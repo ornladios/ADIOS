@@ -1,0 +1,24 @@
+executables:
+  bp2ncd
+  -- convert bp format to netcdf format
+ 
+  bp2ncdphi
+  (gtc: RUNcoord.bp PHI_00000.bp)
+  -- convert bp format to netcdf format
+  -- merge the array with the same variable name
+  -- the array index is abstracted from "path_name"
+
+  bp2ncdxgc
+  (xgc: flowdiag.bp fluxdiag.bp)
+  -- convert bp format to netcdf format
+  -- merge the array with the same variable name
+  -- the array index is abstracted from "istep" scalar var
+
+Folder:
+  src
+  -- include all the source code for the utilities
+  -- include Makefile
+
+  test_dir
+  -- have example bp files to test the utilities
+ 
