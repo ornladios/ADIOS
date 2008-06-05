@@ -624,7 +624,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
         long long file;
         char name [STR_LEN];
 
-        sprintf (name, "%sOVERFLOW_%s", method->base_path, fd->name);
+        sprintf (name, "%s%s_OVERFLOW%d", method->base_path, fd->name, rank);
         bw_set_write (0); // set write to a file directly
         bw_fopen_ (name, &file);
         v = fd->group->vars;
