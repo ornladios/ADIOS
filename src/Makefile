@@ -1,6 +1,6 @@
 #use this for ewok
-EWOK=y
-JAGUAR=n
+EWOK=n
+JAGUAR=y
 PORTALS=n
 ROHAN=n
 
