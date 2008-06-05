@@ -773,14 +773,14 @@ int adios_define_global_bounds_ (long long * group, const char * dimensions
 // adios_common_define_attribute is in adios_internals.c
 
 int adios_define_attribute (long long group, const char * name
-                           ,const char * path, const char * value
+                           ,const char * path, const char * value,int type
                            )
 {
-    return adios_common_define_attribute (group, name, path, value);
+    return adios_common_define_attribute (group, name, path, value,0);
 }
 
 int adios_define_attribute_ (long long * group, const char * name
-                            ,const char * path, const char * value
+                            ,const char * path, const char * value,int *type
                             ,int name_size, int path_size, int value_size
                             )
 {
@@ -792,7 +792,7 @@ int adios_define_attribute_ (long long * group, const char * name
     adios_extract_string (buf2, path, path_size);
     adios_extract_string (buf3, value, value_size);
 
-    return adios_common_define_attribute (*group, buf1, buf2, buf3);
+    return adios_common_define_attribute (*group, buf1, buf2, buf3,*type);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

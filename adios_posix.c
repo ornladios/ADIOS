@@ -300,6 +300,8 @@ static void adios_posix_do_write (struct adios_file_struct * fd
 
         md->start = end;
         v = v->next;
+        //if(v)
+           //printf("var list: %s,%d\n",v->name,v->data);
     }
 
     while (a && !overflow)
