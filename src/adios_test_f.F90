@@ -11,6 +11,7 @@ program adios_test
     integer adios_integer, adios_real
     parameter (adios_integer=1, adios_real=2)
 
+    integer istep 
     integer mype, nhybrid, istep, me, mi, ntracer, mflux
     real etracer, ptracer(4)
     integer mpsi
@@ -32,7 +33,7 @@ program adios_test
     integer previous, current, next
 
     ptracer_dim(1) = 4
-
+    istep=4
     mype = 1
     nhybrid = 6
     istep = 1
@@ -88,7 +89,7 @@ program adios_test
     previous = -1
     current = 0
     next = -1
-
+    
     ! how to get the error messages out
     ! integer l, r, e
     ! character*1000 s

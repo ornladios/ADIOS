@@ -36,7 +36,10 @@ struct adios_attribute_struct
 {
     char * name;
     char * path;
+//CJ
     char * value;
+    struct adios_var_struct * var;
+    enum ADIOS_DATATYPES type;
     struct adios_attribute_struct * next;
 };
 
@@ -303,10 +306,15 @@ int adios_do_write_attribute (struct adios_attribute_struct * a
                              ,unsigned long long buf_start
                              ,unsigned long long * buf_end
                              );
-
+//CJ
+int adios_common_define_attribute (long long group, const char * name
+                                  ,const char * path, const char * value, int type
+                                 );
+/*
 int adios_common_define_attribute (long long group, const char * name
                                   ,const char * path, const char * value
                                   );
+*/
 
 void adios_append_method (struct adios_method_struct * method);
 
