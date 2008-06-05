@@ -1972,17 +1972,11 @@ static int parseGroup (mxml_node_t * node)
             const char * name;
             const char * path;
             const char * value;
-            const char * type;
-            const char * copy_on_write;
-	    int t1,c1;
+
             name = mxmlElementGetAttr (n, "name");
             path = mxmlElementGetAttr (n, "path");
             value = mxmlElementGetAttr (n, "value");
-            type = mxmlElementGetAttr (n,"type");
-            copy_on_write= mxmlElementGetAttr (n,"copy_on_write");
-            if (!type)
-                type = ""; // this will catch the error
-            t1 = parseType (type, name);
+
             if (!name)
             {
                 fprintf (stderr, "config.xml: attribute element requires name\n");
@@ -2001,25 +1995,8 @@ static int parseGroup (mxml_node_t * node)
 
                 return 0;
             }
-            if (!type)
-            {
-                fprintf (stderr, "config.xml: attribute element requires value\n");
-
-                return 0;
-            }
-//CJ, numeric attribute specified as scalar 
-            else if (strcmp(type,"string")!=0)
-            {
-               if (!adios_common_define_var (*(long long *) &new_group,value
-                                         ,path, t1, adios_flag_no, 0,0, 0
-                                         )
-                  )
-               {
-                   return 0;
-               }
-            }
             if (!adios_common_define_attribute (*(long long *) &new_group, name
-                                               ,path, value,t1
+                                               ,path, value
                                                )
                )
             {
@@ -2798,7 +2775,7 @@ int adios_parse_config (const char * config)
 }
 
 int adios_common_define_attribute (long long group, const char * name
-                                  ,const char * path, const char * value,int type
+                                  ,const char * path, const char * value
                                   )
 {
     struct adios_group_struct * g = (struct adios_group_struct *) group;
@@ -2943,22 +2920,11 @@ int adios_common_define_attribute (long long group, const char * name
 
     attr->name = strdup (name);
     attr->path = strdup (path);
+    attr->value = strdup (value);
     attr->next = 0;
-    attr->type= type;
-//CJ
-    if(type==adios_string)
-    {
-       attr->value=strdup(value); 
-       attr->var = 0;
-    }
-    else
-    {  
-       attr->value=0; 
-       attr->var=adios_find_var_by_name(g->vars,value);
-       //printf("attr var: %s %s %d\n",attr->name,value,attr->var);
-    }
 
     adios_append_attribute (&g->attributes, attr);
+
     return 1;
 }
 
@@ -2976,7 +2942,7 @@ void * adios_dupe_data (struct adios_var_struct * v, void * data)
         struct adios_bp_dimension_struct * dims =
                (struct adios_bp_dimension_struct *)
                       calloc (rank, sizeof (struct adios_bp_dimension_struct));
-        
+
         adios_dims_to_bp_dims (v->name, d, v->global_bounds, &rank, dims);
         adios_var_element_count (rank, dims, &use_count, &total_count);
 
@@ -3042,6 +3008,7 @@ int adios_do_write_var (struct adios_var_struct * v
     long long size = 0;
     int start = (int) buf_start;
     int end = (int) *buf_end;
+
     if (v->data && v->write_or_not == adios_flag_yes)
     {
         if (!v->dimensions)
@@ -3054,7 +3021,6 @@ int adios_do_write_var (struct adios_var_struct * v
                 return 1; // overflowed;
             }
             //printf ("Scalar name: %s total size: %d\n", v->name, size);
-          
             bw_scalar (buf, start, &end, v->path, v->name, v->data
                       ,v->type
                       );
@@ -3110,44 +3076,18 @@ int adios_do_write_attribute (struct adios_attribute_struct * a
     long long size = 0;
     int start = (int) buf_start;
     int end = (int) *buf_end;
-//CJ
-    if(a->type==adios_string)
-    { 
-       size = bcalsize_attr_str (a->path, a->name, a->value);
-       if (size + buf_start > buf_size)
-       {
-           return 1; // overflowed
-       }
-       int len=strlen(a->path);
-       if(*(a->path+len-1)=='/')// || *(a->path+len-2)=='/')
-       {//     printf("directory:%s, %d\n",a->path,len);
-            bw_attr_str_gp (buf, start, &end, a->path, a->name, a->value);
-       }
-       else
-            bw_attr_str_ds (buf, start, &end, a->path, a->name, a->value);
-       buf_start = start;
-       *buf_end = end;
-    }
-    else
-    {
-       size = bcalsize_attr_num (a->path, a->name,a->type, a->var->data);
-       if (size + buf_start > buf_size)
-       {
-           return 1; // overflowed
-       }
-       //printf("bw: %s, %d,  %d\n",a->name,a->var->data,a->type);
-       int len=strlen(a->path);
-       if(*(a->path+len-1)=='/')// || *(a->path+len-2)=='/')
-       {
-	 //printf("directory:%s, %d\n",a->path,len);
-           bw_attr_num_gp (buf, start, &end, a->path, a->name, a->var->data,a->type);
-       }
-       else
-           bw_attr_num_ds (buf, start, &end, a->path, a->name, a->var->data,a->type);
 
-       buf_start = start;
-       *buf_end = end;
+    size = bcalsize_attr_str (a->path, a->name, a->value);
+    if (size + buf_start > buf_size)
+    {
+        return 1; // overflowed
     }
+
+    bw_attr_str_ds (buf, start, &end, a->path, a->name, a->value);
+
+    buf_start = start;
+    *buf_end = end;
+
     return 0;
 }
 
@@ -3428,14 +3368,9 @@ unsigned long long adios_size_of_var (struct adios_var_struct * v, void * data)
 unsigned long long adios_size_of_attribute (struct adios_attribute_struct * a)
 {
     unsigned long long size = 0;
-//CJ
-    if(a->type==adios_string)
-       size = bcalsize_attr_str (a->path, a->name, a->value);
-    else
-    {
-       size = bcalsize_attr_num (a->path, a->name,a->type,a->var->data);
-       printf("attr size: %s,%d,%d\n",a->name,a->var,size);
-    }
+
+    size = bcalsize_attr_str (a->path, a->name, a->value);
+
     return size;
 }
 
@@ -3683,7 +3618,6 @@ void adios_dims_to_bp_dims (char * name
         // calculate the size for this dimension element
         if (d->dimension.var)
         {
-            //printf("dimension: %s,%s,%d\n",name, d->dimension.var->name,d->dimension.var->data);
             bp_dims [*rank].local_bound =
                               (*(int *) d->dimension.var->data);
         }
