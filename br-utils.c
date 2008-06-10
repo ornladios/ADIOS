@@ -229,6 +229,8 @@ static int br_get_next_element (struct adios_bp_read_struct * b, ADIOS_BR_PRE_FE
             case VAL_TAG:
                 br_read_buffer (b, sizeof (int), &(*element)->type, sizeof (int));
                 total_size += sizeof (int);
+
+                (*element)->size = size;
                 if ((*element)->type == bp_string)
                 {
                     (*element)->size++; // account for the null
@@ -288,6 +290,8 @@ static int br_get_next_element (struct adios_bp_read_struct * b, ADIOS_BR_PRE_FE
                               * (*element)->ranks;
                 br_read_buffer (b, sizeof (int), &(*element)->type, sizeof (int));
                 total_size += sizeof (int);
+
+                (*element)->size = size;
                 if (pre)
                 {
                     pre (*element, &buf, &buf_size, private_data);
