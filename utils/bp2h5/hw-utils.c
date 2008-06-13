@@ -4,6 +4,7 @@
 #include <signal.h>
 #include "hw-utils.h"
 #include "br-utils.h"
+#include "binpack-utils.h"
 #define  MAX_RANK 10 * 5
 #define STRLEN 1000 
 
@@ -189,9 +190,11 @@ int hw_makeh5 (char * fnamein, char * fnameout)
           )
     {
         if(verbose >= DEBUG_INFO) {
-            if(element->tag == SCR_TAG || element->tag == DST_TAG)
-            fprintf(stderr, "process element %s (size: %.2f KB)\n", 
-                    element->name, element->size/1024.0);
+            fprintf(stderr, "Write element %-20s : Tag: %-10s Size: %lu Bytes\n"
+                   ,element->name 
+                   ,adios_tag_to_string(element->tag)
+                   ,element->size
+                   );
         }
         switch (element->tag)
         {
@@ -222,6 +225,20 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                 break;
 
             case DST_TAG:
+                if(verbose >= DEBUG_INFO) { 
+                    fprintf (stderr, "  Ranks: %u\n", element->ranks);
+                    if (element->dims) {
+                        for (int i = 0; i < element->ranks; i++) {                                      
+                            fprintf(stderr, "  Dim(%d): %d(%d):%d\n"
+                                   ,i
+                                   ,element->dims [i].local_bound
+                                   ,element->dims [i].global_bound
+                                   ,element->dims [i].global_offset
+                                   );
+                        }
+                    }
+                }
+
                 hw_dset (root_id, element->path, element->name, read_buffer.val
                         ,element->type, element->ranks, element->dims
                         );
@@ -308,6 +325,11 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
                 stride [reverse_i] = 1;
 
                 count [reverse_i] = dims [i].local_bound;
+                
+                if(verbose >= DEBUG_INFO) { 
+                   fprintf(stderr, "rank = %d index = %d reverse index = %d local bound = %d global bound = %d start = %d\n", 
+                           rank, i, reverse_i, local_h5dims [reverse_i], global_h5dims [reverse_i], start [reverse_i]);
+                }
             }
         }
         else if(array_dim_order_fortran == USE_C) {
@@ -366,9 +388,8 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
 
         if(verbose >= DEBUG_INFO) {
 //            for (int i = 0; i < rank; i++) {
-//                printf("%d ",h5dims[i]);
+//                fprintf(stderr,"%d ",h5dims[i]);
 //            }
-//            printf("\n");
         }
         
         hw_dataset (grp_id [level], name, data, type, rank, h5dims);

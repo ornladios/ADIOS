@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "hw-utils.h"
 
 void print_usage() 
@@ -7,7 +8,7 @@ void print_usage()
     printf("bp2h5:\n");
     printf("    Convert a bp file to h5 file.\n");
     printf("\nUSAGE: bp2h5 [OPTION] bp_file [h5_file]\n\n");
-    printf("    bp2h5 converts an bp file nameed by bp_file to a h5 file named by h5_file.\n");
+    printf("    bp2h5 converts a bp file named by bp_file to a h5 file named by h5_file.\n");
     printf("    If h5_file is not specified, the generated h5 file is named by the basename\n"
            "    of bp_file suffixed by \".h5\".\n");
     printf("\nOPTION:\n");
@@ -81,7 +82,7 @@ int parse_cmdline(int argc, char **argv, char **bp_filename,
         }
         else if(!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
             print_usage();
-            return -1;
+            exit(0);
         }
         else if(!found_bp_file) {
             *bp_filename = argv[i];
