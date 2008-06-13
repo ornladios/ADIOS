@@ -325,11 +325,6 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
                 stride [reverse_i] = 1;
 
                 count [reverse_i] = dims [i].local_bound;
-                
-                if(verbose >= DEBUG_INFO) { 
-                   fprintf(stderr, "rank = %d index = %d reverse index = %d local bound = %d global bound = %d start = %d\n", 
-                           rank, i, reverse_i, local_h5dims [reverse_i], global_h5dims [reverse_i], start [reverse_i]);
-                }
             }
         }
         else if(array_dim_order_fortran == USE_C) {
@@ -345,6 +340,15 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
 
                 count [i] = dims [i].local_bound;
             }
+        }
+
+        if(verbose >= DEBUG_INFO) {
+            fprintf(stderr, "  Hyperslab index = %d local bound = %d global bound = %d start = %d\n"
+                   ,i
+                   ,local_h5dims[i]
+                   ,global_h5dims[i]
+                   ,start[i]
+                   );
         }
 
         dataspace = H5Screate_simple (rank, global_h5dims, NULL);
@@ -381,15 +385,27 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
     {
         hsize_t * h5dims;
         h5dims = (hsize_t *) malloc (rank * sizeof (hsize_t));    
-        for (int i = 0; i < rank; i++)
-        {
-            h5dims [rank-1-i] = dims [i].local_bound;
+        if(array_dim_order_fortran == USE_FORTRAN) { 
+            // transpose dimension order for Fortran arrays
+            for (int i = 0; i < rank; i++)
+            {
+                h5dims [rank-1-i] = dims [i].local_bound;
+            }
+        }
+        else if(array_dim_order_fortran == USE_C) {
+            for (int i = 0; i < rank; i++)
+            {
+                h5dims [i] = dims [i].local_bound;
+            }
         }
 
         if(verbose >= DEBUG_INFO) {
-//            for (int i = 0; i < rank; i++) {
-//                fprintf(stderr,"%d ",h5dims[i]);
-//            }
+            for (int i = 0; i < rank; i++) {
+                fprintf(stderr, "  Dataspace index = %d dimension = %d \n"
+                       ,i
+                       ,h5dims[i]
+                       );
+            }
         }
         
         hw_dataset (grp_id [level], name, data, type, rank, h5dims);
