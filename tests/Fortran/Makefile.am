@@ -1,0 +1,3 @@
+bin_PROGRAMS=adios_test_f
+
+adios_test_c_SOURCES=adios_test_f.F90
