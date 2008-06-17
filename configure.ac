@@ -39,9 +39,9 @@ FC="$MPIFC"
 
 LIBS="$MPILIBS $LIBS"
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile])
 
-dnl AC_CONFIG_FILES([Makefile src/Makefile utils/Makefile utils/adios_lint/Makefile utils/bp2ascii/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/gwrite/bpdump utils/gwrite/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile])
+dnl add these in as they are converted: [utils/Makefile utils/adios_lint/Makefile utils/bp2ascii/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/gwrite/bpdump utils/gwrite/Makefile])
 
 AC_OUTPUT
 
