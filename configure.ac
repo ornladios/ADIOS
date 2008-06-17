@@ -46,9 +46,11 @@ AC_CONFIG_FILES([Makefile
                  tests/Fortran/Makefile
                  utils/Makefile
                  utils/adios_lint/Makefile
+                 utils/gwrite/Makefile
+                 utils/bpdump/Makefile
                 ])
 
-dnl add these in as they are converted: [utils/bp2ascii/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/gwrite/bpdump utils/gwrite/Makefile])
+dnl add these in as they are converted: [utils/bp2ascii/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile])
 
 AC_OUTPUT
 
