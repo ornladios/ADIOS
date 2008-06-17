@@ -1,4 +1,8 @@
 executables:
+  adios_lint
+  -- check the XML file for correctness. No news is good news.
+  -- USAGE: ./adios_lint <config.xml>
+
   bpdump
   -- convert bp format to netcdf format
   -- USAGE: ./bpdump [-d [var]|--dump [var]] <filename>
