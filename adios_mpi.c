@@ -107,7 +107,7 @@ void adios_mpi_open (struct adios_file_struct * fd
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
 
-    unsigned long long file_size_for_offset = 0;
+    MPI_Offset file_size_for_offset = 0;
 
     // if it is an append, add the base file size to the initial offset
     if (fd->mode & adios_mode_append)
@@ -414,7 +414,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
     unsigned long long my_data_len = adios_data_size (fd->group);
     unsigned long long mem_needed = 0;
     unsigned long long mem_allowed = 0;
-    unsigned long long my_offset = 0;
+    MPI_Offset my_offset = 0;
     MPI_Status mstatus;
     int overflow = 0;
     unsigned long long end = 0;
@@ -470,6 +470,18 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
         {
             int amode = MPI_MODE_WRONLY;
             if (!(fd->mode & adios_mode_append))
+            {
+                // truncate the file
+                err = MPI_File_delete (name, adios_mpi_info);
+                if (err != MPI_SUCCESS)
+                {
+                    fprintf (stderr, "Error truncating file %s for group %s\n"
+                            ,name ,adios_file_mode_to_string (fd->mode)
+                            );
+                }
+            }
+
+            if (!(fd->mode & adios_mode_append))
                 amode |= MPI_MODE_CREATE;
             /* node 0 does an open to create the file, if necessary */
             err = MPI_File_open (adios_mpi_comm_self, name, amode
@@ -485,16 +497,6 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
                 {
                     fprintf (stderr, "Error opening file %s for %s\n", name
                             ,adios_file_mode_to_string (fd->mode)
-                            );
-                }
-            }
-            if (!(fd->mode & adios_mode_append))
-            {
-                err = MPI_File_set_size (&md->fh, 0); // truncate the file
-                if (err != MPI_SUCCESS)
-                {
-                    fprintf (stderr, "Error truncating file %s for group %s\n"
-                            ,name ,adios_file_mode_to_string (fd->mode)
                             );
                 }
             }
@@ -532,6 +534,19 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
     else
     {
         int err_class;
+        if (!(fd->mode & adios_mode_append))
+        {
+            // truncate the file
+            err = MPI_File_delete (name, adios_mpi_info);
+            MPI_Error_class (err, &err_class);
+            if (err_class != MPI_SUCCESS)
+            {
+                fprintf (stderr, "Error %d truncating file %s for %s\n"
+                        ,err_class
+                        ,name, adios_file_mode_to_string (fd->mode)
+                        );
+            }
+        }
         err = MPI_File_open (adios_mpi_comm_self, name
                             ,MPI_MODE_WRONLY | MPI_MODE_CREATE
                             ,adios_mpi_info, &md->fh
@@ -545,15 +560,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
         }
         if (!(fd->mode & adios_mode_append))
         {
-            err = MPI_File_set_size (&md->fh, 0); // truncate the file
-            MPI_Error_class (err, &err_class);
-            if (err_class != MPI_SUCCESS)
-            {
-                fprintf (stderr, "Error %d truncating file %s for %s\n", err_class
-                        ,name, adios_file_mode_to_string (fd->mode)
-                        );
-            }
-            err = MPI_File_get_size (&md->fh, &my_offset);
+            err = MPI_File_get_size (md->fh, &my_offset);
             MPI_Error_class (err, &err_class);
             if (err_class != MPI_SUCCESS)
             {
