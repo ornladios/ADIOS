@@ -2102,8 +2102,12 @@ static int parseMethod (mxml_node_t * node)
     base_path = mxmlElementGetAttr (node, "base-path");
     method = mxmlElementGetAttr (node, "method");
     group = mxmlElementGetAttr (node, "group");
+    /* Check for parameters, if they exist */
     n = mxmlWalkNext (node, node, MXML_DESCEND);
-    parameters = n->value.text.string;
+    if ( n != NULL) 
+      {parameters = n->value.text.string;    }
+    else
+      {parameters = NULL;}
     if (!priority)
         p1 = 1;
     else
