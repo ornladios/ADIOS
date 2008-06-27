@@ -57,7 +57,7 @@ am_adios_test_f_OBJECTS = adios_test_f.$(OBJEXT)
 adios_test_f_OBJECTS = $(am_adios_test_f_OBJECTS)
 am__DEPENDENCIES_1 =
 adios_test_f_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(top_builddir)/src/libadios_int.a $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -186,8 +186,7 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 adios_test_f_SOURCES = adios_test_f.F90
 adios_test_f_LDFLAGS = $(MXML_LDFLAGS)
-adios_test_f_LDADD = $(top_builddir)/src/libadios.a \
-	$(top_builddir)/src/libadios_int.a $(MXML_LIBS)
+adios_test_f_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS)
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) "$()" \
 	$(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@

@@ -2243,6 +2243,7 @@ int adios_set_buffer_size ()
             if (pagesize * pages >= adios_buffer_size_requested)
             {
                 // sufficient memory, do nothing
+                adios_buffer_size_max = adios_buffer_size_requested;
             }
             else
             {
@@ -2252,8 +2253,8 @@ int adios_set_buffer_size ()
                         ,adios_buffer_size_requested
                         ,((unsigned long long) (pagesize * pages))
                         );
-            }
-            adios_buffer_size_max = adios_buffer_size_requested;
+                 adios_buffer_size_max = (unsigned long long) (pagesize * pages);
+           }
         }
 
         adios_buffer_size_remaining = adios_buffer_size_max;
