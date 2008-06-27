@@ -105,9 +105,9 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
 
 // forward declare the functions (or dummies for internals use)
 FORWARD_DECLARE(mpi)
-FORWARD_DECLARE(datatap)
+     /*FORWARD_DECLARE(datatap)*/
 FORWARD_DECLARE(posix)
-FORWARD_DECLARE(dart)
+     /*FORWARD_DECLARE(dart)*/
 FORWARD_DECLARE(vtk)
 FORWARD_DECLARE(posix_ascii)
 
@@ -127,8 +127,8 @@ FORWARD_DECLARE(posix_ascii)
 #define ADIOS_INIT_TRANSPORTS_SETUP \
     ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)                 \
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)             \
-    ASSIGN_FNS(dart,ADIOS_METHOD_DART)               \
     ASSIGN_FNS(vtk,ADIOS_METHOD_VTK)                 \
     ASSIGN_FNS(posix_ascii,ADIOS_METHOD_POSIX_ASCII)
 //    ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP)         
+/*    ASSIGN_FNS(dart,ADIOS_METHOD_DART)               \*/
 

@@ -16,8 +16,9 @@ libadios_a_SOURCES = adios.c \
 		     adios_internals.c \
                      bw-utils.c \
                      br-utils.c \
-                     binpack-utils.c \
-		     adios_datatap.c
+                     binpack-utils.c 
+#\
+#		     adios_datatap.c
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)
 include_HEADERS += adios.h \
                    adios_types.h
