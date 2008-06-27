@@ -343,12 +343,13 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
         }
 
         if(verbose >= DEBUG_INFO) {
-            fprintf(stderr, "  Hyperslab index = %d local bound = %d global bound = %d start = %d\n"
-                   ,i
-                   ,local_h5dims[i]
-                   ,global_h5dims[i]
-                   ,start[i]
-                   );
+            for (int i = 0; i < rank; i++)
+                fprintf(stderr, "  Hyperslab index = %d local bound = %d global bound = %d start = %d\n"
+                       ,i
+                       ,local_h5dims[i]
+                       ,global_h5dims[i]
+                       ,start[i]
+                       );
         }
 
         dataspace = H5Screate_simple (rank, global_h5dims, NULL);
