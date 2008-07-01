@@ -100,7 +100,8 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
                      ,ADIOS_METHOD_DART        = 3
                      ,ADIOS_METHOD_VTK         = 4
                      ,ADIOS_METHOD_POSIX_ASCII = 5
-                     ,ADIOS_METHOD_COUNT       = 6
+                     ,ADIOS_METHOD_MPI_CIO     = 6
+                     ,ADIOS_METHOD_COUNT       = 7
                      };
 
 // forward declare the functions (or dummies for internals use)
@@ -121,6 +122,7 @@ FORWARD_DECLARE(posix_ascii)
     MATCH_STRING_TO_METHOD("DART",ADIOS_METHOD_DART)               \
     MATCH_STRING_TO_METHOD("VTK",ADIOS_METHOD_VTK)                 \
     MATCH_STRING_TO_METHOD("POSIX_ASCII",ADIOS_METHOD_POSIX_ASCII) \
+    MATCH_STRING_TO_METHOD("MPI_CIO",ADIOS_METHOD_MPI_CIO) \
     MATCH_STRING_TO_METHOD("NULL",ADIOS_METHOD_NULL)
 
 // add the initialization of the functions for the calls here
@@ -129,6 +131,7 @@ FORWARD_DECLARE(posix_ascii)
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)             \
     ASSIGN_FNS(vtk,ADIOS_METHOD_VTK)                 \
     ASSIGN_FNS(posix_ascii,ADIOS_METHOD_POSIX_ASCII)
+    ASSIGN_FNS(datatap,ADIOS_METHOD_MPI_CIO)         
 //    ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP)         
 /*    ASSIGN_FNS(dart,ADIOS_METHOD_DART)               \*/
 
