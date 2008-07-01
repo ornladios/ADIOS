@@ -10,6 +10,7 @@ lib_LIBRARIES += libadios.a
 libadios_a_SOURCES = adios.c \
                      adios_transport_hooks.c \
                      adios_mpi.c \
+                     adios_mpi_cio.c \
                      adios_posix.c \
                      adios_posix_ascii.c \
                      adios_vtk.c \
