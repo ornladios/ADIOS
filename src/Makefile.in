@@ -66,6 +66,7 @@ libadios_a_LIBADD =
 am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
 	libadios_a-adios_transport_hooks.$(OBJEXT) \
 	libadios_a-adios_mpi.$(OBJEXT) \
+	libadios_a-adios_mpi_cio.$(OBJEXT) \
 	libadios_a-adios_posix.$(OBJEXT) \
 	libadios_a-adios_posix_ascii.$(OBJEXT) \
 	libadios_a-adios_vtk.$(OBJEXT) \
@@ -212,6 +213,7 @@ lib_LIBRARIES = libadios.a
 libadios_a_SOURCES = adios.c \
                      adios_transport_hooks.c \
                      adios_mpi.c \
+                     adios_mpi_cio.c \
                      adios_posix.c \
                      adios_posix_ascii.c \
                      adios_vtk.c \
@@ -323,6 +325,12 @@ libadios_a-adios_mpi.o: adios_mpi.c
 
 libadios_a-adios_mpi.obj: adios_mpi.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi.obj `if test -f 'adios_mpi.c'; then $(CYGPATH_W) 'adios_mpi.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi.c'; fi`
+
+libadios_a-adios_mpi_cio.o: adios_mpi_cio.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_cio.o `test -f 'adios_mpi_cio.c' || echo '$(srcdir)/'`adios_mpi_cio.c
+
+libadios_a-adios_mpi_cio.obj: adios_mpi_cio.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_cio.obj `if test -f 'adios_mpi_cio.c'; then $(CYGPATH_W) 'adios_mpi_cio.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_cio.c'; fi`
 
 libadios_a-adios_posix.o: adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_posix.o `test -f 'adios_posix.c' || echo '$(srcdir)/'`adios_posix.c

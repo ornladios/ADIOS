@@ -18,9 +18,9 @@
 #include "adios_transport_hooks.h"
 #include "adios_internals.h"
 
-extern MPI_Comm adios_mpi_cio_comm_world;
-extern MPI_Comm adios_mpi_cio_comm_self;
-extern MPI_Info adios_mpi_cio_info;
+extern MPI_Comm adios_mpi_comm_world;
+extern MPI_Comm adios_mpi_comm_self;
+extern MPI_Info adios_mpi_info;
 
 static int adios_mpi_cio_initialized = 0;
 
@@ -58,7 +58,7 @@ static void adios_var_to_comm (const char * varname
                                  "Using MPI_COMM_WORLD instead\n"
                         ,varname
                         );
-                *comm = adios_mpi_cio_comm_world;
+                *comm = adios_mpi_comm_world;
             }
         }
         else
@@ -68,7 +68,7 @@ static void adios_var_to_comm (const char * varname
                     ,varname
                     );
 
-            *comm = adios_mpi_cio_comm_world;
+            *comm = adios_mpi_comm_world;
         }
     }
     else
@@ -126,8 +126,8 @@ void adios_mpi_cio_open (struct adios_file_struct * fd
         if (group_comm == MPI_COMM_NULL || rank == 0)
         {
             int err;
-            err = MPI_File_open (adios_mpi_cio_comm_self, name, MPI_MODE_RDONLY
-                                ,adios_mpi_cio_info, &md->fh
+            err = MPI_File_open (adios_mpi_comm_self, name, MPI_MODE_RDONLY
+                                ,adios_mpi_info, &md->fh
                                 );
             if (err != MPI_SUCCESS)
             {
@@ -279,33 +279,17 @@ static void adios_mpi_cio_do_read (struct adios_file_struct * fd
     struct adios_var_struct * v = 0;
 
     unsigned long long my_data_len = adios_data_size (fd->group);
+
     unsigned long long my_offset = 0;
     MPI_Status mstatus;
+    MPI_Offset read_offset;
     int amode = MPI_MODE_RDONLY;
     int err;
     MPI_Comm group_comm;
-    int previous;
-    int current;
-    int next;
-    int rank;
-    int size;
 
     if (fd->group->group_comm)
     {
         adios_var_to_comm (fd->group->group_comm, fd->group->vars, &group_comm);
-
-        MPI_Comm_rank (group_comm, &rank);
-        MPI_Comm_size (group_comm, &size);
-        if (rank == size - 1)
-        {
-            next = -1;
-        }
-        else
-        {
-            next = rank + 1;
-        }
-        previous = rank - 1;
-        current = rank;
     }
     else
     {
@@ -328,42 +312,30 @@ static void adios_mpi_cio_do_read (struct adios_file_struct * fd
     // sprintf (buf2, buf1, fd->name, fd->group->current);
     if (group_comm != MPI_COMM_NULL)
     {
-        if (previous == -1)
-        {
-            /* node 0 does an open */
-            MPI_File_open (adios_mpi_cio_comm_self, name, amode, adios_mpi_cio_info, &md->fh);
-            if (next != -1)
-            {
-                MPI_Isend (&my_data_len, 1, MPI_LONG_LONG, next
-                          ,current, group_comm, &md->req
-                          );
-            }
-        }
-        else
-        {
-            MPI_Recv (&my_offset, 1, MPI_LONG_LONG, previous
-                     ,previous, group_comm, &md->status
-                     );
-            if (next != -1)
-            {
-                unsigned long long new_offset = my_offset + my_data_len;
-                MPI_Isend (&new_offset, 1, MPI_LONG_LONG, next
-                          ,current, group_comm, &md->req
-                          );
-            }
-            MPI_File_open (adios_mpi_cio_comm_self, name, amode, adios_mpi_cio_info
-                          ,&md->fh
-                          );
-        }
+        int do_free_info = 0;
 
-        MPI_File_seek (md->fh, fd->base_offset + fd->offset + my_offset
-                      ,MPI_SEEK_SET
-                      );
+        MPI_Scan(&my_data_len, &my_offset, 1, MPI_LONG_LONG, MPI_SUM, group_comm);
+        my_offset -= my_data_len;
+        read_offset = fd->base_offset + fd->offset + my_offset;
+
+        if (adios_mpi_info == MPI_INFO_NULL) {
+            do_free_info = 1;
+            MPI_Info_create(&adios_mpi_info);
+        }
+        MPI_Info_set(adios_mpi_info, "romio_no_indep_rw", "true");
+        /* this hint will enable aggregator I/O */
+
+        MPI_File_open (group_comm, name, MPI_MODE_RDONLY, adios_mpi_info, &md->fh);
+
+        if (do_free_info) {
+            MPI_Info_free(&adios_mpi_info);
+            adios_mpi_info = MPI_INFO_NULL;
+        }
     }
     else
     {
-        MPI_File_open (adios_mpi_cio_comm_self, name, amode, adios_mpi_cio_info, &md->fh);
-        MPI_File_seek (md->fh, fd->base_offset + fd->offset, MPI_SEEK_SET);
+        MPI_File_open (adios_mpi_comm_self, name, amode, adios_mpi_info, &md->fh);
+        read_offset = fd->base_offset + fd->offset;
     }
     /******************************
      * End Coordinate file offet
@@ -385,7 +357,8 @@ static void adios_mpi_cio_do_read (struct adios_file_struct * fd
         free (md->buffer);
         md->buffer = malloc (md->buffer_size);
     }
-    err = MPI_File_read (md->fh, md->buffer, my_data_len, MPI_BYTE, &mstatus);
+    
+    err = MPI_File_read_at_all(md->fh, read_offset, md->buffer, my_data_len, MPI_BYTE, &mstatus);
     if (err != MPI_SUCCESS)
     {
         fprintf (stderr, "Could not read from file %s\n", name);
@@ -399,9 +372,6 @@ static void adios_mpi_cio_do_read (struct adios_file_struct * fd
         v->data = 0;
         v = v->next;
     }
-
-    if (next != -1)
-        MPI_Wait (&md->req, &md->status);
 }
 
 static void adios_mpi_cio_do_write (struct adios_file_struct * fd
@@ -455,24 +425,24 @@ static void adios_mpi_cio_do_write (struct adios_file_struct * fd
         my_offset -= my_data_len;
         write_offset = fd->base_offset + fd->offset + my_offset;
 
-        if (adios_mpi_cio_info == MPI_INFO_NULL) {
+        if (adios_mpi_info == MPI_INFO_NULL) {
             do_free_info = 1;
-            MPI_Info_create(&adios_mpi_cio_info);
+            MPI_Info_create(&adios_mpi_info);
         }
-        MPI_Info_set(adios_mpi_cio_info, "romio_no_indep_rw", "true");
+        MPI_Info_set(adios_mpi_info, "romio_no_indep_rw", "true");
         /* this hint will enable aggregator I/O */
 
-        MPI_File_open (group_comm, name, MPI_MODE_CREATE|MPI_MODE_WRONLY, adios_mpi_cio_info, &m->fh);
+        MPI_File_open (group_comm, name, MPI_MODE_CREATE|MPI_MODE_WRONLY, adios_mpi_info, &md->fh);
 
         if (do_free_info) {
-            MPI_Info_free(&adios_mpi_cio_info);
-            adios_mpi_cio_info = MPI_INFO_NULL;
+            MPI_Info_free(&adios_mpi_info);
+            adios_mpi_info = MPI_INFO_NULL;
         }
     }
     else
     {
-        MPI_File_open (adios_mpi_cio_comm_self, name, MPI_MODE_WRONLY | MPI_MODE_CREATE
-                      ,adios_mpi_cio_info, &m->fh
+        MPI_File_open (adios_mpi_comm_self, name, MPI_MODE_WRONLY | MPI_MODE_CREATE
+                      ,adios_mpi_info, &md->fh
                       );
         write_offset = fd->base_offset + fd->offset;
     }
@@ -563,7 +533,7 @@ static void adios_mpi_cio_do_write (struct adios_file_struct * fd
     }
     else
     {
-        MPI_File_write_at_all(m->fh, write_offset, md->buffer, end, MPI_BYTE, &mstatus);
+        MPI_File_write_at_all(md->fh, write_offset, md->buffer, end, MPI_BYTE, &mstatus);
     }
 
     // clear out the cached data for the caller to be able to continue to work
