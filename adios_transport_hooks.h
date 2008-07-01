@@ -106,13 +106,16 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
 
 // forward declare the functions (or dummies for internals use)
 FORWARD_DECLARE(mpi)
-     /*FORWARD_DECLARE(datatap)*/
 FORWARD_DECLARE(posix)
-     /*FORWARD_DECLARE(dart)*/
 FORWARD_DECLARE(vtk)
 FORWARD_DECLARE(posix_ascii)
+#if USE_PORTALS
+FORWARD_DECLARE(datatap)
+FORWARD_DECLARE(dart)
+#endif
 
 // add the string<->ID mapping here (also add ID in adios_internals.h)
+#if USE_PORTALS
 #define ADIOS_PARSE_METHOD_SETUP \
     MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI)                 \
     MATCH_STRING_TO_METHOD("DATATAP",ADIOS_METHOD_DATATAP)         \
@@ -124,14 +127,29 @@ FORWARD_DECLARE(posix_ascii)
     MATCH_STRING_TO_METHOD("POSIX_ASCII",ADIOS_METHOD_POSIX_ASCII) \
     MATCH_STRING_TO_METHOD("MPI_CIO",ADIOS_METHOD_MPI_CIO) \
     MATCH_STRING_TO_METHOD("NULL",ADIOS_METHOD_NULL)
+#else
+#define ADIOS_PARSE_METHOD_SETUP \
+    MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI)                 \
+    MATCH_STRING_TO_METHOD("POSIX",ADIOS_METHOD_POSIX)             \
+    MATCH_STRING_TO_METHOD("FB",ADIOS_METHOD_POSIX)                \
+    MATCH_STRING_TO_METHOD("VTK",ADIOS_METHOD_VTK)                 \
+    MATCH_STRING_TO_METHOD("POSIX_ASCII",ADIOS_METHOD_POSIX_ASCII) \
+    MATCH_STRING_TO_METHOD("NULL",ADIOS_METHOD_NULL)
+#endif
 
 // add the initialization of the functions for the calls here
+#if USE_PORTALS
+#define ADIOS_INIT_TRANSPORTS_SETUP \
+    ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)                 \
+    ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)             \
+    ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP)         \
+    ASSIGN_FNS(dart,ADIOS_METHOD_DART)               \
+    ASSIGN_FNS(vtk,ADIOS_METHOD_VTK)                 \
+    ASSIGN_FNS(posix_ascii,ADIOS_METHOD_POSIX_ASCII)
+#else
 #define ADIOS_INIT_TRANSPORTS_SETUP \
     ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)                 \
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)             \
     ASSIGN_FNS(vtk,ADIOS_METHOD_VTK)                 \
     ASSIGN_FNS(posix_ascii,ADIOS_METHOD_POSIX_ASCII)
-    ASSIGN_FNS(datatap,ADIOS_METHOD_MPI_CIO)         
-//    ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP)         
-/*    ASSIGN_FNS(dart,ADIOS_METHOD_DART)               \*/
-
+#endif
