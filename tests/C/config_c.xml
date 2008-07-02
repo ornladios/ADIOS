@@ -34,17 +34,19 @@
     <var name="ze0size" type="integer"/>
     <var name="zelectron0" type="real" dimensions="ze0size" copy-on-write="yes"/>
 
-    <var name="nparam" type="integer" write="no"/>
-    <var name="mimax" type="integer" write="no"/>
-    <var name="mgrid" type="integer" write="no"/>
-    <var name="mzeta" type="integer" write="no"/>
-    <var name="memax" type="integer" write="no"/>
+    <var name="nparam" type="integer"/>
+    <var name="mimax" type="integer"/>
+    <var name="mgrid" type="integer"/>
+    <var name="mzeta" type="integer"/>
+    <var name="memax" type="integer"/>
 
     <attribute name="units1" path="/abc/me/" value="m/s"/>
     <attribute name="units2" path="/abc/me" value="m/s"/>
     <attribute name="timestep1" path="/" value="1"/>
     <attribute name="timestep2" path="/abc" value="1"/>
     <attribute name="timestep3" path="/abc/" value="1"/>
+
+    <attribute name="node" path="/" type="integer" var="node-attr"/>
   </adios-group>
 
   <adios-group name="diagnostic">

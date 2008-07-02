@@ -37,6 +37,7 @@ int main (int argc, char ** argv)
     adios_write (io_handle, "mype", &var_x);
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);
+    adios_write (io_handle, "node-attr", &node);
     adios_close (io_handle);
 
     var_x = 11;
