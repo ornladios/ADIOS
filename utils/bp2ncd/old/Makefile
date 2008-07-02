@@ -37,8 +37,8 @@ bp2ncdxgc:  bp2ncdxgc.o Makefile
 
 bp2ncdxgc.o: bp2ncdxgc.c
 	$(CCMP) $(INC) -c bp2ncdxgc.c ${NETCDF_CLIB}
-bp2ncd.o: bp2ncd.c
-	$(CCMP) $(INC) -c bp2ncd.c ${NETCDF_CLIB}
+bp2ncd.o: ../bp2ncd.c
+	$(CCMP) $(INC) -c ../bp2ncd.c ${NETCDF_CLIB}
 bp2ncdphi.o: bp2ncdphi.c
 	$(CCMP) $(INC) -c bp2ncdphi.c ${NETCDF_CLIB}
 
