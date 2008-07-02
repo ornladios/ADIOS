@@ -15,7 +15,7 @@
 @SET_MAKE@
 
 
-SOURCES = $(libadios_a_SOURCES)
+SOURCES = $(libadios_a_SOURCES) $(libadios_int_a_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -74,6 +74,14 @@ am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
 	libadios_a-bw-utils.$(OBJEXT) libadios_a-br-utils.$(OBJEXT) \
 	libadios_a-binpack-utils.$(OBJEXT)
 libadios_a_OBJECTS = $(am_libadios_a_OBJECTS)
+libadios_int_a_AR = $(AR) $(ARFLAGS)
+libadios_int_a_LIBADD =
+am_libadios_int_a_OBJECTS = libadios_int_a-adios_internals.$(OBJEXT) \
+	libadios_int_a-adios_transport_hooks_dummy.$(OBJEXT) \
+	libadios_int_a-bw-utils.$(OBJEXT) \
+	libadios_int_a-br-utils.$(OBJEXT) \
+	libadios_int_a-binpack-utils.$(OBJEXT)
+libadios_int_a_OBJECTS = $(am_libadios_int_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -85,8 +93,8 @@ LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libadios_a_SOURCES)
-DIST_SOURCES = $(libadios_a_SOURCES)
+SOURCES = $(libadios_a_SOURCES) $(libadios_int_a_SOURCES)
+DIST_SOURCES = $(libadios_a_SOURCES) $(libadios_int_a_SOURCES)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -209,7 +217,7 @@ METASOURCES = AUTO
 include_HEADERS = adios.h adios_types.h adios_internals.h \
 	adios_transport_hooks.h br-utils.h bw-utils.h binpack-utils.h \
 	binpack-general.h
-lib_LIBRARIES = libadios.a
+lib_LIBRARIES = libadios.a libadios_int.a
 libadios_a_SOURCES = adios.c \
                      adios_transport_hooks.c \
                      adios_mpi.c \
@@ -222,9 +230,14 @@ libadios_a_SOURCES = adios.c \
                      br-utils.c \
                      binpack-utils.c 
 
-#\
 #		     adios_datatap.c
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)
+libadios_int_a_SOURCES = adios_internals.c \
+                        adios_transport_hooks_dummy.c \
+                        bw-utils.c \
+                        br-utils.c \
+                        binpack-utils.c
+
 libadios_int_a_CPPFLAGS = $(MXML_CPPFLAGS)
 all: all-am
 
@@ -292,6 +305,10 @@ libadios.a: $(libadios_a_OBJECTS) $(libadios_a_DEPENDENCIES)
 	-rm -f libadios.a
 	$(libadios_a_AR) libadios.a $(libadios_a_OBJECTS) $(libadios_a_LIBADD)
 	$(RANLIB) libadios.a
+libadios_int.a: $(libadios_int_a_OBJECTS) $(libadios_int_a_DEPENDENCIES) 
+	-rm -f libadios_int.a
+	$(libadios_int_a_AR) libadios_int.a $(libadios_int_a_OBJECTS) $(libadios_int_a_LIBADD)
+	$(RANLIB) libadios_int.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -373,6 +390,36 @@ libadios_a-binpack-utils.o: binpack-utils.c
 
 libadios_a-binpack-utils.obj: binpack-utils.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-binpack-utils.obj `if test -f 'binpack-utils.c'; then $(CYGPATH_W) 'binpack-utils.c'; else $(CYGPATH_W) '$(srcdir)/binpack-utils.c'; fi`
+
+libadios_int_a-adios_internals.o: adios_internals.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-adios_internals.o `test -f 'adios_internals.c' || echo '$(srcdir)/'`adios_internals.c
+
+libadios_int_a-adios_internals.obj: adios_internals.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-adios_internals.obj `if test -f 'adios_internals.c'; then $(CYGPATH_W) 'adios_internals.c'; else $(CYGPATH_W) '$(srcdir)/adios_internals.c'; fi`
+
+libadios_int_a-adios_transport_hooks_dummy.o: adios_transport_hooks_dummy.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-adios_transport_hooks_dummy.o `test -f 'adios_transport_hooks_dummy.c' || echo '$(srcdir)/'`adios_transport_hooks_dummy.c
+
+libadios_int_a-adios_transport_hooks_dummy.obj: adios_transport_hooks_dummy.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-adios_transport_hooks_dummy.obj `if test -f 'adios_transport_hooks_dummy.c'; then $(CYGPATH_W) 'adios_transport_hooks_dummy.c'; else $(CYGPATH_W) '$(srcdir)/adios_transport_hooks_dummy.c'; fi`
+
+libadios_int_a-bw-utils.o: bw-utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-bw-utils.o `test -f 'bw-utils.c' || echo '$(srcdir)/'`bw-utils.c
+
+libadios_int_a-bw-utils.obj: bw-utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-bw-utils.obj `if test -f 'bw-utils.c'; then $(CYGPATH_W) 'bw-utils.c'; else $(CYGPATH_W) '$(srcdir)/bw-utils.c'; fi`
+
+libadios_int_a-br-utils.o: br-utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-br-utils.o `test -f 'br-utils.c' || echo '$(srcdir)/'`br-utils.c
+
+libadios_int_a-br-utils.obj: br-utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-br-utils.obj `if test -f 'br-utils.c'; then $(CYGPATH_W) 'br-utils.c'; else $(CYGPATH_W) '$(srcdir)/br-utils.c'; fi`
+
+libadios_int_a-binpack-utils.o: binpack-utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-binpack-utils.o `test -f 'binpack-utils.c' || echo '$(srcdir)/'`binpack-utils.c
+
+libadios_int_a-binpack-utils.obj: binpack-utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-binpack-utils.obj `if test -f 'binpack-utils.c'; then $(CYGPATH_W) 'binpack-utils.c'; else $(CYGPATH_W) '$(srcdir)/binpack-utils.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

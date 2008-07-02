@@ -1801,11 +1801,13 @@ static int parseGroup (mxml_node_t * node)
     coordination_var = mxmlElementGetAttr (node, "coordination-var");
     if (!datagroup_name)
     {
-        fprintf (stderr, "config.xml: name attribute required on adios-group\n");
+        fprintf (stderr,
+                 "config.xml: name attribute required on adios-group\n");
 
         return 0;
     }
-    adios_common_declare_group ((long long *) &new_group, datagroup_name, coordination_comm, coordination_var);
+    adios_common_declare_group ((long long *) &new_group, datagroup_name
+                               ,coordination_comm, coordination_var);
 
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
         ;n
@@ -2923,9 +2925,9 @@ int adios_common_define_attribute (long long group, const char * name
     }
 #endif
 
-    attr->name = strdup (name);
-    attr->path = strdup (path);
-    attr->value = strdup (value);
+    attr->var.name = strdup (name);
+    attr->var.path = strdup (path);
+    attr->var.data = strdup (value);
     attr->next = 0;
 
     adios_append_attribute (&g->attributes, attr);
@@ -3082,13 +3084,13 @@ int adios_do_write_attribute (struct adios_attribute_struct * a
     int start = (int) buf_start;
     int end = (int) *buf_end;
 
-    size = bcalsize_attr_str (a->path, a->name, a->value);
+    size = bcalsize_attr_str (a->var.path, a->var.name, a->var.data);
     if (size + buf_start > buf_size)
     {
         return 1; // overflowed
     }
 
-    bw_attr_str_ds (buf, start, &end, a->path, a->name, a->value);
+    bw_attr_str_ds (buf, start, &end, a->var.path, a->var.name, a->var.data);
 
     buf_start = start;
     *buf_end = end;
@@ -3374,7 +3376,7 @@ unsigned long long adios_size_of_attribute (struct adios_attribute_struct * a)
 {
     unsigned long long size = 0;
 
-    size = bcalsize_attr_str (a->path, a->name, a->value);
+    size = bcalsize_attr_str (a->var.path, a->var.name, a->var.data);
 
     return size;
 }
@@ -3486,6 +3488,7 @@ void adios_append_global_bounds (struct adios_global_bounds_struct * bounds)
 void adios_append_group (struct adios_group_struct * group)
 {
     struct adios_group_list_struct ** root = &adios_groups;
+    int id = 1;
 
     while (root)
     {
@@ -3499,6 +3502,7 @@ void adios_append_group (struct adios_group_struct * group)
             {
                 fprintf (stderr, "out of memory in adios_append_group\n");
             }
+            group->id = id;
             new_node->group = group;
             new_node->next = 0;
 
@@ -3508,6 +3512,7 @@ void adios_append_group (struct adios_group_struct * group)
         else
         {
             root = &(*root)->next;
+            id++;
         }
     }
 }
@@ -3516,16 +3521,20 @@ void adios_append_var (struct adios_var_struct ** root
                       ,struct adios_var_struct * var
                       )
 {
+    int id = 1;
+
     while (root)
     {
         if (!*root)
         {
+            var->id = id;
             *root = var;
             root = 0;
         }
         else
         {
             root = &(*root)->next;
+            id++;
         }
     }
 }
@@ -3552,16 +3561,20 @@ void adios_append_attribute (struct adios_attribute_struct ** root
                             ,struct adios_attribute_struct * attribute
                             )
 {
+    int id = 1;
+
     while (root)
     {
         if (!*root)
         {
+            attribute->var.id = id;
             *root = attribute;
             root = 0;
         }
         else
         {
             root = &(*root)->next;
+            id++;
         }
     }
 }
@@ -3689,6 +3702,7 @@ int adios_common_declare_group (long long * id, const char * name
                              malloc (sizeof (struct adios_group_struct));
 
     g->name = strdup (name);
+    g->id = 0; // will be set in adios_append_group
     g->var_count = 0;
     g->vars = 0;
     g->attributes = 0;
