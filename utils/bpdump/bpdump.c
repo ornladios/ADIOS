@@ -128,34 +128,35 @@ int main (int argc, char ** argv)
                        ,adios_type_to_string (element->type)
                        ,element->type
                        );
+                printf ("\tValue: ");
                 switch (element->type)
                 {
                     case bp_int: //adios_integer:
-                        printf ("\t(int): %d\n", *((int *) element->data));
+                        printf ("%d\n", *((int *) element->data));
                         break;
                     case bp_float: //adios_real:
-                        printf ("\t(float): %f\n", *((float *) element->data));
+                        printf ("%f\n", *((float *) element->data));
                         break;
                     case bp_string: //adios_string:
-                        printf ("\t(char): %s\n", ((char *) element->data));
+                        printf ("%s\n", ((char *) element->data));
                         break;
                     case bp_double: //adios_double:
-                        printf ("\t(double): %lf\n"
+                        printf ("%lf\n"
                                ,*((double *) element->data)
                                );
                         break;
                     case bp_uchar: //adios_byte:
-                        printf ("\t(byte): %d\n"
+                        printf ("%d\n"
                                ,*((unsigned char *) element->data)
                                );
                         break;
                     case bp_longlong: // adios_long
-                        printf ("\t(long): %lld\n"
+                        printf ("%lld\n"
                                ,*((long long *) element->data)
                                );
                         break;
                     case bp_complex: // adios_complex
-                        printf ("\t(complex): %lf %lf\n"
+                        printf ("%lf %lf\n"
                                ,((double *) element->data) [0]
                                ,((double *) element->data) [1]
                                );
@@ -175,7 +176,7 @@ int main (int argc, char ** argv)
                 {
                     for (i = 0; i < element->ranks; i++)   
                     {                                      
-                        printf ("\t\tGlobal Dim(%d): %d(%d):%d(%d):%d\n"
+                        printf ("\t\tDim(%d) l:g:o: %d:%d:%d\n"
                                ,i
                                ,element->dims [i].local_bound
                                ,element->dims [i].global_bound
@@ -183,15 +184,17 @@ int main (int argc, char ** argv)
                            );
                     }
                 }
+#if 0
                 for (i = 0; i < element->ranks; i++)
                 {
-                    printf ("\t\tDim(%d): %d(%d):%d(%d):%d\n"
+                    printf ("\t\tDim(%d): %d:%d:%d\n"
                            ,i
                            ,element->dims [i].local_bound
                            ,element->dims [i].global_bound
                            ,element->dims [i].global_offset
                            );
                 }
+#endif
                 if (data.dump)
                 {
                     printf ("\t%s: %s\n", data.dump_var, element->name);
