@@ -1825,17 +1825,14 @@ static int parseGroup (mxml_node_t * node)
             const char * path;
             const char * type;
             const char * dimensions;
-            const char * write;
             const char * copy_on_write;
             int t1;
-            int w1;
             int c1;
 
             name = mxmlElementGetAttr (n, "name");
             path = mxmlElementGetAttr (n, "path");
             type = mxmlElementGetAttr (n, "type");
             dimensions = mxmlElementGetAttr (n, "dimensions");
-            write = mxmlElementGetAttr (n, "write");
             copy_on_write = mxmlElementGetAttr (n, "copy-on-write");
             if (!name)
                 name = "";  // this will catch the error
@@ -1844,7 +1841,6 @@ static int parseGroup (mxml_node_t * node)
             if (!type)
                 type = ""; // this will catch the error
             t1 = parseType (type, name);
-            w1 = parseFlag ("write", write, adios_flag_yes);
             c1 = parseFlag ("copy-on-write", copy_on_write, adios_flag_no);
 
             if (!dimensions)
@@ -1855,7 +1851,7 @@ static int parseGroup (mxml_node_t * node)
             }
 
             if (!adios_common_define_var (*(long long *) &new_group, name
-                                         ,path, t1, w1, c1, dimensions, 0
+                                         ,path, t1, c1, dimensions, 0
                                          )
                )
             {
@@ -1919,17 +1915,14 @@ static int parseGroup (mxml_node_t * node)
                     const char * path;
                     const char * type;
                     const char * dimensions;
-                    const char * write;
                     const char * copy_on_write;
                     int t1;
-                    int w1;
                     int c1;
 
                     name = mxmlElementGetAttr (n1, "name");
                     path = mxmlElementGetAttr (n1, "path");
                     type = mxmlElementGetAttr (n1, "type");
                     dimensions = mxmlElementGetAttr (n1, "dimensions");
-                    write = mxmlElementGetAttr (n1, "write");
                     copy_on_write = mxmlElementGetAttr (n1, "copy-on-write");
                     if (!name)
                         name = "";  // this will catch the error
@@ -1938,14 +1931,13 @@ static int parseGroup (mxml_node_t * node)
                     if (!type)
                         type = ""; // this will catch the error
                     t1 = parseType (type, name);
-                    w1 = parseFlag ("write", write, adios_flag_yes);
                     c1 = parseFlag ("copy-on-write", copy_on_write, adios_flag_no);
                     if (!dimensions)
                         dimensions = mxmlElementGetAttr (n, "dimension");
 
 
                     if (!adios_common_define_var (*(long long *) &new_group, name
-                                                 ,path, t1, w1, c1, dimensions
+                                                 ,path, t1, c1, dimensions
                                                  ,new_global_bounds
                                                  )
                        )
@@ -1974,10 +1966,14 @@ static int parseGroup (mxml_node_t * node)
             const char * name;
             const char * path;
             const char * value;
+            const char * type;
+            const char * var;
 
             name = mxmlElementGetAttr (n, "name");
             path = mxmlElementGetAttr (n, "path");
             value = mxmlElementGetAttr (n, "value");
+            type = mxmlElementGetAttr (n, "type");
+            var = mxmlElementGetAttr (n, "var");
 
             if (!name)
             {
@@ -1991,14 +1987,41 @@ static int parseGroup (mxml_node_t * node)
 
                 return 0;
             }
+            if (value || type || var)
+            {
+                if (!(   (!value && type && var)
+                      || (value && !type && !var)
+                     )
+                   )
+                {
+                    fprintf (stderr, "config.xml: attriute element '%s' "
+                                     "requires either value OR type and var\n"
+                            ,name
+                            );
+
+                    return 0;
+                }
+            }
+            else
+            {
+                fprintf (stderr, "config.xml: attriute element '%s' "
+                                 "requires either value OR type and var\n"
+                        ,name
+                        );
+
+                return 0;
+            }
+          
+#if 0
             if (!value)
             {
                 fprintf (stderr, "config.xml: attribute element requires value\n");
 
                 return 0;
             }
+#endif
             if (!adios_common_define_attribute (*(long long *) &new_group, name
-                                               ,path, value
+                                               ,path, value, type, var
                                                )
                )
             {
@@ -2318,7 +2341,10 @@ struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
     int done = 0;
 
     if (!name)
+    {
         done = 1;
+        root = 0;
+    }
 
     while (!done && root)
     {
@@ -2333,6 +2359,32 @@ struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
     }
 
     return root;
+}
+
+struct adios_var_struct * adios_find_attribute_var_by_name (struct adios_attribute_struct * root, const char * name)
+{
+    int done = 0;
+    struct adios_var_struct * v = 0;
+
+    if (!name)
+    {
+        done = 1;
+    }
+
+    while (!done && root)
+    {
+        if (root->var.name && !strcmp (name, root->var.name))
+        {
+            done = 1;
+            v = &root->var;
+        }
+        else
+        {
+            root = root->next;
+        }
+    }
+
+    return v;
 }
 
 #if 0
@@ -2783,6 +2835,7 @@ int adios_parse_config (const char * config)
 
 int adios_common_define_attribute (long long group, const char * name
                                   ,const char * path, const char * value
+                                  ,const char * type, const char * var
                                   )
 {
     struct adios_group_struct * g = (struct adios_group_struct *) group;
@@ -2854,18 +2907,6 @@ int adios_common_define_attribute (long long group, const char * name
                 return 0;
             }
 
-            if (v->write_or_not == adios_flag_no)
-            {
-                fprintf (stderr, "config.xml: no attributes can be added for "
-                                 "data item '%s' for attribute '%s' "
-                                 "set to write=\"no\"\n", path, name
-                        );
-                free (a);
-                free (extracted_name);
-
-                return 0;
-            }
-
 //            free (a);
 //            free (extracted_name);
         }
@@ -2925,9 +2966,21 @@ int adios_common_define_attribute (long long group, const char * name
     }
 #endif
 
-    attr->var.name = strdup (name);
-    attr->var.path = strdup (path);
-    attr->var.data = strdup (value);
+    attr->name = strdup (name);
+    attr->path = strdup (path);
+
+    if (value)
+    {
+        attr->var.type = adios_string;
+        attr->var.data = adios_dupe_data (&attr->var, (void *) value);
+    }
+    else
+    {
+        attr->var.name = strdup (var);
+        attr->var.data = 0;
+        attr->var.type = parseType (type, name);
+    }
+
     attr->next = 0;
 
     adios_append_attribute (&g->attributes, attr);
@@ -3016,7 +3069,7 @@ int adios_do_write_var (struct adios_var_struct * v
     int start = (int) buf_start;
     int end = (int) *buf_end;
 
-    if (v->data && v->write_or_not == adios_flag_yes)
+    if (v->data)
     {
         if (!v->dimensions)
         {
@@ -3062,12 +3115,9 @@ int adios_do_write_var (struct adios_var_struct * v
     }
     else
     {
-        if (v->write_or_not == adios_flag_yes)
-        {
-            //printf ("Skipping %s (no data provided)\n"
-            //       ,v->name
-            //       );
-        }
+        //printf ("Skipping %s (no data provided)\n"
+        //       ,v->name
+        //       );
     }
 
     return 0;
@@ -3084,13 +3134,14 @@ int adios_do_write_attribute (struct adios_attribute_struct * a
     int start = (int) buf_start;
     int end = (int) *buf_end;
 
-    size = bcalsize_attr_str (a->var.path, a->var.name, a->var.data);
+    size = bcalsize_attr (a->path, a->name, a->var.data, a->var.type);
     if (size + buf_start > buf_size)
     {
         return 1; // overflowed
     }
 
-    bw_attr_str_ds (buf, start, &end, a->var.path, a->var.name, a->var.data);
+    bw_attr (buf, start, &end, a->path, a->name, a->var.data, a->var.type);
+    //bw_attr_str_ds (buf, start, &end, a->var.path, a->var.name, a->var.data);
 
     buf_start = start;
     *buf_end = end;
@@ -3345,38 +3396,31 @@ unsigned long long adios_size_of_var (struct adios_var_struct * v, void * data)
 {
     unsigned long long size = 0;
 
-    if (v->write_or_not == adios_flag_no)
+    if (!v->dimensions)
     {
-        return 0;
+        size = bcalsize_scalar (v->path, v->name, v->type, data);
     }
     else
     {
-        if (!v->dimensions)
-        {
-            size = bcalsize_scalar (v->path, v->name, v->type, data);
-        }
-        else
-        {
-            int rank = 10;
-            struct adios_bp_dimension_struct * dims =
-                (struct adios_bp_dimension_struct *)
-                   calloc (rank, sizeof (struct adios_bp_dimension_struct));
+        int rank = 10;
+        struct adios_bp_dimension_struct * dims =
+            (struct adios_bp_dimension_struct *)
+               calloc (rank, sizeof (struct adios_bp_dimension_struct));
 
-            adios_dims_to_bp_dims (v->name, v->dimensions, v->global_bounds, &rank, dims);
-            size = bcalsize_dset (v->path, v->name, v->type, rank, dims);
-            free (dims);
-        }
-       //printf("name:%s, size:%llu\n",v->name,size);
-
-        return size;
+        adios_dims_to_bp_dims (v->name, v->dimensions, v->global_bounds, &rank, dims);
+        size = bcalsize_dset (v->path, v->name, v->type, rank, dims);
+        free (dims);
     }
+   //printf("name:%s, size:%llu\n",v->name,size);
+
+    return size;
 }
 
 unsigned long long adios_size_of_attribute (struct adios_attribute_struct * a)
 {
     unsigned long long size = 0;
 
-    size = bcalsize_attr_str (a->var.path, a->var.name, a->var.data);
+    size = bcalsize_attr (a->path, a->name, a->var.data, a->var.type);
 
     return size;
 }
@@ -3787,7 +3831,7 @@ int adios_common_define_global_bounds (long long group_id
 
 int adios_common_define_var (long long group_id, const char * name
                             ,const char * path, int type
-                            ,int write_or_not, int copy_on_write
+                            ,int copy_on_write
                             ,const char * dimensions
                             ,struct adios_global_bounds_struct * global_bounds
                             )
@@ -3807,7 +3851,6 @@ int adios_common_define_var (long long group_id, const char * name
     v->type = type;
     v->dimensions = 0;
     v->global_bounds = global_bounds;
-    v->write_or_not = write_or_not;
     v->copy_on_write = copy_on_write;
     v->got_buffer = adios_flag_no;
     v->free_data = adios_flag_no;

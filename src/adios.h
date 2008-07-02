@@ -105,13 +105,13 @@ struct adios_global_bounds_struct;
 
 int adios_define_var (long long group_id, const char * name
                      ,const char * path, int type
-                     ,int write_or_not, int copy_on_write
+                     ,int copy_on_write
                      ,const char * dimensions
                      ,struct adios_global_bounds_struct * global_bounds
                      );
 int adios_define_var_ (long long * group_id, const char * name
                       ,const char * path, int * type
-                      ,int * write_or_not, int * copy_on_write
+                      ,int * copy_on_write
                       ,const char * dimensions
                       ,long long * global_bounds
                       ,int name_size, int path_size, int dimensions_size
@@ -129,10 +129,13 @@ int adios_define_global_bounds_ (long long * group_id, const char * dimensions
 
 int adios_define_attribute (long long group, const char * name
                            ,const char * path, const char * value
+                           ,const char * type, const char * var
                            );
 int adios_define_attribute_ (long long * group, const char * name
                             ,const char * path, const char * value
+                            ,const char * type, const char * var
                             ,int name_size, int path_size, int value_size
+                            ,int type_size, int var_size
                             );
 
 int adios_select_method (int priority, const char * method
