@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include "binpack-general.h"
 
 #define STR_LEN 1000
@@ -18,6 +19,7 @@ struct adios_global_bounds_struct
 
 struct adios_var_struct
 {
+    uint32_t id;
     char * name;
     char * path;
     enum ADIOS_DATATYPES type;
@@ -26,17 +28,19 @@ struct adios_var_struct
     enum ADIOS_FLAG write_or_not;
     enum ADIOS_FLAG copy_on_write;
     enum ADIOS_FLAG got_buffer;
+
     enum ADIOS_FLAG free_data;    // primarily used for writing
     void * data;                  // primarily used for reading
     unsigned long long data_size; // primarily used for reading
+
     struct adios_var_struct * next;
 };
 
 struct adios_attribute_struct
 {
-    char * name;
-    char * path;
-    char * value;
+    // if var.data == 0, then it is a var.  Otherwise, that is the value.
+    struct adios_var_struct var;
+
     struct adios_attribute_struct * next;
 };
 
@@ -86,8 +90,10 @@ struct adios_mesh_struct
 
 struct adios_group_struct
 {
+    uint32_t id;
     char * name;
     int var_count;
+    enum ADIOS_FLAG adios_host_language_fortran;
     struct adios_var_struct * vars;
     struct adios_attribute_struct * attributes;
     const char * group_by;
@@ -99,6 +105,7 @@ struct adios_group_struct
 struct adios_group_list_struct
 {
     struct adios_group_struct * group;
+
     struct adios_group_list_struct * next;
 };
 
@@ -113,7 +120,7 @@ struct adios_file_struct
 
 struct adios_dimension_item_struct
 {
-    int rank;
+    uint64_t rank;
     struct adios_var_struct * var;
 };
 
@@ -152,8 +159,10 @@ typedef void (* ADIOS_FINALIZE_FN) (int mype
                                    ,struct adios_method_struct * method
                                    );
 typedef void (* ADIOS_END_ITERATION_FN) (struct adios_method_struct * method);
-typedef void (* ADIOS_START_CALCULATION_FN) (struct adios_method_struct * method);
-typedef void (* ADIOS_STOP_CALCULATION_FN) (struct adios_method_struct * method);
+typedef void (* ADIOS_START_CALCULATION_FN)
+                                        (struct adios_method_struct * method);
+typedef void (* ADIOS_STOP_CALCULATION_FN)
+                                        (struct adios_method_struct * method);
 
 struct adios_transport_struct
 {
