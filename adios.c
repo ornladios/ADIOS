@@ -26,8 +26,8 @@ extern MPI_Info adios_mpi_info;
 extern struct adios_transport_struct * adios_transports;
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_init (const char * config, MPI_Comm world, MPI_Comm self
-                              ,MPI_Info info_obj
+static void common_adios_init (const char * config, MPI_Comm world
+                              ,MPI_Comm self, MPI_Info info_obj
                               )
 {
     MPI_Comm_dup (world, &adios_mpi_comm_world);
@@ -255,16 +255,20 @@ static void common_adios_write (long long fd_p, const char * name, void * var)
 
     if (!v)
     {
-        fprintf (stderr, "Bad var name (ignored): '%s'\n", name);
+        v = adios_find_attribute_var_by_name (fd->group->attributes, name);
+        if (!v)
+        {
+            fprintf (stderr, "Bad var name (ignored): '%s'\n", name);
 
-        return;
+            return;
+        }
     }
 
-    if (fd->mode & adios_mode_read && v->write_or_not == adios_flag_yes)
+    if (fd->mode & adios_mode_read)
     {
         fprintf (stderr, "write attempted on %s in %s.  This was opened for"
-                         " read and this is not a informational item %d\n"
-                ,name , fd->name, v->write_or_not
+                         " read\n"
+                ,name , fd->name
                 );
 
         return;
@@ -331,11 +335,11 @@ static void common_adios_get_write_buffer (long long fd_p, const char * name
         return;
     }
 
-    if (fd->mode & adios_mode_read && v->write_or_not == adios_flag_yes)
+    if (fd->mode & adios_mode_read)
     {
         fprintf (stderr, "write attempted on %s in %s.  This was opened for"
-                         " read and this is not a informational item %d\n"
-                ,name , fd->name, v->write_or_not
+                         " read\n"
+                ,name , fd->name
                 );
 
         return;
@@ -702,12 +706,12 @@ int adios_declare_group_ (long long * id, const char * name
 // declare a single var as an entry in a group
 int adios_define_var (long long group_id, const char * name
                      ,const char * path, int type
-                     ,int write_or_not, int copy_on_write
+                     ,int copy_on_write
                      ,const char * dimensions
                      ,struct adios_global_bounds_struct * global_dimensions
                      )
 {
-    return adios_common_define_var (group_id, name, path, type, write_or_not
+    return adios_common_define_var (group_id, name, path, type
                                    ,copy_on_write, dimensions
                                    ,global_dimensions
                                    );
@@ -716,7 +720,7 @@ int adios_define_var (long long group_id, const char * name
 // declare a single var as an entry in a group
 int adios_define_var_ (long long * group_id, const char * name
                       ,const char * path, int * type
-                      ,int * write_or_not, int * copy_on_write
+                      ,int * copy_on_write
                       ,const char * dimensions
                       ,long long * global_dimensions
                       ,int name_size, int path_size, int dimensions_size
@@ -734,7 +738,6 @@ int adios_define_var_ (long long * group_id, const char * name
     adios_extract_string (buf3, dimensions, dimensions_size);
 
     return adios_common_define_var (*group_id, buf1, buf2, *type
-                                   ,*write_or_not
                                    ,*copy_on_write, buf3, *b
                                    );
 }
@@ -774,25 +777,32 @@ int adios_define_global_bounds_ (long long * group, const char * dimensions
 
 int adios_define_attribute (long long group, const char * name
                            ,const char * path, const char * value
+                           ,const char * type, const char * var
                            )
 {
-    return adios_common_define_attribute (group, name, path, value);
+    return adios_common_define_attribute (group, name, path, value, type, var);
 }
 
 int adios_define_attribute_ (long long * group, const char * name
                             ,const char * path, const char * value
+                            ,const char * type, const char * var
                             ,int name_size, int path_size, int value_size
+                            ,int type_size, int var_size
                             )
 {
     char buf1 [STR_LEN] = "";
     char buf2 [STR_LEN] = "";
     char buf3 [STR_LEN] = "";
+    char buf4 [STR_LEN] = "";
+    char buf5 [STR_LEN] = "";
 
     adios_extract_string (buf1, name, name_size);
     adios_extract_string (buf2, path, path_size);
     adios_extract_string (buf3, value, value_size);
+    adios_extract_string (buf4, type, type_size);
+    adios_extract_string (buf5, var, var_size);
 
-    return adios_common_define_attribute (*group, buf1, buf2, buf3);
+    return adios_common_define_attribute (*group, buf1, buf2, buf3, buf4, buf5);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

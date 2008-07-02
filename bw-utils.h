@@ -1,35 +1,6 @@
 #include "binpack-general.h"
 #include "binpack-utils.h"
 
-/***************************************/
-/* public functions (Fortan interface) */
-/***************************************/
-// write a dataset (array)
-void bw_dset_ (void *file_hd,int *startidx,int *endidx,char* path,char* name
-              ,void* val, int* type, int* rank,int* dims
-              );
-
-// write a scalar (single value or string)
-void bw_scalar_ (void *file_hd, int *startidx,int *endidx,char *str
-                ,char *name, void *val, int *type
-                );
-
-// write a numeric attribute for a data item
-void bw_an_d_ (void *file_hd, int*,int *,char *str,char *aname, void *aval
-              ,int *type
-              );
-
-// write a numeric attribute for a group
-void bw_an_g_ (void *file_hd, int*,int *,char *str,char *aname, void *aval
-              ,int *type
-              );
-
-// write a string attribute for a data item
-void bw_as_d_ (void *file_hd, int*,int *,char *str,char *aname, char *aval);
-
-// write a string attribute for a group
-void bw_as_g_ (void *file_hd, int*,int *,char *str,char *aname, char *aval);
-
 /********************************/
 /* public functions C interface */
 /********************************/
@@ -69,6 +40,8 @@ int bcalsize_scalar (char *dir_name,char* name,enum vartype_t type, void * val);
 int bcalsize_dset (char *dir_name,char* name,enum vartype_t type,int rank
                   ,struct adios_bp_dimension_struct * dims
                   );
+
+int bcalsize_attr (char *dir_name, char*, char*, enum vartype_t type);
 
 // how big will this string attribute be?
 int bcalsize_attr_str (char *dir_name,char*, char*);

@@ -25,7 +25,6 @@ struct adios_var_struct
     enum ADIOS_DATATYPES type;
     struct adios_dimension_struct * dimensions;
     struct adios_global_bounds_struct * global_bounds;
-    enum ADIOS_FLAG write_or_not;
     enum ADIOS_FLAG copy_on_write;
     enum ADIOS_FLAG got_buffer;
 
@@ -38,6 +37,9 @@ struct adios_var_struct
 
 struct adios_attribute_struct
 {
+    char * name;
+    char * path;
+
     // if var.data == 0, then it is a var.  Otherwise, that is the value.
     struct adios_var_struct var;
 
@@ -280,6 +282,11 @@ struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
                                                  ,const char * name
                                                  );
 
+struct adios_var_struct * adios_find_attribute_var_by_name
+                                       (struct adios_attribute_struct * root
+                                       ,const char * name
+                                       );
+
 void adios_pre_element_fetch (struct adios_bp_element_struct * element
                              ,void ** buffer, long long * buffer_size
                              ,void * private_data
@@ -315,6 +322,7 @@ int adios_do_write_attribute (struct adios_attribute_struct * a
 
 int adios_common_define_attribute (long long group, const char * name
                                   ,const char * path, const char * value
+                                  ,const char * type, const char * var
                                   );
 
 void adios_append_method (struct adios_method_struct * method);
@@ -361,7 +369,7 @@ int adios_common_define_global_bounds (long long group_id
 
 int adios_common_define_var (long long group_id, const char * name
                             ,const char * path, int type
-                            ,int write_or_not, int copy_on_write
+                            ,int copy_on_write
                             ,const char * dimensions
                             ,struct adios_global_bounds_struct * global_bounds
                             );

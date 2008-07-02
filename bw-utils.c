@@ -79,56 +79,6 @@ void bw_set_write (int a)
 //            lower bound, upper bound, use lower bound, use upper bound, stride
 // g_dims = global dimension entries (5 ints wide): 
 //            lower bound, upper bound, use lower bound, use upper bound, stride
-void bw_dset_ (void * buf, int * startidx, int * endidx, char * str, char * name
-              ,void * val, int * type, int * rank, int * dims
-              )
-{
-    bw_dset (buf, *startidx, endidx, str, name, val
-            ,(enum vartype_t) *type, *rank
-            ,(struct adios_bp_dimension_struct *) dims
-            );    
-}
-
-void bw_scalar_ (void * buf, int * startidx, int * endidx, char * str, char * name
-                ,void * val, int * type
-                )
-{
-    bw_scalar (buf, *startidx, endidx, str, name, val, (enum vartype_t) *type);
-}
-
-void bw_an_d_ (void * buf, int * startidx, int * endidx, char * str, char * aname
-              ,void * aval, int * type
-              )
-{
-    bw_attr_num_ds (buf, *startidx, endidx, str, aname, aval
-                   ,(enum vartype_t) *type
-                   );
-}
-
-void bw_an_g_ (void * buf, int * startidx, int * endidx, char * str, char * aname
-              ,void * aval, int * type
-              )
-{
-    bw_attr_num_gp (buf, *startidx, endidx, str, aname, aval
-                   ,(enum vartype_t) *type
-                   );
-}
-
-void bw_as_d_ (void * buf, int * startidx, int * endidx, char * str, char * aname
-              ,char * aval
-              )
-{
-    bw_attr_str_ds (buf, *startidx, endidx, str, aname, aval);    
-}
-
-void bw_as_g_ (void * buf, int * startidx, int * endidx, char * str, char * aname
-              ,char * aval
-              )
-{
-    bw_attr_str_gp (buf, *startidx, endidx, str, aname, aval);
-}
-
-// rank = number of dimension entries
 void bw_dset (void * fbp, int startidx, int * endidx, char * path, char * name
              ,void * val, enum vartype_t type, int rank
              ,struct adios_bp_dimension_struct * dims
@@ -175,6 +125,27 @@ void bw_scalar (void * fbp, int startidx, int * endidx, char * str, char * name
 
     tag = DIR_TAG;
     bw_stringtag (fbp, &localidx, tag, str);
+    
+    tag = VAL_TAG;
+    bw_scalartag (fbp, &localidx, tag, val, type);
+}
+
+void bw_attr (void * fbp, int startidx, int * endidx, char * path
+             ,char * name, void * val, enum vartype_t type)
+{
+    int var_step;
+    enum TAG_t tag;
+    int localidx = startidx;    
+
+    var_step = bcalsize_attr_num (path, name, type, val);
+    *endidx = startidx + var_step;
+    BWRITE (&var_step, sizeof (int), 1, fbp, &localidx);
+
+    tag = DSTATRN_TAG;
+    bw_stringtag (fbp, &localidx, tag, name);
+
+    tag = DIR_TAG;
+    bw_stringtag (fbp, &localidx, tag, path);
     
     tag = VAL_TAG;
     bw_scalartag (fbp, &localidx, tag, val, type);
@@ -410,17 +381,6 @@ int bcalsize_dset (char * dir_name, char * name, enum vartype_t type, int rank
     return size;
 }
 
-int bw_calsize_dset_ (int * subsize, char * dir_name, char * name
-                     ,enum vartype_t * type, int * rank, int * dims
-                     )
-{
-    *subsize = bcalsize_dset (dir_name, name, *type, *rank
-                             ,(struct adios_bp_dimension_struct *) dims
-                             );
-
-    return *subsize;
-}
-
 int bcalsize_scalar (char *dir_name, char* name,enum vartype_t type,void * val)
 {
     int size = 4;                          // overall element size
@@ -432,11 +392,15 @@ int bcalsize_scalar (char *dir_name, char* name,enum vartype_t type,void * val)
     return size;
 }
 
-void bw_calsize_scalar_ (int *subsize,char *dir_name, char* name
-                        ,enum vartype_t *type, void * val
-                        )
+int bcalsize_attr (char * path, char * name, void * data, enum vartype_t type)
 {
-    *subsize = bcalsize_scalar (dir_name, name, *type, val);
+    int size = 4;
+
+    size += bp_calsize_stringtag (name);
+    size += bp_calsize_stringtag (path);
+    size += bp_calsize_scalartag (type, data);
+
+    return size;
 }
 
 int bcalsize_attr_str (char * dir_name, char * aname, char * aval)
