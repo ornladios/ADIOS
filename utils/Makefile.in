@@ -168,7 +168,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = adios_lint gwrite bpdump
+SUBDIRS = adios_lint gwrite bpdump bp2h5 bp2ncd
 all: all-recursive
 
 .SUFFIXES:
@@ -465,7 +465,7 @@ uninstall-info: uninstall-info-recursive
 	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am uninstall-info-am
 
-#SUBDIRS=adios_lint bp2ascii  bp2h5  bp2ncd
+#SUBDIRS= bp2ascii
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

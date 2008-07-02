@@ -48,6 +48,8 @@ AC_CONFIG_FILES([Makefile
                  utils/adios_lint/Makefile
                  utils/gwrite/Makefile
                  utils/bpdump/Makefile
+                 utils/bp2h5/Makefile
+                 utils/bp2ncd/Makefile
                 ])
 
 dnl add these in as they are converted: [utils/bp2ascii/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile])

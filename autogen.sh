@@ -1,5 +1,5 @@
-aclocal -I m4
-libtoolize --force
+aclocal -I config
+libtoolize --force --copy
 autoconf
 autoheader
 automake -a
