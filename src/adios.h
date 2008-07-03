@@ -17,9 +17,6 @@ int adios_allocate_buffer (void);
 int adios_allocate_buffer_ (void);
 
 /* end user calls for each I/O operation */
-void adios_get_group (long long * group_id, const char * name);
-void adios_get_group_ (long long * group_id, const char * name, int name_size);
-
 void adios_group_by (long long group_id, const char * group_by
                     ,MPI_Comm group_comm, int previous_id, int current_id
                     ,int next_id
@@ -29,18 +26,24 @@ void adios_group_by_ (long long * group_id, const char * group_by
                      ,int * next_id, int group_by_size
                      );
 
-void adios_open (long long * fd, long long group, const char * name);
-void adios_open_ (long long * fd, long long * group, const char * name
-                 ,int name_size
+void adios_open (long long * fd, const char * group_name, const char * name);
+void adios_open_ (long long * fd, const char * group_name, const char * name
+                 ,int group_name_size, int name_size
                  );
 
-void adios_open_append (long long * fd, long long group, const char * name);
-void adios_open_append_ (long long * fd, long long * group, const char * name
+void adios_open_append (long long * fd, const char * group_name
+                       ,const char * name
+                       );
+void adios_open_append_ (long long * fd, const char * group_name
+                        ,const char * name, int group_name_size
                         ,int name_size
                         );
 
-void adios_open_read (long long * fd, long long group, const char * name);
-void adios_open_read_ (long long * fd, long long * group, const char * name
+void adios_open_read (long long * fd, const char * group_name
+                     ,const char * name
+                     );
+void adios_open_read_ (long long * fd, const char * group_name
+                      ,const char * name, int group_name_size
                       ,int name_size
                       );
 

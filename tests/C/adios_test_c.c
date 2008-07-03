@@ -10,7 +10,6 @@
 int main (int argc, char ** argv)
 {
     long long io_handle;  /* io handle */
-    long long group_id;    /* composite type identifier */
     int var_x = 10;
     int z_dim_size = 10;
     float z_dim [z_dim_size];
@@ -31,9 +30,7 @@ int main (int argc, char ** argv)
     MPI_Init (&argc, &argv);
     adios_init ("config_c.xml", MPI_COMM_WORLD, MPI_COMM_SELF, MPI_INFO_NULL);
 
-    adios_get_group (&group_id, type_name);
-
-    adios_open (&io_handle, group_id, filename);
+    adios_open (&io_handle, type_name, filename);
     adios_write (io_handle, "mype", &var_x);
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);
@@ -41,7 +38,7 @@ int main (int argc, char ** argv)
     adios_close (io_handle);
 
     var_x = 11;
-    adios_open_append (&io_handle, group_id, filename);
+    adios_open_append (&io_handle, type_name, filename);
     adios_write (io_handle, "mype", &var_x);
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);

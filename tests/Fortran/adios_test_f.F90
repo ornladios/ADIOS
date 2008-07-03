@@ -2,7 +2,6 @@
 program adios_test
     implicit none
     include 'mpif.h'
-    integer*8 group1_id
     integer*8 io_handle1
     integer ierr
     integer ptracer_dim(1)
@@ -98,14 +97,11 @@ program adios_test
     ! (buffer size [MB], MPI pieces...) TEMP: Add the MPI_COMM_WORLD handle since C version incompatible
     call adios_init ("config_fortran.xml"//char(0), MPI_COMM_WORLD, MPI_COMM_SELF, MPI_INFO_NULL)
 
-    ! get the group for use in writing and other operations (once at startup or any other time)
-    call adios_get_group (group1_id, 'restart'//char(0))
-
     ! do our normal work for an interation
 
     ! open this nodes connection to the downstream consumer/storage of the data
     ! (handle, group id, filename, filepath)
-    call adios_open (io_handle1, group1_id, 'restart.0'//char(0))
+    call adios_open (io_handle1, 'restart'//char(0), 'restart.0'//char(0))
 
     ! write the group communicator
     call adios_write (io_handle1, "group_comm"//char(0), partd_comm)

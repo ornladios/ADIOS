@@ -111,7 +111,7 @@ void adios_mpi_cio_open (struct adios_file_struct * fd
     unsigned long long file_size_for_offset = 0;
 
     // if it is an append, add the base file size to the initial offset
-    if (fd->mode & adios_mode_append)
+    if (fd->mode == adios_mode_append)
     {
         MPI_Comm group_comm = MPI_COMM_NULL;
         int rank = -1;
@@ -564,12 +564,12 @@ void adios_mpi_cio_close (struct adios_file_struct * fd
     struct adios_MPI_Collective_data_struct * md = (struct adios_MPI_Collective_data_struct *)
                                                  method->method_data;
 
-    if (fd->mode & adios_mode_write)
+    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
         adios_mpi_cio_do_write (fd, method);
     }
 
-    if (fd->mode & adios_mode_read)
+    if (fd->mode == adios_mode_read)
     {
         adios_mpi_cio_do_read (fd, method);
     }

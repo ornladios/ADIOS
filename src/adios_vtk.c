@@ -63,7 +63,7 @@ void adios_vtk_open (struct adios_file_struct * fd
                                                           method->method_data;
 
     sprintf (name, "%s%s", method->base_path, fd->name);
-    if (fd->mode & adios_mode_read)
+    if (fd->mode == adios_mode_read)
     {
         f->handle = br_fopen (fd->name);
         if (!f->handle)
@@ -75,7 +75,7 @@ void adios_vtk_open (struct adios_file_struct * fd
     }
     else
     {
-        if (fd->mode & adios_mode_append)
+        if (fd->mode == adios_mode_append)
         {
             struct stat s;
             if (stat (name, &s) == 0)
@@ -422,10 +422,10 @@ void adios_vtk_close (struct adios_file_struct * fd
     struct adios_File_data_struct * md = (struct adios_File_data_struct *)
                                                        method->method_data;
 
-    if (fd->mode & adios_mode_write)
+    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
         adios_vtk_do_write (fd, method);
 
-    if (fd->mode & adios_mode_read)
+    if (fd->mode == adios_mode_read)
     {
         adios_vtk_do_read (fd, method);
         struct adios_var_struct * v = fd->group->vars;
