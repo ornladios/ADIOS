@@ -17,38 +17,14 @@ int adios_allocate_buffer (void);
 int adios_allocate_buffer_ (void);
 
 /* end user calls for each I/O operation */
-void adios_group_by (long long group_id, const char * group_by
-                    ,MPI_Comm group_comm, int previous_id, int current_id
-                    ,int next_id
-                    );
-void adios_group_by_ (long long * group_id, const char * group_by
-                     ,int * group_comm, int * previous_id, int * current_id
-                     ,int * next_id, int group_by_size
-                     );
-
-void adios_open (long long * fd, const char * group_name, const char * name);
+// modes = "r" = "read", "w" = "write", "a" = "append", "u" = "update"
+void adios_open (long long * fd, const char * group_name, const char * name
+                ,const char * mode
+                );
 void adios_open_ (long long * fd, const char * group_name, const char * name
-                 ,int group_name_size, int name_size
+                 ,const char * mode
+                 ,int group_name_size, int name_size, int mode_size
                  );
-
-void adios_open_append (long long * fd, const char * group_name
-                       ,const char * name
-                       );
-void adios_open_append_ (long long * fd, const char * group_name
-                        ,const char * name, int group_name_size
-                        ,int name_size
-                        );
-
-void adios_open_read (long long * fd, const char * group_name
-                     ,const char * name
-                     );
-void adios_open_read_ (long long * fd, const char * group_name
-                      ,const char * name, int group_name_size
-                      ,int name_size
-                      );
-
-void adios_set_offset (long long fd_p, long long offset);
-void adios_set_offset_ (long long * fd_p, long long * offset);
 
 void adios_write (long long fd_p, const char * name, void * var);
 void adios_write_ (long long * fd_p, const char * name, void * var

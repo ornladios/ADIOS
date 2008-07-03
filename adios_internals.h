@@ -5,6 +5,7 @@
 
 enum ADIOS_METHOD_MODE {adios_mode_write  = 1
                        ,adios_mode_read   = 2
+                       ,adios_mode_update = 3 // not supported yet
                        ,adios_mode_append = 4
                        };
 
