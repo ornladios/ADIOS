@@ -113,33 +113,19 @@ int adios_allocate_buffer_ ()
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
-// adios_common_get_group is in adios_internals.c
-
-void adios_get_group (long long * group_id, const char * name)
-{
-    adios_common_get_group (group_id, name);
-}
-
-void adios_get_group_ (long long * group_id, const char * name, int name_size)
-{
-    char buf1 [STR_LEN] = "";
-
-    adios_extract_string (buf1, name, name_size);
-
-    adios_common_get_group (group_id, buf1);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-static void common_adios_open (long long * fd, long long group
+static void common_adios_open (long long * fd, const char * group_name
                               ,const char * name, enum ADIOS_METHOD_MODE mode
                               )
 {
+    long long * group_id;
     struct adios_file_struct * fd_p = (struct adios_file_struct *)
                                   malloc (sizeof (struct adios_file_struct));
-    struct adios_group_struct * g = (struct adios_group_struct *) group;
+    struct adios_group_struct * g = 0;
+    struct adios_method_list_struct * methods = 0;
 
-    struct adios_method_list_struct * methods = g->methods;
+    adios_common_get_group (group_id, group_name);
+    g = (struct adios_group_struct *) group_id;
+    methods = g->methods;
 
     fd_p->name = strdup (name);
     fd_p->base_offset = 0;
@@ -164,50 +150,66 @@ static void common_adios_open (long long * fd, long long group
     *fd = (long long) fd_p;
 }
 
-void adios_open (long long * fd, long long group, const char * name)
+void adios_open (long long * fd, const char * group_name, const char * name)
 {
-    common_adios_open (fd, group, name, adios_mode_write);
+    common_adios_open (fd, group_name, name, adios_mode_write);
 }
 
-void adios_open_ (long long * fd, long long * group, const char * name
-                 ,int name_size
+void adios_open_ (long long * fd, const char * group_name, const char * name
+                 ,int group_name_size, int name_size
                  )
 {
     char buf1 [STR_LEN] = "";
+    char buf2 [STR_LEN] = "";
 
-    adios_extract_string (buf1, name, name_size);
+    adios_extract_string (buf1, group_name, group_name_size);
+    adios_extract_string (buf2, name, name_size);
 
-    common_adios_open (fd, *group, buf1, adios_mode_write);
+    common_adios_open (fd, buf1, buf2, adios_mode_write);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void adios_open_append (long long * fd, long long group, const char * name)
+void adios_open_append (long long * fd, const char * group_name
+                       ,const char * name
+                       )
 {
-    common_adios_open (fd, group, name, adios_mode_write | adios_mode_append);
+    common_adios_open (fd, group_name, name, adios_mode_append);
 }
 
-void adios_open_append_ (long long * fd, long long * group, const char * name
+void adios_open_append_ (long long * fd, const char * group_name
+                        ,const char * name, int group_name_size
                         ,int name_size
                         )
 {
-    common_adios_open (fd, *group, name, adios_mode_write | adios_mode_append);
+    char buf1 [STR_LEN] = "";
+    char buf2 [STR_LEN] = "";
+
+    adios_extract_string (buf1, group_name, group_name_size);
+    adios_extract_string (buf2, name, name_size);
+
+    common_adios_open (fd, buf1, buf2, adios_mode_append);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void adios_open_read (long long * fd, long long group, const char * name)
+void adios_open_read (long long * fd, const char * group_name
+                     ,const char * name
+                     )
 {
-    common_adios_open (fd, group, name, adios_mode_read);
+    common_adios_open (fd, group_name, name, adios_mode_read);
 }
 
-void adios_open_read_ (long long * fd, long long * group, const char * name
+void adios_open_read_ (long long * fd, const char * group_name
+                      ,const char * name, int group_name_size
                       ,int name_size
                       )
 {
     char buf1 [STR_LEN] = "";
+    char buf2 [STR_LEN] = "";
 
+    adios_extract_string (buf1, group_name, group_name_size);
     adios_extract_string (buf1, name, name_size);
 
-    common_adios_open (fd, *group, buf1, adios_mode_read);
+    common_adios_open (fd, buf1, buf2, adios_mode_read);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -217,7 +219,7 @@ static void common_adios_set_offset (long long fd_p, long long offset)
 
     if (fd)
     {
-        if (!(fd->mode & adios_mode_write))
+        if (fd->mode != adios_mode_write)
         {
             fprintf (stderr, "write attempted on %s which was opened for read\n"
                     ,fd->name

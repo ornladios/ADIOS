@@ -110,7 +110,7 @@ void adios_mpi_open (struct adios_file_struct * fd
     MPI_Offset file_size_for_offset = 0;
 
     // if it is an append, add the base file size to the initial offset
-    if (fd->mode & adios_mode_append)
+    if (fd->mode == adios_mode_append)
     {
         MPI_Comm group_comm = MPI_COMM_NULL;
         int rank = -1;
@@ -469,7 +469,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
         if (previous == -1)
         {
             int amode = MPI_MODE_WRONLY;
-            if (!(fd->mode & adios_mode_append))
+            if (fd->mode != adios_mode_append)
             {
                 // truncate the file
                 err = MPI_File_delete (name, adios_mpi_info);
@@ -481,7 +481,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
                 }
             }
 
-            if (!(fd->mode & adios_mode_append))
+            if (fd->mode != adios_mode_append)
                 amode |= MPI_MODE_CREATE;
             /* node 0 does an open to create the file, if necessary */
             err = MPI_File_open (adios_mpi_comm_self, name, amode
@@ -534,7 +534,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
     else
     {
         int err_class;
-        if (!(fd->mode & adios_mode_append))
+        if (fd->mode != adios_mode_append)
         {
             // truncate the file
             err = MPI_File_delete (name, adios_mpi_info);
@@ -558,7 +558,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
                     );
  
         }
-        if (!(fd->mode & adios_mode_append))
+        if (fd->mode != adios_mode_append)
         {
             err = MPI_File_get_size (md->fh, &my_offset);
             MPI_Error_class (err, &err_class);
@@ -702,12 +702,12 @@ void adios_mpi_close (struct adios_file_struct * fd
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                  method->method_data;
 
-    if (fd->mode & adios_mode_write)
+    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
         adios_mpi_do_write (fd, method);
     }
 
-    if (fd->mode & adios_mode_read)
+    if (fd->mode == adios_mode_read)
     {
         adios_mpi_do_read (fd, method);
     }

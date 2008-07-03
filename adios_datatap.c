@@ -510,7 +510,7 @@ extern void adios_datatap_close(struct adios_file_struct *fd,
     }
 	
 
-    if(fd->mode & adios_mode_write)
+    if(fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
 	internal_adios_datatap_write(fd, method);
     }
