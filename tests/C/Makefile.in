@@ -189,6 +189,7 @@ AUTOMAKE_OPTIONS = no-dependencies
 adios_test_c_SOURCES = adios_test_c.c
 adios_test_c_LDFLAGS = $(MXML_LDFLAGS)
 adios_test_c_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS)
+CLEANFILES = restart.0
 all: all-am
 
 .SUFFIXES:
@@ -378,6 +379,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)

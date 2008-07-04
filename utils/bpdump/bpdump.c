@@ -129,6 +129,9 @@ int main (int argc, char ** argv)
                        ,element->type
                        );
                 printf ("\tValue: ");
+                if (element->size == 0)
+                    printf ("(null)\n");
+                else
                 switch (element->type)
                 {
                     case bp_int: //adios_integer:

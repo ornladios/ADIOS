@@ -31,61 +31,64 @@ char** bp_dirparser(char *str, int *nLevel)
 // Returns the size in bytes of each possible vartype_t
 int bp_getsize(enum vartype_t type, void * val)
 {
-  switch (type)
-  {
-    case bp_char:
-    case bp_uchar:
-      return sizeof(char);
+    if (!val)
+        return 0;
 
-    case bp_string:
-      return strlen ((char *) val);
+    switch (type)
+    {
+        case bp_char:
+        case bp_uchar:
+            return sizeof(char);
 
-    case bp_short:
-    case bp_ushort:
-      return sizeof(short);
+        case bp_string:
+            return strlen ((char *) val);
 
-    case bp_int:
-    case bp_uint:
-      return sizeof(int);
+        case bp_short:
+        case bp_ushort:
+            return sizeof(short);
 
-    case bp_long:
-    case bp_ulong:
+        case bp_int:
+        case bp_uint:
+            return sizeof(int);
+
+        case bp_long:
+        case bp_ulong:
 #ifdef BP_USELONG
-      return sizeof(long);
+            return sizeof(long);
 #else
-      return sizeof(int);
+            return sizeof(int);
 #endif
 
-    case bp_longlong:
-    case bp_ulonglong:
+        case bp_longlong:
+        case bp_ulonglong:
 #ifdef BP_USELONGLONG
-      return sizeof(long long);
+            return sizeof(long long);
 #else
 #  ifdef BP_USELONG
-      return sizeof(long);
+            return sizeof(long);
 #  else
-      return sizeof(int);
+            return sizeof(int);
 #  endif
 #endif
 
-    case bp_float:
-      return sizeof(float);
+        case bp_float:
+            return sizeof(float);
 
-    case bp_double:
-      return sizeof(double);
+        case bp_double:
+            return sizeof(double);
 
-    case bp_longdouble:
-      return sizeof(long double);
+        case bp_longdouble:
+            return sizeof(long double);
 
-    case bp_pointer:
-      return sizeof(char*);
+        case bp_pointer:
+            return sizeof(char*);
 
-    case bp_complex:
-        return 2 * sizeof (double);
+        case bp_complex:
+            return 2 * sizeof (double);
 
-    default:
-      return -1;
-  }
+        default:
+            return -1;
+    }
 }
 
 // Given the cell type, return the number of nodes per cell

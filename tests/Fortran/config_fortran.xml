@@ -44,9 +44,9 @@
 
     <attribute name="units" path="/abc/me/" value="m/s"/>
     <attribute name="units1" path="/abc/me" value="m/s"/>
-    <attribute name="timestep1" path="/" value="istep" type="integer"/>
-    <attribute name="timestep2" path="/abc" value="istep" type="integer"/>
-    <attribute name="timestep3" path="/abc/" value="istep" type="integer"/>
+    <attribute name="timestep1" path="/" var="istep1" type="integer"/>
+    <attribute name="timestep2" path="/abc" var="istep2" type="integer"/>
+    <attribute name="timestep3" path="/abc/" var="istep3" type="integer"/>
   </adios-group>
 
   <adios-group name="diagnostic">

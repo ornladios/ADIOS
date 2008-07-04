@@ -1,5 +1,6 @@
 !example program for using the Asynchronous IO system
 program adios_test
+    ! use ADIOS
     implicit none
     include 'mpif.h'
     integer*8 io_handle1
@@ -96,12 +97,13 @@ program adios_test
     ! setup the buffering once in startup
     ! (buffer size [MB], MPI pieces...) TEMP: Add the MPI_COMM_WORLD handle since C version incompatible
     call adios_init ("config_fortran.xml"//char(0), MPI_COMM_WORLD, MPI_COMM_SELF, MPI_INFO_NULL)
+    ! call adios_init ("config_fortran.xml")
 
     ! do our normal work for an interation
 
     ! open this nodes connection to the downstream consumer/storage of the data
-    ! (handle, group id, filename, filepath)
-    call adios_open (io_handle1, 'restart'//char(0), 'restart.0'//char(0))
+    ! (handle, group id, filename, filepath, mode)
+    call adios_open (io_handle1, 'restart'//char(0), 'restart.0'//char(0), 'w'//char(0))
 
     ! write the group communicator
     call adios_write (io_handle1, "group_comm"//char(0), partd_comm)

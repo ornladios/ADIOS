@@ -30,7 +30,7 @@ int main (int argc, char ** argv)
     MPI_Init (&argc, &argv);
     adios_init ("config_c.xml", MPI_COMM_WORLD, MPI_COMM_SELF, MPI_INFO_NULL);
 
-    adios_open (&io_handle, type_name, filename);
+    adios_open (&io_handle, type_name, filename, "w");
     adios_write (io_handle, "mype", &var_x);
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);
@@ -38,7 +38,7 @@ int main (int argc, char ** argv)
     adios_close (io_handle);
 
     var_x = 11;
-    adios_open_append (&io_handle, type_name, filename);
+    adios_open (&io_handle, type_name, filename, "a");
     adios_write (io_handle, "mype", &var_x);
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);

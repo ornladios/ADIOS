@@ -295,7 +295,8 @@ void bw_scalartag (void * fbp, int * ptridx, enum TAG_t tag, void * val
     BWRITE (&tag, sizeof (int), 1, fbp, ptridx);
     BWRITE (&size, sizeof (int), 1, fbp, ptridx);
     BWRITE (&type, sizeof (int), 1, fbp, ptridx);
-    BWRITE (val, sizeof (char), size, fbp, ptridx);
+    if (size)
+        BWRITE (val, sizeof (char), size, fbp, ptridx);
 }
 
 // rank = number of dimension entries

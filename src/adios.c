@@ -49,9 +49,9 @@ void adios_init (const char * config, MPI_Comm world, MPI_Comm self
 }
 
 void adios_init_ (const char * config, MPI_Fint * world, MPI_Fint * self
-                 ,MPI_Fint * info_obj
-                 ,int config_size
-                 )
+                   ,MPI_Fint * info_obj
+                   ,int config_size
+                   )
 {
     char buf1 [STR_LEN] = "";
 
@@ -117,14 +117,14 @@ static void common_adios_open (long long * fd, const char * group_name
                               ,const char * name, const char * file_mode
                               )
 {
-    long long * group_id;
+    long long group_id = 0;
     struct adios_file_struct * fd_p = (struct adios_file_struct *)
                                   malloc (sizeof (struct adios_file_struct));
     struct adios_group_struct * g = 0;
     struct adios_method_list_struct * methods = 0;
     enum ADIOS_METHOD_MODE mode;
 
-    adios_common_get_group (group_id, group_name);
+    adios_common_get_group (&group_id, group_name);
     g = (struct adios_group_struct *) group_id;
     methods = g->methods;
 
@@ -177,13 +177,13 @@ void adios_open (long long * fd, const char * group_name, const char * name
                 ,const char * mode
                 )
 {
-    common_adios_open (fd, group_name, name, adios_mode_write);
+    common_adios_open (fd, group_name, name, mode);
 }
 
 void adios_open_ (long long * fd, const char * group_name, const char * name
-                 ,const char * mode
-                 ,int group_name_size, int name_size, int mode_size
-                 )
+                   ,const char * mode
+                   ,int group_name_size, int name_size, int mode_size
+                   )
 {
     char buf1 [STR_LEN] = "";
     char buf2 [STR_LEN] = "";
@@ -193,7 +193,7 @@ void adios_open_ (long long * fd, const char * group_name, const char * name
     adios_extract_string (buf2, name, name_size);
     adios_extract_string (buf3, mode, mode_size);
 
-    common_adios_open (fd, buf1, buf2, adios_mode_write);
+    common_adios_open (fd, buf1, buf2, buf3);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -386,8 +386,8 @@ void adios_read (long long fd_p, const char * name, void * buffer)
 }
 
 void adios_read_ (long long * fd_p, const char * name, void * buffer
-                 ,int name_size
-                 )
+                   ,int name_size
+                   )
 {
     char buf1 [STR_LEN] = "";
 
@@ -397,9 +397,10 @@ void adios_read_ (long long * fd_p, const char * name, void * buffer
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_set_path (long long group, const char * path)
+static void common_adios_set_path (long long fd_p, const char * path)
 {
-    struct adios_group_struct * t = (struct adios_group_struct *) group;
+    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    struct adios_group_struct * t = fd->group;
     struct adios_var_struct * v = t->vars;
 
     while (v)
@@ -415,26 +416,27 @@ static void common_adios_set_path (long long group, const char * path)
     }
 }
 
-void adios_set_path (long long group, const char * path)
+void adios_set_path (long long fd_p, const char * path)
 {
-    common_adios_set_path (group, path);
+    common_adios_set_path (fd_p, path);
 }
 
-void adios_set_path_ (long long * group, const char * path, int path_size)
+void adios_set_path_ (long long * fd_p, const char * path, int path_size)
 {
     char buf1 [STR_LEN] = "";
 
     adios_extract_string (buf1, path, path_size);
 
-    common_adios_set_path (*group, buf1);
+    common_adios_set_path (*fd_p, buf1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_set_path_var (long long group, const char * path
+static void common_adios_set_path_var (long long fd_p, const char * path
                                       ,const char * name
                                       )
 {
-    struct adios_group_struct * t = (struct adios_group_struct *) group;
+    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    struct adios_group_struct * t = fd->group;
     struct adios_var_struct * v = t->vars;
 
     v = adios_find_var_by_name (t->vars, name);
@@ -456,14 +458,14 @@ static void common_adios_set_path_var (long long group, const char * path
     }
 }
 
-void adios_set_path_var (long long group, const char * path, const char * name)
+void adios_set_path_var (long long fd_p, const char * path, const char * name)
 {
-    common_adios_set_path_var (group, path, name);
+    common_adios_set_path_var (fd_p, path, name);
 }
 
-void adios_set_path_var_ (long long * group, const char * path
-                         ,const char * name, int path_size, int name_size
-                         )
+void adios_set_path_var_ (long long * fd_p, const char * path
+                           ,const char * name, int path_size, int name_size
+                           )
 {
     char buf1 [STR_LEN] = "";
     char buf2 [STR_LEN] = "";
@@ -471,7 +473,7 @@ void adios_set_path_var_ (long long * group, const char * path
     adios_extract_string (buf1, path, path_size);
     adios_extract_string (buf2, name, name_size);
 
-    common_adios_set_path_var (*group, buf1, buf2);
+    common_adios_set_path_var (*fd_p, buf1, buf2);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
