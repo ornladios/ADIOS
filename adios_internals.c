@@ -3141,7 +3141,6 @@ int adios_do_write_attribute (struct adios_attribute_struct * a
     }
 
     bw_attr (buf, start, &end, a->path, a->name, a->var.data, a->var.type);
-    //bw_attr_str_ds (buf, start, &end, a->var.path, a->var.name, a->var.data);
 
     buf_start = start;
     *buf_end = end;
@@ -3967,7 +3966,9 @@ void adios_common_get_group (long long * group_id, const char * name)
         g = g->next;
     }
 
-    fprintf (stderr, "adios-group '%s' not found in configuration file\n", name);
+    fprintf (stderr, "adios-group '%s' not found in configuration file\n"
+            ,name
+            );
 }   
 
 #if CHUNK_DATA

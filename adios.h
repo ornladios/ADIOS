@@ -45,14 +45,15 @@ void adios_read_ (long long * fd_p, const char * name, void * buffer
                  ,int name_size
                  );
 
-void adios_set_path (long long group, const char * path);
-void adios_set_path_ (long long * group, const char * path, int path_size);
+void adios_set_path (long long fd_p, const char * path);
+void adios_set_path_ (long long * fd_p, const char * path, int path_size);
 
-void adios_set_path_var (long long group, const char * path, const char * name);
-void adios_set_path_var_ (long long * group, const char * path
+void adios_set_path_var (long long fd_p, const char * path, const char * name);
+void adios_set_path_var_ (long long * fd_p, const char * path
                          ,const char * name, int path_size, int name_size
                          );
 
+//???DO WE NEED THIS???
 void adios_get_data_size (long long fd_p, unsigned long long * size);
 void adios_get_data_size_ (long long * fd_p, unsigned long long * size);
 
