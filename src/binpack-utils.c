@@ -1,6 +1,8 @@
 #include "binpack-utils.h"
 #include "adios_types.h"
 
+#include <stdint.h>
+
 extern int adios_host_language_fortran;
 
 char** bp_dirparser(char *str, int *nLevel)
@@ -53,23 +55,11 @@ int bp_getsize(enum vartype_t type, void * val)
 
         case bp_long:
         case bp_ulong:
-#ifdef BP_USELONG
-            return sizeof(long);
-#else
-            return sizeof(int);
-#endif
+            return sizeof(uint32_t);
 
         case bp_longlong:
         case bp_ulonglong:
-#ifdef BP_USELONGLONG
-            return sizeof(long long);
-#else
-#  ifdef BP_USELONG
-            return sizeof(long);
-#  else
-            return sizeof(int);
-#  endif
-#endif
+            return sizeof(uint64_t);
 
         case bp_float:
             return sizeof(float);
