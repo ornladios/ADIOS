@@ -358,6 +358,7 @@ void adios_dims_to_bp_dims (char * name
                            );
 
 int adios_common_declare_group (long long * id, const char * name
+                               ,enum ADIOS_FLAG host_language_fortran
                                ,const char * coordination_comm
                                ,const char * coordination_var
                                );

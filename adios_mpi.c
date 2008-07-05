@@ -37,7 +37,8 @@ struct adios_MPI_data_struct
     int last_var_write_yes; // was the last item asked to write a write="yes"?
 };
 
-static void adios_var_to_comm (const char * varname
+static void adios_var_to_comm (enum ADIOS_FLAG host_language_fortran
+                              ,const char * varname
                               ,struct adios_var_struct * vars
                               ,MPI_Comm * comm
                               )
@@ -50,7 +51,17 @@ static void adios_var_to_comm (const char * varname
         {
             if (var->data)
             {
-                *comm = *(MPI_Comm *) var->data;
+                int t = *(int *) var->data;
+                if (host_language_fortran == adios_flag_yes)
+                {
+printf ("convert comm f 2 c: %d\n", t);
+                    *comm = MPI_Comm_f2c (t);
+                }
+                else
+                {
+printf ("use comm straight\n");
+                    *comm = *(MPI_Comm *) var->data;
+                }
             }
             else
             {
@@ -115,9 +126,10 @@ void adios_mpi_open (struct adios_file_struct * fd
         MPI_Comm group_comm = MPI_COMM_NULL;
         int rank = -1;
 
+printf ("in open\n");
         if (fd->group->group_comm)
         {
-            adios_var_to_comm (fd->group->group_comm, fd->group->vars, &group_comm);
+            adios_var_to_comm (fd->group->adios_host_language_fortran, fd->group->group_comm, fd->group->vars, &group_comm);
             if (group_comm != MPI_COMM_NULL)
                 MPI_Comm_rank (group_comm, &rank);
         }
@@ -292,7 +304,9 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
 
     if (fd->group->group_comm)
     {
-        adios_var_to_comm (fd->group->group_comm, fd->group->vars, &group_comm);
+printf ("abc\n");
+        adios_var_to_comm (fd->group->adios_host_language_fortran, fd->group->group_comm, fd->group->vars, &group_comm);
+printf ("def\n");
 
         MPI_Comm_rank (group_comm, &rank);
         MPI_Comm_size (group_comm, &size);
@@ -428,9 +442,10 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
     int rank = -2;
     int size = -2;
 
+printf ("in do write\n");
     if (fd->group->group_comm)
     {
-        adios_var_to_comm (fd->group->group_comm, fd->group->vars, &group_comm);
+        adios_var_to_comm (fd->group->adios_host_language_fortran, fd->group->group_comm, fd->group->vars, &group_comm);
 
         MPI_Comm_rank (group_comm, &rank);
         MPI_Comm_size (group_comm, &size);

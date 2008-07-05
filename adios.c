@@ -218,12 +218,15 @@ static void common_adios_write (long long fd_p, const char * name, void * var)
 
     if (fd->mode & adios_mode_read)
     {
-        fprintf (stderr, "write attempted on %s in %s.  This was opened for"
-                         " read\n"
-                ,name , fd->name
-                );
+        if (strcmp (name, fd->group->group_comm))
+        {
+            fprintf (stderr, "write attempted on %s in %s.  This was opened for"
+                             " read\n"
+                    ,name , fd->name
+                    );
 
-        return;
+            return;
+        }
     }
 
     if (!var)
@@ -260,6 +263,7 @@ void adios_write_ (long long * fd_p, const char * name, void * var
     char buf1 [STR_LEN] = "";
 
     adios_extract_string (buf1, name, name_size);
+if (!strcmp (name, "group_comm")) printf ("comm: %d\n", *(long long*)var);
 
     common_adios_write (*fd_p, buf1, var);
 }
@@ -630,7 +634,8 @@ int adios_declare_group (long long * id, const char * name
                         ,const char * coordination_var
                         )
 {
-    return adios_common_declare_group (id, name, coordination_comm
+    return adios_common_declare_group (id, name, adios_flag_no
+                                      ,coordination_comm
                                       ,coordination_var
                                       );
 }
@@ -650,7 +655,7 @@ int adios_declare_group_ (long long * id, const char * name
     adios_extract_string (buf2, coordination_comm, coordination_comm_size);
     adios_extract_string (buf3, coordination_var, coordination_var_size);
 
-    return adios_common_declare_group (id, buf1, buf2, buf3);
+    return adios_common_declare_group (id, buf1, adios_flag_yes, buf2, buf3);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

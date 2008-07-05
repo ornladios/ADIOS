@@ -1807,6 +1807,7 @@ static int parseGroup (mxml_node_t * node)
         return 0;
     }
     adios_common_declare_group ((long long *) &new_group, datagroup_name
+                               ,adios_host_language_fortran
                                ,coordination_comm, coordination_var);
 
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
@@ -3737,6 +3738,7 @@ void adios_dims_to_bp_dims (char * name
 // functions to support C & Fortran interface
 ///////////////////////////////////////////////////////////////////////////////
 int adios_common_declare_group (long long * id, const char * name
+                               ,enum ADIOS_FLAG host_language_fortran
                                ,const char * coordination_comm
                                ,const char * coordination_var
                                )
@@ -3745,6 +3747,7 @@ int adios_common_declare_group (long long * id, const char * name
                              malloc (sizeof (struct adios_group_struct));
 
     g->name = strdup (name);
+    g->adios_host_language_fortran = host_language_fortran;
     g->id = 0; // will be set in adios_append_group
     g->var_count = 0;
     g->vars = 0;
