@@ -2091,6 +2091,10 @@ static int parseGroup (mxml_node_t * node)
                 return 1;
             }
         } else
+        if (!strcmp (n->value.element.name, "gwrite"))
+        {
+            continue;
+        } else
         {
             if (!strncmp (n->value.element.name, "!--", 3)) // a comment
             {
