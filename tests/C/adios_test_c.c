@@ -24,11 +24,11 @@ int main (int argc, char ** argv)
     z_dim [8] = 18.0;
     z_dim [9] = 19.0;
     char * type_name = "restart";
-    char * filename = "restart.0";
+    char * filename = "restart.bp";
     int node = 0;
 
     MPI_Init (&argc, &argv);
-    adios_init ("config_c.xml", MPI_COMM_WORLD, MPI_COMM_SELF, MPI_INFO_NULL);
+    adios_init ("config_c.xml"); //, MPI_COMM_WORLD, MPI_COMM_SELF, MPI_INFO_NULL);
 
     adios_open (&io_handle, type_name, filename, "w");
     adios_write (io_handle, "mype", &var_x);

@@ -54,7 +54,6 @@ typedef struct datatap_method_data
     struct fm_structure *fm;
 }dmd;
 
-extern MPI_Comm adios_mpi_comm_world;
 int initialized = 0;
 
 
@@ -129,7 +128,7 @@ extern void adios_datatap_init (const char *params, struct adios_method_struct *
     else
 	mdata->pfile = strdup("params");
 
-    MPI_Comm_rank (adios_mpi_comm_world, &rank);
+    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 }
 
 

@@ -18,10 +18,6 @@
 #include "adios_transport_hooks.h"
 #include "adios_internals.h"
 
-extern MPI_Comm adios_mpi_comm_world;
-extern MPI_Comm adios_mpi_comm_self;
-extern MPI_Info adios_mpi_info;
-
 static int adios_mpi_initialized = 0;
 
 struct adios_MPI_data_struct
@@ -54,12 +50,10 @@ static void adios_var_to_comm (enum ADIOS_FLAG host_language_fortran
                 int t = *(int *) var->data;
                 if (host_language_fortran == adios_flag_yes)
                 {
-printf ("convert comm f 2 c: %d\n", t);
                     *comm = MPI_Comm_f2c (t);
                 }
                 else
                 {
-printf ("use comm straight\n");
                     *comm = *(MPI_Comm *) var->data;
                 }
             }
@@ -69,7 +63,7 @@ printf ("use comm straight\n");
                                  "Using MPI_COMM_WORLD instead\n"
                         ,varname
                         );
-                *comm = adios_mpi_comm_world;
+                *comm = MPI_COMM_WORLD;
             }
         }
         else
@@ -79,7 +73,7 @@ printf ("use comm straight\n");
                     ,varname
                     );
 
-            *comm = adios_mpi_comm_world;
+            *comm = MPI_COMM_WORLD;
         }
     }
     else
@@ -137,8 +131,8 @@ printf ("in open\n");
         if (group_comm == MPI_COMM_NULL || rank == 0)
         {
             int err;
-            err = MPI_File_open (adios_mpi_comm_self, name, MPI_MODE_RDONLY
-                                ,adios_mpi_info, &md->fh
+            err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
+                                ,MPI_INFO_NULL, &md->fh
                                 );
             if (err != MPI_SUCCESS)
             {
@@ -304,9 +298,7 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
 
     if (fd->group->group_comm)
     {
-printf ("abc\n");
         adios_var_to_comm (fd->group->adios_host_language_fortran, fd->group->group_comm, fd->group->vars, &group_comm);
-printf ("def\n");
 
         MPI_Comm_rank (group_comm, &rank);
         MPI_Comm_size (group_comm, &size);
@@ -345,7 +337,7 @@ printf ("def\n");
         if (previous == -1)
         {
             /* node 0 does an open */
-            MPI_File_open (adios_mpi_comm_self, name, amode, adios_mpi_info, &md->fh);
+            MPI_File_open (MPI_COMM_SELF, name, amode, MPI_INFO_NULL, &md->fh);
             if (next != -1)
             {
                 MPI_Isend (&my_data_len, 1, MPI_LONG_LONG, next
@@ -365,7 +357,7 @@ printf ("def\n");
                           ,current, group_comm, &md->req
                           );
             }
-            MPI_File_open (adios_mpi_comm_self, name, amode, adios_mpi_info
+            MPI_File_open (MPI_COMM_SELF, name, amode, MPI_INFO_NULL
                           ,&md->fh
                           );
         }
@@ -376,7 +368,7 @@ printf ("def\n");
     }
     else
     {
-        MPI_File_open (adios_mpi_comm_self, name, amode, adios_mpi_info, &md->fh);
+        MPI_File_open (MPI_COMM_SELF, name, amode, MPI_INFO_NULL, &md->fh);
         MPI_File_seek (md->fh, fd->base_offset + fd->offset, MPI_SEEK_SET);
     }
     /******************************
@@ -442,7 +434,6 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
     int rank = -2;
     int size = -2;
 
-printf ("in do write\n");
     if (fd->group->group_comm)
     {
         adios_var_to_comm (fd->group->adios_host_language_fortran, fd->group->group_comm, fd->group->vars, &group_comm);
@@ -487,7 +478,7 @@ printf ("in do write\n");
             if (fd->mode != adios_mode_append)
             {
                 // truncate the file
-                err = MPI_File_delete (name, adios_mpi_info);
+                err = MPI_File_delete (name, MPI_INFO_NULL);
                 if (err != MPI_SUCCESS)
                 {
                     fprintf (stderr, "Error truncating file %s for group %s\n"
@@ -499,14 +490,14 @@ printf ("in do write\n");
             if (fd->mode != adios_mode_append)
                 amode |= MPI_MODE_CREATE;
             /* node 0 does an open to create the file, if necessary */
-            err = MPI_File_open (adios_mpi_comm_self, name, amode
-                                ,adios_mpi_info, &md->fh
+            err = MPI_File_open (MPI_COMM_SELF, name, amode
+                                ,MPI_INFO_NULL, &md->fh
                                 );
             if (err != MPI_SUCCESS)
             {
                 amode |= MPI_MODE_CREATE;
-                err = MPI_File_open (adios_mpi_comm_self, name, amode
-                                    ,adios_mpi_info, &md->fh
+                err = MPI_File_open (MPI_COMM_SELF, name, amode
+                                    ,MPI_INFO_NULL, &md->fh
                                     );
                 if (err != MPI_SUCCESS)
                 {
@@ -535,8 +526,8 @@ printf ("in do write\n");
                           ,current, group_comm, &md->req
                           );
             }
-            MPI_File_open (adios_mpi_comm_self, name, MPI_MODE_WRONLY
-                          ,adios_mpi_info, &md->fh
+            MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_WRONLY
+                          ,MPI_INFO_NULL, &md->fh
                           );
         }
 
@@ -552,7 +543,7 @@ printf ("in do write\n");
         if (fd->mode != adios_mode_append)
         {
             // truncate the file
-            err = MPI_File_delete (name, adios_mpi_info);
+            err = MPI_File_delete (name, MPI_INFO_NULL);
             MPI_Error_class (err, &err_class);
             if (err_class != MPI_SUCCESS)
             {
@@ -562,9 +553,9 @@ printf ("in do write\n");
                         );
             }
         }
-        err = MPI_File_open (adios_mpi_comm_self, name
+        err = MPI_File_open (MPI_COMM_SELF, name
                             ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                            ,adios_mpi_info, &md->fh
+                            ,MPI_INFO_NULL, &md->fh
                             );
         if (err != MPI_SUCCESS)
         {

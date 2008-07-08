@@ -144,7 +144,7 @@ int main (int argc, char ** argv)
                         printf ("%s\n", ((char *) element->data));
                         break;
                     case bp_double: //adios_double:
-                        printf ("%lf\n"
+                        printf ("%g\n"
                                ,*((double *) element->data)
                                );
                         break;

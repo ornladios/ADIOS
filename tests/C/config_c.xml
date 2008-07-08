@@ -28,11 +28,13 @@
     <var name="phisavesize" type="integer"/>
     <var name="phisave" type="real" dimensions="phisavesize"/>
 
+<gwrite src="abc"/>
     <var name="zelectronsize" type="integer"/>
     <var name="zelectron" type="real" dimensions="zelectronsize"/>
 
     <var name="ze0size" type="integer"/>
     <var name="zelectron0" type="real" dimensions="ze0size" copy-on-write="yes"/>
+<gwrite src="abc"/>
 
     <var name="nparam" type="integer"/>
     <var name="mimax" type="integer"/>

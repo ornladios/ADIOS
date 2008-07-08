@@ -19,10 +19,6 @@
 #include "adios_transport_hooks.h"
 #include "adios_internals.h"
 
-extern MPI_Comm adios_mpi_comm_world;
-extern MPI_Comm adios_mpi_comm_self;
-extern MPI_Info adios_mpi_info;
-
 static int adios_posix_initialized = 0;
 
 struct adios_File_data_struct

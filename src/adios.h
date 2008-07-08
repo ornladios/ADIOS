@@ -3,12 +3,8 @@
 /* Asynchronous I/O API Public Functions */
 
 /* Global setup and cleanup */
-void adios_init (const char * config, MPI_Comm world, MPI_Comm self
-                ,MPI_Info info_obj
-                );
-void adios_init_ (const char * config, MPI_Fint * world, MPI_Fint * self
-                 ,MPI_Fint * info_obj, int config_size
-                 );
+void adios_init (const char * config);
+void adios_init_ (const char * config, int config_size);
 
 void adios_finalize (int mype);
 void adios_finalize_ (int * mype);

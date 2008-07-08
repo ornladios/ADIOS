@@ -1,7 +1,13 @@
+#!/bin/bash
 #export CFLAGS='-g -W -Wall -pedantic -isystem /home/gflofst/software/pnetcdf/include'
 #export CXXFLAGS='-g -W -Wall -pedantic -fpermissive -isystem /home/gflofst/software/pnetcdf/include'
 #export LDFLAGS='-L/home/gflofst/software/pnetcdf/lib'
 
+#ewok
 export CC=gcc
-
 ./configure --prefix=/ccs/home/ge1/work/ewok --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/ewok
+
+#jaguar
+#export CC=cc
+#export FC=ftn
+#./configure --prefix=/ccs/home/ge1/work/jaguar --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/jaguar

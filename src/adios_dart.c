@@ -23,10 +23,6 @@
 #include "adios_transport_hooks.h"
 #include "adios_internals.h"
 
-extern MPI_Comm adios_mpi_comm_world;
-extern MPI_Comm adios_mpi_comm_self;
-extern MPI_Info adios_mpi_info;
-
 static int adios_dart_initialized = 0;
 
 struct adios_DART_data_struct
