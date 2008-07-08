@@ -1,174 +1,138 @@
-!example program for using the Asynchronous IO system
 program adios_test
-    ! use ADIOS
     implicit none
     include 'mpif.h'
-    integer*8 io_handle1
-    integer ierr
-    integer ptracer_dim(1)
-    integer partd_comm
+    character (len=200) :: group
+    character (len=200) :: filename
+    integer :: group_comm
+    integer :: ierr
+    integer :: rank
 
-    integer adios_integer, adios_real
-    parameter (adios_integer=1, adios_real=2)
+    ! write vars
+    integer :: small_int
+    integer*8 :: big_int
+    real :: small_real
+    real*8 :: big_real
+    integer :: z_size
+    real :: z_array (2)
 
-    integer mype, nhybrid, istep, me, mi, ntracer, mflux
-    real etracer, ptracer(4)
-    integer mpsi
-    real rdtemi(2), rdteme(2), pfluxpsi(2)
-    integer phisize
-    real phi(2), phip00(2), zonali(2), zonale(2)
-    integer zionsize
-    real zion(2), zion0(2)
-    integer phisavesize
-    real phisave(2)
-    integer zelectronsize
-    real zelectron(2)
-    integer ze0size
-    real zelectron0(2)
-    integer nparam, mimax, mgrid, mzeta, memax
+    ! read vars
+    integer :: r_small_int
+    integer*8 :: r_big_int
+    real :: r_small_real
+    real*8 :: r_big_real
+    integer :: r_z_size
+    real :: r_z_array (2)
 
-    ! The grouping node identifiers (use the MPI rank)
-    ! (See the last subroutine in setup.F90)
-    integer previous, current, next
-
-    ptracer_dim(1) = 4
-
-    mype = 1
-    nhybrid = 6
-    istep = 1
-    me = 2
-    mi = 2
-    ntracer = 2
-    mflux = 2
-    etracer = 3
-    ptracer(1) = 1.0
-    ptracer(2) = 2.0
-    ptracer(3) = 3.0
-    ptracer(4) = 4.0
-    mpsi = 2
-    rdtemi(1) = 5.0
-    rdtemi(2) = 6.0
-    rdteme(1) = 7.0
-    rdteme(2) = 8.0
-    pfluxpsi(1) = 9.0
-    pfluxpsi(2) = 10.0
-    phisize = 2
-    phi(1) = 11.0
-    phi(2) = 12.0
-    phip00(1) = 13.0
-    phip00(2) = 14.0
-    zonali(1) = 15.0
-    zonali(2) = 16.0
-    zonale(1) = 17.0
-    zonale(2) = 18.0
-    zionsize = 2
-    zion(1) = 19.0
-    zion(2) = 20.0
-    zion0(1) = 21.0
-    zion0(2) = 22.0
-    phisavesize = 2
-    phisave(1) = 23.0
-    phisave(2) = 24.0
-    zelectronsize = 2
-    zelectron(1) = 25.0
-    zelectron(2) = 26.0
-    ze0size = 2
-    zelectron0(1) = 27.0
-    zelectron0(2) = 28.0
-    nparam = 6
-    mimax = 7
-    mgrid = 8
-    mzeta = 2
-    memax = 10
+    group = "restart"
+    filename = "restart.bp"
+    small_int = 10
+    big_int = 4294967296
+    small_real = 0.3
+    big_real = 0.00000000000004
+    z_size = 2
+    z_array (1) = 11.1
+    z_array (2) = 22.2
+    r_z_size = 2
 
     call MPI_Init (ierr)
+    call MPI_Comm_dup (MPI_COMM_WORLD, group_comm, ierr)
+    call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
 
-    ! This is setup in GTC to be the communication within the group
-    call MPI_Comm_dup (MPI_COMM_WORLD, partd_comm, ierr)
-    previous = -1
-    current = 0
-    next = -1
-
-    ! how to get the error messages out
-    ! integer l, r, e
-    ! character*1000 s
-    ! call MPI_ERROR_STRING (ierr, s, r, e)
-
-    ! setup the buffering once in startup
-    ! (buffer size [MB], MPI pieces...) TEMP: Add the MPI_COMM_WORLD handle since C version incompatible
     call adios_init ("config_fortran.xml"//char(0), MPI_COMM_WORLD, MPI_COMM_SELF, MPI_INFO_NULL)
-    ! call adios_init ("config_fortran.xml")
 
-    ! do our normal work for an interation
+    call test_write (group, filename, group_comm, small_int, big_int, small_real, big_real, z_size, z_array)
 
-    ! open this nodes connection to the downstream consumer/storage of the data
-    ! (handle, group id, filename, filepath, mode)
-    call adios_open (io_handle1, 'restart'//char(0), 'restart.0'//char(0), 'w'//char(0))
+    call MPI_Barrier (MPI_COMM_WORLD, ierr)
 
-    ! write the group communicator
-    call adios_write (io_handle1, "group_comm"//char(0), partd_comm)
+    call test_read (group, filename, group_comm, r_small_int, r_big_int, r_small_real, r_big_real, r_z_size, r_z_array)
 
-    ! write a restart's data
-    ! (handle, variable name, var)
-    call adios_write (io_handle1, "nparam"//char(0), nparam)
-    call adios_write (io_handle1, "mimax"//char(0), mimax)
-    call adios_write (io_handle1, "mgrid"//char(0), mgrid)
-    call adios_write (io_handle1, "mzeta"//char(0), mzeta)
-    call adios_write (io_handle1, "memax"//char(0), memax)
-    call adios_write (io_handle1, "mype"//char(0), mype)
-    call adios_write (io_handle1, "nhybrid"//char(0), nhybrid)
-    call adios_write (io_handle1, "istep"//char(0), istep)
-    call adios_write (io_handle1, "me"//char(0), me)
-    call adios_write (io_handle1, "mi"//char(0), mi)
-    call adios_write (io_handle1, "ntracer"//char(0), ntracer)
-    call adios_write (io_handle1, "mflux"//char(0), mflux)
-
-    if (mype == 0) then
-        call adios_write (io_handle1, "etracer"//char(0), etracer)
-        call adios_write (io_handle1, "ptracer"//char(0), ptracer)
+    if (small_int /= r_small_int .or. big_int /= r_big_int .or. small_real /= r_small_real .or. big_real /= r_big_real .or. z_size /= r_z_size) then
+        write (*,*) 'rank ', rank, ' read did not match write'
+    else
+        write (*,*) 'rank ', rank, ' read matched write'
     endif
 
-    call adios_write (io_handle1, "mpsi"//char(0), mpsi)
-    call adios_write (io_handle1, "phisize"//char(0), phisize)
-    call adios_write (io_handle1, "zionsize"//char(0), zionsize)
-    call adios_write (io_handle1, "rdtemi"//char(0), rdtemi)
-    call adios_write (io_handle1, "rdteme"//char(0), rdteme)
-    call adios_write (io_handle1, "pfluxpsi"//char(0), pfluxpsi)
-    call adios_write (io_handle1, "phi"//char(0), phi)
-    call adios_write (io_handle1, "phip00"//char(0), phip00)
-    call adios_write (io_handle1, "zonali"//char(0), zonali)
-    call adios_write (io_handle1, "zonale"//char(0), zonale)
-    call adios_write (io_handle1, "zion"//char(0), zion)
-    call adios_write (io_handle1, "zion0"//char(0), zion0)
-
-    if (nhybrid > 0) then
-        call adios_write (io_handle1, "phisavesize"//char(0), phisavesize)
-        call adios_write (io_handle1, "zelectronsize"//char(0), zelectronsize)
-        call adios_write (io_handle1, "ze0size"//char(0), ze0size)
-        call adios_write (io_handle1, "phisave"//char(0), phisave)
-        call adios_write (io_handle1, "zelectron"//char(0), zelectron)
-        call adios_write (io_handle1, "zelectron0"//char(0), zelectron0)
-    endif
-
-    ! make sure that anything that needs to be done
-    ! at the end of a data write is completed.
-    ! (handle)
-    call adios_close (io_handle1)
-
-    ! mark the end of an iteration for transmission timing
-    call adios_end_iteration ()
-
-    ! do work until another restart is written
-    ! ...
-    ! hint to data transfer that it is safe to communicate now
-    call adios_start_calculation ()
-    ! ...
-
-    ! hint to data transfer that it is safe to communicate now
-    call adios_stop_calculation ()
-
-    ! once the simulation is done, make sure we have our IO finished
-    call adios_finalize ()
+    call adios_finalize (rank)
 
     call MPI_Finalize (ierr)
 end program adios_test
+
+subroutine test_write (group, filename, group_comm, small_int, big_int, small_real, big_real, a_size, a_array)
+    implicit none
+    include 'mpif.h'
+    character (*), intent(in) :: group
+    character (*), intent(in) :: filename
+    integer, intent (in) :: group_comm
+    integer, intent(in) :: small_int
+    integer*8, intent(in) :: big_int
+    real, intent(in) :: small_real
+    real*8, intent(in) :: big_real
+    integer, intent(in) :: a_size
+    real, intent(in) :: a_array (a_size)
+
+    integer :: istep1
+    integer :: istep2
+    integer :: istep3
+
+    integer*8 :: handle
+
+    istep1 = 11
+    istep2 = 22
+    istep3 = 33
+
+    call adios_open (handle, trim(group)//char(0), trim(filename)//char(0), "w"//char(0))
+
+    call adios_write (handle, "group_comm"//char(0), group_comm)
+
+    call adios_write (handle, "small_int"//char(0), small_int)
+    call adios_write (handle, "big_int"//char(0), big_int)
+    call adios_write (handle, "small_real"//char(0), small_real)
+    call adios_write (handle, "big_real"//char(0), big_real)
+    call adios_write (handle, "ze0size"//char(0), a_size)
+    call adios_write (handle, "zelectron0"//char(0), a_array)
+
+    call adios_write (handle, "istep1"//char(0), istep1)
+    call adios_write (handle, "istep2"//char(0), istep2)
+    call adios_write (handle, "istep3"//char(0), istep3)
+
+    call adios_close (handle)
+
+end subroutine test_write
+
+subroutine test_read (group, filename, group_comm, small_int, big_int, small_real, big_real, a_size, a_array)
+    implicit none
+    include 'mpif.h'
+    character (*), intent(in) :: group
+    character (*), intent(in) :: filename
+    integer, intent (in) :: group_comm
+    integer, intent(out) :: small_int
+    integer*8, intent(out) :: big_int
+    real, intent(out) :: small_real
+    real*8, intent(out) :: big_real
+    integer, intent(inout) :: a_size
+    real, intent(out) :: a_array (a_size)
+
+    integer :: istep1
+    integer :: istep2
+    integer :: istep3
+
+    integer*8 :: handle
+
+    istep1 = 11
+    istep2 = 22
+    istep3 = 33
+
+    call adios_open (handle, trim(group)//char(0), trim(filename)//char(0), "r"//char(0))
+
+    call adios_write (handle, "group_comm"//char(0), group_comm)
+
+    call adios_read (handle, "small_int"//char(0), small_int)
+    call adios_read (handle, "big_int"//char(0), big_int)
+    call adios_read (handle, "small_real"//char(0), small_real)
+    call adios_read (handle, "big_real"//char(0), big_real)
+    call adios_read (handle, "ze0size"//char(0), a_size)
+    call adios_read (handle, "zelectron0"//char(0), a_array)
+
+    call adios_close (handle)
+
+end subroutine test_read
