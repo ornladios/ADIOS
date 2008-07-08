@@ -375,6 +375,7 @@ static void common_adios_set_path (long long fd_p, const char * path)
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     struct adios_group_struct * t = fd->group;
     struct adios_var_struct * v = t->vars;
+    struct adios_attribute_struct * a = t->attributes;
 
     while (v)
     {
@@ -386,6 +387,18 @@ static void common_adios_set_path (long long fd_p, const char * path)
         v->path = strdup (path);
 
         v = v->next;
+    }
+
+    while (a)
+    {
+        if (a->var.path)
+        {
+            free (a->var.path);
+        }
+
+        a->var.path = strdup (path);
+
+        a = a->next;
     }
 }
 
@@ -412,7 +425,12 @@ static void common_adios_set_path_var (long long fd_p, const char * path
     struct adios_group_struct * t = fd->group;
     struct adios_var_struct * v = t->vars;
 
+    // check for vars and then attributes
     v = adios_find_var_by_name (t->vars, name);
+    if (!v)
+    {
+        v = adios_find_attribute_var_by_name (t->attributes, name);
+    }
 
     if (v)
     {
