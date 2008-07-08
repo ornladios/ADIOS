@@ -19,10 +19,6 @@
 
 enum ADIOS_FLAG adios_host_language_fortran = adios_flag_yes;
 
-MPI_Comm adios_mpi_comm_world;
-MPI_Comm adios_mpi_comm_self;
-MPI_Info adios_mpi_info;
-
 // buffer sizing may be problematic.  To get a more accurate picture, check:
 // http://chandrashekar.info/vault/linux-system-programs.html
 static unsigned long long adios_buffer_size_requested = 0;

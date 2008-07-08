@@ -19,47 +19,27 @@
 
 #define STR_LEN 1000
 
-extern MPI_Comm adios_mpi_comm_world;
-extern MPI_Comm adios_mpi_comm_self;
-extern MPI_Info adios_mpi_info;
-
 extern struct adios_transport_struct * adios_transports;
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_init (const char * config, MPI_Comm world
-                              ,MPI_Comm self, MPI_Info info_obj
-                              )
+static void common_adios_init (const char * config)
 {
-    MPI_Comm_dup (world, &adios_mpi_comm_world);
-    MPI_Comm_dup (self, &adios_mpi_comm_self);
-    if (info_obj != MPI_INFO_NULL)
-        MPI_Info_dup (info_obj, &adios_mpi_info);
-    else
-        adios_mpi_info = MPI_INFO_NULL;
-
     // parse the config file
     adios_parse_config (config);
 }
 
-void adios_init (const char * config, MPI_Comm world, MPI_Comm self
-                 ,MPI_Info info_obj
-                 )
+void adios_init (const char * config)
 {
-    common_adios_init (config, world, self, info_obj);
+    common_adios_init (config);
 }
 
-void adios_init_ (const char * config, MPI_Fint * world, MPI_Fint * self
-                   ,MPI_Fint * info_obj
-                   ,int config_size
-                   )
+void adios_init_ (const char * config, int config_size)
 {
     char buf1 [STR_LEN] = "";
 
     adios_extract_string (buf1, config, config_size);
 
-    common_adios_init (buf1, MPI_Comm_f2c (*world), MPI_Comm_f2c (*self)
-                      ,MPI_Info_f2c (*info_obj)
-                      );
+    common_adios_init (buf1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -77,13 +57,6 @@ static void common_adios_finalize (int mype)
             adios_transports [m->method->m].adios_finalize_fn (mype, m->method);
         }
     }
-
-    if (adios_mpi_info != MPI_INFO_NULL)
-    {
-        MPI_Info_free (&adios_mpi_info);
-    }
-    MPI_Comm_free (&adios_mpi_comm_self);
-    MPI_Comm_free (&adios_mpi_comm_world);
 }
 
 void adios_finalize (int mype)
@@ -263,7 +236,6 @@ void adios_write_ (long long * fd_p, const char * name, void * var
     char buf1 [STR_LEN] = "";
 
     adios_extract_string (buf1, name, name_size);
-if (!strcmp (name, "group_comm")) printf ("comm: %d\n", *(long long*)var);
 
     common_adios_write (*fd_p, buf1, var);
 }

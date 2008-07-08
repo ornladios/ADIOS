@@ -18,9 +18,7 @@
 #include "adios_transport_hooks.h"
 #include "adios_internals.h"
 
-extern MPI_Comm adios_mpi_comm_world;
-extern MPI_Comm adios_mpi_comm_self;
-extern MPI_Info adios_mpi_info;
+MPI_Info adios_mpi_info = MPI_INFO_NULL;
 
 static int adios_mpi_cio_initialized = 0;
 
@@ -58,7 +56,7 @@ static void adios_var_to_comm (const char * varname
                                  "Using MPI_COMM_WORLD instead\n"
                         ,varname
                         );
-                *comm = adios_mpi_comm_world;
+                *comm = MPI_COMM_WORLD;
             }
         }
         else
@@ -68,7 +66,7 @@ static void adios_var_to_comm (const char * varname
                     ,varname
                     );
 
-            *comm = adios_mpi_comm_world;
+            *comm = MPI_COMM_WORLD;
         }
     }
     else
@@ -126,7 +124,7 @@ void adios_mpi_cio_open (struct adios_file_struct * fd
         if (group_comm == MPI_COMM_NULL || rank == 0)
         {
             int err;
-            err = MPI_File_open (adios_mpi_comm_self, name, MPI_MODE_RDONLY
+            err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
                                 ,adios_mpi_info, &md->fh
                                 );
             if (err != MPI_SUCCESS)
@@ -334,7 +332,7 @@ static void adios_mpi_cio_do_read (struct adios_file_struct * fd
     }
     else
     {
-        MPI_File_open (adios_mpi_comm_self, name, amode, adios_mpi_info, &md->fh);
+        MPI_File_open (MPI_COMM_SELF, name, amode, adios_mpi_info, &md->fh);
         read_offset = fd->base_offset + fd->offset;
     }
     /******************************
@@ -441,7 +439,7 @@ static void adios_mpi_cio_do_write (struct adios_file_struct * fd
     }
     else
     {
-        MPI_File_open (adios_mpi_comm_self, name, MPI_MODE_WRONLY | MPI_MODE_CREATE
+        MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_WRONLY | MPI_MODE_CREATE
                       ,adios_mpi_info, &md->fh
                       );
         write_offset = fd->base_offset + fd->offset;
