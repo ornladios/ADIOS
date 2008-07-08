@@ -2,9 +2,6 @@
 #include <string.h>
 #include <unistd.h>
 
-// mpi
-#include "mpi.h"
-
 // xml parser
 #include <mxml.h>
 
