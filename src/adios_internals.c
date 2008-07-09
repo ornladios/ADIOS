@@ -2693,20 +2693,55 @@ int adios_parse_config (const char * config)
     fclose (fp);
     if (!doc)
     {
-        fprintf (stderr, "config.xml: unknown error parsing XML\n"
+        fprintf (stderr, "config.xml: unknown error parsing XML "
+                         "(probably structural)\n"
                          "Did you remember to start the file with\n"
                          "<?xml version=\"1.0\"?>");
 
         return 0;
     }
 
-    root = mxmlWalkNext (doc, doc, MXML_DESCEND); // get rid of the xml version
-    root = mxmlWalkNext (root, doc, MXML_DESCEND); // should be our root tag
-    
-    while (!strncmp (root->value.element.name, "!--", 3)) // skip comments
+    root = doc;
+
+    while (!strncmp (root->value.element.name, "!--", 3))
     {
         root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
+        root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
     }
+
+    if (strcmp (root->value.element.name, "adios-config"))
+    {
+        if (strncmp (root->value.element.name, "?xml", 4))
+        {
+            fprintf (stderr, "config.xml: invalid root xml element: %s\n"
+                    ,root->value.element.name
+                    );
+
+            mxmlRelease (doc);
+
+            return 0;
+        }
+        else
+        {
+            while (!strncmp (root->value.element.name, "!--", 3))
+            {
+                root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
+            }
+
+            root = mxmlWalkNext (root, doc, MXML_DESCEND);  // skip ver num
+            root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);  // get next
+            while (!strncmp (root->value.element.name, "!--", 3))
+            {
+                root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
+                root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
+            }
+        }
+    }
+    else
+    {
+        printf ("it is adios-config\n");
+    }
+
 
     if (strcmp (root->value.element.name, "adios-config"))
     {
