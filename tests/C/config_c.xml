@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<adios-config host-language="C">
+<adios-config host-language="C">   <!-- other host-language is 'Fortran' -->
   <adios-group name="restart">
     <var name="mype" type="integer"/>
     <var name="nhybrid" type="integer"/>
@@ -28,13 +28,13 @@
     <var name="phisavesize" type="integer"/>
     <var name="phisave" type="real" dimensions="phisavesize"/>
 
-<gwrite src="abc"/>
+<gwrite src="abc"/>   <!-- used in the adios_gwrite call for code gen -->
     <var name="zelectronsize" type="integer"/>
     <var name="zelectron" type="real" dimensions="zelectronsize"/>
 
     <var name="ze0size" type="integer"/>
     <var name="zelectron0" type="real" dimensions="ze0size" copy-on-write="yes"/>
-<gwrite src="abc"/>
+<gwrite src="abc"/>   <!-- used in the adios_gwrite call for code gen -->
 
     <var name="nparam" type="integer"/>
     <var name="mimax" type="integer"/>
@@ -48,6 +48,7 @@
     <attribute name="timestep2" path="/abc" value="1"/>
     <attribute name="timestep3" path="/abc/" value="1"/>
 
+    <!-- try a writeable attribute -->
     <attribute name="node" path="/" type="integer" var="node-attr"/>
   </adios-group>
 
