@@ -44,6 +44,8 @@ int main (int argc, char ** argv)
     adios_write (io_handle, "node-attr", &node);
     adios_close (io_handle);
 
+    MPI_Barrier (MPI_COMM_WORLD);
+
     adios_open (&io_handle, type_name, filename, "r");
     adios_read (io_handle, "mype", &r_var_x);
     adios_read (io_handle, "zionsize", &r_zsize);
