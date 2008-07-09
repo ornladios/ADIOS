@@ -596,6 +596,7 @@ static void common_adios_close (long long fd_p)
     }
 
     free ((void *) fd_p);
+printf ("done with write\n");
 }
 
 void adios_close (long long fd_p)

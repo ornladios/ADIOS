@@ -120,7 +120,6 @@ void adios_mpi_open (struct adios_file_struct * fd
         MPI_Comm group_comm = MPI_COMM_NULL;
         int rank = -1;
 
-printf ("in open\n");
         if (fd->group->group_comm)
         {
             adios_var_to_comm (fd->group->adios_host_language_fortran, fd->group->group_comm, fd->group->vars, &group_comm);
@@ -406,7 +405,7 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
         v = v->next;
     }
 
-    if (next != -1)
+    if (group_comm != MPI_COMM_NULL && next != -1)
         MPI_Wait (&md->req, &md->status);
 }
 
@@ -466,6 +465,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
     //char buf1 [STR_LEN];
     //char buf2 [STR_LEN];
 
+printf ("pre-open\n");
     sprintf (name, "%s%s", method->base_path, fd->name);
     /* make a filename based on the size and current node */
     // sprintf (buf1, "%%s.%%0%dd", (int) (log10 (size)));
@@ -474,6 +474,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
     {
         if (previous == -1)
         {
+printf ("1\n");
             int amode = MPI_MODE_WRONLY;
             if (fd->mode != adios_mode_append)
             {
@@ -493,6 +494,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
             err = MPI_File_open (MPI_COMM_SELF, name, amode
                                 ,MPI_INFO_NULL, &md->fh
                                 );
+printf ("2\n");
             if (err != MPI_SUCCESS)
             {
                 amode |= MPI_MODE_CREATE;
@@ -506,31 +508,42 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
                             );
                 }
             }
+printf ("3\n");
             if (next != -1)
             {
                 MPI_Isend (&my_data_len, 1, MPI_LONG_LONG, next
                           ,current, group_comm, &md->req
                           );
             }
+printf ("4\n");
         }
         else
         {
+printf ("5\n");
+printf ("comm: %d &md->status: %lld\n", group_comm, &md->status);
+printf ("my_offset: %lld previous: %d\n", my_offset, previous);
+printf ("MPI_Recv: %lld\n",MPI_Recv);
             MPI_Recv (&my_offset, 1, MPI_LONG_LONG, previous
                      ,previous, group_comm
                      ,&md->status
                      );
+printf ("5a\n");
             if (next != -1)
             {
+printf ("5b\n");
                 unsigned long long new_offset = my_offset + my_data_len;
                 MPI_Isend (&new_offset, 1, MPI_LONG_LONG, next
                           ,current, group_comm, &md->req
                           );
+printf ("5c\n");
             }
+printf ("6\n");
             MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_WRONLY
                           ,MPI_INFO_NULL, &md->fh
                           );
         }
 
+printf ("7\n");
         err = MPI_File_seek (md->fh, fd->base_offset + fd->offset + my_offset
                             ,MPI_SEEK_SET
                             );
@@ -539,6 +552,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
     }
     else
     {
+printf ("8\n");
         int err_class;
         if (fd->mode != adios_mode_append)
         {
@@ -588,6 +602,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
     /******************************
      * End Coordinate file offet
      ******************************/
+printf ("post-open\n");
 
     if (my_data_len > md->buffer_size)
     {
@@ -605,6 +620,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
         md->buffer = malloc (md->buffer_size);
     }
 
+printf ("pre-vars\n");
     while (v && !overflow)
     {
         overflow = adios_do_write_var (v
@@ -617,6 +633,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
         md->start = end;
         v = v->next;
     }
+printf ("pre-attrs\n");
 
     while (a && !overflow)
     {
@@ -630,6 +647,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
         md->start = end;
         a = a->next;
     }
+printf ("post-attrs\n");
 
     if (overflow)
     {
@@ -671,7 +689,6 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
     }
     else
     {
-//if (!fd->name [0] == 'T' || current == 0) 
         MPI_File_write (md->fh, md->buffer, end, MPI_BYTE, &mstatus);
     }
 
