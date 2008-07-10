@@ -117,6 +117,7 @@ struct adios_file_struct
     char * name;
     long long base_offset;
     long long offset;
+    long long write_size;
     struct adios_group_struct * group;
     enum ADIOS_METHOD_MODE mode;
 };
