@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define STEPS       10000               /* number of time steps */
+#define STEPS       100000               /* number of time steps */
 #define MAXWORKER   64                  /* maximum number of worker tasks */
 #define MINWORKER   3                  /* minimum number of worker tasks */
 #define BEGIN       1                  /* message type */
@@ -38,10 +38,10 @@
 #define NONE        0                  /* indicates no neighbor */
 #define DONE        4                  /* message type */
 #define MASTER      0                  /* taskid of first process */
-#define STRD        5000                /* stride of output */
+#define STRD        10000                /* stride of output */
 
-int  NX=400;                 /* x dimension of problem grid */
-int  NY=500;                 /* y dimension of problem grid */
+int  NX=800;                 /* x dimension of problem grid */
+int  NY=1000;                 /* y dimension of problem grid */
 MPI_Comm group_comm;
 struct Parms { 
   float cx;
@@ -232,9 +232,15 @@ void update(int start, int end, float *u1, float *u2)
 void inidat(float *u,float value) {
 int ix, iy;
 
-for (ix = 0; ix <= NX-1; ix++) 
-  for (iy = 0; iy <= NY-1; iy++)
+for (ix = 0; ix <= NX-1; ix++)  {
+  for (iy = 0; iy <= NY-1; iy++) {
        *(u+ix*NY+iy) = value;
+       if (ix==0) *(u+ix*NY+iy) = 0.0;
+       if (iy==0) *(u+ix*NY+iy) = 0.0;
+       if (ix==NX-1) *(u+ix*NY+iy) = 0.0;
+       if (iy==NY-1) *(u+ix*NY+iy) = 0.0;
+  }
+}
 }
 
 /**************************************************************************
