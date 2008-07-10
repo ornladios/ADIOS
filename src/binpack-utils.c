@@ -326,9 +326,14 @@ const char * adios_file_mode_to_string (int mode)
 {
     static char buf [50];
 
-    if (mode & 4) return "append";
-    if (mode & 2) return "read";
-    if (mode & 1) return "write";
+    if (mode == 1)
+        return "write";
+    if (mode == 2)
+        return "read";
+    if (mode == 3)
+        return "update";
+    if (mode == 4)
+        return "append";
 
     sprintf (buf, "(unknown: %d)", mode);
 
