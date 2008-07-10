@@ -6,7 +6,7 @@ int main (int argc, char ** argv)
 {
     if (argc < 4)
     {
-        printf ("\nUSAGE: bp2ascii XXXX.bp -C[-c] col_name\n\n");
+        printf ("\nUSAGE: bp2ascii XXXX.bp  [XXXX.txt] -C[-c] data_name1  [data_name2...]\n\n");
         return -1;
     }
     int i;
@@ -22,7 +22,7 @@ int main (int argc, char ** argv)
 void dump2ascii(char* argv[],int argc,int idx)
 {
      char filename[100];
-     int len,i,j;
+     int len,i,j,id;
      void *data;
      hid_t h5file_id,root_id,type_id;
      hsize_t rank,dims[3];
@@ -34,21 +34,30 @@ void dump2ascii(char* argv[],int argc,int idx)
      if(h5file_id<0)
        return;
      root_id=H5Gopen(h5file_id,"/");
-     data=hr_dataset(root_id,argv[idx],&rank,dims,&type_id);
-     idx=1;
-     strcpy(filename,argv[idx]);
-     len=strlen(argv[idx]);
+     if(idx==3)
+     { 
+     strcpy(filename,argv[1]);
+     len=strlen(argv[1]);
      filename[len-2]='t';
      filename[len-1]='x';
      filename[len]='t';
      filename[len+1]='\0';
-     printf("start to generate %s\n",filename);
+     }
+     if(idx==4)
+     strcpy(filename,argv[2]);
+
+     printf("----------------------------\n");
+     printf("generating file: %s\n",filename);
      FILE* fid=fopen(filename,"w");
+     for(id=idx;id<argc;id++)
+     {
+     printf("----------------------------\n");
+     printf("write dataset: %s\n",argv[id]);
+     data=hr_dataset(root_id,argv[id],&rank,dims,&type_id);
      if(rank==1)
      {
         if(H5Tequal(type_id,H5Tcopy(H5T_IEEE_F64LE)))
         {
-           printf("\tDOUBLE:\n");
            for(i=0;i<dims[0];i++)
            {
               fprintf(fid,"%e  ",*((double *)(data+8*i)));
@@ -58,17 +67,17 @@ void dump2ascii(char* argv[],int argc,int idx)
         }
         else if(H5Tequal(type_id,H5Tcopy(H5T_IEEE_F32LE)))
         {
-           printf("\tFLOAT:\n");
-           for(i=0;i<dims[0];i++)
            {
-              fprintf(fid,"%e  ",*((float *)(data+4*i)));
-              printf("\t%e  ",*((float *)(data+4*i)));
+              for(i=0;i<dims[0];i++)
+              {
+                  fprintf(fid,"%e  ",*((float *)(data+4*i)));
+                  printf("\t%e  ",*((float *)(data+4*i)));
+              }
+              printf("\n");
            }
-           printf("\n");
         }
         else if(H5Tequal(type_id,H5Tcopy(H5T_STD_I32LE)))
         {
-           printf("\tINT:\n");
            for(i=0;i<dims[0];i++)
            {
               fprintf(fid,"%d  ",*((int*)(data+4*i)));
@@ -81,12 +90,35 @@ void dump2ascii(char* argv[],int argc,int idx)
      }
      if(rank==2)
      {
-        for(i=0;i<dims[0];i++)
-        {
-           for(j=0;j<dims[1];j++)
-              fprintf(fid,"%e  ",(double)data[i*dims[1]+j]);
-           fprintf(fid,"\n"); 
-        }
+        if(H5Tequal(type_id,H5Tcopy(H5T_IEEE_F32LE)))
+              for(i=0;i<dims[0];i++)
+              {
+                  for(j=0;j<dims[1];j++)
+                      fprintf(fid,"%e  ",*((float*)(data+i*dims[1]+4*j)));
+                  fprintf(fid,"\n"); 
+              }
+        else if(H5Tequal(type_id,H5Tcopy(H5T_IEEE_F64LE)))
+              for(i=0;i<dims[0];i++)
+              {
+                  for(j=0;j<dims[1];j++)
+                      fprintf(fid,"%e  ",*((double*)(data+i*dims[1]+8*j)));
+                  fprintf(fid,"\n"); 
+              }
+        else if(H5Tequal(type_id,H5Tcopy(H5T_STD_I32LE)))
+              for(i=0;i<dims[0];i++)
+              {
+                  for(j=0;j<dims[1];j++)
+                      fprintf(fid,"%e  ",*((int*)(data+i*dims[1]+4*j)));
+                  fprintf(fid,"\n"); 
+              }
+        else if(H5Tequal(type_id,H5Tcopy(H5T_STD_I64LE)))
+              for(i=0;i<dims[0];i++)
+              {
+                  for(j=0;j<dims[1];j++)
+                      fprintf(fid,"%e  ",*((long *)(data+i*dims[1]+8*j)));
+                  fprintf(fid,"\n"); 
+              }
+     }
      }
      fclose(fid);
 }
@@ -99,19 +131,18 @@ void *hr_dataset(hid_t root_id, char* name,hsize_t *rank,hsize_t *dims,hid_t *ty
    dsethist_id=H5Dopen(root_id,name);
    *type_id=H5Dget_type(dsethist_id);
    size=H5Tget_size(*type_id);  
-   printf("size: %d\n",size);
    filespace_id=H5Dget_space(dsethist_id);
    *rank=H5Sget_simple_extent_ndims(filespace_id);
    H5Sget_simple_extent_dims(filespace_id,dims,NULL);
    if (*rank==1)
    {
-      printf("%s:\n\tDimension:%d \n",name,dims[0]);
+      printf("\tDimension:%d \n",dims[0]);
       temp= malloc(size*dims[0]);
       H5Dread(dsethist_id,*type_id,H5S_ALL,H5S_ALL,H5P_DEFAULT,temp);
    }
    else if (*rank==2)
    {
-      printf("%s:\nDimension:%d x %d \n",name,dims[0],dims[1]);
+      printf("\tDimension:%d x %d \n",dims[0],dims[1]);
       temp=malloc(size*dims[0]*dims[1]);
       H5Dread(dsethist_id,*type_id,H5S_ALL,H5S_ALL,H5P_DEFAULT,temp);
    }
