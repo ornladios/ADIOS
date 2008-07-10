@@ -1,0 +1,111 @@
+&sml_param
+sml_machine=0             ! 0 circular, 1:D3D, 
+sml_read=1
+sml_concentric=1
+sml_node_file='cyclon4mm_32.1.node'
+sml_ele_file='cyclon4mm_32.1.ele'
+sml_bfollow=1
+sml_bfollow_read=0
+
+sml_special=0             ! 0: normal simulation, 1: single particle simulation
+sml_dt=0.0030D0           ! delta-t for one time step - unit of toroidal transit time. 
+sml_mstep=10              ! totoal time step
+sml_deltaf=0              ! delta-f simulation switch - incomplete
+sml_turb_efield=1
+sml_electron_on=0
+sml_nphi_total=32
+sml_canonical_maxwell=0   ! cononical maxwellian initial loading switch - incomplete
+sml_bounce=3              ! Particle motion boundary condition 
+                          ! 1 for edge simulation (including open field line region)
+                          ! 2 for core simulation (excluding open field line region)
+sml_limiter=0             ! Limiter on/off
+sml_fem_matrix=1
+sml_inpsi=0.00D0          ! inner boundary of simulation - unit of eq_x_psi
+sml_outpsi=0.90           ! outter boundary of simulation - unit of eq_x_psi
+sml_push_mode=2
+sml_pc_order=4
+sml_restart_write_period=2
+sml_restart=0
+sml_zero_inner_bd=0
+sml_guess_table_size=1500
+sml_no_00_efield=0
+sml_input_file_dir='./'
+sml_bd_ext_delta1=-0.1D0
+sml_bd_ext_delta2=-0.1D0
+sml_bd_ext_delta3=0.10
+sml_bd_ext_delta4=0.12
+sml_dwdt_fix_bg=1
+sml_add_pot0=2
+sml_use_simple00=.true.
+sml_marker_temp_factor=1.5
+sml_bd_Te_width=0.05
+sml_bd_Te_mode=2
+/
+
+&ptl_param
+ptl_mass_au=2D0             ! 1 for hydrogen, 2 for deutron
+ptl_charge_eu=1D0           ! ion charge
+ptl_num=400000              ! number of particle for simulation, initial 800k
+ptl_maxnum=1000000
+/
+
+&eq_param ! Initial equilibrium profile - Tanh profile
+eq_filename='cyclon4.eqd'
+eq_den_edge=5.0D19          ! inside value of density m^-3
+eq_den_out=4.0D19           ! outside value of density  m^-3
+eq_den_ped_c=0.437D0      ! pedestal center 
+eq_den_ped_width=0.30D0    ! pedestal width
+
+eq_tempi_ev_edge=3.0D3      ! ion temperature (inside) - eV
+eq_tempi_ev_out=1.5d3     ! ion temperature (outside) - eV
+eq_tempe_ev_edge=3.0D3
+eq_tempe_ev_out=1.5D3
+eq_tempi_ped_width=0.3D0
+!eq_tempi_ev_edge=0.625D3
+!eq_tempi_ev_out=0.625D3     ! ion temperature (outside) - eV
+!eq_tempe_ev_edge=0.625D3
+!eq_tempe_ev_out=0.625D3
+/
+
+&efld_param ! E-field calculation
+efld_mode=2              ! 0 zero efield, 1 static efield, 2 self-consistent
+efld_cutoff=0
+/
+
+&col_param  ! Collision
+col_mode=0  ! 0 : off , 1 monte-carlo (non-conserving) 2: monte-carlo (conserving)
+/
+
+&diag_param             ! diagnosis
+diag_f_on=0             ! inital value was 1
+diag_tracer_period=1
+diag_tracer_n=1
+diag_binout_period=5
+diag_pot_period=2
+diag_ptl_on=1
+diag_ptl_begin=5
+diag_gam_on=1
+diag_avg_on=1
+diag_avg_outperiod=5
+/
+
+&neu_param            ! neutral collision
+neu_col_mode=0
+/
+
+&lim_param            ! limiter 
+
+/
+&smooth_param
+smooth_mode_in=0
+smooth_H_mode_in=2
+smooth_H_n_in=2
+
+smooth_r1_n_in=0
+smooth_r1_d0_in=0.0101
+smooth_r1_type_in=1
+
+smooth_diag_mode_in=-1
+/
+&tbl_param
+/

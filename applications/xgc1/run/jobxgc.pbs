@@ -1,0 +1,25 @@
+#!/bin/bash
+#PBS -N staging_nodes
+#PBS -A csc025ewk
+#PBS -j oe
+#PBS -q batch
+#PBS -l walltime=00:30:00,size=68
+
+cd $PBS_O_WORKDIR
+
+## export set LD_LIBRARY_PATH=libs/
+aprun -n 4 ./ptl2tcp -c 64 -b 4 -d 0 &
+
+sleep 4
+
+while read line; do 
+  export set "${line}"
+done < conf
+
+aprun -n 64 ./xgc1 >& results.dat
+
+wait
+
+# post run cleanup
+touch finished.sim
+rm -f conf

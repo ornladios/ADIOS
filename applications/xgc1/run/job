@@ -1,0 +1,10 @@
+#PBS -q debug
+#PBS -l mppwidth=32
+#PBS -l walltime=00:10:00
+#PBS -j eo
+cd /scratch/scratchdirs/cjin/newrun/
+
+aprun -n 32 /u0/c/cjin/xgc_new/src/xgc1 >& results.dat
+
+# post run cleanup
+touch finished.sim
