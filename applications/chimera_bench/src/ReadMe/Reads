@@ -1,0 +1,33 @@
+IF ( myid == 0 ) THEN
+  OPEN (UNIT=37,FILE='data0.d',STATUS='new',IOSTAT=istat)
+  IF ( istat /= 0 ) OPEN (UNIT=37,FILE='data0.d',STATUS='old',POSITION='append',IOSTAT=istat)
+  DO j = 1,i_ray_dim
+    DO i = imin,imax
+    WRITE (37,3001) j,i,rho_c(i,j),t_c(i,j),ye_c(i,j),ei_c(i,j),u_c(i,j),v_c(i,j), &
+& w_c(i,j),a_nuc_rep_c(i,j),z_nuc_rep_c(i,j),be_nuc_rep_c(i,j),nse_c(i,j)
+ 3001 FORMAT (' j=',i3,' i=',i3,' rho_c=',es11.3,' t_c=',es11.3,' ye_c=',es11.3,' ei_c=',es11.3, &
+& ' u_c=',es11.3,' v_c=',es11.3,' w_c=',es11.3,' a_nuc_rep_c=',es11.3,' a_nuc_rep_c=',es11.3, &
+& ' be_nuc_rep_c=',es11.3, ' nse_c=',i3)
+    WRITE (37,3002) j,i,(xn_c(i,l,j), l=1,10)
+ 3002 FORMAT (' j=',i3,' i=',i3,' xn=',10es11.3)
+    END DO
+  END DO
+  CLOSE (unit=37, status='keep')
+END IF
+
+IF ( myid == 1 ) THEN
+  OPEN (UNIT=38,FILE='data1.d',STATUS='new',IOSTAT=istat)
+  IF ( istat /= 0 ) OPEN (UNIT=38,FILE='data1.d',STATUS='old',POSITION='append',IOSTAT=istat)
+  DO j = 1,i_ray_dim
+    DO i = imin,imax
+    WRITE (38,3003) j,i,rho_c(i,j),t_c(i,j),ye_c(i,j),ei_c(i,j),u_c(i,j),v_c(i,j), &
+& w_c(i,j),a_nuc_rep_c(i,j),z_nuc_rep_c(i,j),be_nuc_rep_c(i,j),nse_c(i,j)
+ 3003 FORMAT (' j=',i3,' i=',i3,' rho_c=',es11.3,' t_c=',es11.3,' ye_c=',es11.3,' ei_c=',es11.3, &
+& ' u_c=',es11.3,' v_c=',es11.3,' w_c=',es11.3,' a_nuc_rep_c=',es11.3,' a_nuc_rep_c=',es11.3, &
+& ' be_nuc_rep_c=',es11.3, ' nse_c=',i3)
+    WRITE (38,3004) j,i,(xn_c(i,l,j), l=1,10)
+ 3004 FORMAT (' j=',i3,' i=',i3,' xn=',10es11.3)
+    END DO
+  END DO
+  CLOSE (unit=38, status='keep')
+END IF

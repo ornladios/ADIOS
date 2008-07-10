@@ -1,0 +1,437 @@
+<?xml version="1.0"?>
+<adios-config host-language="Fortran">
+
+<adios-group name="restart.model" coordination-communicator="mpi_comm_per_hyperslab_group">
+
+<var name="nx" path="/nx" type="integer" write="no"/>
+<var name="nx+1" path="/nx" type="integer" write="no" copy-on-write="yes"/>
+<var name="ny" path="/ny" type="integer" write="no"/>
+<var name="ny+1" path="/ny" type="integer" write="no" copy-on-write="yes"/>
+<var name="nz" path="/nz" type="integer" write="no"/>
+<var name="nz+1" path="/nz" type="integer" write="no" copy-on-write="yes"/>
+<var name="nez" path="/nez" type="integer" write="no"/>
+<var name="nnu" path="/nnu" type="integer" write="no"/>
+<var name="nnu+1" path="/nnu" type="integer" write="no" copy-on-write="yes"/>
+<var name="nnc" path="/nnc" type="integer" write="no"/>
+<var name="ij_ray_dim" path="/ij_ray_dim" type="integer" write="no" gname="my_j_ray_dim"/> <!-- my_j_ray_dim -->
+<var name="ik_ray_dim" path="/ik_ray_dim" type="integer" write="no" gname="my_k_ray_dim"/> <!-- my_k_ray_dim -->
+<var name="mpi_comm_per_hyperslab_group" type="integer" write="no"/>
+<var name="j_ray_min" path="/j_ray_min" type="integer" write="no"/> 
+<var name="j_ray_min-1" path="/j_ray_min" type="integer" write="no" copy-on-write="yes"/> 
+<var name="k_ray_min" path="/k_ray_min" type="integer" write="no"/> 
+<var name="k_ray_min-1" path="/k_ray_min" type="integer" write="no" copy-on-write="yes"/> 
+
+<!-- /mesh -->
+
+<global-bounds dimensions="3" offsets="0">
+<!-- Mesh Metadata -->
+<var name="array_dimensions" path="/mesh/" type="integer" dimensions="3"/> <!-- nx,ny,nz -->
+</global-bounds>
+
+<attribute name="Desc" path="/mesh/array_dimensions" value="array_dimensions"/>
+
+<!-- Problem Cycle and Time -->
+<var name="time" path="/mesh" type="double"/>
+<var name="cycle" path="/mesh" type="integer" gname="ncycle"/> <!-- var name: ncycle -->
+<var name="nz_hyperslabs" path="/mesh" type="integer"/>
+<var name="my_hyperslab_group" path="/mesh" type="integer"/>
+<var name="nz_hyperslab_width" path="/mesh" type="integer" write="no"/>
+
+<attribute name="Desc" path="/mesh/time" value="the elapsed time since the initiation of the calculation"/>
+<attribute name="Desc" path="/mesh/cycle" value="the cycle number of the calculation"/>
+<attribute name="Desc" path="/mesh/nz_hyperslabs" value="Number of separate hyperslabs output (ie. files output) the whole domain is divided into"/>
+<attribute name="Desc" path="/mesh/my_hyperslab_group" value="the hyperslab group this process belongs to"/>
+
+<!-- Radial Index bound for MGFLD shifted radial arrays -->
+<global-bounds dimensions="2" offsets="0">
+<var name="radial_index_bound" path="/mesh" type="integer" dimensions="2"/> <!-- imin,imax -->
+<var name="theta_index_bound" path="/mesh" type="integer" dimensions="2"/> <!-- jmin,jmax -->
+<var name="phi_index_bound" path="/mesh" type="integer" dimensions="2"/> <!-- kmin,kmax -->
+</global-bounds>
+
+<attribute name="Desc" path="/mesh/radial_index_bound" value="radial_index_bound (r)"/>
+<attribute name="Desc" path="/mesh/theta_index_bound" value="theta_index_bound"/>
+<attribute name="Desc" path="/mesh/phi_index_bound" value="phi_index_bound"/>
+
+<!-- Zone Face Coordinates -->
+<!-- radial_ray_module -->
+<global-bounds dimensions="nx+1" offsets="0">
+<var name="x_ef" path="/mesh" type="double" dimensions="nx+1"/> <!-- dim?? -->
+</global-bounds>
+
+<global-bounds dimensions="ny+1" offsets="0">
+<var name="y_ef" path="/mesh" type="double" dimensions="ny+1"/>
+</global-bounds>
+
+<global-bounds dimensions="nz+1" offsets="0">
+<var name="z_ef" path="/mesh" type="double" dimensions="nz+1"/>
+</global-bounds>
+
+<attribute name="Desc" path="/mesh/x_ef" value="X Grid Zone Face"/> 
+<attribute name="Unit" path="/mesh/x_ef" value="cm"/> 
+<attribute name="Desc" path="/mesh/y_ef" value="Y Grid Zone Face"/> 
+<attribute name="Unit" path="/mesh/y_ef" value="rad"/> 
+<attribute name="Desc" path="/mesh/z_ef" value="Z Grid Zone Face"/>  
+<attribute name="Unit" path="/mesh/z_ef" value="rad"/> 
+
+
+<!-- Write Zone Midpoint Coordinates -->
+<global-bounds dimensions="nx" offsets="0">
+<var name="x_cf" path="/mesh" type="double" dimensions="nx"/> 
+<var name="dx_cf" path="/mesh" type="double" dimensions="nx"/> 
+</global-bounds>
+
+<global-bounds dimensions="ny" offsets="0">
+<var name="y_cf" path="/mesh" type="double" dimensions="ny"/>
+<var name="dy_cf" path="/mesh" type="double" dimensions="ny"/>
+</global-bounds>
+
+<global-bounds dimensions="nz" offsets="0">
+<var name="z_cf" path="/mesh" type="double" dimensions="nz"/>
+<var name="dz_cf" path="/mesh" type="double" dimensions="nz"/>
+</global-bounds>
+
+<attribute name="Desc" path="/mesh/x_cf" value="X Grid Zone Midpoint"/>
+<attribute name="Unit" path="/mesh/x_cf" value="cm"/> 
+<attribute name="Desc" path="/mesh/y_cf" value="Y Grid Zone Midpoint"/>
+<attribute name="Unit" path="/mesh/y_cf" value="rad"/> 
+<attribute name="Desc" path="/mesh/z_cf" value="Z Grid Zone Midpoint"/>
+<attribute name="Unit" path="/mesh/z_cf" value="rad"/> 
+
+<!-- Zone Width -->
+
+<attribute name="Desc" path="/mesh/dx_cf" value="X Zone Width"/> 
+<attribute name="Unit" path="/mesh/dx_cf" value="cm"/> 
+<attribute name="Desc" path="/mesh/dy_cf" value="Y Zone Width"/>  
+<attribute name="Unit" path="/mesh/dy_cf" value="rad"/> 
+<attribute name="Desc" path="/mesh/dz_cf" value="Z Zone Width"/> 
+<attribute name="Unit" path="/mesh/dz_cf" value="rad"/> 
+
+
+<!-- /physical_variables -->
+
+<global-bounds dimensions="nx,ny,nz" offsets="0,j_ray_min-1,k_ray_min-1">
+
+<!-- independed thermodynamic variables -->
+<var name="rho_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/> 
+
+<var name="t_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>
+
+<var name="ye_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>
+
+<!-- independed mechanical variables -->
+<var name="u_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>
+
+<var name="v_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>
+
+<var name="w_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>
+
+<!-- nse - non-bse flag -->
+<var name="nse_c" path="/physical_variables" type="integer" dimensions="nx,ij_ray_dim,ik_ray_dim"/>
+
+<!-- aunxiliary heavy nucleus -->
+<var name="a_nuc_rep_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>
+
+<var name="z_nuc_rep_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>
+
+<var name="be_nuc_rep_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>
+
+<!-- nuclear energy released -->
+<var name="uburn_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>
+
+<!-- Energy offsets -->
+<var name="duesrc" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/> 
+
+<!-- Derived Physical Values for Plotting -->
+<!-- compute_plot_variables -->
+<var name="pMD" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/> 
+
+<var name="sMD" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/> 
+
+<!-- nucbrn_module -->
+<var name="dudt_nuc" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>  
+
+<!-- nu_dist_module -->
+<var name="dudt_nu" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>  
+
+<var name="grav_x_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>  
+
+<var name="grav_y_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>  
+
+<var name="grav_z_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>  
+
+<var name="agr_e" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>  
+
+<var name="agr_c" path="/physical_variables" type="double" dimensions="nx,ij_ray_dim,ik_ray_dim"/>  
+
+</global-bounds>
+
+<attribute name="Desc" path="/physical_variables/rho_c" value="Zone Average Density"/>
+<attribute name="Unit" path="/physical_variables/rho_c" value="gm/c^3"/>
+
+<attribute name="Desc" path="/physical_variables/t_c" value="Zone Average Temperature"/>
+<attribute name="Unit" path="/physical_variables/t_c" value="K"/>
+
+<attribute name="Desc" path="/physical_variables/ye_c" value="Zone Average Electron Fraction"/> 
+<attribute name="Unit" path="/physical_variables/ye_c" value="K"/>
+
+<attribute name="Desc" path="/physical_variables/u_c" value="Zone Centered Average Velocity X Direction"/>
+<attribute name="Unit" path="/physical_variables/u_c" value="cm/s"/>
+
+<attribute name="Desc" path="/physical_variables/v_c" value="Zone Centered Average Velocity Y Direction"/> 
+<attribute name="Unit" path="/physical_variables/v_c" value="cm/s"/>
+
+<attribute name="Desc" path="/physical_variables/w_c" value="Zone Centered Average Velocity Z Direction"/> 
+<attribute name="Unit" path="/physical_variables/w_c" value="cm/s"/>
+
+<attribute name="Desc" path="/physical_variables/nse_c" value="NSE Flag"/>
+
+<attribute name="Desc" path="/physical_variables/a_nuc_rep_c" value="Mass Number of the Representative Heavy Nucleus"/>
+
+<attribute name="Desc" path="/physical_variables/z_nuc_rep_c" value="Charge Number of the Representative Heavy Nucleus"/>
+
+<attribute name="Desc" path="/physical_variables/be_nuc_rep_c" value="Binding Energy of the Representative Heavy Nucleus"/> 
+<attribute name="Unit" path="/physical_variables/be_nuc_rep_c" value="MeV"/>
+
+<attribute name="Unit" path="/physical_variables/uburn_c" value="Ergs/gm"/>
+<attribute name="Desc" path="/physical_variables/uburn_c" value="Cumulative Energy Generated in Zone by Nuclear Reaction"/>
+
+<attribute name="Desc" path="/physical_variables/duesrc" value="Cumulative Energy Glitches per Unit Mass"/>
+
+<attribute name="Desc" path="/physical_variables/pMD" value="Pressure"/>
+
+<attribute name="Desc" path="/physical_variables/sMD" value="Entropy"/>
+
+<attribute name="Unit" path="/physical_variables/dudt_nuc" value="Ergs/gm"/> 
+<attribute name="Desc" path="/physical_variables/dudt_nuc" value="Energy Generation Rate By Nuclear Reaction For The Current Time Step"/> 
+
+<attribute name="Desc" path="/physical_variables/dudt_nu" value="Energy Deposition Rate By All Neutrinos in Radial Zone"/>  
+<attribute name="Unit" path="/physical_variables/dudt_nu" value="Ergs/gm/s"/> 
+
+<attribute name="Unit" path="/physical_variables/grav_x_c" value="cm/s^2/g"/> 
+<attribute name="Desc" path="/physical_variables/grav_x_c" value="Zone Centered X-Component of Gravitational Acceleration"/> 
+
+<attribute name="Unit" path="/physical_variables/grav_y_c" value="cm/s^2/g"/> 
+<attribute name="Desc" path="/physical_variables/grav_y_c" value="Zone Centered Y-Component of Gravitational Acceleration"/>
+
+<attribute name="Unit" path="/physical_variables/grav_z_c" value="cm/s^2/g"/> 
+<attribute name="Desc" path="/physical_variables/grav_z_c" value="Zone Centered Z-Component of Gravitational Acceleration"/>
+
+<attribute name="Desc" path="/physical_variables/agr_e" value="Zone Edged Value of the Lapse Function After Gravitational Update"/> 
+
+<attribute name="Desc" path="/physical_variables/agr_c" value="Zone Centered Value of the Lapse Function After Gravitational Update"/> 
+
+<global-bounds dimensions="nx,nez,nnu,ny,nz" offsets="0,0,0,j_ray_min-1,k_ray_min-1">
+
+<!-- Independent radiation variables and bookkeeping arrays -->
+<!-- radial_ray_module -->
+<var name="psi0_c" path="/physical_variables" type="double" dimensions="nx,nez,nnu,ij_ray_dim,ik_ray_dim"/>
+
+<var name="psi1_e" path="/physical_variables" type="double" dimensions="nx,nez,nnu,ij_ray_dim,ik_ray_dim"/>
+
+<!-- nu_dist_module -->
+<var name="dnurad" path="/physical_variables" type="double" dimensions="nx,nez,nnu,ij_ray_dim,ik_ray_dim"/> 
+
+</global-bounds>
+
+<attribute name="Desc" path="/physical_variables/psi0_c" value="Zero Moment of the Neutrino Occupation Distribution"/>
+
+<attribute name="Desc" path="/physical_variables/psi1_e" value="First Moment of the Neutrino Occupation Distribution at Outer Boundary Radial Zone"/>
+
+<attribute name="Desc" path="/physical_variables/dnurad" value="Total number of Neutrinos Per Unit Energy That Have Crossed Outer Boundary Radial Zone"/> 
+<attribute name="Unit" path="/physical_variables/dnurad" value="MeV^-1"/> 
+
+<global-bounds dimensions="nez,nnu,ny,nz" offsets="0,0,j_ray_min-1,k_ray_min-1">
+
+<var name="unukrad" path="/physical_variables" type="double" dimensions="nez,nnu,ij_ray_dim,ik_ray_dim"/>
+
+<var name="nnukrad" path="/physical_variables" type="double" dimensions="nez,nnu,ij_ray_dim,ik_ray_dim"/>
+
+<!-- Net number of neutrinos radiated from density rho_nurad and radius r_nurad -->
+<var name="nu_r" path="/physical_variables" type="double" dimensions="nez,nnu,ij_ray_dim,ik_ray_dim"/> <!-- dim in old code: nez, nnu -->
+
+<var name="nu_rt" path="/physical_variables" type="double" dimensions="nez,nnu,ij_ray_dim,ik_ray_dim"/> <!-- dim in old code: nez, nnu -->
+
+<var name="nu_rho" path="/physical_variables" type="double" dimensions="nez,nnu,ij_ray_dim,ik_ray_dim"/> <!-- dim in old code: nez, nnu -->
+
+<var name="nu_rhot" path="/physical_variables" type="double" dimensions="nez,nnu,ij_ray_dim,ik_ray_dim"/> <!-- dim in old code: nez, nnu -->
+
+<!-- Time integrated psi0 and psi1 -->
+<var name="psi0dat" path="/physical_variables" type="double" dimensions="nez,nnu,ij_ray_dim,ik_ray_dim"/>  <!-- dim in old code: nez, nnu -->
+
+<var name="psi1dat" path="/physical_variables" type="double" dimensions="nez,nnu,ij_ray_dim,ik_ray_dim"/>  <!-- dim in old code: nez, nnu -->
+
+</global-bounds>
+
+<attribute name="Desc" path="/physical_variables/unukrad" value="Cumulative Energy Emmitted from the Core For Each Neutrinos Type of Each Energy Zone"/> 
+<attribute name="Unit" path="/physical_variables/unukrad" value="Ergs"/> 
+
+<attribute name="Desc" path="/physical_variables/nnukrad" value="Cumulative Number Emmitted from the Core For Each Neutrinos Type of Each Energy Zone"/>
+
+<attribute name="Desc" path="/physical_variables/nu_r" value="Number of Neutrinos for Each Energy Group Radiated Across r_nurad"/>
+
+<attribute name="Desc" path="/physical_variables/nu_rt" value="Cumulative Number of Neutrinos for Each Energy Group Radiated Across r_nurad"/>
+
+<attribute name="Desc" path="/physical_variables/nu_rho" value="Number of Neutrinos for Each Energy group Across rho_nurad in Time dtnuradplot"/>
+
+<attribute name="Desc" path="/physical_variables/nu_rhot" value="Cumulative Number of Neutrinos for Each Energy Group Radiated Across rho_nurad"/>
+
+<attribute name="Desc" path="/physical_variables/psi0dat" value="Time Integrated psi0"/>
+
+<attribute name="Desc" path="/physical_variables/psi1dat" value="Time Integrated psi1"/>
+
+<global-bounds dimensions="nx,nnu,ny,nz" offsets="0,0,j_ray_min-1,k_ray_min-1">
+
+<var name="unujrad" path="/physical_variables" type="double" dimensions="nx,nnu,ij_ray_dim,ik_ray_dim"/>
+
+<var name="nnujrad" path="/physical_variables" type="double" dimensions="nx,nnu,ij_ray_dim,ik_ray_dim"/>
+
+</global-bounds>
+
+<attribute name="Desc" path="/physical_variables/unujrad" value="Cumulative Energy for Each Neutrino Type Transported Across Radial Boundary Zone"/>
+<attribute name="Unit" path="/physical_variables/unujrad" value="Ergs"/>
+
+<attribute name="Desc" path="/physical_variables/nnujrad" value="Net Number For Each Neutrino Type Transported Across Radial Boundary Zone"/>
+
+<global-bounds dimensions="ny,nz" offsets="j_ray_min-1,k_ray_min-1">
+
+<var name="e_rad" path="/physical_variables" type="double" dimensions="ij_ray_dim,ik_ray_dim"/>
+
+<var name="elec_rad" path="/physical_variables" type="double" dimensions="ij_ray_dim,ik_ray_dim"/> 
+
+<!-- Derived Physical Values for Plotting -->
+<!-- compute_plot_variables -->
+<var name="r_shock" path="/physical_variables" type="double" dimensions="ij_ray_dim,ik_ray_dim"/> 
+
+<var name="r_shock_mn" path="/physical_variables" type="double" dimensions="ij_ray_dim,ik_ray_dim"/> 
+
+<var name="r_shock_mx" path="/physical_variables" type="double" dimensions="ij_ray_dim,ik_ray_dim"/> 
+
+<var name="tau_adv" path="/physical_variables" type="double" dimensions="ij_ray_dim,ik_ray_dim"/> 
+
+<var name="tau_heat_nu" path="/physical_variables" type="double" dimensions="ij_ray_dim,ik_ray_dim"/> 
+
+<var name="tau_heat_nuc" path="/physical_variables" type="double" dimensions="ij_ray_dim,ik_ray_dim"/> 
+
+<var name="r_nse" path="/physical_variables" type="double" dimensions="ij_ray_dim,ik_ray_dim"/> 
+
+</global-bounds>
+
+<attribute name="Unit" path="/physical_variables/e_rad" value="Ergs"/> 
+<attribute name="Desc" path="/physical_variables/e_rad" value="Cumulative Material Energy Entering (-) or Leaving (+) the Grid"/> 
+
+<attribute name="Desc" path="/physical_variables/elec_rad" value="Net Number of electrons Advected In (-) or Out (+) Of the Grid"/>
+
+<attribute name="Desc" path="/physical_variables/r_shock" value="Radius of Shock Maximum"/>
+
+<attribute name="Desc" path="/physical_variables/r_shock_mn" value="Minimum Estimated Shock Radius"/>
+
+<attribute name="Desc" path="/physical_variables/r_shock_mx" value="Maximum Estimated Shock Radius"/>
+
+<attribute name="Desc" path="/physical_variables/tau_adv" value="Advection Time Scale"/>
+<attribute name="Unit" path="/physical_variables/tau_adv" value="s"/>
+
+<attribute name="Desc" path="/physical_variables/tau_heat_nu" value="Neutrino Heating Time Scale"/> 
+<attribute name="Unit" path="/physical_variables/tau_heat_nu" value="s"/>
+
+<attribute name="Desc" path="/physical_variables/tau_heat_nuc" value="Nuclear Heating Time Scale"/> 
+<attribute name="Unit" path="/physical_variables/tau_heat_nuc" value="s"/>
+
+<attribute name="Desc" path="/physical_variables/r_nse" value="Radius of NSE-nonNSE Boundary"/>
+
+<global-bounds dimensions="nnu,ny,nz" offsets="0,j_ray_min-1,k_ray_min-1">
+
+<var name="unurad" path="/physical_variables" type="double" dimensions="nnu,ij_ray_dim,ik_ray_dim"/>
+
+<var name="nnurad" path="/physical_variables" type="double" dimensions="nnu,ij_ray_dim,ik_ray_dim"/>
+
+<var name="rsphere_mean" path="/physical_variables" type="double" dimensions="nnu,ij_ray_dim,ik_ray_dim"/> 
+
+<var name="dsphere_mean" path="/physical_variables" type="double" dimensions="nnu,ij_ray_dim,ik_ray_dim"/> 
+
+<var name="tsphere_mean" path="/physical_variables" type="double" dimensions="nnu,ij_ray_dim,ik_ray_dim"/> 
+
+<var name="msphere_mean" path="/physical_variables" type="double" dimensions="nnu,ij_ray_dim,ik_ray_dim"/> 
+
+<var name="esphere_mean" path="/physical_variables" type="double" dimensions="nnu,ij_ray_dim,ik_ray_dim"/> 
+
+</global-bounds>
+
+<attribute name="Unit" path="/physical_variables/unurad" value="Ergs"/> 
+<attribute name="Desc" path="/physical_variables/unurad" value="Cumulative Energy Emitted From the Core for Each Neutrino Type"/>
+
+<attribute name="Desc" path="/physical_variables/nnurad" value="Cumulative Number Of Each Neutrino Type Emmited by the Core"/>
+
+<attribute name="Desc" path="/physical_variables/rsphere_mean" value="Mean Neutrinosphere Radius"/>
+
+<attribute name="Desc" path="/physical_variables/dsphere_mean" value="Mean Neutrinosphere Density"/>
+
+<attribute name="Desc" path="/physical_variables/tsphere_mean" value="Mean Neutrinosphere Temperature"/>
+
+<attribute name="Desc" path="/physical_variables/msphere_mean" value="Mean Neutrinosphere Enclosed Mass"/>
+
+<attribute name="Desc" path="/physical_variables/esphere_mean" value="Mean Neutrinosphere Energy"/>
+
+<global-bounds dimensions="nx" offsets="0">
+
+<var name="e_nu_c_bar" path="/physical_variables" type="double" dimensions="nx"/>
+
+<var name="f_nu_e_bar" path="/physical_variables" type="double" dimensions="nx"/> <!-- dim: nx+1? -->
+
+</global-bounds>
+
+<attribute name="Desc" path="/physical_variables/e_nu_c_bar" value="Angular Averaged Neutrino Energy Density"/>  
+<attribute name="Unit" path="/physical_variables/e_nu_c_bar" value="Ergs/cm^3"/> 
+
+<attribute name="Desc" path="/physical_variables/f_nu_e_bar" value="Angular Averaged Neutrino Energy Flux"/> 
+<attribute name="Unit" path="/physical_variables/f_nu_e_bar" value="Ergs/cm^2/s"/> 
+
+<global-bounds dimensions="nx,nnc,ny,nz" offsets="0,0,j_ray_min-1,k_ray_min-1">
+
+<!-- nuclear abundance -->
+<var name="xn_c" path="/physical_variables" type="double" dimensions="nx,nnc,ij_ray_dim,ik_ray_dim"/>
+
+</global-bounds>
+
+<attribute name="Desc" path="/physical_variables/xn_c" value="Mass Fraction for Each Nucleus"/>
+
+<global-bounds dimensions="nnu+1,ny,nz" offsets="0,j_ray_min-1,k_ray_min-1">
+
+<!-- radial_ray_module -->
+<var name="r_gain" path="/physical_variables" type="double" dimensions="nnu+1,ij_ray_dim,ik_ray_dim"/> 
+
+</global-bounds>
+
+<attribute name="Desc" path="/physical_variables/r_gain" value="Gain Radius"/>
+
+<global-bounds dimensions="nx,nez,ny,nz" offsets="0,0,j_ray_min-1,k_ray_min-1">
+
+<var name="unu_c" path="/physical_variables" type="double" dimensions="nx,nez,ij_ray_dim,ik_ray_dim"/> 
+
+<var name="dunu_c" path="/physical_variables" type="double" dimensions="nx,nez,ij_ray_dim,ik_ray_dim"/> 
+
+<var name="unue_e" path="/physical_variables" type="double" dimensions="nx,nez,ij_ray_dim,ik_ray_dim"/> 
+
+<var name="dunue_e" path="/physical_variables" type="double" dimensions="nx,nez,ij_ray_dim,ik_ray_dim"/> 
+
+</global-bounds>
+
+<attribute name="Desc" path="/physical_variables/unu_c" value="Zone Centered Neutrino Energy"/> 
+<attribute name="Unit" path="/physical_variables/unu_c" value="MeV"/>  
+
+<attribute name="Desc" path="/physical_variables/dunu_c" value="Width of Neutrino Energy Zone at Radial Zone Center"/> 
+<attribute name="Unit" path="/physical_variables/dunu_c" value="MeV"/>  
+
+<attribute name="Desc" path="/physical_variables/unue_e" value="Zone Centered Neutrino Energy Radial Zone Edge"/> 
+<attribute name="Unit" path="/physical_variables/unue_e" value="MeV"/>  
+
+<attribute name="Desc" path="/physical_variables/dunue_e" value="Width of Neutrino Energy Zone at Radial Zone Edge"/>  
+<attribute name="Unit" path="/physical_variables/dunue_e" value="MeV"/>  
+
+</adios-group>
+
+<method method="MPI_CIO" group="restart.model"/>
+
+<buffer size-MB="100" allocate-time="now"/>
+
+</adios-config>

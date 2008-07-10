@@ -1,0 +1,58 @@
+#!/bin/sh
+#PBS -A CSC025ewk
+#PBS -N chimera_8192_POSIX_2
+#PBS -o /tmp/work/zf2/chimera_run/8192/POSIX/2/Execute/build/run.stdout
+#PBS -e /tmp/work/zf2/chimera_run/8192/POSIX/2/Execute/build/run.stderr
+#PBS -l walltime=02:00:00,size=8192
+
+cd /tmp/work/zf2/chimera_run/8192/POSIX/2/Execute/build
+
+# copy initial parameter files
+cp -rf /ccs/home/zf2/chimera_setting/8192/Initial_Data/* ./Data3/Initial_Data
+sed -i.bak -e "s/dddd/8192\/POSIX\/2/" ./Data3/Initial_Data/array_dimensions.d
+
+# copy config.xml file
+cp -rf /ccs/home/zf2/chimera_setting/configfile/POSIX ./config.xml
+
+# write log file
+echo "Test Chimera on Machine ""$(hostname)" > ./log
+date >> ./log
+echo "nproc=""8192" >> ./log
+echo "method=""POSIX" >> ./log
+echo "testno=""2" >> ./log
+echo >> ./log
+echo "Initial Parameter" >> ./log
+grep "^n" Data3/Initial_Data/array_dimensions.d >> ./log
+grep "ncymax$" Data3/Initial_Data/radhyd_keys.d >> ./log
+grep "intprm$" Data3/Initial_Data/edit_keys.d >> ./log
+echo >> ./log
+
+echo "Run Chimera begin" >> ./log
+date >> ./log
+
+# run the simulation
+aprun -n 8192 ./RadHyd3D >runlog 2>&1
+
+echo "Run Chimera end" >> ./log
+date >> ./log
+echo >> ./log
+
+# collect timing info
+echo "Restart files" >> ./log
+ls -l Data3/Restart/ >> ./log
+echo >> ./log
+mkdir -p /tmp/work/zf2/chimera_results/8192/POSIX/2
+cp ./log /tmp/work/zf2/chimera_results/8192/POSIX/2/log
+cp ./runlog /tmp/work/zf2/chimera_results/8192/POSIX/2/runlog
+if [ -f run.stdout ]
+then
+  cp -rf run.stdout /tmp/work/zf2/chimera_results/8192/POSIX/2
+fi
+if [ -f run.stderr ]
+then
+  cp -rf run.stderr /tmp/work/zf2/chimera_results/8192/POSIX/2
+fi
+
+# cleanup
+sh Data3/cleanup
+

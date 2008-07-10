@@ -1,0 +1,593 @@
+\documentclass[11pt,doublespace]{article} 
+\topmargin=-0.5in 
+\oddsidemargin=0in 
+\textheight=9in 
+\textwidth=6.5in 
+\newcommand{\pderiv}[2]{\ensuremath{\frac{\partial #1 }{\partial #2}}}
+\usepackage{latexsym}
+%\pagestyle{empty}
+\usepackage{graphicx}
+
+\begin{document}
+
+\begin{center}
+{\large {\bf Radhyd\\
+Outline}}
+\end{center}
+
+\begin{itemize}
+  \item {\bf Initialization}
+\begin{enumerate}
+  \item Call {\bf read\_pack\_array\_dimensions(n\_dim\_data)}
+\begin{enumerate}
+  \item {\bf n\_dim\_data} (output) array dimension data
+  \item Open file array\_dimensions.d
+  \item Call {\bf read\_array\_dimensions(nread,nprint,iskipp,nx,ny,nz,nez,nnu,nnc,n\_proc)}\\
+  Reads in array dimenisons and number of processors assigned to the run.
+\begin{enumerate}
+  \item {\bf nread}: unit number to read from.
+  \item {\bf nprint}: unit number to print diagnostics.
+  \item {\bf iskipp}: read in echo flag.
+  \item {\bf nx}: x-array (radial) dimension. Must be at least 2 + number of active radial quantities.
+  \item {\bf ny}: y-array (angular) dimension.
+  \item {\bf nz}: z-array (azimuthal) dimension
+  \item  {\bf nez} Neutrino energy array dimension. Must be $\ge$ number of active neutrino energy zones.
+  \item  {\bf nnu}: Neutrino flavor array dimension. For the time being, set to 3.
+  \item  {\bf nnc}: Number of nuclear species not in NSE.
+  \item  {\bf n\_proc}: Number of processors assigned to the run.
+\end{enumerate}
+  \item Close file array\_dimensions.d
+  \item Check array dimensions and processor number for compatibility.
+  \item Pack array dimensions in integer array {\bf n\_dim\_data}
+\end{enumerate}
+  \item Call {\bf unpack\_array\_dimenisons(n\_dim\_data,nx,ny,nz,nez,nnu,nnc,n\_proc,n\_ray)}\\
+  Unpacks array dimensions and makes them available to each processor.
+\begin{enumerate}
+  \item {\bf nx}: x-array (radial) dimension. Must be at least 2 + number of active radial quantities.
+  \item {\bf ny}: y-array (angular) dimension.
+  \item {\bf nz}: z-array (azimuthal) dimension
+  \item  {\bf nez} Neutrino energy array dimension. Must be $\ge$ number of active neutrino energy zones.
+  \item  {\bf nnu}: Neutrino flavor array dimension. For the time being, set to 3.
+  \item  {\bf nnc}: Number of nuclear species not in NSE.
+  \item  {\bf n\_proc}: Number of processors assigned to the run.
+  \item  {\bf n\_ray}: Number of radial rays per processor.
+\end{enumerate}
+  \item Call {\bf load\_array\_module(nx,ny,nz,nez,nnu,nnc,n\_proc,n\_ray)}\\
+  Loads array dimensions into {\bf array\_module}.
+ 
+  \item Call {\bf initialize}
+\begin{enumerate}
+
+  \item Call {\bf dimension\_arrays(nx,ny,nz,nez,nnu,nnc,n\_proc,n\_ray)}\\
+  Dimensions and initializes the module arrays.
+\begin{enumerate}
+  \item {\bf nx}: x-array (radial) dimension. Must be at least 2 + number of active radial quantities.
+  \item {\bf ny}: y-array (angular) dimension.
+  \item {\bf nz}: z-array (azimuthal) dimension
+  \item  {\bf nez} Neutrino energy array dimension. Must be $\ge$ number of active neutrino energy zones.
+  \item  {\bf nnu}: Neutrino flavor array dimension. For the time being, set to 3.
+  \item  {\bf nnc}: Number of nuclear species not in NSE.
+  \item  {\bf n\_proc}: Number of processors assigned to the run.
+  \item  {\bf n\_ray}: Number of radial rays per processor.
+  \item Call {\bf dimension\_radhyd\_arrays(nx,ny,nz,nez,nnu,nnc)}\\
+  Allocates  the dimensions and initializes the master radhyd arrays
+  \item Call {\bf dimension\_radhyd\_ray\_arrays(nx,ny,nz,n\_ray,nez,nnu,nnc)}\\
+    Allocates  the dimensions and initializes the primary arrays on a processor
+  \item Call {\bf dimension\_prb\_cntl\_ray\_arrays(nnu)}
+  \item Call {\bf dimension\_hydro\_arrays(nx,ny,nz,nez,nnu,nnc)}
+\begin{enumerate}
+  \item Call {\bf dimension\_boundary\_arrays(nx)}
+  \item Call {\bf dimension\_convect\_arrays(nx)}
+  \item Call {\bf dimension\_hydro\_arrays(nx,ny,nz,nez,nnu,nnc)}
+  \item Call {\bf dimension\_mgfld\_remap\_arrays(nx,nez,nnu,nnc)}
+  \item Call {\bf dimension\_psi0p\_arrays(nx,nez,nnu)}
+  \item Call {\bf dimension\_shock\_arrays(nx)}
+\end{enumerate}
+  \item Call {\bf dimension\_mgfld\_arrays(nx,nez,nnu,n\_ray)}
+\begin{enumerate}
+  \item Call {\bf dimension\_abem\_arrays(nx,nez,nnu,n\_ray)}
+  \item Call {\bf dimension\_brem\_arrays(nx,nez,nnu,n\_ray)}
+  \item Call {\bf dimension\_incrmnt\_arrays(nx,nez,nnu,n\_ray)}
+  \item Call {\bf dimension\_mdl\_cnfg\_arrays(nx)}
+  \item Call {\bf dimension\_nu\_dist\_arrays(nx,nez,nnu)}
+  \item Call {\bf dimension\_nu\_energy\_grid\_arrays(nez,nnu)}
+  \item Call {\bf dimension\_pair\_arrays(nx,nez,nnu,n\_ray)}
+  \item Call {\bf dimension\_scat\_a\_arrays(nx,nez,nnu,n\_ray)}
+  \item Call {\bf dimension\_scat\_e\_arrays(nx,nez,nnu,n\_ray)}
+  \item Call {\bf dimension\_scat\_i\_arrays(nx,nez,n\_ray)}
+  \item Call {\bf dimension\_scat\_n\_arrays(nx,nez,nnu,n\_ray)}
+  \item Call {\bf dimension\_scat\_nn\_arrays(nx,nez,nnu,n\_ray)}
+  \item Call {\bf dimension\_t\_cntrl\_arrays(nx,nnu)}
+\end{enumerate}
+  \item Call {\bf dimension\_edit\_arrays(nx,nez,nnu)}
+  \item Call {\bf dimension\_eos\_bck\_arrays(nx)}
+  \item Call {\bf dimension\_eos\_snc\_arrays(nx)}
+  \item Call {\bf dimension\_eos\_ls\_arrays(nx)}
+  \item Call {\bf dimension\_nucbrn\_arrays(nx,nnc)}
+  \item Call {\bf dimension\_e\_advct\_arrays(nx,nez,nnu)}
+  \item Call {\bf dimension\_evh1\_sweep\_arrays(nx,ny,nz)}
+  \item Call {\bf dimension\_evh1\_zone\_arrays(nx,ny,nz)}
+  \item Call {\bf dimension\_evh1\_bound\_arrays(nnc)}
+\end{enumerate}
+
+  \item Call {\bf initialize\_variables(nx,ny,nz,nez,nnu,nnc)}
+\begin{enumerate}
+  \item Initializes variables not initialized in the dimension variable calls
+  \item {\bf nx}: x-array (radial) dimension. Must be at least 2 + number of active radial quantities.
+  \item {\bf ny}: y-array (angular) dimension.
+  \item {\bf nz}: z-array (azimuthal) dimension
+  \item  {\bf nez} Neutrino energy array dimension. Must be $\ge$ number of active neutrino energy zones.
+  \item  {\bf nnu}: Neutrino flavor array dimension. For the time being, set to 3.
+  \item  {\bf nnc}: Number of nuclear species not in NSE.
+  \item Call {\bf initialize\_global\_var}
+  \item Call {\bf initialize\_cycle\_arrays}
+  \item Call {\bf initialize\_it\_tol\_arrays}
+  \item Call {\bf initialize\_bomb\_arrays}
+  \item Call {\bf initialize\_rezone\_arrays}
+\end{enumerate}
+
+  \item Call {\bf problem\_read(c\_init\_data,c\_radhyd\_data,c\_eos\_data,i\_radhyd\_data,\\
+i\_trans\_data,i\_e\_advct\_data,i\_edit\_data, i\_hydro\_data, i\_nuc\_data, i\_model\_data,\\
+d\_radhyd\_data, d\_eos\_data, d\_trans\_data,d\_e\_advct\_data, d\_edit\_data,\\
+d\_hydro\_data, d\_nuc\_data, d\_model\_data)}
+\begin{enumerate}
+  \item Open {\bf Data3/reset.d}
+  \item Open {\bf Data3/superdump.d}
+  \item Open {\bf Data3/rstdmp1.d}
+  \item Open {\bf Data3/rstdmp2.d}
+  \item Call {\bf read\_pack(c\_init\_data,c\_radhyd\_data,c\_eos\_data,i\_radhyd\_data,\\
+i\_trans\_data,i\_e\_advct\_data,i\_edit\_data, i\_hydro\_data, i\_nuc\_data, i\_model\_data,\\
+d\_radhyd\_data, d\_eos\_data, d\_trans\_data,d\_e\_advct\_data, d\_edit\_data,\\
+d\_hydro\_data, d\_nuc\_data, d\_model\_data)} Read and broadcast initial data and run keys
+\begin{enumerate}
+  \item Call {\bf read\_pack\_init(nrrstp,c\_init\_data)}\\
+  Reads 'head" and "nrst"
+  \item If nrst = 0 .....................
+  \item Call {\bf radhyd\_read(c\_radhyd\_data,i\_radhyd\_data,d\_radhyd\_data)}\\
+  .....Call {\bf read\_radhyd\_keys(nreadp,nprint,iskip,c\_radhyd\_data,i\_radhyd\_data,d\_radhyd\_data)}
+  \item Call {\bf eos\_read(c\_eos\_data,d\_eos\_data)}\\
+   .....Call {\bf read\_pack\_eos\_keys(nreadp,nprint,iskip,c\_eos\_data,d\_eos\_data)}
+  \item Call {\bf transport\_read)(i\_trans\_data,d\_trans\_data)}\\
+   .....Call {\bf read\_pack\_transport\_keys(nreadp,nprint,iskip,nez,nezp1,nnu,\\
+   i\_trans\_data,d\_trans\_data)}
+  \item Call {\bf e\_advct\_read(i\_e\_advct\_data,d\_e\_advct\_data)}\\
+   .....Call {\bf read\_pack\_e\_advct\_keys(nreadp,nprint,iskip,nnu,i\_e\_advct\_data,\\
+   d\_e\_advct\_data)}
+  \item Call {\bf edit\_read(i\_edit\_data,d\_edit\_data)}\\
+   .....Call {\bf read\_pack\_edit\_keys(nreadp,nprintp,iskip,nez,nnu,i\_edit\_data,\\
+   d\_edit\_data)}
+  \item Call {\bf hydro\_read(i\_hydro\_data,d\_hydro\_data)}\\
+   .....Call {\bf read\_pack\_hydro\_keys(nreadp,nprint,iskip,nx,i\_hydro\_data,\\
+   d\_hydro\_data)}
+  \item Call {\bf nuc\_read(i\_nuc\_data,d\_nuc\_data)}\\
+   .....Call {\bf read\_pack\_nuclear\_keys(nreadp,nprint,iskip,nx,nnc,i\_nuc\_data,\\
+   d\_nuc\_data)}
+  \item Call {\bf model\_read(i\_model\_data,d\_model\_data)}\\
+   .....Call {\bf read\_initial\_model(nread,nprint,iskipp)}
+   \item If nrst $\ne$ 0 .....................
+ \item Call {\bf readst(nwrstp,iskip)}
+\end{enumerate}
+  \item Close {\bf Data3/reset.d}
+  \item Close {\bf Data3/rstdmp1.d}
+  \item Close {\bf Data3/rstdmp2.d}
+\end{enumerate}
+
+  \item Call {\bf data\_check}\\
+  Check consistency of data.
+
+  \item Call {\bf rezone(c\_radhyd\_data,i\_radhyd\_data,d\_radhyd\_data,i\_model\_data,\\
+  d\_model\_data,l\_rezone\_data,d\_rezone\_data,i\_nuc\_data, d\_nuc\_data)}\\
+  Unpack lagr, rezn, ngeomy, ngeomz, jm, and r. Set courant, xmin, and xmax.\\
+  Initialize ymin, ymax, zmin, zmax.
+\begin{enumerate}
+  \item set {\bf courant} and {\bf lagrangian}
+  \item If rezn = 'ye'
+\begin{enumerate}
+  \item if  lagrangian = true, Call {\bf lagregrid}
+  \item if   lagrangian = false, Call {\bf eulregrid}
+\end{enumerate}
+  \item If rezn = 'no'
+\begin{enumerate}
+  \item imax = jm - 1
+  \item load nse(j) in eos\_snc\_module
+  \item Load quantities from MGFLD to RadHyd variables.
+  \item Load EVH1 boundary conditions from MGFLD.
+\end{enumerate}
+  \item if ndim $\ge$ 2, build a j grid. Set ymin and ymax,
+  \item if ndim = 3, build a k grid. Set zmin and zmax,
+  \item Pack {\bf lagrangian, imax, xmin, xmax, ymin, ymax, zmin, zmax, courant, y-coordinates, z-coordinates}
+\end{enumerate}
+
+  \item Call {\bf Call unpack\_arrays(c\_init\_data,c\_radhyd\_data,c\_eos\_data,i\_radhyd\_data,\\
+i\_trans\_data,i\_e\_advct\_data,i\_edit\_data, i\_hydro\_data, i\_nuc\_data, i\_model\_data,\\
+l\_rezone\_data, d\_radhyd\_data, d\_eos\_data,d\_trans\_data, d\_e\_advct\_data,\\
+d\_edit\_data, d\_hydro\_data, d\_nuc\_data, d\_model\_data, d\_rezone\_data)}
+\begin{enumerate}
+  \item Call {\bf unpack\_init(c\_init\_data)}
+  \item Call {\bf unpack\_radhyd\_keys(c\_radhyd\_data,i\_radhyd\_data,d\_radhyd\_data)}
+  \item Call {\bf unpack\_radhyd\_ray\_keys(c\_radhyd\_data,i\_radhyd\_data,d\_radhyd\_data)}
+  \item Call {\bf unpack\_rezone\_arrays(l\_rezone\_data,d\_rezone\_data)}
+  \item Call {\bf unpack\_eos\_keys(c\_eos\_data,d\_eos\_data)}
+  \item Call {\bf unpack\_transport\_keys(nez,nezp1,nnu,i\_trans\_data,d\_trans\_data)}
+  \item Call {\bf unpack\_e\_advct\_keys(nnu,i\_e\_advct\_data,d\_e\_advct\_data)}
+  \item Call {\bf upack\_edit\_keys(nez,nnu,i\_edit\_data,d\_edit\_data)}
+  \item Call {\bf unpack\_hydro\_keys(nx,i\_hydro\_data,d\_hydro\_data)}
+  \item Call {\bf unpack\_nuclear\_keys(nx,nnc,n\_ray,i\_nuc\_data,d\_nuc\_data)}
+  \item Call {\bf unpack\_initial\_model(nx,n\_ray,i\_model\_data,d\_model\_data)}
+\end{enumerate}
+  \item Call {\bf problem\_setup(nx,nnu,n\_ray)}
+\begin{enumerate}
+  \item If ( nrst = 0 ) {\bf {\underline{Loop over j\_ray from 1 to n\_ray}}} Call {\bf mgfld\_setup(imin,imax,nx,j\_ray,n\_ray,nnu,rho\_c,t\_c,ye\_c,x\_e,dx\_c,u\_c)}
+\begin{enumerate}
+  \item {\bf imin}: (input) inner physical x-zone index
+  \item {\bf imax}: (input) outer physical x-zone index
+  \item {\bf nx}: (input) logical x-array dimension
+  \item {\bf j\_ray}: (input) index denoting a specific radial ray
+  \item {\bf n\_ray}: (input) number of rays assigned to a processor
+  \item {\bf nnu}: (input) neutrino flavor extent
+  \item {\bf ka}: (input) value of z-zone index
+  \item {\bf rho\_c(:,:,:)}: (input) density (g/cm$^{3}$)
+  \item {\bf t\_c(:,:,:)}: (input) temperature (MeV)
+  \item {\bf ye\_c(:,:,:)}: (input) electron fraction
+  \item {\bf x\_e(:)}: (input) radial coordinate (face) (cm)
+  \item {\bf dx\_c(:)}: (input) radial coordinate thickness (cm)
+  \item {\bf u\_c(:,:,:)}: (input) radial velocity (face) (cm/s)
+  \item {\bf xn\_c(:,:,:)}: (input) abundance mass fractions
+  \item {\bf be\_nuc\_c(:,:)}: (input) binding energies
+  \item {\bf a\_nuc\_c(:,:)}: (input) nuclear mass numbers
+  \item {\bf z\_nuc\_c(:,:)}: (input) nuclear charge numbers
+\end{enumerate}
+  \item ..........
+\begin{enumerate}
+  \item Initialize radial array index boundaries (set jm, jmin, jmax, jmaxp, jnumax, jnumaxp)
+  \item Set quatities at inner edge of configuration
+  \item Transfer zone-centered independent variables to mgfld arrays
+  \item Transfer zone-edgeed independent variables to mgfld arrays
+  \item Compute Newtonian rest masses
+  \item Call {\bf pblmst1} Modify problem before eos table setup (if appropriate)
+  \item Call {\bf esrgnz\_x} Load equation of state
+  \item Call {\bf eqstz\_x}
+  \item Call {\bf gammaz\_x}
+  \item Set m-1 and m+1 values of independent variables
+  \item Call {\bf genst\_rel} Compute GR quantities if irelhy = 1
+  \item Call {\bf agr\_cal} Time dilation factors
+  \item Call {\bf gamgr\_nu\_cal} Put GR gammas in neutrino variables
+  \item Call {\bf gamgra\_nu\_cal} Put updated GR gammas in neutrino variables
+  \item Call {\bf agr\_nu\_cal} Put time dilation factors in neutrino variables
+  \item Call {\bf agra\_nu\_cal} Put updated time dilation factors in neutrino variables
+  \item Call {\bf e\_zone} Compute neutrino group energies at infinity
+  \item Call {\bf enu\_cal} Compute GR neutrino energy arrays
+  \item Call {\bf pre\_trans} Compute quantities needed for neutrino transport
+  \item Call {\bf pblmst2} Modify problem given the neutrino energies (if appropriate)
+  \item Call {\bf gennur} Read in and regrid Wick's neutrino interaction rates
+  \item Call {\bf abemset} Compute absorption and emission opacities on table corners
+  \item Call {\bf scataset} Compute Wick's scattering opacities on table corners
+  \item Call {\bf scateset} Compute neutrino-electron scattering opacities on table corners
+  \item Call {\bf scatiset} Compute isoenergetic scattering opacities on table corners
+  \item Call {\bf pairset} Compute pair annihilation opacities on table corners
+\end{enumerate}
+\begin{enumerate}
+  \item Call {\bf bremset} Compute nucleon-nucleon bremsstrahlung opacities on table corners
+  \item Call {\bf scatnset} Compute neutrino-nucleon elastic scattering opacities on table corners
+  \item Call {\bf scatnnset} Compute neutrino-nucleon inelastic scattering opacities on table corners
+  \item Call {\bf abemrate} Interpolate absorption and emission opacities
+  \item Call {\bf sctarate} Interpolate Wick's opacities
+  \item Call {\bf scterate} Interpolate neutrino-electron scattering opacities
+  \item Call {\bf sctirate} Interpolate isoenergetic scattering opacities
+  \item Call {\bf pairrate} Interpolate pair annihilation opacities
+  \item Call {\bf bremrate} Interpolate nucleon-nucleon bremsstrahlung opacities
+  \item Call {\bf sctnrate} Interpolate neutrino-nucleon elastic scattering opacities
+  \item Call {\bf sctnnrate} Interpolate neutrino-nucleon inelastic scattering opacities
+  \item Call {\bf nu\_number} Compute the neutrino number and energy
+  \item Call {\bf mfp\_cal} Compute neutrino inverse mean free paths
+  \item Call {\bf nu\_sphere} Compute location of neutrinospheres
+  \item Call {\bf diffc} Compute neutrino diffusion coefficients
+  \item Call {\bf nu\_stress} Compute neutrino stresses
+  \item Call {\bf eddington} Compute neutrino flux and eddington
+  \item Call {\bf nu\_U} Compute neutrino energy density
+\end{enumerate}
+  \item  If ( nrst $\ne$ 0 ) Call {\bf genrst} Reinitialize problem from restart data
+\end{enumerate}
+
+  \item Call {\bf load\_radhyd\_ray\_arrays(nx,nnu,nnc,n\_ray)}
+  \item Call {\bf load\_evh1\_arrays}
+  \item Call {\bf time\_step\_check(n\_ray)}\\
+  Checks that the given time step is not larger than the minimum time step given by the Courant condition.
+\end{enumerate}
+  \item Call {\bf radhyd\_to\_edit(j\_ray\_min,j\_ray\_max,i\_edit)}
+\begin{enumerate}
+  \item {\bf j\_ray\_min}: (input) minimum ray index
+  \item {\bf j\_ray\_max}: (input) maximum ray index
+  \item {\bf i\_edit}: (input) edit flag
+  \item {\bf {\underline{Loop over j\_ray from j\_ray\_min to j\_ray\_max}}}
+\begin{enumerate}
+  \item {\bf CALL mgfld\_edit\_in(is,ie,idim,j\_ray\_min,j\_ray\_max,n\_ray,rho\_ci,rho\_c,t\_c,ye\_c,\\
+x\_e,u\_c,psi0\_c,psi1\_e,dtnph,time,i\_editp,ncycle,xn\_c,be\_nuc\_c,a\_nuc\_c,z\_nuc\_c,\\
+nse\_c, nedc,nedmi,nedma,nedh,nedps,nedu,nedy,nedsc,nedn,nedng)}
+\begin{enumerate}
+  \item Load edit counters into edit\_module
+  \item Load state variables into mdl\_cnfg\_module
+  \item Load neutrino distribution functions into nu\_dist\_module
+  \item Load composition variables into eos\_snc\_module and nucbrn\_module
+  \item {\bf Call eqstz\_x(jmin,jmaxp,j\_ray)}
+  \item {\bf Call gammaz\_x(jmin,jmaxp,j\_ray)}
+  \item {\bf Call mgfld\_edit(j\_ray,i\_editp,first)}
+\end{enumerate}
+  \item {\bf Call mgfld\_edit\_out(nedc,nedmi,nedma,nedh,nedps,nedu,nedy,nedsc,\\
+  nedn,nedng)}\\
+  Bring back updated edit counters
+\end{enumerate}
+  \item {\bf {\underline{End Loop over j\_ray}}}
+\end{enumerate}
+\end{enumerate}
+\end{itemize}
+
+{\bf Cycling MGFLD Transport}
+ \begin{itemize}
+  \item Call {\bf cycle}\\
+  Updates cycle number, opens {\bf Data3/cycle.d} prints cycle number, closes {\bf Data3/cycle.d}
+  \item Initialize increment arrays
+  \item Initialize {\bf svel}
+  \item {\bf {\underline{Loop over j\_ray from 1 to n\_ray}}}
+ \begin{enumerate}
+ \item {\bf Call store\_int\_radhyd\_var(j\_ray)}\\
+  Stores initial values of state variables in {\bf radhyd\_variable\_module} (variables end with an ``i'')
+  \item {\bf Call radhyd\_to\_evh1\_x\_lagr(nx,j\_ray,n\_ray)}
+\begin{enumerate}
+  \item {\bf Call evh1\_x\_lagr(imin,imax,nx,j\_ray,n\_ray,x\_e,dx\_c,x\_c,
+y\_e,dy\_c,y\_c,z\_e,\\
+  dz\_c,z\_c,rho\_c,t\_c,ye\_c,ei\_c,u\_c,v\_c,w\_c,nu\_str\_c,time,dtime)}
+\begin{enumerate}
+  \item Set {\bf nmin, nmax, ntot}
+  \item Load padded arrays for Lagrangian update
+  \item Load initial values in mgfld\_remap\_module
+  \item Initialize {\bf dt}
+  \item {\bf Call etotal(.false.)}
+  \item {\bf Call sweepx(j\_ray)}
+\begin{enumerate}
+  \item {\bf Call tgvndeye\_sweep(nmin,nmax,j\_ray,r0i,r0i)}\\
+  Update {\bf t, p, s, gc, ge}
+  \item {\bf Call sweepbc(nleftx,nrightx,j\_ray)}\\
+  Fill ghost zones
+  \item {\bf Call volume (ngeomx)}
+  \item {\bf Call paraset(ntot,zparax,dx,xa,nmin-4,nmax+4)}
+  \item {\bf Call e\_compose(xa,dx,ntot,zparax)}
+  \item {\bf Call ppm(ngeomx,ntot,zparax,j\_ray)}
+  \item {\bf Call tgvndeye\_sweep(nmin,nmax,j\_ray,r,r0i)}
+\end{enumerate}
+  \item Put variables advanced by Lagrangian hydro step back in radhyd ray arrays
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+
+\item {\bf Call radhyd\_to\_eos\_x\_reset( nx, i\_ray\_dim, i\_ray, nnc )}
+
+\item {\bf Call nu\_transport\_inout( imin, imax, nx, i\_ray, i\_ray\_dim, nez, nnu, nprintp, rhop, tp, yep, rhobarp, rp, up, psi0p, psi1p, nu\_strp, dt, jdt, dtnph\_trans, dtime\_trans ) }
+
+\begin{enumerate}
+
+\item {\bf  Call mgfld\_reset( i\_ray )}\\
+Reset opacity tables if dictated by criteria. 
+
+\item {\bf  Call mgfld\_transport( i\_ray, i\_ray\_dim, nx, nez, nnu, jdt, dtnph\_trans ))}\\
+Sets up for neutrino transport
+
+\begin{enumerate}
+
+\item {\bf  Call extrap}
+
+\item {\bf Call w\_cal( jr\_min, jr\_max, i\_ray, rho, t, ye, wgr, nx )}
+
+\item {\bf Call agr\_cal( jr\_min, jr\_max, i\_ray, rho, t, ye, r, nx )}
+
+\item {\bf Call agr\_nu\_cal( jr\_min, jr\_max )}
+
+\item {\bf Call gamgr\_nu\_cal( jr\_min, jr\_max )}
+
+\item {\bf Call enu\_cal( jr\_min, jr\_max )}
+
+\item {\bf Call nu\_adv( jr\_min, jr\_max, i\_ray, i\_ray\_dim, rho, t, ye, r, rstmss, nx,  nez, nnu, jdt, dtnph\_trans )}
+
+\begin{enumerate}
+
+\item {\bf Call pre\_trans( jr\_min, jr\_max, rho, r, nx, nnu )}\\
+Computes {\bf ncoefa, ecoefa, ecoefae, rjmh, area, areajmh, vol, drjmh, drjmh\_inv}
+
+\item {\bf Call nu\_sphere( jr\_min, jr\_max, i\_ray, i\_ray\_dim, r, rho, t, rstmss, nx, nez, nnu, j\_sphere, r\_sphere, d\_sphere, t\_sphere, m\_sphere )}\\
+
+\item {\bf Call nu\_trans( jr\_min, jr\_max, i\_ray, i\_ray\_dim, rho, t, t\_new, ye, ye\_new, r, rstmss, nx, nez, nnu, jdt, dtnph\_trans )}\\
+
+\begin{enumerate}
+
+\item {\bf Call psi\_bd( jr\_max, k, 1, radius, nx, psi\_ratio )}
+
+\item {\bf Call psi1\_cal( jr\_min, jr\_max, i\_ray, i\_ray\_dim, rho, t\_new, ye\_new, radius,  rstmss, u\_vel, psi0, psi1, nx, nez, nnu, it )}
+
+\item {\bf Call ddc\_dpsi( jr\_min, jr\_max, i\_ray, i\_ray\_dim, radius, ddcpsjph, ddcpsjmh, nx, nez, nnu )}
+
+\item {\bf Call abemrate( jr\_min, jr\_max, i\_ray, rho, t\_new, ye\_new, nx )}
+
+\item {\bf Call scterate( 1, jr\_min, jr\_max, i\_ray, rho, t\_new, ye\_new, nx )}
+
+\item {\bf Call pairrate( 1, jr\_min, jr\_max, i\_ray, rho, t\_new, ye\_new, radius, nx )}
+
+\item {\bf Call bremrate( 1, jr\_min, jr\_max, i\_ray, rho, t\_new, ye\_new, radius, nx )}
+
+\item {\bf Call sctnrate( 1, jr\_min, jr\_max, i\_ray, rho, t\_new, ye\_new, nx )}
+
+\item {\bf Call sctnnrate( 1, jr\_min, jr\_max, i\_ray, rho, t\_new, ye\_new, nx )}
+
+\item {\bf Call sctnArate( 1, jr\_min, jr\_max, i\_ray, rho, t\_new, ye\_new, nx )}
+
+\item {\bf Call ludcmp( O, ne\_4+1, 4*nez+1, indx, d\_perm )}
+
+\item {\bf Call lubksb( O, ne\_4+1, 4*nez+1, indx, O\_inv(1,k)}
+
+\item {\bf Call eqstt\_x( 2, j, i\_ray, rho(j), t\_new(j), ye\_0(j), e, dedd, dedt, dedy )}
+
+\item {\bf Call tgvndeye\_x( j, i\_ray, rho(j), e - de(j), ye\_new(j), t\_new(j), t\_new(j) )}
+
+\item {\bf Call psi1\_cal( jr\_min, jr\_max, i\_ray, i\_ray\_dim, rho, t\_new, ye\_new, radius,  rstmss, u\_vel, psi0, psi1, nx, nez, nnu, 2 )}
+
+\item {\bf Call flux( jr\_min, jr\_max, n )}
+
+\end{enumerate}
+
+\end{enumerate}
+
+\item {\bf Call nu\_number( jr\_min, jr\_max, n, i\_ray, nx, nez, nnu, r, u, psi0, psi1 )}
+
+\item {\bf Call eqstz\_x( jr\_min, jmaxp, i\_ray )}
+
+\item {\bf Call gammaz\_x( jr\_min, jr\_max, i\_ray )}
+
+\item {\bf Call nu\_stress\_x( jr\_min, jr\_max, i\_ray, rho, r )}
+
+\end{enumerate}
+
+\end{enumerate}
+
+\end{itemize}
+
+{\bf Cycling Remap\_x}
+
+\begin{itemize}
+
+\item Call {\bf radhyd\_to\_remap\_x( nx, i\_ray, i\_ray\_dim, nez, nnu, nnc )}
+
+\begin{enumerate}
+
+  \item CALL {\bf remap\_x\_inout( imin, imax, nx, i\_ray,i\_ray\_dim\, nez, nnu, ls, le, nnc, x\_el, dx\_cl, x\_cl, x\_ef, dx\_cf, x\_cf, rho\_c, t\_c, ye\_c, ei\_c, u\_c, v\_c, w\_c, psi0\_c, xn\_c, a\_nuc\_rep\_c, z\_nuc\_rep\_c, be\_nuc\_rep\_c)}
+
+\begin{enumerate}
+
+  \item Load final coordinate values, pad with ghost zones
+
+\begin{enumerate}
+
+  \item load {\bf xa0} and {\bf dx0} in evh1\_sweep
+
+  \item load {\bf xa0} and {\bf dx0} in mgfld\_remap\_module
+
+\end{enumerate}
+
+  \item Load Lagrangian coordinates, pad with ghost zones
+
+\begin{enumerate}
+
+  \item load {\bf xa} and {\bf dx} in evh1\_sweep
+
+  \item load {\bf xa} and {\bf dx} in mgfld\_remap\_module
+
+\end{enumerate}
+
+  \item Load state variables, pad with ghost zones
+
+\begin{enumerate}
+
+  \item load {\bf r}, {\bf temp}, {\bf ye}, {\bf u}, {\bf v}, {\bf w}, {\bf ei} in evh1\_sweep
+
+  \item load {\bf r}, {\bf temp}, {\bf ye}  in mgfld\_remap\_module
+
+\end{enumerate}
+
+  \item Load radiation variables, pad with ghost zones
+
+\begin{enumerate}
+
+  \item load {\bf psi0\_re} = {\bf psi0} in mgfld\_remap\_module
+
+\end{enumerate}
+
+  \item Load abundances, (no padding)
+
+\begin{enumerate}
+
+  \item load {\bf a\_nuc}, {\bf z\_nuc}, {\bf be\_nuc}, {\bf xn} in nucbrn\_module
+
+\end{enumerate}
+
+  \item Call {\bf sweepbc( nleftx, nrightx, nmin, nmax, i\_ray )}\\
+  Load boundary values in ghost zones of state variables and load in evh1\_sweep
+
+  \item Call {\bf volume ( ngeomx )}\\
+  Compute volumes of zones with Lagrangian coordinate values and with final coordinate values
+
+  \item Call {\bf paraset( imax+12, zparax, dx, xa, nmin-4, nmax+4 )}\\
+  Calculates coefficients for PPM on the Lagrangian coordinates; store zparax in evh1\_zone
+
+  \item Call {\bf pre\_remap\_psi( nleftx, nrightx, nnu )}
+
+\begin{enumerate}
+
+  \item Call {\bf coord\_bc( nleft, nright, xa, dx, xa0, dx0, imax+12 )}\\
+  Computes coordinate boundary values and returns them. They are then loaded into mgfld\_remap\_module
+
+  \item Load left (inner) ghosts for {\bf psi0\_re}, store in mgfld\_remap\_module
+
+  \item Load right (outer) ghosts for {\bf psi0\_re}, store in mgfld\_remap\_module
+
+\end{enumerate}
+
+  \item Call {\bf remap\_psi\_x( ngeomx, is, ie, i\_ray, nx, nez, nnu )}
+
+\begin{enumerate}
+
+  \item Call {\bf parabola( nmin-1, nmax+1, imax+12, zparax, psi, dpsi, psi6, psil, dm, 0, 0 )}\\
+  Compute the PPM interpolation coefficients for psi0 for each k and n; use zparax from evh1\_zone
+
+  \item Calculate the volume of the overlapping subshells (delta)
+
+  \item Compute psi0 to be advected
+
+  \item Advect psi0 by moving the subshell quantities into the appropriate Eulerian zone.
+
+  \item Restore psi0
+
+  \item Book keeping
+\end{enumerate}
+  \item CALL {\bf pre\_remap\_comp( nleftx, nrightx, i\_ray, i\_nnse, ldim )}
+\begin{enumerate}
+  \item Initialize {\bf comp}
+  \item Find nse - nonnse boundary
+  \item Load {\bf comp}
+  \item CALL {\bf coord\_bc( nleft, nright, xa, dx, xa0, dx0, imax+12 )}\\
+  Computes coordinate boundary values
+  \item CALL {\bf sweepbc\_r( nleft ,nright )}
+\begin{enumerate}
+  \item CALL {\bf coord\_bc( nleft, nright, xa, dx, xa0, dx0, imax+12 )}
+  \item Load left (inner) ghosts for {\bf r}.
+  \item Load right (outer) ghosts for {\bf r}.
+\end{enumerate}
+  \item Load left (inner) ghosts for {\bf comp} and {\bf r}.
+  \item Load right (outer) ghosts for {\bf comp} and {\bf r}.
+\end{enumerate}
+  \item Call {\bf remap\_comp( ngeomx, i\_nnse, i\_ray, nx, ldim )}
+\begin{enumerate}
+  \item Initialize {\bf fluxbe} to 0 and store initial values of {\bf xn} in {\bf xn0}.
+  \item Calculate volumes before and after Eul remap.
+  \item Call {\bf eos\_nnse\_e( j, r(n), temp(n), ye(n), xn\_t, nnc, a\_nuc(j), z\_nuc(j),\\
+be\_nuc(j), e\_ph, e\_elec, e\_drip, e\_hvy, e\_bind, e\_no\_bind, e\_total )}\\
+  Computes the total binding energy for zones not in nse.
+  \item Set {\bf eb(n) = eb(nminc)} for n $<$ nminc.
+  \item Load boundary values of binding energy.
+  \item Call {\bf parabola( nmin-1, nmax+1, imax+12, zparax, r,    dr,  r6,  rl,  dm, 0, 0 )}\\
+  Computes PPM coefficients for the density.
+  \item Call {\bf parabola( nminc-1, nmax+1, imax+12, zparax, cmp, dcmp, cmp6, cmpl, dm, 0, 0 )}\\
+  Computes PPM coefficients for the composition.
+  \item Calculate the volume of the overlapping subshells ({\bf delta})
+  \item Calculate the total mass, {\bf fluxr}, and the mass, {\bf fluxcmp}, of each specie to be advected.
+  \item Compute the total binding energy, {\bf fluxbe}, of the mass being transferred.
+  \item Compute the total electron fraction, {\bf fluxye\_comp}, being transferred.
+  \item Advect mass and composition mass fractions by moving the subshell quantities into the appropriate Eulerian zone.
+  \item Restore composition to {\bf xn}
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+
+\end{itemize}
+
+
+
+
+\end{document}

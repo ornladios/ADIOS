@@ -1,0 +1,286 @@
+This is pdfeTeX, Version 3.14159-1.10b-2.1 (Web2C 7.4.5) (format=pdflatex 2003.6.24)  12 JUN 2005 22:47
+entering extended mode
+\write18 enabled.
+**Initialize.tex
+(./Initialize.tex{/usr/local/teTeX/share/texmf.local/pdftex/config/pdftex.cfg}
+LaTeX2e <2001/06/01>
+Babel <v3.7h> and hyphenation patterns for american, french, german, ngerman, n
+ohyphenation, loaded.
+(/usr/local/teTeX/share/texmf.tetex/tex/latex/base/article.cls
+Document Class: article 2001/04/21 v1.4e Standard LaTeX document class
+(/usr/local/teTeX/share/texmf.tetex/tex/latex/base/size11.clo
+File: size11.clo 2001/04/21 v1.4e Standard LaTeX file (size option)
+)
+\c@part=\count79
+\c@section=\count80
+\c@subsection=\count81
+\c@subsubsection=\count82
+\c@paragraph=\count83
+\c@subparagraph=\count84
+\c@figure=\count85
+\c@table=\count86
+\abovecaptionskip=\skip41
+\belowcaptionskip=\skip42
+\bibindent=\dimen102
+)
+(/usr/local/teTeX/share/texmf.tetex/tex/latex/base/latexsym.sty
+Package: latexsym 1998/08/17 v2.2e Standard LaTeX package (lasy symbols)
+\symlasy=\mathgroup4
+LaTeX Font Info:    Overwriting symbol font `lasy' in version `bold'
+(Font)                  U/lasy/m/n --> U/lasy/b/n on input line 42.
+)
+(/usr/local/teTeX/share/texmf.tetex/tex/latex/graphics/graphicx.sty
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/local/teTeX/share/texmf.tetex/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks14
+)
+(/usr/local/teTeX/share/texmf.tetex/tex/latex/graphics/graphics.sty
+Package: graphics 2001/07/07 v1.0n Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/local/teTeX/share/texmf.tetex/tex/latex/graphics/trig.sty
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+(/usr/local/teTeX/share/texmf.tetex/tex/latex/config/graphics.cfg
+File: graphics.cfg 2001/08/31 v1.1 graphics configuration of teTeX/TeXLive
+)
+Package graphics Info: Driver file: pdftex.def on input line 80.
+
+(/usr/local/teTeX/share/texmf.tetex/tex/latex/graphics/pdftex.def
+File: pdftex.def 2002/06/19 v0.03k graphics/color for pdftex
+\Gread@gobject=\count87
+))
+\Gin@req@height=\dimen103
+\Gin@req@width=\dimen104
+)
+
+LaTeX Warning: Unused global option(s):
+    [doublespace].
+
+(./Initialize.aux)
+\openout1 = `Initialize.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 11.
+LaTeX Font Info:    ... okay on input line 11.
+
+(/usr/local/teTeX/share/texmf.tetex/tex/context/base/supp-pdf.tex
+(/usr/local/teTeX/share/texmf.tetex/tex/context/base/supp-mis.tex
+loading : Context Support Macros / Missing
+\protectiondepth=\count88
+\scratchcounter=\count89
+\scratchtoks=\toks15
+\scratchdimen=\dimen105
+\scratchskip=\skip43
+\scratchmuskip=\muskip10
+\scratchbox=\box26
+\scratchread=\read1
+\scratchwrite=\write3
+\zeropoint=\dimen106
+\minusone=\count90
+\thousandpoint=\dimen107
+\emptytoks=\toks16
+\nextbox=\box27
+\nextdepth=\dimen108
+\everyline=\toks17
+\!!counta=\count91
+\!!countb=\count92
+\recursecounter=\count93
+)
+loading : Context Support Macros / PDF
+\nofMPsegments=\count94
+\nofMParguments=\count95
+\everyMPtoPDFconversion=\toks18
+)
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 18.
+ (/usr/local/teTeX/share/texmf.tetex/tex/latex/base/omscmr.fd
+File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10.95> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 18.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <10.95> on input line 20.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <8> on input line 20.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <6> on input line 20.
+LaTeX Font Info:    Try loading font information for U+lasy on input line 20.
+
+(/usr/local/teTeX/share/texmf.tetex/tex/latex/base/ulasy.fd
+File: ulasy.fd 1998/08/17 v2.2e LaTeX symbol font definitions
+)
+Overfull \hbox (18.80176pt too wide) in paragraph at lines 24--36
+[]/cmr10@10.95pt/Call /cmbx10@10.95pt/read[]array[]dimensions(nread,nprint,iski
+pp,nx,ny,nz,nez,nnu,nnc,n[]proc) 
+ []
+
+[1
+
+{/usr/local/teTeX/share/texmf.tetex/dvips/config/pdftex.map}]
+Overfull \hbox (25.88434pt too wide) in paragraph at lines 81--83
+[]/cmr10@10.95pt/Call /cmbx10@10.95pt/un-pack[]array[]dimenisons(n[]dim[]data,n
+x,ny,nz,nez,nnu,nnc,n[]proc, i[]ray[]dim,
+ []
+
+
+Overfull \hbox (28.39792pt too wide) in paragraph at lines 94--96
+[]/cmr10@10.95pt/Call /cmbx10@10.95pt/load[]array[]module(nx,ny,nz,nez,nnu,nnc,
+n[]proc,i[]ray[]dim, j[]ray[]dim, max[]12) 
+ []
+
+[2]
+Overfull \hbox (38.42973pt too wide) in paragraph at lines 112--124
+[]/cmr10@10.95pt/Call /cmbx10@10.95pt/di-men-sion[]arrays(nx,ny,nz,nez,nnu,nnc,
+max[]12,n[]proc,i[]ray[]dim, j[]ray[]dim) 
+ []
+
+[3]
+Overfull \hbox (0.64539pt too wide) in paragraph at lines 169--171
+/cmr10@10.95pt/Allocates on each pro-ces-sor the di-men-sions and ini-tial-izes
+ the electron-positron
+ []
+
+[4]
+Overfull \hbox (34.38556pt too wide) in paragraph at lines 217--222
+/cmbx10@10.95pt/i[]hydro[]data, i[]nuc[]data, i[]model[]data,d[]radhyd[]data, d
+[]eos[]data, d[]trans[]data, 
+ []
+
+
+Overfull \hbox (49.38376pt too wide) in paragraph at lines 227--232
+/cmbx10@10.95pt/c[]nuc[]data, i[]radhyd[]data,i[]trans[]data,i[]e[]advct[]data,
+i[]edit[]data, i[]hydro[]data, 
+ []
+
+
+Overfull \hbox (64.94023pt too wide) in paragraph at lines 227--232
+/cmbx10@10.95pt/i[]nuc[]data, i[]model[]data, d[]radhyd[]data, d[]eos[]data, d[
+]trans[]data,d[]e[]advct[]data, 
+ []
+
+[5]
+Overfull \hbox (119.51552pt too wide) in paragraph at lines 235--274
+/cmr10@10.95pt/.....Call /cmbx10@10.95pt/read[]radhyd[]keys(nreadp,nprint,iskip
+,c[]radhyd[]data,i[]radhyd[]data,d[]radhyd[]data,
+ []
+
+
+Overfull \hbox (5.6016pt too wide) in paragraph at lines 235--274
+/cmr10@10.95pt/.....Call /cmbx10@10.95pt/read[]pack[]eos[]keys(nreadp,nprint,is
+kip,c[]eos[]data,d[]eos[]data,
+ []
+
+
+Overfull \hbox (1.54836pt too wide) in paragraph at lines 235--274
+/cmr10@10.95pt/.....Call /cmbx10@10.95pt/read[]pack[]transport[]keys(nreadp,npr
+int,iskip,nez,nezp1,nnu, 
+ []
+
+
+Overfull \hbox (13.26198pt too wide) in paragraph at lines 235--274
+/cmr10@10.95pt/.....Call /cmbx10@10.95pt/read[]pack[]e[]advct[]keys(nreadp,npri
+nt,iskip,nnu,i[]e[]advct[]data, 
+ []
+
+
+Overfull \hbox (4.02058pt too wide) in paragraph at lines 235--274
+/cmr10@10.95pt/.....Call /cmbx10@10.95pt/read[]pack[]edit[]keys(nreadp,nprintp,
+iskip,nez,nnu,i[]edit[]data, 
+ []
+
+
+Overfull \hbox (10.08107pt too wide) in paragraph at lines 235--274
+/cmr10@10.95pt/.....Call /cmbx10@10.95pt/read[]pack[]nuclear[]keys(nreadp,nprin
+t,iskip,nx,nnc,c[]nuc[]data, 
+ []
+
+
+Overfull \hbox (23.6533pt too wide) in paragraph at lines 274--293
+/cmr10@10.95pt/Call /cmbx10@10.95pt/read[]pack[]e[]advct[]keys( n[]restart, npr
+int, iskip, nnu, i[]e[]advct[]data, 
+ []
+
+
+Overfull \hbox (10.49426pt too wide) in paragraph at lines 274--293
+/cmr10@10.95pt/Call /cmbx10@10.95pt/read[]pack[]edit[]keys( n[]restart, nprint,
+ iskip, nez, nnu, i[]edit[]data, 
+ []
+
+
+Overfull \hbox (23.55054pt too wide) in paragraph at lines 274--293
+/cmr10@10.95pt/Call /cmbx10@10.95pt/read[]pack[]nuclear[]keys( n[]restart, npri
+nt, iskip, nx, nnc, c[]nuc[]data, 
+ []
+
+[6]
+Overfull \hbox (1.13084pt too wide) in paragraph at lines 328--333
+[]/cmr10@10.95pt/Call /cmbx10@10.95pt/Call un-pack[]arrays(c[]init[]data, i[]in
+it[]data, c[]radhyd[]data, c[]eos[]data, 
+ []
+
+
+Overfull \hbox (7.4564pt too wide) in paragraph at lines 335--336
+[]/cmr10@10.95pt/Call /cmbx10@10.95pt/un-pack[]radhyd[]keys(c[]radhyd[]data, i[
+]radhyd[]data, d[]radhyd[]data) 
+ []
+
+[7]
+Overfull \hbox (29.5932pt too wide) in paragraph at lines 336--337
+[]/cmr10@10.95pt/Call /cmbx10@10.95pt/un-pack[]radhyd[]ray[]keys(c[]radhyd[]dat
+a, i[]radhyd[]data, d[]radhyd[]data) 
+ []
+
+
+Overfull \hbox (6.33011pt too wide) in paragraph at lines 339--340
+[]/cmr10@10.95pt/Call /cmbx10@10.95pt/un-pack[]transport[]keys(nez, nezp1, nnu,
+ i[]trans[]data, d[]trans[]data) 
+ []
+
+
+Overfull \hbox (46.36055pt too wide) in paragraph at lines 344--345
+[]/cmr10@10.95pt/Call /cmbx10@10.95pt/un-pack[]initial[]model(nx, nez, nnu, i[]
+ray[]dim, i[]model[]data, d[]model[]data) 
+ []
+
+[8] [9]
+Overfull \hbox (42.26566pt too wide) in paragraph at lines 432--435
+[]/cmbx10@10.95pt/CALL mgfld[]edit[]in(is,ie,idim,j[]ray[]min,j[]ray[]max,n[]ra
+y,rho[]ci,rho[]c,t[]c,ye[]c, 
+ []
+
+
+Overfull \hbox (38.9468pt too wide) in paragraph at lines 432--435
+/cmbx10@10.95pt/x[]e,u[]c,psi0[]c,psi1[]e,dtnph,time,i[]editp,ncycle,xn[]c,be[]
+nuc[]c,a[]nuc[]c,z[]nuc[]c, 
+ []
+
+[10] [11] (./Initialize.aux) ) 
+Here is how much of TeX's memory you used:
+ 927 strings out of 95321
+ 11799 string characters out of 1187585
+ 61941 words of memory out of 1000001
+ 4029 multiletter control sequences out of 10000+50000
+ 7610 words of font info for 29 fonts, out of 500000 for 1000
+ 14 hyphenation exceptions out of 1000
+ 25i,4n,19p,252b,425s stack positions out of 1500i,500n,5000p,200000b,5000s
+ 50 PDF objects out of 300000
+ 0 named destinations out of 131072
+ 0 words of extra memory for PDF output out of 65536
+{/usr/local/teTeX/share/texmf.tetex/dvips/tetex/f
+7b6d320.enc}</usr/local/teTeX/share/texmf.tetex/fonts/type1/bluesky/cm/cmr8.pfb
+></usr/local/teTeX/share/texmf.tetex/fonts/type1/bluesky/cm/cmr10.pfb></usr/loc
+al/teTeX/share/texmf.tetex/fonts/type1/bluesky/cm/cmbx10.pfb>{/usr/local/teTeX/
+share/texmf.tetex/dvips/tetex/bbad153f.enc}</usr/local/teTeX/share/texmf.tetex/
+fonts/type1/bluesky/cm/cmsy10.pfb></usr/local/teTeX/share/texmf.tetex/fonts/typ
+e1/bluesky/cm/cmbx12.pfb>
+Output written on Initialize.pdf (11 pages, 81505 bytes).

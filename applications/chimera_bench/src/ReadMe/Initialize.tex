@@ -1,0 +1,493 @@
+\documentclass[11pt,doublespace]{article} 
+\topmargin=-0.5in 
+\oddsidemargin=0in 
+\textheight=9in 
+\textwidth=6.5in 
+\newcommand{\pderiv}[2]{\ensuremath{\frac{\partial #1 }{\partial #2}}}
+\usepackage{latexsym}
+%\pagestyle{empty}
+\usepackage{graphicx}
+
+\begin{document}
+
+\begin{center}
+{\large {\bf Radhyd Initialization\\ Outline}}
+\end{center}
+
+\begin{itemize}
+  \item {\bf Initialization}
+\begin{enumerate}
+  \item Call {\bf read\_pack\_array\_dimensions(n\_dim\_data)} \underline{({\bf my\_rank = 0})}\\
+  {\bf n\_dim\_data} (output) integer array of array dimension data
+\begin{enumerate}
+  \item Open file {\bf array\_dimensions.d} in directory {\bf Data3/Initial\_Data}
+  \item Call {\bf read\_array\_dimensions(nread,nprint,iskipp,nx,ny,nz,nez,nnu,nnc,n\_proc)}\\
+  Reads in array dimenisons and number of processors assigned to the run.\\
+  {\bf nread}: (input) unit number to read from.\\
+  {\bf nprint}: (input) unit number to print diagnostics.\\
+  {\bf iskipp}: (input) read in echo flag.\\
+  {\bf nx}: (output) x-array (radial) dimension. Must be at least 2 + number of active radial quantities.\\
+  {\bf ny}: (output) y-array (angular) dimension.\\
+  {\bf nz}: (output) z-array (azimuthal) dimension.\\
+  {\bf nez}: (output) Neutrino energy array dimension. Must be $\ge$ number of active neutrino energy zones.\\
+  {\bf nnu}: Neutrino flavor array dimension. For the time being, set to 3.\\
+  {\bf nnc}: Number of nuclear species not in NSE.\\
+  {\bf n\_proc}: Number of processors assigned to the run.
+  \item Close file array\_dimensions.d
+  \item Open file {\bf reset.d} in directory {\bf Data3/Initial\_Data}
+  \item Call {\bf read\_pack\_init( nread, c\_init\_data, i\_init\_data, nrst, nouttmp )}\\
+  {\bf nread}: (input) unit number from which to read.\\
+  {\bf c\_init\_data}: (output) character array of initial data containing header.\\
+  {\bf i\_init\_data}: (output) integer array of initial data containing nrst.\\
+  {\bf nrst}: (output) cycle number to start simulation.\\
+  {\bf nouttmp}: (output) unit number to get restart data if nrst /= 0 (obsolete).
+  \item Close file {\bf reset.d}
+  \item IF ( nrst == 0 )
+\begin{enumerate}
+  \item Open file {\bf radhyd\_keys.d} in directory {\bf Data3/Initial\_Data}
+  \item Call {\bf read\_model\_dimensions( nread, nprint, iskipp, imin, imax, jmin, jmax, kmin, kmax )}\\
+  {\bf nread}: (input) unit number from which to read.\\
+  {\bf nprint}: (input) unit number to print to.\\
+  {\bf iskip}: (input) echo data read flag.\\
+  {\bf imin}: (output) inner x-array index.\\
+  {\bf imax}: (output) outer x-array index.\\
+  {\bf jmin}: (output) inner y-array index.\\
+  {\bf jmax}: (output) inner x-array index.\\
+  {\bf kmin}: (output) inner z-array index.\\
+  {\bf kmax}: (output) outer z-array index.
+  \item Close file {\bf radhyd\_keys.d}
+\end{enumerate}
+  \item ELSE
+\begin{enumerate}
+  \item Open file {\bf restart.d} in directory {\bf Data3/Restart}
+  \item Call {\bf read\_model\_dimensions( nread, nprint, iskipp, imin, imax, jmin, jmax, kmin, kmax )}\\
+  {\bf nread}: (input) unit number from which to read.\\
+  {\bf nprint}: (input) unit number to print to.\\
+  {\bf iskip}: (input) echo data read flag.\\
+  {\bf imin}: (output) inner x-array index.\\
+  {\bf imax}: (output) outer x-array index.\\
+  {\bf jmin}: (output) inner y-array index.\\
+  {\bf jmax}: (output) inner x-array index.\\
+  {\bf kmin}: (output) inner z-array index.\\
+  {\bf kmax}: (output) outer z-array index.
+  \item Close file {\bf restart.d}
+\end{enumerate}
+  \item END IF
+  \item Check array dimensions and processor number for compatibility.
+  \item Compute {\bf i\_ray\_dim} and {\bf j\_ray\_dim}.
+  \item Pack array dimensions in integer array {\bf n\_dim\_data}
+\end{enumerate}
+  \item {\bf Broadcast array\_dimensions}
+  \item Call {\bf unpack\_array\_dimenisons(n\_dim\_data,nx,ny,nz,nez,nnu,nnc,n\_proc, i\_ray\_dim, j\_ray\_dim)}\\
+  Unpacks array dimensions and makes them available to each processor. \underline{({\bf all\_ranks})}
+\begin{enumerate}
+  \item {\bf nx}: x-array (radial) dimension. Must be at least 2 + number of active radial quantities.
+  \item {\bf ny}: y-array (angular) dimension.
+  \item {\bf nz}: z-array (azimuthal) dimension
+  \item  {\bf nez} Neutrino energy array dimension. Must be $\ge$ number of active neutrino energy zones.
+  \item  {\bf nnu}: Neutrino flavor array dimension. For the time being, set to 3.
+  \item  {\bf nnc}: Number of nuclear species not in NSE.
+  \item  {\bf n\_proc}: Number of processors assigned to the run.
+  \item  {\bf i\_ray\_dim}: Number of radial rays per processor.
+  \item  {\bf j\_ray\_dim}: Number of angular rays per processor.
+\end{enumerate}
+  \item Call {\bf load\_array\_module(nx,ny,nz,nez,nnu,nnc,n\_proc,i\_ray\_dim, j\_ray\_dim, max\_12)}\\
+  Loads array dimensions into {\bf array\_module}.  \underline{({\bf all\_ranks})}
+ \begin{enumerate}
+  \item {\bf nx}: x-array (radial) dimension. Must be at least 2 + number of active radial quantities.
+  \item {\bf ny}: y-array (angular) dimension.
+  \item {\bf nz}: z-array (azimuthal) dimension
+  \item  {\bf nez} Neutrino energy array dimension. Must be $\ge$ number of active neutrino energy zones.
+  \item  {\bf nnu}: Neutrino flavor array dimension. For the time being, set to 3.
+  \item  {\bf nnc}: Number of nuclear species not in NSE.
+  \item  {\bf n\_proc}: Number of processors assigned to the run.
+  \item  {\bf i\_ray\_dim}: Number of radial rays per processor.
+  \item  {\bf j\_ray\_dim}: Number of angular rays per processor.
+  \item  {\bf max\_12}: MAX(nx, ny, nz) + 12
+\end{enumerate}
+
+  \item Call {\bf initialize}
+\begin{enumerate}
+
+  \item Call {\bf dimension\_arrays(nx,ny,nz,nez,nnu,nnc,max\_12,n\_proc,i\_ray\_dim, j\_ray\_dim)}\\
+  Dimensions and initializes the module arrays. \underline{({\bf all\_ranks})}\\
+    {\bf nx}: x-array (radial) dimension. Must be at least 2 + number of active radial quantities.\\
+    {\bf ny}: y-array (angular) dimension.\\
+    {\bf nz}: z-array (azimuthal) dimension\\
+    {\bf nez} Neutrino energy array dimension. Must be $\ge$ number of active neutrino energy zones.\\
+    {\bf nnu}: Neutrino flavor array dimension. For the time being, set to 3.\\
+    {\bf nnc}: Number of nuclear species not in NSE.\\
+    {\bf max\_12}: MAX(nx, ny, nz) + 12\\
+    {\bf n\_proc}: Number of processors assigned to the run.\\
+    {\bf i\_ray\_dim}: Number of radial rays per processor.\\
+    {\bf j\_ray\_dim}: Number of angular rays per processor.
+\begin{enumerate}
+  \item Call {\bf dimension\_radhyd\_arrays(nx,ny,nz,nez,nnu,nnc)}
+\begin{enumerate}
+  \item Call {\bf dimension\_radhyd\_variable\_arrays(nx,ny,nz,nez,nnu,nnc)}\\
+    Allocates on each processor  the dimensions and initializes the master radhyd arrays
+  \item Call {\bf dimension\_radhyd\_ray\_arrays(nx,ny,nz,i\_ray\_dim,nez,nnu,nnc)}\\
+    Allocates on each processor  the dimensions and initializes the primary radial arrays
+  \item Call {\bf dimension\_angular\_ray\_arrays(ny,j\_ray\_dim,nez,nnu,nnc)}\\
+    Allocates on each processor  the dimensions and initializes the primary angular arrays
+  \item Call {\bf dimension\_prb\_cntl\_ray\_arrays(nnu)}\\
+    Allocates on each processor  the dimensions and initializes the problem controls
+  \item Call {\bf dimension\_t\_cntrl\_arrays(nx,nnu)}
+    Allocates on each processor  the dimensions and time step controls
+\end{enumerate}
+  \item Call {\bf dimension\_hydro\_arrays(nx,ny,nz,nez,nnu,nnc)}
+\begin{enumerate}
+  \item Call {\bf dimension\_boundary\_arrays(nx)}\\
+  Allocates on each processor  the dimensions and initializes the boundary conditions
+  \item Call {\bf dimension\_convect\_arrays(nx)}\\
+  Allocates on each processor  the dimensions and initializes the parameters for mixing-length convection
+  \item Call {\bf dimension\_mgfld\_remap\_arrays(max\_12,nez,nnu,nnc)}\\
+  Allocates on each processor  the dimensions and initializes the parameters for remapping the material variables
+  \item Call {\bf dimension\_shock\_arrays(nx,i\_ray\_dim)}\\
+  Allocates on each processor  the dimensions and initializes the parameters for tracking shocks
+  \item Call {\bf dimension\_evh1\_sweep\_arrays(nx,ny,nz)}\\
+  Allocates on each processor  the dimensions and initializes the parameters for the evh1 padded variables
+  \item Call {\bf dimension\_evh1\_zone\_arrays(nx,ny,nz)}\\
+  Allocates on each processor  the dimensions and initializes the parameters for global evh1 variables
+  \item Call {\bf dimension\_evh1\_bound\_arrays(nnc)}\\
+  Allocates on each processor  the dimensions and initializes the hydro boundary conditions
+\end{enumerate}
+  \item Call {\bf dimension\_mgfld\_arrays(nx,nez,nnu,i\_ray\_dim)}
+\begin{enumerate}
+  \item Call {\bf dimension\_abem\_arrays(nx,nez,nnu,i\_ray\_dim)}\\
+    Allocates on each processor  the dimensions and initializes the absorption and emission arrays
+  \item Call {\bf dimension\_brem\_arrays(nx,nez,nnu,i\_ray\_dim)}\\
+    Allocates on each processor  the dimensions and initializes the nucleon-nucleon neutrino bremsstrahlung arrays
+  \item Call {\bf dimension\_incrmnt\_arrays(nx,nez,nnu,i\_ray\_dim)}\\
+    Allocates on each processor  the dimensions and initializes the increment arrays
+  \item Call {\bf dimension\_mdl\_cnfg\_arrays(nx)}\\
+    Allocates on each processor  the dimensions and initializes the mgfld model configuration arrays
+  \item Call {\bf dimension\_nu\_dist\_arrays(nx,nez,nnu,,i\_ray\_dim)}\\
+    Allocates on each processor  the dimensions and initializes the mgfld model configuration arrays
+  \item Call {\bf dimension\_nu\_energy\_grid\_arrays(nez,nnu)}\\
+    Allocates on each processor  the dimensions and initializes the neutrino distribution arrays
+  \item Call {\bf dimension\_pair\_arrays(nx,nez,nnu,i\_ray\_dim)}\\
+    Allocates on each processor  the dimensions and initializes the electron-positron annihilation arrays
+  \item Call {\bf dimension\_scat\_a\_arrays(nx,nez,nnu,i\_ray\_dim)}\\
+    Allocates on each processor  the dimensions and initializes the Haxton neutrino nucleus inelastic scattering arrays
+  \item Call {\bf dimension\_scat\_e\_arrays(nx,nez,nnu,i\_ray\_dim)}\\
+    Allocates  the dimensions and initializes the neutrino electron scattering arrays on a processor
+  \item Call {\bf dimension\_scat\_i\_arrays(nx,nez,i\_ray\_dim)}\\
+    Allocates on each processor  the dimensions and initializes the neutrino-nucleon and nucleus isoenergetic scattering arrays
+  \item Call {\bf dimension\_scat\_n\_arrays(nx,nez,nnu,i\_ray\_dim)}\\
+    Allocates  the dimensions and initializes the neutrino nucleon elastic scattering arrays on a processor
+  \item Call {\bf dimension\_scat\_nn\_arrays(nx,nez,nnu,i\_ray\_dim)}\\
+    Allocates on each processor  the dimensions and initializes the neutrino-nucleus inelastic scattering arrays
+\end{enumerate}
+  \item Call {\bf dimension\_edit\_arrays(nx,nez,nnu)}
+    Allocates on each processor  the dimensions and initializes the edit arrays
+  \item Call {\bf dimension\_eos\_arrays( nx, ny, i\_ray\_dim, j\_ray\_dim, nnc )}
+\begin{enumerate}
+  \item Call {\bf dimension\_eos\_snc\_arrays( nx, i\_ray\_dim, nnc )}\\
+    Allocates on each processor  the dimensions and initializes the ``cube'' eos machinery for the radial arrays
+  \item Call {\bf dimension\_eos\_snc\_y\_arrays( ny, j\_ray\_dim, nnc )}\\
+    Allocates on each processor  the dimensions and initializes the ``cube'' eos machinery for the angular arrays
+  \item Call {\bf dimension\_eos\_bck\_arrays(nx)}\\
+    Allocates on each processor  the dimensions and initializes the BCK eos arrays
+  \item Call {\bf dimension\_eos\_ls\_arrays(nx)}\\
+    Allocates on each processor  the dimensions and initializes the LS eos arrays
+\end{enumerate}
+  \item Call {\bf dimension\_nucbrn\_arrays(nx,nnc)}\\
+    Allocates on each processor  the dimensions and initializes the nuclear network arrays
+  \item Call {\bf dimension\_e\_advct\_arrays(nx,nez,nnu)}\\
+    Allocates on each processor  the dimensions and initializes the neutrino energy advection arrays
+\end{enumerate}
+
+  \item Call {\bf initialize\_variables(nx,ny,nz,nez,nnu,nnc)}
+\begin{enumerate}
+  \item Initializes variables not initialized in the dimension variable calls
+  \item {\bf nx}: x-array (radial) dimension. Must be at least 2 + number of active radial quantities.
+  \item {\bf ny}: y-array (angular) dimension.
+  \item {\bf nz}: z-array (azimuthal) dimension
+  \item  {\bf nez} Neutrino energy array dimension. Must be $\ge$ number of active neutrino energy zones.
+  \item  {\bf nnu}: Neutrino flavor array dimension. For the time being, set to 3.
+  \item  {\bf nnc}: Number of nuclear species not in NSE.
+  \item Call {\bf initialize\_global\_var}
+  \item Call {\bf initialize\_cycle\_arrays}
+  \item Call {\bf initialize\_it\_tol\_arrays}
+  \item Call {\bf initialize\_bomb\_arrays}
+  \item Call {\bf initialize\_rezone\_arrays}
+\end{enumerate}
+
+  \item Call {\bf problem\_read(c\_init\_data, i\_init\_data,c\_radhyd\_data,c\_eos\_data,\\
+c\_nuc\_data, i\_radhyd\_data,i\_trans\_data,i\_e\_advct\_data,i\_edit\_data, \\
+i\_hydro\_data, i\_nuc\_data, i\_model\_data,d\_radhyd\_data, d\_eos\_data, d\_trans\_data,\\
+d\_e\_advct\_data, d\_edit\_data,d\_hydro\_data, d\_nuc\_data, d\_model\_data)}\\
+ \underline{({\bf my\_rank = 0})}
+\begin{enumerate}
+  \item nread = 11
+  \item nprint = 41
+
+  \item Open {\bf Data3/Initial\_Data/reset.d}
+  \item Open {\bf Data3/Run\_Log/superdump.d}
+  \item Call {\bf read\_pack(c\_init\_data, i\_init\_data, c\_radhyd\_data,c\_eos\_data,\\
+c\_nuc\_data, i\_radhyd\_data,i\_trans\_data,i\_e\_advct\_data,i\_edit\_data, i\_hydro\_data,\\
+i\_nuc\_data, i\_model\_data, d\_radhyd\_data, d\_eos\_data, d\_trans\_data,d\_e\_advct\_data,\\
+d\_edit\_data, d\_hydro\_data, d\_nuc\_data, d\_model\_data, nrst)}\\
+ Read and broadcast initial data and run keys
+\begin{enumerate}
+  \item Call {\bf read\_pack\_init(nrrstp,c\_init\_data, i\_init\_data, nrst, nouttmp)}\\
+  Reads 'head" and "nrst"
+  \item If nrst = 0 .....................\\
+       Call {\bf radhyd\_read(c\_radhyd\_data,i\_radhyd\_data,d\_radhyd\_data, nrst)}\\
+  .....Open Data3/Initial\_Data/radhyd\_keys.d\\
+  .....Call {\bf read\_radhyd\_keys(nreadp,nprint,iskip,c\_radhyd\_data,i\_radhyd\_data,d\_radhyd\_data, nrst)}\\
+  .....Close Data3/Initial\_Data/radhyd\_keys.d\\
+  Call {\bf eos\_read(c\_eos\_data,d\_eos\_data,nrst)}\\
+  .....Open Data3/Initial\_Data/eos\_keys.d\\
+  .....Call {\bf read\_pack\_eos\_keys(nreadp,nprint,iskip,c\_eos\_data,d\_eos\_data, nrst)}
+  .....Close Data3/Initial\_Data/eos\_keys.d\\
+  Call {\bf transport\_read)(i\_trans\_data,d\_trans\_data, nrst)}\\
+  .....Open Data3/Initial\_Data/transport\_keys.d\\
+  .....Call {\bf read\_pack\_transport\_keys(nreadp,nprint,iskip,nez,nezp1,nnu,\\
+   i\_trans\_data,d\_trans\_data, nrst)}\\
+   .....Close Data3/Initial\_Data/transport\_keys.d\\
+  Call {\bf e\_advct\_read(i\_e\_advct\_data,d\_e\_advct\_data, nrst)}\\
+  .....Open Data3/Initial\_Data/e\_advct\_keys.d\\
+  .....Call {\bf read\_pack\_e\_advct\_keys(nreadp,nprint,iskip,nnu,i\_e\_advct\_data,\\
+   d\_e\_advct\_data, nrst)}\\
+   .....Close Data3/Initial\_Data/e\_advct\_keys.d\\
+   Call {\bf edit\_read(i\_edit\_data,d\_edit\_data, nrst)}\\
+  .....Open Data3/Initial\_Data/edit\_keys.d\\
+  .....Call {\bf read\_pack\_edit\_keys(nreadp,nprintp,iskip,nez,nnu,i\_edit\_data,\\
+   d\_edit\_data, nrst)}\\
+   .....Close Data3/Initial\_Data/edit\_keys.d\\
+  Call {\bf hydro\_read(i\_hydro\_data,d\_hydro\_data, nrst)}\\
+  .....Open Data3/Initial\_Data/hydro\_keys.d\\
+  .....Call {\bf read\_pack\_hydro\_keys(nreadp,nprint,iskip,nx,i\_hydro\_data,\\
+   d\_hydro\_data, nrst)}\\
+   .....Close Data3/Initial\_Data/hydro\_keys.d\\
+  Call {\bf nuc\_read(c\_nuc\_data, i\_nuc\_data,d\_nuc\_data, nrst)}\\
+  .....Open Data3/Initial\_Data/nuclear\_keys.d\\
+  .....Call {\bf read\_pack\_nuclear\_keys(nreadp,nprint,iskip,nx,nnc,c\_nuc\_data,\\
+   i\_nuc\_data, d\_nuc\_data, nrst)}\\
+   .....Close Data3/Initial\_Data/nuclear\_keys.d\\
+   Call {\bf model\_read(i\_model\_data,d\_model\_data, nrst)}\\
+   .....Open Data3/Initial\_Data/initial\_model.d\\
+   .....Call {\bf read\_pack\_initial\_model(nread, nprint, iskipp, nx, nez, nnu, i\_model\_data,\\
+  d\_model\_data, nrst)}\\
+   .....Close Data3/Initial\_Data/initial\_model.d
+   \item ELSE .....................\\
+   Open Data3/Restart/restart.d\\
+   Call {\bf read\_pack\_radhyd\_keys( n\_restart, nprint, iskip, c\_radhyd\_data,\\
+   i\_radhyd\_data, d\_radhyd\_data, nrst )}\\
+  Call {\bf read\_pack\_eos\_keys( n\_restart, nprint, iskip, c\_eos\_data,\\
+   d\_eos\_data, nrst )}
+  Call {\bf read\_pack\_transport\_keys( n\_restart, nprint, iskip, nez, nezp1, nnu\\
+  i\_trans\_data, d\_trans\_data, nrst )}\\
+  Call {\bf read\_pack\_e\_advct\_keys( n\_restart, nprint, iskip, nnu, i\_e\_advct\_data,\\
+  d\_e\_advct\_data, nrst )}\\
+  Call {\bf read\_pack\_edit\_keys( n\_restart, nprint, iskip, nez, nnu, i\_edit\_data,\\
+  d\_edit\_data, nrst )}\\
+  Call {\bf read\_pack\_hydro\_keys( n\_restart, nprint, iskip, nx, i\_hydro\_data,\\
+  d\_hydro\_data, nrst )}\\
+  Call {\bf read\_pack\_nuclear\_keys( n\_restart, nprint, iskip, nx, nnc, c\_nuc\_data,\\
+  i\_nuc\_data, d\_nuc\_data, nrst )}\\
+  Call {\bf read\_pack\_initial\_model( n\_restart, nprint, iskip, nx, nez, nnu,\\
+  i\_model\_data, d\_model\_data, nrst )}\\
+   Close Data3/Restart/restart.d
+\end{enumerate}
+  \item Close {\bf Data3/Initial\_Data/reset.d}
+  \item Open {\bf Data3/Initial\_Data/reset\_initial.d}
+  \item Write {\bf reset.d} used
+  \item Close {\bf Data3/Initial\_Data/reset\_initial.d}
+\end{enumerate}
+
+  \item Call {\bf data\_check( c\_radhyd\_data, i\_radhyd\_data )}\\
+  Check consistency of data.
+
+  \item Call {\bf rezone(c\_radhyd\_data,i\_radhyd\_data,d\_radhyd\_data,i\_model\_data,\\
+  d\_model\_data,l\_rezone\_data,d\_rezone\_data,i\_nuc\_data, d\_nuc\_data)}\\
+  Unpack lagr, rezn, ngeomy, ngeomz, jm, and r. Set courant, xmin, and xmax.\\
+  Initialize ymin, ymax, zmin, zmax.
+\begin{enumerate}
+  \item set {\bf courant} and {\bf lagrangian}
+  \item If rezn = 'ye'
+\begin{enumerate}
+  \item if  lagrangian = true, Call {\bf lagregrid}
+  \item if   lagrangian = false, Call {\bf eulregrid}
+\end{enumerate}
+  \item If rezn = 'no'
+\begin{enumerate}
+  \item imax = jm - 1
+  \item load nse(j) in eos\_snc\_module
+  \item Load quantities from MGFLD to RadHyd variables.
+  \item Load EVH1 boundary conditions from MGFLD.
+\end{enumerate}
+  \item if ndim $\ge$ 2, build a j grid. Set ymin and ymax,
+  \item if ndim = 3, build a k grid. Set zmin and zmax,
+  \item Pack {\bf lagrangian, imax, xmin, xmax, ymin, ymax, zmin, zmax, courant, y-coordinates, z-coordinates}
+\end{enumerate}
+
+  \item Broadcast packed data to all nodes
+
+  \item Call {\bf Call unpack\_arrays(c\_init\_data, i\_init\_data, c\_radhyd\_data, c\_eos\_data,\\ c\_nuc\_data, i\_radhyd\_data, i\_trans\_data, i\_e\_advct\_data, i\_edit\_data, \\
+i\_hydro\_data, i\_nuc\_data, i\_model\_data, l\_rezone\_data, d\_radhyd\_data, \\
+d\_eos\_data, d\_trans\_data, d\_e\_advct\_data, d\_edit\_data, d\_hydro\_data, \\
+d\_nuc\_data, d\_model\_data, d\_rezone\_data)}\\
+ \underline{({\bf all\_ranks})}
+\begin{enumerate}
+  \item Call {\bf unpack\_init(c\_init\_data)}
+  \item Call {\bf unpack\_radhyd\_keys(c\_radhyd\_data, i\_radhyd\_data, d\_radhyd\_data)}
+  \item Call {\bf unpack\_radhyd\_ray\_keys(c\_radhyd\_data, i\_radhyd\_data, d\_radhyd\_data)}
+  \item Call {\bf unpack\_rezone\_arrays(l\_rezone\_data, d\_rezone\_data)}
+  \item Call {\bf unpack\_eos\_keys(c\_eos\_data, d\_eos\_data)}
+  \item Call {\bf unpack\_transport\_keys(nez, nezp1, nnu, i\_trans\_data, d\_trans\_data)}
+  \item Call {\bf unpack\_e\_advct\_keys(nnu, i\_e\_advct\_data, d\_e\_advct\_data)}
+  \item Call {\bf upack\_edit\_keys( i\_ray\_dim, nez, nnu, i\_edit\_data, d\_edit\_data)}
+  \item Call {\bf unpack\_hydro\_keys( nx, i\_hydro\_data, d\_hydro\_data)}
+  \item Call {\bf unpack\_nuclear\_keys(nx, nnc, i\_ray\_dim, i\_nuc\_data, d\_nuc\_data)}
+  \item Call {\bf unpack\_initial\_model(nx, nez, nnu, i\_ray\_dim, i\_model\_data, d\_model\_data)}
+\end{enumerate}
+  \item Call {\bf problem\_setup(nx, nez, nnu, i\_ray\_dim, nnc)}
+\begin{enumerate}
+  \item IF ( nrst = 0 ) {\bf {\underline{Loop over i\_ray from 1 to i\_ray\_dim}}}\\
+   Call {\bf mgfld\_setup(imin, imax, i\_ray, i\_ray\_dim, nx, nez, nnu, nnc, rho\_c, \\
+   t\_c, ye\_c, x\_e, dx\_c, u\_c, xn\_c, be\_nuc\_rep\_c, a\_nuc\_rep\_c, z\_nuc\_rep\_c)}\\
+   {\bf imin}: (input) inner physical x-zone index\\
+   {\bf imax}: (input) outer physical x-zone index\\
+   {\bf i\_ray}: (input) index denoting a specific radial ray\\
+   {\bf i\_ray\_dim}: (input) number of rays assigned to a processor\\
+   {\bf nx}: (input) x-array extent\\
+   {\bf nez}: (input) neutrino energy array extent\\
+   {\bf nnu}: (input) neutrino flavor extent\\
+   {\bf nnc}: (input) composition array extent\\
+   {\bf rho\_c(:,:,:)}: (input) density (g/cm$^{3}$)\\
+   {\bf t\_c(:,:,:)}: (input) temperature (MeV)\\
+   {\bf ye\_c(:,:,:)}: (input) electron fraction\\
+   {\bf x\_e(:)}: (input) radial coordinate (face) (cm)\\
+   {\bf dx\_c(:)}: (input) radial coordinate thickness (cm)\\
+   {\bf u\_c(:,:,:)}: (input) radial velocity (face) (cm/s)\\
+   {\bf xn\_c(:,:,:)}: (input) abundance mass fractions\\
+   {\bf be\_nuc\_rep\_c(:,:)}: (input) binding energies\\
+   {\bf a\_nuc\_rep\_c(:,:)}: (input) nuclear mass numbers\\
+   {\bf z\_nuc\_rep\_c(:,:)}: (input) nuclear charge numbers
+\begin{enumerate}
+  \item Initialize radial array index boundaries (set jm, jmin, jmax, jmaxp, jnumax, jnumaxp)
+  \item Set quatities at inner edge of configuration
+  \item Transfer zone-centered independent variables to mgfld arrays
+  \item Transfer zone-edgeed independent variables to mgfld arrays
+  \item Compute Newtonian rest masses
+  \item Call {\bf pblmst1} Modify problem before eos table setup (if appropriate)
+  \item Call {\bf esrgnz_x} Load equation of state
+  \item Call {\bf eqstz_x}
+  \item Call {\bf gammaz_x}
+  \item Set m-1 and m+1 values of independent variables
+  \item Call {\bf genst\_rel} Compute GR quantities if irelhy = 1
+  \item Call {\bf agr\_cal} Time dilation factors
+  \item Call {\bf gamgr\_nu\_cal} Put GR gammas in neutrino variables
+  \item Call {\bf gamgra\_nu\_cal} Put updated GR gammas in neutrino variables
+  \item Call {\bf agr\_nu\_cal} Put time dilation factors in neutrino variables
+  \item Call {\bf agra\_nu\_cal} Put updated time dilation factors in neutrino variables
+  \item Call {\bf e\_zone} Compute neutrino group energies at infinity
+  \item Call {\bf enu\_cal} Compute GR neutrino energy arrays
+  \item Call {\bf pre\_trans} Compute quantities needed for neutrino transport
+  \item Call {\bf pblmst2} Modify problem given the neutrino energies (if appropriate)
+  \item Call {\bf gennur} Read in and regrid Wick's neutrino interaction rates
+  \item Call {\bf abemset} Compute absorption and emission opacities on table corners
+  \item Call {\bf scataset} Compute Wick's scattering opacities on table corners
+  \item Call {\bf scateset} Compute neutrino-electron scattering opacities on table corners
+  \item Call {\bf scatiset} Compute isoenergetic scattering opacities on table corners
+  \item Call {\bf pairset} Compute pair annihilation opacities on table corners
+\end{enumerate}
+\begin{enumerate}
+  \item Call {\bf bremset} Compute nucleon-nucleon bremsstrahlung opacities on table corners
+  \item Call {\bf scatnset} Compute neutrino-nucleon elastic scattering opacities on table corners
+  \item Call {\bf scatnnset} Compute neutrino-nucleon inelastic scattering opacities on table corners
+  \item Call {\bf abemrate} Interpolate absorption and emission opacities
+  \item Call {\bf sctarate} Interpolate Wick's opacities
+  \item Call {\bf scterate} Interpolate neutrino-electron scattering opacities
+  \item Call {\bf sctirate} Interpolate isoenergetic scattering opacities
+  \item Call {\bf pairrate} Interpolate pair annihilation opacities
+  \item Call {\bf bremrate} Interpolate nucleon-nucleon bremsstrahlung opacities
+  \item Call {\bf sctnrate} Interpolate neutrino-nucleon elastic scattering opacities
+  \item Call {\bf sctnnrate} Interpolate neutrino-nucleon inelastic scattering opacities
+  \item Call {\bf nu\_number} Compute the neutrino number and energy
+  \item Call {\bf mfp\_cal} Compute neutrino inverse mean free paths
+  \item Call {\bf nu\_sphere} Compute location of neutrinospheres
+  \item Call {\bf diffc} Compute neutrino diffusion coefficients
+  \item Call {\bf nu\_stress} Compute neutrino stresses
+  \item Call {\bf eddington} Compute neutrino flux and eddington
+  \item Call {\bf nu\_U} Compute neutrino energy density
+\end{enumerate}
+  \item  If ( nrst $\ne$ 0 ) Call {\bf genrst} Reinitialize problem from restart data
+\end{enumerate}
+
+  \item Call {\bf load\_radhyd\_ray\_arrays(nx,nnu,nnc,n\_ray)}
+  \item Call {\bf load\_evh1\_arrays}
+  \item Call {\bf time\_step\_check(n\_ray)}\\
+  Checks that the given time step is not larger than the minimum time step given by the Courant condition.
+\end{enumerate}
+  \item Call {\bf radhyd\_to\_edit(j\_ray\_min,j\_ray\_max,i\_edit)}
+\begin{enumerate}
+  \item {\bf j\_ray\_min}: (input) minimum ray index
+  \item {\bf j\_ray\_max}: (input) maximum ray index
+  \item {\bf i\_edit}: (input) edit flag
+  \item {\bf {\underline{Loop over j\_ray from j\_ray\_min to j\_ray\_max}}}
+\begin{enumerate}
+  \item {\bf CALL mgfld\_edit\_in(is,ie,idim,j\_ray\_min,j\_ray\_max,n\_ray,rho\_ci,rho\_c,t\_c,ye\_c,\\
+x\_e,u\_c,psi0\_c,psi1\_e,dtnph,time,i\_editp,ncycle,xn\_c,be\_nuc\_c,a\_nuc\_c,z\_nuc\_c,\\
+nse\_c, nedc,nedmi,nedma,nedh,nedps,nedu,nedy,nedsc,nedn,nedng)}
+\begin{enumerate}
+  \item Load edit counters into edit\_module
+  \item Load state variables into mdl\_cnfg\_module
+  \item Load neutrino distribution functions into nu\_dist\_module
+  \item Load composition variables into eos\_snc\_module and nucbrn\_module
+  \item {\bf Call eqstz_x(jmin,jmaxp,j\_ray)}
+  \item {\bf Call gammaz_x(jmin,jmaxp,j\_ray)}
+  \item {\bf Call mgfld\_edit(j\_ray,i\_editp,first)}
+\end{enumerate}
+  \item {\bf Call mgfld\_edit\_out(nedc,nedmi,nedma,nedh,nedps,nedu,nedy,nedsc,\\
+  nedn,nedng)}\\
+  Bring back updated edit counters
+\end{enumerate}
+  \item {\bf {\underline{End Loop over j\_ray}}}
+\end{enumerate}
+\end{enumerate}
+\end{itemize}
+
+{\bf Cycling MGFLD Transport}
+ \begin{itemize}
+  \item Call {\bf cycle}\\
+  Updates cycle number, opens {\bf Data3/cycle.d} prints cycle number, closes {\bf Data3/cycle.d}
+  \item Initialize increment arrays
+  \item Initialize {\bf svel}
+  \item {\bf {\underline{Loop over j\_ray from 1 to n\_ray}}}
+ \begin{enumerate}
+ \item {\bf Call store\_int\_radhyd\_var(j\_ray)}\\
+  Stores initial values of state variables in {\bf radhyd\_variable\_module} (variables end with an ``i'')
+  \item {\bf Call radhyd\_to\_evh1\_x\_lagr(nx,j\_ray,n\_ray)}
+\begin{enumerate}
+  \item {\bf Call evh1\_x\_lagr(imin,imax,nx,j\_ray,n\_ray,x\_e,dx\_c,x\_c,
+y\_e,dy\_c,y\_c,z\_e,\\
+  dz\_c,z\_c,rho\_c,t\_c,ye\_c,ei\_c,u\_c,v\_c,w\_c,nu\_str\_c,time,dtime)}
+\begin{enumerate}
+  \item Set {\bf nmin, nmax, ntot}
+  \item Load padded arrays for Lagrangian update
+  \item Load initial values in mgfld\_remap\_module
+  \item Initialize {\bf dt}
+  \item {\bf Call etotal(.false.)}
+  \item {\bf Call sweepx(j\_ray)}
+\begin{enumerate}
+  \item {\bf Call tgvndeye\_sweep(nmin,nmax,j\_ray,r0i,r0i)}\\
+  Update {\bf t, p, s, gc, ge}
+  \item {\bf Call sweepbc(nleftx,nrightx,j\_ray)}\\
+  Fill ghost zones
+  \item {\bf Call volume (ngeomx)}
+  \item {\bf Call paraset(ntot,zparax,dx,xa,nmin-4,nmax+4)}
+  \item {\bf Call e\_compose(xa,dx,ntot,zparax)}
+  \item {\bf Call ppm(ngeomx,ntot,zparax,j\_ray)}
+  \item {\bf Call tgvndeye\_sweep(nmin,nmax,j\_ray,r,r0i)}
+\end{enumerate}
+  \item Put variables advanced by Lagrangian hydro step back in radhyd ray arrays
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+\end{itemize}
+
+\end{document}

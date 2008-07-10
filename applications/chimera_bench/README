@@ -1,0 +1,230 @@
+How to run Chimera/ADIOS
+
+1. Seven steps to setup benchmark environment and run jobs:
+
+First of all, you should just copy ~zf2/setup_chimera.sh and run it in bash shell. It will do the following 1)-3) steps and take care of the direcotry names so you can do benchmark in specified direcotry. After running setup_chimera.sh, go directly to 4).
+
+> cp ~zf2/setup_chimera.sh /tmp/work/$LOGNAME
+> cd /tmp/work/$LOGNAME
+> ./setup_chimera.sh /tmp/work/zf2/chimera_bench 512 16384 5
+
+ Usage for ./setup_chimera.sh:
+  ./setup_chimera.sh dir smallest_num_procs largest_num_procs number_of_tests
+  dir specifies the directory (refered as working directory, WORKING_DIR) where all files are hosted. In the above command, it is set to /tmp/work/$LOGNAME/chimera_bench.
+  smallest_num_procs is the lower bound of job size. In the command above, it is 512 (cores).
+  largest_num_procs is the lower bound of job size. In the command above, it is 16384 (cores). Therefore, we will benchmark the program with 512, 1024, 2048,..., 16384 cores.
+  number_of_tests specifies how many tests to run for each job size and ADIOS method pair. It is set to 5. Therefore, we will run 5 jobs for 512 cores and ADIOS MPI method.
+
+ In the following text, WORKING_DIR=/tmp/work/$LOGNAME/chimera_bench
+
+> export WORKING_DIR=/tmp/work/$LOGNAME/chimera_bench
+
+1) copy files to your working directory:
+> cp ~zf2/chimera_bench.tar.gz /tmp/work/$LOGNAME
+> cd /tmp/work/$LOGNAME
+> tar zxvf chimera_bench.tar.gz
+
+ There are 4 direcoties:
+ RadHyd3D_adios: source code and executables
+ chimera_setting: input files and job scripts 
+ chimera_run: job will run in the sub-direcotry 
+ chimera_results: timing info and run logs for all jobs
+
+2) build executables:
+> cd RadHyd3D_adios/Execute/build
+> make
+
+ This will produce two executables: RadHyd3D_mpi and RadHyd3D_posix.
+ RadHyd3D_mpi can use ADIOS-MPI, ADIOS-MPI_CIO, ADIOS-NULL method and can let all processes write to a shared file.
+ RadHyd3D_posix uses ADIOS-POSIX and each process writes to a seperate file.
+
+3) build working directories:
+> ./create_working_dir.sh
+
+ This will create a directory named chimera_run in your working directory. It contains subdirectories in the form of ./xxxx/mmmmm/nnnn/, where xxxx is number of processes (512, 1024,..., 16384), mmmm is ADIOS method (MPI, MPI_CIO, POSIX, NULL, and ORIG_H5 for the original code which uses pHDF5), nnnn is test NO. (0,1,2,3,4, meaning for each (no. of process, ADIOS method) pair, we will run 5 test jobs). 
+
+4) generate pbs job script
+
+> cd $WORKING_DIR/chimera_setting
+> ./gen_script 512 MPI 0
+
+ The above script generate a pbs job script "chimera_512_MPI_0.pbs" using 512 process, ADIOS-MPI method and with test NO. set to 0.
+
+5) submit job with generated script
+
+> qsub -q batch ./chimera_512_MPI_0.pbs
+
+ The job runs in $WORKING_DIR/chimera_run/512/MPI/0/Execute/build/. 
+ The restart files go to $WORKING_DIR/chimera_run/Execute/build/Data3/Restart. 
+ You can check $WORKING_DIR/chimera_run/Execute/build/Data3/Run_Log/cycle.d to see current cycle number. 
+ When the program is terminating, timing results are write to $WORKING_DIR/chimera_run/Execute/build/log.
+
+6) collect result
+ 
+> cd $WORKING_DIR/chimera_results/512/MPI/0
+
+ The pbs job script copies timing info and run logs to this directory. 
+ 
+7) generate timing report
+
+> cd $WORKING_DIR/chimera_setting
+> ./post_srcipt.sh 512 MPI
+
+ This script will merge timing results of all jobs (test no. 0-4) using 512 process and ADIOS-MPI method. The resulting files are in $WORKING_DIR/chimera_results/512/MPI/, including open, write, close, and total
+
+
+
+Following are detailed instructions about benchmarking:
+
+1. Directory layout:
+There are 4 direcotories to build:
+
+1) $WORKING_DIR/chimera_run: 
+This is where jobs run. It contains subdirectories in the form of ./xxxx/mmmmm/nnnn/, where xxxx is number of processes (512, 1024,..., 16384), mmmm is ADIOS method (MPI, MPI_CIO, POSIX, NULL, and ORIG_H5 for the original code which uses pHDF5), nnnn is test number (0,1,2,3,4, meaning for each process/method, we will run 5 test jobs). 
+
+Each subdirectory is layed out like this:
+
+512/MPI/0/
+  |
+  |---+ Equation_of_State (symbolic link) ---> $WORKING_DIR/chimera_run/bak/Equation_of_State Equation_of_State
+  |
+  |---+ FullNet (symbolic link) ---> $WORKING_DIR/chimera_run/bak/FullNet FullNet
+  |
+  |---+ MGFLD (symbolic link) ---> $WORKING_DIR/chimera_run/bak/MGFLD MGFLD
+  |
+  |---+ Execute
+          |
+	  |---+ build
+	          |
+		  |---+ RadHyd3D (symbolic link) ---> $WORKING_DIR/RadHyd3D_adios/Execute/build/RadHyd3D_[mpi|posix]
+		  |
+		  |---+ config.xml (This file will be copied from chimera_setting/configfile when job runs)
+		  |
+		  |---+ log (timing result; created when job runs)
+		  |
+		  |---+ runlog (stdout and stderr from RadHyd3D during execution)
+		  |
+		  |---+ Data3
+		          |
+			  |---+ Initial_Data (contains input files. Input files will be copied from chimera_setting/512)
+			  |
+			  |---+ Restart (contains restart files generated by RadHyd3D during execution)
+			  |
+			  |---+ other directories (containing other output files generated by RadHyd3D)
+
+2) $WORKING_DIR/chimera_results: 
+This is where timing and runtime logs are saved. The result of job chimera_xxxx_mmmm_nnnn.pbs is saved in 
+
+3) $WORKING_DIR/chimera_setting: T
+his is where input files, job scripts, and other scripts are.
+
+chimera_setting:
+  |
+  |---+ 512
+  |
+  |---+ 1024
+  |
+  |---+ 2048
+  |
+  |---+ 4096
+  |
+  |---+ 8192
+  |
+  |---+ 16384
+  |
+  |---+ chimera.pbs: a template used to generate pbs scripts
+  |
+  |---+ configfile: config.xml files named by ADIOS methods
+  |
+  |---+ gen_script.sh: used to generate pbs scripts
+  |
+  |---+ jobscripts: example pbs scripts generated by gen_script.sh
+  |
+  |---+ post_script.sh: used to generate timing report
+
+4) $WORKING_DIR/RadHyd3D_adios:
+This contains source code and executables. Note that $WORKING_DIR/chimera_run contains symbolic links to executables in $WORKING_DIR/RadHyd3D_adios/Execute/build/.
+
+
+2. Build executables:
+
+Use the following commands to build an executable which can use ADIOS-MPI, ADIOS-MPI-CIO, ADIOS-NULL methods:
+> cd RadHyd3D_adios/Execute/build
+> make RadHyd3D_mpi # this will generate an executable named RadHyd3D_mpi
+
+To build an executable which can use ADIOS-POSIX method, you need to type:
+> cd RadHyd3D_adios/Execute/build
+> make RadHyd3D_posix # this will generate an executable named RadHyd3D_posix
+
+Or you can just type make to build both.
+
+NOTES:
+1) Source files containing ADIOS API and related stuff are re-named as xxx_adios.f95. Please refer to Makefile.
+2) The ADIOS IO code is in RadHyd3D_adios/Restart/ADIOS_IO_MODULE.f95. 
+2) Timing: The Makefile use ~zf2/work/jaguar/lib/libadios-timing.a and ~zf2/work/jaguar/include/adios-timing.h for timing.
+
+
+3. Set input parameters:
+Input files are in directory RadHyd3D_adios/Execute/build/Data3/Initial_Data.
+
+in file array_dimensions.d:
+
+nx                         300                                          nx (X dimension; don't change)
+ny                          16                                          ny (Y dimension; keep it equal to n_proc_y below)
+nz                          32                                          nz (Z dimension; keep it equal to n_proc_z below)
+nez                         20                                          nez
+nnu                          4                                          nnu
+nnc                         17                                          nnc
+n_proc                     512                                          n_proc (total number of processes)
+n_proc                      16                                          n_proc_y (number of processes in Y-dimension)
+n_proc                      32                                          n_proc_z (number of processes in Z-dimension)
+
+!-----------------------------------------------------------------------
+!      data_path: the path directing output to the data directories.
+!-----------------------------------------------------------------------
+
+data_p    /tmp/work/zf2/chimera_run/dddd/Execute/build/Data3 (this is the directory where Chimera write data out. just change zf2 to your user name)
+
+!-----------------------------------------------------------------------
+!      log_path : the path directing output to the simulation log.
+!-----------------------------------------------------------------------
+
+log_p     /tmp/work/zf2/chimera_run/dddd/Execute/build/Data3 (keep this the same as above)
+
+in file radhyd_keys.d:
+
+line 7:
+cycle                      400                                          ncymax (total number of cycles. For 4K processes, 400 cycles take about 1 hour)
+
+line 245:
+evh1zn                      16                                          jmax (upperbound index of Y-dimension. keep this the same as n_proc_y)
+
+line 255:
+evh1zn                      32                                          kmax (upperbound index of Y-dimension. keep this the same as n_proc_z)
+
+in file edit_keys.d:
+
+line 784:
+intprm                      50                                          intprm (number of cycles between restart dumps. For 4K processes, 50 cycles roughly takes 5-8 minutes)
+
+NOTE:
+Please keep jmax = ny = nproc_y and kmax = nz = nproc_z
+
+There are a set of input files already ready for job size 512, 1024, 2048, 4096,8192, 16384. They are in chimera_setting/512/, chimera_setting/1024/...
+If you use the pbs script generated by chimera_setting/gen_script.sh, then you don't need to worry about that. It will copy correct input files to chimera_run sub-directory before run the executable.
+
+4. Generate pbs sripts:
+
+Under directory chimera_setting/, there is a template pbs script named chimera.pbs and a bash script which uses that template to generate a pbs script for given job size, ADIOS method and test number.
+
+> cd chimera_setting
+> ./gen_script.sh 512 MPI 0 # generate a pbs script using 512 processes, ADIOS-MPI method, and with test number 0.
+> ll ./chimera_512_MPI_0.pbs
+
+The basic usage is:
+./gen_script.sh xxxx mmmm nnnn
+xxxx: number of processes to use: 512 1024 2048 4096 8192 16384
+mmmm: ADIOS method: possible values are MPI, MPI_CIO, NULL, POSIX, ORIG_H5. ORIG_H5 specify to use original code
+nnnn: test number: could be 0, 1, 2, 3, or 4
+
+

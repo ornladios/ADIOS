@@ -1,0 +1,27 @@
+rm -rf Data3/Initial_Data
+mkdir Data3/Initial_Data
+rm -rf Data3/Restart/
+mkdir Data3/Restart/
+rm -rf Data3/Models_n/
+mkdir Data3/Models_n/
+rm -rf Data3/Models_d/
+mkdir Data3/Models_d/
+rm -rf Data3/Models_t/
+mkdir Data3/Models_t/
+rm -rf Data3/Log/
+mkdir Data3/Log/
+rm -rf Data3/Plot_Files/
+mkdir Data3/Plot_Files/
+rm -rf Data3/Log_File/
+mkdir Data3/Log_File/
+rm -rf Data3/Models_Global_t/
+mkdir Data3/Models_Global_t/
+rm -rf Data3/Models_Global_n/
+mkdir Data3/Models_Global_n/
+rm -rf Data3/Run_Log/
+mkdir Data3/Run_Log/
+rm -rf Data3/HDF
+mkdir Data3/HDF
+rm -rf Data3/Var_Files
+mkdir Data3/Var_Files
+

@@ -1,0 +1,59 @@
+#!/bin/sh
+#PBS -A CSC025ewk
+#PBS -N chimera_4096_NOIO_0
+#PBS -o /tmp/work/zf2/chimera_run/4096/NOIO/0/Execute/build/run.stdout
+#PBS -e /tmp/work/zf2/chimera_run/4096/NOIO/0/Execute/build/run.stderr
+#PBS -l walltime=01:00:00,size=4096
+
+cd /tmp/work/zf2/chimera_run/4096/NOIO/0/Execute/build
+
+# copy initial parameter files
+cp -rf /ccs/home/zf2/chimera_setting/4096/Initial_Data/* ./Data3/Initial_Data
+sed -i.bak -e "s/dddd/4096\/NOIO\/0/" ./Data3/Initial_Data/array_dimensions.d
+cp -rf /ccs/home/zf2/chimera_setting/noio/edit_keys.d ./Data3/Initial_Data
+
+# copy config.xml file
+cp -rf /ccs/home/zf2/chimera_setting/configfile/NOIO ./config.xml
+
+# write log file
+echo "Test Chimera on Machine ""$(hostname)" > ./log
+date >> ./log
+echo "nproc=""4096" >> ./log
+echo "method=""NOIO" >> ./log
+echo "testno=""0" >> ./log
+echo >> ./log
+echo "Initial Parameter" >> ./log
+grep "^n" Data3/Initial_Data/array_dimensions.d >> ./log
+grep "ncymax$" Data3/Initial_Data/radhyd_keys.d >> ./log
+grep "intprm$" Data3/Initial_Data/edit_keys.d >> ./log
+echo >> ./log
+
+echo "Run Chimera begin" >> ./log
+date >> ./log
+
+# run the simulation
+aprun -n 4096 ./RadHyd3D >runlog 2>&1
+
+echo "Run Chimera end" >> ./log
+date >> ./log
+echo >> ./log
+
+# collect timing info
+echo "Restart files" >> ./log
+ls -l Data3/Restart/ >> ./log
+echo >> ./log
+mkdir -p /tmp/work/zf2/chimera_results/4096/NOIO/0
+cp ./log /tmp/work/zf2/chimera_results/4096/NOIO/0/log
+cp ./runlog /tmp/work/zf2/chimera_results/4096/NOIO/0/runlog
+if [ -f run.stdout ]
+then
+  cp -rf run.stdout /tmp/work/zf2/chimera_results/4096/NOIO/0
+fi
+if [ -f run.stderr ]
+then
+  cp -rf run.stderr /tmp/work/zf2/chimera_results/4096/NOIO/0
+fi
+
+# cleanup
+sh Data3/cleanup
+
