@@ -465,7 +465,6 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
     //char buf1 [STR_LEN];
     //char buf2 [STR_LEN];
 
-printf ("pre-open\n");
     sprintf (name, "%s%s", method->base_path, fd->name);
     /* make a filename based on the size and current node */
     // sprintf (buf1, "%%s.%%0%dd", (int) (log10 (size)));
@@ -474,7 +473,6 @@ printf ("pre-open\n");
     {
         if (previous == -1)
         {
-printf ("1\n");
             int amode = MPI_MODE_WRONLY;
             if (fd->mode != adios_mode_append)
             {
@@ -494,7 +492,6 @@ printf ("1\n");
             err = MPI_File_open (MPI_COMM_SELF, name, amode
                                 ,MPI_INFO_NULL, &md->fh
                                 );
-printf ("2\n");
             if (err != MPI_SUCCESS)
             {
                 amode |= MPI_MODE_CREATE;
@@ -508,42 +505,31 @@ printf ("2\n");
                             );
                 }
             }
-printf ("3\n");
             if (next != -1)
             {
                 MPI_Isend (&my_data_len, 1, MPI_LONG_LONG, next
                           ,current, group_comm, &md->req
                           );
             }
-printf ("4\n");
         }
         else
         {
-printf ("5\n");
-printf ("comm: %d &md->status: %lld\n", group_comm, &md->status);
-printf ("my_offset: %lld previous: %d\n", my_offset, previous);
-printf ("MPI_Recv: %lld\n",MPI_Recv);
             MPI_Recv (&my_offset, 1, MPI_LONG_LONG, previous
                      ,previous, group_comm
                      ,&md->status
                      );
-printf ("5a\n");
             if (next != -1)
             {
-printf ("5b\n");
                 unsigned long long new_offset = my_offset + my_data_len;
                 MPI_Isend (&new_offset, 1, MPI_LONG_LONG, next
                           ,current, group_comm, &md->req
                           );
-printf ("5c\n");
             }
-printf ("6\n");
             MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_WRONLY
                           ,MPI_INFO_NULL, &md->fh
                           );
         }
 
-printf ("7\n");
         err = MPI_File_seek (md->fh, fd->base_offset + fd->offset + my_offset
                             ,MPI_SEEK_SET
                             );
@@ -552,7 +538,6 @@ printf ("7\n");
     }
     else
     {
-printf ("8\n");
         int err_class;
         if (fd->mode != adios_mode_append)
         {
@@ -602,7 +587,6 @@ printf ("8\n");
     /******************************
      * End Coordinate file offet
      ******************************/
-printf ("post-open\n");
 
     if (my_data_len > md->buffer_size)
     {
@@ -620,7 +604,6 @@ printf ("post-open\n");
         md->buffer = malloc (md->buffer_size);
     }
 
-printf ("pre-vars\n");
     while (v && !overflow)
     {
         overflow = adios_do_write_var (v
@@ -633,7 +616,6 @@ printf ("pre-vars\n");
         md->start = end;
         v = v->next;
     }
-printf ("pre-attrs\n");
 
     while (a && !overflow)
     {
@@ -647,7 +629,6 @@ printf ("pre-attrs\n");
         md->start = end;
         a = a->next;
     }
-printf ("post-attrs\n");
 
     if (overflow)
     {
