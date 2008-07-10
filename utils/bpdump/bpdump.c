@@ -177,27 +177,28 @@ int main (int argc, char ** argv)
                 printf ("\tRanks: %u\n", element->ranks);
                 if (element->dims)
                 {
+                    char * format_local = "\t\tDim(%d): %d\n";
+                    char * format_global = "\t\tDim(%d) l:g:o: %d:%d:%d\n";
                     for (i = 0; i < element->ranks; i++)   
-                    {                                      
-                        printf ("\t\tDim(%d) l:g:o: %d:%d:%d\n"
-                               ,i
-                               ,element->dims [i].local_bound
-                               ,element->dims [i].global_bound
-                               ,element->dims [i].global_offset
-                           );
+                    {
+                        if (element->dims [i].global_bound == 0)
+                        {
+                            printf (format_local
+                                   ,i
+                                   ,element->dims [i].local_bound
+                                   );
+                        }
+                        else
+                        {
+                            printf (format_global
+                                   ,i
+                                   ,element->dims [i].local_bound
+                                   ,element->dims [i].global_bound
+                                   ,element->dims [i].global_offset
+                                   );
+                        }
                     }
                 }
-#if 0
-                for (i = 0; i < element->ranks; i++)
-                {
-                    printf ("\t\tDim(%d): %d:%d:%d\n"
-                           ,i
-                           ,element->dims [i].local_bound
-                           ,element->dims [i].global_bound
-                           ,element->dims [i].global_offset
-                           );
-                }
-#endif
                 if (data.dump)
                 {
                     printf ("\t%s: %s\n", data.dump_var, element->name);
