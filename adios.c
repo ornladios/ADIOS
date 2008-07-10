@@ -125,6 +125,7 @@ static int common_adios_open (long long * fd, const char * group_name
     fd_p->name = strdup (name);
     fd_p->base_offset = 0;
     fd_p->offset = 0;
+    fd_p->write_size = 0;
     fd_p->group = g;
     fd_p->mode = mode;
 
@@ -168,6 +169,26 @@ void adios_open_ (long long * fd, const char * group_name, const char * name
     adios_extract_string (buf3, mode, mode_size);
 
     err = common_adios_open (fd, buf1, buf2, buf3);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+static int common_adios_group_size (long long fd_p, long long byte_size)
+{
+    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+
+    fd->write_size = byte_size;
+
+    return 0;
+}
+
+int adios_group_size (long long fd_p, long long byte_size)
+{
+    return common_adios_group_size (fd_p, byte_size);
+}
+
+void adios_group_size_ (long long fd_p, long long byte_size, int err)
+{
+    err = common_adios_group_size (fd_p, byte_size);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
