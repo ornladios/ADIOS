@@ -10,4 +10,7 @@ export CC=gcc
 #jaguar
 #export CC=cc
 #export FC=ftn
+# use the two lines below for openmpi
+#export CC=mpicc
+#export FC=mpif90
 #./configure --prefix=/ccs/home/ge1/work/jaguar --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/jaguar
