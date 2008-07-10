@@ -2775,7 +2775,7 @@ int adios_parse_config (const char * config)
     }
     else
     {
-        printf ("it is adios-config\n");
+        //printf ("it is adios-config\n");
     }
 
 
