@@ -28,6 +28,8 @@ struct adios_var_struct
     struct adios_global_bounds_struct * global_bounds;
     enum ADIOS_FLAG copy_on_write;
     enum ADIOS_FLAG got_buffer;
+    enum ADIOS_FLAG is_dim;   // if it is a dimension, we temporarily need to
+                              // track for reading until we get the new header
 
     enum ADIOS_FLAG free_data;    // primarily used for writing
     void * data;                  // primarily used for reading

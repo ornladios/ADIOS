@@ -1956,12 +1956,15 @@ static int parseGroup (mxml_node_t * node)
                     if (!type)
                         type = ""; // this will catch the error
                     t1 = parseType (type, name);
-                    c1 = parseFlag ("copy-on-write", copy_on_write, adios_flag_no);
+                    c1 = parseFlag ("copy-on-write", copy_on_write
+                                   ,adios_flag_no
+                                   );
                     if (!dimensions)
                         dimensions = mxmlElementGetAttr (n, "dimension");
 
 
-                    if (!adios_common_define_var (*(long long *) &new_group, name
+                    if (!adios_common_define_var (*(long long *) &new_group
+                                                 ,name
                                                  ,path, t1, c1, dimensions
                                                  ,new_global_bounds
                                                  )
@@ -1971,13 +1974,14 @@ static int parseGroup (mxml_node_t * node)
                     }
                 } else
                 {
-                    if (!strncmp (n1->value.element.name, "!--", 3)) // a comment
+                    if (!strncmp (n1->value.element.name, "!--", 3)) // comment
                     {
                         continue;
                     }
                     else
                     {
-                        fprintf (stderr, "config.xml: invalid xml element: '%s'\n"
+                        fprintf (stderr, "config.xml: invalid xml element: "
+                                         "'%s'\n"
                                 ,n1->value.element.name
                                 );
 
@@ -2566,6 +2570,11 @@ void adios_parse_dimension (char * dimension, struct adios_group_struct * g
                     );
 
             return;
+        }
+        else
+        {
+            dim->dimension.var->is_dim = adios_flag_yes;
+printf ("setting is_dim for %s %d\n", dim->dimension.var->name, dim->dimension.var->is_dim);
         }
     }
     else
@@ -3232,7 +3241,9 @@ void adios_pre_element_fetch (struct adios_bp_element_struct * element
         v = adios_find_var_by_name (d->vars, element->name);
         if (!v)
         {
-            fprintf (stderr, "Data item %s being read ignored\n", element->name);
+            fprintf (stderr, "Data item %s being read ignored\n"
+                    ,element->name
+                    );
         }
     }
     else
@@ -3475,7 +3486,9 @@ unsigned long long adios_size_of_var (struct adios_var_struct * v, void * data)
             (struct adios_bp_dimension_struct *)
                calloc (rank, sizeof (struct adios_bp_dimension_struct));
 
-        adios_dims_to_bp_dims (v->name, v->dimensions, v->global_bounds, &rank, dims);
+        adios_dims_to_bp_dims (v->name, v->dimensions, v->global_bounds, &rank
+                              ,dims
+                              );
         size = bcalsize_dset (v->path, v->name, v->type, rank, dims);
         free (dims);
     }
@@ -3922,6 +3935,7 @@ int adios_common_define_var (long long group_id, const char * name
     v->dimensions = 0;
     v->global_bounds = global_bounds;
     v->copy_on_write = copy_on_write;
+    v->is_dim = adios_flag_no;
     v->got_buffer = adios_flag_no;
     v->free_data = adios_flag_no;
     v->data = 0;
