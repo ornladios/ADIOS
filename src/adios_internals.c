@@ -2734,6 +2734,11 @@ int adios_parse_config (const char * config)
 
     root = doc;
 
+    while (root && root->type != MXML_ELEMENT)
+    {
+        root = mxmlWalkNext (root, doc, MXML_DESCEND);
+    }
+
     while (!strncmp (root->value.element.name, "!--", 3))
     {
         root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
