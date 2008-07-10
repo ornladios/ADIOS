@@ -1,0 +1,37 @@
+#include basic makefile definitions
+include defs.mk
+
+# PAPI_LIB = -lpapi -lm
+
+# Add loader flags for IMSL or pspline libraries and binpack to LIBS if desired
+LIB=-L/apps/Pspline/prod/jaguar/lib -lezcdf -lpspline -lportlib -L../binpack/pack -lbppack ${NETCDF_F_LIB}
+# LIB=-L/apps/Pspline/prod/jaguar/lib -lezcdf -lpspline -lportlib -L../binpack/pack -lbppack -L../camtimers -ltimers ${NETCDF_F_LIB}
+# LIB=-L/apps/Pspline/prod/jaguar/lib -lezcdf -lpspline -lportlib -L../binpack/pack -lbppack -L../camtimers -ltimers_wpapi $(PAPI_LIB) ${NETCDF_F_LIB}
+
+# compiler optimization flags
+#OPT=-Minline -fast -Kieee
+OPT= -fast -Kieee
+#OPT = -g -Mbounds -Kieee -Mprof=lines
+
+# Compiler name and options.  Add -D flags to select specific math library options.
+# -DIMSL if using IMSL library routines
+# -DMY_IMSL with -DIMSL to substitute wrappers for certain IMSL functions (helpful with IMSL 4 library)
+# -DPSPLINE to use the NTCC pspline library routines (via the EZspline F90 interface)
+# Also add a -I flag for locating the NTCC pspline module files!
+# -DUSE_EXPLICIT with -DPSPLINE to use separate splines for each partial derivative in r-z.
+# If neither -DIMSL nor -DPSPLINE is specified, we use portable pppack and bspline routines.
+# -DCAM_TIMERS to use the NCAR CAM timing library routines 
+# Also add a -I flag for locating the CAM timing library module files
+CMP=ftn --target=catamount -DPSPLINE -I/apps/Pspline/prod/jaguar/mod -DBINPACK
+# CMP=ftn --target=catamount -DPSPLINE -I/apps/Pspline/prod/jaguar/mod -DBINPACK -DCAM_TIMERS -I../camtimers
+
+# Set EXTRA_OBJ to $(IMSL_OBJ) for MY_IMSL wrappers, or $(PORT_OBJ) if not using IMSL
+EXTRA_OBJ=$(PORT_OBJ)
+
+# Set MPI_OBJ to $(PAR_OBJ) for parallel code, or $(SER_OBJ) for serial code
+MPI_OBJ=$(PAR_OBJ)
+
+# include basic makefile build rules
+include rules.mk
+
+
