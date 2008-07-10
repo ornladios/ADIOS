@@ -73,12 +73,16 @@ int main (int argc, char ** argv)
         printf ("read matches write\n");
     }
 
+    MPI_Barrier (MPI_COMM_WORLD);
+
     var_x = 11;
     adios_open (&io_handle, type_name, filename, "a");
     adios_write (io_handle, "mype", &var_x);
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);
     adios_close (io_handle);
+
+    MPI_Barrier (MPI_COMM_WORLD);
 
     adios_finalize (node);
     MPI_Finalize ();

@@ -1,46 +1,8 @@
-<?xml version="1.0"?>
 <adios-config host-language="C">   <!-- other host-language is 'Fortran' -->
   <adios-group name="restart">
     <var name="mype" type="integer"/>
-    <var name="nhybrid" type="integer"/>
-    <var name="istep" type="integer"/>
-    <var name="me" path="/abc" type="integer"/>
-    <var name="mi" type="integer"/>
-    <var name="ntracer" type="integer"/>
-    <var name="mflux" type="integer"/>
-
-    <var name="etracer" type="real"/>
-    <var name="ptracer" type="real" dimensions="4"/>
-
-    <var name="mpsi" type="integer"/>
-    <var name="rdtemi" type="real" dimensions="mpsi"/>
-    <var name="rdteme" type="real" dimensions="mflux"/>
-    <var name="pfluxpsi" type="real" dimensions="mpsi"/>
-    <var name="phisize" type="integer"/>
-    <var name="phi" type="real" dimensions="phisize"/>
-    <var name="phip00" type="real" dimensions="mpsi"/>
-    <var name="zonali" type="real" dimensions="mpsi"/>
-    <var name="zonale" type="real" dimensions="mpsi"/>
     <var name="zionsize" type="integer"/>
     <var name="zion" type="real" dimensions="zionsize"/>
-    <var name="zion0" type="real" dimensions="mi" copy-on-write="yes"/>
-
-    <var name="phisavesize" type="integer"/>
-    <var name="phisave" type="real" dimensions="phisavesize"/>
-
-<gwrite src="abc"/>   <!-- used in the adios_gwrite call for code gen -->
-    <var name="zelectronsize" type="integer"/>
-    <var name="zelectron" type="real" dimensions="zelectronsize"/>
-
-    <var name="ze0size" type="integer"/>
-    <var name="zelectron0" type="real" dimensions="ze0size" copy-on-write="yes"/>
-<gwrite src="abc"/>   <!-- used in the adios_gwrite call for code gen -->
-
-    <var name="nparam" type="integer"/>
-    <var name="mimax" type="integer"/>
-    <var name="mgrid" type="integer"/>
-    <var name="mzeta" type="integer"/>
-    <var name="memax" type="integer"/>
 
     <attribute name="units1" path="/abc/me/" value="m/s"/>
     <attribute name="units2" path="/abc/me" value="m/s"/>
@@ -52,12 +14,7 @@
     <attribute name="node" path="/" type="integer" var="node-attr"/>
   </adios-group>
 
-  <adios-group name="diagnostic">
-    <var name="a" type="integer"/>
-  </adios-group>
-
   <method priority="2" method="POSIX" iterations="10" group="restart"/>
-  <method priority="1" method="POSIX" iterations="10" group="diagnostic">downstream="ewok001.nccs.ornl.gov",port="9999"</method>
 
   <buffer size-MB="100" allocate-time="now"/>
 
