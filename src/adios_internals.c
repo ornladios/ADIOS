@@ -45,7 +45,9 @@ static int parseType (const char * type, const char * name)
     if (!strcmp (type, "integer*8") || !strcmp (type, "long"))
         return adios_long;
 
-    if (!strcmp (type, "real*4") || !strcmp (type, "real"))
+    if (   !strcmp (type, "real*4") || !strcmp (type, "real")
+        || !strcmp (type, "float")
+       )
         return adios_real;
 
     if (!strcmp (type, "complex"))
@@ -1787,11 +1789,15 @@ static int parseGroup (mxml_node_t * node)
     const char * datagroup_name;
     const char * coordination_comm;
     const char * coordination_var;
+    const char * host_language = NULL;
     struct adios_group_struct * new_group;
+    enum ADIOS_FLAG host_language_fortran = adios_flag_yes;
 
     datagroup_name = mxmlElementGetAttr (node, "name");
     coordination_comm = mxmlElementGetAttr (node, "coordination-communicator");
     coordination_var = mxmlElementGetAttr (node, "coordination-var");
+    host_language = mxmlElementGetAttr (node, "host-language");
+
     if (!datagroup_name)
     {
         fprintf (stderr,
@@ -1799,8 +1805,33 @@ static int parseGroup (mxml_node_t * node)
 
         return 0;
     }
+    if (!host_language)
+    {
+        host_language = "Fortran";
+    }
+
+    if (!strcmp (host_language, "Fortran"))
+    {
+        host_language_fortran = adios_flag_yes;
+    }
+    else
+    {
+        if (!strcmp (host_language, "C"))
+        {
+            host_language_fortran = adios_flag_no;
+        }
+        else
+        {
+            fprintf (stderr, "config.xml: invalid host-language %s"
+                    ,host_language
+                    );
+
+            return 0;
+        }
+    }
+
     adios_common_declare_group ((long long *) &new_group, datagroup_name
-                               ,adios_host_language_fortran
+                               ,host_language_fortran
                                ,coordination_comm, coordination_var);
 
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
@@ -3148,9 +3179,9 @@ int adios_do_write_var (struct adios_var_struct * v
     }
     else
     {
-        //printf ("Skipping %s (no data provided)\n"
-        //       ,v->name
-        //       );
+        fprintf (stderr, "Skipping %s (no data provided)\n"
+                ,v->name
+                );
     }
 
     return 0;
