@@ -1,0 +1,8 @@
+#!/bin/sh
+#PBS -A CSC025ewk
+#PBS -N heat_demo
+#PBS -j oe
+#PBS -l walltime=00:05:00,nodes=8:ppn=2
+
+cd $PBS_O_WORKDIR
+mpirun -np 16 ./heat_adios >& result.dat
