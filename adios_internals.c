@@ -2574,7 +2574,6 @@ void adios_parse_dimension (char * dimension, struct adios_group_struct * g
         else
         {
             dim->dimension.var->is_dim = adios_flag_yes;
-printf ("setting is_dim for %s %d\n", dim->dimension.var->name, dim->dimension.var->is_dim);
         }
     }
     else

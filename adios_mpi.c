@@ -122,7 +122,10 @@ void adios_mpi_open (struct adios_file_struct * fd
 
         if (fd->group->group_comm)
         {
-            adios_var_to_comm (fd->group->adios_host_language_fortran, fd->group->group_comm, fd->group->vars, &group_comm);
+            adios_var_to_comm (fd->group->adios_host_language_fortran
+                              ,fd->group->group_comm, fd->group->vars
+                              ,&group_comm
+                              );
             if (group_comm != MPI_COMM_NULL)
                 MPI_Comm_rank (group_comm, &rank);
         }
@@ -297,7 +300,9 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
 
     if (fd->group->group_comm)
     {
-        adios_var_to_comm (fd->group->adios_host_language_fortran, fd->group->group_comm, fd->group->vars, &group_comm);
+        adios_var_to_comm (fd->group->adios_host_language_fortran
+                          ,fd->group->group_comm, fd->group->vars, &group_comm
+                          );
 
         MPI_Comm_rank (group_comm, &rank);
         MPI_Comm_size (group_comm, &size);
@@ -435,7 +440,10 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
 
     if (fd->group->group_comm)
     {
-        adios_var_to_comm (fd->group->adios_host_language_fortran, fd->group->group_comm, fd->group->vars, &group_comm);
+        adios_var_to_comm (fd->group->adios_host_language_fortran
+                          ,fd->group->group_comm, fd->group->vars
+                          ,&group_comm
+                          );
 
         MPI_Comm_rank (group_comm, &rank);
         MPI_Comm_size (group_comm, &size);
@@ -480,9 +488,9 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
                 err = MPI_File_delete (name, MPI_INFO_NULL);
                 if (err != MPI_SUCCESS)
                 {
-                    fprintf (stderr, "Error truncating file %s for group %s\n"
-                            ,name ,adios_file_mode_to_string (fd->mode)
-                            );
+                    //fprintf (stderr, "Error truncating file %s for group %s\n"
+                    //        ,name ,adios_file_mode_to_string (fd->mode)
+                    //        );
                 }
             }
 

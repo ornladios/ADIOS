@@ -213,7 +213,6 @@ static int common_adios_write (long long fd_p, const char * name, void * var)
 
     if (fd->mode == adios_mode_read)
     {
-        printf ("is_dim: %d var %s\n", v->is_dim, v->name);
         if (strcmp (name, fd->group->group_comm) && v->is_dim != adios_flag_yes)
         {
             fprintf (stderr, "write attempted on %s in %s.  This was opened for"
