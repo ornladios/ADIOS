@@ -211,9 +211,10 @@ static int common_adios_write (long long fd_p, const char * name, void * var)
         }
     }
 
-    if (fd->mode & adios_mode_read)
+    if (fd->mode == adios_mode_read)
     {
-        if (strcmp (name, fd->group->group_comm))
+        printf ("is_dim: %d var %s\n", v->is_dim, v->name);
+        if (strcmp (name, fd->group->group_comm) && v->is_dim != adios_flag_yes)
         {
             fprintf (stderr, "write attempted on %s in %s.  This was opened for"
                              " read\n"
@@ -287,7 +288,7 @@ static int common_adios_get_write_buffer (long long fd_p, const char * name
         return 1;
     }
 
-    if (fd->mode & adios_mode_read)
+    if (fd->mode == adios_mode_read)
     {
         fprintf (stderr, "write attempted on %s in %s.  This was opened for"
                          " read\n"
@@ -343,7 +344,7 @@ static int common_adios_read (long long fd_p, const char * name, void * buffer)
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     struct adios_var_struct * v;
 
-    if (!(fd->mode & adios_mode_read))
+    if (!(fd->mode == adios_mode_read))
     {
         fprintf (stderr, "read attempted on %s which was opened for write\n"
                 ,fd->name
