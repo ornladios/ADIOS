@@ -1,0 +1,12 @@
+#!/bin/bash
+#PBS -A stf006
+#PBS -N heat_adios_demo
+#PBS -j oe
+#PBS -q debug
+#PBS -l walltime=00:05:00,size=16
+
+#setenv MPICH_PTL_SEND_CREDITS -1
+#setenv MPICH_UNEX_BUFFER_SIZE 200M
+
+cd $PBS_O_WORKDIR
+aprun -n 16 ./heat_adios >& result.dat
