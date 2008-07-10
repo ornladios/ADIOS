@@ -52,6 +52,8 @@ program adios_test
         write (*,*) 'rank ', rank, ' read matched write'
     endif
 
+    call MPI_Barrier (MPI_COMM_WORLD, ierr)
+
     call adios_finalize (rank)
 
     call MPI_Finalize (ierr)
