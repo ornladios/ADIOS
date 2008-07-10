@@ -19,28 +19,28 @@
 extern struct adios_transport_struct * adios_transports;
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_init (const char * config)
+static int common_adios_init (const char * config)
 {
     // parse the config file
-    adios_parse_config (config);
+    return adios_parse_config (config);
 }
 
-void adios_init (const char * config)
+int adios_init (const char * config)
 {
-    common_adios_init (config);
+    return common_adios_init (config);
 }
 
-void adios_init_ (const char * config, int config_size)
+void adios_init_ (const char * config, int err, int config_size)
 {
     char buf1 [STR_LEN] = "";
 
     adios_extract_string (buf1, config, config_size);
 
-    common_adios_init (buf1);
+    err = common_adios_init (buf1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_finalize (int mype)
+static int common_adios_finalize (int mype)
 {
     struct adios_method_list_struct * m;
 
@@ -54,16 +54,18 @@ static void common_adios_finalize (int mype)
             adios_transports [m->method->m].adios_finalize_fn (mype, m->method);
         }
     }
+
+    return 0;
 }
 
-void adios_finalize (int mype)
+int adios_finalize (int mype)
 {
-    common_adios_finalize (mype);
+    return common_adios_finalize (mype);
 }
 
-void adios_finalize_ (int * mype)
+void adios_finalize_ (int * mype, int err)
 {
-    common_adios_finalize (*mype);
+    err = common_adios_finalize (*mype);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -77,15 +79,15 @@ int adios_allocate_buffer ()
     return common_adios_allocate_buffer ();
 }
 
-int adios_allocate_buffer_ ()
+void adios_allocate_buffer_ (int err)
 {
-    return common_adios_allocate_buffer ();
+    err = common_adios_allocate_buffer ();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_open (long long * fd, const char * group_name
-                              ,const char * name, const char * file_mode
-                              )
+static int common_adios_open (long long * fd, const char * group_name
+                             ,const char * name, const char * file_mode
+                             )
 {
     long long group_id = 0;
     struct adios_file_struct * fd_p = (struct adios_file_struct *)
@@ -141,19 +143,21 @@ static void common_adios_open (long long * fd, const char * group_name
     }
 
     *fd = (long long) fd_p;
+
+    return 0;
 }
 
-void adios_open (long long * fd, const char * group_name, const char * name
-                ,const char * mode
-                )
+int adios_open (long long * fd, const char * group_name, const char * name
+               ,const char * mode
+               )
 {
-    common_adios_open (fd, group_name, name, mode);
+    return common_adios_open (fd, group_name, name, mode);
 }
 
 void adios_open_ (long long * fd, const char * group_name, const char * name
-                   ,const char * mode
-                   ,int group_name_size, int name_size, int mode_size
-                   )
+                 ,const char * mode, int err
+                 ,int group_name_size, int name_size, int mode_size
+                 )
 {
     char buf1 [STR_LEN] = "";
     char buf2 [STR_LEN] = "";
@@ -163,11 +167,11 @@ void adios_open_ (long long * fd, const char * group_name, const char * name
     adios_extract_string (buf2, name, name_size);
     adios_extract_string (buf3, mode, mode_size);
 
-    common_adios_open (fd, buf1, buf2, buf3);
+    err = common_adios_open (fd, buf1, buf2, buf3);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_write (long long fd_p, const char * name, void * var)
+static int common_adios_write (long long fd_p, const char * name, void * var)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     struct adios_var_struct * v = fd->group->vars;
@@ -182,7 +186,7 @@ static void common_adios_write (long long fd_p, const char * name, void * var)
         {
             fprintf (stderr, "Bad var name (ignored): '%s'\n", name);
 
-            return;
+            return 1;
         }
     }
 
@@ -195,7 +199,7 @@ static void common_adios_write (long long fd_p, const char * name, void * var)
                     ,name , fd->name
                     );
 
-            return;
+            return 1;
         }
     }
 
@@ -203,7 +207,7 @@ static void common_adios_write (long long fd_p, const char * name, void * var)
     {
         fprintf (stderr, "Invalid data: %s\n", name);
 
-        return;
+        return 1;
     }
 
     while (m)
@@ -219,14 +223,16 @@ static void common_adios_write (long long fd_p, const char * name, void * var)
 
         m = m->next;
     }
+
+    return 0;
 }
 
-void adios_write (long long fd_p, const char * name, void * var)
+int adios_write (long long fd_p, const char * name, void * var)
 {
-    common_adios_write (fd_p, name, var);
+    return common_adios_write (fd_p, name, var);
 }
 
-void adios_write_ (long long * fd_p, const char * name, void * var
+void adios_write_ (long long * fd_p, const char * name, void * var, int err
                   ,int name_size
                   )
 {
@@ -234,15 +240,15 @@ void adios_write_ (long long * fd_p, const char * name, void * var
 
     adios_extract_string (buf1, name, name_size);
 
-    common_adios_write (*fd_p, buf1, var);
+    err = common_adios_write (*fd_p, buf1, var);
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_get_write_buffer (long long fd_p, const char * name
-                                          ,unsigned long long * size
-                                          ,void ** buffer
-                                          )
+static int common_adios_get_write_buffer (long long fd_p, const char * name
+                                         ,unsigned long long * size
+                                         ,void ** buffer
+                                         )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     struct adios_var_struct * v = fd->group->vars;
@@ -257,7 +263,7 @@ static void common_adios_get_write_buffer (long long fd_p, const char * name
                 ,name, name[0], name[1], name[2]
                 );
 
-        return;
+        return 1;
     }
 
     if (fd->mode & adios_mode_read)
@@ -267,7 +273,7 @@ static void common_adios_get_write_buffer (long long fd_p, const char * name
                 ,name , fd->name
                 );
 
-        return;
+        return 1;
     }
 
     // since we are only getting one buffer, get it from the first
@@ -286,30 +292,32 @@ static void common_adios_get_write_buffer (long long fd_p, const char * name
         else
             m = m->next;
     }
+
+    return 0;
 }
 
-void adios_get_write_buffer (long long fd_p, const char * name
-                            ,unsigned long long * size
-                            ,void ** buffer
-                            )
+int adios_get_write_buffer (long long fd_p, const char * name
+                           ,unsigned long long * size
+                           ,void ** buffer
+                           )
 {
-    common_adios_get_write_buffer (fd_p, name, size, buffer);
+    return common_adios_get_write_buffer (fd_p, name, size, buffer);
 }
 
 void adios_get_write_buffer_ (long long * fd_p, const char * name
                              ,unsigned long long * size
-                             ,void ** buffer, int name_size
+                             ,void ** buffer, int err, int name_size
                              )
 {
     char buf1 [STR_LEN] = "";
 
     adios_extract_string (buf1, name, name_size);
 
-    common_adios_get_write_buffer (*fd_p, buf1, size, buffer);
+    err = common_adios_get_write_buffer (*fd_p, buf1, size, buffer);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_read (long long fd_p, const char * name, void * buffer)
+static int common_adios_read (long long fd_p, const char * name, void * buffer)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     struct adios_var_struct * v;
@@ -320,7 +328,7 @@ static void common_adios_read (long long fd_p, const char * name, void * buffer)
                 ,fd->name
                 );
 
-        return;
+        return 1;
     }
 
     v = adios_find_var_by_name (fd->group->vars, name);
@@ -350,27 +358,31 @@ static void common_adios_read (long long fd_p, const char * name, void * buffer)
         fprintf (stderr, "var %s in file %s not found on read\n"
                 ,name, fd->name
                 );
+
+        return 1;
     }
+
+    return 0;
 }
 
-void adios_read (long long fd_p, const char * name, void * buffer)
+int adios_read (long long fd_p, const char * name, void * buffer)
 {
-    common_adios_read (fd_p, name, buffer);
+    return common_adios_read (fd_p, name, buffer);
 }
 
-void adios_read_ (long long * fd_p, const char * name, void * buffer
-                   ,int name_size
-                   )
+void adios_read_ (long long * fd_p, const char * name, void * buffer, int err
+                 ,int name_size
+                 )
 {
     char buf1 [STR_LEN] = "";
 
     adios_extract_string (buf1, name, name_size);
 
-    common_adios_read (*fd_p, buf1, buffer);
+    err = common_adios_read (*fd_p, buf1, buffer);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_set_path (long long fd_p, const char * path)
+static int common_adios_set_path (long long fd_p, const char * path)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     struct adios_group_struct * t = fd->group;
@@ -400,26 +412,30 @@ static void common_adios_set_path (long long fd_p, const char * path)
 
         a = a->next;
     }
+
+    return 0;
 }
 
-void adios_set_path (long long fd_p, const char * path)
+int adios_set_path (long long fd_p, const char * path)
 {
-    common_adios_set_path (fd_p, path);
+    return common_adios_set_path (fd_p, path);
 }
 
-void adios_set_path_ (long long * fd_p, const char * path, int path_size)
+void adios_set_path_ (long long * fd_p, const char * path, int err
+                     ,int path_size
+                     )
 {
     char buf1 [STR_LEN] = "";
 
     adios_extract_string (buf1, path, path_size);
 
-    common_adios_set_path (*fd_p, buf1);
+    err = common_adios_set_path (*fd_p, buf1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_set_path_var (long long fd_p, const char * path
-                                      ,const char * name
-                                      )
+static int common_adios_set_path_var (long long fd_p, const char * path
+                                     ,const char * name
+                                     )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     struct adios_group_struct * t = fd->group;
@@ -446,17 +462,22 @@ static void common_adios_set_path_var (long long fd_p, const char * path
         fprintf (stderr, "adios_set_path_var (path=%s, var=%s): var not found\n"
                 ,path, name
                 );
+
+        return 1;
     }
+
+    return 0;
 }
 
-void adios_set_path_var (long long fd_p, const char * path, const char * name)
+int adios_set_path_var (long long fd_p, const char * path, const char * name)
 {
-    common_adios_set_path_var (fd_p, path, name);
+    return common_adios_set_path_var (fd_p, path, name);
 }
 
 void adios_set_path_var_ (long long * fd_p, const char * path
-                           ,const char * name, int path_size, int name_size
-                           )
+                         ,const char * name, int err, int path_size
+                         ,int name_size
+                         )
 {
     char buf1 [STR_LEN] = "";
     char buf2 [STR_LEN] = "";
@@ -464,31 +485,35 @@ void adios_set_path_var_ (long long * fd_p, const char * path
     adios_extract_string (buf1, path, path_size);
     adios_extract_string (buf2, name, name_size);
 
-    common_adios_set_path_var (*fd_p, buf1, buf2);
+    err = common_adios_set_path_var (*fd_p, buf1, buf2);
 }
 
+#if 0
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_get_data_size (long long fd_p
-                                       ,unsigned long long * size
-                                       )
+static int common_adios_get_data_size (long long fd_p
+                                      ,unsigned long long * size
+                                      )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
 
     *size = adios_data_size (fd->group);
+
+    return 0;
 }
 
-void adios_get_data_size (long long fd_p, unsigned long long * size)
+int adios_get_data_size (long long fd_p, unsigned long long * size)
 {
-    common_adios_get_data_size (fd_p, size);
+    return common_adios_get_data_size (fd_p, size);
 }
 
-void adios_get_data_size_ (long long * fd_p, unsigned long long * size)
+void adios_get_data_size_ (long long * fd_p, unsigned long long * size, int err)
 {
-    common_adios_get_data_size (*fd_p, size);
+    err = common_adios_get_data_size (*fd_p, size);
 }
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_end_iteration ()
+static int common_adios_end_iteration ()
 {
     struct adios_method_list_struct * m;
 
@@ -503,22 +528,24 @@ static void common_adios_end_iteration ()
                                                 (m->method);
         }
     }
+
+    return 0;
 }
 
 // hint that we reached the end of an iteration (for asynchronous pacing)
-void adios_end_iteration ()
+int adios_end_iteration ()
 {
-    common_adios_end_iteration ();
+    return common_adios_end_iteration ();
 }
 
 // hint that we reached the end of an iteration (for asynchronous pacing)
-void adios_end_iteration_ ()
+void adios_end_iteration_ (int err)
 {
-    common_adios_end_iteration ();
+    err = common_adios_end_iteration ();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_start_calculation ()
+static int common_adios_start_calculation ()
 {
     struct adios_method_list_struct * m;
 
@@ -533,22 +560,24 @@ static void common_adios_start_calculation ()
                                                   (m->method);
         }
     }
+
+    return 0;
 }
 
 // hint to start communicating
-void adios_start_calculation ()
+int adios_start_calculation ()
 {
-    common_adios_start_calculation ();
+    return common_adios_start_calculation ();
 }
 
 // hint to start communicating
-void adios_start_calculation_ ()
+void adios_start_calculation_ (int err)
 {
-    common_adios_start_calculation ();
+    err = common_adios_start_calculation ();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_stop_calculation ()
+static int common_adios_stop_calculation ()
 {
     struct adios_method_list_struct * m;
 
@@ -563,22 +592,24 @@ static void common_adios_stop_calculation ()
                                                    (m->method);
         }
     }
+
+    return 0;
 }
 
 // hint to stop communicating
-void adios_stop_calculation ()
+int adios_stop_calculation ()
 {
-    common_adios_stop_calculation ();
+    return common_adios_stop_calculation ();
 }
 
 // hint to stop communicating
-void adios_stop_calculation_ ()
+void adios_stop_calculation_ (int err)
 {
-    common_adios_stop_calculation ();
+    err = common_adios_stop_calculation ();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void common_adios_close (long long fd_p)
+static int common_adios_close (long long fd_p)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     struct adios_method_list_struct * m = fd->group->methods;
@@ -596,16 +627,18 @@ static void common_adios_close (long long fd_p)
     }
 
     free ((void *) fd_p);
+
+    return 0;
 }
 
-void adios_close (long long fd_p)
+int adios_close (long long fd_p)
 {
-    common_adios_close (fd_p);
+    return common_adios_close (fd_p);
 }
 
-void adios_close_ (long long * fd_p)
+void adios_close_ (long long * fd_p, int err)
 {
-    common_adios_close (*fd_p);
+    err = common_adios_close (*fd_p);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -627,12 +660,12 @@ int adios_declare_group (long long * id, const char * name
                                       );
 }
 
-int adios_declare_group_ (long long * id, const char * name
-                         ,const char * coordination_comm
-                         ,const char * coordination_var
-                         ,int name_size, int coordination_comm_size
-                         ,int coordination_var_size
-                         )
+void adios_declare_group_ (long long * id, const char * name
+                          ,const char * coordination_comm
+                          ,const char * coordination_var, int err
+                          ,int name_size, int coordination_comm_size
+                          ,int coordination_var_size
+                          )
 {
     char buf1 [STR_LEN] = "";
     char buf2 [STR_LEN] = "";
@@ -642,7 +675,7 @@ int adios_declare_group_ (long long * id, const char * name
     adios_extract_string (buf2, coordination_comm, coordination_comm_size);
     adios_extract_string (buf3, coordination_var, coordination_var_size);
 
-    return adios_common_declare_group (id, buf1, adios_flag_yes, buf2, buf3);
+    err = adios_common_declare_group (id, buf1, adios_flag_yes, buf2, buf3);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -664,13 +697,13 @@ int adios_define_var (long long group_id, const char * name
 }
 
 // declare a single var as an entry in a group
-int adios_define_var_ (long long * group_id, const char * name
-                      ,const char * path, int * type
-                      ,int * copy_on_write
-                      ,const char * dimensions
-                      ,long long * global_dimensions
-                      ,int name_size, int path_size, int dimensions_size
-                      )
+void adios_define_var_ (long long * group_id, const char * name
+                       ,const char * path, int * type
+                       ,int * copy_on_write
+                       ,const char * dimensions
+                       ,long long * global_dimensions, int err
+                       ,int name_size, int path_size, int dimensions_size
+                       )
 {
     struct adios_global_bounds_struct ** b =
                    (struct adios_global_bounds_struct **) global_dimensions;
@@ -683,9 +716,9 @@ int adios_define_var_ (long long * group_id, const char * name
     adios_extract_string (buf2, path, path_size);
     adios_extract_string (buf3, dimensions, dimensions_size);
 
-    return adios_common_define_var (*group_id, buf1, buf2, *type
-                                   ,*copy_on_write, buf3, *b
-                                   );
+    err = adios_common_define_var (*group_id, buf1, buf2, *type
+                                  ,*copy_on_write, buf3, *b
+                                  );
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -700,11 +733,11 @@ int adios_define_global_bounds (long long group, const char * dimensions
     return adios_common_define_global_bounds (group, dimensions, offsets, b);
 }
 
-int adios_define_global_bounds_ (long long * group, const char * dimensions
-                                ,const char * offsets
-                                ,long long * global_bounds
-                                ,int dimensions_size, int offsets_size
-                                )
+void adios_define_global_bounds_ (long long * group, const char * dimensions
+                                 ,const char * offsets
+                                 ,long long * global_bounds, int err
+                                 ,int dimensions_size, int offsets_size
+                                 )
 {
     struct adios_global_bounds_struct ** b =
                   (struct adios_global_bounds_struct **) global_bounds;
@@ -714,7 +747,7 @@ int adios_define_global_bounds_ (long long * group, const char * dimensions
     adios_extract_string (buf1, dimensions, dimensions_size);
     adios_extract_string (buf2, offsets, offsets_size);
 
-    return adios_common_define_global_bounds (*group, buf1, buf2, b);
+    err = adios_common_define_global_bounds (*group, buf1, buf2, b);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -729,12 +762,12 @@ int adios_define_attribute (long long group, const char * name
     return adios_common_define_attribute (group, name, path, value, type, var);
 }
 
-int adios_define_attribute_ (long long * group, const char * name
-                            ,const char * path, const char * value
-                            ,const char * type, const char * var
-                            ,int name_size, int path_size, int value_size
-                            ,int type_size, int var_size
-                            )
+void adios_define_attribute_ (long long * group, const char * name
+                             ,const char * path, const char * value
+                             ,const char * type, const char * var, int err
+                             ,int name_size, int path_size, int value_size
+                             ,int type_size, int var_size
+                             )
 {
     char buf1 [STR_LEN] = "";
     char buf2 [STR_LEN] = "";
@@ -748,7 +781,7 @@ int adios_define_attribute_ (long long * group, const char * name
     adios_extract_string (buf4, type, type_size);
     adios_extract_string (buf5, var, var_size);
 
-    return adios_common_define_attribute (*group, buf1, buf2, buf3, buf4, buf5);
+    err = adios_common_define_attribute (*group, buf1, buf2, buf3, buf4, buf5);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -765,11 +798,12 @@ int adios_select_method (int priority, const char * method
                                       );
 }
 
-int adios_select_method_ (int * priority, const char * method
-                         ,const char * parameters, const char * group
-                         ,const char * base_path, int * iters, int method_size
-                         ,int parameters_size, int group_size, int base_path_size
-                         )
+void adios_select_method_ (int * priority, const char * method
+                          ,const char * parameters, const char * group
+                          ,const char * base_path, int * iters, int err
+                          ,int method_size, int parameters_size
+                          ,int group_size, int base_path_size
+                          )
 {
     char buf1 [STR_LEN] = "";
     char buf2 [STR_LEN] = "";
@@ -781,5 +815,7 @@ int adios_select_method_ (int * priority, const char * method
     adios_extract_string (buf3, group, group_size);
     adios_extract_string (buf4, base_path, base_path_size);
 
-    return adios_common_select_method (*priority, buf1, buf2, buf3, buf4, *iters);
+    err = adios_common_select_method (*priority, buf1, buf2, buf3, buf4
+                                     ,*iters
+                                     );
 }
