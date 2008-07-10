@@ -1,8 +1,11 @@
 <adios-config host-language="C">   <!-- other host-language is 'Fortran' -->
-  <adios-group name="restart">
+  <adios-group name="restart" coordination-communicator="comm">
+    <var name="comm" type="integer"/>
+
     <var name="mype" type="integer"/>
     <var name="zionsize" type="integer"/>
-    <var name="zion" type="real" dimensions="zionsize"/>
+<!--    <var name="zion" type="real" dimensions="zionsize"/> -->
+    <var name="zion" type="real" dimensions="10"/>
 
     <attribute name="units1" path="/abc/me/" value="m/s"/>
     <attribute name="units2" path="/abc/me" value="m/s"/>
@@ -14,7 +17,7 @@
     <attribute name="node" path="/" type="integer" var="node-attr"/>
   </adios-group>
 
-  <method priority="2" method="POSIX" iterations="10" group="restart"/>
+  <method group="restart" method="MPI"/>
 
   <buffer size-MB="100" allocate-time="now"/>
 

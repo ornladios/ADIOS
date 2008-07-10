@@ -12,6 +12,8 @@ int main (int argc, char ** argv)
     char * type_name = "restart";
     char * filename = "restart.bp";
     long long io_handle;  /* io handle */
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int rank;
 
     int var_x = 10;
     int z_dim_size = 10;
@@ -35,9 +37,11 @@ int main (int argc, char ** argv)
     int node = 0;
 
     MPI_Init (&argc, &argv);
-    adios_init ("config_c.xml"); //, MPI_COMM_WORLD, MPI_COMM_SELF, MPI_INFO_NULL);
+    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+    adios_init ("config_c.xml");
 
     adios_open (&io_handle, type_name, filename, "w");
+    adios_write (io_handle, "comm", &comm);
     adios_write (io_handle, "mype", &var_x);
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);
@@ -47,10 +51,14 @@ int main (int argc, char ** argv)
     MPI_Barrier (MPI_COMM_WORLD);
 
     adios_open (&io_handle, type_name, filename, "r");
+    adios_write (io_handle, "comm", &comm);
+    //adios_write (io_handle, "zionsize", &z_dim_size);
     adios_read (io_handle, "mype", &r_var_x);
     adios_read (io_handle, "zionsize", &r_zsize);
     adios_read (io_handle, "zion", &r_z);
     adios_close (io_handle);
+
+    MPI_Barrier (MPI_COMM_WORLD);
 
     if (   var_x != r_var_x
         || r_zsize != r_zsize
@@ -66,17 +74,16 @@ int main (int argc, char ** argv)
         || r_z [9] != z_dim [9]
        )
     {
-        printf ("mismatch in reading\n");
+        printf ("rank: %d mismatch in reading\n", rank);
     }
     else
     {
-        printf ("read matches write\n");
+        printf ("rank: %d read matches write\n", rank);
     }
-
-    MPI_Barrier (MPI_COMM_WORLD);
 
     var_x = 11;
     adios_open (&io_handle, type_name, filename, "a");
+    adios_write (io_handle, "comm", &comm);
     adios_write (io_handle, "mype", &var_x);
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);
