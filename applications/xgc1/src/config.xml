@@ -235,7 +235,7 @@
   <var name="istep" type="integer" gname="istep/diag_avg_outperiod"/>
 
   <gwrite src="if(istep==diag_avg_outperiod) then"/>
-  <var name="psi" type="double" dimensions="samples"/>
+  <var name="psi" gname="psi1" type="double" dimensions="samples"/>
   <gwrite src="endif"/>
   <var name="time" type="double" gname="simtime(1)"/> 
   <attribute name="units"  path="time" value="transit times"/>
