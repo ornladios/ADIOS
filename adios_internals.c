@@ -1783,6 +1783,77 @@ static int parseMeshUnstructured (mxml_node_t * node
     return 1;
 }
 
+static int validatePath (const struct adios_var_struct * vars
+                        ,const char * test_path
+                        )
+{
+    // if it is a default path, it is ok by default
+    if (!strcmp (test_path, "/"))
+    {
+        return 1;
+    }
+
+    char * path = strdup (test_path);
+    int len = strlen (path);
+    char * path_only;
+    char * var_only;
+    char * last_slash = strrchr (path, '/'); // find the last '/'
+    path_only = (char *) malloc (len + 1);
+    var_only = (char *) malloc (len + 1);
+    if (last_slash == path + len - 1)  // if it is a trailing '/', remove
+    {
+        last_slash = '\0';
+        last_slash = strrchr (path, '/');
+    }
+    if (last_slash == 0)
+    {
+        strcpy (path_only, "/");
+        strcpy (var_only, path);
+    }
+    else
+    {
+        strncpy (path_only, path, (last_slash - path));
+        strncpy (var_only, last_slash + 1, (len - (last_slash - path + 1)));
+    }
+
+    while (vars)
+    {
+        int path_only_len = strlen (path_only);
+        char full_path_matches = (!strcmp (vars->path, path));
+        char path_matches = (!strcmp (vars->path, path_only));
+        char var_matches = (!strcmp (vars->name, var_only));
+        int var_path_len = strlen (vars->path);
+        char prefix_matches = 0;
+
+        if (var_path_len >= len)
+            prefix_matches = (!strncmp (vars->path, path_only, path_only_len));
+        if (!prefix_matches)
+            prefix_matches = (!strncmp (vars->path, path, len));
+        int var_len = strlen (var_only);
+
+        if (   (path_matches && var_matches)
+            || (path_matches && var_len == 0)
+            || (full_path_matches)
+            || (prefix_matches)
+           )
+        {
+            free (path);
+            free (path_only);
+            free (var_only);
+
+            return 1;
+        }
+        vars = vars->next;
+    }
+
+    // not found
+    free (path);
+    free (path_only);
+    free (var_only);
+
+    return 0;
+}
+
 static int parseGroup (mxml_node_t * node)
 {
     mxml_node_t * n;
@@ -2040,15 +2111,17 @@ static int parseGroup (mxml_node_t * node)
 
                 return 0;
             }
-          
-#if 0
-            if (!value)
+            if (!validatePath (new_group->vars, path))
             {
-                fprintf (stderr, "config.xml: attribute element requires value\n");
+                fprintf (stderr, "config.xml: attribute element '%s' "
+                                 "has path '%s' that does not match "
+                                 "an existing var path or name.\n"
+                        ,name, path
+                        );
 
                 return 0;
             }
-#endif
+          
             if (!adios_common_define_attribute (*(long long *) &new_group, name
                                                ,path, value, type, var
                                                )
@@ -2083,25 +2156,28 @@ static int parseGroup (mxml_node_t * node)
                 new_group->mesh->type = ADIOS_MESH_STRUCTURED;
                 new_group->mesh->structured =
                     (struct adios_mesh_structured_struct *)
-                         calloc (1, sizeof (struct adios_mesh_structured_struct));
-                parseMeshStructured (n, new_group, &new_group->mesh->structured);
+                       calloc (1, sizeof (struct adios_mesh_structured_struct));
+                parseMeshStructured (n, new_group
+                                    ,&new_group->mesh->structured);
             } else
             if (!strcmp (type, "rectilinear"))
             {
                 new_group->mesh->type = ADIOS_MESH_RECTILINEAR;
                 new_group->mesh->rectilinear =
                     (struct adios_mesh_rectilinear_struct *)
-                         calloc (1, sizeof (struct adios_mesh_rectilinear_struct));
-                parseMeshRectilinear (n, new_group, &new_group->mesh->rectilinear);
+                      calloc (1, sizeof (struct adios_mesh_rectilinear_struct));
+                parseMeshRectilinear (n, new_group
+                                     ,&new_group->mesh->rectilinear);
             } else
             if (!strcmp (type, "unstructured"))
             {
                 new_group->mesh->type = ADIOS_MESH_UNSTRUCTURED;
                 new_group->mesh->unstructured =
                     (struct adios_mesh_unstructured_struct *)
-                         calloc (1, sizeof (struct adios_mesh_unstructured_struct));
+                     calloc (1, sizeof (struct adios_mesh_unstructured_struct));
 
-                parseMeshUnstructured (n, new_group, &new_group->mesh->unstructured);
+                parseMeshUnstructured (n, new_group
+                                      ,&new_group->mesh->unstructured);
             } else
             {
                 fprintf (stderr, "config.xml: invalid mesh type: '%s'\n"
@@ -2112,7 +2188,7 @@ static int parseGroup (mxml_node_t * node)
             }
 
             new_group->mesh->time_varying = parseFlag
-                                   ("time-varying", time_varying, adios_flag_no);
+                               ("time-varying", time_varying, adios_flag_no);
 
             if (new_group->mesh->time_varying == adios_flag_unknown)
             {
