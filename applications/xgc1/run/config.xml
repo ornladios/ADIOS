@@ -488,7 +488,7 @@
 <adios-group name="diagnosis.bfield">
   <var name="nspace" type="integer"/>
   <var name="n_n" type="integer"/>
-  <var name="values" gname="bfld" path="/node_data[0]" type="double" dimensions="n_n"/>
+  <var name="values" gname="bfld" path="/node_data[0]" type="double" dimensions="3,n_n"/>
   <attribute name="nspace" path="/" var="nspace" type="integer"/>
   <attribute name="nnodes" path="/" var="n_n" type="integer"/>
   <attribute name="nnode_data" path="/" value="2" />
