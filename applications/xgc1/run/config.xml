@@ -165,7 +165,7 @@
   <var name="NA" type="integer"/>
   <var name="NN" type="integer"/>
   <var name="psi_eq_x_psi" type="double" dimensions="diag_avg_npsi"/>
-  <!--var name="flux_total" gname="flux_total(:,2:NN)" type="integer" dimensions="diag_avg_npsi,NN"/-->
+  <!-- var name="flux_total" gname="flux_total(:,2:NN)" type="integer" dimensions="diag_avg_npsi,NN" copy-on-write="yes"/ -->
   <var name="composite_value" type="double" dimensions="diag_avg_npsi,NA"/>
 </adios-group>
 <adios-group name="fort.103">
@@ -208,16 +208,16 @@
 
 <adios-group name="fort.ef">
   <var name="nnode" gname="grid%nnode" type="integer"/>
-  <var name="x1" type="double" gname="grid%x(1,:)" dimensions="nnode"/>
-  <var name="x2" type="double" gname="grid%x(2,:)" dimensions="nnode"/>
-  <var name="xE_para" type="double" gname="psn%dpot(:,iphi)" dimensions="nnode"/>
-  <var name="dpot" type="double" gname="psn%E_para(:,iphi)" dimensions="nnode"/>
+  <var name="x1" type="double" gname="grid%x(1,:)" dimensions="nnode" copy-on-write="yes"/>
+  <var name="x2" type="double" gname="grid%x(2,:)" dimensions="nnode" copy-on-write="yes"/>
+  <var name="xE_para" type="double" gname="psn%dpot(:,iphi)" dimensions="nnode" copy-on-write="yes"/>
+  <var name="dpot" type="double" gname="psn%E_para(:,iphi)" dimensions="nnode" copy-on-write="yes"/>
 </adios-group>
 
 <adios-group name="diagnosis.particle">
   <var name="pnum" type="integer"/>
   <var name="sml_time" type="double"/>
-  <var name="gid" gname="sp%gid(1:pnum)" type="integer"/>
+  <var name="gid" gname="sp%gid(1:pnum)" type="integer" copy-on-write="yes"/>
   <var name="position_r" gname="diag_ptl_data1" dimensions="pnum" copy-on-write="yes" type="double"/> 
   <var name="position_z" gname="diag_ptl_data2" dimensions="pnum" copy-on-write="yes" type="double"/>
   <var name="vpar" gname="diag_ptl_data1" dimensions="pnum" copy-on-write="yes" type="double"/> 
@@ -237,92 +237,92 @@
   <gwrite src="if(istep==diag_avg_outperiod) then"/>
   <var name="psi" type="double" dimensions="samples"/>
   <gwrite src="endif"/>
-  <var name="time" type="double" gname="simtime(1)"/> 
+  <var name="time" type="double" gname="simtime(1)" copy-on-write="yes"/> 
   <attribute name="units"  path="time" value="transit times"/>
 
-  <var name="ion__radial_flux(avg)" type="double" dimensions="samples" gname="flux_total(:,2,1)"/>
+  <var name="ion__radial_flux(avg)" type="double" dimensions="samples" gname="flux_total(:,2,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__radial_flux(avg)" value="psi/s" />
 
-  <var name="ion__radial_E_para_flux(avg)" type="double" dimensions="samples" gname="flux_total(:,3,1)"/>
+  <var name="ion__radial_E_para_flux(avg)" type="double" dimensions="samples" gname="flux_total(:,3,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__radial_E_para_flux(avg)" value="J psi/s" />
 
-  <var name="ion__radial_E_perp_flux(avg)" type="double" dimensions="samples" gname="flux_total(:,4,1)"/>
+  <var name="ion__radial_E_perp_flux(avg)" type="double" dimensions="samples" gname="flux_total(:,4,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__radial_E_perp_flux(avg)" value="J psi/s" />
 
-  <var name="ion__parallel_flow(avg)" type="double" dimensions="samples" gname="flux_total(:,5,1)"/>
+  <var name="ion__parallel_flow(avg)" type="double" dimensions="samples" gname="flux_total(:,5,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__parallel_flow(avg)" value="m/s" />
 
-  <var name="ion__parallel_mean_E(avg)" type="double" dimensions="samples" gname="flux_total(:,6,1)"/>
+  <var name="ion__parallel_mean_E(avg)" type="double" dimensions="samples" gname="flux_total(:,6,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__parallel_mean_E(avg)" value="eV" />
 
-  <var name="ion__perp_temperature(avg)" type="double" dimensions="samples" gname="flux_total(:,7,1)"/>
+  <var name="ion__perp_temperature(avg)" type="double" dimensions="samples" gname="flux_total(:,7,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__perp_temperature(avg)" value="eV" />
 
-  <var name="ion__v_r_v_para_corel(avg)" type="double" dimensions="samples" gname="flux_total(:,8,1)"/>
+  <var name="ion__v_r_v_para_corel(avg)" type="double" dimensions="samples" gname="flux_total(:,8,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__v_r_v_para_corel(avg)" value="psi m /s^2" />
 
-  <var name="ion__average_gradpsi_sqr(avg)" type="double" dimensions="samples" gname="flux_total(:,9,1)"/>
+  <var name="ion__average_gradpsi_sqr(avg)" type="double" dimensions="samples" gname="flux_total(:,9,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__average_gradpsi_sqr(avg)" value="psi^2/m^2" />
 
-  <var name="ion__full_weight(avg)" type="double" dimensions="samples" gname="flux_total(:,10,1)"/>
+  <var name="ion__full_weight(avg)" type="double" dimensions="samples" gname="flux_total(:,10,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__full_weight(avg)" value="Number" />
 
-  <var name="ion__density(avg)" type="double" dimensions="samples" gname="composite_value(:,11,1)"/>
+  <var name="ion__density(avg)" type="double" dimensions="samples" gname="composite_value(:,11,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__density(avg)" value="m^-3" />
 
-  <var name="ion__total_E_flux(avg)" type="double" dimensions="samples" gname="composite_value(:,12,1)"/>
+  <var name="ion__total_E_flux(avg)" type="double" dimensions="samples" gname="composite_value(:,12,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__total_E_flux(avg)" value="J psi/s" />
 
-  <var name="ion__grad_T(avg)" type="double" dimensions="samples" gname="composite_value(:,13,1)"/>
+  <var name="ion__grad_T(avg)" type="double" dimensions="samples" gname="composite_value(:,13,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__grad_T(avg)" value="J/psi" />
 
-  <var name="ion__Thermal_conductivity(psi:avg)" type="double" dimensions="samples" gname="composite_value(:,14,1)"/>
+  <var name="ion__Thermal_conductivity(psi:avg)" type="double" dimensions="samples" gname="composite_value(:,14,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__Thermal_conductivity(psi:avg)" value="psi^2/s" />
 
-  <var name="ion__Thermal_conductivity(m:avg)" type="double" dimensions="samples" gname="composite_value(:,15,1)"/>
+  <var name="ion__Thermal_conductivity(m:avg)" type="double" dimensions="samples" gname="composite_value(:,15,1)" copy-on-write="yes"/>
   <attribute name="units" path="ion__Thermal_conductivity(m:avg)" value="m^2/s" />
 
   <gwrite src="if (sml_electron_on==1) then"/>
-  <var name="elec_radial_flux(avg)" type="double" dimensions="samples" gname="flux_total(:,2,2)"/>
+  <var name="elec_radial_flux(avg)" type="double" dimensions="samples" gname="flux_total(:,2,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_radial_flux(avg)" value="psi/s" />
 
-  <var name="elec_radial_E_para_flux(avg)" type="double" dimensions="samples" gname="flux_total(:,3,2)"/>
+  <var name="elec_radial_E_para_flux(avg)" type="double" dimensions="samples" gname="flux_total(:,3,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_radial_E_para_flux(avg)" value="J psi/s" />
 
-  <var name="elec_radial_E_perp_flux(avg)" type="double" dimensions="samples" gname="flux_total(:,4,2)"/>
+  <var name="elec_radial_E_perp_flux(avg)" type="double" dimensions="samples" gname="flux_total(:,4,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_radial_E_perp_flux(avg)" value="J psi/s" />
 
-  <var name="elec_parallel_flow(avg)" type="double" dimensions="samples" gname="flux_total(:,5,2)"/>
+  <var name="elec_parallel_flow(avg)" type="double" dimensions="samples" gname="flux_total(:,5,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_parallel_flow(avg)" value="m/s" />
 
-  <var name="elec_parallel_mean_E(avg)" type="double" dimensions="samples" gname="flux_total(:,6,2)"/>
+  <var name="elec_parallel_mean_E(avg)" type="double" dimensions="samples" gname="flux_total(:,6,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_parallel_mean_E(avg)" value="eV" />
 
-  <var name="elec_perp_temperature(avg)" type="double" dimensions="samples" gname="flux_total(:,7,2)"/>
+  <var name="elec_perp_temperature(avg)" type="double" dimensions="samples" gname="flux_total(:,7,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_perp_temperature(avg)" value="eV" />
 
-  <var name="elec_v_r_v_para_corel(avg)" type="double" dimensions="samples" gname="flux_total(:,8,2)"/>
+  <var name="elec_v_r_v_para_corel(avg)" type="double" dimensions="samples" gname="flux_total(:,8,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_v_r_v_para_corel(avg)" value="psi m /s^2" />
 
-  <var name="elec_average_gradpsi_sqr(avg)" type="double" dimensions="samples" gname="flux_total(:,9,2)"/>
+  <var name="elec_average_gradpsi_sqr(avg)" type="double" dimensions="samples" gname="flux_total(:,9,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_average_gradpsi_sqr(avg)" value="psi^2/m^2" />
 
-  <var name="elec_full_weight(avg)" type="double" dimensions="samples" gname="flux_total(:,10,2)"/>
+  <var name="elec_full_weight(avg)" type="double" dimensions="samples" gname="flux_total(:,10,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_full_weight(avg)" value="Number" />
 
-  <var name="elec_density(avg)" type="double" dimensions="samples" gname="composite_value(:,11,2)"/>
+  <var name="elec_density(avg)" type="double" dimensions="samples" gname="composite_value(:,11,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_density(avg)" value="m^-3" />
 
-  <var name="elec_total_E_flux(avg)" type="double" dimensions="samples" gname="composite_value(:,12,2)"/>
+  <var name="elec_total_E_flux(avg)" type="double" dimensions="samples" gname="composite_value(:,12,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_total_E_flux(avg)" value="J psi/s" />
 
-  <var name="elec_grad_T(avg)" type="double" dimensions="samples" gname="composite_value(:,13,2)"/>
+  <var name="elec_grad_T(avg)" type="double" dimensions="samples" gname="composite_value(:,13,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_grad_T(avg)" value="J/psi" />
 
-  <var name="elec_Thermal_conductivity(psi:avg)" type="double" dimensions="samples" gname="composite_value(:,14,2)"/>
+  <var name="elec_Thermal_conductivity(psi:avg)" type="double" dimensions="samples" gname="composite_value(:,14,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_Thermal_conductivity(psi:avg)" value="psi^2/s" />
 
-  <var name="elec_Thermal_conductivity(m:avg)" type="double" dimensions="samples" gname="composite_value(:,15,2)"/>
+  <var name="elec_Thermal_conductivity(m:avg)" type="double" dimensions="samples" gname="composite_value(:,15,2)" copy-on-write="yes"/>
   <attribute name="units" path="elec_Thermal_conductivity(m:avg)" value="m^2/s" />
   <gwrite src="endif"/>
 </adios-group>
@@ -335,152 +335,152 @@
   <gwrite src="if(istep==diag_flow_period) then"/>
       <var name="psi" type="double" dimensions="samples"/>
   <gwrite src="endif"/>
-  <var name="time" gname="simtime(1)" type="double"/> 
+  <var name="time" gname="simtime(1)" type="double" copy-on-write="yes"/> 
   <attribute name="units"  path="time" value="transit times"/>
 
-  <var name="ion__density(df)" gname="netcdf_flow(:,2)" type="double" dimensions="samples"/>
+  <var name="ion__density(df)" gname="netcdf_flow(:,2)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__density(df)" value="m^-3" />
 
-  <var name="ion__toroidal_flow(df)" gname="netcdf_flow(:,3)" type="double" dimensions="samples"/>
+  <var name="ion__toroidal_flow(df)" gname="netcdf_flow(:,3)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__toroidal_flow(df)" value="m/s" />
 
-  <var name="ion__poloidal_flow(df)" gname="netcdf_flow(:,4)" type="double" dimensions="samples"/>
+  <var name="ion__poloidal_flow(df)" gname="netcdf_flow(:,4)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__poloidal_flow(df)" value="m/s" />
 
-  <var name="ion__parallel_flow(df)" gname="netcdf_flow(:,5)" type="double" dimensions="samples"/>
+  <var name="ion__parallel_flow(df)" gname="netcdf_flow(:,5)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__parallel_flow(df)" value="m/s" />
 
-  <var name="ion__poloidal_comp._of_ExB(df)" gname="netcdf_flow(:,6)" type="double" dimensions="samples"/>
+  <var name="ion__poloidal_comp._of_ExB(df)" gname="netcdf_flow(:,6)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__poloidal_comp._of_ExB(df)" value="m/s" />
 
-  <var name="ion__Radial_flow_times_grad_psi(df)" gname="netcdf_flow(:,7)" type="double" dimensions="samples"/>
+  <var name="ion__Radial_flow_times_grad_psi(df)" gname="netcdf_flow(:,7)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__Radial_flow_times_grad_psi(df)" value="A.U." />
 
-  <var name="ion__Radial_current_density(df)" gname="netcdf_flow(:,8)" type="double" dimensions="samples"/>
+  <var name="ion__Radial_current_density(df)" gname="netcdf_flow(:,8)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__Radial_current_density(df)" value="A.U." />
 
-  <var name="ion__parallel_mean_energy(df)" gname="netcdf_flow(:,9)" type="double" dimensions="samples"/>
+  <var name="ion__parallel_mean_energy(df)" gname="netcdf_flow(:,9)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__parallel_mean_energy(df)" value="KeV" />
 
-  <var name="ion__perp._temperature(df)" gname="netcdf_flow(:,10)" type="double" dimensions="samples"/>
+  <var name="ion__perp._temperature(df)" gname="netcdf_flow(:,10)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__perp._temperature(df)" value="KeV" />
 
-  <var name="ion__parallel_temperature(df)" gname="netcdf_flow(:,11)" type="double" dimensions="samples"/>
+  <var name="ion__parallel_temperature(df)" gname="netcdf_flow(:,11)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__parallel_temperature(df)" value="KeV" />
 
-  <var name="ion__v_para_times_B(df)" gname="netcdf_flow(:,12)" type="double" dimensions="samples"/>
+  <var name="ion__v_para_times_B(df)" gname="netcdf_flow(:,12)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__v_para_times_B(df)" value="mT/s" />
 
-  <var name="ion__density" gname="netcdf_flow(:,13)" type="double" dimensions="samples"/>
+  <var name="ion__density" gname="netcdf_flow(:,13)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__density" value="m^-3" />
 
-  <var name="ion__toroidal_flow" gname="netcdf_flow(:,14)" type="double" dimensions="samples"/>
+  <var name="ion__toroidal_flow" gname="netcdf_flow(:,14)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__toroidal_flow" value="m/s" />
 
-  <var name="ion__poloidal_flow" gname="netcdf_flow(:,15)" type="double" dimensions="samples"/>
+  <var name="ion__poloidal_flow" gname="netcdf_flow(:,15)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__poloidal_flow" value="m/s" />
 
-  <var name="ion__parallel_flow" gname="netcdf_flow(:,16)" type="double" dimensions="samples"/>
+  <var name="ion__parallel_flow" gname="netcdf_flow(:,16)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__parallel_flow" value="m/s" />
 
-  <var name="ion__poloidal_comp._of_ExB" gname="netcdf_flow(:,17)" type="double" dimensions="samples"/>
+  <var name="ion__poloidal_comp._of_ExB" gname="netcdf_flow(:,17)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__poloidal_comp._of_ExB" value="m/s" />
 
-  <var name="ion__Radial_flow_times_grad_psi" gname="netcdf_flow(:,18)" type="double" dimensions="samples"/>
+  <var name="ion__Radial_flow_times_grad_psi" gname="netcdf_flow(:,18)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__Radial_flow_times_grad_psi" value="A.U." />
 
-  <var name="ion__Radial_current_density" gname="netcdf_flow(:,19)" type="double" dimensions="samples"/>
+  <var name="ion__Radial_current_density" gname="netcdf_flow(:,19)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__Radial_current_density" value="A.U." />
   
-  <var name="ion__v_para_times_B" gname="netcdf_flow(:,20)" type="double" dimensions="samples"/>
+  <var name="ion__v_para_times_B" gname="netcdf_flow(:,20)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__v_para_times_B" value="mT/s" />
 
-  <var name="ion__parallel_mean_energy" gname="netcdf_flow(:,21)" type="double" dimensions="samples"/>
+  <var name="ion__parallel_mean_energy" gname="netcdf_flow(:,21)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__parallel_mean_energy" value="KeV" />
 
-  <var name="ion__perp._temperature" gname="netcdf_flow(:,22)" type="double" dimensions="samples"/>
+  <var name="ion__perp._temperature" gname="netcdf_flow(:,22)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__perp._temperature" value="KeV" />
 
-  <var name="ion__parallel_temperature" gname="netcdf_flow(:,23)" type="double" dimensions="samples"/>
+  <var name="ion__parallel_temperature" gname="netcdf_flow(:,23)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__parallel_temperature" value="KeV" />
 
-  <var name="ion__delta-f_ratio" gname="netcdf_flow(:,24)" type="double" dimensions="samples"/>
+  <var name="ion__delta-f_ratio" gname="netcdf_flow(:,24)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__delta-f_ratio" value="Unitless" />
 
-  <var name="ion__flow_shell_volume" gname="netcdf_flow(:,25)" type="double" dimensions="samples"/>
+  <var name="ion__flow_shell_volume" gname="netcdf_flow(:,25)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="ion__flow_shell_volume" value="m^3" />
 
   <gwrite src="if (sml_electron_on==1) then"/>
-  <var name="elec_density(df)" gname="netcdf_flow(:,2)" type="double" dimensions="samples"/>
+  <var name="elec_density(df)" gname="netcdf_flow(:,2)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_density(df)" value="m^-3" />
 
-  <var name="elec_toroidal_flow(df)" gname="netcdf_flow(:,3)" type="double" dimensions="samples"/>
+  <var name="elec_toroidal_flow(df)" gname="netcdf_flow(:,3)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_toroidal_flow(df)" value="m/s" />
 
-  <var name="elec_poloidal_flow(df)" gname="netcdf_flow(:,4)" type="double" dimensions="samples"/>
+  <var name="elec_poloidal_flow(df)" gname="netcdf_flow(:,4)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_poloidal_flow(df)" value="m/s" />
 
-  <var name="elec_parallel_flow(df)" gname="netcdf_flow(:,5)" type="double" dimensions="samples"/>
+  <var name="elec_parallel_flow(df)" gname="netcdf_flow(:,5)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_parallel_flow(df)" value="m/s" />
 
-  <var name="elec_poloidal_comp._of_ExB(df)" gname="netcdf_flow(:,6)" type="double" dimensions="samples"/>
+  <var name="elec_poloidal_comp._of_ExB(df)" gname="netcdf_flow(:,6)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_poloidal_comp._of_ExB(df)" value="m/s" />
 
-  <var name="elec_Radial_flow_times_grad_psi(df)" gname="netcdf_flow(:,7)" type="double" dimensions="samples"/>
+  <var name="elec_Radial_flow_times_grad_psi(df)" gname="netcdf_flow(:,7)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_Radial_flow_times_grad_psi(df)" value="A.U." />
 
-  <var name="elec_Radial_current_density(df)" gname="netcdf_flow(:,8)" type="double" dimensions="samples"/>
+  <var name="elec_Radial_current_density(df)" gname="netcdf_flow(:,8)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_Radial_current_density(df)" value="A.U." />
 
-  <var name="elec_v_para_times_B(df)" gname="netcdf_flow(:,9)" type="double" dimensions="samples"/>
+  <var name="elec_v_para_times_B(df)" gname="netcdf_flow(:,9)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_v_para_times_B(df)" value="mT/s" />
 
-  <var name="elec_parallel_mean_energy(df)" gname="netcdf_flow(:,10)" type="double" dimensions="samples"/>
+  <var name="elec_parallel_mean_energy(df)" gname="netcdf_flow(:,10)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_parallel_mean_energy(df)" value="KeV" />
 
-  <var name="elec_perp._temperature(df)" gname="netcdf_flow(:,11)" type="double" dimensions="samples"/>
+  <var name="elec_perp._temperature(df)" gname="netcdf_flow(:,11)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_perp._temperature(df)" value="KeV" />
 
-  <var name="elec_parallel_temperature(df)" gname="netcdf_flow(:,12)" type="double" dimensions="samples"/>
+  <var name="elec_parallel_temperature(df)" gname="netcdf_flow(:,12)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_parallel_temperature(df)" value="KeV" />
 
-  <var name="elec_density" gname="netcdf_flow(:,13)" type="double" dimensions="samples"/>
+  <var name="elec_density" gname="netcdf_flow(:,13)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_density" value="m^-3" />
 
-  <var name="elec_toroidal_flow" gname="netcdf_flow(:,14)" type="double" dimensions="samples"/>
+  <var name="elec_toroidal_flow" gname="netcdf_flow(:,14)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_toroidal_flow" value="m/s" />
 
-  <var name="elec_poloidal_flow" gname="netcdf_flow(:,15)" type="double" dimensions="samples"/>
+  <var name="elec_poloidal_flow" gname="netcdf_flow(:,15)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_poloidal_flow" value="m/s" />
 
-  <var name="elec_parallel_flow" gname="netcdf_flow(:,16)" type="double" dimensions="samples"/>
+  <var name="elec_parallel_flow" gname="netcdf_flow(:,16)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_parallel_flow" value="m/s" />
 
-  <var name="elec_poloidal_comp._of_ExB" gname="netcdf_flow(:,17)" type="double" dimensions="samples"/>
+  <var name="elec_poloidal_comp._of_ExB" gname="netcdf_flow(:,17)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_poloidal_comp._of_ExB" value="m/s" />
 
-  <var name="elec_Radial_flow_times_grad_psi" gname="netcdf_flow(:,18)" type="double" dimensions="samples"/>
+  <var name="elec_Radial_flow_times_grad_psi" gname="netcdf_flow(:,18)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_Radial_flow_times_grad_psi" value="A.U." />
 
-  <var name="elec_Radial_current_density" gname="netcdf_flow(:,19)" type="double" dimensions="samples"/>
+  <var name="elec_Radial_current_density" gname="netcdf_flow(:,19)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_Radial_current_density" value="A.U." />
 
-  <var name="elec_v_para_times_B" gname="netcdf_flow(:,20)" type="double" dimensions="samples"/>
+  <var name="elec_v_para_times_B" gname="netcdf_flow(:,20)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_v_para_times_B" value="mT/s"/>
 
-  <var name="elec_parallel_mean_energy" gname="netcdf_flow(:,21)" type="double" dimensions="samples"/>
+  <var name="elec_parallel_mean_energy" gname="netcdf_flow(:,21)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_parallel_mean_energy" value="KeV" />
 
-  <var name="elec_perp._temperature" gname="netcdf_flow(:,22)" type="double" dimensions="samples"/>
+  <var name="elec_perp._temperature" gname="netcdf_flow(:,22)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_perp._temperature" value="KeV" />
 
-  <var name="elec_parallel_temperature" gname="netcdf_flow(:,23)" type="double" dimensions="samples"/>
+  <var name="elec_parallel_temperature" gname="netcdf_flow(:,23)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_parallel_temperature" value="KeV" />
 
-  <var name="elec_flow_shell_volume" gname="netcdf_flow(:,25)" type="double" dimensions="samples"/>
+  <var name="elec_flow_shell_volume" gname="netcdf_flow(:,25)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_flow_shell_volume" value="m^3" />
 
-  <var name="elec_delta-f_ratio" gname="netcdf_flow(:,24)" type="double" dimensions="samples"/>
+  <var name="elec_delta-f_ratio" gname="netcdf_flow(:,24)" type="double" dimensions="samples" copy-on-write="yes"/>
   <attribute name="units" path="elec_delta-f_ratio" value="Unitless" />
   <gwrite src="endif"/>
 </adios-group>
@@ -533,21 +533,21 @@
 
 <adios-group name="fort.p">
   <var name="nnode" gname="grid%nnode" type="integer"/> 
-  <var name="grid_x" gname="grid%x(:,:)" type="real*8" dimensions="2,nnode"/>
-  <var name="psn_idensity" gname="psn%idensity(:,1)" type="real*8" dimensions="nnode"/>
-  <var name="psn_dpot" gname="psn%dpot(:,1)" type="real*8" dimensions="nnode"/>
-  <var name="psn_idensity0" gname="psn%idensity(:,1)" type="real*8" dimensions="nnode"/>
-  <var name="psn_edensity0" gname="psn%dpot(:,1)" type="real*8" dimensions="nnode"/>
-  <var name="psn_full" gname="psn%density0_full(:)" type="real*8" dimensions="nnode"/>
-  <var name="psn_pot0" gname="psn%pot0(:)" type="real*8" dimensions="nnode"/>
+  <var name="grid_x" gname="grid%x(:,:)" type="real*8" dimensions="2,nnode" copy-on-write="yes"/>
+  <var name="psn_idensity" gname="psn%idensity(:,1)" type="real*8" dimensions="nnode" copy-on-write="yes"/>
+  <var name="psn_dpot" gname="psn%dpot(:,1)" type="real*8" dimensions="nnode" copy-on-write="yes"/>
+  <var name="psn_idensity0" gname="psn%idensity(:,1)" type="real*8" dimensions="nnode" copy-on-write="yes"/>
+  <var name="psn_edensity0" gname="psn%dpot(:,1)" type="real*8" dimensions="nnode" copy-on-write="yes"/>
+  <var name="psn_full" gname="psn%density0_full(:)" type="real*8" dimensions="nnode" copy-on-write="yes"/>
+  <var name="psn_pot0" gname="psn%pot0(:)" type="real*8" dimensions="nnode" copy-on-write="yes"/>
   <gwrite src="#ifdef XGC_DEBUG10"/>
   <var name="grid_node_vol" gname="grid%node_vol(:)*real(sml_nphi_total)" type="real*8" copy-on-write="yes" dimensions="nnode"/>
-  <var name="grid_rtmp3" gname="grid%rtmp3(:)" type="real*8" dimensions="nnode"/>
-  <var name="grid_rtmp4" gname="grid%rtmp4(:)" type="real*8" dimensions="nnode"/>
-  <var name="grid_rtmp5" gname="grid%rtmp5(:)" type="real*8" dimensions="nnode"/>
-  <var name="grid_rtmp6" gname="grid%rtmp6(:)" type="real*8" dimensions="nnode"/>
-  <var name="grid_rtmp7" gname="grid%rtmp7(:)" type="real*8" dimensions="nnode"/>
-  <var name="grid_rtmp8" gname="grid%rtmp8(:)" type="real*8" dimensions="nnode"/>
+  <var name="grid_rtmp3" gname="grid%rtmp3(:)" type="real*8" dimensions="nnode" copy-on-write="yes"/>
+  <var name="grid_rtmp4" gname="grid%rtmp4(:)" type="real*8" dimensions="nnode" copy-on-write="yes"/>
+  <var name="grid_rtmp5" gname="grid%rtmp5(:)" type="real*8" dimensions="nnode" copy-on-write="yes"/>
+  <var name="grid_rtmp6" gname="grid%rtmp6(:)" type="real*8" dimensions="nnode" copy-on-write="yes"/>
+  <var name="grid_rtmp7" gname="grid%rtmp7(:)" type="real*8" dimensions="nnode" copy-on-write="yes"/>
+  <var name="grid_rtmp8" gname="grid%rtmp8(:)" type="real*8" dimensions="nnode" copy-on-write="yes"/>
   <gwrite src="#else"/>
   <var name="grid_node_vol" gname="grid%node_vol(:)*real(sml_nphi_total)" type="real*8" copy-on-write="yes" dimensions="nnode"/>
   <gwrite src="#endif"/>
