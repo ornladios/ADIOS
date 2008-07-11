@@ -22,8 +22,10 @@ void adios_open_ (long long * fd, const char * group_name, const char * name
                  ,int group_name_size, int name_size, int mode_size
                  );
 
-int adios_group_size (long long fd_p, long long byte_size);
-void adios_group_size_ (long long fd_p, long long byte_size, int err);
+int adios_group_size (long long fd_p, int nvars, long long byte_size);
+void adios_group_size_ (long long fd_p, int nvars, long long byte_size
+                       ,int err
+                       );
 
 int adios_write (long long fd_p, const char * name, void * var);
 void adios_write_ (long long * fd_p, const char * name, void * var, int err
