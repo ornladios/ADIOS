@@ -172,7 +172,9 @@ void adios_open_ (long long * fd, const char * group_name, const char * name
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_group_size (long long fd_p, long long byte_size)
+static int common_adios_group_size (long long fd_p, int nvars
+                                   ,long long byte_size
+                                   )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
 
@@ -181,14 +183,14 @@ static int common_adios_group_size (long long fd_p, long long byte_size)
     return 0;
 }
 
-int adios_group_size (long long fd_p, long long byte_size)
+int adios_group_size (long long fd_p, int nvars, long long byte_size)
 {
-    return common_adios_group_size (fd_p, byte_size);
+    return common_adios_group_size (fd_p, nvars, byte_size);
 }
 
-void adios_group_size_ (long long fd_p, long long byte_size, int err)
+void adios_group_size_ (long long fd_p, int nvars, long long byte_size, int err)
 {
-    err = common_adios_group_size (fd_p, byte_size);
+    err = common_adios_group_size (fd_p, nvars, byte_size);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
