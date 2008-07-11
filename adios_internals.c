@@ -1819,11 +1819,16 @@ static int validatePath (const struct adios_var_struct * vars
     while (vars)
     {
         int path_only_len = strlen (path_only);
+        int var_path_len = strlen (vars->path);
+        int var_name_len = strlen (vars->name);
         char full_path_matches = (!strcmp (vars->path, path));
         char path_matches = (!strcmp (vars->path, path_only));
         char var_matches = (!strcmp (vars->name, var_only));
-        int var_path_len = strlen (vars->path);
         char prefix_matches = 0;
+        char * path_var;
+        path_var = (char *) malloc (var_path_len + var_name_len + 2);
+        sprintf (path_var, "%s/%s", vars->path, vars->name);
+        char path_var_matches = (!strcmp (path_var, path));
 
         if (var_path_len >= len)
             prefix_matches = (!strncmp (vars->path, path_only, path_only_len));
@@ -1835,15 +1840,18 @@ static int validatePath (const struct adios_var_struct * vars
             || (path_matches && var_len == 0)
             || (full_path_matches)
             || (prefix_matches)
+            || (path_var_matches)
            )
         {
             free (path);
             free (path_only);
             free (var_only);
+            free (path_var);
 
             return 1;
         }
         vars = vars->next;
+        free (path_var);
     }
 
     // not found
