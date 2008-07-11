@@ -204,13 +204,9 @@ static int common_adios_write (long long fd_p, const char * name, void * var)
 
     if (!v)
     {
-        v = adios_find_attribute_var_by_name (fd->group->attributes, name);
-        if (!v)
-        {
-            fprintf (stderr, "Bad var name (ignored): '%s'\n", name);
+        fprintf (stderr, "Bad var name (ignored): '%s'\n", name);
 
-            return 1;
-        }
+        return 1;
     }
 
     if (fd->mode == adios_mode_read)
@@ -424,17 +420,19 @@ static int common_adios_set_path (long long fd_p, const char * path)
         v = v->next;
     }
 
+#if 0
     while (a)
     {
-        if (a->var.path)
+        if (a->path)
         {
-            free (a->var.path);
+            free (a->path);
         }
 
-        a->var.path = strdup (path);
+        a->path = strdup (path);
 
         a = a->next;
     }
+#endif
 
     return 0;
 }
@@ -466,10 +464,6 @@ static int common_adios_set_path_var (long long fd_p, const char * path
 
     // check for vars and then attributes
     v = adios_find_var_by_name (t->vars, name);
-    if (!v)
-    {
-        v = adios_find_attribute_var_by_name (t->attributes, name);
-    }
 
     if (v)
     {
@@ -779,32 +773,30 @@ void adios_define_global_bounds_ (long long * group, const char * dimensions
 
 int adios_define_attribute (long long group, const char * name
                            ,const char * path, const char * value
-                           ,const char * type, const char * var
+                           ,const char * var
                            )
 {
-    return adios_common_define_attribute (group, name, path, value, type, var);
+    return adios_common_define_attribute (group, name, path, value, var);
 }
 
 void adios_define_attribute_ (long long * group, const char * name
                              ,const char * path, const char * value
-                             ,const char * type, const char * var, int err
+                             ,const char * var, int err
                              ,int name_size, int path_size, int value_size
-                             ,int type_size, int var_size
+                             ,int var_size
                              )
 {
     char buf1 [STR_LEN] = "";
     char buf2 [STR_LEN] = "";
     char buf3 [STR_LEN] = "";
     char buf4 [STR_LEN] = "";
-    char buf5 [STR_LEN] = "";
 
     adios_extract_string (buf1, name, name_size);
     adios_extract_string (buf2, path, path_size);
     adios_extract_string (buf3, value, value_size);
-    adios_extract_string (buf4, type, type_size);
-    adios_extract_string (buf5, var, var_size);
+    adios_extract_string (buf4, var, var_size);
 
-    err = adios_common_define_attribute (*group, buf1, buf2, buf3, buf4, buf5);
+    err = adios_common_define_attribute (*group, buf1, buf2, buf3, buf4);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

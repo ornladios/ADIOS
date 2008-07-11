@@ -40,11 +40,11 @@ struct adios_var_struct
 
 struct adios_attribute_struct
 {
+    uint32_t id;
     char * name;
     char * path;
-
-    // if var.data == 0, then it is a var.  Otherwise, that is the value.
-    struct adios_var_struct var;
+    char * value;
+    struct adios_var_struct * var;
 
     struct adios_attribute_struct * next;
 };
@@ -326,7 +326,7 @@ int adios_do_write_attribute (struct adios_attribute_struct * a
 
 int adios_common_define_attribute (long long group, const char * name
                                   ,const char * path, const char * value
-                                  ,const char * type, const char * var
+                                  ,const char * var
                                   );
 
 void adios_append_method (struct adios_method_struct * method);

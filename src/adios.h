@@ -110,13 +110,13 @@ void adios_define_global_bounds_ (long long * group_id, const char * dimensions
 
 int adios_define_attribute (long long group, const char * name
                            ,const char * path, const char * value
-                           ,const char * type, const char * var
+                           ,const char * var
                            );
 void adios_define_attribute_ (long long * group, const char * name
                              ,const char * path, const char * value
-                             ,const char * type, const char * var, int err
+                             ,const char * var, int err
                              ,int name_size, int path_size, int value_size
-                             ,int type_size, int var_size
+                             ,int var_size
                              );
 
 int adios_select_method (int priority, const char * method
