@@ -17,6 +17,9 @@ void bw_dset (void* fbp,int start, int * end,char *path, char *name, void *val
 
 ///////////////////////////////////////////
 // write a dataset attribute (string)
+void bw_attr (void * fbp, int startidx, int * endidx, char * path
+             ,char * name, enum vartype_t type, void * val);
+
 void bw_attr_str_ds (void*,int, int *,char *str, char *aname, char* aval);
 
 // write a dataset attribute (numeric)
@@ -41,7 +44,7 @@ int bcalsize_dset (char *dir_name,char* name,enum vartype_t type,int rank
                   ,struct adios_bp_dimension_struct * dims
                   );
 
-int bcalsize_attr (char *dir_name, char*, char*, enum vartype_t type);
+int bcalsize_attr (char *path, char* name, enum vartype_t type, void * val);
 
 // how big will this string attribute be?
 int bcalsize_attr_str (char *dir_name,char*, char*);

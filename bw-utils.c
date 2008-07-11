@@ -131,7 +131,7 @@ void bw_scalar (void * fbp, int startidx, int * endidx, char * str, char * name
 }
 
 void bw_attr (void * fbp, int startidx, int * endidx, char * path
-             ,char * name, void * val, enum vartype_t type)
+             ,char * name, enum vartype_t type, void * val)
 {
     int var_step;
     enum TAG_t tag;
@@ -393,7 +393,7 @@ int bcalsize_scalar (char *dir_name, char* name,enum vartype_t type,void * val)
     return size;
 }
 
-int bcalsize_attr (char * path, char * name, void * data, enum vartype_t type)
+int bcalsize_attr (char * path, char * name, enum vartype_t type, void * data)
 {
     int size = 4;
 

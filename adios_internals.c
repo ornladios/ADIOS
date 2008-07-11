@@ -2074,13 +2074,11 @@ static int parseGroup (mxml_node_t * node)
             const char * name;
             const char * path;
             const char * value;
-            const char * type;
             const char * var;
 
             name = mxmlElementGetAttr (n, "name");
             path = mxmlElementGetAttr (n, "path");
             value = mxmlElementGetAttr (n, "value");
-            type = mxmlElementGetAttr (n, "type");
             var = mxmlElementGetAttr (n, "var");
 
             if (!name)
@@ -2095,25 +2093,10 @@ static int parseGroup (mxml_node_t * node)
 
                 return 0;
             }
-            if (value || type || var)
-            {
-                if (!(   (!value && type && var)
-                      || (value && !type && !var)
-                     )
-                   )
-                {
-                    fprintf (stderr, "config.xml: attriute element '%s' "
-                                     "requires either value OR type and var\n"
-                            ,name
-                            );
-
-                    return 0;
-                }
-            }
-            else
+            if ((!value && !var) || (value && var))
             {
                 fprintf (stderr, "config.xml: attriute element '%s' "
-                                 "requires either value OR type and var\n"
+                                 "requires either value OR var\n"
                         ,name
                         );
 
@@ -2131,7 +2114,7 @@ static int parseGroup (mxml_node_t * node)
             }
           
             if (!adios_common_define_attribute (*(long long *) &new_group, name
-                                               ,path, value, type, var
+                                               ,path, value, var
                                                )
                )
             {
@@ -2476,32 +2459,6 @@ struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
     }
 
     return root;
-}
-
-struct adios_var_struct * adios_find_attribute_var_by_name (struct adios_attribute_struct * root, const char * name)
-{
-    int done = 0;
-    struct adios_var_struct * v = 0;
-
-    if (!name)
-    {
-        done = 1;
-    }
-
-    while (!done && root)
-    {
-        if (root->var.name && !strcmp (name, root->var.name))
-        {
-            done = 1;
-            v = &root->var;
-        }
-        else
-        {
-            root = root->next;
-        }
-    }
-
-    return v;
 }
 
 #if 0
@@ -2996,7 +2953,7 @@ int adios_parse_config (const char * config)
 
 int adios_common_define_attribute (long long group, const char * name
                                   ,const char * path, const char * value
-                                  ,const char * type, const char * var
+                                  ,const char * var
                                   )
 {
     struct adios_group_struct * g = (struct adios_group_struct *) group;
@@ -3129,17 +3086,13 @@ int adios_common_define_attribute (long long group, const char * name
 
     attr->name = strdup (name);
     attr->path = strdup (path);
-
     if (value)
     {
-        attr->var.type = adios_string;
-        attr->var.data = adios_dupe_data (&attr->var, (void *) value);
+        attr->value = strdup (value);
     }
     else
     {
-        attr->var.name = strdup (var);
-        attr->var.data = 0;
-        attr->var.type = parseType (type, name);
+        attr->var = adios_find_var_by_name (g->vars, var);
     }
 
     attr->next = 0;
@@ -3294,14 +3247,27 @@ int adios_do_write_attribute (struct adios_attribute_struct * a
     long long size = 0;
     int start = (int) buf_start;
     int end = (int) *buf_end;
+    void * val = 0;
+    enum ADIOS_DATATYPES type = adios_unknown;
 
-    size = bcalsize_attr (a->path, a->name, a->var.data, a->var.type);
+    if (a->value)
+    {
+        val = a->value;
+        type = adios_string;
+    }
+    else
+    {
+        val = a->var->data;
+        type = a->var->type;
+    }
+
+    size = bcalsize_attr (a->path, a->name, type, val);
     if (size + buf_start > buf_size)
     {
         return 1; // overflowed
     }
 
-    bw_attr (buf, start, &end, a->path, a->name, a->var.data, a->var.type);
+    bw_attr (buf, start, &end, a->path, a->name, type, val);
 
     buf_start = start;
     *buf_end = end;
@@ -3583,8 +3549,21 @@ unsigned long long adios_size_of_var (struct adios_var_struct * v, void * data)
 unsigned long long adios_size_of_attribute (struct adios_attribute_struct * a)
 {
     unsigned long long size = 0;
+    void * val = 0;
+    enum ADIOS_DATATYPES type = adios_unknown;
 
-    size = bcalsize_attr (a->path, a->name, a->var.data, a->var.type);
+    if (a->value)
+    {
+        val = a->value;
+        type = adios_string;
+    }
+    else
+    {
+        val = a->var->data;
+        type = a->var->type;
+    }
+
+    size = bcalsize_attr (a->path, a->name, type, val);
 
     return size;
 }
@@ -3775,7 +3754,7 @@ void adios_append_attribute (struct adios_attribute_struct ** root
     {
         if (!*root)
         {
-            attribute->var.id = id;
+            attribute->id = id;
             *root = attribute;
             root = 0;
         }
