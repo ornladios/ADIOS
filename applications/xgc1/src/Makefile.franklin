@@ -1,0 +1,41 @@
+#include basic makefile definitions
+include defs.mk
+ADIOS=/ccs/proj/e2e/adios/jaguar
+# Add loader flags for IMSL or pspline libraries and binpack to LIBS if desired
+# PGI
+LIB=-L/apps/pspline/LINUX_pg625/lib -lpspline -lezcdf -lportlib -L$(NETCDF)/lib -lnetcdf\
+    -L$(ADIOS)/lib -ladios -lmxml
+#    -L../binpack/pack -lbppack 
+# PathScale
+#LIB=-L/apps/pspline/LINUX_path25/lib -lpspline -lezcdf -lportlib -L$(NETCDF)/lib -lnetcdf -L../binpack/pack -lbppack
+
+# compiler optimization flags
+# PGI
+OPT=-fast -Kieee
+# PathScale
+#OPT=-Ofast
+
+# Compiler name and options.  Add -D flags to select specific math library options.
+# -DIMSL if using IMSL library routines
+# -DMY_IMSL with -DIMSL to substitute wrappers for certain IMSL functions (helpful with IMSL 4 library)
+# -DPSPLINE to use the NTCC pspline library routines (via the EZspline F90 interface)
+# Also add a -I flag for locating the NTCC pspline module files!
+# -DUSE_EXPLICIT with -DPSPLINE to use separate splines for each partial derivative in r-z.
+# If neither -DIMSL nor -DPSPLINE is specified, we use portable pppack and bspline routines.
+# PGI
+
+CMP=mpif90 -DPSPLINE -module . -module /apps/pspline/LINUX_pg625/mod -I/apps/pspline/LINUX_pg625/include -DADIOS -DNETCDF -module $(NETCDF)/include -I/opt/mpich2-1.0.3/include/ -I$(ADIOS)/include ${PSPLINE_FLIB}
+#CMP=pgf90 -DPSPLINE -module . -module /apps/pspline/LINUX_pg625/mod -I/apps/pspline/LINUX_pg625/include -DBINPACK -DNETCDF -module $(NETCDF)/include
+# PathScale
+#CMP=pathf90 -DPSPLINE -I/apps/pspline/LINUX_path25/mod -I/apps/pspline/LINUX_path25/include -DBINPACK -DNETCDF -I$(NETCDF)/include
+
+# Set EXTRA_OBJ to $(IMSL_OBJ) for MY_IMSL wrappers, or $(PORT_OBJ) if not using IMSL
+EXTRA_OBJ=$(PORT_OBJ)
+
+# Set MPI_OBJ to $(PAR_OBJ) for parallel code, or $(SER_OBJ) for serial code
+MPI_OBJ=$(PAR_OBJ)
+
+# include basic makefile build rules
+include rules.mk
+
+
