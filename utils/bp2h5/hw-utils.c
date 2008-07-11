@@ -645,9 +645,11 @@ void hw_attr_str_ds (hid_t root_id, char * dirstr, char * aname, char * aval)
         dataset_id = H5Dcreate (grp_id [level - 1], grp_name [level - 1]
                                ,type_id, space_id, H5P_DEFAULT
                                );
+        if(dataset_id==-1)
+           hw_attr_str_gp (root_id, dirstr, aname, aval);
     }
-
-    hw_string_attr_ds_internal (dataset_id, aname, aval);
+   
+    if(dataset_id>0) hw_string_attr_ds_internal (dataset_id, aname, aval);
 
     H5Dclose (dataset_id);
     for (i = 1; i < level; i++)
@@ -815,11 +817,24 @@ void hw_attr_num_ds(hid_t root_id, char *dirstr, char *aname, void *avalue, enum
         type_id = H5Tcopy(H5T_NATIVE_INT);
         space_id = H5Screate_simple(1,dims,NULL);
         dataset_id = H5Dcreate(grp_id[level-1],grp_name[level-1],type_id,space_id,H5P_DEFAULT);
+        if(dataset_id==-1)
+        {
+           printf("hit group att!%d\n",type);
+           if(type==bp_string)
+              hw_attr_str_gp (root_id, dirstr, aname, avalue);
+           else
+              hw_attr_num_gp (root_id, dirstr, aname, avalue,type);
+        }
     }
 
-    hw_scalar_attr(dataset_id, aname, avalue,type);
+    if(dataset_id>0)
+    {
+       hw_scalar_attr(dataset_id, aname, avalue,type);
+      //printf("%s: dataset_id:%d, %s\n",grp_name[0],dataset_id,aname);
+       H5Dclose(dataset_id);
+    }
 
-    H5Dclose(dataset_id);
+
     for(i=1;i<level;i++)
         H5Gclose(grp_id[i]);
 
