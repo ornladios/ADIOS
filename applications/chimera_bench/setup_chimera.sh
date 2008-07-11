@@ -29,6 +29,16 @@ else
     export NUMBER_TEST=$4
 fi
 
+######################################
+# Needed before any module commands
+######################################
+if [ -f /opt/modules/default/etc/modules.sh ]; then
+. /opt/modules/default/etc/modules.sh
+fi
+if [ -f /etc/profile.d/modules.sh ]; then
+. /etc/profile.d/modules.sh
+fi
+
 echo "Chimera Benchmark is set to " $WORKING_DIR
 echo "Number of processes from " $LOW_BOUND_PROC " to " $UP_BOUND_PROC
 echo "For each (number of processes, ADIOS Method), run " $NUMBER_TEST " job(s)"
