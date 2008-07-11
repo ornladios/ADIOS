@@ -1551,7 +1551,7 @@ subroutine particle_dump_finalize
   integer (kind=8) :: fileptr
   integer, parameter :: vardim=1
   character (len=30) :: varname
-
+#if BINPACK
   if (diag_ptl_on==1) then
     nsteps = diag_ptl_end - diag_ptl_begin + 1
     varname = "time"
@@ -1572,7 +1572,7 @@ subroutine particle_dump_finalize
 ! deallocate particle diagnostic arrays
     deallocate(diag_ptl_data1,diag_ptl_data2,diag_ptl_times)
   endif
-
+#endif
 end subroutine particle_dump_finalize
 !! ADIOS JC
 !!#endif
@@ -1604,7 +1604,7 @@ subroutine diag_2d(istep,grid,psn,ptl)
 
 #ifdef ADIOS 
   integer :: nspace
-  integer*8        :: buf_id, grp_id
+  integer*8        :: buf_id 
 #endif
 
 
@@ -1785,7 +1785,7 @@ subroutine diag_2d(istep,grid,psn,ptl)
         endif
 #endif
 
-!#ifdef ADIOS 
+#ifdef ADIOS 
         if (mod(istep,diag_binout_period)==0) then
            ! dump 2d field diagnostics in binpack format
            if(sml_mype==0)write(0,*)"my diagnosis.F90"
@@ -1793,47 +1793,36 @@ subroutine diag_2d(istep,grid,psn,ptl)
               write(filename2,'("fieldi",".",i4.4,".bp")') (istep)/(diag_binout_period)
               filename2=trim(filename2)//char(0)
               if(sml_mype==0)write(0,*)"my diagnosis.F90:",filename2
-!! NEW OPEN
-!              call adios_get_group(grp_id,"diagnosis.fieldi"//char(0))
-!              call adios_open(buf_id,grp_id,filename2)
               call adios_open(buf_id,"diagnosis.fieldi"//char(0),filename2,"w"//char(0))
               call adios_gwrite(buf_id,"diagnosis.fieldi")
               call adios_close(buf_id)
               
-              !call adios_get_group(grp_id,"diagnosis.fieldi.1"//char(0))
-              !call adios_open_append(buf_id,grp_id,filename2)
               call adios_open(buf_id,"diagnosis.fieldi.1"//char(0),filename2,"a"//char(0))
               call adios_gwrite(buf_id,"diagnosis.fieldi.1")
               call adios_close(buf_id)
               
-              !call adios_get_group(grp_id,"diagnosis.fieldi.2"//char(0))
-              !call adios_open_append(buf_id,grp_id,filename2)
               call adios_open(buf_id,"diagnosis.fieldi.2"//char(0),filename2,"a"//char(0))
               call adios_gwrite(buf_id,"diagnosis.fieldi.2")
               call adios_close(buf_id)
 
-              !call adios_get_group(grp_id,"diagnosis.fieldi.3"//char(0))
-              !call adios_open_append(buf_id,grp_id,filename2)
               call adios_open(buf_id,"diagnosis.fieldi.3"//char(0),filename2,"a"//char(0))
               call adios_gwrite(buf_id,"diagnosis.fieldi.3")
               call adios_close(buf_id)
 
-              !call adios_get_group(grp_id,"diagnosis.fieldi.4"//char(0))
-              !call adios_open_append(buf_id,grp_id,filename2)
               call adios_open(buf_id,"diagnosis.fieldi.4"//char(0),filename2,"a"//char(0))
               call adios_gwrite(buf_id,"diagnosis.fieldi.4")
               call adios_close(buf_id)
 
-              !call adios_get_group(grp_id,"diagnosis.fieldi.5"//char(0))
-              !call adios_open_append(buf_id,grp_id,filename2)
               call adios_open(buf_id,"diagnosis.fieldi.5"//char(0),filename2,"a"//char(0))
               call adios_gwrite(buf_id,"diagnosis.fieldi.5")
               call adios_close(buf_id)
              if(sml_mype==0)write(*,*)"end my diagnosis.F90"
            endif ! sp_type==1
         endif  !istep%binout_period
+#endif
      endif  !sml_mype==0
   enddo  !sp_type=1,1+sml_electron_on
+
   deallocate(weight,flow,flowe,enpa,enpe,flower,flowez,dum)
 3001 format(7(e19.13,' '))
 end subroutine diag_2d

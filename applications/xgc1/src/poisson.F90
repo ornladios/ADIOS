@@ -1537,7 +1537,10 @@ subroutine neo_pot0_simple(grid,psn)
   real (kind=8), external :: init_den, init_tempi_ev
   np=grid%npsi
 
-  allocate( pot(np), dpot(np-1), psi(np), p(np), tempi_ev(np-1) ,temp(np))
+  allocate( pot(np), dpot(np-1), psi(np), p(np), tempi_ev(np-1) )
+#if ADIOS
+  allocate(temp(np))
+#endif
   ! get psi from ordered list
   do i=1, np
      psi(i)=grid%psi(grid%itheta0(i))  ! wrap with reordered 
@@ -1567,7 +1570,7 @@ subroutine neo_pot0_simple(grid,psn)
   if(sml_mype==0) then
      do i=1, np
 #ifdef ADIOS
-        temp=psi(i)/eq_x_psi
+        temp(i)=psi(i)/eq_x_psi
 #else
         write(700,*) psi(i)/eq_x_psi, pot(i)     
 #endif
@@ -1581,8 +1584,6 @@ subroutine neo_pot0_simple(grid,psn)
      close(700)
 #endif
   endif
-
-
   ! assign to grid
 
   do i=1, np
@@ -1591,7 +1592,6 @@ subroutine neo_pot0_simple(grid,psn)
 !     psn%add_pot0(grid%inv_sort(nd1:nd2))=pot(i)
      psn%add_pot0(nd1:nd2)=pot(i)
   enddo
-
   deallocate( pot, dpot, psi, p, tempi_ev)
 #ifdef ADIOS 
   deallocate(temp)

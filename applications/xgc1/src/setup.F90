@@ -591,7 +591,6 @@ subroutine setup(ptl)
      endif
      allocate(diag_ptl_times((diag_ptl_end-diag_ptl_begin)+1),&
               diag_ptl_data1(diag_ptl_num),diag_ptl_data2(diag_ptl_num))
-  endif
 #endif
 
   !-----------------------------------------------------
