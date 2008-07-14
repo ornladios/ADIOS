@@ -40,41 +40,45 @@ int bp_getsize(enum vartype_t type, void * val)
     {
         case bp_char:
         case bp_uchar:
-            return sizeof(char);
+            return 1;
 
         case bp_string:
             return strlen ((char *) val);
 
         case bp_short:
         case bp_ushort:
-            return sizeof(short);
+            return 2;
 
         case bp_int:
         case bp_uint:
-            return sizeof(int);
-
         case bp_long:
         case bp_ulong:
-            return sizeof(uint32_t);
+            return 4;
 
         case bp_longlong:
         case bp_ulonglong:
-            return sizeof(uint64_t);
+            return 8;
 
         case bp_float:
-            return sizeof(float);
+        case bp_ufloat:
+            return 4;
 
         case bp_double:
-            return sizeof(double);
+        case bp_udouble:
+            return 8;
 
         case bp_longdouble:
-            return sizeof(long double);
+        case bp_ulongdouble:
+            return 16;
 
         case bp_pointer:
             return sizeof(char*);
 
         case bp_complex:
-            return 2 * sizeof (double);
+            return 2 * 4;
+
+        case bp_double_complex:
+            return 2 * 8;
 
         default:
             return -1;

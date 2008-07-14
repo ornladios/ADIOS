@@ -36,28 +36,76 @@ static int adios_transports_initialized = 0;
 
 static int parseType (const char * type, const char * name)
 {
-    if (!strcasecmp (type, "byte"))
+    if (   !strcasecmp (type, "byte")
+        || !strcasecmp (type, "integer*1")
+       )
         return adios_byte;
 
-    if (!strcasecmp (type, "integer*4") || !strcasecmp (type, "integer"))
+    if (   !strcasecmp (type, "short")
+        || !strcasecmp (type, "integer*2")
+       )
+        return adios_short;
+
+    if (   !strcasecmp (type, "integer")
+        || !strcasecmp (type, "integer*4")
+       )
         return adios_integer;
 
-    if (!strcasecmp (type, "integer*8") || !strcasecmp (type, "long"))
+    if (   !strcasecmp (type, "long")
+        || !strcasecmp (type, "integer*8")
+       )
         return adios_long;
 
-    if (   !strcasecmp (type, "real*4") || !strcasecmp (type, "real")
+    if (   !strcasecmp (type, "unsigned byte")
+        || !strcasecmp (type, "unsigned integer*1")
+       )
+        return adios_unsigned_byte;
+
+    if (   !strcasecmp (type, "unsigned short")
+        || !strcasecmp (type, "unsigned integer*2")
+       )
+        return adios_unsigned_short;
+
+    if (   !strcasecmp (type, "unsigned integer")
+        || !strcasecmp (type, "unsigned integer*4")
+       )
+        return adios_unsigned_integer;
+
+    if (   !strcasecmp (type, "unsigned long")
+        || !strcasecmp (type, "unsigned integer*8")
+       )
+        return adios_unsigned_long;
+
+    if (   !strcasecmp (type, "real")
+        || !strcasecmp (type, "real*4")
         || !strcasecmp (type, "float")
        )
         return adios_real;
 
-    if (!strcasecmp (type, "complex"))
-        return adios_complex;
+    if (   !strcasecmp (type, "real*8")
+        || !strcasecmp (type, "double")
+       )
+        return adios_double;
+
+    if (   !strcasecmp (type, "unsigned real")
+        || !strcasecmp (type, "unsigned real*4")
+        || !strcasecmp (type, "unsigned float")
+       )
+        return adios_real;
+
+    if (   !strcasecmp (type, "unsigned real*8")
+        || !strcasecmp (type, "unsigned double")
+       )
+        return adios_unsigned_double;
 
     if (!strcasecmp (type, "string"))
         return adios_string;
 
-    if (!strcasecmp (type, "real*8") || !strcasecmp (type, "double"))
-        return adios_double;
+    if (!strcasecmp (type, "complex"))
+        return adios_complex;
+
+    if (!strcasecmp (type, "double complex"))
+        return adios_double_complex;
 
     fprintf (stderr, "config.xml: invalid type: %s in var %s\n", type, name);
 
