@@ -47,7 +47,7 @@ getsize["double"]=8
 getsize["unsigned real*8"]=8
 getsize["unsigned double"]=8
 
-getsize["complex"]=16
+getsize["complex"]=8
 getsize["double complex"]=16
 
 def processvar(node,language_sw,coord_comm,coord_var):
