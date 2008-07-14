@@ -36,27 +36,27 @@ static int adios_transports_initialized = 0;
 
 static int parseType (const char * type, const char * name)
 {
-    if (!strcmp (type, "byte"))
+    if (!strcasecmp (type, "byte"))
         return adios_byte;
 
-    if (!strcmp (type, "integer*4") || !strcmp (type, "integer"))
+    if (!strcasecmp (type, "integer*4") || !strcasecmp (type, "integer"))
         return adios_integer;
 
-    if (!strcmp (type, "integer*8") || !strcmp (type, "long"))
+    if (!strcasecmp (type, "integer*8") || !strcasecmp (type, "long"))
         return adios_long;
 
-    if (   !strcmp (type, "real*4") || !strcmp (type, "real")
-        || !strcmp (type, "float")
+    if (   !strcasecmp (type, "real*4") || !strcasecmp (type, "real")
+        || !strcasecmp (type, "float")
        )
         return adios_real;
 
-    if (!strcmp (type, "complex"))
+    if (!strcasecmp (type, "complex"))
         return adios_complex;
 
-    if (!strcmp (type, "string"))
+    if (!strcasecmp (type, "string"))
         return adios_string;
 
-    if (!strcmp (type, "real*8") || !strcmp (type, "double"))
+    if (!strcasecmp (type, "real*8") || !strcasecmp (type, "double"))
         return adios_double;
 
     fprintf (stderr, "config.xml: invalid type: %s in var %s\n", type, name);
@@ -71,10 +71,10 @@ static int parseFlag (const char * attr_name, const char * flag
     if (!flag)
         return default_value;
 
-    if (!strcmp (flag, "yes"))
+    if (!strcasecmp (flag, "yes"))
         return adios_flag_yes;
 
-    if (!strcmp (flag, "no"))
+    if (!strcasecmp (flag, "no"))
         return adios_flag_no;
 
     fprintf (stderr, "config.xml: %s must have a value of 'yes' or 'no' "
@@ -1199,7 +1199,7 @@ static int parseMeshUniform (mxml_node_t * node
             continue;
         }
 
-        if (!strcmp (n->value.element.name, "dimensions"))
+        if (!strcasecmp (n->value.element.name, "dimensions"))
         {
             const char * dimensions;
 
@@ -1227,7 +1227,7 @@ static int parseMeshUniform (mxml_node_t * node
             if (!parseMeshUniformDimensions (dimensions, new_group, *mesh))
                 return 0;
         } else
-        if (!strcmp (n->value.element.name, "origin"))
+        if (!strcasecmp (n->value.element.name, "origin"))
         {
             const char * value;
 
@@ -1255,7 +1255,7 @@ static int parseMeshUniform (mxml_node_t * node
             if (!parseMeshUniformOrigin (value, new_group, *mesh))
                 return 0;
         } else
-        if (!strcmp (n->value.element.name, "spacing"))
+        if (!strcasecmp (n->value.element.name, "spacing"))
         {
             const char * value;
 
@@ -1323,7 +1323,7 @@ static int parseMeshRectilinear (mxml_node_t * node
             continue;
         }
 
-        if (!strcmp (n->value.element.name, "dimensions"))
+        if (!strcasecmp (n->value.element.name, "dimensions"))
         {
             const char * value;
 
@@ -1351,7 +1351,7 @@ static int parseMeshRectilinear (mxml_node_t * node
             if (!parseMeshRectilinearDimensions (value, new_group, *mesh))
                 return 0;
         } else
-        if (!strcmp (n->value.element.name, "coordinates-multi-var"))
+        if (!strcasecmp (n->value.element.name, "coordinates-multi-var"))
         {
             const char * value;
 
@@ -1380,7 +1380,7 @@ static int parseMeshRectilinear (mxml_node_t * node
                 return 0;
             (*mesh)->coordinates_single_var = adios_flag_no;
         } else
-        if (!strcmp (n->value.element.name, "coordinates-single-var"))
+        if (!strcasecmp (n->value.element.name, "coordinates-single-var"))
         {
             const char * value;
 
@@ -1459,7 +1459,7 @@ static int parseMeshStructured (mxml_node_t * node
             continue;
         }
 
-        if (!strcmp (n->value.element.name, "nspace"))
+        if (!strcasecmp (n->value.element.name, "nspace"))
         {
             const char * value;
 
@@ -1487,7 +1487,7 @@ static int parseMeshStructured (mxml_node_t * node
             if (!parseMeshStructuredNspace (value, new_group, *mesh))
                 return 0;
         } else
-        if (!strcmp (n->value.element.name, "dimensions"))
+        if (!strcasecmp (n->value.element.name, "dimensions"))
         {
             const char * value;
 
@@ -1515,7 +1515,7 @@ static int parseMeshStructured (mxml_node_t * node
             if (!parseMeshStructuredDimensions (value, new_group, *mesh))
                 return 0;
         } else
-        if (!strcmp (n->value.element.name, "points-multi-var"))
+        if (!strcasecmp (n->value.element.name, "points-multi-var"))
         {
             const char * value;
 
@@ -1544,7 +1544,7 @@ static int parseMeshStructured (mxml_node_t * node
                 return 0;
             (*mesh)->points_single_var = adios_flag_no;
         } else
-        if (!strcmp (n->value.element.name, "points-single-var"))
+        if (!strcasecmp (n->value.element.name, "points-single-var"))
         {
             const char * value;
 
@@ -1620,7 +1620,7 @@ static int parseMeshUnstructured (mxml_node_t * node
             continue;
         }
 
-        if (!strcmp (n->value.element.name, "points"))
+        if (!strcasecmp (n->value.element.name, "points"))
         {
             const char * components;
             const char * number_of_points;
@@ -1671,7 +1671,7 @@ static int parseMeshUnstructured (mxml_node_t * node
                )
                 return 0;
         } else
-        if (!strcmp (n->value.element.name, "uniform-cells"))
+        if (!strcasecmp (n->value.element.name, "uniform-cells"))
         {
             const char * count;
             const char * data;
@@ -1713,7 +1713,7 @@ static int parseMeshUnstructured (mxml_node_t * node
                )
                 return 0;
         } else
-        if (!strcmp (n->value.element.name, "mixed-cells"))
+        if (!strcasecmp (n->value.element.name, "mixed-cells"))
         {
             const char * count;
             const char * data;
@@ -1821,14 +1821,14 @@ static int validatePath (const struct adios_var_struct * vars
         int path_only_len = strlen (path_only);
         int var_path_len = strlen (vars->path);
         int var_name_len = strlen (vars->name);
-        char full_path_matches = (!strcmp (vars->path, path));
-        char path_matches = (!strcmp (vars->path, path_only));
-        char var_matches = (!strcmp (vars->name, var_only));
+        char full_path_matches = (!strcasecmp (vars->path, path));
+        char path_matches = (!strcasecmp (vars->path, path_only));
+        char var_matches = (!strcasecmp (vars->name, var_only));
         char prefix_matches = 0;
         char * path_var;
         path_var = (char *) malloc (var_path_len + var_name_len + 2);
         sprintf (path_var, "%s/%s", vars->path, vars->name);
-        char path_var_matches = (!strcmp (path_var, path));
+        char path_var_matches = (!strcasecmp (path_var, path));
 
         if (var_path_len >= len)
             prefix_matches = (!strncmp (vars->path, path_only, path_only_len));
@@ -1889,13 +1889,13 @@ static int parseGroup (mxml_node_t * node)
         host_language = "Fortran";
     }
 
-    if (!strcmp (host_language, "Fortran"))
+    if (!strcasecmp (host_language, "Fortran"))
     {
         host_language_fortran = adios_flag_yes;
     }
     else
     {
-        if (!strcmp (host_language, "C"))
+        if (!strcasecmp (host_language, "C"))
         {
             host_language_fortran = adios_flag_no;
         }
@@ -1923,7 +1923,7 @@ static int parseGroup (mxml_node_t * node)
             continue;
         }
 
-        if (!strcmp (n->value.element.name, "var"))
+        if (!strcasecmp (n->value.element.name, "var"))
         {
             const char * name;
             const char * path;
@@ -1962,7 +1962,7 @@ static int parseGroup (mxml_node_t * node)
                 return 0;
             }
         } else
-        if (!strcmp (n->value.element.name, "global-bounds"))
+        if (!strcasecmp (n->value.element.name, "global-bounds"))
         {
             mxml_node_t * n1;   // used for global_bounds
             struct adios_global_bounds_struct * new_global_bounds = 0;
@@ -2013,7 +2013,7 @@ static int parseGroup (mxml_node_t * node)
                     continue;
                 }
 
-                if (!strcmp (n1->value.element.name, "var"))
+                if (!strcasecmp (n1->value.element.name, "var"))
                 {
                     const char * name;
                     const char * path;
@@ -2069,7 +2069,7 @@ static int parseGroup (mxml_node_t * node)
                 }
             }
         } else
-        if (!strcmp (n->value.element.name, "attribute"))
+        if (!strcasecmp (n->value.element.name, "attribute"))
         {
             const char * name;
             const char * path;
@@ -2121,7 +2121,7 @@ static int parseGroup (mxml_node_t * node)
                 return 0;
             }
         } else
-        if (!strcmp (n->value.element.name, "mesh"))
+        if (!strcasecmp (n->value.element.name, "mesh"))
         {
             const char * type;
             const char * time_varying;
@@ -2134,7 +2134,7 @@ static int parseGroup (mxml_node_t * node)
             if (!type)
                 type = "";
 
-            if (!strcmp (type, "uniform"))
+            if (!strcasecmp (type, "uniform"))
             {
                 new_group->mesh->type = ADIOS_MESH_UNIFORM;
                 new_group->mesh->uniform =
@@ -2142,7 +2142,7 @@ static int parseGroup (mxml_node_t * node)
                          calloc (1, sizeof (struct adios_mesh_uniform_struct));
                 parseMeshUniform (n, new_group, &new_group->mesh->uniform);
             } else
-            if (!strcmp (type, "structured"))
+            if (!strcasecmp (type, "structured"))
             {
                 new_group->mesh->type = ADIOS_MESH_STRUCTURED;
                 new_group->mesh->structured =
@@ -2151,7 +2151,7 @@ static int parseGroup (mxml_node_t * node)
                 parseMeshStructured (n, new_group
                                     ,&new_group->mesh->structured);
             } else
-            if (!strcmp (type, "rectilinear"))
+            if (!strcasecmp (type, "rectilinear"))
             {
                 new_group->mesh->type = ADIOS_MESH_RECTILINEAR;
                 new_group->mesh->rectilinear =
@@ -2160,7 +2160,7 @@ static int parseGroup (mxml_node_t * node)
                 parseMeshRectilinear (n, new_group
                                      ,&new_group->mesh->rectilinear);
             } else
-            if (!strcmp (type, "unstructured"))
+            if (!strcasecmp (type, "unstructured"))
             {
                 new_group->mesh->type = ADIOS_MESH_UNSTRUCTURED;
                 new_group->mesh->unstructured =
@@ -2186,7 +2186,7 @@ static int parseGroup (mxml_node_t * node)
                 return 1;
             }
         } else
-        if (!strcmp (n->value.element.name, "gwrite"))
+        if (!strcasecmp (n->value.element.name, "gwrite"))
         {
             continue;
         } else
@@ -2280,13 +2280,13 @@ static int parseBuffer (mxml_node_t * node)
     }
     else
     {
-        if (!strcmp (allocate_time, "now"))
+        if (!strcasecmp (allocate_time, "now"))
         {
             adios_buffer_alloc_when = ADIOS_BUFFER_ALLOC_NOW;
         }
         else
         {
-            if (!strcmp (allocate_time, "oncall"))
+            if (!strcasecmp (allocate_time, "oncall"))
             {
                 adios_buffer_alloc_when = ADIOS_BUFFER_ALLOC_LATER;
             }
@@ -2448,7 +2448,7 @@ struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
 
     while (!done && root)
     {
-        if (!strcmp (name, root->name))
+        if (!strcasecmp (name, root->name))
         {
             done = 1;
         }
@@ -2794,7 +2794,7 @@ int adios_parse_config (const char * config)
         root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
     }
 
-    if (strcmp (root->value.element.name, "adios-config"))
+    if (strcasecmp (root->value.element.name, "adios-config"))
     {
         if (strncmp (root->value.element.name, "?xml", 4))
         {
@@ -2828,7 +2828,7 @@ int adios_parse_config (const char * config)
     }
 
 
-    if (strcmp (root->value.element.name, "adios-config"))
+    if (strcasecmp (root->value.element.name, "adios-config"))
     {
         fprintf (stderr, "config.xml: invalid root xml element: %s\n"
                 ,root->value.element.name
@@ -2847,13 +2847,13 @@ int adios_parse_config (const char * config)
             host_language = "Fortran";
         }
 
-        if (!strcmp (host_language, "Fortran"))
+        if (!strcasecmp (host_language, "Fortran"))
         {
             adios_host_language_fortran = adios_flag_yes;
         }
         else
         {
-            if (!strcmp (host_language, "C"))
+            if (!strcasecmp (host_language, "C"))
             {
                 adios_host_language_fortran = adios_flag_no;
             }
@@ -2880,7 +2880,7 @@ int adios_parse_config (const char * config)
             continue;
         }
 
-        if (!strcmp (node->value.element.name, "adios-group"))
+        if (!strcasecmp (node->value.element.name, "adios-group"))
         {
             if (!parseGroup (node))
                 break;
@@ -2888,7 +2888,7 @@ int adios_parse_config (const char * config)
         }
         else
         {
-            if (!strcmp (node->value.element.name, "method"))
+            if (!strcasecmp (node->value.element.name, "method"))
             {
                 if (!parseMethod (node))
                     break;
@@ -2896,7 +2896,7 @@ int adios_parse_config (const char * config)
             }
             else
             {
-                if (!strcmp (node->value.element.name, "buffer"))
+                if (!strcasecmp (node->value.element.name, "buffer"))
                 {
                     if (!parseBuffer (node))
                         break;
@@ -3010,8 +3010,8 @@ int adios_common_define_attribute (long long group, const char * name
         f = adios_find_var_by_name (t->vars, extracted_name);
         if (f)
         {
-            if (   strcmp (extracted_path, v->path)
-                || strcmp (extracted_name, v->name)
+            if (   strcasecmp (extracted_path, v->path)
+                || strcasecmp (extracted_name, v->name)
                )
             {
                 fprintf (stderr, "config.xml: data item '%s' for attribute '%s' "
@@ -3057,7 +3057,7 @@ int adios_common_define_attribute (long long group, const char * name
             while (v && !done)
             {
                 // check for trailing '/' on both parts and fix up
-                if (!strcmp (v->path, a))
+                if (!strcasecmp (v->path, a))
                 {
                     done = 1;
                 }
@@ -4103,7 +4103,7 @@ void adios_common_get_group (long long * group_id, const char * name)
     
     while (g)
     {
-        if (!strcmp (g->group->name, name))
+        if (!strcasecmp (g->group->name, name))
         {
             *group_id = (long long) g->group;
     
