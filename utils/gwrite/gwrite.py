@@ -23,15 +23,20 @@ def replace(indent,outfile,newline,vardict,flag,type):
     gname=word.strip("\"")
     gname=gname.rstrip("\"")
     value=vardict[gname].replace("aaaabbbb",buf[0])
+    line=xmlparser.sizeformular[0]
+    for i in range(1,len(xmlparser.sizeformular)):
+        line=line+' + '+xmlparser.sizeformular[i] 
     if (type==0):
        value1=value.replace("adios_op","adios_read")
     elif(type==1):
        value1=value.replace("adios_op","adios_write")
     if(flag==2):
+       line=indent+"adios_group_size("+buf[0]+","+str(len(xmlparser.sizeformular))+","+line+')\n'
        value=value1.replace("adios_",indent+"adios_")
     elif(flag==1):
+       line=indent+"call adios_group_size("+buf[0]+","+str(len(xmlparser.sizeformular))+","+line+')\n'
        value=value1.replace("call",indent+"call")
-    outfile.write(value)
+    outfile.write(line+value)
     return
  
 def search_gwrite(ifname,ofname,vardict):
