@@ -100,16 +100,16 @@ static int common_adios_open (long long * fd, const char * group_name
     g = (struct adios_group_struct *) group_id;
     methods = g->methods;
 
-    if (!strcmp (file_mode, "r"))
+    if (!strcasecmp (file_mode, "r"))
         mode = adios_mode_read;
     else
-        if (!strcmp (file_mode, "w"))
+        if (!strcasecmp (file_mode, "w"))
             mode = adios_mode_write;
         else
-            if (!strcmp (file_mode, "a"))
+            if (!strcasecmp (file_mode, "a"))
                 mode = adios_mode_append;
             else
-                if (!strcmp (file_mode, "u"))
+                if (!strcasecmp (file_mode, "u"))
                     mode = adios_mode_update;
                 else
                 {
@@ -211,7 +211,9 @@ static int common_adios_write (long long fd_p, const char * name, void * var)
 
     if (fd->mode == adios_mode_read)
     {
-        if (strcmp (name, fd->group->group_comm) && v->is_dim != adios_flag_yes)
+        if (   strcasecmp (name, fd->group->group_comm)
+            && v->is_dim != adios_flag_yes
+           )
         {
             fprintf (stderr, "write attempted on %s in %s.  This was opened for"
                              " read\n"
