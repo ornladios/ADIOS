@@ -1,3 +1,6 @@
+#ifndef BW_UTILS_H
+#define BW_UTILS_H
+
 #include "binpack-general.h"
 #include "binpack-utils.h"
 
@@ -65,3 +68,5 @@ void bw_dsettag (void*,int*, enum TAG_t tag, void *val, enum vartype_t type
 void bw_set_write (int a);
 void bw_fopen_ (char * filename, long long * file_hd);
 void bw_fclose_ (long long * fptr);
+
+#endif

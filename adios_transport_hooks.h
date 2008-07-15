@@ -1,3 +1,7 @@
+#ifndef ADIOS_TRANSPORT_HOOKS_H
+#define ADIOS_TRANSPORT_HOOKS_H
+
+#include <stdint.h>
 // this is defined in the lint program to get empty implementations
 #ifdef ADIOS_EMPTY_TRANSPORTS
 #define FORWARD_DECLARE(a) \
@@ -14,7 +18,7 @@ void adios_##a##_write (struct adios_file_struct * fd \
                        ) {} \
 void adios_##a##_get_write_buffer (struct adios_file_struct * fd \
                                   ,struct adios_var_struct * v \
-                                  ,unsigned long long * size \
+                                  ,uint64_t * size \
                                   ,void ** buffer \
                                   ,struct adios_method_struct * method \
                                   ) {} \
@@ -45,7 +49,7 @@ void adios_##a##_write (struct adios_file_struct * fd \
                        ); \
 void adios_##a##_get_write_buffer (struct adios_file_struct * fd \
                                   ,struct adios_var_struct * v \
-                                  ,unsigned long long * size \
+                                  ,uint64_t * size \
                                   ,void ** buffer \
                                   ,struct adios_method_struct * method \
                                   ); \
@@ -156,4 +160,6 @@ FORWARD_DECLARE(dart)
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)             \
     ASSIGN_FNS(vtk,ADIOS_METHOD_VTK)                 \
     ASSIGN_FNS(posix_ascii,ADIOS_METHOD_POSIX_ASCII)
+#endif
+
 #endif

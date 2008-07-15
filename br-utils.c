@@ -6,7 +6,7 @@ struct adios_bp_read_struct
 {
     char type;  // 1 == file, 0 == buffer
     void * buf;
-    long long buf_len;
+    uint64_t long buf_len;
     int fd;
     int offset;
 };
@@ -52,7 +52,7 @@ void br_fclose (long long handle)
     free (b);
 }
 
-long long br_bopen (void * buffer, long long len)
+long long br_bopen (void * buffer, uint64_t len)
 {
     struct adios_bp_read_struct * b = (struct adios_bp_read_struct *)
                               malloc (sizeof (struct adios_bp_read_struct));
@@ -100,11 +100,11 @@ void br_free_element (struct adios_bp_element_struct * element)
     free (element);
 }
 
-long long br_read_buffer (struct adios_bp_read_struct * b
-                         ,unsigned long long read_size
-                         ,void * buffer
-                         ,long long buffer_size
-                         )
+uint64_t br_read_buffer (struct adios_bp_read_struct * b
+                        ,uint64_t read_size
+                        ,void * buffer
+                        ,uint64_t buffer_size
+                        )
 {
     int ret;
 
@@ -144,12 +144,12 @@ long long br_read_buffer (struct adios_bp_read_struct * b
     return ret;
 }
 
-static int br_get_next_element (struct adios_bp_read_struct * b, ADIOS_BR_PRE_FETCH pre, ADIOS_BR_POST_FETCH post, void * private_data, void * buffer, long long buffer_size, struct adios_bp_element_struct ** element)
+static int br_get_next_element (struct adios_bp_read_struct * b, ADIOS_BR_PRE_FETCH pre, ADIOS_BR_POST_FETCH post, void * private_data, void * buffer, uint64_t buffer_size, struct adios_bp_element_struct ** element)
 {
     unsigned int var_step = 0;
-    unsigned long long total_size = 0;
+    uint64_t total_size = 0;
     void * buf = 0;         // used in pre/post fetch calls
-    long long buf_size = 0; // used in pre/post fetch calls
+    uint64_t buf_size = 0;  // used in pre/post fetch calls
     int tag = NULL_TAG;
     unsigned long int size = 0;
 
@@ -333,7 +333,7 @@ int br_get_next_element_specific (long long handle, ADIOS_BR_PRE_FETCH pre, ADIO
     return br_get_next_element (b, pre, post, private_data, 0, 0, element);
 }
 
-int br_get_next_element_general (long long handle, void * buffer, long long buffer_size, struct adios_bp_element_struct ** element)
+int br_get_next_element_general (long long handle, void * buffer, uint64_t buffer_size, struct adios_bp_element_struct ** element)
 {
     struct adios_bp_read_struct * b = (struct adios_bp_read_struct *) handle;
 

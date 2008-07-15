@@ -306,8 +306,8 @@ int bp_calsize_dsettag (enum vartype_t type, int rank
 {
     char * tmp = "";  // dummy since we don't expect strings in arrays
     int subsize = bp_getsize (type, tmp);
-    unsigned long long use_count = 0;
-    unsigned long long total_count = 0;
+    uint64_t use_count = 0;
+    uint64_t total_count = 0;
 
     if (subsize < 0)
     {
@@ -337,8 +337,8 @@ void bw_dsettag (void * fbp, int * ptridx, enum TAG_t tag, void * val
 {
     int total_size;
     int element_size;
-    unsigned long long use_count = 0;
-    unsigned long long total_count = 0;
+    uint64_t use_count = 0;
+    uint64_t total_count = 0;
     int full_write = 1;
 
     element_size = bp_getsize (type, val);

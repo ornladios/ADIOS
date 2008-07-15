@@ -1,6 +1,8 @@
 #ifndef _BINPACK_UTILS_H
 #define _BINPACK_UTILS_H
 
+#include <stdint.h>
+
 /*
  binpack-utils.h
  2006
@@ -33,7 +35,7 @@ const char * adios_type_to_string (int type);
 const char * adios_file_mode_to_string (int mode);
 void adios_var_element_count (int rank
                              ,struct adios_bp_dimension_struct * dims
-                             ,unsigned long long * use_count
-                             ,unsigned long long * total_count
+                             ,uint64_t * use_count
+                             ,uint64_t * total_count
                              );
 #endif

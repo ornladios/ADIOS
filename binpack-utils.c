@@ -60,15 +60,12 @@ int bp_getsize(enum vartype_t type, void * val)
             return 8;
 
         case bp_float:
-        case bp_ufloat:
             return 4;
 
         case bp_double:
-        case bp_udouble:
             return 8;
 
-        case bp_longdouble:
-        case bp_ulongdouble:
+        case bp_long_double:
             return 16;
 
         case bp_pointer:
@@ -153,8 +150,8 @@ int bp_tagPeek(FILE* packfile)
 
 void adios_var_element_count (int rank
                              ,struct adios_bp_dimension_struct * dims
-                             ,unsigned long long * use_count
-                             ,unsigned long long * total_count
+                             ,uint64_t * use_count
+                             ,uint64_t * total_count
                              )
 {
     int i;
@@ -309,14 +306,24 @@ const char * adios_type_to_string (int type)
 {
     switch (type)
     {
-        case bp_uchar:    return "byte";
-        case bp_char:     return "character";
-        case bp_int:      return "integer";
-        case bp_longlong: return "long";
-        case bp_float:    return "real";
-        case bp_double:   return "double";
-        case bp_string:   return "string";
-        case bp_complex:  return "complex";
+        case bp_uchar:          return "unsigned byte";
+        case bp_ushort:         return "unsigned short";
+        case bp_uint:           return "unsigned integer";
+        case bp_ulonglong:      return "unsigned long long";
+
+        case bp_char:           return "byte";
+        case bp_short:          return "short";
+        case bp_int:            return "integer";
+        case bp_longlong:       return "long long";
+
+        case bp_float:          return "real";
+        case bp_double:         return "double";
+        case bp_long_double:    return "long double";
+
+        case bp_string:         return "string";
+        case bp_complex:        return "complex";
+        case bp_double_complex: return "double complex";
+
         default:
         {
             static char buf [50];
@@ -330,16 +337,16 @@ const char * adios_file_mode_to_string (int mode)
 {
     static char buf [50];
 
-    if (mode == 1)
-        return "write";
-    if (mode == 2)
-        return "read";
-    if (mode == 3)
-        return "update";
-    if (mode == 4)
-        return "append";
+    switch (mode)
+    {
+        case 1: return "write";
+        case 2: return "read";
+        case 3: return "update";
+        case 4: return "append";
 
-    sprintf (buf, "(unknown: %d)", mode);
+        default:
+            sprintf (buf, "(unknown: %d)", mode);
+    }
 
     return buf;
 }

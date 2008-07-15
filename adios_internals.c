@@ -18,9 +18,9 @@ enum ADIOS_FLAG adios_host_language_fortran = adios_flag_yes;
 
 // buffer sizing may be problematic.  To get a more accurate picture, check:
 // http://chandrashekar.info/vault/linux-system-programs.html
-static unsigned long long adios_buffer_size_requested = 0;
-static unsigned long long adios_buffer_size_max = 0;
-static unsigned long long adios_buffer_size_remaining = 0;
+static uint64_t adios_buffer_size_requested = 0;
+static uint64_t adios_buffer_size_max = 0;
+static uint64_t adios_buffer_size_remaining = 0;
 static int adios_buffer_alloc_percentage = 0;  // 1 = yes, 0 = no
 static enum ADIOS_BUFFER_ALLOC_WHEN {ADIOS_BUFFER_ALLOC_UNKNOWN
                                     ,ADIOS_BUFFER_ALLOC_NOW
@@ -84,19 +84,14 @@ static int parseType (const char * type, const char * name)
 
     if (   !strcasecmp (type, "real*8")
         || !strcasecmp (type, "double")
+        || !strcasecmp (type, "long float")
        )
         return adios_double;
 
-    if (   !strcasecmp (type, "unsigned real")
-        || !strcasecmp (type, "unsigned real*4")
-        || !strcasecmp (type, "unsigned float")
+    if (   !strcasecmp (type, "real*16")
+        || !strcasecmp (type, "long double")
        )
-        return adios_real;
-
-    if (   !strcasecmp (type, "unsigned real*8")
-        || !strcasecmp (type, "unsigned double")
-       )
-        return adios_unsigned_double;
+        return adios_long_double;
 
     if (!strcasecmp (type, "string"))
         return adios_string;
@@ -2363,7 +2358,7 @@ static int parseBuffer (mxml_node_t * node)
                 return 0;
             }
 
-            adios_buffer_size_requested = (  (unsigned long long) size
+            adios_buffer_size_requested = (  (uint64_t) size
                                            * 1024
                                            * 1024
                                           );
@@ -2374,7 +2369,7 @@ static int parseBuffer (mxml_node_t * node)
             size = atoi (free_memory_percentage);
             if (size > 0 && size <= 100)
             {
-                adios_buffer_size_requested = (unsigned long long) size;
+                adios_buffer_size_requested = (uint64_t) size;
             }
             else
             {
@@ -2424,9 +2419,9 @@ int adios_set_buffer_size ()
                                  "%llu requested, %llu available.  Using "
                                  "available.\n"
                         ,adios_buffer_size_requested
-                        ,((unsigned long long) (pagesize * pages))
+                        ,(((uint64_t) pagesize) * pages)
                         );
-                 adios_buffer_size_max = (unsigned long long) (pagesize * pages);
+                 adios_buffer_size_max = ((uint64_t) pagesize) * pages;
            }
         }
 
@@ -2444,7 +2439,7 @@ int adios_set_buffer_size ()
     }
 }
 
-unsigned long long adios_method_buffer_alloc (unsigned long long size)
+uint64_t adios_method_buffer_alloc (uint64_t size)
 {
     if (adios_buffer_size_remaining >= size)
     {
@@ -2454,7 +2449,7 @@ unsigned long long adios_method_buffer_alloc (unsigned long long size)
     }
     else
     {
-        unsigned long long remaining = adios_buffer_size_remaining;
+        uint64_t remaining = adios_buffer_size_remaining;
 
         adios_buffer_size_remaining = 0;
 
@@ -2462,7 +2457,7 @@ unsigned long long adios_method_buffer_alloc (unsigned long long size)
     }
 }
 
-int adios_method_buffer_free (unsigned long long size)
+int adios_method_buffer_free (uint64_t size)
 {
     if (size + adios_buffer_size_remaining > adios_buffer_size_max)
     {
@@ -2507,6 +2502,21 @@ struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
     }
 
     return root;
+}
+
+struct adios_var_struct * adios_find_var_by_id (struct adios_var_struct * root
+                                               ,uint32_t id
+                                               )
+{
+    while (root)
+    {
+        if (root->id == id)
+            return root;
+        else
+            root = root->next;
+    }
+
+    return NULL;
 }
 
 #if 0
@@ -3137,9 +3147,11 @@ int adios_common_define_attribute (long long group, const char * name
     if (value)
     {
         attr->value = strdup (value);
+        attr->var = 0;
     }
     else
     {
+        attr->value = 0;
         attr->var = adios_find_var_by_name (g->vars, var);
     }
 
@@ -3157,34 +3169,39 @@ void * adios_dupe_data (struct adios_var_struct * v, void * data)
 
     if (v->dimensions)
     {
+        int rc;
         int rank = 10;
         int full_write = 1;
-        unsigned long long use_count = 1;
-        unsigned long long total_count = 1;
+        uint64_t use_count = 1;
+        uint64_t total_count = 1;
         struct adios_bp_dimension_struct * dims =
                (struct adios_bp_dimension_struct *)
                       calloc (rank, sizeof (struct adios_bp_dimension_struct));
 
-        adios_dims_to_bp_dims (v->name, d, v->global_bounds, &rank, dims);
-        adios_var_element_count (rank, dims, &use_count, &total_count);
-
-        if (use_count == total_count)
-            full_write = 1;
-        else
-            full_write = 0;
-
-        d = malloc (use_count * element_size); // no strings
-        if (!d)
+        rc = adios_dims_to_bp_dims (v->name, d, v->global_bounds, &rank, dims);
+        if (!rc)
         {
-            fprintf (stderr, "cannot allocate %llu byte buffer to duplicate "
-                             "array %s\n"
-                    ,use_count * element_size
-                    ,v->name
-                    );
-            return 0;
-        }
+            adios_var_element_count (rank, dims, &use_count, &total_count);
 
-        memcpy (d, data, use_count * element_size);
+            if (use_count == total_count)
+                full_write = 1;
+            else
+                full_write = 0;
+
+            d = malloc (use_count * element_size); // no strings
+            if (!d)
+            {
+                fprintf (stderr, "cannot allocate %llu byte buffer to "
+                                 "duplicate array %s\n"
+                        ,use_count * element_size
+                        ,v->name
+                        );
+
+                return 0;
+            }
+
+            memcpy (d, data, use_count * element_size);
+        }
     }
     else
     {
@@ -3222,12 +3239,12 @@ void * adios_dupe_data (struct adios_var_struct * v, void * data)
 
 int adios_do_write_var (struct adios_var_struct * v
                        ,void * buf
-                       ,unsigned long long buf_size
-                       ,unsigned long long buf_start
-                       ,unsigned long long * buf_end
+                       ,uint64_t buf_size
+                       ,uint64_t buf_start
+                       ,uint64_t * buf_end
                        )
 {
-    long long size = 0;
+    uint64_t size = 0;
     int start = (int) buf_start;
     int end = (int) *buf_end;
 
@@ -3250,26 +3267,38 @@ int adios_do_write_var (struct adios_var_struct * v
         else
         {
             int rank = 10;
+            int rc;
             struct adios_bp_dimension_struct * dims = 0;
 
             dims = (struct adios_bp_dimension_struct *)
                     calloc (rank, sizeof (struct adios_bp_dimension_struct));
 
-            adios_dims_to_bp_dims (v->name, v->dimensions
-                                  ,v->global_bounds, &rank, dims
-                                  );
-            size = bcalsize_dset (v->path, v->name, v->type
-                                 ,rank, dims
-                                 );
-
-            if (size + buf_start > buf_size)
+            rc = adios_dims_to_bp_dims (v->name, v->dimensions
+                                       ,v->global_bounds, &rank, dims
+                                       );
+            if (!rc)
             {
-                return 1; // overflowed
+                size = bcalsize_dset (v->path, v->name, v->type
+                                     ,rank, dims
+                                     );
+
+                if (size + buf_start > buf_size)
+                {
+                    return 1; // overflowed
+                }
+                //printf ("\ttotalsize: %d\n", size);
+                bw_dset (buf, start, &end, v->path, v->name, v->data
+                        ,v->type, rank, dims
+                        );
             }
-            //printf ("\ttotalsize: %d\n", size);
-            bw_dset (buf, start, &end, v->path, v->name, v->data
-                    ,v->type, rank, dims
-                    );
+            else
+            {
+                fprintf (stderr, "one or more dimensions for %s not provided.  "
+                                 "ADIOS cannot write the var.\n"
+                        ,v->name
+                        );
+            }
+
             free (dims);
         }
         buf_start = start;
@@ -3287,12 +3316,12 @@ int adios_do_write_var (struct adios_var_struct * v
 
 int adios_do_write_attribute (struct adios_attribute_struct * a
                              ,void * buf
-                             ,unsigned long long buf_size
-                             ,unsigned long long buf_start
-                             ,unsigned long long * buf_end
+                             ,uint64_t buf_size
+                             ,uint64_t buf_start
+                             ,uint64_t * buf_end
                              )
 {
-    long long size = 0;
+    uint64_t size = 0;
     int start = (int) buf_start;
     int end = (int) *buf_end;
     void * val = 0;
@@ -3324,7 +3353,7 @@ int adios_do_write_attribute (struct adios_attribute_struct * a
 }
 
 void adios_pre_element_fetch (struct adios_bp_element_struct * element
-                             ,void ** buffer, long long * buffer_size
+                             ,void ** buffer, uint64_t * buffer_size
                              ,void * private_data
                              )
 {
@@ -3355,8 +3384,8 @@ void adios_pre_element_fetch (struct adios_bp_element_struct * element
             if (v->dimensions)
             {
                 int full_read = 1;
-                unsigned long long use_count = 1;
-                unsigned long long total_count = 1;
+                uint64_t use_count = 1;
+                uint64_t total_count = 1;
 
                 adios_var_element_count (element->ranks, element->dims
                                         ,&use_count, &total_count
@@ -3405,7 +3434,7 @@ void adios_pre_element_fetch (struct adios_bp_element_struct * element
 }
 
 void adios_post_element_fetch (struct adios_bp_element_struct * element
-                              ,void * buffer, long long buffer_size
+                              ,void * buffer, uint64_t buffer_size
                               ,void * private_data
                               )
 {
@@ -3425,8 +3454,8 @@ void adios_post_element_fetch (struct adios_bp_element_struct * element
         {
             int full_read = 1;
             int i = 0;
-            unsigned long long use_count = 1;
-            unsigned long long total_count = 1;
+            uint64_t use_count = 1;
+            uint64_t total_count = 1;
 
             adios_var_element_count (element->ranks, element->dims
                                     ,&use_count, &total_count
@@ -3501,7 +3530,7 @@ void adios_post_element_fetch (struct adios_bp_element_struct * element
 }
 
 void adios_parse_buffer (struct adios_file_struct * fd, char * buffer
-                        ,long long len
+                        ,uint64_t len
                         )
 {
     struct adios_var_struct * v = fd->group->vars;
@@ -3540,9 +3569,9 @@ void adios_parse_buffer (struct adios_file_struct * fd, char * buffer
         free (data.buffer);
 }
 
-unsigned long long adios_data_size (struct adios_group_struct * g)
+uint64_t adios_data_size (struct adios_group_struct * g)
 {
-    unsigned long long size = 0;
+    uint64_t size = 0;
     struct adios_var_struct * v;
     struct adios_attribute_struct * a;
 
@@ -3568,9 +3597,9 @@ unsigned long long adios_data_size (struct adios_group_struct * g)
     return size;
 }
 
-unsigned long long adios_size_of_var (struct adios_var_struct * v, void * data)
+uint64_t adios_size_of_var (struct adios_var_struct * v, void * data)
 {
-    unsigned long long size = 0;
+    uint64_t size = 0;
 
     if (!v->dimensions)
     {
@@ -3579,14 +3608,18 @@ unsigned long long adios_size_of_var (struct adios_var_struct * v, void * data)
     else
     {
         int rank = 10;
+        int rc;
         struct adios_bp_dimension_struct * dims =
             (struct adios_bp_dimension_struct *)
                calloc (rank, sizeof (struct adios_bp_dimension_struct));
 
-        adios_dims_to_bp_dims (v->name, v->dimensions, v->global_bounds, &rank
-                              ,dims
-                              );
-        size = bcalsize_dset (v->path, v->name, v->type, rank, dims);
+        rc = adios_dims_to_bp_dims (v->name, v->dimensions, v->global_bounds
+                                   ,&rank, dims
+                                   );
+        if (!rc)
+        {
+            size = bcalsize_dset (v->path, v->name, v->type, rank, dims);
+        }
         free (dims);
     }
    //printf("name:%s, size:%llu\n",v->name,size);
@@ -3594,9 +3627,9 @@ unsigned long long adios_size_of_var (struct adios_var_struct * v, void * data)
     return size;
 }
 
-unsigned long long adios_size_of_attribute (struct adios_attribute_struct * a)
+uint64_t adios_size_of_attribute (struct adios_attribute_struct * a)
 {
-    unsigned long long size = 0;
+    uint64_t size = 0;
     void * val = 0;
     enum ADIOS_DATATYPES type = adios_unknown;
 
@@ -3814,12 +3847,12 @@ void adios_append_attribute (struct adios_attribute_struct ** root
     }
 }
 
-void adios_dims_to_bp_dims (char * name
-                           ,struct adios_dimension_struct * adios_dims
-                           ,struct adios_global_bounds_struct * global
-                           ,int * rank
-                           ,struct adios_bp_dimension_struct * bp_dims
-                           )
+int adios_dims_to_bp_dims (char * name
+                          ,struct adios_dimension_struct * adios_dims
+                          ,struct adios_global_bounds_struct * global
+                          ,int * rank
+                          ,struct adios_bp_dimension_struct * bp_dims
+                          )
 {
     int i = *rank;
     struct adios_dimension_struct * d = adios_dims;
@@ -3838,6 +3871,8 @@ void adios_dims_to_bp_dims (char * name
                          "destination array provided.\n"
                 ,name
                 );
+
+        return 1;
     }
     else
     {
@@ -3865,7 +3900,7 @@ void adios_dims_to_bp_dims (char * name
                     ,name, d->dimension.var->name
                     );
 
-            break;
+            return 1;
         }
 
         // calculate the size for this dimension element
@@ -3923,6 +3958,8 @@ void adios_dims_to_bp_dims (char * name
             o = o->next;
         (*rank)++;
     }
+
+    return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
