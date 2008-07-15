@@ -50,9 +50,8 @@ AC_CONFIG_FILES([Makefile
                  utils/bpdump/Makefile
                  utils/bp2h5/Makefile
                  utils/bp2ncd/Makefile
+                 utils/bp2ascii/Makefile
                 ])
-
-dnl add these in as they are converted: [utils/bp2ascii/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile])
 
 AC_OUTPUT
 
