@@ -23,8 +23,8 @@ struct adios_File_data_struct
     long long handle;   // used for read
     int f;              // used for write
     void * buffer;
-    unsigned long long buffer_size;
-    unsigned long long start;
+    uint64_t buffer_size;
+    uint64_t start;
     int last_var_write_yes; // was the last item asked to write a write="yes"?
 };
 
@@ -133,8 +133,8 @@ void adios_posix_ascii_write (struct adios_file_struct * fd
 
     if (v->copy_on_write == adios_flag_yes)
     {
-        unsigned long long var_size;
-        unsigned long long mem_allowed;
+        uint64_t var_size;
+        uint64_t mem_allowed;
 
         var_size = adios_size_of_var (v, data);
         mem_allowed = adios_method_buffer_alloc (var_size);
@@ -164,12 +164,12 @@ void adios_posix_ascii_write (struct adios_file_struct * fd
 
 void adios_posix_ascii_get_write_buffer (struct adios_file_struct * fd
                                         ,struct adios_var_struct * v
-                                        ,unsigned long long * size
+                                        ,uint64_t * size
                                         ,void ** buffer
                                         ,struct adios_method_struct * method
                                         )
 {
-    unsigned long long mem_allowed;
+    uint64_t mem_allowed;
     
     if (*size == 0)
     {
@@ -223,7 +223,7 @@ void adios_posix_ascii_get_write_buffer (struct adios_file_struct * fd
 // for now, just use the ones used for parse buffer.  Should they
 // need to change, we're ready
 static void posix_ascii_read_pre_fetch (struct adios_bp_element_struct * element
-                                       ,void ** buffer, long long * buffer_size
+                                       ,void ** buffer, uint64_t * buffer_size
                                        ,void * private_data
                                        )
 {
@@ -233,7 +233,7 @@ static void posix_ascii_read_pre_fetch (struct adios_bp_element_struct * element
 // for now, just use the ones used for parse buffer.  Should they
 // need to change, we're ready
 static void posix_ascii_read_post_fetch (struct adios_bp_element_struct * element
-                                        ,void * buffer, long long buffer_size
+                                        ,void * buffer, uint64_t buffer_size
                                         ,void * private_data
                                         )
 {
@@ -258,11 +258,11 @@ static void adios_posix_ascii_do_write (struct adios_file_struct * fd
     struct adios_var_struct * v = fd->group->vars;
     struct adios_attribute_struct * a = fd->group->attributes;
     int overflow = 0;
-    unsigned long long end = 0;
+    uint64_t end = 0;
 
-    unsigned long long size = adios_data_size (fd->group);
-    unsigned long long mem_needed = 0;
-    unsigned long long mem_allowed = 0;;
+    uint64_t size = adios_data_size (fd->group);
+    uint64_t mem_needed = 0;
+    uint64_t mem_allowed = 0;;
 
     if (size > md->buffer_size)
     {
@@ -381,7 +381,7 @@ static void adios_posix_ascii_do_read (struct adios_file_struct * fd
                                          method->method_data;
     struct adios_var_struct * v = fd->group->vars;
     
-    unsigned long long element_size = 0;
+    uint64_t element_size = 0;
     struct adios_bp_element_struct * element = NULL;
     struct adios_parse_buffer_struct data;
 

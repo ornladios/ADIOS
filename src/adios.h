@@ -1,4 +1,8 @@
+#ifndef ADIOS_H
+#define ADIOS_H
+
 #include "adios_types.h"
+#include <stdint.h>
 
 /* Asynchronous I/O API Public Functions */
 
@@ -33,11 +37,11 @@ void adios_write_ (long long * fd_p, const char * name, void * var, int err
                   );
 
 int adios_get_write_buffer (long long fd_p, const char * name
-                           ,unsigned long long * size
+                           ,uint64_t * size
                            ,void ** buffer
                            );
 void adios_get_write_buffer_ (long long * fd_p, const char * name
-                             ,unsigned long long * size
+                             ,uint64_t * size
                              ,void ** buffer, int err, int name_size
                              );
 
@@ -142,3 +146,5 @@ void adios_select_method_ (int * priority, const char * method
                           ,int parameters_size, int type_size
                           ,int base_path_size
                           );
+
+#endif

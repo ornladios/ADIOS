@@ -30,8 +30,8 @@ struct adios_MPI_Collective_data_struct
     int rank;
     int size;
     void * buffer;
-    unsigned long long buffer_size;
-    unsigned long long start;
+    uint64_t buffer_size;
+    uint64_t start;
     int last_var_write_yes; // was the last item asked to write a write="yes"?
 };
 
@@ -106,7 +106,7 @@ void adios_mpi_cio_open (struct adios_file_struct * fd
                                                     method->method_data;
 
     sprintf (name, "%s%s", method->base_path, fd->name);
-    unsigned long long file_size_for_offset = 0;
+    uint64_t file_size_for_offset = 0;
 
     // if it is an append, add the base file size to the initial offset
     if (fd->mode == adios_mode_append)
@@ -172,8 +172,8 @@ void adios_mpi_cio_write (struct adios_file_struct * fd
 
     if (v->copy_on_write == adios_flag_yes)
     {
-        unsigned long long var_size;
-        unsigned long long mem_allowed;
+        uint64_t var_size;
+        uint64_t mem_allowed;
 
         var_size = adios_size_of_var (v, data);
         mem_allowed = adios_method_buffer_alloc (var_size);
@@ -203,12 +203,12 @@ void adios_mpi_cio_write (struct adios_file_struct * fd
 
 void adios_mpi_cio_get_write_buffer (struct adios_file_struct * fd
                                 ,struct adios_var_struct * v
-                                ,unsigned long long * size
+                                ,uint64_t * size
                                 ,void ** buffer
                                 ,struct adios_method_struct * method
                                 )
 {
-    unsigned long long mem_allowed;
+    uint64_t mem_allowed;
 
     if (*size == 0)
     {
@@ -276,9 +276,9 @@ static void adios_mpi_cio_do_read (struct adios_file_struct * fd
                                                       method->method_data; 
     struct adios_var_struct * v = 0;
 
-    unsigned long long my_data_len = adios_data_size (fd->group);
+    uint64_t my_data_len = adios_data_size (fd->group);
 
-    unsigned long long my_offset = 0;
+    uint64_t my_offset = 0;
     MPI_Status mstatus;
     MPI_Offset read_offset;
     int amode = MPI_MODE_RDONLY;
@@ -341,8 +341,8 @@ static void adios_mpi_cio_do_read (struct adios_file_struct * fd
 
     if (md->buffer_size < my_data_len)
     {
-        unsigned long long mem_needed = 0;
-        unsigned long long mem_allowed = 0;
+        uint64_t mem_needed = 0;
+        uint64_t mem_allowed = 0;
         mem_needed = my_data_len - md->buffer_size;
         mem_allowed = adios_method_buffer_alloc (mem_needed);
         if (mem_needed != mem_allowed)
@@ -379,14 +379,14 @@ static void adios_mpi_cio_do_write (struct adios_file_struct * fd
     struct adios_MPI_Collective_data_struct * md = (struct adios_MPI_Collective_data_struct *)
                                                        method->method_data;
     char name [STR_LEN];
-    unsigned long long my_data_len = adios_data_size (fd->group);
-    unsigned long long mem_needed = 0;
-    unsigned long long mem_allowed = 0;
-    unsigned long long my_offset = 0;
+    uint64_t my_data_len = adios_data_size (fd->group);
+    uint64_t mem_needed = 0;
+    uint64_t mem_allowed = 0;
+    uint64_t my_offset = 0;
     MPI_Status mstatus;
     MPI_Offset write_offset = 0;
     int overflow = 0;
-    unsigned long long end = 0;
+    uint64_t end = 0;
     struct adios_var_struct * v = fd->group->vars;
     struct adios_attribute_struct * a = fd->group->attributes;
     int err;

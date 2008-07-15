@@ -67,7 +67,7 @@ enum vartype_t {bp_char = 0
                ,bp_longlong = 4
                ,bp_float = 5
                ,bp_double = 6
-               ,bp_longdouble = 7
+               ,bp_long_double = 7
                ,bp_pointer = 8
                ,bp_string = 9
                ,bp_complex = 10
@@ -77,9 +77,6 @@ enum vartype_t {bp_char = 0
                ,bp_uint = 52
                ,bp_ulong = 53
                ,bp_ulonglong = 54
-               ,bp_ufloat = 55
-               ,bp_udouble = 56
-               ,bp_ulongdouble = 57
                };
 
 struct adios_bp_dimension_struct

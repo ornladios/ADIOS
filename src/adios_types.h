@@ -1,3 +1,6 @@
+#ifndef ADIOS_TYPES_H
+#define ADIOS_TYPES_H
+
 /* global defines needed for the type creation/setup functions */
 enum ADIOS_DATATYPES {adios_unknown = -1             // bp type         (size)
 
@@ -15,10 +18,6 @@ enum ADIOS_DATATYPES {adios_unknown = -1             // bp type         (size)
                      ,adios_double = 6               // bp_double         (8)
                      ,adios_long_double = 7          // bp_longdouble     (16)
 
-                     ,adios_unsigned_real = 55        // bp_ufloat        (4)
-                     ,adios_unsigned_double = 56      // bp_udouble       (8)
-                     ,adios_unsigned_long_double = 57 // bp_ulongdouble   (16)
-
                      ,adios_string = 9               // bp_string         (?)
                      ,adios_complex = 10             // bp_complex        (8)
                      ,adios_double_complex = 11      // bp_double_complex (16)
@@ -28,3 +27,5 @@ enum ADIOS_FLAG {adios_flag_unknown = 0
                 ,adios_flag_yes = 1
                 ,adios_flag_no = 2
                 };
+
+#endif
