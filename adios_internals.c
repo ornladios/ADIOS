@@ -34,6 +34,24 @@ static struct adios_group_list_struct * adios_groups = 0;
 struct adios_transport_struct * adios_transports = 0;
 static int adios_transports_initialized = 0;
 
+// this macro makes getting the attributes easier
+#define GET_ATTR(n,attr,var,en)                              \
+if (!strcasecmp (n, attr->name))                             \
+    if (!var)                                                \
+    {                                                        \
+        var = attr->value;                                   \
+        continue;                                            \
+    }                                                        \
+    else                                                     \
+    {                                                        \
+        fprintf (stderr, "config.xml: duplicate attribute "  \
+                         n                                   \
+                         " on "                              \
+                         en                                  \
+                         " (ignored)");                      \
+        continue;                                            \
+    }
+
 static int parseType (const char * type, const char * name)
 {
     if (   !strcasecmp (type, "byte")
@@ -1908,17 +1926,30 @@ static int validatePath (const struct adios_var_struct * vars
 static int parseGroup (mxml_node_t * node)
 {
     mxml_node_t * n;
-    const char * datagroup_name;
-    const char * coordination_comm;
-    const char * coordination_var;
-    const char * host_language = NULL;
+
+    const char * datagroup_name = 0;
+    const char * coordination_comm = 0;
+    const char * coordination_var = 0;
+    const char * host_language = 0;
+
     struct adios_group_struct * new_group;
     enum ADIOS_FLAG host_language_fortran = adios_flag_yes;
+    int i;
 
-    datagroup_name = mxmlElementGetAttr (node, "name");
-    coordination_comm = mxmlElementGetAttr (node, "coordination-communicator");
-    coordination_var = mxmlElementGetAttr (node, "coordination-var");
-    host_language = mxmlElementGetAttr (node, "host-language");
+    for (i = 0; i < node->value.element.num_attrs; i++)
+    {
+        mxml_attr_t * attr = &node->value.element.attrs [i];
+
+        GET_ATTR("name",attr,datagroup_name,"adios-group")
+        GET_ATTR("coordination-communicator",attr,coordination_comm,"adios-group")
+        GET_ATTR("coordination-var",attr,coordination_var,"adios-group")
+        GET_ATTR("host-language",attr,host_language,"adios-group")
+        fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+                         "(ignored)\n"
+                ,attr->name
+                ,"adios-group"
+                );
+    }
 
     if (!datagroup_name)
     {
@@ -1968,19 +1999,32 @@ static int parseGroup (mxml_node_t * node)
 
         if (!strcasecmp (n->value.element.name, "var"))
         {
-            const char * name;
-            const char * path;
-            const char * type;
-            const char * dimensions;
-            const char * copy_on_write;
+            const char * name = 0;
+            const char * path = 0;
+            const char * type = 0;
+            const char * dimensions = 0;
+            const char * dimension = 0;
+            const char * copy_on_write = 0;
             int t1;
             int c1;
 
-            name = mxmlElementGetAttr (n, "name");
-            path = mxmlElementGetAttr (n, "path");
-            type = mxmlElementGetAttr (n, "type");
-            dimensions = mxmlElementGetAttr (n, "dimensions");
-            copy_on_write = mxmlElementGetAttr (n, "copy-on-write");
+            for (i = 0; i < n->value.element.num_attrs; i++)
+            {
+                mxml_attr_t * attr = &n->value.element.attrs [i];
+
+                GET_ATTR("name",attr,name,"var")
+                GET_ATTR("path",attr,path,"var")
+                GET_ATTR("type",attr,type,"var")
+                GET_ATTR("dimensions",attr,dimensions,"var")
+                GET_ATTR("dimension",attr,dimension,"var")
+                GET_ATTR("copy-on-write",attr,copy_on_write,"var")
+                fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+                                 "(ignored)\n"
+                        ,attr->name
+                        ,"var"
+                        );
+            }
+
             if (!name)
                 name = "";  // this will catch the error
             if (!path)
@@ -1992,7 +2036,7 @@ static int parseGroup (mxml_node_t * node)
 
             if (!dimensions)
             {
-                dimensions = mxmlElementGetAttr (n, "dimension");
+                dimensions = dimension;
                 if (!dimensions)
                     dimensions = "";
             }
@@ -2010,15 +2054,42 @@ static int parseGroup (mxml_node_t * node)
             mxml_node_t * n1;   // used for global_bounds
             struct adios_global_bounds_struct * new_global_bounds = 0;
 
-            const char * dimensions;
-            const char * offsets;
+            const char * dimensions = 0;
+            const char * dimension = 0;
+            const char * global_dimensions = 0;
+            const char * global_dimension = 0;
+            const char * offsets = 0;
+            const char * offset = 0;
+            const char * local_offsets = 0;
+            const char * local_offset = 0;
 
-            dimensions = mxmlElementGetAttr (n, "dimensions");
-            offsets = mxmlElementGetAttr (n, "offsets");
+            for (i = 0; i < n->value.element.num_attrs; i++)
+            {
+                mxml_attr_t * attr = &n->value.element.attrs [i];
+
+                GET_ATTR("dimensions",attr,dimensions,"var")
+                GET_ATTR("dimension",attr,dimension,"var")
+
+                GET_ATTR("global-dimensions",attr,global_dimensions,"var")
+                GET_ATTR("global-dimension",attr,global_dimension,"var")
+
+                GET_ATTR("offsets",attr,offsets,"var")
+                GET_ATTR("offset",attr,offset,"var")
+
+                GET_ATTR("local-offsets",attr,local_offsets,"var")
+                GET_ATTR("local-offset",attr,local_offset,"var")
+
+                fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+                                 "(ignored)\n"
+                        ,attr->name
+                        ,"global-bounds"
+                        );
+            }
 
             if (!dimensions)
             {
-                dimensions = mxmlElementGetAttr (n, "global-dimensions");
+                dimensions = (dimension ? dimension : global_dimensions);
+                dimensions = (dimensions ? dimensions : global_dimension);
                 if (!dimensions)
                 {
                     fprintf (stderr, "config.xml: dimensions required on "
@@ -2030,6 +2101,8 @@ static int parseGroup (mxml_node_t * node)
             }
             if (!offsets)
             {
+                offsets = (offset ? offset : local_offsets);
+                offsets = (offsets ? offsets : local_offset);
                 fprintf (stderr, "config.xml: offsets required on "
                                  "global-bounds\n"
                         );
@@ -2058,19 +2131,32 @@ static int parseGroup (mxml_node_t * node)
 
                 if (!strcasecmp (n1->value.element.name, "var"))
                 {
-                    const char * name;
-                    const char * path;
-                    const char * type;
-                    const char * dimensions;
-                    const char * copy_on_write;
+                    const char * name = 0;
+                    const char * path = 0;
+                    const char * type = 0;
+                    const char * dimension = 0;
+                    const char * dimensions = 0;
+                    const char * copy_on_write = 0;
                     int t1;
                     int c1;
 
-                    name = mxmlElementGetAttr (n1, "name");
-                    path = mxmlElementGetAttr (n1, "path");
-                    type = mxmlElementGetAttr (n1, "type");
-                    dimensions = mxmlElementGetAttr (n1, "dimensions");
-                    copy_on_write = mxmlElementGetAttr (n1, "copy-on-write");
+                    for (i = 0; i < n->value.element.num_attrs; i++)
+                    {
+                        mxml_attr_t * attr = &n1->value.element.attrs [i];
+
+                        GET_ATTR("name",attr,name,"var")
+                        GET_ATTR("path",attr,path,"var")
+                        GET_ATTR("type",attr,type,"var")
+                        GET_ATTR("dimensions",attr,dimensions,"var")
+                        GET_ATTR("dimension",attr,dimension,"var")
+                        GET_ATTR("copy-on-write",attr,copy_on_write,"var")
+                        fprintf (stderr, "config.xml: unknown attribute '%s' "
+                                         "on %s (ignored)\n"
+                                ,attr->name
+                                ,"var"
+                                );
+                    }
+
                     if (!name)
                         name = "";  // this will catch the error
                     if (!path)
@@ -2082,8 +2168,7 @@ static int parseGroup (mxml_node_t * node)
                                    ,adios_flag_no
                                    );
                     if (!dimensions)
-                        dimensions = mxmlElementGetAttr (n, "dimension");
-
+                        dimensions = dimension;
 
                     if (!adios_common_define_var (*(long long *) &new_group
                                                  ,name
@@ -2114,25 +2199,37 @@ static int parseGroup (mxml_node_t * node)
         } else
         if (!strcasecmp (n->value.element.name, "attribute"))
         {
-            const char * name;
-            const char * path;
-            const char * value;
-            const char * var;
+            const char * name = 0;
+            const char * path = 0;
+            const char * value = 0;
+            const char * var = 0;
 
-            name = mxmlElementGetAttr (n, "name");
-            path = mxmlElementGetAttr (n, "path");
-            value = mxmlElementGetAttr (n, "value");
-            var = mxmlElementGetAttr (n, "var");
+            for (i = 0; i < n->value.element.num_attrs; i++)
+            {
+                mxml_attr_t * attr = &n->value.element.attrs [i];
+
+                GET_ATTR("name",attr,name,"var")
+                GET_ATTR("path",attr,path,"var")
+                GET_ATTR("value",attr,value,"var")
+                GET_ATTR("var",attr,var,"var")
+                fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+                                 "(ignored)\n"
+                        ,attr->name
+                        ,"attribute"
+                        );
+            }
 
             if (!name)
             {
-                fprintf (stderr, "config.xml: attribute element requires name\n");
+                fprintf (stderr, "config.xml: attribute element requires "
+                                 "name\n");
 
                 return 0;
             }
             if (!path)
             {
-                fprintf (stderr, "config.xml: attribute element requires path\n");
+                fprintf (stderr, "config.xml: attribute element requires "
+                                 "path\n");
 
                 return 0;
             }
@@ -2231,7 +2328,26 @@ static int parseGroup (mxml_node_t * node)
         } else
         if (!strcasecmp (n->value.element.name, "gwrite"))
         {
-            continue;
+            const char * src = 0;
+
+            for (i = 0; i < n->value.element.num_attrs; i++)
+            {
+                mxml_attr_t * attr = &n->value.element.attrs [i];
+
+                GET_ATTR("src",attr,src,"var")
+                fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+                                 "(ignored)\n"
+                        ,attr->name
+                        ,"gwrite"
+                        );
+            }
+            if (!src)
+            {
+                fprintf (stderr, "config.xml: gwrite element requires "
+                                 "src\n");
+
+                return 0;
+            }
         } else
         {
             if (!strncmp (n->value.element.name, "!--", 3)) // a comment
@@ -2256,26 +2372,43 @@ static int parseMethod (mxml_node_t * node)
 {
     mxml_node_t * n;
 
-    const char * priority;
-    const char * method;
-    const char * iterations;
-    const char * group;
-    const char * parameters;
-    const char * base_path;
+    const char * priority = 0;
+    const char * iterations = 0;
+    const char * base_path = 0;
+    const char * method = 0;
+    const char * group = 0;
+    const char * parameters = 0;
     int p1;
     int i1;
+    int i;
 
-    priority = mxmlElementGetAttr (node, "priority");
-    iterations = mxmlElementGetAttr (node, "iterations");
-    base_path = mxmlElementGetAttr (node, "base-path");
-    method = mxmlElementGetAttr (node, "method");
-    group = mxmlElementGetAttr (node, "group");
-    /* Check for parameters, if they exist */
+    for (i = 0; i < node->value.element.num_attrs; i++)
+    {
+        mxml_attr_t * attr = &node->value.element.attrs [i];
+
+        GET_ATTR("priority",attr,priority,"method")
+        GET_ATTR("iterations",attr,iterations,"method")
+        GET_ATTR("base-path",attr,base_path,"method")
+        GET_ATTR("method",attr,method,"method")
+        GET_ATTR("group",attr,group,"method")
+        fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+                         "(ignored)\n"
+                ,attr->name
+                ,"method"
+                );
+    }
+
+    // Check for parameters, if they exist
     n = mxmlWalkNext (node, node, MXML_DESCEND);
-    if ( n != NULL) 
-      {parameters = n->value.text.string;    }
+    if (n != NULL) 
+    {
+        parameters = n->value.text.string;
+    }
     else
-      {parameters = NULL;}
+    {
+        parameters = NULL;
+    }
+
     if (!priority)
         p1 = 1;
     else
@@ -2293,7 +2426,10 @@ static int parseMethod (mxml_node_t * node)
     if (!method)
         method = "";
 
-    if (!adios_common_select_method (p1, method, parameters, group, base_path, i1))
+    if (!adios_common_select_method (p1, method, parameters, group
+                                    ,base_path, i1
+                                    )
+       )
     {
         return 0;
     }
@@ -2303,20 +2439,35 @@ static int parseMethod (mxml_node_t * node)
 
 static int parseBuffer (mxml_node_t * node)
 {
-    const char * size_MB;
-    const char * free_memory_percentage;
-    const char * allocate_time;
+    const char * size_MB = 0;
+    const char * free_memory_percentage = 0;
+    const char * allocate_time = 0;
+
+    int i;
 
     int size = -1;
 
-    size_MB = mxmlElementGetAttr (node, "size-MB");
-    free_memory_percentage = mxmlElementGetAttr (node, "free-memory-percentage");
-    allocate_time = mxmlElementGetAttr (node, "allocate-time");
+    for (i = 0; i < node->value.element.num_attrs; i++)
+    {
+        mxml_attr_t * attr = &node->value.element.attrs [i];
+
+        GET_ATTR("size-MB",attr,size_MB,"method")
+        GET_ATTR("free-memory-percentage",attr,free_memory_percentage,"method")
+        GET_ATTR("allocate-time",attr,allocate_time,"method")
+        fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+                         "(ignored)\n"
+                ,attr->name
+                ,"buffer"
+                );
+    }
+
+
 
     if ((!size_MB && !free_memory_percentage) || !allocate_time)
     {
         fprintf (stderr, "config.xml: must define allocate-time and either "
-                         "size-MB or free-memory-percentage for buffer element\n"
+                         "size-MB or free-memory-percentage for "
+                         "buffer element\n"
                 );
 
         return 0;
@@ -2898,8 +3049,21 @@ int adios_parse_config (const char * config)
     }
     else
     {
-        const char * host_language = NULL;
-        host_language = mxmlElementGetAttr (root, "host-language");
+        const char * host_language = 0;
+        int i;
+
+        for (i = 0; i < root->value.element.num_attrs; i++)
+        {
+            mxml_attr_t * attr = &root->value.element.attrs [i];
+
+            GET_ATTR("host-language",attr,host_language,"var")
+            fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+                             "(ignored)\n"
+                    ,attr->name
+                    ,"adios-config"
+                    );
+        }
+
         if (!host_language)
         {
             host_language = "Fortran";
@@ -2962,7 +3126,7 @@ int adios_parse_config (const char * config)
                 }
                 else
                 {
-                    if (!strncmp (node->value.element.name, "!--", 3)) // a comment
+                    if (!strncmp (node->value.element.name, "!--", 3))
                     {
                         continue;
                     }
