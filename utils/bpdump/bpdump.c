@@ -14,7 +14,7 @@ struct dump_struct
 };
 
 static void pre_element_fetch (struct adios_bp_element_struct * element
-                              ,void ** buffer, long long * buffer_size
+                              ,void ** buffer, uint64_t * buffer_size
                               ,void * private_data
                               )
 {
@@ -43,7 +43,7 @@ int main (int argc, char ** argv)
     char * var;
     int i = 0;
     long long handle = 0;
-    long long element_size = 0;
+    uint64_t element_size = 0;
     struct adios_bp_element_struct * element = NULL;
     struct dump_struct data;
     data.DATALEN = 100 * 1024 * 1024;
@@ -134,36 +134,58 @@ int main (int argc, char ** argv)
                 else
                 switch (element->type)
                 {
-                    case bp_int: //adios_integer:
-                        printf ("%d\n", *((int *) element->data));
+                    case bp_char: // adios_byte
+                        printf ("%d\n", *((int8_t *) element->data));
                         break;
-                    case bp_float: //adios_real:
+                    case bp_short: // adios_short
+                        printf ("%d\n", *((int16_t *) element->data));
+                        break;
+                    case bp_int: //adios_integer
+                        printf ("%d\n", *((int32_t *) element->data));
+                        break;
+                    case bp_longlong: //adios_long
+                        printf ("%lld\n", *((int64_t *) element->data));
+                        break;
+
+                    case bp_float: //adios_real
                         printf ("%f\n", *((float *) element->data));
                         break;
-                    case bp_string: //adios_string:
+                    case bp_double: //adios_double
+                        printf ("%g\n", *((double *) element->data));
+                        break;
+                    case bp_long_double: //adios_long_double
+                        printf ("%lg\n", *((long double *) element->data));
+                        break;
+
+                    case bp_uchar: //adios_unsigned_byte:
+                        printf ("%u\n", *((uint8_t *) element->data));
+                        break;
+                    case bp_ushort: //adios_unsigned_short:
+                        printf ("%u\n", *((uint16_t *) element->data));
+                        break;
+                    case bp_uint: //adios_unsigned_integer
+                        printf ("%d\n", *((uint32_t *) element->data));
+                        break;
+                    case bp_ulonglong: // adios_unsigned_long
+                        printf ("%llu\n", *((uint64_t *) element->data));
+                        break;
+
+                    case bp_string: //adios_string
                         printf ("%s\n", ((char *) element->data));
                         break;
-                    case bp_double: //adios_double:
-                        printf ("%g\n"
-                               ,*((double *) element->data)
-                               );
-                        break;
-                    case bp_uchar: //adios_byte:
-                        printf ("%d\n"
-                               ,*((unsigned char *) element->data)
-                               );
-                        break;
-                    case bp_longlong: // adios_long
-                        printf ("%lld\n"
-                               ,*((long long *) element->data)
-                               );
-                        break;
                     case bp_complex: // adios_complex
+                        printf ("%f %f\n"
+                               ,((float *) element->data) [0]
+                               ,((float *) element->data) [1]
+                               );
+                        break;
+                    case bp_double_complex: // adios_double_complex
                         printf ("%lf %lf\n"
                                ,((double *) element->data) [0]
                                ,((double *) element->data) [1]
                                );
                         break;
+
                     default:
                         break;
                 }
@@ -276,7 +298,7 @@ int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
                     break;
 
                 case bp_longlong: // adios_long
-                    printf ("%lld ", (((long long *) data) [e]));
+                    printf ("%lld ", (((int64_t *) data) [e]));
                     break;
 
                 case bp_complex: // adios_complex
