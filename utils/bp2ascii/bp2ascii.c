@@ -1,7 +1,9 @@
 #include "hw-utils.h"
 #include "hdf5.h"
+
 void dump2ascii(char *argv[],int argc,int i);
 double *hr_dataset(hid_t root_id, char* name,hsize_t *rank,hsize_t *dims,hid_t *type_id);
+
 int main (int argc, char ** argv)
 {
     if (argc < 4)
