@@ -47,7 +47,7 @@ enum verbose_level verbose = NO_INFO;
  */
 struct buffer_struct
 {
-    unsigned long long DATALEN;
+    uint64_t DATALEN;
     void * val;
 } read_buffer;
 
@@ -62,7 +62,7 @@ int initialize_bp2h5(enum lang_convention array_dim_order,
                      enum lang_convention attr_str_ds,
                      enum lang_convention attr_str_gp,
                      enum scalar_convention scalar_ds,
-                     unsigned long long buf_size,
+                     uint64_t buf_size,
                      enum verbose_level verb
                      )
 {
@@ -110,7 +110,7 @@ void *xrealloc (void *ptr, size_t size)
  * Allocate buffer if necessary to accommodate the data value or dataset being read 
  */
 static void pre_element_fetch (struct adios_bp_element_struct * element
-                              ,void ** buffer, long long * buffer_size
+                              ,void ** buffer, uint64_t * buffer_size
                               ,void * private_data
                               )
 {
@@ -149,7 +149,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
     char * tmpstr;
     int size;
     struct adios_bp_element_struct * element = NULL;
-    long long element_size = 0;
+    uint64_t element_size = 0;
 
     handle = br_fopen (fnamein);
     if (!handle)

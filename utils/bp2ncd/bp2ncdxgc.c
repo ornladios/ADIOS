@@ -78,9 +78,9 @@ int makencd(char *ifname, char *ofname,char *destname)
   int ncid,retval;
   char *val;
   char *tmpstr=NULL;
-  unsigned long long DATALEN=100*1024*1024;
+  uint64_t DATALEN=100*1024*1024;
   struct adios_bp_element_struct *element=NULL;
-  long long element_size=0; 
+  uint64_t element_size=0; 
   if(ofname==NULL)
   {
      int size=strlen(ifname);

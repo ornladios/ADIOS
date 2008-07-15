@@ -34,7 +34,7 @@ int initialize_bp2h5(enum lang_convention array_dim_order,
                      enum lang_convention attr_str_ds,
                      enum lang_convention attr_str_gp,
                      enum scalar_convention scalar_ds,
-                     unsigned long long buf_size,
+                     uint64_t buf_size,
                      enum verbose_level verb
                      );
 
