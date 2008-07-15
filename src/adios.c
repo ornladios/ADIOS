@@ -126,7 +126,8 @@ static int common_adios_open (long long * fd, const char * group_name
     fd_p->name = strdup (name);
     fd_p->base_offset = 0;
     fd_p->offset = 0;
-    fd_p->write_size = 0;
+    fd_p->write_size_bytes = 0;
+    fd_p->write_size_nvars = 0;
     fd_p->group = g;
     fd_p->mode = mode;
 
@@ -179,7 +180,8 @@ static int common_adios_group_size (long long fd_p, int nvars
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
 
-    fd->write_size = byte_size;
+    fd->write_size_nvars = nvars;
+    fd->write_size_bytes = byte_size;
 
     return 0;
 }
@@ -201,7 +203,7 @@ static int common_adios_write (long long fd_p, const char * name, void * var)
     struct adios_var_struct * v = fd->group->vars;
     struct adios_method_list_struct * m = fd->group->methods;
 
-    v = adios_find_var_by_name (v, name);
+    v = adios_find_var_by_name (v, name, fd->group->all_unique_var_names);
 
     if (!v)
     {
@@ -276,7 +278,7 @@ static int common_adios_get_write_buffer (long long fd_p, const char * name
     struct adios_var_struct * v = fd->group->vars;
     struct adios_method_list_struct * m = fd->group->methods;
 
-    v = adios_find_var_by_name (v, name);
+    v = adios_find_var_by_name (v, name, fd->group->all_unique_var_names);
 
     if (!v)
     {
@@ -353,7 +355,9 @@ static int common_adios_read (long long fd_p, const char * name, void * buffer)
         return 1;
     }
 
-    v = adios_find_var_by_name (fd->group->vars, name);
+    v = adios_find_var_by_name (fd->group->vars, name
+                               ,fd->group->all_unique_var_names
+                               );
     if (v)
     {
         struct adios_method_list_struct * m = fd->group->methods;
@@ -466,7 +470,7 @@ static int common_adios_set_path_var (long long fd_p, const char * path
     struct adios_var_struct * v = t->vars;
 
     // check for vars and then attributes
-    v = adios_find_var_by_name (t->vars, name);
+    v = adios_find_var_by_name (t->vars, name, fd->group->all_unique_var_names);
 
     if (v)
     {

@@ -24,7 +24,7 @@ void bw_fopen_ (char * filename, long long * file_hd)
     if (size > 0)
     {
         lseek (fbp, size - 4, SEEK_SET);
-        read (fbp, &pos, sizeof (int) * 1);
+        read (fbp, &pos, 4 * 1);
         if (pos == 0)
             lseek (fbp, size - 4, SEEK_SET);
         else
@@ -44,7 +44,7 @@ void bw_fclose_ (long long * fptr)
 
 void bw_fwrite_ (long long * fptr, void * buffer, size_t * number)
 {
-    write (*(int *) fptr, buffer, sizeof (char) * *number);
+    write (*(int *) fptr, buffer, 1 * *number);
 }
 
 // write to a buffer
@@ -93,7 +93,7 @@ void bw_dset (void * fbp, int startidx, int * endidx, char * path, char * name
 
     var_step = bcalsize_dset (path, name, type, rank, dims);
     *endidx = startidx + var_step;
-    BWRITE (&var_step, sizeof (int), 1, fbp, &localidx);
+    BWRITE (&var_step, 4, 1, fbp, &localidx);
 
     tag = DST_TAG;
     bw_stringtag (fbp, &localidx, tag, name);
@@ -118,7 +118,7 @@ void bw_scalar (void * fbp, int startidx, int * endidx, char * str, char * name
 
     var_step = bcalsize_scalar (str, name, type, val);
     *endidx = startidx + var_step;
-    BWRITE (&var_step, sizeof (int), 1, fbp, &localidx);
+    BWRITE (&var_step, 4, 1, fbp, &localidx);
 
     tag = SCR_TAG;
     bw_stringtag (fbp, &localidx, tag, name);
@@ -139,7 +139,7 @@ void bw_attr (void * fbp, int startidx, int * endidx, char * path
 
     var_step = bcalsize_attr_num (path, name, type, val);
     *endidx = startidx + var_step;
-    BWRITE (&var_step, sizeof (int), 1, fbp, &localidx);
+    BWRITE (&var_step, 4, 1, fbp, &localidx);
 
     tag = DSTATRN_TAG;
     bw_stringtag (fbp, &localidx, tag, name);
@@ -161,7 +161,7 @@ void bw_attr_num_ds (void * fbp, int startidx, int * endidx, char * str
 
     var_step = bcalsize_attr_num (str, aname, type, val);
     *endidx = startidx + var_step;
-    BWRITE (&var_step, sizeof (int), 1, fbp, &localidx);
+    BWRITE (&var_step, 4, 1, fbp, &localidx);
 
     tag = DSTATRN_TAG;
     bw_stringtag (fbp, &localidx, tag, aname);
@@ -183,7 +183,7 @@ void bw_attr_num_gp (void * fbp, int startidx, int * endidx, char * str
 
     var_step = bcalsize_attr_num (str, aname, type, val);
     *endidx = startidx + var_step;
-    BWRITE (&var_step, sizeof (int), 1, fbp, &localidx);
+    BWRITE (&var_step, 4, 1, fbp, &localidx);
 
     tag = GRPATRN_TAG;
     bw_stringtag (fbp, &localidx, tag, aname);
@@ -206,7 +206,7 @@ void bw_attr_str_gp (void * fbp, int startidx, int * endidx, char * str
 
     var_step = bcalsize_attr_str (str, aname, aval);
     *endidx = startidx + var_step;
-    BWRITE (&var_step, sizeof (int), 1, fbp, &localidx);
+    BWRITE (&var_step, 4, 1, fbp, &localidx);
 
     tag = GRPATRS_TAG;
     bw_stringtag (fbp, &localidx, tag, aname);
@@ -228,7 +228,7 @@ void bw_attr_str_ds (void * fbp, int startidx, int * endidx, char * str
 
     var_step = bcalsize_attr_str (str, aname, aval);
     *endidx = startidx + var_step;
-    BWRITE (&var_step, sizeof (int), 1, fbp, &localidx);
+    BWRITE (&var_step, 4, 1, fbp, &localidx);
 
     tag = DSTATRS_TAG;
     bw_stringtag (fbp, &localidx, tag, aname);
@@ -242,8 +242,8 @@ void bw_attr_str_ds (void * fbp, int startidx, int * endidx, char * str
 
 int bp_calsize_stringtag (char * name)
 {
-    return  sizeof (int)
-          + sizeof (int)
+    return  4
+          + 4
           + strlen (name);
 }
 
@@ -251,9 +251,9 @@ void bw_stringtag (void * fbp, int * ptridx, enum TAG_t tag, char * name)
 { 
     int size = strlen (name);
 
-    BWRITE (&tag, sizeof (int), 1, fbp, ptridx);
-    BWRITE (&size, sizeof (int), 1, fbp, ptridx);
-    BWRITE (name, sizeof (char), size, fbp, ptridx);
+    BWRITE (&tag, 4, 1, fbp, ptridx);
+    BWRITE (&size, 4, 1, fbp, ptridx);
+    BWRITE (name, 1, size, fbp, ptridx);
 }
 
 int bp_calsize_scalartag (enum vartype_t type, void * val)
@@ -270,10 +270,10 @@ int bp_calsize_scalartag (enum vartype_t type, void * val)
         unit_size = 4;
     }
 
-    return  sizeof (int)
-          + sizeof (int)
-          + sizeof (int)
-          + unit_size * sizeof (char);
+    return  4
+          + 4
+          + 4
+          + unit_size * 1;
 }
 
 void bw_scalartag (void * fbp, int * ptridx, enum TAG_t tag, void * val
@@ -292,11 +292,11 @@ void bw_scalartag (void * fbp, int * ptridx, enum TAG_t tag, void * val
         size = 4;
     }
 
-    BWRITE (&tag, sizeof (int), 1, fbp, ptridx);
-    BWRITE (&size, sizeof (int), 1, fbp, ptridx);
-    BWRITE (&type, sizeof (int), 1, fbp, ptridx);
+    BWRITE (&tag, 4, 1, fbp, ptridx);
+    BWRITE (&size, 4, 1, fbp, ptridx);
+    BWRITE (&type, 4, 1, fbp, ptridx);
     if (size)
-        BWRITE (val, sizeof (char), size, fbp, ptridx);
+        BWRITE (val, 1, size, fbp, ptridx);
 }
 
 // rank = number of dimension entries
@@ -321,12 +321,12 @@ int bp_calsize_dsettag (enum vartype_t type, int rank
     adios_var_element_count (rank, dims, &use_count, &total_count);
     subsize *= use_count;
 
-    return  sizeof (int)
-          + sizeof (int)
-          + sizeof (int)
+    return  4
+          + 4
+          + 4
           + sizeof (struct adios_bp_dimension_struct) * rank
-          + sizeof (int)
-          + sizeof (char) * subsize;
+          + 4
+          + 1 * subsize;
 }
 
 // rank = number of dimension entries
@@ -360,12 +360,12 @@ void bw_dsettag (void * fbp, int * ptridx, enum TAG_t tag, void * val
 
     total_size = use_count * element_size;
 
-    BWRITE (&tag, sizeof (int), 1, fbp, ptridx);
-    BWRITE (&total_size, sizeof (int), 1, fbp, ptridx);
-    BWRITE (&rank, sizeof (int), 1, fbp, ptridx);
+    BWRITE (&tag, 4, 1, fbp, ptridx);
+    BWRITE (&total_size, 4, 1, fbp, ptridx);
+    BWRITE (&rank, 4, 1, fbp, ptridx);
     BWRITE (dims, sizeof (struct adios_bp_dimension_struct), rank, fbp, ptridx);
-    BWRITE (&type, sizeof (int), 1, fbp, ptridx);
-    BWRITE (val, sizeof (char), total_size, fbp, ptridx);
+    BWRITE (&type, 4, 1, fbp, ptridx);
+    BWRITE (val, 1, total_size, fbp, ptridx);
 }
 
 // rank = number of dimension entries

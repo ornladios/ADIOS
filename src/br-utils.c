@@ -165,19 +165,19 @@ static int br_get_next_element (struct adios_bp_read_struct * b, ADIOS_BR_PRE_FE
     (*element)->data = buffer;
     (*element)->tag = NULL_TAG;
 
-    total_size = br_read_buffer (b, sizeof (int), &var_step, sizeof (int));
+    total_size = br_read_buffer (b, 4, &var_step, 4);
     while (total_size < var_step)
     {
-        br_read_buffer (b, sizeof (int), &tag, sizeof (int));
-        total_size += sizeof (int);
+        br_read_buffer (b, 4, &tag, 4);
+        total_size += 4;
 
         if ((*element)->tag == NULL_TAG)
         {
             (*element)->tag = tag;
         }
 
-        br_read_buffer (b, sizeof (int), &size, sizeof (int));
-        total_size += sizeof (int);
+        br_read_buffer (b, 4, &size, 4);
+        total_size += 4;
 
         if (buffer_size && size > buffer_size)
         {
@@ -227,8 +227,8 @@ static int br_get_next_element (struct adios_bp_read_struct * b, ADIOS_BR_PRE_FE
                 break;
 
             case VAL_TAG:
-                br_read_buffer (b, sizeof (int), &(*element)->type, sizeof (int));
-                total_size += sizeof (int);
+                br_read_buffer (b, 4, &(*element)->type, 4);
+                total_size += 4;
 
                 (*element)->size = size;
                 if ((*element)->type == bp_string)
@@ -264,11 +264,11 @@ static int br_get_next_element (struct adios_bp_read_struct * b, ADIOS_BR_PRE_FE
                 break;
 
             case DSTVAL_TAG:
-                br_read_buffer (b, sizeof (int), &(*element)->ranks, sizeof (int));
-                total_size += sizeof (int);
+                br_read_buffer (b, 4, &(*element)->ranks, 4);
+                total_size += 4;
                 (*element)->dims = (struct adios_bp_dimension_struct *)
                                  calloc ((*element)->ranks
-                                        ,sizeof (struct adios_bp_dimension_struct)
+                                    ,sizeof (struct adios_bp_dimension_struct)
                                         );
                 if (!(*element)->dims)
                 {
@@ -288,8 +288,8 @@ static int br_get_next_element (struct adios_bp_read_struct * b, ADIOS_BR_PRE_FE
                                );
                 total_size +=   sizeof (struct adios_bp_dimension_struct)
                               * (*element)->ranks;
-                br_read_buffer (b, sizeof (int), &(*element)->type, sizeof (int));
-                total_size += sizeof (int);
+                br_read_buffer (b, 4, &(*element)->type, 4);
+                total_size += 4;
 
                 (*element)->size = size;
                 if (pre)
