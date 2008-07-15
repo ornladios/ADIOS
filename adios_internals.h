@@ -102,6 +102,7 @@ struct adios_group_struct
     char * name;
     int var_count;
     enum ADIOS_FLAG adios_host_language_fortran;
+    enum ADIOS_FLAG all_unique_var_names;
     struct adios_var_struct * vars;
     struct adios_attribute_struct * attributes;
     const char * group_by;
@@ -122,7 +123,8 @@ struct adios_file_struct
     char * name;
     uint64_t base_offset;
     uint64_t offset;
-    uint64_t write_size;
+    uint64_t write_size_bytes;
+    uint32_t write_size_nvars;
     struct adios_group_struct * group;
     enum ADIOS_METHOD_MODE mode;
 };
@@ -196,6 +198,7 @@ struct adios_buffer_part_entry
 struct adios_parse_buffer_struct
 {
     struct adios_var_struct * vars;
+    enum ADIOS_FLAG all_unique_var_names;
     uint64_t buffer_len;
     void * buffer;
 };
@@ -287,6 +290,7 @@ struct adios_group_list_struct * adios_get_groups (void);
 
 struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
                                                  ,const char * name
+                                                 ,enum ADIOS_FLAG unique_names
                                                  );
 struct adios_var_struct * adios_find_var_by_id (struct adios_var_struct * root
                                                ,uint32_t id
@@ -345,9 +349,10 @@ void adios_append_global_bounds (struct adios_global_bounds_struct * bounds);
 
 void adios_append_group (struct adios_group_struct * group);
 
-void adios_append_var (struct adios_var_struct ** root
-                      ,struct adios_var_struct * var
-                      );
+// is the var name unique
+enum ADIOS_FLAG adios_append_var (struct adios_var_struct ** root
+                                 ,struct adios_var_struct * var
+                                 );
 
 void adios_append_dimension (struct adios_dimension_struct ** root
                             ,struct adios_dimension_struct * dimension

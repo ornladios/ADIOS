@@ -11,15 +11,15 @@ char** bp_dirparser(char *str, int *nLevel)
   char *pch;
   int idx = 0, len=0;
   char *tmpstr;
-  tmpstr= (char *)malloc(sizeof(char)*(strlen(str)+1));
+  tmpstr= (char *)malloc(1*(strlen(str)+1));
   strcpy(tmpstr,str);
   pch = strtok(tmpstr,"/");
-  grp_name = (char **)malloc(NUM_GP*sizeof(char));
+  grp_name = (char **)malloc(NUM_GP*1);
   while(pch!=NULL && *pch!=' ')
   {
      
      len = strlen(pch);
-     grp_name[idx]  = (char *)malloc((len+1)*sizeof(char));
+     grp_name[idx]  = (char *)malloc((len+1)*1);
      grp_name[idx][0]='\0';
      strcat(grp_name[idx],pch);
      pch=strtok(NULL,"/");
@@ -135,7 +135,7 @@ int bp_tagPeek(FILE* packfile)
     int nexttag;
     
     if (fgetpos(packfile, &position) == 0) {
-      fread(&nexttag, sizeof(int), 1, packfile);
+      fread(&nexttag, 4, 1, packfile);
       if (fsetpos(packfile, &position) != 0)
         return -2;
       else

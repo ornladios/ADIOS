@@ -37,11 +37,13 @@ static void adios_var_to_comm (enum ADIOS_FLAG host_language_fortran
                               ,const char * varname
                               ,struct adios_var_struct * vars
                               ,MPI_Comm * comm
+                              ,enum ADIOS_FLAG unique_var_names
                               )
 {
     if (varname)
     {
-        struct adios_var_struct * var = adios_find_var_by_name (vars, varname);
+        struct adios_var_struct * var =
+                 adios_find_var_by_name (vars, varname, unique_var_names);
 
         if (var)
         {
@@ -125,6 +127,7 @@ void adios_mpi_open (struct adios_file_struct * fd
             adios_var_to_comm (fd->group->adios_host_language_fortran
                               ,fd->group->group_comm, fd->group->vars
                               ,&group_comm
+                              ,fd->group->all_unique_var_names
                               );
             if (group_comm != MPI_COMM_NULL)
                 MPI_Comm_rank (group_comm, &rank);
@@ -302,6 +305,7 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
     {
         adios_var_to_comm (fd->group->adios_host_language_fortran
                           ,fd->group->group_comm, fd->group->vars, &group_comm
+                          ,fd->group->all_unique_var_names
                           );
 
         MPI_Comm_rank (group_comm, &rank);
@@ -443,6 +447,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
         adios_var_to_comm (fd->group->adios_host_language_fortran
                           ,fd->group->group_comm, fd->group->vars
                           ,&group_comm
+                          ,fd->group->all_unique_var_names
                           );
 
         MPI_Comm_rank (group_comm, &rank);

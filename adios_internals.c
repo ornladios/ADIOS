@@ -285,7 +285,10 @@ static int parseMeshUniformDimensions (const char * dimensions
             else
             {
                 item->item.rank = 0.0;
-                item->item.var = adios_find_var_by_name (new_group->vars, tmp);
+                item->item.var =
+                    adios_find_var_by_name (new_group->vars, tmp
+                                           ,new_group->all_unique_var_names
+                                           );
                 if (!item->item.var)
                 {
                     fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -347,7 +350,10 @@ static int parseMeshUniformOrigin (const char * origin
         if (is_var (c))
         {
             item->item.rank = 0.0;
-            item->item.var = adios_find_var_by_name (new_group->vars, c);
+            item->item.var =
+                    adios_find_var_by_name (new_group->vars, c
+                                           ,new_group->all_unique_var_names
+                                           );
             if (!item->item.var)
             {
                 fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -423,7 +429,10 @@ static int parseMeshUniformSpacing (const char * spacing
             else
             {
                 item->item.rank = 0.0;
-                item->item.var = adios_find_var_by_name (new_group->vars, tmp);
+                item->item.var =
+                    adios_find_var_by_name (new_group->vars, tmp
+                                           ,new_group->all_unique_var_names
+                                           );
                 if (!item->item.var)
                 {
                     fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -495,7 +504,10 @@ static int parseMeshRectilinearDimensions (const char * dimensions
             else
             {
                 item->item.rank = 0.0;
-                item->item.var = adios_find_var_by_name (new_group->vars, tmp);
+                item->item.var =
+                    adios_find_var_by_name (new_group->vars, tmp
+                                           ,new_group->all_unique_var_names
+                                           );
                 if (!item->item.var)
                 {
                     fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -563,7 +575,10 @@ static int parseMeshRectilinearCoordinatesMultiVar (const char * coordinates
             *c = '\0';
             if (is_var (tmp))
             {
-                var->var = adios_find_var_by_name (new_group->vars, tmp);
+                var->var =
+                    adios_find_var_by_name (new_group->vars, tmp
+                                           ,new_group->all_unique_var_names
+                                           );
                 if (!var->var)
                 {
                     fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -631,7 +646,10 @@ static int parseMeshRectilinearCoordinatesSingleVar (const char * coordinates
             *c = '\0';
             if (is_var (tmp))
             {
-                var->var = adios_find_var_by_name (new_group->vars, tmp);
+                var->var =
+                    adios_find_var_by_name (new_group->vars, tmp
+                                           ,new_group->all_unique_var_names
+                                           );
                 if (!var->var)
                 {
                     fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -692,7 +710,10 @@ static int parseMeshStructuredNspace (const char * nspace
         if (is_var (c))
         {
             item->rank = 0.0;
-            item->var = adios_find_var_by_name (new_group->vars, c);
+            item->var =
+                    adios_find_var_by_name (new_group->vars, c
+                                           ,new_group->all_unique_var_names
+                                           );
             if (!item->var)
             {
                 fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -758,7 +779,10 @@ static int parseMeshStructuredDimensions (const char * dimensions
         if (is_var (c))
         {
             item->item.rank = 0.0;
-            item->item.var = adios_find_var_by_name (new_group->vars, c);
+            item->item.var =
+                    adios_find_var_by_name (new_group->vars, c
+                                           ,new_group->all_unique_var_names
+                                           );
             if (!item->item.var)
             {
                 fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -823,7 +847,10 @@ static int parseMeshStructuredPointsMultiVar (const char * points
 
         if (is_var (c))
         {
-            var->var = adios_find_var_by_name (new_group->vars, c);
+            var->var =
+                    adios_find_var_by_name (new_group->vars, c
+                                           ,new_group->all_unique_var_names
+                                           );
             if (!var->var)
             {
                 fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -887,7 +914,10 @@ static int parseMeshStructuredPointsSingleVar (const char * points
 
         if (is_var (c))
         {
-            var->var = adios_find_var_by_name (new_group->vars, c);
+            var->var =
+                    adios_find_var_by_name (new_group->vars, c
+                                           ,new_group->all_unique_var_names
+                                           );
             if (!var->var)
             {
                 fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -941,7 +971,9 @@ static int parseMeshUnstructuredPoints (const char * components
     {
         if (is_var (c))
         {
-            var = adios_find_var_by_name (new_group->vars, c);
+            var = adios_find_var_by_name (new_group->vars, c
+                                         ,new_group->all_unique_var_names
+                                         );
             if (!var)
             {
                 fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -1022,7 +1054,10 @@ static int parseMeshUnstructuredUniformCells (const char * count
     {
         if (is_var (c))
         {
-            cell_list->cell_list.count.var = adios_find_var_by_name (new_group->vars, c);
+            cell_list->cell_list.count.var =
+                    adios_find_var_by_name (new_group->vars, c
+                                           ,new_group->all_unique_var_names
+                                           );
             cell_list->cell_list.count.rank = 0;
             if (!cell_list->cell_list.count.var)
             {
@@ -1050,7 +1085,10 @@ static int parseMeshUnstructuredUniformCells (const char * count
     {
         if (is_var (c))
         {
-            cell_list->cell_list.data = adios_find_var_by_name (new_group->vars, c);
+            cell_list->cell_list.data =
+                 adios_find_var_by_name (new_group->vars, c
+                                        ,new_group->all_unique_var_names
+                                        );
             if (!cell_list->cell_list.data)
             {
                 fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -1076,7 +1114,10 @@ static int parseMeshUnstructuredUniformCells (const char * count
     {
         if (is_var (c))
         {
-            cell_list->cell_list.type.var = adios_find_var_by_name (new_group->vars, c);
+            cell_list->cell_list.type.var =
+                     adios_find_var_by_name (new_group->vars, c
+                                            ,new_group->all_unique_var_names
+                                            );
             cell_list->cell_list.type.rank = 0;
             if (!cell_list->cell_list.type.var)
             {
@@ -1158,7 +1199,10 @@ static int parseMeshUnstructuredMixedCells (const char * count
     {
         if (is_var (c))
         {
-            cell_list->cell_list.count.var = adios_find_var_by_name (new_group->vars, c);
+            cell_list->cell_list.count.var =
+                   adios_find_var_by_name (new_group->vars, c
+                                          ,new_group->all_unique_var_names
+                                          );
             cell_list->cell_list.count.rank = 0;
             if (!cell_list->cell_list.count.var)
             {
@@ -1186,7 +1230,10 @@ static int parseMeshUnstructuredMixedCells (const char * count
     {
         if (is_var (c))
         {
-            cell_list->cell_list.data = adios_find_var_by_name (new_group->vars, c);
+            cell_list->cell_list.data =
+                   adios_find_var_by_name (new_group->vars, c
+                                          ,new_group->all_unique_var_names
+                                          );
             if (!cell_list->cell_list.data)
             {
                 fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -1212,7 +1259,10 @@ static int parseMeshUnstructuredMixedCells (const char * count
     {
         if (is_var (c))
         {
-            cell_list->cell_list.type.var = adios_find_var_by_name (new_group->vars, c);
+            cell_list->cell_list.type.var =
+                   adios_find_var_by_name (new_group->vars, c
+                                          ,new_group->all_unique_var_names
+                                          );
             cell_list->cell_list.type.rank = 0;
             if (!cell_list->cell_list.type.var)
             {
@@ -2630,9 +2680,11 @@ int adios_method_buffer_free (uint64_t size)
 
 struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
                                                  ,const char * name
+                                                 ,enum ADIOS_FLAG unique_names
                                                  )
 {
     int done = 0;
+    struct adios_var_struct * var = 0;
 
     if (!name)
     {
@@ -2642,17 +2694,41 @@ struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
 
     while (!done && root)
     {
-        if (!strcasecmp (name, root->name))
+        char * compare_name = root->name;
+        char * compare_name_path = root->name;
+        if (unique_names == adios_flag_no)
+        {
+            compare_name_path = malloc (  strlen (root->name)
+                                        + strlen (root->path)
+                                        + 2 // null term and '/'
+                                       );
+            if (!strcmp (root->path, "/"))
+                sprintf (compare_name_path, "/%s", root->name);
+            else
+                sprintf (compare_name_path, "%s/%s", root->path, root->name);
+        }
+
+        if (   !strcasecmp (name, compare_name)
+            || (   unique_names == adios_flag_no
+                && !strcasecmp (name, compare_name_path)
+               )
+           )
         {
             done = 1;
+            var = root;
         }
         else
         {
             root = root->next;
         }
+
+        if (unique_names == adios_flag_no)
+        {
+            free (compare_name_path);
+        }
     }
 
-    return root;
+    return var;
 }
 
 struct adios_var_struct * adios_find_var_by_id (struct adios_var_struct * root
@@ -2725,7 +2801,10 @@ static int parse_subitem (char * d, struct adios_group_struct * g
         if (is_var (left))
         {
             bound->rank = 0;
-            bound->var = adios_find_var_by_name (g->vars, left);
+            bound->var =
+                   adios_find_var_by_name (g->vars, left
+                                          ,g->all_unique_var_names
+                                          );
             if (!bound->var)
             {
                 fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -2744,7 +2823,10 @@ static int parse_subitem (char * d, struct adios_group_struct * g
         if (is_var (right))
         {
             use_bound->rank = 0;
-            use_bound->var = adios_find_var_by_name (g->vars, right);
+            use_bound->var =
+                   adios_find_var_by_name (g->vars, right
+                                          ,g->all_unique_var_names
+                                          );
             if (!use_bound->var)
             {
                 fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -2766,7 +2848,9 @@ static int parse_subitem (char * d, struct adios_group_struct * g
         {
             bound->rank = 0;
             use_bound->rank = 0;
-            bound->var = adios_find_var_by_name (g->vars, d);
+            bound->var = adios_find_var_by_name (g->vars, d
+                                                ,g->all_unique_var_names
+                                                );
             if (!bound->var)
             {
                 fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -2775,7 +2859,9 @@ static int parse_subitem (char * d, struct adios_group_struct * g
 
                 return 0;
             }
-            use_bound->var = adios_find_var_by_name (g->vars, d);
+            use_bound->var = adios_find_var_by_name (g->vars, d
+                                                    ,g->all_unique_var_names
+                                                    );
             if (!use_bound->var)
             {
                 fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -2812,7 +2898,9 @@ void adios_parse_dimension (char * dimension, struct adios_group_struct * g
     if (is_var (dimension))
     {
         dim->dimension.rank = 0;
-        dim->dimension.var = adios_find_var_by_name (g->vars, dimension);
+        dim->dimension.var = adios_find_var_by_name (g->vars, dimension
+                                                    ,g->all_unique_var_names
+                                                    );
         if (!dim->dimension.var)
         {
             fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -2917,7 +3005,10 @@ void adios_parse_dimension (char * dimension, struct adios_group_struct * g
             if (is_var (stride))
             {
                 dim->stride.rank = 0;
-                dim->stride.var = adios_find_var_by_name (g->vars, stride);
+                dim->stride.var =
+                             adios_find_var_by_name (g->vars, stride
+                                                    ,g->all_unique_var_names
+                                                    );
                 if (!dim->stride.var)
                 {
                     fprintf (stderr, "config.xml: invalid var dimension: %s\n"
@@ -3229,7 +3320,9 @@ int adios_common_define_attribute (long long group, const char * name
             return 0;
         }
 
-        f = adios_find_var_by_name (t->vars, extracted_name);
+        f = adios_find_var_by_name (t->vars, extracted_name
+                                   ,g->all_unique_var_names
+                                   );
         if (f)
         {
             if (   strcasecmp (extracted_path, v->path)
@@ -3316,7 +3409,9 @@ int adios_common_define_attribute (long long group, const char * name
     else
     {
         attr->value = 0;
-        attr->var = adios_find_var_by_name (g->vars, var);
+        attr->var = adios_find_var_by_name (g->vars, var
+                                           ,g->all_unique_var_names
+                                           );
     }
 
     attr->next = 0;
@@ -3528,7 +3623,17 @@ void adios_pre_element_fetch (struct adios_bp_element_struct * element
     // if it isn't a data element, skip it
     if (element->tag == SCR_TAG || element->tag == DST_TAG)
     {
-        v = adios_find_var_by_name (d->vars, element->name);
+        char * full_name = malloc (  strlen (element->path)
+                                   + strlen (element->name) + 2
+                                  );
+        if (!strcmp (element->path, "/"))
+            sprintf (full_name, "/%s", element->name);
+        else
+            sprintf (full_name, "%s/%s", element->path, element->name);
+        v = adios_find_var_by_name (d->vars, full_name
+                                   ,d->all_unique_var_names
+                                   );
+        free (full_name);
         if (!v)
         {
             fprintf (stderr, "Data item %s being read ignored\n"
@@ -3608,9 +3713,23 @@ void adios_post_element_fetch (struct adios_bp_element_struct * element
 
     // if it isn't a data element, skip it
     if (element->tag == SCR_TAG || element->tag == DST_TAG)
-        v = adios_find_var_by_name (d->vars, element->name);
+    {
+        char * full_name = malloc (  strlen (element->path)
+                                   + strlen (element->name) + 2
+                                  );
+        if (!strcmp (element->path, "/"))
+            sprintf (full_name, "/%s", element->name);
+        else
+            sprintf (full_name, "%s/%s", element->path, element->name);
+        v = adios_find_var_by_name (d->vars, full_name
+                                   ,d->all_unique_var_names
+                                   );
+        free (full_name);
+    }
     else
+    {
         v = 0;
+    }
 
     if (v)
     {
@@ -3706,6 +3825,7 @@ void adios_parse_buffer (struct adios_file_struct * fd, char * buffer
     struct adios_parse_buffer_struct data;
 
     data.vars = v;
+    data.all_unique_var_names = adios_flag_no;
     data.buffer_len = DATALEN;
     data.buffer = malloc (DATALEN);
     if (!data.buffer)
@@ -3949,14 +4069,23 @@ void adios_append_group (struct adios_group_struct * group)
     }
 }
 
-void adios_append_var (struct adios_var_struct ** root
-                      ,struct adios_var_struct * var
-                      )
+// return is whether or not the name is unique
+enum ADIOS_FLAG adios_append_var (struct adios_var_struct ** root
+                                 ,struct adios_var_struct * var
+                                 )
 {
     int id = 1;
+    enum ADIOS_FLAG unique_names = adios_flag_yes;
 
     while (root)
     {
+        if (   unique_names == adios_flag_yes
+            && *root
+            && !strcasecmp ((*root)->name, var->name)
+           )
+        {
+            unique_names = adios_flag_no;
+        }
         if (!*root)
         {
             var->id = id;
@@ -3969,6 +4098,8 @@ void adios_append_var (struct adios_var_struct ** root
             id++;
         }
     }
+
+    return unique_names;
 }
 
 void adios_append_dimension (struct adios_dimension_struct ** root
@@ -4140,6 +4271,7 @@ int adios_common_declare_group (long long * id, const char * name
 
     g->name = strdup (name);
     g->adios_host_language_fortran = host_language_fortran;
+    g->all_unique_var_names = adios_flag_yes;
     g->id = 0; // will be set in adios_append_group
     g->var_count = 0;
     g->vars = 0;
@@ -4235,6 +4367,7 @@ int adios_common_define_var (long long group_id, const char * name
                                malloc (sizeof (struct adios_var_struct));
     char * dim;
     char * dim_temp;
+    enum ADIOS_FLAG flag;
     if (dimensions)
         dim_temp = strdup (dimensions);
     else
@@ -4279,7 +4412,11 @@ int adios_common_define_var (long long group_id, const char * name
         free (dim_temp);
     }
 
-    adios_append_var (&t->vars, v);
+    flag = adios_append_var (&t->vars, v);
+    if (flag == adios_flag_no)
+    {
+        t->all_unique_var_names = adios_flag_no;
+    }
     t->var_count++;
 
     return 1;
