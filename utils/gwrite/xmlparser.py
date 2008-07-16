@@ -2,132 +2,151 @@
 import sys
 import os
 import xml.dom.minidom
+import gwrite_types 
 from time import sleep
 
 items=""
 sizeformular=[]
-
+sizestr={}
+getsize=gwrite_types.adios_size
 language_flag=0
-getsize={}
-getsize["byte"]=1
-getsize["integer*1"]=1
-
-getsize["short"]=2
-getsize["integer*2"]=2
-
-getsize["integer"]=4
-getsize["integer*4"]=4
-
-getsize["long"]=8
-getsize["integer*8"]=8
-
-getsize["unsigned byte"]=1
-getsize["unsigned integer*1"]=1
-
-getsize["unsigned short"]=2
-getsize["unsigned integer*2"]=2
-
-getsize["unsigned integer"]=4
-getsize["unsigned integer*4"]=4
-
-getsize["unsigned long"]=8
-getsize["unsigned integer*8"]=8
-
-getsize["real"]=4
-getsize["real*4"]=4
-getsize["float"]=4
-
-getsize["unsigned real"]=4
-getsize["unsigned real*4"]=4
-getsize["unsigned float"]=4
-
-getsize["real*8"]=8
-getsize["double"]=8
-
-getsize["unsigned real*8"]=8
-getsize["unsigned double"]=8
-
-getsize["complex"]=8
-getsize["double complex"]=16
-
+groupdict={}
 def processvar(node,language_sw,coord_comm,coord_var):
     global sizeformular
+    global groupdict 
     line=""
-    dimsname=node.getAttribute("dimensions")
-    typename=node.getAttribute("type")
-    strsize=str(getsize[typename])
+########################################################          
+# Modified Code: Case Insensitive
+########################################################          
+    attkeys=node.attributes.keys()
+    varname=""
+    typename="" 
+    dimsname=""
+    varname_g=""
+    copyflag=""
+    for akey in attkeys:
+        akeystr=str(akey).lower()
+        if(akeystr=="dimensions"):
+           dimsname=node.attributes[akey].value
+        elif(akeystr=="type"):
+           typename=node.attributes[akey].value
+        elif(akeystr=="name"):
+           varname=node.attributes[akey].value
+        elif(akeystr=="gname"):
+           varname_g=node.attributes[akey].value
+        elif(akeystr=="copy-on-write"):
+           copyflag=node.attributes[akey].value
+    if(varname=="" or typename==""):
+       print "Warning: empty varname or type for adiosgroup: "+node.nodeName
     if (dimsname!=""):
-        return line 
-    sizeformular.append(strsize)
-    varname=str(node.getAttribute("name"))
+        return line
+    print varname,dimsname,typename,varname_g 
+    strsize=str(getsize[typename])
+    if(copyflag=="yes"):
+        sizeformular.append(strsize+'*2')
+    else:
+        sizeformular.append(strsize)
+    if(varname_g==""):
+       varname_g=varname
+    groupdict[varname]=varname_g
+########################################################          
+# Original Code: Case Sensitive
+########################################################          
+    #dimsname=node.getAttribute("dimensions")
+    #typename=node.getAttribute("type")
+    #varname=str(node.getAttribute("name"))
+    #if(node.getAttribute("gname")!=""):
+    #   varname_g=node.getAttribute("gname")
+    #else:
+    #   varname_g=varname
+########################################################          
+           
     if (language_sw==1):
-        if(node.getAttribute("gname")!=""):
-           varname_g=node.getAttribute("gname")
-        else:
-           varname_g=varname
-        if(node.getAttribute("goffset")!=""):
-           varname_g=varname_g+"("+str(node.getAttribute("goffset")) +")"
         if(coord_comm==varname or coord_var==varname): 
            line="call adios_write(aaaabbbb,"+"\""+varname+"\"//char(0),"+varname_g+")"
         else:
            line="call adios_op(aaaabbbb,"+"\""+varname+"\"//char(0),"+varname_g+")"
-            
     elif(language_sw==2):
-        if(node.getAttribute("gname")!=""):
-           varname_g=node.getAttribute("gname")
-        else:
-           varname_g=varname
-        if(node.getAttribute("goffset")!=""):
-           varname_g="&"+varname_g+"["+str(node.getAttribute("goffset")) +"]"
-        elif(node.getAttribute("dimensions")!="" or node.getAttribute("copy-on-write")=="yes"):
-           varname_g=varname_g
-        else:
-           varname_g="&"+varname_g
         if(coord_comm==varname or coord_var==varname):
-           line="call adios_write(aaaabbbb,"+"\""+varname+"\"//char(0),"+varname_g+")"
+           line="adios_write(aaaabbbb,"+"\""+varname+"\","+"&"+varname_g+")"
         else:
-           line="call adios_op(aaaabbbb,"+"\""+varname+"\"//char(0),"+varname_g+")"
+           for c in varname_g:
+               if(c=='+' or c=='-' or c=='*' or c=='/' or c=='^' or c=='%'):
+                  print "Fatal: var --"+varname_g+"-- cannot be written"
+                  raise SystemExit
+           line="adios_op(aaaabbbb,"+"\""+varname+"\","+"&"+varname_g+")"
     return line+'\n'
 
 def processdset(node,language_sw):
     global sizeformular
+    global groupdict
     line=""
-    dimsname=node.getAttribute("dimensions")
-    typename=node.getAttribute("type")
-    strsize=str(getsize[typename])
+########################################################          
+# Modified Code: Case Insensitive
+########################################################          
+    attkeys=node.attributes.keys()
+    varname=""
+    typename="" 
+    dimsname=""
+    varname_g=""
+    copyflag=""
+    for akey in attkeys:
+        akeystr=str(akey).lower()
+        if(akeystr=="dimensions"):
+           dimsname=node.attributes[akey].value
+        elif(akeystr=="type"):
+           typename=node.attributes[akey].value
+        elif(akeystr=="name"):
+           varname=node.attributes[akey].value
+        elif(akeystr=="gname"):
+           varname_g=node.attributes[akey].value
+        elif(akeystr=="copy-on-write"):
+           copyflag=node.attributes[akey].value
     if (dimsname==""):
-        return line
+        return line 
+    if(varname_g==""):
+       varname_g=varname
+########################################################          
+# Original Code: Case Sensitive
+########################################################          
+#    dimsname=node.getAttribute("dimensions")
+#    typename=node.getAttribute("type")
+########################################################          
+    strsize=str(getsize[typename])
     dimsarr=dimsname.split(',');
-    for i in range(0,len(dimsarr)):
-        if(i==0):
-           line=strsize+'*'+'('+dimsarr[i]+')'
+    for dimsele in dimsarr:
+           
+        if(dimsele==dimsarr[0]):
+           if(dimsele.isdigit()):
+              line=strsize+'*'+'('+dimsele+')'
+           else:
+              line=strsize+'*'+'('+groupdict[dimsele]+')'
         else:
-           line=line+'*'+'('+dimsarr[i]+')'
+           if(dimsele.isdigit()):
+              line=line+'*'+'('+dimsele+')'
+           else:
+              line=line+'*'+'('+groupdict[dimsele]+')'
+   
+    if("yes"==str(node.getAttribute("copy-on-write")).lower()):
+           line ='2*'+'('+line+')'
+    
     sizeformular.append(line)
     line=""
-    varname=str(node.getAttribute("name"))
     if (language_sw==1):
-        if(node.getAttribute("gname")!=""):
-           varname_g=node.getAttribute("gname")
-        else:
-           varname_g=varname
-        if(node.getAttribute("goffset")!=""):
-           varname_g=varname_g+"("+str(node.getAttribute("goffset")) +")"
+        #if(node.getAttribute("goffset")!=""):
+        #   varname_g=varname_g+"("+str(node.getAttribute("goffset")) +")"
         line="call adios_op(aaaabbbb,"+"\""+varname+"\"//char(0),"+varname_g+")"
             
     elif(language_sw==2):
-        if(node.getAttribute("gname")!=""):
-           varname_g=node.getAttribute("gname")
-        else:
-           varname_g=varname
-        if(node.getAttribute("goffset")!=""):
-           varname_g="&"+varname_g+"["+str(node.getAttribute("goffset")) +"]"
-        elif(node.getAttribute("dimensions")!="" or node.getAttribute("copy-on-write")=="yes"):
-           varname_g=varname_g
-        else:
-           varname_g="&"+varname_g
+        #if(node.getAttribute("goffset")!=""):
+        #   varname_g="&"+varname_g+"["+str(node.getAttribute("goffset")) +"]"
+        #elif(node.getAttribute("dimensions")!="" or node.getAttribute("copy-on-write")=="yes"):
+        #   varname_g=varname_g
+        #else:
+        #   varname_g="&"+varname_g
         line="adios_op(aaaabbbb,"+"\""+varname+"\","+varname_g+");"
     return line+'\n'
+
 def processnode(nodelist,language_sw,coord_comm,coord_var):
    global items,sizeformular
    for node in nodelist:
@@ -150,24 +169,73 @@ def getVarlistFromXML(xmlFile):
     variables={}
     doc=xml.dom.minidom.parse(xmlFile)# parse an XML file by name
     idx=0
-    group=doc.getElementsByTagName("adios-config")
-    language=(group[0].getAttribute("host-language"))
-    
-    if (language=="Fortran"):
-	 language_flag=1
-    elif(language=="C" or language=="c" or language=="cpp" or language=="CPP"):
-         language_flag=2
-    for group in doc.getElementsByTagName("adios-group"):
-         items=""
-         indent=""
-         gname=group.getAttribute("name")
-         coord_comm=group.getAttribute("coordination-communicator")
-         coord_var=group.getAttribute("coordination-var")
-         nodelist=group.childNodes
-         processnode(nodelist,language_flag,coord_comm,coord_var)
-         variables[str(gname)]=items
+    group=doc.childNodes
+    if(group.length!=1):
+       print "Fatal: adios-config should be one and only one!"
+       raise SystemExit
+    root=group[0]
+    if(root.tagName.lower()!="adios-config"):
+       print "Fatal: wrong root element, switch to adios-config"  
+       raise SystemExit
+    #group=doc.getElementsByTagName("adios-config")
+    attnum=len(root.attributes.keys())
+    if (attnum==0) :
+        language_flag=1
+    elif(attnum==1):
+        attkeys=root.attributes.keys()
+        if(str(attkeys[0]).lower()=="host-language"):
+           language=group[0].getAttribute(attkeys[0])
+        if (language.lower()=="fortran"):
+    	    language_flag=1
+        elif(language.lower()=="c" or language.lower()=="cpp"):
+            language_flag=2
+        else:
+            language_flag==-1
+            print "Fatal: Unknown language supported!"
+            raise SystemExit
+    gname=""
+    coord_comm=""
+    coord_var=""
+    for group in root.childNodes:
+      if (group.nodeType==group.ELEMENT_NODE): 
+        if (group.tagName.lower()=="adios-group"): 
+            items=""
+            indent=""
+            attkeys=group.attributes.keys()
+            for akey in attkeys:
+                akeystr=str(akey).lower()
+                if (akeystr=="name"):
+                    gname=group.attributes[akey].value
+                elif (akeystr=="coordination-communicator"):
+                    coord_comm=group.attributes[akey].value
+                elif (akeystr=="coordination-var"):
+                    coord_var=group.attributes[akey].value
+                else:
+                    print "Warning: Unknown attribute --"+str(akey)+"-- for adios-group: "+gname
+            if (gname ==""):
+                print "Fatal: name for adios-group is required!"
+                raise SystemExit
+            nodelist=group.childNodes
+            processnode(nodelist,language_flag,coord_comm,coord_var)
+            groupdict={}
+            variables[str(gname)]=items
+            sizestr[str(gname)] = sizeformular    
+            sizeformular=[]
     return variables
 
+def processgroup(group,gname,coord_comm,coord_var):
+    attkeys=group.attributes.keys()
+    for akey in attkeys:
+        akeystr=str(akey).lower()
+        if (akeystr=="name"):
+            gname=group.attributes[akey].value
+        elif (akeystr=="coordination-communicator"):
+            coord_comm=group.attributes[akey].value
+        elif (akeystr=="coordination-var"):
+            coord_var=group.attributes[akey].value
+        else:
+            print "Warning: Unknown attribute --"+str(akey)+"-- for adios-group: "+gname
+    
 def main(argv=None):
     if argv is None:
         argv=sys.argv
@@ -177,4 +245,4 @@ def main(argv=None):
 #        if(key=="restart"): 
 #	        print key,value
 if __name__ == "__main__":
-    main()
+     main()
