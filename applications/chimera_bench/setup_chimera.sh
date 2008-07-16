@@ -55,13 +55,13 @@ cd $WORKING_DIR
 tar zxvf chimera_bench.tar.gz
 
 echo 
-echo "Build executables in " $WORKING_DIR"/RadHyd3D_adios/Execute/build ..." 
+echo "Build executables in " $WORKING_DIR"/src/Execute/build ..." 
 echo 
 sleep 1
 
 # build executables
 module load hdf5/1.6.7_par
-cd RadHyd3D_adios/Execute/build
+cd src/Execute/build
 make
 
 echo

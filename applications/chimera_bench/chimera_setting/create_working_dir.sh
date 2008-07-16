@@ -29,10 +29,10 @@ do
     for m in MPI MPI_CIO POSIX NULL       
     do
         mkdir $WORKING_DIR/chimera_run/$d/$m 
-        exe_file=$WORKING_DIR/RadHyd3D_adios/Execute/build/RadHyd3D_mpi 
+        exe_file=$WORKING_DIR/src/Execute/build/RadHyd3D_mpi 
         if [ "X$m" = "XPOSIX" ]
 	then
-	    exe_file=$WORKING_DIR/RadHyd3D_adios/Execute/build/RadHyd3D_posix
+	    exe_file=$WORKING_DIR/src/Execute/build/RadHyd3D_posix
         fi 
 
         n=0
