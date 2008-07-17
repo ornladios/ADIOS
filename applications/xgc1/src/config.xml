@@ -28,7 +28,7 @@
   <var name="n_t" type="integer"  />
   <var name="n_psi" type="integer"  />
   <var name="values" gname="coord" path="/coordinates/" type="real*8" dimensions="2,n_n"/>
-  <var name="node_connect_list" gname="nodeid" path="cell_set[0]" type="integer" dimensions="3,n_t" />
+  <var name="node_connect_list" gname="nodeid" path="/cell_set[0]" type="integer" dimensions="3,n_t" />
   <var name="nextnode" gname="nextn" type="integer" dimensions="n_n"/>
   <var name="itheta0" gname="n_itheta0" type="integer" dimensions="n_psi"/>
   <attribute name="nnodes" path="/" var="n_n"/>
@@ -44,9 +44,9 @@
   <var name="istep" type="integer"/>
   <var name="values" gname="weight" path="/node_data[0]/" type="double" dimensions="n_n"/>
 
-  <attribute name="timestep" path="/" var="istep" type="integer"/>
-  <attribute name="nspace" path="/" var="nspace" type="integer"/>
-  <attribute name="nnodes" path="/" var="n_n" type="integer"/>
+  <attribute name="timestep" path="/" var="istep"/>
+  <attribute name="nspace" path="/" var="nspace"/>
+  <attribute name="nnodes" path="/" var="n_n"/>
   <attribute name="nnode_data" path="/" value="6" />
   <attribute name="XP_CLASS" path="/" value="Node_Data" />
 
@@ -489,8 +489,8 @@
   <var name="nspace" type="integer"/>
   <var name="n_n" type="integer"/>
   <var name="values" gname="bfld" path="/node_data[0]" type="double" dimensions="3,n_n"/>
-  <attribute name="nspace" path="/" var="nspace" type="integer"/>
-  <attribute name="nnodes" path="/" var="n_n" type="integer"/>
+  <attribute name="nspace" path="/" var="nspace"/>
+  <attribute name="nnodes" path="/" var="n_n"/>
   <attribute name="nnode_data" path="/" value="2" />
   <attribute name="XP_CLASS" path="/" value="Node_Data" />
   <attribute name="veclen" path="/node_data[0]/" value="3" />
@@ -511,10 +511,10 @@
   <var name="istep" type="integer"/>
   <var name="nspace" type="integer"/>
   <var name="nphi" type="integer"/>
-  <attribute name="istep" path="/" var="istep" type="integer"/>
-  <attribute name="nspace" path="/" var="nspace" type="integer"/>
-  <attribute name="nnodes" path="/" var="nnode" type="integer"/>
-  <attribute name="nnode_data" path="/" var="nphi" type="integer"/>
+  <attribute name="istep" path="/" var="istep"/>
+  <attribute name="nspace" path="/" var="nspace"/>
+  <attribute name="nnodes" path="/" var="nnode"/>
+  <attribute name="nnode_data" path="/" var="nphi"/>
   <var name="values" gname="potential" path="/node_data[0]/" type="double" dimensions="nnode"/>
 
   <attribute name="labels" path="/node_data[0]/" value="potential_favg" />
