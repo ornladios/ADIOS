@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define STEPS       10000               /* number of time steps */
+#define STEPS       100000               /* number of time steps */
 #define MAXWORKER   64                  /* maximum number of worker tasks */
 #define MINWORKER   3                  /* minimum number of worker tasks */
 #define BEGIN       1                  /* message type */
@@ -38,10 +38,10 @@
 #define NONE        0                  /* indicates no neighbor */
 #define DONE        4                  /* message type */
 #define MASTER      0                  /* taskid of first process */
-#define STRD        5000                /* stride of output */
+#define STRD        10000                /* stride of output */
 
-int  NX=400;                 /* x dimension of problem grid */
-int  NY=500;                 /* y dimension of problem grid */
+int  NX=800;                 /* x dimension of problem grid */
+int  NY=1000;                 /* y dimension of problem grid */
 MPI_Comm group_comm;
 struct Parms { 
   float cx;
@@ -204,6 +204,8 @@ MPI_Status status;
       prtdat((float *)u,offset,size,taskid,"final.bp");
    }
    adios_finalize (taskid);
+   MPI_Finalize();
+   return 0;
 }
 
 
@@ -230,9 +232,15 @@ void update(int start, int end, float *u1, float *u2)
 void inidat(float *u,float value) {
 int ix, iy;
 
-for (ix = 0; ix <= NX-1; ix++) 
-  for (iy = 0; iy <= NY-1; iy++)
+for (ix = 0; ix <= NX-1; ix++)  {
+  for (iy = 0; iy <= NY-1; iy++) {
        *(u+ix*NY+iy) = value;
+       if (ix==0) *(u+ix*NY+iy) = 0.0;
+       if (iy==0) *(u+ix*NY+iy) = 0.0;
+       if (ix==NX-1) *(u+ix*NY+iy) = 0.0;
+       if (iy==NY-1) *(u+ix*NY+iy) = 0.0;
+  }
+}
 }
 
 /**************************************************************************
@@ -252,19 +260,27 @@ void prtdat(float *u, int offset, int size, int taskid,char *fname)
            tan_u[ix][iy]=tan(*(u+ix*NX+iy));
        }
    // declare ADIOS Variable(s) 
-   char dirname[100];
    long long buf;
 
    // get buf id
-   sprintf(dirname,"node_%d",taskid);
-   printf("taskid in prtdat=%d\n",taskid);
    adios_open (&buf, "output", fname,"w");
-   printf("*** taskid in prtdat=%d buf=%ld\n",taskid,buf);
-   adios_set_path(buf,dirname); 
-   printf(">>>taskid in prtdat=%d\n",taskid);
-   //adios_gwrite(buf,"output");
-   //do the actual writing
-   printf("ready to write!!!");
    
+   //adios_gwrite(buf,"output");
+   adios_group_size(buf, 13, 8 + 4 + 4 + 4 + 4 + 4*(size)*(NY) + 4*(size)*(NY) + 4*(size)*(NY) + 4*(size)*(NY) + 4*(size)*(NY) + 4*(size)*(NY) + 4*(size)*(NY) + 4*(size)*(NY));
+   adios_write(buf,"group_comm",&group_comm);
+   adios_write(buf,"NX",&NX);
+   adios_write(buf,"NY",&NY);
+   adios_write(buf,"offset",&offset);
+   adios_write(buf,"size",&size);
+   adios_write(buf,"data",u+offset*NY);
+   adios_write(buf,"cos_data",cos_u[offset]);
+   adios_write(buf,"sin_data",sin_u[offset]);
+   adios_write(buf,"tan_data",tan_u[offset]);
+   adios_write(buf,"data",u+offset*NY);
+   adios_write(buf,"cos_data",cos_u[offset]);
+   adios_write(buf,"sin_data",sin_u[offset]);
+   adios_write(buf,"tan_data",tan_u[offset]);
+   
+   //do the actual writing
    adios_close (buf);
 }

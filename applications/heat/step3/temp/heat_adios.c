@@ -79,7 +79,7 @@ MPI_Status status;
       printf ("mpi_heat2D MPI task ID = %d\n", taskid);
    numworkers = numtasks-1;
 
-   adios_init ("heat.xml", MPI_COMM_WORLD, MPI_COMM_SELF, MPI_INFO_NULL);
+   adios_init ("heat.xml");
    MPI_Comm_split (MPI_COMM_WORLD, (taskid == MASTER ? 1 : 2), taskid, &group_comm);
    if (taskid == MASTER)
    {
@@ -204,6 +204,8 @@ MPI_Status status;
       prtdat((float *)u,offset,size,taskid,"final.bp");
    }
    adios_finalize (taskid);
+   MPI_Finalize();
+   return 0;
 }
 
 
@@ -252,7 +254,6 @@ void prtdat(float *u, int offset, int size, int taskid,char *fname)
            tan_u[ix][iy]=tan(*(u+ix*NX+iy));
        }
    // declare ADIOS Variable(s) 
-   char dirname[100];
    long long buf;
 
    // get buf id
@@ -272,6 +273,7 @@ void prtdat(float *u, int offset, int size, int taskid,char *fname)
    //do the actual writing
    adios_close (buf);
 
+   //char dirname[100];
    //sprintf(dirname,"node_%d",taskid);
    //adios_set_path(buf,dirname); 
 }

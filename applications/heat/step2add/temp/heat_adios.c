@@ -78,7 +78,7 @@ MPI_Status status;
       printf ("mpi_heat2D MPI task ID = %d\n", taskid);
    numworkers = numtasks-1;
 
-   adios_init ("heat.xml", MPI_COMM_WORLD, MPI_COMM_SELF, MPI_INFO_NULL);
+   adios_init ("heat.xml");
 
    if (taskid == MASTER)
    {
@@ -227,6 +227,8 @@ MPI_Status status;
       MPI_Send(&u[iz][offset][0], rows*NY, MPI_FLOAT, MASTER, DONE, MPI_COMM_WORLD);
    }
    adios_finalize (taskid);
+   MPI_Finalize();
+   return 0;
 }
 
 
