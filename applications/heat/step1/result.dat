@@ -14,8 +14,8 @@ Initializing grid and writing initial.dat file...
 mpi_heat2D MPI task ID = 14
 mpi_heat2D MPI task ID = 15
 mpi_heat2D MPI task ID = 11
-mpi_heat2D MPI task ID = 12
 mpi_heat2D MPI task ID = 13
+mpi_heat2D MPI task ID = 12
 Sent to= 1 offset= 0 rows= 27 neighbor1= 0 neighbor2= 2
 Sent to= 2 offset= 27 rows= 27 neighbor1= 1 neighbor2= 3
 Sent to= 3 offset= 54 rows= 27 neighbor1= 2 neighbor2= 4

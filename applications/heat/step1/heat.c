@@ -92,7 +92,7 @@ MPI_Status status;
       /* Initialize grid */
       printf("Grid size: X= %d  Y= %d  Time steps= %d\n",NX,NY,STEPS);
       printf("Initializing grid and writing initial.dat file...\n");
-      inidat((float *) u,1.0);
+      inidat((float *) u,0.0);
       prtdat((float *) u, "initial.dat");
 
       /* Distribute work to workers.  Must first figure out how many rows to */
