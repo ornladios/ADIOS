@@ -1,0 +1,50 @@
+mpi_heat2D MPI task ID = 0
+mpi_heat2D MPI task ID = 1
+mpi_heat2D MPI task ID = 2
+mpi_heat2D MPI task ID = 3
+mpi_heat2D MPI task ID = 4
+mpi_heat2D MPI task ID = 5
+mpi_heat2D MPI task ID = 6
+mpi_heat2D MPI task ID = 7
+mpi_heat2D MPI task ID = 8
+mpi_heat2D MPI task ID = 9
+mpi_heat2D MPI task ID = 10
+Grid size: X= 400  Y= 500  Time steps= 10000
+Initializing grid and writing initial.dat file...
+config.xml: unknown attribute 'gname' on var (ignored)
+mpi_heat2D MPI task ID = 15
+mpi_heat2D MPI task ID = 14
+mpi_heat2D MPI task ID = 11
+mpi_heat2D MPI task ID = 13
+mpi_heat2D MPI task ID = 12
+config.xml: unknown attribute 'gname' on var (ignored)
+config.xml: unknown attribute 'gname' on var (ignored)
+config.xml: unknown attribute 'gname' on var (ignored)
+Sent to= 1 offset= 0 rows= 27 neighbor1= 0 neighbor2= 2
+Sent to= 2 offset= 27 rows= 27 neighbor1= 1 neighbor2= 3
+Sent to= 3 offset= 54 rows= 27 neighbor1= 2 neighbor2= 4
+config.xml: unknown attribute 'gname' on var (ignored)
+Sent to= 4 offset= 81 rows= 27 neighbor1= 3 neighbor2= 5
+Sent to= 5 offset= 108 rows= 27 neighbor1= 4 neighbor2= 6
+Sent to= 6 offset= 135 rows= 27 neighbor1= 5 neighbor2= 7
+Sent to= 7 offset= 162 rows= 27 neighbor1= 6 neighbor2= 8
+Sent to= 8 offset= 189 rows= 27 neighbor1= 7 neighbor2= 9
+Sent to= 9 offset= 216 rows= 27 neighbor1= 8 neighbor2= 10
+Sent to= 10 offset= 243 rows= 27 neighbor1= 9 neighbor2= 11
+Sent to= 11 offset= 270 rows= 26 neighbor1= 10 neighbor2= 12
+Sent to= 12 offset= 296 rows= 26 neighbor1= 11 neighbor2= 13
+config.xml: unknown attribute 'gname' on var (ignored)
+Sent to= 13 offset= 322 rows= 26 neighbor1= 12 neighbor2= 14
+Sent to= 14 offset= 348 rows= 26 neighbor1= 13 neighbor2= 15
+Sent to= 15 offset= 374 rows= 26 neighbor1= 14 neighbor2= 0
+config.xml: unknown attribute 'gname' on var (ignored)
+config.xml: unknown attribute 'gname' on var (ignored)
+config.xml: unknown attribute 'gname' on var (ignored)
+config.xml: unknown attribute 'gname' on var (ignored)
+config.xml: unknown attribute 'gname' on var (ignored)
+config.xml: unknown attribute 'gname' on var (ignored)
+config.xml: unknown attribute 'gname' on var (ignored)
+config.xml: unknown attribute 'gname' on var (ignored)
+config.xml: unknown attribute 'gname' on var (ignored)
+config.xml: unknown attribute 'gname' on var (ignored)
+Writing final.dat file and generating graph...
