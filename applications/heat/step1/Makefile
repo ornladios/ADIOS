@@ -1,6 +1,6 @@
 
-JAGUAR=y
-EWOK=n
+JAGUAR=n
+EWOK=y
 ifeq ($(JAGUAR),y)
      HOME=/ccs/proj/e2e/adios/jaguar
      FC=ftn
