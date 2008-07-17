@@ -7,7 +7,7 @@ ifeq ($(JAGUAR),y)
      CC=cc
 endif
 
-ifeq ($(ewok),y)
+ifeq ($(EWOK),y)
      HOME=/ccs/proj/e2e/adios/ewok.gcc
      FC=mpif90
      CC=mpicc
