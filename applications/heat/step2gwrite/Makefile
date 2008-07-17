@@ -1,12 +1,12 @@
-JAGUAR=y
-EWOK=n
+JAGUAR=n
+EWOK=y
 ifeq ($(JAGUAR),y)
      HOME=/ccs/proj/e2e/adios/jaguar
      FC=ftn
      CC=cc
 endif
 
-ifeq ($(ewok),y)
+ifeq ($(EWOK),y)
      HOME=/ccs/proj/e2e/adios/ewok.gcc
      FC=mpif90
      CC=mpicc
