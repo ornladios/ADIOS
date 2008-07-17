@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <adios-config host-language="Fortran">
 <adios-group name="restart" coordination-communicator="icomm">
-  <var name="icomm" type="integer*8"/>
+  <var name="icomm" type="integer"/>
   <var name="sml_istep" type="integer"/>
   <var name="sml_time" type="double"/>
   <var name="maxnum" gname="sp%maxnum" type="integer"/>
@@ -31,7 +31,7 @@
   <var name="node_connect_list" gname="nodeid" path="cell_set[0]" type="integer" dimensions="3,n_t" />
   <var name="nextnode" gname="nextn" type="integer" dimensions="n_n"/>
   <var name="itheta0" gname="n_itheta0" type="integer" dimensions="n_psi"/>
-  <attribute name="nnodes" path="/" var="n_n" type="integer"/>
+  <attribute name="nnodes" path="/" var="n_n"/>
   <attribute name="nspace" path="/" value="2" />
   <attribute name="ncell_sets" path="/" value="1" />
   <attribute name="XP_CLASS" path="/" value="Mesh" />
@@ -523,7 +523,7 @@
 </adios-group>
 
 <adios-group name="diag_pot.fieldp" coordination-communicator="sml_pe_comm" >
-  <var name="sml_pe_comm" type="integer*8"  />
+  <var name="sml_pe_comm" type="integer"  />
   <var name="nnode" type="integer"/>
   <var name="nphi" type="integer"/>
   <gwrite src="if (sml_turb_efield==1) then"/>
