@@ -23044,8 +23044,28 @@ echo $PACKAGE configured as follows:
 echo "*********************************"
 echo
 
+echo
+echo "  - General Compile FLAGS";
+echo "      - FC = $FC";
+echo "      - FCFLAGS = $FCFLAGS";
+echo
+echo "      - CC = $CC";
+echo "      - CPPFLAGS = $CPPFLAGS";
+echo "      - CFLAGS = $CFLAGS";
+echo "      - LDLAGS = $LDFLAGS";
+echo "      - LIBS = $LIBS";
+echo
+echo "      - MPICC = $MPICC";
+echo "      - MPILIBS = $MPILIBS";
+echo "      - MPIFC = $MPIFC";
+echo
+
 if test -z "${HAVE_PORTALS_TRUE}"; then
-echo "Has Portals"
+        echo "  - PORTALS";
+        echo "      - PORTALS_CFLAGS = $PORTALS_CFLAGS";
+        echo "      - PORTALS_CPPFLAGS = $PORTALS_CPPFLAGS";
+        echo "      - PORTALS_LDFLAGS = $PORTALS_LDFLAGS";
+        echo "      - PORTALS_LIBS = $PORTALS_LIBS";
 else
 echo "No Portals"
 fi
@@ -23053,7 +23073,11 @@ fi
 echo
 
 if test -z "${HAVE_MXML_TRUE}"; then
-echo "Has MXML"
+        echo "  - MXML";
+        echo "      - MXML_CFLAGS = $MXML_CFLAGS";
+        echo "      - MXML_CPPFLAGS = $MXML_CPPFLAGS";
+        echo "      - MXML_LDFLAGS = $MXML_LDFLAGS";
+        echo "      - MXML_LIBS = $MXML_LIBS";
 else
 echo "No MXML"
 fi
@@ -23061,7 +23085,10 @@ fi
 echo
 
 if test -z "${HAVE_GENGETOPT_TRUE}"; then
-echo "has Gengetopt"
+        echo "      - GENGETOPT_CFLAGS = $GENGETOPT_CFLAGS";
+        echo "      - GENGETOPT_CPPFLAGS = $GENGETOPT_CPPFLAGS";
+        echo "      - GENGETOPT_LDFLAGS = $GENGETOPT_LDFLAGS";
+        echo "      - GENGETOPT_LIBS = $GENGETOPT_LIBS";
 else
 echo "No Gengetopt"
 fi
@@ -23069,7 +23096,10 @@ fi
 echo
 
 if test -z "${HAVE_MPI_TRUE}"; then
-echo "has MPI"
+        echo "      - MPI_CFLAGS = $MPI_CFLAGS";
+        echo "      - MPI_CPPFLAGS = $MPI_CPPFLAGS";
+        echo "      - MPI_LDFLAGS = $MPI_LDFLAGS";
+        echo "      - MPI_LIBS = $MPI_LIBS";
 else
 echo "No MPI"
 fi
