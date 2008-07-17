@@ -677,7 +677,7 @@ int bp_getH5TypeId(enum vartype_t type, hid_t* h5_type_id, void * val)
     case bp_double:
         *h5_type_id = H5Tcopy(H5T_NATIVE_DOUBLE);
         break;
-    case bp_longdouble:
+    case bp_long_double:
         *h5_type_id = H5Tcopy(H5T_NATIVE_LDOUBLE);
         break;
     case bp_uchar:
