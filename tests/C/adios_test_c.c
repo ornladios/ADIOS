@@ -15,11 +15,13 @@ int main (int argc, char ** argv)
     MPI_Comm comm = MPI_COMM_WORLD;
     int rank;
 
-    int var_x = 10;
+    int var_x1 = 101;
+    int var_x2 = 102;
     int z_dim_size = 10;
     float z_dim [z_dim_size];
 
-    int r_var_x;
+    int r_var_x1;
+    int r_var_x2;
     int r_zsize;
     float r_z [z_dim_size];
 
@@ -42,7 +44,8 @@ int main (int argc, char ** argv)
 
     adios_open (&io_handle, type_name, filename, "w");
     adios_write (io_handle, "comm", &comm);
-    adios_write (io_handle, "mype", &var_x);
+    adios_write (io_handle, "/mype", &var_x1);
+    adios_write (io_handle, "/test/mype", &var_x2);
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);
     adios_write (io_handle, "node-attr", &node);
@@ -53,14 +56,16 @@ int main (int argc, char ** argv)
     adios_open (&io_handle, type_name, filename, "r");
     adios_write (io_handle, "comm", &comm);
     //adios_write (io_handle, "zionsize", &z_dim_size);
-    adios_read (io_handle, "mype", &r_var_x);
+    adios_read (io_handle, "/mype", &r_var_x1);
+    adios_read (io_handle, "/test/mype", &r_var_x2);
     adios_read (io_handle, "zionsize", &r_zsize);
     adios_read (io_handle, "zion", &r_z);
     adios_close (io_handle);
 
     MPI_Barrier (MPI_COMM_WORLD);
 
-    if (   var_x != r_var_x
+    if (   var_x1 != r_var_x1
+        || var_x2 != r_var_x2
         || r_zsize != r_zsize
         || r_z [0] != z_dim [0]
         || r_z [1] != z_dim [1]
