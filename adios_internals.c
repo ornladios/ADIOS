@@ -2055,6 +2055,7 @@ static int parseGroup (mxml_node_t * node)
             const char * dimensions = 0;
             const char * dimension = 0;
             const char * copy_on_write = 0;
+            const char * gname = 0;
             int t1;
             int c1;
 
@@ -2068,6 +2069,7 @@ static int parseGroup (mxml_node_t * node)
                 GET_ATTR("dimensions",attr,dimensions,"var")
                 GET_ATTR("dimension",attr,dimension,"var")
                 GET_ATTR("copy-on-write",attr,copy_on_write,"var")
+                GET_ATTR("gname",attr,gname,"var")
                 fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
                                  "(ignored)\n"
                         ,attr->name
@@ -2187,6 +2189,7 @@ static int parseGroup (mxml_node_t * node)
                     const char * dimension = 0;
                     const char * dimensions = 0;
                     const char * copy_on_write = 0;
+                    const char * gname = 0;
                     int t1;
                     int c1;
 
@@ -2200,6 +2203,7 @@ static int parseGroup (mxml_node_t * node)
                         GET_ATTR("dimensions",attr,dimensions,"var")
                         GET_ATTR("dimension",attr,dimension,"var")
                         GET_ATTR("copy-on-write",attr,copy_on_write,"var")
+                        GET_ATTR("gname",attr,gname,"var")
                         fprintf (stderr, "config.xml: unknown attribute '%s' "
                                          "on %s (ignored)\n"
                                 ,attr->name
