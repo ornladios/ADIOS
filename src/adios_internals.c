@@ -2193,13 +2193,13 @@ static int parseGroup (mxml_node_t * node)
                     int t1;
                     int c1;
 
-                    for (i = 0; i < n->value.element.num_attrs; i++)
+                    for (i = 0; i < n1->value.element.num_attrs; i++)
                     {
                         mxml_attr_t * attr = &n1->value.element.attrs [i];
 
                         GET_ATTR("name",attr,name,"var")
                         GET_ATTR("path",attr,path,"var")
-                        GET_ATTR("type",attr,type,"var")
+                        GET_ATTR("type",attr,type,"global-bounds var")
                         GET_ATTR("dimensions",attr,dimensions,"var")
                         GET_ATTR("dimension",attr,dimension,"var")
                         GET_ATTR("copy-on-write",attr,copy_on_write,"var")
