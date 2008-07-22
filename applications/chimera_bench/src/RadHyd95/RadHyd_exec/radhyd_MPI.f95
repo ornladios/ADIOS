@@ -170,7 +170,7 @@ CALL MPI_COMM_SIZE( MPI_COMM_WORLD, num_procs, ierr )
 #ifdef ADIOS_MODEL || ADIOS_KEYS
 CALL adios_init ('config.xml'//char(0), MPI_COMM_WORLD, MPI_COMM_SELF, MPI_INFO_NULL)
 
-CALL init_prof('./log'//char(0),20,MPI_COMM_WORLD,num_procs,myid) 
+CALL init_prof('./log'//char(0),20,401,MPI_COMM_WORLD,num_procs,myid)
 
 #endif
 

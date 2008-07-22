@@ -2,7 +2,7 @@ vpath  %.f95 ../../Array_Dimensions:../../Convect:../../E_Advection:../../Edit:.
 vpath  %.f ../../Array_Dimensions:../../Convect:../../E_Advection:../../Edit:../../Edit/Initialize:../../Edit_MD:../../Edit_Global:../../Edit_HDF:../../Equation_of_State/Eos:../../Equation_of_State/Eos_bck:../../Equation_of_State/Eos_lsu:../../Equation_of_State/Eos_x:../../Equation_of_State/Eos_y:../../Equation_of_State/Eos_yl:../../Equation_of_State/Eos_z:../../Equation_of_State/Initialize:../../FullNet:../../GR:../../Hydro_EVH1/Hydro:../../Hydro_EVH1/Hydro_EVH1_Modules:../../Hydro_EVH1/Hydro_x:../../Hydro_EVH1/Hydro_y:../../Hydro_EVH1/Hydro_z:../../Hydro_EVH1/Initialize:../../Hydro_EVH1/Time_Step:../../Lapack:../../MGFLD/Modules:../../MGFLD/Abem:../../MGFLD/Abem_y:../../MGFLD/Abem_z:../../MGFLD/Bremsstrahlung:../../MGFLD/Exec:../../MGFLD/General_Purpose:../../MGFLD/Initialize:../../MGFLD/Pair:../../MGFLD/Pair_A:../../MGFLD/Linear_Solvers:../../MGFLD/Scat_as:../../MGFLD/Scat_es:../../MGFLD/Scat_is:../../MGFLD/Scat_n:../../MGFLD/Scat_nA:../../MGFLD/Scat_nn:../../MGFLD/Time_Step:../../MGFLD/Transport:../../Plot:../../Nuclear:../../RadHyd95/Eos_source:../../RadHyd95/Initialize:../../RadHyd95/Modules:../../RadHyd95/RadHyd_Interfaces:../../RadHyd95/RadHyd_exec:../../RadHyd95/Time_Step:../../Restart
 
 USE_ADIOS=y
-PORTALS=n
+PORTALS=y
 
 GWRITE=python /ccs/proj/e2e/adios/utils/gwrite/gwrite.py 
 
@@ -11,7 +11,7 @@ ifeq ($(USE_ADIOS),y)
   #ADIOS = -DADIOS_MODEL -DADIOS_KEYS
   ADIOS = -DADIOS_MODEL
   ifeq ($(PORTALS),y)
-     ADIOS_LIBS=-ladios -lmxml -lptlclient -lIO -lportals -ldrisc -lcercs_env -ldart -ladios_timing
+     ADIOS_LIBS=-ladios -lmxml -lptlclient  -lportals -ldill -lfm -latl  -lcercs_env  -ladios_timing -levpath -lffs -lcmselect -lcmsockets
   else
      ADIOS_LIBS=-ladios -lmxml -ladios_timing
   endif
@@ -20,7 +20,7 @@ else
   ADIOS=
 endif
 
-ADIOS_LIBD=-L/ccs/home/zf2/work/jaguar/lib
+ADIOS_LIBD=-L/ccs/home/zf2/work/pe/lib
 
 #Uncomment this line to generate an optimized executable
 #STD    = -c -fastsse -Mnolre -r8 -i4
