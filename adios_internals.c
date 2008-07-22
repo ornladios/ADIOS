@@ -1,6 +1,7 @@
 #include <math.h>
 #include <string.h>
 #include <unistd.h>
+#include <limits.h>
 
 // xml parser
 #include <mxml.h>
@@ -2256,7 +2257,9 @@ static int parseGroup (mxml_node_t * node)
             const char * name = 0;
             const char * path = 0;
             const char * value = 0;
+            const char * type = 0;
             const char * var = 0;
+            enum ADIOS_DATATYPES t1;
 
             for (i = 0; i < n->value.element.num_attrs; i++)
             {
@@ -2264,6 +2267,7 @@ static int parseGroup (mxml_node_t * node)
 
                 GET_ATTR("name",attr,name,"var")
                 GET_ATTR("path",attr,path,"var")
+                GET_ATTR("type",attr,type,"var")
                 GET_ATTR("value",attr,value,"var")
                 GET_ATTR("var",attr,var,"var")
                 fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
@@ -2296,6 +2300,19 @@ static int parseGroup (mxml_node_t * node)
 
                 return 0;
             }
+            if (var && type)
+            {
+                fprintf (stderr, "config.xml: attriute element '%s'. "
+                                 "The type of an associated var is part "
+                                 "of the associated var element and cannot "
+                                 "be provided as part of the attribute "
+                                 "element."
+                                 "\n"
+                        ,name
+                        );
+
+                return 0;
+            }
             if (!validatePath (new_group->vars, path))
             {
                 fprintf (stderr, "config.xml: attribute element '%s' "
@@ -2306,9 +2323,21 @@ static int parseGroup (mxml_node_t * node)
 
                 return 0;
             }
+            if (!type && value)
+            {
+                type = "string";
+            }
+            if (!var)
+            {
+                t1 = parseType (type, name);
+            }
+            else
+            {
+                t1 = adios_unknown;
+            }
           
             if (!adios_common_define_attribute (*(long long *) &new_group, name
-                                               ,path, value, var
+                                               ,path, t1, value, var
                                                )
                )
             {
@@ -3268,8 +3297,374 @@ int adios_parse_config (const char * config)
     return 1;
 }
 
+int adios_validate_scalar_string (enum ADIOS_TYPES type, char * value)
+{
+    char * end;
+
+    switch (type)
+    {
+        case adios_byte:
+        case adios_short:
+        case adios_integer:
+        {
+            int errno_save = errno;
+            long t = strtol (value, &end, 10);
+            if (errno != errno_save || (end != 0 && *end != '\0'))
+            {
+                fprintf (stderr, "value: '%s' not valid integer\n"
+                        ,value
+                        );
+
+                return 0;
+            }
+            else
+            {
+                switch (type)
+                {
+                    case adios_byte:
+                        if (t < SCHAR_MIN || t > SCHAR_MAX)
+                        {
+                            fprintf (stderr, "type is %s, value "
+                                             "is out of range: '%s'\n"
+                                    ,adios_type_to_string (type), value
+                                    );
+
+                            return 0;
+                        }
+                        else
+                        {
+                            return 1;
+                        }
+                    case adios_short:
+                        if (t < SHRT_MIN || t > SHRT_MAX)
+                        {
+                            fprintf (stderr, "type is %s, value "
+                                             "is out of range: '%s'\n"
+                                    ,adios_type_to_string (type), value
+                                    );
+
+                            return 0;
+                        }
+                        else
+                        {
+                            return 1;
+                        }
+                    case adios_integer:
+                        if (t < INT_MIN || t > INT_MAX)
+                        {
+                            fprintf (stderr, "type is %s, value "
+                                             "is out of range: '%s'\n"
+                                    ,adios_type_to_string (type), value
+                                    );
+
+                            return 0;
+                        }
+                        else
+                        {
+                            return 1;
+                        }
+                }
+            }
+        }
+        case adios_long:
+        {
+            int errno_save = errno;
+            long long t = strtoll (value, &end, 10);
+            if (errno != errno_save || (end != 0 && *end != '\0'))
+            {
+                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
+                        ,adios_type_to_string (type), value
+                        );
+
+                return 0;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+        case adios_unsigned_byte:          
+        case adios_unsigned_short:         
+        case adios_unsigned_integer:
+        {
+            int errno_save = errno;
+            unsigned long t = strtoul (value, &end, 10);
+            if (errno != errno_save || (end != 0 && *end != '\0'))
+            {
+                fprintf (stderr, "value: '%s' not valid integer\n"
+                        ,value
+                        );
+
+                return 0;
+            }
+            else
+            {
+                switch (type)
+                {
+                    case adios_unsigned_byte:
+                        if (t > UCHAR_MAX)
+                        {
+                            fprintf (stderr, "type is %s, value "
+                                             "is out of range: '%s'\n"
+                                    ,adios_type_to_string (type), value
+                                    );
+
+                            return 0;
+                        }
+                        else
+                        {
+                            return 1;
+                        }
+                    case adios_unsigned_short:
+                        if (t > USHRT_MAX)
+                        {
+                            fprintf (stderr, "type is %s, value "
+                                             "is out of range: '%s'\n"
+                                    ,adios_type_to_string (type), value
+                                    );
+
+                            return 0;
+                        }
+                        else
+                        {
+                            return 1;
+                        }
+                    case adios_unsigned_integer:
+                        if (t > UINT_MAX)
+                        {
+                            fprintf (stderr, "type is %s, value "
+                                             "is out of range: '%s'\n"
+                                    ,adios_type_to_string (type), value
+                                    );
+
+                            return 0;
+                        }
+                        else
+                        {
+                            return 1;
+                        }
+                }
+            }
+        }
+        case adios_unsigned_long:
+        {
+            int errno_save = errno;
+            unsigned long long t = strtoull (value, &end, 10);
+            if (errno != errno_save || (end != 0 && *end != '\0'))
+            {
+                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
+                        ,adios_type_to_string (type), value
+                        );
+
+                return 0;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+        case adios_real:
+        {
+            int errno_save = errno;
+            float t = strtof (value, &end);
+            if (errno != errno_save || (end != 0 && *end != '\0'))
+            {
+                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
+                        ,adios_type_to_string (type), value
+                        );
+
+                return 0;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+        case adios_double:
+        {
+            int errno_save = errno;
+            double t = strtod (value, &end);
+            if (errno != errno_save || (end != 0 && *end != '\0'))
+            {
+                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
+                        ,adios_type_to_string (type), value
+                        );
+
+                return 0;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+        case adios_long_double:
+        {
+            int errno_save = errno;
+            long double t = strtold (value, &end);
+            if (errno != errno_save || (end != 0 && *end != '\0'))
+            {
+                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
+                        ,adios_type_to_string (type), value
+                        );
+
+                return 0;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+        case adios_string: 
+        {
+            return 1;
+        }
+        case adios_complex:
+        {
+            fprintf (stderr, "adios_complex type validation needs to be "
+                             "implemented\n");
+            return 1;
+#if 0
+            int errno_save = errno;
+            long t = strtol(const char *restrict, char **restrict, int);
+            if (errno != errno_save || (end != 0 && *end != '\0'))
+            {
+                fprintf (stderr, "value: '%s' not valid integer\n"
+                        ,value
+                        );
+
+                return 0;
+            }
+            else
+            {
+                switch (type)
+                {
+                    case adios_byte:
+                        if (t < SCHAR_MIN || t > SCHAR_MAX)
+                        {
+                            fprintf (stderr, "type is signed byte, value "
+                                             "is out of range: '%s'\n
+                                    ,value
+                                    );
+
+                            return 0;
+                        }
+                        else
+                        {
+                            return 1;
+                        }
+                    case adios_short:
+                        if (t < SHRT_MIN || t > SHRT_MAX)
+                        {
+                            fprintf (stderr, "type is signed short, value "
+                                             "is out of range: '%s'\n
+                                    ,value
+                                    );
+
+                            return 0;
+                        }
+                        else
+                        {
+                            return 1;
+                        }
+                    case adios_int:
+                        if (t < INT_MIN || t > INT_MAX)
+                        {
+                            fprintf (stderr, "type is signed int, value "
+                                             "is out of range: '%s'\n
+                                    ,value
+                                    );
+
+                            return 0;
+                        }
+                        else
+                        {
+                            return 1;
+                        }
+                }
+            }
+#endif
+        }
+        case adios_double_complex:
+        {
+            fprintf (stderr, "adios_double_complex type validation needs to "
+                             "be implemented\n");
+            return 1;
+#if 0
+            int errno_save = errno;
+            long t = strtol(const char *restrict, char **restrict, int);
+            if (errno != errno_save || (end != 0 && *end != '\0'))
+            {
+                fprintf (stderr, "value: '%s' not valid integer\n"
+                        ,value
+                        );
+
+                return 0;
+            }
+            else
+            {
+                switch (type)
+                {
+                    case adios_byte:
+                        if (t < SCHAR_MIN || t > SCHAR_MAX)
+                        {
+                            fprintf (stderr, "type is signed byte, value "
+                                             "is out of range: '%s'\n
+                                    ,value
+                                    );
+
+                            return 0;
+                        }
+                        else
+                        {
+                            return 1;
+                        }
+                    case adios_short:
+                        if (t < SHRT_MIN || t > SHRT_MAX)
+                        {
+                            fprintf (stderr, "type is signed short, value "
+                                             "is out of range: '%s'\n
+                                    ,value
+                                    );
+
+                            return 0;
+                        }
+                        else
+                        {
+                            return 1;
+                        }
+                    case adios_int:
+                        if (t < INT_MIN || t > INT_MAX)
+                        {
+                            fprintf (stderr, "type is signed int, value "
+                                             "is out of range: '%s'\n
+                                    ,value
+                                    );
+
+                            return 0;
+                        }
+                        else
+                        {
+                            return 1;
+                        }
+                }
+            }
+#endif
+        }
+
+        case adios_unknown:
+        default:
+            fprintf (stderr, "unknown type cannot be validated\n");
+
+            return 0;
+    }
+
+    return 1;
+}
+
 int adios_common_define_attribute (long long group, const char * name
-                                  ,const char * path, const char * value
+                                  ,const char * path
+                                  ,enum ADIOS_DATATYPES type
+                                  ,const char * value
                                   ,const char * var
                                   )
 {
@@ -3277,145 +3672,58 @@ int adios_common_define_attribute (long long group, const char * name
     struct adios_attribute_struct * attr = (struct adios_attribute_struct *)
                               malloc (sizeof (struct adios_attribute_struct));
 
-#if 0
-    struct adios_var_struct * f;
-
-    if (attr_type == adios_attribute_data)
-    {
-        char * a = strdup (path);
-        char * extracted_name;  // for testing
-        char * extracted_path;  // for testing
-        int last_slash = -1;
-        int len;
-        int i;
-
-        // extract name and path from path
-        extracted_path = a;
-        len = strlen (extracted_path);
-        if (extracted_path [len - 1] == '/')
-            extracted_path [len - 1] = 0;
-        len--;
-        for (i = len - 1; i >= 0; i--)
-        {
-            if (extracted_path [i] == '/')
-            {
-                last_slash = i;
-                break;
-            }
-        }
-
-        if (last_slash >= 0)
-        {
-            extracted_name = strdup (extracted_path + last_slash + 1);
-            if (last_slash == 0)
-                extracted_path [last_slash + 1] = 0;
-            else
-                extracted_path [last_slash] = 0;
-        }
-        else
-        {
-            fprintf (stderr, "config.xml: data item '%s' for attribute '%s' "
-                             "not found (no root '/' provided in path: "
-                             "last_slash position: %d extracted_path: '%s')\n"
-                    ,path, name, last_slash, extracted_path
-                    );
-            free (a);
-
-            return 0;
-        }
-
-        f = adios_find_var_by_name (t->vars, extracted_name
-                                   ,g->all_unique_var_names
-                                   );
-        if (f)
-        {
-            if (   strcasecmp (extracted_path, v->path)
-                || strcasecmp (extracted_name, v->name)
-               )
-            {
-                fprintf (stderr, "config.xml: data item '%s' for attribute '%s' "
-                                 "not found (extracted_path: '%s' "
-                                 "extracted_name: '%s')\n"
-                        ,path, name, extracted_path, extracted_name
-                        );
-                free (a);
-                free (extracted_name);
-
-                return 0;
-            }
-
-//            free (a);
-//            free (extracted_name);
-        }
-        else
-        {
-            fprintf (stderr, "config.xml: data item '%s' for attribute '%s' "
-                             "not found\n", path, name
-                    );
-            free (a);
-            free (extracted_name);
-
-            return 0;
-        }
-    }
-    else
-    {
-        if (attr_type == adios_attribute_group)
-        {
-            v = t->vars;
-            int done = 0;
-            int len = strlen (path);
-            char * a = strdup (path);
-            if (len > 1)
-            {
-                if (a [len - 1] == '/')
-                    a [len - 1] = 0;
-                len--;
-            }
-
-            while (v && !done)
-            {
-                // check for trailing '/' on both parts and fix up
-                if (!strcasecmp (v->path, a))
-                {
-                    done = 1;
-                }
-                else
-                {
-                    v = v->next;
-                }
-            }
-            if (!done)
-            {
-                fprintf (stderr, "config.xml: group '%s' for attribute '%s' "
-                                 "not found\n", path, name
-                        );
-
-                return 0;
-            }
-        }
-        else
-        {
-            fprintf (stderr, "invalid attribute type: %d\n", attr_type);
-
-           return 0;
-        }
-    }
-#endif
-
     attr->name = strdup (name);
     attr->path = strdup (path);
     if (value)
     {
-        attr->value = strdup (value);
-        attr->var = 0;
+        if (type == adios_unknown)
+        {
+            fprintf (stderr, "config.xml: attribute element %s has invalid "
+                             "type attribute\n"
+                    ,name, type
+                    );
+
+            free (attr);
+
+            return 0;
+        }
+        attr->type = type;
+        if (adios_validate_scalar_string (type, (void *) value))
+        {
+            attr->value = adios_dupe_data_scalar (type, (void *) value);
+            attr->var = 0;
+        }
+        else
+        {
+            fprintf (stderr, "config.xml: attribute element %s has invalid "
+                             "value attribute: '%s'\n"
+                    ,name, value
+                    );
+
+            free (attr);
+
+            return 0;
+        }
     }
     else
     {
         attr->value = 0;
+        attr->type = adios_unknown;
         attr->var = adios_find_var_by_name (g->vars, var
                                            ,g->all_unique_var_names
                                            );
+
+        if (attr->var == 0)
+        {
+            fprintf (stderr, "config.xml: attribute element %s references "
+                             "var %s that has not been defined.\n"
+                    ,name, var
+                    );
+
+            free (attr);
+
+            return 0;
+        }
     }
 
     attr->next = 0;
@@ -3423,6 +3731,63 @@ int adios_common_define_attribute (long long group, const char * name
     adios_append_attribute (&g->attributes, attr);
 
     return 1;
+}
+
+void * adios_dupe_data_scalar (enum ADIOS_DATATYPES type, void * in)
+{
+    void * out;
+    int element_size = bp_getsize (type, in);
+
+    void * d;
+
+    switch (type)
+    {
+        case adios_byte:
+        case adios_short:
+        case adios_integer:
+        case adios_long:
+        case adios_unsigned_byte:
+        case adios_unsigned_short:
+        case adios_unsigned_integer:
+        case adios_unsigned_long:
+        case adios_real:
+        case adios_double:
+        case adios_long_double:
+        case adios_complex:
+        case adios_double_complex:
+            d = malloc (element_size);
+            if (!d)
+            {
+                fprintf (stderr, "cannot allocate %d bytes to copy scalar\n"
+                        ,element_size
+                        );
+
+                return 0;
+            }
+
+            memcpy ((char *) d, (char *) in, element_size);
+            break;
+
+        case adios_string:
+            d = malloc (element_size + 1);
+            if (!d)
+            {
+                fprintf (stderr, "cannot allocate %d bytes to copy scalar\n"
+                        ,element_size + 1
+                        );
+
+                return 0;
+            }
+
+            memcpy ((char *) d, (char *) in, element_size + 1);
+            break;
+
+        default:
+            d = 0;
+            break;
+    }
+
+    return d;
 }
 
 void * adios_dupe_data (struct adios_var_struct * v, void * data)
@@ -3483,11 +3848,19 @@ void * adios_dupe_data (struct adios_var_struct * v, void * data)
         switch (v->type)
         {
             case adios_byte:
+            case adios_short:
             case adios_integer:
             case adios_long:
+            case adios_unsigned_byte:
+            case adios_unsigned_short:
+            case adios_unsigned_integer:
+            case adios_unsigned_long:
             case adios_real:
             case adios_double:
+            case adios_long_double:
             case adios_string:
+            case adios_complex:
+            case adios_double_complex:
                 memcpy ((char *) d, (char *) data, element_size);
                 break;
 
@@ -3593,7 +3966,7 @@ int adios_do_write_attribute (struct adios_attribute_struct * a
     if (a->value)
     {
         val = a->value;
-        type = adios_string;
+        type = a->type;
     }
     else
     {
