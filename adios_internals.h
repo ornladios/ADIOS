@@ -46,8 +46,7 @@ struct adios_attribute_struct
     uint32_t id;
     char * name;
     char * path;
-    enum ADIOS_DATATYPES type;
-    void * value;
+    char * value;
     struct adios_var_struct * var;
 
     struct adios_attribute_struct * next;
@@ -336,9 +335,7 @@ int adios_do_write_attribute (struct adios_attribute_struct * a
                              );
 
 int adios_common_define_attribute (long long group, const char * name
-                                  ,const char * path
-                                  ,enum ADIOS_DATATYPES type
-                                  ,const char * value
+                                  ,const char * path, const char * value
                                   ,const char * var
                                   );
 
@@ -365,7 +362,6 @@ void adios_append_attribute (struct adios_attribute_struct ** root
                             ,struct adios_attribute_struct * attribute
                             );
 
-void * adios_dupe_data_scalar (enum ADIOS_DATATYPES type, void * in);
 void * adios_dupe_data (struct adios_var_struct * v, void * data);
 
 int adios_dims_to_bp_dims (char * name
