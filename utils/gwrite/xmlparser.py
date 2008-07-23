@@ -21,34 +21,37 @@ def processvar(node,language_sw,coord_comm,coord_var):
     attkeys=node.attributes.keys()
     varname=""
     typename="" 
+    pathname="" 
     dimsname=""
     varname_g=""
-    copyflag=""
     for akey in attkeys:
         akeystr=str(akey).lower()
         if(akeystr=="dimensions"):
            dimsname=node.attributes[akey].value
         elif(akeystr=="type"):
            typename=node.attributes[akey].value
+        elif(akeystr=="path"):
+           pathname=node.attributes[akey].value
         elif(akeystr=="name"):
            varname=node.attributes[akey].value
         elif(akeystr=="gname"):
            varname_g=node.attributes[akey].value
-        elif(akeystr=="copy-on-write"):
-           copyflag=node.attributes[akey].value
     if(varname=="" or typename==""):
        print "Warning: empty varname or type for adiosgroup: "+node.nodeName
     if (dimsname!=""):
         return line
-    print varname,dimsname,typename,varname_g 
+    #print varname,dimsname,typename,varname_g 
     strsize=str(getsize[typename])
-    if(copyflag=="yes"):
-        sizeformular.append(strsize+'*2')
-    else:
-        sizeformular.append(strsize)
+    sizeformular.append(strsize)
     if(varname_g==""):
        varname_g=varname
-    groupdict[varname]=varname_g
+    if(groupdict.has_key(varname)):
+       if(pathname[len(pathname)-1]!='/'):
+          varname=pathname+'/'+varname 
+       groupdict[varname]=varname_g
+    else:
+       groupdict[varname]=varname_g
+
 ########################################################          
 # Original Code: Case Sensitive
 ########################################################          
@@ -68,19 +71,24 @@ def processvar(node,language_sw,coord_comm,coord_var):
            line="call adios_op(aaaabbbb,"+"\""+varname+"\"//char(0),"+varname_g+")"
     elif(language_sw==2):
         if(coord_comm==varname or coord_var==varname):
-           line="adios_write(aaaabbbb,"+"\""+varname+"\","+"&"+varname_g+")"
+           line="adios_write(aaaabbbb,"+"\""+varname+"\","+"&"+varname_g+");"
         else:
            for c in varname_g:
                if(c=='+' or c=='-' or c=='*' or c=='/' or c=='^' or c=='%'):
                   print "Fatal: var --"+varname_g+"-- cannot be written"
                   raise SystemExit
-           line="adios_op(aaaabbbb,"+"\""+varname+"\","+"&"+varname_g+")"
+           line="adios_op(aaaabbbb,"+"\""+varname+"\","+"&"+varname_g+");"
     return line+'\n'
+
+def processattr(node,language_sw):
+    line=""
+    return line
 
 def processdset(node,language_sw):
     global sizeformular
     global groupdict
     line=""
+
 ########################################################          
 # Modified Code: Case Insensitive
 ########################################################          
@@ -127,37 +135,32 @@ def processdset(node,language_sw):
            else:
               line=line+'*'+'('+groupdict[dimsele]+')'
    
-    if("yes"==str(node.getAttribute("copy-on-write")).lower()):
+    if(str(node.getAttribute("copy-on-write")).lower()=="yes"):
            line ='2*'+'('+line+')'
     
     sizeformular.append(line)
     line=""
     if (language_sw==1):
-        #if(node.getAttribute("goffset")!=""):
-        #   varname_g=varname_g+"("+str(node.getAttribute("goffset")) +")"
         line="call adios_op(aaaabbbb,"+"\""+varname+"\"//char(0),"+varname_g+")"
-            
     elif(language_sw==2):
-        #if(node.getAttribute("goffset")!=""):
-        #   varname_g="&"+varname_g+"["+str(node.getAttribute("goffset")) +"]"
-        #elif(node.getAttribute("dimensions")!="" or node.getAttribute("copy-on-write")=="yes"):
-        #   varname_g=varname_g
-        #else:
-        #   varname_g="&"+varname_g
         line="adios_op(aaaabbbb,"+"\""+varname+"\","+varname_g+");"
     return line+'\n'
 
 def processnode(nodelist,language_sw,coord_comm,coord_var):
    global items,sizeformular
+# process scalar-type var first
    for node in nodelist:
-       if (node.nodeType==node.ELEMENT_NODE and node.nodeName=="var"):
+       if (node.nodeType==node.ELEMENT_NODE and node.nodeName.lower()=="var"):
            items=items+processvar(node,language_sw,coord_comm,coord_var)
        subnodelist=node.childNodes
        processnode(subnodelist,language_sw,coord_comm,coord_var)
+# process dataset-type var  
    for node in nodelist:
-       if (node.nodeType==node.ELEMENT_NODE and node.nodeName=="var"):
+       if (node.nodeType==node.ELEMENT_NODE and node.nodeName.lower()=="var"):
            items=items+processdset(node,language_sw)
-       elif (node.nodeType==node.ELEMENT_NODE and node.nodeName=="gwrite"):
+       elif (node.nodeType==node.ELEMENT_NODE and node.nodeName.lower()=="attribute"):
+           items=items+processattr(node,language_sw)
+       elif (node.nodeType==node.ELEMENT_NODE and node.nodeName.lower()=="gwrite"):
            varname=str(node.getAttribute("src"))
            items=items+varname+"\n"
        subnodelist=node.childNodes

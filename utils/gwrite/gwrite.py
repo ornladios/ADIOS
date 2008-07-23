@@ -30,7 +30,10 @@ def gwrite_replace(indent,outfile,newline,flag,type):
 
     value=vardict[gname].replace("aaaabbbb",buf[0])
     sizestr=xmlparser.sizestr[gname]
-    line=sizestr[0]
+    if(len(sizestr)):
+       line=sizestr[0]
+    else:
+       return
     for i in range(1,len(sizestr)):
         line=line+' + '+sizestr[i]
 ######################
@@ -46,10 +49,10 @@ def gwrite_replace(indent,outfile,newline,flag,type):
 #        fortran=1 
 ######################
     if(flag==1):
-       line=indent+"call adios_group_size("+buf[0]+", "+str(len(sizestr))+", "+line+')\n'
+       line=indent+"print(0,*)"+line+'\n'+indent+"call adios_group_size("+buf[0]+", "+str(len(sizestr))+", "+line+')\n'
        value=value1.replace("call",indent+"call")
     elif(flag==2):
-       line=indent+"adios_group_size("+buf[0]+", "+str(len(sizestr))+", "+line+')\n'
+       line=indent+'printf(\"%d\\n",'+line+');\n'+indent+"adios_group_size("+buf[0]+", "+str(len(sizestr))+", "+line+');\n'
        value=value1.replace("adios_",indent+"adios_")
     outfile.write(line+value)
     return
