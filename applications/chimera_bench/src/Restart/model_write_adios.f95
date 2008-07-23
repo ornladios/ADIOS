@@ -72,10 +72,11 @@ INTEGER, INTENT(in)              :: nnu             ! neutrino flavor array exte
 
 INTEGER                          :: io_count
 LOGICAL                          :: io_initialized = .FALSE.
-INTEGER                          :: error 
+INTEGER                          :: error            
+INTEGER                          :: adios_err       ! ADIOS error flag 
 
 integer*8 :: io_type, handle
-#define ADIOS_WRITE(a,b) call adios_write(a,'b'//char(0),b)
+#define ADIOS_WRITE(a,b) call adios_write(a,'b'//char(0),b,adios_err)
 
 !-----------------------------------------------------------------------
 !        Formats: Document the dump
@@ -100,8 +101,10 @@ END IF
 ! open start
 CALL open_start(ncycle, io_count)
 
-CALL adios_get_group (io_type, 'restart.model'//char(0))
-CALL adios_open (handle, io_type, trim(ndump)//char(0))
+!CALL adios_get_group (io_type, 'restart.model'//char(0))
+!CALL adios_open (handle, io_type, trim(ndump)//char(0))
+
+CALL adios_open (handle, 'restart.model'//char(0), trim(ndump)//char(0), 'w'//char(0),adios_err)
 
 ! open end
 CALL open_end(ncycle, io_count)
@@ -214,7 +217,7 @@ CALL write_end(ncycle, io_count)
 ! close start
 CALL close_start(ncycle, io_count)
 
-CALL adios_close (handle)
+CALL adios_close (handle, adios_err)
 
 ! cloe end
 CALL close_end(ncycle, io_count)

@@ -13,9 +13,12 @@
 
 #include "adios-timing.h"
 
-extern MPI_Comm adios_mpi_comm_world;
-extern MPI_Comm adios_mpi_comm_self;
-extern MPI_Info adios_mpi_info;
+/*
+ * the following variables have been deprecated in
+ * ADIOS; so just set them to use default MPI values 
+ */
+MPI_Comm adios_mpi_comm_world = MPI_COMM_WORLD;
+MPI_Comm adios_mpi_comm_self = MPI_COMM_SELF;
 
 typedef struct _cycle_timing_info {
     int cycle;
@@ -718,7 +721,7 @@ fprintf(stderr, "------------ADIOS Profiling: close end group: rank: %d\n", rank
 MPI_Comm get_comm_by_group(struct adios_group_struct *group)
 {
     if (group->group_comm) {
-        struct adios_var_struct *var = adios_find_var_by_name(group->vars, group->group_comm);
+        struct adios_var_struct *var = adios_find_var_by_name(group->vars, group->group_comm, group->all_unique_var_names);
 
         if (var) {
             if (var->data) {

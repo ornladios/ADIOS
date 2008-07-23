@@ -56,7 +56,7 @@ MODULE adios_io_module
   
 integer*8, private :: io_type, handle
 
-#define ADIOS_WRITE(a,b) call adios_write(a,'b'//char(0),b)
+#define ADIOS_WRITE(a,b) call adios_write(a,'b'//char(0),b,adios_err)
 
 
   !-----------------------------------------------------------------------
@@ -323,8 +323,8 @@ integer*8, private :: io_type, handle
     !-----------------------------------------------------------------------
     !       File, group, dataset, and dataspace Identifier 
     !-----------------------------------------------------------------------
-    CHARACTER(LEN=29)                :: suffix
-    !CHARACTER(LEN=35)                :: suffix
+    !CHARACTER(LEN=29)                :: suffix
+    CHARACTER(LEN=35)                :: suffix
     INTEGER(HID_T)                   :: file_id         ! HDF5 File identifier  
     INTEGER(HID_T)                   :: group_id        ! HDF5 Group identifier
     INTEGER(HID_T)                   :: dataset_id      ! HDF5 dataset identifier
@@ -361,6 +361,7 @@ integer*8, private :: io_type, handle
     INTEGER, dimension(2)            :: radial_index_bound
     INTEGER, dimension(2)            :: theta_index_bound
     INTEGER, dimension(2)            :: phi_index_bound
+    INTEGER                          :: adios_err       ! ADIOS error flag
 
     CALL initialized_io()    
     
@@ -402,8 +403,9 @@ integer*8, private :: io_type, handle
 ! open start
     CALL open_start(ncycle, io_count)
 
-    CALL adios_get_group (io_type, 'restart.model'//char(0))
-    CALL adios_open (handle, io_type, TRIM(data_path)//'/Restart/'//filename//TRIM(suffix)//char(0))
+!    CALL adios_get_group (io_type, 'restart.model'//char(0))
+!    CALL adios_open (handle, io_type, TRIM(data_path)//'/Restart/'//filename//TRIM(suffix)//char(0))
+    CALL adios_open (handle, 'restart.model'//char(0), TRIM(data_path)//'/Restart/'//filename//TRIM(suffix)//char(0), 'w'//char(0),adios_err)
 
 ! open end
     CALL open_end(ncycle, io_count)
@@ -411,6 +413,7 @@ integer*8, private :: io_type, handle
 ! write start
     CALL write_start(ncycle, io_count)
 
+    ADIOS_WRITE(handle,myid)
     ADIOS_WRITE(handle,mpi_comm_per_hyperslab_group)
     ADIOS_WRITE(handle,nx)
     ADIOS_WRITE(handle,nx+1)
@@ -609,7 +612,7 @@ integer*8, private :: io_type, handle
 ! close start
     CALL close_start(ncycle, io_count)
 
-    CALL adios_close (handle)
+    CALL adios_close (handle, adios_err)
 
 ! cloe end
     CALL close_end(ncycle, io_count)

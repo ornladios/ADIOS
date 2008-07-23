@@ -1,17 +1,17 @@
 #use this for ewok
-EWOK=y
-JAGUAR=n
+EWOK=n
+JAGUAR=y
 
 ifeq ($(JAGUAR),y)
     #use this for cray compute nodes
     CC=cc -c -g -target=linux
 
-    ADIOS_LIB_HOME=$(HOME)/work/pe
+    ADIOS_LIB_HOME=$(HOME)/work/jaguar
     ADIOS_LIB_I=$(ADIOS_LIB_HOME)/include
 
     I_PATH=-I$(ADIOS_LIB_I)
 
-    INSTALL_PREFIX=$(HOME)/work/pe
+    INSTALL_PREFIX=$(HOME)/work/jaguar
 endif
 
 ifeq ($(EWOK),y)

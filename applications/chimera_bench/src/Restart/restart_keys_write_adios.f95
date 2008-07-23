@@ -51,7 +51,8 @@ character (len=128), INTENT(in)  :: ndump         ! group handle to write to
 INTEGER, INTENT(in)              :: nez           ! neutrino energy array extent
 INTEGER, INTENT(in)              :: nnu           ! neutrino flavor array extent
 integer*8 :: io_type, handle
-
+INTEGER                          :: adios_err     ! ADIOS error flag
+ 
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 
@@ -60,8 +61,10 @@ integer*8 :: io_type, handle
 !         \\\\\ WRITE SIMULATION KEYS TO A RESTART FILE /////
 !
 !-----------------------------------------------------------------------
-call adios_get_group (io_type, 'restart.keys'//char(0))
-call adios_open (handle, io_type, trim(ndump)//char(0))
+!call adios_get_group (io_type, 'restart.keys'//char(0))
+!call adios_open (handle, io_type, trim(ndump)//char(0))
+
+CALL adios_open (handle,'restart.keys'//char(0),trim(ndump)//char(0),adios_err)
 
 !-----------------------------------------------------------------------
 !  Write array_dimensions

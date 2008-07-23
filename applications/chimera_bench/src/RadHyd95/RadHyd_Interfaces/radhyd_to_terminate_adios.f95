@@ -83,6 +83,7 @@ INTEGER                          :: ik_ray           ! k-index of a radial ray
 INTEGER, PARAMETER               :: n_dump = 23      ! unit number for final restart dump
 INTEGER                          :: istat            ! open file flag
 INTEGER                          :: ierr             ! mpi flag
+INTEGER                          :: adios_err        ! adios error flag
 
 #ifdef ADIOS_KEYS || ADIOS_MODEL
 character (len=128) :: restart_filename
@@ -326,9 +327,13 @@ END IF ! ndim == 1
 WRITE (nprint,1001)
 WRITE (nlog,1001)
 
-CALL adios_finalize (myid)
+CALL adios_finalize (myid, adios_err)
 
-CALL finalize_prof()
+#ifdef ADIOS_MODEL || ADIOS_KEYS
+  CALL cycle_end(ncycle)
+  CALL finalize_prof()
+#endif
+
 
 CALL MPI_FINALIZE(ierr)
 STOP

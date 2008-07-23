@@ -120,6 +120,10 @@ INTEGER                          :: num_procs       ! number of processors assig
 INTEGER                          :: num_procs_y     ! number of processors assigned to the y index of the rays
 INTEGER                          :: num_procs_z     ! number of processors assigned to the z index of the rays
 
+#ifdef ADIOS_MODEL || ADIOS_KEYS
+INTEGER                          :: adios_err       ! error flag for ADIOS
+#endif
+
 !-----------------------------------------------------------------------
 !        Formats
 !-----------------------------------------------------------------------
@@ -168,9 +172,9 @@ CALL MPI_COMM_SIZE( MPI_COMM_WORLD, num_procs, ierr )
 !
 !-----------------------------------------------------------------------
 #ifdef ADIOS_MODEL || ADIOS_KEYS
-CALL adios_init ('config.xml'//char(0), MPI_COMM_WORLD, MPI_COMM_SELF, MPI_INFO_NULL)
+CALL adios_init ('config.xml'//char(0), adios_err)
 
-CALL init_prof('./log'//char(0),20,401,MPI_COMM_WORLD,num_procs,myid)
+CALL init_prof('./log'//char(0),20,401,MPI_COMM_WORLD,num_procs,myid) 
 
 #endif
 
@@ -367,6 +371,11 @@ DO
 !-----------------------------------------------------------------------
  
   CALL cycle( time, dtnph )
+
+#ifdef ADIOS_MODEL || ADIOS_KEYS
+  CALL cycle_start(ncycle)
+#endif
+
   CALL MPI_Barrier( MPI_COMM_WORLD, ierr )
 
 !-----------------------------------------------------------------------
@@ -431,11 +440,19 @@ DO
   CALL radhyd_to_restart( ndim, nx, nez, nnu )
 #endif
 
+#ifdef ADIOS_MODEL || ADIOS_KEYS
+  CALL cycle_end(ncycle)
+#endif
+
 !-----------------------------------------------------------------------
 !  Update cycle number
 !-----------------------------------------------------------------------
 
   CALL cycle( time, dtnph )
+
+#ifdef ADIOS_MODEL || ADIOS_KEYS
+  CALL cycle_start(ncycle)
+#endif
 
 !-----------------------------------------------------------------------
 !
@@ -499,11 +516,20 @@ DO
   CALL radhyd_to_restart( ndim, nx, nez, nnu )
 #endif
 
+#ifdef ADIOS_MODEL || ADIOS_KEYS
+  CALL cycle_end(ncycle)
+#endif
+
 !-----------------------------------------------------------------------
 !  Update cycle number
 !-----------------------------------------------------------------------
 
   CALL cycle( time, dtnph )
+
+#ifdef ADIOS_MODEL || ADIOS_KEYS
+  CALL cycle_start(ncycle)
+#endif
+
   CALL MPI_Barrier( MPI_COMM_WORLD, ierr )
 
 !-----------------------------------------------------------------------
@@ -568,11 +594,19 @@ DO
   CALL radhyd_to_restart( ndim, nx, nez, nnu )
 #endif
 
+#ifdef ADIOS_MODEL || ADIOS_KEYS
+  CALL cycle_end(ncycle)
+#endif
+
 !-----------------------------------------------------------------------
 !  Update cycle number
 !-----------------------------------------------------------------------
 
   CALL cycle( time, dtnph )
+
+#ifdef ADIOS_MODEL || ADIOS_KEYS
+  CALL cycle_start(ncycle)
+#endif
 
 !-----------------------------------------------------------------------
 !
@@ -634,6 +668,10 @@ DO
   CALL radhyd_to_restart_adios( ndim, nx, nez, nnu )
 #else
   CALL radhyd_to_restart( ndim, nx, nez, nnu )
+#endif
+
+#ifdef ADIOS_MODEL || ADIOS_KEYS
+  CALL cycle_end(ncycle)
 #endif
 
 END DO
