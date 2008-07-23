@@ -259,7 +259,6 @@ void bw_stringtag (void * fbp, int * ptridx, enum TAG_t tag, char * name)
 int bp_calsize_scalartag (enum vartype_t type, void * val)
 {
     int unit_size = 0;
-
     unit_size = bp_getsize (type, val);
     if (unit_size < 0)
     {
@@ -317,7 +316,6 @@ int bp_calsize_dsettag (enum vartype_t type, int rank
 
         subsize = 4;
     }
-
     adios_var_element_count (rank, dims, &use_count, &total_count);
     subsize *= use_count;
 
@@ -374,11 +372,13 @@ int bcalsize_dset (char * dir_name, char * name, enum vartype_t type, int rank
                   )
 {
     int size = 4;                           // overall element size
-
+     
     size += bp_calsize_stringtag (name);
+    //printf("\t%d",size);
     size += bp_calsize_stringtag (dir_name);
+    //printf("\t%d",size);
     size += bp_calsize_dsettag (type, rank, dims);
-
+    //printf("\t%d\n",size);
     return size;
 }
 
@@ -389,7 +389,6 @@ int bcalsize_scalar (char *dir_name, char* name,enum vartype_t type,void * val)
     size += bp_calsize_stringtag (name);
     size += bp_calsize_stringtag (dir_name);
     size += bp_calsize_scalartag (type, val);
-
     return size;
 }
 
@@ -400,7 +399,6 @@ int bcalsize_attr (char * path, char * name, enum vartype_t type, void * data)
     size += bp_calsize_stringtag (name);
     size += bp_calsize_stringtag (path);
     size += bp_calsize_scalartag (type, data);
-
     return size;
 }
 

@@ -158,7 +158,12 @@ void adios_var_element_count (int rank
 
     *use_count = 1;
     *total_count = 1;
-
+    if (!dims)
+    {
+       *use_count = 0;
+       *total_count = 0;
+       return;
+    }
     for (i = 0; i < rank; i++)
     {
         *use_count *= dims [i].local_bound;

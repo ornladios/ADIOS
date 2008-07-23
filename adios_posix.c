@@ -261,8 +261,11 @@ static void adios_posix_do_write (struct adios_file_struct * fd
     uint64_t end = 0;
 
     uint64_t size = adios_data_size (fd->group);
+    printf("group_size:%d\n",size);
     uint64_t mem_needed = 0;
     uint64_t mem_allowed = 0;;
+
+//  Buffer Management
 
     if (size > md->buffer_size)
     {
@@ -274,6 +277,8 @@ static void adios_posix_do_write (struct adios_file_struct * fd
             fprintf (stderr, "OVERFLOW!!\n");
             overflow = 1;
         }
+
+        //md->buffer_size == group_size
 
         md->buffer_size = md->buffer_size + mem_allowed;
         free (md->buffer);

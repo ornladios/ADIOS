@@ -178,11 +178,83 @@ static int common_adios_group_size (long long fd_p, int nvars
                                    ,long long byte_size
                                    )
 {
+    uint64_t size = 0; 
+    int * val = 0;
+    enum ADIOS_DATATYPES type = adios_unknown;
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    struct adios_var_struct  * v = fd->group->vars;
+    struct adios_attribute_struct * a = fd->group->attributes;
+    //fprintf(stderr,"meta size:%lld, %d, %lld\n",size,nvars,byte_size);
+    if(fd == NULL || fd->group==NULL)
+    { 
+        fprintf(stderr, "group is not initialized properly\n");
+        return -1;
+    }
+    while (v)
+    {       
+       if(!v->dimensions)
+       {
+          size += bcalsize_scalar(v->path,v->name,v->type,v->data);
+          //fprintf(stderr,"\tscalar--path:%s  var:%s size:%d \n",v->path,v->name,size);
+       }
+       else
+       {
+             //fprintf(stderr,"\titerations: %d dimension:%d\n",size,v->dimensions->dimension.rank);
+             int i=10; 
+             int rank;
+             //struct adios_bp_dimension_struct * dims = 0;
 
+             //dims = (struct adios_bp_dimension_struct *)   \
+                     calloc (rank, sizeof (struct adios_bp_dimension_struct));
+
+             //rc = adios_dims_to_bp_dims (v->name, v->dimensions          \
+                                        ,v->global_bounds, &rank, dims     \
+                                        );
+             struct adios_dimension_struct * d = v->dimensions;
+             while (d)
+             {
+                i--;    
+                d = d->next; 
+             }
+             if (i < 0)
+             {
+                 fprintf (stderr, "conversion of '%s' failed because too small "
+                                  "destination array provided.\n"
+                         ,v->name
+                          );
+                 return 1;
+             }
+             else
+                 rank = 10-i;
+             int tmpsize;
+             tmpsize = bcalsize_dset (v->path, v->name, v->type
+                                   ,rank,d);
+             fprintf(stderr,"\tdset--path:%s  var:%s tmpsize=%d size=%d rank=%d\n",v->path,v->name,tmpsize,size,rank);
+             size += tmpsize;
+       }//end of scalar/dset if
+       v=v->next;
+    }      //end of var while
+    while (a)
+    {
+       if(a->value)
+       {
+          val = a->value;
+          type = adios_string;
+          //fprintf(stderr,"\tattribute--path:%s  var:%s size=%d\n",a->path,a->name,size);
+       }
+       else
+       {
+          val = a->var->data;
+          type = a->var->type;
+       }
+       size += bcalsize_attr (a->path, a->name, type, val);
+       a=a->next;
+       //fprintf(stderr,"----------------------\n");
+     
+    }          //end of group for loop
     fd->write_size_nvars = nvars;
     fd->write_size_bytes = byte_size;
-
+    fprintf(stderr,"meta size:%d\n",byte_size+size);
     return 0;
 }
 
