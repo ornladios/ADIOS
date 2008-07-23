@@ -77,12 +77,14 @@ void adios_close_ (long long * fd_p, int err);
 int adios_declare_group (long long * id, const char * name
                         ,const char * coordination_comm
                         ,const char * coordination_var
+                        ,const char * time_index
                         );
 void adios_declare_group_ (long long * id, const char * name
                           ,const char * coordination_comm
                           ,const char * coordination_var
+                          ,const char * time_index
                           ,int name_size, int coordination_comm_size, int err
-                          ,int coordination_var_size
+                          ,int coordination_var_size, int time_index_size
                           );
 
 struct adios_global_bounds_struct;
@@ -91,14 +93,17 @@ int adios_define_var (long long group_id, const char * name
                      ,const char * path, int type
                      ,int copy_on_write
                      ,const char * dimensions
-                     ,struct adios_global_bounds_struct * global_bounds
+                     ,const char * global_dimensions
+                     ,const char * local_offsets
                      );
 void adios_define_var_ (long long * group_id, const char * name
                        ,const char * path, int * type
                        ,int * copy_on_write
                        ,const char * dimensions
-                       ,long long * global_bounds, int err
+                       ,const char * global_dimensions
+                       ,const char * local_offsets, int err
                        ,int name_size, int path_size, int dimensions_size
+                       ,int global_dimensions_size, int local_offsets_size
                        );
 
 int adios_define_global_bounds (long long group_id, const char * dimensions

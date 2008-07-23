@@ -146,7 +146,7 @@ static int parseFlag (const char * attr_name, const char * flag
     return adios_flag_unknown;
 }
 
-static int is_var (char * temp) // 1 == yes, 0 == no
+static int is_var (const char * temp) // 1 == yes, 0 == no
 {
     if (!temp)
         return 1;
@@ -1982,6 +1982,7 @@ static int parseGroup (mxml_node_t * node)
     const char * coordination_comm = 0;
     const char * coordination_var = 0;
     const char * host_language = 0;
+    const char * time_index = 0;
 
     struct adios_group_struct * new_group;
     enum ADIOS_FLAG host_language_fortran = adios_flag_yes;
@@ -1995,6 +1996,7 @@ static int parseGroup (mxml_node_t * node)
         GET_ATTR("coordination-communicator",attr,coordination_comm,"adios-group")
         GET_ATTR("coordination-var",attr,coordination_var,"adios-group")
         GET_ATTR("host-language",attr,host_language,"adios-group")
+        GET_ATTR("time-index",attr,time_index,"adios-group")
         fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
                          "(ignored)\n"
                 ,attr->name
@@ -2035,14 +2037,18 @@ static int parseGroup (mxml_node_t * node)
     }
 
     adios_common_declare_group ((long long *) &new_group, datagroup_name
-                               ,host_language_fortran
-                               ,coordination_comm, coordination_var);
+                               ,host_language_fortran, coordination_comm
+                               ,coordination_var, time_index
+                               );
 
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
         ;n
         ;n = mxmlWalkNext (n, node, MXML_NO_DESCEND)
         )
     {
+        const char * gb_global_dimensions = "";
+        const char * gb_local_offsets = "";
+
         if (n->type != MXML_ELEMENT)
         {
             continue;
@@ -2095,7 +2101,9 @@ static int parseGroup (mxml_node_t * node)
             }
 
             if (!adios_common_define_var (*(long long *) &new_group, name
-                                         ,path, t1, c1, dimensions, 0
+                                         ,path, t1, c1, dimensions
+                                         ,gb_global_dimensions
+                                         ,gb_local_offsets
                                          )
                )
             {
@@ -2163,14 +2171,8 @@ static int parseGroup (mxml_node_t * node)
                 return 0;
             }
 
-            if (!adios_common_define_global_bounds (*(long long *) &new_group
-                                                   ,dimensions, offsets
-                                                   ,&new_global_bounds
-                                                   )
-               )
-            {
-                return 0;
-            }
+            gb_global_dimensions = dimensions;
+            gb_local_offsets = offsets;
 
             for (n1 = mxmlWalkNext (n, n, MXML_DESCEND)
                 ;n1
@@ -2228,7 +2230,8 @@ static int parseGroup (mxml_node_t * node)
                     if (!adios_common_define_var (*(long long *) &new_group
                                                  ,name
                                                  ,path, t1, c1, dimensions
-                                                 ,new_global_bounds
+                                                 ,gb_global_dimensions
+                                                 ,gb_local_offsets
                                                  )
                        )
                     {
@@ -2251,6 +2254,9 @@ static int parseGroup (mxml_node_t * node)
                     }
                 }
             }
+
+            gb_global_dimensions = "";
+            gb_local_offsets = "";
         } else
         if (!strcasecmp (n->value.element.name, "attribute"))
         {
@@ -2917,7 +2923,10 @@ static int parse_subitem (char * d, struct adios_group_struct * g
 }
 #endif
 
-void adios_parse_dimension (char * dimension, struct adios_group_struct * g
+void adios_parse_dimension (const char * dimension
+                           ,const char * global_dimension
+                           ,const char * local_offset
+                           ,struct adios_group_struct * g
                            ,struct adios_dimension_struct * dim
                            )
 {
@@ -2951,6 +2960,73 @@ void adios_parse_dimension (char * dimension, struct adios_group_struct * g
     {
         dim->dimension.var = 0;
         dim->dimension.rank = atoi (dimension);
+    }
+
+    if (!global_dimension)
+    {
+        fprintf (stderr, "adios_parse_dimension: global_dimension not "
+                         "provided\n"
+                );
+
+        return;
+    }
+
+    if (is_var (global_dimension))
+    {
+        dim->global_dimension.rank = 0;
+        dim->global_dimension.var = adios_find_var_by_name (g->vars
+                                                    ,global_dimension
+                                                    ,g->all_unique_var_names
+                                                    );
+        if (!dim->global_dimension.var)
+        {
+            fprintf (stderr, "config.xml: invalid global-bounds dimension: %s\n"
+                    ,global_dimension
+                    );
+
+            return;
+        }
+        else
+        {
+            dim->global_dimension.var->is_dim = adios_flag_yes;
+        }
+    }
+    else
+    {
+        dim->global_dimension.var = 0;
+        dim->global_dimension.rank = strtol (global_dimension, NULL, 10);
+    }
+
+    if (!local_offset)
+    {
+        fprintf (stderr, "adios_parse_dimension: local-offset not provided\n");
+
+        return;
+    }
+
+    if (is_var (local_offset))
+    {
+        dim->local_offset.rank = 0;
+        dim->local_offset.var = adios_find_var_by_name (g->vars, local_offset
+                                                    ,g->all_unique_var_names
+                                                    );
+        if (!dim->local_offset.var)
+        {
+            fprintf (stderr, "config.xml: invalid var local_offset: %s\n"
+                    ,local_offset
+                    );
+
+            return;
+        }
+        else
+        {
+            dim->local_offset.var->is_dim = adios_flag_yes;
+        }
+    }
+    else
+    {
+        dim->local_offset.var = 0;
+        dim->local_offset.rank = strtoi (local_offset, NULL, 10);
     }
 }
 
@@ -3728,7 +3804,7 @@ int adios_common_define_attribute (long long group, const char * name
 
     attr->next = 0;
 
-    adios_append_attribute (&g->attributes, attr);
+    adios_append_attribute (&g->attributes, attr, ++g->member_count);
 
     return 1;
 }
@@ -3806,7 +3882,7 @@ void * adios_dupe_data (struct adios_var_struct * v, void * data)
                (struct adios_bp_dimension_struct *)
                       calloc (rank, sizeof (struct adios_bp_dimension_struct));
 
-        rc = adios_dims_to_bp_dims (v->name, d, v->global_bounds, &rank, dims);
+        rc = adios_dims_to_bp_dims (v->name, d, &rank, dims);
         if (!rc)
         {
             adios_var_element_count (rank, dims, &use_count, &total_count);
@@ -3909,9 +3985,7 @@ int adios_do_write_var (struct adios_var_struct * v
             dims = (struct adios_bp_dimension_struct *)
                     calloc (rank, sizeof (struct adios_bp_dimension_struct));
 
-            rc = adios_dims_to_bp_dims (v->name, v->dimensions
-                                       ,v->global_bounds, &rank, dims
-                                       );
+            rc = adios_dims_to_bp_dims (v->name, v->dimensions, &rank, dims);
             if (!rc)
             {
                 size = bcalsize_dset (v->path, v->name, v->type
@@ -4274,9 +4348,7 @@ uint64_t adios_size_of_var (struct adios_var_struct * v, void * data)
             (struct adios_bp_dimension_struct *)
                calloc (rank, sizeof (struct adios_bp_dimension_struct));
 
-        rc = adios_dims_to_bp_dims (v->name, v->dimensions, v->global_bounds
-                                   ,&rank, dims
-                                   );
+        rc = adios_dims_to_bp_dims (v->name, v->dimensions, &rank, dims);
         if (!rc)
         {
             size = bcalsize_dset (v->path, v->name, v->type, rank, dims);
@@ -4449,9 +4521,9 @@ void adios_append_group (struct adios_group_struct * group)
 // return is whether or not the name is unique
 enum ADIOS_FLAG adios_append_var (struct adios_var_struct ** root
                                  ,struct adios_var_struct * var
+                                 ,int id
                                  )
 {
-    int id = 1;
     enum ADIOS_FLAG unique_names = adios_flag_yes;
 
     while (root)
@@ -4472,7 +4544,6 @@ enum ADIOS_FLAG adios_append_var (struct adios_var_struct ** root
         else
         {
             root = &(*root)->next;
-            id++;
         }
     }
 
@@ -4499,10 +4570,9 @@ void adios_append_dimension (struct adios_dimension_struct ** root
 
 void adios_append_attribute (struct adios_attribute_struct ** root
                             ,struct adios_attribute_struct * attribute
+                            ,int id
                             )
 {
-    int id = 1;
-
     while (root)
     {
         if (!*root)
@@ -4514,22 +4584,18 @@ void adios_append_attribute (struct adios_attribute_struct ** root
         else
         {
             root = &(*root)->next;
-            id++;
         }
     }
 }
 
 int adios_dims_to_bp_dims (char * name
                           ,struct adios_dimension_struct * adios_dims
-                          ,struct adios_global_bounds_struct * global
                           ,int * rank
                           ,struct adios_bp_dimension_struct * bp_dims
                           )
 {
     int i = *rank;
     struct adios_dimension_struct * d = adios_dims;
-    struct adios_dimension_struct * g = 0;
-    struct adios_dimension_struct * o = 0;
 
     // check size of target bp_dimension array
     while (d)
@@ -4552,12 +4618,6 @@ int adios_dims_to_bp_dims (char * name
         *rank = 0;
     }
 
-    if (global)
-    {
-        g = global->dimensions;
-        o = global->offsets;
-    }
-
     // do the conversion
     while (d)
     {
@@ -4574,6 +4634,30 @@ int adios_dims_to_bp_dims (char * name
 
             return 1;
         }
+        if (   d->global_dimension.var
+            && !d->global_dimension.var->data
+           )
+        {
+            fprintf (stderr, "sizing of %s failed because "
+                             "dimension component %s was not "
+                             "provided\n"
+                    ,name, d->global_dimension.var->name
+                    );
+
+            return 1;
+        }
+        if (   d->local_offset.var
+            && !d->local_offset.var->data
+           )
+        {
+            fprintf (stderr, "sizing of %s failed because "
+                             "dimension component %s was not "
+                             "provided\n"
+                    ,name, d->local_offset.var->name
+                    );
+
+            return 1;
+        }
 
         // calculate the size for this dimension element
         if (d->dimension.var)
@@ -4585,37 +4669,23 @@ int adios_dims_to_bp_dims (char * name
         {
             bp_dims [*rank].local_bound = d->dimension.rank;
         }
-        if (g)
+        if (d->global_dimension.var)
         {
-            if (g->dimension.var)
-            {
-                bp_dims [*rank].global_bound =
-                           (*(int *) g->dimension.var->data);
-            }
-            else
-            {
-                bp_dims [*rank].global_bound = g->dimension.rank;
-            }
+            bp_dims [*rank].global_bound =
+                       (*(int *) d->global_dimension.var->data);
         }
         else
         {
-            bp_dims [*rank].global_bound = 0;
+            bp_dims [*rank].global_bound = d->global_dimension.rank;
         }
-        if (o)
+        if (d->local_offset.var)
         {
-            if (o->dimension.var)
-            {
-                bp_dims [*rank].global_offset =
-                           (*(int *) o->dimension.var->data);
-            }
-            else
-            {
-                bp_dims [*rank].global_offset = o->dimension.rank;
-            }
+            bp_dims [*rank].global_offset =
+                       (*(int *) d->local_offset.var->data);
         }
         else
         {
-            bp_dims [*rank].global_offset = 0;
+            bp_dims [*rank].global_offset = d->local_offset.rank;
         }
 
         //printf ("\tdim (%d): %d(%d)[%d]\n", *rank
@@ -4624,10 +4694,6 @@ int adios_dims_to_bp_dims (char * name
         //       ,bp_dims [*rank].global_offset
         //       );
         d = d->next;
-        if (g)
-            g = g->next;
-        if (o)
-            o = o->next;
         (*rank)++;
     }
 
@@ -4641,6 +4707,7 @@ int adios_common_declare_group (long long * id, const char * name
                                ,enum ADIOS_FLAG host_language_fortran
                                ,const char * coordination_comm
                                ,const char * coordination_var
+                               ,const char * time_index
                                )
 {
     struct adios_group_struct * g = (struct adios_group_struct *)
@@ -4650,11 +4717,13 @@ int adios_common_declare_group (long long * id, const char * name
     g->adios_host_language_fortran = host_language_fortran;
     g->all_unique_var_names = adios_flag_yes;
     g->id = 0; // will be set in adios_append_group
+    g->member_count = 0; // will be set in adios_append_group
     g->var_count = 0;
     g->vars = 0;
     g->attributes = 0;
     g->group_by = (coordination_var ? strdup (coordination_var) : 0L); 
     g->group_comm = (coordination_comm ? strdup (coordination_comm) : 0L);
+    g->time_index = (time_index ? strdup (time_index) : 0L);
     g->methods = 0;
     g->mesh = 0;
     
@@ -4665,78 +4734,12 @@ int adios_common_declare_group (long long * id, const char * name
     return 1;
 }
 
-int adios_common_define_global_bounds (long long group_id
-                                      ,const char * dimensions
-                                      ,const char * offsets
-                                      ,struct adios_global_bounds_struct ** b
-                                      )
-{
-    struct adios_group_struct * t = (struct adios_group_struct *) group_id;
-
-    *b = (struct adios_global_bounds_struct *)
-                        malloc (sizeof (struct adios_global_bounds_struct));
-    char * dim;
-    char * dim_temp;
-    char * off;
-    char * offsets_temp;
-
-    if (dimensions)
-        dim_temp = strdup (dimensions);
-    else
-        dim_temp = 0;
-
-    if (offsets)
-        offsets_temp = strdup (offsets);
-    else
-        offsets_temp = 0;
-
-    (*b)->dimensions = 0;
-    (*b)->offsets = 0;
-
-    if (dim_temp)
-    {
-        dim = strtok (dim_temp, ",");
-        while (dim)
-        {
-            struct adios_dimension_struct * d =
-                     (struct adios_dimension_struct *)
-                         calloc (1, sizeof (struct adios_dimension_struct));
-
-            adios_parse_dimension (dim, t, d);
-
-            adios_append_dimension (&(*b)->dimensions, d);
-
-            dim = strtok (NULL, ",");
-        }
-        free (dim_temp);
-    }
-
-    if (offsets_temp)
-    {
-        off = strtok (offsets_temp, ",");
-        while (off)
-        {
-            struct adios_dimension_struct * d =
-                     (struct adios_dimension_struct *)
-                         calloc (1, sizeof (struct adios_dimension_struct));
-
-            adios_parse_dimension (off, t, d);
-
-            adios_append_dimension (&(*b)->offsets, d);
-
-            off = strtok (NULL, ",");
-        }
-        free (offsets_temp);
-    }
-
-    return 1;
-}
-
 int adios_common_define_var (long long group_id, const char * name
                             ,const char * path, int type
                             ,int copy_on_write
                             ,const char * dimensions
-                            ,struct adios_global_bounds_struct * global_bounds
+                            ,const char * global_dimensions
+                            ,const char * local_offsets
                             )
 {
     struct adios_group_struct * t = (struct adios_group_struct *) group_id;
@@ -4744,21 +4747,33 @@ int adios_common_define_var (long long group_id, const char * name
                                malloc (sizeof (struct adios_var_struct));
     char * dim;
     char * dim_temp;
+    char * g_dim;
+    char * g_dim_temp;
+    char * lo_dim;
+    char * lo_dim_temp;
     enum ADIOS_FLAG flag;
     if (dimensions)
         dim_temp = strdup (dimensions);
     else
         dim_temp = 0;
+    if (global_dimensions)
+        g_dim_temp = strdup (global_dimensions);
+    else
+        g_dim_temp = 0;
+    if (local_offsets)
+        lo_dim_temp = strdup (local_offsets);
+    else
+        lo_dim_temp = 0;
 
     v->name = strdup (name);
     v->path = strdup (path);
     v->type = type;
     v->dimensions = 0;
-    v->global_bounds = global_bounds;
     v->copy_on_write = copy_on_write;
     v->is_dim = adios_flag_no;
     v->got_buffer = adios_flag_no;
     v->free_data = adios_flag_no;
+    v->write_offset = 0;
     v->data = 0;
     v->data_size = 0;
     v->next = 0;
@@ -4766,7 +4781,9 @@ int adios_common_define_var (long long group_id, const char * name
     if (dim_temp)
     {
         dim = strtok (dim_temp, ",");
-        while (dim)
+        g_dim = strtok (g_dim_temp, ",");
+        lo_dim = strtok (lo_dim_temp, ",");
+        while (dim && g_dim && lo_dim)
         {
             struct adios_dimension_struct * d =
                      (struct adios_dimension_struct *)
@@ -4780,16 +4797,18 @@ int adios_common_define_var (long long group_id, const char * name
 
                 return 0;
             }
-            adios_parse_dimension (dim, t, d);
+            adios_parse_dimension (dim, g_dim, lo_dim, t, d);
 
             adios_append_dimension (&v->dimensions, d);
 
             dim = strtok (NULL, ",");
         }
         free (dim_temp);
+        free (g_dim_temp);
+        free (lo_dim_temp);
     }
 
-    flag = adios_append_var (&t->vars, v);
+    flag = adios_append_var (&t->vars, v, ++t->member_count);
     if (flag == adios_flag_no)
     {
         t->all_unique_var_names = adios_flag_no;
@@ -4880,6 +4899,381 @@ void adios_common_get_group (long long * group_id, const char * name)
             ,name
             );
 }   
+
+uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
+{
+fprintf (stderr, "Must calc the overhead properly\n");
+    return 25000;
+}
+
+int adios_bp_write_header_v1 (struct adios_file_struct * fd)
+{
+    struct adios_group_struct * g = fd->group;
+
+    uint8_t flag;
+    struct adios_var_struct * var;
+    uint16_t len;
+    char * temp;
+
+    flag = (g->adios_host_language_fortran == adios_flag_yes ? 'y' : 'n');
+    memcpy (fd->shared_buffer, &flag, 1);
+    fd->shared_buffer += 1;
+
+    len = strlen (g->name);
+    memcpy (fd->shared_buffer, &len, 2);
+    fd->shared_buffer += 2;
+
+    memcpy (fd->shared_buffer, g->name, len);
+    fd->shared_buffer += len;
+
+    var = adios_find_var_by_name (g->vars, g->group_comm
+                                 ,g->all_unique_var_names
+                                 );
+    if (var)
+    {
+        memcpy (fd->shared_buffer, &var->id, 4);
+    }
+    else
+    {
+        int i = 0;
+        memcpy (fd->shared_buffer, &i, 4);
+    }
+    fd->shared_buffer += 4;
+
+    var = adios_find_var_by_name (g->vars, g->group_by
+                                 ,g->all_unique_var_names
+                                 );
+    if (var)
+    {
+        memcpy (fd->shared_buffer, &var->id, 4);
+    }
+    else
+    {
+        int i = 0;
+        memcpy (fd->shared_buffer, &i, 4);
+    }
+    fd->shared_buffer += 4;
+
+    var = adios_find_var_by_name (g->vars, g->time_index
+                                 ,g->all_unique_var_names
+                                 );
+    if (var)
+    {
+        memcpy (fd->shared_buffer, &var->id, 4);
+    }
+    else
+    {
+        int i = 0;
+        memcpy (fd->shared_buffer, &i, 4);
+    }
+    fd->shared_buffer += 4;
+
+    flag = (char) g->methods->method->m;
+    memcpy (fd->shared_buffer, &flag, 1);
+    fd->shared_buffer += 1;
+
+    temp = (g->methods->method->parameters
+                      ? g->methods->method->parameters : "");
+    len = strlen (temp);
+    memcpy (fd->shared_buffer, &len, 2);
+    fd->shared_buffer += 2;
+
+    memcpy (fd->shared_buffer, temp, len);
+    fd->shared_buffer += len;
+
+    // it is now setup to write the vars and then the attrs on close
+    fd->vars_start = fd->shared_buffer;
+
+    return 0;
+}
+
+int adios_bp_write_index_v1 (struct adios_file_struct * fd)
+{
+    return 0;
+}
+
+static
+uint8_t count_dimensions (struct adios_dimension_struct * dimensions)
+{
+    uint8_t count = 0;
+
+    while (dimensions)
+    {
+        count++;
+        dimensions = dimensions->next;
+    }
+
+    return count;
+}
+
+static
+uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
+{
+    uint16_t size = 0;
+
+    size += 1; // var (y or n)
+
+    if (dimension->dimension.var == 0)  // it is a number
+    {
+        size += 8;  // size of value
+    }
+    else   // it is a var
+    {
+        size += 4;  // size of var ID
+    }
+
+    if (!dimension->global_dimension.var)
+    {
+        size += 8; // default to a rank
+    }
+    else
+    {
+        if (dimension->global_dimension.var == 0)  // it is a number
+        {
+            size += 8;  // size of value
+        }
+        else   // it is a var
+        {
+            size += 4;  // size of var ID
+        }
+    }
+
+    if (!dimension->local_offset.var)
+    {
+        size += 8;  // default to a rank
+    }
+    else
+    {
+        if (dimension->local_offset.var == 0)  // it is a number
+        {
+            size += 8;  // size of value
+        }
+        else   // it is a var
+        {
+            size += 4;  // size of var ID
+        }
+    }
+
+    return size;
+}
+
+static
+uint64_t adios_bp_write_dimension_v1 (struct adios_file_struct * fd
+                                     ,struct adios_dimension_struct * dimension
+                                     )
+{
+    uint64_t size = 0;
+    uint8_t var;
+
+    if (dimension->dimension.var == 0)
+    {
+        var = 'n';
+        memcpy (fd->shared_buffer, &var, 1);
+        fd->shared_buffer += 1;
+        size += 1;
+        memcpy (fd->shared_buffer, &dimension->dimension.rank, 8);
+        fd->shared_buffer += 8;
+        size += 8;
+    }
+    else
+    {
+        var = 'y';
+        memcpy (fd->shared_buffer, &var, 1);
+        fd->shared_buffer += 1;
+        size += 1;
+        memcpy (fd->shared_buffer, &dimension->dimension.var->id, 4);
+        fd->shared_buffer += 4;
+        size += 4;
+    }
+
+    if (!dimension->global_dimension.var == 0)
+    {
+        uint64_t rank = 0;
+        var = 'n';
+        memcpy (fd->shared_buffer, &var, 1);
+        fd->shared_buffer += 1;
+        size += 1;
+        memcpy (fd->shared_buffer, &rank, 8);
+        fd->shared_buffer += 8;
+        size += 8;
+    }
+    else
+    {
+        if (dimension->global_dimension.var == 0)
+        {
+            var = 'n';
+            memcpy (fd->shared_buffer, &var, 1);
+            fd->shared_buffer += 1;
+            size += 1;
+            memcpy (fd->shared_buffer, &dimension->global_dimension.rank, 8);
+            fd->shared_buffer += 8;
+            size += 8;
+        }
+        else
+        {
+            var = 'y';
+            memcpy (fd->shared_buffer, &var, 1);
+            fd->shared_buffer += 1;
+            size += 1;
+            memcpy (fd->shared_buffer, &dimension->global_dimension.var->id, 4);
+            fd->shared_buffer += 4;
+            size += 4;
+        }
+    }
+
+    if (!dimension->local_offset.var)
+    {
+        uint64_t rank = 0;
+        var = 'n';
+        memcpy (fd->shared_buffer, &var, 1);
+        fd->shared_buffer += 1;
+        size += 1;
+        memcpy (fd->shared_buffer, &rank, 8);
+        fd->shared_buffer += 8;
+        size += 8;
+    }
+    else
+    {
+        if (dimension->local_offset.var == 0)
+        {
+            var = 'n';
+            memcpy (fd->shared_buffer, &var, 1);
+            fd->shared_buffer += 1;
+            size += 1;
+            memcpy (fd->shared_buffer, &dimension->local_offset.rank, 8);
+            fd->shared_buffer += 8;
+            size += 8;
+        }
+        else
+        {
+            var = 'y';
+            memcpy (fd->shared_buffer, &var, 1);
+            fd->shared_buffer += 1;
+            size += 1;
+            memcpy (fd->shared_buffer, &dimension->local_offset.var->id, 4);
+            fd->shared_buffer += 4;
+            size += 4;
+        }
+    }
+
+    return size;
+}
+
+uint64_t adios_bp_write_dimensions_v1 (struct adios_file_struct * fd
+                                    ,struct adios_dimension_struct * dimensions
+                                    )
+{
+    uint64_t size = 0;
+    uint16_t dimensions_size = calc_dimensions_size (dimensions);
+    uint8_t ranks = count_dimensions (dimensions);
+
+    memcpy (fd->shared_buffer, &dimensions_size, 2);
+    fd->shared_buffer += 2;
+    size += 2;
+    memcpy (fd->shared_buffer, &ranks, 1);
+    fd->shared_buffer += 1;
+    size += 1;
+
+    while (dimensions)
+    {
+        size += adios_bp_write_dimension_v1 (fd, dimensions);
+
+        dimensions = dimensions->next;
+    }
+
+    return size;
+}
+
+uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var)
+{
+    switch (type)
+    {
+        case adios_byte:
+        case adios_unsigned_byte:
+            return 1;
+
+        case adios_string:
+            if (!var)
+                return 0;
+            else
+                return strlen ((char *) var);
+
+        case adios_short:
+        case adios_unsigned_short:
+            return 2;
+
+        case adios_integer:
+        case adios_unsigned_integer:
+            return 4;
+
+        case adios_long:
+        case adios_unsigned_long:
+            return 8;
+
+        case adios_real:
+            return 4;
+
+        case adios_double:
+            return 8;
+
+        case adios_long_double:
+            return 16;
+
+        case adios_complex:
+            return 2 * 4;
+
+        case adios_double_complex:
+            return 2 * 8;
+
+        default:
+            return -1;
+    }
+}
+
+uint64_t adios_get_var_size (struct adios_var_struct * var, void * data)
+{
+    uint64_t size = 0;
+
+    if (var->dimensions)
+    {
+        size = adios_get_type_size (var->type, data);
+        struct adios_dimension_struct * d = var->dimensions;
+
+        while (d)
+        {
+            // first check to make sure all vars are provided
+            if (   d->dimension.var
+                && !d->dimension.var->data
+               )
+            {
+                fprintf (stderr, "sizing of %s failed because "
+                                 "dimension component %s was not "
+                                 "provided\n"
+                        ,var->name, d->dimension.var->name
+                        );
+
+                return 0;
+            }
+            // calculate the size for this dimension element
+            if (d->dimension.var)
+            {
+                size *= (*(int *) d->dimension.var->data);
+            }
+            else
+            {
+                size *= d->dimension.rank;
+            }
+
+            d = d->next;
+        }
+    }
+    else
+    {
+        size = adios_get_type_size (var->type, data);
+    }
+
+    return size;
+}
 
 #if CHUNK_DATA
 static int whole_data_only = 0;
