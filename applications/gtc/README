@@ -20,8 +20,10 @@ The code and config.xml are compatible with the latest ADIOS code.
 
 The gtc_setting directory contains input parameter files (in P2,
 P4, P8, P16 sub-directories). Inputs files in the same sub-directory
-do weakly scaling. Using input files in P4 will generate files of
-double size of those using inputs in P2, and so on.
+do weakly scaling. Input files in different Px directories use 
+different mpsi values to do strong scaling. For example, using input 
+files in P4 will generate files whose size is double of files using
+inputs in P2.  
 
 2. gtc_setting/gen_script.sh is used to generate PBS script according
    to the template gtc_setting/gtc.pbs.
