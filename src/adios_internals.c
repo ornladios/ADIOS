@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <arpa/inet.h>
 
 // xml parser
 #include <mxml.h>
@@ -152,15 +153,15 @@ static int is_var (const char * temp) // 1 == yes, 0 == no
         return 1;
 
     if (*temp == '-' || isdigit (*temp))
-    {                                 
-        while (*temp)                 
+    {
+        while (*temp)
         {
             if (isdigit (*temp))
                 temp++;
             else
                 return 1;
-        }                           
-    }                                     
+        }
+    }
     else
         return 1;
 
@@ -180,24 +181,24 @@ static int is_num (char * temp) // 1 == yes, 0 == no
 
     return 0;
 }
-                                    
+
 static void adios_append_mesh_item (struct adios_mesh_item_list_struct ** root
                                    ,struct adios_mesh_item_list_struct * item
                                    )
-{               
-    while (root)    
-    {                       
-        if (!*root)         
-        {           
+{
+    while (root)
+    {
+        if (!*root)
+        {
             *root = item;
             root = 0;
-        }       
+        }
         else
-        {   
+        {
             root = &(*root)->next;
-        }       
-    }           
-}           
+        }
+    }
+}
 
 static void adios_append_mesh_var (struct adios_mesh_var_list_struct ** root
                                   ,struct adios_mesh_var_list_struct * var
@@ -1302,7 +1303,7 @@ static int parseMeshUniform (mxml_node_t * node
     int saw_spacing = 0;
 
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
-        ;n            
+        ;n
         ;n = mxmlWalkNext (n, node, MXML_DESCEND)
         )
     {
@@ -1330,7 +1331,7 @@ static int parseMeshUniform (mxml_node_t * node
             if (!dimensions)
             {
                 fprintf (stderr, "config.xml: value attribute on "
-                                 "dimensions required\n" 
+                                 "dimensions required\n"
                         );
 
                 return 0;
@@ -1350,7 +1351,7 @@ static int parseMeshUniform (mxml_node_t * node
                         );
 
                 return 0;
-            } 
+            }
 
             saw_origin = 1;
             value = mxmlElementGetAttr (n, "value");
@@ -1362,7 +1363,7 @@ static int parseMeshUniform (mxml_node_t * node
                         );
 
                 return 0;
-            } 
+            }
 
             if (!parseMeshUniformOrigin (value, new_group, *mesh))
                 return 0;
@@ -1426,7 +1427,7 @@ static int parseMeshRectilinear (mxml_node_t * node
     int saw_coordinates_single_var = 0;
 
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
-        ;n            
+        ;n
         ;n = mxmlWalkNext (n, node, MXML_DESCEND)
         )
     {
@@ -1454,7 +1455,7 @@ static int parseMeshRectilinear (mxml_node_t * node
             if (!value)
             {
                 fprintf (stderr, "config.xml: value attribute on "
-                                 "dimensions required\n" 
+                                 "dimensions required\n"
                         );
 
                 return 0;
@@ -1474,7 +1475,7 @@ static int parseMeshRectilinear (mxml_node_t * node
                         );
 
                 return 0;
-            } 
+            }
 
             saw_coordinates_multi_var = 1;
             value = mxmlElementGetAttr (n, "value");
@@ -1486,7 +1487,7 @@ static int parseMeshRectilinear (mxml_node_t * node
                         );
 
                 return 0;
-            } 
+            }
 
             if (!parseMeshRectilinearCoordinatesMultiVar (value, new_group, *mesh))
                 return 0;
@@ -1503,7 +1504,7 @@ static int parseMeshRectilinear (mxml_node_t * node
                         );
 
                 return 0;
-            } 
+            }
 
             saw_coordinates_single_var = 1;
             value = mxmlElementGetAttr (n, "value");
@@ -1515,7 +1516,7 @@ static int parseMeshRectilinear (mxml_node_t * node
                         );
 
                 return 0;
-            } 
+            }
 
             if (!parseMeshRectilinearCoordinatesSingleVar (value, new_group, *mesh))
                 return 0;
@@ -1562,7 +1563,7 @@ static int parseMeshStructured (mxml_node_t * node
     int saw_points_single_var = 0;
 
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
-        ;n            
+        ;n
         ;n = mxmlWalkNext (n, node, MXML_DESCEND)
         )
     {
@@ -1590,7 +1591,7 @@ static int parseMeshStructured (mxml_node_t * node
             if (!value)
             {
                 fprintf (stderr, "config.xml: value attribute on "
-                                 "nspace required\n" 
+                                 "nspace required\n"
                         );
 
                 return 0;
@@ -1618,7 +1619,7 @@ static int parseMeshStructured (mxml_node_t * node
             if (!value)
             {
                 fprintf (stderr, "config.xml: value attribute on "
-                                 "dimensions required\n" 
+                                 "dimensions required\n"
                         );
 
                 return 0;
@@ -1638,7 +1639,7 @@ static int parseMeshStructured (mxml_node_t * node
                         );
 
                 return 0;
-            } 
+            }
 
             saw_points_multi_var = 1;
             value = mxmlElementGetAttr (n, "value");
@@ -1650,7 +1651,7 @@ static int parseMeshStructured (mxml_node_t * node
                         );
 
                 return 0;
-            } 
+            }
 
             if (!parseMeshStructuredPointsMultiVar (value, new_group, *mesh))
                 return 0;
@@ -1667,7 +1668,7 @@ static int parseMeshStructured (mxml_node_t * node
                         );
 
                 return 0;
-            } 
+            }
 
             saw_points_single_var = 1;
             value = mxmlElementGetAttr (n, "value");
@@ -1679,7 +1680,7 @@ static int parseMeshStructured (mxml_node_t * node
                         );
 
                 return 0;
-            } 
+            }
 
             if (!parseMeshStructuredPointsSingleVar (value, new_group, *mesh))
                 return 0;
@@ -1723,7 +1724,7 @@ static int parseMeshUnstructured (mxml_node_t * node
     int saw_cell_set = 0;
 
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
-        ;n            
+        ;n
         ;n = mxmlWalkNext (n, node, MXML_DESCEND)
         )
     {
@@ -1755,7 +1756,7 @@ static int parseMeshUnstructured (mxml_node_t * node
             if (!components)
             {
                 fprintf (stderr, "config.xml: components attribute on "
-                                 "points required\n" 
+                                 "points required\n"
                         );
 
                 return 0;
@@ -1763,7 +1764,7 @@ static int parseMeshUnstructured (mxml_node_t * node
             if (!number_of_points)
             {
                 fprintf (stderr, "config.xml: number-of-points attribute on "
-                                 "points required\n" 
+                                 "points required\n"
                         );
 
                 return 0;
@@ -1771,7 +1772,7 @@ static int parseMeshUnstructured (mxml_node_t * node
             if (!value)
             {
                 fprintf (stderr, "config.xml: value attribute on "
-                                 "points required\n" 
+                                 "points required\n"
                         );
 
                 return 0;
@@ -2341,7 +2342,7 @@ static int parseGroup (mxml_node_t * node)
             {
                 t1 = adios_unknown;
             }
-          
+
             if (!adios_common_define_attribute (*(long long *) &new_group, name
                                                ,path, t1, value, var
                                                )
@@ -2489,7 +2490,7 @@ static int parseMethod (mxml_node_t * node)
 
     // Check for parameters, if they exist
     n = mxmlWalkNext (node, node, MXML_DESCEND);
-    if (n != NULL) 
+    if (n != NULL)
     {
         parameters = n->value.text.string;
     }
@@ -2704,9 +2705,9 @@ int adios_method_buffer_free (uint64_t size)
         fprintf (stderr, "ERROR: attempt to return more bytes to buffer "
                          "pool than were originally available\n"
                 );
- 
+
         adios_buffer_size_remaining = adios_buffer_size_max;
- 
+
         return 0;
     }
     else
@@ -2849,7 +2850,7 @@ static int parse_subitem (char * d, struct adios_group_struct * g
                 fprintf (stderr, "config.xml: invalid var dimension: %s\n"
                         ,left
                         );
-    
+
                 return 0;
             }
         }
@@ -3026,7 +3027,7 @@ void adios_parse_dimension (const char * dimension
     else
     {
         dim->local_offset.var = 0;
-        dim->local_offset.rank = strtoi (local_offset, NULL, 10);
+        dim->local_offset.rank = strtol (local_offset, NULL, 10);
     }
 }
 
@@ -3064,7 +3065,7 @@ void adios_parse_dimension (char * dimension, struct adios_group_struct * g
         {
             temp = &c2;
         }
- 
+
         if (*c_temp == ':')
             *temp = c_temp;
 
@@ -3123,7 +3124,7 @@ void adios_parse_dimension (char * dimension, struct adios_group_struct * g
                     fprintf (stderr, "config.xml: invalid var dimension: %s\n"
                             ,stride
                             );
-    
+
                     return;
                 }
             }
@@ -3459,8 +3460,8 @@ int adios_validate_scalar_string (enum ADIOS_TYPES type, char * value)
                 return 1;
             }
         }
-        case adios_unsigned_byte:          
-        case adios_unsigned_short:         
+        case adios_unsigned_byte:
+        case adios_unsigned_short:
         case adios_unsigned_integer:
         {
             int errno_save = errno;
@@ -3590,7 +3591,7 @@ int adios_validate_scalar_string (enum ADIOS_TYPES type, char * value)
                 return 1;
             }
         }
-        case adios_string: 
+        case adios_string:
         {
             return 1;
         }
@@ -4448,7 +4449,7 @@ void adios_add_method_to_group (struct adios_method_list_struct ** root
             struct adios_method_list_struct * new_node =
                  (struct adios_method_list_struct *)
                    malloc (sizeof (struct adios_method_list_struct));
-            
+
             if (!new_node)
             {
                 fprintf (stderr, "out of memory in adios_append_method\n");
@@ -4463,7 +4464,7 @@ void adios_add_method_to_group (struct adios_method_list_struct ** root
         {
             root = &(*root)->next;
         }
-    }   
+    }
 }
 
 #if 0
@@ -4521,7 +4522,7 @@ void adios_append_group (struct adios_group_struct * group)
 // return is whether or not the name is unique
 enum ADIOS_FLAG adios_append_var (struct adios_var_struct ** root
                                  ,struct adios_var_struct * var
-                                 ,int id
+                                 ,uint16_t id
                                  )
 {
     enum ADIOS_FLAG unique_names = adios_flag_yes;
@@ -4570,7 +4571,7 @@ void adios_append_dimension (struct adios_dimension_struct ** root
 
 void adios_append_attribute (struct adios_attribute_struct ** root
                             ,struct adios_attribute_struct * attribute
-                            ,int id
+                            ,uint16_t id
                             )
 {
     while (root)
@@ -4721,16 +4722,17 @@ int adios_common_declare_group (long long * id, const char * name
     g->var_count = 0;
     g->vars = 0;
     g->attributes = 0;
-    g->group_by = (coordination_var ? strdup (coordination_var) : 0L); 
+    g->group_by = (coordination_var ? strdup (coordination_var) : 0L);
     g->group_comm = (coordination_comm ? strdup (coordination_comm) : 0L);
     g->time_index = (time_index ? strdup (time_index) : 0L);
+    g->process_id = 0;
     g->methods = 0;
     g->mesh = 0;
-    
+
     *id = (long long) g;
-    
+
     adios_append_group (g);
-    
+
     return 1;
 }
 
@@ -4773,9 +4775,15 @@ int adios_common_define_var (long long group_id, const char * name
     v->is_dim = adios_flag_no;
     v->got_buffer = adios_flag_no;
     v->free_data = adios_flag_no;
-    v->write_offset = 0;
+
     v->data = 0;
+
+    v->write_offset = 0;
+    v->min = 0;
+    v->max = 0;
+
     v->data_size = 0;
+
     v->next = 0;
 
     if (dim_temp)
@@ -4878,27 +4886,27 @@ int adios_common_select_method (int priority, const char * method
 }
 
 void adios_common_get_group (long long * group_id, const char * name)
-{                             
+{
     struct adios_group_list_struct * g = adios_get_groups ();
-                              
+
     *group_id = 0;
-    
+
     while (g)
     {
         if (!strcasecmp (g->group->name, name))
         {
             *group_id = (long long) g->group;
-    
+
             return;
         }
-    
+
         g = g->next;
     }
 
     fprintf (stderr, "adios-group '%s' not found in configuration file\n"
             ,name
             );
-}   
+}
 
 uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
 {
@@ -4931,42 +4939,42 @@ int adios_bp_write_header_v1 (struct adios_file_struct * fd)
                                  );
     if (var)
     {
-        memcpy (fd->shared_buffer, &var->id, 4);
+        memcpy (fd->shared_buffer, &var->id, 2);
     }
     else
     {
         int i = 0;
-        memcpy (fd->shared_buffer, &i, 4);
+        memcpy (fd->shared_buffer, &i, 2);
     }
-    fd->shared_buffer += 4;
+    fd->shared_buffer += 2;
 
     var = adios_find_var_by_name (g->vars, g->group_by
                                  ,g->all_unique_var_names
                                  );
     if (var)
     {
-        memcpy (fd->shared_buffer, &var->id, 4);
+        memcpy (fd->shared_buffer, &var->id, 2);
     }
     else
     {
         int i = 0;
-        memcpy (fd->shared_buffer, &i, 4);
+        memcpy (fd->shared_buffer, &i, 2);
     }
-    fd->shared_buffer += 4;
+    fd->shared_buffer += 2;
 
     var = adios_find_var_by_name (g->vars, g->time_index
                                  ,g->all_unique_var_names
                                  );
     if (var)
     {
-        memcpy (fd->shared_buffer, &var->id, 4);
+        memcpy (fd->shared_buffer, &var->id, 2);
     }
     else
     {
         int i = 0;
-        memcpy (fd->shared_buffer, &i, 4);
+        memcpy (fd->shared_buffer, &i, 2);
     }
-    fd->shared_buffer += 4;
+    fd->shared_buffer += 2;
 
     flag = (char) g->methods->method->m;
     memcpy (fd->shared_buffer, &flag, 1);
@@ -4987,8 +4995,373 @@ int adios_bp_write_header_v1 (struct adios_file_struct * fd)
     return 0;
 }
 
+struct adios_index_process_group_struct_v1
+{
+    char * group_name;
+    uint32_t process_id;
+    uint32_t timestep;
+    uint64_t offset_in_file;
+
+    struct adios_index_process_group_struct_v1 * next;
+};
+
+struct adios_index_var_entry_struct_v1
+{
+    uint64_t offset;
+    uint64_t min;
+    uint64_t max;
+};
+
+struct adios_index_var_struct_v1
+{
+    char * group_name;
+    char * var_name;
+    char * var_path;
+    enum ADIOS_DATATYPES type;
+
+    uint64_t entries_count;
+    uint64_t entries_allocated;
+
+    struct adios_index_var_entry_struct_v1 * entries;
+
+    struct adios_index_var_struct_v1 * next;
+};
+
+static void index_append_process_group_v1 (
+                          struct adios_index_process_group_struct_v1 ** root
+                         ,struct adios_index_process_group_struct_v1 * item
+                         )
+{
+    while (root)
+    {
+        if (!*root)
+        {
+            *root = item;
+            root = 0;
+        }
+        else
+        {
+            root = &(*root)->next;
+        }
+    }
+}
+
+static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
+                                ,const char * group_name
+                                ,struct adios_index_var_struct_v1 * item
+                                )
+{
+    while (root)
+    {
+        if (!*root)
+        {
+            *root = item;
+            root = 0;
+        }
+        else
+        {
+            if (   !strcasecmp (item->group_name, (*root)->group_name)
+                && !strcasecmp (item->var_name, (*root)->var_name)
+                && !strcasecmp (item->var_path, (*root)->var_path)
+                && item->type == (*root)->type
+               )
+            {
+                if ((*root)->entries_count == (*root)->entries_allocated)
+                {
+                    (*root)->entries_allocated += 100;
+                    void * ptr;
+                    ptr = realloc ((*root)->entries
+                            ,  (*root)->entries_allocated
+                             * sizeof (struct adios_index_var_entry_struct_v1)
+                            );
+
+                    if (ptr)
+                    {
+                        (*root)->entries = ptr;
+                    }
+                    else
+                    {
+                        fprintf (stderr, "error allocating memory to build "
+                                         "var index.  Index aborted\n"
+                                );
+
+                        return;
+                    }
+                }
+                memcpy (&(*root)->entries [(*root)->entries_count++]
+                       ,item->entries
+                       ,sizeof (struct adios_index_var_entry_struct_v1)
+                       );
+
+                free (item->entries);
+                free (item);
+            }
+            else
+            {
+                root = &(*root)->next;
+            }
+        }
+    }
+}
+
+void adios_bp_merge_index_v1 (struct adios_index_process_group_struct_v1 ** p1
+                             ,struct adios_index_var_struct_v1 ** v1
+                             ,struct adios_index_process_group_struct_v1 * p2
+                             ,struct adios_index_var_struct_v1 * v2
+                             )
+{
+}
+
+void clear_index_groups (struct adios_index_process_group_struct_v1 * root)
+{
+    while (root)
+    {
+        struct adios_index_process_group_struct_v1 * temp = root->next;
+        free (root);
+        root = temp;
+    }
+}
+
+void clear_index_vars (struct adios_index_var_struct_v1 * root)
+{
+    while (root)
+    {
+        struct adios_index_var_struct_v1 * temp = root->next;
+        free (root->entries);
+        free (root);
+        root = temp;
+    }
+}
+
+static void adios_write_index_v1 (struct adios_file_struct * fd
+                       ,struct adios_index_process_group_struct_v1 * pg_root
+                       ,struct adios_index_var_struct_v1 * vars_root
+                       )
+{
+    uint64_t groups_count = 0;
+    uint16_t vars_count = 0;
+
+    uint64_t index_size = 0;
+
+    char * index_start = 0;
+    char * start = 0;
+
+    start = fd->shared_buffer;
+    index_start = start;
+
+    fd->shared_buffer += (8 + 8);  // save space for count and size
+
+    while (pg_root)
+    {
+        uint16_t len;
+        uint16_t group_size = 0;
+        char * group_start = fd->shared_buffer;
+
+        groups_count++;
+
+        fd->shared_buffer += 2;  // save space for length
+
+        len = strlen (pg_root->group_name);
+        memcpy (fd->shared_buffer, &len, 2);
+        fd->shared_buffer += 2;
+        index_size += 2;
+        group_size += 2;
+        memcpy (fd->shared_buffer, pg_root->group_name, len);
+        fd->shared_buffer += len;
+        index_size += len;
+        group_size += len;
+
+        memcpy (fd->shared_buffer, &pg_root->process_id, 4);
+        fd->shared_buffer += 4;
+        index_size += 4;
+        group_size += 4;
+        memcpy (fd->shared_buffer, &pg_root->timestep, 4);
+        fd->shared_buffer += 4;
+        index_size += 4;
+        group_size += 4;
+        memcpy (fd->shared_buffer, &pg_root->offset_in_file, 8);
+        fd->shared_buffer += 8;
+        index_size += 8;
+        group_size += 8;
+
+        memcpy (group_start, &group_size, 2);
+
+        pg_root = pg_root->next;
+    }
+
+    memcpy (start, &groups_count, 8);
+    start += 8;
+    memcpy (start, &index_size, 8);
+
+    index_size = 0;
+
+    start = fd->shared_buffer;
+    fd->shared_buffer += (2 + 8); // save space for count and size
+
+    while (vars_root)
+    {
+        uint8_t flag;
+        uint16_t len;
+        uint32_t var_size = 0;
+        char * var_start = fd->shared_buffer;
+
+        vars_count++;
+
+        fd->shared_buffer += 4; // save space for var length
+
+        len = strlen (vars_root->group_name);
+        memcpy (fd->shared_buffer, &len, 2);
+        fd->shared_buffer += 2;
+        index_size += 2;
+        var_size += 2;
+        memcpy (fd->shared_buffer, &vars_root->group_name, len);
+        fd->shared_buffer += len;
+        index_size += len;
+        var_size += len;
+
+        len = strlen (vars_root->var_name);
+        memcpy (fd->shared_buffer, &len, 2);
+        fd->shared_buffer += 2;
+        index_size += 2;
+        var_size += 2;
+        memcpy (fd->shared_buffer, &vars_root->var_name, len);
+        fd->shared_buffer += len;
+        index_size += len;
+        var_size += len;
+
+        len = strlen (vars_root->var_path);
+        memcpy (fd->shared_buffer, &len, 2);
+        fd->shared_buffer += 2;
+        index_size += 2;
+        var_size += 2;
+        memcpy (fd->shared_buffer, &vars_root->var_path, len);
+        fd->shared_buffer += len;
+        index_size += len;
+        var_size += len;
+
+        flag = vars_root->type;
+        memcpy (fd->shared_buffer, &flag, 1);
+        fd->shared_buffer += 1;
+        index_size += 1;
+        var_size += 1;
+
+        memcpy (fd->shared_buffer, &vars_root->entries, 8);
+        fd->shared_buffer += 8;
+        index_size += 8;
+        var_size += 8;
+
+        for (int i = 0; i < vars_root->entries_count; i++)
+        {
+            uint64_t size;
+
+            memcpy (fd->shared_buffer, &vars_root->entries [i].offset, 8);
+            fd->shared_buffer += 8;
+            index_size += 8;
+            var_size += 8;
+
+            size = adios_get_type_size (vars_root->type
+                                       ,&vars_root->entries [i].min
+                                       );
+
+            memcpy (fd->shared_buffer, &vars_root->entries [i].min, size);
+            fd->shared_buffer += size;
+            index_size += size;
+            var_size += size;
+
+            memcpy (fd->shared_buffer, &vars_root->entries [i].max, size);
+            fd->shared_buffer += size;
+            index_size += size;
+            var_size += size;
+        }
+
+        vars_root = vars_root->next;
+    }
+
+    memcpy (start, &vars_count, 2);
+    start += 2;
+    memcpy (start, &index_size, 8);
+
+    // location of the beginning of the index
+    index_size = fd->shared_buffer - index_start;
+    memcpy (fd->shared_buffer, &index_size, 8);
+    fd->shared_buffer += 8;
+}
+
+int adios_write_version_v1 (struct adios_file_struct * fd)
+{
+    uint64_t test = 1;
+
+    if (!*(char *) &test)
+        test = 0x80000000;
+    else
+        test = 0;
+
+    test += 1;   // current version
+
+    test = htonl (test);
+
+    memcpy (fd->shared_buffer, &test, 4);
+    fd->shared_buffer += 4;
+
+    return 0;
+}
+
 int adios_bp_write_index_v1 (struct adios_file_struct * fd)
 {
+    struct adios_group_struct * g = fd->group;
+    struct adios_var_struct * v = g->vars;
+    struct adios_index_process_group_struct_v1 * g_item;
+
+    struct adios_index_process_group_struct_v1 * pg_root = 0;
+    struct adios_index_var_struct_v1 * vars_root = 0;
+    uint64_t process_group_count = 0;
+    uint16_t var_count = 0;
+
+    g_item = (struct adios_index_process_group_struct_v1 *)
+                malloc (sizeof (struct adios_index_process_group_struct_v1));
+    g_item->group_name = g->name;
+    g_item->process_id = g->process_id;
+    g_item->timestep = 0;
+    g_item->offset_in_file = 0;
+    g_item->next = 0;
+
+    // build the groups and vars index
+    index_append_process_group_v1 (&pg_root, g_item);
+
+    while (v)
+    {
+        struct adios_index_var_struct_v1 * v_index;
+        v_index = malloc (sizeof (struct adios_index_var_struct_v1));
+        v_index->entries = malloc (
+                             sizeof (struct adios_index_var_entry_struct_v1)
+                             );
+
+        v_index->group_name = g->name;
+        v_index->var_name = v->name;
+        v_index->var_path = v->path;
+        v_index->type = v->type;
+        v_index->entries_count = 1;
+        v_index->entries_allocated = 1;
+        v_index->entries [0].offset = v->write_offset;
+        v_index->entries [0].min = v->min;
+        v_index->entries [0].max = v->max;
+
+        v_index->next = 0;
+
+        // this fn will either take ownership for free
+        index_append_var_v1 (&vars_root, g->name, v_index);
+
+        v = v->next;
+    }
+
+    // write into the buffer
+    adios_write_index_v1 (fd, pg_root, vars_root);
+
+    adios_write_version_v1 (fd);
+
+    clear_index_groups (pg_root);
+    clear_index_vars (vars_root);
+
     return 0;
 }
 
@@ -5006,8 +5379,7 @@ uint8_t count_dimensions (struct adios_dimension_struct * dimensions)
     return count;
 }
 
-static
-uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
+static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 {
     uint16_t size = 0;
 
@@ -5057,6 +5429,20 @@ uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
     return size;
 }
 
+static uint16_t calc_dimensions_size (struct adios_dimension_struct * dimension)
+{
+    uint16_t size = 0;
+
+    while (dimension)
+    {
+        size += calc_dimension_size (dimension);
+
+        dimension = dimension->next;
+    }
+
+    return size;
+}
+
 static
 uint64_t adios_bp_write_dimension_v1 (struct adios_file_struct * fd
                                      ,struct adios_dimension_struct * dimension
@@ -5081,9 +5467,9 @@ uint64_t adios_bp_write_dimension_v1 (struct adios_file_struct * fd
         memcpy (fd->shared_buffer, &var, 1);
         fd->shared_buffer += 1;
         size += 1;
-        memcpy (fd->shared_buffer, &dimension->dimension.var->id, 4);
-        fd->shared_buffer += 4;
-        size += 4;
+        memcpy (fd->shared_buffer, &dimension->dimension.var->id, 2);
+        fd->shared_buffer += 2;
+        size += 2;
     }
 
     if (!dimension->global_dimension.var == 0)
@@ -5115,9 +5501,9 @@ uint64_t adios_bp_write_dimension_v1 (struct adios_file_struct * fd
             memcpy (fd->shared_buffer, &var, 1);
             fd->shared_buffer += 1;
             size += 1;
-            memcpy (fd->shared_buffer, &dimension->global_dimension.var->id, 4);
-            fd->shared_buffer += 4;
-            size += 4;
+            memcpy (fd->shared_buffer, &dimension->global_dimension.var->id, 2);
+            fd->shared_buffer += 2;
+            size += 2;
         }
     }
 
@@ -5150,9 +5536,9 @@ uint64_t adios_bp_write_dimension_v1 (struct adios_file_struct * fd
             memcpy (fd->shared_buffer, &var, 1);
             fd->shared_buffer += 1;
             size += 1;
-            memcpy (fd->shared_buffer, &dimension->local_offset.var->id, 4);
-            fd->shared_buffer += 4;
-            size += 4;
+            memcpy (fd->shared_buffer, &dimension->local_offset.var->id, 2);
+            fd->shared_buffer += 2;
+            size += 2;
         }
     }
 
@@ -5167,12 +5553,12 @@ uint64_t adios_bp_write_dimensions_v1 (struct adios_file_struct * fd
     uint16_t dimensions_size = calc_dimensions_size (dimensions);
     uint8_t ranks = count_dimensions (dimensions);
 
-    memcpy (fd->shared_buffer, &dimensions_size, 2);
-    fd->shared_buffer += 2;
-    size += 2;
     memcpy (fd->shared_buffer, &ranks, 1);
     fd->shared_buffer += 1;
     size += 1;
+    memcpy (fd->shared_buffer, &dimensions_size, 2);
+    fd->shared_buffer += 2;
+    size += 2;
 
     while (dimensions)
     {
@@ -5182,6 +5568,86 @@ uint64_t adios_bp_write_dimensions_v1 (struct adios_file_struct * fd
     }
 
     return size;
+}
+
+static void calc_min_max (struct adios_var_struct * var)
+{
+    switch (var->type)
+    {
+        case adios_byte:
+        case adios_unsigned_byte:
+            return;
+
+        case adios_string:
+            if (!var)
+                return;
+            else
+                return; // strlen ((char *) var);
+
+        case adios_short:
+        case adios_unsigned_short:
+            return;
+
+        case adios_integer:
+        case adios_unsigned_integer:
+            return;
+
+        case adios_long:
+        case adios_unsigned_long:
+            return;
+
+        case adios_real:
+            return;
+
+        case adios_double:
+            return;
+
+        case adios_long_double:
+            return;
+
+        case adios_complex:
+            return;
+
+        case adios_double_complex:
+            return;
+
+        default:
+            return;
+    }
+}
+
+int adios_bp_write_payload_v1 (struct adios_file_struct * fd
+                              ,struct adios_var_struct * var
+                              ,void * data
+                              )
+{
+    uint64_t size;
+    char * buf;
+
+    calc_min_max (var);
+
+    size = adios_get_type_size (var->type, data);
+
+    buf = malloc (size);
+
+    memset (buf, 0, size);
+
+    // write min
+    memcpy (fd->shared_buffer, buf, size);
+    fd->shared_buffer += size;
+
+    // write max
+    memcpy (fd->shared_buffer, buf, size);
+    fd->shared_buffer += size;
+
+    free (buf);
+
+    // write payload
+    size = adios_get_var_size (var, data);
+    memcpy (fd->shared_buffer, data, size);
+    fd->shared_buffer += size;
+
+    return 0;
 }
 
 uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var)

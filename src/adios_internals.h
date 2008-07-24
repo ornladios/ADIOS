@@ -17,7 +17,7 @@ struct adios_var_struct;
 
 struct adios_var_struct
 {
-    uint32_t id;
+    uint16_t id;
 
     char * name;
     char * path;
@@ -27,7 +27,10 @@ struct adios_var_struct
     enum ADIOS_FLAG got_buffer;
     enum ADIOS_FLAG is_dim;   // if it is a dimension, we temporarily need to
                               // track for reading until we get the new header
-    uint64_t write_offset;  // offset this var was written at
+
+    uint64_t write_offset;    // offset this var was written at  [for writes]
+    uint64_t min;             // minimum value                   [for writes]
+    uint64_t max;             // maximum value                   [for writes]
 
     enum ADIOS_FLAG free_data;    // primarily used for writing
     void * data;                  // primarily used for reading
@@ -38,7 +41,7 @@ struct adios_var_struct
 
 struct adios_attribute_struct
 {
-    uint32_t id;
+    uint16_t id;
     char * name;
     char * path;
     enum ADIOS_DATATYPES type;
@@ -94,8 +97,10 @@ struct adios_mesh_struct
 
 struct adios_group_struct
 {
-    uint32_t id;
-    uint32_t member_count;
+    uint16_t id;
+    uint16_t member_count;
+    uint64_t group_offset;
+
     char * name;
     int var_count;
     enum ADIOS_FLAG adios_host_language_fortran;
@@ -105,7 +110,10 @@ struct adios_group_struct
     const char * group_comm;
     const char * group_by;
     const char * time_index;
+    uint32_t process_id;
+
     struct adios_method_list_struct * methods;
+
     struct adios_mesh_struct * mesh;
 };
 
@@ -129,7 +137,7 @@ struct adios_file_struct
     char * buffer_start;   // save the start location
     char * shared_buffer;  // and the current location
     char * vars_start;     // save the start location for vars to write count
-    int vars_written;
+    uint16_t vars_written;
 };
 
 struct adios_dimension_item_struct
@@ -360,7 +368,7 @@ void adios_append_group (struct adios_group_struct * group);
 // is the var name unique
 enum ADIOS_FLAG adios_append_var (struct adios_var_struct ** root
                                  ,struct adios_var_struct * var
-                                 ,int id
+                                 ,uint16_t id
                                  );
 
 void adios_append_dimension (struct adios_dimension_struct ** root
@@ -369,7 +377,7 @@ void adios_append_dimension (struct adios_dimension_struct ** root
 
 void adios_append_attribute (struct adios_attribute_struct ** root
                             ,struct adios_attribute_struct * attribute
-                            ,int id
+                            ,uint16_t id
                             );
 
 void * adios_dupe_data_scalar (enum ADIOS_DATATYPES type, void * in);
@@ -409,6 +417,10 @@ int adios_bp_write_index_v1 (struct adios_file_struct * fd);
 uint64_t adios_bp_write_dimensions_v1 (struct adios_file_struct * fd
                                    ,struct adios_dimension_struct * dimensions
                                    );
+int adios_bp_write_payload_v1 (struct adios_file_struct * fd
+                              ,struct adios_var_struct * var
+                              ,void * data
+                              );
 uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var);
 uint64_t adios_get_var_size (struct adios_var_struct * var, void * data);
 

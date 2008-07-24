@@ -131,35 +131,7 @@ void adios_posix_write (struct adios_file_struct * fd
         } 
     }
 
-    if (v->copy_on_write == adios_flag_yes)
-    {
-        uint64_t var_size;
-        uint64_t mem_allowed;
-
-        var_size = adios_size_of_var (v, data);
-        mem_allowed = adios_method_buffer_alloc (var_size);
-        if (mem_allowed == var_size)
-        {
-            v->free_data = adios_flag_yes;
-            v->data = adios_dupe_data (v, data);
-            v->data_size = var_size;
-        }
-        else
-        {
-            adios_method_buffer_free (mem_allowed);
-// need to handle overflow of allocatable space
-            fprintf (stderr, "OVERFLOW in POSIX when writing %s\n", v->name);
-            v->free_data = adios_flag_no;
-            v->data = 0;
-            v->data_size = 0;
-        }
-    }
-    else // otherwise, should be safe to hold pointer
-    {
-        v->data = data;
-        v->free_data = adios_flag_no;
-        v->data_size = 0;
-    }
+    // nothing to do since we will use the shared buffer
 }
 
 void adios_posix_get_write_buffer (struct adios_file_struct * fd
@@ -255,122 +227,7 @@ static void adios_posix_do_write (struct adios_file_struct * fd
 {
     struct adios_File_data_struct * md = (struct adios_File_data_struct *)
                                          method->method_data;
-    struct adios_var_struct * v = fd->group->vars;
-    struct adios_attribute_struct * a = fd->group->attributes;
-    int overflow = 0;
-    uint64_t end = 0;
-
-    uint64_t size = adios_data_size (fd->group);
-    uint64_t mem_needed = 0;
-    uint64_t mem_allowed = 0;;
-
-    if (size > md->buffer_size)
-    {
-        mem_needed = size - md->buffer_size;
-        mem_allowed = adios_method_buffer_alloc (mem_needed);
-        if (mem_needed != mem_allowed)
-        {
-            adios_method_buffer_free (mem_allowed);
-            fprintf (stderr, "OVERFLOW!!\n");
-            overflow = 1;
-        }
-
-        md->buffer_size = md->buffer_size + mem_allowed;
-        free (md->buffer);
-        md->buffer = malloc (md->buffer_size);
-        if (!md->buffer)
-            fprintf (stderr, "Cannot allocate buffer space\n");
-    }
-
-    while (v && !overflow)
-    {
-        overflow = adios_do_write_var (v
-                                      ,md->buffer
-                                      ,md->buffer_size
-                                      ,md->start
-                                      ,&end
-                                      );
-
-        md->start = end;
-        v = v->next;
-    }
-
-    while (a && !overflow)
-    {
-        overflow = adios_do_write_attribute (a
-                                            ,md->buffer
-                                            ,md->buffer_size
-                                            ,md->start
-                                            ,&end
-                                            );
-
-        md->start = end;
-        a = a->next;
-    }
-
-    if (overflow)
-    {
-        overflow = 0;
-        long long file;
-        char name [STR_LEN];
-
-        sprintf (name, "%sOVERFLOW_%s", method->base_path, fd->name);
-        bw_set_write (0); // set write to a file directly
-        bw_fopen_ (name, &file);
-        v = fd->group->vars;
-        a = fd->group->attributes;
-
-        while (v && !overflow)
-        {
-            overflow = adios_do_write_var (v
-                                          ,&file
-                                          ,9223372036854775807LL // LLONG_MAX
-                                          ,0
-                                          ,&end
-                                          );
-
-            v = v->next;
-        }
-        while (a && !overflow)
-        {
-            overflow = adios_do_write_attribute (a
-                                                ,md->buffer
-                                                ,md->buffer_size
-                                                ,0
-                                                ,&end
-                                                );
-
-            a = a->next;
-        }
-
-        bw_fclose_ (&file);
-        bw_set_write (1); // set write to the buffer
-    }
-    else
-    {
-        lseek (md->f, fd->base_offset + fd->offset, SEEK_SET);
-        write (md->f, md->buffer, end);
-    }
-
-    // clear out the cached data for the caller to be able to continue to work
-    v = fd->group->vars;
-    while (v)
-    {
-        if (v->free_data == adios_flag_yes)
-        {
-            if (v->data)
-            {
-                free (v->data);
-                adios_method_buffer_free (v->data_size);
-            }
-        }
-
-        v->data = 0;
-        v->data_size = 0;
-        v->free_data = adios_flag_no;
-        v->got_buffer = adios_flag_no;
-        v = v->next;
-    }
+    write (md->f, fd->buffer_start, (fd->shared_buffer - fd->buffer_start + 1));
 }
 
 static void adios_posix_do_read (struct adios_file_struct * fd
@@ -415,7 +272,10 @@ void adios_posix_close (struct adios_file_struct * fd
     struct adios_File_data_struct * md = (struct adios_File_data_struct *)
                                                        method->method_data;
 
-    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
+    if (fd->mode == adios_mode_write)
+        adios_posix_do_write (fd, method);
+
+    if (fd->mode == adios_mode_append)
         adios_posix_do_write (fd, method);
 
     if (fd->mode == adios_mode_read)
