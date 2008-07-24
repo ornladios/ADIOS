@@ -588,9 +588,9 @@ group_prof_info *get_prof_by_group_name(char *group_name)
  */
 void open_start_for_group_(long long *gp_prof_handle, char *group_name, int *cycle, int *gp_name_size)
 {
-int rank;
-MPI_Comm_rank(adios_mpi_comm_world, &rank);
-fprintf(stderr, "------------ADIOS Profiling: open start group: %s rank: %d\n", group_name, rank);
+//int rank;
+//MPI_Comm_rank(adios_mpi_comm_world, &rank);
+//fprintf(stderr, "------------ADIOS Profiling: open start group: %s rank: %d\n", group_name, rank);
 
     group_prof_info *gp_prof = get_prof_by_group_name(group_name);
 
@@ -608,7 +608,7 @@ fprintf(stderr, "------------ADIOS Profiling: open start group: %s rank: %d\n", 
         fprintf(stderr, "ADIOS Profiling: io count exceeds max limit (%d)\n", gp_prof->max_io_count);
         exit(-1);
     }
-fprintf(stderr, "------------ADIOS Profiling: open start end group: %s rank: %d\n", group_name, rank);
+//fprintf(stderr, "------------ADIOS Profiling: open start end group: %s rank: %d\n", group_name, rank);
 }
 
 /*
@@ -618,6 +618,10 @@ fprintf(stderr, "------------ADIOS Profiling: open start end group: %s rank: %d\
  */
 void open_end_for_group_(long long *gp_prof_handle, int *cycle)
 {
+//int rank;
+//MPI_Comm_rank(adios_mpi_comm_world, &rank);
+//fprintf(stderr, "------------ADIOS Profiling: open end group: rank: %d\n", rank);
+
     group_prof_info *gp_prof = (group_prof_info *)*gp_prof_handle;
     if(!gp_prof) {
         fprintf(stderr, "ADIOS Profiling: unkown group\n");
@@ -636,6 +640,10 @@ void open_end_for_group_(long long *gp_prof_handle, int *cycle)
  */
 void write_start_for_group_(long long *gp_prof_handle, int *cycle)
 {
+//int rank;
+//MPI_Comm_rank(adios_mpi_comm_world, &rank);
+//fprintf(stderr, "------------ADIOS Profiling: write start group: rank: %d\n", rank);
+
     group_prof_info *gp_prof = (group_prof_info *)*gp_prof_handle;
     if(!gp_prof) {
         fprintf(stderr, "ADIOS Profiling: unkown group\n");
@@ -652,6 +660,10 @@ void write_start_for_group_(long long *gp_prof_handle, int *cycle)
  */
 void write_end_for_group_(long long *gp_prof_handle, int *cycle)
 {
+//int rank;
+//MPI_Comm_rank(adios_mpi_comm_world, &rank);
+//fprintf(stderr, "------------ADIOS Profiling: write end group: rank: %d\n", rank);
+
     group_prof_info *gp_prof = (group_prof_info *)*gp_prof_handle;
     if(!gp_prof) {
         fprintf(stderr, "ADIOS Profiling: unkown group\n");
@@ -672,9 +684,9 @@ MPI_Comm get_comm_by_group(struct adios_group_struct *group);
  */
 void close_start_for_group_(long long *gp_prof_handle, int *cycle)
 {
-int rank;
-MPI_Comm_rank(adios_mpi_comm_world, &rank);
-fprintf(stderr, "------------ADIOS Profiling: close start group: rank: %d\n", rank);
+//int rank;
+//MPI_Comm_rank(adios_mpi_comm_world, &rank);
+//fprintf(stderr, "------------ADIOS Profiling: close start group: rank: %d\n", rank);
 
 
     group_prof_info *gp_prof = (group_prof_info *)*gp_prof_handle;
@@ -698,9 +710,9 @@ fprintf(stderr, "------------ADIOS Profiling: close start group: rank: %d\n", ra
  */
 void close_end_for_group_(long long *gp_prof_handle, int *cycle)
 {
-int rank;
-MPI_Comm_rank(adios_mpi_comm_world, &rank);
-fprintf(stderr, "------------ADIOS Profiling: close end group: rank: %d\n", rank);
+//int rank;
+//MPI_Comm_rank(adios_mpi_comm_world, &rank);
+//fprintf(stderr, "------------ADIOS Profiling: close end group: rank: %d\n", rank);
 
 
     group_prof_info *gp_prof = (group_prof_info *)*gp_prof_handle;
@@ -794,7 +806,7 @@ int finalize_prof_all_()
                 "min", "max", "mean", "var");
             cur += num_written;
         }
-fprintf(stderr, "--------11111 timing result for group: %s : rank %d\n", gp_prof->adios_group_id->name, global_rank);
+//fprintf(stderr, "--------11111 timing result for group: %s : rank %d\n", gp_prof->adios_group_id->name, global_rank);
 
 
         for(i = 0; i < gp_prof->io_count; i ++) {
@@ -1005,7 +1017,7 @@ fprintf(stderr, "--------11111 timing result for group: %s : rank %d\n", gp_prof
             MPI_Comm_free(&comm_io);
         }
 
-fprintf(stderr, "--------22222 timing result for group: %s : rank %d\n", gp_prof->adios_group_id->name, global_rank);
+//fprintf(stderr, "--------22222 timing result for group: %s : rank %d\n", gp_prof->adios_group_id->name, global_rank);
         unsigned long long my_length = cur - print_buf;
         unsigned long long my_offset = 0;
         MPI_Offset write_offset;
@@ -1040,7 +1052,7 @@ fprintf(stderr, "--------22222 timing result for group: %s : rank %d\n", gp_prof
         // set file pointer to the right position
         rc = MPI_File_seek(profile.prof_file_ptr, write_offset, MPI_SEEK_SET);
 
-fprintf(stderr, "--------33333 timing result for group: %s : rank %d\n", gp_prof->adios_group_id->name, global_rank);
+//fprintf(stderr, "--------33333 timing result for group: %s : rank %d\n", gp_prof->adios_group_id->name, global_rank);
         // write timing info to log file using explicit offset
         // the timing info will be ordered by global_rank
         MPI_Status status;
@@ -1061,7 +1073,7 @@ fprintf(stderr, "--------33333 timing result for group: %s : rank %d\n", gp_prof
             }
         }
 
-fprintf(stderr, "--------44444 timing result for group: %s : rank %d\n", gp_prof->adios_group_id->name, global_rank);
+//fprintf(stderr, "--------44444 timing result for group: %s : rank %d\n", gp_prof->adios_group_id->name, global_rank);
         // flush and close log file
         rc = MPI_File_close (&profile.prof_file_ptr);
         if(rc != MPI_SUCCESS) {
@@ -1072,7 +1084,7 @@ fprintf(stderr, "--------44444 timing result for group: %s : rank %d\n", gp_prof
             return -1;
         }
         free(profile.prof_file_name);
-fprintf(stderr, "--------55555 timing result for group: %s : rank %d\n", gp_prof->adios_group_id->name, global_rank);
+//fprintf(stderr, "--------55555 timing result for group: %s : rank %d\n", gp_prof->adios_group_id->name, global_rank);
     }
 
     // cleanup
