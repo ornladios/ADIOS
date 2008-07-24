@@ -3,23 +3,23 @@
 
 <adios-group name="restart.model" coordination-communicator="mpi_comm_per_hyperslab_group">
 
-<var name="nx" path="/nx" type="integer" write="no"/>
-<var name="nx+1" path="/nx" type="integer" write="no" copy-on-write="yes"/>
-<var name="ny" path="/ny" type="integer" write="no"/>
-<var name="ny+1" path="/ny" type="integer" write="no" copy-on-write="yes"/>
-<var name="nz" path="/nz" type="integer" write="no"/>
-<var name="nz+1" path="/nz" type="integer" write="no" copy-on-write="yes"/>
-<var name="nez" path="/nez" type="integer" write="no"/>
-<var name="nnu" path="/nnu" type="integer" write="no"/>
-<var name="nnu+1" path="/nnu" type="integer" write="no" copy-on-write="yes"/>
-<var name="nnc" path="/nnc" type="integer" write="no"/>
-<var name="ij_ray_dim" path="/ij_ray_dim" type="integer" write="no" gname="my_j_ray_dim"/> <!-- my_j_ray_dim -->
-<var name="ik_ray_dim" path="/ik_ray_dim" type="integer" write="no" gname="my_k_ray_dim"/> <!-- my_k_ray_dim -->
-<var name="mpi_comm_per_hyperslab_group" type="integer" write="no"/>
-<var name="j_ray_min" path="/j_ray_min" type="integer" write="no"/> 
-<var name="j_ray_min-1" path="/j_ray_min" type="integer" write="no" copy-on-write="yes"/> 
-<var name="k_ray_min" path="/k_ray_min" type="integer" write="no"/> 
-<var name="k_ray_min-1" path="/k_ray_min" type="integer" write="no" copy-on-write="yes"/> 
+<var name="nx" path="/nx" type="integer"/>
+<var name="nx+1" path="/nx" type="integer" copy-on-write="yes"/>
+<var name="ny" path="/ny" type="integer"/>
+<var name="ny+1" path="/ny" type="integer" copy-on-write="yes"/>
+<var name="nz" path="/nz" type="integer"/>
+<var name="nz+1" path="/nz" type="integer" copy-on-write="yes"/>
+<var name="nez" path="/nez" type="integer"/>
+<var name="nnu" path="/nnu" type="integer"/>
+<var name="nnu+1" path="/nnu" type="integer" copy-on-write="yes"/>
+<var name="nnc" path="/nnc" type="integer"/>
+<var name="ij_ray_dim" path="/ij_ray_dim" type="integer" gname="my_j_ray_dim"/> <!-- my_j_ray_dim -->
+<var name="ik_ray_dim" path="/ik_ray_dim" type="integer" gname="my_k_ray_dim"/> <!-- my_k_ray_dim -->
+<var name="mpi_comm_per_hyperslab_group" type="integer"/>
+<var name="j_ray_min" path="/j_ray_min" type="integer"/> 
+<var name="j_ray_min-1" path="/j_ray_min" type="integer" copy-on-write="yes"/> 
+<var name="k_ray_min" path="/k_ray_min" type="integer"/> 
+<var name="k_ray_min-1" path="/k_ray_min" type="integer" copy-on-write="yes"/> 
 
 <!-- /mesh -->
 
@@ -35,7 +35,7 @@
 <var name="cycle" path="/mesh" type="integer" gname="ncycle"/> <!-- var name: ncycle -->
 <var name="nz_hyperslabs" path="/mesh" type="integer"/>
 <var name="my_hyperslab_group" path="/mesh" type="integer"/>
-<var name="nz_hyperslab_width" path="/mesh" type="integer" write="no"/>
+<var name="nz_hyperslab_width" path="/mesh" type="integer"/>
 
 <attribute name="Desc" path="/mesh/time" value="the elapsed time since the initiation of the calculation"/>
 <attribute name="Desc" path="/mesh/cycle" value="the cycle number of the calculation"/>
