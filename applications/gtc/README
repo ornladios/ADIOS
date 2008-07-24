@@ -1,0 +1,13 @@
+GTC/ADIOS Code and Benchmark
+
+Enter the src directory and type 'make' to build. It will build two 
+executables: gtc and gtc_posix. gtc uses ADIOS_MPI and ADIOS_MPI_CIO
+methods and gtc_posix uses ADIOS_POSIX method. 
+
+The code and config.xml are compatible with the latest ADIOS code.
+
+The gtc.input file is an example input file for 512 cores with 
+OpenMP threads set to 4. 
+
+Benchmark scripts and input files will be added soon.
+

@@ -1,0 +1,214 @@
+<?xml version="1.0"?>
+<adios-config host-language="Fortran">
+
+<adios-group name="restart" coordination-communicator="partd_comm" coordination-var="mzeta">
+  <var name="mpsi+1" type="integer" write="no" copy-on-write="yes"/>
+  <var name="mzeta+1" type="integer" write="no" copy-on-write="yes"/>
+  <var name="partd_comm" type="integer*8" write="no"/>
+  <var name="mimax" type="integer" write="no"/>
+  <var name="mgrid" type="integer" write="no"/>
+  <var name="nparam" type="integer" write="no"/>
+  <var name="memax" type="integer" write="no"/>
+  <var name="nhybrid" type="integer" write="no"/>
+  <var name="2*nhybrid" type="integer" write="no" copy-on-write="yes"/>
+  
+  <var name="mzeta" type="integer"/>
+  <var name="mi" type="integer"/>
+  <var name="me" type="integer"/>
+  <var name="ntracer" type="integer"/>
+  <var name="etracer" type="real"/>
+  <var name="mflux" type="integer" write="no"/>
+  <var name="rdtemi" type="real" dimensions="mpsi+1"/>
+  <var name="rdteme" type="real" dimensions="mpsi+1"/>
+  <var name="ptracer" type="real" dimensions="4"/>
+  <var name="pfluxpsi" type="real" dimensions="mpsi+1"/>
+  <var name="phi00" type="real" dimensions="mpsi+1"/>
+  <var name="phip00" type="real" dimensions="mpsi+1"/>
+  <var name="zonali" type="real" dimensions="mpsi+1"/>
+  <var name="zonale" type="real" dimensions="mpsi+1"/>
+  <var name="zion0" type="real" dimensions="mimax" copy-on-write="yes"/>
+  <var name="phi" type="real" dimensions="mzeta+1,mgrid"/>
+  <var name="zion" type="real" dimensions="nparam,mimax"/>
+  <var name="zelectron0" type="real" dimensions="memax" copy-on-write="yes"/>
+  <var name="zelectron" type="real" dimensions="nparam,memax"/>
+  <var name="phisave" type="real" dimensions="mzeta+1,mgrid,2*nhybrid"/>
+</adios-group>
+
+<adios-group name="snapshot">
+  <var name="timestep" path="/time_info" type="real" copy-on-write="yes"/>
+  <var name="time" path="/time_info" type="real" copy-on-write="yes"/>
+  <var name="3+mbin_psi*6" path="/" type="integer" write="yes" copy-on-write="yes"/>
+  <var name="mbin_u" path="/grid_info_poloidal" type="integer"/>
+  <var name="mbin_psi" path="/grid_info_poloidal" type="integer"/>
+  <var name="mpsi" path="/grid_info_poloidal" type="integer"/>
+  <var name="jm" path="/grid_info_poloidal" type="integer"/>
+  <var name="jm+1" path="/" type="integer" write="no" copy-on-write="yes"/>
+  <var name="mzetamax" path="/grid_info_poloidal" type="integer"/>
+  <var name="num_of_quantities" path="/grid_info_poloidal" type="integer"/>
+  <var name="dataout_u" path="/" type="real" dimensions="mbin_u,3+mbin_psi*6"/>
+  <var name="dataout_r" path="/" type="real" dimensions="mpsi,9"/>
+  <var name="dataout_p" path="/" type="real" dimensions="mpsi,jm+1,3"/>
+  <var name="ntoroidal" path="/" type="integer" write="no"/>
+  <var name="mzeta" path="/" type="integer" write="no"/>
+  <var name="dataout_f" path="/" type="real" dimensions="mzeta,ntoroidal,jm"/>
+  <var name="num_mode" path="/" type="integer" write="no"/>
+  <var name="modeeigen" path="/" type="integer" dimensions="num_mode"/>
+  <var name="m_poloidal" path="/" type="integer" write="no"/>
+  <var name="dataeigen" path="/" type="real" dimensions="mpsi,num_mode,m_poloidal"/>
+</adios-group>
+
+<adios-group name="diagnosis.0">
+  <var name="irun" path="/history" type="integer"/>
+  <attribute name="description" path="/history/irun" value="the run control variable"/>
+  <attribute name="unit" path="/history/irun" value="none"/>
+
+  <var name="mquantity" path="/history" type="integer"/>
+  <attribute name="description" path="/history/mquantity" value="number of quantities"/>
+  <attribute name="unit" path="/history/mquantity" value="none"/>
+
+  <var name="mflux" path="/history" type="integer"/>
+  <attribute name="description" path="/history/mflux" value="mass_of_flux"/>
+  <attribute name="unit" path="/history/mflux" value="none"/>
+
+  <var name="num_mode" path="/history" type="integer"/>
+  <attribute name="description" path="/history/num_mode" value="number of modes for diagnostics"/>
+  <attribute name="unit" path="/history/num_mode" value="none"/>
+
+  <var name="mstep_ndiag" path="/history" type="integer" copy-on-write="yes"/>
+  <attribute name="description" path="/history/mstep_ndiag" value="number of modes for diagnostics"/>
+  <attribute name="unit" path="/history/mstep_ndiag" value="none"/>
+
+  <var name="tstep_ndiag" path="/history" type="real" copy-on-write="yes"/>
+  <attribute name="description" path="/history/tstep_ndiag" value="number of timestep per each diagnostic calculation"/>
+  <attribute name="unit" path="/history/tstep_ndiag" value="none"/>
+</adios-group>
+
+<adios-group name="diagnosis.1">
+  <var name="irun" path="/history" type="integer"/>
+  <attribute name="description" path="/history/irun" value="the run control variable"/>
+  <attribute name="unit" path="/history/irun" value="none"/>
+
+  <var name="mstep_ndiag" path="/history" type="real" copy-on-write="yes"/>
+  <attribute name="description" path="/history/mstep_ndiag" value="number of total timesteps for all diagnostic calculation"/>
+  <attribute name="unit" path="/history/irun" value="none"/>
+</adios-group>
+
+<adios-group name="diagnosis.2">
+  <var name="num_mode" type="integer" write="no"/>
+  <var name="mpsi" type="integer" write="no"/>
+  <var name="index_timestep" type="integer" copy-on-write="yes"/>
+  <var name="axisx" path="/history" type="real" dimensions="1" copy-on-write="yes"/>
+  <attribute name="description" path="/history/axisx" value="none"/>
+  <attribute name="unit" path="/history/axisx" value="none"/>
+  <var name="axisz" path="/history" type="real" dimensions="1" copy-on-write="yes"/>
+  <attribute name="description" path="/history/axisz" value="none"/>
+  <attribute name="unit" path="/history/axisz" value="none"/>
+  <var name="tracer2" path="/history" type="real" dimensions="1" copy-on-write="yes"/>
+  <attribute name="description" path="/history/tracer2" value="none"/>
+  <attribute name="unit" path="/history/tracer2" value="none"/>
+  <var name="tracer3" pathe="/history" type="real" dimensions="1"/>
+  <attribute name="description" path="/history/tracer3" value="none"/>
+  <attribute name="unit" path="/history/tracer3" value="none"/>
+  <var name="tracer5" path="/history" type="real" dimensions="1"/>
+  <attribute name="description" path="/history/tracer5" value="none"/>
+  <attribute name="unit" path="/history/tracer5" value="none"/>
+  <var name="tracer4" path="/history" type="real" dimensions="1" copy-on-write="yes"/>
+  <attribute name="description" path="/history/tracer4" value="none"/>
+  <attribute name="unit" path="/history/tracer4" value="none"/>
+  <var name="tracer6" path="/history" type="real" dimensions="1" copy-on-write="yes"/>
+
+  <var name="ptracer4" path="/history" type="real" dimensions="1"/>
+  <attribute name="description" path="/history/ptracer4" value="none"/>
+  <attribute name="unit" path="/history/ptracer4" value="none"/>
+
+  <var name="ddeni" path="/history" type="real" dimensions="1"/>
+  <attribute name="description" path="/history/ddeni" value="none"/>
+  <attribute name="unit" path="/history/ddeni" value="none"/>
+
+  <var name="ddene" path="/history" type="real" dimensions="1"/>
+  <attribute name="description" path="/history/ddene" value="none"/>
+  <attribute name="unit" path="/history/ddene" value="none"/>
+
+  <var name="eradial" path="/history" type="real" dimensions="1"/>
+  <attribute name="description" path="/history/eradial" value="none"/>
+  <attribute name="unit" path="/history/eradial" value="none"/>
+
+  <var name="fdum" path="/history" type="real" dimensions="1"/>
+  <attribute name="description" path="/history/fdum" value="none"/>
+  <attribute name="unit" path="/history/fdum" value="none"/>
+
+  <var name="amp_mode" path="/history" type="real" dimensions="1,2,num_mode,2"/>
+  <attribute name="description" path="/history/amp_mode" value="none"/>
+  <attribute name="unit" path="/history/amp_mode" value="none"/>
+
+  <var name="dataout" path="/history" type="real" dimensions="57"/>
+  <var name="phip00" path="/sheareb" type="real" dimensions="1,mpsi"/>
+  <attribute name="description" path="/sheareb/phip00" value="none"/>
+  <attribute name="unit" path="/sheareb/phip00" value="none"/>
+
+  <var name="ddum" path="/sheareb" type="real" dimensions="1,mpsi"/>
+  <attribute name="description" path="/sheareb/ddum" value="none"/>
+  <attribute name="unit" path="/sheareb/ddum" value="none"/>
+
+  <var name="hfluxpsi" path="/sheareb" type="real" dimensions="1,mpsi"/>
+  <attribute name="description" path="/sheareb/hfluxpsi" value="none"/>
+  <attribute name="unit" path="/sheareb/hfluxpsi" value="none"/>
+</adios-group>
+<adios-group name="output3d.0" coordination-communicator="toroidal_comm" coordination-var="myrank_toroidal"> 
+  <var name="toroidal_comm" type="integer*8" write="no"/> <!-- parallel parameter-->
+  <var name="mpsi+1" type="integer" write="no" copy-on-write="yes"/>
+  <var name="mzeta+kp" type="integer" write="no" copy-on-write="yes"/>
+  <var name="myrank_toroidal" type="integer" write="yes"/>
+  <var name="mzeta" type="integer" write="yes"/>
+  <var name="kp" type="integer" write="yes"/>
+  <var name="mgrid" type="integer" write="yes"/>
+  <var name="nproc_toroidal" type="integer" write="yes"/>
+  <var name="mpsi" type="integer"/>
+  <var name="numberpe" type="integer"/>
+  <var name="mtheta" type="integer" dimensions="mpsi+1" copy-on-write="yes"/>
+  <var name="itran" type="integer" dimensions="mpsi+1"/>
+  <var name="radial" type="real" dimensions="mpsi+1"/>
+  <var name="theta_start" type="integer" dimensions="mzeta+kp,mpsi+1"/>
+  <var name="X" type="real" dimensions="mgrid,mzeta+kp" copy-on-write="yes"/>
+  <var name="Y" type="real" dimensions="mgrid,mzeta+kp" copy-on-write="yes"/>
+  <var name="Z" type="real" dimensions="mgrid,mzeta+kp" copy-on-write="yes"/>
+</adios-group>
+
+<adios-group name="output3d.1" coordination-communicator="toroidal_comm" coordination-var="myrank_toroidal">
+  <var name="toroidal_comm" type="integer*8" write="no"/> <!-- parallel parameter-->
+  <var name="myrank_toroidal" type="integer" write="yes"/>
+  <var name="nproc_toroidal" type="integer" write="yes"/>
+  <var name="mpsi+1" type="integer" write="no" copy-on-write="yes"/>
+  <var name="mzeta+kp" type="integer" write="no" copy-on-write="yes"/>
+  <var name="mzeta" type="integer" write="yes"/>
+  <var name="kp" type="integer" write="yes"/>
+  <var name="mpsi" type="integer"/>
+  <var name="mtheta" type="integer" dimensions="mpsi+1" copy-on-write="yes"/>
+  <var name="mgrid" type="integer" write="yes"/>
+  <var name="phi" type="real" dimensions="mgrid,mzeta+kp"/>
+</adios-group>
+
+ <adios-group name="particles" coordination-communicator="comm" cooridnation-var="mype">
+  <var name="comm" type="integer*8" write="no"/> <!-- parallel parameter-->
+  <var name="mype" type="integer" write="yes"/>
+  <!--var name="ntpart" path="/" type="integer" write="yes" dimensions="numberpe"/-->
+  <var name="nparam" type="integer" write="yes"/>
+  <var name="nspec" type="integer" write="yes"/>
+  <var name="ntracki" type="integer" write="yes"/>
+  <var name="ntracke" type="integer" write="yes"/>
+  <var name="ptrackedi" type="real" dimensions="nparam,ntracki"/>
+  <var name="ptrackede" type="real" dimensions="nparam,ntracke"/>
+</adios-group>
+
+<method method="MPI" group="restart"/>
+<method method="POSIX" group="snapshot"/>
+<method method="POSIX" group="diagnosis.0"/>
+<method method="POSIX" group="diagnosis.1"/>
+<method method="POSIX" group="diagnosis.2"/>
+<method method="MPI" group="particles"/>
+<method priority="2" method="MPI" iterations="10" group="output3d.0"/>
+<method priority="2" method="MPI" iterations="10" group="output3d.1"/>
+
+<buffer size-MB="100" allocate-time="now"/>
+<!-- or free-memory-percentage="90" allocate-time="oncall" -->
+</adios-config>

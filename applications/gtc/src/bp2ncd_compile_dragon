@@ -1,0 +1,2 @@
+mpif90 -I/home/cgj/work/ewok/include -fastsse -I/usr/lib/netcdf-3.6.1/include -DADIOS=1  -L/usr/lib/netcdf-3.6.1/lib -lnetcdf -L/home/cgj/work/ewok/lib -ladios -lmxml -c bp2dncd.F90
+mpif90  -I/home/cgj/work/ewok/include -fastsse -I/usr/lib/netcdf-3.6.1/include -DADIOS=1 -o bp2ncd bp2ncd.o -L/usr/lib/netcdf-3.6.1/lib -lnetcdf -L/home/cgj/work/ewok/lib -ladios -lmxml
