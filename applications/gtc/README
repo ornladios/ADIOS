@@ -1,13 +1,46 @@
 GTC/ADIOS Code and Benchmark
 
-Enter the src directory and type 'make' to build. It will build two 
-executables: gtc and gtc_posix. gtc uses ADIOS_MPI and ADIOS_MPI_CIO
-methods and gtc_posix uses ADIOS_POSIX method. 
+Quick Start:
+1. check out setup_gtc.sh script and run it with parameter set to
+   the direcotry in which the benchmark environment is build.
+   
+For example:
+> cp /ccs/home/zf2/ADIOS/trunk/applications/gtc/setup_gtc.sh .
+> ./setup_gtc.sh /tmp/work/zf2/gtc_bench
+
+Then the script will check out GTC source code, scripts and input
+files from SVN and build the executables and benchmakr environment
+under the directory /tmp/work/zf2/gtc_bench.
+
+It will build two executables: gtc and gtc_posix. gtc uses 
+ADIOS_MPI and ADIOS_MPI_CIO methods and gtc_posix uses ADIOS_POSIX 
+method.
 
 The code and config.xml are compatible with the latest ADIOS code.
 
-The gtc.input file is an example input file for 512 cores with 
-OpenMP threads set to 4. 
+The gtc_setting directory contains input parameter files (in P2,
+P4, P8, P16 sub-directories). Inputs files in the same sub-directory
+do weakly scaling. Using input files in P4 will generate files of
+double size of those using inputs in P2, and so on.
 
-Benchmark scripts and input files will be added soon.
+2. gtc_setting/gen_script.sh is used to generate PBS script according
+   to the template gtc_setting/gtc.pbs.
+
+Th usage of gen_script.sh is:
+
+> ./gen_script.sh P2 512 MPI 1
+
+This will generate a PBS script named as 'P2_512_MPI_1.pbs'. The job
+created with this script will run in gtc_run/P2/512/MPI/1 and the 
+timing results will be in gtc_results/P2/512/MPI/1.
+
+Each ADIOS group has a corresponding timing file named as 
+'group_name.prof'.
+
+3. gtc_setting/post_script.sh is used for merging and sorting timing 
+   results.
+
+> ./post_script.sh P2 512 MPI
+
+Details about benchmark scripts and input files will be added soon.
 

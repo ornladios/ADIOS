@@ -1,0 +1,75 @@
+#!/bin/sh
+#PBS -A CSC025ewk
+#PBS -N SSSS_xxxx_mmmm_nnnn
+#PBS -o wwww/gtc_run/SSSS/xxxx/mmmm/nnnn/run.stdout
+#PBS -e wwww/gtc_run/SSSS/xxxx/mmmm/nnnn/run.stderr
+#PBS -l walltime=01:00:00,size=xxxx
+
+cd wwww/gtc_run/SSSS/xxxx/mmmm/nnnn/
+./cleanup
+
+# copy initial parameter files
+cp -rf wwww/gtc_setting/SSSS/xxxx/gtc.input .
+
+# copy config.xml file
+cp -rf wwww/gtc_setting/configfile/mmmm ./config.xml
+
+# write log file
+echo "Test GTC on Machine ""$(hostname)" > ./log
+date >> ./log
+echo "nproc=""xxxx" >> ./log
+echo "method=""mmmm" >> ./log
+echo "testno=""nnnn" >> ./log
+echo >> ./log
+echo "Initial Parameter" >> ./log
+head -n 50 ./gtc.input >> ./log
+echo >> ./log
+echo >> ./log
+echo "Scaling along Particle domain" >> ./log
+echo >> ./log
+
+# use Openmp
+export OMP_NUM_THREADS=4
+num_procs=`expr xxxx / $OMP_NUM_THREADS `
+
+echo "Run GTC begin" >> ./log
+date >> ./log
+
+# run the simulation
+aprun -n $num_procs -N 1 ./gtc >runlog 2>&1
+
+echo "Run GTC end" >> ./log
+date >> ./log
+echo >> ./log
+
+# collect timing info
+echo "Generated files" >> ./log
+echo "restart_dir1" >> ./log
+ls -l restart_dir1/ >> ./log
+echo "restart_dir2" >> ./log
+ls -l restart_dir2/ >> ./log
+echo "phi_dir" >> ./log
+ls -l phi_dir/ >> ./log
+echo "trackp_dir" >> ./log
+ls -l trackp_dir/ >> ./log
+echo "snapshot" >> ./log
+ls -l snap* >> ./log
+echo >> ./log
+mkdir -p wwww/gtc_results/SSSS/xxxx/mmmm/nnnn
+cp ./*.prof wwww/gtc_results/SSSS/xxxx/mmmm/nnnn/
+cp ./stdout.out wwww/gtc_results/SSSS/xxxx/mmmm/nnnn/
+cp ./log wwww/gtc_results/SSSS/xxxx/mmmm/nnnn/log
+cp ./runlog wwww/gtc_results/SSSS/xxxx/mmmm/nnnn/runlog
+if [ -f run.stdout ]
+then
+  cp -rf run.stdout wwww/gtc_results/SSSS/xxxx/mmmm/nnnn
+fi
+if [ -f run.stderr ]
+then
+  cp -rf run.stderr wwww/gtc_results/SSSS/xxxx/mmmm/nnnn
+fi
+
+# cleanup
+rm log runlog *.prof -rf
+sh ./cleanup
+
