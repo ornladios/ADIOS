@@ -127,7 +127,6 @@ static int common_adios_open (long long * fd, const char * group_name
     fd_p->base_offset = 0;
     fd_p->offset = 0;
     fd_p->write_size_bytes = 0;
-    fd_p->write_size_nvars = 0;
     fd_p->group = g;
     fd_p->mode = mode;
 
@@ -174,26 +173,52 @@ void adios_open_ (long long * fd, const char * group_name, const char * name
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_group_size (long long fd_p, int nvars
+static int common_adios_group_size (long long fd_p
                                    ,uint64_t data_size
                                    ,uint64_t * total_size
+                                   ,void * comm
                                    )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     struct adios_method_list_struct * m = fd->group->methods;
+    int do_buffering = 1;
 
-    fd->write_size_nvars = nvars;
     fd->write_size_bytes = data_size;
 
     uint64_t overhead = adios_calc_overhead_v1 (fd);
 
     *total_size = data_size + overhead;
+printf ("Base size: %llu Overhead: %llu Total: %llu\n", data_size, overhead, *total_size);
 
     // try to reserve a buffer using the adios_method_buffer_alloc
     // if it does not give the correct amount, overflow.  Make sure
     // the amount given is big enough for the first part of the file.
 
     fd->write_size_bytes += overhead;
+
+    // call each transport method to coordinate the write and handle
+    // if an overflow is detected.
+    // now tell each transport attached that it is being written
+    while (m)
+    {
+        int should_buffer = 0;
+        if (   m->method->m != ADIOS_METHOD_UNKNOWN
+            && m->method->m != ADIOS_METHOD_NULL
+            && adios_transports [m->method->m].adios_write_fn
+           )
+        {
+            should_buffer =
+                   adios_transports [m->method->m].adios_should_buffer_fn
+                                    (fd, m->method, comm);
+        }
+
+        if (!should_buffer)
+            do_buffering = 0;
+
+        m = m->next;
+    }
+
+printf ("consensus on buffering: %s\n", (do_buffering ? "yes" : "no"));
 
     fd->shared_buffer = malloc (fd->write_size_bytes);
     fd->buffer_start = fd->shared_buffer;
@@ -208,28 +233,8 @@ static int common_adios_group_size (long long fd_p, int nvars
     memcpy (fd->shared_buffer, total_size, 8);
     fd->shared_buffer += 8; // start after the process group length
 
-    // call each transport method to coordinate the write and handle
-    // if an overflow is detected.
-    // now tell each transport attached that it is being written
-// need new method function for this?  Probably
-#if 0
-    while (m)
-    {
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_write_fn
-           )
-        {
-            adios_transports [m->method->m].adios_write_fn
-                                   (fd, v, var, m->method);
-        }
-
-        m = m->next;
-    }
-#endif
-
     // write the process group header
-    adios_bp_write_header_v1 (fd);
+    adios_write_process_group_header_v1 (fd);
 
     // each var will be added to the buffer by the adios_write calls
     // attributes will be added by adios_close
@@ -237,19 +242,19 @@ static int common_adios_group_size (long long fd_p, int nvars
     return 0;
 }
 
-int adios_group_size (long long fd_p, int nvars, uint64_t data_size
-                     ,uint64_t * total_size
+int adios_group_size (long long fd_p, uint64_t data_size
+                     ,uint64_t * total_size, void * comm
                      )
 {
-    return common_adios_group_size (fd_p, nvars, data_size, total_size);
+    return common_adios_group_size (fd_p, data_size, total_size, comm);
 }
 
-void adios_group_size_ (long long * fd_p, int * nvars, int64_t * data_size
-                       ,int64_t * total_size, int * err
+void adios_group_size_ (long long * fd_p, int64_t * data_size
+                       ,int64_t * total_size, int * err, void * comm
                        )
 {
-    *err = common_adios_group_size (*fd_p, *nvars, (uint64_t) *data_size
-                                   ,(uint64_t *) total_size
+    *err = common_adios_group_size (*fd_p, (uint64_t) *data_size
+                                   ,(uint64_t *) total_size, comm
                                    );
 }
 
@@ -331,10 +336,10 @@ static int common_adios_write (long long fd_p, const char * name, void * var)
     fd->shared_buffer += 1;
     total_size += 1;
 
-    total_size += adios_bp_write_dimensions_v1 (fd, v->dimensions);
+    total_size += adios_write_dimensions_v1 (fd, v->dimensions);
 
     // write payload
-    size = adios_bp_write_payload_v1 (fd, v, var);
+    size = adios_write_payload_v1 (fd, v, var);
     total_size += size;
 
     // put in the total size for this var
@@ -841,7 +846,8 @@ static int common_adios_close (long long fd_p)
     fd->vars_start += 2;
     memcpy (fd->vars_start, &total_size, 8);
 
-    adios_bp_write_index_v1 (fd);
+    // in order to get the index assembled, we need to do it in the
+    // transport once we have collected all of the pieces
 
     // now tell all of the transports to write the buffer during close
     for (;m; m = m->next)

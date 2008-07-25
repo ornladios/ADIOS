@@ -17,10 +17,10 @@
     <attribute name="timestep3" path="/abc/" value="1"/>
 
     <!-- try a writeable attribute -->
-  <!--  <attribute name="node" path="/" var="node-attr"/> -->
+    <attribute name="node" path="/" var="node-attr"/>
   </adios-group>
 
-  <method group="restart" method="MPI"/>
+  <method group="restart" method="POSIX"/>
 
   <buffer size-MB="100" allocate-time="now"/>
 

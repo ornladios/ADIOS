@@ -150,6 +150,15 @@ printf ("base offset: %llu\n", fd->base_offset);
     }
 }
 
+int adios_mpi_cio_should_buffer (struct adios_file_struct * fd
+                                ,struct adios_method_struct * method
+                                ,void * comm
+                                )
+{
+printf ("MPI CIO Method: Need to coordinate buffering with peers, if any\n");
+    return 1;   // as far as we care, buffer
+}
+
 void adios_mpi_cio_write (struct adios_file_struct * fd
                      ,struct adios_var_struct * v
                      ,void * data

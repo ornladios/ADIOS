@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 // mpi
 #include "mpi.h"
@@ -25,6 +26,10 @@ int main (int argc, char ** argv)
     int r_zsize;
     float r_z [z_dim_size];
 
+    int node = 0;
+
+    uint64_t total;
+
     z_dim [0] = 10.0;
     z_dim [1] = 11.0;
     z_dim [2] = 12.0;
@@ -36,22 +41,24 @@ int main (int argc, char ** argv)
     z_dim [8] = 18.0;
     z_dim [9] = 19.0;
 
-    int node = 0;
-
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
     adios_init ("config_c.xml");
 
     adios_open (&io_handle, type_name, filename, "w");
+    adios_group_size (io_handle, 4 + 4 + 4 + 4 + 4 * 10 + 4, &total, &comm);
     adios_write (io_handle, "comm", &comm);
     adios_write (io_handle, "/mype", &var_x1);
     adios_write (io_handle, "/test/mype", &var_x2);
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);
     adios_write (io_handle, "node-attr", &node);
+printf ("A\n");
     adios_close (io_handle);
+printf ("B\n");
 
     MPI_Barrier (MPI_COMM_WORLD);
+#if 0
 
     adios_open (&io_handle, type_name, filename, "r");
     adios_write (io_handle, "comm", &comm);
@@ -88,6 +95,7 @@ int main (int argc, char ** argv)
 
     var_x = 11;
     adios_open (&io_handle, type_name, filename, "a");
+    adios_group_size (io_handle, 4 + 4 + 4 + 4 + 4 * 10 + 4, &total, &comm);
     adios_write (io_handle, "comm", &comm);
     adios_write (io_handle, "mype", &var_x);
     adios_write (io_handle, "zionsize", &z_dim_size);
@@ -95,7 +103,9 @@ int main (int argc, char ** argv)
     adios_close (io_handle);
 
     MPI_Barrier (MPI_COMM_WORLD);
+#endif
 
+printf ("C\n");
     adios_finalize (node);
     MPI_Finalize ();
 

@@ -108,6 +108,14 @@ void adios_posix_open (struct adios_file_struct * fd
     }
 }
 
+int adios_posix_should_buffer (struct adios_file_struct * fd
+                              ,struct adios_method_struct * method
+                              ,void * comm
+                              )
+{
+    return 1;   // as far as we care, buffer
+}
+
 void adios_posix_write (struct adios_file_struct * fd
                        ,struct adios_var_struct * v
                        ,void * data
@@ -222,12 +230,15 @@ void adios_posix_read (struct adios_file_struct * fd
 }
 
 static void adios_posix_do_write (struct adios_file_struct * fd
+                                 ,char * buffer
+                                 ,uint64_t buffer_size
                                  ,struct adios_method_struct * method
                                  )
 {
     struct adios_File_data_struct * md = (struct adios_File_data_struct *)
                                          method->method_data;
     write (md->f, fd->buffer_start, (fd->shared_buffer - fd->buffer_start + 1));
+    write (md->f, buffer, buffer_size);
 }
 
 static void adios_posix_do_read (struct adios_file_struct * fd
@@ -272,14 +283,56 @@ void adios_posix_close (struct adios_file_struct * fd
     struct adios_File_data_struct * md = (struct adios_File_data_struct *)
                                                        method->method_data;
 
+    struct adios_index_process_group_struct_v1 * pg_root = 0;
+    struct adios_index_var_struct_v1 * vars_root = 0;
+
     if (fd->mode == adios_mode_write)
-        adios_posix_do_write (fd, method);
+    {
+        char * buffer = 0;
+        uint64_t buffer_size = 0;
+        uint64_t buffer_offset = 0;
+        uint64_t index_start = (fd->shared_buffer - fd->buffer_start + 1);
+
+        // build index
+        adios_build_index_v1 (fd, &pg_root, &vars_root);
+        // if collective, gather the indexes from the rest and call
+        // adios_merge_index_v1 (&pg_root, &vars_root, new_pg, new_vars);
+        adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
+                             ,index_start, pg_root, vars_root
+                             );
+        adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
+        adios_posix_do_write (fd, buffer, buffer_size, method);
+
+        free (buffer);
+
+        adios_clear_index_v1 (pg_root, vars_root);
+    }
 
     if (fd->mode == adios_mode_append)
-        adios_posix_do_write (fd, method);
+    {
+        char * buffer = 0;
+        uint64_t buffer_size = 0;
+        uint64_t buffer_offset = 0;
+        uint64_t index_start = (fd->shared_buffer - fd->buffer_start + 1);
+
+        // build index
+        adios_build_index_v1 (fd, &pg_root, &vars_root);
+        // merge in with old struct
+        // merge in peers with old struct from initial read
+        adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
+                             ,index_start, pg_root, vars_root
+                             );
+        adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
+        adios_posix_do_write (fd, buffer, buffer_size, method);
+
+        free (buffer);
+
+        adios_clear_index_v1 (pg_root, vars_root);
+    }
 
     if (fd->mode == adios_mode_read)
     {
+        // read the index to find the place to start reading
         adios_posix_do_read (fd, method);
         struct adios_var_struct * v = fd->group->vars;
         while (v)

@@ -159,6 +159,15 @@ void adios_mpi_open (struct adios_file_struct * fd
     }
 }
 
+int adios_mpi_should_buffer (struct adios_file_struct * fd
+                            ,struct adios_method_struct * method
+                            ,void * comm
+                            )
+{
+printf ("MPI Method: Need to validate can buffer with peers, if any\n");
+    return 1;   // as far as we care, buffer
+}
+
 void adios_mpi_write (struct adios_file_struct * fd
                      ,struct adios_var_struct * v
                      ,void * data

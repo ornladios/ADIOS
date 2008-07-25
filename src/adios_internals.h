@@ -130,7 +130,6 @@ struct adios_file_struct
     uint64_t base_offset;
     uint64_t offset;
     uint64_t write_size_bytes;
-    uint32_t write_size_nvars;
     struct adios_group_struct * group;
     enum ADIOS_METHOD_MODE mode;
                            // use pointer subtraction to get size
@@ -160,6 +159,10 @@ typedef void (* ADIOS_INIT_FN) (const char * parameters
 typedef void (* ADIOS_OPEN_FN) (struct adios_file_struct * fd
                                ,struct adios_method_struct * method
                                );
+typedef int (* ADIOS_SHOULD_BUFFER_FN) (struct adios_file_struct * fd
+                                       ,struct adios_method_struct * method
+                                       ,void * comm
+                                       );
 typedef void (* ADIOS_WRITE_FN) (struct adios_file_struct * fd
                                 ,struct adios_var_struct * v
                                 ,void * data
@@ -192,6 +195,7 @@ struct adios_transport_struct
 {
     ADIOS_INIT_FN adios_init_fn;
     ADIOS_OPEN_FN adios_open_fn;
+    ADIOS_SHOULD_BUFFER_FN adios_should_buffer_fn;
     ADIOS_WRITE_FN adios_write_fn;
     ADIOS_GET_WRITE_BUFFER_FN adios_get_write_buffer_fn;
     ADIOS_READ_FN adios_read_fn;
@@ -411,16 +415,75 @@ int adios_common_select_method (int priority, const char * method
 
 void adios_common_get_group (long long * group_id, const char * name);
 
+// ADIOS file format functions
+struct adios_index_process_group_struct_v1
+{
+    char * group_name;
+    uint32_t process_id;
+    uint32_t timestep;
+    uint64_t offset_in_file;
+
+    struct adios_index_process_group_struct_v1 * next;
+};
+
+struct adios_index_var_entry_struct_v1
+{
+    uint64_t offset;
+    uint64_t min;
+    uint64_t max;
+};
+
+struct adios_index_var_struct_v1
+{
+    char * group_name;
+    char * var_name;
+    char * var_path;
+    enum ADIOS_DATATYPES type;
+
+    uint64_t entries_count;
+    uint64_t entries_allocated;
+
+    struct adios_index_var_entry_struct_v1 * entries;
+
+    struct adios_index_var_struct_v1 * next;
+};
+
 uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd);
-int adios_bp_write_header_v1 (struct adios_file_struct * fd);
-int adios_bp_write_index_v1 (struct adios_file_struct * fd);
-uint64_t adios_bp_write_dimensions_v1 (struct adios_file_struct * fd
-                                   ,struct adios_dimension_struct * dimensions
-                                   );
-int adios_bp_write_payload_v1 (struct adios_file_struct * fd
+
+int adios_write_process_group_header_v1 (struct adios_file_struct * fd);
+int adios_write_payload_v1 (struct adios_file_struct * fd
                               ,struct adios_var_struct * var
                               ,void * data
                               );
+uint64_t adios_write_dimensions_v1 (struct adios_file_struct * fd
+                                   ,struct adios_dimension_struct * dimensions
+                                   );
+
+void adios_build_index_v1 (struct adios_file_struct * fd
+                       ,struct adios_index_process_group_struct_v1 ** pg_root
+                       ,struct adios_index_var_struct_v1 ** vars_root
+                       );
+void adios_merge_index_v1 (
+                   struct adios_index_process_group_struct_v1 ** main_pg_root
+                  ,struct adios_index_var_struct_v1 ** main_vars_root
+                  ,struct adios_index_process_group_struct_v1 * new_pg_root
+                  ,struct adios_index_var_struct_v1 * new_vars_root
+                  );
+int adios_write_index_v1 (char ** buffer
+                         ,uint64_t * buffer_size
+                         ,uint64_t * buffer_offset
+                         ,uint64_t index_start
+                         ,struct adios_index_process_group_struct_v1 * pg_root
+                         ,struct adios_index_var_struct_v1 * vars_root
+                         );
+int adios_write_version_v1 (char ** buffer
+                           ,uint64_t * buffer_size
+                           ,uint64_t * buffer_offset
+                           );
+void adios_clear_index_v1 (struct adios_index_process_group_struct_v1 * pg_root
+                          ,struct adios_index_var_struct_v1 * vars_root
+                          );
+
 uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var);
 uint64_t adios_get_var_size (struct adios_var_struct * var, void * data);
 

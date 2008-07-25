@@ -4908,13 +4908,119 @@ void adios_common_get_group (long long * group_id, const char * name)
             );
 }
 
-uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
+//******************************************************************************
+static void buffer_write (char ** buffer, uint64_t * buffer_size
+                         ,uint64_t * buffer_offset, void * data, uint64_t size
+                         )
 {
-fprintf (stderr, "Must calc the overhead properly\n");
-    return 25000;
+    if (*buffer_offset + size > *buffer_size)
+    {
+        char * b = realloc (*buffer, *buffer_offset + size + 1000);
+        if (b)
+        {
+            *buffer = b;
+            *buffer_size += (*buffer_offset + size + 1000);
+        }
+        else
+        {
+            fprintf (stderr, "Cannot allocate memory in buffer_write.  "
+                             "Requested: %llu\n", *buffer_offset + size + 1000);
+
+            return;
+        }
+    }
+
+    memcpy ((*buffer) + *buffer_offset, data, size);
+    *buffer_offset += size;
 }
 
-int adios_bp_write_header_v1 (struct adios_file_struct * fd)
+uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
+{
+    uint64_t overhead = 0;
+    struct adios_var_struct * v = fd->group->vars;
+    struct adios_attribute_struct * a = fd->group->attributes;
+
+    overhead += 8; // process group length
+    overhead += 1; // host language flag
+    overhead += 2; // length of group name
+    overhead += strlen (fd->group->name); // group name
+    overhead += 2; // coordination comm id
+    overhead += 2; // coordination var id
+    overhead += 2; // timestep var id
+    overhead += 1; // method ID
+    overhead += 2; // method params length
+    overhead += strlen (fd->group->methods->method->parameters); // method parameters
+
+    overhead += 4; // count of vars
+    overhead += 8; // length of vars section
+
+    while (v)
+    {
+        struct adios_dimension_struct * d = v->dimensions;
+
+        overhead += 8; // length of var entry
+        overhead += 2; // member id
+        overhead += 2; // length of name
+        overhead += strlen (v->name); // name
+        overhead += 2; // length of path
+        overhead += strlen (v->path); // path
+        overhead += 1; // datatype
+        overhead += 1; // used as a dimension flag
+
+        overhead += 1; // ranks
+        overhead += 2; // dimensions length
+        while (d)
+        {
+            overhead += 1; // var flag
+            if (d->dimension.var)
+                overhead += 2; // member id
+            else
+                overhead += 8; // value
+            if (d->global_dimension.var)
+                overhead += 2; // member id
+            else
+                overhead += 8; // value
+            if (d->local_offset.var)
+                overhead += 2; // member id
+            else
+                overhead += 8; // value
+
+            d = d->next;
+        }
+        overhead += adios_get_type_size (v->type, ""); // min
+        overhead += adios_get_type_size (v->type, ""); // max
+
+        v = v->next;
+    }
+
+    overhead += 2; // attributes count
+    overhead += 8; // attributes length
+
+    while (a)
+    {
+        overhead += 4; // attribute length
+        overhead += 2; // member id
+        overhead += 2; // length of name
+        overhead += strlen (a->name); // name
+        overhead += 2; // length of path
+        overhead += strlen (a->path); // path
+        overhead += 1; // var flag
+        if (a->var)
+            overhead += 2; // var member id
+        else
+        {
+            overhead += 1; // datatype
+            overhead += 4; // length of value
+            overhead += adios_get_type_size (a->type, a->value); // value
+        }
+
+        a = a->next;
+    }
+    
+    return overhead;
+}
+
+int adios_write_process_group_header_v1 (struct adios_file_struct * fd)
 {
     struct adios_group_struct * g = fd->group;
 
@@ -4995,38 +5101,6 @@ int adios_bp_write_header_v1 (struct adios_file_struct * fd)
     return 0;
 }
 
-struct adios_index_process_group_struct_v1
-{
-    char * group_name;
-    uint32_t process_id;
-    uint32_t timestep;
-    uint64_t offset_in_file;
-
-    struct adios_index_process_group_struct_v1 * next;
-};
-
-struct adios_index_var_entry_struct_v1
-{
-    uint64_t offset;
-    uint64_t min;
-    uint64_t max;
-};
-
-struct adios_index_var_struct_v1
-{
-    char * group_name;
-    char * var_name;
-    char * var_path;
-    enum ADIOS_DATATYPES type;
-
-    uint64_t entries_count;
-    uint64_t entries_allocated;
-
-    struct adios_index_var_entry_struct_v1 * entries;
-
-    struct adios_index_var_struct_v1 * next;
-};
-
 static void index_append_process_group_v1 (
                           struct adios_index_process_group_struct_v1 ** root
                          ,struct adios_index_process_group_struct_v1 * item
@@ -5104,15 +5178,18 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
     }
 }
 
-void adios_bp_merge_index_v1 (struct adios_index_process_group_struct_v1 ** p1
-                             ,struct adios_index_var_struct_v1 ** v1
-                             ,struct adios_index_process_group_struct_v1 * p2
-                             ,struct adios_index_var_struct_v1 * v2
-                             )
+void adios_merge_index_v1 (struct adios_index_process_group_struct_v1 ** p1
+                          ,struct adios_index_var_struct_v1 ** v1
+                          ,struct adios_index_process_group_struct_v1 * p2
+                          ,struct adios_index_var_struct_v1 * v2
+                          )
 {
+printf ("Merge the indexes together\n");
 }
 
-void clear_index_groups (struct adios_index_process_group_struct_v1 * root)
+static void adios_clear_process_groups_index_v1 (
+                            struct adios_index_process_group_struct_v1 * root
+                           )
 {
     while (root)
     {
@@ -5122,7 +5199,7 @@ void clear_index_groups (struct adios_index_process_group_struct_v1 * root)
     }
 }
 
-void clear_index_vars (struct adios_index_var_struct_v1 * root)
+static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
 {
     while (root)
     {
@@ -5133,187 +5210,23 @@ void clear_index_vars (struct adios_index_var_struct_v1 * root)
     }
 }
 
-static void adios_write_index_v1 (struct adios_file_struct * fd
-                       ,struct adios_index_process_group_struct_v1 * pg_root
-                       ,struct adios_index_var_struct_v1 * vars_root
+void adios_clear_index_v1 (struct adios_index_process_group_struct_v1 * pg_root
+                          ,struct adios_index_var_struct_v1 * vars_root
+                          )
+{
+    adios_clear_process_groups_index_v1 (pg_root);
+    adios_clear_vars_index_v1 (vars_root);
+}
+
+void adios_build_index_v1 (struct adios_file_struct * fd
+                       ,struct adios_index_process_group_struct_v1 ** pg_root
+                       ,struct adios_index_var_struct_v1 ** vars_root
                        )
-{
-    uint64_t groups_count = 0;
-    uint16_t vars_count = 0;
-
-    uint64_t index_size = 0;
-
-    char * index_start = 0;
-    char * start = 0;
-
-    start = fd->shared_buffer;
-    index_start = start;
-
-    fd->shared_buffer += (8 + 8);  // save space for count and size
-
-    while (pg_root)
-    {
-        uint16_t len;
-        uint16_t group_size = 0;
-        char * group_start = fd->shared_buffer;
-
-        groups_count++;
-
-        fd->shared_buffer += 2;  // save space for length
-
-        len = strlen (pg_root->group_name);
-        memcpy (fd->shared_buffer, &len, 2);
-        fd->shared_buffer += 2;
-        index_size += 2;
-        group_size += 2;
-        memcpy (fd->shared_buffer, pg_root->group_name, len);
-        fd->shared_buffer += len;
-        index_size += len;
-        group_size += len;
-
-        memcpy (fd->shared_buffer, &pg_root->process_id, 4);
-        fd->shared_buffer += 4;
-        index_size += 4;
-        group_size += 4;
-        memcpy (fd->shared_buffer, &pg_root->timestep, 4);
-        fd->shared_buffer += 4;
-        index_size += 4;
-        group_size += 4;
-        memcpy (fd->shared_buffer, &pg_root->offset_in_file, 8);
-        fd->shared_buffer += 8;
-        index_size += 8;
-        group_size += 8;
-
-        memcpy (group_start, &group_size, 2);
-
-        pg_root = pg_root->next;
-    }
-
-    memcpy (start, &groups_count, 8);
-    start += 8;
-    memcpy (start, &index_size, 8);
-
-    index_size = 0;
-
-    start = fd->shared_buffer;
-    fd->shared_buffer += (2 + 8); // save space for count and size
-
-    while (vars_root)
-    {
-        uint8_t flag;
-        uint16_t len;
-        uint32_t var_size = 0;
-        char * var_start = fd->shared_buffer;
-
-        vars_count++;
-
-        fd->shared_buffer += 4; // save space for var length
-
-        len = strlen (vars_root->group_name);
-        memcpy (fd->shared_buffer, &len, 2);
-        fd->shared_buffer += 2;
-        index_size += 2;
-        var_size += 2;
-        memcpy (fd->shared_buffer, &vars_root->group_name, len);
-        fd->shared_buffer += len;
-        index_size += len;
-        var_size += len;
-
-        len = strlen (vars_root->var_name);
-        memcpy (fd->shared_buffer, &len, 2);
-        fd->shared_buffer += 2;
-        index_size += 2;
-        var_size += 2;
-        memcpy (fd->shared_buffer, &vars_root->var_name, len);
-        fd->shared_buffer += len;
-        index_size += len;
-        var_size += len;
-
-        len = strlen (vars_root->var_path);
-        memcpy (fd->shared_buffer, &len, 2);
-        fd->shared_buffer += 2;
-        index_size += 2;
-        var_size += 2;
-        memcpy (fd->shared_buffer, &vars_root->var_path, len);
-        fd->shared_buffer += len;
-        index_size += len;
-        var_size += len;
-
-        flag = vars_root->type;
-        memcpy (fd->shared_buffer, &flag, 1);
-        fd->shared_buffer += 1;
-        index_size += 1;
-        var_size += 1;
-
-        memcpy (fd->shared_buffer, &vars_root->entries, 8);
-        fd->shared_buffer += 8;
-        index_size += 8;
-        var_size += 8;
-
-        for (int i = 0; i < vars_root->entries_count; i++)
-        {
-            uint64_t size;
-
-            memcpy (fd->shared_buffer, &vars_root->entries [i].offset, 8);
-            fd->shared_buffer += 8;
-            index_size += 8;
-            var_size += 8;
-
-            size = adios_get_type_size (vars_root->type
-                                       ,&vars_root->entries [i].min
-                                       );
-
-            memcpy (fd->shared_buffer, &vars_root->entries [i].min, size);
-            fd->shared_buffer += size;
-            index_size += size;
-            var_size += size;
-
-            memcpy (fd->shared_buffer, &vars_root->entries [i].max, size);
-            fd->shared_buffer += size;
-            index_size += size;
-            var_size += size;
-        }
-
-        vars_root = vars_root->next;
-    }
-
-    memcpy (start, &vars_count, 2);
-    start += 2;
-    memcpy (start, &index_size, 8);
-
-    // location of the beginning of the index
-    index_size = fd->shared_buffer - index_start;
-    memcpy (fd->shared_buffer, &index_size, 8);
-    fd->shared_buffer += 8;
-}
-
-int adios_write_version_v1 (struct adios_file_struct * fd)
-{
-    uint64_t test = 1;
-
-    if (!*(char *) &test)
-        test = 0x80000000;
-    else
-        test = 0;
-
-    test += 1;   // current version
-
-    test = htonl (test);
-
-    memcpy (fd->shared_buffer, &test, 4);
-    fd->shared_buffer += 4;
-
-    return 0;
-}
-
-int adios_bp_write_index_v1 (struct adios_file_struct * fd)
 {
     struct adios_group_struct * g = fd->group;
     struct adios_var_struct * v = g->vars;
     struct adios_index_process_group_struct_v1 * g_item;
 
-    struct adios_index_process_group_struct_v1 * pg_root = 0;
-    struct adios_index_var_struct_v1 * vars_root = 0;
     uint64_t process_group_count = 0;
     uint16_t var_count = 0;
 
@@ -5326,7 +5239,7 @@ int adios_bp_write_index_v1 (struct adios_file_struct * fd)
     g_item->next = 0;
 
     // build the groups and vars index
-    index_append_process_group_v1 (&pg_root, g_item);
+    index_append_process_group_v1 (pg_root, g_item);
 
     while (v)
     {
@@ -5349,18 +5262,177 @@ int adios_bp_write_index_v1 (struct adios_file_struct * fd)
         v_index->next = 0;
 
         // this fn will either take ownership for free
-        index_append_var_v1 (&vars_root, g->name, v_index);
+        index_append_var_v1 (vars_root, g->name, v_index);
 
         v = v->next;
     }
+}
 
-    // write into the buffer
-    adios_write_index_v1 (fd, pg_root, vars_root);
+uint64_t adios_calc_size_process_group_index_v1 (
+                        struct adios_index_process_group_struct_v1 * pg_root
+                       )
+{
+    uint64_t size;
+printf ("How to do adios_calc_size_process_group_index?\n");
 
-    adios_write_version_v1 (fd);
+    return size;
+}
 
-    clear_index_groups (pg_root);
-    clear_index_vars (vars_root);
+int adios_write_index_v1 (char ** buffer
+                         ,uint64_t * buffer_size
+                         ,uint64_t * buffer_offset
+                         ,uint64_t index_start
+                         ,struct adios_index_process_group_struct_v1 * pg_root
+                         ,struct adios_index_var_struct_v1 * vars_root
+                         )
+{
+    uint64_t groups_count = 0;
+    uint16_t vars_count = 0;
+
+    uint64_t index_size = 0;
+
+    // we need to save the offset we will write the count and size
+    uint64_t buffer_offset_start = 0; // since we realloc, we can't save a ptr
+
+    // save for the process group index
+    buffer_offset_start = *buffer_offset;
+
+    *buffer_offset += (8 + 8); // save space for groups count and index size
+
+    while (pg_root)
+    {
+        uint16_t len;
+        uint16_t group_size = 0;
+        uint64_t group_start = *buffer_offset;
+
+        groups_count++;
+
+        *buffer_offset += 2; // save space for the size
+
+        len = strlen (pg_root->group_name);
+        buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
+        index_size += 2;
+        group_size += 2;
+        buffer_write (buffer, buffer_size, buffer_offset, pg_root->group_name, len);
+        index_size += len;
+        group_size += len;
+
+        buffer_write (buffer, buffer_size, buffer_offset, &pg_root->process_id, 4);
+        index_size += 4;
+        group_size += 4;
+        buffer_write (buffer, buffer_size, buffer_offset, &pg_root->timestep, 4);
+        index_size += 4;
+        group_size += 4;
+        buffer_write (buffer, buffer_size, buffer_offset, &pg_root->offset_in_file, 8);
+        index_size += 8;
+        group_size += 8;
+
+        buffer_write (buffer, buffer_size, &group_start, &group_size, 2);
+
+        pg_root = pg_root->next;
+    }
+
+    buffer_write (buffer, buffer_size, &buffer_offset_start, &groups_count, 8);
+    buffer_write (buffer, buffer_size, &buffer_offset_start, &index_size, 8);
+
+    index_size = 0;
+
+    buffer_offset_start = *buffer_offset;
+
+    *buffer_offset += (2 + 8); // save space for count and size
+
+    while (vars_root)
+    {
+        uint8_t flag;
+        uint16_t len;
+        uint32_t var_size = 0;
+        uint64_t var_start = *buffer_offset;
+
+        vars_count++;
+
+        *buffer_offset += 4; // save space for var length
+
+        len = strlen (vars_root->group_name);
+        buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
+        index_size += 2;
+        var_size += 2;
+        buffer_write (buffer, buffer_size, buffer_offset, vars_root->group_name, len);
+        index_size += len;
+        var_size += len;
+
+        len = strlen (vars_root->var_name);
+        buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
+        index_size += 2;
+        var_size += 2;
+        buffer_write (buffer, buffer_size, buffer_offset, vars_root->var_name, len);
+        index_size += len;
+        var_size += len;
+
+        len = strlen (vars_root->var_path);
+        buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
+        index_size += 2;
+        var_size += 2;
+        buffer_write (buffer, buffer_size, buffer_offset, vars_root->var_path, len);
+        index_size += len;
+        var_size += len;
+
+        flag = vars_root->type;
+        buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
+        index_size += 1;
+        var_size += 1;
+
+        buffer_write (buffer, buffer_size, buffer_offset, &vars_root->entries_count, 8);
+        index_size += 8;
+        var_size += 8;
+
+        for (int i = 0; i < vars_root->entries_count; i++)
+        {
+            uint64_t size;
+
+            buffer_write (buffer, buffer_size, buffer_offset, &vars_root->entries [i].offset, 8);
+            index_size += 8;
+            var_size += 8;
+
+            size = adios_get_type_size (vars_root->type
+                                       ,&vars_root->entries [i].min
+                                       );
+
+            buffer_write (buffer, buffer_size, buffer_offset, &vars_root->entries [i].min, size);
+            index_size += size;
+            var_size += size;
+
+            buffer_write (buffer, buffer_size, buffer_offset, &vars_root->entries [i].max, size);
+            index_size += size;
+            var_size += size;
+        }
+
+        vars_root = vars_root->next;
+    }
+
+    buffer_write (buffer, buffer_size, &buffer_offset_start, &vars_count, 2);
+    buffer_write (buffer, buffer_size, &buffer_offset_start, &index_size, 8);
+
+    // location of the beginning of the index
+    buffer_write (buffer, buffer_size, buffer_offset, &index_start, 8);
+}
+
+int adios_write_version_v1 (char ** buffer
+                           ,uint64_t * buffer_size
+                           ,uint64_t * buffer_offset
+                           )
+{
+    uint64_t test = 1;
+
+    if (!*(char *) &test)
+        test = 0x80000000;
+    else
+        test = 0;
+
+    test += 1;   // current version
+
+    test = htonl (test);
+
+    buffer_write (buffer, buffer_size, buffer_offset, &test, 4);
 
     return 0;
 }
@@ -5444,9 +5516,9 @@ static uint16_t calc_dimensions_size (struct adios_dimension_struct * dimension)
 }
 
 static
-uint64_t adios_bp_write_dimension_v1 (struct adios_file_struct * fd
-                                     ,struct adios_dimension_struct * dimension
-                                     )
+uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
+                                  ,struct adios_dimension_struct * dimension
+                                  )
 {
     uint64_t size = 0;
     uint8_t var;
@@ -5545,9 +5617,9 @@ uint64_t adios_bp_write_dimension_v1 (struct adios_file_struct * fd
     return size;
 }
 
-uint64_t adios_bp_write_dimensions_v1 (struct adios_file_struct * fd
-                                    ,struct adios_dimension_struct * dimensions
-                                    )
+uint64_t adios_write_dimensions_v1 (struct adios_file_struct * fd
+                                   ,struct adios_dimension_struct * dimensions
+                                   )
 {
     uint64_t size = 0;
     uint16_t dimensions_size = calc_dimensions_size (dimensions);
@@ -5562,7 +5634,7 @@ uint64_t adios_bp_write_dimensions_v1 (struct adios_file_struct * fd
 
     while (dimensions)
     {
-        size += adios_bp_write_dimension_v1 (fd, dimensions);
+        size += adios_write_dimension_v1 (fd, dimensions);
 
         dimensions = dimensions->next;
     }
@@ -5616,10 +5688,10 @@ static void calc_min_max (struct adios_var_struct * var)
     }
 }
 
-int adios_bp_write_payload_v1 (struct adios_file_struct * fd
-                              ,struct adios_var_struct * var
-                              ,void * data
-                              )
+int adios_write_payload_v1 (struct adios_file_struct * fd
+                           ,struct adios_var_struct * var
+                           ,void * data
+                           )
 {
     uint64_t size;
     char * buf;

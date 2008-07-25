@@ -47,6 +47,14 @@ void adios_dart_open (struct adios_file_struct * fd
 {
 }
 
+int adios_dart_should_buffer (struct adios_file_struct * fd
+                             ,struct adios_method_struct * method
+                             ,void * comm
+                             )
+{
+    return 0;  // this will take care of it
+}
+
 void adios_dart_write (struct adios_file_struct * fd
                       ,struct adios_var_struct * v
                       ,void * data
@@ -125,6 +133,14 @@ void adios_dart_open (struct adios_file_struct * fd
                      )
 {
     fprintf (stderr, "adios_dart_open: DART disabled, no portals support\n");
+}
+
+int adios_dart_should_buffer (struct adios_file_struct * fd
+                             ,struct adios_method_struct * method
+                             ,void * comm
+                             )
+{
+    return 0;   // we'll buffer
 }
 
 void adios_dart_write (struct adios_file_struct * fd

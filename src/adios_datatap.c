@@ -416,6 +416,22 @@ extern void adios_datatap_open (struct adios_file_struct * fd,
     
 }
 
+int adios_datatap_should_buffer (struct adios_file_struct * fd
+                              ,struct adios_method_struct * method
+                              ,void * comm
+                              )
+{
+    return 0;   // we'll buffer internally
+}
+
+int adios_datatap_should_buffer (struct adios_file_struct * fd
+                              ,struct adios_method_struct * method
+                              ,void * comm
+                              )
+{
+    return 0;   // we'll buffer internally
+}
+
 static FMField* internal_find_field(char *name, FMFieldList flist)
 {
     FMField *f = flist;

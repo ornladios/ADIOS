@@ -108,6 +108,14 @@ void adios_posix_ascii_open (struct adios_file_struct * fd
     }
 }
 
+int adios_posix_ascii_should_buffer (struct adios_file_struct * fd
+                                    ,struct adios_method_struct * method
+                                    ,void * comm
+                                    )
+{
+    return 1;   // as far as we care, buffer
+}
+
 void adios_posix_ascii_write (struct adios_file_struct * fd
                              ,struct adios_var_struct * v
                              ,void * data
