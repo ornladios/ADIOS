@@ -361,6 +361,8 @@ integer*8, private :: io_type, handle
     INTEGER, dimension(2)            :: radial_index_bound
     INTEGER, dimension(2)            :: theta_index_bound
     INTEGER, dimension(2)            :: phi_index_bound
+    INTEGER                          :: adios_err       ! ADIOS error flag
+
 
     CALL initialized_io()    
     
