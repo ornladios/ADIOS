@@ -56,8 +56,8 @@ PROGRAMS = $(bin_PROGRAMS)
 am_bpdump_OBJECTS = bpdump.$(OBJEXT)
 bpdump_OBJECTS = $(am_bpdump_OBJECTS)
 am__DEPENDENCIES_1 =
-bpdump_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(top_builddir)/src/libadios_int.a $(am__DEPENDENCIES_1)
+bpdump_DEPENDENCIES = $(top_builddir)/src/libadios_int.a \
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -188,8 +188,7 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 bpdump_SOURCES = bpdump.c
 bpdump_LDFLAGS = $(MXML_LDFLAGS)
-bpdump_LDADD = $(top_builddir)/src/libadios.a \
-	$(top_builddir)/src/libadios_int.a $(MXML_LIBS)
+bpdump_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS)
 all: all-am
 
 .SUFFIXES:

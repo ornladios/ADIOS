@@ -16,6 +16,7 @@
 #include "bw-utils.h"
 #include "adios.h"
 #include "adios_transport_hooks.h"
+#include "adios_bp_v1.h"
 #include "adios_internals.h"
 
 static int adios_mpi_initialized = 0;
@@ -31,6 +32,7 @@ struct adios_MPI_data_struct
     uint64_t buffer_size;
     uint64_t start;
     int last_var_write_yes; // was the last item asked to write a write="yes"?
+    uint64_t base_offset;
 };
 
 static void adios_var_to_comm (enum ADIOS_FLAG host_language_fortran
@@ -104,11 +106,12 @@ void adios_mpi_init (const char * parameters
     md->buffer_size = 0;
     md->start = 0;
     md->last_var_write_yes = 0;
+    md->base_offset = 0;
 }
 
-void adios_mpi_open (struct adios_file_struct * fd
-                    ,struct adios_method_struct * method
-                    )
+int adios_mpi_open (struct adios_file_struct * fd
+                   ,struct adios_method_struct * method
+                   )
 {
     char name [STR_LEN];
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
@@ -154,9 +157,11 @@ void adios_mpi_open (struct adios_file_struct * fd
         if (group_comm != MPI_COMM_NULL)
             MPI_Bcast (&file_size_for_offset, 1, MPI_LONG_LONG, 0, group_comm);
 
-        fd->base_offset += file_size_for_offset;
-        //printf ("base offset: %llu\n", fd->base_offset);
+        md->base_offset += file_size_for_offset;
+        //printf ("base offset: %llu\n", md->base_offset);
     }
+
+    return 1;
 }
 
 int adios_mpi_should_buffer (struct adios_file_struct * fd
@@ -174,6 +179,7 @@ void adios_mpi_write (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
+#if 0
     if (v->got_buffer)
     {
         if (data != v->data)  // if the user didn't give back the same thing
@@ -191,7 +197,7 @@ void adios_mpi_write (struct adios_file_struct * fd
         }
     }
 
-    if (v->copy_on_write == adios_flag_yes)
+    if (0) //v->copy_on_write == adios_flag_yes)
     {
         uint64_t var_size;
         uint64_t mem_allowed;
@@ -201,7 +207,7 @@ void adios_mpi_write (struct adios_file_struct * fd
         if (mem_allowed == var_size)
         {
             v->free_data = adios_flag_yes;
-            v->data = adios_dupe_data (v, data);
+            v->data = adios_dupe_data_scalar (v->type, data);
             v->data_size = var_size;
         }
         else
@@ -220,6 +226,7 @@ void adios_mpi_write (struct adios_file_struct * fd
         v->free_data = adios_flag_no;
         v->data_size = 0;
     }
+#endif
 }
 
 void adios_mpi_get_write_buffer (struct adios_file_struct * fd
@@ -229,6 +236,7 @@ void adios_mpi_get_write_buffer (struct adios_file_struct * fd
                                 ,struct adios_method_struct * method
                                 )
 {
+#if 0
     uint64_t mem_allowed;
 
     if (*size == 0)
@@ -278,6 +286,7 @@ void adios_mpi_get_write_buffer (struct adios_file_struct * fd
         *size = 0;
         *buffer = 0;
     }
+#endif
 }
 
 void adios_mpi_read (struct adios_file_struct * fd
@@ -292,6 +301,7 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
                               ,struct adios_method_struct * method
                               )
 {
+#if 0
     char name [STR_LEN];
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data; 
@@ -378,15 +388,14 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
                           ,&md->fh
                           );
         }
-        //printf ("previous=%d next=%d group_comm=%d fdoffset=%llu myoffset=%llu\n",previous,next,group_comm, fd->offset,my_offset);
-        MPI_File_seek (md->fh, fd->base_offset + fd->offset + my_offset
+        MPI_File_seek (md->fh, md->base_offset + my_offset
                       ,MPI_SEEK_SET
                       );
     }
     else
     {
         MPI_File_open (MPI_COMM_SELF, name, amode, MPI_INFO_NULL, &md->fh);
-        MPI_File_seek (md->fh, fd->base_offset + fd->offset, MPI_SEEK_SET);
+        MPI_File_seek (md->fh, md->base_offset, MPI_SEEK_SET);
     }
     /******************************
      * End Coordinate file offet
@@ -425,12 +434,14 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
 
     if (group_comm != MPI_COMM_NULL && next != -1)
         MPI_Wait (&md->req, &md->status);
+#endif
 }
 
 static void adios_mpi_do_write (struct adios_file_struct * fd
                                ,struct adios_method_struct * method
                                )
 {
+#if 0
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                        method->method_data;
     char name [STR_LEN];
@@ -552,7 +563,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
                           );
         }
 
-        err = MPI_File_seek (md->fh, fd->base_offset + fd->offset + my_offset
+        err = MPI_File_seek (md->fh, md->base_offset + my_offset
                             ,MPI_SEEK_SET
                             );
         if (err != MPI_SUCCESS)
@@ -597,7 +608,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
             }
             //printf ("initial size: %llu\n", my_offset);
         }
-        err = MPI_File_seek (md->fh, fd->base_offset + fd->offset, MPI_SEEK_SET);
+        err = MPI_File_seek (md->fh, md->base_offset, MPI_SEEK_SET);
         MPI_Error_class (err, &err_class);
         if (err_class != MPI_SUCCESS)
         {
@@ -719,6 +730,7 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
         v->got_buffer = adios_flag_no;
         v = v->next;
     }
+#endif
 }
 
 void adios_mpi_close (struct adios_file_struct * fd
@@ -746,6 +758,7 @@ void adios_mpi_close (struct adios_file_struct * fd
     memset (&md->status, 0, sizeof (MPI_Status));
     md->start = 0;
     md->last_var_write_yes = 0;
+    md->base_offset = 0;
 }
 
 void adios_mpi_finalize (int mype, struct adios_method_struct * method)

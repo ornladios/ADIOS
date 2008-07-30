@@ -1,7 +1,11 @@
+#include <unistd.h>
+#include <stdint.h>
+#include <sys/types.h>
 #include "mpi.h"
 #include "adios.h"
 #define ADIOS_EMPTY_TRANSPORTS
 #include "adios_transport_hooks.h"
+#include "adios_bp_v1.h"
 #include "adios_internals.h"
 
 void adios_init_transports (struct adios_transport_struct ** t)

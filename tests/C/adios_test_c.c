@@ -52,13 +52,13 @@ int main (int argc, char ** argv)
     adios_write (io_handle, "/test/mype", &var_x2);
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);
+    adios_write (io_handle, "zion1", z_dim);
     adios_write (io_handle, "node-attr", &node);
-printf ("A\n");
     adios_close (io_handle);
-printf ("B\n");
+
+    printf ("rank: %d write completed\n", rank);
 
     MPI_Barrier (MPI_COMM_WORLD);
-#if 0
 
     adios_open (&io_handle, type_name, filename, "r");
     adios_write (io_handle, "comm", &comm);
@@ -93,6 +93,7 @@ printf ("B\n");
         printf ("rank: %d read matches write\n", rank);
     }
 
+#if 0
     var_x = 11;
     adios_open (&io_handle, type_name, filename, "a");
     adios_group_size (io_handle, 4 + 4 + 4 + 4 + 4 * 10 + 4, &total, &comm);
@@ -105,7 +106,6 @@ printf ("B\n");
     MPI_Barrier (MPI_COMM_WORLD);
 #endif
 
-printf ("C\n");
     adios_finalize (node);
     MPI_Finalize ();
 

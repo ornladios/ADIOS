@@ -29,8 +29,8 @@ void adios_open_ (long long * fd, const char * group_name, const char * name
 int adios_group_size (long long fd_p, uint64_t data_size
                      ,uint64_t * total_size, void * comm
                      );
-void adios_group_size_ (long long * fd_p, long long * data_size
-                       ,long long * total_size, int * err, void * comm
+void adios_group_size_ (long long * fd_p, int64_t * data_size
+                       ,int64_t * total_size, int * err, void * comm
                        );
 
 int adios_write (long long fd_p, const char * name, void * var);
@@ -91,14 +91,12 @@ void adios_declare_group_ (long long * id, const char * name
 
 int adios_define_var (long long group_id, const char * name
                      ,const char * path, int type
-                     ,int copy_on_write
                      ,const char * dimensions
                      ,const char * global_dimensions
                      ,const char * local_offsets
                      );
 void adios_define_var_ (long long * group_id, const char * name
                        ,const char * path, int * type
-                       ,int * copy_on_write
                        ,const char * dimensions
                        ,const char * global_dimensions
                        ,const char * local_offsets, int * err

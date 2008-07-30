@@ -41,10 +41,11 @@ void adios_dart_init (const char * parameters
     method->method_data = calloc (1, sizeof (struct adios_DART_data_struct));
 }
 
-void adios_dart_open (struct adios_file_struct * fd
-                     ,struct adios_method_struct * method
-                     )
+int adios_dart_open (struct adios_file_struct * fd
+                    ,struct adios_method_struct * method
+                    )
 {
+    return 1;
 }
 
 int adios_dart_should_buffer (struct adios_file_struct * fd
@@ -128,11 +129,13 @@ void adios_dart_init (const char * parameters
     method->method_data = 0;
 }
 
-void adios_dart_open (struct adios_file_struct * fd
-                     ,struct adios_method_struct * method
-                     )
+int adios_dart_open (struct adios_file_struct * fd
+                    ,struct adios_method_struct * method
+                    )
 {
     fprintf (stderr, "adios_dart_open: DART disabled, no portals support\n");
+
+    return 1;
 }
 
 int adios_dart_should_buffer (struct adios_file_struct * fd

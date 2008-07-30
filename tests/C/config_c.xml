@@ -6,7 +6,7 @@
     <var name="mype" path="/test" type="integer"/>
     <var name="zionsize" type="integer"/>
     <var name="zion" type="real" dimensions="10" path="/abc/me"/>
-<!--    <var name="zion" type="real" dimensions="zionsize" path="/abc/me"/> -->
+    <var name="zion1" type="real" dimensions="zionsize" path="/abc/me"/>
 
     <var name="node-attr" type="integer"/>
 
