@@ -1,0 +1,1 @@
+mpirun -np 1 -machinefile hostlist ./adios_test_f
