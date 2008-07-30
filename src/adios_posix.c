@@ -23,8 +23,12 @@ static int adios_posix_initialized = 0;
 
 struct adios_POSIX_data_struct
 {
+    // our file bits
     struct adios_bp_buffer_struct_v1 b;
-    uint64_t base_offset;   // where appends should start
+
+    // old index structs we read in and have to be merged in
+    struct adios_index_process_group_struct_v1 * old_pg_root;
+    struct adios_index_var_struct_v1 * old_vars_root;
 };
 
 void adios_posix_init (const char * parameters
@@ -41,7 +45,8 @@ void adios_posix_init (const char * parameters
     method->method_data = malloc (sizeof (struct adios_POSIX_data_struct));
     p = (struct adios_POSIX_data_struct *) method->method_data;
     adios_buffer_struct_init (&p->b);
-    p->base_offset = 0;
+    p->old_pg_root = 0;
+    p->old_vars_root = 0;
 }
 
 int adios_posix_open (struct adios_file_struct * fd
@@ -65,13 +70,13 @@ int adios_posix_open (struct adios_file_struct * fd
 
             return 0;
         }
+        fd->base_offset = 0;
     }
     else
     {
         if (fd->mode == adios_mode_append)
         {
-            p->base_offset = p->b.file_size;
-            p->b.f = open (name, O_WRONLY);
+            p->b.f = open (name, O_RDWR);
             if (p->b.f == -1)
             {
                 p->b.f = open64 (name,  O_WRONLY | O_CREAT
@@ -89,6 +94,36 @@ int adios_posix_open (struct adios_file_struct * fd
                     return 0;
                 }
             }
+                // now we have to read the old stuff so we can merge it
+                // in at the end and set the base_offset for the old index
+                // start
+                uint32_t version;
+                adios_posix_read_version (&p->b);
+                adios_parse_version (&p->b, &version);
+
+                switch (version)
+                {
+                    case 1:
+                        // read the old stuff and set the base offset
+                        adios_posix_read_index_offsets (&p->b);
+                        adios_parse_index_offsets_v1 (&p->b);
+
+                        adios_posix_read_process_group_index (&p->b);
+                        adios_parse_process_group_index_v1 (&p->b
+                                                           ,&p->old_pg_root
+                                                           );
+
+                        adios_posix_read_vars_index (&p->b);
+                        adios_parse_vars_index_v1 (&p->b, &p->old_vars_root);
+
+                        fd->base_offset = p->b.end_of_pgs;
+                        break;
+
+                    default:
+                        fprintf (stderr, "Unkown bp version.  Cannot append\n");
+
+                        return 0;
+                }
         }
         else  // make sure we overwrite
         {
@@ -106,6 +141,7 @@ int adios_posix_open (struct adios_file_struct * fd
 
                 return 0;
             }
+            fd->base_offset = 0;
         }
     }
 
@@ -223,6 +259,8 @@ static void adios_posix_do_write (struct adios_file_struct * fd
 {
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
+printf ("base offset: %lld\n", fd->base_offset);
+    lseek64 (p->b.f, fd->base_offset, SEEK_SET);
     write (p->b.f, fd->buffer, fd->bytes_written);
     write (p->b.f, buffer, buffer_size);
 }
@@ -323,6 +361,7 @@ fprintf (stderr, "need to read from the last one?\n");
                 adios_parse_attribute_v1 (&p->b, &attribute);
             }
 #endif
+            adios_clear_index_v1 (pg_root, vars_root);
             break;
         }
 
@@ -343,29 +382,29 @@ void adios_posix_close (struct adios_file_struct * fd
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
 
-    struct adios_index_process_group_struct_v1 * pg_root = 0;
-    struct adios_index_var_struct_v1 * vars_root = 0;
+    struct adios_index_process_group_struct_v1 * new_pg_root = 0;
+    struct adios_index_var_struct_v1 * new_vars_root = 0;
 
     if (fd->mode == adios_mode_write)
     {
         char * buffer = 0;
         uint64_t buffer_size = 0;
         uint64_t buffer_offset = 0;
-        uint64_t index_start = fd->offset;
+        uint64_t index_start = fd->base_offset + fd->offset;
 
         // build index
-        adios_build_index_v1 (fd, &pg_root, &vars_root);
+        adios_build_index_v1 (fd, &new_pg_root, &new_vars_root);
         // if collective, gather the indexes from the rest and call
-        // adios_merge_index_v1 (&pg_root, &vars_root, new_pg, new_vars);
+        // adios_merge_index_v1 (&new_pg_root, &new_vars_root, pg, vars);
         adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                             ,index_start, pg_root, vars_root
+                             ,index_start, new_pg_root, new_vars_root
                              );
         adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
         adios_posix_do_write (fd, buffer, buffer_offset, method);
 
         free (buffer);
 
-        adios_clear_index_v1 (pg_root, vars_root);
+        adios_clear_index_v1 (new_pg_root, new_vars_root);
     }
 
     if (fd->mode == adios_mode_append)
@@ -373,21 +412,20 @@ void adios_posix_close (struct adios_file_struct * fd
         char * buffer = 0;
         uint64_t buffer_size = 0;
         uint64_t buffer_offset = 0;
-        uint64_t index_start = fd->offset;
+        uint64_t index_start = fd->base_offset + fd->offset;
 
         // build index
-        adios_build_index_v1 (fd, &pg_root, &vars_root);
-        // merge in with old struct
-        // merge in peers with old struct from initial read
+        adios_build_index_v1 (fd, &new_pg_root, &new_vars_root);
+        // merge in old indicies
+        adios_merge_index_v1 (&p->old_pg_root, &p->old_vars_root
+                             ,new_pg_root, new_vars_root);
         adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                             ,index_start, pg_root, vars_root
+                             ,index_start, p->old_pg_root, p->old_vars_root
                              );
         adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
         adios_posix_do_write (fd, buffer, buffer_offset, method);
 
         free (buffer);
-
-        adios_clear_index_v1 (pg_root, vars_root);
     }
 
     if (fd->mode == adios_mode_read)
@@ -403,7 +441,9 @@ void adios_posix_close (struct adios_file_struct * fd
     }
 
     adios_posix_close_internal (&p->b);
-    p->base_offset = 0;
+    adios_clear_index_v1 (p->old_pg_root, p->old_vars_root);
+    p->old_pg_root = 0;
+    p->old_vars_root = 0;
 }
 
 void adios_posix_finalize (int mype, struct adios_method_struct * method)

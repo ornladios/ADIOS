@@ -131,6 +131,8 @@ struct adios_file_struct
     uint64_t data_size;
     uint64_t write_size_bytes;
 
+    uint64_t base_offset;   // where this group starts in the overall file
+
     char * buffer;          // buffer we use for building the output
     uint64_t offset;        // current offset to write at
     uint64_t bytes_written; // largest offset into buffer written to

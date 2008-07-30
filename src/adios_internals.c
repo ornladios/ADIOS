@@ -5189,7 +5189,6 @@ static void index_append_process_group_v1 (
 }
 
 static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
-                                ,const char * group_name
                                 ,struct adios_index_var_struct_v1 * item
                                 )
 {
@@ -5208,9 +5207,14 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
                 && item->type == (*root)->type
                )
             {
-                if ((*root)->entries_count == (*root)->entries_allocated)
+                if (  (*root)->entries_count + item->entries_count
+                    > (*root)->entries_allocated
+                   )
                 {
-                    (*root)->entries_allocated += 100;
+                    int new_items = (item->entries_count == 1)
+                                             ? 100 : item->entries_count;
+                    (*root)->entries_allocated =   (*root)->entries_count
+                                                 + new_items;
                     void * ptr;
                     ptr = realloc ((*root)->entries
                             ,  (*root)->entries_allocated
@@ -5230,13 +5234,18 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
                         return;
                     }
                 }
-                memcpy (&(*root)->entries [(*root)->entries_count++]
+                memcpy (&(*root)->entries [(*root)->entries_count]
                        ,item->entries
-                       ,sizeof (struct adios_index_var_entry_struct_v1)
+                       ,  item->entries_count
+                        * sizeof (struct adios_index_var_entry_struct_v1)
                        );
+
+                (*root)->entries_count += item->entries_count;
 
                 free (item->entries);
                 free (item);
+
+                root = 0;  // exit the loop
             }
             else
             {
@@ -5246,13 +5255,26 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
     }
 }
 
+// p2 and v2 will be destroyed as part of the merge operation...
 void adios_merge_index_v1 (struct adios_index_process_group_struct_v1 ** p1
                           ,struct adios_index_var_struct_v1 ** v1
                           ,struct adios_index_process_group_struct_v1 * p2
                           ,struct adios_index_var_struct_v1 * v2
                           )
 {
-printf ("Merge the indexes together\n");
+    // this will just add it on to the end and all should work fine
+    index_append_process_group_v1 (p1, p2);
+
+    // need to do vars one at a time to merge them properly
+    struct adios_index_var_struct_v1 * v_temp;
+
+    while (v2)
+    {
+        v_temp = v2->next;
+        v2->next = 0;
+        index_append_var_v1 (v1, v2);
+        v2 = v_temp;
+    }
 }
 
 static void adios_clear_process_groups_index_v1 (
@@ -5303,7 +5325,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
     g_item->group_name = g->name;
     g_item->process_id = g->process_id;
     g_item->timestep = 0;
-    g_item->offset_in_file = 0;
+    g_item->offset_in_file = fd->base_offset;
     g_item->next = 0;
 
     // build the groups and vars index
@@ -5330,7 +5352,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
         v_index->next = 0;
 
         // this fn will either take ownership for free
-        index_append_var_v1 (vars_root, g->name, v_index);
+        index_append_var_v1 (vars_root, v_index);
 
         v = v->next;
     }
@@ -5687,7 +5709,7 @@ uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
     uint16_t len;
 
     uint64_t start = fd->offset;  // save to write the size
-    v->write_offset = fd->offset; // save offset into write for index
+    v->write_offset = fd->offset + fd->base_offset; // save offset in file
     fd->offset += 8;              // save space for the size
     total_size += 8;              // makes final parsing easier
 

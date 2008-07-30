@@ -93,18 +93,16 @@ int main (int argc, char ** argv)
         printf ("rank: %d read matches write\n", rank);
     }
 
-#if 0
-    var_x = 11;
+    var_x1 = 11;
     adios_open (&io_handle, type_name, filename, "a");
     adios_group_size (io_handle, 4 + 4 + 4 + 4 + 4 * 10 + 4, &total, &comm);
     adios_write (io_handle, "comm", &comm);
-    adios_write (io_handle, "mype", &var_x);
+    adios_write (io_handle, "mype", &var_x1);
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);
     adios_close (io_handle);
 
     MPI_Barrier (MPI_COMM_WORLD);
-#endif
 
     adios_finalize (node);
     MPI_Finalize ();
