@@ -38,32 +38,6 @@ int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
 
 const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t element);
 
-#if 0
-static void pre_element_fetch (struct adios_bp_element_struct * element
-                              ,void ** buffer, uint64_t * buffer_size
-                              ,void * private_data
-                              )
-{
-    struct dump_struct * data = (struct dump_struct *) private_data;
-
-    if (element->tag == DST_TAG)
-    {
-        if (data->dump == 0)
-        {
-            element->data = 0;
-            *buffer = 0;
-            *buffer_size = 0;
-
-            return;
-        }
-    }
-
-    element->data = data->val;
-    *buffer = data->val;
-    *buffer_size = data->DATALEN;
-}
-#endif
-
 int main (int argc, char ** argv)
 {
     char * filename;
@@ -239,7 +213,6 @@ int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
     for (j = 0; j < total_element_count; j++)
     {
         printf ("%s ", value_to_string (type, data, e));
-#if 0
             switch (type)
             {
                 case bp_uchar:
@@ -275,7 +248,6 @@ int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
                            );
                     break;
             }
-#endif
             e++;
     }
 }
