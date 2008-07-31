@@ -5333,26 +5333,29 @@ void adios_build_index_v1 (struct adios_file_struct * fd
 
     while (v)
     {
-        struct adios_index_var_struct_v1 * v_index;
-        v_index = malloc (sizeof (struct adios_index_var_struct_v1));
-        v_index->entries = malloc (
-                             sizeof (struct adios_index_var_entry_struct_v1)
-                             );
+        if (v->write_offset != 0)
+        {
+            struct adios_index_var_struct_v1 * v_index;
+            v_index = malloc (sizeof (struct adios_index_var_struct_v1));
+            v_index->entries = malloc (
+                                 sizeof (struct adios_index_var_entry_struct_v1)
+                                 );
 
-        v_index->group_name = g->name;
-        v_index->var_name = v->name;
-        v_index->var_path = v->path;
-        v_index->type = v->type;
-        v_index->entries_count = 1;
-        v_index->entries_allocated = 1;
-        v_index->entries [0].offset = v->write_offset;
-        v_index->entries [0].min = v->min;
-        v_index->entries [0].max = v->max;
+            v_index->group_name = g->name;
+            v_index->var_name = v->name;
+            v_index->var_path = v->path;
+            v_index->type = v->type;
+            v_index->entries_count = 1;
+            v_index->entries_allocated = 1;
+            v_index->entries [0].offset = v->write_offset;
+            v_index->entries [0].min = v->min;
+            v_index->entries [0].max = v->max;
 
-        v_index->next = 0;
+            v_index->next = 0;
 
-        // this fn will either take ownership for free
-        index_append_var_v1 (vars_root, v_index);
+            // this fn will either take ownership for free
+            index_append_var_v1 (vars_root, v_index);
+        }
 
         v = v->next;
     }

@@ -14,8 +14,8 @@ struct dump_struct
     char * dump_var;
 };
 
-void print_process_group_header (
-                      struct adios_process_group_header_struct_v1 * pg_header
+void print_process_group_header (uint64_t num
+                      ,struct adios_process_group_header_struct_v1 * pg_header
                       );
 void print_vars_header (struct adios_vars_header_struct_v1 * vars_header);
 void print_var_header (struct adios_var_header_struct_v1 * var_header);
@@ -111,8 +111,8 @@ int main (int argc, char ** argv)
     adios_parse_version (b, &version);
 
     struct adios_index_process_group_struct_v1 * pg_root = 0;
+    struct adios_index_process_group_struct_v1 * pg = 0;
     struct adios_index_var_struct_v1 * vars_root = 0;
-    uint64_t offset = 0;
 
     printf (DIVIDER);
     printf ("Process Groups Index:\n");
@@ -130,12 +130,10 @@ int main (int argc, char ** argv)
     print_vars_index (vars_root);
 
     uint64_t element_num = 1;
-
-    offset = 0;
-    while (offset < b->end_of_pgs)
+    pg = pg_root;
+    while (pg)
     {
         printf (DIVIDER);
-        printf ("Process Group: %llu\n", element_num);
 
         struct adios_process_group_header_struct_v1 pg_header;
         struct adios_vars_header_struct_v1 vars_header;
@@ -145,9 +143,22 @@ int main (int argc, char ** argv)
         struct adios_var_payload_struct_v1 var_payload;
         struct adios_attribute_struct_v1 attribute;
 
-        offset += adios_posix_read_process_group (b, element_num++, pg_root);
+        // setup where to read the process group from (and size)
+        b->read_pg_offset = pg->offset_in_file;
+        if (pg->next)
+        {
+            b->read_pg_size =   pg->next->offset_in_file
+                              - pg->offset_in_file;
+        }
+        else
+        {
+            b->read_pg_size =   b->pg_index_offset
+                              - pg->offset_in_file;
+        }
+
+        adios_posix_read_process_group (b);
         adios_parse_process_group_header_v1 (b, &pg_header);
-        print_process_group_header (&pg_header);
+        print_process_group_header (element_num++, &pg_header);
 
         adios_parse_vars_header_v1 (b, &vars_header);
         print_vars_header (&vars_header);
@@ -181,6 +192,7 @@ int main (int argc, char ** argv)
             printf ("\n");
         }
 
+        pg = pg->next;
     }
     printf (DIVIDER);
     printf ("End of %s\n", filename);
@@ -325,14 +337,14 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t e
 }
 
         
-void print_process_group_header (
-                      struct adios_process_group_header_struct_v1 * pg_header
+void print_process_group_header (uint64_t num
+                      ,struct adios_process_group_header_struct_v1 * pg_header
                       )
 {
     int i;
     struct adios_method_info_struct_v1 * m;
 
-    printf ("Process Group Output\n");
+    printf ("Process Group: %llu\n", num);
     printf ("\tGroup Name: %s\n", pg_header->name);
     printf ("\tHost Language Fortran?: %c\n"
            ,(pg_header->host_language_fortran == adios_flag_yes ? 'Y' : 'N')

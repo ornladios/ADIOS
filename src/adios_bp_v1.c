@@ -10,9 +10,49 @@
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
 
+#define BYTE_ALIGN 8
+static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
+{
+    b->allocated_buff_ptr = malloc (size + BYTE_ALIGN - 1);
+    if (!b->allocated_buff_ptr)
+    {
+        fprintf (stderr, "Cannot allocate: %lld\n", size);
+
+        b->buff = 0;
+        b->length = 0;
+
+        return;
+    }
+    uint64_t p = (uint64_t) b->allocated_buff_ptr;
+    b->buff = (char *) ((p + BYTE_ALIGN - 1) & ~(BYTE_ALIGN - 1));
+    b->length = size;
+}
+
+static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b
+                            ,uint64_t size
+                            )
+{
+    b->allocated_buff_ptr = realloc (b->allocated_buff_ptr
+                                    ,size + BYTE_ALIGN - 1
+                                    );
+    if (!b->allocated_buff_ptr)
+    {
+        fprintf (stderr, "Cannot allocate: %lld\n", size);
+
+        b->buff = 0;
+        b->length = 0;
+
+        return;
+    }
+    uint64_t p = (uint64_t) b->allocated_buff_ptr;
+    b->buff = (char *) ((p + BYTE_ALIGN - 1) & ~(BYTE_ALIGN - 1));
+    b->length = size;
+}
+
 void adios_buffer_struct_init (struct adios_bp_buffer_struct_v1 * b)
 {
     b->f = -1;
+    b->allocated_buff_ptr = 0;
     b->buff = 0;
     b->length = 0;
     b->change_endianness = adios_flag_unknown;
@@ -30,8 +70,8 @@ void adios_buffer_struct_init (struct adios_bp_buffer_struct_v1 * b)
 
 void adios_buffer_struct_clear (struct adios_bp_buffer_struct_v1 * b)
 {
-    if (b->buff)
-        free (b->buff);
+    if (b->allocated_buff_ptr)
+        free (b->allocated_buff_ptr);
     adios_buffer_struct_init (b);
 }
 
@@ -86,12 +126,15 @@ int adios_parse_index_offsets_v1 (struct adios_bp_buffer_struct_v1 * b)
     }
 
     uint64_t vars_end = b->file_size - 20;
+    int i;
 
+    char * t;
+    t = b->buff + b->offset;
     b->pg_index_offset = *(uint64_t *) (b->buff + b->offset);
     b->offset += 8;
     b->vars_index_offset = *(uint64_t *) (b->buff + b->offset);
+    t = b->buff + b->offset;
     b->offset += 8;
-
     b->end_of_pgs = b->pg_index_offset;
     b->pg_size = b->vars_index_offset - b->pg_index_offset;
     b->vars_size = vars_end - b->vars_index_offset;
@@ -687,10 +730,10 @@ void adios_init_buffer_read_version (struct adios_bp_buffer_struct_v1 * b)
 {
     if (!b->buff)
     {
-        b->buff = malloc (20); // all we need for version and indexes
+        alloc_aligned (b, 20);
+        memset (b->buff, 10, 20);
         if (!b->buff)
             fprintf(stderr, "could not allocate 20 bytes\n");
-        b->length = 20;
         b->offset = 16;
     }
 }
@@ -725,7 +768,7 @@ void adios_init_buffer_read_process_group_index (
                                           struct adios_bp_buffer_struct_v1 * b
                                           )
 {
-    b->buff = realloc (b->buff, b->pg_size);
+    realloc_aligned (b, b->pg_size);
     b->offset = 0;
 }
 
@@ -739,7 +782,7 @@ void adios_posix_read_process_group_index (struct adios_bp_buffer_struct_v1 * b)
 
 void adios_init_buffer_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
 {
-    b->buff = realloc (b->buff, b->vars_size);
+    realloc_aligned (b, b->vars_size);
     b->offset = 0;
 }
 
@@ -757,17 +800,15 @@ void adios_posix_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
 
 void adios_init_buffer_read_process_group (struct adios_bp_buffer_struct_v1 * b)
 {
-    b->buff = realloc (b->buff, b->read_pg_size);
-    b->length = b->read_pg_size;
+    realloc_aligned (b, b->read_pg_size);
     b->offset = 0;
 }
 
 uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b)
 {
     uint64_t pg_size;
+
     adios_init_buffer_read_process_group (b);
-    //b->read_pg_offset = pg_root->offset_in_file;
-    //b->read_pg_size = size;
     lseek (b->f, b->read_pg_offset, SEEK_SET);
     pg_size = read (b->f, b->buff, b->read_pg_size);
     if (pg_size != b->read_pg_size)

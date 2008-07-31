@@ -101,9 +101,11 @@ int adios_posix_open (struct adios_file_struct * fd
 
         case adios_mode_append:
         {
+            int old_file = 1;
             p->b.f = open (name, O_RDWR);
             if (p->b.f == -1)
             {
+                old_file = 0;
                 p->b.f = open64 (name,  O_WRONLY | O_CREAT
                                 ,  S_IRUSR | S_IWUSR
                                  | S_IRGRP | S_IWGRP
@@ -120,35 +122,38 @@ int adios_posix_open (struct adios_file_struct * fd
                 }
             }
 
-            // now we have to read the old stuff so we can merge it
-            // in at the end and set the base_offset for the old index
-            // start
-            uint32_t version;
-            adios_posix_read_version (&p->b);
-            adios_parse_version (&p->b, &version);
-
-            switch (version)
+            if (old_file)
             {
-                case 1:
-                    // read the old stuff and set the base offset
-                    adios_posix_read_index_offsets (&p->b);
-                    adios_parse_index_offsets_v1 (&p->b);
+                // now we have to read the old stuff so we can merge it
+                // in at the end and set the base_offset for the old index
+                // start
+                uint32_t version;
+                adios_posix_read_version (&p->b);
+                adios_parse_version (&p->b, &version);
 
-                    adios_posix_read_process_group_index (&p->b);
-                    adios_parse_process_group_index_v1 (&p->b
-                                                       ,&p->old_pg_root
-                                                       );
+                switch (version)
+                {
+                    case 1:
+                        // read the old stuff and set the base offset
+                        adios_posix_read_index_offsets (&p->b);
+                        adios_parse_index_offsets_v1 (&p->b);
 
-                    adios_posix_read_vars_index (&p->b);
-                    adios_parse_vars_index_v1 (&p->b, &p->old_vars_root);
+                        adios_posix_read_process_group_index (&p->b);
+                        adios_parse_process_group_index_v1 (&p->b
+                                                           ,&p->old_pg_root
+                                                           );
 
-                    fd->base_offset = p->b.end_of_pgs;
-                    break;
+                        adios_posix_read_vars_index (&p->b);
+                        adios_parse_vars_index_v1 (&p->b, &p->old_vars_root);
 
-                default:
-                    fprintf (stderr, "Unkown bp version.  Cannot append\n");
+                        fd->base_offset = p->b.end_of_pgs;
+                        break;
 
-                    return 0;
+                    default:
+                        fprintf (stderr, "Unkown bp version.  Cannot append\n");
+
+                        return 0;
+                }
             }
 
             break;
@@ -308,6 +313,7 @@ static void adios_posix_do_read (struct adios_file_struct * fd
         case 1:
         {
             struct adios_index_process_group_struct_v1 * pg_root = 0;
+            struct adios_index_process_group_struct_v1 * pg_root_temp = 0;
             struct adios_index_var_struct_v1 * vars_root = 0;
 
             adios_posix_read_index_offsets (&p->b);
@@ -319,7 +325,6 @@ static void adios_posix_do_read (struct adios_file_struct * fd
             adios_posix_read_vars_index (&p->b);
             adios_parse_vars_index_v1 (&p->b, &vars_root);
 #endif
-fprintf (stderr, "need to read from the last one?\n");
 
             // the three section headers
             struct adios_process_group_header_struct_v1 pg_header;
@@ -332,16 +337,20 @@ fprintf (stderr, "need to read from the last one?\n");
 
             int i;
 
-            p->b.read_pg_offset = pg_root->offset_in_file;
-            if (pg_root->next)
+            pg_root_temp = pg_root;
+            while (pg_root && pg_root_temp->next)
+                pg_root = pg_root->next;
+
+            p->b.read_pg_offset = pg_root_temp->offset_in_file;
+            if (pg_root_temp->next)
             {
-                p->b.read_pg_size =   pg_root->next->offset_in_file
-                                    - pg_root->offset_in_file;
+                p->b.read_pg_size =   pg_root_temp->next->offset_in_file
+                                    - pg_root_temp->offset_in_file;
             }   
             else
             {
                 p->b.read_pg_size =   p->b.pg_index_offset
-                                    - pg_root->offset_in_file;
+                                    - pg_root_temp->offset_in_file;
             }
 
             adios_posix_read_process_group (&p->b);

@@ -138,6 +138,11 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data; 
     char * name;
+    int err;
+    int previous;
+    int current;
+    int next;
+
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf (name, "%s%s", method->base_path, fd->name);
 
@@ -151,13 +156,19 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
         MPI_Comm_size (md->group_comm, &md->size);
     }
 
-#define DO_SCATTER 1
+    if (md->rank == md->size - 1)
+        next = -1;
+    else
+        next = md->rank + 1;
+    previous = md->rank - 1;
+    current = md->rank;
+
+    fd->base_offset = 0;
+
     switch (fd->mode)
     {
         case adios_mode_read:
         {
-            int err;
-
             if (md->group_comm == MPI_COMM_NULL || md->rank == 0)
             {
                 err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
@@ -165,6 +176,13 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                                     );
                 if (err != MPI_SUCCESS)
                 {
+                    char e [MPI_MAX_ERROR_STRING];
+                    int len = 0;
+                    memset (e, 0, MPI_MAX_ERROR_STRING);
+                    MPI_Error_string (err, e, &len);
+                    fprintf (stderr, "MPI open read failed for %s: '%s'\n"
+                            ,name, e
+                            );
                     free (name);
 
                     return 0;
@@ -178,7 +196,7 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                 MPI_File_seek (md->fh, md->b.file_size - md->b.length
                               ,MPI_SEEK_SET
                               );
-                MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.length
+                MPI_File_read (md->fh, md->b.buff, md->b.length, MPI_BYTE
                               ,&md->status
                               );
                 adios_parse_version (&md->b, &md->b.version);
@@ -191,7 +209,7 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                 MPI_File_seek (md->fh, md->b.pg_index_offset
                               ,MPI_SEEK_SET
                               );
-                MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.pg_size
+                MPI_File_read (md->fh, md->b.buff, md->b.pg_size, MPI_BYTE
                               ,&md->status
                               );
                 adios_parse_process_group_index_v1 (&md->b
@@ -202,7 +220,7 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                 MPI_File_seek (md->fh, md->b.vars_index_offset
                               ,MPI_SEEK_SET
                               );
-                MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.vars_size
+                MPI_File_read (md->fh, md->b.buff, md->b.vars_size, MPI_BYTE
                               ,&md->status
                               );
                 adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
@@ -210,7 +228,7 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                 fd->base_offset = md->b.end_of_pgs;
             }
 
-            if (1) //md->group_comm != MPI_COMM_NULL)
+            if (md->group_comm != MPI_COMM_NULL)
             {
                 if (md->rank == 0)
                 {
@@ -223,12 +241,10 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                     build_offsets (&md->b, offsets, md->size
                                   ,fd->group->name, md->old_pg_root
                                   );
-#if DO_SCATTER
                     MPI_Scatter (offsets, 2, MPI_LONG_LONG
                                 ,offsets, 2, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
-#endif
                     md->b.read_pg_offset = offsets [0];
                     md->b.read_pg_size = offsets [1];
                 }
@@ -237,32 +253,68 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                     MPI_Offset offset [2];
                     offset [0] = offset [1] = 0;
 
-#if DO_SCATTER
                     MPI_Scatter (&offset, 2, MPI_LONG_LONG
                                 ,&offset, 2, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
-#endif
 
                     md->b.read_pg_offset = offset [0];
                     md->b.read_pg_size = offset [1];
                 }
             }
 
-printf ("do the cascading open (MPI open read)\n");
-            // note rank 0 is already open
-            if (md->rank != 0)
+            // cascade the opens to avoid trashing the metadata server
+            if (previous == -1)
             {
-                err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
-                                    ,MPI_INFO_NULL, &md->fh
+                // note rank 0 is already open
+                // don't open it again here
+
+                if (next != -1)
+                {
+                    MPI_Isend (&current, 1, MPI_INTEGER, next, current
+                              ,md->group_comm, &md->req
+                              );
+                }
+            }
+            else
+            {
+                MPI_Recv (&current, 1, MPI_INTEGER, previous, previous
+                         ,md->group_comm, &md->status
+                         );
+                if (next != -1)
+                {
+                    MPI_Isend (&current, 1, MPI_INTEGER, next, current
+                              ,md->group_comm, &md->req
+                              );
+                }
+                err = MPI_File_open (MPI_COMM_SELF, name
+                                    ,MPI_MODE_RDONLY
+                                    ,MPI_INFO_NULL
+                                    ,&md->fh
                                     );
             }
+
+            if (err != MPI_SUCCESS)
+            {
+                char e [MPI_MAX_ERROR_STRING];
+                int len = 0;
+                memset (e, 0, MPI_MAX_ERROR_STRING);
+                MPI_Error_string (err, e, &len);
+                fprintf (stderr, "MPI open write failed for %s: '%s'\n"
+                        ,name, e
+                        );
+                free (name);
+
+                return 0;
+            }
+
             break;
         }
 
         case adios_mode_write:
         {
-            int err;
+            MPI_Offset * offsets = 0;
+            MPI_Offset offset;
 
             if (md->group_comm != MPI_COMM_NULL)
             {
@@ -271,6 +323,7 @@ printf ("do the cascading open (MPI open read)\n");
                     MPI_Offset * offsets = malloc (  sizeof (MPI_Offset)
                                                    * md->size
                                                   );
+                    offsets [0] = 0;
 
                     MPI_Gather (offsets, 1, MPI_LONG_LONG
                                ,offsets, 1, MPI_LONG_LONG
@@ -281,40 +334,74 @@ printf ("do the cascading open (MPI open read)\n");
                     {
                         offsets [i + 1] += offsets [i];
                     }
-#if DO_SCATTER
                     MPI_Scatter (offsets, 1, MPI_LONG_LONG
                                 ,offsets, 1, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
-#endif
                     fd->base_offset = offsets [0];
                     free (offsets);
                 }
                 else
                 {
-                    MPI_Offset offset = fd->write_size_bytes;
+                    offset = fd->write_size_bytes;
 
                     MPI_Gather (&offset, 1, MPI_LONG_LONG
                                ,&offset, 1, MPI_LONG_LONG
                                ,0, md->group_comm
                                );
 
-#if DO_SCATTER
                     MPI_Scatter (&offset, 1, MPI_LONG_LONG
                                 ,&offset, 1, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
-#endif
                     fd->base_offset = offset;
                 }
             }
 
-printf ("do the cascading open thing (MPI open write)\n");
-            err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_WRONLY
-                                ,MPI_INFO_NULL, &md->fh
-                                );
+            // cascade the opens to avoid trashing the metadata server
+            if (previous == -1)
+            {
+                MPI_File_delete (name, MPI_INFO_NULL);  // make sure clean
+
+                err = MPI_File_open (MPI_COMM_SELF, name
+                                    ,MPI_MODE_WRONLY | MPI_MODE_CREATE
+                                    ,MPI_INFO_NULL
+                                    ,&md->fh
+                                    );
+                if (next != -1)
+                {
+                    MPI_Isend (&current, 1, MPI_INTEGER, next, current
+                              ,md->group_comm, &md->req
+                              );
+                }
+            }
+            else
+            {
+                MPI_Recv (&current, 1, MPI_INTEGER, previous, previous
+                         ,md->group_comm, &md->status
+                         );
+                if (next != -1)
+                {
+                    MPI_Isend (&current, 1, MPI_INTEGER, next, current
+                              ,md->group_comm, &md->req
+                              );
+                }
+                err = MPI_File_open (MPI_COMM_SELF, name
+                                    ,MPI_MODE_WRONLY
+                                    ,MPI_INFO_NULL
+                                    ,&md->fh
+                                    );
+            }
+
             if (err != MPI_SUCCESS)
             {
+                char e [MPI_MAX_ERROR_STRING];
+                int len = 0;
+                memset (e, 0, MPI_MAX_ERROR_STRING);
+                MPI_Error_string (err, e, &len);
+                fprintf (stderr, "MPI open write failed for %s: '%s'\n"
+                        ,name, e
+                        );
                 free (name);
 
                 return 0;
@@ -325,110 +412,162 @@ printf ("do the cascading open thing (MPI open write)\n");
 
         case adios_mode_append:
         {
+            int old_file = 1;
             adios_buffer_struct_clear (&md->b);
 
-            int err;
             err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDWR
                                 ,MPI_INFO_NULL, &md->fh
                                 );
 
-            if (md->group_comm == MPI_COMM_NULL || md->rank == 0)
+            if (err != MPI_SUCCESS)
             {
-                if (err != MPI_SUCCESS)
-                {
-                    md->b.file_size = 0;
-                }
-                else
-                {
-                    MPI_Offset file_size;
-                    MPI_File_get_size (md->fh, &file_size);
-                    md->b.file_size = file_size;
-                }
-
-                adios_init_buffer_read_version (&md->b);
-                MPI_File_seek (md->fh, md->b.file_size - md->b.length
-                              ,MPI_SEEK_SET
-                              );
-                MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.length
-                              ,&md->status
-                              );
-                adios_parse_version (&md->b, &md->b.version);
-
-                adios_init_buffer_read_index_offsets (&md->b);
-                // already in the buffer
-                adios_parse_index_offsets_v1 (&md->b);
-
-                adios_init_buffer_read_process_group_index (&md->b);
-                MPI_File_seek (md->fh, md->b.pg_index_offset
-                              ,MPI_SEEK_SET
-                              );
-                MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.pg_size
-                              ,&md->status
-                              );
-                adios_parse_process_group_index_v1 (&md->b
-                                                   ,&md->old_pg_root
-                                                   );
-
-                adios_init_buffer_read_vars_index (&md->b);
-                MPI_File_seek (md->fh, md->b.vars_index_offset
-                              ,MPI_SEEK_SET
-                              );
-                MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.vars_size
-                              ,&md->status
-                              );
-                adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
-
-                fd->base_offset = md->b.end_of_pgs;
-            }
-
-            if (md->group_comm != MPI_COMM_NULL)
-            {
-                if (md->rank == 0)
-                {
-                    MPI_Offset * offsets = malloc (  sizeof (MPI_Offset)
-                                                   * md->size
-                                                  );
-
-                    MPI_Gather (offsets, 1, MPI_LONG_LONG
-                               ,offsets, 1, MPI_LONG_LONG
-                               ,0, md->group_comm
-                               );
-
-                    offsets [0] = fd->base_offset;
-                    for (i = 0; i < md->size - 1; i++)
-                    {
-                        offsets [i + 1] += offsets [i];
-                    }
-#if DO_SCATTER
-                    MPI_Scatter (offsets, 1, MPI_LONG_LONG
-                                ,offsets, 1, MPI_LONG_LONG
-                                ,0, md->group_comm
-                                );
-#endif
-                }
-                else
-                {
-                    MPI_Offset offset = fd->write_size_bytes;
-
-                    MPI_Gather (&offset, 1, MPI_LONG_LONG
-                               ,&offset, 1, MPI_LONG_LONG
-                               ,0, md->group_comm
-                               );
-
-#if DO_SCATTER
-                    MPI_Scatter (&offset, 1, MPI_LONG_LONG
-                                ,&offset, 1, MPI_LONG_LONG
-                                ,0, md->group_comm
-                                );
-#endif
-                }
-            }
-printf ("do the cascading open thing (MPI open append)\n");
-            if (md->rank != 0)
-            {
-                err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDWR
+                old_file = 0;
+                err = MPI_File_open (MPI_COMM_SELF, name
+                                    ,MPI_MODE_WRONLY | MPI_MODE_CREATE
                                     ,MPI_INFO_NULL, &md->fh
                                     );
+            }
+
+            if (old_file)
+            {
+                if (md->group_comm == MPI_COMM_NULL || md->rank == 0)
+                {
+                    if (err != MPI_SUCCESS)
+                    {
+                        md->b.file_size = 0;
+                    }
+                    else
+                    {
+                        MPI_Offset file_size;
+                        MPI_File_get_size (md->fh, &file_size);
+                        md->b.file_size = file_size;
+                    }
+
+                    adios_init_buffer_read_version (&md->b);
+                    MPI_File_seek (md->fh, md->b.file_size - md->b.length
+                                  ,MPI_SEEK_SET
+                                  );
+                    MPI_File_read (md->fh, md->b.buff, md->b.length, MPI_BYTE
+                                  ,&md->status
+                                  );
+                    adios_parse_version (&md->b, &md->b.version);
+
+                    adios_init_buffer_read_index_offsets (&md->b);
+                    // already in the buffer
+                    adios_parse_index_offsets_v1 (&md->b);
+
+                    adios_init_buffer_read_process_group_index (&md->b);
+                    MPI_File_seek (md->fh, md->b.pg_index_offset
+                                  ,MPI_SEEK_SET
+                                  );
+                    MPI_File_read (md->fh, md->b.buff, md->b.pg_size, MPI_BYTE
+                                  ,&md->status
+                                  );
+                    adios_parse_process_group_index_v1 (&md->b
+                                                       ,&md->old_pg_root
+                                                       );
+
+                    adios_init_buffer_read_vars_index (&md->b);
+                    MPI_File_seek (md->fh, md->b.vars_index_offset
+                                  ,MPI_SEEK_SET
+                                  );
+                    MPI_File_read (md->fh, md->b.buff, md->b.vars_size, MPI_BYTE
+                                  ,&md->status
+                                  );
+                    adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
+
+                    fd->base_offset = md->b.end_of_pgs;
+                }
+
+                if (md->group_comm != MPI_COMM_NULL)
+                {
+                    if (md->rank == 0)
+                    {
+                        MPI_Offset * offsets = malloc (  sizeof (MPI_Offset)
+                                                       * md->size
+                                                      );
+
+                        MPI_Gather (offsets, 1, MPI_LONG_LONG
+                                   ,offsets, 1, MPI_LONG_LONG
+                                   ,0, md->group_comm
+                                   );
+
+                        offsets [0] = fd->base_offset;
+                        for (i = 0; i < md->size - 1; i++)
+                        {
+                            offsets [i + 1] += offsets [i];
+                        }
+                        MPI_Scatter (offsets, 1, MPI_LONG_LONG
+                                    ,offsets, 1, MPI_LONG_LONG
+                                    ,0, md->group_comm
+                                    );
+                        fd->base_offset = offsets [0];
+                    }
+                    else
+                    {
+                        MPI_Offset offset = fd->write_size_bytes;
+
+                        MPI_Gather (&offset, 1, MPI_LONG_LONG
+                                   ,&offset, 1, MPI_LONG_LONG
+                                   ,0, md->group_comm
+                                   );
+
+                        MPI_Scatter (&offset, 1, MPI_LONG_LONG
+                                    ,&offset, 1, MPI_LONG_LONG
+                                    ,0, md->group_comm
+                                    );
+
+                        fd->base_offset = offset;
+                    }
+                }
+            }
+            else
+            {
+                fd->base_offset = 0;
+            }
+
+            // cascade the opens to avoid trashing the metadata server
+            if (previous == -1)
+            {
+                // already open on node 0 so don't need to open again
+
+                if (next != -1)
+                {
+                    MPI_Isend (&current, 1, MPI_INTEGER, next, current
+                              ,md->group_comm, &md->req
+                              );
+                }
+            }
+            else
+            {
+                MPI_Recv (&current, 1, MPI_INTEGER, previous, previous
+                         ,md->group_comm, &md->status
+                         );
+                if (next != -1)
+                {
+                    MPI_Isend (&current, 1, MPI_INTEGER, next, current
+                              ,md->group_comm, &md->req
+                              );
+                }
+                err = MPI_File_open (MPI_COMM_SELF, name
+                                    ,MPI_MODE_WRONLY
+                                    ,MPI_INFO_NULL
+                                    ,&md->fh
+                                    );
+            }
+
+            if (err != MPI_SUCCESS)
+            {
+                char e [MPI_MAX_ERROR_STRING];
+                int len = 0;
+                memset (e, 0, MPI_MAX_ERROR_STRING);
+                MPI_Error_string (err, e, &len);
+                fprintf (stderr, "MPI open write failed for %s: '%s'\n"
+                        ,name, e
+                        );
+                free (name);
+
+                return 0;
             }
 
             break;
@@ -576,7 +715,7 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
             MPI_File_seek (md->fh, md->b.read_pg_offset
                           ,MPI_SEEK_SET
                           );
-            MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.read_pg_size
+            MPI_File_read (md->fh, md->b.buff, md->b.read_pg_size, MPI_BYTE
                           ,&md->status
                           );
             adios_parse_process_group_header_v1 (&md->b, &pg_header);
@@ -646,8 +785,11 @@ static void adios_mpi_do_write (struct adios_file_struct * fd
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                  method->method_data;
 
+printf ("write offset: %lld\n", fd->base_offset);
     MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
+printf ("writing data: %lld\n", fd->bytes_written);
     MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE, &md->status);
+printf ("writing index: %lld\n", buffer_size);
     MPI_File_write (md->fh, buffer, buffer_size, MPI_BYTE, &md->status);
 }
 
@@ -677,7 +819,7 @@ void adios_mpi_close (struct adios_file_struct * fd
             {
                 if (md->rank == 0)
                 {
-                    int ranks_sent = 0;
+                    int ranks_sent = 1; // assume that we have sent to ourselves
                     buffer_size = 100 * 1024; // try 100k to start
                     buffer = malloc (buffer_size);
                     buffer_offset = 0;
@@ -685,8 +827,8 @@ void adios_mpi_close (struct adios_file_struct * fd
 
                     while (ranks_sent < md->size)
                     {
-                        MPI_Recv (buffer, 1, MPI_BYTE, MPI_ANY_SOURCE, 0
-                                 ,md->group_comm, &md->status
+                        MPI_Recv (buffer, buffer_size, MPI_BYTE, MPI_ANY_SOURCE
+                                 ,0, md->group_comm, &md->status
                                  );
                         MPI_Get_count (&md->status, MPI_BYTE, &count);
                         if (buffer_size <= count)
@@ -745,6 +887,7 @@ void adios_mpi_close (struct adios_file_struct * fd
 
         case adios_mode_append:
         {
+printf ("start append write\n");
             char * buffer = 0;
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
@@ -759,7 +902,7 @@ void adios_mpi_close (struct adios_file_struct * fd
             {
                 if (md->rank == 0)
                 {
-                    int ranks_sent = 0;
+                    int ranks_sent = 1;
                     buffer_size = 100 * 1024; // try 100k to start
                     buffer = malloc (buffer_size);
                     buffer_offset = 0;
@@ -767,8 +910,8 @@ void adios_mpi_close (struct adios_file_struct * fd
 
                     while (ranks_sent < md->size)
                     {
-                        MPI_Recv (buffer, 1, MPI_BYTE, MPI_ANY_SOURCE, 0
-                                 ,md->group_comm, &md->status
+                        MPI_Recv (buffer, buffer_size, MPI_BYTE, MPI_ANY_SOURCE
+                                 ,0, md->group_comm, &md->status
                                  );
                         MPI_Get_count (&md->status, MPI_BYTE, &count);
                         if (buffer_size <= count)
@@ -813,7 +956,8 @@ void adios_mpi_close (struct adios_file_struct * fd
                 }
             }
             adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                 ,index_start, md->old_pg_root, md->old_vars_root
+                                 ,index_start, md->old_pg_root
+                                 ,md->old_vars_root
                                  );
             adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
             adios_mpi_do_write (fd, method, buffer, buffer_offset);
@@ -821,6 +965,7 @@ void adios_mpi_close (struct adios_file_struct * fd
             free (buffer);
 
             break;
+printf ("end append write\n");
         }
 
         case adios_mode_read:
@@ -843,19 +988,27 @@ void adios_mpi_close (struct adios_file_struct * fd
         }
     }
 
+printf ("before close\n");
     if (md && md->fh)
         MPI_File_close (&md->fh);
 
-    MPI_Comm_free (&md->group_comm);
+printf ("before comm free\n");
+    if (   md->group_comm != MPI_COMM_WORLD
+        && md->group_comm != MPI_COMM_SELF
+        && md->group_comm != MPI_COMM_NULL
+       )
+        MPI_Comm_free (&md->group_comm);
 
     md->fh = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
     md->group_comm = MPI_COMM_NULL;
 
+printf ("before clear index\n");
     adios_clear_index_v1 (md->old_pg_root, md->old_vars_root);
     md->old_pg_root = 0;
     md->old_vars_root = 0;
+printf ("end of close\n");
 }
 
 void adios_mpi_finalize (int mype, struct adios_method_struct * method)

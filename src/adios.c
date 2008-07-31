@@ -194,7 +194,6 @@ static int common_adios_group_size (long long fd_p
     uint64_t overhead = adios_calc_overhead_v1 (fd);
 
     *total_size = data_size + overhead;
-printf ("Base size: %llu Overhead: %llu Total: %llu\n", data_size, overhead, *total_size);
 
     // try to reserve a buffer using the adios_method_buffer_alloc
     // if it does not give the correct amount, overflow.  Make sure
@@ -223,8 +222,6 @@ printf ("Base size: %llu Overhead: %llu Total: %llu\n", data_size, overhead, *to
 
         m = m->next;
     }
-
-printf ("consensus on buffering: %s\n", (do_buffering ? "yes" : "no"));
 
     fd->buffer = malloc (fd->write_size_bytes);
     fd->offset = 0;
@@ -750,6 +747,7 @@ static int common_adios_close (long long fd_p)
     while (v)
     {
         v->write_offset = 0;
+        v->data = 0;
 
         v = v->next;
     }

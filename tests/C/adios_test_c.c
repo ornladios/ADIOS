@@ -45,8 +45,16 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
     adios_init ("config_c.xml");
 
+printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
+#if 0
     adios_open (&io_handle, type_name, filename, "w");
-    adios_group_size (io_handle, 4 + 4 + 4 + 4 + 4 * 10 + 4, &total, &comm);
+    adios_group_size (io_handle, 4, &total, &comm);
+    adios_write (io_handle, "mype", &var_x1);
+    adios_close (io_handle);
+#endif
+
+    adios_open (&io_handle, type_name, filename, "w");
+    adios_group_size (io_handle, 4 + 4 + 4 + 4 + 4 * 10 + 4 * 10 + 4, &total, &comm);
     adios_write (io_handle, "comm", &comm);
     adios_write (io_handle, "/mype", &var_x1);
     adios_write (io_handle, "/test/mype", &var_x2);
@@ -59,9 +67,11 @@ int main (int argc, char ** argv)
     printf ("rank: %d write completed\n", rank);
 
     MPI_Barrier (MPI_COMM_WORLD);
+#if 1
+printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
 
     adios_open (&io_handle, type_name, filename, "r");
-    adios_write (io_handle, "comm", &comm);
+    adios_group_size (io_handle, 0, &total, &comm);
     //adios_write (io_handle, "zionsize", &z_dim_size);
     adios_read (io_handle, "/mype", &r_var_x1);
     adios_read (io_handle, "/test/mype", &r_var_x2);
@@ -92,7 +102,10 @@ int main (int argc, char ** argv)
     {
         printf ("rank: %d read matches write\n", rank);
     }
+#endif
 
+#if 1
+printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
     var_x1 = 11;
     adios_open (&io_handle, type_name, filename, "a");
     adios_group_size (io_handle, 4 + 4 + 4 + 4 + 4 * 10 + 4, &total, &comm);
@@ -101,6 +114,7 @@ int main (int argc, char ** argv)
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);
     adios_close (io_handle);
+#endif
 
     MPI_Barrier (MPI_COMM_WORLD);
 

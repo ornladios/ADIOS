@@ -4,6 +4,8 @@ struct adios_bp_buffer_struct_v1
     uint64_t file_size;
     uint32_t version;
 
+    char * allocated_buff_ptr;  // initial alloc for aligning on 8-byte boundary
+
     char * buff;
     uint64_t length;
     uint64_t offset;   // buffer_offset
