@@ -15,6 +15,9 @@ struct adios_bp_buffer_struct_v1
     uint64_t pg_size;             // process groups index size
     uint64_t vars_index_offset;   // vars index start
     uint64_t vars_size;           // vars index size
+
+    uint64_t read_pg_offset;
+    uint64_t read_pg_size;
 };
 
 struct adios_index_process_group_struct_v1
@@ -176,19 +179,32 @@ int adios_parse_attribute_v1 (struct adios_bp_buffer_struct_v1 * b
 //****************************************************************************
 // functions from adios_posix.c used for file reading
 
+void adios_init_buffer_read_version (struct adios_bp_buffer_struct_v1 * b);
 void adios_posix_read_version (struct adios_bp_buffer_struct_v1 * b);
 
+void adios_init_buffer_read_index_offsets (
+                                         struct adios_bp_buffer_struct_v1 * b
+                                         );
 void adios_posix_read_index_offsets (struct adios_bp_buffer_struct_v1 * b);
 
+void adios_init_buffer_read_process_group_index (
+                                          struct adios_bp_buffer_struct_v1 * b
+                                          );
 void adios_posix_read_process_group_index (struct adios_bp_buffer_struct_v1 * b
                                           );
 
+void adios_init_buffer_read_vars_index (struct adios_bp_buffer_struct_v1 * b);
 void adios_posix_read_vars_index (struct adios_bp_buffer_struct_v1 * b);
 
+void adios_init_buffer_read_procss_group (struct adios_bp_buffer_struct_v1 * b
+                          ,uint64_t pg_number
+                          ,struct adios_index_process_group_struct_v1 * pg_root
+                          );
 uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b
                           ,uint64_t pg_number
                           ,struct adios_index_process_group_struct_v1 * pg_root
                           );
+
 int adios_posix_open_read_internal (const char * filename
                                    ,const char * base_path
                                    ,struct adios_bp_buffer_struct_v1 * b

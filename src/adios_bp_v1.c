@@ -23,6 +23,8 @@ void adios_buffer_struct_init (struct adios_bp_buffer_struct_v1 * b)
     b->vars_index_offset = 0;
     b->vars_size = 0;
     b->file_size = 0;
+    b->read_pg_offset = 0;
+    b->read_pg_size = 0;
 }
 
 void adios_buffer_struct_clear (struct adios_bp_buffer_struct_v1 * b)
@@ -680,9 +682,7 @@ void * adios_dupe_data_scalar (enum ADIOS_DATATYPES type, void * in)
 }
 
 //*****************************************************************************
-// last 4 bytes of file
-
-void adios_posix_read_version (struct adios_bp_buffer_struct_v1 * b)
+void adios_init_buffer_read_version (struct adios_bp_buffer_struct_v1 * b)
 {
     if (!b->buff)
     {
@@ -692,9 +692,16 @@ void adios_posix_read_version (struct adios_bp_buffer_struct_v1 * b)
         b->length = 20;
         b->offset = 16;
     }
+}
+
+// last 4 bytes of file
+void adios_posix_read_version (struct adios_bp_buffer_struct_v1 * b)
+{
     uint64_t buffer_size;
     uint64_t start;
     uint64_t r;
+
+    adios_init_buffer_read_version (b);
 
     lseek64 (b->f, b->file_size - 20, SEEK_SET);
 
@@ -708,24 +715,72 @@ void adios_posix_read_index_offsets (struct adios_bp_buffer_struct_v1 * b)
     b->offset = 0; // just move to the start of the buffer
 }
 
-void adios_posix_read_process_group_index (struct adios_bp_buffer_struct_v1 * b)
+void adios_init_buffer_read_process_group_index (
+                                          struct adios_bp_buffer_struct_v1 * b
+                                          )
 {
     b->buff = realloc (b->buff, b->pg_size);
-    b->offset = lseek (b->f, b->pg_index_offset, SEEK_SET);
+    b->offset = 0;
+}
+
+void adios_posix_read_process_group_index (struct adios_bp_buffer_struct_v1 * b)
+{
+    adios_init_buffer_read_process_group_index (b);
+
+    lseek (b->f, b->pg_index_offset, SEEK_SET);
     read (b->f, b->buff, b->pg_size);
+}
+
+void adios_init_buffer_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
+{
+    b->buff = realloc (b->buff, b->vars_size);
     b->offset = 0;
 }
 
 void adios_posix_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
 {
+    adios_init_buffer_read_vars_index (b);
+
     lseek (b->f, b->vars_index_offset, SEEK_SET);
-    b->buff = realloc (b->buff, b->vars_size);
     uint64_t r = read (b->f, b->buff, b->vars_size);
     if (r != b->vars_size)
         fprintf (stderr, "reading vars_index: wanted %llu, read: %llu\n"
                 ,b->vars_size, r
                 );
-    b->offset = 0;
+}
+
+void adios_init_buffer_read_procss_group (struct adios_bp_buffer_struct_v1 * b
+                          ,uint64_t pg_number
+                          ,struct adios_index_process_group_struct_v1 * pg_root
+                          )
+{
+    while (pg_root && --pg_number > 0)
+    {
+        pg_root = pg_root->next;
+    }
+    if (pg_root)
+    {
+        uint64_t size = 0;
+
+        if (pg_root->next)
+        {
+            size = pg_root->next->offset_in_file - pg_root->offset_in_file;
+        }
+        else
+        {
+            size = b->pg_index_offset - pg_root->offset_in_file;
+        }
+
+        b->buff = realloc (b->buff, size);
+        b->length = size;
+        b->offset = 0;
+        b->read_pg_offset = pg_root->offset_in_file;
+        b->read_pg_size = size;
+    }
+    else
+    {
+        fprintf (stderr, "invalid process group number %llu\n", pg_number);
+    }
 }
 
 uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b
@@ -733,7 +788,6 @@ uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b
                           ,struct adios_index_process_group_struct_v1 * pg_root
                           )
 {
-    uint64_t size = 0;
     uint64_t pg_size = 0;
 
     if (!pg_root)
@@ -744,38 +798,17 @@ uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b
     }
     else
     {
-        while (pg_root && --pg_number > 0)
+        adios_init_buffer_read_process_group (b, pg_number, pg_root);
+        lseek (b->f, b->read_pg_offset, SEEK_SET);
+        pg_size = read (b->f, b->buff, b->read_pg_size);
+        if (pg_size != b->read_pg_size)
         {
-            pg_root = pg_root->next;
-        }
-        if (pg_root)
-        {
-            if (pg_root->next)
-            {
-                size = pg_root->next->offset_in_file - pg_root->offset_in_file;
-            }
-            else
-            {
-                size = b->pg_index_offset - pg_root->offset_in_file;
-            }
-            b->buff = realloc (b->buff, size);
-            b->length = size;
-            b->offset = 0;
-            lseek (b->f, pg_root->offset_in_file, SEEK_SET);
-            pg_size = read (b->f, b->buff, size);
-            if (pg_size != size)
-            {
-                fprintf (stderr, "adios_read_process_group: "
-                                 "Tried to read: %llu, but only got: %llu\n"
-                        ,size, pg_size
-                        );
+            fprintf (stderr, "adios_read_process_group: "
+                             "Tried to read: %llu, but only got: %llu\n"
+                    ,b->read_pg_size, pg_size
+                    );
 
-                pg_size = 0;
-            }
-        }
-        else
-        {
-            fprintf (stderr, "invalid process group number %llu\n", pg_number);
+            pg_size = 0;
         }
     }
 

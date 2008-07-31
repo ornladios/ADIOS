@@ -26,63 +26,39 @@ struct adios_MPI_data_struct
     MPI_File fh;
     MPI_Request req;
     MPI_Status status;
+    MPI_Comm group_comm;
     int rank;
     int size;
-    void * buffer;
-    uint64_t buffer_size;
-    uint64_t start;
-    int last_var_write_yes; // was the last item asked to write a write="yes"?
-    uint64_t base_offset;
+
+    struct adios_bp_buffer_struct_v1 b;
+
+    struct adios_index_process_group_struct_v1 * old_pg_root;
+    struct adios_index_var_struct_v1 * old_vars_root;
 };
 
 static void adios_var_to_comm (enum ADIOS_FLAG host_language_fortran
-                              ,const char * varname
-                              ,struct adios_var_struct * vars
+                              ,void * data
                               ,MPI_Comm * comm
-                              ,enum ADIOS_FLAG unique_var_names
                               )
 {
-    if (varname)
+    if (data)
     {
-        struct adios_var_struct * var =
-                 adios_find_var_by_name (vars, varname, unique_var_names);
-
-        if (var)
+        int t = *(int *) data;
+        if (host_language_fortran == adios_flag_yes)
         {
-            if (var->data)
-            {
-                int t = *(int *) var->data;
-                if (host_language_fortran == adios_flag_yes)
-                {
-                    *comm = MPI_Comm_f2c (t);
-                }
-                else
-                {
-                    *comm = *(MPI_Comm *) var->data;
-                }
-            }
-            else
-            {
-                fprintf (stderr, "coordination-communication: %s not provided. "
-                                 "Using MPI_COMM_WORLD instead\n"
-                        ,varname
-                        );
-                *comm = MPI_COMM_WORLD;
-            }
+            *comm = MPI_Comm_f2c (t);
         }
         else
         {
-            fprintf (stderr, "coordination-communicator: %s not found in "
-                             "adios-group.  Using MPI_COMM_WORLD instead\n"
-                    ,varname
-                    );
-
-            *comm = MPI_COMM_WORLD;
+            *comm = *(MPI_Comm *) data;
         }
     }
     else
     {
-        *comm = MPI_COMM_NULL;
+        fprintf (stderr, "coordination-communication not provided. "
+                         "Using MPI_COMM_WORLD instead\n"
+                );
+        *comm = MPI_COMM_WORLD;
     }
 }
 
@@ -90,7 +66,8 @@ void adios_mpi_init (const char * parameters
                     ,struct adios_method_struct * method
                     )
 {
-    struct adios_MPI_data_struct * md;
+    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+                                                    method->method_data;
     if (!adios_mpi_initialized)
     {
         adios_mpi_initialized = 1;
@@ -102,11 +79,11 @@ void adios_mpi_init (const char * parameters
     memset (&md->status, 0, sizeof (MPI_Status));
     md->rank = 0;
     md->size = 0;
-    md->buffer = 0;
-    md->buffer_size = 0;
-    md->start = 0;
-    md->last_var_write_yes = 0;
-    md->base_offset = 0;
+    md->group_comm = MPI_COMM_NULL;
+    md->old_pg_root = 0;
+    md->old_vars_root = 0;
+
+    adios_buffer_struct_init (&md->b);
 }
 
 int adios_mpi_open (struct adios_file_struct * fd
@@ -117,49 +94,8 @@ int adios_mpi_open (struct adios_file_struct * fd
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
 
-    MPI_Offset file_size_for_offset = 0;
-
-    // if it is an append, add the base file size to the initial offset
-    if (fd->mode == adios_mode_append)
-    {
-        MPI_Comm group_comm = MPI_COMM_NULL;
-        int rank = -1;
-
-        if (fd->group->group_comm)
-        {
-            adios_var_to_comm (fd->group->adios_host_language_fortran
-                              ,fd->group->group_comm, fd->group->vars
-                              ,&group_comm
-                              ,fd->group->all_unique_var_names
-                              );
-            if (group_comm != MPI_COMM_NULL)
-                MPI_Comm_rank (group_comm, &rank);
-        }
-
-        if (group_comm == MPI_COMM_NULL || rank == 0)
-        {
-            int err;
-            err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
-                                ,MPI_INFO_NULL, &md->fh
-                                );
-            if (err != MPI_SUCCESS)
-            {
-                file_size_for_offset = 0;
-            }
-            else
-            {
-                MPI_File_get_size (md->fh, &file_size_for_offset);
-            }
-            //printf ("group_comm %d, file size: %llu\n", group_comm,file_size_for_offset);
-            MPI_File_close (&md->fh);  // just in case it opened
-        }
-
-        if (group_comm != MPI_COMM_NULL)
-            MPI_Bcast (&file_size_for_offset, 1, MPI_LONG_LONG, 0, group_comm);
-
-        md->base_offset += file_size_for_offset;
-        //printf ("base offset: %llu\n", md->base_offset);
-    }
+    // we have to wait for the group_size (should_buffer) to get the comm
+    // before we can do an open for any of the modes
 
     return 1;
 }
@@ -169,7 +105,314 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                             ,void * comm
                             )
 {
-printf ("MPI Method: Need to validate can buffer with peers, if any\n");
+    uint32_t version = 0;
+    int i;
+    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+                                                      method->method_data; 
+    char * name;
+    name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
+    sprintf (name, "%s%s", method->base_path, fd->name);
+
+    adios_var_to_comm (fd->group->adios_host_language_fortran
+                      ,comm
+                      ,&md->group_comm
+                      );
+    if (md->group_comm != MPI_COMM_NULL)
+    {
+        MPI_Comm_rank (md->group_comm, &md->rank);
+        MPI_Comm_size (md->group_comm, &md->size);
+    }
+
+#define DO_SCATTER 1
+    switch (fd->mode)
+    {
+        case adios_mode_read:
+        {
+            int err;
+
+            if (md->group_comm == MPI_COMM_NULL || md->rank == 0)
+            {
+                err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
+                                    ,MPI_INFO_NULL, &md->fh
+                                    );
+                if (err != MPI_SUCCESS)
+                {
+                    free (name);
+
+                    return 0;
+                }
+
+                MPI_Offset file_size;
+                MPI_File_get_size (md->fh, &file_size);
+                md->b.file_size = file_size;
+
+                adios_init_buffer_read_version (&md->b);
+                MPI_File_seek (md->fh, md->b.file_size - md->b.length
+                              ,MPI_SEEK_SET
+                              );
+                MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.length
+                              ,&md->status
+                              );
+                adios_parse_version (&md->b, &version);
+
+                adios_init_buffer_read_index_offsets_v1 (&md->b);
+                // already in the buffer
+                adios_parse_index_offsets_v1 (&md->b);
+
+                adios_init_buffer_read_process_group_index (&md->b);
+                MPI_File_seek (md->fh, md->b.pg_index_offset
+                              ,MPI_SEEK_SET
+                              );
+                MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.pg_size
+                              ,&md->status
+                              );
+                adios_parse_process_group_index_v1 (&md->b
+                                                   ,&md->old_pg_root
+                                                   );
+
+                adios_init_buffer_read_vars_index (&md->b);
+                MPI_File_seek (md->fh, md->b.vars_index_offset
+                              ,MPI_SEEK_SET
+                              );
+                MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.vars_size
+                              ,&md->status
+                              );
+                adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
+
+                fd->base_offset = md->b.end_of_pgs;
+            }
+
+            if (1) //md->group_comm != MPI_COMM_NULL)
+            {
+                if (md->rank == 0)
+                {
+                    MPI_Offset * offsets = malloc (  sizeof (MPI_Offset)
+                                                   * md->size
+                                                  );
+                    memset (offsets, 0, md->size * sizeof (MPI_Offset));
+
+                    // go through the pg index to build the offsets array
+printf ("build the base offsets\n");
+
+#if DO_SCATTER
+                    MPI_Scatter (offsets, 1, MPI_LONG_LONG
+                                ,offsets, 1, MPI_LONG_LONG
+                                ,0, md->group_comm
+                                );
+#endif
+                    fd->base_offset = offsets [0];
+                }
+                else
+                {
+                    MPI_Offset offset = 0;
+
+#if DO_SCATTER
+                    MPI_Scatter (&offset, 1, MPI_LONG_LONG
+                                ,&offset, 1, MPI_LONG_LONG
+                                ,0, md->group_comm
+                                );
+#endif
+
+                    fd->base_offset = offset;
+                }
+            }
+printf ("do the cascading open (MPI open read)\n");
+            // note rank 0 is already open
+            if (md->rank != 0)
+            {
+                err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
+                                    ,MPI_INFO_NULL, &md->fh
+                                    );
+            }
+            break;
+        }
+
+        case adios_mode_write:
+        {
+            int err;
+
+            if (md->group_comm != MPI_COMM_NULL)
+            {
+                if (md->rank == 0)
+                {
+                    MPI_Offset * offsets = malloc (  sizeof (MPI_Offset)
+                                                   * md->size
+                                                  );
+
+                    MPI_Gather (offsets, 1, MPI_LONG_LONG
+                               ,offsets, 1, MPI_LONG_LONG
+                               ,0, md->group_comm
+                               );
+
+                    for (i = 0; i < md->size - 1; i++)
+                    {
+                        offsets [i + 1] += offsets [i];
+                    }
+#if DO_SCATTER
+                    MPI_Scatter (offsets, 1, MPI_LONG_LONG
+                                ,offsets, 1, MPI_LONG_LONG
+                                ,0, md->group_comm
+                                );
+#endif
+                    fd->base_offset = offsets [0];
+                    free (offsets);
+                }
+                else
+                {
+                    MPI_Offset offset = fd->write_size_bytes;
+
+                    MPI_Gather (&offset, 1, MPI_LONG_LONG
+                               ,&offset, 1, MPI_LONG_LONG
+                               ,0, md->group_comm
+                               );
+
+#if DO_SCATTER
+                    MPI_Scatter (&offset, 1, MPI_LONG_LONG
+                                ,&offset, 1, MPI_LONG_LONG
+                                ,0, md->group_comm
+                                );
+#endif
+                    fd->base_offset = offset;
+                }
+            }
+
+printf ("do the cascading open thing (MPI open write)\n");
+            err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_WRONLY
+                                ,MPI_INFO_NULL, &md->fh
+                                );
+            if (err != MPI_SUCCESS)
+            {
+                free (name);
+
+                return 0;
+            }
+
+            break;
+        }
+
+        case adios_mode_append:
+        {
+            adios_buffer_struct_clear (&md->b);
+
+            int err;
+            err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDWR
+                                ,MPI_INFO_NULL, &md->fh
+                                );
+
+            if (md->group_comm == MPI_COMM_NULL || md->rank == 0)
+            {
+                if (err != MPI_SUCCESS)
+                {
+                    md->b.file_size = 0;
+                }
+                else
+                {
+                    MPI_Offset file_size;
+                    MPI_File_get_size (md->fh, &file_size);
+                    md->b.file_size = file_size;
+                }
+
+                adios_init_buffer_read_version (&md->b);
+                MPI_File_seek (md->fh, md->b.file_size - md->b.length
+                              ,MPI_SEEK_SET
+                              );
+                MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.length
+                              ,&md->status
+                              );
+                adios_parse_version (&md->b, &version);
+
+                adios_init_buffer_read_index_offsets_v1 (&md->b);
+                // already in the buffer
+                adios_parse_index_offsets_v1 (&md->b);
+
+                adios_init_buffer_read_process_group_index (&md->b);
+                MPI_File_seek (md->fh, md->b.pg_index_offset
+                              ,MPI_SEEK_SET
+                              );
+                MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.pg_size
+                              ,&md->status
+                              );
+                adios_parse_process_group_index_v1 (&md->b
+                                                   ,&md->old_pg_root
+                                                   );
+
+                adios_init_buffer_read_vars_index (&md->b);
+                MPI_File_seek (md->fh, md->b.vars_index_offset
+                              ,MPI_SEEK_SET
+                              );
+                MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.vars_size
+                              ,&md->status
+                              );
+                adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
+
+                fd->base_offset = md->b.end_of_pgs;
+            }
+
+            if (md->group_comm != MPI_COMM_NULL)
+            {
+                if (md->rank == 0)
+                {
+                    MPI_Offset * offsets = malloc (  sizeof (MPI_Offset)
+                                                   * md->size
+                                                  );
+
+                    MPI_Gather (offsets, 1, MPI_LONG_LONG
+                               ,offsets, 1, MPI_LONG_LONG
+                               ,0, md->group_comm
+                               );
+
+                    offsets [0] = fd->base_offset;
+                    for (i = 0; i < md->size - 1; i++)
+                    {
+                        offsets [i + 1] += offsets [i];
+                    }
+#if DO_SCATTER
+                    MPI_Scatter (offsets, 1, MPI_LONG_LONG
+                                ,offsets, 1, MPI_LONG_LONG
+                                ,0, md->group_comm
+                                );
+#endif
+                }
+                else
+                {
+                    MPI_Offset offset = fd->write_size_bytes;
+
+                    MPI_Gather (&offset, 1, MPI_LONG_LONG
+                               ,&offset, 1, MPI_LONG_LONG
+                               ,0, md->group_comm
+                               );
+
+#if DO_SCATTER
+                    MPI_Scatter (&offset, 1, MPI_LONG_LONG
+                                ,&offset, 1, MPI_LONG_LONG
+                                ,0, md->group_comm
+                                );
+#endif
+                }
+            }
+printf ("do the cascading open thing (MPI open append)\n");
+            if (md->rank != 0)
+            {
+                err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDWR
+                                    ,MPI_INFO_NULL, &md->fh
+                                    );
+            }
+
+            break;
+        }
+
+        default:
+        {
+            fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
+
+            free (name);
+
+            return 0;
+        }
+    }
+
+    free (name);
+
     return 1;   // as far as we care, buffer
 }
 
@@ -179,7 +422,6 @@ void adios_mpi_write (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
-#if 0
     if (v->got_buffer)
     {
         if (data != v->data)  // if the user didn't give back the same thing
@@ -196,37 +438,6 @@ void adios_mpi_write (struct adios_file_struct * fd
             return;
         }
     }
-
-    if (0) //v->copy_on_write == adios_flag_yes)
-    {
-        uint64_t var_size;
-        uint64_t mem_allowed;
-
-        var_size = adios_size_of_var (v, data);
-        mem_allowed = adios_method_buffer_alloc (var_size);
-        if (mem_allowed == var_size)
-        {
-            v->free_data = adios_flag_yes;
-            v->data = adios_dupe_data_scalar (v->type, data);
-            v->data_size = var_size;
-        }
-        else
-        {
-            adios_method_buffer_free (mem_allowed);
-// need to handle overflow of allocatable space
-            fprintf (stderr, "OVERFLOW in MPI when writing %s\n", v->name);
-            v->free_data = adios_flag_no;
-            v->data = 0;
-            v->data_size = 0;
-        }
-    }
-    else // otherwise, should be safe to hold pointer
-    {
-        v->data = data;
-        v->free_data = adios_flag_no;
-        v->data_size = 0;
-    }
-#endif
 }
 
 void adios_mpi_get_write_buffer (struct adios_file_struct * fd
@@ -236,12 +447,13 @@ void adios_mpi_get_write_buffer (struct adios_file_struct * fd
                                 ,struct adios_method_struct * method
                                 )
 {
-#if 0
     uint64_t mem_allowed;
 
     if (*size == 0)
     {
-        *size = adios_size_of_var (v, (void *) "");
+        *buffer = 0;
+
+        return;
     }
 
     if (v->data && v->free_data)
@@ -286,7 +498,6 @@ void adios_mpi_get_write_buffer (struct adios_file_struct * fd
         *size = 0;
         *buffer = 0;
     }
-#endif
 }
 
 void adios_mpi_read (struct adios_file_struct * fd
@@ -301,436 +512,160 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
                               ,struct adios_method_struct * method
                               )
 {
-#if 0
-    char name [STR_LEN];
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data; 
-    struct adios_var_struct * v = 0;
+    struct adios_var_struct * v = fd->group->vars;
 
-    uint64_t my_data_len = adios_data_size (fd->group);
-    //printf("read: adios_data_size:%llu\n",my_data_len);
-    uint64_t my_offset = 0;
-    MPI_Status mstatus;
-    int amode = MPI_MODE_RDONLY;
-    int err;
-    MPI_Comm group_comm;
-    int previous;
-    int current;
-    int next;
-    int rank;
-    int size;
+    uint64_t element_size = 0;
+    struct adios_bp_element_struct * element = NULL;
+    struct adios_parse_buffer_struct data;
 
-    if (fd->group->group_comm)
+    data.vars = v;
+    data.buffer = 0;
+    data.buffer_len = 0;
+
+    uint32_t version = 0;
+
+    adios_init_buffer_read_version (&md->b);
+    MPI_File_seek (md->fh, md->b.file_size - md->b.length
+                  ,MPI_SEEK_SET
+                  );
+    MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.length
+                  ,&md->status
+                  );
+    adios_parse_version (&md->b, &version);
+
+    switch (version)
     {
-        adios_var_to_comm (fd->group->adios_host_language_fortran
-                          ,fd->group->group_comm, fd->group->vars, &group_comm
-                          ,fd->group->all_unique_var_names
+        case 1:
+        {
+            struct adios_index_process_group_struct_v1 * pg_root = 0;
+            struct adios_index_var_struct_v1 * vars_root = 0;
+
+            adios_init_buffer_read_version (&md->b);
+            MPI_File_seek (md->fh, md->b.file_size - md->b.length
+                          ,MPI_SEEK_SET
                           );
-
-        MPI_Comm_rank (group_comm, &rank);
-        MPI_Comm_size (group_comm, &size);
-        if (rank == size - 1)
-        {
-            next = -1;
-        }
-        else
-        {
-            next = rank + 1;
-        }
-        previous = rank - 1;
-        current = rank;
-    }
-    else
-    {
-        group_comm = MPI_COMM_NULL;
-    }
-
-    /* this code section is important if we want to write from
-     * several processes to a single file.  For one file per process
-     * writes, this is unnecessary.
-     */
-    /******************************
-     * Begin Coordinate file offet
-     ******************************/
-    //char buf1 [STR_LEN];
-    //char buf2 [STR_LEN];
-
-    sprintf (name, "%s%s", method->base_path, fd->name);
-    /* make a filename based on the size and current node */
-    // sprintf (buf1, "%%s.%%0%dd", (int) (log10 (size)));
-    // sprintf (buf2, buf1, fd->name, fd->group->current);
-    if (group_comm != MPI_COMM_NULL)
-    {
-        if (previous == -1)
-        {
-            /* node 0 does an open */
-            MPI_File_open (MPI_COMM_SELF, name, amode, MPI_INFO_NULL, &md->fh);
-            if (next != -1)
-            {
-                MPI_Isend (&my_data_len, 1, MPI_LONG_LONG, next
-                          ,current, group_comm, &md->req
+            MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.length
+                          ,&md->status
                           );
-            }
-        }
-        else
-        {
-            MPI_Recv (&my_offset, 1, MPI_LONG_LONG, previous
-                     ,previous, group_comm, &md->status
-                     );
-            if (next != -1)
-            {
-                uint64_t new_offset = my_offset + my_data_len;
-                MPI_Isend (&new_offset, 1, MPI_LONG_LONG, next
-                          ,current, group_comm, &md->req
+            adios_parse_version (&md->b, &version);
+                               
+            adios_init_buffer_read_index_offsets_v1 (&md->b);
+            // already in the buffer
+            adios_parse_index_offsets_v1 (&md->b);
+
+            adios_init_buffer_read_process_group_index (&md->b);
+            MPI_File_seek (md->fh, md->b.pg_index_offset
+                          ,MPI_SEEK_SET
                           );
-            }
-            MPI_File_open (MPI_COMM_SELF, name, amode, MPI_INFO_NULL
-                          ,&md->fh
+            MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.pg_size
+                          ,&md->status
                           );
-        }
-        MPI_File_seek (md->fh, md->base_offset + my_offset
-                      ,MPI_SEEK_SET
-                      );
-    }
-    else
-    {
-        MPI_File_open (MPI_COMM_SELF, name, amode, MPI_INFO_NULL, &md->fh);
-        MPI_File_seek (md->fh, md->base_offset, MPI_SEEK_SET);
-    }
-    /******************************
-     * End Coordinate file offet
-     ******************************/
+            adios_parse_process_group_index_v1 (&md->b
+                                               ,&md->old_pg_root
+                                               );
 
-    if (md->buffer_size < my_data_len)
-    {
-        uint64_t mem_needed = 0;
-        uint64_t mem_allowed = 0;
-        mem_needed = my_data_len - md->buffer_size;
-        mem_allowed = adios_method_buffer_alloc (mem_needed);
-        if (mem_needed != mem_allowed)
-        {
-            adios_method_buffer_free (mem_allowed);
-            fprintf (stderr, "OVERFLOW!!\n");
-        }
-        
-        md->buffer_size = md->buffer_size + mem_allowed;
-        free (md->buffer);
-        md->buffer = malloc (md->buffer_size);
-    }
-    err = MPI_File_read (md->fh, md->buffer, my_data_len, MPI_BYTE, &mstatus);
-    if (err != MPI_SUCCESS)
-    {
-        fprintf (stderr, "Could not read from file %s\n", name);
-    }
-
-    adios_parse_buffer (fd, md->buffer, my_data_len);
-
-    v = fd->group->vars;
-    while (v)
-    {
-        v->data = 0;
-        v = v->next;
-    }
-
-    if (group_comm != MPI_COMM_NULL && next != -1)
-        MPI_Wait (&md->req, &md->status);
+#if 1
+            adios_init_buffer_read_vars_index (&md->b);
+            MPI_File_seek (md->fh, md->b.vars_index_offset
+                          ,MPI_SEEK_SET
+                          );
+            MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.vars_size
+                          ,&md->status
+                          );
+            adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
 #endif
+
+            // the three section headers
+            struct adios_process_group_header_struct_v1 pg_header;
+            struct adios_vars_header_struct_v1 vars_header;
+            struct adios_attributes_header_struct_v1 attrs_header;
+
+            struct adios_var_header_struct_v1 var_header;
+            struct adios_var_payload_struct_v1 var_payload;
+            struct adios_attribute_struct_v1 attribute;
+
+            int i;
+
+            adios_init_buffer_read_process_group (&md->b, 1, pg_root);
+            MPI_File_seek (md->fh, md->b.read_pg_offset
+                          ,MPI_SEEK_SET
+                          );
+            MPI_File_read (md->fh, md->b.buff, MPI_BYTE, md->b.read_pg_size
+                          ,&md->status
+                          );
+            adios_parse_process_group_header_v1 (&md->b, &pg_header);
+
+            adios_parse_vars_header_v1 (&md->b, &vars_header);
+
+            for (i = 0; i < vars_header.count; i++)
+            {
+                memset (&var_payload, 0
+                       ,sizeof (struct adios_var_payload_struct_v1)
+                       );
+                adios_parse_var_data_header_v1 (&md->b, &var_header);
+
+                struct adios_var_struct * v1 = v;
+                while (v1)
+                {
+                    if (   strcasecmp (var_header.name, v1->name)
+                        || strcasecmp (var_header.path, v1->path)
+                       )
+                    {
+                        v1 = v1->next;
+                    }
+                    else
+                        break;
+                }
+
+                if (v1)
+                {
+                    var_payload.payload = v1->data;
+                    adios_parse_var_data_payload_v1 (&md->b, &var_header
+                                                    ,&var_payload
+                                                    );
+                }
+                else
+                {
+                    adios_parse_var_data_payload_v1 (&md->b, &var_header, NULL);
+                }
+            }
+
+#if 1
+            adios_parse_attributes_header_v1 (&md->b, &attrs_header);
+
+            for (i = 0; i < attrs_header.count; i++)
+            {
+                adios_parse_attribute_v1 (&md->b, &attribute);
+            }
+#endif
+            adios_clear_index_v1 (pg_root, vars_root);
+            break;
+        }
+
+        default:
+            fprintf (stderr, "MPI read: file version unknown: %u\n"
+                    ,version
+                    );
+            return;
+    }
+
+    adios_buffer_struct_clear (&md->b);
 }
 
 static void adios_mpi_do_write (struct adios_file_struct * fd
                                ,struct adios_method_struct * method
+                               ,char * buffer
+                               ,uint64_t buffer_size
                                )
 {
-#if 0
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                       method->method_data;
-    char name [STR_LEN];
-    uint64_t my_data_len = adios_data_size (fd->group);
-    uint64_t mem_needed = 0;
-    uint64_t mem_allowed = 0;
-    MPI_Offset my_offset = 0;
-    MPI_Status mstatus;
-    int overflow = 0;
-    uint64_t end = 0;
-    struct adios_var_struct * v = fd->group->vars;
-    struct adios_attribute_struct * a = fd->group->attributes;
-    int err;
-    MPI_Comm group_comm;
-    int previous = -2;
-    int current = -2;
-    int next = -2;
-    int rank = -2;
-    int size = -2;
+                                                 method->method_data;
 
-    if (fd->group->group_comm)
-    {
-        adios_var_to_comm (fd->group->adios_host_language_fortran
-                          ,fd->group->group_comm, fd->group->vars
-                          ,&group_comm
-                          ,fd->group->all_unique_var_names
-                          );
-
-        MPI_Comm_rank (group_comm, &rank);
-        MPI_Comm_size (group_comm, &size);
-        if (rank == size - 1)
-        {
-            next = -1;
-        }
-        else
-        {
-            next = rank + 1;
-        }
-        previous = rank - 1;
-        current = rank;
-    }
-    else
-    {
-        group_comm = MPI_COMM_NULL;
-    }
-
-    /* this code section is important if we want to write from
-     * several processes to a single file.  For one file per process
-     * writes, this is unnecessary.
-     */
-    /******************************
-     * Begin Coordinate file offet
-     ******************************/
-    //char buf1 [STR_LEN];
-    //char buf2 [STR_LEN];
-
-    sprintf (name, "%s%s", method->base_path, fd->name);
-    /* make a filename based on the size and current node */
-    // sprintf (buf1, "%%s.%%0%dd", (int) (log10 (size)));
-    // sprintf (buf2, buf1, fd->name, fd->group->current);
-    if (group_comm != MPI_COMM_NULL)
-    {
-        if (previous == -1)
-        {
-            int amode = MPI_MODE_WRONLY;
-            if (fd->mode != adios_mode_append)
-            {
-                // truncate the file
-                err = MPI_File_delete (name, MPI_INFO_NULL);
-                if (err != MPI_SUCCESS)
-                {
-                    //fprintf (stderr, "Error truncating file %s for group %s\n"
-                    //        ,name ,adios_file_mode_to_string (fd->mode)
-                    //        );
-                }
-            }
-
-            if (fd->mode != adios_mode_append)
-                amode |= MPI_MODE_CREATE;
-            /* node 0 does an open to create the file, if necessary */
-            err = MPI_File_open (MPI_COMM_SELF, name, amode
-                                ,MPI_INFO_NULL, &md->fh
-                                );
-            if (err != MPI_SUCCESS)
-            {
-                amode |= MPI_MODE_CREATE;
-                err = MPI_File_open (MPI_COMM_SELF, name, amode
-                                    ,MPI_INFO_NULL, &md->fh
-                                    );
-                if (err != MPI_SUCCESS)
-                {
-                    fprintf (stderr, "Error opening file %s for %s\n", name
-                            ,adios_file_mode_to_string (fd->mode)
-                            );
-                }
-            }
-            if (next != -1)
-            {
-                MPI_Isend (&my_data_len, 1, MPI_LONG_LONG, next
-                          ,current, group_comm, &md->req
-                          );
-            }
-        }
-        else
-        {
-            MPI_Recv (&my_offset, 1, MPI_LONG_LONG, previous
-                     ,previous, group_comm
-                     ,&md->status
-                     );
-            if (next != -1)
-            {
-                uint64_t new_offset = my_offset + my_data_len;
-                MPI_Isend (&new_offset, 1, MPI_LONG_LONG, next
-                          ,current, group_comm, &md->req
-                          );
-            }
-            MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_WRONLY
-                          ,MPI_INFO_NULL, &md->fh
-                          );
-        }
-
-        err = MPI_File_seek (md->fh, md->base_offset + my_offset
-                            ,MPI_SEEK_SET
-                            );
-        if (err != MPI_SUCCESS)
-            fprintf (stderr, "cannot seek for some reason: %d\n", err);
-    }
-    else
-    {
-        int err_class;
-        if (fd->mode != adios_mode_append)
-        {
-            // truncate the file
-            err = MPI_File_delete (name, MPI_INFO_NULL);
-            MPI_Error_class (err, &err_class);
-            if (err_class != MPI_SUCCESS)
-            {
-                fprintf (stderr, "Error %d truncating file %s for %s\n"
-                        ,err_class
-                        ,name, adios_file_mode_to_string (fd->mode)
-                        );
-            }
-        }
-        err = MPI_File_open (MPI_COMM_SELF, name
-                            ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                            ,MPI_INFO_NULL, &md->fh
-                            );
-        if (err != MPI_SUCCESS)
-        {
-            fprintf (stderr, "Error opening file %s for %s\n", name
-                    ,adios_file_mode_to_string (fd->mode)
-                    );
- 
-        }
-        if (fd->mode != adios_mode_append)
-        {
-            err = MPI_File_get_size (md->fh, &my_offset);
-            MPI_Error_class (err, &err_class);
-            if (err_class != MPI_SUCCESS)
-            {
-                fprintf (stderr, "Error %d getting file size %s\n", err_class
-                        ,name
-                        );
-            }
-            //printf ("initial size: %llu\n", my_offset);
-        }
-        err = MPI_File_seek (md->fh, md->base_offset, MPI_SEEK_SET);
-        MPI_Error_class (err, &err_class);
-        if (err_class != MPI_SUCCESS)
-        {
-            fprintf (stderr, "Error %d seeking file %s\n", err_class
-                    ,name
-                    );
-        }
-    }
-    /******************************
-     * End Coordinate file offet
-     ******************************/
-
-    if (my_data_len > md->buffer_size)
-    {
-        mem_needed = my_data_len - md->buffer_size;
-        mem_allowed = adios_method_buffer_alloc (mem_needed);
-        if (mem_needed != mem_allowed)
-        {
-            adios_method_buffer_free (mem_allowed);
-            fprintf (stderr, "OVERFLOW!!\n");
-            overflow = 1;
-        }
-
-        md->buffer_size = md->buffer_size + mem_allowed;
-        free (md->buffer);
-        md->buffer = malloc (md->buffer_size);
-    }
-
-    while (v && !overflow)
-    {
-        overflow = adios_do_write_var (v
-                                      ,md->buffer
-                                      ,md->buffer_size
-                                      ,md->start
-                                      ,&end
-                                      );
-
-        md->start = end;
-        v = v->next;
-    }
-
-    while (a && !overflow)
-    {
-        overflow = adios_do_write_attribute (a
-                                            ,md->buffer
-                                            ,md->buffer_size
-                                            ,md->start
-                                            ,&end
-                                            );
-
-        md->start = end;
-        a = a->next;
-    }
-
-    if (overflow)
-    {
-        overflow = 0;
-        long long file;
-        char name [STR_LEN];
-
-        sprintf (name, "%s%s_OVERFLOW%d", method->base_path, fd->name, rank);
-        bw_set_write (0); // set write to a file directly
-        bw_fopen_ (name, &file);
-        v = fd->group->vars;
-        a = fd->group->attributes;
-
-        while (v && !overflow)
-        {
-            overflow = adios_do_write_var (v
-                                          ,&file
-                                          ,9223372036854775807LL // LLONG_MAX
-                                          ,0
-                                          ,&end
-                                          );
-
-            v = v->next;
-        }
-        while (a && !overflow)
-        {
-            overflow = adios_do_write_attribute (a
-                                                ,md->buffer
-                                                ,md->buffer_size
-                                                ,0
-                                                ,&end
-                                                );
-
-            a = a->next;
-        }
-
-        bw_fclose_ (&file);
-        bw_set_write (1); // set write to the buffer
-    }
-    else
-    {
-        MPI_File_write (md->fh, md->buffer, end, MPI_BYTE, &mstatus);
-    }
-
-    if (group_comm != MPI_COMM_NULL && next != -1)
-    {
-        MPI_Wait (&md->req, &md->status);
-    }
-
-    // clear out the cached data for the caller to be able to continue to work
-    v = fd->group->vars;
-    while (v)
-    {
-        if (v->free_data == adios_flag_yes)
-        {
-            if (v->data)
-            {
-                free (v->data);
-                adios_method_buffer_free (v->data_size);
-            }
-        }
-
-        v->data = 0;
-        v->data_size = 0;
-        v->free_data = adios_flag_no;
-        v->got_buffer = adios_flag_no;
-        v = v->next;
-    }
-#endif
+    MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
+    MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE, &md->status);
+    MPI_File_write (md->fh, buffer, buffer_size, MPI_BYTE, &md->status);
 }
 
 void adios_mpi_close (struct adios_file_struct * fd
@@ -740,30 +675,96 @@ void adios_mpi_close (struct adios_file_struct * fd
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                  method->method_data;
 
-    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
-    {
-        adios_mpi_do_write (fd, method);
-    }
+    struct adios_index_process_group_struct_v1 * new_pg_root = 0;
+    struct adios_index_var_struct_v1 * new_vars_root = 0;
 
-    if (fd->mode == adios_mode_read)
+    switch (fd->mode)
     {
-        adios_mpi_do_read (fd, method);
+        case adios_mode_write:
+        {
+            char * buffer = 0;
+            uint64_t buffer_size = 0;
+            uint64_t buffer_offset = 0;
+            uint64_t index_start = fd->base_offset + fd->offset;
+
+            // build index
+            adios_build_index_v1 (fd, &new_pg_root, &new_vars_root);
+            // if collective, gather the indexes from the rest and call
+            // adios_merge_index_v1 (&new_pg_root, &new_vars_root, pg, vars);
+            adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
+                                 ,index_start, new_pg_root, new_vars_root
+                                 );
+            adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
+            adios_mpi_do_write (fd, method, buffer, buffer_offset);
+
+            free (buffer);
+
+            adios_clear_index_v1 (new_pg_root, new_vars_root);
+
+            break;
+        }
+
+        case adios_mode_append:
+        {
+            char * buffer = 0;
+            uint64_t buffer_size = 0;
+            uint64_t buffer_offset = 0;
+            uint64_t index_start = fd->base_offset + fd->offset;
+
+            // build index
+            adios_build_index_v1 (fd, &new_pg_root, &new_vars_root);
+            // merge in old indicies
+            adios_merge_index_v1 (&md->old_pg_root, &md->old_vars_root
+                                 ,new_pg_root, new_vars_root);
+            adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
+                                 ,index_start, md->old_pg_root, md->old_vars_root
+                                 );
+            adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
+            adios_mpi_do_write (fd, method, buffer, buffer_offset);
+
+            free (buffer);
+
+            break;
+        }
+
+        case adios_mode_read:
+        {
+            // read the index to find the place to start reading
+            adios_mpi_do_read (fd, method);
+            struct adios_var_struct * v = fd->group->vars;
+            while (v)
+            {
+                v->data = 0;
+                v = v->next;
+            }
+
+            break;
+        }
+
+        default:
+        {
+            fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
+        }
     }
 
     if (md && md->fh)
         MPI_File_close (&md->fh);
 
+    MPI_Comm_free (&md->group_comm);
+
     md->fh = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
-    md->start = 0;
-    md->last_var_write_yes = 0;
-    md->base_offset = 0;
+    md->group_comm = MPI_COMM_NULL;
+
+    adios_clear_index_v1 (md->old_pg_root, md->old_vars_root);
+    md->old_pg_root = 0;
+    md->old_vars_root = 0;
 }
 
 void adios_mpi_finalize (int mype, struct adios_method_struct * method)
 {
-/* nothing to do here */
+// nothing to do here
     if (adios_mpi_initialized)
         adios_mpi_initialized = 0;
 }
