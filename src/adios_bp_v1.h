@@ -2,6 +2,7 @@ struct adios_bp_buffer_struct_v1
 {
     int f;             // the file handle
     uint64_t file_size;
+    uint32_t version;
 
     char * buff;
     uint64_t length;
@@ -196,14 +197,8 @@ void adios_posix_read_process_group_index (struct adios_bp_buffer_struct_v1 * b
 void adios_init_buffer_read_vars_index (struct adios_bp_buffer_struct_v1 * b);
 void adios_posix_read_vars_index (struct adios_bp_buffer_struct_v1 * b);
 
-void adios_init_buffer_read_procss_group (struct adios_bp_buffer_struct_v1 * b
-                          ,uint64_t pg_number
-                          ,struct adios_index_process_group_struct_v1 * pg_root
-                          );
-uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b
-                          ,uint64_t pg_number
-                          ,struct adios_index_process_group_struct_v1 * pg_root
-                          );
+void adios_init_buffer_read_procss_group (struct adios_bp_buffer_struct_v1 * b);
+uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b);
 
 int adios_posix_open_read_internal (const char * filename
                                    ,const char * base_path

@@ -16,6 +16,7 @@ void adios_buffer_struct_init (struct adios_bp_buffer_struct_v1 * b)
     b->buff = 0;
     b->length = 0;
     b->change_endianness = adios_flag_unknown;
+    b->version = 0;
     b->offset = 0;
     b->end_of_pgs = 0;
     b->pg_index_offset = 0;
@@ -710,9 +711,14 @@ void adios_posix_read_version (struct adios_bp_buffer_struct_v1 * b)
         fprintf (stderr, "could not read 20 bytes. read only: %lld\n", r);
 }
 
-void adios_posix_read_index_offsets (struct adios_bp_buffer_struct_v1 * b)
+void adios_init_buffer_read_index_offsets (struct adios_bp_buffer_struct_v1 * b)
 {
     b->offset = 0; // just move to the start of the buffer
+}
+
+void adios_posix_read_index_offsets (struct adios_bp_buffer_struct_v1 * b)
+{
+    adios_init_buffer_read_index_offsets (b);
 }
 
 void adios_init_buffer_read_process_group_index (
@@ -749,67 +755,29 @@ void adios_posix_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
                 );
 }
 
-void adios_init_buffer_read_procss_group (struct adios_bp_buffer_struct_v1 * b
-                          ,uint64_t pg_number
-                          ,struct adios_index_process_group_struct_v1 * pg_root
-                          )
+void adios_init_buffer_read_process_group (struct adios_bp_buffer_struct_v1 * b)
 {
-    while (pg_root && --pg_number > 0)
-    {
-        pg_root = pg_root->next;
-    }
-    if (pg_root)
-    {
-        uint64_t size = 0;
-
-        if (pg_root->next)
-        {
-            size = pg_root->next->offset_in_file - pg_root->offset_in_file;
-        }
-        else
-        {
-            size = b->pg_index_offset - pg_root->offset_in_file;
-        }
-
-        b->buff = realloc (b->buff, size);
-        b->length = size;
-        b->offset = 0;
-        b->read_pg_offset = pg_root->offset_in_file;
-        b->read_pg_size = size;
-    }
-    else
-    {
-        fprintf (stderr, "invalid process group number %llu\n", pg_number);
-    }
+    b->buff = realloc (b->buff, b->read_pg_size);
+    b->length = b->read_pg_size;
+    b->offset = 0;
 }
 
-uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b
-                          ,uint64_t pg_number
-                          ,struct adios_index_process_group_struct_v1 * pg_root
-                          )
+uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b)
 {
-    uint64_t pg_size = 0;
-
-    if (!pg_root)
+    uint64_t pg_size;
+    adios_init_buffer_read_process_group (b);
+    //b->read_pg_offset = pg_root->offset_in_file;
+    //b->read_pg_size = size;
+    lseek (b->f, b->read_pg_offset, SEEK_SET);
+    pg_size = read (b->f, b->buff, b->read_pg_size);
+    if (pg_size != b->read_pg_size)
     {
-        fprintf (stderr, "just start at the front and go from there (save "
-                         "position for faster reading)\n"
+        fprintf (stderr, "adios_read_process_group: "
+                         "Tried to read: %llu, but only got: %llu\n"
+                ,b->read_pg_size, pg_size
                 );
-    }
-    else
-    {
-        adios_init_buffer_read_process_group (b, pg_number, pg_root);
-        lseek (b->f, b->read_pg_offset, SEEK_SET);
-        pg_size = read (b->f, b->buff, b->read_pg_size);
-        if (pg_size != b->read_pg_size)
-        {
-            fprintf (stderr, "adios_read_process_group: "
-                             "Tried to read: %llu, but only got: %llu\n"
-                    ,b->read_pg_size, pg_size
-                    );
 
-            pg_size = 0;
-        }
+        pg_size = 0;
     }
 
     return pg_size;

@@ -332,7 +332,19 @@ fprintf (stderr, "need to read from the last one?\n");
 
             int i;
 
-            adios_posix_read_process_group (&p->b, 1, pg_root);
+            p->b.read_pg_offset = pg_root->offset_in_file;
+            if (pg_root->next)
+            {
+                p->b.read_pg_size =   pg_root->next->offset_in_file
+                                    - pg_root->offset_in_file;
+            }   
+            else
+            {
+                p->b.read_pg_size =   p->b.pg_index_offset
+                                    - pg_root->offset_in_file;
+            }
+
+            adios_posix_read_process_group (&p->b);
             adios_parse_process_group_header_v1 (&p->b, &pg_header);
 
             adios_parse_vars_header_v1 (&p->b, &vars_header);
