@@ -19,19 +19,19 @@ First of all, you should just copy ~zf2/setup_chimera.sh and run it in bash shel
 
 > export WORKING_DIR=/tmp/work/$LOGNAME/chimera_bench
 
-1) copy files to your working directory:
-> cp ~zf2/chimera_bench.tar.gz /tmp/work/$LOGNAME
-> cd /tmp/work/$LOGNAME
-> tar zxvf chimera_bench.tar.gz
+1) checkout files to your working directory:
+> mkdir -p $WORKING_DIR
+> cd $WORKING_DIR
+> svn checkout $SVN_URL
 
  There are 4 direcoties:
- RadHyd3D_adios: source code and executables
+ src: source code and executables
  chimera_setting: input files and job scripts 
  chimera_run: job will run in the sub-direcotry 
  chimera_results: timing info and run logs for all jobs
 
 2) build executables:
-> cd RadHyd3D_adios/Execute/build
+> cd src/Execute/build
 > make
 
  This will produce two executables: RadHyd3D_mpi and RadHyd3D_posix.

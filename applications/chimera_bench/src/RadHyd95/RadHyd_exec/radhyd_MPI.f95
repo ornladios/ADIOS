@@ -176,6 +176,9 @@ CALL adios_init ('config.xml'//char(0), adios_err)
 
 CALL init_prof('./log'//char(0),20,401,MPI_COMM_WORLD,num_procs,myid) 
 
+! craypat trace
+CALL PAT_tracing_state(0, adios_err)
+
 #endif
 
 !-----------------------------------------------------------------------

@@ -57,6 +57,7 @@ MODULE adios_io_module
 integer*8, private :: io_type, handle
 
 #define ADIOS_WRITE(a,b) call adios_write(a,'b'//char(0),b,adios_err)
+#define ADIOS_READ(a,b) call adios_read(a,'b'//char(0),b,adios_err)
 
 
   !-----------------------------------------------------------------------
@@ -260,11 +261,6 @@ integer*8, private :: io_type, handle
       !-- Set the k index in the hyperslab group
       k_hyperslab_min = mod(k_ray_min-1, nz_hyperslab_width) + 1
       
-
-!#ifdef ADIOS_MODEL
-
-!#else
-      
       !-- Create MPI communicator for each group of writers
       ALLOCATE(hyperslab_group_member(nproc_per_hyperslab_group))
       hyperslab_group_member &
@@ -278,8 +274,6 @@ integer*8, private :: io_type, handle
              mpi_comm_per_hyperslab_group, error)
       call MPI_GROUP_FREE(mpi_group_per_hyperslab_group, error)
       deALLOCATE(hyperslab_group_member)
-
-!#endif  
 
       io_walltime = zero
       io_count    = 0
@@ -380,8 +374,6 @@ integer*8, private :: io_type, handle
                esphere_mean, r_gain, r_nse, tau_adv, tau_heat_nu, &
                tau_heat_nuc)
     
-#ifdef ADIOS_MODEL
-
 ! added by zf
     array_dimensions = (/nx,ny,nz/)
     radial_index_bound = (/imin,imax/)
@@ -617,420 +609,6 @@ integer*8, private :: io_type, handle
 ! cloe end
     CALL close_end(ncycle, io_count)
 
-#else
-
-    !------------------------------------------------------------------------
-    !       Create and Initialize File using Default Properties
-    !------------------------------------------------------------------------
-
-    WRITE(suffix, fmt='(i9.9,a7,i4.4,a3)') ncycle,'_group_',my_hyperslab_group,'.h5'
-
-    io_startime = MPI_WTIME()
-
-    CALL h5open_f(error)
-    CALL h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, error)
-    CALL h5pset_sieve_buf_size_f(plist_id, sieve_buffer, error)
-    CALL h5pset_alignment_f(plist_id, thresshold, alignment, error);
-    CALL MPI_Info_create(FILE_INFO_TEMPLATE, error)
-    CALL MPI_Info_set(FILE_INFO_TEMPLATE, "romio_cb_write", "ENABLE", error)
-    CALL MPI_Info_set(FILE_INFO_TEMPLATE, "romio_cb_read", "ENABLE", error) 
-    CALL MPI_Info_set(FILE_INFO_TEMPLATE, "cb_buffer_size", "33554432", error)
-    CALL h5pset_fapl_mpio_f(plist_id, mpi_comm_per_hyperslab_group, MPI_INFO_NULL, error)
-
-    CALL h5fcreate_f(TRIM(data_path)//'/Restart/'//filename//suffix, &
-           H5F_ACC_TRUNC_F, file_id, error, access_prp=plist_id)
-    CALL h5pclose_f(plist_id, error)
-    
-    !------------------------------------------------------------------------
-    !      Create Mesh Group and Write Mesh Associated Data
-    !      FIXME: This only needs to be done by processor 0
-    !------------------------------------------------------------------------
-      
-    CALL h5gcreate_f(file_id, '/mesh', group_id, error)
-
-    !-- Write Mesh Metadata
-    datasize1d(1) = 3
-    CALL write_1d_slab('array_dimensions', (/nx,ny,nz/), group_id, &
-           datasize1d, 'array_dimensions')
-    
-    !-- Write Problem Cycle and Time
-    datasize1d(1) = 0
-    CALL h5screate_f(H5S_SCALAR_F, dataspace_id, error)
-    CALL h5dcreate_f(group_id, 'time', H5T_NATIVE_DOUBLE, dataspace_id, &
-                     dataset_id, error)
-    iF(hyperslab_group_master) &
-      CALL h5dwrite_f(dataset_id, H5T_NATIVE_DOUBLE, time, datasize1d, &
-                      error)
-    CALL h5dclose_f(dataset_id, error)
-    CALL h5sclose_f(dataspace_id, error)
-
-    datasize1d(1) = 0
-    CALL h5screate_f(H5S_SCALAR_F, dataspace_id, error)
-    CALL h5dcreate_f(group_id, 'cycle', H5T_NATIVE_INTEGER, dataspace_id, &
-                     dataset_id, error)
-    IF(hyperslab_group_master) &
-      CALL h5dwrite_f(dataset_id, H5T_NATIVE_INTEGER, ncycle, datasize1d, &
-                      error)
-    CALL h5dclose_f(dataset_id, error)
-    CALL h5sclose_f(dataspace_id, error)
-
-    CALL h5screate_f(H5S_SCALAR_F, dataspace_id, error)
-    CALL h5dcreate_f(group_id, 'nz_hyperslabs', H5T_NATIVE_INTEGER, dataspace_id, &
-                     dataset_id, error)
-    IF(hyperslab_group_master) &
-      CALL h5dwrite_f(dataset_id, H5T_NATIVE_INTEGER, nz_hyperslabs, datasize1d, &
-                      error)
-    CALL h5dclose_f(dataset_id, error)
-    CALL h5sclose_f(dataspace_id, error)
-
-    CALL h5screate_f(H5S_SCALAR_F, dataspace_id, error)
-    CALL h5dcreate_f(group_id, 'my_hyperslab_group', H5T_NATIVE_INTEGER, dataspace_id, &
-                     dataset_id, error)
-    IF(hyperslab_group_master) &
-      CALL h5dwrite_f(dataset_id, H5T_NATIVE_INTEGER, my_hyperslab_group, datasize1d, &
-                      error)
-    CALL h5dclose_f(dataset_id, error)
-    CALL h5sclose_f(dataspace_id, error)
-
-
-    !-- Write Radial Index bound for MGFLD shifted radial arrays
-    datasize1d(1) = 2
-    CALL write_1d_slab('radial_index_bound', (/imin,imax/), group_id, &
-           datasize1d, 'radial_index_bound (r)')
-    CALL write_1d_slab('theta_index_bound', (/jmin,jmax/), group_id, &
-           datasize1d, 'theta_index_bound')
-    CALL write_1d_slab('phi_index_bound', (/kmin,kmax/), group_id, &
-           datasize1d, 'phi_index_bound')
-
-    !-- Write Zone Face Coordinates
-    datasize1d(1) = nx+1
-    CALL write_1d_slab('x_ef', x_ef, group_id, &
-           datasize1d, 'X Grid Zone Face', 'cm')
-    datasize1d(1) = ny+1
-    CALL write_1d_slab('y_ef', y_ef, group_id, &
-           datasize1d, 'Y Grid Zone Face', 'rad')
-    datasize1d(1) = nz+1
-    CALL write_1d_slab('z_ef', z_ef, group_id, &
-           datasize1d, 'Z Grid Zone Face', 'rad')
-    
-    !-- Write Zone Midpoint Coordinates
-    datasize1d(1) = nx
-    CALL write_1d_slab('x_cf', x_cf, group_id, &
-           datasize1d, 'X Grid Zone Midpoint', 'cm')
-    datasize1d(1) = ny
-    CALL write_1d_slab('y_cf', y_cf, group_id, &
-           datasize1d, 'Y Grid Zone Midpoint', 'rad')
-    datasize1d(1) = nz
-    CALL write_1d_slab('z_cf', z_cf, group_id, &
-           datasize1d, 'Z Grid Zone Midpoint', 'rad')
-    
-    !-- Write Zone Width 
-    datasize1d(1) = nx
-    CALL write_1d_slab('dx_cf', dx_cf, group_id, &
-           datasize1d, 'X Zone Width', 'cm')
-    datasize1d(1) = ny
-    CALL write_1d_slab('dy_cf', dy_cf, group_id, &
-           datasize1d, 'Y Zone Width', 'rad')
-    datasize1d(1) = nz
-    CALL write_1d_slab('dz_cf', dz_cf, group_id, &
-           datasize1d, 'Z Zone Width', 'rad')
-    
-    CALL h5gclose_f(group_id, error)
-    
-    !------------------------------------------------------------------------
-    !      Create Physical Variables group and Write Physical Data
-    !      Each processors write its share to a hyperslab of the data 
-    !
-    !              \\\\\  Model Restart and Plot Files /////
-    !
-    !------------------------------------------------------------------------
-    
-    CALL h5gcreate_f(file_id, '/physical_variables', group_id, error)
-    
-    !-----------------------------------------------------------------------
-    !  Independent thermodynamic variables
-    !-----------------------------------------------------------------------
-    datasize3d = (/nx,ny,nz_hyperslab_width/)
-    mydatasize3d = (/nx, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset3d = (/0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('rho_c', rho_c, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Zone Average Density','gm/c^3')
-    CALL write_ray_hyperslab('t_c', t_c, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Zone Average Temperature','K')
-    CALL write_ray_hyperslab('ye_c', ye_c, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Zone Average Electron Fraction','K')
-    
-    !-----------------------------------------------------------------------
-    !  Independent mechanical variables
-    !-----------------------------------------------------------------------
-    CALL write_ray_hyperslab('u_c', u_c, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Zone Centered Average Velocity X Direction','cm/s')
-    CALL write_ray_hyperslab('v_c', v_c, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Zone Centered Average Velocity Y Direction','cm/s')
-    CALL write_ray_hyperslab('w_c', u_c, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Zone Centered Average Velocity Z Direction','cm/s')
-    
-    !-----------------------------------------------------------------------
-    !  Independent radiation variables and bookkeeping arrays
-    !-----------------------------------------------------------------------
-    datasize5d = (/nx,nez,nnu,ny,nz_hyperslab_width/)
-    mydatasize5d = (/nx, nez, nnu, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset5d = (/0,0,0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('psi0_c', psi0_c, group_id, &
-           datasize5d, mydatasize5d, slab_offset5d, &
-           'Zero Moment of the Neutrino Occupation Distribution')
-    CALL write_ray_hyperslab('psi1_e', psi1_e, group_id, &
-           datasize5d, mydatasize5d, slab_offset5d, &
-           'First Moment of the Neutrino Occupation Distribution at Outer '// &
-           'Boundary Radial Zone')
-    CALL write_ray_hyperslab('dnurad', dnurad, group_id, &
-           datasize5d, mydatasize5d, slab_offset5d, &
-           'Total number of Neutrinos Per Unit Energy That Have ' &
-           //'Crossed Outer Boundary Radial Zone', 'MeV^-1')
-    
-           
-    datasize4d = (/nez,nnu,ny,nz_hyperslab_width/)
-    mydatasize4d = (/nez, nnu, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset4d = (/0,0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('unukrad', unukrad, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Cumulative Energy Emmitted from the Core For Each '& 
-           // 'Neutrinos Type of Each Energy Zone', 'Ergs')
-    
-    datasize4d = (/nx,nnu,ny,nz_hyperslab_width/)
-    mydatasize4d = (/nx, nnu, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset4d = (/0,0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('unujrad', unujrad, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Cumulative Energy for Each Neutrino Type '& 
-           // 'Transported Across Radial Boundary Zone', 'Ergs')
-    
-    datasize2d = (/ny,nz_hyperslab_width/)
-    mydatasize2d = (/my_j_ray_dim, my_k_ray_dim/)
-    slab_offset2d = (/j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('e_rad', e_rad, group_id, &
-           datasize2d, mydatasize2d, slab_offset2d, & 
-           'Cumulative Material Energy Entering (-) or Leaving (+) the Grid', &
-           'Ergs')
-    CALL write_ray_hyperslab('elec_rad', elec_rad, group_id, &
-           datasize2d, mydatasize2d, slab_offset2d, & 
-           'Net Number of electrons Advected In (-) or Out (+) Of the Grid')
-    
-    datasize3d = (/nnu,ny,nz_hyperslab_width/)
-    mydatasize3d = (/nnu, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset3d = (/0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('unurad', unurad, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Cumulative Energy Emitted From the Core for Each Neutrino Type', &
-           'Ergs')
-    
-    datasize4d = (/nez,nnu,ny,nz_hyperslab_width/)
-    mydatasize4d = (/nez, nnu, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset4d = (/0,0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('nnukrad', nnukrad, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Cumulative Number Emmitted from the Core For Each '& 
-           // 'Neutrinos Type of Each Energy Zone')
-    
-    datasize4d = (/nx,nnu,ny,nz_hyperslab_width/)
-    mydatasize4d = (/nx, nnu, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset4d = (/0,0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('nnujrad', nnujrad, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Net Number For Each Neutrino Type' &
-           // 'Transported Across Radial Boundary Zone')
-    
-    datasize3d = (/nnu,ny,nz_hyperslab_width/)
-    mydatasize3d = (/nnu, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset3d = (/0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('nnurad', nnurad, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Cumulative Number Of Each Neutrino Type Emmited by the Core')
-           
-    datasize4d = (/nez,nnu,ny,nz_hyperslab_width/)
-    mydatasize4d = (/nez, nnu, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset4d = (/0,0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('nu_r', nu_r, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Number of Neutrinos for Each Energy Group Radiated Across r_nurad')
-    CALL write_ray_hyperslab('nu_rt', nu_rt, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Cumulative Number of Neutrinos for Each Energy Group Radiated ' &
-           //'Across r_nurad')
-    CALL write_ray_hyperslab('nu_rho', nu_rho, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Number of Neutrinos for Each Energy group Across rho_nurad '&
-           // 'in Time dtnuradplot')
-    CALL write_ray_hyperslab('nu_rhot', nu_rhot, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Cumulative Number of Neutrinos for Each Energy Group ' &
-           //'Radiated Across rho_nurad')
-    
-    CALL write_ray_hyperslab('psi0dat', psi0dat, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Time Integrated psi0')
-    CALL write_ray_hyperslab('psi1dat', psi1dat, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Time Integrated psi1')
-    
-    datasize4d = (/nx,nnc,ny,nz_hyperslab_width/)
-    mydatasize4d = (/nx, nnc, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset4d = (/0,0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('xn_c', xn_c, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Mass Fraction for Each Nucleus')
-    
-    datasize3d = (/nx,ny,nz_hyperslab_width/)
-    mydatasize3d = (/nx, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset3d = (/0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('nse_c', nse_c, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'NSE Flag')
-    CALL write_ray_hyperslab('a_nuc_rep_c', a_nuc_rep_c, group_id, &
-            datasize3d, mydatasize3d, slab_offset3d, &
-           'Mass Number of the Representative Heavy Nucleus')
-    CALL write_ray_hyperslab('z_nuc_rep_c', z_nuc_rep_c, &
-           group_id, datasize3d, mydatasize3d, slab_offset3d, &
-           'Charge Number of the Representative Heavy Nucleus')
-    CALL write_ray_hyperslab('be_nuc_rep_c', be_nuc_rep_c, &
-           group_id, datasize3d, mydatasize3d, slab_offset3d, &
-           'Binding Energy of the Representative Heavy Nucleus', 'MeV')
-    CALL write_ray_hyperslab('uburn_c', uburn_c, &
-           group_id, datasize3d, mydatasize3d, slab_offset3d, &
-           'Cumulative Energy Generated in Zone by Nuclear Reaction', 'Ergs/gm')
-    CALL write_ray_hyperslab('duesrc', duesrc, &
-           group_id, datasize3d, mydatasize3d, slab_offset3d, &
-           'Cumulative Energy Glitches per Unit Mass')
-    
-    datasize1d(1) = nx
-    CALL write_1d_slab('e_nu_c_bar', e_nu_c_bar, group_id, &
-           datasize1d, 'Angular Averaged Neutrino Energy Density', &
-          'Ergs/cm^3')
-    CALL write_1d_slab('f_nu_e_bar', f_nu_e_bar, group_id, &
-           datasize1d, 'Angular Averaged Neutrino Energy Flux', &
-           'Ergs/cm^2/s')
-    
-    datasize3d = (/nx,ny,nz_hyperslab_width/)
-    mydatasize3d = (/nx, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset3d = (/0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('pMD', pMD, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Pressure')
-    CALL write_ray_hyperslab('sMD', sMD, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Entropy')
-    CALL write_ray_hyperslab('dudt_nuc', dudt_nuc, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Energy Generation Rate By Nuclear Reaction For ' &
-           //'The Current Time Step', 'Ergs/gm')
-    CALL write_ray_hyperslab('dudt_nu', dudt_nu, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Energy Deposition Rate By All Neutrinos in Radial Zone', &
-           'Ergs/gm/s')
-    CALL write_ray_hyperslab('grav_x_c', grav_x_c, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Zone Centered X-Component of Gravitational Acceleration', &
-           'cm/s^2/g')
-    CALL write_ray_hyperslab('grav_y_c', grav_y_c, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Zone Centered Y-Component of Gravitational Acceleration', &
-           'cm/s^2/g')
-    CALL write_ray_hyperslab('grav_z_c', grav_z_c, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Zone Centered Z-Component of Gravitational Acceleration', &
-           'cm/s^2/g')
-    CALL write_ray_hyperslab('agr_e', agr_e, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Zone Edged Value of the Lapse Function After Gravitational Update')
-    CALL write_ray_hyperslab('agr_c', agr_c, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Zone Centered Value of the Lapse Function After Gravitational Update')
-    
-    datasize2d = (/ny,nz_hyperslab_width/)
-    mydatasize2d = (/my_j_ray_dim, my_k_ray_dim/)
-    slab_offset2d = (/j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('r_shock', r_shock, group_id, &
-           datasize2d, mydatasize2d, slab_offset2d, &
-           'Radius of Shock Maximum')
-    CALL write_ray_hyperslab('r_shock_mn', r_shock_mn, group_id, &
-           datasize2d, mydatasize2d, slab_offset2d, &
-           'Minimum Estimated Shock Radius')
-    CALL write_ray_hyperslab('r_shock_mx', r_shock_mx, group_id, &
-           datasize2d, mydatasize2d, slab_offset2d, &
-           'Maximum Estimated Shock Radius')
-    CALL write_ray_hyperslab('tau_adv', tau_adv, group_id, &
-           datasize2d, mydatasize2d, slab_offset2d, &
-           'Advection Time Scale', 's')
-    CALL write_ray_hyperslab('tau_heat_nu', tau_heat_nu, group_id, &
-           datasize2d, mydatasize2d, slab_offset2d, &
-           'Neutrino Heating Time Scale', 's')
-    CALL write_ray_hyperslab('tau_heat_nuc', tau_heat_nuc, group_id, &
-           datasize2d, mydatasize2d, slab_offset2d, &
-           'Nuclear Heating Time Scale', 's')
-    CALL write_ray_hyperslab('r_nse', r_nse, group_id, &
-           datasize2d, mydatasize2d, slab_offset2d, &
-           'Radius of NSE-nonNSE Boundary')
-    
-    datasize3d = (/nnu,ny,nz_hyperslab_width/)
-    mydatasize3d = (/nnu, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset3d = (/0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('rsphere_mean', rsphere_mean, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Mean Neutrinosphere Radius')
-    CALL write_ray_hyperslab('dsphere_mean', dsphere_mean, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Mean Neutrinosphere Density')
-    CALL write_ray_hyperslab('tsphere_mean', tsphere_mean, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Mean Neutrinosphere Temperature')
-    CALL write_ray_hyperslab('msphere_mean', msphere_mean, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Mean Neutrinosphere Enclosed Mass')
-    CALL write_ray_hyperslab('esphere_mean', esphere_mean, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Mean Neutrinosphere Energy')
-    
-    datasize3d = (/nnu+1,ny,nz_hyperslab_width/)
-    mydatasize3d = (/nnu+1, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset3d = (/0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('r_gain', r_gain, group_id, &
-           datasize3d, mydatasize3d, slab_offset3d, &
-           'Gain Radius')
-           
-    datasize4d = (/nx,nez,ny,nz_hyperslab_width/)
-    mydatasize4d = (/nx, nez, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset4d = (/0,0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL write_ray_hyperslab('unu_c', unu_c, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Zone Centered Neutrino Energy', 'MeV')
-    CALL write_ray_hyperslab('dunu_c', dunu_c, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Width of Neutrino Energy Zone at Radial Zone Center', 'MeV')
-    CALL write_ray_hyperslab('unue_e', unue_e, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Zone Centered Neutrino Energy Radial Zone Edge', 'MeV')
-    CALL write_ray_hyperslab('dunue_e', dunue_e, group_id, &
-           datasize4d, mydatasize4d, slab_offset4d, & 
-           'Width of Neutrino Energy Zone at Radial Zone Edge', 'MeV')
-    
-    CALL h5gclose_f(group_id, error)
-
-    !------------------------------------------------------------------------
-    !      Cleanup
-    !------------------------------------------------------------------------
-
-    CALL h5fclose_f(file_id, error)
-    CALL h5close_f(error)
-    call MPI_Info_free(FILE_INFO_TEMPLATE, error)
-
-#endif
-
     io_endtime = MPI_WTIME()
     io_walltime = io_walltime + (io_endtime-io_startime)
     io_count = io_count+1
@@ -1090,7 +668,7 @@ integer*8, private :: io_type, handle
     !       File, group, dataset, and dataspace Identifier 
     !-----------------------------------------------------------------------
     
-    CHARACTER(LEN=23)                :: suffix
+    CHARACTER(LEN=35)                :: suffix
     INTEGER(HID_T)                   :: file_id         ! HDF5 File identifier  
     INTEGER(HID_T)                   :: group_id        ! HDF5 Group identifier
     INTEGER(HID_T)                   :: dataset_id      ! HDF5 dataset identifier
@@ -1119,6 +697,7 @@ integer*8, private :: io_type, handle
     INTEGER(HSIZE_T), dimension(5)   :: slab_offset5d
     
     REAL(KIND=double)                :: xn_tot        ! sum of themass fractions in a zone
+    INTEGER                          :: adios_err     ! ADIOS error flag
     
     !-----------------------------------------------------------------------
     !        Formats
@@ -1149,110 +728,168 @@ integer*8, private :: io_type, handle
     uburn_c      = zero
     
     
-    WRITE(suffix, fmt='(i9.9,a7,i4.4,a3)') read_cycle,'_group_',my_hyperslab_group,'.h5'
+    WRITE(suffix, fmt='(i9.9,a7,i4.4,a3)') read_cycle,'_group_',my_hyperslab_group,'.bp'
+    !WRITE(suffix, fmt='(i9.9,a7,i4.4,a1,i6.6,a3)') ncycle,'_group_',my_hyperslab_group,'_',myid,'.bp'
+
     if(hyperslab_group_master)THEN
       PRINT*, '***Read Model Dump', TRIM(data_path)//'/Restart/'//filename//suffix
       WRITE(nlog, 'a50'), '***Read Model Dump', TRIM(data_path)//'/Restart/'//filename//suffix
     END IF
 
-    CALL h5open_f(error)
-    CALL h5fopen_f(TRIM(data_path)//'/Restart/'//filename//suffix, H5F_ACC_RDONLY_F, file_id, error)
+!    CALL h5open_f(error)
+!    CALL h5fopen_f(TRIM(data_path)//'/Restart/'//filename//suffix, H5F_ACC_RDONLY_F, file_id, error)
+! open bp file for read
+    CALL adios_open (handle, 'restart.model'//char(0), TRIM(data_path)//'/Restart/'//filename//TRIM(suffix)//char(0), 'r'//char(0),error)
     
     if(error /= 0)then
       PRINT*, '***ERROR in trying to open ', TRIM(data_path)//'/Restart/'//filename//suffix
       WRITE(nlog, 'a50'), '***ERROR in trying to open ', TRIM(data_path)//'/Restart/'//filename//suffix
       CALL MPI_ABORT(MPI_COMM_WORLD, error)
     end if
-    
+
+       PRINT*, '***NO ERROR in trying to open ', TRIM(data_path)//'/Restart/'//filename//suffix
+   
+    ! dimension-related variables must be declared by calling adios_write
+    ADIOS_READ(handle,myid)
+    ADIOS_READ(handle,mpi_comm_per_hyperslab_group)
+    ADIOS_READ(handle,nx)
+    ADIOS_WRITE(handle,nx+1)
+    ADIOS_READ(handle,ny)
+    ADIOS_WRITE(handle,ny+1)
+    ADIOS_READ(handle,nz)
+    ADIOS_WRITE(handle,nz+1)
+    ADIOS_READ(handle,nez)
+    ADIOS_READ(handle,nnu)
+    ADIOS_WRITE(handle,nnu+1)
+    ADIOS_READ(handle,nnc)
+    !ADIOS_WRITE(handle,ij_ray_dim)
+    CALL adios_write(handle,'ij_ray_dim'//char(0), my_j_ray_dim)
+    !ADIOS_WRITE(handle,ik_ray_dim)
+    CALL adios_write(handle,'ik_ray_dim'//char(0), my_k_ray_dim)
+    ADIOS_READ(handle,j_ray_min)
+    ADIOS_WRITE(handle,j_ray_min-1)
+    ADIOS_READ(handle,k_ray_min)
+    ADIOS_WRITE(handle,k_ray_min-1)
+
     !------------------------------------------------------------------------
     !      Open Mesh Group and Read Mesh Associated Data
     !------------------------------------------------------------------------
       
-    CALL h5gopen_f(file_id, '/mesh', group_id, error)
+!    CALL h5gopen_f(file_id, '/mesh', group_id, error)
 
-    datasize1d(1) = 2
-    CALL read_1d_slab('radial_index_bound', radial_index_bound, group_id, &
-           datasize1d)
+!    datasize1d(1) = 2
+!    CALL read_1d_slab('radial_index_bound', radial_index_bound, group_id, &
+!           datasize1d)
+    ADIOS_READ(handle,radial_index_bound) 
+
+       PRINT*, '***NO ERROR in trying to read radial_index_bound '
+       PRINT*, '***my_j_ray_dim= '
+
     imin_read = radial_index_bound(1)
     imax_read = radial_index_bound(2)
 
     !-- Read Zone Face Coordinates
-    datasize1d(1) = nx+1
-    CALL read_1d_slab('x_ef', x_ei, group_id, datasize1d)
-    
+!    datasize1d(1) = nx+1
+!    CALL read_1d_slab('x_ef', x_ei, group_id, datasize1d)
+    CALL adios_read(handle, 'x_ef'//char(0), x_ei, adios_err) 
+
     !-- Read Zone Width 
-    datasize1d(1) = nx
-    CALL read_1d_slab('dx_cf', dx_ci, group_id, datasize1d)
+!    datasize1d(1) = nx
+!    CALL read_1d_slab('dx_cf', dx_ci, group_id, datasize1d)
+    CALL adios_read(handle, 'dx_cf'//char(0), dx_ci, adios_err)
     
-    CALL h5gclose_f(group_id, error)
+!    CALL h5gclose_f(group_id, error)
   
     !------------------------------------------------------------------------
     !      Open Physical Variables group and Read Physical Data
     !      Each processors read its share from a hyperslab of the data 
     !------------------------------------------------------------------------
     
-    CALL h5gopen_f(file_id, '/physical_variables', group_id, error)
+!    CALL h5gopen_f(file_id, '/physical_variables', group_id, error)
     
     !-----------------------------------------------------------------------
     !  Independent thermodynamic variables
     !-----------------------------------------------------------------------
-    datasize3d = (/nx, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset3d = (/0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL read_ray_hyperslab('rho_c', rho_c, group_id, &
-           datasize3d, slab_offset3d)
-    CALL read_ray_hyperslab('t_c', t_c, group_id, &
-           datasize3d, slab_offset3d)
-    CALL read_ray_hyperslab('ye_c', ye_c, group_id, &
-           datasize3d, slab_offset3d)
+!    datasize3d = (/nx, my_j_ray_dim, my_k_ray_dim/)
+!    slab_offset3d = (/0,j_ray_min-1,k_hyperslab_min-1/)
+!    CALL read_ray_hyperslab('rho_c', rho_c, group_id, &
+!           datasize3d, slab_offset3d)
+    ADIOS_READ(handle,rho_c)
+
+!    CALL read_ray_hyperslab('t_c', t_c, group_id, &
+!           datasize3d, slab_offset3d)
+    ADIOS_READ(handle,t_c)
+
+!   CALL read_ray_hyperslab('ye_c', ye_c, group_id, &
+!           datasize3d, slab_offset3d)
+    ADIOS_READ(handle,ye_c)
     
     !-----------------------------------------------------------------------
     !  Independent mechanical variables
     !-----------------------------------------------------------------------
-    CALL read_ray_hyperslab('u_c', u_c, group_id, &
-           datasize3d, slab_offset3d)
-    CALL read_ray_hyperslab('v_c', v_c, group_id, &
-           datasize3d,  slab_offset3d)
-    CALL read_ray_hyperslab('w_c', u_c, group_id, &
-           datasize3d, slab_offset3d)
+!    CALL read_ray_hyperslab('u_c', u_c, group_id, &
+!           datasize3d, slab_offset3d)
+    ADIOS_READ(handle,u_c)
+
+!    CALL read_ray_hyperslab('v_c', v_c, group_id, &
+!           datasize3d,  slab_offset3d)
+    ADIOS_READ(handle,v_c)
+
+!    CALL read_ray_hyperslab('w_c', u_c, group_id, &
+!           datasize3d, slab_offset3d)
+    ADIOS_READ(handle,w_c)
     
     !-----------------------------------------------------------------------
     !  Independent radiation variables and bookkeeping arrays
     !-----------------------------------------------------------------------
-    datasize5d = (/nx, nez, nnu, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset5d = (/0,0,0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL read_ray_hyperslab('psi0_c', psi0_c, group_id, &
-           datasize5d, slab_offset5d)
+!    datasize5d = (/nx, nez, nnu, my_j_ray_dim, my_k_ray_dim/)
+!    slab_offset5d = (/0,0,0,j_ray_min-1,k_hyperslab_min-1/)
+!    CALL read_ray_hyperslab('psi0_c', psi0_c, group_id, &
+!           datasize5d, slab_offset5d)
+    ADIOS_READ(handle,psi0_c)
     
-    datasize4d = (/nx, nnc, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset4d = (/0,0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL read_ray_hyperslab('xn_c', xn_c, group_id, &
-           datasize4d, slab_offset4d)
+!    datasize4d = (/nx, nnc, my_j_ray_dim, my_k_ray_dim/)
+!    slab_offset4d = (/0,0,j_ray_min-1,k_hyperslab_min-1/)
+!    CALL read_ray_hyperslab('xn_c', xn_c, group_id, &
+!           datasize4d, slab_offset4d)
+    ADIOS_READ(handle,xn_c)
     
-    datasize3d = (/nx, my_j_ray_dim, my_k_ray_dim/)
-    slab_offset3d = (/0,j_ray_min-1,k_hyperslab_min-1/)
-    CALL read_ray_hyperslab('nse_c', nse_c, group_id, &
-           datasize3d, slab_offset3d)
+!    datasize3d = (/nx, my_j_ray_dim, my_k_ray_dim/)
+!    slab_offset3d = (/0,j_ray_min-1,k_hyperslab_min-1/)
+!    CALL read_ray_hyperslab('nse_c', nse_c, group_id, &
+!           datasize3d, slab_offset3d)
+    ADIOS_READ(handle,nse_c)
            
-    CALL read_ray_hyperslab('a_nuc_rep_c', a_nuc_rep_c, group_id, &
-            datasize3d, slab_offset3d)
-    CALL read_ray_hyperslab('z_nuc_rep_c', z_nuc_rep_c, &
-           group_id, datasize3d, slab_offset3d)
-    CALL read_ray_hyperslab('be_nuc_rep_c', be_nuc_rep_c, &
-           group_id, datasize3d, slab_offset3d)
-    CALL read_ray_hyperslab('uburn_c', uburn_c, &
-           group_id, datasize3d, slab_offset3d)
-    CALL read_ray_hyperslab('duesrc', duesrc, &
-           group_id, datasize3d, slab_offset3d)
+!    CALL read_ray_hyperslab('a_nuc_rep_c', a_nuc_rep_c, group_id, &
+!            datasize3d, slab_offset3d)
+    ADIOS_READ(handle,a_nuc_rep_c)
+
+!    CALL read_ray_hyperslab('z_nuc_rep_c', z_nuc_rep_c, &
+!           group_id, datasize3d, slab_offset3d)
+    ADIOS_READ(handle,z_nuc_rep_c)
+
+!    CALL read_ray_hyperslab('be_nuc_rep_c', be_nuc_rep_c, &
+!           group_id, datasize3d, slab_offset3d)
+    ADIOS_READ(handle,be_nuc_rep_c)
+
+!    CALL read_ray_hyperslab('uburn_c', uburn_c, &
+!           group_id, datasize3d, slab_offset3d)
+    ADIOS_READ(handle,uburn_c)
+
+!    CALL read_ray_hyperslab('duesrc', duesrc, &
+!           group_id, datasize3d, slab_offset3d)
+    ADIOS_READ(handle,duesrc)
     
-    CALL h5gclose_f(group_id, error)
+!    CALL h5gclose_f(group_id, error)
 
       
     !------------------------------------------------------------------------
     !      Cleanup
     !------------------------------------------------------------------------
 
-    CALL h5fclose_f(file_id, error)
-    CALL h5close_f(error)
+!    CALL h5fclose_f(file_id, error)
+!    CALL h5close_f(error)
+    CALL adios_close(handle,adios_err) 
     
     !-----------------------------------------------------------------------
     !     Set values not read directly

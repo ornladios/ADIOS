@@ -39,20 +39,28 @@ if [ -f /etc/profile.d/modules.sh ]; then
 . /etc/profile.d/modules.sh
 fi
 
+export SVN_URL="https://svn.ccs.ornl.gov/svn-ewok/ADIOS/trunk/applications/chimera_bench"
+
 echo "Chimera Benchmark is set to " $WORKING_DIR
 echo "Number of processes from " $LOW_BOUND_PROC " to " $UP_BOUND_PROC
 echo "For each (number of processes, ADIOS Method), run " $NUMBER_TEST " job(s)"
 echo
 sleep 2
 echo 
-echo "Decompress..."
+echo "Check out files from "$SVN_URL
 echo 
 sleep 1
 
 mkdir -p $WORKING_DIR
-cp ~zf2/chimera_bench.tar.gz $WORKING_DIR
+#cp ~zf2/chimera_bench.tar.gz $WORKING_DIR
+#cd $WORKING_DIR
+#tar zxvf chimera_bench.tar.gz
+#cp /ccs/home/zf2/ADIOS/trunk/applications/chimera_bench/* $WORKING_DIR -rf
 cd $WORKING_DIR
-tar zxvf chimera_bench.tar.gz
+svn checkout $SVN_URL
+mv chimera_bench/* .
+rm chimera_bench -rf
+
 
 echo 
 echo "Build executables in " $WORKING_DIR"/src/Execute/build ..." 

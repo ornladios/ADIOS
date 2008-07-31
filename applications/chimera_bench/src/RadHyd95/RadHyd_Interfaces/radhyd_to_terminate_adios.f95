@@ -327,11 +327,10 @@ END IF ! ndim == 1
 WRITE (nprint,1001)
 WRITE (nlog,1001)
 
-CALL adios_finalize (myid, adios_err)
 
 #ifdef ADIOS_MODEL || ADIOS_KEYS
-  CALL cycle_end(ncycle)
-  CALL finalize_prof()
+CALL adios_finalize (myid, adios_err)
+CALL finalize_prof()
 #endif
 
 
