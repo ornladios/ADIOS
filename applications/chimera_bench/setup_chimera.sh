@@ -57,6 +57,7 @@ mkdir -p $WORKING_DIR
 #tar zxvf chimera_bench.tar.gz
 #cp /ccs/home/zf2/ADIOS/trunk/applications/chimera_bench/* $WORKING_DIR -rf
 cd $WORKING_DIR
+module load subversion 
 svn checkout $SVN_URL
 mv chimera_bench/* .
 rm chimera_bench -rf
@@ -68,6 +69,7 @@ echo
 sleep 1
 
 # build executables
+module unload hdf5
 module load hdf5/1.6.7_par
 cd src/Execute/build
 make
