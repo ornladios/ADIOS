@@ -31,8 +31,6 @@ int adios_should_use_data (int element, int rank
                           ,int * position
                           );
 const char * adios_tag_to_string (int tag);
-const char * adios_type_to_string (int type);
-const char * adios_file_mode_to_string (int mode);
 void adios_var_element_count (int rank
                              ,struct adios_bp_dimension_struct * dims
                              ,uint64_t * use_count

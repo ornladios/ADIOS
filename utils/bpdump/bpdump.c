@@ -1,56 +1,58 @@
-#include "binpack-general.h"
-#include "br-utils.h"
+//#include "binpack-general.h"
+//#include "br-utils.h"
+#include <sys/types.h>
+#include "adios_types.h"
+#include "adios_transport_hooks.h"
+#include "adios_bp_v1.h"
+#include "adios_internals.h"
+
+#define DIVIDER "========================================================\n"
+
+struct dump_struct
+{
+    int do_dump;
+    char * dump_var;
+};
+
+void print_process_group_header (uint64_t num
+                      ,struct adios_process_group_header_struct_v1 * pg_header
+                      );
+void print_vars_header (struct adios_vars_header_struct_v1 * vars_header);
+void print_var_header (struct adios_var_header_struct_v1 * var_header);
+void print_var_payload (struct adios_var_header_struct_v1 * var_header
+                       ,struct adios_var_payload_struct_v1 * var_payload
+                       ,struct dump_struct * dump
+                       );
+void print_attrs_header (
+                      struct adios_attributes_header_struct_v1 * attrs_header
+                      );
+void print_attribute (struct adios_attribute_struct_v1 * attribute);
+void print_process_group_index (
+                         struct adios_index_process_group_struct_v1 * pg_root
+                         );
+void print_vars_index (struct adios_index_var_struct_v1 * vars_root);
 
 int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
                   ,void * data
                   );
 
-struct dump_struct
-{
-    int dump;
-    char * dump_var;
-    unsigned long DATALEN;
-    void * val;
-};
-
-static void pre_element_fetch (struct adios_bp_element_struct * element
-                              ,void ** buffer, uint64_t * buffer_size
-                              ,void * private_data
-                              )
-{
-    struct dump_struct * data = (struct dump_struct *) private_data;
-
-    if (element->tag == DST_TAG)
-    {
-        if (data->dump == 0)
-        {
-            element->data = 0;
-            *buffer = 0;
-            *buffer_size = 0;
-
-            return;
-        }
-    }
-
-    element->data = data->val;
-    *buffer = data->val;
-    *buffer_size = data->DATALEN;
-}
+const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t element);
 
 int main (int argc, char ** argv)
 {
     char * filename;
     char * var;
     int i = 0;
-    long long handle = 0;
+    int rc = 0;
     uint64_t element_size = 0;
     struct adios_bp_element_struct * element = NULL;
-    struct dump_struct data;
-    data.DATALEN = 100 * 1024 * 1024;
+    struct dump_struct dump;
 
     if (argc < 2)
     {
-        fprintf (stderr, "usage: %s [-d [var]|--dump [var]] <filename>\n", argv [0]);
+        fprintf (stderr, "usage: %s [-d [var]|--dump [var]] <filename>\n"
+                ,argv [0]
+                );
 
         return -1;
     }
@@ -61,23 +63,25 @@ int main (int argc, char ** argv)
             || !strcmp (argv [1], "--dump")
            )
         {
-            data.dump = 1;
+            dump.do_dump = 1;
             if (argc > 2)
             {
-                data.dump_var = argv [2];
+                dump.dump_var = argv [2];
                 filename = argv [3];
-                printf("%s %s\n",data.dump_var,filename);
+                printf("%s %s\n",dump.dump_var,filename);
             }
             else
             {
-                data.dump_var = 0;
+                dump.dump_var = 0;
                 filename = argv [2];
-                printf("%s %s\n",data.dump_var,filename);
+                printf("%s %s\n",dump.dump_var,filename);
             }
         }
         else
         {
-            fprintf (stderr, "usage: %s [-d [var]|--dump [var]] <filename>\n", argv [0]);
+            fprintf (stderr, "usage: %s [-d [var]|--dump [var]] <filename>\n"
+                    ,argv [0]
+                    );
 
             return -1;
         }
@@ -85,172 +89,120 @@ int main (int argc, char ** argv)
     else
     {
         filename = argv [1];
-        data.dump = 0;
-        data.dump_var = 0;
+        dump.do_dump = 0;
+        dump.dump_var = 0;
     }
 
-    handle = br_fopen (filename);
-    if (!handle)
+    struct adios_bp_buffer_struct_v1 * b = 0;
+    uint32_t version = 0;
+
+    b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
+    adios_buffer_struct_init (b);
+
+    rc = adios_posix_open_read_internal (filename, "", b);
+    if (!rc)
     {
-        fprintf (stderr, "file not found: %s\n", filename);
+        fprintf (stderr, "bpdump: file not found: %s\n", filename);
 
         return -1;
     }
 
-    data.val = (char *) malloc (data.DATALEN);
-    if (!data.val)
+    adios_posix_read_version (b);
+    adios_parse_version (b, &version);
+
+    struct adios_index_process_group_struct_v1 * pg_root = 0;
+    struct adios_index_process_group_struct_v1 * pg = 0;
+    struct adios_index_var_struct_v1 * vars_root = 0;
+
+    printf (DIVIDER);
+    printf ("Process Groups Index:\n");
+    adios_posix_read_index_offsets (b);
+    adios_parse_index_offsets_v1 (b);
+
+    adios_posix_read_process_group_index (b);
+    adios_parse_process_group_index_v1 (b, &pg_root);
+    print_process_group_index (pg_root);
+
+    printf (DIVIDER);
+    printf ("Vars Index:\n");
+    adios_posix_read_vars_index (b);
+    adios_parse_vars_index_v1 (b, &vars_root);
+    print_vars_index (vars_root);
+
+    uint64_t element_num = 1;
+    pg = pg_root;
+    while (pg)
     {
-        fprintf (stderr, "cannot allocate %ul for data buffer\n", data.DATALEN);
+        printf (DIVIDER);
 
-        return -1;
-    }
+        struct adios_process_group_header_struct_v1 pg_header;
+        struct adios_vars_header_struct_v1 vars_header;
+        struct adios_attributes_header_struct_v1 attrs_header;
 
-    while (element_size = br_get_next_element_specific (handle
-                                                       ,pre_element_fetch
-                                                       ,0
-                                                       ,&data
-                                                       ,&element
-                                                       )
-          )
-    {
-        printf ("element size: %d\n", element_size);
-        printf ("%s %s\n", adios_tag_to_string (element->tag), element->name);
-        printf ("\tPath: %s\n", element->path);
+        struct adios_var_header_struct_v1 var_header;
+        struct adios_var_payload_struct_v1 var_payload;
+        struct adios_attribute_struct_v1 attribute;
 
-        switch (element->tag)
+        // setup where to read the process group from (and size)
+        b->read_pg_offset = pg->offset_in_file;
+        if (pg->next)
         {
-            case SCR_TAG:
-            case DSTATRS_TAG:
-            case DSTATRN_TAG:
-            case GRPATRS_TAG:
-            case GRPATRN_TAG:
-                printf ("\tType: %s (%d)\n"
-                       ,adios_type_to_string (element->type)
-                       ,element->type
-                       );
-                printf ("\tValue: ");
-                if (element->size == 0)
-                    printf ("(null)\n");
-                else
-                switch (element->type)
-                {
-                    case bp_char: // adios_byte
-                        printf ("%d\n", *((int8_t *) element->data));
-                        break;
-                    case bp_short: // adios_short
-                        printf ("%d\n", *((int16_t *) element->data));
-                        break;
-                    case bp_int: //adios_integer
-                        printf ("%d\n", *((int32_t *) element->data));
-                        break;
-                    case bp_longlong: //adios_long
-                        printf ("%lld\n", *((int64_t *) element->data));
-                        break;
-
-                    case bp_float: //adios_real
-                        printf ("%f\n", *((float *) element->data));
-                        break;
-                    case bp_double: //adios_double
-                        printf ("%g\n", *((double *) element->data));
-                        break;
-                    case bp_long_double: //adios_long_double
-                        printf ("%lg\n", *((long double *) element->data));
-                        break;
-
-                    case bp_uchar: //adios_unsigned_byte:
-                        printf ("%u\n", *((uint8_t *) element->data));
-                        break;
-                    case bp_ushort: //adios_unsigned_short:
-                        printf ("%u\n", *((uint16_t *) element->data));
-                        break;
-                    case bp_uint: //adios_unsigned_integer
-                        printf ("%d\n", *((uint32_t *) element->data));
-                        break;
-                    case bp_ulonglong: // adios_unsigned_long
-                        printf ("%llu\n", *((uint64_t *) element->data));
-                        break;
-
-                    case bp_string: //adios_string
-                        printf ("%s\n", ((char *) element->data));
-                        break;
-                    case bp_complex: // adios_complex
-                        printf ("%f %f\n"
-                               ,((float *) element->data) [0]
-                               ,((float *) element->data) [1]
-                               );
-                        break;
-                    case bp_double_complex: // adios_double_complex
-                        printf ("%lf %lf\n"
-                               ,((double *) element->data) [0]
-                               ,((double *) element->data) [1]
-                               );
-                        break;
-
-                    default:
-                        break;
-                }
-                break;
-
-            case DST_TAG:
-                printf ("\tType: %s (%d)\n"
-                       ,adios_type_to_string (element->type)
-                       ,element->type
-                       );
-                printf ("\tRanks: %u\n", element->ranks);
-                if (element->dims)
-                {
-                    char * format_local = "\t\tDim(%d): %d\n";
-                    char * format_global = "\t\tDim(%d) l:g:o: %d:%d:%d\n";
-                    for (i = 0; i < element->ranks; i++)   
-                    {
-                        if (element->dims [i].global_bound == 0)
-                        {
-                            printf (format_local
-                                   ,i
-                                   ,element->dims [i].local_bound
-                                   );
-                        }
-                        else
-                        {
-                            printf (format_global
-                                   ,i
-                                   ,element->dims [i].local_bound
-                                   ,element->dims [i].global_bound
-                                   ,element->dims [i].global_offset
-                                   );
-                        }
-                    }
-                }
-                if (data.dump)
-                {
-                    printf ("\t%s: %s\n", data.dump_var, element->name);
-                    if (!data.dump_var || !strcmp (data.dump_var, element->name))
-                    {
-                        printf ("\tdata.dump: %u\n", data.dump);
-                        print_dataset (element->type
-                                      ,element->ranks
-                                      ,element->dims
-                                      ,element->data
-                                      );
-                    }
-                }
-                break;
-
-            case GRP_TAG:
-            default:
-                fprintf (stderr, "invalid tag\n");
-
-                break;
+            b->read_pg_size =   pg->next->offset_in_file
+                              - pg->offset_in_file;
         }
-        br_free_element (element);
-        printf ("-----------------------\n");
-    }
-    br_fclose (handle);
+        else
+        {
+            b->read_pg_size =   b->pg_index_offset
+                              - pg->offset_in_file;
+        }
 
+        adios_posix_read_process_group (b);
+        adios_parse_process_group_header_v1 (b, &pg_header);
+        print_process_group_header (element_num++, &pg_header);
+
+        adios_parse_vars_header_v1 (b, &vars_header);
+        print_vars_header (&vars_header);
+
+        int i;
+        for (i = 0; i < vars_header.count; i++)
+        {
+            adios_parse_var_data_header_v1 (b, &var_header);
+            print_var_header (&var_header);
+
+            if (dump.do_dump)
+            {
+                // make sure the buffer is big enough or send in null
+                adios_parse_var_data_payload_v1 (b, &var_header, &var_payload);
+                print_var_payload (&var_header, &var_payload, &dump);
+            }
+            else
+            {
+                adios_parse_var_data_payload_v1 (b, &var_header, NULL);
+            }
+            printf ("\n");
+        }
+
+        adios_parse_attributes_header_v1 (b, &attrs_header);
+        print_attrs_header (&attrs_header);
+
+        for (i = 0; i < attrs_header.count; i++)
+        {
+            adios_parse_attribute_v1 (b, &attribute);
+            print_attribute (&attribute);
+            printf ("\n");
+        }
+
+        pg = pg->next;
+    }
+    printf (DIVIDER);
+    printf ("End of %s\n", filename);
+
+    adios_posix_close_internal (b);
 
     return 0;
 }
 
+#if 0
 int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
                   ,void * data
                   )
@@ -272,6 +224,7 @@ int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
     printf ("ranks=%d\n",ranks);
     for (j = 0; j < total_element_count; j++)
     {
+        printf ("%s ", value_to_string (type, data, e));
             switch (type)
             {
                 case bp_uchar:
@@ -308,5 +261,254 @@ int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
                     break;
             }
             e++;
+    }
+}
+#endif
+
+const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t element)
+{
+    static char s [100];
+    s [0] = 0;
+
+    switch (type)
+    {
+        case adios_unsigned_byte:
+            sprintf (s, "%u", *(((uint8_t *) data) + element));
+            break;
+
+        case adios_byte:
+            sprintf (s, "%d", *(((int8_t *) data) + element));
+            break;
+
+        case adios_short:
+            sprintf (s, "%hd", *(((int8_t *) data) + element));
+            break;
+
+        case adios_unsigned_short:
+            sprintf (s, "%uh", *(((int8_t *) data) + element));
+            break;
+
+        case adios_integer:
+            sprintf (s, "%d", *(((int32_t *) data) + element));
+            break;
+
+        case adios_unsigned_integer:
+            sprintf (s, "%u", *(((uint32_t *) data) + element));
+            break;
+
+        case adios_long:
+            sprintf (s, "%lld", *(((int64_t *) data) + element));
+            break;
+
+        case adios_unsigned_long:
+            sprintf (s, "%llu", *(((uint64_t *) data) + element));
+            break;
+
+        case adios_real:
+            sprintf (s, "%e", *(((float *) data) + element));
+            break;
+
+        case adios_double:
+            sprintf (s, "%le", *(((double *) data) + element));
+            break;
+
+        case adios_long_double:
+            sprintf (s, "%Le", *(((long double *) data) + element));
+            break;
+
+        case adios_string:
+            sprintf (s, "%s", ((char *) data) + element);
+            break;
+
+        case adios_complex:
+            sprintf (s, "(%f %f)", *((float *) data) + (element * 2 + 0)
+                                 , *((float *) data) + (element * 2 + 1)
+                    );
+            break;
+
+        case adios_double_complex:
+            sprintf (s, "(%lf %lf)", *((double *) data) + (element * 2 + 0)
+                                   , *((double *) data) + (element * 2 + 1)
+                    );
+            break;
+    }
+
+    return s;
+}
+
+        
+void print_process_group_header (uint64_t num
+                      ,struct adios_process_group_header_struct_v1 * pg_header
+                      )
+{
+    int i;
+    struct adios_method_info_struct_v1 * m;
+
+    printf ("Process Group: %llu\n", num);
+    printf ("\tGroup Name: %s\n", pg_header->name);
+    printf ("\tHost Language Fortran?: %c\n"
+           ,(pg_header->host_language_fortran == adios_flag_yes ? 'Y' : 'N')
+           );
+    printf ("\tCoordination Comm Member ID: %d\n", pg_header->coord_comm_id);
+    printf ("\tCoordination Var Member ID: %d\n", pg_header->coord_var_id);
+    printf ("\tTimestep Member ID: %d\n", pg_header->timestep_id);
+    printf ("\tMethods used in output: %d\n", pg_header->methods_count);
+    m = pg_header->methods;
+    while (m)
+    {
+        printf ("\t\tMethod ID: %d\n", m->id);
+        printf ("\t\tMethod Parameters: %s\n", m->parameters);
+ 
+        m = m->next;
+    }
+}
+
+void print_vars_header (struct adios_vars_header_struct_v1 * vars_header)
+{
+    printf ("\tVars Count: %u\n", vars_header->count);
+}
+
+void print_var_header (struct adios_var_header_struct_v1 * var_header)
+{
+    int i = 0;
+
+    printf ("\t\tVar Name (ID): %s (%d)\n", var_header->name, var_header->id);
+    printf ("\t\tVar Path: %s\n", var_header->path);
+    printf ("\t\tDatatype: %s\n", adios_type_to_string (var_header->type));
+    printf ("\t\tIs Dimension: %c\n"
+           ,(var_header->is_dim == adios_flag_yes ? 'Y' : 'N')
+           );
+    if (var_header->dims)
+    {
+        struct adios_dimension_struct_v1 * d = var_header->dims;
+        printf ("\t\tDimensions:\n");
+        while (d)
+        {
+            printf ("\t\t\tDim %d l:g:o: ", i++);
+            if (d->dimension.var_id == 0)
+            {
+                printf ("R(%llu):", d->dimension.rank);
+            }
+            else
+            {
+                printf ("V(%hu):", d->dimension.var_id);
+            }
+            if (d->global_dimension.var_id == 0)
+            {
+                printf ("R(%llu):", d->global_dimension.rank);
+            }
+            else
+            {
+                printf ("V(%hu):", d->global_dimension.var_id);
+            }
+            if (d->local_offset.var_id == 0)
+            {
+                printf ("R(%llu)\n", d->local_offset.rank);
+            }
+            else
+            {
+                printf ("V(%hu)\n", d->local_offset.var_id);
+            }
+
+            d = d->next;
+	}
+    }
+}
+
+void print_var_payload (struct adios_var_header_struct_v1 * var_header
+                       ,struct adios_var_payload_struct_v1 * var_payload
+                       ,struct dump_struct * dump
+                       )
+{
+    printf ("\t\tMin: %s\n", value_to_string (var_header->type
+                                             ,var_payload->min, 0
+                                             )
+           );
+    printf ("\t\tMax: %s\n", value_to_string (var_header->type
+                                             ,var_payload->max, 0
+                                             )
+           );
+    if (dump->do_dump)
+    {
+        printf ("dump the data\n");
+    }
+}
+
+void print_attrs_header (
+                      struct adios_attributes_header_struct_v1 * attrs_header
+                      )
+{
+    printf ("\tAttributes Count: %u\n", attrs_header->count);
+}
+
+void print_attribute (struct adios_attribute_struct_v1 * attribute)
+{
+    printf ("\t\tAttribute Name (ID): %s (%d)\n"
+           ,attribute->name, attribute->id
+           );
+    printf ("\t\tAttribute Path: %s\n", attribute->path);
+    if (attribute->is_var == adios_flag_yes)
+    {
+        printf ("\t\tAssociated Var ID: %d\n", attribute->var_id);
+    }
+    else
+    {
+        printf ("\t\tDatatype: %s\n", adios_type_to_string (attribute->type));
+        printf ("\t\tValue: %s\n", value_to_string (attribute->type
+                                                   ,attribute->value, 0
+                                                   )
+               );
+    }
+}
+
+void print_process_group_index (
+                         struct adios_index_process_group_struct_v1 * pg_root
+                         )
+{
+    while (pg_root)
+    {
+        printf ("Group: %s\n", pg_root->group_name);
+        printf ("\tProcess ID: %d\n", pg_root->process_id);
+        printf ("\tTimestep: %d\n", pg_root->timestep);
+        printf ("\tOffset in File: %llu\n", pg_root->offset_in_file);
+
+        pg_root = pg_root->next;
+    }
+}
+
+void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
+{
+    while (vars_root)
+    {
+        if (!strcmp (vars_root->var_path, "/"))
+        {
+            printf ("Var (Group): /%s (%s)\n", vars_root->var_name
+                   ,vars_root->group_name
+                   );
         }
+        else
+	{
+            printf ("Var (Group): %s/%s (%s)\n", vars_root->var_path
+                   ,vars_root->var_name, vars_root->group_name
+                   );
+	}
+        printf ("\tDatatype: %s\n", adios_type_to_string (vars_root->type));
+        printf ("\tVars Entries: %llu\n", vars_root->entries_count);
+        uint64_t i;
+        printf ("\t\tOffset\t\tMin\t\tMax\n");
+        for (i = 0; i < vars_root->entries_count; i++)
+        {
+            printf ("\t\t%s\t\t", value_to_string (adios_long
+                                           ,&vars_root->entries [i].offset, 0)
+                                           );
+            printf ("%s\t\t", value_to_string (vars_root->type
+                                           ,vars_root->entries [i].min, 0)
+                                           );
+            printf ("%s\n", value_to_string (vars_root->type
+                                           ,vars_root->entries [i].max, 0)
+                                           );
+        }
+
+        vars_root = vars_root->next;
+    }
 }

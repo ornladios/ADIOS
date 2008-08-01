@@ -1,12 +1,13 @@
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include "br-utils.h"
 
 struct adios_bp_read_struct
 {
     char type;  // 1 == file, 0 == buffer
     void * buf;
-    uint64_t long buf_len;
+    uint64_t buf_len;
     int fd;
     int offset;
 };

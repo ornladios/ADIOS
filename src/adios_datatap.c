@@ -133,13 +133,13 @@ extern void adios_datatap_init (const char *params, struct adios_method_struct *
 
 
 
-extern void adios_datatap_open (struct adios_file_struct * fd, 
+extern int adios_datatap_open (struct adios_file_struct * fd, 
 				struct adios_method_struct * method)
 {
     if(fd == NULL || method == NULL)
     {
 	fprintf(stderr, "Bad input parameters\n");
-	return;
+	return 0;
     }
 	
     dmd *mdata = (dmd*)method->method_data;
@@ -149,18 +149,18 @@ extern void adios_datatap_open (struct adios_file_struct * fd,
 	if(mdata->initialized == 0)
 	{
 	    fprintf(stderr, "method not initialized properly\n");
-	    return;
+	    return 0;
 	}
     }
     else
     {
 	fprintf(stderr, "method not initialized\n");
-	return;
+	return 0;
     }
 
     if(mdata->fm != NULL)
     {
-	return;
+	return 0;
     }
     
 
@@ -169,14 +169,14 @@ extern void adios_datatap_open (struct adios_file_struct * fd,
     if(t == NULL)
     {
 	fprintf(stderr, "group is not initialized properly\n");
-	return;
+	return 0;
     }
 	
     struct adios_var_struct *fields = t->vars;
     if(fields == NULL)
     {
 	fprintf(stderr, "adios vars not initalized properly in the group\n");
-	return;
+	return 0;
     }
 	
     //iterate through all the types
@@ -185,7 +185,7 @@ extern void adios_datatap_open (struct adios_file_struct * fd,
     if(format == NULL)
     {
 	perror("memory allocation failed");
-	return;
+	return 0;
     }
 		
     memset(format, 0, sizeof(FMFormatRec) *2);
@@ -195,7 +195,7 @@ extern void adios_datatap_open (struct adios_file_struct * fd,
     if(current_fm == NULL)
     {
 	perror("memory allocation failed");
-	return;
+	return 0;
     }
 		
     memset(current_fm, 0, sizeof(struct fm_structure));
@@ -211,7 +211,7 @@ extern void adios_datatap_open (struct adios_file_struct * fd,
     if(t->var_count == 0)
     {
 	fprintf(stderr, "no variables in this group - possibly an error\n");
-	return;
+	return 0;
 		
     }
 		
@@ -219,7 +219,7 @@ extern void adios_datatap_open (struct adios_file_struct * fd,
     if(field_list == NULL)
     {
 	perror("memory allocation failed");
-	return;
+	return 0;
     }
 		
     //keep count of the total number of fields
@@ -414,6 +414,23 @@ extern void adios_datatap_open (struct adios_file_struct * fd,
 
     mdata->fm = current_fm;
     
+    return 1;
+}
+
+int adios_datatap_should_buffer (struct adios_file_struct * fd
+                              ,struct adios_method_struct * method
+                              ,void * comm
+                              )
+{
+    return 0;   // we'll buffer internally
+}
+
+int adios_datatap_should_buffer (struct adios_file_struct * fd
+                              ,struct adios_method_struct * method
+                              ,void * comm
+                              )
+{
+    return 0;   // we'll buffer internally
 }
 
 static FMField* internal_find_field(char *name, FMFieldList flist)

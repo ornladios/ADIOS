@@ -1,12 +1,11 @@
-<adios-config host-language="C">   <!-- other host-language is 'Fortran' -->
+<adios-config host-language="C">
   <adios-group name="restart" coordination-communicator="comm">
     <var name="comm" type="integer"/>
-
-    <var name="mype" type="integer"/>
+    <var name="mype" path="/" type="integer"/>
     <var name="mype" path="/test" type="integer"/>
     <var name="zionsize" type="integer"/>
     <var name="zion" type="real" dimensions="10" path="/abc/me"/>
-<!--    <var name="zion" type="real" dimensions="zionsize" path="/abc/me"/> -->
+    <var name="zion1" type="real" dimensions="zionsize" path="/abc/me"/>
 
     <var name="node-attr" type="integer"/>
 
@@ -16,8 +15,8 @@
     <attribute name="timestep2" path="/abc" value="1"/>
     <attribute name="timestep3" path="/abc/" value="1"/>
 
-    <!-- try a writeable attribute -->
-  <!--  <attribute name="node" path="/" var="node-attr"/> -->
+  
+    <attribute name="node" path="/" var="node-attr"/>
   </adios-group>
 
   <method group="restart" method="MPI"/>
