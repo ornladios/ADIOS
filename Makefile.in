@@ -74,8 +74,7 @@ am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
 	libadios_a-adios_bp_v1.$(OBJEXT)
 libadios_a_OBJECTS = $(am_libadios_a_OBJECTS)
 libadios_int_a_AR = $(AR) $(ARFLAGS)
-am__DEPENDENCIES_1 =
-libadios_int_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+libadios_int_a_LIBADD =
 am_libadios_int_a_OBJECTS = libadios_int_a-adios_internals.$(OBJEXT) \
 	libadios_int_a-adios_transport_hooks_dummy.$(OBJEXT) \
 	libadios_int_a-adios_bp_v1.$(OBJEXT)
@@ -211,6 +210,7 @@ target_alias = @target_alias@
 INCLUDES = -I$(top_srcdir)
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES = AUTO
+#libadios_int_a_LIBADD = $(MXML_LIBS)
 include_HEADERS = adios.h adios_types.h adios_internals.h \
 	adios_transport_hooks.h
 lib_LIBRARIES = libadios.a libadios_int.a
@@ -238,7 +238,6 @@ libadios_int_a_SOURCES = adios_internals.c \
 #                        br-utils.c \
 #                        binpack-utils.c
 libadios_int_a_CPPFLAGS = $(MXML_CPPFLAGS)
-libadios_int_a_LIBADD = $(MXML_LIBS)
 all: all-am
 
 .SUFFIXES:
