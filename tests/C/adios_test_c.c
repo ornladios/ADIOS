@@ -12,7 +12,7 @@ int main (int argc, char ** argv)
 {
     char * type_name = "restart";
     char * filename = "restart.bp";
-    long long io_handle;  /* io handle */
+    long long io_handle;  // io handle
     MPI_Comm comm = MPI_COMM_WORLD;
     int rank;
 
@@ -45,16 +45,12 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
     adios_init ("config_c.xml");
 
+#if 1
 printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
-#if 0
     adios_open (&io_handle, type_name, filename, "w");
-    adios_group_size (io_handle, 4, &total, &comm);
-    adios_write (io_handle, "mype", &var_x1);
-    adios_close (io_handle);
-#endif
-
-    adios_open (&io_handle, type_name, filename, "w");
-    adios_group_size (io_handle, 4 + 4 + 4 + 4 + 4 * 10 + 4 * 10 + 4, &total, &comm);
+    adios_group_size (io_handle, 4 + 4 + 4 + 4 + 4 * 10 + 4 * 10 + 4
+                     ,&total, &comm
+                     );
     adios_write (io_handle, "comm", &comm);
     adios_write (io_handle, "/mype", &var_x1);
     adios_write (io_handle, "/test/mype", &var_x2);
@@ -67,23 +63,24 @@ printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
     printf ("rank: %d write completed\n", rank);
 
     MPI_Barrier (MPI_COMM_WORLD);
+#endif
+
 #if 1
 printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
 
     adios_open (&io_handle, type_name, filename, "r");
     adios_group_size (io_handle, 0, &total, &comm);
-    //adios_write (io_handle, "zionsize", &z_dim_size);
     adios_read (io_handle, "/mype", &r_var_x1);
     adios_read (io_handle, "/test/mype", &r_var_x2);
     adios_read (io_handle, "zionsize", &r_zsize);
-    adios_read (io_handle, "zion", &r_z);
+    adios_read (io_handle, "zion", r_z);
     adios_close (io_handle);
 
     MPI_Barrier (MPI_COMM_WORLD);
 
     if (   var_x1 != r_var_x1
         || var_x2 != r_var_x2
-        || r_zsize != r_zsize
+        || r_zsize != z_dim_size
         || r_z [0] != z_dim [0]
         || r_z [1] != z_dim [1]
         || r_z [2] != z_dim [2]
@@ -96,7 +93,13 @@ printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
         || r_z [9] != z_dim [9]
        )
     {
+        int i;
         printf ("rank: %d mismatch in reading\n", rank);
+        printf ("r_var_x1: %d (%d)\n", r_var_x1, var_x1);
+        printf ("r_var_x2: %d (%d)\n", r_var_x2, var_x2);
+        printf ("r_zsize: %d (%d)\n", r_zsize, z_dim_size);
+        for (i = 0; i < 10; i++)
+            printf ("z_dim [%d]: %f (%f)\n", i, r_z [i], z_dim [i]);
     }
     else
     {
@@ -108,12 +111,20 @@ printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
 printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
     var_x1 = 11;
     adios_open (&io_handle, type_name, filename, "a");
-    adios_group_size (io_handle, 4 + 4 + 4 + 4 + 4 * 10 + 4, &total, &comm);
-    adios_write (io_handle, "comm", &comm);
-    adios_write (io_handle, "mype", &var_x1);
+    adios_group_size (io_handle, 4 + 4 + 4 + 4 + 4 * 10 + 4 * 10 + 4
+                     ,&total, &comm
+                     );
+//    adios_write (io_handle, "comm", &comm);
+    adios_write (io_handle, "/mype", &var_x1);
+    adios_write (io_handle, "/test/mype", &var_x2);
     adios_write (io_handle, "zionsize", &z_dim_size);
     adios_write (io_handle, "zion", z_dim);
+    adios_write (io_handle, "zion1", z_dim);
+    adios_write (io_handle, "node-attr", &node);
     adios_close (io_handle);
+
+    printf ("rank: %d append completed\n", rank);
+
 #endif
 
     MPI_Barrier (MPI_COMM_WORLD);
