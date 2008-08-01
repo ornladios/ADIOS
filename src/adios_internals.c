@@ -4360,12 +4360,12 @@ void adios_extract_string (char * out, const char * in, int size)
 {
     if (in && out)
         strcpy (out, in);
-/* for some Fortran implementations, we get a size for a string.
- * for others (like PGI), we don't and it isn't null terminated
- * unless we do it explicitly.  Assume that it is null terminated
- * for now.
- */
-/*
+// for some Fortran implementations, we get a size for a string.
+// for others (like PGI), we don't and it isn't null terminated
+// unless we do it explicitly.  Assume that it is null terminated
+// for now.
+//
+#if 0
     int i = 0;
     memcpy (out, in, size);
     while (i < size)
@@ -4379,7 +4379,7 @@ void adios_extract_string (char * out, const char * in, int size)
             i++;
     }
     out [i] = 0;
-*/
+#endif
 }
 
 void adios_append_method (struct adios_method_struct * method)
@@ -4932,7 +4932,7 @@ void adios_common_get_group (long long * group_id, const char * name)
             );
 }
 
-//******************************************************************************
+// *****************************************************************************
 static void buffer_write (char ** buffer, uint64_t * buffer_size
                          ,uint64_t * buffer_offset, void * data, uint64_t size
                          )
@@ -6000,7 +6000,7 @@ int adios_write_close_attributes_v1 (struct adios_file_struct * fd)
     return 0;
 }
 
-//*****************************************************************************
+// *****************************************************************************
 
 uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var)
 {
@@ -6221,7 +6221,7 @@ static int chunk_data (struct adios_var_struct * f_param, char * buf, int buf_le
                     var_offset = to_copy;
                 else
                     var_offset += to_copy;
-                /* copied_so_far should == buf_len */
+                // copied_so_far should == buf_len
             }
         }
     }

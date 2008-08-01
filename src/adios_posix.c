@@ -53,10 +53,11 @@ int adios_posix_open (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
-    char name [STR_LEN];
+    char * name;
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
 
+    name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf (name, "%s%s", method->base_path, fd->name);
     struct stat s;
     if (stat (name, &s) == 0)
@@ -70,6 +71,8 @@ int adios_posix_open (struct adios_file_struct * fd
             if (p->b.f == -1)
             {
                 fprintf (stderr, "ADIOS POSIX: file not found: %s\n", fd->name);
+
+                free (name);
 
                 return 0;
             }
@@ -91,6 +94,8 @@ int adios_posix_open (struct adios_file_struct * fd
                                  "base_path %s, name %s\n"
                         ,method->base_path, fd->name
                         );
+
+                free (name);
 
                 return 0;
             }
@@ -117,6 +122,8 @@ int adios_posix_open (struct adios_file_struct * fd
                                      "base_path %s, name %s\n"
                             ,method->base_path, fd->name
                             );
+
+                    free (name);
 
                     return 0;
                 }
@@ -152,6 +159,8 @@ int adios_posix_open (struct adios_file_struct * fd
                     default:
                         fprintf (stderr, "Unkown bp version.  Cannot append\n");
 
+                        free (name);
+
                         return 0;
                 }
             }
@@ -163,9 +172,13 @@ int adios_posix_open (struct adios_file_struct * fd
         {
             fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
 
+            free (name);
+
             return 0;
         }
     }
+
+    free (name);
 
     return 1;
 }

@@ -90,7 +90,6 @@ int adios_mpi_open (struct adios_file_struct * fd
                    ,struct adios_method_struct * method
                    )
 {
-    char name [STR_LEN];
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
 
@@ -121,8 +120,9 @@ void build_offsets (struct adios_bp_buffer_struct_v1 * b
                 size = b->pg_index_offset - pg_root->offset_in_file;
             }
 
-            offsets [pg_root->process_id * 2] = pg_root->offset_in_file;
-            offsets [pg_root->process_id * 2 + 1] = size;
+            offsets [pg_root->process_id * 3] = pg_root->offset_in_file;
+            offsets [pg_root->process_id * 3 + 1] = size;
+            offsets [pg_root->process_id * 3 + 2] = b->version;
         }
 
         pg_root = pg_root->next;
@@ -236,16 +236,16 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                 if (md->rank == 0)
                 {
                     MPI_Offset * offsets = malloc (  sizeof (MPI_Offset)
-                                                   * md->size * 2
+                                                   * md->size * 3
                                                   );
-                    memset (offsets, 0, sizeof (MPI_Offset) * md->size * 2);
+                    memset (offsets, 0, sizeof (MPI_Offset) * md->size * 3);
 
                     // go through the pg index to build the offsets array
                     build_offsets (&md->b, offsets, md->size
                                   ,fd->group->name, md->old_pg_root
                                   );
-                    MPI_Scatter (offsets, 2, MPI_LONG_LONG
-                                ,offsets, 2, MPI_LONG_LONG
+                    MPI_Scatter (offsets, 3, MPI_LONG_LONG
+                                ,offsets, 3, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
                     md->b.read_pg_offset = offsets [0];
@@ -253,16 +253,17 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                 }
                 else
                 {
-                    MPI_Offset offset [2];
-                    offset [0] = offset [1] = 0;
+                    MPI_Offset offset [3];
+                    offset [0] = offset [1] = offset [2] = 0;
 
-                    MPI_Scatter (0, 0, MPI_LONG_LONG
-                                ,offset, 2, MPI_LONG_LONG
+                    MPI_Scatter (offset, 3, MPI_LONG_LONG
+                                ,offset, 3, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
 
                     md->b.read_pg_offset = offset [0];
                     md->b.read_pg_size = offset [1];
+                    md->b.version = offset [2];
                 }
             }
 
@@ -770,7 +771,9 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
                         v1 = v1->next;
                     }
                     else
+                    {
                         break;
+                    }
                 }
 
                 if (v1)
@@ -782,6 +785,9 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
                 }
                 else
                 {
+                    printf ("MPI read: skipping name: %s path: %s\n"
+                           ,var_header.name, var_header.path
+                           );
                     adios_parse_var_data_payload_v1 (&md->b, &var_header, NULL);
                 }
             }

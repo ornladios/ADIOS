@@ -4,9 +4,9 @@
 #include "adios_types.h"
 #include <stdint.h>
 
-/* Asynchronous I/O API Public Functions */
+// ADIOS - Adaptable IO System
 
-/* Global setup and cleanup */
+// Global setup and cleanup
 int adios_init (const char * config);
 void adios_init_ (const char * config, int* err, int config_size);
 
@@ -16,7 +16,7 @@ void adios_finalize_ (int * mype, int * err);
 int adios_allocate_buffer (void);
 void adios_allocate_buffer_ (int * err);
 
-/* end user calls for each I/O operation */
+// end user calls for each I/O operation
 // modes = "r" = "read", "w" = "write", "a" = "append", "u" = "update"
 int adios_open (long long * fd, const char * group_name, const char * name
                ,const char * mode
@@ -75,7 +75,7 @@ void adios_stop_calculation_ (int * err);
 int adios_close (long long fd_p);
 void adios_close_ (long long * fd_p, int * err);
 
-/* Generally internal use called when parsing the XML file */
+// Generally internal use called when parsing the XML file
 int adios_declare_group (long long * id, const char * name
                         ,const char * coordination_comm
                         ,const char * coordination_var

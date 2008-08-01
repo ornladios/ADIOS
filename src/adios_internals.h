@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include "binpack-general.h"
 
-#define STR_LEN 1000
-
 enum ADIOS_METHOD_MODE {adios_mode_write  = 1
                        ,adios_mode_read   = 2
                        ,adios_mode_update = 3 // not supported yet

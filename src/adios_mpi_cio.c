@@ -19,6 +19,8 @@
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
 
+#define STR_LEN 1000
+
 MPI_Info adios_mpi_info = MPI_INFO_NULL;
 
 static int adios_mpi_cio_initialized = 0;
@@ -317,18 +319,18 @@ static void adios_mpi_cio_do_read (struct adios_file_struct * fd
         group_comm = MPI_COMM_NULL;
     }
 
-    /* this code section is important if we want to write from
-     * several processes to a single file.  For one file per process
-     * writes, this is unnecessary.
-     */
-    /******************************
-     * Begin Coordinate file offet
-     ******************************/
+    // this code section is important if we want to write from
+    // several processes to a single file.  For one file per process
+    // writes, this is unnecessary.
+
+    // ******************************
+    // Begin Coordinate file offet
+    // ******************************
     //char buf1 [STR_LEN];
     //char buf2 [STR_LEN];
 
     sprintf (name, "%s%s", method->base_path, fd->name);
-    /* make a filename based on the size and current node */
+    // make a filename based on the size and current node
     // sprintf (buf1, "%%s.%%0%dd", (int) (log10 (size)));
     // sprintf (buf2, buf1, fd->name, fd->group->current);
     if (group_comm != MPI_COMM_NULL)
@@ -344,7 +346,7 @@ static void adios_mpi_cio_do_read (struct adios_file_struct * fd
             MPI_Info_create(&adios_mpi_info);
         }
         MPI_Info_set(adios_mpi_info, "romio_no_indep_rw", "true");
-        /* this hint will enable aggregator I/O */
+        // this hint will enable aggregator I/O
 
         MPI_File_open (group_comm, name, MPI_MODE_RDONLY, adios_mpi_info, &md->fh);
 
@@ -358,9 +360,9 @@ static void adios_mpi_cio_do_read (struct adios_file_struct * fd
         MPI_File_open (MPI_COMM_SELF, name, amode, adios_mpi_info, &md->fh);
         read_offset = md->base_offset;
     }
-    /******************************
-     * End Coordinate file offet
-     ******************************/
+    // *****************************
+    // End Coordinate file offet
+    // *****************************
 
     if (md->buffer_size < my_data_len)
     {
@@ -427,18 +429,18 @@ static void adios_mpi_cio_do_write (struct adios_file_struct * fd
         group_comm = MPI_COMM_NULL;
     }
 
-    /* this code section is important if we want to write from
-     * several processes to a single file.  For one file per process
-     * writes, this is unnecessary.
-     */
-    /******************************
-     * Begin Coordinate file offet
-     ******************************/
+    // this code section is important if we want to write from
+    // several processes to a single file.  For one file per process
+    // writes, this is unnecessary.
+
+    // *****************************
+    // Begin Coordinate file offet
+    // *****************************
     //char buf1 [STR_LEN];
     //char buf2 [STR_LEN];
 
     sprintf (name, "%s%s", method->base_path, fd->name);
-    /* make a filename based on the size and current node */
+    // make a filename based on the size and current node
     // sprintf (buf1, "%%s.%%0%dd", (int) (log10 (size)));
     // sprintf (buf2, buf1, fd->name, fd->group->current);
     if (group_comm != MPI_COMM_NULL)
@@ -454,7 +456,7 @@ static void adios_mpi_cio_do_write (struct adios_file_struct * fd
             MPI_Info_create(&adios_mpi_info);
         }
         MPI_Info_set(adios_mpi_info, "romio_no_indep_rw", "true");
-        /* this hint will enable aggregator I/O */
+        // this hint will enable aggregator I/O
 
         MPI_File_open (group_comm, name, MPI_MODE_CREATE|MPI_MODE_WRONLY, adios_mpi_info, &md->fh);
 
@@ -471,9 +473,9 @@ static void adios_mpi_cio_do_write (struct adios_file_struct * fd
         write_offset = md->base_offset;
     }
 
-    /******************************
-     * End Coordinate file offet
-     ******************************/
+    // ******************************
+    //  End Coordinate file offet
+    // ******************************
 
     if (my_data_len > md->buffer_size)
     {
@@ -612,7 +614,7 @@ void adios_mpi_cio_close (struct adios_file_struct * fd
 
 void adios_mpi_cio_finalize (int mype, struct adios_method_struct * method)
 {
-/* nothing to do here */
+// nothing to do here
     if (adios_mpi_cio_initialized)
         adios_mpi_cio_initialized = 0;
 }

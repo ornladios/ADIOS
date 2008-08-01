@@ -75,7 +75,7 @@ void adios_buffer_struct_clear (struct adios_bp_buffer_struct_v1 * b)
     adios_buffer_struct_init (b);
 }
 
-//*****************************************************************************
+// *****************************************************************************
 // buff must be 4 bytes
 int adios_parse_version (struct adios_bp_buffer_struct_v1 * b
                         ,uint32_t * version
@@ -725,7 +725,7 @@ void * adios_dupe_data_scalar (enum ADIOS_DATATYPES type, void * in)
     return d;
 }
 
-//*****************************************************************************
+// *****************************************************************************
 void adios_init_buffer_read_version (struct adios_bp_buffer_struct_v1 * b)
 {
     if (!b->buff)
@@ -829,9 +829,10 @@ int adios_posix_open_read_internal (const char * filename
                                    ,struct adios_bp_buffer_struct_v1 * b
                                    )
 {
-    char name [STR_LEN];
+    char * name;
     struct stat s;
 
+    name = malloc (strlen (base_path) + strlen (filename) + 1);
     sprintf (name, "%s%s", base_path, filename);
 
     if (stat (name, &s) == 0)
@@ -842,8 +843,12 @@ int adios_posix_open_read_internal (const char * filename
     {
         fprintf (stderr, "ADIOS POSIX: file not found: %s\n", name);
 
+        free (name);
+
         return 0;
     }
+
+    free (name);
 
     return 1;
 }

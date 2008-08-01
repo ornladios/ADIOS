@@ -179,7 +179,7 @@ int adios_parse_attribute_v1 (struct adios_bp_buffer_struct_v1 * b
                              ,struct adios_attribute_struct_v1 * attribute
                              );
 
-//****************************************************************************
+// ****************************************************************************
 // functions from adios_posix.c used for file reading
 
 void adios_init_buffer_read_version (struct adios_bp_buffer_struct_v1 * b);
