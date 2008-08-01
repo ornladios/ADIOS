@@ -8,9 +8,13 @@
 void adios_##a##_init (const char * parameters \
                       ,struct adios_method_struct * method \
                       ) {} \
-void adios_##a##_open (struct adios_file_struct * fd \
-                      ,struct adios_method_struct * method \
-                      ) {} \
+int adios_##a##_open (struct adios_file_struct * fd \
+                     ,struct adios_method_struct * method \
+                     ) {return 0;} \
+int adios_##a##_should_buffer (struct adios_file_struct * fd \
+                              ,struct adios_method_struct * method \
+                              ,void * comm \
+                              ) {return 0;} \
 void adios_##a##_write (struct adios_file_struct * fd \
                        ,struct adios_var_struct * v \
                        ,void * data \
@@ -39,9 +43,13 @@ void adios_##a##_stop_calculation (struct adios_method_struct * method) {}
 void adios_##a##_init (const char * parameters \
                       ,struct adios_method_struct * method \
                       ); \
-void adios_##a##_open (struct adios_file_struct * fd \
-                      ,struct adios_method_struct * method \
-                      ); \
+int adios_##a##_open (struct adios_file_struct * fd \
+                     ,struct adios_method_struct * method \
+                     ); \
+int adios_##a##_should_buffer (struct adios_file_struct * fd \
+                              ,struct adios_method_struct * method \
+                              ,void * comm \
+                              ); \
 void adios_##a##_write (struct adios_file_struct * fd \
                        ,struct adios_var_struct * v \
                        ,void * data \
@@ -72,6 +80,7 @@ void adios_##a##_stop_calculation (struct adios_method_struct * method);
 #define ASSIGN_FNS(a,b) \
 (*t) [b].adios_init_fn = adios_##a##_init; \
 (*t) [b].adios_open_fn = adios_##a##_open; \
+(*t) [b].adios_should_buffer_fn = adios_##a##_should_buffer; \
 (*t) [b].adios_write_fn = adios_##a##_write; \
 (*t) [b].adios_get_write_buffer_fn = adios_##a##_get_write_buffer; \
 (*t) [b].adios_read_fn = adios_##a##_read; \
@@ -83,8 +92,7 @@ void adios_##a##_stop_calculation (struct adios_method_struct * method);
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-//// SETUP YOUR NEW TRANSPORT METHODS BELOW (FOLLOW THE PATTERN):          ////
-//// 1. Add an entry to the ADIOS_IO_METHOD updating the ADIOS_METHOD_COUNT////
+//// SETUP YOUR NEW TRANSPORT METHODS BELOW (FOLLOW THE PATTERN):          //// //// 1. Add an entry to the ADIOS_IO_METHOD updating the ADIOS_METHOD_COUNT////
 //// 2. Add a FOWARD_DECLARE line (assuming standard naming)               ////
 //// 3. Add an entry to ADIOS_PARSE_METHOD_SETUP for the string and ID     ////
 //// 4. Add an entry to ADIOS_INIT_TRANSPORTS_SETUP for name to ID         ////

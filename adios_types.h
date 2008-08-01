@@ -1,7 +1,7 @@
 #ifndef ADIOS_TYPES_H
 #define ADIOS_TYPES_H
 
-/* global defines needed for the type creation/setup functions */
+// global defines needed for the type creation/setup functions
 enum ADIOS_DATATYPES {adios_unknown = -1             // bp type         (size)
 
                      ,adios_byte = 0                 // bp_char           (1)

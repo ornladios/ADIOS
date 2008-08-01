@@ -15,9 +15,10 @@ libadios_a_SOURCES = adios.c \
                      adios_posix_ascii.c \
                      adios_vtk.c \
 		     adios_internals.c \
-                     bw-utils.c \
-                     br-utils.c \
-                     binpack-utils.c 
+                     adios_bp_v1.c
+#                     bw-utils.c
+#                     br-utils.c
+#                     binpack-utils.c
 #		     adios_datatap.c
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)
 include_HEADERS += adios.h \
@@ -26,16 +27,16 @@ include_HEADERS += adios.h \
 lib_LIBRARIES += libadios_int.a
 libadios_int_a_SOURCES= adios_internals.c \
                         adios_transport_hooks_dummy.c \
-                        bw-utils.c \
-                        br-utils.c \
-                        binpack-utils.c
+                        adios_bp_v1.c
+#                        adios_posix.c
+#                        bw-utils.c \
+#                        br-utils.c \
+#                        binpack-utils.c
 libadios_int_a_CPPFLAGS = $(MXML_CPPFLAGS)
 #libadios_int_a_LIBADD = $(MXML_LIBS)
 include_HEADERS += adios_internals.h \
-                   adios_transport_hooks.h \
-                   br-utils.h \
-                   bw-utils.h \
-                   binpack-utils.h \
-                   binpack-general.h
-
-
+                   adios_transport_hooks.h
+#                   br-utils.h
+#                   bw-utils.h
+#                   binpack-utils.h
+#                   binpack-general.h

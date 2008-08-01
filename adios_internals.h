@@ -4,8 +4,6 @@
 #include <stdint.h>
 #include "binpack-general.h"
 
-#define STR_LEN 1000
-
 enum ADIOS_METHOD_MODE {adios_mode_write  = 1
                        ,adios_mode_read   = 2
                        ,adios_mode_update = 3 // not supported yet
@@ -15,24 +13,21 @@ enum ADIOS_METHOD_MODE {adios_mode_write  = 1
 struct adios_dimension_struct;
 struct adios_var_struct;
 
-struct adios_global_bounds_struct
-{
-    struct adios_dimension_struct * dimensions;
-    struct adios_dimension_struct * offsets;
-};
-
 struct adios_var_struct
 {
-    uint32_t id;
+    uint16_t id;
+
     char * name;
     char * path;
     enum ADIOS_DATATYPES type;
     struct adios_dimension_struct * dimensions;
-    struct adios_global_bounds_struct * global_bounds;
-    enum ADIOS_FLAG copy_on_write;
     enum ADIOS_FLAG got_buffer;
     enum ADIOS_FLAG is_dim;   // if it is a dimension, we temporarily need to
                               // track for reading until we get the new header
+
+    uint64_t write_offset;  // offset this var was written at  [for writes]
+    void * min;             // minimum value                   [for writes]
+    void * max;             // maximum value                   [for writes]
 
     enum ADIOS_FLAG free_data;    // primarily used for writing
     void * data;                  // primarily used for reading
@@ -43,7 +38,7 @@ struct adios_var_struct
 
 struct adios_attribute_struct
 {
-    uint32_t id;
+    uint16_t id;
     char * name;
     char * path;
     enum ADIOS_DATATYPES type;
@@ -99,16 +94,23 @@ struct adios_mesh_struct
 
 struct adios_group_struct
 {
-    uint32_t id;
+    uint16_t id;
+    uint16_t member_count;
+    uint64_t group_offset;
+
     char * name;
     int var_count;
     enum ADIOS_FLAG adios_host_language_fortran;
     enum ADIOS_FLAG all_unique_var_names;
     struct adios_var_struct * vars;
     struct adios_attribute_struct * attributes;
-    const char * group_by;
     const char * group_comm;
+    const char * group_by;
+    const char * time_index;
+    uint32_t process_id;
+
     struct adios_method_list_struct * methods;
+
     struct adios_mesh_struct * mesh;
 };
 
@@ -122,12 +124,20 @@ struct adios_group_list_struct
 struct adios_file_struct
 {
     char * name;
-    uint64_t base_offset;
-    uint64_t offset;
-    uint64_t write_size_bytes;
-    uint32_t write_size_nvars;
     struct adios_group_struct * group;
     enum ADIOS_METHOD_MODE mode;
+    uint64_t data_size;
+    uint64_t write_size_bytes;
+
+    uint64_t base_offset;   // where this group starts in the overall file
+
+    char * buffer;          // buffer we use for building the output
+    uint64_t offset;        // current offset to write at
+    uint64_t bytes_written; // largest offset into buffer written to
+    uint64_t buffer_size;   // how big the buffer is currently
+
+    uint64_t vars_start;    // offset for where to put the var/attr count
+    uint16_t vars_written;  // count of vars/attrs to write
 };
 
 struct adios_dimension_item_struct
@@ -139,15 +149,21 @@ struct adios_dimension_item_struct
 struct adios_dimension_struct
 {
     struct adios_dimension_item_struct dimension;
+    struct adios_dimension_item_struct global_dimension;
+    struct adios_dimension_item_struct local_offset;
     struct adios_dimension_struct * next;
 };
 
 typedef void (* ADIOS_INIT_FN) (const char * parameters
                                ,struct adios_method_struct * method
                                );
-typedef void (* ADIOS_OPEN_FN) (struct adios_file_struct * fd
-                               ,struct adios_method_struct * method
-                               );
+typedef int (* ADIOS_OPEN_FN) (struct adios_file_struct * fd
+                              ,struct adios_method_struct * method
+                              );
+typedef int (* ADIOS_SHOULD_BUFFER_FN) (struct adios_file_struct * fd
+                                       ,struct adios_method_struct * method
+                                       ,void * comm
+                                       );
 typedef void (* ADIOS_WRITE_FN) (struct adios_file_struct * fd
                                 ,struct adios_var_struct * v
                                 ,void * data
@@ -180,6 +196,7 @@ struct adios_transport_struct
 {
     ADIOS_INIT_FN adios_init_fn;
     ADIOS_OPEN_FN adios_open_fn;
+    ADIOS_SHOULD_BUFFER_FN adios_should_buffer_fn;
     ADIOS_WRITE_FN adios_write_fn;
     ADIOS_GET_WRITE_BUFFER_FN adios_get_write_buffer_fn;
     ADIOS_READ_FN adios_read_fn;
@@ -316,24 +333,14 @@ void adios_parse_buffer (struct adios_file_struct * fd, char * buffer
                         ,uint64_t len
                         );
 
-void adios_parse_dimension (char * dimension, struct adios_group_struct * g
+void adios_parse_dimension (const char * dimension
+                           ,const char * global_dimension
+                           ,const char * local_offset
+                           ,struct adios_group_struct * g
                            ,struct adios_dimension_struct * dim
                            );
 
 void adios_extract_string (char * out, const char * in, int size);
-
-int adios_do_write_var (struct adios_var_struct * v
-                       ,void * buf
-                       ,uint64_t buf_size
-                       ,uint64_t buf_start
-                       ,uint64_t * buf_end
-                       );
-int adios_do_write_attribute (struct adios_attribute_struct * a
-                             ,void * buf
-                             ,uint64_t buf_size
-                             ,uint64_t buf_start
-                             ,uint64_t * buf_end
-                             );
 
 int adios_common_define_attribute (long long group, const char * name
                                   ,const char * path
@@ -348,13 +355,12 @@ void adios_add_method_to_group (struct adios_method_list_struct ** root
                                ,struct adios_method_struct * method
                                );
 
-void adios_append_global_bounds (struct adios_global_bounds_struct * bounds);
-
 void adios_append_group (struct adios_group_struct * group);
 
 // is the var name unique
 enum ADIOS_FLAG adios_append_var (struct adios_var_struct ** root
                                  ,struct adios_var_struct * var
+                                 ,uint16_t id
                                  );
 
 void adios_append_dimension (struct adios_dimension_struct ** root
@@ -363,14 +369,13 @@ void adios_append_dimension (struct adios_dimension_struct ** root
 
 void adios_append_attribute (struct adios_attribute_struct ** root
                             ,struct adios_attribute_struct * attribute
+                            ,uint16_t id
                             );
 
-void * adios_dupe_data_scalar (enum ADIOS_DATATYPES type, void * in);
 void * adios_dupe_data (struct adios_var_struct * v, void * data);
 
 int adios_dims_to_bp_dims (char * name
                           ,struct adios_dimension_struct * adios_dims
-                          ,struct adios_global_bounds_struct * global_bounds
                           ,int * rank
                           ,struct adios_bp_dimension_struct * bp_dims
                           );
@@ -379,19 +384,14 @@ int adios_common_declare_group (long long * id, const char * name
                                ,enum ADIOS_FLAG host_language_fortran
                                ,const char * coordination_comm
                                ,const char * coordination_var
+                               ,const char * time_index
                                );
 
-int adios_common_define_global_bounds (long long group_id
-                                      ,const char * dimensions
-                                      ,const char * offsets
-                                      ,struct adios_global_bounds_struct ** b
-                                      );
-
 int adios_common_define_var (long long group_id, const char * name
-                            ,const char * path, int type
-                            ,int copy_on_write
+                            ,const char * path, enum ADIOS_DATATYPES type
                             ,const char * dimensions
-                            ,struct adios_global_bounds_struct * global_bounds
+                            ,const char * global_dimensions
+                            ,const char * local_offsets
                             );
 
 int adios_common_select_method (int priority, const char * method
@@ -400,6 +400,64 @@ int adios_common_select_method (int priority, const char * method
                                );
 
 void adios_common_get_group (long long * group_id, const char * name);
+
+// ADIOS file format functions
+
+uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v);
+uint32_t adios_calc_attribute_overhead_v1 (struct adios_attribute_struct * a);
+uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd);
+
+int adios_write_version_v1 (char ** buffer
+                           ,uint64_t * buffer_size
+                           ,uint64_t * buffer_offset
+                           );
+int adios_write_process_group_header_v1 (struct adios_file_struct * fd
+                                        ,uint64_t total_size
+                                        );
+
+// data is only there for sizing
+uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
+                                   ,struct adios_var_struct * v
+                                   ,void * data
+                                   );
+int adios_write_var_payload_v1 (struct adios_file_struct * fd
+                               ,struct adios_var_struct * var
+                               ,void * data
+                               );
+int adios_write_attribute_v1 (struct adios_file_struct * fd
+                             ,struct adios_attribute_struct * a
+                             );
+int adios_write_open_vars_v1 (struct adios_file_struct * fd);
+int adios_write_close_vars_v1 (struct adios_file_struct * fd);
+int adios_write_open_attributes_v1 (struct adios_file_struct * fd);
+int adios_write_close_attributes_v1 (struct adios_file_struct * fd);
+int adios_write_index_v1 (char ** buffer
+                         ,uint64_t * buffer_size
+                         ,uint64_t * buffer_offset
+                         ,uint64_t index_start
+                         ,struct adios_index_process_group_struct_v1 * pg_root
+                         ,struct adios_index_var_struct_v1 * vars_root
+                         );
+
+void adios_build_index_v1 (struct adios_file_struct * fd
+                       ,struct adios_index_process_group_struct_v1 ** pg_root
+                       ,struct adios_index_var_struct_v1 ** vars_root
+                       );
+void adios_merge_index_v1 (
+                   struct adios_index_process_group_struct_v1 ** main_pg_root
+                  ,struct adios_index_var_struct_v1 ** main_vars_root
+                  ,struct adios_index_process_group_struct_v1 * new_pg_root
+                  ,struct adios_index_var_struct_v1 * new_vars_root
+                  );
+void adios_clear_index_v1 (struct adios_index_process_group_struct_v1 * pg_root
+                          ,struct adios_index_var_struct_v1 * vars_root
+                          );
+
+uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var);
+uint64_t adios_get_var_size (struct adios_var_struct * var, void * data);
+
+const char * adios_type_to_string (int type);
+const char * adios_file_mode_to_string (int mode);
 
 // the following are defined in adios_transport_hooks.c
 void adios_init_transports (struct adios_transport_struct ** transports);
