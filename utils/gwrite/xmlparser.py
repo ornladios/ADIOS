@@ -44,6 +44,7 @@ def processvar(node,language_sw,coord_comm,coord_var):
            copyflag=node.attributes[akey].value
     if(varname=="" or typename==""):
        print "Warning: empty varname or type for adiosgroup: "+node.nodeName
+    varname_gg=varname_g
     if(varname_g==""):
        varname_g=varname
     if(var_gname_dict.has_key(varname)):
@@ -82,14 +83,16 @@ def processvar(node,language_sw,coord_comm,coord_var):
         else:
            line="call adios_op(_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
     elif(language_sw==2):
-        if(coord_comm==varname or coord_var==varname):
+        if(coord_comm==varname or coord_var==varname or varname_gg==""):
            line="adios_write(_handle,"+"\""+varname+"\","+"&"+varname_g+");"
         else:
-           for c in varname_g:
-               if(c=='+' or c=='-' or c=='*' or c=='/' or c=='^' or c=='%'):
-                  print "Fatal: var --"+varname_g+"-- cannot be written"
-                  raise SystemExit
-           line="adios_op(_handle,"+"\""+varname+"\","+"&"+varname_g+");"
+           #for c in varname_g:
+           #    if(c=='+' or c=='-' or c=='*' or c=='/' or c=='^' or c=='%'):
+           #line="adios_write(_handle,"+"\""+varname+"\","+varname_g+");"
+           #line="adios_write(_handle,"+"\""+varname+"\","+varname_g+");"
+           #print "Fatal: var --"+varname_g+"-- cannot be written"
+           #raise SystemExit
+           line="adios_op(_handle,"+"\""+varname+"\","+varname_g+");"
     return line+'\n'
 
 def processattr(node,language_sw):
