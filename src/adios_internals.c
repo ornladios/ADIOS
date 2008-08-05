@@ -6073,9 +6073,10 @@ uint64_t adios_get_var_size (struct adios_var_struct * var, void * data)
 {
     uint64_t size = 0;
 
+    size = adios_get_type_size (var->type, data);
+
     if (var->dimensions)
     {
-        size = adios_get_type_size (var->type, data);
         struct adios_dimension_struct * d = var->dimensions;
 
         while (d)
@@ -6106,10 +6107,6 @@ uint64_t adios_get_var_size (struct adios_var_struct * var, void * data)
 
             d = d->next;
         }
-    }
-    else
-    {
-        size = adios_get_type_size (var->type, data);
     }
 
     return size;
