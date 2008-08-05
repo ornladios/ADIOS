@@ -880,6 +880,9 @@ void adios_mpi_close (struct adios_file_struct * fd
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
             {
+                if (md->rank != md->size - 1)
+                    MPI_Wait (&md->req, &md->status);
+
                 if (md->rank == 0)
                 {
                     int ranks_sent = 1; // assume that we have sent to ourselves
@@ -988,6 +991,9 @@ void adios_mpi_close (struct adios_file_struct * fd
             new_vars_root = 0;
             if (md->group_comm != MPI_COMM_NULL)
             {
+                if (md->rank != md->size - 1)
+                    MPI_Wait (&md->req, &md->status);
+
                 if (md->rank == 0)
                 {
                     int ranks_sent = 1;
@@ -1101,9 +1107,6 @@ void adios_mpi_close (struct adios_file_struct * fd
         && md->group_comm != MPI_COMM_NULL
        )
     {
-        if (md->rank != md->size - 1)
-            MPI_Wait (&md->req, &md->status);
-
         md->group_comm = MPI_COMM_NULL;
     }
 
