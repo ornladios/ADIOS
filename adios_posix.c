@@ -204,7 +204,6 @@ int adios_posix_should_buffer (struct adios_file_struct * fd
 
     if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
     {
-printf ("start 1\n");
         // write the process group header
         adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
 
@@ -231,9 +230,7 @@ printf ("start 1\n");
         fd->base_offset += fd->offset;  // add the size of the vars header
         fd->offset = 0;
         fd->bytes_written = 0;
-printf ("end 1\n");
         adios_shared_buffer_free (&p->b);
-printf ("end 1\n");
     }
 
     return fd->shared_buffer;   // buffer if there is space
@@ -389,11 +386,9 @@ static void adios_posix_do_write (struct adios_file_struct * fd
 
     if (fd->shared_buffer == adios_flag_yes)
     {
-off_t o = lseek (p->b.f, p->b.end_of_pgs, SEEK_SET);
-printf ("write pg at: %lld\n", o);
+        lseek (p->b.f, p->b.end_of_pgs, SEEK_SET);
         write (p->b.f, fd->buffer, fd->bytes_written);
     }
-printf ("base_offset: %lld offset: %lld\n", fd->base_offset, fd->offset);
 
     // index location calculation:
     // for buffered, base_offset = 0, fd->offset = write loc
@@ -642,13 +637,11 @@ void adios_posix_close (struct adios_file_struct * fd
 
         case adios_mode_append:
         {
-printf ("start 2\n");
             if (fd->shared_buffer == adios_flag_no)
             {
                 off_t new_off;
                 // set it up so that it will start at 0, but have correct sizes
                 new_off = lseek64 (p->b.f, 0, SEEK_CUR);
-printf ("new_off: %lld\n", new_off);
                 fd->offset = fd->base_offset - p->vars_start;
                 fd->vars_start = 0;
                 fd->buffer_size = 0;
@@ -721,7 +714,6 @@ printf ("new_off: %lld\n", new_off);
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
             uint64_t index_start = fd->base_offset + fd->offset;
-printf ("base_offset: %lld offset: %lld\n", fd->base_offset, fd->offset);
 
             // build index
             adios_build_index_v1 (fd, &new_pg_root, &new_vars_root);
@@ -736,7 +728,6 @@ printf ("base_offset: %lld offset: %lld\n", fd->base_offset, fd->offset);
 
             free (buffer);
 
-printf ("end 2\n");
             break;
         }
 

@@ -845,7 +845,7 @@ void adios_mpi_close (struct adios_file_struct * fd
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                  method->method_data;
-    struct adios_attribute_struct * a = method->group->attributes;
+    struct adios_attribute_struct * a = fd->group->attributes;
 
     struct adios_index_process_group_struct_v1 * new_pg_root = 0;
     struct adios_index_var_struct_v1 * new_vars_root = 0;
@@ -1100,7 +1100,12 @@ void adios_mpi_close (struct adios_file_struct * fd
         && md->group_comm != MPI_COMM_SELF
         && md->group_comm != MPI_COMM_NULL
        )
-        MPI_Comm_free (&md->group_comm);
+    {
+        if (md->rank != md->size - 1)
+            MPI_Wait (&md->req, &md->status);
+
+        md->group_comm = MPI_COMM_NULL;
+    }
 
     md->fh = 0;
     md->req = 0;

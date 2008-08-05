@@ -118,10 +118,14 @@ static enum ADIOS_DATATYPES parseType (const char * type, const char * name)
     if (!strcasecmp (type, "string"))
         return adios_string;
 
-    if (!strcasecmp (type, "complex"))
+    if (   !strcasecmp (type, "complex")
+        || !strcasecmp (type, "complex*8")
+       )
         return adios_complex;
 
-    if (!strcasecmp (type, "double complex"))
+    if (   !strcasecmp (type, "double complex")
+        || !strcasecmp (type, "complex*16")
+       )
         return adios_double_complex;
 
     fprintf (stderr, "config.xml: invalid type: %s in var %s\n", type, name);
@@ -4943,7 +4947,7 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
         if (b)
         {
             *buffer = b;
-            *buffer_size += (*buffer_offset + size + 1000);
+            *buffer_size = (*buffer_offset + size + 1000);
         }
         else
         {
