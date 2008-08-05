@@ -38,7 +38,7 @@ program adios_test
     call MPI_Comm_dup (MPI_COMM_WORLD, group_comm, ierr)
     call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
 
-    call adios_init ("config_fortran.xml"//char(0)) !, MPI_COMM_WORLD, MPI_COMM_SELF, MPI_INFO_NULL)
+    call adios_init ("config_fortran.xml"//char(0), ierr)
 
     call test_write (group, filename, group_comm, small_int, big_int, small_real, big_real, z_size, z_array)
 
@@ -54,7 +54,7 @@ program adios_test
 
     call MPI_Barrier (MPI_COMM_WORLD, ierr)
 
-    call adios_finalize (rank)
+    call adios_finalize (rank, ierr)
 
     call MPI_Finalize (ierr)
 end program adios_test
@@ -79,28 +79,33 @@ subroutine test_write (group, filename, group_comm, small_int, big_int, small_re
     integer*8 :: handle
     integer*8 :: total_size
     integer :: err
+    integer*8 :: size
+
+    size = 900 * 1024
 
     istep1 = 11
     istep2 = 22
     istep3 = 33
 
-    call adios_open (handle, trim(group)//char(0), trim(filename)//char(0), "w"//char(0))
+    size = 4 + 4 + 8 + 4 + 8 + 4 + a_size * 4 + 4 + 4 + 4
 
-    call adios_group_size (handle, 4 + 4 + 8 + 4 + 8 + 4 + a_size * 4 + 4 + 4 + 4, total_size, 0, err)
-    call adios_write (handle, "group_comm"//char(0), group_comm)
+    call adios_open (handle, trim(group)//char(0), trim(filename)//char(0), "w"//char(0), err)
 
-    call adios_write (handle, "small_int"//char(0), small_int)
-    call adios_write (handle, "big_int"//char(0), big_int)
-    call adios_write (handle, "small_real"//char(0), small_real)
-    call adios_write (handle, "big_real"//char(0), big_real)
-    call adios_write (handle, "ze0size"//char(0), a_size)
-    call adios_write (handle, "zelectron0"//char(0), a_array)
+    call adios_group_size (handle, size, total_size, group_comm, err)
+    call adios_write (handle, "group_comm"//char(0), group_comm, err)
 
-    call adios_write (handle, "istep1"//char(0), istep1)
-    call adios_write (handle, "istep2"//char(0), istep2)
-    call adios_write (handle, "istep3"//char(0), istep3)
+    call adios_write (handle, "small_int"//char(0), small_int, err)
+    call adios_write (handle, "big_int"//char(0), big_int, err)
+    call adios_write (handle, "small_real"//char(0), small_real, err)
+    call adios_write (handle, "big_real"//char(0), big_real, err)
+    call adios_write (handle, "ze0size"//char(0), a_size, err)
+    call adios_write (handle, "zelectron0"//char(0), a_array, err)
 
-    call adios_close (handle)
+    call adios_write (handle, "istep1"//char(0), istep1, err)
+    call adios_write (handle, "istep2"//char(0), istep2, err)
+    call adios_write (handle, "istep3"//char(0), istep3, err)
+
+    call adios_close (handle, err)
 
 end subroutine test_write
 
@@ -132,7 +137,7 @@ subroutine test_read (group, filename, group_comm, small_int, big_int, small_rea
 
     call adios_open (handle, trim(group)//char(0), trim(filename)//char(0), "r"//char(0), err)
 
-    call adios_group_size (handle, 0, total_size, 0, 0, err)
+    call adios_group_size (handle, 0, total_size, 0, group_comm, err)
     call adios_read (handle, "small_int"//char(0), small_int, 4, err)
     call adios_read (handle, "big_int"//char(0), big_int, 8, err)
     call adios_read (handle, "small_real"//char(0), small_real, 4, err)
