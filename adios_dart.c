@@ -48,12 +48,12 @@ int adios_dart_open (struct adios_file_struct * fd
     return 1;
 }
 
-int adios_dart_should_buffer (struct adios_file_struct * fd
-                             ,struct adios_method_struct * method
-                             ,void * comm
-                             )
+enum ADIOS_FLAG adios_dart_should_buffer (struct adios_file_struct * fd
+                                         ,struct adios_method_struct * method
+                                         ,void * comm
+                                         )
 {
-    return 0;  // this will take care of it
+    return adios_flag_no;  // this will take care of it
 }
 
 void adios_dart_write (struct adios_file_struct * fd
@@ -138,12 +138,12 @@ int adios_dart_open (struct adios_file_struct * fd
     return 1;
 }
 
-int adios_dart_should_buffer (struct adios_file_struct * fd
-                             ,struct adios_method_struct * method
-                             ,void * comm
-                             )
+enum ADIOS_FLAG adios_dart_should_buffer (struct adios_file_struct * fd
+                                         ,struct adios_method_struct * method
+                                         ,void * comm
+                                         )
 {
-    return 0;   // we'll buffer
+    return adios_flag_no;   // we'll buffer
 }
 
 void adios_dart_write (struct adios_file_struct * fd

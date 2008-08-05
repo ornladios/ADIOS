@@ -30,7 +30,7 @@ int adios_group_size (long long fd_p, uint64_t data_size
                      ,uint64_t * total_size, void * comm
                      );
 void adios_group_size_ (long long * fd_p, int64_t * data_size
-                       ,int64_t * total_size, int * err, void * comm
+                       ,int64_t * total_size, void * comm, int * err
                        );
 
 int adios_write (long long fd_p, const char * name, void * var);
@@ -47,9 +47,11 @@ void adios_get_write_buffer_ (long long * fd_p, const char * name
                              ,void ** buffer, int * err, int name_size
                              );
 
-int adios_read (long long fd_p, const char * name, void * buffer);
-void adios_read_ (long long * fd_p, const char * name, void * buffer, int * err
-                 ,int name_size
+int adios_read (long long fd_p, const char * name, void * buffer
+               ,uint64_t buffer_size
+               );
+void adios_read_ (long long * fd_p, const char * name, void * buffer
+                 ,long long * buffer_size, int * err, int name_size
                  );
 
 int adios_set_path (long long fd_p, const char * path);
