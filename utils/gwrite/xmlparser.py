@@ -27,6 +27,7 @@ def processvar(node,language_sw,coord_comm,coord_var):
     pathname="" 
     dimsname=""
     varname_g=""
+    varname_gg=""
     copyflag=""
     for akey in attkeys:
         akeystr=str(akey).lower()
@@ -47,6 +48,7 @@ def processvar(node,language_sw,coord_comm,coord_var):
     varname_gg=varname_g
     if(varname_g==""):
        varname_g=varname
+    
     if(var_gname_dict.has_key(varname)):
        if(pathname!="" and pathname[len(pathname)-1]!='/'):
           varname=pathname+'/'+varname
@@ -83,16 +85,16 @@ def processvar(node,language_sw,coord_comm,coord_var):
         else:
            line="call adios_op(_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
     elif(language_sw==2):
-        if(coord_comm==varname or coord_var==varname or varname_gg==""):
+        if(coord_comm==varname or coord_var==varname):
            line="adios_write(_handle,"+"\""+varname+"\","+"&"+varname_g+");"
+        elif (varname_gg==""):
+           line="adios_op(_handle,"+"\""+varname+"\","+"&"+varname_g+");"
         else:
+           line="adios_op(_handle,"+"\""+varname+"\","+varname_g+");"
            #for c in varname_g:
            #    if(c=='+' or c=='-' or c=='*' or c=='/' or c=='^' or c=='%'):
-           #line="adios_write(_handle,"+"\""+varname+"\","+varname_g+");"
-           #line="adios_write(_handle,"+"\""+varname+"\","+varname_g+");"
-           #print "Fatal: var --"+varname_g+"-- cannot be written"
-           #raise SystemExit
-           line="adios_op(_handle,"+"\""+varname+"\","+varname_g+");"
+           #       print "Fatal: var --"+varname_g+"-- cannot be written"
+           #       raise SystemExit
     return line+'\n'
 
 def processattr(node,language_sw):
@@ -291,10 +293,19 @@ def getVarlistFromXML(xmlFile):
                 raise SystemExit
             nodelist=group.childNodes
             processnode(nodelist,glanguage,coord_comm,coord_var)
+            line = sizeformular[1]  
+            for i in range(2,len(sizeformular)):
+                line =line +' + '+sizeformular[i]
+            line = "adios_groupsize = "+line 
+            if(glanguage==1):
+               line=line+"\ncall adios_group_size(adios_handle, "+  "adios_groupsize, adios_totalsize, "+ coord_comm+ ', err)\n'
+            else:
+               line=line+";\nadios_group_size(adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ coord_comm + ');\n'
+               
             var_gname_dict={}
             language_group_dict[gname]=glanguage
             variables[str(gname)]=items
-            sizestr[str(gname)] = sizeformular   
+            sizestr[str(gname)] = line
             sizeformular=[]
     return variables
 
