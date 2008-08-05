@@ -80,17 +80,17 @@ def processvar(node,language_sw,coord_comm,coord_var):
     var_size_dict[varname]=line
     line=""
     if (language_sw==1):
-        if(coord_comm==varname or coord_var==varname): 
-           line="call adios_write(_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
-        else:
-           line="call adios_op(_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
+        #if(coord_comm==varname or coord_var==varname): 
+        #   line="call adios_write(_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
+        #else:
+        line="call adios_op(adios_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
     elif(language_sw==2):
-        if(coord_comm==varname or coord_var==varname):
-           line="adios_write(_handle,"+"\""+varname+"\","+"&"+varname_g+");"
-        elif (varname_gg==""):
-           line="adios_op(_handle,"+"\""+varname+"\","+"&"+varname_g+");"
+        #if(coord_comm==varname or coord_var==varname):
+        #   line="adios_write(_handle,"+"\""+varname+"\","+"&"+varname_g+");"
+        if (varname_gg==""):
+           line="adios_op(adios_handle,"+"\""+varname+"\","+"&"+varname_g+");"
         else:
-           line="adios_op(_handle,"+"\""+varname+"\","+varname_g+");"
+           line="adios_op(adios_handle,"+"\""+varname+"\","+varname_g+");"
            #for c in varname_g:
            #    if(c=='+' or c=='-' or c=='*' or c=='/' or c=='^' or c=='%'):
            #       print "Fatal: var --"+varname_g+"-- cannot be written"
@@ -200,9 +200,9 @@ def processdset(node,language_sw):
 
     line=""
     if (language_sw==1):
-        line="call adios_op(_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
+        line="call adios_op(adios_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
     elif(language_sw==2):
-        line="adios_op(_handle,"+"\""+varname+"\","+varname_g+");"
+        line="adios_op(adios_handle,"+"\""+varname+"\","+varname_g+");"
     return line+'\n'
 
 def processnode(nodelist,language_sw,coord_comm,coord_var):
