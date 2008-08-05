@@ -363,7 +363,7 @@ static int common_adios_write (long long fd_p, const char * name, void * var)
     }
     else
     {
-        int element_size = adios_size_of_type (v->type, var);
+        int element_size = adios_get_type_size (v->type, var);
         v->data = malloc (element_size);
 
         if (!v->data)
