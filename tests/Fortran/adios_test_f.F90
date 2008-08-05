@@ -77,6 +77,8 @@ subroutine test_write (group, filename, group_comm, small_int, big_int, small_re
     integer :: istep3
 
     integer*8 :: handle
+    integer*8 :: total_size
+    integer :: err
 
     istep1 = 11
     istep2 = 22
@@ -84,6 +86,7 @@ subroutine test_write (group, filename, group_comm, small_int, big_int, small_re
 
     call adios_open (handle, trim(group)//char(0), trim(filename)//char(0), "w"//char(0))
 
+    call adios_group_size (handle, 4 + 4 + 8 + 4 + 8 + 4 + a_size * 4 + 4 + 4 + 4, total_size, 0, err)
     call adios_write (handle, "group_comm"//char(0), group_comm)
 
     call adios_write (handle, "small_int"//char(0), small_int)
@@ -114,6 +117,9 @@ subroutine test_read (group, filename, group_comm, small_int, big_int, small_rea
     integer, intent(inout) :: a_size
     real, intent(out) :: a_array (a_size)
 
+    integer*8 :: total_size
+    integer :: err
+
     integer :: istep1
     integer :: istep2
     integer :: istep3
@@ -124,17 +130,16 @@ subroutine test_read (group, filename, group_comm, small_int, big_int, small_rea
     istep2 = 22
     istep3 = 33
 
-    call adios_open (handle, trim(group)//char(0), trim(filename)//char(0), "r"//char(0))
+    call adios_open (handle, trim(group)//char(0), trim(filename)//char(0), "r"//char(0), err)
 
-    call adios_write (handle, "group_comm"//char(0), group_comm)
+    call adios_group_size (handle, 0, total_size, 0, 0, err)
+    call adios_read (handle, "small_int"//char(0), small_int, 4, err)
+    call adios_read (handle, "big_int"//char(0), big_int, 8, err)
+    call adios_read (handle, "small_real"//char(0), small_real, 4, err)
+    call adios_read (handle, "big_real"//char(0), big_real, 8, err)
+    call adios_read (handle, "ze0size"//char(0), a_size, 4, err)
+    call adios_read (handle, "zelectron0"//char(0), a_array, a_size * 4, err)
 
-    call adios_read (handle, "small_int"//char(0), small_int)
-    call adios_read (handle, "big_int"//char(0), big_int)
-    call adios_read (handle, "small_real"//char(0), small_real)
-    call adios_read (handle, "big_real"//char(0), big_real)
-    call adios_read (handle, "ze0size"//char(0), a_size)
-    call adios_read (handle, "zelectron0"//char(0), a_array)
-
-    call adios_close (handle)
+    call adios_close (handle, err)
 
 end subroutine test_read

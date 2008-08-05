@@ -129,10 +129,10 @@ void build_offsets (struct adios_bp_buffer_struct_v1 * b
     }
 }
 
-int adios_mpi_should_buffer (struct adios_file_struct * fd
-                            ,struct adios_method_struct * method
-                            ,void * comm
-                            )
+enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
+                                        ,struct adios_method_struct * method
+                                        ,void * comm
+                                        )
 {
     int i;
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
@@ -186,7 +186,7 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                             );
                     free (name);
 
-                    return 0;
+                    return adios_flag_no;
                 }
 
                 MPI_Offset file_size;
@@ -309,7 +309,7 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                         );
                 free (name);
 
-                return 0;
+                return adios_flag_no;
             }
 
             break;
@@ -417,7 +417,7 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                         );
                 free (name);
 
-                return 0;
+                return adios_flag_no;
             }
 
             break;
@@ -451,7 +451,7 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                             );
                     free (name);
 
-                    return 0;
+                    return adios_flag_no;
                 }
             }
 
@@ -599,7 +599,7 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
                         );
                 free (name);
 
-                return 0;
+                return adios_flag_no;
             }
 
             break;
@@ -611,13 +611,24 @@ int adios_mpi_should_buffer (struct adios_file_struct * fd
 
             free (name);
 
-            return 0;
+            return adios_flag_no;
         }
     }
 
     free (name);
 
-    return 1;   // as far as we care, buffer
+    if (fd->shared_buffer == adios_flag_no)
+    {
+        // write the process group header
+        adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
+
+        // setup for writing vars
+        adios_write_open_vars_v1 (fd);
+    }
+    else
+    {
+        return adios_flag_yes;
+    }
 }
 
 void adios_mpi_write (struct adios_file_struct * fd
@@ -626,7 +637,7 @@ void adios_mpi_write (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
-    if (v->got_buffer)
+    if (v->got_buffer == adios_flag_yes)
     {
         if (data != v->data)  // if the user didn't give back the same thing
         {
@@ -641,6 +652,21 @@ void adios_mpi_write (struct adios_file_struct * fd
             // we already saved all of the info, so we're ok.
             return;
         }
+    }
+
+    if (fd->shared_buffer == adios_flag_no)
+    {
+        // var payload sent for sizing information
+        adios_write_var_header_v1 (fd, v);
+
+        // generate characteristics (like min and max)
+        adios_generate_var_characteristics_v1 (fd, v);
+        
+        // write these characteristics
+        adios_write_var_characteristics_v1 (fd, v);
+
+        // write payload
+        adios_write_var_payload_v1 (fd, v);
     }
 }
 
@@ -819,9 +845,26 @@ void adios_mpi_close (struct adios_file_struct * fd
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                  method->method_data;
+    struct adios_attribute_struct * a = method->group->attributes;
 
     struct adios_index_process_group_struct_v1 * new_pg_root = 0;
     struct adios_index_var_struct_v1 * new_vars_root = 0;
+
+    if (fd->shared_buffer == adios_flag_no)
+    {
+        adios_write_close_vars_v1 (fd);
+
+        adios_write_open_attributes_v1 (fd);
+
+        while (a)
+        {
+            adios_write_attribute_v1 (fd, a);
+
+            a = a->next;
+        }
+
+        adios_write_close_attributes_v1 (fd);
+    }
 
     switch (fd->mode)
     {

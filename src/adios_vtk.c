@@ -37,12 +37,12 @@ int adios_vtk_open (struct adios_file_struct * fd
     return 1;
 }
 
-int adios_vtk_should_buffer (struct adios_file_struct * fd
-                            ,struct adios_method_struct * method
-                            ,void * comm
-                            )
+enum ADIOS_FLAG adios_vtk_should_buffer (struct adios_file_struct * fd
+                                        ,struct adios_method_struct * method
+                                        ,void * comm
+                                        )
 {
-    return 1;   // as far as we care, buffer
+    return adios_flag_yes;   // as far as we care, buffer
 }
 
 void adios_vtk_write (struct adios_file_struct * fd

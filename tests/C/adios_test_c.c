@@ -70,10 +70,10 @@ printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
 
     adios_open (&io_handle, type_name, filename, "r");
     adios_group_size (io_handle, 0, &total, &comm);
-    adios_read (io_handle, "/mype", &r_var_x1);
-    adios_read (io_handle, "/test/mype", &r_var_x2);
-    adios_read (io_handle, "zionsize", &r_zsize);
-    adios_read (io_handle, "zion", r_z);
+    adios_read (io_handle, "/mype", &r_var_x1, 4);
+    adios_read (io_handle, "/test/mype", &r_var_x2, 4);
+    adios_read (io_handle, "zionsize", &r_zsize, 4);
+    adios_read (io_handle, "zion", r_z, 4 * 10);
     adios_close (io_handle);
 
     MPI_Barrier (MPI_COMM_WORLD);

@@ -3180,7 +3180,7 @@ int adios_parse_config (const char * config)
         fprintf (stderr, "config.xml: unknown error parsing XML "
                          "(probably structural)\n"
                          "Did you remember to start the file with\n"
-                         "<?xml version=\"1.0\"?>");
+                         "<?xml version=\"1.0\"?>\n");
 
         return 0;
     }
@@ -4728,7 +4728,7 @@ static void tokenize_dimensions (char * str, char *** tokens, int * count)
     while (*t)
     {
         if (*t == ',')
-            *count++;
+            (*count)++;
         t++;
     }
 
@@ -4937,7 +4937,7 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
                          ,uint64_t * buffer_offset, void * data, uint64_t size
                          )
 {
-    if (*buffer_offset + size > *buffer_size)
+    if (*buffer_offset + size > *buffer_size || *buffer == 0)
     {
         char * b = realloc (*buffer, *buffer_offset + size + 1000);
         if (b)
@@ -5325,7 +5325,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
     g_item->group_name = g->name;
     g_item->process_id = g->process_id;
     g_item->timestep = 0;
-    g_item->offset_in_file = fd->base_offset;
+    g_item->offset_in_file = fd->pg_start_in_file;
     g_item->next = 0;
 
     // build the groups and vars index
@@ -5704,7 +5704,6 @@ uint16_t adios_write_dimensions_v1 (struct adios_file_struct * fd
 // data is only there for sizing
 uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
                                    ,struct adios_var_struct * v
-                                   ,void * data
                                    )
 {
     uint64_t total_size = 0;
@@ -5743,9 +5742,9 @@ uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
 
     total_size += adios_write_dimensions_v1 (fd, v->dimensions);
 
-    total_size += adios_get_type_size (v->type, data); // min
-    total_size += adios_get_type_size (v->type, data); // max
-    total_size += adios_get_var_size (v, data);        // payload
+    total_size += adios_get_type_size (v->type, v->data); // min
+    total_size += adios_get_type_size (v->type, v->data); // max
+    total_size += adios_get_var_size (v, v->data);        // payload
 
     buffer_write (&fd->buffer, &fd->buffer_size, &start, &total_size, 8);
 
@@ -5865,16 +5864,22 @@ static void calc_min_max (struct adios_var_struct * var)
     }
 }
 
-int adios_write_var_payload_v1 (struct adios_file_struct * fd
-                               ,struct adios_var_struct * var
-                               ,void * data
-                               )
+int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
+                                          ,struct adios_var_struct * var
+                                          )
+{
+    calc_min_max (var);
+
+    return 0;
+}
+
+int adios_write_var_characteristics_v1 (struct adios_file_struct * fd
+                                       ,struct adios_var_struct * var
+                                       )
 {
     uint64_t size;
 
-    calc_min_max (var);
-
-    size = adios_get_type_size (var->type, data);
+    size = adios_get_type_size (var->type, var->data);
 
     // write min
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var->min, size);
@@ -5882,9 +5887,21 @@ int adios_write_var_payload_v1 (struct adios_file_struct * fd
     // write max
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var->max, size);
 
+    if (fd->bytes_written < fd->offset)
+        fd->bytes_written = fd->offset;
+
+    return 0;
+}
+
+int adios_write_var_payload_v1 (struct adios_file_struct * fd
+                               ,struct adios_var_struct * var
+                               )
+{
+    uint64_t size;
+
     // write payload
-    size = adios_get_var_size (var, data);
-    buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, data, size);
+    size = adios_get_var_size (var, var->data);
+    buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, var->data, size);
 
     if (fd->bytes_written < fd->offset)
         fd->bytes_written = fd->offset;

@@ -157,13 +157,12 @@ printf ("base offset: %llu\n", md->base_offset);
     return 1;
 }
 
-int adios_mpi_cio_should_buffer (struct adios_file_struct * fd
-                                ,struct adios_method_struct * method
-                                ,void * comm
-                                )
+enum ADIOS_FLAG adios_mpi_cio_should_buffer (struct adios_file_struct * fd
+                                            ,struct adios_method_struct * method
+                                            ,void * comm
+                                            )
 {
-printf ("MPI CIO Method: Need to coordinate buffering with peers, if any\n");
-    return 1;   // as far as we care, buffer
+    return adios_flag_yes;   // as far as we care, buffer
 }
 
 void adios_mpi_cio_write (struct adios_file_struct * fd
@@ -173,7 +172,7 @@ void adios_mpi_cio_write (struct adios_file_struct * fd
                      )
 {
 #if 0
-    if (v->got_buffer)
+    if (v->got_buffer == adios_flag_yes)
     {
         if (data != v->data)  // if the user didn't give back the same thing
         {

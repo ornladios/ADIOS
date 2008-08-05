@@ -135,6 +135,8 @@ static int common_adios_open (long long * fd, const char * group_name
     fd_p->vars_start = 0;
     fd_p->vars_written = 0;
     fd_p->write_size_bytes = 0;
+    fd_p->base_offset = 0;
+    fd_p->pg_start_in_file = 0;
 
     while (methods)
     {
@@ -187,7 +189,6 @@ static int common_adios_group_size (long long fd_p
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     struct adios_method_list_struct * m = fd->group->methods;
-    int do_buffering = 1;
 
     fd->write_size_bytes = data_size;
 
@@ -201,41 +202,69 @@ static int common_adios_group_size (long long fd_p
 
     fd->write_size_bytes += overhead;
 
+    uint64_t allocated = adios_method_buffer_alloc (fd->write_size_bytes);
+    if (allocated != fd->write_size_bytes)
+    {
+        fd->shared_buffer = adios_flag_no;
+    }
+    else
+    {
+        fd->shared_buffer = adios_flag_yes;
+    }
+
     // call each transport method to coordinate the write and handle
     // if an overflow is detected.
     // now tell each transport attached that it is being written
     while (m)
     {
-        int should_buffer = 0;
+        enum ADIOS_FLAG should_buffer = adios_flag_yes;
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
             && m->method->m != ADIOS_METHOD_NULL
             && adios_transports [m->method->m].adios_should_buffer_fn
            )
         {
-            should_buffer =
-                   adios_transports [m->method->m].adios_should_buffer_fn
-                                    (fd, m->method, comm);
+            should_buffer = adios_transports [m->method->m].
+                                            adios_should_buffer_fn (fd
+                                                                   ,m->method
+                                                                   ,comm
+                                                                   );
         }
 
-        if (!should_buffer)
-            do_buffering = 0;
+        if (should_buffer == adios_flag_no)     // can't write directly since
+            fd->shared_buffer = adios_flag_no;  // some might want to share
 
         m = m->next;
     }
 
-    fd->buffer = malloc (fd->write_size_bytes);
-    fd->offset = 0;
-    fd->bytes_written = 0;
-    if (!fd->buffer)
+    if (fd->shared_buffer == adios_flag_no)
     {
-        fprintf (stderr, "Cannot allocate buffer for output.\n");
+        adios_method_buffer_free (allocated);
+        fd->buffer = 0;
+        fd->offset = 0;
+        fd->bytes_written = 0;
     }
+    else
+    {
+        fd->buffer = malloc (fd->write_size_bytes);
+        fd->offset = 0;
+        fd->bytes_written = 0;
+        if (!fd->buffer)
+        {
+            fprintf (stderr, "Cannot allocate %lld bytes for buffered "
+                             "output.\n"
+                    );
 
-    // write the process group header
-    adios_write_process_group_header_v1 (fd, *total_size);
+            return 1;
+        }
+        else
+        {
+            // write the process group header
+            adios_write_process_group_header_v1 (fd, *total_size);
 
-    // setup for writing vars
-    adios_write_open_vars_v1 (fd);
+            // setup for writing vars
+            adios_write_open_vars_v1 (fd);
+        }
+    }
 
     // each var will be added to the buffer by the adios_write calls
     // attributes will be added by adios_close
@@ -251,7 +280,7 @@ int adios_group_size (long long fd_p, uint64_t data_size
 }
 
 void adios_group_size_ (long long * fd_p, int64_t * data_size
-                       ,int64_t * total_size, int * err, void * comm
+                       ,int64_t * total_size, void * comm, int * err
                        )
 {
     *err = common_adios_group_size (*fd_p, (uint64_t) *data_size
@@ -297,14 +326,21 @@ static int common_adios_write (long long fd_p, const char * name, void * var)
         return 1;
     }
 
-    if (v->is_dim == adios_flag_yes)
-       v->data = var;
+    v->data = var;
+    if (fd->shared_buffer == adios_flag_yes)
+    {
+        // var payload sent for sizing information
+        adios_write_var_header_v1 (fd, v);
 
-    // var payload sent for sizing information
-    adios_write_var_header_v1 (fd, v, var);
+        // generate characteristics (like min and max)
+        adios_generate_var_characteristics_v1 (fd, v);
 
-    // write payload
-    adios_write_var_payload_v1 (fd, v, var);
+        // write these characteristics
+        adios_write_var_characteristics_v1 (fd, v);
+
+        // write payload
+        adios_write_var_payload_v1 (fd, v);
+    }
 
     // now tell each transport attached that it is being written
     while (m)
@@ -319,6 +355,11 @@ static int common_adios_write (long long fd_p, const char * name, void * var)
         }
 
         m = m->next;
+    }
+
+    if (v->is_dim == adios_flag_no)
+    {
+        v->data = 0;
     }
 
     return 0;
@@ -414,7 +455,9 @@ void adios_get_write_buffer_ (long long * fd_p, const char * name
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_read (long long fd_p, const char * name, void * buffer)
+static int common_adios_read (long long fd_p, const char * name, void * buffer
+                             ,uint64_t buffer_size
+                             )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     struct adios_var_struct * v;
@@ -464,20 +507,22 @@ static int common_adios_read (long long fd_p, const char * name, void * buffer)
     return 0;
 }
 
-int adios_read (long long fd_p, const char * name, void * buffer)
+int adios_read (long long fd_p, const char * name, void * buffer
+               ,uint64_t buffer_size
+               )
 {
-    return common_adios_read (fd_p, name, buffer);
+    return common_adios_read (fd_p, name, buffer, buffer_size);
 }
 
-void adios_read_ (long long * fd_p, const char * name, void * buffer, int * err
-                 ,int name_size
+void adios_read_ (long long * fd_p, const char * name, void * buffer
+                 ,long long * buffer_size, int * err, int name_size
                  )
 {
     char buf1 [STR_LEN] = "";
 
     adios_extract_string (buf1, name, name_size);
 
-    *err = common_adios_read (*fd_p, buf1, buffer);
+    *err = common_adios_read (*fd_p, buf1, buffer, *buffer_size);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -715,18 +760,21 @@ static int common_adios_close (long long fd_p)
     struct adios_attribute_struct * a = fd->group->attributes;
     struct adios_var_struct * v = fd->group->vars;
 
-    adios_write_close_vars_v1 (fd);
-
-    adios_write_open_attributes_v1 (fd);
-
-    while (a)
+    if (fd->shared_buffer == adios_flag_yes)
     {
-        adios_write_attribute_v1 (fd, a);
+        adios_write_close_vars_v1 (fd);
 
-        a = a->next;
+        adios_write_open_attributes_v1 (fd);
+
+        while (a)
+        {
+            adios_write_attribute_v1 (fd, a);
+
+            a = a->next;
+        }
+
+        adios_write_close_attributes_v1 (fd);
     }
-
-    adios_write_close_attributes_v1 (fd);
 
     // in order to get the index assembled, we need to do it in the
     // transport once we have collected all of the pieces

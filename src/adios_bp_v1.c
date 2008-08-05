@@ -49,6 +49,16 @@ static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b
     b->length = size;
 }
 
+void adios_shared_buffer_free (struct adios_bp_buffer_struct_v1 * b)
+{
+    if (b->allocated_buff_ptr)
+        free (b->allocated_buff_ptr);
+    b->allocated_buff_ptr = 0;
+    b->buff = 0;
+    b->offset = 0;
+    b->length = 0;
+}
+
 void adios_buffer_struct_init (struct adios_bp_buffer_struct_v1 * b)
 {
     b->f = -1;

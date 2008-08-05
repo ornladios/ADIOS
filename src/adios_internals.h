@@ -129,7 +129,11 @@ struct adios_file_struct
     uint64_t data_size;
     uint64_t write_size_bytes;
 
-    uint64_t base_offset;   // where this group starts in the overall file
+    enum ADIOS_FLAG shared_buffer;
+
+    uint64_t pg_start_in_file; //  where this pg started in the file
+
+    uint64_t base_offset;   // where writing last ocurred
 
     char * buffer;          // buffer we use for building the output
     uint64_t offset;        // current offset to write at
@@ -160,7 +164,8 @@ typedef void (* ADIOS_INIT_FN) (const char * parameters
 typedef int (* ADIOS_OPEN_FN) (struct adios_file_struct * fd
                               ,struct adios_method_struct * method
                               );
-typedef int (* ADIOS_SHOULD_BUFFER_FN) (struct adios_file_struct * fd
+typedef enum ADIOS_FLAG (* ADIOS_SHOULD_BUFFER_FN)
+                                       (struct adios_file_struct * fd
                                        ,struct adios_method_struct * method
                                        ,void * comm
                                        );
@@ -418,11 +423,15 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
 // data is only there for sizing
 uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
                                    ,struct adios_var_struct * v
-                                   ,void * data
                                    );
+int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
+                                          ,struct adios_var_struct * var
+                                          );
+int adios_write_var_characteristics_v1 (struct adios_file_struct * fd
+                                       ,struct adios_var_struct * var
+                                       );
 int adios_write_var_payload_v1 (struct adios_file_struct * fd
                                ,struct adios_var_struct * var
-                               ,void * data
                                );
 int adios_write_attribute_v1 (struct adios_file_struct * fd
                              ,struct adios_attribute_struct * a
