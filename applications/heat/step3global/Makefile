@@ -18,8 +18,8 @@ INCD=${HOME}/include
 all: heat_adios 
 
 heat_adios: heat_adios.c heat.xml
-	python gwrite.py heat.xml temp
-	$(CC) -I$(INCD)  temp/heat_adios.c -o heat_adios -L$(LIBD)
+	python gpp.py heat.xml
+	$(CC) -I$(INCD)  heat_adios.c -o heat_adios -L$(LIBD)
 
 clean:
 	rm -rf temp *demo* *.o *.dat *.bp *.h5 heat heat_adios heat_adios_global

@@ -260,13 +260,15 @@ void prtdat(float *u, int offset, int size, int taskid,char *fname)
            tan_u[ix][iy]=tan(*(u+ix*NX+iy));
        }
    // declare ADIOS Variable(s) 
-   long long buf;
+   unsigned long long adios_handle;
+   unsigned long long adios_groupsize;
+   unsigned long long adios_totalsize;
 
    // get buf id
-   adios_open (&buf, "output", fname,"w");
+   adios_open (&adios_handle, "output", fname,"w");
    
-   adios_gwrite(buf,"output");
+#include "gwrite_output.ch"
    
    //do the actual writing
-   adios_close (buf);
+   adios_close (adios_handle);
 }
