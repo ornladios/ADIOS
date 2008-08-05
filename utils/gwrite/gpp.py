@@ -28,7 +28,7 @@ def main(argv=None):
            wfile= open("gwrite_"+fname+".fh","w") 
            rfile= open("gread_"+fname+".fh","w")
            #line="print(0,*)"+line+'\n'+"call adios_group_size("+str(len(sizestr))+", "+line+')\n'
-           line="call adios_group_size(_handle, "+ line +", totalsize,"+ ' comm)\n'
+           line="call adios_group_size(_handle, "+ line +", totalsize,"+ ' comm, err)\n'
         elif(xmlparser.language_group_dict[fname]==2):
            line="adios_group_size(_handle, "+ line +", &totalsize," + ' &comm);\n'
            wfile= open("gwrite_"+fname+".ch","w") 
