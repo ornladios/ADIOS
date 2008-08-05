@@ -361,6 +361,45 @@ static int common_adios_write (long long fd_p, const char * name, void * var)
     {
         v->data = 0;
     }
+    else
+    {
+        int element_size = adios_size_of_type (v->type, var);
+        v->data = malloc (element_size);
+
+        if (!v->data)
+        {
+            fprintf (stderr, "cannot allocate %d bytes to copy scalar %s\n"
+                    ,element_size
+                    ,v->name
+                    );
+
+            return 0;
+        }
+
+        switch (v->type)
+        {
+            case adios_byte:
+            case adios_short:
+            case adios_integer:
+            case adios_long:
+            case adios_unsigned_byte:
+            case adios_unsigned_short:
+            case adios_unsigned_integer:
+            case adios_unsigned_long:
+            case adios_real:
+            case adios_double:
+            case adios_long_double:
+            case adios_string:
+            case adios_complex:
+            case adios_double_complex:
+                memcpy ((char *) v->data, (char *) var, element_size);
+                break;
+
+            default:
+                v->data = 0;
+                break;
+        }
+    }
 
     return 0;
 }
@@ -795,6 +834,9 @@ static int common_adios_close (long long fd_p)
     while (v)
     {
         v->write_offset = 0;
+        if (v->data)
+            free (v->data);
+
         v->data = 0;
 
         v = v->next;
