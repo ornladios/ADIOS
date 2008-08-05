@@ -536,6 +536,8 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
             (*root)->local_offset.var_id = 0;
             b->offset += 8;
         }
+
+        root = &(*root)->next;
     }
 
     var_header->payload_size = length_of_var - (b->offset - initial_offset);
