@@ -12,6 +12,13 @@ struct dump_struct
 {
     int do_dump;
     char * dump_var;
+    enum ADIOS_FLAG host_language_fortran;
+};
+
+struct var_dim
+{
+    uint16_t id;
+    uint64_t rank;
 };
 
 void print_process_group_header (uint64_t num
@@ -22,6 +29,8 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header);
 void print_var_payload (struct adios_var_header_struct_v1 * var_header
                        ,struct adios_var_payload_struct_v1 * var_payload
                        ,struct dump_struct * dump
+                       ,int var_dims_count
+                       ,struct var_dim * var_dims
                        );
 void print_attrs_header (
                       struct adios_attributes_header_struct_v1 * attrs_header
@@ -133,6 +142,9 @@ int main (int argc, char ** argv)
     pg = pg_root;
     while (pg)
     {
+        int var_dims_count = 0;
+        struct var_dim * var_dims = 0;
+
         printf (DIVIDER);
 
         struct adios_process_group_header_struct_v1 pg_header;
@@ -163,21 +175,51 @@ int main (int argc, char ** argv)
         adios_parse_vars_header_v1 (b, &vars_header);
         print_vars_header (&vars_header);
 
+        dump.host_language_fortran = pg_header.host_language_fortran;
         int i;
         for (i = 0; i < vars_header.count; i++)
         {
+            var_payload.payload = 0;
+
             adios_parse_var_data_header_v1 (b, &var_header);
             print_var_header (&var_header);
 
-            if (dump.do_dump)
+            if (   var_header.is_dim == adios_flag_yes
+                ||    dump.do_dump
+                   && !strcasecmp (dump.dump_var, var_header.name)
+               )
             {
-                // make sure the buffer is big enough or send in null
+                var_payload.payload = malloc (var_header.payload_size);
                 adios_parse_var_data_payload_v1 (b, &var_header, &var_payload);
-                print_var_payload (&var_header, &var_payload, &dump);
             }
             else
             {
                 adios_parse_var_data_payload_v1 (b, &var_header, NULL);
+            }
+
+            if (var_header.is_dim == adios_flag_yes)
+            {
+                var_dims = realloc (var_dims,   (var_dims_count + 1)
+                                              * sizeof (struct var_dim)
+                                   );
+
+                var_dims [var_dims_count].id = var_header.id;
+                var_dims [var_dims_count].rank = *(unsigned int *)
+                                                        var_payload.payload;
+                var_dims_count++;
+            }
+
+            if (dump.do_dump)
+            {
+                // make sure the buffer is big enough or send in null
+                print_var_payload (&var_header, &var_payload, &dump
+                                  ,var_dims_count, var_dims
+                                  );
+            }
+            if (var_payload.payload)
+            {
+                free (var_payload.payload);
+                var_payload.payload;
             }
             printf ("\n");
         }
@@ -192,6 +234,9 @@ int main (int argc, char ** argv)
             printf ("\n");
         }
 
+        var_dims_count = 0;
+        if (var_dims)
+            free (var_dims);
         pg = pg->next;
     }
     printf (DIVIDER);
@@ -427,22 +472,248 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
     }
 }
 
+#if 0
+void adios_var_element_count (int rank
+                             ,struct adios_bp_dimension_struct * dims
+                             ,uint64_t * use_count
+                             ,uint64_t * total_count
+                             )
+{
+    int i;
+
+    *use_count = 1;
+    *total_count = 1;
+
+    for (i = 0; i < rank; i++)
+    {
+        *use_count *= dims [i].local_bound;
+        *total_count *= dims [i].local_bound;
+        int use_size = dims [i].use_upper_bound - dims [i].use_lower_bound + 1;
+        int total_size = dims [i].upper_bound - dims [i].lower_bound + 1;
+
+        // adjust for the stride
+        if (dims [i].stride <= use_size / 2)
+        {
+            if (use_size % dims [i].stride == 1) // correct fencepost error
+                use_size = use_size / dims [i].stride + 1;
+            else
+                use_size = use_size / dims [i].stride;
+        }
+        else
+        {
+            if (dims [i].stride >= use_size)
+                use_size = 1;
+            else
+                use_size = use_size / dims [i].stride + 1;  // maybe always 2?
+        }
+
+        // need to correct for empty/bad arrays
+        if (   dims [i].use_upper_bound < dims [i].use_lower_bound
+            || dims [i].upper_bound < dims [i].lower_bound
+           )
+        {
+            use_size = 0;
+            total_size = 0;
+        }
+
+        // number of items in the array
+        *use_count *= use_size;
+        *total_count *= total_size;
+    }
+}
+#endif
+
+    // for writing out bits in a global way, we would need this piece
+static
+int increment_dimension (enum ADIOS_FLAG host_language_fortran
+                        ,uint64_t element
+                        ,int ranks
+                        ,uint64_t * dims
+                        ,uint64_t * position
+                        )
+{
+    int i;
+    int done = 0;
+    
+    if (element == 0)
+    {
+        for (i = 0; i < ranks; i++)
+        {
+            position [i] = 0;
+        }   
+        done = 1;
+    }   
+    else  // increment our position
+    {
+        if (host_language_fortran == adios_flag_yes)
+        {
+            i = 0;
+            while (!done && i < ranks)
+            {
+                // if less than max, just increment this dim
+                if (position [i] < dims [i])
+                {
+                    position [i]++;
+                    if (i == ranks - 1 && position [i] != dims [i])
+                        done = 1;
+                }
+                else  // reset dim and move to next to increment
+                {
+                    position [i] = 0;
+                    i++;
+                }
+            }
+        }
+        else
+        {
+            i = ranks - 1;
+            while (!done && i >= 0)
+            {
+                // if less than max, just increment this dim
+                if (position [i] < dims [i])
+                {
+                    position [i]++;
+                    if (i == 0 && position [i] != dims [i])
+                        done = 1;
+                }
+                else  // reset dim and move to next to increment
+                {
+                    position [i] = 0;
+                    i--;
+                }
+            }
+        }
+    }
+
+    return done;
+
+#if 0
+    // for writing out bits in a global way, we would need this piece
+    // check against bounds
+    for (i = 0; i < rank; i++)
+    {
+        if (   position [i] < dims [i].use_lower_bound
+            || position [i] > dims [i].use_upper_bound
+           )
+        {
+            return 0;
+        }
+        else
+        {
+            // (pos - use lower) mod stride == 0 == use this element
+            if (((position [i] - dims [i].use_lower_bound) % dims [i].stride) != 0)
+                return 0;
+        }
+    }
+
+    return 1;  // we only get here if we are within all bounds
+#endif
+}
+
 void print_var_payload (struct adios_var_header_struct_v1 * var_header
                        ,struct adios_var_payload_struct_v1 * var_payload
                        ,struct dump_struct * dump
+                       ,int var_dims_count
+                       ,struct var_dim * var_dims
                        )
 {
-    printf ("\t\tMin: %s\n", value_to_string (var_header->type
-                                             ,var_payload->min, 0
-                                             )
-           );
-    printf ("\t\tMax: %s\n", value_to_string (var_header->type
-                                             ,var_payload->max, 0
-                                             )
-           );
-    if (dump->do_dump)
+    if (dump->do_dump && !strcasecmp (dump->dump_var, var_header->name))
     {
-        printf ("dump the data\n");
+        printf ("\t\tMin: %s\n", value_to_string (var_header->type
+                                                 ,var_payload->min, 0
+                                                 )
+               );
+        printf ("\t\tMax: %s\n", value_to_string (var_header->type
+                                                 ,var_payload->max, 0
+                                                 )
+               );
+
+        if (var_header->dims)
+        {
+            uint64_t element = 0;
+            int ranks = 0;
+            struct adios_dimension_struct_v1 * d = var_header->dims;
+            int c = 0;
+            uint64_t * position;
+            uint64_t * dims;
+            int i = 0;
+
+            while (d)
+            {
+                ranks++;
+                d = d->next;
+            }
+
+            position = (uint64_t *) malloc (8 * ranks);
+            memset (position, 0, 8 * ranks);
+            dims = (uint64_t *) malloc (8 * ranks);
+            memset (dims, 0, 8 * ranks);
+
+            d = var_header->dims;
+            uint64_t * dims_t = dims;
+
+            while (d)
+            {
+                if (d->dimension.var_id != 0)
+                {
+                    for (i = 0; i < var_dims_count; i++)
+                    {
+                        if (var_dims [i].id == d->dimension.var_id)
+                        {
+                            *dims_t = var_dims [i].rank;
+                        }
+                    }
+                }
+                else
+                {
+                    *dims_t = d->dimension.rank;
+                }
+
+                d = d->next;
+                dims_t++;
+            }
+
+            while (increment_dimension (dump->host_language_fortran
+                                       ,element
+                                       ,ranks
+                                       ,dims
+                                       ,position
+                                       )
+                  )
+            {
+                if (c > 65)
+                {
+                    printf ("\n");
+                    c = 0;
+                }
+
+                c += printf ("[");
+                for (i = 0; i < ranks; i++)
+                {
+                    if (i > 0)
+                        c += printf (",%lld", position [i]);
+                    else
+                        c += printf ("%lld", position [i]);
+                }
+                c += printf ("] ");
+                c += printf ("%s ", value_to_string (var_header->type
+                                               ,var_payload->payload
+                                               ,element
+                                               )
+                       );
+
+                element++;
+            }
+            printf ("\n");
+        }
+        else
+        {
+            printf ("%s ", value_to_string (var_header->type
+                                           ,var_payload->payload
+                                           ,0
+                                           )
+                   );
+        }
     }
 }
 
