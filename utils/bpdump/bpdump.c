@@ -273,50 +273,62 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t e
     switch (type)
     {
         case adios_unsigned_byte:
-            sprintf (s, "%u", *(((uint8_t *) data) + element));
+            //sprintf (s, "%u", *(((uint8_t *) data) + element));
+            sprintf (s, "%u", *(((uint8_t *) &data) + element));
             break;
 
         case adios_byte:
-            sprintf (s, "%d", *(((int8_t *) data) + element));
+            //sprintf (s, "%d", *(((int8_t *) data) + element));
+            sprintf (s, "%d", *(((int8_t *) &data) + element));
             break;
 
         case adios_short:
-            sprintf (s, "%hd", *(((int8_t *) data) + element));
+            //sprintf (s, "%hd", *(((int8_t *) data) + element));
+            sprintf (s, "%hd", *(((int8_t *) &data) + element));
             break;
 
         case adios_unsigned_short:
-            sprintf (s, "%uh", *(((int8_t *) data) + element));
+            //sprintf (s, "%uh", *(((int8_t *) data) + element));
+            sprintf (s, "%uh", *(((int8_t *) &data) + element));
             break;
 
         case adios_integer:
-            sprintf (s, "%d", *(((int32_t *) data) + element));
+            //sprintf (s, "%d", *(((int32_t *) data) + element));
+            sprintf (s, "%d", *(((int32_t *) &data) + element));
             break;
 
         case adios_unsigned_integer:
-            sprintf (s, "%u", *(((uint32_t *) data) + element));
+            //sprintf (s, "%u", *(((uint32_t *) data) + element));
+            sprintf (s, "%u", *(((uint32_t *) &data) + element));
             break;
 
         case adios_long:
-            sprintf (s, "%lld", *(((int64_t *) data) + element));
+            //sprintf (s, "%lld", *(((int64_t *) data) + element));
+            sprintf (s, "%lld", *(((int64_t *) &data) + element));
             break;
 
         case adios_unsigned_long:
-            sprintf (s, "%llu", *(((uint64_t *) data) + element));
+            //sprintf (s, "%llu", *(((uint64_t *) data) + element));
+            sprintf (s, "%llu", *(((uint64_t *) &data) + element));
             break;
 
         case adios_real:
-            sprintf (s, "%e", *(((float *) data) + element));
+            //sprintf (s, "%e", *(((float *) data) + element));
+            sprintf (s, "%e", *(((float *) &data) + element));
             break;
 
         case adios_double:
-            sprintf (s, "%le", *(((double *) data) + element));
+            //sprintf (s, "%le", *(((double *) data) + element));
+            sprintf (s, "%le", *(((double *) &data) + element));
             break;
 
         case adios_long_double:
-            sprintf (s, "%Le", *(((long double *) data) + element));
+            //sprintf (s, "%Le", *(((long double *) data) + element));
+            sprintf (s, "%Le", *(((long double *) &data) + element));
             break;
 
         case adios_string:
+            //sprintf (s, "%s", ((char *) data) + element);
             sprintf (s, "%s", ((char *) data) + element);
             break;
 
@@ -499,8 +511,8 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
         for (i = 0; i < vars_root->entries_count; i++)
         {
             printf ("\t\t%s\t\t", value_to_string (adios_long
-                                           ,&vars_root->entries [i].offset, 0)
-                                           );
+                                  ,(void *) (vars_root->entries [i].offset), 0)
+                                  );
             printf ("%s\t\t", value_to_string (vars_root->type
                                            ,vars_root->entries [i].min, 0)
                                            );
