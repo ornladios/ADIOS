@@ -72,6 +72,9 @@ subroutine test_write (group, filename, group_comm, small_int, big_int, small_re
     integer, intent(in) :: a_size
     real, intent(in) :: a_array (a_size)
 
+    integer :: a_size2
+    real :: a_array2 (a_size, 10)
+
     integer :: istep1
     integer :: istep2
     integer :: istep3
@@ -80,6 +83,8 @@ subroutine test_write (group, filename, group_comm, small_int, big_int, small_re
     integer*8 :: total_size
     integer :: err
     integer*8 :: size
+
+    a_size2 = 10
 
     size = 900 * 1024
 
@@ -99,7 +104,9 @@ subroutine test_write (group, filename, group_comm, small_int, big_int, small_re
     call adios_write (handle, "small_real"//char(0), small_real, err)
     call adios_write (handle, "big_real"//char(0), big_real, err)
     call adios_write (handle, "ze0size"//char(0), a_size, err)
+    call adios_write (handle, "ze1size"//char(0), a_size2, err)
     call adios_write (handle, "zelectron0"//char(0), a_array, err)
+    call adios_write (handle, "zelectron1"//char(0), a_array2, err)
 
     call adios_write (handle, "istep1"//char(0), istep1, err)
     call adios_write (handle, "istep2"//char(0), istep2, err)

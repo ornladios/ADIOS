@@ -9,7 +9,9 @@
     <var name="big_real" path="/abc/me" type="double"/>
 
     <var name="ze0size" type="integer"/>
+    <var name="ze1size" type="integer"/>
     <var name="zelectron0" type="real" dimensions="ze0size"/>
+    <var name="zelectron1" type="real" dimensions="ze0size,ze1size"/>
 
     <var name="istep1" type="integer"/>
     <var name="istep2" type="integer"/>
