@@ -4,8 +4,9 @@
     <var name="mype" path="/" type="integer"/>
     <var name="mype" path="/test" type="integer"/>
     <var name="zionsize" type="integer"/>
+    <var name="zionsize2" type="integer"/>
     <var name="zion" type="real" dimensions="10" path="/abc/me"/>
-    <var name="zion1" type="real" dimensions="zionsize" path="/abc/me"/>
+    <var name="zion1" type="real" dimensions="zionsize,zionsize2" path="/abc/me"/>
 
     <var name="node-attr" type="integer"/>
 
@@ -14,7 +15,6 @@
     <attribute name="timestep1" path="/" value="1"/>
     <attribute name="timestep2" path="/abc" value="1"/>
     <attribute name="timestep3" path="/abc/" value="1"/>
-
   
     <attribute name="node" path="/" var="node-attr"/>
   </adios-group>

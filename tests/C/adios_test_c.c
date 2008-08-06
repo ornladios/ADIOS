@@ -19,8 +19,12 @@ int main (int argc, char ** argv)
     int var_x1 = 101;
     int var_x2 = 102;
     int z_dim_size = 10;
-    float z_dim [z_dim_size];
+    int z_dim_size2 = 100;
+    float * z_dim;
+    float * z_dim2;
 
+    z_dim = malloc (z_dim_size * sizeof (float));
+    z_dim2 = malloc (z_dim_size * z_dim_size2 * sizeof (float));
     int r_var_x1;
     int r_var_x2;
     int r_zsize;
@@ -48,15 +52,16 @@ int main (int argc, char ** argv)
 #if 1
 printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
     adios_open (&io_handle, type_name, filename, "w");
-    adios_group_size (io_handle, 4 + 4 + 4 + 4 + 4 * 10 + 4 * 10 + 4
+    adios_group_size (io_handle, 4 + 4 + 4 + 4 + 4 * 10 + 4 * 10 + 4 + 4 * 10 * 100
                      ,&total, &comm
                      );
-    adios_write (io_handle, "comm", &comm);
-    adios_write (io_handle, "/mype", &var_x1);
-    adios_write (io_handle, "/test/mype", &var_x2);
+//    adios_write (io_handle, "comm", &comm);
+//    adios_write (io_handle, "/mype", &var_x1);
+//    adios_write (io_handle, "/test/mype", &var_x2);
     adios_write (io_handle, "zionsize", &z_dim_size);
-    adios_write (io_handle, "zion", z_dim);
-    adios_write (io_handle, "zion1", z_dim);
+    adios_write (io_handle, "zionsize2", &z_dim_size2);
+//    adios_write (io_handle, "zion", z_dim);
+    adios_write (io_handle, "zion1", z_dim2);
     adios_write (io_handle, "node-attr", &node);
     adios_close (io_handle);
 
@@ -65,7 +70,7 @@ printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
     MPI_Barrier (MPI_COMM_WORLD);
 #endif
 
-#if 1
+#if 0
 printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
 
     adios_open (&io_handle, type_name, filename, "r");
@@ -107,7 +112,7 @@ printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
     }
 #endif
 
-#if 1
+#if 0
 printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
     var_x1 = 11;
     adios_open (&io_handle, type_name, filename, "a");
