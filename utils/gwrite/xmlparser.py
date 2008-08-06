@@ -298,7 +298,7 @@ def getVarlistFromXML(xmlFile):
                 line =line +' + '+sizeformular[i]
             line = "adios_groupsize = "+line 
             if(glanguage==1):
-               line=line+"\ncall adios_group_size(adios_handle, "+  "adios_groupsize, adios_totalsize, "+ coord_comm+ ', err)\n'
+               line=line+"\ncall adios_group_size(adios_handle, "+  "adios_groupsize, adios_totalsize, "+ coord_comm+ ', adios_err)\n'
             else:
                line=line+";\nadios_group_size(adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ coord_comm + ');\n'
                
