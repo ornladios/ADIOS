@@ -203,6 +203,8 @@ MPI_Status status;
       /* Finally, send my portion of final results back to master */
       prtdat((float *)u,offset,size,taskid,"final.bp");
    }
+   MPI_Barrier (MPI_COMM_WORLD);
+
    adios_finalize (taskid);
    MPI_Finalize();
    return 0;
