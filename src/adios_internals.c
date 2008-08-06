@@ -5762,14 +5762,48 @@ uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
 
 static void calc_min_max (struct adios_var_struct * var)
 {
+    uint64_t total_size = adios_get_var_size (var, var->data);
+    uint64_t size = 0;
+
     switch (var->type)
     {
         case adios_byte:
+        {
+            int8_t * data = (int8_t *) var->data;
+            int8_t min = data [0];
+            int8_t max = data [0];
+            size++;
+            while ((size * 1) < total_size)
+            {
+                if (data [size] < min)
+                    min = data [size];
+                if (data [size] > max)
+                    max = data [size];
+                size++;
+            }
+            var->min = (void *) min;
+            var->max = (void *) max;
+          
+            return;
+        }
+
         case adios_unsigned_byte:
         {
-            uint8_t data = adios_byte;
-            var->min = (void *) data;
-            var->max = (void *) data;
+            uint8_t * data = (uint8_t *) var->data;
+            uint8_t min = data [0];
+            uint8_t max = data [0];
+            size++;
+            while ((size * 1) < total_size)
+            {
+                if (data [size] < min)
+                    min = data [size];
+                if (data [size] > max)
+                    max = data [size];
+                size++;
+            }
+            var->min = (void *) min;
+            var->max = (void *) max;
+          
             return;
         }
 
@@ -5792,69 +5826,222 @@ static void calc_min_max (struct adios_var_struct * var)
         }
 
         case adios_short:
+        {
+            int16_t * data = (int16_t *) var->data;
+            int16_t min = data [0];
+            int16_t max = data [0];
+            size++;
+            while ((size * 2) < total_size)
+            {
+                if (data [size] < min)
+                    min = data [size];
+                if (data [size] > max)
+                    max = data [size];
+                size++;
+            }
+            var->min = (void *) min;
+            var->max = (void *) max;
+          
+            return;
+        }
+
         case adios_unsigned_short:
         {
-            uint16_t data = adios_short;
-            var->min = (void *) data;
-            var->max = (void *) data;
+            uint16_t * data = (uint16_t *) var->data;
+            uint16_t min = data [0];
+            uint16_t max = data [0];
+            size++;
+            while ((size * 2) < total_size)
+            {
+                if (data [size] < min)
+                    min = data [size];
+                if (data [size] > max)
+                    max = data [size];
+                size++;
+            }
+            var->min = (void *) min;
+            var->max = (void *) max;
+          
             return;
         }
 
         case adios_integer:
+        {
+            int32_t * data = (int32_t *) var->data;
+            int32_t min = data [0];
+            int32_t max = data [0];
+            size++;
+            while ((size * 4) < total_size)
+            {
+                if (data [size] < min)
+                    min = data [size];
+                if (data [size] > max)
+                    max = data [size];
+                size++;
+            }
+            var->min = (void *) min;
+            var->max = (void *) max;
+
+            return;
+        }
+
         case adios_unsigned_integer:
         {
-            uint32_t data = adios_integer;
-            var->min = (void *) data;
-            var->max = (void *) data;
+            uint32_t * data = (uint32_t *) var->data;
+            uint32_t min = data [0];
+            uint32_t max = data [0];
+            size++;
+            while ((size * 4) < total_size)
+            {
+                if (data [size] < min)
+                    min = data [size];
+                if (data [size] > max)
+                    max = data [size];
+                size++;
+            }
+            var->min = (void *) min;
+            var->max = (void *) max;
+
             return;
         }
 
         case adios_long:
+        {
+            int64_t * data = (int64_t *) var->data;
+            int64_t min = data [0];
+            int64_t max = data [0];
+            size++;
+            while ((size * 8) < total_size)
+            {
+                if (data [size] < min)
+                    min = data [size];
+                if (data [size] > max)
+                    max = data [size];
+                size++;
+            }
+            var->min = (void *) min;
+            var->max = (void *) max;
+
+            return;
+        }
+
         case adios_unsigned_long:
         {
-            uint64_t data = adios_long;
-            var->min = (void *) data;
-            var->max = (void *) data;
+            uint64_t * data = (uint64_t *) var->data;
+            uint64_t min = data [0];
+            uint64_t max = data [0];
+            size++;
+            while ((size * 8) < total_size)
+            {
+                if (data [size] < min)
+                    min = data [size];
+                if (data [size] > max)
+                    max = data [size];
+                size++;
+            }
+            var->min = (void *) min;
+            var->max = (void *) max;
+
             return;
         }
 
         case adios_real:
         {
-            uint32_t data = adios_real;
-            var->min = (void *) *(uint32_t *) &data;
-            var->max = (void *) *(uint32_t *) &data;
+            float * data = (float *) var->data;
+            float min = data [0];
+            float max = data [0];
+            size++;
+            while ((size * 4) < total_size)
+            {
+                if (data [size] < min)
+                    min = data [size];
+                if (data [size] > max)
+                    max = data [size];
+                size++;
+            }
+            var->min = (void *) *(uint32_t *) &min;
+            var->max = (void *) *(uint32_t *) &max;
+
             return;
         }
 
         case adios_double:
         {
-            uint64_t data = adios_double;
-            var->min = (void *) *(uint64_t *) &data;
-            var->max = (void *) *(uint64_t *) &data;
+            double * data = (double *) var->data;
+            double min = data [0];
+            double max = data [0];
+            size++;
+            while ((size * 8) < total_size)
+            {
+                if (data [size] < min)
+                    min = data [size];
+                if (data [size] > max)
+                    max = data [size];
+                size++;
+            }
+            var->min = (void *) *(uint64_t *) &min;
+            var->max = (void *) *(uint64_t *) &max;
+
             return;
         }
 
         case adios_long_double:
         {
-            uint64_t data = adios_long_double;
-            var->min = (void *) *(uint64_t *) &data;
-            var->max = (void *) *(uint64_t *) &data;
+            long double * data = (long double *) var->data;
+            long double min = data [0];
+            long double max = data [0];
+            size++;
+            while ((size * 16) < total_size)
+            {
+                if (data [size] < min)
+                    min = data [size];
+                if (data [size] > max)
+                    max = data [size];
+                size++;
+            }
+            var->min = (void *) *(uint64_t *) &min;
+            var->max = (void *) *(uint64_t *) &max;
+
             return;
 	}
 
         case adios_complex:
 	{
-            uint64_t data = adios_complex;
-            var->min = (void *) *(uint64_t *) &data;
-            var->max = (void *) *(uint64_t *) &data;
+            uint32_t * data = (uint32_t *) var->data;
+            uint32_t min = (void *) data [0];
+            uint32_t max = (void *) data [0];
+            size++;
+            while ((size * 4) < total_size)
+            {
+                if (data [size] < min)
+                    min = data [size];
+                if (data [size] > max)
+                    max = data [size];
+                size++;
+            }
+            var->min = (void *) min;
+            var->max = (void *) max;
+
             return;
 	}
 
         case adios_double_complex:
 	{
-            uint64_t data = adios_double_complex;
-            var->min = (void *) *(uint64_t *) &data;
-            var->max = (void *) *(uint64_t *) &data;
+            uint32_t * data = (uint32_t *) var->data;
+            uint32_t min = (void *) data [0];
+            uint32_t max = (void *) data [0];
+            size++;
+            while ((size * 4) < total_size)
+            {
+                if (data [size] < min)
+                    min = data [size];
+                if (data [size] > max)
+                    max = data [size];
+                size++;
+            }
+            var->min = (void *) min;
+            var->max = (void *) max;
+
             return;
 	}
 
