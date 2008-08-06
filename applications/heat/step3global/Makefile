@@ -1,7 +1,10 @@
-JAGUAR=n
-EWOK=y
+JAGUAR=y
+EWOK=n
 ifeq ($(JAGUAR),y)
-     HOME=/ccs/proj/e2e/adios/jaguar
+     HOME=/ccs/home/ge1/work/jaguar
+     HOME1=/ccs/home/ge1/work/jaguar
+#     HOME=/ccs/home/ge1/work/ADIOS/trunk/src
+#     HOME1=/ccs/proj/e2e/adios/jaguar
      FC=ftn
      CC=cc
 endif
