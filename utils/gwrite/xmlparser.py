@@ -81,9 +81,9 @@ def processvar(node,language_sw,coord_comm,coord_var):
     line=""
     if (language_sw==1):
         #if(coord_comm==varname or coord_var==varname): 
-        #   line="call adios_write(_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
+        #   line="call adios_write(_handle,"+"\""+varname+"\"//char(0),"+varname_g+", err)"
         #else:
-        line="call adios_op(adios_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
+        line="call adios_op(adios_handle,"+"\""+varname+"\"//char(0),"+varname_g+", adios_err)"
     elif(language_sw==2):
         #if(coord_comm==varname or coord_var==varname):
         #   line="adios_write(_handle,"+"\""+varname+"\","+"&"+varname_g+");"
@@ -200,7 +200,7 @@ def processdset(node,language_sw):
 
     line=""
     if (language_sw==1):
-        line="call adios_op(adios_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
+        line="call adios_op(adios_handle,"+"\""+varname+"\"//char(0),"+varname_g+", adios_err)"
     elif(language_sw==2):
         line="adios_op(adios_handle,"+"\""+varname+"\","+varname_g+");"
     return line+'\n'
