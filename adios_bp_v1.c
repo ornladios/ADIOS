@@ -296,17 +296,51 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                             * sizeof (struct adios_index_var_entry_struct_v1));
         for (j = 0; j < offsets_count; j++)
         {
+            uint64_t size = adios_get_type_size ((*root)->type, "");
             (*root)->entries [j].offset = *(uint64_t *) (b->buff + b->offset);
             b->offset += 8;
-            char * str = "";
-            void * x = adios_dupe_data_scalar (adios_string, str);
-//                             ((*root)->type, (void *) (b->buff + b->offset));
-            (*root)->entries [j].min = adios_dupe_data_scalar
-                                         ((*root)->type, b->buff + b->offset);
-            b->offset += adios_get_type_size ((*root)->type, "");
-            (*root)->entries [j].max = adios_dupe_data_scalar
-                                         ((*root)->type, b->buff + b->offset);
-            b->offset += adios_get_type_size ((*root)->type, "");
+            (*root)->entries [j].min = 0;
+            (*root)->entries [j].max = 0;
+            switch (size)
+            {
+                case 1:
+                    (*root)->entries [j].min = (void *) *(uint8_t *) (b->buff + b->offset);
+                    b->offset += 1;
+
+                    (*root)->entries [j].max = (void *) *(uint8_t *) (b->buff + b->offset);
+                    b->offset += 1;
+                    break;
+
+                case 2:
+                    (*root)->entries [j].min = (void *) *(uint16_t *) (b->buff + b->offset);
+                    b->offset += 2;
+
+                    (*root)->entries [j].max = (void *) *(uint16_t *) (b->buff + b->offset);
+                    b->offset += 2;
+                    break;
+
+                case 4:
+                    (*root)->entries [j].min = (void *) *(uint32_t *) (b->buff + b->offset);
+                    b->offset += 4;
+
+                    (*root)->entries [j].max = (void *) *(uint32_t *) (b->buff + b->offset);
+                    b->offset += 4;
+                    break;
+
+                case 8:
+                    (*root)->entries [j].min = (void *) *(uint64_t *) (b->buff + b->offset);
+                    b->offset += 8;
+
+                    (*root)->entries [j].max = (void *) *(uint64_t *) (b->buff + b->offset);
+                    b->offset += 8;
+                    break;
+
+                default:
+                    memcpy (&(*root)->entries [j].min, (b->buff + b->offset), size);
+                    b->offset += size;
+                    memcpy (&(*root)->entries [j].max, (b->buff + b->offset), size);
+                    b->offset += size;
+            }
         }
 
         root = &(*root)->next;
@@ -397,10 +431,10 @@ int adios_parse_vars_header_v1 (struct adios_bp_buffer_struct_v1 * b
                                ,struct adios_vars_header_struct_v1 * vars_header
                                )
 {
-    if (b->length - b->offset < 12)
+    if (b->length - b->offset < 10)
     {
         fprintf (stderr, "adios_parse_var_header_v1 requires a "
-                         "buffer of at least 12 bytes.  "
+                         "buffer of at least 10 bytes.  "
                          "Only %lld were provided\n"
                 ,b->length - b->offset
                 );
@@ -595,10 +629,10 @@ int adios_parse_attributes_header_v1 (struct adios_bp_buffer_struct_v1 * b
                       ,struct adios_attributes_header_struct_v1 * attrs_header
                       )
 {
-    if (b->length - b->offset < 10)
+    if (b->length - b->offset < 2)
     {
         fprintf (stderr, "adios_parse_attribute_header_v1 requires a "
-                         "buffer of at least 10 bytes.  "
+                         "buffer of at least 2 bytes.  "
                          "Only %lld were provided\n"
                 ,b->length - b->offset
                 );
@@ -608,8 +642,11 @@ int adios_parse_attributes_header_v1 (struct adios_bp_buffer_struct_v1 * b
 
     attrs_header->count = *(uint16_t *) (b->buff + b->offset);
     b->offset += 2;
-    attrs_header->length = *(uint64_t *) (b->buff + b->offset);
-    b->offset += 8;
+    if (attrs_header->count != 0)
+    {
+        attrs_header->length = *(uint64_t *) (b->buff + b->offset);
+        b->offset += 8;
+    }
 
     return 0;
 }

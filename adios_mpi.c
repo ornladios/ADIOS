@@ -139,6 +139,8 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                                       method->method_data; 
     char * name;
     int err;
+    int flag;    // used for coordinating the MPI_File_open
+
     int previous;
     int current;
     int next;
@@ -250,6 +252,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                 );
                     md->b.read_pg_offset = offsets [0];
                     md->b.read_pg_size = offsets [1];
+                    free (offsets);
                 }
                 else
                 {
@@ -275,19 +278,19 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
                 if (next != -1)
                 {
-                    MPI_Isend (&current, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
                               ,md->group_comm, &md->req
                               );
                 }
             }
             else
             {
-                MPI_Recv (&current, 1, MPI_INTEGER, previous, previous
+                MPI_Recv (&flag, 1, MPI_INTEGER, previous, previous
                          ,md->group_comm, &md->status
                          );
                 if (next != -1)
                 {
-                    MPI_Isend (&current, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
                               ,md->group_comm, &md->req
                               );
                 }
@@ -338,8 +341,8 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                     offsets [0] = 0;
                     for (i = 1; i < md->size; i++)
                     {
-                        offsets [i] = offsets [i - 1] + last_offset;
                         last_offset = offsets [i];
+                        offsets [i] = offsets [i - 1] + last_offset;
                     }
                     md->b.pg_index_offset =   offsets [md->size - 1]
                                             + last_offset;
@@ -348,6 +351,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                 ,0, md->group_comm
                                 );
                     fd->base_offset = offsets [0];
+                    fd->pg_start_in_file = fd->base_offset;
                     free (offsets);
                 }
                 else
@@ -364,6 +368,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                 ,0, md->group_comm
                                 );
                     fd->base_offset = offset;
+                    fd->pg_start_in_file = fd->base_offset;
                 }
             }
             else
@@ -383,19 +388,19 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                     );
                 if (next != -1)
                 {
-                    MPI_Isend (&current, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
                               ,md->group_comm, &md->req
                               );
                 }
             }
             else
             {
-                MPI_Recv (&current, 1, MPI_INTEGER, previous, previous
+                MPI_Recv (&flag, 1, MPI_INTEGER, previous, previous
                          ,md->group_comm, &md->status
                          );
                 if (next != -1)
                 {
-                    MPI_Isend (&current, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
                               ,md->group_comm, &md->req
                               );
                 }
@@ -504,6 +509,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                     adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
 
                     fd->base_offset = md->b.end_of_pgs;
+                    fd->pg_start_in_file = fd->base_offset;
                 }
 
                 if (md->group_comm != MPI_COMM_NULL)
@@ -534,6 +540,8 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                     ,0, md->group_comm
                                     );
                         fd->base_offset = offsets [0];
+                        fd->pg_start_in_file = fd->base_offset;
+                        free (offsets);
                     }
                     else
                     {
@@ -550,12 +558,14 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                     );
 
                         fd->base_offset = offset;
+                        fd->pg_start_in_file = fd->base_offset;
                     }
                 }
             }
             else
             {
                 fd->base_offset = 0;
+                fd->pg_start_in_file = 0;
             }
 
             // cascade the opens to avoid trashing the metadata server
@@ -565,19 +575,19 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
                 if (next != -1)
                 {
-                    MPI_Isend (&current, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
                               ,md->group_comm, &md->req
                               );
                 }
             }
             else
             {
-                MPI_Recv (&current, 1, MPI_INTEGER, previous, previous
+                MPI_Recv (&flag, 1, MPI_INTEGER, previous, previous
                          ,md->group_comm, &md->status
                          );
                 if (next != -1)
                 {
-                    MPI_Isend (&current, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
                               ,md->group_comm, &md->req
                               );
                 }
@@ -893,7 +903,7 @@ void adios_mpi_close (struct adios_file_struct * fd
 
                     while (ranks_sent < md->size)
                     {
-                        MPI_Recv (buffer, buffer_size, MPI_BYTE, MPI_ANY_SOURCE
+                        MPI_Recv (buffer, buffer_size, MPI_BYTE, ranks_sent
                                  ,0, md->group_comm, &md->status
                                  );
                         MPI_Get_count (&md->status, MPI_BYTE, &count);
