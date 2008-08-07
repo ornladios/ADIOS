@@ -634,6 +634,8 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
         // setup for writing vars
         adios_write_open_vars_v1 (fd);
+
+        return adios_flag_no;
     }
     else
     {
