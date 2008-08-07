@@ -194,10 +194,10 @@ int adios_posix_open (struct adios_file_struct * fd
     return 1;
 }
 
-int adios_posix_should_buffer (struct adios_file_struct * fd
-                              ,struct adios_method_struct * method
-                              ,void * comm
-                              )
+enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd
+                                          ,struct adios_method_struct * method
+                                          ,void * comm
+                                          )
 {
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
