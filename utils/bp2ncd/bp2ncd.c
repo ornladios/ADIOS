@@ -39,21 +39,19 @@ void ncd_addtimedim( int ncid, int timestep_id)
     nc_def_dim(ncid,"timestep",NC_UNLIMITED,&time_dimid);
     nc_enddef(ncid);
 }
-/*int ncd_attr_str_ds (int ncid 
-                    ,struct adios_attribute_struct_v1 * attribute
-                    ,struct adios_index_var_struct_v1 *ptr_var_root)
-*/
-int copy_buffer(struct adios_bp_buffer_struct_v1 *dest
-               ,struct adios_bp_buffer_struct_v1 *src){
-    memcpy (dest, src, sizeof(struct adios_bp_buffer_struct_v1));
 
-    //dest->offset = src->offset; 
+void copy_buffer(struct adios_bp_buffer_struct_v1 *dest
+                ,struct adios_bp_buffer_struct_v1 *src) {
+
+    memcpy (dest, src, sizeof(struct adios_bp_buffer_struct_v1));
 }
+
 int ncd_attr_str_ds (int ncid 
                     ,struct adios_attribute_struct_v1 * attribute
                     ,struct adios_bp_buffer_struct_v1 * ptr_buffer
-                    ,int count)
-{
+                    ,int count
+                    ,struct var_dim * var_dims
+                    ,int var_dims_count) {
     int i;
     char fullname[255];
     char *path = attribute->path;
@@ -81,6 +79,7 @@ int ncd_attr_str_ds (int ncid
         valid = NC_GLOBAL; 
     //nc_enddef(ncid);
     void *value = attribute->value;
+    size_t len = 1; 
     enum ADIOS_DATATYES type =  attribute->type;
     struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;  
@@ -90,6 +89,20 @@ int ncd_attr_str_ds (int ncid
              adios_parse_var_data_header_v1 (ptr_buffer, &var_header);
              if ( var_header.id == attribute->var_id) {
                  printf("is_var: %s\n", var_header.name); 
+                  struct  adios_dimension_struct_v1 * dims = var_header.dims; 
+                  while (dims) {
+                      if ( dims->dimension.var_id != 0 ) {
+                           for (i = 0; i < var_dims_count; i++) {
+                                if (var_dims [i].id == dims->dimension.var_id ){
+                                    len *= var_dims [i]. rank;
+			            break;
+                                } 
+                           }
+                      }
+                      else
+                         len *= dims->dimension.rank;
+                      dims = dims->next;
+                 }
                  type = var_header.type;
                  var_payload.payload = malloc (var_header.payload_size);
                  adios_parse_var_data_payload_v1 (ptr_buffer, &var_header, &var_payload);
@@ -102,28 +115,28 @@ int ncd_attr_str_ds (int ncid
     }
     switch (type) {
          case adios_unsigned_byte:
-            retval=nc_put_att_uchar(ncid,valid,fullname,NC_BYTE,1,value);
+            retval=nc_put_att_uchar(ncid,valid,fullname,NC_BYTE,len,value);
             break;
          case adios_byte:
-            retval=nc_put_att_schar(ncid,valid,fullname,NC_BYTE,1,value);
+            retval=nc_put_att_schar(ncid,valid,fullname,NC_BYTE,len,value);
             break;
          case adios_string:
             retval=nc_put_att_text(ncid,valid,fullname, strlen(value),value);
             break;
          case adios_short:
-            retval=nc_put_att_short(ncid,valid,fullname,NC_SHORT,1,value);
+            retval=nc_put_att_short(ncid,valid,fullname,NC_SHORT,len,value);
             break;
          case adios_integer:
-            retval=nc_put_att_int(ncid,valid,fullname,NC_INT,1,value);
+            retval=nc_put_att_int(ncid,valid,fullname,NC_INT,len,value);
             break;
          case adios_long:
-            retval=nc_put_att_long(ncid,valid,fullname,NC_LONG,1,value);
+            retval=nc_put_att_long(ncid,valid,fullname,NC_LONG,len,value);
             break;
          case adios_real:
-            retval=nc_put_att_float(ncid,valid,fullname,NC_FLOAT,1,value);
+            retval=nc_put_att_float(ncid,valid,fullname,NC_FLOAT,len,value);
             break;
          case adios_double:
-            retval=nc_put_att_double(ncid,valid,fullname,NC_DOUBLE,1,value);
+            retval=nc_put_att_double(ncid,valid,fullname,NC_DOUBLE,len,value);
             break;
          default:
             break;
@@ -133,12 +146,12 @@ int ncd_attr_str_ds (int ncid
     if ( var_payload.payload)
         free (var_payload.payload);
 }
+
 int ncd_dataset (int ncid
                 ,struct adios_var_header_struct_v1 *ptr_var_header
                 ,struct adios_var_payload_struct_v1 *ptr_var_payload
-                ,struct var_dim * var_dims
+                ,struct var_dim *var_dims
                 ,int var_dims_count) {
-    printf("%s\n", DIVIDER);
 
     char *name = ptr_var_header->name;
     char *path = ptr_var_header->path;
@@ -377,7 +390,6 @@ int ncd_dataset (int ncid
     }
     return 0;
 }
-
 const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t element);
 
 int main (int argc, char ** argv)
@@ -561,7 +573,7 @@ int main (int argc, char ** argv)
         {
 
             adios_parse_attribute_v1 (b, &attribute);
-            ncd_attr_str_ds (ncid, &attribute, b_0, vars_header.count);
+            ncd_attr_str_ds (ncid, &attribute, b_0, vars_header.count, var_dims, var_dims_count);
 
 //            print_attribute (&attribute);
 //            printf ("\n");
