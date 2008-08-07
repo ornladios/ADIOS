@@ -27,30 +27,111 @@ void print_process_group_header (uint64_t num
                       ,struct adios_process_group_header_struct_v1 * pg_header
                       );
 void print_vars_header (struct adios_vars_header_struct_v1 * vars_header);
-void print_var_header (struct adios_var_header_struct_v1 * var_header);
 void print_var_payload (struct adios_var_header_struct_v1 * var_header
                        ,struct adios_var_payload_struct_v1 * var_payload
                        ,struct dump_struct * dump
                        ,int var_dims_count
                        ,struct var_dim * var_dims
                        );
-void print_attrs_header (
-                      struct adios_attributes_header_struct_v1 * attrs_header
-                      );
-void print_attribute (struct adios_attribute_struct_v1 * attribute);
-void print_process_group_index (
-                         struct adios_index_process_group_struct_v1 * pg_root
-                         );
-void print_vars_index (struct adios_index_var_struct_v1 * vars_root);
-
-int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
-                  ,void * data
-                  );
-int ncd_addtimedim (int ncid, int timestep_id)
+void ncd_addtimedim( int ncid, int timestep_id)
 {
     static int time_dimid; 
     nc_def_dim(ncid,"timestep",NC_UNLIMITED,&time_dimid);
     nc_enddef(ncid);
+}
+/*int ncd_attr_str_ds (int ncid 
+                    ,struct adios_attribute_struct_v1 * attribute
+                    ,struct adios_index_var_struct_v1 *ptr_var_root)
+*/
+int copy_buffer(struct adios_bp_buffer_struct_v1 *dest
+               ,struct adios_bp_buffer_struct_v1 *src){
+    memcpy (dest, src, sizeof(struct adios_bp_buffer_struct_v1));
+
+    //dest->offset = src->offset; 
+}
+int ncd_attr_str_ds (int ncid 
+                    ,struct adios_attribute_struct_v1 * attribute
+                    ,struct adios_bp_buffer_struct_v1 * ptr_buffer
+                    ,int count)
+{
+    int i;
+    char fullname[255];
+    char *path = attribute->path;
+    char *name = attribute->name;
+    char *new_path;
+    int  valid,retval; 
+    new_path = strdup (path);
+    if ( path[0] == '/')
+         new_path=new_path+1;
+    if ( path[strlen(path)-1] = '/')
+         new_path[strlen(new_path)-1]='\0';
+    for ( i = 0; i < strlen (new_path); i++) {
+        if ( new_path[i] == '[' || new_path[i] == ']' || new_path[i] == '/' || new_path[i] == '\\')
+            new_path[i] = '_';
+    }
+    if (*new_path != '\0')
+        sprintf (fullname, "%s_%s", new_path, name);
+    else
+        strcpy (fullname, name);
+    valid = -1;
+    nc_redef(ncid);
+    retval=nc_inq_varid(ncid,new_path,&valid);
+    //printf ("\t\tpath: %s %d\n", new_path, valid);
+    if ( valid < 0)
+        valid = NC_GLOBAL; 
+    //nc_enddef(ncid);
+    void *value = attribute->value;
+    enum ADIOS_DATATYES type =  attribute->type;
+    struct adios_var_header_struct_v1 var_header;
+    struct adios_var_payload_struct_v1 var_payload;  
+    var_payload.payload = 0;
+    if (attribute->is_var == adios_flag_yes) {
+         for ( i = 0; i < count; i++) {
+             adios_parse_var_data_header_v1 (ptr_buffer, &var_header);
+             if ( var_header.id == attribute->var_id) {
+                 printf("is_var: %s\n", var_header.name); 
+                 type = var_header.type;
+                 var_payload.payload = malloc (var_header.payload_size);
+                 adios_parse_var_data_payload_v1 (ptr_buffer, &var_header, &var_payload);
+                 value = var_payload.payload;
+              }
+              else
+                  adios_parse_var_data_payload_v1 (ptr_buffer, &var_header, NULL);
+
+         }
+    }
+    switch (type) {
+         case adios_unsigned_byte:
+            retval=nc_put_att_uchar(ncid,valid,fullname,NC_BYTE,1,value);
+            break;
+         case adios_byte:
+            retval=nc_put_att_schar(ncid,valid,fullname,NC_BYTE,1,value);
+            break;
+         case adios_string:
+            retval=nc_put_att_text(ncid,valid,fullname, strlen(value),value);
+            break;
+         case adios_short:
+            retval=nc_put_att_short(ncid,valid,fullname,NC_SHORT,1,value);
+            break;
+         case adios_integer:
+            retval=nc_put_att_int(ncid,valid,fullname,NC_INT,1,value);
+            break;
+         case adios_long:
+            retval=nc_put_att_long(ncid,valid,fullname,NC_LONG,1,value);
+            break;
+         case adios_real:
+            retval=nc_put_att_float(ncid,valid,fullname,NC_FLOAT,1,value);
+            break;
+         case adios_double:
+            retval=nc_put_att_double(ncid,valid,fullname,NC_DOUBLE,1,value);
+            break;
+         default:
+            break;
+     }
+     ERR(retval);
+
+    if ( var_payload.payload)
+        free (var_payload.payload);
 }
 int ncd_dataset (int ncid
                 ,struct adios_var_header_struct_v1 *ptr_var_header
@@ -84,7 +165,7 @@ int ncd_dataset (int ncid
         strcpy (fullname, name);
     if(dims)printf("write float %s %d %d XXXXXXX\n",fullname, dims->global_dimension.var_id, dims->global_dimension.rank);
     const char one_name[] = "one";
-    static int onename_dimid=-1;
+    static int onename_dimid = -1;
     val = ptr_var_payload->payload;
     if (dims) {
         while (dims) {
@@ -157,6 +238,8 @@ int ncd_dataset (int ncid
                     printf ("%s\n",dimname);
                     retval = nc_def_dim ( ncid, dimname, dims->dimension.rank, &nc_dimid);
                     dimids[rank]=nc_dimid;
+                    count_dims[rank] = dims->dimension.rank;
+                    start_dims[0] =0; 
                     ERR(retval);
                 } 
             }
@@ -166,14 +249,14 @@ int ncd_dataset (int ncid
         val = ptr_var_payload->payload;    
         nc_redef(ncid);
         nc_inq_varid(ncid,fullname,&valid);
+        printf(" \t--XXXXX----%s valid %d, start %d, count %d\n", fullname , valid, start_dims[1],count_dims[1]);
         switch(type) { 
         case adios_real:
             printf("write float %s %d\n",fullname, valid);
             if ( valid<0) {
                 retval=nc_def_var(ncid,fullname,NC_FLOAT,rank,dimids,&valid);
-                printf(" \t------%s rank %d, start %d, count %d\n", fullname , rank, start_dims[0],count_dims[0]);
-                printf(" \t------%s rank %d, start %d, count %d\n", fullname , rank, start_dims[1],count_dims[1]);
                 ERR(retval);
+                printf(" \t---XXXXX---%s rank %d, start %d, count %d\n", fullname , rank, start_dims[1],count_dims[1]);
             }
             retval=nc_enddef(ncid);
             retval=nc_put_vara_float(ncid,valid,start_dims,count_dims,val);
@@ -330,9 +413,11 @@ int main (int argc, char ** argv)
     nc_create ( out_fname, NC_CLOBBER | NC_64BIT_OFFSET, &ncid);
 
     struct adios_bp_buffer_struct_v1 * b = 0;
+    struct adios_bp_buffer_struct_v1 * b_0 = 0;
     uint32_t version = 0;
 
     b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
+    b_0 = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     adios_buffer_struct_init (b);
 
     rc = adios_posix_open_read_internal (argv[1], "", b);
@@ -350,8 +435,8 @@ int main (int argc, char ** argv)
     struct adios_index_process_group_struct_v1 * pg = 0;
     struct adios_index_var_struct_v1 * vars_root = 0;
 
-    printf (DIVIDER);
-    printf ("Process Groups Index:\n");
+//    printf (DIVIDER);
+//    printf ("Process Groups Index:\n");
     adios_posix_read_index_offsets (b);
     adios_parse_index_offsets_v1 (b);
 
@@ -359,8 +444,8 @@ int main (int argc, char ** argv)
     adios_parse_process_group_index_v1 (b, &pg_root);
 //    print_process_group_index (pg_root);
 
-    printf (DIVIDER);
-    printf ("Vars Index:\n");
+//    printf (DIVIDER);
+//    printf ("Vars Index:\n");
     adios_posix_read_vars_index (b);
     adios_parse_vars_index_v1 (b, &vars_root);
 //    print_vars_index (vars_root);
@@ -382,7 +467,7 @@ int main (int argc, char ** argv)
         struct adios_var_payload_struct_v1 var_payload;
         struct adios_attribute_struct_v1 attribute;
 
-        // setup where to read the process group from (and size)
+        // setup here to read the process group from (and size)
         b->read_pg_offset = pg->offset_in_file;
         if (pg->next)
         {
@@ -408,6 +493,8 @@ int main (int argc, char ** argv)
         int i,j;
         for (i = 0; i < vars_header.count; i++)
         {
+            if(i==0)
+               copy_buffer(b_0, b);
             var_payload.payload = 0;
             adios_parse_var_data_header_v1 (b, &var_header);
             //print_var_header (&var_header);
@@ -472,9 +559,12 @@ int main (int argc, char ** argv)
 
         for (i = 0; i < attrs_header.count; i++)
         {
+
             adios_parse_attribute_v1 (b, &attribute);
-            print_attribute (&attribute);
-            printf ("\n");
+            ncd_attr_str_ds (ncid, &attribute, b_0, vars_header.count);
+
+//            print_attribute (&attribute);
+//            printf ("\n");
         }
 
         var_dims_count = 0;
@@ -486,7 +576,8 @@ int main (int argc, char ** argv)
     printf ("End of %s\n", argv[1]);
 
     adios_posix_close_internal (b);
-
+    free (b);
+    free (b_0);
     nc_close (ncid);
     return 0;
 }
@@ -499,7 +590,7 @@ int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
     printf("My Value: \n");
     int use_element_count = 1;
     int total_element_count = 1;
-    int e = 0; // which element we are printing
+    int e = 0; // hich element we are printing
     int i,j;
     int position[ranks];
     for (i = 0; i < ranks; i++)
@@ -732,8 +823,8 @@ void adios_var_element_count (int rank
     {
         *use_count *= dims [i].local_bound;
         *total_count *= dims [i].local_bound;
-        int use_size = dims [i].use_upper_bound - dims [i].use_lower_bound + 1;
-        int total_size = dims [i].upper_bound - dims [i].lower_bound + 1;
+        int use_size = dims [i].use_upper_bound - dims [i].use_loer_bound + 1;
+        int total_size = dims [i].upper_bound - dims [i].loer_bound + 1;
 
         // adjust for the stride
         if (dims [i].stride <= use_size / 2)
@@ -748,12 +839,12 @@ void adios_var_element_count (int rank
             if (dims [i].stride >= use_size)
                 use_size = 1;
             else
-                use_size = use_size / dims [i].stride + 1;  // maybe always 2?
+                use_size = use_size / dims [i].stride + 1;  // maybe alays 2?
         }
 
         // need to correct for empty/bad arrays
-        if (   dims [i].use_upper_bound < dims [i].use_lower_bound
-            || dims [i].upper_bound < dims [i].lower_bound
+        if (   dims [i].use_upper_bound < dims [i].use_loer_bound
+            || dims [i].upper_bound < dims [i].loer_bound
            )
         {
             use_size = 0;
@@ -767,7 +858,7 @@ void adios_var_element_count (int rank
 }
 #endif
 
-    // for writing out bits in a global way, we would need this piece
+    // for riting out bits in a global way, we would need this piece
 static
 int increment_dimension (enum ADIOS_FLAG host_language_fortran
                         ,uint64_t element
@@ -832,11 +923,11 @@ int increment_dimension (enum ADIOS_FLAG host_language_fortran
     return done;
 
 #if 0
-    // for writing out bits in a global way, we would need this piece
+    // for riting out bits in a global way, we would need this piece
     // check against bounds
     for (i = 0; i < rank; i++)
     {
-        if (   position [i] < dims [i].use_lower_bound
+        if (   position [i] < dims [i].use_loer_bound
             || position [i] > dims [i].use_upper_bound
            )
         {
@@ -844,13 +935,13 @@ int increment_dimension (enum ADIOS_FLAG host_language_fortran
         }
         else
         {
-            // (pos - use lower) mod stride == 0 == use this element
-            if (((position [i] - dims [i].use_lower_bound) % dims [i].stride) != 0)
+            // (pos - use loer) mod stride == 0 == use this element
+            if (((position [i] - dims [i].use_loer_bound) % dims [i].stride) != 0)
                 return 0;
         }
     }
 
-    return 1;  // we only get here if we are within all bounds
+    return 1;  // e only get here if we are within all bounds
 #endif
 }
 
