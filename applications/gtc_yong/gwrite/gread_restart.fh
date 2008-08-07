@@ -1,0 +1,60 @@
+adios_groupsize = 4 &
++ 8 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4*(mpsi+1) &
++ 4*(mpsi+1) &
++ 4*(4) &
++ 4*(mpsi+1) &
++ 4*(mpsi+1) &
++ 4*(mpsi+1) &
++ 4*(mpsi+1) &
++ 4*(mpsi+1) &
++ 4*(mimax) &
++ 4*(mzeta+1)*(mgrid) &
++ 4*(nparam)*(mimax) &
++ 4*(memax) &
++ 4*(nparam)*(memax) &
++ 4*(mzeta+1)*(mgrid)*(2*nhybrid)
+call adios_group_size(adios_handle, adios_groupsize, adios_totalsize, partd_comm, adios_err)
+call adios_read(adios_handle,"mpsi+1"//char(0),mpsi+1, adios_err)
+call adios_read(adios_handle,"mzeta+1"//char(0),mzeta+1, adios_err)
+call adios_read(adios_handle,"partd_comm"//char(0),partd_comm, adios_err)
+call adios_read(adios_handle,"mimax"//char(0),mimax, adios_err)
+call adios_read(adios_handle,"mgrid"//char(0),mgrid, adios_err)
+call adios_read(adios_handle,"nparam"//char(0),nparam, adios_err)
+call adios_read(adios_handle,"memax"//char(0),memax, adios_err)
+call adios_read(adios_handle,"nhybrid"//char(0),nhybrid, adios_err)
+call adios_read(adios_handle,"2*nhybrid"//char(0),2*nhybrid, adios_err)
+call adios_read(adios_handle,"mzeta"//char(0),mzeta, adios_err)
+call adios_read(adios_handle,"mi"//char(0),mi, adios_err)
+call adios_read(adios_handle,"me"//char(0),me, adios_err)
+call adios_read(adios_handle,"ntracer"//char(0),ntracer, adios_err)
+call adios_read(adios_handle,"etracer"//char(0),etracer, adios_err)
+call adios_read(adios_handle,"mflux"//char(0),mflux, adios_err)
+call adios_read(adios_handle,"rdtemi"//char(0),rdtemi, adios_err)
+call adios_read(adios_handle,"rdteme"//char(0),rdteme, adios_err)
+call adios_read(adios_handle,"ptracer"//char(0),ptracer, adios_err)
+call adios_read(adios_handle,"pfluxpsi"//char(0),pfluxpsi, adios_err)
+call adios_read(adios_handle,"phi00"//char(0),phi00, adios_err)
+call adios_read(adios_handle,"phip00"//char(0),phip00, adios_err)
+call adios_read(adios_handle,"zonali"//char(0),zonali, adios_err)
+call adios_read(adios_handle,"zonale"//char(0),zonale, adios_err)
+call adios_read(adios_handle,"zion0"//char(0),zion0(6,:), adios_err)
+call adios_read(adios_handle,"phi"//char(0),phi, adios_err)
+call adios_read(adios_handle,"zion"//char(0),zion, adios_err)
+if(nhybrid>0)then
+call adios_read(adios_handle,"zelectron0"//char(0),zelectron0(6,:), adios_err)
+call adios_read(adios_handle,"zelectron"//char(0),zelectron, adios_err)
+call adios_read(adios_handle,"phisave"//char(0),phisave, adios_err)
+endif

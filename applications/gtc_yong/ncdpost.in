@@ -1,0 +1,10 @@
+&ncd_in_params
+dirpath='',
+nstart=5,
+nend=200,
+ndel=5
+/
+
+!!! this program is for ncdpost.f90 
+!!! to combine large small data file into bigger 3d data file
+

@@ -1,0 +1,42 @@
+adios_groupsize = 8 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4 &
++ 4*(mpsi+1) &
++ 4*(mpsi+1) &
++ 4*(mpsi+1) &
++ 4 &
++ 4 &
++ 4*(mzeta+kp)*(mpsi+1) &
++ 4 &
++ 4 &
++ 4*(mgrid)*(mzeta+kp) &
++ 4*(mgrid)*(mzeta+kp) &
++ 4*(mgrid)*(mzeta+kp)
+call adios_group_size(adios_handle, adios_groupsize, adios_totalsize, toroidal_comm, adios_err)
+call adios_write(adios_handle,"toroidal_comm"//char(0),toroidal_comm, adios_err)
+call adios_write(adios_handle,"mpsi+1"//char(0),mpsi+1, adios_err)
+call adios_write(adios_handle,"mzeta+kp"//char(0),mzeta+kp, adios_err)
+call adios_write(adios_handle,"myrank_toroidal"//char(0),myrank_toroidal, adios_err)
+call adios_write(adios_handle,"mzeta"//char(0),mzeta, adios_err)
+call adios_write(adios_handle,"kp"//char(0),kp, adios_err)
+call adios_write(adios_handle,"mgrid"//char(0),mgrid, adios_err)
+call adios_write(adios_handle,"nproc_toroidal"//char(0),nproc_toroidal, adios_err)
+call adios_write(adios_handle,"mpsi"//char(0),mpsi, adios_err)
+call adios_write(adios_handle,"numberpe"//char(0),numberpe, adios_err)
+call adios_write(adios_handle,"mtheta"//char(0),(mtheta+1), adios_err)
+call adios_write(adios_handle,"itran"//char(0),itran, adios_err)
+call adios_write(adios_handle,"radial"//char(0),radial, adios_err)
+call adios_write(adios_handle,"(mzeta+kp)*nproc_toroidal"//char(0),(mzeta+kp)*nproc_toroidal, adios_err)
+call adios_write(adios_handle,"(mzeta+kp)*myrank_toroidal"//char(0),(mzeta+kp)*myrank_toroidal, adios_err)
+call adios_write(adios_handle,"theta_start"//char(0),theta_start, adios_err)
+call adios_write(adios_handle,"mgrid*nproc_toroidal"//char(0),mgrid*nproc_toroidal, adios_err)
+call adios_write(adios_handle,"mgrid*myrank_toroidal"//char(0),mgrid*myrank_toroidal, adios_err)
+call adios_write(adios_handle,"X"//char(0),X, adios_err)
+call adios_write(adios_handle,"Y"//char(0),Y, adios_err)
+call adios_write(adios_handle,"Z"//char(0),Z, adios_err)
