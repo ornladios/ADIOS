@@ -1,12 +1,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "stdint.h"
 #include <signal.h>
-#include "hw-utils.h"
-#include "br-utils.h"
+#include <sys/types.h>
+#include "adios_types.h"
+#include "adios_transport_hooks.h"
+#include "adios_bp_v1.h"
+#include "adios_internals.h"
 #include "binpack-utils.h"
+#include "hw-utils.h"
+
 #define  MAX_RANK 10 * 5
 #define STRLEN 1000 
+
+struct var_dim
+{
+    uint16_t id;
+    uint64_t rank;
+};
 
 /*
  * Global config variables to set the convenstion of conversion
@@ -16,6 +28,11 @@
  * array to dataset convention (transpose array dimension order if using Fortran)
  */
 enum lang_convention array_dim_order_fortran = USE_FORTRAN;
+
+/*
+ * string-typed scalar/dataset write convention
+ */
+enum lang_convention var_str_fortran = USE_FORTRAN;
 
 /*
  * string-typed dataset attribute write convention
@@ -42,15 +59,54 @@ int bp2h5_initialized = 0;
  */
 enum verbose_level verbose = NO_INFO;
 
-/*
- * buffer used to read value of scalars or datasets from bp file
- */
-struct buffer_struct
+void set_lang_convention(enum ADIOS_FLAG host_language_fortran)
 {
-    uint64_t DATALEN;
-    void * val;
-} read_buffer;
+    if(host_language_fortran == adios_flag_yes) {
+        array_dim_order_fortran = USE_FORTRAN;
+        var_str_fortran = USE_FORTRAN;
+        attr_str_ds_fortran = USE_FORTRAN;
+        attr_str_gp_fortran = USE_FORTRAN;
+    }
+    else {
+        // otherwise assume host language is C
+        array_dim_order_fortran = USE_C;
+        var_str_fortran = USE_C;
+        attr_str_ds_fortran = USE_C;
+        attr_str_gp_fortran = USE_C;
+    }
+}
 
+/*
+ * Parse path of var/attribute
+ *
+ * (copied from binpack-utils.c; this function
+ * is no longer included in libadios.a or 
+ * libadios_int.a)
+ */ 
+char** bp_dirparser(char *str, int *nLevel)
+{
+  char **grp_name;
+  char *pch;
+  int idx = 0, len=0;
+  char *tmpstr;
+  tmpstr= (char *)malloc(1*(strlen(str)+1));
+  strcpy(tmpstr,str);
+  pch = strtok(tmpstr,"/");
+  grp_name = (char **)malloc(NUM_GP*1);
+  while(pch!=NULL && *pch!=' ')
+  {
+
+     len = strlen(pch);
+     grp_name[idx]  = (char *)malloc((len+1)*1);
+     grp_name[idx][0]='\0';
+     strcat(grp_name[idx],pch);
+     pch=strtok(NULL,"/");
+     idx=idx+1;
+  }
+  *nLevel = idx;
+  free(tmpstr);
+  return grp_name;
+}
 
 /*
  * Initialization
@@ -59,72 +115,25 @@ struct buffer_struct
  * It returns 0 if no error and -1 otherwise
  */
 int initialize_bp2h5(enum lang_convention array_dim_order,
+                     enum lang_convention var_str,
                      enum lang_convention attr_str_ds,
                      enum lang_convention attr_str_gp,
                      enum scalar_convention scalar_ds,
-                     uint64_t buf_size,
                      enum verbose_level verb
                      )
 {
     if(!bp2h5_initialized) {
         array_dim_order_fortran = array_dim_order;
+        var_str_fortran = var_str;
         attr_str_ds_fortran = attr_str_ds;
         attr_str_gp_fortran = attr_str_gp;
         scalar_dataspace = scalar_ds;
         verbose = verb;
         
-        // allocate initial buffer size
-        if(buf_size <= 0) {
-            fprintf (stderr, "Error in initialization: invalid buffer size\n");
-            return -1;            
-        }
-        read_buffer.DATALEN = buf_size;
-        read_buffer.val = (char *) malloc (read_buffer.DATALEN);
-        if (!read_buffer.val)
-        {
-            fprintf (stderr, "Error in initialization: cannot allocate memory for read buffer\n");
-            return -1;
-        }
-
         bp2h5_initialized = 1;
     }
 
     return 0;
-}
-
-/*
- * Helper function for buffer reallocation
- * code borrowed from GNU Libc Manual.
- */
-void *xrealloc (void *ptr, size_t size)
-{
-    register void *value = realloc (ptr, size);
-    if (value == 0) {
-        fprintf(stderr, "Virtual memory exhausted\n");
-        exit(-1);
-    }
-    return value;
-}
-
-/*
- * Allocate buffer if necessary to accommodate the data value or dataset being read 
- */
-static void pre_element_fetch (struct adios_bp_element_struct * element
-                              ,void ** buffer, uint64_t * buffer_size
-                              ,void * private_data
-                              )
-{
-    struct buffer_struct * data = (struct buffer_struct *) private_data;
-
-    // check if the buffer size is big enough
-    if(data->DATALEN < element->size) {
-        data->val = xrealloc(data->val, element->size);
-        data->DATALEN = element->size;
-    }
-
-    element->data = data->val;
-    *buffer = data->val;
-    *buffer_size = data->DATALEN;
 }
 
 void hw_free2D (char ** grp_name, int level)
@@ -145,25 +154,51 @@ void hw_free2D (char ** grp_name, int level)
  */
 int hw_makeh5 (char * fnamein, char * fnameout)
 {
-    long long handle = 0;
     char * tmpstr;
     int size;
-    struct adios_bp_element_struct * element = NULL;
+    int i;
+    int rc;
     uint64_t element_size = 0;
+    struct adios_bp_element_struct * element = NULL;
 
-    handle = br_fopen (fnamein);
-    if (!handle)
+    // initialization
+    if(!bp2h5_initialized && 
+        (initialize_bp2h5(USE_FORTRAN, USE_FORTRAN, USE_FORTRAN, USE_FORTRAN, USE_SCALAR, NO_INFO))) {
+        return -1;
+    }
+
+    // open bp file for read
+    struct adios_bp_buffer_struct_v1 * b = 0;
+    uint32_t version = 0;
+
+    b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
+    adios_buffer_struct_init (b);
+
+    rc = adios_posix_open_read_internal (fnamein, "", b);
+    if (!rc)
     {
         fprintf (stderr, "Error in open bp file: cannot open %s file!\n", fnamein);
 
         return -1;
     }
 
-    // initialization
-    if(!bp2h5_initialized && 
-        (initialize_bp2h5(USE_FORTRAN, USE_FORTRAN, USE_FORTRAN, USE_SCALAR, 100 * 1024 * 1024, NO_INFO))) {
-        return -1;
-    }
+    // read and parse footer
+    adios_posix_read_version (b);
+    adios_parse_version (b, &version);
+
+    struct adios_index_process_group_struct_v1 * pg_root = 0;
+    struct adios_index_process_group_struct_v1 * pg = 0;
+    struct adios_index_var_struct_v1 * vars_root = 0;
+
+    // read and parse index
+    adios_posix_read_index_offsets (b);
+    adios_parse_index_offsets_v1 (b);
+
+    adios_posix_read_process_group_index (b);
+    adios_parse_process_group_index_v1 (b, &pg_root);
+
+    adios_posix_read_vars_index (b);
+    adios_parse_vars_index_v1 (b, &vars_root);
 
     // xxx.bp --> xxx.h5
     tmpstr = strdup (fnamein);
@@ -174,88 +209,263 @@ int hw_makeh5 (char * fnamein, char * fnameout)
         fnameout=tmpstr;
     }
 
+    // create h5 file
     hid_t h5file_id;
     hid_t root_id;
     h5file_id = H5Fcreate (fnameout, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
     root_id = H5Gopen (h5file_id, "/");
 
-    // Use br_get_next_element_specific instead of br_get_next_element_general
-    // in order to handle arbitrary-sized data. 
-    while (element_size = br_get_next_element_specific (handle
-                                                       ,pre_element_fetch
-                                                       ,0
-                                                       ,&read_buffer
-                                                       ,&element
-                                                       )
-          )
+    // parse element from bp file and write to hdf5 file
+    uint64_t element_num = 1;
+    pg = pg_root;
+    while (pg)
     {
-        if(verbose >= DEBUG_INFO) {
-            fprintf(stderr, "Write element %-20s : Tag: %-10s Size: %lu Bytes\n"
-                   ,element->name 
-                   ,adios_tag_to_string(element->tag)
-                   ,element->size
-                   );
-        }
-        switch (element->tag)
+        int var_dims_count = 0;
+        struct var_dim * var_dims = 0;
+
+        struct adios_process_group_header_struct_v1 pg_header;
+        struct adios_vars_header_struct_v1 vars_header;
+        struct adios_attributes_header_struct_v1 attrs_header;
+
+        struct adios_var_header_struct_v1 var_header;
+        struct adios_var_payload_struct_v1 var_payload;
+        struct adios_attribute_struct_v1 attribute;
+
+        // setup where to read the process group from (and size)
+        b->read_pg_offset = pg->offset_in_file;
+        if (pg->next)
         {
-            case DSTATRS_TAG:
-                hw_attr_str_ds (root_id, element->path, element->name, read_buffer.val);
-                break;
+            b->read_pg_size =   pg->next->offset_in_file
+                              - pg->offset_in_file;
+        }
+        else
+        {
+            b->read_pg_size =   b->pg_index_offset
+                              - pg->offset_in_file;
+        }
 
-            case DSTATRN_TAG:
-                hw_attr_num_ds (root_id, element->path, element->name, read_buffer.val
-                               ,element->type
-                               );
-                break;
+        adios_posix_read_process_group (b);
+        adios_parse_process_group_header_v1 (b, &pg_header);
+        //print_process_group_header (element_num++, &pg_header);
 
-            case GRPATRS_TAG:
-                hw_attr_str_gp (root_id, element->path, element->name, read_buffer.val);
-                break;
+        adios_parse_vars_header_v1 (b, &vars_header);
 
-            case GRPATRN_TAG:
-                hw_attr_num_gp (root_id, element->path, element->name, read_buffer.val
-                               ,element->type
-                               );
-                break;
+        set_lang_convention(pg_header.host_language_fortran);
 
-            case SCR_TAG:
-                hw_scalar (root_id, element->path, element->name, read_buffer.val
-                          ,element->type, 0
-                          );
-                break;
+        // process each var in current process group
+        int i;
+        for (i = 0; i < vars_header.count; i++)
+        {
+            var_payload.payload = 0;
 
-            case DST_TAG:
-                if(verbose >= DEBUG_INFO) { 
-                    fprintf (stderr, "  Ranks: %u\n", element->ranks);
-                    if (element->dims) {
-                        for (int i = 0; i < element->ranks; i++) {                                      
-                            fprintf(stderr, "  Dim(%d): %d(%d):%d\n"
-                                   ,i
-                                   ,element->dims [i].local_bound
-                                   ,element->dims [i].global_bound
-                                   ,element->dims [i].global_offset
+            adios_parse_var_data_header_v1 (b, &var_header);
+            //print_var_header (&var_header);
+
+            //if (var_header.is_dim == adios_flag_yes)
+            //{
+                var_payload.payload = malloc (var_header.payload_size);
+                adios_parse_var_data_payload_v1 (b, &var_header, &var_payload);
+            //}
+            //else
+            //{
+            //    adios_parse_var_data_payload_v1 (b, &var_header, NULL);
+            //}
+
+            if (var_header.is_dim == adios_flag_yes)
+            {
+                var_dims = realloc (var_dims,   (var_dims_count + 1)
+                                              * sizeof (struct var_dim)
                                    );
-                        }
-                    }
+
+                var_dims [var_dims_count].id = var_header.id;
+                var_dims [var_dims_count].rank = *(unsigned int *)
+                                                        var_payload.payload;
+                var_dims_count++;
+            }
+
+            // write to h5 file
+            // make sure the buffer is big enough or send in null
+            if (var_header.dims) 
+            { 
+                // dataset
+                    
+                uint64_t element = 0;
+                int ranks = 0;
+                struct adios_dimension_struct_v1 * d = var_header.dims;
+                int c = 0;
+                uint64_t * dims;
+                uint64_t * global_dims;
+                uint64_t * offsets;
+                int i = 0;
+
+                while (d)
+                {
+                    ranks++;
+                    d = d->next;
                 }
 
-                hw_dset (root_id, element->path, element->name, read_buffer.val
-                        ,element->type, element->ranks, element->dims
-                        );
-                break;
+                // get local dimensions
+                dims = (uint64_t *) malloc (8 * ranks);
+                memset (dims, 0, 8 * ranks);
 
-            default:
-                break;
+                d = var_header.dims;
+                uint64_t * dims_t = dims;
+
+                while (d)
+                {
+                    if (d->dimension.var_id != 0)
+                    {
+                        for (i = 0; i < var_dims_count; i++)
+                        {
+                            if (var_dims [i].id == d->dimension.var_id)
+                            {
+                                *dims_t = var_dims [i].rank;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        *dims_t = d->dimension.rank;
+                    }
+
+                    d = d->next;
+                    dims_t++;
+                }
+                    
+                // get global dimensions
+                global_dims = (uint64_t *) malloc (8 * ranks);
+                memset (global_dims, 0, 8 * ranks);
+
+                d = var_header.dims;
+                dims_t = global_dims;
+
+                while (d)
+                {
+                    if (d->global_dimension.var_id != 0)
+                    {
+                        for (i = 0; i < var_dims_count; i++)
+                        {
+                            if (var_dims [i].id == d->global_dimension.var_id)
+                            {
+                                *dims_t = var_dims [i].rank;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        *dims_t = d->global_dimension.rank;
+                    }
+                    d = d->next;
+                    dims_t++;
+                }
+
+                // get offsets
+                offsets = (uint64_t *) malloc (8 * ranks);
+                memset (offsets, 0, 8 * ranks);
+
+                d = var_header.dims;
+                dims_t = offsets;
+                while (d)
+                {
+                    if (d->local_offset.var_id != 0)
+                    {
+                        for (i = 0; i < var_dims_count; i++)
+                        {
+                            if (var_dims [i].id == d->local_offset.var_id)
+                            {
+                                *dims_t = var_dims [i].rank;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        *dims_t = d->local_offset.rank;
+                    }
+
+                    d = d->next;
+                    dims_t++;
+                }
+
+                // now ready to write dataset to h5 file
+                hw_dset (root_id, var_header.path, var_header.name, var_payload.payload
+                        ,var_header.type, ranks, dims, global_dims, offsets
+                        );        
+                free(dims);
+                free(global_dims);
+                free(offsets);
+            }
+            else {
+                // scalar var
+                hw_scalar (root_id, var_header.path, var_header.name
+                          ,var_payload.payload
+                          ,var_header.type
+                          ,0
+                          );     
+            }
+  
+            if (var_payload.payload)
+            {
+                free (var_payload.payload);
+            }
         }
 
-        br_free_element (element);
+        adios_parse_attributes_header_v1 (b, &attrs_header);
+
+        // process each attribute in current process group
+        for (i = 0; i < attrs_header.count; i++)
+        {
+            adios_parse_attribute_v1 (b, &attribute);
+            
+            // write to h5 file
+            if(attribute.is_var == adios_flag_no) {
+                switch(attribute.type) 
+                {
+                    case adios_string:
+                        hw_attr_str_ds (root_id, attribute.path, attribute.name, attribute.value);
+                        break;
+                    case adios_byte:
+                    case adios_real:
+                    case adios_double:
+                    case adios_long_double:
+                    case adios_unsigned_byte:
+                    case adios_unsigned_short:
+                    case adios_unsigned_integer:
+                    case adios_unsigned_long:
+                    case adios_short:
+                    case adios_integer:
+                    case adios_long:
+                        hw_attr_num_ds (root_id, attribute.path, attribute.name, attribute.value
+                                       ,attribute.type
+                                       );
+                        break;
+                    case adios_complex:
+                    case adios_double_complex:
+                        fprintf(stderr, "Error in mapping ADIOS Data Types to HDF5: complex not supported yet.\n");
+                        break;
+                    case adios_unknown:
+                    default:
+                        fprintf(stderr, "Error in mapping ADIOS Data Types to HDF5: unknown data type.\n");
+                }
+            }
+            else {
+                // var 
+
+            }
+        }
+
+        var_dims_count = 0;
+        
+        if (var_dims) {
+            free (var_dims);
+        }
+
+        pg = pg->next;
     }
+
+    adios_posix_close_internal (b);
 
     H5Gclose (root_id);
     H5Fclose (h5file_id);
-    br_fclose (handle);
-
-    free (read_buffer.val);
 
     return 0;
 }
@@ -264,8 +474,10 @@ int hw_makeh5 (char * fnamein, char * fnameout)
  * Write dataset to h5 file
  */
 void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
-             ,enum vartype_t type, int rank
-             ,struct adios_bp_dimension_struct * dims
+             ,enum ADIOS_DATATYPES type, int rank
+             ,uint64_t *dims
+             ,uint64_t *global_dims
+             ,uint64_t *offsets
              )
 {
     H5Eset_auto (NULL,NULL);
@@ -287,7 +499,7 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
         }
     }
 
-    if (dims [0].global_bound)
+    if (global_dims[0])
     {
         hsize_t * global_h5dims;
         hsize_t * local_h5dims;
@@ -316,29 +528,29 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
             {
                 int reverse_i = rank - 1 - i;
 
-                global_h5dims [reverse_i] = dims [i].global_bound;
+                global_h5dims [reverse_i] = global_dims[i];
 
-                local_h5dims [reverse_i] = dims [i].local_bound;
+                local_h5dims [reverse_i] = dims[i];
 
-                start [reverse_i] = dims [i].global_offset;
+                start [reverse_i] = offsets[i];
 
                 stride [reverse_i] = 1;
 
-                count [reverse_i] = dims [i].local_bound;
+                count [reverse_i] = dims[i];
             }
         }
         else if(array_dim_order_fortran == USE_C) {
             for (int i = 0; i < rank; i++)
             {
-                global_h5dims [i] = dims [i].global_bound;
+                global_h5dims [i] = global_dims[i];
 
-                local_h5dims [i] = dims [i].local_bound;
+                local_h5dims [i] = dims[i];
 
-                start [i] = dims [i].global_offset;
+                start [i] = offsets[i];
 
                 stride [i] = 1;
 
-                count [i] = dims [i].local_bound;
+                count [i] = dims[i];
             }
         }
 
@@ -390,13 +602,13 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
             // transpose dimension order for Fortran arrays
             for (int i = 0; i < rank; i++)
             {
-                h5dims [rank-1-i] = dims [i].local_bound;
+                h5dims [rank-1-i] = dims[i];
             }
         }
         else if(array_dim_order_fortran == USE_C) {
             for (int i = 0; i < rank; i++)
             {
-                h5dims [i] = dims [i].local_bound;
+                h5dims [i] = dims[i];
             }
         }
 
@@ -422,7 +634,7 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
  * Write a scalar var to h5 file
  */
 void hw_scalar (hid_t root_id, char * dirstr, char * name, void * data
-               ,enum vartype_t type, int append
+               ,enum ADIOS_DATATYPES type, int append
                )
 {
     H5Eset_auto (NULL, NULL);
@@ -439,8 +651,9 @@ void hw_scalar (hid_t root_id, char * dirstr, char * name, void * data
     for (i = 0; i < level; i++)
     {
         grp_id [i + 1] = H5Gopen (grp_id [i], grp_name [i]);
-        if (grp_id [i + 1] < 0)
+        if (grp_id [i + 1] < 0) {
             grp_id [i + 1] = H5Gcreate (grp_id [i], grp_name [i], 0);
+        }
     }
 
     if(scalar_dataspace == USE_SCALAR) {
@@ -462,7 +675,7 @@ void hw_scalar (hid_t root_id, char * dirstr, char * name, void * data
  * Write a scalar var to h5 file as a scalar
  */
 void hw_scalar_as_scalar (hid_t parent_id, char * name, void * data
-                 ,enum vartype_t type, int append
+                 ,enum ADIOS_DATATYPES type, int append
                  )
 {
     hid_t h5_dataset_id;
@@ -514,7 +727,7 @@ void hw_scalar_as_scalar (hid_t parent_id, char * name, void * data
  * Write a scalar var to h5 file as a single-element array
  */
 void hw_scalar_as_array (hid_t parent_id, char * name, void * data
-                 ,enum vartype_t type, int ndims, hsize_t * dims
+                 ,enum ADIOS_DATATYPES type, int ndims, hsize_t * dims
                  ,int append
                  )
 {
@@ -747,7 +960,7 @@ void hw_string_attr_f (hid_t parent_id, const char *name,const char *value)
  * hw_attr_num_gp() finds the group to which the attribute is attached and
  * writes the attribute. 
  */
-void hw_attr_num_gp(hid_t root_id, char *dirstr, char *aname, void *avalue, enum vartype_t type)
+void hw_attr_num_gp(hid_t root_id, char *dirstr, char *aname, void *avalue, enum ADIOS_DATATYPES type)
 {
     H5Eset_auto(NULL,NULL);
     char **grp_name;
@@ -779,7 +992,7 @@ void hw_attr_num_gp(hid_t root_id, char *dirstr, char *aname, void *avalue, enum
  * hw_attr_num_ds() finds the dataset to which the attribute is attached and
  * writes the attribute. 
  */
-void hw_attr_num_ds(hid_t root_id, char *dirstr, char *aname, void *avalue, enum vartype_t type)
+void hw_attr_num_ds(hid_t root_id, char *dirstr, char *aname, void *avalue, enum ADIOS_DATATYPES type)
 {
     H5Eset_auto(NULL,NULL);
     char **grp_name;
@@ -844,7 +1057,7 @@ void hw_attr_num_ds(hid_t root_id, char *dirstr, char *aname, void *avalue, enum
 /*
  * Write an integer attribute as a scalar or a single-element-array
  */
-void hw_scalar_attr( hid_t parent_id, const char *name, void *value,enum vartype_t type)
+void hw_scalar_attr( hid_t parent_id, const char *name, void *value,enum ADIOS_DATATYPES type)
 {
     if(scalar_dataspace == USE_SCALAR) {
         hw_scalar_attr_scalar (parent_id, name, value, type);
@@ -859,7 +1072,7 @@ void hw_scalar_attr( hid_t parent_id, const char *name, void *value,enum vartype
  *
  * Edited from the AVS example file src/hdf5/examp/write_struct.c
  */
-void hw_scalar_attr_scalar ( hid_t parent_id, const char *name, void *value, enum vartype_t type)
+void hw_scalar_attr_scalar ( hid_t parent_id, const char *name, void *value, enum ADIOS_DATATYPES type)
 {
     hid_t h5_dspace_id, h5_attr_id, h5_type_id;
     int status;
@@ -889,7 +1102,7 @@ void hw_scalar_attr_scalar ( hid_t parent_id, const char *name, void *value, enu
 /*
  * Write an integer attribute to a h5 file as a single-element-array
  */
-void hw_scalar_attr_array ( hid_t parent_id, const char *name, void *value, enum vartype_t type)
+void hw_scalar_attr_array ( hid_t parent_id, const char *name, void *value, enum ADIOS_DATATYPES type)
 {
     hid_t h5_dspace_id, h5_attr_id, h5_type_id;
     int status;
@@ -920,7 +1133,7 @@ void hw_scalar_attr_array ( hid_t parent_id, const char *name, void *value, enum
 /*
  * Write an array as a dataset to a h5 file 
  */
-void hw_dataset(hid_t parent_id, char* name, void* data,enum vartype_t type, int rank, hsize_t* dims)
+void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES type, int rank, hsize_t* dims)
 {
     hid_t dataset_id, dataspace_id, cparms, type_id,filespace;    
     int i,rank_old;
@@ -1001,61 +1214,66 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum vartype_t type, int
 
 /*
  * Maps bp datatypes to h5 datatypes 
+ *
+ * The Mapping is according to HDF5 Reference Manual
+ * (http://hdf.ncsa.uiuc.edu/HDF5/doc1.6/Datatypes.html)
  */
-int bp_getH5TypeId(enum vartype_t type, hid_t* h5_type_id, void * val)
+int bp_getH5TypeId(enum ADIOS_DATATYPES type, hid_t* h5_type_id, void * val)
 {
     int size, status=0;
+
     switch (type)
     {
-    case bp_float:
-        *h5_type_id = H5Tcopy(H5T_NATIVE_FLOAT);
-        break;
-    case bp_double:
-        *h5_type_id = H5Tcopy(H5T_NATIVE_DOUBLE);
-        break;
-    case bp_long_double:
-        *h5_type_id = H5Tcopy(H5T_NATIVE_LDOUBLE);
-        break;
-    case bp_uchar:
-    case bp_ushort:
-    case bp_uint:
-    case bp_ulong:
-    case bp_ulonglong:
-#ifdef BP_USEUNSIGNED
-        size = bp_getsize(type, val);
-        if (size == 1)
+        case adios_byte:
+            *h5_type_id = H5Tcopy(H5T_NATIVE_CHAR);
+            break;
+        case adios_string:
+            if(var_str_fortran = USE_FORTRAN) {
+                *h5_type_id = H5Tcopy(H5T_FORTRAN_S1);
+            }
+            else { // otherwise assume C
+                *h5_type_id = H5Tcopy(H5T_C_S1_g);
+            }
+            break;
+        case adios_real:
+            *h5_type_id = H5Tcopy(H5T_NATIVE_FLOAT);
+            break;
+        case adios_double:
+            *h5_type_id = H5Tcopy(H5T_NATIVE_DOUBLE);
+            break;
+        case adios_long_double:
+            *h5_type_id = H5Tcopy(H5T_NATIVE_LDOUBLE);
+            break;
+        case adios_unsigned_byte:
             *h5_type_id = H5Tcopy(H5T_NATIVE_UINT8);
-        else if (size == 2)
+            break;
+        case adios_unsigned_short:
             *h5_type_id = H5Tcopy(H5T_NATIVE_UINT16);
-        else if (size == 4)
+            break;
+        case adios_unsigned_integer:
             *h5_type_id = H5Tcopy(H5T_NATIVE_UINT32);
-         else if (size == 8)
+            break;
+        case adios_unsigned_long:
             *h5_type_id = H5Tcopy(H5T_NATIVE_UINT64);
-        else
-            status = -1;
-        break;
-#endif
-    case bp_char:
-    case bp_string:
-    case bp_short:
-    case bp_int:
-    case bp_long:
-    case bp_longlong:
-        size = bp_getsize(type, val);
-        if (size == 1)
-            *h5_type_id = H5Tcopy(H5T_NATIVE_INT8);
-        else if (size == 2)
+            break;
+        case adios_short:
             *h5_type_id = H5Tcopy(H5T_NATIVE_INT16);
-        else if (size == 4)
+            break;
+        case adios_integer:
             *h5_type_id = H5Tcopy(H5T_NATIVE_INT32);
-        else if (size == 8)
+            break;
+        case adios_long:
             *h5_type_id = H5Tcopy(H5T_NATIVE_INT64);
-        else
+            break;
+        case adios_complex:
+        case adios_double_complex:
+            fprintf(stderr, "Error in mapping ADIOS Data Types to HDF5: complex not supported yet.\n");
             status = -1;
             break;
-    default:
-        status = -1;
+        case adios_unknown:
+        default:
+            fprintf(stderr, "Error in mapping ADIOS Data Types to HDF5: unknown data type.\n");
+            status = -1;
     }
     return status;
 }
-

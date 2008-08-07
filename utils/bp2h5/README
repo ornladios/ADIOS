@@ -1,4 +1,10 @@
-06/11/2008/ by zf2:
+08/07/2008 by zf2:
+Changes made:
+1. Migrate to new BP format.
+2. -c option is removed. host-language information is extracted from header.
+3. Known issue: cannot handle attribute whose value is a var.
+
+06/11/2008 by zf2:
 
 Changes made: 
 1. Replace br_get_next_element_general() with br_get_next_element_specific() 
