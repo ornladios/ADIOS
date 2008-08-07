@@ -1,5 +1,3 @@
-//#include "binpack-general.h"
-//#include "br-utils.h"
 #include <sys/types.h>
 #include "adios_types.h"
 #include "adios_transport_hooks.h"
@@ -45,7 +43,8 @@ int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
                   ,void * data
                   );
 
-const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t element);
+const char * value_to_string (enum ADIOS_DATATYPES type, void * data);
+const char * value_to_string_ptr (enum ADIOS_DATATYPES type, void * data, uint64_t element);
 
 int main (int argc, char ** argv)
 {
@@ -184,7 +183,7 @@ int main (int argc, char ** argv)
             adios_parse_var_data_header_v1 (b, &var_header);
             print_var_header (&var_header);
 
-            if (   var_header.is_dim == adios_flag_yes
+            if (   var_header.dims == 0
                 ||    dump.do_dump
                    && !strcasecmp (dump.dump_var, var_header.name)
                )
@@ -219,7 +218,7 @@ int main (int argc, char ** argv)
             if (var_payload.payload)
             {
                 free (var_payload.payload);
-                var_payload.payload;
+                var_payload.payload = 0;
             }
             printf ("\n");
         }
@@ -247,145 +246,71 @@ int main (int argc, char ** argv)
     return 0;
 }
 
-#if 0
-int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
-                  ,void * data
-                  )
-{
-    printf("My Value: \n");
-    int use_element_count = 1;
-    int total_element_count = 1;
-    int e = 0; // which element we are printing
-    int i,j;
-    int position[ranks];
-    for (i = 0; i < ranks; i++)
-    {
-        use_element_count *= (  dims [i].local_bound
-                             );
-        position[i]=dims[i].local_bound; 
-        total_element_count *= dims [i].local_bound;
-    } 
-    printf ("DIMS: dims[%d][%d]\n",position[0],position[1]);
-    printf ("ranks=%d\n",ranks);
-    for (j = 0; j < total_element_count; j++)
-    {
-        printf ("%s ", value_to_string (type, data, e));
-            switch (type)
-            {
-                case bp_uchar:
-                    printf ("%c ", (((unsigned char *) data) [e]));
-                    break;
-
-                case bp_char:
-                    printf ("%c ", (((char *) data) [e]));
-                    break;
-
-                case bp_int:
-                    printf ("%d ", (((int *) data) [e]));
-                    break;
-
-                case bp_float:
-                    printf ("(%d: %e) ", j,(((float *) data) [e]));
-                    break;
-
-                case bp_double:
-                    printf ("(%d: %le) ",j, (((double *) data) [e]));
-                    break;
-
-                case bp_string:
-                    break;
-
-                case bp_longlong: // adios_long
-                    printf ("%lld ", (((int64_t *) data) [e]));
-                    break;
-
-                case bp_complex: // adios_complex
-                    printf ("(%lf %lf) ", ((double *) data) [e * 2 + 0]
-                                        , ((double *) data) [e * 2 + 1]
-                           );
-                    break;
-            }
-            e++;
-    }
-}
-#endif
-
-const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t element)
+const char * value_to_string (enum ADIOS_DATATYPES type, void * data)
 {
     static char s [100];
     s [0] = 0;
 
+
     switch (type)
     {
         case adios_unsigned_byte:
-            //sprintf (s, "%u", *(((uint8_t *) data) + element));
-            sprintf (s, "%u", *(((uint8_t *) &data) + element));
+            sprintf (s, "%u", *(((uint8_t *) &data)));
             break;
 
         case adios_byte:
-            //sprintf (s, "%d", *(((int8_t *) data) + element));
-            sprintf (s, "%d", *(((int8_t *) &data) + element));
+            sprintf (s, "%d", *(((int8_t *) &data)));
             break;
 
         case adios_short:
-            //sprintf (s, "%hd", *(((int8_t *) data) + element));
-            sprintf (s, "%hd", *(((int8_t *) &data) + element));
+            sprintf (s, "%hd", *(((int8_t *) &data)));
             break;
 
         case adios_unsigned_short:
-            //sprintf (s, "%uh", *(((int8_t *) data) + element));
-            sprintf (s, "%uh", *(((int8_t *) &data) + element));
+            sprintf (s, "%uh", *(((int8_t *) &data)));
             break;
 
         case adios_integer:
-            //sprintf (s, "%d", *(((int32_t *) data) + element));
-            sprintf (s, "%d", *(((int32_t *) &data) + element));
+            sprintf (s, "%d", *(((int32_t *) &data)));
             break;
 
         case adios_unsigned_integer:
-            //sprintf (s, "%u", *(((uint32_t *) data) + element));
-            sprintf (s, "%u", *(((uint32_t *) &data) + element));
+            sprintf (s, "%u", *(((uint32_t *) &data)));
             break;
 
         case adios_long:
-            //sprintf (s, "%lld", *(((int64_t *) data) + element));
-            sprintf (s, "%lld", *(((int64_t *) &data) + element));
+            sprintf (s, "%lld", *(((int64_t *) &data)));
             break;
 
         case adios_unsigned_long:
-            //sprintf (s, "%llu", *(((uint64_t *) data) + element));
-            sprintf (s, "%llu", *(((uint64_t *) &data) + element));
+            sprintf (s, "%llu", *(((uint64_t *) &data)));
             break;
 
         case adios_real:
-            //sprintf (s, "%e", *(((float *) data) + element));
-            sprintf (s, "%e", *(((float *) &data) + element));
+            sprintf (s, "%f", *(((float *) &data)));
             break;
 
         case adios_double:
-            //sprintf (s, "%le", *(((double *) data) + element));
-            sprintf (s, "%le", *(((double *) &data) + element));
+            sprintf (s, "%le", *(((double *) &data)));
             break;
 
         case adios_long_double:
-            //sprintf (s, "%Le", *(((long double *) data) + element));
-            sprintf (s, "%Le", *(((long double *) &data) + element));
+            sprintf (s, "%Le", *(((long double *) &data)));
             break;
 
         case adios_string:
-            //sprintf (s, "%s", ((char *) data) + element);
-            sprintf (s, "%s", ((char *) data) + element);
+            sprintf (s, "%s", ((char *) data));
             break;
 
         case adios_complex:
-            sprintf (s, "(%f %f)", *((float *) data) + (element * 2 + 0)
-                                 , *((float *) data) + (element * 2 + 1)
+            sprintf (s, "(%f %f)", *(((float *) data) + 0)
+                                 , *(((float *) data) + 1)
                     );
             break;
 
         case adios_double_complex:
-            sprintf (s, "(%lf %lf)", *((double *) data) + (element * 2 + 0)
-                                   , *((double *) data) + (element * 2 + 1)
+            sprintf (s, "(%lf %lf)", *(((double *) data) + 0)
+                                   , *(((double *) data) + 1)
                     );
             break;
     }
@@ -393,6 +318,121 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t e
     return s;
 }
 
+const char * value_to_string_ptr (enum ADIOS_DATATYPES type, void * data, uint64_t element)
+{
+    static char s [100];
+    s [0] = 0;
+
+
+    switch (type)
+    {
+        case adios_unsigned_byte:
+        {
+            uint8_t * p = (uint8_t *) data;
+            sprintf (s, "%u", p [element]);
+            break;
+        }
+
+        case adios_byte:
+        {
+            int8_t * p = (int8_t *) data;
+            sprintf (s, "%d", p [element]);
+            break;
+        }
+
+        case adios_short:
+        {
+            int16_t * p = (int16_t *) data;
+            sprintf (s, "%hd", p [element]);
+            break;
+        }
+
+        case adios_unsigned_short:
+        {
+            uint16_t * p = (uint16_t *) data;
+            sprintf (s, "%uh", p [element]);
+            break;
+        }
+
+        case adios_integer:
+        {
+            int32_t * p = (int32_t *) data;
+            sprintf (s, "%d", p [element]);
+            break;
+        }
+
+        case adios_unsigned_integer:
+        {
+            uint32_t * p = (uint32_t *) data;
+            sprintf (s, "%u", p [element]);
+            break;
+        }
+
+        case adios_long:
+        {
+            int64_t * p = (int64_t *) data;
+            sprintf (s, "%lld", p [element]);
+            break;
+        }
+
+        case adios_unsigned_long:
+        {
+            uint64_t * p = (uint64_t *) data;
+            sprintf (s, "%llu", p [element]);
+            break;
+        }
+
+        case adios_real:
+        {
+            float * p = (float *) data;
+            sprintf (s, "%f", p [element]);
+            break;
+        }
+
+        case adios_double:
+        {
+            double * p = (double *) data;
+            sprintf (s, "%le", p [element]);
+            break;
+        }
+
+        case adios_long_double:
+        {
+            long double * p = (long double *) data;
+            sprintf (s, "%Le", p [element]);
+            break;
+        }
+
+        case adios_string:
+        {
+            char * p = (char *) data;
+            //sprintf (s, "%s", p [element]);
+            sprintf (s, "");
+            fprintf (stderr, "arrays of strings not fully supported\n");
+            break;
+        }
+
+        case adios_complex:
+        {
+            float * p = (float *) data;
+            sprintf (s, "(%f %f)", p [element * 2 + 0]
+                                 , p [element * 2 + 1]
+                    );
+            break;
+        }
+
+        case adios_double_complex:
+        {
+            double * p = (double *) data;
+            sprintf (s, "(%lf %lf)", p [element * 2 + 0]
+                                   , p [element * 2 + 1]
+                    );
+            break;
+        }
+    }
+
+    return s;
+}
         
 void print_process_group_header (uint64_t num
                       ,struct adios_process_group_header_struct_v1 * pg_header
@@ -545,17 +585,16 @@ int increment_dimension (enum ADIOS_FLAG host_language_fortran
     }   
     else  // increment our position
     {
-        if (host_language_fortran == adios_flag_yes)
+//        if (host_language_fortran == adios_flag_yes)
         {
             i = 0;
             while (!done && i < ranks)
             {
                 // if less than max, just increment this dim
-                if (position [i] < dims [i])
+                if (position [i] < dims [i] - 1)
                 {
                     position [i]++;
-                    if (i == ranks - 1 && position [i] != dims [i])
-                        done = 1;
+                    done = 1;
                 }
                 else  // reset dim and move to next to increment
                 {
@@ -564,6 +603,7 @@ int increment_dimension (enum ADIOS_FLAG host_language_fortran
                 }
             }
         }
+#if 0
         else
         {
             i = ranks - 1;
@@ -573,8 +613,7 @@ int increment_dimension (enum ADIOS_FLAG host_language_fortran
                 if (position [i] < dims [i])
                 {
                     position [i]++;
-                    if (i == 0 && position [i] != dims [i])
-                        done = 1;
+                    done = 1;
                 }
                 else  // reset dim and move to next to increment
                 {
@@ -583,6 +622,7 @@ int increment_dimension (enum ADIOS_FLAG host_language_fortran
                 }
             }
         }
+#endif
     }
 
     return done;
@@ -610,6 +650,20 @@ int increment_dimension (enum ADIOS_FLAG host_language_fortran
 #endif
 }
 
+static
+int dims_not_max (uint64_t * position, uint64_t * dims, int ranks)
+{
+    int i;
+
+    for (i = 0; i < ranks; i++)
+    {
+        if (position [i] != dims [i] - 1)
+            return 1;
+    }
+
+    return 0;
+}
+
 void print_var_payload (struct adios_var_header_struct_v1 * var_header
                        ,struct adios_var_payload_struct_v1 * var_payload
                        ,struct dump_struct * dump
@@ -617,17 +671,20 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
                        ,struct var_dim * var_dims
                        )
 {
-    if (dump->do_dump && !strcasecmp (dump->dump_var, var_header->name))
-    {
-        printf ("\t\tMin: %s\n", value_to_string (var_header->type
-                                                 ,var_payload->min, 0
-                                                 )
-               );
-        printf ("\t\tMax: %s\n", value_to_string (var_header->type
-                                                 ,var_payload->max, 0
-                                                 )
-               );
+    printf ("\t\tMin: %s\n", value_to_string (var_header->type
+                                             ,var_payload->min
+                                             )
+           );
+    printf ("\t\tMax: %s\n", value_to_string (var_header->type
+                                             ,var_payload->max
+                                             )
+           );
 
+    if (   dump->do_dump
+        && var_header->dims
+        && !strcasecmp (dump->dump_var, var_header->name)
+       )
+    {
         if (var_header->dims)
         {
             uint64_t element = 0;
@@ -637,6 +694,7 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
             uint64_t * position;
             uint64_t * dims;
             int i = 0;
+            int size_of_type = adios_get_type_size (var_header->type, "");
 
             while (d)
             {
@@ -673,14 +731,14 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
                 dims_t++;
             }
 
-            while (increment_dimension (dump->host_language_fortran
-                                       ,element
-                                       ,ranks
-                                       ,dims
-                                       ,position
-                                       )
-                  )
+            while (dims_not_max (position, dims, ranks))
             {
+                increment_dimension (dump->host_language_fortran
+                                    ,element
+                                    ,ranks
+                                    ,dims
+                                    ,position
+                                    );
                 if (c > 65)
                 {
                     printf ("\n");
@@ -696,24 +754,27 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
                         c += printf ("%lld", position [i]);
                 }
                 c += printf ("] ");
-                c += printf ("%s ", value_to_string (var_header->type
-                                               ,var_payload->payload
-                                               ,element
-                                               )
+                c += printf ("%s ", value_to_string_ptr (var_header->type
+,var_payload->payload, element
+#if 0
+                                    ,(void *) ( ((char *) var_payload->payload)
+                                                + (element * size_of_type)
+                                              )
+#endif
+                                    )
                        );
 
                 element++;
             }
             printf ("\n");
         }
-        else
-        {
-            printf ("%s ", value_to_string (var_header->type
-                                           ,var_payload->payload
-                                           ,0
-                                           )
-                   );
-        }
+    }
+    if (!var_header->dims)
+    {
+        printf ("\t\tValue: %s\n", value_to_string (var_header->type
+                                       ,(void *) *(int *) var_payload->payload
+                                       )
+               );
     }
 }
 
@@ -738,7 +799,7 @@ void print_attribute (struct adios_attribute_struct_v1 * attribute)
     {
         printf ("\t\tDatatype: %s\n", adios_type_to_string (attribute->type));
         printf ("\t\tValue: %s\n", value_to_string (attribute->type
-                                                   ,attribute->value, 0
+                                                   ,attribute->value
                                                    )
                );
     }
@@ -782,13 +843,13 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
         for (i = 0; i < vars_root->entries_count; i++)
         {
             printf ("\t\t%s\t\t", value_to_string (adios_long
-                                  ,(void *) (vars_root->entries [i].offset), 0)
+                                  ,(void *) (vars_root->entries [i].offset))
                                   );
             printf ("%s\t\t", value_to_string (vars_root->type
-                                           ,vars_root->entries [i].min, 0)
+                                           ,vars_root->entries [i].min)
                                            );
             printf ("%s\n", value_to_string (vars_root->type
-                                           ,vars_root->entries [i].max, 0)
+                                           ,vars_root->entries [i].max)
                                            );
         }
 
