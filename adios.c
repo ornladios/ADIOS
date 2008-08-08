@@ -584,7 +584,6 @@ static int common_adios_set_path (long long fd_p, const char * path)
         v = v->next;
     }
 
-#if 0
     while (a)
     {
         if (a->path)
@@ -596,7 +595,6 @@ static int common_adios_set_path (long long fd_p, const char * path)
 
         a = a->next;
     }
-#endif
 
     return 0;
 }
@@ -668,32 +666,6 @@ void adios_set_path_var_ (long long * fd_p, const char * path
 
     *err = common_adios_set_path_var (*fd_p, buf1, buf2);
 }
-
-#if 0
-///////////////////////////////////////////////////////////////////////////////
-static int common_adios_get_data_size (long long fd_p
-                                      ,unsigned long long * size
-                                      )
-{
-    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
-
-    *size = adios_data_size (fd->group);
-
-    return 0;
-}
-
-int adios_get_data_size (long long fd_p, unsigned long long * size)
-{
-    return common_adios_get_data_size (fd_p, size);
-}
-
-void adios_get_data_size_ (long long * fd_p, unsigned long long * size
-                          ,int * err
-                          )
-{
-    *err = common_adios_get_data_size (*fd_p, size);
-}
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 static int common_adios_end_iteration ()

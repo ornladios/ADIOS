@@ -224,19 +224,13 @@ libadios_a_SOURCES = adios.c \
 		     adios_internals.c \
                      adios_bp_v1.c
 
-#                     bw-utils.c
-#                     br-utils.c
-#                     binpack-utils.c
 #		     adios_datatap.c
+#		     adios_dart.c
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)
 libadios_int_a_SOURCES = adios_internals.c \
                         adios_transport_hooks_dummy.c \
                         adios_bp_v1.c
 
-#                        adios_posix.c
-#                        bw-utils.c \
-#                        br-utils.c \
-#                        binpack-utils.c
 libadios_int_a_CPPFLAGS = $(MXML_CPPFLAGS)
 all: all-am
 
@@ -592,10 +586,6 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	tags uninstall uninstall-am uninstall-includeHEADERS \
 	uninstall-info-am uninstall-libLIBRARIES
 
-#                   br-utils.h
-#                   bw-utils.h
-#                   binpack-utils.h
-#                   binpack-general.h
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

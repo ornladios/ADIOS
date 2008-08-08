@@ -1,3 +1,6 @@
+#ifndef ADIOS_BP_V1_H
+#define ADIOS_BP_V1_H
+
 struct adios_bp_buffer_struct_v1
 {
     int f;             // the file handle
@@ -207,3 +210,5 @@ int adios_posix_open_read_internal (const char * filename
                                    ,struct adios_bp_buffer_struct_v1 * b
                                    );
 void adios_posix_close_internal (struct adios_bp_buffer_struct_v1 * b);
+
+#endif
