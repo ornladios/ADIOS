@@ -207,8 +207,8 @@ enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd
         ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
         if (s != fd->bytes_written)
         {
-            fprintf (stderr, "POSIX method tried to write %lld, "
-                             "only wrote %lld\n"
+            fprintf (stderr, "POSIX method tried to write %llu, "
+                             "only wrote %llu\n"
                     ,fd->bytes_written
                     ,s
                     );
@@ -272,8 +272,8 @@ void adios_posix_write (struct adios_file_struct * fd
         ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
         if (s != fd->bytes_written)
         {
-            fprintf (stderr, "POSIX method tried to write %lld, "
-                             "only wrote %lld\n"
+            fprintf (stderr, "POSIX method tried to write %llu, "
+                             "only wrote %llu\n"
                     ,fd->bytes_written
                     ,s
                     );
@@ -285,12 +285,12 @@ void adios_posix_write (struct adios_file_struct * fd
 
         // write payload
         // adios_write_var_payload_v1 (fd, v);
-        uint64_t var_size = adios_get_var_size (v, v->data);
+        uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
         s = write (p->b.f, v->data, var_size);
         if (s != var_size)
         {
-            fprintf (stderr, "POSIX method tried to write %lld, "
-                             "only wrote %lld\n"
+            fprintf (stderr, "POSIX method tried to write %llu, "
+                             "only wrote %llu\n"
                     ,var_size
                     ,s
                     );
@@ -549,8 +549,8 @@ void adios_posix_close (struct adios_file_struct * fd
                 ssize_t s = write (p->b.f, fd->buffer, p->vars_header_size);
                 if (s != fd->vars_start)
                 {
-                    fprintf (stderr, "POSIX method tried to write %lld, "
-                                     "only wrote %lld\n"
+                    fprintf (stderr, "POSIX method tried to write %llu, "
+                                     "only wrote %llu\n"
                             ,fd->vars_start
                             ,s
                             );
@@ -574,8 +574,8 @@ void adios_posix_close (struct adios_file_struct * fd
                     ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
                     if (s != fd->bytes_written)
                     {
-                        fprintf (stderr, "POSIX method tried to write %lld, "
-                                         "only wrote %lld\n"
+                        fprintf (stderr, "POSIX method tried to write %llu, "
+                                         "only wrote %llu\n"
                                 ,fd->bytes_written
                                 ,s
                                 );
@@ -598,8 +598,8 @@ void adios_posix_close (struct adios_file_struct * fd
                 s = write (p->b.f, fd->buffer, p->vars_header_size);
                 if (s != p->vars_header_size)
                 {
-                    fprintf (stderr, "POSIX method tried to write %lld, "
-                                     "only wrote %lld\n"
+                    fprintf (stderr, "POSIX method tried to write %llu, "
+                                     "only wrote %llu\n"
                             ,p->vars_header_size
                             ,s
                             );
@@ -647,8 +647,8 @@ void adios_posix_close (struct adios_file_struct * fd
                 ssize_t s = write (p->b.f, fd->buffer, p->vars_header_size);
                 if (s != fd->vars_start)
                 {
-                    fprintf (stderr, "POSIX method tried to write %lld, "
-                                     "only wrote %lld\n"
+                    fprintf (stderr, "POSIX method tried to write %llu, "
+                                     "only wrote %llu\n"
                             ,fd->vars_start
                             ,s
                             );
@@ -672,8 +672,8 @@ void adios_posix_close (struct adios_file_struct * fd
                     ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
                     if (s != fd->bytes_written)
                     {
-                        fprintf (stderr, "POSIX method tried to write %lld, "
-                                         "only wrote %lld\n"
+                        fprintf (stderr, "POSIX method tried to write %llu, "
+                                         "only wrote %llu\n"
                                 ,fd->bytes_written
                                 ,s
                                 );
@@ -696,8 +696,8 @@ void adios_posix_close (struct adios_file_struct * fd
                 s = write (p->b.f, fd->buffer, p->vars_header_size);
                 if (s != p->vars_header_size)
                 {
-                    fprintf (stderr, "POSIX method tried to write %lld, "
-                                     "only wrote %lld\n"
+                    fprintf (stderr, "POSIX method tried to write %llu, "
+                                     "only wrote %llu\n"
                             ,p->vars_header_size
                             ,s
                             );

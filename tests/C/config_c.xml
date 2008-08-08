@@ -1,22 +1,26 @@
 <adios-config host-language="C">
   <adios-group name="restart" coordination-communicator="comm">
-    <var name="comm" type="integer"/>
     <var name="mype" path="/" type="integer"/>
     <var name="mype" path="/test" type="integer"/>
-    <var name="zionsize" type="integer"/>
+
+    <var name="zion1" type="real" dimensions="10" path="/abc/me"/>
+
     <var name="zionsize2" type="integer"/>
-    <var name="zion" type="real" dimensions="10" path="/abc/me"/>
-    <var name="zion1" type="real" dimensions="zionsize,zionsize2" path="/abc/me"/>
+    <attribute name="attr_dim" path="/abc/" type="integer" value="2"/>
+    <var name="zion2" type="real" dimensions="zionsize2,attr_dim"/>
+
+    <var name="zionsize3" type="integer"/>
+    <attribute name="attr_dim2" path="/abc" var="zionsize3"/>
+    <var name="zion3" type="real" dimensions="attr_dim,attr_dim2"/>
 
     <var name="node-attr" type="integer"/>
+    <attribute name="node" path="/" var="node-attr"/>
 
     <attribute name="units1" path="/abc/me/" value="m/s"/>
     <attribute name="units2" path="/abc/me" value="m/s"/>
     <attribute name="timestep1" path="/" value="1"/>
     <attribute name="timestep2" path="/abc" value="1"/>
-    <attribute name="timestep3" path="/abc/" value="1"/>
   
-    <attribute name="node" path="/" var="node-attr"/>
   </adios-group>
 
   <method group="restart" method="POSIX"/>

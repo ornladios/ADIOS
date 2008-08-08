@@ -22,8 +22,8 @@ struct adios_var_struct
     enum ADIOS_DATATYPES type;
     struct adios_dimension_struct * dimensions;
     enum ADIOS_FLAG got_buffer;
-    enum ADIOS_FLAG is_dim;   // if it is a dimension, we temporarily need to
-                              // track for reading until we get the new header
+    enum ADIOS_FLAG is_dim;   // if it is a dimension, we need to
+                              // track for netCDF usage
 
     uint64_t write_offset;  // offset this var was written at  [for writes]
     void * min;             // minimum value                   [for writes]
@@ -147,7 +147,7 @@ struct adios_file_struct
 struct adios_dimension_item_struct
 {
     uint64_t rank;
-    struct adios_var_struct * var;
+    uint16_t id;
 };
 
 struct adios_dimension_struct
@@ -462,7 +462,9 @@ void adios_clear_index_v1 (struct adios_index_process_group_struct_v1 * pg_root
                           );
 
 uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var);
-uint64_t adios_get_var_size (struct adios_var_struct * var, void * data);
+uint64_t adios_get_var_size (struct adios_var_struct * var
+                            ,struct adios_group_struct * group, void * data
+                            );
 
 const char * adios_type_to_string (int type);
 const char * adios_file_mode_to_string (int mode);
