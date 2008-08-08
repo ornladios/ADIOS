@@ -594,69 +594,6 @@ int main (int argc, char ** argv)
     return 0;
 }
 
-#if 0
-int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
-                  ,void * data
-                  )
-{
-    printf("My Value: \n");
-    int use_element_count = 1;
-    int total_element_count = 1;
-    int e = 0; // hich element we are printing
-    int i,j;
-    int position[ranks];
-    for (i = 0; i < ranks; i++)
-    {
-        use_element_count *= (  dims [i].local_bound
-                             );
-        position[i]=dims[i].local_bound; 
-        total_element_count *= dims [i].local_bound;
-    } 
-    printf ("DIMS: dims[%d][%d]\n",position[0],position[1]);
-    printf ("ranks=%d\n",ranks);
-    for (j = 0; j < total_element_count; j++)
-    {
-        printf ("%s ", value_to_string (type, data, e));
-            switch (type)
-            {
-                case bp_uchar:
-                    printf ("%c ", (((unsigned char *) data) [e]));
-                    break;
-
-                case bp_char:
-                    printf ("%c ", (((char *) data) [e]));
-                    break;
-
-                case bp_int:
-                    printf ("%d ", (((int *) data) [e]));
-                    break;
-
-                case bp_float:
-                    printf ("(%d: %e) ", j,(((float *) data) [e]));
-                    break;
-
-                case bp_double:
-                    printf ("(%d: %le) ",j, (((double *) data) [e]));
-                    break;
-
-                case bp_string:
-                    break;
-
-                case bp_longlong: // adios_long
-                    printf ("%lld ", (((int64_t *) data) [e]));
-                    break;
-
-                case bp_complex: // adios_complex
-                    printf ("(%lf %lf) ", ((double *) data) [e * 2 + 0]
-                                        , ((double *) data) [e * 2 + 1]
-                           );
-                    break;
-            }
-            e++;
-    }
-}
-#endif
-
 const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t element)
 {
     static char s [100];
@@ -665,62 +602,50 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t e
     switch (type)
     {
         case adios_unsigned_byte:
-            //sprintf (s, "%u", *(((uint8_t *) data) + element));
             sprintf (s, "%u", *(((uint8_t *) &data) + element));
             break;
 
         case adios_byte:
-            //sprintf (s, "%d", *(((int8_t *) data) + element));
             sprintf (s, "%d", *(((int8_t *) &data) + element));
             break;
 
         case adios_short:
-            //sprintf (s, "%hd", *(((int8_t *) data) + element));
             sprintf (s, "%hd", *(((int8_t *) &data) + element));
             break;
 
         case adios_unsigned_short:
-            //sprintf (s, "%uh", *(((int8_t *) data) + element));
             sprintf (s, "%uh", *(((int8_t *) &data) + element));
             break;
 
         case adios_integer:
-            //sprintf (s, "%d", *(((int32_t *) data) + element));
             sprintf (s, "%d", *(((int32_t *) &data) + element));
             break;
 
         case adios_unsigned_integer:
-            //sprintf (s, "%u", *(((uint32_t *) data) + element));
             sprintf (s, "%u", *(((uint32_t *) &data) + element));
             break;
 
         case adios_long:
-            //sprintf (s, "%lld", *(((int64_t *) data) + element));
             sprintf (s, "%lld", *(((int64_t *) &data) + element));
             break;
 
         case adios_unsigned_long:
-            //sprintf (s, "%llu", *(((uint64_t *) data) + element));
             sprintf (s, "%llu", *(((uint64_t *) &data) + element));
             break;
 
         case adios_real:
-            //sprintf (s, "%e", *(((float *) data) + element));
             sprintf (s, "%e", *(((float *) &data) + element));
             break;
 
         case adios_double:
-            //sprintf (s, "%le", *(((double *) data) + element));
             sprintf (s, "%le", *(((double *) &data) + element));
             break;
 
         case adios_long_double:
-            //sprintf (s, "%Le", *(((long double *) data) + element));
             sprintf (s, "%Le", *(((long double *) &data) + element));
             break;
 
         case adios_string:
-            //sprintf (s, "%s", ((char *) data) + element);
             sprintf (s, "%s", ((char *) data) + element);
             break;
 
@@ -818,57 +743,6 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
 	}
     }
 }
-
-#if 0
-void adios_var_element_count (int rank
-                             ,struct adios_bp_dimension_struct * dims
-                             ,uint64_t * use_count
-                             ,uint64_t * total_count
-                             )
-{
-    int i;
-
-    *use_count = 1;
-    *total_count = 1;
-
-    for (i = 0; i < rank; i++)
-    {
-        *use_count *= dims [i].local_bound;
-        *total_count *= dims [i].local_bound;
-        int use_size = dims [i].use_upper_bound - dims [i].use_loer_bound + 1;
-        int total_size = dims [i].upper_bound - dims [i].loer_bound + 1;
-
-        // adjust for the stride
-        if (dims [i].stride <= use_size / 2)
-        {
-            if (use_size % dims [i].stride == 1) // correct fencepost error
-                use_size = use_size / dims [i].stride + 1;
-            else
-                use_size = use_size / dims [i].stride;
-        }
-        else
-        {
-            if (dims [i].stride >= use_size)
-                use_size = 1;
-            else
-                use_size = use_size / dims [i].stride + 1;  // maybe alays 2?
-        }
-
-        // need to correct for empty/bad arrays
-        if (   dims [i].use_upper_bound < dims [i].use_loer_bound
-            || dims [i].upper_bound < dims [i].loer_bound
-           )
-        {
-            use_size = 0;
-            total_size = 0;
-        }
-
-        // number of items in the array
-        *use_count *= use_size;
-        *total_count *= total_size;
-    }
-}
-#endif
 
     // for riting out bits in a global way, we would need this piece
 static
@@ -1038,9 +912,9 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
                 for (i = 0; i < ranks; i++)
                 {
                     if (i > 0)
-                        c += printf (",%lld", position [i]);
+                        c += printf (",%llu", position [i]);
                     else
-                        c += printf ("%lld", position [i]);
+                        c += printf ("%llu", position [i]);
                 }
                 c += printf ("] ");
                 c += printf ("%s ", value_to_string (var_header->type

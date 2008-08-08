@@ -750,9 +750,9 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
                 for (i = 0; i < ranks; i++)
                 {
                     if (i > 0)
-                        c += printf (",%lld", position [i]);
+                        c += printf (",%llu", position [i]);
                     else
-                        c += printf ("%lld", position [i]);
+                        c += printf ("%llu", position [i]);
                 }
                 c += printf ("] ");
                 c += printf ("%s ", value_to_string_ptr (var_header->type
