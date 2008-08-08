@@ -30,4 +30,4 @@ heat_adios: heat_adios.c gwrite_output.ch
 	$(CC) -g $(INCD) heat_adios.c -o heat_adios $(LIBD)
 
 clean:
-	rm -rf *demo* *.o *.dat *.bp *.h5 heat heat_adios heat_adios_global
+	rm -rf *demo* *.o *.dat *.bp *.h5 heat heat_adios heat_adios_global *.pyc
