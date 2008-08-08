@@ -59,9 +59,9 @@ printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
 //    adios_write (io_handle, "/mype", &var_x1);
 //    adios_write (io_handle, "/test/mype", &var_x2);
     adios_write (io_handle, "zionsize", &z_dim_size);
-    adios_write (io_handle, "zionsize2", &z_dim_size2);
-//    adios_write (io_handle, "zion", z_dim);
-    adios_write (io_handle, "zion1", z_dim2);
+//    adios_write (io_handle, "zionsize2", &z_dim_size2);
+    adios_write (io_handle, "zion", z_dim);
+//    adios_write (io_handle, "zion1", z_dim2);
     adios_write (io_handle, "node-attr", &node);
     adios_close (io_handle);
 

@@ -6,8 +6,8 @@ AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = bp2h5
 
 bp2h5_SOURCES = bp2h5.c \
-                 hw-utils.c \
-                 parse_config.c
+                 hw-utils.c
+#                 parse_config.c
 bp2h5_LDFLAGS = $(MXML_LDFLAGS)
 bp2h5_CPPFLAGS = $(MXML_CPPFLAGS)
 

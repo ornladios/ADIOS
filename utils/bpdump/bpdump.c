@@ -691,8 +691,8 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
             int ranks = 0;
             struct adios_dimension_struct_v1 * d = var_header->dims;
             int c = 0;
-            uint64_t * position;
-            uint64_t * dims;
+            uint64_t * position = 0;
+            uint64_t * dims = 0;
             int i = 0;
             int size_of_type = adios_get_type_size (var_header->type, "");
 
@@ -755,18 +755,20 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
                 }
                 c += printf ("] ");
                 c += printf ("%s ", value_to_string_ptr (var_header->type
-,var_payload->payload, element
-#if 0
-                                    ,(void *) ( ((char *) var_payload->payload)
-                                                + (element * size_of_type)
-                                              )
-#endif
-                                    )
+                                                 ,var_payload->payload, element
+                                                 )
                        );
 
                 element++;
             }
             printf ("\n");
+
+            if (position)
+                free (position);
+            if (dims)
+                free (dims);
+            position = 0;
+            dims = 0;
         }
     }
     if (!var_header->dims)

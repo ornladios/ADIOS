@@ -21,6 +21,7 @@ void hw_free2D (char ** grp_name, int level)
 
 int hw_makeh5 (char * filename)
 {
+#if 0
     char * val;
     unsigned long long DATALEN = 100 * 1024 * 1024;
     long long handle = 0;
@@ -124,6 +125,7 @@ int hw_makeh5 (char * filename)
 
     free (val);
 
+#endif
     return 0;
 }
 
@@ -131,6 +133,7 @@ void hw_dset (hid_t root_id,
              struct adios_bp_element_struct* element
              )
 {
+#if 0
     H5Eset_auto (NULL,NULL);
     char ** grp_name;
     void *data;
@@ -209,6 +212,7 @@ void hw_dset (hid_t root_id,
         free (local_h5dims);
     }
     hw_free2D (grp_name, level);
+#endif
 }
 /*/////////////////////////////
 Obsolete
@@ -219,6 +223,7 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
              ,struct adios_bp_dimension_struct * global_dims
              )
 {
+#if 0
     H5Eset_auto (NULL,NULL);
     char ** grp_name;
     int level;
@@ -325,6 +330,7 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
         free (h5dims);
     }
     hw_free2D (grp_name, level);
+#endif
 }
 /////////////////////////////////
 *////////////////////////////////
@@ -333,6 +339,7 @@ void hw_scalar (hid_t root_id, char * dirstr, char * name, void * data
                ,enum vartype_t type, int append
                )
 {
+#if 0
     H5Eset_auto (NULL, NULL);
     char ** grp_name;
     int level;
@@ -355,6 +362,7 @@ void hw_scalar (hid_t root_id, char * dirstr, char * name, void * data
         H5Gclose (grp_id [i]);
 
     hw_free2D (grp_name, level);
+#endif
 }
 
 void hw_dataset1 (hid_t parent_id, char * name, void * data
@@ -409,6 +417,7 @@ void hw_dataset1 (hid_t parent_id, char * name, void * data
 
 void hw_attr_str_gp (hid_t root_id, char * dirstr, char * aname, char * aval)
 {
+#if 0
     H5Eset_auto (NULL, NULL);
     char ** grp_name;
     int level;
@@ -431,10 +440,12 @@ void hw_attr_str_gp (hid_t root_id, char * dirstr, char * aname, char * aval)
         H5Gclose (grp_id [i]);
 
     hw_free2D (grp_name, level);
+#endif
 }
 
 void hw_attr_str_ds (hid_t root_id, char * dirstr, char * aname, char * aval)
 {
+#if 0
     H5Eset_auto (NULL, NULL);
     char ** grp_name;
     int level;
@@ -472,6 +483,7 @@ void hw_attr_str_ds (hid_t root_id, char * dirstr, char * aname, char * aval)
         H5Gclose (grp_id [i]);
 
     hw_free2D (grp_name, level);
+#endif
 }
 
 void hw_string_attr(hid_t parent_id, const char *name,const char *value)
@@ -500,6 +512,7 @@ void hw_string_attr(hid_t parent_id, const char *name,const char *value)
 
 void hw_attr_num_gp(hid_t root_id, char *dirstr, char *aname, void *avalue, enum vartype_t type)
 {
+#if 0
     H5Eset_auto(NULL,NULL);
     char **grp_name;
     int level,i;
@@ -522,10 +535,12 @@ void hw_attr_num_gp(hid_t root_id, char *dirstr, char *aname, void *avalue, enum
         H5Gclose(grp_id[i]);
 
     hw_free2D(grp_name,level);
+#endif
 }
 
 void hw_attr_num_ds(hid_t root_id, char *dirstr, char *aname, void *avalue, enum vartype_t type)
 {
+#if 0
     H5Eset_auto(NULL,NULL);
     char **grp_name;
     int level,i;
@@ -561,6 +576,7 @@ void hw_attr_num_ds(hid_t root_id, char *dirstr, char *aname, void *avalue, enum
         H5Gclose(grp_id[i]);
 
     hw_free2D(grp_name,level);
+#endif
  }
 // Write an integer attribute to an h5 file
 // Edited from the AVS example file src/hdf5/examp/write_struct.c
@@ -669,6 +685,7 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum vartype_t type, int
 int bp_getH5TypeId(enum vartype_t type, hid_t* h5_type_id, void * val)
 {
     int size, status=0;
+#if 0
     switch (type)
     {
     case bp_float:
@@ -720,6 +737,7 @@ int bp_getH5TypeId(enum vartype_t type, hid_t* h5_type_id, void * val)
     default:
         status = -1;
     }
+#endif
     return status;
 }
 

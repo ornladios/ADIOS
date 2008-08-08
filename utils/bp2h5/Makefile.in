@@ -53,8 +53,7 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_bp2h5_OBJECTS = bp2h5-bp2h5.$(OBJEXT) bp2h5-hw-utils.$(OBJEXT) \
-	bp2h5-parse_config.$(OBJEXT)
+am_bp2h5_OBJECTS = bp2h5-bp2h5.$(OBJEXT) bp2h5-hw-utils.$(OBJEXT)
 bp2h5_OBJECTS = $(am_bp2h5_OBJECTS)
 am__DEPENDENCIES_1 =
 bp2h5_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -188,9 +187,9 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 bp2h5_SOURCES = bp2h5.c \
-                 hw-utils.c \
-                 parse_config.c
+                 hw-utils.c
 
+#                 parse_config.c
 
 # change these to use proper autoconf settings
 bp2h5_LDFLAGS = $(MXML_LDFLAGS) -L/apps/HDF5/1.6.5/ewok_par/pgi625/lib
@@ -289,12 +288,6 @@ bp2h5-hw-utils.o: hw-utils.c
 
 bp2h5-hw-utils.obj: hw-utils.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp2h5_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bp2h5-hw-utils.obj `if test -f 'hw-utils.c'; then $(CYGPATH_W) 'hw-utils.c'; else $(CYGPATH_W) '$(srcdir)/hw-utils.c'; fi`
-
-bp2h5-parse_config.o: parse_config.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp2h5_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bp2h5-parse_config.o `test -f 'parse_config.c' || echo '$(srcdir)/'`parse_config.c
-
-bp2h5-parse_config.obj: parse_config.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp2h5_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bp2h5-parse_config.obj `if test -f 'parse_config.c'; then $(CYGPATH_W) 'parse_config.c'; else $(CYGPATH_W) '$(srcdir)/parse_config.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
