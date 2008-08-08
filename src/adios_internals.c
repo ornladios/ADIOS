@@ -5493,10 +5493,10 @@ const char * adios_file_mode_to_string (int mode)
 
     switch (mode)
     {
-        case 1: return "write";
-        case 2: return "read";
-        case 3: return "update";
-        case 4: return "append";
+        case adios_mode_write:  return "write";
+        case adios_mode_read:   return "read";
+        case adios_mode_update: return "update";
+        case adios_mode_append: return "append";
 
         default:
             sprintf (buf, "(unknown: %d)", mode);
