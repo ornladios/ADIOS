@@ -250,7 +250,7 @@ static int common_adios_group_size (long long fd_p
         fd->bytes_written = 0;
         if (!fd->buffer)
         {
-            fprintf (stderr, "Cannot allocate %lld bytes for buffered "
+            fprintf (stderr, "Cannot allocate %llu bytes for buffered "
                              "output.\n"
                     );
 

@@ -16,7 +16,7 @@ static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
     b->allocated_buff_ptr = malloc (size + BYTE_ALIGN - 1);
     if (!b->allocated_buff_ptr)
     {
-        fprintf (stderr, "Cannot allocate: %lld\n", size);
+        fprintf (stderr, "Cannot allocate: %llu\n", size);
 
         b->buff = 0;
         b->length = 0;
@@ -37,7 +37,7 @@ static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b
                                     );
     if (!b->allocated_buff_ptr)
     {
-        fprintf (stderr, "Cannot allocate: %lld\n", size);
+        fprintf (stderr, "Cannot allocate: %llu\n", size);
 
         b->buff = 0;
         b->length = 0;
@@ -97,7 +97,7 @@ int adios_parse_version (struct adios_bp_buffer_struct_v1 * b
     if (b->length < 4)
     {
         fprintf (stderr, "adios_parse_version requires a buffer of at least "
-                         "4 bytes.  Only %lld were provided\n"
+                         "4 bytes.  Only %llu were provided\n"
                 ,b->length
                 );
 
@@ -128,7 +128,7 @@ int adios_parse_index_offsets_v1 (struct adios_bp_buffer_struct_v1 * b)
     if (b->length - b->offset < 16)
     {
         fprintf (stderr, "adios_parse_index_offsets_v1 requires a buffer of "
-                         "at least 16 bytes.  Only %lld were provided\n"
+                         "at least 16 bytes.  Only %llu were provided\n"
                 ,b->length - b->offset
                 );
 
@@ -160,7 +160,7 @@ int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b
     if (b->length - b->offset < 16)
     {
         fprintf (stderr, "adios_parse_process_group_index_v1 requires a buffer "
-                         "of at least 16 bytes.  Only %lld were provided\n"
+                         "of at least 16 bytes.  Only %llu were provided\n"
                 ,b->length - b->offset
                 );
 
@@ -226,7 +226,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
     if (b->length - b->offset < 10)
     {
         fprintf (stderr, "adios_parse_vars_index_v1 requires a buffer "
-                         "of at least 10 bytes.  Only %lld were provided\n"
+                         "of at least 10 bytes.  Only %llu were provided\n"
                 ,b->length - b->offset
                 );
 
@@ -357,7 +357,7 @@ int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b
     {
         fprintf (stderr, "adios_parse_process_group_header_v1 requires a "
                          "buffer of at least 16 bytes.  "
-                         "Only %lld were provided\n"
+                         "Only %llu were provided\n"
                 ,b->length - b->offset
                 );
 
@@ -435,7 +435,7 @@ int adios_parse_vars_header_v1 (struct adios_bp_buffer_struct_v1 * b
     {
         fprintf (stderr, "adios_parse_var_header_v1 requires a "
                          "buffer of at least 10 bytes.  "
-                         "Only %lld were provided\n"
+                         "Only %llu were provided\n"
                 ,b->length - b->offset
                 );
 
@@ -458,7 +458,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
     {
         fprintf (stderr, "adios_parse_var_data_header_v1 requires a "
                          "buffer of at least 21 bytes.  "
-                         "Only %lld were provided\n"
+                         "Only %llu were provided\n"
                 ,b->length - b->offset
                 );
 
@@ -587,8 +587,8 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
     if (b->length - b->offset < var_header->payload_size)
     {
         fprintf (stderr, "adios_parse_var_data_payload_v1 requires a "
-                         "buffer of at least %lld bytes.  "
-                         "Only %lld were provided\n"
+                         "buffer of at least %llu bytes.  "
+                         "Only %llu were provided\n"
                 ,var_header->payload_size, b->length - b->offset
                 );
 
@@ -629,24 +629,30 @@ int adios_parse_attributes_header_v1 (struct adios_bp_buffer_struct_v1 * b
                       ,struct adios_attributes_header_struct_v1 * attrs_header
                       )
 {
-    if (b->length - b->offset < 2)
+    if (b->length - b->offset < 10)
     {
-        fprintf (stderr, "adios_parse_attribute_header_v1 requires a "
-                         "buffer of at least 2 bytes.  "
-                         "Only %lld were provided\n"
-                ,b->length - b->offset
-                );
+        if (b->length - b->offset == 0)
+        {
+            attrs_header->count = 0;
+            attrs_header->length = 0;
+        }
+        else
+        {
+            fprintf (stderr, "adios_parse_attribute_header_v1 requires a "
+                             "buffer of at least 10 bytes.  "
+                             "Only %llu were provided\n"
+                    ,b->length - b->offset
+                    );
 
-        return 1;
+            return 1;
+        }
     }
 
     attrs_header->count = *(uint16_t *) (b->buff + b->offset);
     b->offset += 2;
-    if (attrs_header->count != 0)
-    {
-        attrs_header->length = *(uint64_t *) (b->buff + b->offset);
-        b->offset += 8;
-    }
+
+    attrs_header->length = *(uint64_t *) (b->buff + b->offset);
+    b->offset += 8;
 
     return 0;
 }
@@ -659,7 +665,7 @@ int adios_parse_attribute_v1 (struct adios_bp_buffer_struct_v1 * b
     {
         fprintf (stderr, "adios_parse_attribute_data_payload_v1 requires a "
                          "buffer of at least 15 bytes.  "
-                         "Only %lld were provided\n"
+                         "Only %llu were provided\n"
                 ,b->length - b->offset
                 );
 
@@ -800,7 +806,7 @@ void adios_posix_read_version (struct adios_bp_buffer_struct_v1 * b)
 
     r = read (b->f, b->buff, 20);
     if (r != 20)
-        fprintf (stderr, "could not read 20 bytes. read only: %lld\n", r);
+        fprintf (stderr, "could not read 20 bytes. read only: %llu\n", r);
 }
 
 void adios_init_buffer_read_index_offsets (struct adios_bp_buffer_struct_v1 * b)
