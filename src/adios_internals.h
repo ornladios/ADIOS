@@ -2,7 +2,7 @@
 #define ADIOS_INTERNALS_H
 
 #include <stdint.h>
-#include "binpack-general.h"
+#include <stdlib.h>
 
 enum ADIOS_METHOD_MODE {adios_mode_write  = 1
                        ,adios_mode_read   = 2
@@ -316,12 +316,17 @@ struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
                                                  ,enum ADIOS_FLAG unique_names
                                                  );
 struct adios_var_struct * adios_find_var_by_id (struct adios_var_struct * root
-                                               ,uint32_t id
+                                               ,uint16_t id
                                                );
 
-struct adios_var_struct * adios_find_attribute_var_by_name
+struct adios_attribute_struct * adios_find_attribute_var_by_name
                                        (struct adios_attribute_struct * root
                                        ,const char * name
+                                       );
+
+struct adios_attribute_struct * adios_find_attribute_var_by_id
+                                       (struct adios_attribute_struct * root
+                                       ,uint16_t id
                                        );
 
 void adios_pre_element_fetch (struct adios_bp_element_struct * element
@@ -378,12 +383,6 @@ void adios_append_attribute (struct adios_attribute_struct ** root
                             );
 
 void * adios_dupe_data (struct adios_var_struct * v, void * data);
-
-int adios_dims_to_bp_dims (char * name
-                          ,struct adios_dimension_struct * adios_dims
-                          ,int * rank
-                          ,struct adios_bp_dimension_struct * bp_dims
-                          );
 
 int adios_common_declare_group (long long * id, const char * name
                                ,enum ADIOS_FLAG host_language_fortran

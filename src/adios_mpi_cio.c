@@ -10,10 +10,6 @@
 // xml parser
 #include <mxml.h>
 
-#include "binpack-general.h"
-#include "binpack-utils.h"
-#include "br-utils.h"
-#include "bw-utils.h"
 #include "adios.h"
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
