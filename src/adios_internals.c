@@ -4277,7 +4277,7 @@ uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
 
         a = a->next;
     }
-    
+
     return overhead;
 }
 
@@ -4772,6 +4772,8 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
         size += 2;  // size of var ID
     }
 
+    size += 1; // var (y or n)
+
     if (dimension->global_dimension.id == 0)
     {
         size += 8; // default to a rank
@@ -4787,6 +4789,8 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
             size += 2;  // size of var ID
         }
     }
+
+    size += 1; // var (y or n)
 
     if (dimension->local_offset.id == 0)
     {
@@ -5381,6 +5385,9 @@ int adios_write_open_vars_v1 (struct adios_file_struct * fd)
 
     fd->offset += (2 + 8); // (count + size)
 
+    if (fd->bytes_written < fd->offset)
+        fd->bytes_written = fd->offset;
+
     return 0;
 }
 
@@ -5400,6 +5407,9 @@ int adios_write_open_attributes_v1 (struct adios_file_struct * fd)
     fd->vars_start = fd->offset;   // save the start of attr area for size
     fd->offset += (2 + 8);         // space to write the count and size
     fd->vars_written = 0;
+
+    if (fd->bytes_written < fd->offset)
+        fd->bytes_written = fd->offset;
 
     return 0;
 }

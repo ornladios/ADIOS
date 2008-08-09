@@ -139,12 +139,15 @@ int adios_parse_index_offsets_v1 (struct adios_bp_buffer_struct_v1 * b)
     int i;
 
     char * t;
+
     t = b->buff + b->offset;
     b->pg_index_offset = *(uint64_t *) (b->buff + b->offset);
     b->offset += 8;
+
     b->vars_index_offset = *(uint64_t *) (b->buff + b->offset);
     t = b->buff + b->offset;
     b->offset += 8;
+
     b->end_of_pgs = b->pg_index_offset;
     b->pg_size = b->vars_index_offset - b->pg_index_offset;
     b->vars_size = vars_end - b->vars_index_offset;
@@ -174,6 +177,7 @@ int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
     process_groups_count = *(uint64_t *) (b->buff + b->offset);
     b->offset += 8;
+
     process_groups_length = *(uint64_t *) (b->buff + b->offset);
     b->offset += 8;
 
@@ -240,6 +244,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
     vars_count = *(uint16_t *) (b->buff + b->offset);
     b->offset += 2;
+
     vars_length = *(uint64_t *) (b->buff + b->offset);
     b->offset += 8;
 
@@ -299,6 +304,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
             uint64_t size = adios_get_type_size ((*root)->type, "");
             (*root)->entries [j].offset = *(uint64_t *) (b->buff + b->offset);
             b->offset += 8;
+
             (*root)->entries [j].min = 0;
             (*root)->entries [j].max = 0;
             switch (size)
@@ -631,21 +637,13 @@ int adios_parse_attributes_header_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < 10)
     {
-        if (b->length - b->offset == 0)
-        {
-            attrs_header->count = 0;
-            attrs_header->length = 0;
-        }
-        else
-        {
-            fprintf (stderr, "adios_parse_attribute_header_v1 requires a "
-                             "buffer of at least 10 bytes.  "
-                             "Only %llu were provided\n"
-                    ,b->length - b->offset
-                    );
+        fprintf (stderr, "adios_parse_attribute_header_v1 requires a "
+                         "buffer of at least 10 bytes.  "
+                         "Only %llu were provided\n"
+                ,b->length - b->offset
+                );
 
-            return 1;
-        }
+        return 1;
     }
 
     attrs_header->count = *(uint16_t *) (b->buff + b->offset);
