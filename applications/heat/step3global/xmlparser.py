@@ -81,9 +81,9 @@ def processvar(node,language_sw,coord_comm,coord_var):
     line=""
     if (language_sw==1):
         #if(coord_comm==varname or coord_var==varname): 
-        #   line="call adios_write(_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
+        #   line="call adios_write(_handle,"+"\""+varname+"\"//char(0),"+varname_g+", err)"
         #else:
-        line="call adios_op(adios_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
+        line="call adios_op(adios_handle,"+"\""+varname+"\"//char(0),"+varname_g+", adios_err)"
     elif(language_sw==2):
         #if(coord_comm==varname or coord_var==varname):
         #   line="adios_write(_handle,"+"\""+varname+"\","+"&"+varname_g+");"
@@ -200,7 +200,7 @@ def processdset(node,language_sw):
 
     line=""
     if (language_sw==1):
-        line="call adios_op(adios_handle,"+"\""+varname+"\"//char(0),"+varname_g+")"
+        line="call adios_op(adios_handle,"+"\""+varname+"\"//char(0),"+varname_g+", adios_err)"
     elif(language_sw==2):
         line="adios_op(adios_handle,"+"\""+varname+"\","+varname_g+");"
     return line+'\n'
@@ -293,12 +293,12 @@ def getVarlistFromXML(xmlFile):
                 raise SystemExit
             nodelist=group.childNodes
             processnode(nodelist,glanguage,coord_comm,coord_var)
-            line = sizeformular[1]  
-            for i in range(2,len(sizeformular)):
+            line = sizeformular[0]  
+            for i in range(1,len(sizeformular)):
                 line =line +' + '+sizeformular[i]
             line = "adios_groupsize = "+line 
             if(glanguage==1):
-               line=line+"\ncall adios_group_size(adios_handle, "+  "adios_groupsize, adios_totalsize, "+ coord_comm+ ', err)\n'
+               line=line+"\ncall adios_group_size(adios_handle, "+  "adios_groupsize, adios_totalsize, "+ coord_comm+ ', adios_err)\n'
             else:
                line=line+";\nadios_group_size(adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ coord_comm + ');\n'
                
