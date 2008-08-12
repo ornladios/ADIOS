@@ -326,40 +326,9 @@ static int common_adios_write (long long fd_p, const char * name, void * var)
         return 1;
     }
 
-    v->data = var;
-    if (fd->shared_buffer == adios_flag_yes)
+    if (v->dimensions)
     {
-        // var payload sent for sizing information
-        adios_write_var_header_v1 (fd, v);
-
-        // generate characteristics (like min and max)
-        adios_generate_var_characteristics_v1 (fd, v);
-
-        // write these characteristics
-        adios_write_var_characteristics_v1 (fd, v);
-
-        // write payload
-        adios_write_var_payload_v1 (fd, v);
-    }
-
-    // now tell each transport attached that it is being written
-    while (m)
-    {
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_write_fn
-           )
-        {
-            adios_transports [m->method->m].adios_write_fn
-                                   (fd, v, var, m->method);
-        }
-
-        m = m->next;
-    }
-
-    if (v->is_dim == adios_flag_no)
-    {
-        v->data = 0;
+        v->data = var;
     }
     else
     {
@@ -392,13 +361,43 @@ static int common_adios_write (long long fd_p, const char * name, void * var)
             case adios_string:
             case adios_complex:
             case adios_double_complex:
-                memcpy ((char *) v->data, (char *) var, element_size);
+                memcpy ((char *) v->data, var, element_size);
                 break;
 
             default:
+                free (v->data);
                 v->data = 0;
                 break;
         }
+    }
+
+    if (fd->shared_buffer == adios_flag_yes)
+    {
+        // var payload sent for sizing information
+        adios_write_var_header_v1 (fd, v);
+
+        // write payload
+        adios_write_var_payload_v1 (fd, v);
+    }
+
+    // now tell each transport attached that it is being written
+    while (m)
+    {
+        if (   m->method->m != ADIOS_METHOD_UNKNOWN
+            && m->method->m != ADIOS_METHOD_NULL
+            && adios_transports [m->method->m].adios_write_fn
+           )
+        {
+            adios_transports [m->method->m].adios_write_fn
+                                   (fd, v, var, m->method);
+        }
+
+        m = m->next;
+    }
+
+    if (v->dimensions)
+    {
+        v->data = 0;
     }
 
     return 0;
@@ -808,6 +807,12 @@ static int common_adios_close (long long fd_p)
         v->write_offset = 0;
         if (v->data)
             free (v->data);
+#if 0
+        if (v->min)
+            free (v->min);
+        if (v->max)
+            free (v->max);
+#endif
 
         v->data = 0;
 

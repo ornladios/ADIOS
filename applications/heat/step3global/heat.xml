@@ -2,7 +2,6 @@
 <adios-config host-language="C">
   
   <adios-group name="output" coordination-communicator="group_comm">
-    <var name="group_comm" type="integer"/>
     <var name="NX" type="integer"/>
     <var name="NY" type="integer"/>
     <var name="offset" type="integer"/>
@@ -13,7 +12,6 @@
     <var name="sin_data" gname="sin_u[offset]" type="real" dimensions="size,NY"/>
     <var name="tan_data" gname="tan_u[offset]" type="real" dimensions="size,NY"/>
     </global-bounds>
-
   </adios-group>
 
   <method method="MPI" group="output"/>

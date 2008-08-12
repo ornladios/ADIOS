@@ -75,7 +75,7 @@ void adios_##a##_start_calculation (struct adios_method_struct * method); \
 void adios_##a##_stop_calculation (struct adios_method_struct * method);
 #endif
 
-#define MATCH_STRING_TO_METHOD(b,d) if (!strcmp (buf,b)) {*method=d;return 1;}
+#define MATCH_STRING_TO_METHOD(b,d) if (!strcasecmp (buf,b)) {*method=d;return 1;}
 
 #define ASSIGN_FNS(a,b) \
 (*t) [b].adios_init_fn = adios_##a##_init; \

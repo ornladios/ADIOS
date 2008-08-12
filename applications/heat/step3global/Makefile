@@ -1,5 +1,5 @@
-JAGUAR=y
-EWOK=n
+JAGUAR=n
+EWOK=y
 ifeq ($(JAGUAR),y)
      HOME=/ccs/home/ge1/work/jaguar
      HOME1=/ccs/home/ge1/work/jaguar
@@ -10,10 +10,10 @@ ifeq ($(JAGUAR),y)
 endif
 
 ifeq ($(EWOK),y)
-     HOME=/ccs/proj/e2e/adios/ewok.gcc
-     HOME1=/ccs/proj/e2e/adios/ewok.gcc
-#     HOME=/ccs/home/ge1/work/ADIOS/trunk/src
-#     HOME1=/ccs/home/ge1/work/ewok
+#     HOME=/ccs/proj/e2e/adios/ewok.gcc
+#     HOME1=/ccs/proj/e2e/adios/ewok.gcc
+     HOME=/ccs/home/ge1/work/ADIOS/trunk/src
+     HOME1=/ccs/home/ge1/work/ewok
      FC=mpif90
      CC=mpicc
 endif

@@ -1,6 +1,15 @@
 #ifndef ADIOS_BP_V1_H
 #define ADIOS_BP_V1_H
 
+enum ADIOS_CHARACTERISTICS
+{
+     adios_characteristic_value      = 0
+    ,adios_characteristic_min        = 1
+    ,adios_characteristic_max        = 2
+    ,adios_characteristic_offset     = 3
+    ,adios_characteristic_dimensions = 4
+};
+
 struct adios_bp_buffer_struct_v1
 {
     int f;             // the file handle
@@ -29,11 +38,19 @@ struct adios_bp_buffer_struct_v1
 struct adios_index_process_group_struct_v1
 {
     char * group_name;
+    enum ADIOS_FLAG adios_host_language_fortran;
     uint32_t process_id;
-    uint32_t timestep;
+    char * time_index_name;
+    uint32_t time_index;
     uint64_t offset_in_file;
 
     struct adios_index_process_group_struct_v1 * next;
+};
+
+struct adios_index_var_entry_dims_struct_v1
+{
+    uint8_t count;
+    uint64_t * dims;  // each 3 uint64_t represents one dimension (l, g, o)
 };
 
 struct adios_index_var_entry_struct_v1
@@ -41,6 +58,8 @@ struct adios_index_var_entry_struct_v1
     uint64_t offset;
     void * min;
     void * max;
+    struct adios_index_var_entry_dims_struct_v1 dims;
+    void * value;
 };
 
 struct adios_index_var_struct_v1
@@ -84,9 +103,9 @@ struct adios_process_group_header_struct_v1
 {
     enum ADIOS_FLAG host_language_fortran;
     char * name;
-    uint16_t coord_comm_id;
     uint16_t coord_var_id;
-    uint16_t timestep_id;
+    char * time_index_name;
+    uint32_t time_index;
     uint8_t methods_count;
     struct adios_method_info_struct_v1 * methods;
 };

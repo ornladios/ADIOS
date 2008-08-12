@@ -32,7 +32,8 @@ struct adios_MPI_data_struct
     struct adios_index_var_struct_v1 * old_vars_root;
 };
 
-static void adios_var_to_comm (enum ADIOS_FLAG host_language_fortran
+static void adios_var_to_comm (const char * comm_name
+                              ,enum ADIOS_FLAG host_language_fortran
                               ,void * data
                               ,MPI_Comm * comm
                               )
@@ -40,13 +41,62 @@ static void adios_var_to_comm (enum ADIOS_FLAG host_language_fortran
     if (data)
     {
         int t = *(int *) data;
-        if (host_language_fortran == adios_flag_yes)
+        if (!comm_name)
         {
-            *comm = MPI_Comm_f2c (t);
+            if (!t)
+            {
+                *comm = MPI_COMM_SELF;
+            }
+            else
+            {
+                if (host_language_fortran == adios_flag_yes)
+                {
+                    *comm = MPI_Comm_f2c (t);
+                }
+                else
+                {
+                    *comm = *(MPI_Comm *) data;
+                }
+            }
         }
         else
         {
-            *comm = *(MPI_Comm *) data;
+            if (!strcmp (comm_name, ""))
+            {
+                if (!t)
+                {
+                    *comm = MPI_COMM_WORLD;
+                }
+                else
+                {
+                    if (host_language_fortran == adios_flag_yes)
+                    {
+                        *comm = MPI_Comm_f2c (t);
+                    }
+                    else
+                    {
+                        *comm = *(MPI_Comm *) data;
+                    }
+                }
+            }
+            else
+            {
+                if (!t)
+                {
+                    *comm = MPI_COMM_SELF;
+                }
+                else
+                {
+                    if (host_language_fortran == adios_flag_yes)
+                    {
+                        *comm = MPI_Comm_f2c (t);
+                    }
+                    else
+                    {
+                        *comm = *(MPI_Comm *) data;
+                    }
+                }
+            }
         }
     }
     else
@@ -144,7 +194,8 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf (name, "%s%s", method->base_path, fd->name);
 
-    adios_var_to_comm (fd->group->adios_host_language_fortran
+    adios_var_to_comm (fd->group->group_comm
+                      ,fd->group->adios_host_language_fortran
                       ,comm
                       ,&md->group_comm
                       );
@@ -645,6 +696,9 @@ void adios_mpi_write (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
+    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+                                                      method->method_data; 
+
     if (v->got_buffer == adios_flag_yes)
     {
         if (data != v->data)  // if the user didn't give back the same thing
@@ -666,12 +720,6 @@ void adios_mpi_write (struct adios_file_struct * fd
     {
         // var payload sent for sizing information
         adios_write_var_header_v1 (fd, v);
-
-        // generate characteristics (like min and max)
-        adios_generate_var_characteristics_v1 (fd, v);
-        
-        // write these characteristics
-        adios_write_var_characteristics_v1 (fd, v);
 
         // write payload
         adios_write_var_payload_v1 (fd, v);

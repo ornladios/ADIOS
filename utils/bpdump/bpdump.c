@@ -256,47 +256,47 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data)
     switch (type)
     {
         case adios_unsigned_byte:
-            sprintf (s, "%u", *(((uint8_t *) &data)));
+            sprintf (s, "%u", *(((uint8_t *) data)));
             break;
 
         case adios_byte:
-            sprintf (s, "%d", *(((int8_t *) &data)));
+            sprintf (s, "%d", *(((int8_t *) data)));
             break;
 
         case adios_short:
-            sprintf (s, "%hd", *(((int8_t *) &data)));
+            sprintf (s, "%hd", *(((int8_t *) data)));
             break;
 
         case adios_unsigned_short:
-            sprintf (s, "%uh", *(((int8_t *) &data)));
+            sprintf (s, "%uh", *(((int8_t *) data)));
             break;
 
         case adios_integer:
-            sprintf (s, "%d", *(((int32_t *) &data)));
+            sprintf (s, "%d", *(((int32_t *) data)));
             break;
 
         case adios_unsigned_integer:
-            sprintf (s, "%u", *(((uint32_t *) &data)));
+            sprintf (s, "%u", *(((uint32_t *) data)));
             break;
 
         case adios_long:
-            sprintf (s, "%lld", *(((int64_t *) &data)));
+            sprintf (s, "%lld", *(((int64_t *) data)));
             break;
 
         case adios_unsigned_long:
-            sprintf (s, "%llu", *(((uint64_t *) &data)));
+            sprintf (s, "%llu", *(((uint64_t *) data)));
             break;
 
         case adios_real:
-            sprintf (s, "%f", *(((float *) &data)));
+            sprintf (s, "%f", *(((float *) data)));
             break;
 
         case adios_double:
-            sprintf (s, "%le", *(((double *) &data)));
+            sprintf (s, "%le", *(((double *) data)));
             break;
 
         case adios_long_double:
-            sprintf (s, "%Le", *(((long double *) &data)));
+            sprintf (s, "%Le", *(((long double *) data)));
             break;
 
         case adios_string:
@@ -447,9 +447,9 @@ void print_process_group_header (uint64_t num
     printf ("\tHost Language Fortran?: %c\n"
            ,(pg_header->host_language_fortran == adios_flag_yes ? 'Y' : 'N')
            );
-    printf ("\tCoordination Comm Member ID: %d\n", pg_header->coord_comm_id);
     printf ("\tCoordination Var Member ID: %d\n", pg_header->coord_var_id);
-    printf ("\tTimestep Member ID: %d\n", pg_header->timestep_id);
+    printf ("\tTime Name: %d\n", pg_header->time_index_name);
+    printf ("\tTime: %d\n", pg_header->time_index);
     printf ("\tMethods used in output: %d\n", pg_header->methods_count);
     m = pg_header->methods;
     while (m)
@@ -491,21 +491,27 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
             {
                 printf ("V(%hu):", d->dimension.var_id);
             }
-            if (d->global_dimension.var_id == 0)
+
+            if (   d->global_dimension.var_id != 0
+                || d->global_dimension.rank != 0
+               )
             {
-                printf ("R(%llu):", d->global_dimension.rank);
-            }
-            else
-            {
-                printf ("V(%hu):", d->global_dimension.var_id);
-            }
-            if (d->local_offset.var_id == 0)
-            {
-                printf ("R(%llu)\n", d->local_offset.rank);
-            }
-            else
-            {
-                printf ("V(%hu)\n", d->local_offset.var_id);
+                if (d->global_dimension.var_id == 0)
+                {
+                    printf ("R(%llu):", d->global_dimension.rank);
+                }
+                else
+                {
+                    printf ("V(%hu):", d->global_dimension.var_id);
+                }
+                if (d->local_offset.var_id == 0)
+                {
+                    printf ("R(%llu)\n", d->local_offset.rank);
+                }
+                else
+                {
+                    printf ("V(%hu)\n", d->local_offset.var_id);
+                }
             }
 
             d = d->next;
@@ -775,8 +781,8 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
     if (!var_header->dims)
     {
         printf ("\t\tValue: %s\n", value_to_string (var_header->type
-                                       ,(void *) *(int *) var_payload->payload
-                                       )
+                                                   ,var_payload->payload
+                                                   )
                );
     }
 }
@@ -816,7 +822,8 @@ void print_process_group_index (
     {
         printf ("Group: %s\n", pg_root->group_name);
         printf ("\tProcess ID: %d\n", pg_root->process_id);
-        printf ("\tTimestep: %d\n", pg_root->timestep);
+        printf ("\tTime Name: %s\n", pg_root->time_index_name);
+        printf ("\tTime: %d\n", pg_root->time_index);
         printf ("\tOffset in File: %llu\n", pg_root->offset_in_file);
 
         pg_root = pg_root->next;
@@ -842,18 +849,57 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
         printf ("\tDatatype: %s\n", adios_type_to_string (vars_root->type));
         printf ("\tVars Entries: %llu\n", vars_root->entries_count);
         uint64_t i;
-        printf ("\t\tOffset\t\tMin\t\tMax\n");
         for (i = 0; i < vars_root->entries_count; i++)
         {
-            printf ("\t\t%s\t\t", value_to_string (adios_long
-                                  ,(void *) (vars_root->entries [i].offset))
-                                  );
-            printf ("%s\t\t", value_to_string (vars_root->type
-                                           ,vars_root->entries [i].min)
-                                           );
-            printf ("%s\n", value_to_string (vars_root->type
-                                           ,vars_root->entries [i].max)
-                                           );
+            printf ("\t\tOffset(%llu)", vars_root->entries [i].offset);
+            if (vars_root->entries [i].min)
+            {
+                printf ("\t\tMin(%s)", value_to_string (vars_root->type
+                                                  ,vars_root->entries [i].min
+                                                  )
+                       );
+            }
+            if (vars_root->entries [i].max)
+            {
+                printf ("\t\tMax(%s)", value_to_string (vars_root->type
+                                                  ,vars_root->entries [i].max
+                                                  )
+                       );
+            }
+            if (vars_root->entries [i].value)
+            {
+                printf ("\t\tValue(%s)", value_to_string (vars_root->type
+                                                  ,vars_root->entries [i].value
+                                                  )
+                       );
+            }
+            if (vars_root->entries [i].dims.count != 0)
+            {
+                int j;
+
+                printf ("\t\tDims (l:g:o): (");
+                for (j = 0; j < vars_root->entries [i].dims.count; j++)
+                {
+                    if (j != 0)
+                        printf (",");
+                    if (vars_root->entries [i].dims.dims [j * 3 + 1] != 0)
+                    {
+                        printf ("%llu:%llu:%llu"
+                               ,vars_root->entries [i].dims.dims [j * 3 + 0]
+                               ,vars_root->entries [i].dims.dims [j * 3 + 1]
+                               ,vars_root->entries [i].dims.dims [j * 3 + 2]
+                               );
+                    }
+                    else
+                    {
+                        printf ("%llu"
+                               ,vars_root->entries [i].dims.dims [j * 3 + 0]
+                               );
+                    }
+                }
+                printf (")");
+            }
+            printf ("\n");
         }
 
         vars_root = vars_root->next;

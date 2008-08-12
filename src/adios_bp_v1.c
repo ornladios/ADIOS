@@ -206,10 +206,23 @@ int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b
         memcpy ((*root)->group_name, b->buff + b->offset, length_of_name);
         b->offset += length_of_name;
 
+        (*root)->adios_host_language_fortran =
+                             (*(b->buff + b->offset) == 'y' ? adios_flag_yes
+                                                            : adios_flag_no
+                             );
+        b->offset += 1;
+
         (*root)->process_id = *(uint32_t *) (b->buff + b->offset);
         b->offset += 4;
 
-        (*root)->timestep = *(uint32_t *) (b->buff + b->offset);
+        length_of_name = *(uint16_t *) (b->buff + b->offset);
+        b->offset += 2;
+        (*root)->time_index_name = (char *) malloc (length_of_name + 1);
+        (*root)->time_index_name [length_of_name] = '\0';
+        memcpy ((*root)->time_index_name, b->buff + b->offset, length_of_name);
+        b->offset += length_of_name;
+
+        (*root)->time_index = *(uint32_t *) (b->buff + b->offset);
         b->offset += 4;
 
         (*root)->offset_in_file = *(uint64_t *) (b->buff + b->offset);
@@ -261,7 +274,8 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
         }
         uint32_t var_entry_length;
         uint16_t len;
-        uint64_t offsets_count;
+        uint64_t characteristics_sets_count;
+        uint64_t type_size;
 
         var_entry_length = *(uint32_t *) (b->buff + b->offset);
         b->offset += 4;
@@ -289,63 +303,147 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
         (*root)->type = (enum ADIOS_DATATYPES) *(b->buff + b->offset);
         b->offset += 1;
+        type_size = adios_get_type_size ((*root)->type, "");
 
-        offsets_count = *(uint64_t *) (b->buff + b->offset);
-        (*root)->entries_count = offsets_count;
-        (*root)->entries_allocated = offsets_count;
+        characteristics_sets_count = *(uint64_t *) (b->buff + b->offset);
+        (*root)->entries_count = characteristics_sets_count;
+        (*root)->entries_allocated = characteristics_sets_count;
         b->offset += 8;
 
         // validate remaining length: offsets_count * (8 + 2 * (size of type))
         uint64_t j;
-        (*root)->entries = malloc (offsets_count
-                            * sizeof (struct adios_index_var_entry_struct_v1));
-        for (j = 0; j < offsets_count; j++)
+        (*root)->entries = malloc (characteristics_sets_count
+                            * sizeof (struct adios_index_var_entry_struct_v1)
+                           );
+        memset ((*root)->entries, 0
+               ,  characteristics_sets_count
+                * sizeof (struct adios_index_var_entry_struct_v1)
+               );
+        for (j = 0; j < characteristics_sets_count; j++)
         {
-            uint64_t size = adios_get_type_size ((*root)->type, "");
-            (*root)->entries [j].offset = *(uint64_t *) (b->buff + b->offset);
-            b->offset += 8;
+            uint8_t characteristic_set_count;
+            uint32_t characteristic_set_length;
+            uint8_t item = 0;
 
-            (*root)->entries [j].min = 0;
-            (*root)->entries [j].max = 0;
-            switch (size)
+            characteristic_set_count = (uint8_t) *(b->buff + b->offset);
+            b->offset += 1;
+
+            characteristic_set_length = *(uint32_t *) *(b->buff + b->offset);
+            b->offset += 4;
+
+            while (item < characteristic_set_count)
             {
-                case 1:
-                    (*root)->entries [j].min = (void *) *(uint8_t *) (b->buff + b->offset);
-                    b->offset += 1;
+                enum ADIOS_CHARACTERISTIC c;
+                c = (enum ADIOS_CHARACTERISTIC) *(b->buff + b->offset);
+                b->offset += 1;
 
-                    (*root)->entries [j].max = (void *) *(uint8_t *) (b->buff + b->offset);
-                    b->offset += 1;
-                    break;
+                switch (c)
+                {
+                    case adios_characteristic_value:
+                    case adios_characteristic_min:
+                    case adios_characteristic_max:
+                    {
+                        int data_size;
+                        void * data = 0;
 
-                case 2:
-                    (*root)->entries [j].min = (void *) *(uint16_t *) (b->buff + b->offset);
-                    b->offset += 2;
+                        if ((*root)->type == adios_string)
+                        {
+                            data_size = *(uint16_t *) (b->buff + b->offset);
+                            b->offset += 2;
+                        }
+                        else
+                        {
+                            data_size = adios_get_type_size ((*root)->type, "");
+                        }
 
-                    (*root)->entries [j].max = (void *) *(uint16_t *) (b->buff + b->offset);
-                    b->offset += 2;
-                    break;
+                        data = malloc (data_size);
 
-                case 4:
-                    (*root)->entries [j].min = (void *) *(uint32_t *) (b->buff + b->offset);
-                    b->offset += 4;
+                        if (!data)
+                        {
+                            fprintf (stderr, "cannot allocate %d bytes to "
+                                             "copy scalar %s\n"
+                                    ,data_size
+                                    ,(*root)->var_name
+                                    );
 
-                    (*root)->entries [j].max = (void *) *(uint32_t *) (b->buff + b->offset);
-                    b->offset += 4;
-                    break;
+                            return 1;
+                        }
 
-                case 8:
-                    (*root)->entries [j].min = (void *) *(uint64_t *) (b->buff + b->offset);
-                    b->offset += 8;
+                        switch ((*root)->type)
+                        {
+                            case adios_byte:
+                            case adios_short:
+                            case adios_integer:
+                            case adios_long:
+                            case adios_unsigned_byte:
+                            case adios_unsigned_short:
+                            case adios_unsigned_integer:
+                            case adios_unsigned_long:
+                            case adios_real:
+                            case adios_double:
+                            case adios_long_double:
+                            case adios_string:
+                            case adios_complex:
+                            case adios_double_complex:
+                                memcpy (data, (b->buff + b->offset), data_size);
+                                b->offset += data_size;
+                                break;
 
-                    (*root)->entries [j].max = (void *) *(uint64_t *) (b->buff + b->offset);
-                    b->offset += 8;
-                    break;
+                            default:
+                                free (data);
+                                data = 0;
+                                break;
+                        }
 
-                default:
-                    memcpy (&(*root)->entries [j].min, (b->buff + b->offset), size);
-                    b->offset += size;
-                    memcpy (&(*root)->entries [j].max, (b->buff + b->offset), size);
-                    b->offset += size;
+                        switch (c)
+                        {
+                            case adios_characteristic_value:
+                                (*root)->entries [j].value = data;
+                                break;
+
+                            case adios_characteristic_min:
+                                (*root)->entries [j].min = data;
+                                break;
+
+                            case adios_characteristic_max:
+                                (*root)->entries [j].max = data;
+                                break;
+                        }
+                        break;
+                    }
+
+                    case adios_characteristic_offset:
+                    {
+                        uint64_t size = adios_get_type_size ((*root)->type, "");
+                        (*root)->entries [j].offset =
+                                            *(uint64_t *) (b->buff + b->offset);
+                        b->offset += 8;
+
+                        break;
+                    }
+
+                    case adios_characteristic_dimensions:
+                    {
+                        uint16_t dims_length;
+
+                        (*root)->entries [j].dims.count =
+                                           *(uint8_t *) (b->buff + b->offset);
+                        b->offset += 1;
+
+                        dims_length = *(uint16_t *) (b->buff + b->offset);
+                        b->offset += 2;
+
+                       (*root)->entries [j].dims.dims =
+                              (struct adios_index_var_entry_dims_struct_v1 *)
+                                          malloc (dims_length);
+                       memcpy ((*root)->entries [j].dims.dims
+                              ,(b->buff + b->offset)
+                              ,dims_length
+                              );
+                        b->offset += dims_length;
+                    }
+                }
+                item++;
             }
         }
 
@@ -389,12 +487,16 @@ int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b
     memcpy (pg_header->name, b->buff + b->offset, len);
     b->offset += len;
 
-    pg_header->coord_comm_id = *(uint16_t *) (b->buff + b->offset);
-    b->offset += 2;
     pg_header->coord_var_id = *(uint16_t *) (b->buff + b->offset);
     b->offset += 2;
-    pg_header->timestep_id = *(uint16_t *) (b->buff + b->offset);
+    len = *(uint16_t *) (b->buff + b->offset);
     b->offset += 2;
+    pg_header->time_index_name = (char *) malloc (len + 1);
+    pg_header->time_index_name [len] = '\0';
+    memcpy (pg_header->time_index_name, b->buff + b->offset, len);
+    b->offset += len;
+    pg_header->time_index = *(uint32_t *) (b->buff + b->offset);
+    b->offset += 4;
 
     pg_header->methods_count = *(b->buff + b->offset);
     b->offset += 1;

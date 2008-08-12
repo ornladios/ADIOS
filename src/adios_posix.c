@@ -263,12 +263,6 @@ void adios_posix_write (struct adios_file_struct * fd
         // var payload sent for sizing information
         adios_write_var_header_v1 (fd, v);
 
-        // generate characteristics (like min and max)
-        adios_generate_var_characteristics_v1 (fd, v);
-
-        // write these characteristics
-        adios_write_var_characteristics_v1 (fd, v);
-
         ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
         if (s != fd->bytes_written)
         {
