@@ -106,7 +106,7 @@ struct adios_group_struct
     struct adios_attribute_struct * attributes;
     const char * group_comm;
     const char * group_by;
-    const char * time_index_name;
+    char * time_index_name;
     uint32_t time_index;
     uint32_t process_id;
 

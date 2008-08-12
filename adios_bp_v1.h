@@ -130,13 +130,12 @@ struct adios_var_header_struct_v1
     enum ADIOS_DATATYPES type;
     enum ADIOS_FLAG is_dim;
     struct adios_dimension_struct_v1 * dims;
+    struct adios_index_var_entry_struct_v1 characteristics;
     uint64_t payload_size;
 };
 
 struct adios_var_payload_struct_v1
 {
-    void * min;
-    void * max;
     void * payload;
 };
 

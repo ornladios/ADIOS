@@ -1915,6 +1915,8 @@ static int validatePath (const struct adios_var_struct * vars
     char * last_slash = strrchr (path, '/'); // find the last '/'
     path_only = (char *) malloc (len + 1);
     var_only = (char *) malloc (len + 1);
+    memset (path_only, 0, len + 1);
+    memset (var_only, 0, len + 1);
     if (last_slash == path + len - 1)  // if it is a trailing '/', remove
     {
         last_slash = '\0';
@@ -3277,7 +3279,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                         }
                         else
                         {
-                            *out = (void *) t;
+                            *out = malloc (1);
+                            *((int8_t *) *out) = t;
 
                             return 1;
                         }
@@ -3293,7 +3296,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                         }
                         else
                         {
-                            *out = (void *) t;
+                            *out = malloc (2);
+                            *((int16_t *) *out) = t;
 
                             return 1;
                         }
@@ -3309,7 +3313,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                         }
                         else
                         {
-                            *out = (void *) t;
+                            *out = malloc (4);
+                            *((int32_t *) *out) = t;
 
                             return 1;
                         }
@@ -3330,7 +3335,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             }
             else
             {
-                *out = (void *) t;
+                *out = malloc (8);
+                *((int64_t *) *out) = t;
 
                 return 1;
             }
@@ -3365,7 +3371,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                         }
                         else
                         {
-                            *out = (void *) t;
+                            *out = malloc (1);
+                            *((uint8_t *) *out) = t;
 
                             return 1;
                         }
@@ -3381,7 +3388,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                         }
                         else
                         {
-                            *out = (void *) t;
+                            *out = malloc (2);
+                            *((uint16_t *) *out) = t;
 
                             return 1;
                         }
@@ -3397,7 +3405,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                         }
                         else
                         {
-                            *out = (void *) t;
+                            *out = malloc (4);
+                            *((uint32_t *) *out) = t;
 
                             return 1;
                         }
@@ -3418,7 +3427,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             }
             else
             {
-                *out = (void *) t;
+                *out = malloc (8);
+                *((uint64_t *) *out) = t;
 
                 return 1;
             }
@@ -3437,8 +3447,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             }
             else
             {
-                // there must be a better way to do this...
-                *out = (void *) *(uint32_t *) &t;
+                *out = malloc (4);
+                *((float *) *out) = t;
 
                 return 1;
             }
@@ -3457,7 +3467,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             }
             else
             {
-                *out = (void *) *(uint64_t *) &t;
+                *out = malloc (8);
+                *((double *) *out) = t;
 
                 return 1;
             }
@@ -3476,11 +3487,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             }
             else
             {
-                fprintf (stderr, "adios_parse_scalar_string long_double not "
-                                 "supported\n"
-                        );
-
-                return 1;
+                *out = malloc (16);
+                *((long double *) *out) = t;
             }
         }
         case adios_string:
@@ -3494,132 +3502,12 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             fprintf (stderr, "adios_complex type validation needs to be "
                              "implemented\n");
             return 1;
-#if 0
-            int errno_save = errno;
-            long t = strtol(const char *restrict, char **restrict, int);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
-            {
-                fprintf (stderr, "value: '%s' not valid integer\n"
-                        ,value
-                        );
-
-                return 0;
-            }
-            else
-            {
-                switch (type)
-                {
-                    case adios_byte:
-                        if (t < SCHAR_MIN || t > SCHAR_MAX)
-                        {
-                            fprintf (stderr, "type is signed byte, value "
-                                             "is out of range: '%s'\n
-                                    ,value
-                                    );
-
-                            return 0;
-                        }
-                        else
-                        {
-                            return 1;
-                        }
-                    case adios_short:
-                        if (t < SHRT_MIN || t > SHRT_MAX)
-                        {
-                            fprintf (stderr, "type is signed short, value "
-                                             "is out of range: '%s'\n
-                                    ,value
-                                    );
-
-                            return 0;
-                        }
-                        else
-                        {
-                            return 1;
-                        }
-                    case adios_int:
-                        if (t < INT_MIN || t > INT_MAX)
-                        {
-                            fprintf (stderr, "type is signed int, value "
-                                             "is out of range: '%s'\n
-                                    ,value
-                                    );
-
-                            return 0;
-                        }
-                        else
-                        {
-                            return 1;
-                        }
-                }
-            }
-#endif
         }
         case adios_double_complex:
         {
             fprintf (stderr, "adios_double_complex type validation needs to "
                              "be implemented\n");
             return 1;
-#if 0
-            int errno_save = errno;
-            long t = strtol(const char *restrict, char **restrict, int);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
-            {
-                fprintf (stderr, "value: '%s' not valid integer\n"
-                        ,value
-                        );
-
-                return 0;
-            }
-            else
-            {
-                switch (type)
-                {
-                    case adios_byte:
-                        if (t < SCHAR_MIN || t > SCHAR_MAX)
-                        {
-                            fprintf (stderr, "type is signed byte, value "
-                                             "is out of range: '%s'\n
-                                    ,value
-                                    );
-
-                            return 0;
-                        }
-                        else
-                        {
-                            return 1;
-                        }
-                    case adios_short:
-                        if (t < SHRT_MIN || t > SHRT_MAX)
-                        {
-                            fprintf (stderr, "type is signed short, value "
-                                             "is out of range: '%s'\n
-                                    ,value
-                                    );
-
-                            return 0;
-                        }
-                        else
-                        {
-                            return 1;
-                        }
-                    case adios_int:
-                        if (t < INT_MIN || t > INT_MAX)
-                        {
-                            fprintf (stderr, "type is signed int, value "
-                                             "is out of range: '%s'\n
-                                    ,value
-                                    );
-
-                            return 0;
-                        }
-                        else
-                        {
-                            return 1;
-                        }
-                }
-            }
-#endif
         }
 
         case adios_unknown:
@@ -3672,6 +3560,7 @@ int adios_common_define_attribute (long long group, const char * name
                     ,name, value
                     );
 
+            free (attr->value);
             free (attr->name);
             free (attr->path);
             free (attr);
@@ -4156,7 +4045,8 @@ void adios_common_get_group (long long * group_id, const char * name)
 
 // *****************************************************************************
 static void buffer_write (char ** buffer, uint64_t * buffer_size
-                         ,uint64_t * buffer_offset, void * data, uint64_t size
+                         ,uint64_t * buffer_offset
+                         ,const void * data, uint64_t size
                          )
 {
     if (*buffer_offset + size > *buffer_size || *buffer == 0)
@@ -4215,22 +4105,13 @@ static uint16_t adios_calc_var_characteristics_overhead
             if (v->dimensions)
             {
                 overhead += 1;  // id
-                overhead += 2;  // len
                 overhead += adios_get_type_size (v->type, ""); // min
 
                 overhead += 1;  // id
-                overhead += 2;  // len
                 overhead += adios_get_type_size (v->type, ""); // max
 
                 overhead += 1;  // id
-                overhead += 2;  // len
                 overhead += adios_calc_var_characteristics_dims_overhead (v);
-            }
-            else
-            {
-                overhead += 1;  // id
-                overhead += 2;  // len
-                overhead += adios_get_type_size (v->type, ""); // value
             }
     }
 
@@ -4761,6 +4642,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
 
     while (v)
     {
+        // only add items that were written to the index
         if (v->write_offset != 0)
         {
             struct adios_index_var_struct_v1 * v_index;
@@ -4846,10 +4728,6 @@ void adios_build_index_v1 (struct adios_file_struct * fd
 
             // this fn will either take ownership for free
             index_append_var_v1 (vars_root, v_index);
-        }
-        else
-        {
-            fprintf (stderr, "no offset: %llu\n", v->data);
         }
 
         v = v->next;
@@ -5390,10 +5268,10 @@ uint16_t adios_write_var_characteristics_dims_v1 (struct adios_file_struct * fd
                                                  )
 {
     uint16_t total_size = 0;
-    uint64_t count_offset = fd->offset;
     uint8_t dims_count = 0;
     uint16_t dims_length = 0;
     struct adios_dimension_struct * d = v->dimensions;
+    uint64_t count_offset = fd->offset;
 
     fd->offset += 1;
     total_size += 1; // count
@@ -5405,17 +5283,22 @@ uint16_t adios_write_var_characteristics_dims_v1 (struct adios_file_struct * fd
     {
         uint64_t dim = 0;
 
+        dims_count++;
+
         dim = get_value_for_dim (fd, &d->dimension);
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &dim, 8);
         total_size += 8;
+        dims_length += 8;
 
         dim = get_value_for_dim (fd, &d->global_dimension);
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &dim, 8);
         total_size += 8;
+        dims_length += 8;
 
         dim = get_value_for_dim (fd, &d->local_offset);
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &dim, 8);
         total_size += 8;
+        dims_length += 8;
 
         d = d->next;
     }
@@ -5430,81 +5313,94 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
                                             ,struct adios_var_struct * v
                                             )
 {
-    uint16_t total_size = 0;
-    uint8_t id;
+    uint8_t flag;
+    uint64_t size;
     uint16_t len;
+    uint8_t characteristic_set_count = 0;
+    uint32_t characteristic_set_length = 0;
+    uint64_t index_size = 0;
+
+    uint64_t characteristic_set_start = fd->offset;
+    fd->offset += 1 + 4; // save space for characteristic count/len
+    index_size += 1 + 4;
+    
+    // depending on if it is an array or not, generate a different
+    // additional set of characteristics
+    size = adios_get_type_size (v->type, v->data);
 
     switch (v->type)
     {
-        case adios_string:   // nothing for strings
-            break;
-            
-        default:   // the 12 numeric types
+        case adios_byte:
+        case adios_unsigned_byte:
+        case adios_short:
+        case adios_unsigned_short:
+        case adios_integer:
+        case adios_unsigned_integer:
+        case adios_long:
+        case adios_unsigned_long:
+        case adios_real:
+        case adios_double:
+        case adios_long_double:
+        case adios_complex:
+        case adios_double_complex:
             if (v->dimensions)
             {
-                len = adios_get_type_size (v->type, "");
+                // add a dimensions characteristic
+                characteristic_set_count++;
+                flag = (uint8_t) adios_characteristic_dimensions;
+                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
+                             ,&flag, 1
+                             );
+                index_size += 1;
+                characteristic_set_length += 1;
 
-                id = adios_characteristic_min;
-                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,&id, 1
-                             );
-                total_size += 1;
-                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,&len, 2
-                             );
-                total_size += 2;
-                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,v->min, len
-                             );
-                total_size += len;
-                
-                id = adios_characteristic_max;
-                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,&id, 1
-                             );
-                total_size += 1;
-                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,&len, 2
-                             );
-                total_size += 2;
-                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,v->max, len
-                             );
-                total_size += len;
-                
-                id = adios_characteristic_dimensions;
-                len = adios_calc_var_characteristics_dims_overhead (v);
-                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,&id, 1
-                             );
-                total_size += 1;
-                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,&len, 2
-                             );
-                total_size += 2;
-                total_size += adios_write_var_characteristics_dims_v1 (fd, v);
-            }
-            else
-            {
-                len = adios_get_type_size (v->type, "");
+                len = adios_write_var_characteristics_dims_v1 (fd, v);
+                index_size += len;
+                characteristic_set_length += len;
 
-                id = adios_characteristic_value;
+                // add a min value characteristic
+                characteristic_set_count++;
+                flag = (uint8_t) adios_characteristic_min;
                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,&id, 1
+                             ,&flag, 1
                              );
-                total_size += 1;
+                index_size += 1;
+                characteristic_set_length += 1;
                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,&len, 2
+                             ,v->min, size
                              );
-                total_size += 2;
+                index_size += size;
+                characteristic_set_length += size;
+
+                // add a max value characteristic
+                characteristic_set_count++;
+                flag = (uint8_t) adios_characteristic_max;
                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,v->data, len
+                             ,&flag, 1
                              );
-                total_size += len;
+                index_size += 1;
+                characteristic_set_length += 1;
+                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
+                             ,v->max, size
+                             );
+                index_size += size;
+                characteristic_set_length += size;
             }
+            break;
+
+        case adios_string:
+            break;
     }
+    // characteristics count/size prefix
+    buffer_write (&fd->buffer, &fd->buffer_size, &characteristic_set_start
+                 ,&characteristic_set_count, 1
+                 );
+    buffer_write (&fd->buffer, &fd->buffer_size, &characteristic_set_start
+                 ,&characteristic_set_length, 4
+                 );
 
-    return total_size;
+
+    return index_size;
 }
 
 int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
@@ -5733,14 +5629,9 @@ int adios_write_attribute_v1 (struct adios_file_struct * fd
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &t, 4);
         size += 4;
 
-        if (a->type == adios_string)
-            buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                         ,a->value, t
-                         );
-        else
-            buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                         ,&a->value, t
-                         );
+        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
+                     ,a->value, t
+                     );
         size += t;
     }
 
@@ -5962,7 +5853,7 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                         {
                             if (!adios_multiply_dimensions (&size, var
                                                            ,attr->type
-                                                           ,&attr->value
+                                                           ,attr->value
                                                            )
                                )
                             {

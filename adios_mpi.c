@@ -577,8 +577,8 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                         offsets [0] = fd->base_offset;
                         for (i = 1; i < md->size; i++)
                         {
-                            offsets [i] = offsets [i - 1] + last_offset;
                             last_offset = offsets [i];
+                            offsets [i] = offsets [i - 1] + last_offset;
                         }
                         md->b.pg_index_offset =   offsets [md->size - 1]
                                                 + last_offset;
@@ -1060,7 +1060,7 @@ void adios_mpi_close (struct adios_file_struct * fd
 
                     while (ranks_sent < md->size)
                     {
-                        MPI_Recv (buffer, buffer_size, MPI_BYTE, MPI_ANY_SOURCE
+                        MPI_Recv (buffer, buffer_size, MPI_BYTE, ranks_sent
                                  ,0, md->group_comm, &md->status
                                  );
                         MPI_Get_count (&md->status, MPI_BYTE, &count);
