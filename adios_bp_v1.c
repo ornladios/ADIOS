@@ -272,6 +272,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                           malloc (sizeof (struct adios_index_var_struct_v1));
             (*root)->next = 0;
         }
+        uint8_t flag;
         uint32_t var_entry_length;
         uint16_t len;
         uint64_t characteristics_sets_count;
@@ -301,7 +302,8 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
         strncpy ((*root)->var_path, b->buff + b->offset, len);
         b->offset += len;
 
-        (*root)->type = (enum ADIOS_DATATYPES) *(b->buff + b->offset);
+        flag = *(b->buff + b->offset);
+        (*root)->type = (enum ADIOS_DATATYPES) flag;
         b->offset += 1;
         type_size = adios_get_type_size ((*root)->type, "");
 
@@ -333,8 +335,10 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
             while (item < characteristic_set_count)
             {
+                uint8_t flag;
                 enum ADIOS_CHARACTERISTIC c;
-                c = (enum ADIOS_CHARACTERISTIC) *(b->buff + b->offset);
+                flag = *(b->buff + b->offset);
+                c = (enum ADIOS_CHARACTERISTIC) flag;
                 b->offset += 1;
 
                 switch (c)
@@ -512,6 +516,7 @@ int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b
     root = &pg_header->methods;
     for (i = 0; i < pg_header->methods_count; i++)
     {
+        uint8_t flag;
         if (!*root)
         {
             *root = (struct adios_method_info_struct_v1 *)
@@ -519,7 +524,8 @@ int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b
             (*root)->next = 0;
         }
 
-        (*root)->id = (enum ADIOS_IO_METHOD) *(b->buff + b->offset);
+        flag = *(b->buff + b->offset);
+        (*root)->id = (enum ADIOS_IO_METHOD) flag;
         b->offset += 1;
 
         len = *(uint16_t *) (b->buff + b->offset);
@@ -576,6 +582,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
     uint64_t initial_offset = b->offset;  // save to calc payload size
     uint64_t length_of_var;
     uint16_t len;
+    uint8_t flag;
 
     length_of_var = *(uint64_t *) (b->buff + b->offset);
     b->offset += 8;
@@ -599,7 +606,8 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
     memcpy (var_header->path, b->buff + b->offset, len);
     b->offset += len;
 
-    var_header->type = (enum ADIOS_DATATYPES) *(b->buff + b->offset);
+    flag = *(b->buff + b->offset);
+    var_header->type = (enum ADIOS_DATATYPES) flag;
     b->offset += 1;
 
     var_header->is_dim = (*(b->buff + b->offset) == 'y' ? adios_flag_yes
@@ -808,8 +816,10 @@ int adios_parse_attribute_v1 (struct adios_bp_buffer_struct_v1 * b
     }
     else
     {
+        uint8_t flag;
         attribute->var_id = 0;
-        attribute->type = (enum ADIOS_DATATYPES) *(b->buff + b->offset);
+        flag = *(b->buff + b->offset);
+        attribute->type = (enum ADIOS_DATATYPES) flag;
         b->offset += 1;
         attribute->length = *(uint32_t *) (b->buff + b->offset);
         b->offset += 4;
