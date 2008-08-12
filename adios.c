@@ -7,10 +7,6 @@
 // xml parser
 #include <mxml.h>
 
-// Chen's encoder
-#include "bw-utils.h"
-#include "br-utils.h"
-
 #include "adios.h"
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
