@@ -328,7 +328,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
             characteristic_set_count = (uint8_t) *(b->buff + b->offset);
             b->offset += 1;
 
-            characteristic_set_length = *(uint32_t *) *(b->buff + b->offset);
+            characteristic_set_length = *(uint32_t *) (b->buff + b->offset);
             b->offset += 4;
 
             while (item < characteristic_set_count)
