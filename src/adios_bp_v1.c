@@ -437,9 +437,8 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                         dims_length = *(uint16_t *) (b->buff + b->offset);
                         b->offset += 2;
 
-                       (*root)->entries [j].dims.dims =
-                              (struct adios_index_var_entry_dims_struct_v1 *)
-                                          malloc (dims_length);
+                       (*root)->entries [j].dims.dims = (uint64_t *)
+                                                         malloc (dims_length);
                        memcpy ((*root)->entries [j].dims.dims
                               ,(b->buff + b->offset)
                               ,dims_length
@@ -499,6 +498,7 @@ int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b
     pg_header->time_index_name [len] = '\0';
     memcpy (pg_header->time_index_name, b->buff + b->offset, len);
     b->offset += len;
+
     pg_header->time_index = *(uint32_t *) (b->buff + b->offset);
     b->offset += 4;
 
@@ -547,7 +547,7 @@ int adios_parse_vars_header_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < 10)
     {
-        fprintf (stderr, "adios_parse_var_header_v1 requires a "
+        fprintf (stderr, "adios_parse_vars_header_v1 requires a "
                          "buffer of at least 10 bytes.  "
                          "Only %llu were provided\n"
                 ,b->length - b->offset
@@ -618,6 +618,8 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
     int i;
     uint8_t dims_count;
     uint16_t dims_length;
+    uint8_t characteristics_count;
+    uint32_t characteristics_length;
 
     // validate remaining length
 
@@ -690,6 +692,86 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
         root = &(*root)->next;
     }
 
+    characteristics_count = *(b->buff + b->offset);
+    b->offset += 1;
+    characteristics_length = *(uint32_t *) (b->buff + b->offset);
+    b->offset += 4;
+
+    uint64_t size = adios_get_type_size (var_header->type, "");
+
+    var_header->characteristics.offset = 0;
+    var_header->characteristics.min = 0;
+    var_header->characteristics.max = 0;
+    var_header->characteristics.value = 0;
+    var_header->characteristics.dims.count = 0;
+    var_header->characteristics.dims.dims = 0;
+    for (i = 0; i < characteristics_count; i++)
+    {
+        uint8_t flag;
+        enum ADIOS_CHARACTERISTICS c;
+
+        flag = *(b->buff + b->offset);
+        b->offset += 1;
+        c = (enum ADIOS_CHARACTERISTICS) flag;
+
+        switch (c)
+        {
+            case adios_characteristic_offset:
+                var_header->characteristics.offset = *(uint64_t *)
+                                                        (b->buff + b->offset);
+                b->offset += 8;
+                break;
+
+            case adios_characteristic_min:
+                var_header->characteristics.min = malloc (size);
+                memcpy (var_header->characteristics.min, (b->buff + b->offset)
+                       ,size
+                       );
+                b->offset += size;
+                break;
+
+            case adios_characteristic_max:
+                var_header->characteristics.max = malloc (size);
+                memcpy (var_header->characteristics.max, (b->buff + b->offset)
+                       ,size
+                       );
+                b->offset += size;
+                break;
+
+            case adios_characteristic_dimensions:
+            {
+                uint8_t dim_count;
+                uint16_t dim_length;
+
+                dim_count = *(b->buff + b->offset);
+                b->offset += 1;
+                dim_length = *(uint16_t *) (b->buff + b->offset);
+                b->offset += 2;
+
+                var_header->characteristics.dims.dims = malloc (dim_length);
+                memcpy (var_header->characteristics.dims.dims
+                       ,(b->buff + b->offset), dim_length
+                       );
+                b->offset += dim_length;
+                break;
+            }
+
+            case adios_characteristic_value:
+            {
+                uint16_t val_size = *(uint16_t *) (b->buff + b->offset);
+                b->offset += 2;
+
+                var_header->characteristics.value = malloc (val_size + 1);
+                ((char *) var_header->characteristics.value) [val_size] = '\0';
+                memcpy (var_header->characteristics.value, (b->buff + b->offset)
+                       ,val_size
+                       );
+                b->offset += val_size;
+                break;
+            }
+        }
+    }
+
     var_header->payload_size = length_of_var - (b->offset - initial_offset);
 
     return 0;
@@ -715,22 +797,33 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
 
     if (var_payload)
     {
+#if 0
         memcpy (&var_payload->min, (b->buff + b->offset), size);
         b->offset += size;
 
         memcpy (&var_payload->max, (b->buff + b->offset), size);
         b->offset += size;
+#endif
 
         if (var_payload->payload)
         {
             memcpy (var_payload->payload, (b->buff + b->offset)
+#if 0
                    ,var_header->payload_size - (2 * size)
+#endif
+                   ,var_header->payload_size
                    );
+#if 0
             b->offset += var_header->payload_size - (2 * size);
+#endif
+            b->offset += var_header->payload_size;
         }
         else
         {
+#if 0
             b->offset += var_header->payload_size - (2 * size);
+#endif
+            b->offset += var_header->payload_size;
         }
     }
     else

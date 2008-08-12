@@ -264,11 +264,11 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data)
             break;
 
         case adios_short:
-            sprintf (s, "%hd", *(((int8_t *) data)));
+            sprintf (s, "%hd", *(((int16_t *) data)));
             break;
 
         case adios_unsigned_short:
-            sprintf (s, "%uh", *(((int8_t *) data)));
+            sprintf (s, "%uh", *(((uint16_t *) data)));
             break;
 
         case adios_integer:
@@ -448,7 +448,7 @@ void print_process_group_header (uint64_t num
            ,(pg_header->host_language_fortran == adios_flag_yes ? 'Y' : 'N')
            );
     printf ("\tCoordination Var Member ID: %d\n", pg_header->coord_var_id);
-    printf ("\tTime Name: %d\n", pg_header->time_index_name);
+    printf ("\tTime Name: %s\n", pg_header->time_index_name);
     printf ("\tTime: %d\n", pg_header->time_index);
     printf ("\tMethods used in output: %d\n", pg_header->methods_count);
     m = pg_header->methods;
@@ -485,11 +485,11 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
             printf ("\t\t\tDim %d l:g:o: ", i++);
             if (d->dimension.var_id == 0)
             {
-                printf ("R(%llu):", d->dimension.rank);
+                printf ("R(%llu)", d->dimension.rank);
             }
             else
             {
-                printf ("V(%hu):", d->dimension.var_id);
+                printf ("V(%hu)", d->dimension.var_id);
             }
 
             if (   d->global_dimension.var_id != 0
@@ -498,11 +498,11 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
             {
                 if (d->global_dimension.var_id == 0)
                 {
-                    printf ("R(%llu):", d->global_dimension.rank);
+                    printf (":R(%llu):", d->global_dimension.rank);
                 }
                 else
                 {
-                    printf ("V(%hu):", d->global_dimension.var_id);
+                    printf (":V(%hu):", d->global_dimension.var_id);
                 }
                 if (d->local_offset.var_id == 0)
                 {
@@ -513,14 +513,66 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
                     printf ("V(%hu)\n", d->local_offset.var_id);
                 }
             }
+            printf ("\n");
 
             d = d->next;
 	}
     }
+    printf ("\t\tCharacteristics:\n");
+    printf ("\t\t\tOffset(%llu)", var_header->characteristics.offset);
+    if (var_header->characteristics.min)
+    {
+        printf ("\t\tMin(%s)", value_to_string (var_header->type
+                                          ,var_header->characteristics.min
+                                          )
+               );
+    }
+    if (var_header->characteristics.max)
+    {
+        printf ("\t\tMax(%s)", value_to_string (var_header->type
+                                          ,var_header->characteristics.max
+                                          )
+               );
+    }
+    if (var_header->characteristics.value)
+    {
+        printf ("\t\tValue(%s)", value_to_string (var_header->type
+                                          ,var_header->characteristics.value
+                                          )
+               );
+    }
+    if (var_header->characteristics.dims.count != 0)
+    {
+        int j;
+
+        printf ("\t\tDims (l:g:o): (");
+        for (j = 0; j < var_header->characteristics.dims.count; j++)
+        {
+            if (j != 0)
+                printf (",");
+            if (var_header->characteristics.dims.dims [j * 3 + 1] != 0)
+            {
+                printf ("%llu:%llu:%llu"
+                       ,var_header->characteristics.dims.dims [j * 3 + 0]
+                       ,var_header->characteristics.dims.dims [j * 3 + 1]
+                       ,var_header->characteristics.dims.dims [j * 3 + 2]
+                       );
+            }
+            else
+            {
+                printf ("%llu"
+                       ,var_header->characteristics.dims.dims [j * 3 + 0]
+                       );
+            }
+        }
+        printf (")");
+    }
+    printf ("\n");
 }
 
 #if 0
 void adios_var_element_count (int rank
+
                              ,struct adios_bp_dimension_struct * dims
                              ,uint64_t * use_count
                              ,uint64_t * total_count
@@ -678,15 +730,6 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
                        ,struct var_dim * var_dims
                        )
 {
-    printf ("\t\tMin: %s\n", value_to_string (var_header->type
-                                             ,var_payload->min
-                                             )
-           );
-    printf ("\t\tMax: %s\n", value_to_string (var_header->type
-                                             ,var_payload->max
-                                             )
-           );
-
     if (   dump->do_dump
         && var_header->dims
         && !strcasecmp (dump->dump_var, var_header->name)
