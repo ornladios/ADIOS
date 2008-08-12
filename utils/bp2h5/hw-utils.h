@@ -3,7 +3,6 @@
 
 #include "stdint.h"
 #include "hdf5.h"
-#include "binpack-general.h"
 
 enum lang_convention {
     USE_FORTRAN = 1,

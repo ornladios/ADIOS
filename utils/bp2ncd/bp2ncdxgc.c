@@ -3,8 +3,6 @@
 #include <string.h>
 #include "adios_types.h"
 #include "netcdf.h"
-#include "binpack-general.h"
-#include "br-utils.h"
 #define ERR(e){if(e){printf("Error:%s\n",nc_strerror(e));return 2;}}
 int makencd(char *ifname, char *ofname,char *destname);
 int ncd_sizedset(int ncid,char *path,char *name,size_t *totalsize,\

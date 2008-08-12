@@ -2,7 +2,6 @@
 #include <string.h>
 #include <math.h>
 #include "hw-utils.h"
-#include "br-utils.h"
 #define  MAX_RANK 10 * 5
 #define STRLEN 1000 
 
@@ -129,11 +128,11 @@ int hw_makeh5 (char * filename)
     return 0;
 }
 
+#if 0
 void hw_dset (hid_t root_id,
              struct adios_bp_element_struct* element
              )
 {
-#if 0
     H5Eset_auto (NULL,NULL);
     char ** grp_name;
     void *data;
@@ -212,8 +211,8 @@ void hw_dset (hid_t root_id,
         free (local_h5dims);
     }
     hw_free2D (grp_name, level);
-#endif
 }
+#endif
 /*/////////////////////////////
 Obsolete
 ///////////////////////////////

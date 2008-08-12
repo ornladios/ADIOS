@@ -11,7 +11,6 @@
 // dart
 #include <sys/uio.h>
 
-#include "binpack-general.h"
 #include "adios.h"
 #include "adios_transport_hooks.h"
 #include "adios_internals.h"

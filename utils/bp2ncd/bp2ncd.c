@@ -23,16 +23,6 @@ struct var_dim
     int      nc_dimid;
 };
 
-void print_process_group_header (uint64_t num
-                      ,struct adios_process_group_header_struct_v1 * pg_header
-                      );
-void print_vars_header (struct adios_vars_header_struct_v1 * vars_header);
-void print_var_payload (struct adios_var_header_struct_v1 * var_header
-                       ,struct adios_var_payload_struct_v1 * var_payload
-                       ,struct dump_struct * dump
-                       ,int var_dims_count
-                       ,struct var_dim * var_dims
-                       );
 void ncd_addtimedim( int ncid, int timestep_id)
 {
     static int time_dimid; 
@@ -447,20 +437,14 @@ int main (int argc, char ** argv)
     struct adios_index_process_group_struct_v1 * pg = 0;
     struct adios_index_var_struct_v1 * vars_root = 0;
 
-//    printf (DIVIDER);
-//    printf ("Process Groups Index:\n");
     adios_posix_read_index_offsets (b);
     adios_parse_index_offsets_v1 (b);
 
     adios_posix_read_process_group_index (b);
     adios_parse_process_group_index_v1 (b, &pg_root);
-//    print_process_group_index (pg_root);
 
-//    printf (DIVIDER);
-//    printf ("Vars Index:\n");
     adios_posix_read_vars_index (b);
     adios_parse_vars_index_v1 (b, &vars_root);
-//    print_vars_index (vars_root);
 
     uint64_t element_num = 1;
     pg = pg_root;
@@ -494,12 +478,12 @@ int main (int argc, char ** argv)
 
         adios_posix_read_process_group (b);
         adios_parse_process_group_header_v1 (b, &pg_header);
-//        print_process_group_header (element_num++, &pg_header);
-        printf ("\tTimestep Member ID: %d\n", pg_header.timestep_id);
-        if ( pg_header.timestep_id >= 0)
-             ncd_addtimedim(ncid,pg_header.timestep_id);
+        printf ("\tTime Index Name: %d\n", pg_header.time_index_name);
+#if 0
+        if ( pg_header.time_index >= 0)
+             ncd_addtimedim(ncid,pg_header.time_index);
+#endif
         adios_parse_vars_header_v1 (b, &vars_header);
-//      print_vars_header (&vars_header);
 
         dump.host_language_fortran = pg_header.host_language_fortran;
         int i,j;
@@ -509,7 +493,6 @@ int main (int argc, char ** argv)
                copy_buffer(b_0, b);
             var_payload.payload = 0;
             adios_parse_var_data_header_v1 (b, &var_header);
-            //print_var_header (&var_header);
 
             if (   var_header.is_dim == adios_flag_yes
                 ||    dump.do_dump
@@ -551,13 +534,6 @@ int main (int argc, char ** argv)
                 ncd_dataset(ncid,&var_header, &var_payload,var_dims,var_dims_count);
             }
 
-            if (dump.do_dump)
-            {
-                // make sure the buffer is big enough or send in null
-                print_var_payload (&var_header, &var_payload, &dump
-                                  ,var_dims_count, var_dims
-                                  );
-            }
             if (var_payload.payload)
             {
                 free (var_payload.payload);
@@ -567,16 +543,12 @@ int main (int argc, char ** argv)
         }
 
         adios_parse_attributes_header_v1 (b, &attrs_header);
-        //print_attrs_header (&attrs_header);
 
         for (i = 0; i < attrs_header.count; i++)
         {
 
             adios_parse_attribute_v1 (b, &attribute);
             ncd_attr_str_ds (ncid, &attribute, b_0, vars_header.count, var_dims, var_dims_count);
-
-//            print_attribute (&attribute);
-//            printf ("\n");
         }
 
         var_dims_count = 0;
@@ -663,356 +635,4 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t e
     }
 
     return s;
-}
-
-        
-void print_process_group_header (uint64_t num
-                      ,struct adios_process_group_header_struct_v1 * pg_header
-                      )
-{
-    int i;
-    struct adios_method_info_struct_v1 * m;
-
-    printf ("Process Group: %llu\n", num);
-    printf ("\tGroup Name: %s\n", pg_header->name);
-    printf ("\tHost Language Fortran?: %c\n"
-           ,(pg_header->host_language_fortran == adios_flag_yes ? 'Y' : 'N')
-           );
-    printf ("\tCoordination Comm Member ID: %d\n", pg_header->coord_comm_id);
-    printf ("\tCoordination Var Member ID: %d\n", pg_header->coord_var_id);
-    printf ("\tTimestep Member ID: %d\n", pg_header->timestep_id);
-    printf ("\tMethods used in output: %d\n", pg_header->methods_count);
-    m = pg_header->methods;
-    while (m)
-    {
-        printf ("\t\tMethod ID: %d\n", m->id);
-        printf ("\t\tMethod Parameters: %s\n", m->parameters);
- 
-        m = m->next;
-    }
-}
-
-void print_vars_header (struct adios_vars_header_struct_v1 * vars_header)
-{
-    printf ("\tVars Count: %u\n", vars_header->count);
-}
-
-void print_var_header (struct adios_var_header_struct_v1 * var_header)
-{
-    int i = 0;
-
-    printf ("\t\tVar Name (ID): %s (%d)\n", var_header->name, var_header->id);
-    printf ("\t\tVar Path: %s\n", var_header->path);
-    printf ("\t\tDatatype: %s\n", adios_type_to_string (var_header->type));
-    printf ("\t\tIs Dimension: %c\n"
-           ,(var_header->is_dim == adios_flag_yes ? 'Y' : 'N')
-           );
-    if (var_header->dims)
-    {
-        struct adios_dimension_struct_v1 * d = var_header->dims;
-        printf ("\t\tDimensions:\n");
-        while (d)
-        {
-            printf ("\t\t\tDim %d l:g:o: ", i++);
-            if (d->dimension.var_id == 0)
-            {
-                printf ("R(%llu):", d->dimension.rank);
-            }
-            else
-            {
-                printf ("V(%hu):", d->dimension.var_id);
-            }
-            if (d->global_dimension.var_id == 0)
-            {
-                printf ("R(%llu):", d->global_dimension.rank);
-            }
-            else
-            {
-                printf ("V(%hu):", d->global_dimension.var_id);
-            }
-            if (d->local_offset.var_id == 0)
-            {
-                printf ("R(%llu)\n", d->local_offset.rank);
-            }
-            else
-            {
-                printf ("V(%hu)\n", d->local_offset.var_id);
-            }
-
-            d = d->next;
-	}
-    }
-}
-
-    // for riting out bits in a global way, we would need this piece
-static
-int increment_dimension (enum ADIOS_FLAG host_language_fortran
-                        ,uint64_t element
-                        ,int ranks
-                        ,uint64_t * dims
-                        ,uint64_t * position
-                        )
-{
-    int i;
-    int done = 0;
-    
-    if (element == 0)
-    {
-        for (i = 0; i < ranks; i++)
-        {
-            position [i] = 0;
-        }   
-        done = 1;
-    }   
-    else  // increment our position
-    {
-        if (host_language_fortran == adios_flag_yes)
-        {
-            i = 0;
-            while (!done && i < ranks)
-            {
-                // if less than max, just increment this dim
-                if (position [i] < dims [i])
-                {
-                    position [i]++;
-                    if (i == ranks - 1 && position [i] != dims [i])
-                        done = 1;
-                }
-                else  // reset dim and move to next to increment
-                {
-                    position [i] = 0;
-                    i++;
-                }
-            }
-        }
-        else
-        {
-            i = ranks - 1;
-            while (!done && i >= 0)
-            {
-                // if less than max, just increment this dim
-                if (position [i] < dims [i])
-                {
-                    position [i]++;
-                    if (i == 0 && position [i] != dims [i])
-                        done = 1;
-                }
-                else  // reset dim and move to next to increment
-                {
-                    position [i] = 0;
-                    i--;
-                }
-            }
-        }
-    }
-
-    return done;
-
-#if 0
-    // for riting out bits in a global way, we would need this piece
-    // check against bounds
-    for (i = 0; i < rank; i++)
-    {
-        if (   position [i] < dims [i].use_loer_bound
-            || position [i] > dims [i].use_upper_bound
-           )
-        {
-            return 0;
-        }
-        else
-        {
-            // (pos - use loer) mod stride == 0 == use this element
-            if (((position [i] - dims [i].use_loer_bound) % dims [i].stride) != 0)
-                return 0;
-        }
-    }
-
-    return 1;  // e only get here if we are within all bounds
-#endif
-}
-
-void print_var_payload (struct adios_var_header_struct_v1 * var_header
-                       ,struct adios_var_payload_struct_v1 * var_payload
-                       ,struct dump_struct * dump
-                       ,int var_dims_count
-                       ,struct var_dim * var_dims
-                       )
-{
-    if (dump->do_dump && !strcasecmp (dump->dump_var, var_header->name))
-    {
-        printf ("\t\tMin: %s\n", value_to_string (var_header->type
-                                                 ,var_payload->min, 0
-                                                 )
-               );
-        printf ("\t\tMax: %s\n", value_to_string (var_header->type
-                                                 ,var_payload->max, 0
-                                                 )
-               );
-
-        if (var_header->dims)
-        {
-            uint64_t element = 0;
-            int ranks = 0;
-            struct adios_dimension_struct_v1 * d = var_header->dims;
-            int c = 0;
-            uint64_t * position;
-            uint64_t * dims;
-            int i = 0;
-
-            while (d)
-            {
-                ranks++;
-                d = d->next;
-            }
-
-            position = (uint64_t *) malloc (8 * ranks);
-            memset (position, 0, 8 * ranks);
-            dims = (uint64_t *) malloc (8 * ranks);
-            memset (dims, 0, 8 * ranks);
-
-            d = var_header->dims;
-            uint64_t * dims_t = dims;
-
-            while (d)
-            {
-                if (d->dimension.var_id != 0)
-                {
-                    for (i = 0; i < var_dims_count; i++)
-                    {
-                        if (var_dims [i].id == d->dimension.var_id)
-                        {
-                            *dims_t = var_dims [i].rank;
-                        }
-                    }
-                }
-                else
-                {
-                    *dims_t = d->dimension.rank;
-                }
-
-                d = d->next;
-                dims_t++;
-            }
-
-            while (increment_dimension (dump->host_language_fortran
-                                       ,element
-                                       ,ranks
-                                       ,dims
-                                       ,position
-                                       )
-                  )
-            {
-                if (c > 65)
-                {
-                    printf ("\n");
-                    c = 0;
-                }
-
-                c += printf ("[");
-                for (i = 0; i < ranks; i++)
-                {
-                    if (i > 0)
-                        c += printf (",%llu", position [i]);
-                    else
-                        c += printf ("%llu", position [i]);
-                }
-                c += printf ("] ");
-                c += printf ("%s ", value_to_string (var_header->type
-                                               ,var_payload->payload
-                                               ,element
-                                               )
-                       );
-
-                element++;
-            }
-            printf ("\n");
-        }
-        else
-        {
-            printf ("%s ", value_to_string (var_header->type
-                                           ,var_payload->payload
-                                           ,0
-                                           )
-                   );
-        }
-    }
-}
-
-void print_attrs_header (
-                      struct adios_attributes_header_struct_v1 * attrs_header
-                      )
-{
-    printf ("\tAttributes Count: %u\n", attrs_header->count);
-}
-
-void print_attribute (struct adios_attribute_struct_v1 * attribute)
-{
-    printf ("\t\tAttribute Name (ID): %s (%d)\n"
-           ,attribute->name, attribute->id
-           );
-    printf ("\t\tAttribute Path: %s\n", attribute->path);
-    if (attribute->is_var == adios_flag_yes)
-    {
-        printf ("\t\tAssociated Var ID: %d\n", attribute->var_id);
-    }
-    else
-    {
-        printf ("\t\tDatatype: %s\n", adios_type_to_string (attribute->type));
-        printf ("\t\tValue: %s\n", value_to_string (attribute->type
-                                                   ,attribute->value, 0
-                                                   )
-               );
-    }
-}
-
-void print_process_group_index (
-                         struct adios_index_process_group_struct_v1 * pg_root
-                         )
-{
-    while (pg_root)
-    {
-        printf ("Group: %s\n", pg_root->group_name);
-        printf ("\tProcess ID: %d\n", pg_root->process_id);
-        printf ("\tTimestep: %d\n", pg_root->timestep);
-        printf ("\tOffset in File: %llu\n", pg_root->offset_in_file);
-
-        pg_root = pg_root->next;
-    }
-}
-
-void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
-{
-    while (vars_root)
-    {
-        if (!strcmp (vars_root->var_path, "/"))
-        {
-            printf ("Var (Group): /%s (%s)\n", vars_root->var_name
-                   ,vars_root->group_name
-                   );
-        }
-        else
-	{
-            printf ("Var (Group): %s/%s (%s)\n", vars_root->var_path
-                   ,vars_root->var_name, vars_root->group_name
-                   );
-	}
-        printf ("\tDatatype: %s\n", adios_type_to_string (vars_root->type));
-        printf ("\tVars Entries: %llu\n", vars_root->entries_count);
-        uint64_t i;
-        printf ("\t\tOffset\t\tMin\t\tMax\n");
-        for (i = 0; i < vars_root->entries_count; i++)
-        {
-            printf ("\t\t%s\t\t", value_to_string (adios_long
-                                  ,(void *) (vars_root->entries [i].offset), 0)
-                                  );
-            printf ("%s\t\t", value_to_string (vars_root->type
-                                           ,vars_root->entries [i].min, 0)
-                                           );
-            printf ("%s\n", value_to_string (vars_root->type
-                                           ,vars_root->entries [i].max, 0)
-                                           );
-        }
-
-        vars_root = vars_root->next;
-    }
 }

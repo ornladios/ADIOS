@@ -8,9 +8,9 @@
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
-#include "binpack-utils.h"
 #include "hw-utils.h"
 
+#define NUM_GP 24
 #define  MAX_RANK 10 * 5
 #define STRLEN 1000 
 
@@ -1033,7 +1033,7 @@ void hw_attr_num_ds(hid_t root_id, char *dirstr, char *aname, void *avalue, enum
         if(dataset_id==-1)
         {
            printf("hit group att!%d\n",type);
-           if(type==bp_string)
+           if(type==adios_string)
               hw_attr_str_gp (root_id, dirstr, aname, avalue);
            else
               hw_attr_num_gp (root_id, dirstr, aname, avalue,type);

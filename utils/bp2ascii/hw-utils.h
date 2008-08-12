@@ -1,5 +1,4 @@
 #include "hdf5.h"
-#include "binpack-general.h"
 
 int hw_makeh5(char *filename);
 void hw_string_attr( hid_t parent_id, const char *name,const char *value);
