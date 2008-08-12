@@ -184,6 +184,7 @@ typedef void (* ADIOS_GET_WRITE_BUFFER_FN) (struct adios_file_struct * fd
 typedef void (* ADIOS_READ_FN) (struct adios_file_struct * fd
                                ,struct adios_var_struct * v
                                ,void * buffer
+                               ,uint64_t buffer_size
                                ,struct adios_method_struct * method
                                );
 typedef void (* ADIOS_CLOSE_FN) (struct adios_file_struct * fd

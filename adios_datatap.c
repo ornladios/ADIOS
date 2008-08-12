@@ -704,6 +704,7 @@ extern void adios_datatap_get_write_buffer (struct adios_file_struct * fd,
 void adios_datatap_read (struct adios_file_struct * fd,
 			 struct adios_var_struct * f,
 			 void * buffer,
+                         uint64_t buffer_size,
 			 struct adios_method_struct *method)
 {
 

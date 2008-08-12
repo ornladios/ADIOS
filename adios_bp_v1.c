@@ -780,6 +780,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
 int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
                              ,struct adios_var_header_struct_v1 * var_header
                              ,struct adios_var_payload_struct_v1 * var_payload
+                             ,uint64_t payload_buffer_size
                              )
 {
     if (b->length - b->offset < var_header->payload_size)
@@ -790,6 +791,22 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
                 ,var_header->payload_size, b->length - b->offset
                 );
 
+        b->offset += var_header->payload_size;
+
+        return 1;
+    }
+    if (   payload_buffer_size < var_header->payload_size
+        && var_payload && var_payload->payload
+       )
+    {
+        fprintf (stderr, "adios_parse_var_data_payload_v1 requires a "
+                         "buffer of at least %llu bytes.  "
+                         "Only %llu were provided\n"
+                ,var_header->payload_size, payload_buffer_size
+                );
+
+        b->offset += var_header->payload_size;
+
         return 1;
     }
 
@@ -797,32 +814,15 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
 
     if (var_payload)
     {
-#if 0
-        memcpy (&var_payload->min, (b->buff + b->offset), size);
-        b->offset += size;
-
-        memcpy (&var_payload->max, (b->buff + b->offset), size);
-        b->offset += size;
-#endif
-
         if (var_payload->payload)
         {
             memcpy (var_payload->payload, (b->buff + b->offset)
-#if 0
-                   ,var_header->payload_size - (2 * size)
-#endif
                    ,var_header->payload_size
                    );
-#if 0
-            b->offset += var_header->payload_size - (2 * size);
-#endif
             b->offset += var_header->payload_size;
         }
         else
         {
-#if 0
-            b->offset += var_header->payload_size - (2 * size);
-#endif
             b->offset += var_header->payload_size;
         }
     }

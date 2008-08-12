@@ -788,10 +788,12 @@ void adios_mpi_get_write_buffer (struct adios_file_struct * fd
 
 void adios_mpi_read (struct adios_file_struct * fd
                     ,struct adios_var_struct * v, void * buffer
+                    ,uint64_t buffer_size
                     ,struct adios_method_struct * method
                     )
 {
     v->data = buffer;
+    v->data_size = buffer_size;
 }
 
 static void adios_mpi_do_read (struct adios_file_struct * fd
@@ -863,6 +865,7 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
                     var_payload.payload = v1->data;
                     adios_parse_var_data_payload_v1 (&md->b, &var_header
                                                     ,&var_payload
+                                                    ,v1->data_size
                                                     );
                 }
                 else
@@ -870,7 +873,9 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
                     printf ("MPI read: skipping name: %s path: %s\n"
                            ,var_header.name, var_header.path
                            );
-                    adios_parse_var_data_payload_v1 (&md->b, &var_header, NULL);
+                    adios_parse_var_data_payload_v1 (&md->b, &var_header
+                                                    ,NULL, 0
+                                                    );
                 }
             }
 

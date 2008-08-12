@@ -522,7 +522,7 @@ static int common_adios_read (long long fd_p, const char * name, void * buffer
                )
             {
                 adios_transports [m->method->m].adios_read_fn
-                                     (fd, v, buffer, m->method);
+                                     (fd, v, buffer, buffer_size, m->method);
                 m = 0;
             }
             else
