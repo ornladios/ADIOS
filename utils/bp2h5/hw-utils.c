@@ -264,11 +264,13 @@ int hw_makeh5 (char * fnamein, char * fnameout)
             //if (var_header.is_dim == adios_flag_yes)
             //{
                 var_payload.payload = malloc (var_header.payload_size);
-                adios_parse_var_data_payload_v1 (b, &var_header, &var_payload);
+                adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
+                                                ,var_header.payload_size
+                                                );
             //}
             //else
             //{
-            //    adios_parse_var_data_payload_v1 (b, &var_header, NULL);
+            //    adios_parse_var_data_payload_v1 (b, &var_header, NULL, 0);
             //}
 
             if (var_header.is_dim == adios_flag_yes)

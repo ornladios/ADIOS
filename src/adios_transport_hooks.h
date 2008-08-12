@@ -29,6 +29,7 @@ void adios_##a##_get_write_buffer (struct adios_file_struct * fd \
 void adios_##a##_read (struct adios_file_struct * fd \
                       ,struct adios_var_struct * v \
                       ,void * buffer \
+                      ,uint64_t buffer_size \
                       ,struct adios_method_struct * method \
                       ) {} \
 void adios_##a##_close (struct adios_file_struct * fd \
@@ -64,6 +65,7 @@ void adios_##a##_get_write_buffer (struct adios_file_struct * fd \
 void adios_##a##_read (struct adios_file_struct * fd \
                       ,struct adios_var_struct * v \
                       ,void * buffer \
+                      ,uint64_t buffer_size \
                       ,struct adios_method_struct * method \
                       ); \
 void adios_##a##_close (struct adios_file_struct * fd \

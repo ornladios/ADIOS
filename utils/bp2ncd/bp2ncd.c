@@ -95,11 +95,11 @@ int ncd_attr_str_ds (int ncid
                  }
                  type = var_header.type;
                  var_payload.payload = malloc (var_header.payload_size);
-                 adios_parse_var_data_payload_v1 (ptr_buffer, &var_header, &var_payload);
+                 adios_parse_var_data_payload_v1 (ptr_buffer, &var_header, &var_payload, var_header.payload_size);
                  value = var_payload.payload;
               }
               else
-                  adios_parse_var_data_payload_v1 (ptr_buffer, &var_header, NULL);
+                  adios_parse_var_data_payload_v1 (ptr_buffer, &var_header, NULL, 0);
 
          }
     }
@@ -500,12 +500,16 @@ int main (int argc, char ** argv)
                )
             {
                 var_payload.payload = malloc (var_header.payload_size);
-                adios_parse_var_data_payload_v1 (b, &var_header, &var_payload);
+                adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
+                                                ,var_header.payload_size
+                                                );
             }
             else
             {
                 var_payload.payload = malloc (var_header.payload_size);
-                adios_parse_var_data_payload_v1 (b, &var_header, &var_payload);
+                adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
+                                                ,var_header.payload_size
+                                                );
                 ncd_dataset(ncid,&var_header, &var_payload,var_dims,var_dims_count);
             }
 

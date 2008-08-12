@@ -279,10 +279,12 @@ void adios_mpi_cio_get_write_buffer (struct adios_file_struct * fd
 
 void adios_mpi_cio_read (struct adios_file_struct * fd
                     ,struct adios_var_struct * v, void * buffer
+                    ,uint64_t buffer_size
                     ,struct adios_method_struct * method
                     )
 {
     v->data = buffer;
+    v->data_size = buffer_size;
 }
 
 static void adios_mpi_cio_do_read (struct adios_file_struct * fd

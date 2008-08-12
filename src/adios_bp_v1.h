@@ -190,6 +190,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
 int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
                               ,struct adios_var_header_struct_v1 * var_header
                               ,struct adios_var_payload_struct_v1 * var_payload
+                              ,uint64_t payload_size
                               );
 
 int adios_parse_attributes_header_v1 (struct adios_bp_buffer_struct_v1 * b
