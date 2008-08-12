@@ -949,38 +949,49 @@ void adios_mpi_close (struct adios_file_struct * fd
 
                     while (ranks_sent < md->size)
                     {
+                        MPI_Probe (ranks_sent, MPI_ANY_TAG, md->group_comm
+                                  ,&md->status
+                                  );
+                        MPI_Get_count (&md->status, MPI_BYTE, &count);
+                        if (buffer_size < count)
+                        {
+                            buffer_size = count;
+                            buffer = realloc (buffer, buffer_size);
+                            if (!buffer)
+                            {
+                                fprintf (stderr, "cannot allocate memory for "
+                                                 "index: %llu\n"
+                                        ,buffer_size
+                                        );
+                            }
+                        }
+
                         MPI_Recv (buffer, buffer_size, MPI_BYTE, ranks_sent
                                  ,0, md->group_comm, &md->status
                                  );
-                        MPI_Get_count (&md->status, MPI_BYTE, &count);
-                        if (buffer_size <= count)
-                        {
-                            fprintf (stderr, "100k buffer size too small.\n");
-                        }
-                        else
-                        {
-                            char * buffer_save = md->b.buff;
-                            uint64_t buffer_size_save = md->b.length;
-                            uint64_t offset_save = md->b.offset;
-    
-                            md->b.buff = buffer;
-                            md->b.length = count;
-                            md->b.offset = 0;
-    
-                            adios_parse_process_group_index_v1 (&md->b
-                                                               ,&new_pg_root
-                                                               );
-                            adios_parse_vars_index_v1 (&md->b, &new_vars_root);
-                            adios_merge_index_v1 (&md->old_pg_root
-                                                 ,&md->old_vars_root
-                                                 ,new_pg_root, new_vars_root
-                                                 );
-                            new_pg_root = 0;
-                            new_vars_root = 0;
-                            md->b.buff = buffer_save;
-                            md->b.length = buffer_size_save;
-                            md->b.offset = offset_save;
-                        }
+
+                        char * buffer_save = md->b.buff;
+                        uint64_t buffer_size_save = md->b.length;
+                        uint64_t offset_save = md->b.offset;
+  
+                        md->b.buff = buffer;
+                        md->b.length = count;
+                        md->b.offset = 0;
+   
+                        adios_parse_process_group_index_v1 (&md->b
+                                                           ,&new_pg_root
+                                                           );
+                        adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_merge_index_v1 (&md->old_pg_root
+                                             ,&md->old_vars_root
+                                             ,new_pg_root, new_vars_root
+                                             );
+                        new_pg_root = 0;
+                        new_vars_root = 0;
+                        md->b.buff = buffer_save;
+                        md->b.length = buffer_size_save;
+                        md->b.offset = offset_save;
+
                         ranks_sent++;
 		    }
                 }
@@ -1060,38 +1071,49 @@ void adios_mpi_close (struct adios_file_struct * fd
 
                     while (ranks_sent < md->size)
                     {
+                        MPI_Probe (ranks_sent, MPI_ANY_TAG, md->group_comm
+                                  ,&md->status
+                                  );
+                        MPI_Get_count (&md->status, MPI_BYTE, &count);
+                        if (buffer_size < count)
+                        {
+                            buffer_size = count;
+                            buffer = realloc (buffer, buffer_size);
+                            if (!buffer)
+                            {
+                                fprintf (stderr, "cannot allocate memory for "
+                                                 "index: %llu\n"
+                                        ,buffer_size
+                                        );
+                            }
+                        }
+
                         MPI_Recv (buffer, buffer_size, MPI_BYTE, ranks_sent
                                  ,0, md->group_comm, &md->status
                                  );
-                        MPI_Get_count (&md->status, MPI_BYTE, &count);
-                        if (buffer_size <= count)
-                        {
-                            fprintf (stderr, "100k buffer size too small.\n");
-                        }
-                        else
-                        {
-                            char * buffer_save = md->b.buff;
-                            uint64_t buffer_size_save = md->b.length;
-                            uint64_t offset_save = md->b.offset;
-    
-                            md->b.buff = buffer;
-                            md->b.length = count;
-                            md->b.offset = 0;
-    
-                            adios_parse_process_group_index_v1 (&md->b
-                                                               ,&new_pg_root
-                                                               );
-                            adios_parse_vars_index_v1 (&md->b, &new_vars_root);
-                            adios_merge_index_v1 (&md->old_pg_root
-                                                 ,&md->old_vars_root
-                                                 ,new_pg_root, new_vars_root
-                                                 );
-                            new_pg_root = 0;
-                            new_vars_root = 0;
-                            md->b.buff = buffer_save;
-                            md->b.length = buffer_size_save;
-                            md->b.offset = offset_save;
-                        }
+
+                        char * buffer_save = md->b.buff;
+                        uint64_t buffer_size_save = md->b.length;
+                        uint64_t offset_save = md->b.offset;
+
+                        md->b.buff = buffer;
+                        md->b.length = count;
+                        md->b.offset = 0;
+
+                        adios_parse_process_group_index_v1 (&md->b
+                                                           ,&new_pg_root
+                                                           );
+                        adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_merge_index_v1 (&md->old_pg_root
+                                             ,&md->old_vars_root
+                                             ,new_pg_root, new_vars_root
+                                             );
+                        new_pg_root = 0;
+                        new_vars_root = 0;
+                        md->b.buff = buffer_save;
+                        md->b.length = buffer_size_save;
+                        md->b.offset = offset_save;
+
                         ranks_sent++;
 		    }
                 }
