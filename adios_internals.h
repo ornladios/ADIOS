@@ -106,7 +106,8 @@ struct adios_group_struct
     struct adios_attribute_struct * attributes;
     const char * group_comm;
     const char * group_by;
-    const char * time_index;
+    const char * time_index_name;
+    uint32_t time_index;
     uint32_t process_id;
 
     struct adios_method_list_struct * methods;
@@ -382,8 +383,6 @@ void adios_append_attribute (struct adios_attribute_struct ** root
                             ,uint16_t id
                             );
 
-void * adios_dupe_data (struct adios_var_struct * v, void * data);
-
 int adios_common_declare_group (long long * id, const char * name
                                ,enum ADIOS_FLAG host_language_fortran
                                ,const char * coordination_comm
@@ -426,9 +425,9 @@ uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
 int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
                                           ,struct adios_var_struct * var
                                           );
-int adios_write_var_characteristics_v1 (struct adios_file_struct * fd
-                                       ,struct adios_var_struct * var
-                                       );
+uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
+                                            ,struct adios_var_struct * var
+                                            );
 int adios_write_var_payload_v1 (struct adios_file_struct * fd
                                ,struct adios_var_struct * var
                                );
