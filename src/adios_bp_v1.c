@@ -336,9 +336,9 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
             while (item < characteristic_set_count)
             {
                 uint8_t flag;
-                enum ADIOS_CHARACTERISTIC c;
+                enum ADIOS_CHARACTERISTICS c;
                 flag = *(b->buff + b->offset);
-                c = (enum ADIOS_CHARACTERISTIC) flag;
+                c = (enum ADIOS_CHARACTERISTICS) flag;
                 b->offset += 1;
 
                 switch (c)
