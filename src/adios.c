@@ -1013,10 +1013,10 @@ void adios_select_method_ (int * priority, const char * method
     char * buf3 = 0;
     char * buf4 = 0;
 
-    adios_extract_string (buf1, method, method_size);
-    adios_extract_string (buf2, parameters, parameters_size);
-    adios_extract_string (buf3, group, group_size);
-    adios_extract_string (buf4, base_path, base_path_size);
+    adios_extract_string (&buf1, method, method_size);
+    adios_extract_string (&buf2, parameters, parameters_size);
+    adios_extract_string (&buf3, group, group_size);
+    adios_extract_string (&buf4, base_path, base_path_size);
 
     *err = adios_common_select_method (*priority, buf1, buf2, buf3, buf4
                                       ,*iters
