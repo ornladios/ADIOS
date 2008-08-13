@@ -1,4 +1,4 @@
-INCLUDES=-I$(top_srcdir)
+INCLUDES=-I$(top_srcdir) 
 
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES=AUTO
@@ -11,6 +11,7 @@ libadios_a_SOURCES = adios.c \
                      adios_transport_hooks.c \
                      adios_mpi.c \
                      adios_mpi_cio.c \
+                     adios_phdf5.c \
                      adios_posix.c \
                      adios_posix_ascii.c \
                      adios_vtk.c \
@@ -18,7 +19,7 @@ libadios_a_SOURCES = adios.c \
                      adios_bp_v1.c
 #		     adios_datatap.c
 #		     adios_dart.c
-libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)
+libadios_a_CPPFLAGS = $(MXML_CPPFLAGS) ${HDF5_CLIB}
 include_HEADERS += adios.h \
                    adios_types.h
 
