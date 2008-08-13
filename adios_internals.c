@@ -2507,6 +2507,19 @@ static int parseMethod (mxml_node_t * node)
         parameters = "";
     if (!base_path)
         base_path = "";
+    else
+    {
+        uint16_t len = strlen (base_path);
+        if (len > 0 && base_path [len - 1] != '/')
+        {
+            fprintf (stderr, "config.xml: method %s for group %s base-path "
+                             "must end with a '/' character\n"
+                    ,method, group
+                    );
+
+            return 0;
+        }
+    }
     if (!group)
         group = "";
     if (!method)
@@ -2892,13 +2905,71 @@ void adios_parse_dimension (const char * dimension
             {
                 if (attr->var)
                 {
+                    switch (attr->var->type)
+                    {
+                        case adios_string:
+                        case adios_real:
+                        case adios_double:
+                        case adios_long_double:
+                        case adios_complex:
+                        case adios_double_complex:
+                            fprintf (stderr, "config.xml: var dimension %s "
+                                             "has an invalid type: %s\n"
+                                    ,attr->name
+                                    ,adios_type_to_string (attr->var->type)
+                                    );
+                            return;
+
+                        default: // the integral numeric types are all fine
+                            break;
+                    }
                     attr->var->is_dim = adios_flag_yes;
+                }
+                else
+                {
+                    switch (attr->type)
+                    {
+                        case adios_string:
+                        case adios_real:
+                        case adios_double:
+                        case adios_long_double:
+                        case adios_complex:
+                        case adios_double_complex:
+                            fprintf (stderr, "config.xml: var dimension %s "
+                                             "has an invalid type: %s\n"
+                                    ,attr->name
+                                    ,adios_type_to_string (attr->type)
+                                    );
+                            return;
+
+                        default: // the integral numeric types are all fine
+                            break;
+                    }
                 }
                 dim->dimension.id = attr->id;
             }
         }
         else
         {
+            switch (var->type)
+            {
+                case adios_string:
+                case adios_real:
+                case adios_double:
+                case adios_long_double:
+                case adios_complex:
+                case adios_double_complex:
+                    fprintf (stderr, "config.xml: var dimension %s "
+                                     "has an invalid type: %s\n"
+                            ,var->name
+                            ,adios_type_to_string (var->type)
+                            );
+                    return;
+
+                default: // the integral numeric types are all fine
+                    break;
+            }
+
             dim->dimension.id = var->id;
             var->is_dim = adios_flag_yes;
         }
@@ -2945,13 +3016,70 @@ void adios_parse_dimension (const char * dimension
             {
                 if (attr->var)
                 {
+                    switch (attr->var->type)
+                    {
+                        case adios_string:
+                        case adios_real:
+                        case adios_double:
+                        case adios_long_double:
+                        case adios_complex:
+                        case adios_double_complex:
+                            fprintf (stderr, "config.xml: var dimension %s "
+                                             "has an invalid type: %s\n"
+                                    ,attr->name
+                                    ,adios_type_to_string (attr->var->type)
+                                    );
+                            return;
+
+                        default: // the integral numeric types are all fine
+                            break;
+                    }
                     attr->var->is_dim = adios_flag_yes;
+                }
+                else
+                {
+                    switch (attr->type)
+                    {
+                        case adios_string:
+                        case adios_real:
+                        case adios_double:
+                        case adios_long_double:
+                        case adios_complex:
+                        case adios_double_complex:
+                            fprintf (stderr, "config.xml: var dimension %s "
+                                             "has an invalid type: %s\n"
+                                    ,attr->name
+                                    ,adios_type_to_string (attr->type)
+                                    );
+                            return;
+
+                        default: // the integral numeric types are all fine
+                            break;
+                    }
                 }
                 dim->global_dimension.id = attr->id;
             }
         }
         else
         {
+            switch (var->type)
+            {
+                case adios_string:
+                case adios_real:
+                case adios_double:
+                case adios_long_double:
+                case adios_complex:
+                case adios_double_complex:
+                    fprintf (stderr, "config.xml: var dimension %s "
+                                     "has an invalid type: %s\n"
+                            ,var->name
+                            ,adios_type_to_string (var->type)
+                            );
+                    return;
+
+                default: // the integral numeric types are all fine
+                    break;
+            }
             var->is_dim = adios_flag_yes;
             dim->global_dimension.id = var->id;
         }
@@ -2995,13 +3123,70 @@ void adios_parse_dimension (const char * dimension
             {
                 if (attr->var)
                 {
+                    switch (attr->var->type)
+                    {
+                        case adios_string:
+                        case adios_real:
+                        case adios_double:
+                        case adios_long_double:
+                        case adios_complex:
+                        case adios_double_complex:
+                            fprintf (stderr, "config.xml: var dimension %s "
+                                             "has an invalid type: %s\n"
+                                    ,attr->name
+                                    ,adios_type_to_string (attr->var->type)
+                                    );
+                            return;
+
+                        default: // the integral numeric types are all fine
+                            break;
+                    }
                     attr->var->is_dim = adios_flag_yes;
+                }
+                else
+                {
+                    switch (attr->type)
+                    {
+                        case adios_string:
+                        case adios_real:
+                        case adios_double:
+                        case adios_long_double:
+                        case adios_complex:
+                        case adios_double_complex:
+                            fprintf (stderr, "config.xml: var dimension %s "
+                                             "has an invalid type: %s\n"
+                                    ,attr->name
+                                    ,adios_type_to_string (attr->type)
+                                    );
+                            return;
+
+                        default: // the integral numeric types are all fine
+                            break;
+                    }
                 }
                 dim->local_offset.id = attr->id;
             }
         }
         else
         {
+            switch (var->type)
+            {
+                case adios_string:
+                case adios_real:
+                case adios_double:
+                case adios_long_double:
+                case adios_complex:
+                case adios_double_complex:
+                    fprintf (stderr, "config.xml: var dimension %s "
+                                     "has an invalid type: %s\n"
+                            ,var->name
+                            ,adios_type_to_string (var->type)
+                            );
+                    return;
+
+                default: // the integral numeric types are all fine
+                    break;
+            }
             var->is_dim = adios_flag_yes;
             dim->local_offset.id = var->id;
         }
