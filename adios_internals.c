@@ -4551,23 +4551,24 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
                 && item->type == (*root)->type
                )
             {
-                if (  (*root)->entries_count + item->entries_count
-                    > (*root)->entries_allocated
+                if (    (*root)->characteristics_count
+                      + item->characteristics_count
+                    > (*root)->characteristics_allocated
                    )
                 {
-                    int new_items = (item->entries_count == 1)
-                                             ? 100 : item->entries_count;
-                    (*root)->entries_allocated =   (*root)->entries_count
-                                                 + new_items;
+                    int new_items = (item->characteristics_count == 1)
+                                         ? 100 : item->characteristics_count;
+                    (*root)->characteristics_allocated = 
+                            (*root)->characteristics_count + new_items;
                     void * ptr;
-                    ptr = realloc ((*root)->entries
-                            ,  (*root)->entries_allocated
-                             * sizeof (struct adios_index_var_entry_struct_v1)
+                    ptr = realloc ((*root)->characteristics
+                            ,  (*root)->characteristics_allocated
+                        * sizeof (struct adios_index_characteristic_struct_v1)
                             );
 
                     if (ptr)
                     {
-                        (*root)->entries = ptr;
+                        (*root)->characteristics = ptr;
                     }
                     else
                     {
@@ -4578,15 +4579,86 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
                         return;
                     }
                 }
-                memcpy (&(*root)->entries [(*root)->entries_count]
-                       ,item->entries
-                       ,  item->entries_count
-                        * sizeof (struct adios_index_var_entry_struct_v1)
+                memcpy (&(*root)->characteristics
+                                             [(*root)->characteristics_count]
+                       ,item->characteristics
+                       ,  item->characteristics_count
+                        * sizeof (struct adios_index_characteristic_struct_v1)
                        );
 
-                (*root)->entries_count += item->entries_count;
+                (*root)->characteristics_count += item->characteristics_count;
 
-                free (item->entries);
+                free (item->characteristics);
+                free (item);
+
+                root = 0;  // exit the loop
+            }
+            else
+            {
+                root = &(*root)->next;
+            }
+        }
+    }
+}
+
+static void index_append_attribute_v1
+                                (struct adios_index_attribute_struct_v1 ** root
+                                ,struct adios_index_attribute_struct_v1 * item
+                                )
+{
+    while (root)
+    {
+        if (!*root)
+        {
+            *root = item;
+            root = 0;
+        }
+        else
+        {
+            if (   !strcasecmp (item->group_name, (*root)->group_name)
+                && !strcasecmp (item->attr_name, (*root)->attr_name)
+                && !strcasecmp (item->attr_path, (*root)->attr_path)
+                && item->type == (*root)->type
+               )
+            {
+                if (    (*root)->characteristics_count
+                      + item->characteristics_count
+                    > (*root)->characteristics_allocated
+                   )
+                {
+                    int new_items = (item->characteristics_count == 1)
+                                         ? 100 : item->characteristics_count;
+                    (*root)->characteristics_allocated =
+                                   (*root)->characteristics_count + new_items;
+                    void * ptr;
+                    ptr = realloc ((*root)->characteristics
+                            ,  (*root)->characteristics_allocated
+                       * sizeof (struct adios_index_characteristic_struct_v1)
+                            );
+
+                    if (ptr)
+                    {
+                        (*root)->characteristics = ptr;
+                    }
+                    else
+                    {
+                        fprintf (stderr, "error allocating memory to build "
+                                         "attribute index.  Index aborted\n"
+                                );
+
+                        return;
+                    }
+                }
+                memcpy (&(*root)->characteristics
+                                              [(*root)->characteristics_count]
+                       ,item->characteristics
+                       ,  item->characteristics_count
+                        * sizeof (struct adios_index_characteristic_struct_v1)
+                       );
+
+                (*root)->characteristics_count += item->characteristics_count;
+
+                free (item->characteristics);
                 free (item);
 
                 root = 0;  // exit the loop
@@ -4602,15 +4674,18 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
 // p2 and v2 will be destroyed as part of the merge operation...
 void adios_merge_index_v1 (struct adios_index_process_group_struct_v1 ** p1
                           ,struct adios_index_var_struct_v1 ** v1
+                          ,struct adios_index_attribute_struct_v1 ** a1
                           ,struct adios_index_process_group_struct_v1 * p2
                           ,struct adios_index_var_struct_v1 * v2
+                          ,struct adios_index_attribute_struct_v1 * a2
                           )
 {
     // this will just add it on to the end and all should work fine
     index_append_process_group_v1 (p1, p2);
 
-    // need to do vars one at a time to merge them properly
+    // need to do vars attrs one at a time to merge them properly
     struct adios_index_var_struct_v1 * v_temp;
+    struct adios_index_attribute_struct_v1 * a_temp;
 
     while (v2)
     {
@@ -4618,6 +4693,14 @@ void adios_merge_index_v1 (struct adios_index_process_group_struct_v1 ** p1
         v2->next = 0;
         index_append_var_v1 (v1, v2);
         v2 = v_temp;
+    }
+
+    while (a2)
+    {
+        a_temp = a2->next;
+        a2->next = 0;
+        index_append_attribute_v1 (a1, a2);
+        a2 = a_temp;
     }
 }
 
@@ -4640,19 +4723,46 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
         int i;
         struct adios_index_var_struct_v1 * temp = root->next;
 
-        for (i = 0; i < root->entries_count; i++)
+        for (i = 0; i < root->characteristics_count; i++)
         {
-            if (root->entries [i].dims.count != 0)
-                free (root->entries [i].dims.dims);
-            if (root->entries [i].min)
-                free (root->entries [i].min);
-            if (root->entries [i].max)
-                free (root->entries [i].max);
-            if (root->entries [i].value)
-                free (root->entries [i].value);
+            if (root->characteristics [i].dims.count != 0)
+                free (root->characteristics [i].dims.dims);
+            if (root->characteristics [i].min)
+                free (root->characteristics [i].min);
+            if (root->characteristics [i].max)
+                free (root->characteristics [i].max);
+            if (root->characteristics [i].value)
+                free (root->characteristics [i].value);
         }
-        if (root->entries)
-            free (root->entries);
+        if (root->characteristics)
+            free (root->characteristics);
+
+        free (root);
+        root = temp;
+    }
+}
+
+static void adios_clear_attributes_index_v1
+                                (struct adios_index_attribute_struct_v1 * root)
+{
+    while (root)
+    {
+        int i;
+        struct adios_index_attribute_struct_v1 * temp = root->next;
+
+        for (i = 0; i < root->characteristics_count; i++)
+        {
+            if (root->characteristics [i].dims.count != 0)
+                free (root->characteristics [i].dims.dims);
+            if (root->characteristics [i].min)
+                free (root->characteristics [i].min);
+            if (root->characteristics [i].max)
+                free (root->characteristics [i].max);
+            if (root->characteristics [i].value)
+                free (root->characteristics [i].value);
+        }
+        if (root->characteristics)
+            free (root->characteristics);
 
         free (root);
         root = temp;
@@ -4661,10 +4771,12 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
 
 void adios_clear_index_v1 (struct adios_index_process_group_struct_v1 * pg_root
                           ,struct adios_index_var_struct_v1 * vars_root
+                          ,struct adios_index_attribute_struct_v1 * attrs_root
                           )
 {
     adios_clear_process_groups_index_v1 (pg_root);
     adios_clear_vars_index_v1 (vars_root);
+    adios_clear_attributes_index_v1 (attrs_root);
 }
 
 static uint8_t count_dimensions (struct adios_dimension_struct * dimensions)
@@ -4809,10 +4921,12 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd
 void adios_build_index_v1 (struct adios_file_struct * fd
                        ,struct adios_index_process_group_struct_v1 ** pg_root
                        ,struct adios_index_var_struct_v1 ** vars_root
+                       ,struct adios_index_attribute_struct_v1 ** attrs_root
                        )
 {
     struct adios_group_struct * g = fd->group;
     struct adios_var_struct * v = g->vars;
+    struct adios_attribute_struct * a = g->attributes;
     struct adios_index_process_group_struct_v1 * g_item;
 
     uint64_t process_group_count = 0;
@@ -4838,18 +4952,18 @@ void adios_build_index_v1 (struct adios_file_struct * fd
         {
             struct adios_index_var_struct_v1 * v_index;
             v_index = malloc (sizeof (struct adios_index_var_struct_v1));
-            v_index->entries = malloc (
-                                 sizeof (struct adios_index_var_entry_struct_v1)
-                                 );
+            v_index->characteristics = malloc (
+                           sizeof (struct adios_index_characteristic_struct_v1)
+                          );
 
             v_index->group_name = g->name;
             v_index->var_name = v->name;
             v_index->var_path = v->path;
             v_index->type = v->type;
-            v_index->entries_count = 1;
-            v_index->entries_allocated = 1;
-            v_index->entries [0].offset = v->write_offset;
-            v_index->entries [0].dims.count = 0;
+            v_index->characteristics_count = 1;
+            v_index->characteristics_allocated = 1;
+            v_index->characteristics [0].offset = v->write_offset;
+            v_index->characteristics [0].dims.count = 0;
 
             uint64_t size = adios_get_type_size (v->type, v->data);
             switch (v->type)
@@ -4872,45 +4986,47 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                         uint8_t c;
                         uint8_t j;
                         struct adios_dimension_struct * d = v->dimensions;
-                        v_index->entries [0].min = malloc (size);
-                        v_index->entries [0].max = malloc (size);
-                        memcpy (v_index->entries [0].min, v->min, size);
-                        memcpy (v_index->entries [0].max, v->max, size);
+                        v_index->characteristics [0].min = malloc (size);
+                        v_index->characteristics [0].max = malloc (size);
+                        memcpy (v_index->characteristics [0].min, v->min, size);
+                        memcpy (v_index->characteristics [0].max, v->max, size);
                         c = count_dimensions (v->dimensions);
-                        v_index->entries [0].dims.count = c;
+                        v_index->characteristics [0].dims.count = c;
                         // (local, global, local offset)
-                        v_index->entries [0].dims.dims = malloc
-                                    (3 * 8 * v_index->entries [0].dims.count);
+                        v_index->characteristics [0].dims.dims = malloc
+                            (3 * 8 * v_index->characteristics [0].dims.count);
                         for (j = 0; j < c; j++)
                         {
-                            v_index->entries [0].dims.dims [j * 3 + 0] =
+                            v_index->characteristics [0].dims.dims [j * 3 + 0] =
                                    get_value_for_dim (fd, &d->dimension);
-                            v_index->entries [0].dims.dims [j * 3 + 1] =
+                            v_index->characteristics [0].dims.dims [j * 3 + 1] =
                                    get_value_for_dim (fd, &d->global_dimension);
-                            v_index->entries [0].dims.dims [j * 3 + 2] =
+                            v_index->characteristics [0].dims.dims [j * 3 + 2] =
                                    get_value_for_dim (fd, &d->local_offset);
 
                             d = d->next;
                         }
-                        v_index->entries [0].value = 0;
+                        v_index->characteristics [0].value = 0;
                     }
                     else
                     {
-                        v_index->entries [0].min = 0;
-                        v_index->entries [0].max = 0;
-                        v_index->entries [0].value = malloc (size);
-                        memcpy (v_index->entries [0].value, v->data, size);
-                        v_index->entries [0].dims.count = 0;
-                        v_index->entries [0].dims.dims = 0;
+                        v_index->characteristics [0].min = 0;
+                        v_index->characteristics [0].max = 0;
+                        v_index->characteristics [0].value = malloc (size);
+                        memcpy (v_index->characteristics [0].value, v->data
+                               ,size
+                               );
+                        v_index->characteristics [0].dims.count = 0;
+                        v_index->characteristics [0].dims.dims = 0;
                     }
 
                     break;
 
                 case adios_string:
                 {
-                    v_index->entries [0].value = malloc (size + 1);
-                    memcpy (v_index->entries [0].value, v->data, size);
-                    ((char *) (v_index->entries [0].value)) [size] = 0;
+                    v_index->characteristics [0].value = malloc (size + 1);
+                    memcpy (v_index->characteristics [0].value, v->data, size);
+                    ((char *) (v_index->characteristics [0].value)) [size] = 0;
 
                     break;
                 }
@@ -4922,6 +5038,54 @@ void adios_build_index_v1 (struct adios_file_struct * fd
         }
 
         v = v->next;
+    }
+
+    while (a)
+    {
+        // only add items that were written to the index
+        if (a->write_offset != 0)
+        {
+            struct adios_index_attribute_struct_v1 * a_index;
+            a_index = malloc (sizeof (struct adios_index_attribute_struct_v1));
+            a_index->characteristics = malloc (
+                           sizeof (struct adios_index_characteristic_struct_v1)
+                          );
+
+            a_index->group_name = g->name;
+            a_index->attr_name = a->name;
+            a_index->attr_path = a->path;
+            a_index->type = a->type;
+            a_index->characteristics_count = 1;
+            a_index->characteristics_allocated = 1;
+            uint64_t size = adios_get_type_size (a->type, a->value);
+
+            a_index->characteristics [0].offset = a->write_offset;
+            a_index->characteristics [0].min = 0;
+            a_index->characteristics [0].max = 0;
+            if (a->value)
+            {
+                a_index->characteristics [0].value = malloc (size + 1);
+                ((char *) (a_index->characteristics [0].value)) [size] = 0;
+                memcpy (a_index->characteristics [0].value, a->value, size);
+            }
+            else
+            {
+                a_index->characteristics [0].value = 0;
+            }
+            a_index->characteristics [0].dims.count = 0;
+            a_index->characteristics [0].dims.dims = 0;
+            if (a->var)
+                a_index->characteristics [0].var_id = a->var->id;
+            else
+                a_index->characteristics [0].var_id = 0;
+
+            a_index->next = 0;
+
+            // this fn will either take ownership for free
+            index_append_attribute_v1 (attrs_root, a_index);
+        }
+
+        a = a->next;
     }
 }
 
@@ -4941,14 +5105,17 @@ int adios_write_index_v1 (char ** buffer
                          ,uint64_t index_start
                          ,struct adios_index_process_group_struct_v1 * pg_root
                          ,struct adios_index_var_struct_v1 * vars_root
+                         ,struct adios_index_attribute_struct_v1 * attrs_root
                          )
 {
     uint64_t groups_count = 0;
     uint16_t vars_count = 0;
+    uint16_t attrs_count = 0;
 
     uint64_t index_size = 0;
     uint64_t pg_index_start = index_start;
     uint64_t vars_index_start = 0;
+    uint64_t attrs_index_start = 0;
 
     // we need to save the offset we will write the count and size
     uint64_t buffer_offset_start = 0; // since we realloc, we can't save a ptr
@@ -5085,12 +5252,12 @@ int adios_write_index_v1 (char ** buffer
         var_size += 1;
 
         buffer_write (buffer, buffer_size, buffer_offset
-                     ,&vars_root->entries_count, 8
+                     ,&vars_root->characteristics_count, 8
                      );
         index_size += 8;
         var_size += 8;
 
-        for (i = 0; i < vars_root->entries_count; i++)
+        for (i = 0; i < vars_root->characteristics_count; i++)
         {
             uint64_t size;
             uint8_t characteristic_set_count = 0;
@@ -5110,7 +5277,7 @@ int adios_write_index_v1 (char ** buffer
             characteristic_set_length += 1;
 
             buffer_write (buffer, buffer_size, buffer_offset
-                         ,&vars_root->entries [i].offset, 8
+                         ,&vars_root->characteristics [i].offset, 8
                          );
             index_size += 8;
             var_size += 8;
@@ -5119,7 +5286,7 @@ int adios_write_index_v1 (char ** buffer
             // depending on if it is an array or not, generate a different
             // additional set of characteristics
             size = adios_get_type_size (vars_root->type
-                                       ,vars_root->entries [i].value
+                                       ,vars_root->characteristics [i].value
                                        );
 
             switch (vars_root->type)
@@ -5137,7 +5304,7 @@ int adios_write_index_v1 (char ** buffer
                 case adios_long_double:
                 case adios_complex:
                 case adios_double_complex:
-                    if (vars_root->entries [i].dims.count)
+                    if (vars_root->characteristics [i].dims.count)
                     {
                         // add a dimensions characteristic
                         characteristic_set_count++;
@@ -5150,13 +5317,14 @@ int adios_write_index_v1 (char ** buffer
                         characteristic_set_length += 1;
 
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,&vars_root->entries [i].dims.count, 1
+                                     ,&vars_root->characteristics [i].dims.count
+                                     ,1
                                      );
                         index_size += 1;
                         var_size += 1;
                         characteristic_set_length += 1;
 
-                        len = 3 * 8 * vars_root->entries [i].dims.count;
+                        len = 3 * 8 * vars_root->characteristics [i].dims.count;
                         buffer_write (buffer, buffer_size, buffer_offset
                                      ,&len, 2
                                      );
@@ -5164,7 +5332,8 @@ int adios_write_index_v1 (char ** buffer
                         var_size += 2;
                         characteristic_set_length += 2;
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,vars_root->entries [i].dims.dims, len
+                                     ,vars_root->characteristics [i].dims.dims
+                                     ,len
                                      );
                         index_size += len;
                         var_size += len;
@@ -5180,7 +5349,7 @@ int adios_write_index_v1 (char ** buffer
                         var_size += 1;
                         characteristic_set_length += 1;
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,vars_root->entries [i].min, size
+                                     ,vars_root->characteristics [i].min, size
                                      );
                         index_size += size;
                         var_size += size;
@@ -5196,7 +5365,7 @@ int adios_write_index_v1 (char ** buffer
                         var_size += 1;
                         characteristic_set_length += 1;
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,vars_root->entries [i].max, size
+                                     ,vars_root->characteristics [i].max, size
                                      );
                         index_size += size;
                         var_size += size;
@@ -5214,7 +5383,7 @@ int adios_write_index_v1 (char ** buffer
                         var_size += 1;
                         characteristic_set_length += 1;
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,vars_root->entries [i].value, size
+                                     ,vars_root->characteristics [i].value, size
                                      );
                         index_size += size;
                         var_size += size;
@@ -5234,7 +5403,7 @@ int adios_write_index_v1 (char ** buffer
                         var_size += 1;
                         characteristic_set_length += 1;
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,vars_root->entries [i].value, size
+                                     ,vars_root->characteristics [i].value, size
                                      );
                         index_size += size;
                         var_size += size;
@@ -5260,9 +5429,164 @@ int adios_write_index_v1 (char ** buffer
     buffer_write (buffer, buffer_size, &buffer_offset_start, &vars_count, 2);
     buffer_write (buffer, buffer_size, &buffer_offset_start, &index_size, 8);
 
+    buffer_offset_start = *buffer_offset; // save to write the attrs_count/size
+    attrs_index_start = buffer_offset_start + index_start;
+    index_size = 0;
+
+    *buffer_offset += (2 + 8); // save space for count and size
+
+    while (attrs_root)
+    {
+        uint8_t flag;
+        uint16_t len;
+        uint32_t attr_size = 0;
+        uint64_t attr_start = *buffer_offset;
+        int i;
+
+        attrs_count++;
+
+        *buffer_offset += 4; // save space for attr length
+
+        len = strlen (attrs_root->group_name);
+        buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
+        index_size += 2;
+        attr_size += 2;
+        buffer_write (buffer, buffer_size, buffer_offset
+                     ,attrs_root->group_name, len
+                     );
+        index_size += len;
+        attr_size += len;
+
+        len = strlen (attrs_root->attr_name);
+        buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
+        index_size += 2;
+        attr_size += 2;
+        buffer_write (buffer, buffer_size, buffer_offset
+                     ,attrs_root->attr_name, len
+                     );
+        index_size += len;
+        attr_size += len;
+
+        len = strlen (attrs_root->attr_path);
+        buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
+        index_size += 2;
+        attr_size += 2;
+        buffer_write (buffer, buffer_size, buffer_offset
+                     ,attrs_root->attr_path, len
+                     );
+        index_size += len;
+        attr_size += len;
+
+        flag = attrs_root->type;
+        buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
+        index_size += 1;
+        attr_size += 1;
+
+        buffer_write (buffer, buffer_size, buffer_offset
+                     ,&attrs_root->characteristics_count, 8
+                     );
+        index_size += 8;
+        attr_size += 8;
+
+        for (i = 0; i < attrs_root->characteristics_count; i++)
+        {
+            uint64_t size;
+            uint8_t characteristic_set_count = 0;
+            uint32_t characteristic_set_length = 0;
+
+            uint64_t characteristic_set_start = *buffer_offset;
+            *buffer_offset += 1 + 4; // save space for characteristic count/len
+            index_size += 1 + 4;
+            attr_size += 1 + 4;
+            
+            // add an offset characteristic for all attrs
+            characteristic_set_count++;
+            flag = (uint8_t) adios_characteristic_offset;
+            buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
+            index_size += 1;
+            attr_size += 1;
+            characteristic_set_length += 1;
+
+            buffer_write (buffer, buffer_size, buffer_offset
+                         ,&attrs_root->characteristics [i].offset, 8
+                         );
+            index_size += 8;
+            attr_size += 8;
+            characteristic_set_length += 8;
+
+            size = adios_get_type_size (attrs_root->type
+                                       ,attrs_root->characteristics [i].value
+                                       );
+
+            if (attrs_root->characteristics [i].value != 0)
+            {
+                // add a value characteristic
+                characteristic_set_count++;
+                flag = (uint8_t) adios_characteristic_value;
+                buffer_write (buffer, buffer_size, buffer_offset
+                             ,&flag, 1
+                             );
+                index_size += 1;
+                attr_size += 1;
+                characteristic_set_length += 1;
+                if (attrs_root->type == adios_string)
+                {
+                    uint16_t len = (uint16_t) size;
+                    buffer_write (buffer, buffer_size, buffer_offset
+                                 ,&len, 2
+                                 );
+                    index_size += 2;
+                    attr_size += 2;
+                    characteristic_set_length += 2;
+                }
+                buffer_write (buffer, buffer_size, buffer_offset
+                             ,attrs_root->characteristics [i].value, size
+                             );
+                index_size += size;
+                attr_size += size;
+                characteristic_set_length += size;
+            }
+            if (attrs_root->characteristics [i].var_id != 0)
+            {
+                // add a var id characteristic
+                characteristic_set_count++;
+                flag = (uint8_t) adios_characteristic_var_id;
+                buffer_write (buffer, buffer_size, buffer_offset
+                             ,&flag, 1
+                             );
+                index_size += 1;
+                attr_size += 1;
+                characteristic_set_length += 1;
+                buffer_write (buffer, buffer_size, buffer_offset
+                             ,&attrs_root->characteristics [i].var_id, 2
+                             );
+                index_size += 2;
+                attr_size += 2;
+                characteristic_set_length += 2;
+            }
+
+            // characteristics count/size prefix
+            buffer_write (buffer, buffer_size, &characteristic_set_start
+                         ,&characteristic_set_count, 1
+                         );
+            buffer_write (buffer, buffer_size, &characteristic_set_start
+                         ,&characteristic_set_length, 4
+                         );
+        }
+
+        buffer_write (buffer, buffer_size, &attr_start, &attr_size, 4);
+
+        attrs_root = attrs_root->next;
+    }
+
+    // attrs index count/size prefix
+    buffer_write (buffer, buffer_size, &buffer_offset_start, &attrs_count, 2);
+    buffer_write (buffer, buffer_size, &buffer_offset_start, &index_size, 8);
+
     // location of the beginning of the indexes (first proc groups then vars)
     buffer_write (buffer, buffer_size, buffer_offset, &pg_index_start, 8);
     buffer_write (buffer, buffer_size, buffer_offset, &vars_index_start, 8);
+    buffer_write (buffer, buffer_size, buffer_offset, &attrs_index_start, 8);
 
     return 0;
 }
@@ -5780,6 +6104,7 @@ int adios_write_attribute_v1 (struct adios_file_struct * fd
 
     // save space for attr length
     start = fd->offset;
+    a->write_offset = fd->offset + fd->base_offset; // save offset in file
     fd->offset += 4;
 
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &a->id, 2);

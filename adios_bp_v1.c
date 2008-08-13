@@ -125,17 +125,17 @@ int adios_parse_version (struct adios_bp_buffer_struct_v1 * b
 // buff must be 16 bytes
 int adios_parse_index_offsets_v1 (struct adios_bp_buffer_struct_v1 * b)
 {
-    if (b->length - b->offset < 16)
+    if (b->length - b->offset < 24)
     {
         fprintf (stderr, "adios_parse_index_offsets_v1 requires a buffer of "
-                         "at least 16 bytes.  Only %llu were provided\n"
+                         "at least 24 bytes.  Only %llu were provided\n"
                 ,b->length - b->offset
                 );
 
         return 1;
     }
 
-    uint64_t vars_end = b->file_size - 20;
+    uint64_t attrs_end = b->file_size - 28;
     int i;
 
     char * t;
@@ -148,9 +148,14 @@ int adios_parse_index_offsets_v1 (struct adios_bp_buffer_struct_v1 * b)
     t = b->buff + b->offset;
     b->offset += 8;
 
+    b->attrs_index_offset = *(uint64_t *) (b->buff + b->offset);
+    t = b->buff + b->offset;
+    b->offset += 8;
+
     b->end_of_pgs = b->pg_index_offset;
     b->pg_size = b->vars_index_offset - b->pg_index_offset;
-    b->vars_size = vars_end - b->vars_index_offset;
+    b->vars_size = b->attrs_index_offset - b->vars_index_offset;
+    b->attrs_size = attrs_end - b->attrs_index_offset;
 
     return 0;
 }
@@ -308,18 +313,18 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
         type_size = adios_get_type_size ((*root)->type, "");
 
         characteristics_sets_count = *(uint64_t *) (b->buff + b->offset);
-        (*root)->entries_count = characteristics_sets_count;
-        (*root)->entries_allocated = characteristics_sets_count;
+        (*root)->characteristics_count = characteristics_sets_count;
+        (*root)->characteristics_allocated = characteristics_sets_count;
         b->offset += 8;
 
         // validate remaining length: offsets_count * (8 + 2 * (size of type))
         uint64_t j;
-        (*root)->entries = malloc (characteristics_sets_count
-                            * sizeof (struct adios_index_var_entry_struct_v1)
-                           );
-        memset ((*root)->entries, 0
+        (*root)->characteristics = malloc (characteristics_sets_count
+                         * sizeof (struct adios_index_characteristic_struct_v1)
+                        );
+        memset ((*root)->characteristics, 0
                ,  characteristics_sets_count
-                * sizeof (struct adios_index_var_entry_struct_v1)
+                * sizeof (struct adios_index_characteristic_struct_v1)
                );
         for (j = 0; j < characteristics_sets_count; j++)
         {
@@ -360,7 +365,8 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                             data_size = adios_get_type_size ((*root)->type, "");
                         }
 
-                        data = malloc (data_size);
+                        data = malloc (data_size + 1);
+                        ((char *) data) [data_size] = '\0';
 
                         if (!data)
                         {
@@ -402,15 +408,15 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                         switch (c)
                         {
                             case adios_characteristic_value:
-                                (*root)->entries [j].value = data;
+                                (*root)->characteristics [j].value = data;
                                 break;
 
                             case adios_characteristic_min:
-                                (*root)->entries [j].min = data;
+                                (*root)->characteristics [j].min = data;
                                 break;
 
                             case adios_characteristic_max:
-                                (*root)->entries [j].max = data;
+                                (*root)->characteristics [j].max = data;
                                 break;
                         }
                         break;
@@ -419,7 +425,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                     case adios_characteristic_offset:
                     {
                         uint64_t size = adios_get_type_size ((*root)->type, "");
-                        (*root)->entries [j].offset =
+                        (*root)->characteristics [j].offset =
                                             *(uint64_t *) (b->buff + b->offset);
                         b->offset += 8;
 
@@ -430,20 +436,218 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                     {
                         uint16_t dims_length;
 
-                        (*root)->entries [j].dims.count =
+                        (*root)->characteristics [j].dims.count =
                                            *(uint8_t *) (b->buff + b->offset);
                         b->offset += 1;
 
                         dims_length = *(uint16_t *) (b->buff + b->offset);
                         b->offset += 2;
 
-                       (*root)->entries [j].dims.dims = (uint64_t *)
+                       (*root)->characteristics [j].dims.dims = (uint64_t *)
                                                          malloc (dims_length);
-                       memcpy ((*root)->entries [j].dims.dims
+                       memcpy ((*root)->characteristics [j].dims.dims
                               ,(b->buff + b->offset)
                               ,dims_length
                               );
                         b->offset += dims_length;
+                    }
+                }
+                item++;
+            }
+        }
+
+        root = &(*root)->next;
+    }
+
+    return 0;
+}
+
+int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
+                          ,struct adios_index_attribute_struct_v1 ** attrs_root
+                          )
+{
+    struct adios_index_attribute_struct_v1 ** root;
+
+    if (b->length - b->offset < 10)
+    {
+        fprintf (stderr, "adios_parse_attributes_index_v1 requires a buffer "
+                         "of at least 10 bytes.  Only %llu were provided\n"
+                ,b->length - b->offset
+                );
+
+        return 1;
+    }
+
+    root = attrs_root;
+
+    uint16_t attrs_count;
+    uint64_t attrs_length;
+
+    attrs_count = *(uint16_t *) (b->buff + b->offset);
+    b->offset += 2;
+
+    attrs_length = *(uint64_t *) (b->buff + b->offset);
+    b->offset += 8;
+
+    // validate remaining length
+
+    int i;
+    for (i = 0; i < attrs_count; i++)
+    {
+        if (!*root)
+        {
+            *root = (struct adios_index_attribute_struct_v1 *)
+                      malloc (sizeof (struct adios_index_attribute_struct_v1));
+            (*root)->next = 0;
+        }
+        uint8_t flag;
+        uint32_t attr_entry_length;
+        uint16_t len;
+        uint64_t characteristics_sets_count;
+        uint64_t type_size;
+
+        attr_entry_length = *(uint32_t *) (b->buff + b->offset);
+        b->offset += 4;
+
+        len = *(uint16_t *) (b->buff + b->offset);
+        b->offset += 2;
+        (*root)->group_name = (char *) malloc (len + 1);
+        (*root)->group_name [len] = '\0';
+        strncpy ((*root)->group_name, b->buff + b->offset, len);
+        b->offset += len;
+
+        len = *(uint16_t *) (b->buff + b->offset);
+        b->offset += 2;
+        (*root)->attr_name = (char *) malloc (len + 1);
+        (*root)->attr_name [len] = '\0';
+        strncpy ((*root)->attr_name, b->buff + b->offset, len);
+        b->offset += len;
+
+        len = *(uint16_t *) (b->buff + b->offset);
+        b->offset += 2;
+        (*root)->attr_path = (char *) malloc (len + 1);
+        (*root)->attr_path [len] = '\0';
+        strncpy ((*root)->attr_path, b->buff + b->offset, len);
+        b->offset += len;
+
+        flag = *(b->buff + b->offset);
+        (*root)->type = (enum ADIOS_DATATYPES) flag;
+        b->offset += 1;
+        type_size = adios_get_type_size ((*root)->type, "");
+
+        characteristics_sets_count = *(uint64_t *) (b->buff + b->offset);
+        (*root)->characteristics_count = characteristics_sets_count;
+        (*root)->characteristics_allocated = characteristics_sets_count;
+        b->offset += 8;
+
+        // validate remaining length: offsets_count * (8 + 2 * (size of type))
+        uint64_t j;
+        (*root)->characteristics = malloc (characteristics_sets_count
+                       * sizeof (struct adios_index_characteristic_struct_v1)
+                      );
+        memset ((*root)->characteristics, 0
+               ,  characteristics_sets_count
+                * sizeof (struct adios_index_characteristic_struct_v1)
+               );
+        for (j = 0; j < characteristics_sets_count; j++)
+        {
+            uint8_t characteristic_set_count;
+            uint32_t characteristic_set_length;
+            uint8_t item = 0;
+
+            characteristic_set_count = (uint8_t) *(b->buff + b->offset);
+            b->offset += 1;
+
+            characteristic_set_length = *(uint32_t *) (b->buff + b->offset);
+            b->offset += 4;
+
+            while (item < characteristic_set_count)
+            {
+                uint8_t flag;
+                enum ADIOS_CHARACTERISTICS c;
+                flag = *(b->buff + b->offset);
+                c = (enum ADIOS_CHARACTERISTICS) flag;
+                b->offset += 1;
+
+                switch (c)
+                {
+                    case adios_characteristic_value:
+                    {
+                        int data_size;
+                        void * data = 0;
+
+                        if ((*root)->type == adios_string)
+                        {
+                            data_size = *(uint16_t *) (b->buff + b->offset);
+                            b->offset += 2;
+                        }
+                        else
+                        {
+                            data_size = adios_get_type_size ((*root)->type, "");
+                        }
+
+                        data = malloc (data_size + 1);
+                        ((char *) data) [data_size] = '\0';
+
+                        if (!data)
+                        {
+                            fprintf (stderr, "cannot allocate %d bytes to "
+                                             "copy scalar %s\n"
+                                    ,data_size
+                                    ,(*root)->attr_name
+                                    );
+
+                            return 1;
+                        }
+
+                        switch ((*root)->type)
+                        {
+                            case adios_byte:
+                            case adios_short:
+                            case adios_integer:
+                            case adios_long:
+                            case adios_unsigned_byte:
+                            case adios_unsigned_short:
+                            case adios_unsigned_integer:
+                            case adios_unsigned_long:
+                            case adios_real:
+                            case adios_double:
+                            case adios_long_double:
+                            case adios_string:
+                            case adios_complex:
+                            case adios_double_complex:
+                                memcpy (data, (b->buff + b->offset), data_size);
+                                b->offset += data_size;
+                                break;
+
+                            default:
+                                free (data);
+                                data = 0;
+                                break;
+                        }
+
+                        (*root)->characteristics [j].value = data;
+
+                        break;
+                    }
+
+                    case adios_characteristic_offset:
+                    {
+                        uint64_t size = adios_get_type_size ((*root)->type, "");
+                        (*root)->characteristics [j].offset =
+                                            *(uint64_t *) (b->buff + b->offset);
+                        b->offset += 8;
+
+                        break;
+                    }
+
+                    case adios_characteristic_var_id:
+                    {
+                        (*root)->characteristics [j].var_id =
+                                            *(uint16_t *) (b->buff + b->offset);
+                        b->offset += 2;
+
+                        break;
                     }
                 }
                 item++;
@@ -988,11 +1192,11 @@ void adios_init_buffer_read_version (struct adios_bp_buffer_struct_v1 * b)
 {
     if (!b->buff)
     {
-        alloc_aligned (b, 20);
-        memset (b->buff, 10, 20);
+        alloc_aligned (b, 28);
+        memset (b->buff, 0, 28);
         if (!b->buff)
-            fprintf(stderr, "could not allocate 20 bytes\n");
-        b->offset = 16;
+            fprintf(stderr, "could not allocate 28 bytes\n");
+        b->offset = 24;
     }
 }
 
@@ -1005,11 +1209,11 @@ void adios_posix_read_version (struct adios_bp_buffer_struct_v1 * b)
 
     adios_init_buffer_read_version (b);
 
-    lseek64 (b->f, b->file_size - 20, SEEK_SET);
+    lseek64 (b->f, b->file_size - 28, SEEK_SET);
 
-    r = read (b->f, b->buff, 20);
-    if (r != 20)
-        fprintf (stderr, "could not read 20 bytes. read only: %llu\n", r);
+    r = read (b->f, b->buff, 28);
+    if (r != 28)
+        fprintf (stderr, "could not read 28 bytes. read only: %llu\n", r);
 }
 
 void adios_init_buffer_read_index_offsets (struct adios_bp_buffer_struct_v1 * b)
@@ -1053,6 +1257,25 @@ void adios_posix_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
     if (r != b->vars_size)
         fprintf (stderr, "reading vars_index: wanted %llu, read: %llu\n"
                 ,b->vars_size, r
+                );
+}
+
+void adios_init_buffer_read_attributes_index
+                                        (struct adios_bp_buffer_struct_v1 * b)
+{
+    realloc_aligned (b, b->attrs_size);
+    b->offset = 0;
+}
+
+void adios_posix_read_attributes_index (struct adios_bp_buffer_struct_v1 * b)
+{
+    adios_init_buffer_read_attributes_index (b);
+
+    lseek (b->f, b->attrs_index_offset, SEEK_SET);
+    uint64_t r = read (b->f, b->buff, b->attrs_size);
+    if (r != b->attrs_size)
+        fprintf (stderr, "reading attributess_index: wanted %llu, read: %llu\n"
+                ,b->attrs_size, r
                 );
 }
 

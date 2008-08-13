@@ -8,6 +8,7 @@ enum ADIOS_CHARACTERISTICS
     ,adios_characteristic_max        = 2
     ,adios_characteristic_offset     = 3
     ,adios_characteristic_dimensions = 4
+    ,adios_characteristic_var_id     = 5
 };
 
 struct adios_bp_buffer_struct_v1
@@ -30,6 +31,8 @@ struct adios_bp_buffer_struct_v1
     uint64_t pg_size;             // process groups index size
     uint64_t vars_index_offset;   // vars index start
     uint64_t vars_size;           // vars index size
+    uint64_t attrs_index_offset;  // attributes index start
+    uint64_t attrs_size;          // attributes index size
 
     uint64_t read_pg_offset;
     uint64_t read_pg_size;
@@ -47,19 +50,20 @@ struct adios_index_process_group_struct_v1
     struct adios_index_process_group_struct_v1 * next;
 };
 
-struct adios_index_var_entry_dims_struct_v1
+struct adios_index_characteristic_dims_struct_v1
 {
     uint8_t count;
     uint64_t * dims;  // each 3 uint64_t represents one dimension (l, g, o)
 };
 
-struct adios_index_var_entry_struct_v1
+struct adios_index_characteristic_struct_v1
 {
     uint64_t offset;
     void * min;
     void * max;
-    struct adios_index_var_entry_dims_struct_v1 dims;
+    struct adios_index_characteristic_dims_struct_v1 dims;
     void * value;
+    uint16_t var_id;
 };
 
 struct adios_index_var_struct_v1
@@ -69,12 +73,27 @@ struct adios_index_var_struct_v1
     char * var_path;
     enum ADIOS_DATATYPES type;
 
-    uint64_t entries_count;
-    uint64_t entries_allocated;
+    uint64_t characteristics_count;
+    uint64_t characteristics_allocated;
 
-    struct adios_index_var_entry_struct_v1 * entries;
+    struct adios_index_characteristic_struct_v1 * characteristics;
 
     struct adios_index_var_struct_v1 * next;
+};
+
+struct adios_index_attribute_struct_v1
+{
+    char * group_name;
+    char * attr_name;
+    char * attr_path;
+    enum ADIOS_DATATYPES type;
+
+    uint64_t characteristics_count;
+    uint64_t characteristics_allocated;
+
+    struct adios_index_characteristic_struct_v1 * characteristics;
+
+    struct adios_index_attribute_struct_v1 * next;
 };
 
 struct adios_method_info_struct_v1
@@ -130,7 +149,7 @@ struct adios_var_header_struct_v1
     enum ADIOS_DATATYPES type;
     enum ADIOS_FLAG is_dim;
     struct adios_dimension_struct_v1 * dims;
-    struct adios_index_var_entry_struct_v1 characteristics;
+    struct adios_index_characteristic_struct_v1 characteristics;
     uint64_t payload_size;
 };
 
@@ -174,6 +193,9 @@ int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b
 int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                               ,struct adios_index_var_struct_v1 ** vars_root
                               );
+int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
+                          ,struct adios_index_attribute_struct_v1 ** attrs_root
+                          );
 
 int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b
                      ,struct adios_process_group_header_struct_v1 * pg_header
@@ -220,6 +242,10 @@ void adios_posix_read_process_group_index (struct adios_bp_buffer_struct_v1 * b
 
 void adios_init_buffer_read_vars_index (struct adios_bp_buffer_struct_v1 * b);
 void adios_posix_read_vars_index (struct adios_bp_buffer_struct_v1 * b);
+
+void adios_init_buffer_read_attributes_index
+                                        (struct adios_bp_buffer_struct_v1 * b);
+void adios_posix_read_attributes_index (struct adios_bp_buffer_struct_v1 * b);
 
 void adios_init_buffer_read_procss_group (struct adios_bp_buffer_struct_v1 * b);
 uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b);

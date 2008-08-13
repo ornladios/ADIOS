@@ -44,6 +44,7 @@ struct adios_attribute_struct
     enum ADIOS_DATATYPES type;
     void * value;
     struct adios_var_struct * var;
+    uint64_t write_offset;  // offset this var was written at  [for writes]
 
     struct adios_attribute_struct * next;
 };
@@ -445,20 +446,25 @@ int adios_write_index_v1 (char ** buffer
                          ,uint64_t index_start
                          ,struct adios_index_process_group_struct_v1 * pg_root
                          ,struct adios_index_var_struct_v1 * vars_root
+                         ,struct adios_index_attribute_struct_v1 * attrs_root
                          );
 
 void adios_build_index_v1 (struct adios_file_struct * fd
                        ,struct adios_index_process_group_struct_v1 ** pg_root
                        ,struct adios_index_var_struct_v1 ** vars_root
+                       ,struct adios_index_attribute_struct_v1 ** attrs_root
                        );
 void adios_merge_index_v1 (
                    struct adios_index_process_group_struct_v1 ** main_pg_root
                   ,struct adios_index_var_struct_v1 ** main_vars_root
+                  ,struct adios_index_attribute_struct_v1 ** main_attrs_root
                   ,struct adios_index_process_group_struct_v1 * new_pg_root
                   ,struct adios_index_var_struct_v1 * new_vars_root
+                  ,struct adios_index_attribute_struct_v1 * new_attrs_root
                   );
 void adios_clear_index_v1 (struct adios_index_process_group_struct_v1 * pg_root
                           ,struct adios_index_var_struct_v1 * vars_root
+                          ,struct adios_index_attribute_struct_v1 * attrs_root
                           );
 
 uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var);

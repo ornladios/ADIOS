@@ -30,6 +30,7 @@ struct adios_MPI_data_struct
 
     struct adios_index_process_group_struct_v1 * old_pg_root;
     struct adios_index_var_struct_v1 * old_vars_root;
+    struct adios_index_attribute_struct_v1 * old_attrs_root;
 };
 
 static void adios_var_to_comm (const char * comm_name
@@ -128,6 +129,7 @@ void adios_mpi_init (const char * parameters
     md->group_comm = MPI_COMM_NULL;
     md->old_pg_root = 0;
     md->old_vars_root = 0;
+    md->old_attrs_root = 0;
 
     adios_buffer_struct_init (&md->b);
 }
@@ -274,6 +276,15 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                               ,&md->status
                               );
                 adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
+
+                adios_init_buffer_read_attributes_index (&md->b);
+                MPI_File_seek (md->fh, md->b.attrs_index_offset
+                              ,MPI_SEEK_SET
+                              );
+                MPI_File_read (md->fh, md->b.buff, md->b.attrs_size, MPI_BYTE
+                              ,&md->status
+                              );
+                adios_parse_attributes_index_v1 (&md->b, &md->old_attrs_root);
 
                 fd->base_offset = md->b.end_of_pgs;
             }
@@ -554,6 +565,17 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                   ,&md->status
                                   );
                     adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
+
+                    adios_init_buffer_read_attributes_index (&md->b);
+                    MPI_File_seek (md->fh, md->b.attrs_index_offset
+                                  ,MPI_SEEK_SET
+                                  );
+                    MPI_File_read (md->fh, md->b.buff, md->b.attrs_size
+                                  ,MPI_BYTE, &md->status
+                                  );
+                    adios_parse_attributes_index_v1 (&md->b
+                                                    ,&md->old_attrs_root
+                                                    );
 
                     fd->base_offset = md->b.end_of_pgs;
                     fd->pg_start_in_file = fd->base_offset;
@@ -910,6 +932,7 @@ void adios_mpi_close (struct adios_file_struct * fd
 
     struct adios_index_process_group_struct_v1 * new_pg_root = 0;
     struct adios_index_var_struct_v1 * new_vars_root = 0;
+    struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
 
     if (fd->shared_buffer == adios_flag_no)
     {
@@ -937,7 +960,9 @@ void adios_mpi_close (struct adios_file_struct * fd
             uint64_t index_start = md->b.pg_index_offset;
 
             // build index
-            adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root);
+            adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
+                                 ,&md->old_attrs_root
+                                 );
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
             {
@@ -987,12 +1012,18 @@ void adios_mpi_close (struct adios_file_struct * fd
                                                            ,&new_pg_root
                                                            );
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_parse_attributes_index_v1 (&md->b
+                                                        ,&new_attrs_root
+                                                        );
                         adios_merge_index_v1 (&md->old_pg_root
                                              ,&md->old_vars_root
+                                             ,&md->old_attrs_root
                                              ,new_pg_root, new_vars_root
+                                             ,new_attrs_root
                                              );
                         new_pg_root = 0;
                         new_vars_root = 0;
+                        new_attrs_root = 0;
                         md->b.buff = buffer_save;
                         md->b.length = buffer_size_save;
                         md->b.offset = offset_save;
@@ -1005,6 +1036,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                          ,0, md->old_pg_root
                                          ,md->old_vars_root
+                                         ,md->old_attrs_root
                                          );
 
                     MPI_Send (buffer, buffer_offset, MPI_BYTE, 0, 0
@@ -1024,6 +1056,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                 adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                      ,index_start, md->old_pg_root
                                      ,md->old_vars_root
+                                     ,md->old_attrs_root
                                      );
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
@@ -1035,12 +1068,16 @@ void adios_mpi_close (struct adios_file_struct * fd
 
             free (buffer);
 
-            adios_clear_index_v1 (new_pg_root, new_vars_root);
-            adios_clear_index_v1 (md->old_pg_root, md->old_vars_root);
+            adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
+            adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
+                                 ,md->old_attrs_root
+                                 );
             new_pg_root = 0;
             new_vars_root = 0;
+            new_attrs_root = 0;
             md->old_pg_root = 0;
             md->old_vars_root = 0;
+            md->old_attrs_root = 0;
 
             break;
         }
@@ -1053,14 +1090,18 @@ void adios_mpi_close (struct adios_file_struct * fd
             uint64_t index_start = md->b.pg_index_offset;
 
             // build index
-            adios_build_index_v1 (fd, &new_pg_root, &new_vars_root);
+            adios_build_index_v1 (fd, &new_pg_root, &new_vars_root
+                                 ,&new_attrs_root
+                                 );
             // merge in old indicies
             adios_merge_index_v1 (&md->old_pg_root, &md->old_vars_root
-                                 ,new_pg_root, new_vars_root);
+                                 ,&md->old_attrs_root
+                                 ,new_pg_root, new_vars_root
+                                 ,new_attrs_root
+                                 );
             new_pg_root = 0;
             new_vars_root = 0;
-            new_pg_root = 0;
-            new_vars_root = 0;
+            new_attrs_root = 0;
             if (md->group_comm != MPI_COMM_NULL)
             {
                 if (md->rank != md->size - 1)
@@ -1109,12 +1150,18 @@ void adios_mpi_close (struct adios_file_struct * fd
                                                            ,&new_pg_root
                                                            );
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_parse_attributes_index_v1 (&md->b
+                                                        ,&new_attrs_root
+                                                        );
                         adios_merge_index_v1 (&md->old_pg_root
                                              ,&md->old_vars_root
+                                             ,&md->old_attrs_root
                                              ,new_pg_root, new_vars_root
+                                             ,new_attrs_root
                                              );
                         new_pg_root = 0;
                         new_vars_root = 0;
+                        new_attrs_root = 0;
                         md->b.buff = buffer_save;
                         md->b.length = buffer_size_save;
                         md->b.offset = offset_save;
@@ -1127,14 +1174,18 @@ void adios_mpi_close (struct adios_file_struct * fd
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                          ,0, md->old_pg_root
                                          ,md->old_vars_root
+                                         ,md->old_attrs_root
                                          );
 
                     MPI_Send (buffer, buffer_offset, MPI_BYTE, 0, 0
                              ,md->group_comm
                              );
-                    adios_clear_index_v1 (new_pg_root, new_vars_root);
+                    adios_clear_index_v1 (new_pg_root, new_vars_root
+                                         ,new_attrs_root
+                                         );
                     new_pg_root = 0;
                     new_vars_root = 0;
+                    new_attrs_root = 0;
                 }
             }
 
@@ -1147,7 +1198,7 @@ void adios_mpi_close (struct adios_file_struct * fd
             {
                 adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                      ,index_start, md->old_pg_root
-                                     ,md->old_vars_root
+                                     ,md->old_vars_root, md->old_attrs_root
                                      );
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
@@ -1198,9 +1249,12 @@ void adios_mpi_close (struct adios_file_struct * fd
     memset (&md->status, 0, sizeof (MPI_Status));
     md->group_comm = MPI_COMM_NULL;
 
-    adios_clear_index_v1 (md->old_pg_root, md->old_vars_root);
+    adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
+                         ,md->old_attrs_root
+                         );
     md->old_pg_root = 0;
     md->old_vars_root = 0;
+    md->old_attrs_root = 0;
 }
 
 void adios_mpi_finalize (int mype, struct adios_method_struct * method)
