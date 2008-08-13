@@ -293,9 +293,13 @@ def getVarlistFromXML(xmlFile):
                 raise SystemExit
             nodelist=group.childNodes
             processnode(nodelist,glanguage,coord_comm,coord_var)
-            line = sizeformular[0]  
-            for i in range(1,len(sizeformular)):
-                line =line +' + '+sizeformular[i]
+            line = sizeformular[0] 
+            if (glanguage == 1): 
+		for i in range(1,len(sizeformular)):
+                    line =line +' &\n                + '+sizeformular[i]
+            elif (glanguage == 2): 
+		for i in range(1,len(sizeformular)):
+                    line =line +' \\\n                + '+sizeformular[i]
             line = "adios_groupsize = "+line 
             if(glanguage==1):
                line=line+"\ncall adios_group_size(adios_handle, "+  "adios_groupsize, adios_totalsize, "+ coord_comm+ ', adios_err)\n'
