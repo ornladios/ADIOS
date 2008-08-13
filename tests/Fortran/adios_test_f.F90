@@ -137,6 +137,7 @@ subroutine test_read (group, filename, group_comm, small_int, big_int, small_rea
     integer :: istep3
 
     integer*8 :: handle
+    integer*8 :: buffer_size
 
     istep1 = 11
     istep2 = 22
@@ -145,12 +146,18 @@ subroutine test_read (group, filename, group_comm, small_int, big_int, small_rea
     call adios_open (handle, trim(group)//char(0), trim(filename)//char(0), "r"//char(0), err)
 
     call adios_group_size (handle, 0, total_size, 0, group_comm, err)
-    call adios_read (handle, "small_int"//char(0), small_int, 4, err)
-    call adios_read (handle, "big_int"//char(0), big_int, 8, err)
-    call adios_read (handle, "small_real"//char(0), small_real, 4, err)
-    call adios_read (handle, "big_real"//char(0), big_real, 8, err)
-    call adios_read (handle, "ze0size"//char(0), a_size, 4, err)
-    call adios_read (handle, "zelectron0"//char(0), a_array, a_size * 4, err)
+    buffer_size = 4
+    call adios_read (handle, "small_int"//char(0), small_int, buffer_size, err)
+    buffer_size = 8
+    call adios_read (handle, "big_int"//char(0), big_int, buffer_size, err)
+    buffer_size = 4
+    call adios_read (handle, "small_real"//char(0), small_real, buffer_size, err)
+    buffer_size = 8
+    call adios_read (handle, "big_real"//char(0), big_real, buffer_size, err)
+    buffer_size = 4
+    call adios_read (handle, "ze0size"//char(0), a_size, buffer_size, err)
+    buffer_size = 4 * a_size
+    call adios_read (handle, "zelectron0"//char(0), a_array, buffer_size, err)
 
     call adios_close (handle, err)
 
