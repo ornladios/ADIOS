@@ -3783,10 +3783,13 @@ int adios_common_define_attribute (long long group, const char * name
     return 1;
 }
 
-void adios_extract_string (char * out, const char * in, int size)
+void adios_extract_string (char ** out, const char * in, int size)
 {
     if (in && out)
-        strcpy (out, in);
+    {
+        *out = malloc (strlen (in) + 1);
+        strcpy (*out, in);
+    }
 // for some Fortran implementations, we get a size for a string.
 // for others (like PGI), we don't and it isn't null terminated
 // unless we do it explicitly.  Assume that it is null terminated

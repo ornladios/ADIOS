@@ -12,8 +12,6 @@
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
 
-#define STR_LEN 1000
-
 extern struct adios_transport_struct * adios_transports;
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -30,11 +28,13 @@ int adios_init (const char * config)
 
 void adios_init_ (const char * config, int * err, int config_size)
 {
-    char buf1 [STR_LEN] = "";
+    char * buf1 = 0;
 
-    adios_extract_string (buf1, config, config_size);
+    adios_extract_string (&buf1, config, config_size);
 
     *err = common_adios_init (buf1);
+
+    free (buf1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -165,15 +165,19 @@ void adios_open_ (long long * fd, const char * group_name, const char * name
                  ,int group_name_size, int name_size, int mode_size
                  )
 {
-    char buf1 [STR_LEN] = "";
-    char buf2 [STR_LEN] = "";
-    char buf3 [STR_LEN] = "";
+    char * buf1 = 0;
+    char * buf2 = 0;
+    char * buf3 = 0;
 
-    adios_extract_string (buf1, group_name, group_name_size);
-    adios_extract_string (buf2, name, name_size);
-    adios_extract_string (buf3, mode, mode_size);
+    adios_extract_string (&buf1, group_name, group_name_size);
+    adios_extract_string (&buf2, name, name_size);
+    adios_extract_string (&buf3, mode, mode_size);
 
     *err = common_adios_open (fd, buf1, buf2, buf3);
+
+    free (buf1);
+    free (buf2);
+    free (buf3);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -408,11 +412,13 @@ void adios_write_ (long long * fd_p, const char * name, void * var, int * err
                   ,int name_size
                   )
 {
-    char buf1 [STR_LEN] = "";
+    char * buf1 = 0;
 
-    adios_extract_string (buf1, name, name_size);
+    adios_extract_string (&buf1, name, name_size);
 
     *err = common_adios_write (*fd_p, buf1, var);
+
+    free (buf1);
 }
 
 
@@ -481,11 +487,13 @@ void adios_get_write_buffer_ (long long * fd_p, const char * name
                              ,void ** buffer, int * err, int name_size
                              )
 {
-    char buf1 [STR_LEN] = "";
+    char * buf1 = 0;
 
-    adios_extract_string (buf1, name, name_size);
+    adios_extract_string (&buf1, name, name_size);
 
     *err = common_adios_get_write_buffer (*fd_p, buf1, size, buffer);
+
+    free (buf1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -552,11 +560,13 @@ void adios_read_ (long long * fd_p, const char * name, void * buffer
                  ,long long * buffer_size, int * err, int name_size
                  )
 {
-    char buf1 [STR_LEN] = "";
+    char * buf1 = 0;
 
-    adios_extract_string (buf1, name, name_size);
+    adios_extract_string (&buf1, name, name_size);
 
     *err = common_adios_read (*fd_p, buf1, buffer, *buffer_size);
+
+    free (buf1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -603,11 +613,13 @@ void adios_set_path_ (long long * fd_p, const char * path, int * err
                      ,int path_size
                      )
 {
-    char buf1 [STR_LEN] = "";
+    char * buf1 = 0;
 
-    adios_extract_string (buf1, path, path_size);
+    adios_extract_string (&buf1, path, path_size);
 
     *err = common_adios_set_path (*fd_p, buf1);
+
+    free (buf1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -653,13 +665,16 @@ void adios_set_path_var_ (long long * fd_p, const char * path
                          ,int name_size
                          )
 {
-    char buf1 [STR_LEN] = "";
-    char buf2 [STR_LEN] = "";
+    char * buf1 = 0;
+    char * buf2 = 0;
 
-    adios_extract_string (buf1, path, path_size);
-    adios_extract_string (buf2, name, name_size);
+    adios_extract_string (&buf1, path, path_size);
+    adios_extract_string (&buf2, name, name_size);
 
     *err = common_adios_set_path_var (*fd_p, buf1, buf2);
+
+    free (buf1);
+    free (buf2);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -859,19 +874,24 @@ void adios_declare_group_ (long long * id, const char * name
                           ,int coordination_var_size, int time_index_size
                           )
 {
-    char buf1 [STR_LEN] = "";
-    char buf2 [STR_LEN] = "";
-    char buf3 [STR_LEN] = "";
-    char buf4 [STR_LEN] = "";
+    char * buf1 = 0;
+    char * buf2 = 0;
+    char * buf3 = 0;
+    char * buf4 = 0;
 
-    adios_extract_string (buf1, name, name_size);
-    adios_extract_string (buf2, coordination_comm, coordination_comm_size);
-    adios_extract_string (buf3, coordination_var, coordination_var_size);
-    adios_extract_string (buf4, time_index, time_index_size);
+    adios_extract_string (&buf1, name, name_size);
+    adios_extract_string (&buf2, coordination_comm, coordination_comm_size);
+    adios_extract_string (&buf3, coordination_var, coordination_var_size);
+    adios_extract_string (&buf4, time_index, time_index_size);
 
     *err = adios_common_declare_group (id, buf1, adios_flag_yes, buf2
                                       ,buf3, buf4
                                       );
+
+    free (buf1);
+    free (buf2);
+    free (buf3);
+    free (buf4);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -903,22 +923,28 @@ void adios_define_var_ (long long * group_id, const char * name
                        ,int global_dimensions_size, int local_offsets_size
                        )
 {
-    char buf1 [STR_LEN] = "";
-    char buf2 [STR_LEN] = "";
-    char buf3 [STR_LEN] = "";
-    char buf4 [STR_LEN] = "";
-    char buf5 [STR_LEN] = "";
+    char * buf1 = 0;
+    char * buf2 = 0;
+    char * buf3 = 0;
+    char * buf4 = 0;
+    char * buf5 = 0;
 
-    adios_extract_string (buf1, name, name_size);
-    adios_extract_string (buf2, path, path_size);
-    adios_extract_string (buf3, dimensions, dimensions_size);
-    adios_extract_string (buf4, global_dimensions, global_dimensions_size);
-    adios_extract_string (buf5, local_offsets, local_offsets_size);
+    adios_extract_string (&buf1, name, name_size);
+    adios_extract_string (&buf2, path, path_size);
+    adios_extract_string (&buf3, dimensions, dimensions_size);
+    adios_extract_string (&buf4, global_dimensions, global_dimensions_size);
+    adios_extract_string (&buf5, local_offsets, local_offsets_size);
 
     *err = adios_common_define_var (*group_id, buf1, buf2
                                    ,(enum ADIOS_DATATYPES) *type
                                    ,buf3, buf4, buf5
                                    );
+
+    free (buf1);
+    free (buf2);
+    free (buf3);
+    free (buf4);
+    free (buf5);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -940,20 +966,25 @@ void adios_define_attribute_ (long long * group, const char * name
                              ,int var_size
                              )
 {
-    char buf1 [STR_LEN] = "";
-    char buf2 [STR_LEN] = "";
-    char buf3 [STR_LEN] = "";
-    char buf4 [STR_LEN] = "";
+    char * buf1 = 0;
+    char * buf2 = 0;
+    char * buf3 = 0;
+    char * buf4 = 0;
 
-    adios_extract_string (buf1, name, name_size);
-    adios_extract_string (buf2, path, path_size);
-    adios_extract_string (buf3, value, value_size);
-    adios_extract_string (buf4, var, var_size);
+    adios_extract_string (&buf1, name, name_size);
+    adios_extract_string (&buf2, path, path_size);
+    adios_extract_string (&buf3, value, value_size);
+    adios_extract_string (&buf4, var, var_size);
 
     *err = adios_common_define_attribute (*group, buf1, buf2
                                          ,(enum ADIOS_DATATYPES) type, buf3
                                          ,buf4
                                          );
+
+    free (buf1);
+    free (buf2);
+    free (buf3);
+    free (buf4);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -977,10 +1008,10 @@ void adios_select_method_ (int * priority, const char * method
                           ,int group_size, int base_path_size
                           )
 {
-    char buf1 [STR_LEN] = "";
-    char buf2 [STR_LEN] = "";
-    char buf3 [STR_LEN] = "";
-    char buf4 [STR_LEN] = "";
+    char * buf1 = 0;
+    char * buf2 = 0;
+    char * buf3 = 0;
+    char * buf4 = 0;
 
     adios_extract_string (buf1, method, method_size);
     adios_extract_string (buf2, parameters, parameters_size);
@@ -990,4 +1021,9 @@ void adios_select_method_ (int * priority, const char * method
     *err = adios_common_select_method (*priority, buf1, buf2, buf3, buf4
                                       ,*iters
                                       );
+
+    free (buf1);
+    free (buf2);
+    free (buf3);
+    free (buf4);
 }
