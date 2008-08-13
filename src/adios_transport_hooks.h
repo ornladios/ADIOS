@@ -77,7 +77,9 @@ void adios_##a##_start_calculation (struct adios_method_struct * method); \
 void adios_##a##_stop_calculation (struct adios_method_struct * method);
 #endif
 
-#define MATCH_STRING_TO_METHOD(b,d) if (!strcasecmp (buf,b)) {*method=d;return 1;}
+#define MATCH_STRING_TO_METHOD(b,d,r) \
+if (!strcasecmp (buf,b)) \
+{*method=d;*requires_group_comm=r;return 1;}
 
 #define ASSIGN_FNS(a,b) \
 (*t) [b].adios_init_fn = adios_##a##_init; \
@@ -132,25 +134,25 @@ FORWARD_DECLARE(dart)
 // add the string<->ID mapping here (also add ID in adios_internals.h)
 #if USE_PORTALS
 #define ADIOS_PARSE_METHOD_SETUP \
-    MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI)                 \
-    MATCH_STRING_TO_METHOD("DATATAP",ADIOS_METHOD_DATATAP)         \
-    MATCH_STRING_TO_METHOD("PBIO",ADIOS_METHOD_DATATAP)            \
-    MATCH_STRING_TO_METHOD("POSIX",ADIOS_METHOD_POSIX)             \
-    MATCH_STRING_TO_METHOD("FB",ADIOS_METHOD_POSIX)                \
-    MATCH_STRING_TO_METHOD("DART",ADIOS_METHOD_DART)               \
-    MATCH_STRING_TO_METHOD("VTK",ADIOS_METHOD_VTK)                 \
-    MATCH_STRING_TO_METHOD("POSIX_ASCII",ADIOS_METHOD_POSIX_ASCII) \
-    MATCH_STRING_TO_METHOD("MPI_CIO",ADIOS_METHOD_MPI_CIO) \
-    MATCH_STRING_TO_METHOD("NULL",ADIOS_METHOD_NULL)
+    MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI,1)                 \
+    MATCH_STRING_TO_METHOD("DATATAP",ADIOS_METHOD_DATATAP,0)         \
+    MATCH_STRING_TO_METHOD("PBIO",ADIOS_METHOD_DATATAP,0)            \
+    MATCH_STRING_TO_METHOD("POSIX",ADIOS_METHOD_POSIX,0)             \
+    MATCH_STRING_TO_METHOD("FB",ADIOS_METHOD_POSIX,0)                \
+    MATCH_STRING_TO_METHOD("DART",ADIOS_METHOD_DART,0)               \
+    MATCH_STRING_TO_METHOD("VTK",ADIOS_METHOD_VTK,0)                 \
+    MATCH_STRING_TO_METHOD("POSIX_ASCII",ADIOS_METHOD_POSIX_ASCII,0) \
+    MATCH_STRING_TO_METHOD("MPI_CIO",ADIOS_METHOD_MPI_CIO,1) \
+    MATCH_STRING_TO_METHOD("NULL",ADIOS_METHOD_NULL,0)
 #else
 #define ADIOS_PARSE_METHOD_SETUP \
-    MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI)                 \
-    MATCH_STRING_TO_METHOD("MPI_CIO",ADIOS_METHOD_MPI_CIO) \
-    MATCH_STRING_TO_METHOD("POSIX",ADIOS_METHOD_POSIX)             \
-    MATCH_STRING_TO_METHOD("FB",ADIOS_METHOD_POSIX)                \
-    MATCH_STRING_TO_METHOD("VTK",ADIOS_METHOD_VTK)                 \
-    MATCH_STRING_TO_METHOD("POSIX_ASCII",ADIOS_METHOD_POSIX_ASCII) \
-    MATCH_STRING_TO_METHOD("NULL",ADIOS_METHOD_NULL)
+    MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI,1)                 \
+    MATCH_STRING_TO_METHOD("MPI_CIO",ADIOS_METHOD_MPI_CIO,1)         \
+    MATCH_STRING_TO_METHOD("POSIX",ADIOS_METHOD_POSIX,0)             \
+    MATCH_STRING_TO_METHOD("FB",ADIOS_METHOD_POSIX,0)                \
+    MATCH_STRING_TO_METHOD("VTK",ADIOS_METHOD_VTK,0)                 \
+    MATCH_STRING_TO_METHOD("POSIX_ASCII",ADIOS_METHOD_POSIX_ASCII,0) \
+    MATCH_STRING_TO_METHOD("NULL",ADIOS_METHOD_NULL,0)
 #endif
 
 // add the initialization of the functions for the calls here
