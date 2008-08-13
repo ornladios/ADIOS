@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <string.h>
 #include "netcdf.h"
 #include "adios_types.h"
 #include "adios_transport_hooks.h"

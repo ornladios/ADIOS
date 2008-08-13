@@ -39,6 +39,8 @@ void print_process_group_index (
                          struct adios_index_process_group_struct_v1 * pg_root
                          );
 void print_vars_index (struct adios_index_var_struct_v1 * vars_root);
+void print_attributes_index
+                         (struct adios_index_attribute_struct_v1 * attrs_root);
 
 int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
                   ,void * data
@@ -122,6 +124,7 @@ int main (int argc, char ** argv)
     struct adios_index_process_group_struct_v1 * pg_root = 0;
     struct adios_index_process_group_struct_v1 * pg = 0;
     struct adios_index_var_struct_v1 * vars_root = 0;
+    struct adios_index_attribute_struct_v1 * attrs_root = 0;
 
     printf (DIVIDER);
     printf ("Process Groups Index:\n");
@@ -137,6 +140,12 @@ int main (int argc, char ** argv)
     adios_posix_read_vars_index (b);
     adios_parse_vars_index_v1 (b, &vars_root);
     print_vars_index (vars_root);
+
+    printf (DIVIDER);
+    printf ("Attributes Index:\n");
+    adios_posix_read_attributes_index (b);
+    adios_parse_attributes_index_v1 (b, &attrs_root);
+    print_attributes_index (attrs_root);
 
     uint64_t element_num = 1;
     pg = pg_root;
@@ -892,53 +901,57 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                    );
 	}
         printf ("\tDatatype: %s\n", adios_type_to_string (vars_root->type));
-        printf ("\tVars Entries: %llu\n", vars_root->entries_count);
+        printf ("\tVars Characteristics: %llu\n"
+               ,vars_root->characteristics_count
+               );
         uint64_t i;
-        for (i = 0; i < vars_root->entries_count; i++)
+        for (i = 0; i < vars_root->characteristics_count; i++)
         {
-            printf ("\t\tOffset(%llu)", vars_root->entries [i].offset);
-            if (vars_root->entries [i].min)
+            printf ("\t\tOffset(%llu)", vars_root->characteristics [i].offset);
+            if (vars_root->characteristics [i].min)
             {
                 printf ("\t\tMin(%s)", value_to_string (vars_root->type
-                                                  ,vars_root->entries [i].min
-                                                  )
+                                           ,vars_root->characteristics [i].min
+                                           )
                        );
             }
-            if (vars_root->entries [i].max)
+            if (vars_root->characteristics [i].max)
             {
                 printf ("\t\tMax(%s)", value_to_string (vars_root->type
-                                                  ,vars_root->entries [i].max
-                                                  )
+                                           ,vars_root->characteristics [i].max
+                                           )
                        );
             }
-            if (vars_root->entries [i].value)
+            if (vars_root->characteristics [i].value)
             {
                 printf ("\t\tValue(%s)", value_to_string (vars_root->type
-                                                  ,vars_root->entries [i].value
-                                                  )
+                                         ,vars_root->characteristics [i].value
+                                         )
                        );
             }
-            if (vars_root->entries [i].dims.count != 0)
+            if (vars_root->characteristics [i].dims.count != 0)
             {
                 int j;
 
                 printf ("\t\tDims (l:g:o): (");
-                for (j = 0; j < vars_root->entries [i].dims.count; j++)
+                for (j = 0; j < vars_root->characteristics [i].dims.count; j++)
                 {
                     if (j != 0)
                         printf (",");
-                    if (vars_root->entries [i].dims.dims [j * 3 + 1] != 0)
+                    if (  vars_root->characteristics [i].dims.dims [j * 3 + 1]
+                        != 0
+                       )
                     {
                         printf ("%llu:%llu:%llu"
-                               ,vars_root->entries [i].dims.dims [j * 3 + 0]
-                               ,vars_root->entries [i].dims.dims [j * 3 + 1]
-                               ,vars_root->entries [i].dims.dims [j * 3 + 2]
+                         ,vars_root->characteristics [i].dims.dims [j * 3 + 0]
+                         ,vars_root->characteristics [i].dims.dims [j * 3 + 1]
+                         ,vars_root->characteristics [i].dims.dims [j * 3 + 2]
                                );
                     }
                     else
                     {
                         printf ("%llu"
-                               ,vars_root->entries [i].dims.dims [j * 3 + 0]
+                         ,vars_root->characteristics [i].dims.dims [j * 3 + 0]
                                );
                     }
                 }
@@ -948,5 +961,90 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
         }
 
         vars_root = vars_root->next;
+    }
+}
+
+void print_attributes_index
+                          (struct adios_index_attribute_struct_v1 * attrs_root)
+{
+    while (attrs_root)
+    {
+        if (!strcmp (attrs_root->attr_path, "/"))
+        {
+            printf ("Attribute (Group): /%s (%s)\n", attrs_root->attr_name
+                   ,attrs_root->group_name
+                   );
+        }
+        else
+	{
+            printf ("Attribute (Group): %s/%s (%s)\n", attrs_root->attr_path
+                   ,attrs_root->attr_name, attrs_root->group_name
+                   );
+	}
+        printf ("\tDatatype: %s\n", adios_type_to_string (attrs_root->type));
+        printf ("\tAttribute Characteristics: %llu\n"
+               ,attrs_root->characteristics_count
+               );
+        uint64_t i;
+        for (i = 0; i < attrs_root->characteristics_count; i++)
+        {
+            printf ("\t\tOffset(%llu)", attrs_root->characteristics [i].offset);
+            if (attrs_root->characteristics [i].min)
+            {
+                printf ("\t\tMin(%s)", value_to_string (attrs_root->type
+                                          ,attrs_root->characteristics [i].min
+                                          )
+                       );
+            }
+            if (attrs_root->characteristics [i].max)
+            {
+                printf ("\t\tMax(%s)", value_to_string (attrs_root->type
+                                          ,attrs_root->characteristics [i].max
+                                          )
+                       );
+            }
+            if (attrs_root->characteristics [i].value)
+            {
+                printf ("\t\tValue(%s)", value_to_string (attrs_root->type
+                                        ,attrs_root->characteristics [i].value
+                                        )
+                       );
+            }
+            if (attrs_root->characteristics [i].var_id)
+            {
+                printf ("\t\tVar(%u)", attrs_root->characteristics [i].var_id);
+            }
+            if (attrs_root->characteristics [i].dims.count != 0)
+            {
+                int j;
+
+                printf ("\t\tDims (l:g:o): (");
+                for (j = 0; j < attrs_root->characteristics [i].dims.count; j++)
+                {
+                    if (j != 0)
+                        printf (",");
+                    if (  attrs_root->characteristics [i].dims.dims [j * 3 + 1]
+                        != 0
+                       )
+                    {
+                        printf ("%llu:%llu:%llu"
+                         ,attrs_root->characteristics [i].dims.dims [j * 3 + 0]
+                         ,attrs_root->characteristics [i].dims.dims [j * 3 + 1]
+                         ,attrs_root->characteristics [i].dims.dims [j * 3 + 2]
+                               );
+                    }
+                    else
+                    {
+                        printf ("%llu"
+                         ,attrs_root->characteristics [i].dims.dims [j * 3 + 0]
+                               );
+                    }
+                }
+                printf (")");
+            }
+            printf ("\n");
+        }
+
+        attrs_root = attrs_root->next;
     }
 }
