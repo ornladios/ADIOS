@@ -175,7 +175,7 @@ void adios_phdf5_get_write_buffer (struct adios_file_struct * fd
 }
 
 void adios_phdf5_read (struct adios_file_struct * fd
-                    ,struct adios_var_struct * v, void * buffer
+                    ,struct adios_var_struct * v, void * buffer, uint64_t buffersize
                     ,struct adios_method_struct * method
                     )
 {
