@@ -4198,7 +4198,10 @@ uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
     overhead += strlen (fd->group->name); // group name
     overhead += 2; // coordination var id
     overhead += 2; // length of time index name
-    overhead += strlen (fd->group->name); // time index name
+    overhead += ((fd->group->time_index_name)
+                    ? strlen (fd->group->time_index_name)
+                    : 0
+                );  // time index name
     overhead += 4; // time index
 
     overhead += 1; // count of methods employed
