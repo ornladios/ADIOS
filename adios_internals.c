@@ -4157,6 +4157,7 @@ int adios_common_select_method (int priority, const char * method
     long long group_id;
     struct adios_group_struct * g;
     struct adios_method_struct * new_method;
+    int requires_group_comm = 0;
 
     new_method = (struct adios_method_struct *)
                            malloc (sizeof (struct adios_method_struct));
@@ -4170,7 +4171,7 @@ int adios_common_select_method (int priority, const char * method
     new_method->method_data = 0;
     new_method->group = 0;
 
-    if (adios_parse_method (method, &new_method->m))
+    if (adios_parse_method (method, &new_method->m, &requires_group_comm))
     {
         if (   new_method->m != ADIOS_METHOD_UNKNOWN
             && new_method->m != ADIOS_METHOD_NULL
@@ -4185,6 +4186,11 @@ int adios_common_select_method (int priority, const char * method
     {
         fprintf (stderr, "config.xml: invalid method: %s\n", method);
 
+        free (new_method->base_path);
+        free (new_method->method);
+        free (new_method->parameters);
+        free (new_method);
+
         return 0;
     }
 
@@ -4196,10 +4202,30 @@ int adios_common_select_method (int priority, const char * method
                 ,group, method
                 );
 
+        free (new_method->base_path);
+        free (new_method->method);
+        free (new_method->parameters);
+        free (new_method);
+
         return 0;
     }
     else
     {
+        if (requires_group_comm && !g->group_comm)
+        {
+            fprintf (stderr, "config.xml: method %s for group %s.  Group does "
+                             "not have the required coordination-communicator"
+                             ".\n"
+                    ,method, group
+                    );
+
+            free (new_method->base_path);
+            free (new_method->method);
+            free (new_method->parameters);
+            free (new_method);
+
+            return 0;
+        }
         adios_add_method_to_group (&g->methods, new_method);
     }
 
