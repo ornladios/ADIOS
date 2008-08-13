@@ -352,7 +352,7 @@ void adios_parse_dimension (const char * dimension
                            ,struct adios_dimension_struct * dim
                            );
 
-void adios_extract_string (char * out, const char * in, int size);
+void adios_extract_string (char ** out, const char * in, int size);
 
 int adios_common_define_attribute (long long group, const char * name
                                   ,const char * path
