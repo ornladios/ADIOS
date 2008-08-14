@@ -890,14 +890,14 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
     {
         if (!strcmp (vars_root->var_path, "/"))
         {
-            printf ("Var (Group): /%s (%s)\n", vars_root->var_name
-                   ,vars_root->group_name
+            printf ("Var (Group) [ID]: /%s (%s) [%d]\n", vars_root->var_name
+                   ,vars_root->group_name, vars_root->id
                    );
         }
         else
 	{
-            printf ("Var (Group): %s/%s (%s)\n", vars_root->var_path
-                   ,vars_root->var_name, vars_root->group_name
+            printf ("Var (Group) [ID]: %s/%s (%s) [%d]\n", vars_root->var_path
+                   ,vars_root->var_name, vars_root->group_name, vars_root->id
                    );
 	}
         printf ("\tDatatype: %s\n", adios_type_to_string (vars_root->type));
@@ -971,14 +971,17 @@ void print_attributes_index
     {
         if (!strcmp (attrs_root->attr_path, "/"))
         {
-            printf ("Attribute (Group): /%s (%s)\n", attrs_root->attr_name
-                   ,attrs_root->group_name
+            printf ("Attribute (Group) [ID]: /%s (%s) [%d]\n"
+                   ,attrs_root->attr_name, attrs_root->group_name
+                   ,attrs_root->id
                    );
         }
         else
 	{
-            printf ("Attribute (Group): %s/%s (%s)\n", attrs_root->attr_path
+            printf ("Attribute (Group) [ID]: %s/%s (%s) [%d]\n"
+                   ,attrs_root->attr_path
                    ,attrs_root->attr_name, attrs_root->group_name
+                   ,attrs_root->id
                    );
 	}
         printf ("\tDatatype: %s\n", adios_type_to_string (attrs_root->type));

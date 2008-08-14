@@ -4982,6 +4982,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                            sizeof (struct adios_index_characteristic_struct_v1)
                           );
 
+            v_index->id = v->id;
             v_index->group_name = g->name;
             v_index->var_name = v->name;
             v_index->var_path = v->path;
@@ -5077,6 +5078,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                            sizeof (struct adios_index_characteristic_struct_v1)
                           );
 
+            a_index->id = a->id;
             a_index->group_name = g->name;
             a_index->attr_name = a->name;
             a_index->attr_path = a->path;
@@ -5231,6 +5233,10 @@ int adios_write_index_v1 (char ** buffer
         vars_count++;
 
         *buffer_offset += 4; // save space for var length
+
+        buffer_write (buffer, buffer_size, buffer_offset, &vars_root->id, 2);
+        index_size += 2;
+        var_size += 2;
 
         len = strlen (vars_root->group_name);
         buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
@@ -5462,6 +5468,10 @@ int adios_write_index_v1 (char ** buffer
         attrs_count++;
 
         *buffer_offset += 4; // save space for attr length
+
+        buffer_write (buffer, buffer_size, buffer_offset, &attrs_root->id, 2);
+        index_size += 2;
+        attr_size += 2;
 
         len = strlen (attrs_root->group_name);
         buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
