@@ -4,6 +4,7 @@
 #include <math.h>
 #include <string.h>
 
+#include "mpi.h"
 #include "hdf5.h"
 #include "adios.h"
 #include "adios_types.h"
@@ -175,6 +176,7 @@ void adios_phdf5_read (struct adios_file_struct * fd
                     )
 {
     v->data = buffer;
+    v->data_size = buffersize;
 }
 static void adios_phdf5_do_read (struct adios_file_struct * fd
                               ,struct adios_method_struct * method
