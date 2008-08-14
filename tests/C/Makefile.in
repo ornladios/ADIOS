@@ -58,7 +58,7 @@ am_adios_test_c_OBJECTS = adios_test_c.$(OBJEXT)
 adios_test_c_OBJECTS = $(am_adios_test_c_OBJECTS)
 am__DEPENDENCIES_1 =
 adios_test_c_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -193,8 +193,9 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 adios_test_c_SOURCES = adios_test_c.c
-adios_test_c_LDFLAGS = $(MXML_LDFLAGS)
-adios_test_c_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS)
+adios_test_c_LDFLAGS = $(MXML_LDFLAGS) $(HDF5_LDFLAGS)
+adios_test_c_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
+	$(HDF5_LIBS)
 CLEANFILES = restart.bp
 all: all-am
 

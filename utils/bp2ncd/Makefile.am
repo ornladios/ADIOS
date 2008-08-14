@@ -14,7 +14,6 @@ bp2ncd_CPPFLAGS = $(MXML_CPPFLAGS)
 bp2ncd_LDFLAGS += -L/apps/netcdf/3.6.1/ewok_x86_64_pgi625/lib
 bp2ncd_CPPFLAGS += -I/apps/netcdf/3.6.1/ewok_x86_64_pgi625/include
 
-bp2ncd_LDADD = $(top_builddir)/src/libadios.a
-bp2ncd_LDADD += $(top_builddir)/src/libadios_int.a
+bp2ncd_LDADD = $(top_builddir)/src/libadios_int.a
 bp2ncd_LDADD += $(MXML_LIBS)
 bp2ncd_LDADD += -lnetcdf

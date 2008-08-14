@@ -57,8 +57,8 @@ PROGRAMS = $(bin_PROGRAMS)
 am_bp2ncd_OBJECTS = bp2ncd-bp2ncd.$(OBJEXT)
 bp2ncd_OBJECTS = $(am_bp2ncd_OBJECTS)
 am__DEPENDENCIES_1 =
-bp2ncd_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(top_builddir)/src/libadios_int.a $(am__DEPENDENCIES_1)
+bp2ncd_DEPENDENCIES = $(top_builddir)/src/libadios_int.a \
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -199,8 +199,8 @@ bp2ncd_LDFLAGS = $(MXML_LDFLAGS) \
 	-L/apps/netcdf/3.6.1/ewok_x86_64_pgi625/lib
 bp2ncd_CPPFLAGS = $(MXML_CPPFLAGS) \
 	-I/apps/netcdf/3.6.1/ewok_x86_64_pgi625/include
-bp2ncd_LDADD = $(top_builddir)/src/libadios.a \
-	$(top_builddir)/src/libadios_int.a $(MXML_LIBS) -lnetcdf
+bp2ncd_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS) \
+	-lnetcdf
 all: all-am
 
 .SUFFIXES:

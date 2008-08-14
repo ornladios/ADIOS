@@ -57,8 +57,8 @@ PROGRAMS = $(bin_PROGRAMS)
 am_bp2h5_OBJECTS = bp2h5-bp2h5.$(OBJEXT) bp2h5-hw-utils.$(OBJEXT)
 bp2h5_OBJECTS = $(am_bp2h5_OBJECTS)
 am__DEPENDENCIES_1 =
-bp2h5_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(top_builddir)/src/libadios_int.a $(am__DEPENDENCIES_1)
+bp2h5_DEPENDENCIES = $(top_builddir)/src/libadios_int.a \
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -201,8 +201,8 @@ bp2h5_SOURCES = bp2h5.c \
 bp2h5_LDFLAGS = $(MXML_LDFLAGS) -L/apps/HDF5/1.6.5/ewok_par/pgi625/lib
 bp2h5_CPPFLAGS = $(MXML_CPPFLAGS) \
 	-I/apps/HDF5/1.6.5/ewok_par/pgi625/include
-bp2h5_LDADD = $(top_builddir)/src/libadios.a \
-	$(top_builddir)/src/libadios_int.a $(MXML_LIBS) -lhdf5 -lz
+bp2h5_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS) -lhdf5 \
+	-lz
 all: all-am
 
 .SUFFIXES:
