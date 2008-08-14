@@ -30,6 +30,12 @@
 /* Define to 1 if you have the <mxml.h> header file. */
 #undef HAVE_MXML_H
 
+/* Define if you have NETCDF. */
+#undef HAVE_NETCDF
+
+/* Define to 1 if you have the <netcdf.h> header file. */
+#undef HAVE_NETCDF_H
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 

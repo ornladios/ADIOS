@@ -5,7 +5,7 @@
 
 #ewok
 export CC=gcc
-./configure --prefix=/ccs/home/ge1/work/ewok --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/ewok --with-hdf5=/apps/HDF5/1.6.5/hawk_x86_64
+./configure --prefix=/ccs/home/ge1/work/ewok --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/ewok --with-hdf5=/apps/HDF5/1.6.5/hawk_x86_64 --with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
 
 #jaguar
 #export CC=cc
@@ -13,4 +13,4 @@ export CC=gcc
 # use the two lines below for openmpi
 #export CC=mpicc
 #export FC=mpif90
-#./configure --prefix=/ccs/home/ge1/work/jaguar --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/jaguar --with-hdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par --with-hdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz"
+#./configure --prefix=/ccs/home/ge1/work/jaguar --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/jaguar --with-hdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par --with-hdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" --with-netcdf=/sw/xt/netcdf/3.6.2/sles9.2_pgi7.0.7
