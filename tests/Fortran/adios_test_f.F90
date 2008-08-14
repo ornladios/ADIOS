@@ -145,7 +145,7 @@ subroutine test_read (group, filename, group_comm, small_int, big_int, small_rea
 
     call adios_open (handle, trim(group)//char(0), trim(filename)//char(0), "r"//char(0), err)
 
-    call adios_group_size (handle, 0, total_size, 0, group_comm, err)
+    call adios_group_size (handle, 0, total_size, group_comm, err)
     buffer_size = 4
     call adios_read (handle, "small_int"//char(0), small_int, buffer_size, err)
     buffer_size = 8
