@@ -67,10 +67,13 @@ am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
 	libadios_a-adios_transport_hooks.$(OBJEXT) \
 	libadios_a-adios_mpi.$(OBJEXT) \
 	libadios_a-adios_mpi_cio.$(OBJEXT) \
+	libadios_a-adios_phdf5.$(OBJEXT) \
 	libadios_a-adios_posix.$(OBJEXT) \
 	libadios_a-adios_posix_ascii.$(OBJEXT) \
 	libadios_a-adios_vtk.$(OBJEXT) \
+	libadios_a-adios_provenance.$(OBJEXT) \
 	libadios_a-adios_internals.$(OBJEXT) \
+	libadios_a-adios_socket.$(OBJEXT) \
 	libadios_a-adios_bp_v1.$(OBJEXT)
 libadios_a_OBJECTS = $(am_libadios_a_OBJECTS)
 libadios_int_a_AR = $(AR) $(ARFLAGS)
@@ -207,7 +210,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-INCLUDES = -I$(top_srcdir)
+INCLUDES = -I$(top_srcdir) 
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES = AUTO
 #libadios_int_a_LIBADD = $(MXML_LIBS)
@@ -218,15 +221,18 @@ libadios_a_SOURCES = adios.c \
                      adios_transport_hooks.c \
                      adios_mpi.c \
                      adios_mpi_cio.c \
+                     adios_phdf5.c \
                      adios_posix.c \
                      adios_posix_ascii.c \
                      adios_vtk.c \
+		     adios_provenance.c \
 		     adios_internals.c \
+		     adios_socket.c \
                      adios_bp_v1.c
 
 #		     adios_datatap.c
 #		     adios_dart.c
-libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)
+libadios_a_CPPFLAGS = $(MXML_CPPFLAGS) ${HDF5_CLIB}
 libadios_int_a_SOURCES = adios_internals.c \
                         adios_transport_hooks_dummy.c \
                         adios_bp_v1.c
@@ -342,6 +348,12 @@ libadios_a-adios_mpi_cio.o: adios_mpi_cio.c
 libadios_a-adios_mpi_cio.obj: adios_mpi_cio.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_cio.obj `if test -f 'adios_mpi_cio.c'; then $(CYGPATH_W) 'adios_mpi_cio.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_cio.c'; fi`
 
+libadios_a-adios_phdf5.o: adios_phdf5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_phdf5.o `test -f 'adios_phdf5.c' || echo '$(srcdir)/'`adios_phdf5.c
+
+libadios_a-adios_phdf5.obj: adios_phdf5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_phdf5.obj `if test -f 'adios_phdf5.c'; then $(CYGPATH_W) 'adios_phdf5.c'; else $(CYGPATH_W) '$(srcdir)/adios_phdf5.c'; fi`
+
 libadios_a-adios_posix.o: adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_posix.o `test -f 'adios_posix.c' || echo '$(srcdir)/'`adios_posix.c
 
@@ -360,11 +372,23 @@ libadios_a-adios_vtk.o: adios_vtk.c
 libadios_a-adios_vtk.obj: adios_vtk.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_vtk.obj `if test -f 'adios_vtk.c'; then $(CYGPATH_W) 'adios_vtk.c'; else $(CYGPATH_W) '$(srcdir)/adios_vtk.c'; fi`
 
+libadios_a-adios_provenance.o: adios_provenance.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_provenance.o `test -f 'adios_provenance.c' || echo '$(srcdir)/'`adios_provenance.c
+
+libadios_a-adios_provenance.obj: adios_provenance.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_provenance.obj `if test -f 'adios_provenance.c'; then $(CYGPATH_W) 'adios_provenance.c'; else $(CYGPATH_W) '$(srcdir)/adios_provenance.c'; fi`
+
 libadios_a-adios_internals.o: adios_internals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_internals.o `test -f 'adios_internals.c' || echo '$(srcdir)/'`adios_internals.c
 
 libadios_a-adios_internals.obj: adios_internals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_internals.obj `if test -f 'adios_internals.c'; then $(CYGPATH_W) 'adios_internals.c'; else $(CYGPATH_W) '$(srcdir)/adios_internals.c'; fi`
+
+libadios_a-adios_socket.o: adios_socket.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_socket.o `test -f 'adios_socket.c' || echo '$(srcdir)/'`adios_socket.c
+
+libadios_a-adios_socket.obj: adios_socket.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_socket.obj `if test -f 'adios_socket.c'; then $(CYGPATH_W) 'adios_socket.c'; else $(CYGPATH_W) '$(srcdir)/adios_socket.c'; fi`
 
 libadios_a-adios_bp_v1.o: adios_bp_v1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_bp_v1.o `test -f 'adios_bp_v1.c' || echo '$(srcdir)/'`adios_bp_v1.c
