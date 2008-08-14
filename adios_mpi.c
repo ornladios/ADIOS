@@ -42,10 +42,16 @@ static void adios_var_to_comm (const char * comm_name
     if (data)
     {
         int t = *(int *) data;
+
         if (!comm_name)
         {
             if (!t)
             {
+                fprintf (stderr, "communicator not provided and none "
+                                 "listed in XML.  Defaulting to "
+                                 "MPI_COMM_SELF\n"
+                        );
+
                 *comm = MPI_COMM_SELF;
             }
             else
@@ -66,7 +72,12 @@ static void adios_var_to_comm (const char * comm_name
             {
                 if (!t)
                 {
-                    *comm = MPI_COMM_WORLD;
+                    fprintf (stderr, "communicator not provided and none "
+                                     "listed in XML.  Defaulting to "
+                                     "MPI_COMM_SELF\n"
+                            );
+
+                    *comm = MPI_COMM_SELF;
                 }
                 else
                 {
@@ -84,7 +95,12 @@ static void adios_var_to_comm (const char * comm_name
             {
                 if (!t)
                 {
-                    *comm = MPI_COMM_SELF;
+                    fprintf (stderr, "communicator not provided but one "
+                                     "listed in XML.  Defaulting to "
+                                     "MPI_COMM_WORLD\n"
+                            );
+
+                    *comm = MPI_COMM_WORLD;
                 }
                 else
                 {
@@ -105,6 +121,7 @@ static void adios_var_to_comm (const char * comm_name
         fprintf (stderr, "coordination-communication not provided. "
                          "Using MPI_COMM_WORLD instead\n"
                 );
+
         *comm = MPI_COMM_WORLD;
     }
 }
