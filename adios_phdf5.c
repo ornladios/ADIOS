@@ -116,7 +116,8 @@ int adios_phdf5_should_buffer (struct adios_file_struct * fd
         MPI_Comm_rank (md->group_comm, &md->rank);
         MPI_Comm_size (md->group_comm, &md->size);
         fapl_id = H5Pcreate(H5P_FILE_ACCESS);
-        H5Pset_fapl_mpio(fapl_id,md->group_comm,info);
+fprintf (stderr, "H5Pset_fapl_mpio not found on ewok so commented out\n");
+//        H5Pset_fapl_mpio(fapl_id,md->group_comm,info);
     }
     else 
        md->group_comm=MPI_COMM_SELF;
@@ -251,7 +252,8 @@ int hw_attribute ( hid_t root_id
     printf ("///////////////////////////\n");  
     h5_plist_id = H5Pcreate(H5P_DATASET_XFER);
     h5_plist_id=H5P_DEFAULT;   
-    H5Pset_dxpl_mpio(h5_plist_id, H5FD_MPIO_INDEPENDENT); 
+fprintf (stderr, "H5Pset_dxpl_mpio not found on ewok so commented out\n");
+    //H5Pset_dxpl_mpio(h5_plist_id, H5FD_MPIO_INDEPENDENT); 
 
     hw_gopen (root_id, patt->path,grp_ids, &level, 1);     
 
@@ -368,7 +370,8 @@ int hw_var ( hid_t root_id
      
     h5_plist_id = H5Pcreate(H5P_DATASET_XFER);
     h5_plist_id=H5P_DEFAULT;   
-    H5Pset_dxpl_mpio(h5_plist_id, H5FD_MPIO_INDEPENDENT); 
+fprintf (stderr, "H5Pset_dxpl_mpio not found on ewok so commented out\n");
+    //H5Pset_dxpl_mpio(h5_plist_id, H5FD_MPIO_INDEPENDENT); 
 
     getH5TypeId (pvar->type, &h5_type_id, fortran_yes);
     if ( h5_type_id <= 0) {

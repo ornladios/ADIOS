@@ -238,11 +238,7 @@ libadios_a_SOURCES = adios.c \
 
 #		     adios_datatap.c
 #		     adios_dart.c
-<<<<<<< .mine
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS) $(HDF5_CPPFLAGS)
-=======
-libadios_a_CPPFLAGS = $(MXML_CPPFLAGS) ${HDF5_CLIB}
->>>>>>> .r288
 libadios_int_a_SOURCES = adios_internals.c \
                         adios_transport_hooks_dummy.c \
                         adios_bp_v1.c
