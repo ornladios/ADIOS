@@ -1,4 +1,0 @@
-adios_groupsize = 4
-call adios_group_size(adios_handle, adios_groupsize, adios_totalsize, partd_comm, adios_err)
-call adios_write(adios_handle,"/history/irun"//char(0),irun, adios_err)
-call adios_write(adios_handle,"/history/mstep_ndiag"//char(0),mstep_ndiag, adios_err)
