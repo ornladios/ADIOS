@@ -437,6 +437,7 @@ int main (int argc, char ** argv)
     struct adios_index_process_group_struct_v1 * pg_root = 0;
     struct adios_index_process_group_struct_v1 * pg = 0;
     struct adios_index_var_struct_v1 * vars_root = 0;
+    struct adios_index_attribute_struct_v1 * attrs_root = 0;
 
     adios_posix_read_index_offsets (b);
     adios_parse_index_offsets_v1 (b);
@@ -446,6 +447,9 @@ int main (int argc, char ** argv)
 
     adios_posix_read_vars_index (b);
     adios_parse_vars_index_v1 (b, &vars_root);
+
+    adios_posix_read_attributes_index (b);
+    adios_parse_attributes_index_v1 (b, &attrs_root);
 
     uint64_t element_num = 1;
     pg = pg_root;
