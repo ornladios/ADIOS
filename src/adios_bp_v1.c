@@ -989,9 +989,11 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < var_header->payload_size)
     {
-        fprintf (stderr, "adios_parse_var_data_payload_v1 requires a "
+        fprintf (stderr, "adios_parse_var_data_payload_v1 for name %s "
+                         "path %s requires a "
                          "buffer of at least %llu bytes.  "
                          "Only %llu were provided\n"
+                ,var_header->name, var_header->path
                 ,var_header->payload_size, b->length - b->offset
                 );
 
@@ -1003,9 +1005,10 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
         && var_payload && var_payload->payload
        )
     {
-        fprintf (stderr, "adios_parse_var_data_payload_v1 requires a "
+        fprintf (stderr, "reading var name %s path %s requires a "
                          "buffer of at least %llu bytes.  "
                          "Only %llu were provided\n"
+                ,var_header->name, var_header->path
                 ,var_header->payload_size, payload_buffer_size
                 );
 
@@ -1044,11 +1047,14 @@ int adios_parse_attributes_header_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < 10)
     {
-        fprintf (stderr, "adios_parse_attribute_header_v1 requires a "
+        fprintf (stderr, "adios_parse_attributes_header_v1 requires a "
                          "buffer of at least 10 bytes.  "
                          "Only %llu were provided\n"
                 ,b->length - b->offset
                 );
+
+        attrs_header->count = 0;
+        attrs_header->length = 0;
 
         return 1;
     }

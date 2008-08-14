@@ -6984,5 +6984,6 @@ AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
 m4_include([config/ac_gengetopt.m4])
+m4_include([config/ac_hdf5.m4])
 m4_include([config/ac_mxml.m4])
 m4_include([config/acx_mpi.m4])

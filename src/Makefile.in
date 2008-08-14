@@ -44,6 +44,7 @@ DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_gengetopt.m4 \
+	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/acx_mpi.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -134,8 +135,13 @@ FFLAGS = @FFLAGS@
 GENGETOPT = @GENGETOPT@
 HAVE_GENGETOPT_FALSE = @HAVE_GENGETOPT_FALSE@
 HAVE_GENGETOPT_TRUE = @HAVE_GENGETOPT_TRUE@
+HAVE_HDF5_FALSE = @HAVE_HDF5_FALSE@
+HAVE_HDF5_TRUE = @HAVE_HDF5_TRUE@
 HAVE_MXML_FALSE = @HAVE_MXML_FALSE@
 HAVE_MXML_TRUE = @HAVE_MXML_TRUE@
+HDF5_CPPFLAGS = @HDF5_CPPFLAGS@
+HDF5_LDFLAGS = @HDF5_LDFLAGS@
+HDF5_LIBS = @HDF5_LIBS@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -232,7 +238,11 @@ libadios_a_SOURCES = adios.c \
 
 #		     adios_datatap.c
 #		     adios_dart.c
+<<<<<<< .mine
+libadios_a_CPPFLAGS = $(MXML_CPPFLAGS) $(HDF5_CPPFLAGS)
+=======
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS) ${HDF5_CLIB}
+>>>>>>> .r288
 libadios_int_a_SOURCES = adios_internals.c \
                         adios_transport_hooks_dummy.c \
                         adios_bp_v1.c

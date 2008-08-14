@@ -43,6 +43,7 @@ subdir = utils/bp2h5
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_gengetopt.m4 \
+	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/acx_mpi.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -108,8 +109,13 @@ FFLAGS = -g -O2
 GENGETOPT = no
 HAVE_GENGETOPT_FALSE = 
 HAVE_GENGETOPT_TRUE = #
+HAVE_HDF5_FALSE = #
+HAVE_HDF5_TRUE = 
 HAVE_MXML_FALSE = #
 HAVE_MXML_TRUE = 
+HDF5_CPPFLAGS = -I/apps/HDF5/1.6.5/hawk_x86_64/include
+HDF5_LDFLAGS = -L/apps/HDF5/1.6.5/hawk_x86_64/lib
+HDF5_LIBS = -lhdf5
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_SCRIPT = ${INSTALL}

@@ -9,6 +9,12 @@
 /* Define if you have GENGETOPT. */
 #undef HAVE_GENGETOPT
 
+/* Define if you have HDF5. */
+#undef HAVE_HDF5
+
+/* Define to 1 if you have the <hdf5.h> header file. */
+#undef HAVE_HDF5_H
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 

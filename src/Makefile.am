@@ -21,7 +21,7 @@ libadios_a_SOURCES = adios.c \
                      adios_bp_v1.c
 #		     adios_datatap.c
 #		     adios_dart.c
-libadios_a_CPPFLAGS = $(MXML_CPPFLAGS) ${HDF5_CLIB}
+libadios_a_CPPFLAGS = $(MXML_CPPFLAGS) $(HDF5_CPPFLAGS)
 include_HEADERS += adios.h \
                    adios_types.h
 

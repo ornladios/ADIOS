@@ -24,6 +24,7 @@ AC_PROG_LIBTOOL
 
 AC_PROG_MXML
 AC_PROG_GENGETOPT
+AC_HDF5
 
 AC_LANG(C)
 ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C])])
@@ -102,6 +103,7 @@ fi
 echo
 
 if test -z "${HAVE_GENGETOPT_TRUE}"; then
+        echo "  - GENGETOPT";
         echo "      - GENGETOPT_CFLAGS = $GENGETOPT_CFLAGS";
         echo "      - GENGETOPT_CPPFLAGS = $GENGETOPT_CPPFLAGS";
         echo "      - GENGETOPT_LDFLAGS = $GENGETOPT_LDFLAGS";
@@ -113,11 +115,24 @@ fi
 echo
 
 if test -z "${HAVE_MPI_TRUE}"; then
+        echo "  - MPI";
         echo "      - MPI_CFLAGS = $MPI_CFLAGS";
         echo "      - MPI_CPPFLAGS = $MPI_CPPFLAGS";
         echo "      - MPI_LDFLAGS = $MPI_LDFLAGS";
         echo "      - MPI_LIBS = $MPI_LIBS";
 else
 echo "No MPI"
+fi
+
+echo
+
+if test -z "${HAVE_HDF5_TRUE}"; then
+        echo "  - HDF5";
+        echo "      - HDF5_CFLAGS = $HDF5_CFLAGS";
+        echo "      - HDF5_CPPFLAGS = $HDF5_CPPFLAGS";
+        echo "      - HDF5_LDFLAGS = $HDF5_LDFLAGS";
+        echo "      - HDF5_LIBS = $HDF5_LIBS";
+else
+echo "No HDF5"
 fi
 

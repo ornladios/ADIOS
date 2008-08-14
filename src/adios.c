@@ -134,6 +134,8 @@ static int common_adios_open (long long * fd, const char * group_name
     fd_p->base_offset = 0;
     fd_p->pg_start_in_file = 0;
 
+    g->time_index++;
+
     while (methods)
     {
         if (   methods->method->m != ADIOS_METHOD_UNKNOWN

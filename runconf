@@ -5,7 +5,7 @@
 
 #ewok
 export CC=gcc
-./configure --prefix=/ccs/home/ge1/work/ewok --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/ewok
+./configure --prefix=/ccs/home/ge1/work/ewok --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/ewok --with-hdf5=/apps/HDF5/1.6.5/hawk_x86_64
 
 #jaguar
 #export CC=cc
