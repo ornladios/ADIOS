@@ -286,6 +286,9 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
         var_entry_length = *(uint32_t *) (b->buff + b->offset);
         b->offset += 4;
 
+        (*root)->id = *(uint16_t *) (b->buff + b->offset);
+        b->offset += 2;
+
         len = *(uint16_t *) (b->buff + b->offset);
         b->offset += 2;
         (*root)->group_name = (char *) malloc (len + 1);
@@ -508,6 +511,9 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
         attr_entry_length = *(uint32_t *) (b->buff + b->offset);
         b->offset += 4;
+
+        (*root)->id = *(uint16_t *) (b->buff + b->offset);
+        b->offset += 2;
 
         len = *(uint16_t *) (b->buff + b->offset);
         b->offset += 2;

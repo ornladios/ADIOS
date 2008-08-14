@@ -68,6 +68,7 @@ struct adios_index_characteristic_struct_v1
 
 struct adios_index_var_struct_v1
 {
+    uint16_t id;
     char * group_name;
     char * var_name;
     char * var_path;
@@ -83,6 +84,7 @@ struct adios_index_var_struct_v1
 
 struct adios_index_attribute_struct_v1
 {
+    uint16_t id;
     char * group_name;
     char * attr_name;
     char * attr_path;
