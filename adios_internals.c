@@ -5115,16 +5115,6 @@ void adios_build_index_v1 (struct adios_file_struct * fd
     }
 }
 
-uint64_t adios_calc_size_process_group_index_v1 (
-                        struct adios_index_process_group_struct_v1 * pg_root
-                       )
-{
-    uint64_t size = 2500;
-fprintf (stderr, "How to do adios_calc_size_process_group_index?\n");
-
-    return size;
-}
-
 int adios_write_index_v1 (char ** buffer
                          ,uint64_t * buffer_size
                          ,uint64_t * buffer_offset
@@ -5958,6 +5948,8 @@ var->min = malloc (b); \
 var->max = malloc (b); \
 a * min = (a *) var->min; \
 a * max = (a *) var->max; \
+*min = data [0]; \
+*max = data [0]; \
 size++; \
 while ((size * b) < total_size) \
 { \
