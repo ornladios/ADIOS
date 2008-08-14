@@ -1,2 +1,2 @@
-dist_bin_SCRIPTS = gwrite.py xmlparser.py
+dist_bin_SCRIPTS = gpp.py xmlparser.py
 
