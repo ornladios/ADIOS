@@ -763,6 +763,9 @@ int adios_parse_vars_header_v1 (struct adios_bp_buffer_struct_v1 * b
                 ,b->length - b->offset
                 );
 
+        vars_header->count = 0;
+        vars_header->length = 0;
+
         return 1;
     }
 
