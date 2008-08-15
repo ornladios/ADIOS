@@ -496,7 +496,14 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
             printf ("\t\t\tDim %d l:g:o: ", i++);
             if (d->dimension.var_id == 0)
             {
-                printf ("R(%llu)", d->dimension.rank);
+                if (d->dimension.time_index == adios_flag_yes)
+                {
+                    printf ("TIME");
+                }
+                else
+                {
+                    printf ("R(%llu)", d->dimension.rank);
+                }
             }
             else
             {
@@ -509,19 +516,33 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
             {
                 if (d->global_dimension.var_id == 0)
                 {
-                    printf (":R(%llu):", d->global_dimension.rank);
+                    if (d->global_dimension.time_index == adios_flag_yes)
+                    {
+                        printf (":TIME");
+                    }
+                    else
+                    {
+                        printf (":R(%llu)", d->global_dimension.rank);
+                    }
                 }
                 else
                 {
-                    printf (":V(%hu):", d->global_dimension.var_id);
+                    printf (":V(%hu)", d->global_dimension.var_id);
                 }
                 if (d->local_offset.var_id == 0)
                 {
-                    printf ("R(%llu)\n", d->local_offset.rank);
+                    if (d->local_offset.time_index == adios_flag_yes)
+                    {
+                        printf (":TIME");
+                    }
+                    else
+                    {
+                        printf (":R(%llu)\n", d->local_offset.rank);
+		    }
                 }
                 else
                 {
-                    printf ("V(%hu)\n", d->local_offset.var_id);
+                    printf (":V(%hu)\n", d->local_offset.var_id);
                 }
             }
             printf ("\n");
@@ -785,7 +806,14 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
                 }
                 else
                 {
-                    *dims_t = d->dimension.rank;
+                    if (d->dimension.time_index == adios_flag_yes)
+                    {
+                        *dims_t = 1;
+                    }
+                    else
+                    {
+                        *dims_t = d->dimension.rank;
+                    }
                 }
 
                 d = d->next;

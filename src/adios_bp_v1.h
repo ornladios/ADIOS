@@ -110,6 +110,7 @@ struct adios_dimension_item_struct_v1
 {
     uint64_t rank;
     uint16_t var_id;
+    enum ADIOS_FLAG time_index;
 };
 
 struct adios_dimension_struct_v1

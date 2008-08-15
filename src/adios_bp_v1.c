@@ -852,12 +852,26 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
             (*root)->next = 0;
         }
 
+        (*root)->dimension.rank = 0;
+        (*root)->dimension.var_id = 0;
+        (*root)->dimension.time_index = adios_flag_no;
+
+        (*root)->global_dimension.rank = 0;
+        (*root)->global_dimension.var_id = 0;
+        (*root)->global_dimension.time_index = adios_flag_no;
+
+        (*root)->local_offset.rank = 0;
+        (*root)->local_offset.var_id = 0;
+        (*root)->local_offset.time_index = adios_flag_no;
+
         flag = *(b->buff + b->offset);
         b->offset += 1;
         if (flag == 'y')
         {
             (*root)->dimension.rank = 0;
             (*root)->dimension.var_id = *(uint16_t *) (b->buff + b->offset);
+            if ((*root)->dimension.var_id == 0)
+                (*root)->dimension.time_index = adios_flag_yes;
             b->offset += 2;
         }
         else
@@ -874,6 +888,8 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
             (*root)->global_dimension.rank = 0;
             (*root)->global_dimension.var_id = *(uint16_t *)
                                                          (b->buff + b->offset);
+            if ((*root)->global_dimension.var_id == 0)
+                (*root)->global_dimension.time_index = adios_flag_yes;
             b->offset += 2;
         }
         else
@@ -890,6 +906,8 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
         {
             (*root)->local_offset.rank = 0;
             (*root)->local_offset.var_id = *(uint16_t *) (b->buff + b->offset);
+            if ((*root)->local_offset.var_id == 0)
+                (*root)->local_offset.time_index = adios_flag_yes;
             b->offset += 2;
         }
         else
