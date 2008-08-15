@@ -2879,6 +2879,9 @@ void adios_parse_dimension (const char * dimension
         return;
     }
 
+    dim->dimension.rank = 0;
+    dim->dimension.id = 0;
+    dim->dimension.time_index = adios_flag_no;
     if (is_var (dimension))
     {
         struct adios_var_struct * var = 0;
@@ -2895,11 +2898,18 @@ void adios_parse_dimension (const char * dimension
 
             if (!attr)
             {
-                fprintf (stderr, "config.xml: invalid var dimension: %s\n"
-                        ,dimension
-                        );
+                if (!strcasecmp (g->time_index_name, dimension))
+                {
+                    dim->dimension.time_index = adios_flag_yes;
+                }
+                else
+                {
+                    fprintf (stderr, "config.xml: invalid var dimension: %s\n"
+                            ,dimension
+                            );
 
-                return;
+                    return;
+                }
             }
             else
             {
@@ -4352,19 +4362,25 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
     while (d)
     {
         overhead += 1; // var flag
-        if (d->dimension.id != 0)
+        if (   d->dimension.id != 0
+            || d->dimension.time_index == adios_flag_yes
+           )
             overhead += 2; // member id
         else
             overhead += 8; // value
 
         overhead += 1; // var flag
-        if (d->global_dimension.id != 0)
+        if (   d->global_dimension.id != 0
+            || d->dimension.time_index == adios_flag_yes
+           )
             overhead += 2; // member id
         else
             overhead += 8; // value
 
         overhead += 1; // var flag
-        if (d->local_offset.id != 0)
+        if (   d->local_offset.id != 0
+            || d->dimension.time_index == adios_flag_yes
+           )
             overhead += 2; // member id
         else
             overhead += 8; // value
@@ -4938,7 +4954,10 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd
     }
     else
     {
-        dim = dimension->rank;
+        if (dimension->time_index == adios_flag_yes)
+            dim = 1;
+        else
+            dim = dimension->rank;
     }
 
     return dim;
@@ -5644,7 +5663,9 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 
     size += 1; // var (y or n)
 
-    if (dimension->dimension.id == 0)  // it is a number
+    if (   dimension->dimension.id == 0
+        && dimension->dimension.time_index == adios_flag_no
+       )  // it is a number
     {
         size += 8;  // size of value
     }
@@ -5655,13 +5676,17 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 
     size += 1; // var (y or n)
 
-    if (dimension->global_dimension.id == 0)
+    if (   dimension->global_dimension.id == 0
+        && dimension->global_dimension.time_index == adios_flag_no
+       )  // it is a number
     {
         size += 8; // default to a rank
     }
     else
     {
-        if (dimension->global_dimension.id == 0)  // it is a number
+        if (   dimension->global_dimension.id == 0
+            && dimension->global_dimension.time_index == adios_flag_no
+           )  // it is a number
         {
             size += 8;  // size of value
         }
@@ -5673,13 +5698,17 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 
     size += 1; // var (y or n)
 
-    if (dimension->local_offset.id == 0)
+    if (   dimension->local_offset.id == 0
+        && dimension->local_offset.time_index == adios_flag_no
+       )  // it is a number
     {
         size += 8;  // default to a rank
     }
     else
     {
-        if (dimension->local_offset.id == 0)  // it is a number
+        if (   dimension->local_offset.id == 0
+            && dimension->local_offset.time_index == adios_flag_no
+           )  // it is a number
         {
             size += 8;  // size of value
         }
@@ -5714,7 +5743,9 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
     uint64_t size = 0;
     uint8_t var;
 
-    if (dimension->dimension.id == 0)
+    if (   dimension->dimension.id == 0
+        && dimension->dimension.time_index == adios_flag_no
+       )
     {
         var = 'n';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
@@ -5735,7 +5766,9 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
         size += 2;
     }
 
-    if (dimension->global_dimension.id == 0)
+    if (   dimension->global_dimension.id == 0
+        && dimension->global_dimension.time_index == adios_flag_no
+       )
     {
         var = 'n';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
@@ -5756,7 +5789,9 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
         size += 2;
     }
 
-    if (dimension->local_offset.id == 0)
+    if (   dimension->local_offset.id == 0
+        && dimension->local_offset.time_index == adios_flag_no
+       )
     {
         var = 'n';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
@@ -6445,7 +6480,11 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
             }
             else
             {
-                size *= d->dimension.rank;
+                if (d->dimension.time_index == adios_flag_no)
+                {
+                    size *= d->dimension.rank;
+                }
+                // the time index doesn't take up space...
             }
 
             d = d->next;
