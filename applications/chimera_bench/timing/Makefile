@@ -1,6 +1,6 @@
 #use this for ewok
-EWOK=y
-JAGUAR=n
+EWOK=n
+JAGUAR=y
 
 ifeq ($(JAGUAR),y)
     #use this for cray compute nodes

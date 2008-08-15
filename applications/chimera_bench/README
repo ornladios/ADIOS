@@ -158,6 +158,8 @@ To build an executable which can use ADIOS-POSIX method, you need to type:
 
 Or you can just type make to build both.
 
+To enable profiling, please define ADIOS_PROFILING in Makefile.
+
 NOTES:
 1) Source files containing ADIOS API and related stuff are re-named as xxx_adios.f95. Please refer to Makefile.
 2) The ADIOS IO code is in RadHyd3D_adios/Restart/ADIOS_IO_MODULE.f95. 
