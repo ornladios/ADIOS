@@ -10,13 +10,6 @@
 #define ERR(e){if(e){printf("Error:%s\n",nc_strerror(e));return 2;}}
 #define DIVIDER "========================================================\n"
 
-struct dump_struct
-{
-    int do_dump;
-    char * dump_var;
-    enum ADIOS_FLAG host_language_fortran;
-};
-
 struct var_dim
 {
     uint16_t id;
@@ -36,7 +29,26 @@ void copy_buffer(struct adios_bp_buffer_struct_v1 *dest
 
     memcpy (dest, src, sizeof(struct adios_bp_buffer_struct_v1));
 }
-
+int ncd_gen_name (char *fullname, char *path, char *name) {
+    int i;
+    char *new_path = strdup (path);
+    if ( path[0] == '/')
+         new_path=new_path+1;
+          
+    for ( i = 0; i < strlen (new_path); i++) {
+        if ( new_path[i] == '[' || new_path[i] == ']' || new_path[i] == '/' || new_path[i] == '\\')
+            new_path[i] = '_';
+    }
+    if (*new_path != '\0') { 
+        if (new_path[i-1]!='_')
+            sprintf (fullname, "%s_%s", new_path, name);
+        else 
+            sprintf (fullname, "%s%s", new_path, name);
+    }
+    else
+        strcpy (fullname, name);
+    return 0;
+}
 int ncd_attr_str_ds (int ncid 
                     ,struct adios_attribute_struct_v1 * attribute
                     ,struct adios_bp_buffer_struct_v1 * ptr_buffer
@@ -48,41 +60,72 @@ int ncd_attr_str_ds (int ncid
     char *path = attribute->path;
     char *name = attribute->name;
     char *new_path;
-    int  valid,retval; 
+    int  valid,retval;
+/* 
     new_path = strdup (path);
     if ( path[0] == '/')
          new_path=new_path+1;
-    if ( path[strlen(path)-1] = '/')
-         new_path[strlen(new_path)-1]='\0';
+
     for ( i = 0; i < strlen (new_path); i++) {
         if ( new_path[i] == '[' || new_path[i] == ']' || new_path[i] == '/' || new_path[i] == '\\')
             new_path[i] = '_';
     }
-    if (*new_path != '\0')
+    if (*new_path != '\0' && new_path[i-1]!='_')
         sprintf (fullname, "%s_%s", new_path, name);
     else
         strcpy (fullname, name);
+*/
+    ncd_gen_name (fullname, path, name);
+
+    printf(DIVIDER);
+    printf("\tattribute: %s\n", fullname);
+
     valid = -1;
     nc_redef(ncid);
-    retval=nc_inq_varid(ncid,new_path,&valid);
-    //printf ("\t\tpath: %s %d\n", new_path, valid);
+    retval=nc_inq_varid(ncid,fullname,&valid);
+
+    if (valid>0) {
+       printf("\tattribute (%d) existed\n", valid);
+       return;
+     }
+
     if ( valid < 0)
         valid = NC_GLOBAL; 
-    //nc_enddef(ncid);
+
     void *value = attribute->value;
     size_t len = 1; 
     enum ADIOS_DATATYES type =  attribute->type;
     struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;  
+    uint64_t offset; 
+    struct adios_index_var_struct_v1 * vars_root = 0;
+
     var_payload.payload = 0;
-    if (attribute->is_var == adios_flag_yes) {
+
+    if ( attribute->is_var == adios_flag_yes) {
+        adios_posix_read_vars_index (ptr_buffer);
+        adios_parse_vars_index_v1 (ptr_buffer, &vars_root);
+        //print_vars_index ( vars_root);
+        while (vars_root) {
+            if (vars_root->id == attribute->var_id) {
+                type = vars_root->type;
+                if (!(vars_root->characteristics->dims.dims)) { 
+                    value = vars_root->characteristics->value; 
+                    printf("\t      var: %s = ", vars_root->var_name);
+                }
+                else {
+                    offset = vars_root->characteristics->offset;
+                }
+                break; 
+            } 
+            vars_root = vars_root->next;
+        }
 #if 0
-         for ( i = 0; i < count; i++) {
-             adios_parse_var_data_header_v1 (ptr_buffer, &var_header);
-             if ( var_header.id == attribute->var_id) {
-                 printf("is_var: %s\n", var_header.name); 
-                  struct  adios_dimension_struct_v1 * dims = var_header.dims; 
-                  while (dims) {
+        for ( i = 0; i < count; i++) {
+            adios_parse_var_data_header_v1 (ptr_buffer, &var_header);
+            if ( var_header.id == attribute->var_id) {
+                struct  adios_dimension_struct_v1 * dims = var_header.dims; 
+                while (dims) {
                       if ( dims->dimension.var_id != 0 ) {
                            for (i = 0; i < var_dims_count; i++) {
                                 if (var_dims [i].id == dims->dimension.var_id ){
@@ -106,7 +149,8 @@ int ncd_attr_str_ds (int ncid
          }
 #endif
     }
-
+    else
+        printf("\t      XML: ");    
     switch (type) {
          case adios_unsigned_byte:
             retval=nc_put_att_uchar(ncid,valid,fullname,NC_BYTE,len,value);
@@ -115,21 +159,27 @@ int ncd_attr_str_ds (int ncid
             retval=nc_put_att_schar(ncid,valid,fullname,NC_BYTE,len,value);
             break;
          case adios_string:
+            printf("%s\n", (char *) value);    
             retval=nc_put_att_text(ncid,valid,fullname, strlen(value),value);
             break;
          case adios_short:
+            //printf("\tvaule: %s\n", *(short *) value);    
             retval=nc_put_att_short(ncid,valid,fullname,NC_SHORT,len,value);
             break;
          case adios_integer:
+            printf("%d\n", *((int *) value));    
             retval=nc_put_att_int(ncid,valid,fullname,NC_INT,len,value);
             break;
          case adios_long:
+            //printf("\tvaule: %s\n", *(long *) value);    
             retval=nc_put_att_long(ncid,valid,fullname,NC_LONG,len,value);
             break;
          case adios_real:
+            //printf("\tvaule: %s\n", *(float *) value);    
             retval=nc_put_att_float(ncid,valid,fullname,NC_FLOAT,len,value);
             break;
          case adios_double:
+            //printf("\tvaule: %s\n", *(double *) value);    
             retval=nc_put_att_double(ncid,valid,fullname,NC_DOUBLE,len,value);
             break;
          default:
@@ -144,12 +194,13 @@ int ncd_attr_str_ds (int ncid
 int ncd_dataset (int ncid
                 ,struct adios_var_header_struct_v1 *ptr_var_header
                 ,struct adios_var_payload_struct_v1 *ptr_var_payload
+                ,struct adios_bp_buffer_struct_v1 * ptr_buffer
                 ,struct var_dim *var_dims
                 ,int var_dims_count) {
 
     char *name = ptr_var_header->name;
     char *path = ptr_var_header->path;
-    char *new_path, dimname[255],fullname[255];
+    char *new_path, fullname[255];
     enum ADIOS_DATATYPES type = ptr_var_header->type;
     enum ADIOS_FLAG is_dim = ptr_var_header->is_dim;
     void *val = ptr_var_payload->payload; 
@@ -158,34 +209,71 @@ int ncd_dataset (int ncid
     int maxrank = 0, i,j, valid=-1, nc_dimid=-1, retval;
     size_t rank = 0, start_dims[10],count_dims[10];
     int dimids[10];
+    const char one_name[] = "one";
+    static int onename_dimid = -1;
     uint64_t dimvalue;
+    struct adios_index_attribute_struct_v1 * vars_root = 0;
+    char dimname[255];
+/*
     new_path = strdup (path);
     if ( path[0] == '/')
          new_path=new_path+1;
+          
     for ( i = 0; i < strlen (new_path); i++) {
         if ( new_path[i] == '[' || new_path[i] == ']' || new_path[i] == '/' || new_path[i] == '\\')
             new_path[i] = '_';
     }
-    if (*new_path != '\0')
+    if (*new_path != '\0' && new_path[i-1]!='_')
         sprintf (fullname, "%s_%s", new_path, name);
     else
         strcpy (fullname, name);
-    if(dims)printf("write float %s %d %d XXXXXXX\n",fullname, dims->global_dimension.var_id, dims->global_dimension.rank);
-    const char one_name[] = "one";
-    static int onename_dimid = -1;
+*/
+    ncd_gen_name (fullname, path, name);
+
+    printf(DIVIDER);
+    printf("\t  dataset: %s\n", fullname);
+
     val = ptr_var_payload->payload;
+    nc_redef(ncid);
+
     if (dims) {
         while (dims) {
             if ( dims->global_dimension.var_id != 0 ) {
                     for (i = 0; i < var_dims_count; i++) {
-                        if (var_dims [i].id == dims->global_dimension.var_id)
+                        if (var_dims [i].id == dims->global_dimension.var_id) {
                             dimids[ rank]=var_dims [i]. nc_dimid;
+                            break;
+                        }
                     }
-            
+                    if (i==var_dims_count) {
+                        adios_posix_read_attributes_index (ptr_buffer);
+			adios_parse_attributes_index_v1 (ptr_buffer, &vars_root);
+	                while (vars_root) {
+		            if (vars_root->id == dims->global_dimension.var_id) {
+                                dimids[ rank] = *(int*)vars_root->characteristics->value;
+			        break; 
+			    }
+                            vars_root = vars_root->next; 
+	                }
+                }
                 if (dims->dimension.var_id!=0 ) {
                     for (i = 0; i < var_dims_count; i++){
-                        if (var_dims [i].id == dims->dimension.var_id)
+                        if (var_dims [i].id == dims->dimension.var_id) {
                             count_dims [ rank]=var_dims [i].rank;
+                            break;
+                        }
+                    }
+                    if (i==var_dims_count) {
+                        adios_posix_read_attributes_index (ptr_buffer);
+			adios_parse_attributes_index_v1 (ptr_buffer, &vars_root);
+			//print_attributes_index ( vars_root);
+			while (vars_root) {
+		            if (vars_root->id == dims->dimension.var_id) {
+                                count_dims [ rank] = *(int*)vars_root->characteristics->value;
+				break; 
+			    } 
+			    vars_root = vars_root->next;
+			}
                     }
                 }
                 else
@@ -195,16 +283,29 @@ int ncd_dataset (int ncid
                     for (i = 0; i < var_dims_count; i++){
                          if (var_dims [i].id == dims->local_offset.var_id){
                              start_dims[rank]=var_dims [i]. rank; 
-                             printf("\t-----global var: %d, %d in %d\n",start_dims[rank], i, var_dims_count);
+                             //printf("\t-----global var: %d, %d in %d\n",start_dims[rank], i, var_dims_count);
                              break;
                          }
+                    }
+                    if (i==var_dims_count) {
+                        adios_posix_read_attributes_index (ptr_buffer);
+			adios_parse_attributes_index_v1 (ptr_buffer, &vars_root);
+			while (vars_root) {
+		            if (vars_root->id == dims->local_offset.var_id) {
+                                start_dims [ rank] = *(int*)vars_root->characteristics->value;
+				break; 
+			    } 
+			    vars_root = vars_root->next;
+			}
                     }
                 }
                 else{
                          start_dims[ rank]=dims->local_offset.rank;
-                         printf("\t-----global constant: %d, %d in %d\n",start_dims[rank], i, var_dims_count);
+                         printf("\t-----global constant: %d, %d in %d\n"
+                               ,start_dims[rank], i, var_dims_count);
                 }
-                printf(" \t global_domain: %s rank %d, start %d, count %d\n", fullname , rank, start_dims[rank],count_dims[rank]);
+                printf(" \t global_domain: %s rank %d, start %d, count %d\n"
+                      ,fullname , rank, start_dims[rank],count_dims[rank]);
             }
             else if (dims->global_dimension.rank !=0 ) {
                 printf(" \tconstant global_info: %s rank: %d\n",fullname, dimids[rank]);
@@ -227,44 +328,64 @@ int ncd_dataset (int ncid
                     start_dims[ rank]=dims->local_offset.rank;
             }
             else {
-                printf(" \tno global_info: %s rank: %d\n",fullname, dimids[rank]);
                 if (dims->dimension.var_id!=0 ) {
                     for (i = 0; i < var_dims_count; i++){
                         if (var_dims [i].id == dims->dimension.var_id){
                             start_dims[rank]=0;
                             count_dims[rank]=var_dims[i].rank;
                             dimids[rank]=var_dims[i].nc_dimid;
+                            printf("\t local[%d]: %d %d\n"
+                                  ,rank,var_dims[i].rank, dimids[rank]);
+			    break;
                         }
+                    }
+                    if (i==var_dims_count) {
+                        adios_posix_read_attributes_index (ptr_buffer);
+			adios_parse_attributes_index_v1 (ptr_buffer, &vars_root);
+                        //print_attributes_index(vars_root);
+			while (vars_root) {
+		            if (vars_root->id == dims->dimension.var_id) {
+                                count_dims [ rank] = *(int *)vars_root->characteristics->value;
+                                //dimids[rank]=var_dims[i].nc_dimid;
+                                start_dims[rank]=0;
+                                ncd_gen_name (dimname, vars_root->attr_path, vars_root->attr_name); 
+                                nc_inq_dimid(ncid, dimname, &dimids[rank]);
+                                if (dimids [rank] <= 0)
+                                    nc_def_dim (ncid, dimname, *(int *)vars_root->characteristics->value, &dimids [rank]); 
+                                printf("\t local[%d]: %d %d\n"
+                                  ,rank,count_dims[rank], dimids[rank]);
+				break; 
+			    } 
+			    vars_root = vars_root->next;
+			}
                     }
                 }
                 else
                 {   
                     //printf ("Error, every dimension in netcdf need to have name!\n");
-                    char dimname[255];
                     sprintf(dimname,"%s_%d", fullname,rank);
-                    printf ("%s\n",dimname);
-                    retval = nc_def_dim ( ncid, dimname, dims->dimension.rank, &nc_dimid);
+                    nc_inq_dimid(ncid,dimname,&nc_dimid);
+                    if (nc_dimid<0)
+                        retval = nc_def_dim ( ncid, dimname, dims->dimension.rank, &nc_dimid);
                     dimids[rank]=nc_dimid;
                     count_dims[rank] = dims->dimension.rank;
-                    start_dims[0] =0; 
+                    start_dims[rank] =0; 
                     ERR(retval);
+                    printf("\t local[%d]: %d\n",rank,dims->dimension.rank);
                 } 
             }
             ++rank;
             dims = dims->next;
         }
         val = ptr_var_payload->payload;    
-        nc_redef(ncid);
         nc_inq_varid(ncid,fullname,&valid);
-        printf(" \t--XXXXX----%s valid %d, start %d, count %d\n", fullname , valid, start_dims[1],count_dims[1]);
         switch(type) { 
         case adios_real:
-            printf("write float %s %d\n",fullname, valid);
             if ( valid<0) {
                 retval=nc_def_var(ncid,fullname,NC_FLOAT,rank,dimids,&valid);
                 ERR(retval);
-                printf(" \t---XXXXX---%s rank %d, start %d, count %d\n", fullname , rank, start_dims[1],count_dims[1]);
             }
+            //printf("\t float rank:%d\n",rank);
             retval=nc_enddef(ncid);
             retval=nc_put_vara_float(ncid,valid,start_dims,count_dims,val);
             ERR(retval);
@@ -307,17 +428,17 @@ int ncd_dataset (int ncid
         }
           
         nc_redef(ncid);
-        retval=nc_inq_dimid ( ncid, fullname, &nc_dimid);
+        nc_inq_dimid ( ncid, fullname, &nc_dimid);
         if ( var_dims[j].rank == 0)
             return;
-            printf("ncd: %s %d %d\n",fullname, var_dims[j].id, var_dims[j].rank);
         if ( nc_dimid < 0) {
            retval = nc_def_dim ( ncid, fullname, var_dims[j].rank, &nc_dimid);
            ERR(retval);
-           var_dims [j].nc_dimid = nc_dimid;
         }
+        var_dims [j].nc_dimid = nc_dimid;
     }
     else {
+
         rank = 1;
         nc_redef(ncid);
         if (onename_dimid==-1)
@@ -367,13 +488,12 @@ int ncd_dataset (int ncid
             break;
         case adios_integer:
             if (valid < 0 ) {
-               printf("\t ncd-scalar-int:  %s\n",fullname);
-               //printf("\t ncd-scalar-int: %d %s\n",dimids[0],*((int *)ptr_var_payload->payload), fullname);
                retval=nc_def_var(ncid,fullname,NC_INT,rank,dimids,&valid);
                ERR(retval);
             }
             retval=nc_enddef(ncid);
             ERR(retval);
+            printf("\t   scalar: %d\n", *(int *)val);
             retval=nc_put_var_int(ncid,valid,val);
             ERR(retval);
             break;
@@ -384,7 +504,6 @@ int ncd_dataset (int ncid
     }
     return 0;
 }
-const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t element);
 
 int main (int argc, char ** argv)
 {
@@ -394,7 +513,6 @@ int main (int argc, char ** argv)
     int rc = 0;
     uint64_t element_size = 0;
     struct adios_bp_element_struct * element = NULL;
-    struct dump_struct dump;
     if (argc < 2)
     {
         fprintf (stderr, "usage: %s <argv[1]_in> [argv[1]_out]\n"
@@ -413,17 +531,17 @@ int main (int argc, char ** argv)
         out_fname [size-2] = 'n'; 
         out_fname [size-1] = 'c';
     }
-        dump.do_dump = 0;
-        dump.dump_var = 0;
     int ncid, retval;
     nc_create ( out_fname, NC_CLOBBER | NC_64BIT_OFFSET, &ncid);
 
     struct adios_bp_buffer_struct_v1 * b = 0;
     struct adios_bp_buffer_struct_v1 * b_0 = 0;
+    struct adios_bp_buffer_struct_v1 * b_1 = 0;
     uint32_t version = 0;
 
     b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     b_0 = malloc (sizeof (struct adios_bp_buffer_struct_v1));
+    b_1 = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     adios_buffer_struct_init (b);
 
     rc = adios_posix_open_read_internal (argv[1], "", b);
@@ -448,9 +566,11 @@ int main (int argc, char ** argv)
     adios_posix_read_process_group_index (b);
     adios_parse_process_group_index_v1 (b, &pg_root);
 
+    copy_buffer(b_0, b);
     adios_posix_read_vars_index (b);
     adios_parse_vars_index_v1 (b, &vars_root);
 
+    copy_buffer(b_1, b);
     adios_posix_read_attributes_index (b);
     adios_parse_attributes_index_v1 (b, &attrs_root);
 
@@ -460,8 +580,6 @@ int main (int argc, char ** argv)
     {
         int var_dims_count = 0;
         struct var_dim * var_dims = 0;
-
-        printf (DIVIDER);
 
         struct adios_process_group_header_struct_v1 pg_header;
         struct adios_vars_header_struct_v1 vars_header;
@@ -493,19 +611,13 @@ int main (int argc, char ** argv)
 #endif
         adios_parse_vars_header_v1 (b, &vars_header);
 
-        dump.host_language_fortran = pg_header.host_language_fortran;
         int i,j;
         for (i = 0; i < vars_header.count; i++)
         {
-            if(i==0)
-               copy_buffer(b_0, b);
             var_payload.payload = 0;
             adios_parse_var_data_header_v1 (b, &var_header);
 
-            if (   var_header.is_dim == adios_flag_yes
-                ||    dump.do_dump
-                   && !strcasecmp (dump.dump_var, var_header.name)
-               )
+            if (   var_header.is_dim == adios_flag_yes)
             {
                 var_payload.payload = malloc (var_header.payload_size);
                 adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
@@ -518,7 +630,7 @@ int main (int argc, char ** argv)
                 adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
                                                 ,var_header.payload_size
                                                 );
-                ncd_dataset(ncid,&var_header, &var_payload,var_dims,var_dims_count);
+                ncd_dataset(ncid,&var_header, &var_payload,b_1,var_dims,var_dims_count);
             }
 
             if (var_header.is_dim == adios_flag_yes)
@@ -543,7 +655,7 @@ int main (int argc, char ** argv)
                     //printf("%s %d %d\n",var_header.name, var_dims[0].id,var_dims[0].rank);
                     var_dims_count++;
                 }
-                ncd_dataset(ncid,&var_header, &var_payload,var_dims,var_dims_count);
+                ncd_dataset(ncid,&var_header, &var_payload,b_1,var_dims,var_dims_count);
             }
 
             if (var_payload.payload)
@@ -578,73 +690,3 @@ int main (int argc, char ** argv)
     return 0;
 }
 
-const char * value_to_string (enum ADIOS_DATATYPES type, void * data, uint64_t element)
-{
-    static char s [100];
-    s [0] = 0;
-
-    switch (type)
-    {
-        case adios_unsigned_byte:
-            sprintf (s, "%u", *(((uint8_t *) &data) + element));
-            break;
-
-        case adios_byte:
-            sprintf (s, "%d", *(((int8_t *) &data) + element));
-            break;
-
-        case adios_short:
-            sprintf (s, "%hd", *(((int8_t *) &data) + element));
-            break;
-
-        case adios_unsigned_short:
-            sprintf (s, "%uh", *(((int8_t *) &data) + element));
-            break;
-
-        case adios_integer:
-            sprintf (s, "%d", *(((int32_t *) &data) + element));
-            break;
-
-        case adios_unsigned_integer:
-            sprintf (s, "%u", *(((uint32_t *) &data) + element));
-            break;
-
-        case adios_long:
-            sprintf (s, "%lld", *(((int64_t *) &data) + element));
-            break;
-
-        case adios_unsigned_long:
-            sprintf (s, "%llu", *(((uint64_t *) &data) + element));
-            break;
-
-        case adios_real:
-            sprintf (s, "%e", *(((float *) &data) + element));
-            break;
-
-        case adios_double:
-            sprintf (s, "%le", *(((double *) &data) + element));
-            break;
-
-        case adios_long_double:
-            sprintf (s, "%Le", *(((long double *) &data) + element));
-            break;
-
-        case adios_string:
-            sprintf (s, "%s", ((char *) data) + element);
-            break;
-
-        case adios_complex:
-            sprintf (s, "(%f %f)", *((float *) data) + (element * 2 + 0)
-                                 , *((float *) data) + (element * 2 + 1)
-                    );
-            break;
-
-        case adios_double_complex:
-            sprintf (s, "(%lf %lf)", *((double *) data) + (element * 2 + 0)
-                                   , *((double *) data) + (element * 2 + 1)
-                    );
-            break;
-    }
-
-    return s;
-}
