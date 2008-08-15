@@ -174,10 +174,9 @@ CALL MPI_COMM_SIZE( MPI_COMM_WORLD, num_procs, ierr )
 #ifdef ADIOS_MODEL || ADIOS_KEYS
 CALL adios_init ('config.xml'//char(0), adios_err)
 
+#ifdef ADIOS_PROFILING
 CALL init_prof('./log'//char(0),20,401,MPI_COMM_WORLD,num_procs,myid) 
-
-! craypat trace
-!CALL PAT_tracing_state(0, adios_err)
+#endif
 
 #endif
 
@@ -375,7 +374,7 @@ DO
  
   CALL cycle( time, dtnph )
 
-#ifdef ADIOS_MODEL || ADIOS_KEYS
+#ifdef ADIOS_PROFILING
   CALL cycle_start(ncycle)
 #endif
 
@@ -443,7 +442,7 @@ DO
   CALL radhyd_to_restart( ndim, nx, nez, nnu )
 #endif
 
-#ifdef ADIOS_MODEL || ADIOS_KEYS
+#ifdef ADIOS_PROFILING
   CALL cycle_end(ncycle)
 #endif
 
@@ -453,7 +452,7 @@ DO
 
   CALL cycle( time, dtnph )
 
-#ifdef ADIOS_MODEL || ADIOS_KEYS
+#ifdef ADIOS_PROFILING
   CALL cycle_start(ncycle)
 #endif
 
@@ -519,7 +518,7 @@ DO
   CALL radhyd_to_restart( ndim, nx, nez, nnu )
 #endif
 
-#ifdef ADIOS_MODEL || ADIOS_KEYS
+#ifdef ADIOS_PROFILING
   CALL cycle_end(ncycle)
 #endif
 
@@ -529,7 +528,7 @@ DO
 
   CALL cycle( time, dtnph )
 
-#ifdef ADIOS_MODEL || ADIOS_KEYS
+#ifdef ADIOS_PROFILING
   CALL cycle_start(ncycle)
 #endif
 
@@ -597,7 +596,7 @@ DO
   CALL radhyd_to_restart( ndim, nx, nez, nnu )
 #endif
 
-#ifdef ADIOS_MODEL || ADIOS_KEYS
+#ifdef ADIOS_PROFILING
   CALL cycle_end(ncycle)
 #endif
 
@@ -607,7 +606,7 @@ DO
 
   CALL cycle( time, dtnph )
 
-#ifdef ADIOS_MODEL || ADIOS_KEYS
+#ifdef ADIOS_PROFILING
   CALL cycle_start(ncycle)
 #endif
 
@@ -673,7 +672,7 @@ DO
   CALL radhyd_to_restart( ndim, nx, nez, nnu )
 #endif
 
-#ifdef ADIOS_MODEL || ADIOS_KEYS
+#ifdef ADIOS_PROFILING
   CALL cycle_end(ncycle)
 #endif
 

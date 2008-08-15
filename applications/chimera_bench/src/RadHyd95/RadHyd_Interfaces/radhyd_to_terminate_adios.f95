@@ -87,7 +87,6 @@ INTEGER                          :: adios_err        ! adios error flag
 
 #ifdef ADIOS_KEYS || ADIOS_MODEL
 character (len=128) :: restart_filename
-#else
 #endif
 
  1001 FORMAT (' Job Done')
@@ -327,10 +326,13 @@ END IF ! ndim == 1
 WRITE (nprint,1001)
 WRITE (nlog,1001)
 
-
 #ifdef ADIOS_MODEL || ADIOS_KEYS
 CALL adios_finalize (myid, adios_err)
-CALL finalize_prof()
+#endif
+
+#ifdef ADIOS_PROFILING
+  CALL cycle_end(ncycle)
+  CALL finalize_prof()
 #endif
 
 

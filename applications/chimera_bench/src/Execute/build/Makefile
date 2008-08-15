@@ -8,12 +8,13 @@ GWRITE=python /ccs/proj/e2e/adios/utils/gwrite/gwrite.py
 
 ifeq ($(USE_ADIOS),y)
 # since the keys and model are written separately, different defines to control
-  #ADIOS = -DADIOS_MODEL -DADIOS_KEYS
   ADIOS = -DADIOS_MODEL
+  # for profiling, use the following
+  #ADIOS = -DADIOS_MODEL -DADIOS_PROFILING
   ifeq ($(PORTALS),y)
-     ADIOS_LIBS=-ladios -lmxml -lptlclient  -lportals -ldill -lfm -latl  -lcercs_env  -ladios_timing -levpath -lffs -lcmselect -lcmsockets
+     ADIOS_LIBS=-ladios -lmxml -lptlclient -lIO -lportals -ldrisc -lcercs_env -ldart -ladios_timing
   else
-     ADIOS_LIBS=-ladios -lmxml -ladios_timing
+     ADIOS_LIBS=-ladios_timing -ladios -lmxml 
   endif
 else
   ADIOS_LIBS=
@@ -684,7 +685,7 @@ OBJFILES2=  array_dimensions_write.o  \
             grid.o  \
             initialize_cycle_arrays.o  \
             initialize_variables.o  \
-            initialize_MPI.o  \
+            initialize_MPI_adios.o  \
             load_radial_ray_arrays.o  \
             model_check.o  \
             model_read.o  \

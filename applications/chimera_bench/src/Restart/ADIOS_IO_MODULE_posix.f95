@@ -19,7 +19,6 @@ MODULE adios_io_module
   USE numerical_module, ONLY : zero, third, half, one, epsilon, frpi, frpith
   USE physcnst_module, ONLY : ergmev, rmu
 
-  USE HDF5
   USE MPI
   
   USE parallel_module, ONLY : myid, myid_y, myid_z, &
@@ -54,10 +53,7 @@ MODULE adios_io_module
   INTEGER, PRIVATE                    :: nnc             ! Composition array extent
 
   
-integer*8, private :: io_type, handle
-
-#define ADIOS_WRITE(a,b) call adios_write(a,'b'//char(0),b,adios_err)
-#define ADIOS_READ(a,b) call adios_read(a,'b'//char(0),b,adios_err)
+integer*8, private :: io_type, adios_handle,adios_groupsize, adios_totalsize, adios_err, adios_buf_size
 
 
   !-----------------------------------------------------------------------
@@ -133,57 +129,9 @@ integer*8, private :: io_type, handle
   PUBLIC      :: model_write_hdf5_adios
   PUBLIC      :: model_read_hdf5_adios
   
-  PRIVATE     :: write_ray_hyperslab
-  PRIVATE     :: write_ray_hyperslab_dbl_2d
-  PRIVATE     :: write_ray_hyperslab_dbl_3d
-  PRIVATE     :: write_ray_hyperslab_dbl_4d
-  PRIVATE     :: write_ray_hyperslab_dbl_5d
-  PRIVATE     :: write_ray_hyperslab_int_3d
-  
-  PRIVATE     :: write_1d_slab
-  PRIVATE     :: write_1d_slab_int
-  PRIVATE     :: write_1d_slab_double
-  
-  PRIVATE     :: read_ray_hyperslab
-  PRIVATE     :: read_ray_hyperslab_dbl_2d
-  PRIVATE     :: read_ray_hyperslab_dbl_3d
-  PRIVATE     :: read_ray_hyperslab_dbl_4d
-  PRIVATE     :: read_ray_hyperslab_dbl_5d
-  PRIVATE     :: read_ray_hyperslab_int_3d
-  
-  PRIVATE     :: read_1d_slab
-  PRIVATE     :: read_1d_slab_int
-  PRIVATE     :: read_1d_slab_double
-  
   PRIVATE     :: compute_plot_variables
   PRIVATE     :: mean
   
-  INTERFACE write_ray_hyperslab
-    MODULE PROCEDURE write_ray_hyperslab_int_3d
-    MODULE PROCEDURE write_ray_hyperslab_dbl_2d
-    MODULE PROCEDURE write_ray_hyperslab_dbl_3d
-    MODULE PROCEDURE write_ray_hyperslab_dbl_4d
-    MODULE PROCEDURE write_ray_hyperslab_dbl_5d
-  END INTERFACE write_ray_hyperslab
-  
-  INTERFACE write_1d_slab
-    MODULE PROCEDURE write_1d_slab_int
-    MODULE PROCEDURE write_1d_slab_double
-  END INTERFACE write_1d_slab
-
-  INTERFACE read_ray_hyperslab
-    MODULE PROCEDURE read_ray_hyperslab_int_3d
-    MODULE PROCEDURE read_ray_hyperslab_dbl_2d
-    MODULE PROCEDURE read_ray_hyperslab_dbl_3d
-    MODULE PROCEDURE read_ray_hyperslab_dbl_4d
-    MODULE PROCEDURE read_ray_hyperslab_dbl_5d
-  END INTERFACE read_ray_hyperslab
-  
-  INTERFACE read_1d_slab
-    MODULE PROCEDURE read_1d_slab_int
-    MODULE PROCEDURE read_1d_slab_double
-  END INTERFACE read_1d_slab
-
 
   CONTAINS
 
@@ -319,33 +267,6 @@ integer*8, private :: io_type, handle
     !-----------------------------------------------------------------------
     !CHARACTER(LEN=29)                :: suffix
     CHARACTER(LEN=35)                :: suffix
-    INTEGER(HID_T)                   :: file_id         ! HDF5 File identifier  
-    INTEGER(HID_T)                   :: group_id        ! HDF5 Group identifier
-    INTEGER(HID_T)                   :: dataset_id      ! HDF5 dataset identifier
-    INTEGER(HID_T)                   :: dataspace_id    ! HDF5 dataspace identifier
-    INTEGER(HID_T)                   :: plist_id        ! HDF5 property list   
-    
-    INTEGER(HSIZE_T)                 :: thresshold    = 524288
-    INTEGER(HSIZE_T)                 :: alignment     = 262144
-    INTEGER(SIZE_T)                  :: sieve_buffer  = 524288
-    
-    INTEGER                          :: dset_rank       ! Dataset rank
-    INTEGER                          :: error           ! Error Flag
-    INTEGER                          :: FILE_INFO_TEMPLATE
-
-    INTEGER(HSIZE_T), dimension(1)   :: datasize1d
-    INTEGER(HSIZE_T), dimension(2)   :: datasize2d
-    INTEGER(HSIZE_T), dimension(2)   :: mydatasize2d
-    INTEGER(HSIZE_T), dimension(2)   :: slab_offset2d
-    INTEGER(HSIZE_T), dimension(3)   :: datasize3d
-    INTEGER(HSIZE_T), dimension(3)   :: mydatasize3d
-    INTEGER(HSIZE_T), dimension(3)   :: slab_offset3d
-    INTEGER(HSIZE_T), dimension(4)   :: datasize4d
-    INTEGER(HSIZE_T), dimension(4)   :: mydatasize4d
-    INTEGER(HSIZE_T), dimension(4)   :: slab_offset4d
-    INTEGER(HSIZE_T), dimension(5)   :: datasize5d
-    INTEGER(HSIZE_T), dimension(5)   :: mydatasize5d
-    INTEGER(HSIZE_T), dimension(5)   :: slab_offset5d
     
     REAL(KIND=double)                :: io_startime
     REAL(KIND=double)                :: io_endtime
@@ -355,7 +276,6 @@ integer*8, private :: io_type, handle
     INTEGER, dimension(2)            :: radial_index_bound
     INTEGER, dimension(2)            :: theta_index_bound
     INTEGER, dimension(2)            :: phi_index_bound
-    INTEGER                          :: adios_err       ! ADIOS error flag
 
     CALL initialized_io()    
     
@@ -387,227 +307,40 @@ integer*8, private :: io_type, handle
     !WRITE(suffix, fmt='(i9.9,a7,i4.4,a3)') ncycle,'_group_',my_hyperslab_group,'.bp'
     WRITE(suffix, fmt='(i9.9,a7,i4.4,a1,i6.6,a3)') ncycle,'_group_',my_hyperslab_group,'_',myid,'.bp'
 
+#ifdef ADIOS_PROFILING 
 ! added by zf: sync all procs before io
     CALL MPI_Barrier( MPI_COMM_WORLD, error )
+#endif
 
     io_startime = MPI_WTIME()
 
+#if ADIOS_PROFILING 
 ! open start
     CALL open_start(ncycle, io_count)
+#endif
 
-!    CALL adios_get_group (io_type, 'restart.model'//char(0))
-!    CALL adios_open (handle, io_type, TRIM(data_path)//'/Restart/'//filename//TRIM(suffix)//char(0))
-    CALL adios_open (handle, 'restart.model'//char(0), TRIM(data_path)//'/Restart/'//filename//TRIM(suffix)//char(0), 'w'//char(0),adios_err)
+    CALL adios_open (adios_handle, 'restart.model'//char(0), TRIM(data_path)//'/Restart/'//filename//TRIM(suffix)//char(0), 'w'//char(0),adios_err)
 
+#if ADIOS_PROFILING
 ! open end
     CALL open_end(ncycle, io_count)
+#endif
 
+#if ADIOS_PROFILING
 ! write start
     CALL write_start(ncycle, io_count)
+#endif
 
-    ADIOS_WRITE(handle,myid)
-    ADIOS_WRITE(handle,mpi_comm_per_hyperslab_group)
-    ADIOS_WRITE(handle,nx)
-    ADIOS_WRITE(handle,nx+1)
-    ADIOS_WRITE(handle,ny)
-    ADIOS_WRITE(handle,ny+1)
-    ADIOS_WRITE(handle,nz)
-    ADIOS_WRITE(handle,nz+1)
-    ADIOS_WRITE(handle,nez)
-    ADIOS_WRITE(handle,nnu)
-    ADIOS_WRITE(handle,nnu+1)
-    ADIOS_WRITE(handle,nnc)
-    !ADIOS_WRITE(handle,ij_ray_dim)
-    CALL adios_write (handle,'ij_ray_dim'//char(0), my_j_ray_dim)
-    !ADIOS_WRITE(handle,ik_ray_dim)
-    CALL adios_write (handle,'ik_ray_dim'//char(0), my_k_ray_dim)
-    ADIOS_WRITE(handle,j_ray_min)
-    ADIOS_WRITE(handle,j_ray_min-1)
-    ADIOS_WRITE(handle,k_ray_min)
-    ADIOS_WRITE(handle,k_ray_min-1)
+    #include "gwrite_restart.model.fh"
+    WRITE(*,*)"Open ok:",myid
 
-    !-----------------------------------------------------------------------
-    !  Mesh Metadata (/mesh)   
-    !-----------------------------------------------------------------------
+    CALL adios_close (adios_handle, adios_err)
+WRITE(*,*)"adios close ok ",myid
 
-    ADIOS_WRITE(handle,array_dimensions) 
-
-    !-----------------------------------------------------------------------
-    !  Problem Cycle and Time 
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,time)
-    !ADIOS_WRITE(handle,cycle)
-    CALL adios_write(handle,'cycle'//char(0), ncycle)   
-
-    ADIOS_WRITE(handle,nz_hyperslabs)
-    ADIOS_WRITE(handle,my_hyperslab_group)
-    ADIOS_WRITE(handle,nz_hyperslab_width)
-
-    !-----------------------------------------------------------------------
-    !  Radial Index bound for MGFLD shifted radial arrays -->
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,radial_index_bound)
-    ADIOS_WRITE(handle,theta_index_bound)
-    ADIOS_WRITE(handle,phi_index_bound)
-
-    !-----------------------------------------------------------------------
-    !  Zone Face Coordinates
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,x_ef)
-    ADIOS_WRITE(handle,y_ef)
-    ADIOS_WRITE(handle,z_ef)
-
-    !-----------------------------------------------------------------------
-    !  Zone Midpoint Coordinates
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,x_cf)
-    ADIOS_WRITE(handle,y_cf)
-    ADIOS_WRITE(handle,z_cf)
-
-    !-----------------------------------------------------------------------
-    !  Zone Width
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,dx_cf)
-    ADIOS_WRITE(handle,dy_cf)
-    ADIOS_WRITE(handle,dz_cf)
-
-    !-----------------------------------------------------------------------
-    !  /physical_variables
-    !-----------------------------------------------------------------------
-
-    !-----------------------------------------------------------------------
-    !  independed thermodynamic variables
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,rho_c)
-    ADIOS_WRITE(handle,t_c)
-    ADIOS_WRITE(handle,ye_c)
-
-    !-----------------------------------------------------------------------
-    !  independed mechanical variables 
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,u_c)
-    ADIOS_WRITE(handle,v_c)
-    ADIOS_WRITE(handle,w_c)
-
-    !-----------------------------------------------------------------------
-    !  Independent radiation variables and bookkeeping arrays
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,psi0_c)
-    ADIOS_WRITE(handle,psi1_e)
-    ADIOS_WRITE(handle,dnurad)
-    ADIOS_WRITE(handle,unukrad)
-    ADIOS_WRITE(handle,unujrad)
-    ADIOS_WRITE(handle,e_rad)
-    ADIOS_WRITE(handle,unurad)
-    ADIOS_WRITE(handle,nnukrad)
-    ADIOS_WRITE(handle,nnujrad)
-    ADIOS_WRITE(handle,elec_rad)
-    ADIOS_WRITE(handle,nnurad)
-    ADIOS_WRITE(handle,e_nu_c_bar)
-    ADIOS_WRITE(handle,f_nu_e_bar)
- 
-    !-----------------------------------------------------------------------
-    !  Net number of neutrinos radiated from density rho_nurad and radius
-    !   r_nurad
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,nu_r)
-    ADIOS_WRITE(handle,nu_rt)
-    ADIOS_WRITE(handle,nu_rho)
-    ADIOS_WRITE(handle,nu_rhot)
-
-    !-----------------------------------------------------------------------
-    !  Time integrated psi0 and psi1
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,psi0dat)
-    ADIOS_WRITE(handle,psi1dat)
-
-    !-----------------------------------------------------------------------
-    !  nse - non-bse flag
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,nse_c)
-
-    !-----------------------------------------------------------------------
-    !  Nuclear abundances
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,xn_c)
-
-    !-----------------------------------------------------------------------
-    !  Auxiliary heavy nucleus
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,a_nuc_rep_c)
-    ADIOS_WRITE(handle,z_nuc_rep_c)
-    ADIOS_WRITE(handle,be_nuc_rep_c)
-
-    !-----------------------------------------------------------------------
-    !  Nuclear energy released
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,uburn_c)
-
-    !-----------------------------------------------------------------------
-    !  Energy offsets
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,duesrc)
-
-    !-----------------------------------------------------------------------
-    !  Derived Physical Values for Plotting 
-    !-----------------------------------------------------------------------
-
-    ADIOS_WRITE(handle,pMD)
-    ADIOS_WRITE(handle,sMD)
-
-    ADIOS_WRITE(handle,dudt_nuc)
-
-    ADIOS_WRITE(handle,dudt_nu)
-    ADIOS_WRITE(handle,grav_x_c)
-    ADIOS_WRITE(handle,grav_y_c)
-    ADIOS_WRITE(handle,grav_z_c)
-    ADIOS_WRITE(handle,agr_e)
-    ADIOS_WRITE(handle,agr_c)
-
-    ADIOS_WRITE(handle,r_shock)
-    ADIOS_WRITE(handle,r_shock_mn)
-    ADIOS_WRITE(handle,r_shock_mx)
-    ADIOS_WRITE(handle,tau_adv)
-    ADIOS_WRITE(handle,tau_heat_nu)
-    ADIOS_WRITE(handle,tau_heat_nuc)
-    ADIOS_WRITE(handle,r_nse)
-    ADIOS_WRITE(handle,rsphere_mean)
-    ADIOS_WRITE(handle,dsphere_mean)
-    ADIOS_WRITE(handle,tsphere_mean)
-    ADIOS_WRITE(handle,msphere_mean)
-    ADIOS_WRITE(handle,esphere_mean)
-
-    ADIOS_WRITE(handle,r_gain)
-    ADIOS_WRITE(handle,unu_c)
-    ADIOS_WRITE(handle,dunu_c)
-    ADIOS_WRITE(handle,unue_e)
-    ADIOS_WRITE(handle,dunue_e)
-
-! write end
-    CALL write_end(ncycle, io_count)
-
-! close start
-    CALL close_start(ncycle, io_count)
-
-    CALL adios_close (handle, adios_err)
-
+#if ADIOS_PROFILING
 ! cloe end
     CALL close_end(ncycle, io_count)
+#endif
 
     io_endtime = MPI_WTIME()
     io_walltime = io_walltime + (io_endtime-io_startime)
@@ -669,13 +402,6 @@ integer*8, private :: io_type, handle
     !-----------------------------------------------------------------------
     
     CHARACTER(LEN=35)                :: suffix
-    INTEGER(HID_T)                   :: file_id         ! HDF5 File identifier  
-    INTEGER(HID_T)                   :: group_id        ! HDF5 Group identifier
-    INTEGER(HID_T)                   :: dataset_id      ! HDF5 dataset identifier
-    INTEGER(HID_T)                   :: dataspace_id    ! HDF5 dataspace identifier
-    
-    INTEGER                          :: dset_rank       ! Dataset rank
-    INTEGER                          :: error           ! Error Flag
     INTEGER                          :: imin_read       
     INTEGER                          :: imax_read
     INTEGER                          :: n
@@ -685,25 +411,15 @@ integer*8, private :: io_type, handle
     INTEGER                          :: ik_ray        ! radial ray k index
     INTEGER                          :: j,k
     INTEGER                          :: fileUnit
+    INTEGER                          :: error 
 
-    INTEGER(HSIZE_T), dimension(1)   :: datasize1d
-    INTEGER(HSIZE_T), dimension(2)   :: datasize2d
-    INTEGER(HSIZE_T), dimension(2)   :: slab_offset2d
-    INTEGER(HSIZE_T), dimension(3)   :: datasize3d
-    INTEGER(HSIZE_T), dimension(3)   :: slab_offset3d
-    INTEGER(HSIZE_T), dimension(4)   :: datasize4d
-    INTEGER(HSIZE_T), dimension(4)   :: slab_offset4d
-    INTEGER(HSIZE_T), dimension(5)   :: datasize5d
-    INTEGER(HSIZE_T), dimension(5)   :: slab_offset5d
-    
     REAL(KIND=double)                :: xn_tot        ! sum of themass fractions in a zone
-    INTEGER                          :: adios_err     ! ADIOS error flag
     
     !-----------------------------------------------------------------------
     !        Formats
     !-----------------------------------------------------------------------
 
-     3001 FORMAT (' jr_max + 1 =',i4,' > nx =',i4)
+     3001 FORMAT (' jr_max + 1 =',i10,' > nx =',i4)
      3003 FORMAT (' jr_max,n_proc =',2i6,' MOD( jr_max - 1 ,n_proc ) /= 0  .and.  MOD( n_proc, jr_max - 1 ) /= 0')
 
     
@@ -736,10 +452,8 @@ integer*8, private :: io_type, handle
       WRITE(nlog, 'a50'), '***Read Model Dump', TRIM(data_path)//'/Restart/'//filename//suffix
     END IF
 
-!    CALL h5open_f(error)
-!    CALL h5fopen_f(TRIM(data_path)//'/Restart/'//filename//suffix, H5F_ACC_RDONLY_F, file_id, error)
-! open bp file for read
-    CALL adios_open (handle, 'restart.model'//char(0), TRIM(data_path)//'/Restart/'//filename//TRIM(suffix)//char(0), 'r'//char(0),error)
+    ! open bp file for read
+    CALL adios_open (adios_handle, 'restart.model'//char(0), TRIM(data_path)//'/Restart/'//filename//TRIM(suffix)//char(0), 'r'//char(0),error)
     
     if(error /= 0)then
       PRINT*, '***ERROR in trying to open ', TRIM(data_path)//'/Restart/'//filename//suffix
@@ -747,149 +461,13 @@ integer*8, private :: io_type, handle
       CALL MPI_ABORT(MPI_COMM_WORLD, error)
     end if
 
-       PRINT*, '***NO ERROR in trying to open ', TRIM(data_path)//'/Restart/'//filename//suffix
-   
-    ! dimension-related variables must be declared by calling adios_write
-    ADIOS_READ(handle,myid)
-    ADIOS_READ(handle,mpi_comm_per_hyperslab_group)
-    ADIOS_READ(handle,nx)
-    ADIOS_WRITE(handle,nx+1)
-    ADIOS_READ(handle,ny)
-    ADIOS_WRITE(handle,ny+1)
-    ADIOS_READ(handle,nz)
-    ADIOS_WRITE(handle,nz+1)
-    ADIOS_READ(handle,nez)
-    ADIOS_READ(handle,nnu)
-    ADIOS_WRITE(handle,nnu+1)
-    ADIOS_READ(handle,nnc)
-    !ADIOS_WRITE(handle,ij_ray_dim)
-    CALL adios_write(handle,'ij_ray_dim'//char(0), my_j_ray_dim)
-    !ADIOS_WRITE(handle,ik_ray_dim)
-    CALL adios_write(handle,'ik_ray_dim'//char(0), my_k_ray_dim)
-    ADIOS_READ(handle,j_ray_min)
-    ADIOS_WRITE(handle,j_ray_min-1)
-    ADIOS_READ(handle,k_ray_min)
-    ADIOS_WRITE(handle,k_ray_min-1)
+    #include "gread_restart.model.fh"
 
-    !------------------------------------------------------------------------
-    !      Open Mesh Group and Read Mesh Associated Data
-    !------------------------------------------------------------------------
-      
-!    CALL h5gopen_f(file_id, '/mesh', group_id, error)
-
-!    datasize1d(1) = 2
-!    CALL read_1d_slab('radial_index_bound', radial_index_bound, group_id, &
-!           datasize1d)
-    ADIOS_READ(handle,radial_index_bound) 
-
-       PRINT*, '***NO ERROR in trying to read radial_index_bound '
-       PRINT*, '***my_j_ray_dim= '
+    CALL adios_close(adios_handle,adios_err)
 
     imin_read = radial_index_bound(1)
     imax_read = radial_index_bound(2)
 
-    !-- Read Zone Face Coordinates
-!    datasize1d(1) = nx+1
-!    CALL read_1d_slab('x_ef', x_ei, group_id, datasize1d)
-    CALL adios_read(handle, 'x_ef'//char(0), x_ei, adios_err) 
-
-    !-- Read Zone Width 
-!    datasize1d(1) = nx
-!    CALL read_1d_slab('dx_cf', dx_ci, group_id, datasize1d)
-    CALL adios_read(handle, 'dx_cf'//char(0), dx_ci, adios_err)
-    
-!    CALL h5gclose_f(group_id, error)
-  
-    !------------------------------------------------------------------------
-    !      Open Physical Variables group and Read Physical Data
-    !      Each processors read its share from a hyperslab of the data 
-    !------------------------------------------------------------------------
-    
-!    CALL h5gopen_f(file_id, '/physical_variables', group_id, error)
-    
-    !-----------------------------------------------------------------------
-    !  Independent thermodynamic variables
-    !-----------------------------------------------------------------------
-!    datasize3d = (/nx, my_j_ray_dim, my_k_ray_dim/)
-!    slab_offset3d = (/0,j_ray_min-1,k_hyperslab_min-1/)
-!    CALL read_ray_hyperslab('rho_c', rho_c, group_id, &
-!           datasize3d, slab_offset3d)
-    ADIOS_READ(handle,rho_c)
-
-!    CALL read_ray_hyperslab('t_c', t_c, group_id, &
-!           datasize3d, slab_offset3d)
-    ADIOS_READ(handle,t_c)
-
-!   CALL read_ray_hyperslab('ye_c', ye_c, group_id, &
-!           datasize3d, slab_offset3d)
-    ADIOS_READ(handle,ye_c)
-    
-    !-----------------------------------------------------------------------
-    !  Independent mechanical variables
-    !-----------------------------------------------------------------------
-!    CALL read_ray_hyperslab('u_c', u_c, group_id, &
-!           datasize3d, slab_offset3d)
-    ADIOS_READ(handle,u_c)
-
-!    CALL read_ray_hyperslab('v_c', v_c, group_id, &
-!           datasize3d,  slab_offset3d)
-    ADIOS_READ(handle,v_c)
-
-!    CALL read_ray_hyperslab('w_c', u_c, group_id, &
-!           datasize3d, slab_offset3d)
-    ADIOS_READ(handle,w_c)
-    
-    !-----------------------------------------------------------------------
-    !  Independent radiation variables and bookkeeping arrays
-    !-----------------------------------------------------------------------
-!    datasize5d = (/nx, nez, nnu, my_j_ray_dim, my_k_ray_dim/)
-!    slab_offset5d = (/0,0,0,j_ray_min-1,k_hyperslab_min-1/)
-!    CALL read_ray_hyperslab('psi0_c', psi0_c, group_id, &
-!           datasize5d, slab_offset5d)
-    ADIOS_READ(handle,psi0_c)
-    
-!    datasize4d = (/nx, nnc, my_j_ray_dim, my_k_ray_dim/)
-!    slab_offset4d = (/0,0,j_ray_min-1,k_hyperslab_min-1/)
-!    CALL read_ray_hyperslab('xn_c', xn_c, group_id, &
-!           datasize4d, slab_offset4d)
-    ADIOS_READ(handle,xn_c)
-    
-!    datasize3d = (/nx, my_j_ray_dim, my_k_ray_dim/)
-!    slab_offset3d = (/0,j_ray_min-1,k_hyperslab_min-1/)
-!    CALL read_ray_hyperslab('nse_c', nse_c, group_id, &
-!           datasize3d, slab_offset3d)
-    ADIOS_READ(handle,nse_c)
-           
-!    CALL read_ray_hyperslab('a_nuc_rep_c', a_nuc_rep_c, group_id, &
-!            datasize3d, slab_offset3d)
-    ADIOS_READ(handle,a_nuc_rep_c)
-
-!    CALL read_ray_hyperslab('z_nuc_rep_c', z_nuc_rep_c, &
-!           group_id, datasize3d, slab_offset3d)
-    ADIOS_READ(handle,z_nuc_rep_c)
-
-!    CALL read_ray_hyperslab('be_nuc_rep_c', be_nuc_rep_c, &
-!           group_id, datasize3d, slab_offset3d)
-    ADIOS_READ(handle,be_nuc_rep_c)
-
-!    CALL read_ray_hyperslab('uburn_c', uburn_c, &
-!           group_id, datasize3d, slab_offset3d)
-    ADIOS_READ(handle,uburn_c)
-
-!    CALL read_ray_hyperslab('duesrc', duesrc, &
-!           group_id, datasize3d, slab_offset3d)
-    ADIOS_READ(handle,duesrc)
-    
-!    CALL h5gclose_f(group_id, error)
-
-      
-    !------------------------------------------------------------------------
-    !      Cleanup
-    !------------------------------------------------------------------------
-
-!    CALL h5fclose_f(file_id, error)
-!    CALL h5close_f(error)
-    CALL adios_close(handle,adios_err) 
     
     !-----------------------------------------------------------------------
     !     Set values not read directly
@@ -955,657 +533,6 @@ integer*8, private :: io_type, handle
   END SUBROUTINE model_read_hdf5_adios
   
 
-  SUBROUTINE write_1d_slab_int(name, value, group_id, datasize, &
-               desc_option, unit_option)
-    CHARACTER(*), INTENT(IN)                    :: name
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: unit_option
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: desc_option
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(1), INTENT(IN)  :: datasize
-    INTEGER, DIMENSION(:), INTENT(IN)           :: value
-    
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER(HID_T)                              :: dataspace_id
-    INTEGER(HID_T)                              :: atype_id
-    INTEGER(HID_T)                              :: attr_id
-    INTEGER(SIZE_T)                             :: attr_len
-    INTEGER(HSIZE_T), DIMENSION(1)              :: adims = (/1/)
-    INTEGER                                     :: error
-    
-    CALL h5screate_simple_f(1, datasize, dataspace_id, error)
-    CALL h5dcreate_f(group_id, name, H5T_NATIVE_INTEGER, &
-                     dataspace_id, dataset_id, error)
-    IF(hyperslab_group_master) &
-      CALL h5dwrite_f(dataset_id, H5T_NATIVE_INTEGER, &
-                      value, datasize, error)
-    CALL h5sclose_f(dataspace_id, error)
-    IF(present(desc_option))THEN
-      attr_len = len(desc_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Desc', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, desc_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    IF(present(unit_option))THEN
-      attr_len = len(unit_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Unit', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, unit_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    CALL h5dclose_f(dataset_id, error)
-
-  END SUBROUTINE write_1d_slab_int
-
-  SUBROUTINE write_1d_slab_double(name, value, group_id, datasize, &
-               desc_option, unit_option)
-    CHARACTER(*), INTENT(IN)                    :: name
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: unit_option
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: desc_option
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(1), INTENT(IN)  :: datasize
-    REAL(kind=double), DIMENSION(:), INTENT(IN) :: value
-    
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER(HID_T)                              :: dataspace_id
-    INTEGER(HID_T)                              :: atype_id
-    INTEGER(HID_T)                              :: attr_id
-    INTEGER(SIZE_T)                             :: attr_len
-    INTEGER(HSIZE_T), DIMENSION(1)              :: adims = (/1/)
-    INTEGER                                     :: error
-    
-    CALL h5screate_simple_f(1, datasize, dataspace_id, error)
-    CALL h5dcreate_f(group_id, name, H5T_NATIVE_DOUBLE, &
-                     dataspace_id, dataset_id, error)
-    IF(hyperslab_group_master) &
-      CALL h5dwrite_f(dataset_id, H5T_NATIVE_DOUBLE, &
-                      value, datasize, error)
-    CALL h5sclose_f(dataspace_id, error)
-    IF(present(desc_option))THEN
-      attr_len = len(desc_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Desc', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, desc_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    IF(present(unit_option))THEN
-      attr_len = len(unit_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Unit', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, unit_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    CALL h5dclose_f(dataset_id, error)
-
-  END SUBROUTINE write_1d_slab_double
-
-
-  SUBROUTINE write_ray_hyperslab_dbl_2d(name, value, group_id, &
-               global_datasize, local_datasize, slab_offset, &
-               desc_option, unit_option)
-    
-    CHARACTER(*), INTENT(IN)                    :: name
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: unit_option
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: desc_option
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(2), INTENT(IN)  :: global_datasize
-    INTEGER(HSIZE_T), dimension(2), INTENT(IN)  :: local_datasize
-    INTEGER(HSIZE_T), dimension(2), INTENT(IN)  :: slab_offset
-    REAL(kind=double), DIMENSION(:,:), INTENT(IN) :: value
-    
-    INTEGER(HID_T)                              :: filespace    
-    INTEGER(HID_T)                              :: memspace    
-    INTEGER(HID_T)                              :: plist_id
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER(HID_T)                              :: dataspace_id
-    INTEGER(HID_T)                              :: atype_id
-    INTEGER(HID_T)                              :: attr_id
-    INTEGER(SIZE_T)                             :: attr_len
-    INTEGER(HSIZE_T), DIMENSION(1)              :: adims = (/1/)
-    INTEGER                                     :: error
-    
-    CALL h5screate_simple_f(2, global_datasize, filespace, error)
-    CALL h5dcreate_f(group_id, name, H5T_NATIVE_DOUBLE, filespace, &
-                     dataset_id, error)
-    CALL h5sclose_f(filespace, error)
-    
-    CALL h5screate_simple_f(2, local_datasize, memspace, error)
-    CALL h5dget_space_f(dataset_id, filespace, error)
-    CALL h5sselect_hyperslab_f(filespace, H5S_SELECT_SET_F, slab_offset, &
-           local_datasize, error)
-    CALL h5pcreate_f(H5P_DATASET_XFER_F, plist_id, error) 
-    CALL h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_INDEPENDENT_F, error)
-    CALL h5dwrite_f(dataset_id, H5T_NATIVE_DOUBLE, value, local_datasize, &
-           error, file_space_id=filespace, mem_space_id=memspace, &
-           xfer_prp=plist_id)
-    CALL h5sclose_f(filespace, error)
-    CALL h5sclose_f(memspace, error)
-    IF(present(desc_option))THEN
-      attr_len = len(desc_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Desc', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, desc_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    IF(present(unit_option))THEN
-      attr_len = len(unit_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Unit', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, unit_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    CALL h5dclose_f(dataset_id, error)
-    CALL h5pclose_f(plist_id, error)                     
-    
-  END SUBROUTINE write_ray_hyperslab_dbl_2d
-
-
-  SUBROUTINE write_ray_hyperslab_dbl_3d(name, value, group_id, &
-               global_datasize, local_datasize, slab_offset, &
-               desc_option, unit_option)
-    
-    CHARACTER(*), INTENT(IN)                    :: name
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: unit_option
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: desc_option
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(3), INTENT(IN)  :: global_datasize
-    INTEGER(HSIZE_T), dimension(3), INTENT(IN)  :: local_datasize
-    INTEGER(HSIZE_T), dimension(3), INTENT(IN)  :: slab_offset
-    REAL(kind=double), DIMENSION(:,:,:), INTENT(IN) :: value
-    
-    INTEGER(HID_T)                              :: filespace    
-    INTEGER(HID_T)                              :: memspace    
-    INTEGER(HID_T)                              :: plist_id
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER(HID_T)                              :: dataspace_id
-    INTEGER(HID_T)                              :: atype_id
-    INTEGER(HID_T)                              :: attr_id
-    INTEGER(SIZE_T)                             :: attr_len
-    INTEGER(HSIZE_T), DIMENSION(1)              :: adims = (/1/)
-    INTEGER                                     :: error
-    
-    CALL h5screate_simple_f(3, global_datasize, filespace, error)
-    CALL h5dcreate_f(group_id, name, H5T_NATIVE_DOUBLE, filespace, &
-                     dataset_id, error)
-    CALL h5sclose_f(filespace, error)
-    
-    CALL h5screate_simple_f(3, local_datasize, memspace, error)
-    CALL h5dget_space_f(dataset_id, filespace, error)
-    CALL h5sselect_hyperslab_f(filespace, H5S_SELECT_SET_F, slab_offset, &
-           local_datasize, error)
-    CALL h5pcreate_f(H5P_DATASET_XFER_F, plist_id, error) 
-    CALL h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_INDEPENDENT_F, error)
-    CALL h5dwrite_f(dataset_id, H5T_NATIVE_DOUBLE, value, local_datasize, &
-           error, file_space_id=filespace, mem_space_id=memspace, &
-           xfer_prp=plist_id)
-    CALL h5sclose_f(filespace, error)
-    CALL h5sclose_f(memspace, error)
-    IF(present(desc_option))THEN
-      attr_len = len(desc_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Desc', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, desc_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    IF(present(unit_option))THEN
-      attr_len = len(unit_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Unit', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, unit_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    CALL h5dclose_f(dataset_id, error)
-    CALL h5pclose_f(plist_id, error)                     
-    
-  END SUBROUTINE write_ray_hyperslab_dbl_3d
-
-
-  SUBROUTINE write_ray_hyperslab_dbl_4d(name, value, group_id, &
-               global_datasize, local_datasize, slab_offset, &
-               desc_option, unit_option)
-    
-    CHARACTER(*), INTENT(IN)                    :: name
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: unit_option
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: desc_option
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(4), INTENT(IN)  :: global_datasize
-    INTEGER(HSIZE_T), dimension(4), INTENT(IN)  :: local_datasize
-    INTEGER(HSIZE_T), dimension(4), INTENT(IN)  :: slab_offset
-    REAL(kind=double), DIMENSION(:,:,:,:), INTENT(IN) :: value
-    
-    INTEGER(HID_T)                              :: filespace    
-    INTEGER(HID_T)                              :: memspace    
-    INTEGER(HID_T)                              :: plist_id
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER(HID_T)                              :: dataspace_id
-    INTEGER(HID_T)                              :: atype_id
-    INTEGER(HID_T)                              :: attr_id
-    INTEGER(SIZE_T)                             :: attr_len
-    INTEGER(HSIZE_T), DIMENSION(1)              :: adims = (/1/)
-    INTEGER                                     :: error
-    
-    CALL h5screate_simple_f(4, global_datasize, filespace, error)
-    CALL h5dcreate_f(group_id, name, H5T_NATIVE_DOUBLE, filespace, &
-                     dataset_id, error)
-    CALL h5sclose_f(filespace, error)
-    
-    CALL h5screate_simple_f(4, local_datasize, memspace, error)
-    CALL h5dget_space_f(dataset_id, filespace, error)
-    CALL h5sselect_hyperslab_f(filespace, H5S_SELECT_SET_F, slab_offset, &
-           local_datasize, error)
-    CALL h5pcreate_f(H5P_DATASET_XFER_F, plist_id, error) 
-    CALL h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_INDEPENDENT_F, error)
-    CALL h5dwrite_f(dataset_id, H5T_NATIVE_DOUBLE, value, local_datasize, &
-           error, file_space_id=filespace, mem_space_id=memspace, &
-           xfer_prp=plist_id)
-    CALL h5sclose_f(filespace, error)
-    CALL h5sclose_f(memspace, error)
-    IF(present(desc_option))THEN
-      attr_len = len(desc_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Desc', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, desc_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    IF(present(unit_option))THEN
-      attr_len = len(unit_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Unit', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, unit_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    CALL h5dclose_f(dataset_id, error)
-    CALL h5pclose_f(plist_id, error)                     
-    
-  END SUBROUTINE write_ray_hyperslab_dbl_4d
-
-
-  SUBROUTINE write_ray_hyperslab_dbl_5d(name, value, group_id, &
-               global_datasize, local_datasize, slab_offset, &
-               desc_option, unit_option)
-    
-    CHARACTER(*), INTENT(IN)                    :: name
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: unit_option
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: desc_option
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(5), INTENT(IN)  :: global_datasize
-    INTEGER(HSIZE_T), dimension(5), INTENT(IN)  :: local_datasize
-    INTEGER(HSIZE_T), dimension(5), INTENT(IN)  :: slab_offset
-    REAL(kind=double), DIMENSION(:,:,:,:,:), INTENT(IN) :: value
-    
-    INTEGER(HID_T)                              :: filespace    
-    INTEGER(HID_T)                              :: memspace    
-    INTEGER(HID_T)                              :: plist_id
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER(HID_T)                              :: dataspace_id
-    INTEGER(HID_T)                              :: atype_id
-    INTEGER(HID_T)                              :: attr_id
-    INTEGER(SIZE_T)                             :: attr_len
-    INTEGER(HSIZE_T), DIMENSION(1)              :: adims = (/1/)
-    INTEGER                                     :: error
-    
-    CALL h5screate_simple_f(5, global_datasize, filespace, error)
-    CALL h5dcreate_f(group_id, name, H5T_NATIVE_DOUBLE, filespace, &
-                     dataset_id, error)
-    CALL h5sclose_f(filespace, error)
-    
-    CALL h5screate_simple_f(5, local_datasize, memspace, error)
-    CALL h5dget_space_f(dataset_id, filespace, error)
-    CALL h5sselect_hyperslab_f(filespace, H5S_SELECT_SET_F, slab_offset, &
-           local_datasize, error)
-    CALL h5pcreate_f(H5P_DATASET_XFER_F, plist_id, error) 
-    CALL h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_INDEPENDENT_F, error)
-    CALL h5dwrite_f(dataset_id, H5T_NATIVE_DOUBLE, value, local_datasize, &
-           error, file_space_id=filespace, mem_space_id=memspace, &
-           xfer_prp=plist_id)
-    CALL h5sclose_f(filespace, error)
-    CALL h5sclose_f(memspace, error)
-    IF(present(desc_option))THEN
-      attr_len = len(desc_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Desc', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, desc_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    IF(present(unit_option))THEN
-      attr_len = len(unit_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Unit', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, unit_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    CALL h5dclose_f(dataset_id, error)
-    CALL h5pclose_f(plist_id, error)                     
-    
-  END SUBROUTINE write_ray_hyperslab_dbl_5d
-
-
-  SUBROUTINE write_ray_hyperslab_int_3d(name, value, group_id, &
-               global_datasize, local_datasize, slab_offset, &
-               desc_option, unit_option)
-    
-    CHARACTER(*), INTENT(IN)                    :: name
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: unit_option
-    CHARACTER(*), INTENT(IN), OPTIONAL          :: desc_option
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(3), INTENT(IN)  :: global_datasize
-    INTEGER(HSIZE_T), dimension(3), INTENT(IN)  :: local_datasize
-    INTEGER(HSIZE_T), dimension(3), INTENT(IN)  :: slab_offset
-    INTEGER, DIMENSION(:,:,:), INTENT(IN)       :: value
-    
-    INTEGER(HID_T)                              :: filespace    
-    INTEGER(HID_T)                              :: memspace    
-    INTEGER(HID_T)                              :: plist_id
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER(HID_T)                              :: dataspace_id
-    INTEGER(HID_T)                              :: atype_id
-    INTEGER(HID_T)                              :: attr_id
-    INTEGER(SIZE_T)                             :: attr_len
-    INTEGER(HSIZE_T), DIMENSION(1)              :: adims = (/1/)
-    INTEGER                                     :: error
-    
-    CALL h5screate_simple_f(3, global_datasize, filespace, error)
-    CALL h5dcreate_f(group_id, name, H5T_NATIVE_INTEGER, filespace, &
-                     dataset_id, error)
-    CALL h5sclose_f(filespace, error)
-    
-    CALL h5screate_simple_f(3, local_datasize, memspace, error)
-    CALL h5dget_space_f(dataset_id, filespace, error)
-    CALL h5sselect_hyperslab_f(filespace, H5S_SELECT_SET_F, slab_offset, &
-           local_datasize, error)
-    CALL h5pcreate_f(H5P_DATASET_XFER_F, plist_id, error) 
-    CALL h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_INDEPENDENT_F, error)
-    CALL h5dwrite_f(dataset_id, H5T_NATIVE_INTEGER, value, local_datasize, &
-           error, file_space_id=filespace, mem_space_id=memspace, &
-           xfer_prp=plist_id)
-    CALL h5sclose_f(filespace, error)
-    CALL h5sclose_f(memspace, error)
-    IF(present(desc_option))THEN
-      attr_len = len(desc_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Desc', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, desc_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    IF(present(unit_option))THEN
-      attr_len = len(unit_option)
-      CALL h5screate_simple_f(1, adims, dataspace_id, error)
-      CALL h5tcopy_f(H5T_NATIVE_CHARACTER, atype_id, error)
-      CALL h5tset_size_f(atype_id, attr_len, error)
-      CALL h5acreate_f(dataset_id, 'Unit', atype_id, dataspace_id, &
-             attr_id, error)
-      IF(hyperslab_group_master) &
-        CALL h5awrite_f(attr_id, atype_id, unit_option, adims, error)
-      CALL h5aclose_f(attr_id, error)
-      CALL h5sclose_f(dataspace_id, error)
-    END IF
-    CALL h5dclose_f(dataset_id, error)
-    CALL h5pclose_f(plist_id, error)                     
-    
-  END SUBROUTINE write_ray_hyperslab_int_3d
-  
-  
-  SUBROUTINE read_1d_slab_int(name, value, group_id, datasize)
-    CHARACTER(*), INTENT(IN)                    :: name
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(1), INTENT(IN)  :: datasize
-    INTEGER, DIMENSION(:), INTENT(OUT)          :: value
-    
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER                                     :: error
-    
-    CALL h5dopen_f(group_id, name, dataset_id, error)
-    CALL h5dread_f(dataset_id, H5T_NATIVE_INTEGER, &
-                    value, datasize, error)
-    CALL h5dclose_f(dataset_id, error)
-
-  END SUBROUTINE read_1d_slab_int
-
-  
-  SUBROUTINE read_1d_slab_double(name, value, group_id, datasize)
-    CHARACTER(*), INTENT(IN)                    :: name
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(1), INTENT(IN)  :: datasize
-    REAL(kind=double), DIMENSION(:), INTENT(OUT):: value
-    
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER(HID_T)                              :: dataspace_id
-    INTEGER                                     :: error
-    
-    CALL h5dopen_f(group_id, name, dataset_id, error)
-    CALL h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, &
-                    value, datasize, error)
-    CALL h5dclose_f(dataset_id, error)
-
-  END SUBROUTINE read_1d_slab_double
-
-
-  SUBROUTINE read_ray_hyperslab_dbl_2d(name, value, group_id, &
-               datasize, slab_offset)
-    
-    CHARACTER(*), INTENT(IN)                    :: name
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(2), INTENT(IN)  :: datasize
-    INTEGER(HSIZE_T), dimension(2), INTENT(IN)  :: slab_offset
-    REAL(kind=double), DIMENSION(:,:), INTENT(OUT) :: value
-    
-    INTEGER(HID_T)                              :: filespace    
-    INTEGER(HID_T)                              :: memspace    
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER(HSIZE_T), dimension(2)              :: null_offset
-    INTEGER                                     :: error
-    
-    null_offset = 0
-    CALL h5dopen_f(group_id, name, dataset_id, error)
-    CALL h5dget_space_f(dataset_id, filespace, error)
-    CALL h5sselect_hyperslab_f(filespace, H5S_SELECT_SET_F, slab_offset, &
-           datasize, error)
-    CALL h5screate_simple_f(2, datasize, memspace, error)
-    CALL h5sselect_hyperslab_f(memspace, H5S_SELECT_SET_F, null_offset, &
-           datasize, error)
-    CALL h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, value, datasize, &
-           error, file_space_id=filespace, mem_space_id=memspace)
-    CALL h5sclose_f(filespace, error)
-    CALL h5sclose_f(memspace, error)
-    CALL h5dclose_f(dataset_id, error)
-    
-  END SUBROUTINE read_ray_hyperslab_dbl_2d
-
-
-  SUBROUTINE read_ray_hyperslab_dbl_3d(name, value, group_id, &
-               datasize, slab_offset)
-    
-    CHARACTER(*), INTENT(IN)                    :: name
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(3), INTENT(IN)  :: datasize
-    INTEGER(HSIZE_T), dimension(3), INTENT(IN)  :: slab_offset
-    REAL(kind=double), DIMENSION(:,:,:), INTENT(OUT) :: value
-    
-    INTEGER(HID_T)                              :: filespace    
-    INTEGER(HID_T)                              :: memspace    
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER(HSIZE_T), dimension(3)              :: null_offset
-    INTEGER                                     :: error
-    
-    null_offset = 0
-    CALL h5dopen_f(group_id, name, dataset_id, error)
-    CALL h5dget_space_f(dataset_id, filespace, error)
-    CALL h5sselect_hyperslab_f(filespace, H5S_SELECT_SET_F, slab_offset, &
-           datasize, error)
-    CALL h5screate_simple_f(3, datasize, memspace, error)
-    CALL h5sselect_hyperslab_f(memspace, H5S_SELECT_SET_F, null_offset, &
-           datasize, error)
-    CALL h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, value, datasize, &
-           error, file_space_id=filespace, mem_space_id=memspace)
-    CALL h5sclose_f(filespace, error)
-    CALL h5sclose_f(memspace, error)
-    CALL h5dclose_f(dataset_id, error)
-    
-  END SUBROUTINE read_ray_hyperslab_dbl_3d
-
-
-  SUBROUTINE read_ray_hyperslab_dbl_4d(name, value, group_id, &
-               datasize, slab_offset)
-    
-    CHARACTER(*), INTENT(IN)                    :: name
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(4), INTENT(IN)  :: datasize
-    INTEGER(HSIZE_T), dimension(4), INTENT(IN)  :: slab_offset
-    REAL(kind=double), DIMENSION(:,:,:,:), INTENT(OUT) :: value
-    
-    INTEGER(HID_T)                              :: filespace    
-    INTEGER(HID_T)                              :: memspace    
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER(HSIZE_T), dimension(4)              :: null_offset
-    INTEGER                                     :: error
-    
-    null_offset = 0
-    CALL h5dopen_f(group_id, name, dataset_id, error)
-    CALL h5dget_space_f(dataset_id, filespace, error)
-    CALL h5sselect_hyperslab_f(filespace, H5S_SELECT_SET_F, slab_offset, &
-           datasize, error)
-    CALL h5screate_simple_f(4, datasize, memspace, error)
-    CALL h5sselect_hyperslab_f(memspace, H5S_SELECT_SET_F, null_offset, &
-           datasize, error)
-    CALL h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, value, datasize, &
-           error, file_space_id=filespace, mem_space_id=memspace)
-    CALL h5sclose_f(filespace, error)
-    CALL h5sclose_f(memspace, error)
-    CALL h5dclose_f(dataset_id, error)
-    
-  END SUBROUTINE read_ray_hyperslab_dbl_4d
-
-
-  SUBROUTINE read_ray_hyperslab_dbl_5d(name, value, group_id, &
-               datasize, slab_offset)
-    
-    CHARACTER(*), INTENT(IN)                    :: name
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(5), INTENT(IN)  :: datasize
-    INTEGER(HSIZE_T), dimension(5), INTENT(IN)  :: slab_offset
-    REAL(kind=double), DIMENSION(:,:,:,:,:), INTENT(OUT) :: value
-    
-    INTEGER(HID_T)                              :: filespace    
-    INTEGER(HID_T)                              :: memspace    
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER(HSIZE_T), dimension(5)              :: null_offset
-    INTEGER                                     :: error
-    
-    null_offset = 0
-    CALL h5dopen_f(group_id, name, dataset_id, error)
-    CALL h5dget_space_f(dataset_id, filespace, error)
-    CALL h5sselect_hyperslab_f(filespace, H5S_SELECT_SET_F, slab_offset, &
-           datasize, error)
-    CALL h5screate_simple_f(4, datasize, memspace, error)
-    CALL h5sselect_hyperslab_f(memspace, H5S_SELECT_SET_F, null_offset, &
-           datasize, error)
-    CALL h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, value, datasize, &
-           error, file_space_id=filespace, mem_space_id=memspace)
-    CALL h5sclose_f(filespace, error)
-    CALL h5sclose_f(memspace, error)
-    CALL h5dclose_f(dataset_id, error)
-    
-  END SUBROUTINE read_ray_hyperslab_dbl_5d
-
-
-  SUBROUTINE read_ray_hyperslab_int_3d(name, value, group_id, &
-               datasize, slab_offset)
-    
-    CHARACTER(*), INTENT(IN)                    :: name
-    INTEGER(HID_T)                              :: group_id
-    INTEGER(HSIZE_T), dimension(3), INTENT(IN)  :: datasize
-    INTEGER(HSIZE_T), dimension(3), INTENT(IN)  :: slab_offset
-    INTEGER, DIMENSION(:,:,:), INTENT(OUT)       :: value
-    
-    INTEGER(HID_T)                              :: filespace    
-    INTEGER(HID_T)                              :: memspace    
-    INTEGER(HID_T)                              :: dataset_id
-    INTEGER(HSIZE_T), dimension(3)              :: null_offset
-    INTEGER                                     :: error
-    
-    null_offset = 0
-    CALL h5dopen_f(group_id, name, dataset_id, error)
-    CALL h5dget_space_f(dataset_id, filespace, error)
-    CALL h5sselect_hyperslab_f(filespace, H5S_SELECT_SET_F, slab_offset, &
-           datasize, error)
-    CALL h5screate_simple_f(3, datasize, memspace, error)
-    CALL h5sselect_hyperslab_f(memspace, H5S_SELECT_SET_F, null_offset, &
-           datasize, error)
-    CALL h5dread_f(dataset_id, H5T_NATIVE_INTEGER, value, datasize, &
-           error, file_space_id=filespace, mem_space_id=memspace)
-    CALL h5sclose_f(filespace, error)
-    CALL h5sclose_f(memspace, error)
-    CALL h5dclose_f(dataset_id, error)
-    
-    
-  END SUBROUTINE read_ray_hyperslab_int_3d
-  
-  
   SUBROUTINE compute_plot_variables(imin, imax, nx, nez, nnu, jmin, jmax, ij_ray_dim, &
                ny, kmin, kmax, ik_ray_dim, nz, x_e_in, x_c_in, y_in, z_in, uMD_in, &
                vMD_in, wMD_in, rhoMD_in, tMD_in, yeMD_in, rhobar, psi0_in, psi1_in, &
