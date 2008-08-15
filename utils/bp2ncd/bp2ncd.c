@@ -76,6 +76,7 @@ int ncd_attr_str_ds (int ncid
     struct adios_var_payload_struct_v1 var_payload;  
     var_payload.payload = 0;
     if (attribute->is_var == adios_flag_yes) {
+#if 0
          for ( i = 0; i < count; i++) {
              adios_parse_var_data_header_v1 (ptr_buffer, &var_header);
              if ( var_header.id == attribute->var_id) {
@@ -103,7 +104,9 @@ int ncd_attr_str_ds (int ncid
                   adios_parse_var_data_payload_v1 (ptr_buffer, &var_header, NULL, 0);
 
          }
+#endif
     }
+
     switch (type) {
          case adios_unsigned_byte:
             retval=nc_put_att_uchar(ncid,valid,fullname,NC_BYTE,len,value);
