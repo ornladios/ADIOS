@@ -347,12 +347,12 @@ void adios_parse_buffer (struct adios_file_struct * fd, char * buffer
                         ,uint64_t len
                         );
 
-void adios_parse_dimension (const char * dimension
-                           ,const char * global_dimension
-                           ,const char * local_offset
-                           ,struct adios_group_struct * g
-                           ,struct adios_dimension_struct * dim
-                           );
+int adios_parse_dimension (const char * dimension
+                          ,const char * global_dimension
+                          ,const char * local_offset
+                          ,struct adios_group_struct * g
+                          ,struct adios_dimension_struct * dim
+                          );
 
 void adios_extract_string (char ** out, const char * in, int size);
 

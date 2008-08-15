@@ -56,7 +56,8 @@ int main (int argc, char ** argv)
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-    adios_init ("config_c.xml");
+    if (!adios_init ("config_c.xml"))
+        return -1;
 
 #if 1
 printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");

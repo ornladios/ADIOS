@@ -2865,18 +2865,18 @@ struct adios_attribute_struct * adios_find_attribute_by_id
     return NULL;
 }
 
-void adios_parse_dimension (const char * dimension
-                           ,const char * global_dimension
-                           ,const char * local_offset
-                           ,struct adios_group_struct * g
-                           ,struct adios_dimension_struct * dim
-                           )
+int adios_parse_dimension (const char * dimension
+                          ,const char * global_dimension
+                          ,const char * local_offset
+                          ,struct adios_group_struct * g
+                          ,struct adios_dimension_struct * dim
+                          )
 {
     if (!dimension)
     {
         fprintf (stderr, "adios_parse_dimension: dimension not provided\n");
 
-        return;
+        return 0;
     }
 
     dim->dimension.rank = 0;
@@ -2898,7 +2898,9 @@ void adios_parse_dimension (const char * dimension
 
             if (!attr)
             {
-                if (!strcasecmp (g->time_index_name, dimension))
+                if (   g->time_index_name
+                    && !strcasecmp (g->time_index_name, dimension)
+                   )
                 {
                     dim->dimension.time_index = adios_flag_yes;
                 }
@@ -2908,7 +2910,7 @@ void adios_parse_dimension (const char * dimension
                             ,dimension
                             );
 
-                    return;
+                    return 0;
                 }
             }
             else
@@ -2928,7 +2930,7 @@ void adios_parse_dimension (const char * dimension
                                     ,attr->name
                                     ,adios_type_to_string (attr->var->type)
                                     );
-                            return;
+                            return 0;
 
                         default: // the integral numeric types are all fine
                             break;
@@ -2950,7 +2952,7 @@ void adios_parse_dimension (const char * dimension
                                     ,attr->name
                                     ,adios_type_to_string (attr->type)
                                     );
-                            return;
+                            return 0;
 
                         default: // the integral numeric types are all fine
                             break;
@@ -2974,7 +2976,7 @@ void adios_parse_dimension (const char * dimension
                             ,var->name
                             ,adios_type_to_string (var->type)
                             );
-                    return;
+                    return 0;
 
                 default: // the integral numeric types are all fine
                     break;
@@ -2996,7 +2998,7 @@ void adios_parse_dimension (const char * dimension
                          "provided\n"
                 );
 
-        return;
+        return 0;
     }
 
     if (is_var (global_dimension))
@@ -3009,18 +3011,27 @@ void adios_parse_dimension (const char * dimension
         if (!var)
         {
             struct adios_attribute_struct * attr = 0;
-            attr = adios_find_attribute_by_name (g->attributes, dimension
+            attr = adios_find_attribute_by_name (g->attributes, global_dimension
                                                 ,g->all_unique_var_names
                                                 );
 
             if (!attr)
             {
-                fprintf (stderr, "config.xml: invalid global-bounds "
-                                 "dimension: %s\n"
-                        ,global_dimension
-                        );
+                if (   g->time_index_name
+                    && !strcasecmp (g->time_index_name, global_dimension)
+                   )
+                {
+                    dim->global_dimension.time_index = adios_flag_yes;
+                }
+                else
+                {
+                    fprintf (stderr, "config.xml: invalid global-bounds "
+                                     "dimension: %s\n"
+                            ,global_dimension
+                            );
 
-                return;
+                    return 0;
+                }
             }
             else
             {
@@ -3039,7 +3050,7 @@ void adios_parse_dimension (const char * dimension
                                     ,attr->name
                                     ,adios_type_to_string (attr->var->type)
                                     );
-                            return;
+                            return 0;
 
                         default: // the integral numeric types are all fine
                             break;
@@ -3061,7 +3072,7 @@ void adios_parse_dimension (const char * dimension
                                     ,attr->name
                                     ,adios_type_to_string (attr->type)
                                     );
-                            return;
+                            return 0;
 
                         default: // the integral numeric types are all fine
                             break;
@@ -3085,7 +3096,7 @@ void adios_parse_dimension (const char * dimension
                             ,var->name
                             ,adios_type_to_string (var->type)
                             );
-                    return;
+                    return 0;
 
                 default: // the integral numeric types are all fine
                     break;
@@ -3104,7 +3115,7 @@ void adios_parse_dimension (const char * dimension
     {
         fprintf (stderr, "adios_parse_dimension: local-offset not provided\n");
 
-        return;
+        return 0;
     }
 
     if (is_var (local_offset))
@@ -3117,17 +3128,27 @@ void adios_parse_dimension (const char * dimension
         if (!var)
         {
             struct adios_attribute_struct * attr = 0;
-            attr = adios_find_attribute_by_name (g->attributes, dimension
+            attr = adios_find_attribute_by_name (g->attributes, local_offset
                                                 ,g->all_unique_var_names
                                                 );
 
             if (!attr)
             {
-                fprintf (stderr, "config.xml: invalid var local_offset: %s\n"
-                        ,local_offset
-                        );
+                if (   g->time_index_name
+                    && !strcasecmp (g->time_index_name, local_offset)
+                   )
+                {
+                    dim->local_offset.time_index = adios_flag_yes;
+                }
+                else
+                {
+                    fprintf (stderr, "config.xml: invalid var local_offset: "
+                                     "%s\n"
+                            ,local_offset
+                            );
 
-                return;
+                    return 0;
+                }
             }
             else
             {
@@ -3146,7 +3167,7 @@ void adios_parse_dimension (const char * dimension
                                     ,attr->name
                                     ,adios_type_to_string (attr->var->type)
                                     );
-                            return;
+                            return 0;
 
                         default: // the integral numeric types are all fine
                             break;
@@ -3168,7 +3189,7 @@ void adios_parse_dimension (const char * dimension
                                     ,attr->name
                                     ,adios_type_to_string (attr->type)
                                     );
-                            return;
+                            return 0;
 
                         default: // the integral numeric types are all fine
                             break;
@@ -3192,7 +3213,7 @@ void adios_parse_dimension (const char * dimension
                             ,var->name
                             ,adios_type_to_string (var->type)
                             );
-                    return;
+                    return 0;
 
                 default: // the integral numeric types are all fine
                     break;
@@ -3206,6 +3227,8 @@ void adios_parse_dimension (const char * dimension
         dim->local_offset.id = 0;
         dim->local_offset.rank = strtol (local_offset, NULL, 10);
     }
+
+    return 1;
 }
 
 struct adios_method_list_struct * adios_get_methods ()
@@ -4115,6 +4138,7 @@ int adios_common_define_var (long long group_id, const char * name
 
         while (i < dim_count)
         {
+            int ret;
             struct adios_dimension_struct * d =
                      (struct adios_dimension_struct *)
                          calloc (1, sizeof (struct adios_dimension_struct));
@@ -4138,7 +4162,17 @@ int adios_common_define_var (long long group_id, const char * name
             if (i < lo_dim_count)
                 lo_dim = lo_dim_tokens [i];
             
-            adios_parse_dimension (dim, g_dim, lo_dim, t, d);
+            if (!(ret = adios_parse_dimension (dim, g_dim, lo_dim, t, d)))
+            {
+                free (dim_temp);
+                free (g_dim_temp);
+                free (lo_dim_temp);
+                free (v->name);
+                free (v->path);
+                free (v);
+
+                return ret;
+            }
 
             adios_append_dimension (&v->dimensions, d);
 
