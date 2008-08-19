@@ -176,7 +176,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-dist_bin_SCRIPTS = gwrite.py xmlparser.py
+dist_bin_SCRIPTS = gpp.py xmlparser.py
 all: all-am
 
 .SUFFIXES:
