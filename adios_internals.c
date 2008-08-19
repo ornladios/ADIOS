@@ -2068,7 +2068,9 @@ static int parseGroup (mxml_node_t * node)
             const char * type = 0;
             const char * dimensions = 0;
             const char * dimension = 0;
-            const char * gname = 0;
+            const char * gread = 0;
+            const char * gwrite = 0;
+            const char * read_flag = 0;
             enum ADIOS_DATATYPES t1;
 
             for (i = 0; i < n->value.element.num_attrs; i++)
@@ -2080,7 +2082,9 @@ static int parseGroup (mxml_node_t * node)
                 GET_ATTR("type",attr,type,"var")
                 GET_ATTR("dimensions",attr,dimensions,"var")
                 GET_ATTR("dimension",attr,dimension,"var")
-                GET_ATTR("gname",attr,gname,"var")
+                GET_ATTR("gwrite",attr,gwrite,"var")
+                GET_ATTR("gread",attr,gread,"var")
+                GET_ATTR("read",attr,read_flag,"var")
                 fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
                                  "(ignored)\n"
                         ,attr->name
@@ -2102,6 +2106,9 @@ static int parseGroup (mxml_node_t * node)
                 if (!dimensions)
                     dimensions = "";
             }
+
+            if (read)
+                parseFlag ("read", read_flag, adios_flag_no);
 
             if (!adios_common_define_var (*(long long *) &new_group, name
                                          ,path, t1, dimensions
@@ -2194,7 +2201,9 @@ static int parseGroup (mxml_node_t * node)
                     const char * type = 0;
                     const char * dimension = 0;
                     const char * dimensions = 0;
-                    const char * gname = 0;
+                    const char * gwrite = 0;
+                    const char * gread = 0;
+                    const char * read_flag = 0;
                     enum ADIOS_DATATYPES t1;
 
                     for (i = 0; i < n1->value.element.num_attrs; i++)
@@ -2206,7 +2215,9 @@ static int parseGroup (mxml_node_t * node)
                         GET_ATTR("type",attr,type,"global-bounds var")
                         GET_ATTR("dimensions",attr,dimensions,"var")
                         GET_ATTR("dimension",attr,dimension,"var")
-                        GET_ATTR("gname",attr,gname,"var")
+                        GET_ATTR("gwrite",attr,gwrite,"var")
+                        GET_ATTR("gread",attr,gread,"var")
+                        GET_ATTR("read",attr,read_flag,"var")
                         fprintf (stderr, "config.xml: unknown attribute '%s' "
                                          "on %s (ignored)\n"
                                 ,attr->name
@@ -2223,6 +2234,9 @@ static int parseGroup (mxml_node_t * node)
                     t1 = parseType (type, name);
                     if (!dimensions)
                         dimensions = dimension;
+
+                    if (read)
+                        parseFlag ("read", read_flag, adios_flag_no);
 
                     if (!adios_common_define_var (*(long long *) &new_group
                                                  ,name
