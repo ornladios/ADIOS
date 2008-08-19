@@ -90,16 +90,6 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
     #print var_size_dict.items()
     line = ""; 
     if (language_sw==1):
-        if (coord_var!= ""):
-            line = line                              \
-                 + "call adios_write (adios_handle, "\
-                 + "\""+coord_var+"\"//char(0), "    \
-                 + coord_var +", adios_err)\n"         
-        if (time_var != ""):
-            line = line                              \
-                 + "call adios_write (adios_handle, "\
-                 + "\""+time_var+"\"//char(0), "     \
-                 + time_var +", adios_err)\n"         
         linew = "call adios_write (adios_handle, "   \
               + "\""+varname+"\"//char(0), "         \
               + gwname +", adios_err)\n"         
@@ -111,32 +101,26 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
                  + "\"//char(0), " + grname            \
                  + ", adios_buf_size, adios_err)\n"
     elif(language_sw==2):
-        if (coord_var!= ""):
-            linew = linew                              \
-                 + "adios_write (adios_handle, "\
-                 + "\""+coord_var+"\"//char(0), &"    \
-                 + coord_var +")\n"         
-        if (time_var != ""):
-            linew = linew                              \
-                 + "adios_write (adios_handle, "\
-                 + "\""+time_var+"\"//char(0), &"     \
-                 + time_var +")\n"        
         if (dimsname==""): 
            linew = "adios_write (adios_handle, "         \
                  + "\"" + varname + "\", &"               \
                  + gwname + ");\n"                         
            if (readyn): 
-              liner = "adios_read (adios_handle, "          \
-                 + "\"" + varname + "\", &"               \
-                 + grname + ", adios_buf_size);\n"
+               liner = "adios_buf_size = "                  \
+                     + str(getsize[typename])              \
+                     + ";\nadios_read (adios_handle, " \
+                     + "\"" + varname + "\", &"               \
+                     + grname + ", adios_buf_size);\n"
         else: 
            linew = "adios_write (adios_handle, "         \
                  + "\"" + varname + "\", "               \
                  + gwname + ");\n"                         
            if (readyn): 
-              liner = "adios_read (adios_handle, "          \
-                 + "\"" + varname + "\", "               \
-                 + grname + ", adios_buf_size);\n"
+              liner = "adios_buf_size = "                  \
+                     + str(getsize[typename])              \
+                     + ";\nadios_read (adios_handle, " \
+                     + "\"" + varname + "\", "               \
+                     + grname + ", adios_buf_size);\n"
     linerw=[linew,liner]
     return linerw
 
