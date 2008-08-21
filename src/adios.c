@@ -209,6 +209,11 @@ static int common_adios_group_size (long long fd_p
     if (allocated != fd->write_size_bytes)
     {
         fd->shared_buffer = adios_flag_no;
+
+        fprintf (stderr, "adios_group_size: Insufficient buffer space for "
+                         "building the output before writing.  Defaulting "
+                         "to direct writing all output.  Performance may "
+                         "suffer.\n");
     }
     else
     {
