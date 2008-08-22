@@ -92,12 +92,11 @@ subroutine test_write (group, filename, group_comm, small_int, big_int, small_re
     istep2 = 22
     istep3 = 33
 
-    size = 4 + 4 + 8 + 4 + 8 + 4 + a_size * 4 + 4 + 4 + 4
+    size = 4 + 8 + 4 + 8 + 4 + 4 + a_size * 4 + a_size * 10 * 4 + 4 + 4 + 4
 
     call adios_open (handle, trim(group)//char(0), trim(filename)//char(0), "w"//char(0), err)
 
     call adios_group_size (handle, size, total_size, group_comm, err)
-    call adios_write (handle, "group_comm"//char(0), group_comm, err)
 
     call adios_write (handle, "small_int"//char(0), small_int, err)
     call adios_write (handle, "big_int"//char(0), big_int, err)
