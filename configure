@@ -22164,7 +22164,7 @@ FC="$MPIFC"
 
 LIBS="$MPILIBS $LIBS"
 
-                                                                                                                        ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile utils/Makefile utils/adios_lint/Makefile utils/gwrite/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile"
+                                                                                                                        ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile utils/Makefile utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -22814,7 +22814,7 @@ do
   "tests/Fortran/Makefile" ) CONFIG_FILES="$CONFIG_FILES tests/Fortran/Makefile" ;;
   "utils/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/Makefile" ;;
   "utils/adios_lint/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/adios_lint/Makefile" ;;
-  "utils/gwrite/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/gwrite/Makefile" ;;
+  "utils/gpp/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/gpp/Makefile" ;;
   "utils/bpdump/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/bpdump/Makefile" ;;
   "utils/bp2h5/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/bp2h5/Makefile" ;;
   "utils/bp2ncd/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/bp2ncd/Makefile" ;;

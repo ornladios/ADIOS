@@ -36,7 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = utils/gwrite
+subdir = utils/gpp
 DIST_COMMON = $(dist_bin_SCRIPTS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -176,7 +176,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-dist_bin_SCRIPTS = gpp.py xmlparser.py
+dist_bin_SCRIPTS = gpp.py xmlparser.py gpp_types.py
 all: all-am
 
 .SUFFIXES:
@@ -189,9 +189,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  utils/gwrite/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  utils/gpp/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  utils/gwrite/Makefile
+	  $(AUTOMAKE) --gnu  utils/gpp/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
