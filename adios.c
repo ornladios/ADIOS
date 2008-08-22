@@ -827,7 +827,6 @@ static int common_adios_close (long long fd_p)
         free (fd->buffer);
     }
 
-
     while (v)
     {
         v->write_offset = 0;
