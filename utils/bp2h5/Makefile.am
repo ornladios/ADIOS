@@ -12,8 +12,8 @@ bp2h5_LDFLAGS = $(MXML_LDFLAGS)
 bp2h5_CPPFLAGS = $(MXML_CPPFLAGS)
 
 # change these to use proper autoconf settings
-bp2h5_LDFLAGS += -L/apps/HDF5/1.6.5/ewok_par/pgi625/lib
-bp2h5_CPPFLAGS += -I/apps/HDF5/1.6.5/ewok_par/pgi625/include
+bp2h5_LDFLAGS += $(HDF5_LDFLAGS)
+bp2h5_CPPFLAGS += $(HDF5_CPPFLAGS)
 
 bp2h5_LDADD = $(top_builddir)/src/libadios_int.a
 bp2h5_LDADD += $(MXML_LIBS)

@@ -204,9 +204,8 @@ bp2h5_SOURCES = bp2h5.c \
 #                 parse_config.c
 
 # change these to use proper autoconf settings
-bp2h5_LDFLAGS = $(MXML_LDFLAGS) -L/apps/HDF5/1.6.5/ewok_par/pgi625/lib
-bp2h5_CPPFLAGS = $(MXML_CPPFLAGS) \
-	-I/apps/HDF5/1.6.5/ewok_par/pgi625/include
+bp2h5_LDFLAGS = $(MXML_LDFLAGS) $(HDF5_LDFLAGS)
+bp2h5_CPPFLAGS = $(MXML_CPPFLAGS) $(HDF5_CPPFLAGS)
 bp2h5_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS) -lhdf5 \
 	-lz
 all: all-am
