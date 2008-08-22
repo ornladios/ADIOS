@@ -48,7 +48,7 @@ AC_CONFIG_FILES([Makefile
                  tests/Fortran/Makefile
                  utils/Makefile
                  utils/adios_lint/Makefile
-                 utils/gwrite/Makefile
+                 utils/gpp/Makefile
                  utils/bpdump/Makefile
                  utils/bp2h5/Makefile
                  utils/bp2ncd/Makefile
