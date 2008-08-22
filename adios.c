@@ -821,6 +821,13 @@ static int common_adios_close (long long fd_p)
         }
     }
 
+    if (fd->shared_buffer == adios_flag_yes)
+    {
+        adios_method_buffer_free (fd->write_size_bytes);
+        free (fd->buffer);
+    }
+
+
     while (v)
     {
         v->write_offset = 0;
