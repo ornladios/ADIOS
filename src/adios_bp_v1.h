@@ -1,6 +1,6 @@
 #ifndef ADIOS_BP_V1_H
 #define ADIOS_BP_V1_H
-
+#include "adios_transport_hooks.h" 
 enum ADIOS_CHARACTERISTICS
 {
      adios_characteristic_value      = 0
@@ -97,7 +97,6 @@ struct adios_index_attribute_struct_v1
 
     struct adios_index_attribute_struct_v1 * next;
 };
-
 struct adios_method_info_struct_v1
 {
     enum ADIOS_IO_METHOD id;
