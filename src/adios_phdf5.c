@@ -20,7 +20,7 @@ int adios_getsize(enum ADIOS_DATATYPES type, void * val);
 void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level, int flag) ;
 void hw_gclose ( hid_t * grp_ids, int level, int flag);
 
-int getH5TypeId(enum ADIOS_DATATPES type, hid_t* h5_type_id, enum ADIOS_FLAG);
+int getH5TypeId(enum ADIOS_DATATYPES type, hid_t* h5_type_id, enum ADIOS_FLAG);
 
 void *xrealloc (void *ptr, size_t size);
 
@@ -96,7 +96,7 @@ void adios_phdf5_init(const char *parameters
 
 //    adios_buffer_struct_init (&md->b); 
 }
-int adios_phdf5_should_buffer (struct adios_file_struct * fd
+enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
                             ,struct adios_method_struct * method
                             ,void * comm
                             )
