@@ -20,6 +20,10 @@
     <attribute name="units2" path="/abc/me" value="m/s"/>
     <attribute name="timestep1" path="/" value="1"/>
     <attribute name="timestep2" path="/abc" value="1"/>
+
+    <var name="byte_test_length" type="integer"/>
+
+    <var name="byte_test" type="byte" dimensions="byte_test_length"/>
   
   </adios-group>
 

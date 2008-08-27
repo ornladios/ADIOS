@@ -17,6 +17,12 @@ int main (int argc, char ** argv)
     MPI_Comm comm = MPI_COMM_WORLD;
     int rank;
 
+    int byte_test_length = 2600;
+    char byte_test [byte_test_length + 1];
+    char r_byte_test [byte_test_length + 1];
+    byte_test [byte_test_length] = 0;
+    r_byte_test [byte_test_length] = 0;
+
     int var_x1 = 101;
     int var_x2 = 102;
 
@@ -34,6 +40,9 @@ int main (int argc, char ** argv)
     assert (zion1);
     assert (zion2);
     assert (zion3);
+    memset (zion1, 0, zionsize1 * sizeof (float));
+    memset (zion2, 0, zionsize2 * zionsize2 * sizeof (float));
+    memset (zion3, 0, zionsize2 * zionsize3 * sizeof (float));
     int r_var_x1;
     int r_var_x2;
     int r_zsize;
@@ -53,6 +62,10 @@ int main (int argc, char ** argv)
     zion1 [7] = 17.0;
     zion1 [8] = 18.0;
     zion1 [9] = 19.0;
+
+    for (int i = 0; i < 100; i++)
+        for (int j = 0; j < 26; j++)
+            byte_test [i * 26 + j] = 'a' + j;
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
@@ -82,6 +95,9 @@ printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
 
     adios_write (io_handle, "node-attr", &node);
 
+    adios_write (io_handle, "byte_test_length", &byte_test_length);
+    adios_write (io_handle, "byte_test", byte_test);
+
     adios_close (io_handle);
 
     printf ("rank: %d write completed\n", rank);
@@ -98,9 +114,19 @@ printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
     adios_read (io_handle, "/test/mype", &r_var_x2, 4);
     adios_read (io_handle, "zionsize2", &r_zsize, 4);
     adios_read (io_handle, "zion1", r_z, 4 * 10);
+    adios_read (io_handle, "byte_test", r_byte_test, 26 * 100);
     adios_close (io_handle);
 
     MPI_Barrier (MPI_COMM_WORLD);
+
+    for (int i = 0; i < byte_test_length; i++)
+            if (r_byte_test [i] != byte_test [i])
+            {
+                printf ("byte_test doesn't match %d\n", i);
+                printf ("byte_test:\n%s\n", byte_test);
+                printf ("r_byte_test:\n%s\n", r_byte_test);
+                break;
+            }
 
     if (   var_x1 != r_var_x1
         || var_x2 != r_var_x2
@@ -161,6 +187,10 @@ printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
 
     adios_finalize (node);
     MPI_Finalize ();
+
+    free (zion1);
+    free (zion2);
+    free (zion3);
 
     return 0;
 }
