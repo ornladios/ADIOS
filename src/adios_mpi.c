@@ -416,8 +416,9 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                     offsets [0] = 0;
                     for (i = 1; i < md->size; i++)
                     {
-                        last_offset = offsets [i];
+                        uint64_t this_offset = offsets [i];
                         offsets [i] = offsets [i - 1] + last_offset;
+                        last_offset = this_offset;
                     }
                     md->b.pg_index_offset =   offsets [md->size - 1]
                                             + last_offset;
@@ -616,8 +617,9 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                         offsets [0] = fd->base_offset;
                         for (i = 1; i < md->size; i++)
                         {
-                            last_offset = offsets [i];
+                            uint64_t this_offset = offsets [i];
                             offsets [i] = offsets [i - 1] + last_offset;
+                            last_offset = this_offset;
                         }
                         md->b.pg_index_offset =   offsets [md->size - 1]
                                                 + last_offset;
