@@ -1008,6 +1008,87 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
     return 0;
 }
 
+int adios_clear_process_group_header_v1 (
+                       struct adios_process_group_header_struct_v1 * pg_header)
+{
+    pg_header->host_language_fortran = adios_flag_unknown;
+    if (pg_header->name)
+    {
+        free (pg_header->name);
+        pg_header->name = 0;
+    }
+    pg_header->coord_var_id = 0;
+    if (pg_header->time_index_name)
+    {
+        free (pg_header->time_index_name);
+        pg_header->time_index_name = 0;
+    }
+    pg_header->time_index = 0;
+    while (pg_header->methods)
+    {
+        struct adios_method_info_struct_v1 * t = pg_header->methods->next;
+        pg_header->methods->id = 0;
+        if (pg_header->methods->parameters)
+        {
+            free (pg_header->methods->parameters);
+            pg_header->methods->parameters = 0;
+        }
+        free (pg_header->methods);
+        pg_header->methods = t;
+    }
+    pg_header->methods_count = 0;
+
+    return 0;
+}
+
+int adios_clear_var_header_v1 (struct adios_var_header_struct_v1 * var_header)
+{
+    if (var_header->name)
+    {
+        free (var_header->name);
+        var_header->name = 0;
+    }
+    if (var_header->path)
+    {
+        free (var_header->path);
+        var_header->path = 0;
+    }
+    while (var_header->dims)
+    {
+        struct adios_dimension_struct_v1 * d = var_header->dims->next;
+        free (var_header->dims);
+        var_header->dims = d;
+    }
+    struct adios_index_characteristic_struct_v1 * c
+                                                = &var_header->characteristics;
+
+    c->offset = 0;
+    if (c->min)
+    {
+        free (c->min);
+        c->min = 0;
+    }
+    if (c->max)
+    {
+        free (c->max);
+        c->max = 0;
+    }
+    if (c->dims.dims)
+    {
+        free (c->dims.dims);
+        c->dims.count = 0;
+        c->dims.dims = 0;
+    }
+    if (c->value)
+    {
+        free (c->value);
+        c->value = 0;
+    }
+    c->var_id = 0;
+
+    return 0;
+}
+
 int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
                              ,struct adios_var_header_struct_v1 * var_header
                              ,struct adios_var_payload_struct_v1 * var_payload
@@ -1161,6 +1242,30 @@ int adios_parse_attribute_v1 (struct adios_bp_buffer_struct_v1 * b
     }
 
     return 0;
+}
+
+int adios_clear_attribute_v1 (struct adios_attribute_struct_v1 * attribute)
+{
+    attribute->id = 0;
+    if (attribute->name)
+    {
+        free (attribute->name);
+        attribute->name = 0;
+    }
+    if (attribute->path)
+    {
+        free (attribute->path);
+        attribute->path = 0;
+    }
+    attribute->is_var = adios_flag_unknown;
+    attribute->var_id = 0;
+    attribute->type = adios_unknown;
+    attribute->length = 0;
+    if (attribute->value)
+    {
+        free (attribute->value);
+        attribute->value = 0;
+    }
 }
 
 void * adios_dupe_data_scalar (enum ADIOS_DATATYPES type, void * in)
