@@ -105,8 +105,8 @@ struct adios_group_struct
     enum ADIOS_FLAG all_unique_var_names;
     struct adios_var_struct * vars;
     struct adios_attribute_struct * attributes;
-    const char * group_comm;
-    const char * group_by;
+    char * group_comm;
+    char * group_by;
     char * time_index_name;
     uint32_t time_index;
     uint32_t process_id;
@@ -475,6 +475,8 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
 
 const char * adios_type_to_string (int type);
 const char * adios_file_mode_to_string (int mode);
+
+void adios_cleanup ();
 
 // the following are defined in adios_transport_hooks.c
 void adios_init_transports (struct adios_transport_struct ** transports);

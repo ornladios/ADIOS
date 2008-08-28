@@ -224,6 +224,10 @@ int adios_parse_attributes_header_v1 (struct adios_bp_buffer_struct_v1 * b
 int adios_parse_attribute_v1 (struct adios_bp_buffer_struct_v1 * b
                              ,struct adios_attribute_struct_v1 * attribute
                              );
+int adios_clear_process_group_header_v1 (
+                     struct adios_process_group_header_struct_v1 * pg_header);
+int adios_clear_var_header_v1 (struct adios_var_header_struct_v1 * var_header);
+int adios_clear_attribute_v1 (struct adios_attribute_struct_v1 * attribute);
 
 // ****************************************************************************
 // functions from adios_posix.c used for file reading

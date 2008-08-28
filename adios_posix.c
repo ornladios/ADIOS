@@ -452,8 +452,8 @@ static void adios_posix_do_read (struct adios_file_struct * fd
             int i;
 
             pg_root_temp = pg_root;
-            while (pg_root && pg_root_temp->next)
-                pg_root = pg_root->next;
+            while (pg_root_temp && pg_root_temp->next)
+                pg_root_temp = pg_root_temp->next;
 
             p->b.read_pg_offset = pg_root_temp->offset_in_file;
             if (pg_root_temp->next)
@@ -506,6 +506,8 @@ static void adios_posix_do_read (struct adios_file_struct * fd
                                                     ,NULL, 0
                                                     );
                 }
+
+                adios_clear_var_header_v1 (&var_header);
             }
 
 #if 1
@@ -514,8 +516,10 @@ static void adios_posix_do_read (struct adios_file_struct * fd
             for (i = 0; i < attrs_header.count; i++)
             {
                 adios_parse_attribute_v1 (&p->b, &attribute);
+                adios_clear_attribute_v1 (&attribute);
             }
 #endif
+            adios_clear_process_group_header_v1 (&pg_header);
             adios_clear_index_v1 (pg_root, vars_root, attrs_root);
             break;
         }

@@ -53,6 +53,8 @@ static int common_adios_finalize (int mype)
         }
     }
 
+    adios_cleanup ();
+
     return 0;
 }
 
@@ -831,18 +833,26 @@ static int common_adios_close (long long fd_p)
     {
         v->write_offset = 0;
         if (v->data)
+        {
             free (v->data);
-#if 0
+            v->data = 0;
+        }
         if (v->min)
+        {
             free (v->min);
+            v->min = 0;
+        }
         if (v->max)
+        {
             free (v->max);
-#endif
-
-        v->data = 0;
+            v->max = 0;
+        }
 
         v = v->next;
     }
+
+    if (fd->name)
+        free (fd->name);
 
     free ((void *) fd_p);
 

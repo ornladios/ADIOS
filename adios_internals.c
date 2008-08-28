@@ -4057,6 +4057,14 @@ int adios_common_declare_group (long long * id, const char * name
 
 static void tokenize_dimensions (char * str, char *** tokens, int * count)
 {
+    if (!str)
+    {
+        *tokens = 0;
+        *count = 0;
+
+        return;
+    }
+
     char * t = str;
     char * save_str = strdup (str);
     int i;
@@ -4067,6 +4075,7 @@ static void tokenize_dimensions (char * str, char *** tokens, int * count)
     {
         *tokens = 0;
         *count = 0;
+        free (save_str);
 
         return;
     }
@@ -4086,6 +4095,17 @@ static void tokenize_dimensions (char * str, char *** tokens, int * count)
     }
 
     free (save_str);
+}
+
+static void cleanup_dimensions (char *** tokens, int * count)
+{
+    for (int i = 0; i < *count; i++)
+    {
+        free ((*tokens) [i]);
+    }
+    free (*tokens);
+    *tokens = 0;
+    *count = 0;
 }
 
 int adios_common_define_var (long long group_id, const char * name
@@ -4133,7 +4153,7 @@ int adios_common_define_var (long long group_id, const char * name
 
     v->next = 0;
 
-    if (strcmp (dim_temp, ""))
+    if (dim_temp && strcmp (dim_temp, ""))
     {
         int dim_count;
         char ** dim_tokens = 0;
@@ -4184,6 +4204,9 @@ int adios_common_define_var (long long group_id, const char * name
                 free (v->name);
                 free (v->path);
                 free (v);
+                cleanup_dimensions (&dim_tokens, &dim_count);
+                cleanup_dimensions (&g_dim_tokens, &g_dim_count);
+                cleanup_dimensions (&lo_dim_tokens, &lo_dim_count);
 
                 return ret;
             }
@@ -4192,10 +4215,17 @@ int adios_common_define_var (long long group_id, const char * name
 
             i++;
         }
-        free (dim_temp);
-        free (g_dim_temp);
-        free (lo_dim_temp);
+        cleanup_dimensions (&dim_tokens, &dim_count);
+        cleanup_dimensions (&g_dim_tokens, &g_dim_count);
+        cleanup_dimensions (&lo_dim_tokens, &lo_dim_count);
     }
+
+    if (dim_temp)
+        free (dim_temp);
+    if (g_dim_temp)
+        free (g_dim_temp);
+    if (lo_dim_temp)
+        free (lo_dim_temp);
 
     flag = adios_append_var (&t->vars, v, ++t->member_count);
     if (flag == adios_flag_no)
@@ -4679,6 +4709,9 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
                 (*root)->characteristics_count += item->characteristics_count;
 
                 free (item->characteristics);
+                free (item->group_name);
+                free (item->var_name);
+                free (item->var_path);
                 free (item);
 
                 root = 0;  // exit the loop
@@ -4749,6 +4782,9 @@ static void index_append_attribute_v1
                 (*root)->characteristics_count += item->characteristics_count;
 
                 free (item->characteristics);
+                free (item->group_name);
+                free (item->attr_name);
+                free (item->attr_path);
                 free (item);
 
                 root = 0;  // exit the loop
@@ -4801,6 +4837,10 @@ static void adios_clear_process_groups_index_v1 (
     while (root)
     {
         struct adios_index_process_group_struct_v1 * temp = root->next;
+        if (root->group_name)
+            free (root->group_name);
+        if (root->time_index_name)
+            free (root->time_index_name);
         free (root);
         root = temp;
     }
@@ -4813,6 +4853,12 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
         int i;
         struct adios_index_var_struct_v1 * temp = root->next;
 
+        if (root->group_name)
+            free (root->group_name);
+        if (root->var_name)
+            free (root->var_name);
+        if (root->var_path)
+            free (root->var_path);
         for (i = 0; i < root->characteristics_count; i++)
         {
             if (root->characteristics [i].dims.count != 0)
@@ -4840,6 +4886,12 @@ static void adios_clear_attributes_index_v1
         int i;
         struct adios_index_attribute_struct_v1 * temp = root->next;
 
+        if (root->group_name)
+            free (root->group_name);
+        if (root->attr_name)
+            free (root->attr_name);
+        if (root->attr_path)
+            free (root->attr_path);
         for (i = 0; i < root->characteristics_count; i++)
         {
             if (root->characteristics [i].dims.count != 0)
@@ -5027,10 +5079,10 @@ void adios_build_index_v1 (struct adios_file_struct * fd
 
     g_item = (struct adios_index_process_group_struct_v1 *)
                 malloc (sizeof (struct adios_index_process_group_struct_v1));
-    g_item->group_name = g->name;
+    g_item->group_name = (g->name ? strdup (g->name) : 0L);
     g_item->adios_host_language_fortran = g->adios_host_language_fortran;
     g_item->process_id = g->process_id;
-    g_item->time_index_name = g->time_index_name;
+    g_item->time_index_name = (g->time_index_name ? strdup (g->time_index_name) : 0L);
     g_item->time_index = g->time_index;
     g_item->offset_in_file = fd->pg_start_in_file;
     g_item->next = 0;
@@ -5050,9 +5102,9 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                           );
 
             v_index->id = v->id;
-            v_index->group_name = g->name;
-            v_index->var_name = v->name;
-            v_index->var_path = v->path;
+            v_index->group_name = (g->name ? strdup (g->name) : 0L);
+            v_index->var_name = (v->name ? strdup (v->name) : 0L);
+            v_index->var_path = (v->path ? strdup (v->path) : 0L);
             v_index->type = v->type;
             v_index->characteristics_count = 1;
             v_index->characteristics_allocated = 1;
@@ -5146,9 +5198,9 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                           );
 
             a_index->id = a->id;
-            a_index->group_name = g->name;
-            a_index->attr_name = a->name;
-            a_index->attr_path = a->path;
+            a_index->group_name = (g->name ? strdup (g->name) : 0L);
+            a_index->attr_name = (a->name ? strdup (a->name) : 0L);
+            a_index->attr_path = (a->path ? strdup (a->path) : 0L);
             a_index->type = a->type;
             a_index->characteristics_count = 1;
             a_index->characteristics_allocated = 1;
@@ -6323,6 +6375,193 @@ int adios_write_close_attributes_v1 (struct adios_file_struct * fd)
 }
 
 // *****************************************************************************
+
+void adios_cleanup ()
+{
+    adios_transports_initialized = 0;
+    if (adios_transports)
+        free (adios_transports);
+    adios_transports = 0;
+
+    while (adios_methods)
+    {
+        struct adios_method_list_struct * methods = adios_methods->next;
+        if (adios_methods->method->base_path)
+            free (adios_methods->method->base_path);
+        if (adios_methods->method->method)
+            free (adios_methods->method->method);
+        if (adios_methods->method->method_data)
+            free (adios_methods->method->method_data);
+        if (adios_methods->method->parameters)
+            free (adios_methods->method->parameters);
+        free (adios_methods->method);
+        free (adios_methods);
+        adios_methods = methods;
+    }
+
+    while (adios_groups)
+    {
+        struct adios_group_list_struct * groups = adios_groups->next;
+
+        if (adios_groups->group->name)
+            free (adios_groups->group->name);
+
+        while (adios_groups->group->vars)
+        {
+            struct adios_var_struct * vars = adios_groups->group->vars->next;
+
+            if (adios_groups->group->vars->name)
+                free (adios_groups->group->vars->name);
+            if (adios_groups->group->vars->path)
+                free (adios_groups->group->vars->path);
+
+            while (adios_groups->group->vars->dimensions)
+            {
+                struct adios_dimension_struct * dimensions
+                                = adios_groups->group->vars->dimensions->next;
+
+                free (adios_groups->group->vars->dimensions);
+                adios_groups->group->vars->dimensions = dimensions;
+            }
+
+            if (adios_groups->group->vars->min)
+                free (adios_groups->group->vars->min);
+            if (adios_groups->group->vars->max)
+                free (adios_groups->group->vars->max);
+            if (adios_groups->group->vars->data)
+                free (adios_groups->group->vars->data);
+
+            free (adios_groups->group->vars);
+            adios_groups->group->vars = vars;
+        }
+
+        while (adios_groups->group->attributes)
+        {
+            struct adios_attribute_struct * attributes
+                                        = adios_groups->group->attributes->next;
+
+            if (adios_groups->group->attributes->name)
+                free (adios_groups->group->attributes->name);
+            if (adios_groups->group->attributes->path)
+                free (adios_groups->group->attributes->path);
+            if (adios_groups->group->attributes->value)
+                free (adios_groups->group->attributes->value);
+
+            free (adios_groups->group->attributes);
+            adios_groups->group->attributes = attributes;
+        }
+
+        if (adios_groups->group->group_comm)
+            free (adios_groups->group->group_comm);
+        if (adios_groups->group->group_by)
+            free (adios_groups->group->group_by);
+        if (adios_groups->group->time_index_name)
+            free (adios_groups->group->time_index_name);
+
+        while (adios_groups->group->methods)
+        {
+            struct adios_method_list_struct * m = adios_groups->group->methods->next;
+            free (adios_groups->group->methods);
+            adios_groups->group->methods = m;
+        }
+
+        if (adios_groups->group->mesh)
+        {
+            switch (adios_groups->group->mesh->type)
+            {
+                case ADIOS_MESH_UNIFORM:
+                {
+                    struct adios_mesh_item_list_struct * i;
+                    while (adios_groups->group->mesh->uniform->dimensions)
+                    {
+                        i = adios_groups->group->mesh->uniform->dimensions->next;
+                        free (adios_groups->group->mesh->uniform->dimensions);
+                        adios_groups->group->mesh->uniform->dimensions = i;
+                    }
+                    while (adios_groups->group->mesh->uniform->origin)
+                    {
+                        i = adios_groups->group->mesh->uniform->origin->next;
+                        free (adios_groups->group->mesh->uniform->origin);
+                        adios_groups->group->mesh->uniform->origin = i;
+                    }
+                    while (adios_groups->group->mesh->uniform->spacing)
+                    {
+                        i = adios_groups->group->mesh->uniform->spacing->next;
+                        free (adios_groups->group->mesh->uniform->spacing);
+                        adios_groups->group->mesh->uniform->spacing = i;
+                    }
+
+                    break;
+                }
+
+                case ADIOS_MESH_STRUCTURED:
+                {
+                    struct adios_mesh_item_list_struct * i;
+                    struct adios_mesh_var_list_struct * v;
+                    while (adios_groups->group->mesh->structured->dimensions)
+                    {
+                        i = adios_groups->group->mesh->structured->dimensions->next;
+                        free (adios_groups->group->mesh->structured->dimensions);
+                        adios_groups->group->mesh->structured->dimensions = i;
+                    }
+                    while (adios_groups->group->mesh->structured->points)
+                    {
+                        v = adios_groups->group->mesh->structured->points->next;
+                        free (adios_groups->group->mesh->structured->points);
+                        adios_groups->group->mesh->structured->points = v;
+                    }
+                    if (adios_groups->group->mesh->structured->nspace)
+                        free (adios_groups->group->mesh->structured->nspace);
+
+                    break;
+                }
+
+                case ADIOS_MESH_RECTILINEAR:
+                {
+                    struct adios_mesh_item_list_struct * i;
+                    struct adios_mesh_var_list_struct * v;
+                    while (adios_groups->group->mesh->rectilinear->dimensions)
+                    {
+                        i = adios_groups->group->mesh->rectilinear->dimensions->next;
+                        free (adios_groups->group->mesh->rectilinear->dimensions);
+                        adios_groups->group->mesh->rectilinear->dimensions = i;
+                    }
+                    while (adios_groups->group->mesh->rectilinear->coordinates)
+                    {
+                        v = adios_groups->group->mesh->rectilinear->coordinates->next;
+                        free (adios_groups->group->mesh->rectilinear->coordinates);
+                        adios_groups->group->mesh->rectilinear->coordinates = v;
+                    }
+
+                    break;
+                }
+
+                case ADIOS_MESH_UNSTRUCTURED:
+                {
+                    if (adios_groups->group->mesh->unstructured->components)
+                        free (adios_groups->group->mesh->unstructured->components);
+                    if (adios_groups->group->mesh->unstructured->points_count)
+                        free (adios_groups->group->mesh->unstructured->points_count);
+                    while (adios_groups->group->mesh->unstructured->cell_list)
+                    {
+                        struct adios_mesh_cell_list_list_struct * next
+                          = adios_groups->group->mesh->unstructured->cell_list->next;
+                        free (adios_groups->group->mesh->unstructured->cell_list);
+                        adios_groups->group->mesh->unstructured->cell_list = next;
+                    }
+
+                    break;
+                }
+            }
+
+            free (adios_groups->group->mesh);
+        }
+
+        free (adios_groups->group);
+        free (adios_groups);
+        adios_groups = groups;
+    }
+}
 
 uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var)
 {
