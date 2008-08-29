@@ -4099,7 +4099,8 @@ static void tokenize_dimensions (char * str, char *** tokens, int * count)
 
 static void cleanup_dimensions (char *** tokens, int * count)
 {
-    for (int i = 0; i < *count; i++)
+    int i;
+    for (i = 0; i < *count; i++)
     {
         free ((*tokens) [i]);
     }
