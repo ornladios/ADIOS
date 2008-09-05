@@ -69,6 +69,7 @@ void adios_phdf5_read (struct adios_file_struct * fd
 int adios_getsize(enum ADIOS_DATATYPES type, void * val);
 
 // adios_flag determine whether it is dataset or group
+
 void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level,enum ADIOS_FLAG grpflag);
 void hw_gclose ( hid_t * grp_ids, int level, enum ADIOS_FLAG grpflag);
 
@@ -81,19 +82,19 @@ int hw_var (hid_t root_id
            ,struct adios_attribute_struct *patt
            ,struct adios_var_struct *pvar
            ,enum ADIOS_FLAG fortran_flag 
-           ,int pid);
+           ,int myrank, int nproc);
 int hr_var (hid_t root_id
            ,struct adios_var_struct *pvar_root
            ,struct adios_attribute_struct *patt_root
            ,struct adios_var_struct *pvar
            ,enum ADIOS_FLAG fortran_flag
-           ,int pid);
+           ,int myrank, int nproc);
            
 int hw_attribute ( hid_t root_id
                   ,struct adios_var_struct *pvar_root
                   ,struct adios_attribute_struct *pvar
                   ,enum ADIOS_FLAG fortran_flag 
-                  ,int pid);
+                  ,int myrank, int nproc);
 
 struct adios_phdf5_data_struct
 {
@@ -219,17 +220,23 @@ void adios_phdf5_write (struct adios_file_struct * fd
 {
     struct adios_phdf5_data_struct * md = (struct adios_phdf5_data_struct *)
                                                        method->method_data;
-    if(fd->mode == adios_mode_write || fd->mode == adios_mode_append)
+    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
-          //fprintf(stderr, "entering phdf5 write mode: %s!\n", v->name);
-          hw_var (md->root_id, fd->group->vars, fd->group->attributes
-                 ,v, fd->group->adios_host_language_fortran,md->rank);
+        if (md->rank==0) {
+            fprintf(stderr, "-------------------------\n");
+            fprintf(stderr, "write var: %s start!\n", v->name);
+        }
+        hw_var (md->root_id, fd->group->vars, fd->group->attributes
+                 ,v, fd->group->adios_host_language_fortran,md->rank,md->size);
     }
     else
     {
        //fprintf(stderr, "entering unknown phdf5 mode %d!\n", fd->mode);
     }
-    fprintf(stderr, "var name: %s rooid=%d!\n", v->name, md->rank);
+    if (md->rank==0) {
+        fprintf(stderr, "write var: %s end!\n", v->name);
+        //fprintf(stderr, "-------------------------\n");
+    }
 }
 
 
@@ -246,15 +253,23 @@ void adios_phdf5_read (struct adios_file_struct * fd
     {
        v->data = buffer;
        v->data_size = buffersize;
-       //fprintf(stderr, "entering phdf5 read mode!\n");
-       fprintf(stderr, "var name: %s!\n", v->name);
+       
+       if (md->rank==0) {
+           fprintf(stderr, "-------------------------\n");
+           fprintf(stderr, "read var: %s! start\n", v->name);
+       }
        hr_var (md->root_id
               ,fd->group->vars
               ,fd->group->attributes
               ,v
               ,fd->group->adios_host_language_fortran
-              ,md->rank);
+              ,md->rank
+              ,md->size);
        v->data = 0;
+       if (md->rank==0) {
+           fprintf(stderr, "read var: %s! end\n", v->name);
+           //fprintf(stderr, "-------------------------\n");
+       }
        
     }
 }
@@ -275,9 +290,12 @@ void adios_phdf5_close (struct adios_file_struct * fd
       
     struct adios_attribute_struct * a = fd->group->attributes;
 
-    if(fd->mode == adios_mode_read)
-    {
-//       fprintf(stderr, "phdf5 cannot read attributes yet, TBD!\n");
+    if (fd->mode == adios_mode_read) {
+        if (md->rank==0) {
+           fprintf(stderr, "-------------------------\n");
+           fprintf(stderr, "reading done, phdf5 file is closed;\n");
+           fprintf(stderr, "-------------------------\n");
+        }
     }
     else if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
@@ -286,8 +304,14 @@ void adios_phdf5_close (struct adios_file_struct * fd
         {
             hw_attribute ( md->root_id, fd->group->vars, a
                           ,fd->group->adios_host_language_fortran
-                          ,md->rank);
+                          ,md->rank
+                          ,md->size);
             a = a->next;
+        }
+        if (md->rank==0) {
+           fprintf(stderr, "-------------------------\n");
+           fprintf(stderr, "writing done, phdf5 file is closed;\n");
+           fprintf(stderr, "-------------------------\n");
         }
     }
 
@@ -295,7 +319,6 @@ void adios_phdf5_close (struct adios_file_struct * fd
         H5Gclose (md->root_id);
     }
     H5Fclose (md->fh);
-    fprintf(stderr, "rank:%d phdf5 file is closed;\n",md->rank);
     md->group_comm = -1;
     md->fh = 0;
     md->rank = -1;
@@ -313,7 +336,8 @@ int hw_attribute ( hid_t root_id
 		,struct adios_var_struct *pvar_root
 		,struct adios_attribute_struct *patt
 		,enum ADIOS_FLAG fortran_flag
-		,int pid) {
+		,int myrank
+                ,int nproc) {
 
     H5Eset_auto ( NULL, NULL);
     int i, rank = 0, level;
@@ -328,10 +352,10 @@ int hw_attribute ( hid_t root_id
     h5_plist_id = H5Pcreate(H5P_DATASET_XFER);
     h5_plist_id=H5P_DEFAULT;  
  
-    H5Pset_dxpl_mpio(h5_plist_id, H5FD_MPIO_INDEPENDENT); 
+    H5Pset_dxpl_mpio(h5_plist_id, H5FD_MPIO_COLLECTIVE); 
     hw_gopen (root_id, patt->path,grp_ids, &level, adios_flag_yes);
     int err_code = 0;
-    printf("patt->type=%d patt->name : %s\n", patt->type, patt->name);
+    //printf("patt->type=%d patt->name : %s\n", patt->type, patt->name);
     if (patt->type == -1) {
         var_linked = patt->var;
         if (!var_linked || (var_linked && !var_linked->data)) {
@@ -356,7 +380,7 @@ int hw_attribute ( hid_t root_id
                                           ,h5_type_id,h5_dataspace_id,0);
                 }
                 if (h5_attribute_id > 0) {
-                        if (pid == 0)	
+                        if (myrank == 0)	
                             H5Awrite ( h5_attribute_id, h5_type_id, var_linked->data);
                 }
                 H5Aclose (h5_attribute_id);
@@ -372,6 +396,7 @@ int hw_attribute ( hid_t root_id
                 ++rank;
                 dims = dims->next;
              }
+            
              h5_localdims = (hsize_t *) malloc (rank * sizeof(hsize_t));
              dims = var_linked->dimensions;
              for ( i = 0; i < rank; i++) {
@@ -396,7 +421,7 @@ int hw_attribute ( hid_t root_id
                   }
              }
              if (h5_attribute_id > 0) {
-                 if (pid == 0 && var_linked->data)
+                 if (myrank == 0 && var_linked->data)
                      H5Awrite ( h5_attribute_id, h5_type_id, var_linked->data);
                  H5Aclose ( h5_attribute_id);
              }
@@ -417,7 +442,7 @@ int hw_attribute ( hid_t root_id
                     h5_attribute_id = H5Acreate ( grp_ids[level], patt->name 
                                         ,h5_type_id, h5_dataspace_id, 0);
                     if (h5_attribute_id > 0) { 
-                       if (pid == 0)	
+                       if (myrank == 0)	
                           H5Awrite(h5_attribute_id, h5_type_id, patt->value);
                      }
                 }
@@ -441,14 +466,14 @@ int hr_var (hid_t root_id
            ,struct adios_attribute_struct *patt_root
            ,struct adios_var_struct *pvar
            ,enum ADIOS_FLAG fortran_flag
-           ,int pid) {
+           ,int myrank
+           ,int nproc) {
 
     H5Eset_auto ( NULL, NULL);
     int i, rank = 0, level, err_code = -2;
     char * name;
     herr_t  status; 
     hid_t   h5_plist_id, h5_type_id, h5_dataspace_id, h5_dataset_id, h5_memspace_id, grp_ids[NUM_GP];
-    hsize_t * h5_globaldims, * h5_localdims, * h5_offsets, * h5_strides; 
     struct adios_dimension_struct * dims = pvar->dimensions;
 
     h5_plist_id = H5Pcreate(H5P_DATASET_XFER);
@@ -499,26 +524,61 @@ int hr_var (hid_t root_id
         dims = dims->next;
     }
     dims = pvar->dimensions;
-    h5_localdims = (hsize_t *) malloc (rank * sizeof(hsize_t));
 
     if ( dims->global_dimension.rank
         || (dims->global_dimension.rank == 0  && dims->global_dimension.id)) {
 
+        hsize_t * h5_globaldims, * h5_localdims, * h5_offsets, * h5_strides; 
+        hsize_t h5_gbstrides[2],h5_gbglobaldims[2], h5_gblocaldims[2], h5_gboffsets[2], *h5_gbdims;
+        char name[256];
+        if(myrank==0)printf("\tenter global writing!\n");
+        h5_gbdims = (hsize_t *)malloc(rank * 3 * sizeof(hsize_t));
         h5_strides = (hsize_t *) malloc (rank * sizeof(hsize_t));
-        h5_globaldims = (hsize_t *) malloc (rank * sizeof(hsize_t));
-        h5_offsets = (hsize_t *) malloc (rank * sizeof(hsize_t));
+
+        h5_gbstrides [0] = 1;
+        h5_gbstrides [1] = 1;
+        h5_gbglobaldims [0] = nproc;
+        h5_gbglobaldims [1] = rank * 3;
+        h5_gboffsets [0] = myrank;
+        h5_gboffsets [1] = 0;
+        h5_gblocaldims [0] = 1; 
+        h5_gblocaldims [1] = rank * 3;
 
         // get the global/local/offset arrays
         for (i = 0; i < rank; i++) {
             h5_strides [i] = 1;
-            h5_globaldims [i] = parse_dimension(pvar_root,patt_root,&dims->global_dimension); 
-            h5_localdims [i] = parse_dimension(pvar_root,patt_root,&dims->dimension); 
-            h5_offsets [i] = parse_dimension(pvar_root,patt_root,&dims->local_offset); 
-            if ( dims)
-                dims = dims->next;
-            printf("%d", h5_globaldims[i], h5_localdims[i], h5_offsets[i]);
+            //dims = dims->next;
         } // end of for
 
+        // save global-bounds information into the hdf5 files
+        h5_dataspace_id = H5Screate_simple (2, h5_gbglobaldims, NULL);
+        h5_memspace_id = H5Screate_simple (2, h5_gblocaldims, NULL);
+        H5Sselect_hyperslab (h5_dataspace_id, H5S_SELECT_SET
+                            ,h5_gboffsets, h5_gbstrides, h5_gblocaldims,0);
+        sprintf(name, "_%s_gbdims", pvar->name);
+         
+        h5_dataset_id  = H5Dopen ( grp_ids[level], name);
+        if (h5_dataset_id > 0) {
+            H5Dread (h5_dataset_id, H5T_STD_I64LE, h5_memspace_id
+                    ,h5_dataspace_id, h5_plist_id, h5_gbdims);
+            H5Dclose (h5_dataset_id);
+        }
+        h5_globaldims= h5_gbdims;
+        h5_localdims = h5_gbdims+rank;
+        h5_offsets = h5_gbdims+rank*2;
+
+        for (i=0;i<rank;i++) {
+            if(myrank==0) 
+                printf("\tDIMS var:%s dim[%d]:  %d %d %d\n",pvar->name
+                         ,i, h5_globaldims[i], h5_localdims[i], h5_offsets[i]);
+        }
+        H5Sclose(h5_dataspace_id); 
+        H5Sclose(h5_memspace_id);
+          
+        //free(h5_gbdims);
+        //free (h5_strides); 
+        //return 0;
+        
         h5_dataspace_id = H5Screate_simple (rank, h5_globaldims, NULL);
         err_code = -2;
         if (h5_dataspace_id > 0) {
@@ -550,12 +610,13 @@ int hr_var (hid_t root_id
             fprintf (stderr, "PHDF5 ERROR: out of memory, cannot create global space in hr_var: %s\n"\
                     ,pvar->name);
          
-        free (h5_globaldims);
-        free (h5_offsets); 
+        free(h5_gbdims);
         free (h5_strides); 
     }  // end of writing dataset with global-bounds
 
     else {
+        hsize_t *h5_localdims;
+        h5_localdims = (hsize_t *) malloc (rank * sizeof(hsize_t));
         for (i = 0; i < rank; i++) {
             h5_localdims [i] = parse_dimension(pvar_root, patt_root, &dims->dimension);
             //printf("\t var name: %s, dims[%d] = %d\n",pvar->name, i, h5_localdims [i]);
@@ -577,8 +638,8 @@ int hr_var (hid_t root_id
         }
         else
             fprintf (stderr, "PHDF5 ERROR: cannot create dataset space %s for var!\n", pvar->name);
+        free (h5_localdims);
     }
-    free (h5_localdims);
     hw_gclose(grp_ids, level, adios_flag_yes);
     H5Tclose (h5_type_id);
     H5Pclose (h5_plist_id);
@@ -590,14 +651,14 @@ int hw_var (hid_t root_id
            ,struct adios_attribute_struct *patt_root
            ,struct adios_var_struct *pvar
            ,enum ADIOS_FLAG fortran_flag
-           ,int pid) {
+           ,int myrank
+           ,int nproc) {
 
     H5Eset_auto ( NULL, NULL);
     int i, rank = 0, level;
     char * name;
     herr_t  status; 
     hid_t   h5_plist_id, h5_type_id, h5_dataspace_id, h5_dataset_id, h5_memspace_id, grp_ids[NUM_GP];
-    hsize_t * h5_globaldims, * h5_localdims, * h5_offsets, * h5_strides; 
     struct adios_dimension_struct * dims = pvar->dimensions;
      
     h5_plist_id = H5Pcreate(H5P_DATASET_XFER);
@@ -618,23 +679,32 @@ int hw_var (hid_t root_id
     else
         sprintf ( name, "%s/%s", pvar->path, pvar->name);
 */////////////////////////////////////////////////////////////////////////////
+    //for(i=0;i<nproc;i++)
+    {
     if (pvar->path)
         hw_gopen (root_id, pvar->path, grp_ids, &level, adios_flag_yes);
+    }
     // printf("root_id=%d, grp_id=%d\n", root_id, grp_ids[level]);
+
     if (!dims) {
         h5_dataspace_id = H5Screate(H5S_SCALAR);
         h5_dataset_id = H5Dopen (grp_ids[level], pvar->name);
-        if (h5_dataset_id <= 0) 
+        if (h5_dataset_id <= 0) {
             h5_dataset_id = H5Dcreate (grp_ids[level], pvar->name, h5_type_id
                                       ,h5_dataspace_id, H5P_DEFAULT
                                       );
             if (h5_dataset_id <= 0) 
                 fprintf (stderr, "PHDF5 ERROR: can not create scalar %s in hw_var!\n", pvar->name); 
+        }
         if (h5_dataset_id>0 ) {
-            if (pid==0)
+            status = -1;
+//            if (myrank==1)
                 status = H5Dwrite (h5_dataset_id, h5_type_id, H5S_ALL
                                   ,H5S_ALL, h5_plist_id, pvar->data
                                   );
+            //printf("groupid=%d level=%d datasetid=%d\n",grp_ids[level],level,h5_dataset_id);
+            //printf("write dataset: name=%s/%s status=%d myrank=%d\n"
+            //         , pvar->path,pvar->name,status, myrank);
             H5Dclose (h5_dataset_id); 
         }
         H5Sclose (h5_dataspace_id); 
@@ -648,29 +718,76 @@ int hw_var (hid_t root_id
         ++rank;
         dims = dims->next;
     }
-    h5_localdims = (hsize_t *) malloc (rank * sizeof(hsize_t));
     dims = pvar->dimensions;
+    hsize_t * h5_globaldims, * h5_localdims, * h5_offsets, * h5_strides, * h5_gbdims; 
     if ( dims->global_dimension.rank 
         || (dims->global_dimension.rank == 0  && dims->global_dimension.id)) {
-        h5_strides = (hsize_t *) malloc (rank * sizeof(hsize_t));
-        h5_globaldims = (hsize_t *) malloc (rank * sizeof(hsize_t));
-        h5_offsets = (hsize_t *) malloc (rank * sizeof(hsize_t));
 
+        hsize_t h5_gbstrides[2], h5_gbglobaldims[2], h5_gblocaldims[2], h5_gboffsets[2];
+        char name[256];
+        if(myrank==0)printf("\tenter global reading!\n");
+
+        h5_gbstrides [0] = 1;
+        h5_gbstrides [1] = 1;
+        h5_gbglobaldims [0] = nproc;
+        h5_gbglobaldims [1] = rank * 3;
+        h5_gboffsets [0] = myrank;
+        h5_gboffsets [1] = 0;
+        h5_gblocaldims [0] = 1; 
+        h5_gblocaldims [1] = rank * 3;
+
+        h5_gbdims = (hsize_t *) malloc (rank * 3 * sizeof(hsize_t));
+        h5_strides = (hsize_t *) malloc (rank * sizeof(hsize_t));
+
+        h5_globaldims = h5_gbdims;
+        h5_localdims = h5_gbdims + rank;
+        h5_offsets = h5_gbdims + 2 * rank;
+ 
         // get the global/local/offset arrays       
         for ( i = 0; i < rank; i++) {
-              
              h5_strides [i] = 1;
-             h5_globaldims [i] = parse_dimension (pvar_root, patt_root, &dims->global_dimension);
-             h5_localdims [i] = parse_dimension (pvar_root, patt_root, &dims->dimension);
-             h5_offsets [i] = parse_dimension (pvar_root, patt_root, &dims->local_offset);
+             h5_globaldims[i] = parse_dimension (pvar_root, patt_root, &dims->global_dimension);
+             h5_localdims[i] = parse_dimension (pvar_root, patt_root, &dims->dimension);
+             h5_offsets[i] = parse_dimension (pvar_root, patt_root, &dims->local_offset);
              if (dims)
                  dims = dims -> next;
+             if (myrank==0) {
+                 printf("\t%s[%d]: g(%d):l(%d):o(%d)\n"
+                       ,pvar->name,i
+                       ,h5_globaldims[i]
+                       ,h5_localdims[i]
+                       ,h5_offsets[i]);
+             }
         }
+        sprintf(name, "_%s_gbdims", pvar->name);
+        // save the global bounds information into hdf5 file
 
+        h5_dataspace_id = H5Screate_simple (2, h5_gbglobaldims, NULL);
+        h5_memspace_id = H5Screate_simple (2, h5_gblocaldims, NULL);
+
+        H5Sselect_hyperslab (h5_dataspace_id, H5S_SELECT_SET
+                            ,h5_gboffsets, h5_gbstrides, h5_gblocaldims,0);
+    
+        h5_dataset_id  = H5Dopen ( grp_ids[level], name);
+        if (h5_dataset_id < 0) {
+             h5_dataset_id = H5Dcreate (grp_ids[level]
+                                       ,name
+                                       ,H5T_STD_I64LE
+                                       ,h5_dataspace_id
+                                       ,H5P_DEFAULT);
+            }
+        }
+        if (h5_dataset_id > 0) {
+            H5Dwrite (h5_dataset_id, H5T_STD_I64LE, h5_memspace_id
+                     ,h5_dataspace_id, h5_plist_id, h5_gbdims);
+            H5Dclose (h5_dataset_id);
+        H5Sclose(h5_dataspace_id); 
+        H5Sclose(h5_memspace_id);
+          
         h5_dataspace_id = H5Screate_simple (rank, h5_globaldims, NULL);
-        if ( h5_dataspace_id < 0) { 
-            fprintf (stderr, "PHDF5 ERROR: cannot create h5_dataset for var: %s %d\n"\
-                    ,pvar->name, rank);
+        if ( h5_dataspace_id < 0 && rank ==2) { 
+            fprintf (stderr, "PHDF5 ERROR: cannot create dataspace for var: %s %d %d %d\n"\
+                    ,pvar->name, rank, h5_globaldims[0], h5_globaldims[1]);
             return -1; 
          } 
 
@@ -704,8 +821,11 @@ int hw_var (hid_t root_id
         status = H5Dclose (h5_dataset_id);
         status = H5Sclose (h5_dataspace_id);
         status = H5Sclose (h5_memspace_id);
+        free (h5_gbdims);  
+        free (h5_strides);  
     }
     else {
+        h5_localdims = (hsize_t *) malloc (rank * sizeof(hsize_t));
         hid_t h5p_dset_id;
         enum ADIOS_FLAG is_timeindex = adios_flag_no;
         int  srank, dimindex = 0;
@@ -747,9 +867,6 @@ int hw_var (hid_t root_id
                 //H5Sget_simple_extent_dims (h5_dataspace_id, h5_offsets, h5_globaldims);
                 fprintf(stderr, "var %s has time index %d %d \n"
                        ,pvar->name, h5_offsets[1], h5_globaldims[1]); 
-                free (h5_globaldims);  
-                free (h5_offsets);  
-                free (h5_strides);  
             }
             else {
                 h5p_dset_id = H5Pcreate(H5P_DATASET_CREATE);
@@ -785,8 +902,9 @@ int hw_var (hid_t root_id
                 return -2;
             } 
         } 
-        if ( pid==0) {
-            if (is_timeindex = adios_flag_yes) {
+        //if (myrank==0) 
+        {
+            if (is_timeindex == adios_flag_yes) {
                printf("dataspace: %d, memspace: %d\n",h5_memspace_id, h5_dataspace_id); 
                H5Dwrite (h5_dataset_id, h5_type_id,h5_memspace_id 
                         ,h5_dataspace_id, h5_plist_id, pvar->data
@@ -960,10 +1078,16 @@ void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level, enum ADI
         grp_id [i + 1] = H5Gopen (grp_id [i],grp_name [i]);
         if (grp_id [i + 1] < 0) {
             if ((i+1) == *level && (flag == adios_flag_no)) {
+                MPI_Barrier(MPI_COMM_WORLD);
                 grp_id [i + 1] = H5Dopen (grp_id [i],grp_name [i]);
+                MPI_Barrier(MPI_COMM_WORLD);
             }
-            else
+            else {
+                MPI_Barrier(MPI_COMM_WORLD);
                 grp_id [i + 1] = H5Gcreate (grp_id [i], grp_name [i], 0);
+                MPI_Barrier(MPI_COMM_WORLD);
+                printf("creat grp:name[%d]=%s id=%d level=%d\n", i,grp_name[i],grp_id[i+1],*level);
+            }
         }
         if (grp_id [i + 1] < 0) { 
             fprintf (stderr, "PHDF5 ERROR: create group %s failed!\n", grp_name[i]);
@@ -984,6 +1108,7 @@ hsize_t parse_dimension(struct adios_var_struct *pvar_root
     struct adios_attribute_struct *attr_linked = NULL;   
     if ( dim->id) {
         var_linked = adios_find_var_by_id (pvar_root , dim->id);
+        //printf("linked var: %s\n", var_linked->name);
         if (!var_linked) {
             attr_linked = adios_find_attribute_by_id ( patt_root, dim->id);
             if (!attr_linked->var) {
@@ -1036,7 +1161,6 @@ hsize_t parse_dimension(struct adios_var_struct *pvar_root
         else
             dimsize = dim->rank;
     }
-    printf("\tdimsize=%d\n",dimsize);
     return dimsize; 
 }
 #endif
