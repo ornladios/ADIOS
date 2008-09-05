@@ -15,13 +15,15 @@ struct var_dim
     uint16_t id;
     uint64_t rank;
     int      nc_dimid;
+    char dimname[256];
 };
 
-void ncd_addtimedim( int ncid, int timestep_id)
+void ncd_addtimedim (int ncid
+                    ,char * time_index_name
+                    ,uint32_t time_index
+                    ,struct var_dim ** var_dim
+                    ,int var_dims_count)
 {
-    static int time_dimid; 
-    nc_def_dim(ncid,"timestep",NC_UNLIMITED,&time_dimid);
-    nc_enddef(ncid);
 }
 
 void copy_buffer(struct adios_bp_buffer_struct_v1 *dest
@@ -235,13 +237,27 @@ int ncd_dataset (int ncid
 
     val = ptr_var_payload->payload;
     nc_redef(ncid);
-
+    enum ADIOS_FLAG time_flag;
+    while (dims) {
+        ++maxrank;
+        if (dims->dimension.time_index == adios_flag_yes)
+            time_flag = adios_flag_yes;
+        dims = dims->next;
+    } 	
+    dims = ptr_var_header->dims; 
     if (dims) {
-        while (dims) {
+        for (j = 0; j < maxrank; j++) {
+            if (time_flag==adios_flag_yes)
+               rank = maxrank-1-j;
+            else
+               rank = j;
+            /**********************************************************************
+            * Process dataset which has global bounds with dynamic dimension value
+            **********************************************************************/
             if ( dims->global_dimension.var_id != 0 ) {
                     for (i = 0; i < var_dims_count; i++) {
                         if (var_dims [i].id == dims->global_dimension.var_id) {
-                            dimids[ rank]=var_dims [i]. nc_dimid;
+                            dimids [rank] = var_dims [i]. nc_dimid;
                             break;
                         }
                     }
@@ -283,7 +299,6 @@ int ncd_dataset (int ncid
                     for (i = 0; i < var_dims_count; i++){
                          if (var_dims [i].id == dims->local_offset.var_id){
                              start_dims[rank]=var_dims [i]. rank; 
-                             //printf("\t-----global var: %d, %d in %d\n",start_dims[rank], i, var_dims_count);
                              break;
                          }
                     }
@@ -304,9 +319,12 @@ int ncd_dataset (int ncid
                          printf("\t-----global constant: %d, %d in %d\n"
                                ,start_dims[rank], i, var_dims_count);
                 }
-                printf(" \t global_domain: %s rank %d, start %d, count %d\n"
+                printf(" \tglobal_domain: %s rank %d, start %d, count %d\n"
                       ,fullname , rank, start_dims[rank],count_dims[rank]);
             }
+            /**********************************************************************
+            * Process dataset which has global bounds with constant dimension value
+            ***********************************************************************/
             else if (dims->global_dimension.rank !=0 ) {
                 printf(" \tconstant global_info: %s rank: %d\n",fullname, dimids[rank]);
                 dimids[rank] = dims->global_dimension.rank;
@@ -327,15 +345,30 @@ int ncd_dataset (int ncid
                 else
                     start_dims[ rank]=dims->local_offset.rank;
             }
+            /*******************************************
+            * Process dataset which has no global bounds
+            ********************************************/
             else {
-                if (dims->dimension.var_id!=0 ) {
-                    for (i = 0; i < var_dims_count; i++){
-                        if (var_dims [i].id == dims->dimension.var_id){
-                            start_dims[rank]=0;
-                            count_dims[rank]=var_dims[i].rank;
+                if ( dims->dimension.var_id!=0
+                   ||time_flag == adios_flag_yes) { 
+
+                    for (i = 0; i < var_dims_count; i++) {
+                        if (var_dims [i].id == dims->dimension.var_id) {
+                            if (dims->dimension.time_index == adios_flag_yes) {
+                                start_dims[rank] = var_dims[i].rank - 1;
+			        count_dims[rank] = 1;
+                            } 
+                            else {
+                                start_dims[rank] = 0;
+			        count_dims[rank] = var_dims[i].rank;
+                            } 
                             dimids[rank]=var_dims[i].nc_dimid;
-                            printf("\t local[%d]: %d %d\n"
-                                  ,rank,var_dims[i].rank, dimids[rank]);
+
+                            printf("\tdim[%d]: c(%d):s(%d)\n"
+                                  ,rank
+                                  ,count_dims[rank]
+                                  ,start_dims[rank]
+                                  ); 
 			    break;
                         }
                     }
@@ -348,10 +381,13 @@ int ncd_dataset (int ncid
                                 count_dims [ rank] = *(int *)vars_root->characteristics->value;
                                 //dimids[rank]=var_dims[i].nc_dimid;
                                 start_dims[rank]=0;
-                                ncd_gen_name (dimname, vars_root->attr_path, vars_root->attr_name); 
+                                ncd_gen_name (dimname, vars_root->attr_path
+                                             ,vars_root->attr_name); 
                                 nc_inq_dimid(ncid, dimname, &dimids[rank]);
                                 if (dimids [rank] <= 0)
-                                    nc_def_dim (ncid, dimname, *(int *)vars_root->characteristics->value, &dimids [rank]); 
+                                    nc_def_dim (ncid, dimname
+                                               ,*(int *)vars_root->characteristics->value
+                                               ,&dimids [rank]); 
                                 printf("\t local[%d]: %d %d\n"
                                   ,rank,count_dims[rank], dimids[rank]);
 				break; 
@@ -360,8 +396,7 @@ int ncd_dataset (int ncid
 			}
                     }
                 }
-                else
-                {   
+                else {
                     //printf ("Error, every dimension in netcdf need to have name!\n");
                     sprintf(dimname,"%s_%d", fullname,rank);
                     nc_inq_dimid(ncid,dimname,&nc_dimid);
@@ -374,54 +409,51 @@ int ncd_dataset (int ncid
                     printf("\t local[%d]: %d\n",rank,dims->dimension.rank);
                 } 
             }
-            ++rank;
             dims = dims->next;
-        }
+        } // end of for loop
+
         val = ptr_var_payload->payload;    
         nc_inq_varid(ncid,fullname,&valid);
+        nc_redef(ncid);
         switch(type) { 
         case adios_real:
             if ( valid<0) {
-                retval=nc_def_var(ncid,fullname,NC_FLOAT,rank,dimids,&valid);
+                retval=nc_def_var(ncid,fullname,NC_FLOAT,maxrank,dimids,&valid);
                 ERR(retval);
             }
-            //printf("\t float rank:%d\n",rank);
             retval=nc_enddef(ncid);
             retval=nc_put_vara_float(ncid,valid,start_dims,count_dims,val);
             ERR(retval);
             break;
         case adios_double:
             if ( valid<0) 
-                retval=nc_def_var(ncid,fullname,NC_DOUBLE,rank,dimids,&valid);
+                retval=nc_def_var(ncid,fullname,NC_DOUBLE,maxrank,dimids,&valid);
             retval=nc_enddef(ncid);
             retval=nc_put_vara_double(ncid,valid,start_dims,count_dims,val);
             break;
         case adios_long:
             if ( valid<0) 
-                retval=nc_def_var(ncid,fullname,NC_LONG,rank,dimids,&valid);
+                retval=nc_def_var(ncid,fullname,NC_LONG,maxrank,dimids,&valid);
             retval=nc_enddef(ncid);
             retval=nc_put_vara_long(ncid,valid,start_dims,count_dims,val);
             break;
         case adios_integer:
-            if(valid<0)
-            {
-               retval=nc_def_var(ncid,fullname,NC_INT,rank,dimids,&valid);
-               ERR(retval);
-            }
-            retval=nc_enddef(ncid);
-            ERR(retval);
-            printf("write integers\n");
-            retval=nc_put_vara_int(ncid,valid,start_dims,count_dims,val);
-            ERR(retval);
+            if (valid < 0) {
+               retval = nc_def_var (ncid,fullname,NC_INT,maxrank,dimids,&valid);
+               printf("definition done!\n");
+            } 
+            retval = nc_enddef (ncid);
+            ERR (retval);
+            retval=nc_put_vara_int (ncid,valid,start_dims,count_dims,val);
+            ERR (retval);
             break;
         default:
             retval=nc_enddef(ncid);
             break;
         }
     }
-
     else if (ptr_var_header->is_dim == adios_flag_yes) {
-        for(j=0;j<var_dims_count;j++){
+        for ( j = 0; j<var_dims_count;j++){
            if (var_dims [j].id==ptr_var_header->id) { 
                break; 
            }
@@ -438,7 +470,6 @@ int ncd_dataset (int ncid
         var_dims [j].nc_dimid = nc_dimid;
     }
     else {
-
         rank = 1;
         nc_redef(ncid);
         if (onename_dimid==-1)
@@ -452,7 +483,7 @@ int ncd_dataset (int ncid
         }
         dimids[0]=onename_dimid;
         rank = 1;
-    switch(type){ 
+    switch (type) {
         case adios_real:
             if (valid < 0 ) {
                printf("\t ncd-scalar-real: %d %d %s\n",dimids[0],valid, fullname);
@@ -500,8 +531,8 @@ int ncd_dataset (int ncid
         default:
             retval=nc_enddef(ncid);
             break;
-        }
     }
+    } 
     return 0;
 }
 
@@ -578,6 +609,7 @@ int main (int argc, char ** argv)
     pg = pg_root;
     while (pg)
     {
+        int i,j;
         int var_dims_count = 0;
         struct var_dim * var_dims = 0;
 
@@ -604,14 +636,30 @@ int main (int argc, char ** argv)
 
         adios_posix_read_process_group (b);
         adios_parse_process_group_header_v1 (b, &pg_header);
-        printf ("\tTime Index Name: %d\n", pg_header.time_index_name);
-#if 0
-        if ( pg_header.time_index >= 0)
-             ncd_addtimedim(ncid,pg_header.time_index);
-#endif
-        adios_parse_vars_header_v1 (b, &vars_header);
 
-        int i,j;
+        printf ("\tTime Index Name: %s %d\n", pg_header.time_index_name, pg_header.time_index);
+
+        /****************************************
+        * Create unlimited time index dimension 
+        ****************************************/
+        if (pg_header.time_index_name) {
+             
+             var_dims = realloc (var_dims, (var_dims_count + 1)
+                          * sizeof (struct var_dim)
+                          );
+	     static int time_dimid = -1; 
+	     nc_def_dim(ncid,pg_header.time_index_name,NC_UNLIMITED,&time_dimid);
+	     nc_enddef(ncid);
+	     strcpy(var_dims[var_dims_count].dimname,pg_header.time_index_name);
+	     var_dims[var_dims_count].id = 0; 
+	     var_dims[var_dims_count].rank = pg_header.time_index;
+	     var_dims[var_dims_count].nc_dimid = time_dimid;
+
+             var_dims_count=var_dims_count+1;
+        }
+
+        adios_parse_vars_header_v1 (b, &vars_header);
+  
         for (i = 0; i < vars_header.count; i++)
         {
             var_payload.payload = 0;
@@ -633,26 +681,29 @@ int main (int argc, char ** argv)
                 ncd_dataset(ncid,&var_header, &var_payload,b_1,var_dims,var_dims_count);
             }
 
-            if (var_header.is_dim == adios_flag_yes)
-            {
+            if (var_header.is_dim == adios_flag_yes) {
                 int flag=0;
                 var_dims = realloc (var_dims,   (var_dims_count + 1)
                                               * sizeof (struct var_dim)
                                    );
                 
+                strcpy(var_dims [var_dims_count].dimname,var_header.name);
                 var_dims [var_dims_count].id = -1;
-                for(j=0;j<var_dims_count;j++){
-                    if (var_dims [j].id==var_header.id) { 
-                         var_dims [j]. rank == *(unsigned int *) var_payload.payload; 
+                var_dims [var_dims_count].rank = -1;
+                var_dims [var_dims_count].nc_dimid = -1;
+
+                for( j = 0 ; j < var_dims_count; j++){
+                    if (var_dims [j].id == var_header.id) { 
+                         var_dims [j].rank == *(unsigned int *) var_payload.payload; 
                          flag = 1;
                          break; 
                     }
                 }
-                if(flag == 0){
+
+                if(flag == 0) {
                     var_dims [var_dims_count].id = var_header.id;
                     var_dims [var_dims_count].rank = *(unsigned int *)
                                                             var_payload.payload;
-                    //printf("%s %d %d\n",var_header.name, var_dims[0].id,var_dims[0].rank);
                     var_dims_count++;
                 }
                 ncd_dataset(ncid,&var_header, &var_payload,b_1,var_dims,var_dims_count);
