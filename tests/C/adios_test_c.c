@@ -80,6 +80,7 @@ printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
                                 + 4 + 4 * zionsize2 * zionsize2
                                 + 4 + 4 * zionsize2 * zionsize3
                                 + 4
+                                + 4 + 2600
                      ,&total, &comm
                      );
     adios_write (io_handle, "/mype", &var_x1);
