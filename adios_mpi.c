@@ -1013,7 +1013,6 @@ void adios_mpi_close (struct adios_file_struct * fd
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
             uint64_t index_start = md->b.pg_index_offset;
-printf ("md->old_pg_root = %llu md->old_vars_root = %llu md->old_attrs_root = %llu\n", md->old_pg_root, md->old_vars_root, md->old_attrs_root);
 
             // build index appending to any existing index
             adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
