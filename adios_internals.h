@@ -356,7 +356,7 @@ int adios_parse_dimension (const char * dimension
 
 void adios_extract_string (char ** out, const char * in, int size);
 
-int adios_common_define_attribute (long long group, const char * name
+int adios_common_define_attribute (int64_t group, const char * name
                                   ,const char * path
                                   ,enum ADIOS_DATATYPES type
                                   ,const char * value
@@ -386,14 +386,14 @@ void adios_append_attribute (struct adios_attribute_struct ** root
                             ,uint16_t id
                             );
 
-int adios_common_declare_group (long long * id, const char * name
+int adios_common_declare_group (int64_t * id, const char * name
                                ,enum ADIOS_FLAG host_language_fortran
                                ,const char * coordination_comm
                                ,const char * coordination_var
                                ,const char * time_index
                                );
 
-int adios_common_define_var (long long group_id, const char * name
+int adios_common_define_var (int64_t group_id, const char * name
                             ,const char * path, enum ADIOS_DATATYPES type
                             ,const char * dimensions
                             ,const char * global_dimensions
@@ -405,7 +405,7 @@ int adios_common_select_method (int priority, const char * method
                                ,const char * base_path, int iters
                                );
 
-void adios_common_get_group (long long * group_id, const char * name);
+void adios_common_get_group (int64_t * group_id, const char * name);
 
 // ADIOS file format functions
 

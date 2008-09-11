@@ -693,7 +693,7 @@ extern void adios_datatap_stop_calculation (struct adios_method_struct * method)
 
 extern void adios_datatap_get_write_buffer (struct adios_file_struct * fd,
 					    struct adios_var_struct * f,
-					    unsigned long long * size,
+					    uint64_t * size,
 					    void ** buffer,
 					    struct adios_method_struct *method)
 {
