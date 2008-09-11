@@ -2107,7 +2107,7 @@ static int parseGroup (mxml_node_t * node)
                     dimensions = "";
             }
 
-            if (read)
+            if (read_flag)
                 parseFlag ("read", read_flag, adios_flag_no);
 
             if (!adios_common_define_var (*(long long *) &new_group, name
@@ -2235,7 +2235,7 @@ static int parseGroup (mxml_node_t * node)
                     if (!dimensions)
                         dimensions = dimension;
 
-                    if (read)
+                    if (read_flag)
                         parseFlag ("read", read_flag, adios_flag_no);
 
                     if (!adios_common_define_var (*(long long *) &new_group
