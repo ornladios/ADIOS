@@ -73,7 +73,7 @@ void adios_dart_write (struct adios_file_struct * fd
 
 void adios_dart_get_write_buffer (struct adios_file_struct * fd
                                  ,struct adios_var_struct * v
-                                 ,unsigned long long * size
+                                 ,uint64_t * size
                                  ,void ** buffer
                                  ,struct adios_method_struct * method
                                  )
@@ -155,7 +155,7 @@ void adios_dart_write (struct adios_file_struct * fd
 
 void adios_dart_get_write_buffer (struct adios_file_struct * fd
                                  ,struct adios_var_struct * v
-                                 ,unsigned long long * size
+                                 ,uint64_t * size
                                  ,void ** buffer
                                  ,struct adios_method_struct * method
                                  )

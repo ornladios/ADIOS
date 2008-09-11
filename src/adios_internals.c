@@ -2043,7 +2043,7 @@ static int parseGroup (mxml_node_t * node)
         }
     }
 
-    adios_common_declare_group ((long long *) &new_group, datagroup_name
+    adios_common_declare_group ((int64_t *) &new_group, datagroup_name
                                ,host_language_fortran, coordination_comm
                                ,coordination_var, time_index_name
                                );
@@ -2110,7 +2110,7 @@ static int parseGroup (mxml_node_t * node)
             if (read_flag)
                 parseFlag ("read", read_flag, adios_flag_no);
 
-            if (!adios_common_define_var (*(long long *) &new_group, name
+            if (!adios_common_define_var (*(int64_t *) &new_group, name
                                          ,path, t1, dimensions
                                          ,gb_global_dimensions
                                          ,gb_local_offsets
@@ -2238,7 +2238,7 @@ static int parseGroup (mxml_node_t * node)
                     if (read_flag)
                         parseFlag ("read", read_flag, adios_flag_no);
 
-                    if (!adios_common_define_var (*(long long *) &new_group
+                    if (!adios_common_define_var (*(int64_t *) &new_group
                                                  ,name
                                                  ,path, t1, dimensions
                                                  ,gb_global_dimensions
@@ -2353,7 +2353,7 @@ static int parseGroup (mxml_node_t * node)
                 t1 = adios_unknown;
             }
 
-            if (!adios_common_define_attribute (*(long long *) &new_group, name
+            if (!adios_common_define_attribute (*(int64_t *) &new_group, name
                                                ,path, t1, value, var
                                                )
                )
@@ -3556,7 +3556,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
         case adios_long:
         {
             int errno_save = errno;
-            long long t = strtoll (value, &end, 10);
+            int64_t t = strtoll (value, &end, 10);
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
                 fprintf (stderr, "type is %s, value is out of range: '%s'\n"
@@ -3648,7 +3648,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
         case adios_unsigned_long:
         {
             int errno_save = errno;
-            unsigned long long t = strtoull (value, &end, 10);
+            uint64_t t = strtoull (value, &end, 10);
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
                 fprintf (stderr, "type is %s, value is out of range: '%s'\n"
@@ -3752,7 +3752,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
     return 1;
 }
 
-int adios_common_define_attribute (long long group, const char * name
+int adios_common_define_attribute (int64_t group, const char * name
                                   ,const char * path
                                   ,enum ADIOS_DATATYPES type
                                   ,const char * value
@@ -4022,7 +4022,7 @@ void adios_append_attribute (struct adios_attribute_struct ** root
 ///////////////////////////////////////////////////////////////////////////////
 // functions to support C & Fortran interface
 ///////////////////////////////////////////////////////////////////////////////
-int adios_common_declare_group (long long * id, const char * name
+int adios_common_declare_group (int64_t * id, const char * name
                                ,enum ADIOS_FLAG host_language_fortran
                                ,const char * coordination_comm
                                ,const char * coordination_var
@@ -4048,7 +4048,7 @@ int adios_common_declare_group (long long * id, const char * name
     g->methods = 0;
     g->mesh = 0;
 
-    *id = (long long) g;
+    *id = (int64_t) g;
 
     adios_append_group (g);
 
@@ -4109,7 +4109,7 @@ static void cleanup_dimensions (char *** tokens, int * count)
     *count = 0;
 }
 
-int adios_common_define_var (long long group_id, const char * name
+int adios_common_define_var (int64_t group_id, const char * name
                             ,const char * path, enum ADIOS_DATATYPES type
                             ,const char * dimensions
                             ,const char * global_dimensions
@@ -4243,7 +4243,7 @@ int adios_common_select_method (int priority, const char * method
                                ,const char * base_path, int iters
                                )
 {
-    long long group_id;
+    int64_t group_id;
     struct adios_group_struct * g;
     struct adios_method_struct * new_method;
     int requires_group_comm = 0;
@@ -4323,7 +4323,7 @@ int adios_common_select_method (int priority, const char * method
     return 1;
 }
 
-void adios_common_get_group (long long * group_id, const char * name)
+void adios_common_get_group (int64_t * group_id, const char * name)
 {
     struct adios_group_list_struct * g = adios_get_groups ();
 
@@ -4333,7 +4333,7 @@ void adios_common_get_group (long long * group_id, const char * name)
     {
         if (!strcasecmp (g->group->name, name))
         {
-            *group_id = (long long) g->group;
+            *group_id = (int64_t) g->group;
 
             return;
         }

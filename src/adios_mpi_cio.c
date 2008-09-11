@@ -519,7 +519,7 @@ static void adios_mpi_cio_do_write (struct adios_file_struct * fd
     if (overflow)
     {
         overflow = 0;
-        long long file;
+        int64_t file;
         char name [STR_LEN];
 
         sprintf (name, "%sOVERFLOW_%s", method->base_path, fd->name);
