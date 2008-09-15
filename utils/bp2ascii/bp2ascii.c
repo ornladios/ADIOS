@@ -36,58 +36,37 @@ int main (int argc, char ** argv)
     struct adios_bp_element_struct * element = NULL;
     struct dump_struct dump;
 
-
-    if (argc < 2)
-    {
-        fprintf (stderr, "usage: %s [-v [var]|--var [var]] <filename> [newfilename]\n"
-                ,argv [0]
-                );
-
-        return -1;
-    }
-
-    if (argv [1][0] && argv [1][0] == '-')
+    if (argv [1][0] && argv [1][0] == '-' && argc > 3)
     {
         if (   !strcmp (argv [1], "-v")
             || !strcmp (argv [1], "--var")
            )
         {
-            if (argc > 2)
+            dump.dump_var = argv [2];
+            filename = argv [3];
+            printf("%s %s\n",dump.dump_var,filename);
+	    if (argc > 4)
+	        strcpy (newfilename, argv[4]);
+	    else
             {
-                dump.dump_var = argv [2];
-                filename = argv [3];
-                printf("%s %s\n",dump.dump_var,filename);
-		if (argc > 4)
-		{
-			strcpy (newfilename, argv[4]);
-		}
-		else
-		{
-			strcpy (newfilename, dump.dump_var);
-			strcat (newfilename, ".dat");
-		}
-            }
-            else
-            {
-		    fprintf (stderr, "usage: %s [-v [var]|--var [var]] <filename> [newfilename]\n"
-				    ,argv [0]
-			    );
-
-		    return -1;
+		strcpy (newfilename, dump.dump_var);
+		strcat (newfilename, ".dat");
             }
         }
         else
         {
-            fprintf (stderr, "usage: %s [-v [var]|--var [var]] <filename> [newfilename]\n"
-                    ,argv [0]
-                    );
-
-            return -1;
+                fprintf (stderr, "usage: %s [-v [var]|--var [var]] <filename> [newfilename]\n"
+                        ,argv [0]
+                        );
+                return -1;
         }
-    }    else
+    }    
+    else
     {
-        filename = argv [1];
-        dump.dump_var = 0;
+        fprintf (stderr, "usage: %s [-v [var]|--var [var]] <filename> [newfilename]\n"
+                ,argv [0]
+                );
+        return -1;
     }
 
     struct adios_bp_buffer_struct_v1 * b = 0;
