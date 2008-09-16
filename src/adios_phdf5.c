@@ -156,7 +156,7 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
 {
     struct adios_phdf5_data_struct * md = (struct adios_phdf5_data_struct *)
                                                       method->method_data;
-    char name[255];
+    char * name;
     MPI_Info info = MPI_INFO_NULL;
     hid_t fapl_id;
     fapl_id = H5P_DEFAULT;
@@ -174,6 +174,7 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
     else 
        md->group_comm=MPI_COMM_SELF;
     fd->group->process_id = md->rank;
+    name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf(name, "%s%s", method->base_path, fd->name);
     H5Eset_auto ( NULL, NULL);
     fapl_id = H5Pcreate(H5P_FILE_ACCESS);
@@ -183,6 +184,12 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
         case adios_mode_read:
         {
             md->fh = H5Fopen (name, H5F_ACC_RDONLY, fapl_id);
+            if (md->fh <= 0)
+            {
+                fprintf (stderr, "ADIOS PHDF5: file not found: %s\n", fd->name);
+                free (name);
+                return adios_flag_no;
+            } 
             break;
         }
         case adios_mode_write:
@@ -192,7 +199,12 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
             {
                 md->fh = H5Fcreate (name, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id);
             }
-            //printf("create file:%s %d\n", name, md->fh);
+            if (md->fh <= 0)
+            {
+                fprintf (stderr, "ADIOS PHDF5: file not create/append: %s\n", fd->name);
+                free (name);
+                return adios_flag_no;
+            } 
             break;
     }
 
@@ -200,6 +212,7 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
     if(md->root_id < 0)
         md->root_id = H5Gcreate(md->fh,"/",0);
     H5Pclose(fapl_id);
+    free (name); 
     return adios_flag_yes;
 }
  
