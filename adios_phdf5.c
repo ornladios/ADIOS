@@ -165,7 +165,7 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
                       ,&md->group_comm
                       );
     // no shared buffer 
-    fd->shared_buffer = adios_flag_no;
+    //fd->shared_buffer = adios_flag_no;
     if (md->group_comm != MPI_COMM_NULL)
     {
         MPI_Comm_rank (md->group_comm, &md->rank);
@@ -176,10 +176,14 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
     fd->group->process_id = md->rank;
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf(name, "%s%s", method->base_path, fd->name);
+
     H5Eset_auto ( NULL, NULL);
+
     fapl_id = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fapl_mpio(fapl_id,md->group_comm,info);
+
     // create a new file. If file exists its contents will be overwritten. //
+
     switch (fd->mode) {
         case adios_mode_read:
         {
@@ -194,12 +198,13 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
         }
         case adios_mode_write:
         case adios_mode_append:
-            md->fh = H5Fopen (name, H5F_ACC_RDWR, fapl_id);
-            if (md->fh <= 0)
+            md->fh = H5Fcreate (name, H5F_ACC_EXCL, H5P_DEFAULT, fapl_id);
+            if (md->fh < 0)
             {
-                md->fh = H5Fcreate (name, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id);
+                md->fh = H5Fopen (name, H5F_ACC_RDWR, fapl_id);
+                //md->fh = H5Fcreate (name, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id);
             }
-            if (md->fh <= 0)
+            if (md->fh < 0)
             {
                 fprintf (stderr, "ADIOS PHDF5: file not create/append: %s\n", fd->name);
                 free (name);
@@ -213,7 +218,7 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
         md->root_id = H5Gcreate(md->fh,"/",0);
     H5Pclose(fapl_id);
     free (name); 
-    return adios_flag_yes;
+    return adios_flag_no;
 }
  
 int adios_phdf5_open(struct adios_file_struct *fd
@@ -923,7 +928,6 @@ int hw_var (hid_t root_id
                         );
             }
             else {
-               printf("write out: %s\n",pvar->name); 
                H5Dwrite (h5_dataset_id, h5_type_id, H5S_ALL
                         ,H5S_ALL, h5_plist_id, pvar->data
                         );
@@ -1100,7 +1104,7 @@ void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level, enum ADI
                 MPI_Barrier(MPI_COMM_WORLD);
                 grp_id [i + 1] = H5Gcreate (grp_id [i], grp_name [i], 0);
                 MPI_Barrier(MPI_COMM_WORLD);
-                printf("creat grp:name[%d]=%s id=%d level=%d\n", i,grp_name[i],grp_id[i+1],*level);
+//                printf("creat grp:name[%d]=%s id=%d level=%d\n", i,grp_name[i],grp_id[i+1],*level);
             }
         }
         if (grp_id [i + 1] < 0) { 
