@@ -711,7 +711,7 @@ int hw_var (hid_t root_id
         }
         if (h5_dataset_id>0 ) {
             status = -1;
-//            if (myrank==1)
+            if ( myrank==1)
                 status = H5Dwrite (h5_dataset_id, h5_type_id, H5S_ALL
                                   ,H5S_ALL, h5_plist_id, pvar->data
                                   );
@@ -788,12 +788,12 @@ int hw_var (hid_t root_id
                                        ,H5T_STD_I64LE
                                        ,h5_dataspace_id
                                        ,H5P_DEFAULT);
-            }
         }
         if (h5_dataset_id > 0) {
             H5Dwrite (h5_dataset_id, H5T_STD_I64LE, h5_memspace_id
                      ,h5_dataspace_id, h5_plist_id, h5_gbdims);
             H5Dclose (h5_dataset_id);
+        }
         H5Sclose(h5_dataspace_id); 
         H5Sclose(h5_memspace_id);
           
@@ -895,7 +895,6 @@ int hw_var (hid_t root_id
             return -1; 
         } 
         if ( h5_dataset_id < 0) {
-              
             if (is_timeindex == adios_flag_yes) {
                 h5_dataset_id = H5Dcreate (grp_ids[level]
                                       ,pvar->name
@@ -915,7 +914,7 @@ int hw_var (hid_t root_id
                 return -2;
             } 
         } 
-        //if (myrank==0) 
+        if (myrank==0) 
         {
             if (is_timeindex == adios_flag_yes) {
                printf("dataspace: %d, memspace: %d\n",h5_memspace_id, h5_dataspace_id); 
@@ -923,10 +922,12 @@ int hw_var (hid_t root_id
                         ,h5_dataspace_id, h5_plist_id, pvar->data
                         );
             }
-            else
+            else {
+               printf("write out: %s\n",pvar->name); 
                H5Dwrite (h5_dataset_id, h5_type_id, H5S_ALL
                         ,H5S_ALL, h5_plist_id, pvar->data
                         );
+            }
         } 
         H5Dclose (h5_dataset_id);
         H5Sclose (h5_dataspace_id);
