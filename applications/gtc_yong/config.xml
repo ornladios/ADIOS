@@ -26,19 +26,19 @@
   <var name="phip00" type="real" dimensions="mpsi+1"/>
   <var name="zonali" type="real" dimensions="mpsi+1"/>
   <var name="zonale" type="real" dimensions="mpsi+1"/>
-  <var name="zion0" type="real" dimensions="mimax" gname="zion0(6,:)"/>
+  <var name="zion0" type="real" dimensions="mimax" gwrite="zion0(6,:)" gread="zion0_read"/>
   <var name="phi" type="real" dimensions="mzeta+1,mgrid"/>
   <var name="zion" type="real" dimensions="nparam,mimax"/>
  <gwrite src="if(nhybrid>0)then"/>
-  <var name="zelectron0" type="real" dimensions="memax" gname="zelectron0(6,:)"/>
+  <var name="zelectron0" type="real" dimensions="memax" gwrite="zelectron0(6,:)" gread="zelectron0_read"/>
   <var name="zelectron" type="real" dimensions="nparam,memax"/>
   <var name="phisave" type="real" dimensions="mzeta+1,mgrid,2*nhybrid"/>
  <gwrite src="endif"/>
 </adios-group>
 
-<adios-group name="snapshot" coordination-communicator="MPI_COMM_SELF">
-  <var name="timestep" path="/time_info" type="real" gname="(mstepall+istep)" />
-  <var name="time" path="/time_info" type="real" gname="q0+0.5*q1+0.25*q2"/>
+<adios-group name="snapshot" coordination-communicator="comm_self">
+  <var name="timestep" path="/time_info" type="real" gwrite="(mstepall+istep)" />
+  <var name="time" path="/time_info" type="real" gwrite="q0+0.5*q1+0.25*q2"/>
   <var name="3+mbin_psi*6" path="/" type="integer" />
   <var name="mbin_u" path="/grid_info_poloidal" type="integer"/>
   <var name="mbin_psi" path="/grid_info_poloidal" type="integer"/>
@@ -46,17 +46,17 @@
   <var name="jm" path="/grid_info_poloidal" type="integer"/>
   <var name="jm+1" path="/" type="integer" />
   <var name="mzetamax" path="/grid_info_poloidal" type="integer"/>
-  <var name="num_of_quantities" path="/grid_info_poloidal" type="integer" gname="i"/>
+  <var name="num_of_quantities" path="/grid_info_poloidal" type="integer" gwrite="i"/>
   <var name="dataout_u" path="/" type="real" dimensions="mbin_u,3+mbin_psi*6"/>
   <var name="dataout_r" path="/" type="real" dimensions="mpsi,9"/>
-  <var name="dataout_p" path="/" type="real" dimensions="mpsi,jm+1,3" gname="booz_out"/>
+  <var name="dataout_p" path="/" type="real" dimensions="mpsi,jm+1,3" gwrite="booz_out"/>
   <var name="ntoroidal" path="/" type="integer"/>
   <var name="mzeta" path="/" type="integer"/>
-  <var name="dataout_f" path="/" type="real" dimensions="mzeta,ntoroidal,jm" gname="flux3darray"/>
+  <var name="dataout_f" path="/" type="real" dimensions="mzeta,ntoroidal,jm" gwrite="flux3darray"/>
   <var name="num_mode" path="/" type="integer"/>
-  <var name="modeeigen" path="/" type="integer" dimensions="num_mode" gname="nmode"/>
+  <var name="modeeigen" path="/" type="integer" dimensions="num_mode" gwrite="nmode"/>
   <var name="m_poloidal" path="/" type="integer"/>
-  <var name="dataeigen" path="/" type="real" dimensions="mpsi,num_mode,m_poloidal" gname="eigenmode"/>
+  <var name="dataeigen" path="/" type="real" dimensions="mpsi,num_mode,m_poloidal" gwrite="eigenmode"/>
 </adios-group>
 
 <adios-group name="diagnosis.0">
@@ -168,7 +168,7 @@
   <var name="nproc_toroidal" type="integer"/>
   <var name="mpsi" type="integer"/>
   <var name="numberpe" type="integer"/>
-  <var name="mtheta" type="integer" dimensions="mpsi+1" gname="(mtheta+1)"/>
+  <var name="mtheta" type="integer" dimensions="mpsi+1" gwrite="(mtheta+1)"/>
   <var name="itran" type="integer" dimensions="mpsi+1"/>
   <var name="radial" type="real" dimensions="mpsi+1"/>
   <var name="(mzeta+kp)*nproc_toroidal" type="integer" />
@@ -199,14 +199,14 @@
   <var name="kp" type="integer"/>
   <var name="mpsi" type="integer"/>
 
-  <var name="mtheta" type="integer" dimensions="mpsi+1" gname="(mtheta+1)"/>
+  <var name="mtheta" type="integer" dimensions="mpsi+1" gwrite="(mtheta+1)"/>
 
   <var name="mgrid" type="integer"/>
   <var name="mgrid*nproc_toroidal" type="integer" />
   <var name="mgrid*myrank_toroidal" type="integer" />
 
  <global-bounds dimensions="mgrid*nproc_toroidal,mzeta+kp" offsets="mgrid*myrank_toroidal,0">
-  <var name="phi" type="real" dimensions="mgrid,mzeta+kp" gname="dataout"/>
+  <var name="phi" type="real" dimensions="mgrid,mzeta+kp" gwrite="dataout"/>
  </global-bounds>
 
 </adios-group>
@@ -220,25 +220,25 @@
   <!--var name="ntracki" type="integer"/-->
 
   <gwrite src="if(nhybrid>0)then"/>
-   <var name="ntracke" type="integer" gname="ntrackp(2)"/>
+   <var name="ntracke" type="integer" gwrite="ntrackp(2)"/>
    <!--var name="ptrackedi" type="real" dimensions="nparam,ntracki"/-->
    <var name="numberpe" type="integer"/>
    <var name="nparam*numberpe" type="integer" />
    <var name="nparam*mype" type="integer" />
    <global-bounds dimensions="nparam*numberpe,ntracke" offsets="nparam*mype,0">
-    <var name="ptrackede" type="real" dimensions="nparam,ntracke" gname="ptrackede(:,1:ntrackp(2))"/>
+    <var name="ptrackede" type="real" dimensions="nparam,ntracke" gwrite="ptrackede(:,1:ntrackp(2))"/>
    </global-bounds>
   <gwrite src="endif"/>
 </adios-group>
 
 <method method="MPI" group="restart"/>
-<method method="POSIX" group="snapshot"/>
+<method method="NULL" group="snapshot"/>
 <method method="NULL" group="diagnosis.0"/>
 <method method="NULL" group="diagnosis.1"/>
 <method method="NULL" group="diagnosis.2"/>
-<method method="MPI" group="particles"/>
-<method priority="2" method="MPI" iterations="10" group="output3d.0"/>
-<method priority="2" method="MPI" iterations="10" group="output3d.1"/>
+<method method="NULL" group="particles"/>
+<method priority="2" method="NULL" iterations="10" group="output3d.0"/>
+<method priority="2" method="NULL" iterations="10" group="output3d.1"/>
 
 <buffer size-MB="300" allocate-time="now"/>
 <!-- or free-memory-percentage="90" allocate-time="oncall" -->
