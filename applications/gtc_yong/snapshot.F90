@@ -26,11 +26,13 @@ subroutine snapshot
   character(len=30) bpdum
   integer*8 filehandle, groupfilehandle
   integer*8 :: group_proffilehandle
-  integer :: adios_err
-  integer ::total_size 
-!  #define ADIOS_WRITE(a,b) call adios_write(a,'b'//char(0),b,adios_err)
+  integer*8 :: adios_groupsize,adios_handle, adios_totalsize 
+  integer   ::  adios_err
+  integer :: comm_self
 #endif
 
+  comm_self = MPI_COMM_SELF
+!MPI_COMM_SELF
 ! write particle data for re-run
 !!  call restart_write
   call restart_io("write")
@@ -376,100 +378,17 @@ subroutine snapshot
      close(snapout)
 
 !!write snapshot.adio
-#ifdef ADIOS
+#ifdef ADIOS 
      write(bpdum,'("snap_",i5.5,".bp")')nsnap
      bpdum=trim(bpdum)//char(0)
+     write(6,*) 'calling adios_open',bpdum
+     call adios_open (adios_handle, "snapshot"//char(0), bpdum, "w"//char(0), adios_err)
+     write(6,*) 'done calling adios_open'
+#include "gwrite_snapshot.fh"
+     write(6,*) 'calling adios_close'
+     call adios_close(adios_handle, adios_err)
+     write(6,*) 'done adios_close'
 
-!!! modified by zf2 for timing
-!     CALL open_start_for_group(group_proffilehandle, "snapshot"//char(0),istep)
-
-     !!!call adios_get_group (groupfilehandle, "snapshot"//char(0))
-     call adios_open (filehandle, "snapshot"//char(0), bpdum, "w"//char(0), adios_err)
-
-!     CALL open_end_for_group(group_proffilehandle,istep)
-
-!     CALL write_start_for_group(group_proffilehandle,istep)
-
-call adios_group_size(filehandle, 4 + &
-4 + &
-4 + &
-4 + &
-4 + &
-4 + &
-4 + &
-4 + &
-4 + &
-4 + &
-4*(mbin_u)*(3+mbin_psi*6) + &
-4*(mpsi)*(9) + &
-4*(mpsi)*(jm+1)*(3) + &
-4 + &
-4 + &
-4*(mzeta)*(ntoroidal)*(jm) + &
-4 + &
-4*(num_mode) + &
-4 + &
-4*(mpsi)*(num_mode)*(m_poloidal), &
-total_size, &
-0, &
-adios_err &
-)
-
-
-call adios_write (filehandle, "timestep"//char(0), (mstepall+istep),adios_err)
-call adios_write (filehandle, "time"//char(0), q0+0.5*q1+0.25*q2,adios_err)
-call adios_write(filehandle,"3+mbin_psi*6"//char(0),3+mbin_psi*6,adios_err)
-call adios_write(filehandle,"mbin_u"//char(0),mbin_u,adios_err)
-call adios_write(filehandle,"mbin_psi"//char(0),mbin_psi,adios_err)
-call adios_write(filehandle,"mpsi"//char(0),mpsi,adios_err)
-call adios_write(filehandle,"jm"//char(0),jm,adios_err)
-call adios_write(filehandle,"jm+1"//char(0),jm+1,adios_err)
-call adios_write(filehandle,"mzetamax"//char(0),mzetamax,adios_err)
-call adios_write(filehandle,"num_of_quantities"//char(0),i, adios_err)
-call adios_write(filehandle,"dataout_u"//char(0),dataout_u,adios_err)
-call adios_write(filehandle,"dataout_r"//char(0),dataout_r,adios_err)
-call adios_write (filehandle, "dataout_p"//char(0), booz_out, adios_err)
-call adios_write(filehandle,"ntoroidal"//char(0),ntoroidal,adios_err)
-call adios_write(filehandle,"mzeta"//char(0),mzeta,adios_err)
-call adios_write (filehandle, "dataout_f"//char(0), flux3darray, adios_err)
-call adios_write(filehandle,"num_mode"//char(0),num_mode,adios_err)
-call adios_write (filehandle, "modeeigen"//char(0), nmode, adios_err)
-call adios_write(filehandle,"m_poloidal"//char(0),m_poloidal,adios_err)
-call adios_write (filehandle, "dataeigen"//char(0), eigenmode, adios_err)
-
-
-!     call adios_write (filehandle, "timestep"//char(0), (mstepall+istep),adios_err)
-!     call adios_write (filehandle, "time"//char(0), q0+0.5*q1+0.25*q2,adios_err)
-     !!!!if(mype==0)write(*,*)"filename,groupfilehandle,filehandle",bpdum,groupfilehandle,filehandle
-!     call adios_write (filehandle, "3+mbin_psi*6"//char(0), 3+mbin_psi*6,adios_err)
-!     call adios_write (filehandle, "jm+1"//char(0), jm+1, adios_err)
-!     ADIOS_WRITE(filehandle,mbin_u)
-!     ADIOS_WRITE(filehandle,mbin_psi)
-!     ADIOS_WRITE(filehandle,mpsi)
-!     ADIOS_WRITE(filehandle,jm)
-!     ADIOS_WRITE(filehandle,mzetamax)
-!     call adios_write(filehandle,"num_of_quantities"//char(0),i, adios_err)
-     ! poloidal cross section: marker,density,potential,parallel flow and temperature
-     !!call adios_write (filehandle, "jm+1"//char(0), jm+1)
-!     ADIOS_WRITE(filehandle,jm)
-!     ADIOS_WRITE(filehandle,ntoroidal)
-!     ADIOS_WRITE(filehandle,mzeta)
-!     ADIOS_WRITE(filehandle,num_mode)
-!     ADIOS_WRITE(filehandle,m_poloidal)
-!     call adios_write (filehandle, "modeeigen"//char(0), nmode, adios_err)
-!     ADIOS_WRITE(filehandle,dataout_u)
-!     ADIOS_WRITE(filehandle,dataout_r)
-!     call adios_write (filehandle, "dataout_p"//char(0), booz_out, adios_err)
-!     call adios_write (filehandle, "dataout_f"//char(0), flux3darray, adios_err)
-!     call adios_write (filehandle, "dataeigen"//char(0), eigenmode, adios_err)
-
-!     CALL write_end_for_group(group_proffilehandle,istep)
-
-!     CALL close_start_for_group(group_proffilehandle,istep)
-
-     call adios_close(filehandle, adios_err)
-
-!     CALL close_end_for_group(group_proffilehandle,istep)
 
 #endif
      deallocate(booz_out)  
