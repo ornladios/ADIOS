@@ -685,7 +685,7 @@ OBJFILES2=  array_dimensions_write.o  \
             grid.o  \
             initialize_cycle_arrays.o  \
             initialize_variables.o  \
-            initialize_MPI_adios.o  \
+            initialize_MPI.o  \
             load_radial_ray_arrays.o  \
             model_check.o  \
             model_read.o  \
