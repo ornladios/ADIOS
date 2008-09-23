@@ -8,7 +8,8 @@
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
 #define ERR(e){if(e){printf("Error:%s\n",nc_strerror(e));return 2;}}
-#define DIVIDER "========================================================\n"
+#define DIVIDER "\t---------------------------------\n"
+//#define DIVIDER "\t************************************\n"
 
 struct var_dim
 {
@@ -216,20 +217,7 @@ int ncd_dataset (int ncid
     static int onename_dimid = -1;
     uint64_t dimvalue;
     struct adios_index_attribute_struct_v1 * vars_root = 0;
-/*
-    new_path = strdup (path);
-    if ( path[0] == '/')
-         new_path=new_path+1;
-          
-    for ( i = 0; i < strlen (new_path); i++) {
-        if ( new_path[i] == '[' || new_path[i] == ']' || new_path[i] == '/' || new_path[i] == '\\')
-            new_path[i] = '_';
-    }
-    if (*new_path != '\0' && new_path[i-1]!='_')
-        sprintf (fullname, "%s_%s", new_path, name);
-    else
-        strcpy (fullname, name);
-*/
+
     ncd_gen_name (fullname, path, name);
 
     printf(DIVIDER);
@@ -260,7 +248,7 @@ int ncd_dataset (int ncid
             }
             else
                rank = j;
-            printf("rank cal:time_index=%d j=%d rank=%d\n",time_dimrank,j,rank);
+//            printf("rank cal:time_index=%d j=%d rank=%d\n",time_dimrank,j,rank);
             /**********************************************************************
             * Process dataset which has global bounds with dynamic dimension value
             **********************************************************************/
@@ -364,7 +352,7 @@ int ncd_dataset (int ncid
                     if (dims->dimension.rank!=0) {
                             sprintf(dimname,"%s_%d",fullname,rank);
                             dimids[rank]=-1;
-                            //printf("\tdim: %s %d\n",dimname,dims->dimension.rank);
+                            printf("\tdim: %s %d\n",dimname,dims->dimension.rank);
                             nc_inq_dimid(ncid, dimname, &dimids[rank]); 
                             if (dimids [rank] <= 0) 
                                 retval=nc_def_dim (ncid, dimname,dims->dimension.rank,&dimids[rank]);
@@ -379,26 +367,14 @@ int ncd_dataset (int ncid
 
                     }
                     else {
-/*
-                           dimids[rank]=-1;nc_inq_dimid(ncid,"time",&dimids[rank]); 
-	                   if(dimids[rank]<0)
-                               nc_def_dim(ncid,"time",NC_UNLIMITED,&dimids[rank]);
-                               start_dims[rank] = 0;//var_dims[i].rank - 1;
-         		       count_dims[rank] = 1;
-                                    printf("\tdim[%d]: c(%d):s(%d): dimid=%d (time-index)\n"
-                                          ,rank
-                                          ,count_dims[rank]
-                                          ,start_dims[rank]
-                                          ,dimids[rank]
-                                          ); 
-*/
+                            //printf("\tvar_dims[%d]=%d\n",i,var_dims[i].id); 
+                            //printf("\tdimcmp: %d %d\n", dims->dimension.var_id,var_dims[i].id);
                         for (i = 0; i < var_dims_count; i++) {
                             if (var_dims [i].id == dims->dimension.var_id) {
                                 if (dims->dimension.time_index == adios_flag_yes) {
                                     start_dims[rank] = var_dims[i].rank - 1;
          			    count_dims[rank] = 1;
                                     dimids[rank] = var_dims [i].nc_dimid; 
-	                            //nc_def_dim(ncid,pg_header.time_index_name,NC_UNLIMITED,&time_dimid);
                                     printf("\tdim[%d]: c(%d):s(%d): dimid=%d (time-index)\n"
                                           ,rank
                                           ,count_dims[rank]
@@ -407,7 +383,6 @@ int ncd_dataset (int ncid
                                           ); 
                                 }
                                 else {
-	                            //nc_def_dim(ncid,pg_header.time_index_name,NC_UNLIMITED,&time_dimid);
                                     start_dims[rank] = 0;
 			            count_dims[rank] = var_dims[i].rank;
                                     dimids[rank]=var_dims[i].nc_dimid;
@@ -418,8 +393,8 @@ int ncd_dataset (int ncid
                                           ,dimids[rank]
                                           ); 
                                 } 
+                                break;
                             }
-                            break;
                         }
                    }
                     if (i==var_dims_count) {
@@ -461,13 +436,12 @@ int ncd_dataset (int ncid
             }
             dims = dims->next;
         } // end of for loop
-        printf("\tend of dimension loop\n");
         val = ptr_var_payload->payload;    
         nc_inq_varid(ncid,fullname,&valid);
         nc_redef(ncid);
         switch(type) { 
         case adios_real:
-            if ( valid<0) {//int dd[2];dd[1]=dimids[1];dd[0]=dimids[0];
+            if ( valid<0) {
                 retval=nc_def_var(ncid,fullname,NC_FLOAT,maxrank,dimids,&valid);
                 ERR(retval);
             }
@@ -478,6 +452,7 @@ int ncd_dataset (int ncid
         case adios_double:
             if ( valid<0) 
                 retval=nc_def_var(ncid,fullname,NC_DOUBLE,maxrank,dimids,&valid);
+                ERR(retval);
             retval=nc_enddef(ncid);
             retval=nc_put_vara_double(ncid,valid,start_dims,count_dims,val);
             break;
@@ -692,8 +667,9 @@ int main (int argc, char ** argv)
 
         adios_posix_read_process_group (b);
         adios_parse_process_group_header_v1 (b, &pg_header);
-
+        printf ("*************************************************\n"); 
         printf ("\tTime Index Name: %s %d\n", pg_header.time_index_name, pg_header.time_index);
+        printf ("*************************************************\n"); 
 
         /****************************************
         * Create unlimited time index dimension 
@@ -705,7 +681,6 @@ int main (int argc, char ** argv)
                           );
 	     static int time_dimid = -1;
 	     nc_def_dim(ncid,pg_header.time_index_name,NC_UNLIMITED,&time_dimid);
-             //printf("time-index id: %s %d\n",pg_header.time_index_name,time_dimid);
 	     nc_enddef(ncid);
 	     strcpy(var_dims[var_dims_count].dimname,pg_header.time_index_name);
 	     var_dims[var_dims_count].id = 0; 
@@ -717,6 +692,7 @@ int main (int argc, char ** argv)
 
         adios_parse_vars_header_v1 (b, &vars_header);
   
+        printf("time-index id: %s %d\n",pg_header.time_index_name, vars_header.count);
         for (i = 0; i < vars_header.count; i++)
         {
             var_payload.payload = 0;
