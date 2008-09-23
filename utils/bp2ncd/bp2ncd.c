@@ -167,6 +167,7 @@ int ncd_attr_str_ds (int ncid
          case adios_short:
             //printf("\tvaule: %s\n", *(short *) value);    
             retval=nc_put_att_short(ncid,valid,fullname,NC_SHORT,len,value);
+            ERR(retval); 
             break;
          case adios_integer:
             printf("%d\n", *((int *) value));    
@@ -202,20 +203,19 @@ int ncd_dataset (int ncid
 
     char *name = ptr_var_header->name;
     char *path = ptr_var_header->path;
-    char *new_path, fullname[255];
+    char *new_path, fullname[256],dimname[256];
     enum ADIOS_DATATYPES type = ptr_var_header->type;
     enum ADIOS_FLAG is_dim = ptr_var_header->is_dim;
     void *val = ptr_var_payload->payload; 
     uint64_t payload_size = ptr_var_header->payload_size;
     struct adios_dimension_struct_v1 *dims = ptr_var_header->dims; 
-    int maxrank = 0, i,j, valid=-1, nc_dimid=-1, retval;
+    int maxrank = 0, i,j, valid=-1, nc_dimid=-1, retval, time_dimrank;
     size_t rank = 0, start_dims[10],count_dims[10];
     int dimids[10];
     const char one_name[] = "one";
     static int onename_dimid = -1;
     uint64_t dimvalue;
     struct adios_index_attribute_struct_v1 * vars_root = 0;
-    char dimname[255];
 /*
     new_path = strdup (path);
     if ( path[0] == '/')
@@ -238,19 +238,29 @@ int ncd_dataset (int ncid
     val = ptr_var_payload->payload;
     nc_redef(ncid);
     enum ADIOS_FLAG time_flag;
+    time_dimrank == 0;
     while (dims) {
         ++maxrank;
-        if (dims->dimension.time_index == adios_flag_yes)
+        if (dims->dimension.time_index == adios_flag_yes) {
             time_flag = adios_flag_yes;
+            time_dimrank = maxrank-1;
+        } 
         dims = dims->next;
     } 	
     dims = ptr_var_header->dims; 
     if (dims) {
         for (j = 0; j < maxrank; j++) {
-            if (time_flag==adios_flag_yes)
-               rank = maxrank-1-j;
+            if (time_flag==adios_flag_yes && time_dimrank >0 ) {
+               if (j < time_dimrank) 
+                   rank = j+1;
+               else if(j==time_dimrank)
+                   rank = 0;
+               else  
+                   rank = j;
+            }
             else
                rank = j;
+            printf("rank cal:time_index=%d j=%d rank=%d\n",time_dimrank,j,rank);
             /**********************************************************************
             * Process dataset which has global bounds with dynamic dimension value
             **********************************************************************/
@@ -350,28 +360,68 @@ int ncd_dataset (int ncid
             ********************************************/
             else {
                 if ( dims->dimension.var_id!=0
-                   ||time_flag == adios_flag_yes) { 
-
-                    for (i = 0; i < var_dims_count; i++) {
-                        if (var_dims [i].id == dims->dimension.var_id) {
-                            if (dims->dimension.time_index == adios_flag_yes) {
-                                start_dims[rank] = var_dims[i].rank - 1;
-			        count_dims[rank] = 1;
-                            } 
-                            else {
-                                start_dims[rank] = 0;
-			        count_dims[rank] = var_dims[i].rank;
-                            } 
-                            dimids[rank]=var_dims[i].nc_dimid;
-
-                            printf("\tdim[%d]: c(%d):s(%d)\n"
-                                  ,rank
-                                  ,count_dims[rank]
+                   ||time_flag == adios_flag_yes) {
+                    if (dims->dimension.rank!=0) {
+                            sprintf(dimname,"%s_%d",fullname,rank);
+                            dimids[rank]=-1;
+                            //printf("\tdim: %s %d\n",dimname,dims->dimension.rank);
+                            nc_inq_dimid(ncid, dimname, &dimids[rank]); 
+                            if (dimids [rank] <= 0) 
+                                retval=nc_def_dim (ncid, dimname,dims->dimension.rank,&dimids[rank]);
+                            start_dims[rank] = 0;
+         		    count_dims[rank] = dims->dimension.rank;
+                            printf("\tdim[%d]: c(%d):s(%d): dimid=%d\n"
+                                  ,rank 
+                                  ,count_dims[rank] 
                                   ,start_dims[rank]
-                                  ); 
-			    break;
-                        }
+                                  ,dimids[rank]
+                                  );
+
                     }
+                    else {
+/*
+                           dimids[rank]=-1;nc_inq_dimid(ncid,"time",&dimids[rank]); 
+	                   if(dimids[rank]<0)
+                               nc_def_dim(ncid,"time",NC_UNLIMITED,&dimids[rank]);
+                               start_dims[rank] = 0;//var_dims[i].rank - 1;
+         		       count_dims[rank] = 1;
+                                    printf("\tdim[%d]: c(%d):s(%d): dimid=%d (time-index)\n"
+                                          ,rank
+                                          ,count_dims[rank]
+                                          ,start_dims[rank]
+                                          ,dimids[rank]
+                                          ); 
+*/
+                        for (i = 0; i < var_dims_count; i++) {
+                            if (var_dims [i].id == dims->dimension.var_id) {
+                                if (dims->dimension.time_index == adios_flag_yes) {
+                                    start_dims[rank] = var_dims[i].rank - 1;
+         			    count_dims[rank] = 1;
+                                    dimids[rank] = var_dims [i].nc_dimid; 
+	                            //nc_def_dim(ncid,pg_header.time_index_name,NC_UNLIMITED,&time_dimid);
+                                    printf("\tdim[%d]: c(%d):s(%d): dimid=%d (time-index)\n"
+                                          ,rank
+                                          ,count_dims[rank]
+                                          ,start_dims[rank]
+                                          ,dimids[rank]
+                                          ); 
+                                }
+                                else {
+	                            //nc_def_dim(ncid,pg_header.time_index_name,NC_UNLIMITED,&time_dimid);
+                                    start_dims[rank] = 0;
+			            count_dims[rank] = var_dims[i].rank;
+                                    dimids[rank]=var_dims[i].nc_dimid;
+				    printf("\tdim[%d]: c(%d):s(%d): dimid=%d\n"
+                                          ,rank
+                                          ,count_dims[rank]
+                                          ,start_dims[rank]
+                                          ,dimids[rank]
+                                          ); 
+                                } 
+                            }
+                            break;
+                        }
+                   }
                     if (i==var_dims_count) {
                         adios_posix_read_attributes_index (ptr_buffer);
 			adios_parse_attributes_index_v1 (ptr_buffer, &vars_root);
@@ -411,13 +461,13 @@ int ncd_dataset (int ncid
             }
             dims = dims->next;
         } // end of for loop
-
+        printf("\tend of dimension loop\n");
         val = ptr_var_payload->payload;    
         nc_inq_varid(ncid,fullname,&valid);
         nc_redef(ncid);
         switch(type) { 
         case adios_real:
-            if ( valid<0) {
+            if ( valid<0) {//int dd[2];dd[1]=dimids[1];dd[0]=dimids[0];
                 retval=nc_def_var(ncid,fullname,NC_FLOAT,maxrank,dimids,&valid);
                 ERR(retval);
             }
@@ -538,7 +588,7 @@ int ncd_dataset (int ncid
 
 int main (int argc, char ** argv)
 {
-    char * out_fname;
+    char out_fname [256];
     char * var;
     int i = 0;
     int rc = 0;
@@ -554,13 +604,19 @@ int main (int argc, char ** argv)
     }
 
     if (argc > 2)
-        out_fname = strdup (argv[2]);
+        strcpy (out_fname,argv[2]);
     else 
     {
-        out_fname = strdup (argv[1]);
         int size = strlen(argv[1]);
-        out_fname [size-2] = 'n'; 
-        out_fname [size-1] = 'c';
+        strcpy (out_fname,argv[1]);
+        if(!strcmp (&out_fname[size-3], ".bp")) {
+          out_fname [size-2] = 'n'; 
+          out_fname [size-1] = 'c';
+        }
+        else {
+          strcat(out_fname, ".nc");
+        }
+        
     }
     int ncid, retval;
     nc_create ( out_fname, NC_CLOBBER | NC_64BIT_OFFSET, &ncid);
@@ -647,8 +703,9 @@ int main (int argc, char ** argv)
              var_dims = realloc (var_dims, (var_dims_count + 1)
                           * sizeof (struct var_dim)
                           );
-	     static int time_dimid = -1; 
+	     static int time_dimid = -1;
 	     nc_def_dim(ncid,pg_header.time_index_name,NC_UNLIMITED,&time_dimid);
+             //printf("time-index id: %s %d\n",pg_header.time_index_name,time_dimid);
 	     nc_enddef(ncid);
 	     strcpy(var_dims[var_dims_count].dimname,pg_header.time_index_name);
 	     var_dims[var_dims_count].id = 0; 
