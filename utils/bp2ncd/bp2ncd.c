@@ -80,19 +80,23 @@ int ncd_attr_str_ds (int ncid
     ncd_gen_name (fullname, path, name);
     valid = -1;
     if (strcmp(path,"/")==0) {
-          valid = NC_GLOBAL;
-          strcpy(fullname, name);
+        valid = NC_GLOBAL;
+        strcpy(fullname, name);
     }
     else {
-          ncd_gen_name (fullname, path, "");
-          retval=nc_inq_varid(ncid,fullname,&valid); 
-          ERR(retval); 
-          if (valid<0)
-              ncd_gen_name (fullname, path, name);
-          else
-              strcpy(fullname, name);
+        ncd_gen_name (fullname, path, "");
+        printf("\tpathname:%s\n",fullname);
+        retval=nc_inq_varid(ncid,fullname,&valid);
+        if(retval < 0)
+           return; 
+        //ERR(retval); 
+        if (valid<0)
+            ncd_gen_name (fullname, path,name);
+        else
+            strcpy(fullname, name);
+        printf("\t attr_name:%s %d\n",fullname,valid);
     }
-
+   
     retval=nc_inq_attid(ncid,valid,fullname,&attid);
     //printf("\tretval:%d attid=%d\n",retval,attid);
     if (retval == NC_NOERR ) {
@@ -100,7 +104,7 @@ int ncd_attr_str_ds (int ncid
        return;
      }
     else
-       printf("\tattribute: %s\n", fullname);
+       printf("\tattribute: %s path=%s name=%s %d\n", fullname,path,name,valid);
     nc_redef(ncid);
 
     void *value = attribute->value;
