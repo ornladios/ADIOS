@@ -42,11 +42,22 @@ int ncd_gen_name (char *fullname, char *path, char *name) {
         if ( new_path[i] == '[' || new_path[i] == ']' || new_path[i] == '/' || new_path[i] == '\\')
             new_path[i] = '_';
     }
-    if (*new_path != '\0') { 
-        if (new_path[i-1]!='_')
-            sprintf (fullname, "%s_%s", new_path, name);
+    if (*new_path != '\0') {
+        if (new_path[i-1]!='_') {
+            if (strcmp(name,"") )  
+                sprintf (fullname, "%s_%s", new_path, name);
+            else {
+                strcpy (fullname,new_path);
+                fullname [strlen(fullname)] = '\0'; 
+            }
+        }
         else 
-            sprintf (fullname, "%s%s", new_path, name);
+            if (strcmp(name,"") )  
+                sprintf (fullname, "%s%s", new_path, name);
+            else {
+                strcpy (fullname,new_path);
+                fullname [strlen(fullname)] = '\0'; 
+            }
     }
     else
         strcpy (fullname, name);
@@ -63,37 +74,34 @@ int ncd_attr_str_ds (int ncid
     char *path = attribute->path;
     char *name = attribute->name;
     char *new_path;
-    int  valid,retval;
-/* 
-    new_path = strdup (path);
-    if ( path[0] == '/')
-         new_path=new_path+1;
-
-    for ( i = 0; i < strlen (new_path); i++) {
-        if ( new_path[i] == '[' || new_path[i] == ']' || new_path[i] == '/' || new_path[i] == '\\')
-            new_path[i] = '_';
-    }
-    if (*new_path != '\0' && new_path[i-1]!='_')
-        sprintf (fullname, "%s_%s", new_path, name);
-    else
-        strcpy (fullname, name);
-*/
-    ncd_gen_name (fullname, path, name);
+    int  valid,retval,attid;
 
     printf(DIVIDER);
-    printf("\tattribute: %s\n", fullname);
-
+    ncd_gen_name (fullname, path, name);
     valid = -1;
-    nc_redef(ncid);
-    retval=nc_inq_varid(ncid,fullname,&valid);
+    if (strcmp(path,"/")==0) {
+          valid = NC_GLOBAL;
+          strcpy(fullname, name);
+    }
+    else {
+          ncd_gen_name (fullname, path, "");
+          retval=nc_inq_varid(ncid,fullname,&valid); 
+          ERR(retval); 
+          if (valid<0)
+              ncd_gen_name (fullname, path, name);
+          else
+              strcpy(fullname, name);
+    }
 
-    if (valid>0) {
-       printf("\tattribute (%d) existed\n", valid);
+    retval=nc_inq_attid(ncid,valid,fullname,&attid);
+    //printf("\tretval:%d attid=%d\n",retval,attid);
+    if (retval == NC_NOERR ) {
+       printf("\tattribute (%s) existed\n", fullname);
        return;
      }
-
-    if ( valid < 0)
-        valid = NC_GLOBAL; 
+    else
+       printf("\tattribute: %s\n", fullname);
+    nc_redef(ncid);
 
     void *value = attribute->value;
     size_t len = 1; 
