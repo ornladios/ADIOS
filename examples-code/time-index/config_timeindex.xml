@@ -2,8 +2,9 @@
 <adios-config host-language="C">
     <adios-group name="temperature" coordination-communicator="comm" time-index="iter">
     <var name="NX" type="integer"/>
-    <var name="temperature" gwrite="t" type="double" dimensions="NX,iter"/>
-    <attribute name="recorded-date" path="/" value="Sep-19-2008" type="string"/>
+    <var name="temperature" gwrite="t" path="oakridge" type="double" dimensions="NX,iter"/>
+    <attribute name="recorded-date" path="oakridge/temperature" value="Sep-19-2008" type="string"/>
+    <attribute name="project-name" path="/" value="adios-timeindex-test" type="string"/>
 </adios-group>
 
 <method group="temperature" method="MPI"/>

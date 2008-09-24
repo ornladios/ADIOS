@@ -16,7 +16,6 @@ MPI_Comm    comm;
  
 MPI_Init (&argc, &argv);
 MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-comm = MPI_COMM_WORLD;
 /* MPI_Comm_split paritions the world group into disjointed 2 subgroups, 
   * the processes are ranked in terms of the argument key  
   *  a new communicator comm is returned for this specific grid configuration
@@ -25,7 +24,8 @@ comm = MPI_COMM_WORLD;
 /* every P/2 processes write into the same file 
   * there are 2 files generated. 
   */
-sprintf (filename,"%s", "restart.bp");
+sprintf (filename,"restart%5.5d.bp",rank);
+comm = MPI_COMM_SELF;
 adios_init ("config_timeindex.xml");
 for (int it=0;it<10;it++) {
     for (int i = 0; i < NX; i++)
