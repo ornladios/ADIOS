@@ -215,7 +215,7 @@ int ncd_dataset (int ncid
     int dimids[10];
     const char one_name[] = "one";
     static int onename_dimid = -1;
-    uint64_t dimvalue;
+    int time_index; 
     struct adios_index_attribute_struct_v1 * vars_root = 0;
 
     ncd_gen_name (fullname, path, name);
@@ -235,7 +235,8 @@ int ncd_dataset (int ncid
         } 
         dims = dims->next;
     } 	
-    dims = ptr_var_header->dims; 
+    dims = ptr_var_header->dims;
+    time_index = 0; 
     if (dims) {
         for (j = 0; j < maxrank; j++) {
             if (time_flag==adios_flag_yes && time_dimrank >0 ) {
@@ -296,7 +297,9 @@ int ncd_dataset (int ncid
                 if ( dims->local_offset.var_id != 0 ) {
                     for (i = 0; i < var_dims_count; i++){
                          if (var_dims [i].id == dims->local_offset.var_id){
-                             start_dims[rank]=var_dims [i]. rank; 
+                             start_dims[rank]=var_dims [i]. rank;;
+                             //printf(" \tglobal[%d]: c(%d) s(%d)\n"
+                             //      ,rank,count_dims[rank], start_dims[rank]);
                              break;
                          }
                     }
@@ -305,7 +308,7 @@ int ncd_dataset (int ncid
 			adios_parse_attributes_index_v1 (ptr_buffer, &vars_root);
 			while (vars_root) {
 		            if (vars_root->id == dims->local_offset.var_id) {
-                                start_dims [ rank] = *(int*)vars_root->characteristics->value;
+                                start_dims [rank] = *(int*)vars_root->characteristics->value;
 				break; 
 			    } 
 			    vars_root = vars_root->next;
@@ -314,11 +317,9 @@ int ncd_dataset (int ncid
                 }
                 else{
                          start_dims[ rank]=dims->local_offset.rank;
-                         printf("\t-----global constant: %d, %d in %d\n"
-                               ,start_dims[rank], i, var_dims_count);
                 }
-                printf(" \tglobal_domain: %s rank %d, start %d, count %d\n"
-                      ,fullname , rank, start_dims[rank],count_dims[rank]);
+                printf(" \tglobal[%d]: c(%d) s(%d)\n"
+                      ,rank,count_dims[rank], start_dims[rank]);
             }
             /**********************************************************************
             * Process dataset which has global bounds with constant dimension value
@@ -373,6 +374,7 @@ int ncd_dataset (int ncid
                             if (var_dims [i].id == dims->dimension.var_id) {
                                 if (dims->dimension.time_index == adios_flag_yes) {
                                     start_dims[rank] = var_dims[i].rank - 1;
+                                    time_index = var_dims[i].rank;
          			    count_dims[rank] = 1;
                                     dimids[rank] = var_dims [i].nc_dimid; 
                                     printf("\tdim[%d]: c(%d):s(%d): dimid=%d (time-index)\n"
@@ -436,6 +438,10 @@ int ncd_dataset (int ncid
             }
             dims = dims->next;
         } // end of for loop
+        //for (rank= 0; rank<maxrank;rank++)
+        //        printf(" \tglobal[%d]: c(%d) s(%d)\n"
+        //              ,rank,count_dims[rank], start_dims[rank]);
+          
         val = ptr_var_payload->payload;    
         nc_inq_varid(ncid,fullname,&valid);
         nc_redef(ncid);
@@ -692,7 +698,7 @@ int main (int argc, char ** argv)
 
         adios_parse_vars_header_v1 (b, &vars_header);
   
-        printf("time-index id: %s %d\n",pg_header.time_index_name, vars_header.count);
+        //printf("time-index id: %s %d\n",pg_header.time_index_name, vars_header.count);
         for (i = 0; i < vars_header.count; i++)
         {
             var_payload.payload = 0;
