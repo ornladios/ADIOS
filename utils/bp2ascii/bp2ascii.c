@@ -80,7 +80,6 @@ int main (int argc, char ** argv)
     if (!rc)
     {
         fprintf (stderr, "bpdump: file not found: %s\n", filename);
-
         return -1;
     }
 
@@ -104,7 +103,7 @@ int main (int argc, char ** argv)
 
     while (vars_root)
     {
-        printf("%s\n",vars_root->var_name);
+        //printf("%s\n",vars_root->var_name);
         if (!strcasecmp (dump.dump_var, vars_root->var_name) )
             break;
         else
@@ -140,7 +139,9 @@ int main (int argc, char ** argv)
 
         read(b->f,b->buff,8);
         var_len = *(uint64_t *) b->buff;
+
         read (b->f,b->buff+8, var_len);
+
         printf("var length: %llu offset: %llu\n",var_len, offset);
         printf ("payload_size %llux\n", var_header.payload_size);
 
@@ -150,9 +151,66 @@ int main (int argc, char ** argv)
         var_payload.payload = malloc (var_header.payload_size);   
 	adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
                                         ,var_header.payload_size
-                                        ); 
-        fprintf(outf, "%d ", *((int *)var_payload.payload));
-        
+                                        );
+        int j;
+        switch (var_header.type) {
+            case adios_long_double:
+                for (j=0; j<var_header.payload_size/16;j++) 
+                    fprintf(outf, "%f ", *((long double*)var_payload.payload+j));
+                    break;
+            case adios_double:
+                for (j=0; j<var_header.payload_size/8;j++) 
+                    fprintf(outf, "%f ", *((double*)var_payload.payload+j));
+                    break;
+            case adios_real:
+                for (j=0; j<(var_header.payload_size)/4;j++) 
+                    fprintf(outf, "%f ", *((float *)var_payload.payload+j));
+                    break;
+            case adios_long:
+                for (j=0; j<(var_header.payload_size)/8;j++) 
+                    fprintf(outf, "%d ", *((long *)var_payload.payload+j));
+                    break;
+            case adios_unsigned_long:
+                for (j=0; j<(var_header.payload_size)/8;j++) 
+                    fprintf(outf, "%d ", *((unsigned long*)var_payload.payload+j));
+                    break;
+            case adios_integer:
+                for (j=0; j<(var_header.payload_size)/4;j++) 
+                    fprintf(outf, "%d ", *((int *)var_payload.payload+j));
+                    break;
+            case adios_unsigned_integer:
+                for (j=0; j<(var_header.payload_size)/4;j++) 
+                    fprintf(outf, "%d ", *((unsigned int *)var_payload.payload+j));
+                    break;
+            case adios_unsigned_short:
+                for (j=0; j<(var_header.payload_size)/2;j++) 
+                    fprintf(outf, "%d ", *((unsigned short*)var_payload.payload+j));
+                    break;
+            case adios_short:
+                for (j=0; j<(var_header.payload_size)/2;j++) 
+                    fprintf(outf, "%d ", *((short *)var_payload.payload+j));
+                    break;
+            case adios_unsigned_byte:
+                for (j=0; j<var_header.payload_size;j++) 
+                    fprintf(outf, "%c ", *((unsigned char *)var_payload.payload+j));
+                    break;
+            case adios_byte:
+                for (j=0; j<var_header.payload_size;j++) 
+                    fprintf(outf, "%c ", *((char *)var_payload.payload+j));
+                    break;
+            case adios_string:
+                    fprintf(outf, "%s ", var_payload.payload);
+                    break;
+            case adios_complex:
+                for (j=0; j<(var_header.payload_size)/8;j++) 
+                    fprintf(outf, "%f + %fi", *((float  *)var_payload.payload+2*j),*((float  *)var_payload.payload+j*2+1));
+                    break;
+            case adios_double_complex:
+                for (j=0; j<(var_header.payload_size)/16;j++) 
+                    fprintf(outf, "%f + %fi", *((double *)var_payload.payload+2*j),*((double *)var_payload.payload+j*2+1));
+                    break;
+         }        
+         fprintf(outf,"\n");
     }
     fclose(outf);
     adios_posix_close_internal (b);
