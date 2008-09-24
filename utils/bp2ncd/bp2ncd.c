@@ -76,7 +76,6 @@ int ncd_attr_str_ds (int ncid
     char *new_path;
     int  valid,retval,attid;
 
-    printf(DIVIDER);
     ncd_gen_name (fullname, path, name);
     valid = -1;
     if (strcmp(path,"/")==0) {
@@ -85,26 +84,28 @@ int ncd_attr_str_ds (int ncid
     }
     else {
         ncd_gen_name (fullname, path, "");
-        printf("\tpathname:%s\n",fullname);
+        //printf("\tpathname:%s\n",fullname);
         retval=nc_inq_varid(ncid,fullname,&valid);
         if(retval < 0)
            return; 
-        //ERR(retval); 
-        if (valid<0)
-            ncd_gen_name (fullname, path,name);
         else
             strcpy(fullname, name);
-        printf("\t attr_name:%s %d\n",fullname,valid);
+        //ERR(retval); 
+        //if (valid<0)
+        //    ncd_gen_name (fullname, path,name);
+        //printf("\t attr_name:%s %d\n",fullname,valid);
     }
-   
     retval=nc_inq_attid(ncid,valid,fullname,&attid);
     //printf("\tretval:%d attid=%d\n",retval,attid);
+    printf(DIVIDER);
     if (retval == NC_NOERR ) {
        printf("\tattribute (%s) existed\n", fullname);
        return;
      }
     else
-       printf("\tattribute: %s path=%s name=%s %d\n", fullname,path,name,valid);
+       printf("\tattribute: %s \n", fullname);
+
+
     nc_redef(ncid);
 
     void *value = attribute->value;
@@ -165,7 +166,7 @@ int ncd_attr_str_ds (int ncid
 #endif
     }
     else
-        printf("\t      XML: ");    
+        printf("\t      XML: ");   
     switch (type) {
          case adios_unsigned_byte:
             retval=nc_put_att_uchar(ncid,valid,fullname,NC_BYTE,len,value);
@@ -203,6 +204,7 @@ int ncd_attr_str_ds (int ncid
      }
      ERR(retval);
 
+    nc_enddef(ncid); 
     if ( var_payload.payload)
         free (var_payload.payload);
 }
