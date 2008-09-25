@@ -53,8 +53,8 @@ subroutine load
      return
   endif
 
-  !!rmi=1.0/real(mi)
-  rmi=1.0/real(mi*npartdom)
+  rmi=1.0/real(mi)
+!  rmi=1.0/real(mi*npartdom)
   pi2_inv=0.5/pi
   delr=1.0/deltar
   ainv=1.0/a
@@ -69,8 +69,8 @@ subroutine load
 ! radial: uniformly distributed in r^2, later transform to psi
 !$omp parallel do private(m)
   do m=1,mi
-     !!zion(1,m)=sqrt(a0*a0+(real(m)-0.5)*(a1*a1-a0*a0)*rmi)
-     zion(1,m)=sqrt(a0*a0+(real(m+myrank_partd*mi)-0.5)*(a1*a1-a0*a0)*rmi)
+     zion(1,m)=sqrt(a0*a0+(real(m)-0.5)*(a1*a1-a0*a0)*rmi)
+     !zion(1,m)=sqrt(a0*a0+(real(m+myrank_partd*mi)-0.5)*(a1*a1-a0*a0)*rmi)
   enddo
 
 ! If particle tracking is "on", tag each particle with a unique number
