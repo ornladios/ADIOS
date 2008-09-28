@@ -416,7 +416,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
         for (i = 0; i < attrs_header.count; i++)
         {
             adios_parse_attribute_v1 (b, &attribute);
-            printf("%s_%s %s\n",attribute.path,attribute.name, attribute.value);
+            //printf("%s_%s %s\n",attribute.path,attribute.name, attribute.value);
             // write to h5 file
             if(attribute.is_var == adios_flag_no) {
                 switch(attribute.type) 
