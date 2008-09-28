@@ -412,12 +412,11 @@ int hw_makeh5 (char * fnamein, char * fnameout)
         }
 
         adios_parse_attributes_header_v1 (b, &attrs_header);
-
         // process each attribute in current process group
         for (i = 0; i < attrs_header.count; i++)
         {
             adios_parse_attribute_v1 (b, &attribute);
-            
+            printf("%s_%s %s\n",attribute.path,attribute.name, attribute.value);
             // write to h5 file
             if(attribute.is_var == adios_flag_no) {
                 switch(attribute.type) 
@@ -436,7 +435,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                     case adios_short:
                     case adios_integer:
                     case adios_long:
-                        hw_attr_num_ds (root_id, attribute.path, attribute.name, attribute.value
+                         hw_attr_num_ds (root_id, attribute.path, attribute.name, attribute.value
                                        ,attribute.type
                                        );
                         break;
@@ -819,6 +818,7 @@ void hw_attr_str_gp (hid_t root_id, char * dirstr, char * aname, char * aval)
 void hw_attr_str_ds (hid_t root_id, char * dirstr, char * aname, char * aval)
 {
     H5Eset_auto (NULL, NULL);
+
     char ** grp_name;
     int level;
     int i;
@@ -832,7 +832,7 @@ void hw_attr_str_ds (hid_t root_id, char * dirstr, char * aname, char * aval)
     
     grp_name = bp_dirparser (dirstr, &level);
     
-    for (i = 0; i < level - 1; i++)
+    for (i = 0; i < level; i++)
     {
         grp_id [i + 1] = H5Gopen (grp_id [i], grp_name [i]);
         if (grp_id [i + 1] < 0)
@@ -840,9 +840,24 @@ void hw_attr_str_ds (hid_t root_id, char * dirstr, char * aname, char * aval)
             grp_id [i + 1] = H5Gcreate (grp_id [i], grp_name [i], 0);
         }
     }
+    if (grp_id[level] > 0) {
+        hw_string_attr_gp_internal (grp_id [level], aname, aval);
+
+        for (i = 1; i < level; i++)
+            H5Gclose (grp_id [i]);
+
+        hw_free2D (grp_name, level);
+        return;
+    }
+    for (i = 0; i < level - 1; i++) {
+        grp_id [i + 1] = H5Gopen (grp_id [i], grp_name [i]);
+	if (grp_id [i + 1] < 0) {
+            grp_id [i + 1] = H5Gcreate (grp_id [i], grp_name [i], 0);
+        }
+    }
     
     dataset_id = H5Dopen (grp_id [level - 1], grp_name [level - 1]);
-    
+     
     type_id = H5Tcopy (H5T_NATIVE_INT);
     if (dataset_id == -1)
     {
@@ -854,7 +869,7 @@ void hw_attr_str_ds (hid_t root_id, char * dirstr, char * aname, char * aval)
         // the dataspace is single element array
         // FIX:
         // delay attribute write until corresponding dataset is written
-        fprintf(stderr, "Warning in writing h5 file: you hit a bug (%s: %d)\n", __FILE__, __LINE__);
+        //fprintf(stderr, "Warning in writing h5 file: you hit a bug (%s: %d)\n", __FILE__, __LINE__);
 
         space_id = H5Screate_simple (1, dims, NULL);
         dataset_id = H5Dcreate (grp_id [level - 1], grp_name [level - 1]
@@ -1005,8 +1020,7 @@ void hw_attr_num_ds(hid_t root_id, char *dirstr, char *aname, void *avalue, enum
     grp_id[0] = root_id;
     
     grp_name = bp_dirparser(dirstr,&level);
-    
-    for(i=0;i<level-1;i++)
+    for(i=0;i<level;i++)
     {
         grp_id[i+1] = H5Gopen(grp_id[i],grp_name[i]);
         if(grp_id[i+1]<0)
@@ -1015,6 +1029,21 @@ void hw_attr_num_ds(hid_t root_id, char *dirstr, char *aname, void *avalue, enum
         }
     }
 
+    if (grp_id[level] > 0) {    
+        hw_scalar_attr(grp_id[level], aname, avalue,type);
+        for(i=1;i<level;i++)
+            H5Gclose(grp_id[i]);
+        hw_free2D(grp_name,level);
+        return; 
+    }
+    
+    for (i = 0; i < level - 1; i++) {
+        grp_id [i + 1] = H5Gopen (grp_id [i], grp_name [i]);
+	if (grp_id [i + 1] < 0) {
+            grp_id [i + 1] = H5Gcreate (grp_id [i], grp_name [i], 0);
+        }
+    }
+    
     dataset_id = H5Dopen(grp_id[level-1],grp_name[level-1]);
     
     if(dataset_id==-1)
