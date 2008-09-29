@@ -57,8 +57,8 @@ int bp2h5_initialized = 0;
 /*
  * verbose level flag
  */
+const char * value_to_string (enum ADIOS_DATATYPES type, void * data);
 enum verbose_level verbose = NO_INFO;
-
 void set_lang_convention(enum ADIOS_FLAG host_language_fortran)
 {
     if(host_language_fortran == adios_flag_yes) {
@@ -189,6 +189,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
     struct adios_index_process_group_struct_v1 * pg_root = 0;
     struct adios_index_process_group_struct_v1 * pg = 0;
     struct adios_index_var_struct_v1 * vars_root = 0;
+    struct adios_index_attribute_struct_v1 * attrs_root = 0;
 
     // read and parse index
     adios_posix_read_index_offsets (b);
@@ -199,7 +200,68 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 
     adios_posix_read_vars_index (b);
     adios_parse_vars_index_v1 (b, &vars_root);
-
+    uint64_t dimval;
+    int var_dims_count = 0;
+    struct var_dim * var_dims = 0;
+    while (vars_root)
+    {
+       if (vars_root->characteristics_count==1 && vars_root->characteristics[0].dims.count==0) {
+          var_dims = realloc (var_dims,   (var_dims_count + 1)
+                             * sizeof (struct var_dim)
+                             );
+          var_dims [var_dims_count].id = vars_root->id;
+          switch (vars_root->type ) {
+              case adios_integer:
+                   dimval =(uint64_t) *(int *) vars_root->characteristics[0].value;
+                   printf("%s %d %llu\n", vars_root->var_name,vars_root->id,dimval); 
+                   break;
+              case adios_long: 
+                   dimval =(uint64_t) *(long *) vars_root->characteristics[0].value;
+                   printf("%s %d %llu\n", vars_root->var_name,vars_root->id,dimval); 
+                   break;
+              default:
+                   printf("ERROR: %s\n","unsupported adios type"); 
+                   break;
+           }
+           var_dims [var_dims_count].rank = dimval;
+           var_dims_count++;
+       }
+       vars_root = vars_root->next;
+    } 
+    adios_posix_read_attributes_index (b);
+    adios_parse_attributes_index_v1 (b, &attrs_root);
+    while (attrs_root)
+    {
+       if  (  attrs_root->characteristics_count==1 
+           && attrs_root->characteristics[0].dims.count==0
+           && attrs_root->type != adios_string) {
+          var_dims = realloc (var_dims,   (var_dims_count + 1)
+                             * sizeof (struct var_dim)
+                             );
+          var_dims [var_dims_count].id = attrs_root->id;
+          switch (attrs_root->type ) {
+              case adios_integer:
+                   dimval =(uint64_t) *(int *) attrs_root->characteristics[0].value;
+                   //printf("%s %d %llu\n", attrs_root->attr_name,attrs_root->id,dimval); 
+                   break;
+              case adios_long: 
+                   dimval =(uint64_t) *(long *) attrs_root->characteristics[0].value;
+                   //printf("%s %d %llu\n", attrs_root->attr_name,attrs_root->id,dimval); 
+                   break;
+              default:
+                   printf("ERROR: unsupported adios type: %s\n", 
+                         value_to_string (attrs_root->type,attrs_root->characteristics[0].value)); 
+                   return ;
+           }
+           var_dims [var_dims_count].rank = dimval;
+           var_dims_count++;
+       }
+       attrs_root = attrs_root->next;
+    }
+/*
+    for (i = 0; i< var_dims_count; i++)
+       printf("total: %d %d %d\n",var_dims_count, var_dims[i].id, var_dims[i].rank); 
+*/
     // xxx.bp --> xxx.h5
     tmpstr = strdup (fnamein);
     size = strlen (fnamein);
@@ -220,8 +282,6 @@ int hw_makeh5 (char * fnamein, char * fnameout)
     pg = pg_root;
     while (pg)
     {
-        int var_dims_count = 0;
-        struct var_dim * var_dims = 0;
 
         struct adios_process_group_header_struct_v1 pg_header;
         struct adios_vars_header_struct_v1 vars_header;
@@ -273,17 +333,6 @@ int hw_makeh5 (char * fnamein, char * fnameout)
             //    adios_parse_var_data_payload_v1 (b, &var_header, NULL, 0);
             //}
 
-            if (var_header.is_dim == adios_flag_yes)
-            {
-                var_dims = realloc (var_dims,   (var_dims_count + 1)
-                                              * sizeof (struct var_dim)
-                                   );
-
-                var_dims [var_dims_count].id = var_header.id;
-                var_dims [var_dims_count].rank = *(unsigned int *)
-                                                        var_payload.payload;
-                var_dims_count++;
-            }
 
             // write to h5 file
             // make sure the buffer is big enough or send in null
@@ -367,8 +416,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 
                 d = var_header.dims;
                 dims_t = offsets;
-                while (d)
-                {
+                while (d) {
                     if (d->local_offset.var_id != 0)
                     {
                         for (i = 0; i < var_dims_count; i++)
@@ -387,7 +435,6 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                     d = d->next;
                     dims_t++;
                 }
-
                 // now ready to write dataset to h5 file
                 hw_dset (root_id, var_header.path, var_header.name, var_payload.payload
                         ,var_header.type, ranks, dims, global_dims, offsets
@@ -1307,4 +1354,74 @@ int bp_getH5TypeId(enum ADIOS_DATATYPES type, hid_t* h5_type_id, void * val)
             status = -1;
     }
     return status;
+}
+
+const char * value_to_string (enum ADIOS_DATATYPES type, void * data)
+{
+    static char s [100];
+    s [0] = 0;
+
+    switch (type)
+    {
+        case adios_unsigned_byte:
+            sprintf (s, "%u", *(((uint8_t *) data)));
+            break;
+
+        case adios_byte:
+            sprintf (s, "%d", *(((int8_t *) data)));
+            break;
+
+        case adios_short:
+            sprintf (s, "%hd", *(((int16_t *) data)));
+            break;
+
+        case adios_unsigned_short:
+            sprintf (s, "%uh", *(((uint16_t *) data)));
+            break;
+
+        case adios_integer:
+            sprintf (s, "%d", *(((int32_t *) data)));
+            break;
+
+        case adios_unsigned_integer:
+            sprintf (s, "%u", *(((uint32_t *) data)));
+            break;
+
+        case adios_long:
+            sprintf (s, "%lld", *(((int64_t *) data)));
+            break;
+
+        case adios_unsigned_long:
+            sprintf (s, "%llu", *(((uint64_t *) data)));
+            break;
+
+        case adios_real:
+            sprintf (s, "%f", *(((float *) data)));
+            break;
+
+        case adios_double:
+            sprintf (s, "%le", *(((double *) data)));
+            break;
+
+        case adios_long_double:
+            sprintf (s, "%Le", *(((long double *) data)));
+            break;
+        case adios_string:
+            sprintf (s, "%s", ((char *) data));
+            break;
+
+        case adios_complex:
+            sprintf (s, "(%f %f)", *(((float *) data) + 0)
+                                 , *(((float *) data) + 1)
+                    );
+            break;
+
+        case adios_double_complex:
+            sprintf (s, "(%lf %lf)", *(((double *) data) + 0)
+                                   , *(((double *) data) + 1)
+                    );
+            break;
+    }
+
+    return s;
 }
