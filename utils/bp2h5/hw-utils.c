@@ -182,6 +182,20 @@ int hw_makeh5 (char * fnamein, char * fnameout)
         return -1;
     }
 
+    tmpstr = strdup (fnamein);
+    size = strlen (fnamein);
+    tmpstr [size - 2] = 'h';
+    tmpstr [size - 1] = '5';
+    if(!fnameout) {
+        fnameout=tmpstr;
+    }
+
+    // create h5 file
+    hid_t h5file_id;
+    hid_t root_id;
+    h5file_id = H5Fcreate (fnameout, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+    root_id = H5Gopen (h5file_id, "/");
+
     // read and parse footer
     adios_posix_read_version (b);
     adios_parse_version (b, &version);
@@ -220,7 +234,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                    printf("%s %d %llu\n", vars_root->var_name,vars_root->id,dimval); 
                    break;
               default:
-                   printf("ERROR: %s\n","unsupported adios type"); 
+                   printf("ERROR: unsupported var adios type %s %d\n",vars_root->var_name,vars_root->type); 
                    break;
            }
            var_dims [var_dims_count].rank = dimval;
@@ -239,20 +253,34 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                              * sizeof (struct var_dim)
                              );
           var_dims [var_dims_count].id = attrs_root->id;
-          switch (attrs_root->type ) {
-              case adios_integer:
-                   dimval =(uint64_t) *(int *) attrs_root->characteristics[0].value;
-                   //printf("%s %d %llu\n", attrs_root->attr_name,attrs_root->id,dimval); 
-                   break;
-              case adios_long: 
-                   dimval =(uint64_t) *(long *) attrs_root->characteristics[0].value;
-                   //printf("%s %d %llu\n", attrs_root->attr_name,attrs_root->id,dimval); 
-                   break;
-              default:
-                   printf("ERROR: unsupported adios type: %s\n", 
-                         value_to_string (attrs_root->type,attrs_root->characteristics[0].value)); 
-                   return ;
-           }
+          if (attrs_root->characteristics[0].var_id !=0) {
+              printf("attribute:%s %d\n",attrs_root->attr_name, attrs_root->characteristics[0].var_id); 
+              for (i = 0; i<var_dims_count;i++) {
+                   if (var_dims[i].id == attrs_root->characteristics[0].var_id) {
+                       dimval = var_dims[i].rank;
+                       printf("attribute:%s %d\n",attrs_root->attr_name, dimval); 
+                       hw_attr_num_ds (root_id, attrs_root->attr_path,attrs_root->attr_name, &dimval
+                                       ,adios_long
+                                      );
+                   }
+              }
+          }
+          else {
+              switch (attrs_root->type ) {
+                  case adios_integer:
+                      dimval =(uint64_t) *(int *) attrs_root->characteristics[0].value;
+                      //printf("%s %d %llu\n", attrs_root->attr_name,attrs_root->id,dimval); 
+                      break;
+                  case adios_long: 
+		      dimval =(uint64_t) *(long *) attrs_root->characteristics[0].value;
+		      //printf("%s %d %llu\n", attrs_root->attr_name,attrs_root->id,dimval); 
+		      break;
+		  default:
+		      printf("ERROR: unsupported adios type: %s \n",attrs_root->attr_name);//,vars_root->type); 
+		      //value_to_string (attrs_root->type,attrs_root->characteristics[0].value)); 
+		      break ;
+              }
+          }
            var_dims [var_dims_count].rank = dimval;
            var_dims_count++;
        }
@@ -263,20 +291,6 @@ int hw_makeh5 (char * fnamein, char * fnameout)
        printf("total: %d %d %d\n",var_dims_count, var_dims[i].id, var_dims[i].rank); 
 */
     // xxx.bp --> xxx.h5
-    tmpstr = strdup (fnamein);
-    size = strlen (fnamein);
-    tmpstr [size - 2] = 'h';
-    tmpstr [size - 1] = '5';
-    if(!fnameout) {
-        fnameout=tmpstr;
-    }
-
-    // create h5 file
-    hid_t h5file_id;
-    hid_t root_id;
-    h5file_id = H5Fcreate (fnameout, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
-    root_id = H5Gopen (h5file_id, "/");
-
     // parse element from bp file and write to hdf5 file
     uint64_t element_num = 1;
     pg = pg_root;
@@ -497,7 +511,10 @@ int hw_makeh5 (char * fnamein, char * fnameout)
             }
             else {
                 // var 
-
+                //hw_attr_num_ds (root_id, attribute.path, attribute.name, attribute.value
+                //                ,attribute.type
+                //                );
+                 
             }
         }
 
