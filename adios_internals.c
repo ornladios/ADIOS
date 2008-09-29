@@ -4742,7 +4742,6 @@ static void index_append_attribute_v1
             if (   !strcasecmp (item->group_name, (*root)->group_name)
                 && !strcasecmp (item->attr_name, (*root)->attr_name)
                 && !strcasecmp (item->attr_path, (*root)->attr_path)
-                && item->type == (*root)->type
                )
             {
                 if (    (*root)->characteristics_count

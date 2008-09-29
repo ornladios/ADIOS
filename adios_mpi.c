@@ -31,6 +31,9 @@ struct adios_MPI_data_struct
     struct adios_index_process_group_struct_v1 * old_pg_root;
     struct adios_index_var_struct_v1 * old_vars_root;
     struct adios_index_attribute_struct_v1 * old_attrs_root;
+
+    uint64_t vars_start;
+    uint64_t vars_header_size;
 };
 
 static void adios_var_to_comm (const char * comm_name
@@ -147,6 +150,8 @@ void adios_mpi_init (const char * parameters
     md->old_pg_root = 0;
     md->old_vars_root = 0;
     md->old_attrs_root = 0;
+    md->vars_start = 0;
+    md->vars_header_size = 0;
 
     adios_buffer_struct_init (&md->b);
 }
@@ -285,6 +290,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                                    ,&md->old_pg_root
                                                    );
 
+#if 1
                 adios_init_buffer_read_vars_index (&md->b);
                 MPI_File_seek (md->fh, md->b.vars_index_offset
                               ,MPI_SEEK_SET
@@ -302,6 +308,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                               ,&md->status
                               );
                 adios_parse_attributes_index_v1 (&md->b, &md->old_attrs_root);
+#endif
 
                 fd->base_offset = md->b.end_of_pgs;
             }
@@ -732,20 +739,40 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
     free (name);
 
-    if (fd->shared_buffer == adios_flag_no)
+    if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
     {
         // write the process group header
         adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
 
+        MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
+        MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE
+                       ,&md->status
+                       );
+        if (md->status.count != fd->bytes_written)
+        {
+            fprintf (stderr, "a:MPI method tried to write %llu, "
+                             "only wrote %llu\n"
+                    ,fd->bytes_written
+                    ,md->status.count
+                    );
+        }
+        fd->base_offset += md->status.count;
+        fd->offset = 0;
+        fd->bytes_written = 0;
+        adios_shared_buffer_free (&md->b);
+
         // setup for writing vars
         adios_write_open_vars_v1 (fd);
+        md->vars_start = fd->base_offset;
+        md->vars_header_size = fd->offset;
+        fd->base_offset += fd->offset;
+        MPI_File_seek (md->fh, md->vars_header_size, MPI_SEEK_CUR);
+        fd->offset = 0;
+        fd->bytes_written = 0;
+        adios_shared_buffer_free (&md->b);
+    }
 
-        return adios_flag_no;
-    }
-    else
-    {
-        return adios_flag_yes;
-    }
+    return fd->shared_buffer;
 }
 
 void adios_mpi_write (struct adios_file_struct * fd
@@ -779,8 +806,38 @@ void adios_mpi_write (struct adios_file_struct * fd
         // var payload sent for sizing information
         adios_write_var_header_v1 (fd, v);
 
+        MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+                       ,MPI_BYTE, &md->status
+                       );
+        if (md->status.count != fd->bytes_written)
+        {
+            fprintf (stderr, "b:MPI method tried to write %llu, "
+                             "only wrote %llu\n"
+                    ,fd->bytes_written
+                    ,md->status.count
+                    );
+        }
+        fd->base_offset += md->status.count;
+        fd->offset = 0;
+        fd->bytes_written = 0;
+        adios_shared_buffer_free (&md->b);
+
         // write payload
-        adios_write_var_payload_v1 (fd, v);
+        // adios_write_var_payload_v1 (fd, v);
+        uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
+        MPI_File_write (md->fh, v->data, var_size, MPI_BYTE, &md->status);
+        if (md->status.count != var_size)
+        {
+            fprintf (stderr, "c:MPI method tried to write %llu, "
+                             "only wrote %llu\n"
+                    ,var_size
+                    ,md->status.count
+                    );
+        }
+        fd->base_offset += md->status.count;
+        fd->offset = 0;
+        fd->bytes_written = 0;
+        adios_shared_buffer_free (&md->b);
     }
 }
 
@@ -975,22 +1032,6 @@ void adios_mpi_close (struct adios_file_struct * fd
     struct adios_index_var_struct_v1 * new_vars_root = 0;
     struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
 
-    if (fd->shared_buffer == adios_flag_no)
-    {
-        adios_write_close_vars_v1 (fd);
-
-        adios_write_open_attributes_v1 (fd);
-
-        while (a)
-        {
-            adios_write_attribute_v1 (fd, a);
-
-            a = a->next;
-        }
-
-        adios_write_close_attributes_v1 (fd);
-    }
-
     switch (fd->mode)
     {
         case adios_mode_read:
@@ -1013,6 +1054,86 @@ void adios_mpi_close (struct adios_file_struct * fd
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
             uint64_t index_start = md->b.pg_index_offset;
+
+            if (fd->shared_buffer == adios_flag_no)
+            {
+                MPI_Offset new_off;
+                // set it up so that it will start at 0, but have correct sizes
+                MPI_File_get_position (md->fh, &new_off);
+                fd->offset = fd->base_offset - md->vars_start;
+                fd->vars_start = 0;
+                fd->buffer_size = 0;
+                adios_write_close_vars_v1 (fd);
+                // fd->vars_start gets updated with the size written
+                MPI_File_seek (md->fh, md->vars_start, MPI_SEEK_SET);
+                MPI_File_write (md->fh, fd->buffer, md->vars_header_size
+                               ,MPI_BYTE, &md->status
+                               );
+                if (md->status.count != md->vars_header_size)
+                {
+                    fprintf (stderr, "d:MPI method tried to write %llu, "
+                                     "only wrote %llu\n"
+                            ,md->vars_header_size
+                            ,md->status.count
+                            );
+                }
+                fd->offset = 0;
+                fd->bytes_written = 0;
+                adios_shared_buffer_free (&md->b);
+
+                adios_write_open_attributes_v1 (fd);
+                md->vars_start = new_off;
+                md->vars_header_size = fd->offset;
+                MPI_File_seek (md->fh, new_off + md->vars_header_size
+                              ,MPI_SEEK_SET
+                              ); // go back to end, but after attr header
+                fd->base_offset += fd->offset;  // add size of header
+                fd->offset = 0;
+                fd->bytes_written = 0;
+
+                while (a)
+                {
+                    adios_write_attribute_v1 (fd, a);
+                    MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+                                   ,MPI_BYTE, &md->status
+                                   );
+                    if (md->status.count != fd->bytes_written)
+                    {
+                        fprintf (stderr, "e:MPI method tried to write %llu, "
+                                         "only wrote %llu\n"
+                                ,fd->bytes_written
+                                ,md->status.count
+                                );
+                    }
+                    fd->base_offset += md->status.count;
+                    fd->offset = 0;
+                    fd->bytes_written = 0;
+                    adios_shared_buffer_free (&md->b);
+
+                    a = a->next;
+                }
+
+                // set it up so that it will start at 0, but have correct sizes
+                fd->offset = fd->base_offset - md->vars_start;
+                fd->vars_start = 0;
+                fd->buffer_size = 0;
+                adios_write_close_attributes_v1 (fd);
+                MPI_File_seek (md->fh, md->vars_start, MPI_SEEK_SET);
+                // fd->vars_start gets updated with the size written
+                MPI_File_write (md->fh, fd->buffer, md->vars_header_size
+                               ,MPI_BYTE, &md->status
+                               );
+                if (md->status.count != md->vars_header_size)
+                {
+                    fprintf (stderr, "f:MPI method tried to write %llu, "
+                                     "only wrote %llu\n"
+                            ,md->vars_header_size
+                            ,md->status.count
+                            );
+                }
+                fd->offset = 0;
+                fd->bytes_written = 0;
+            }
 
             // build index appending to any existing index
             adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
@@ -1100,11 +1221,14 @@ void adios_mpi_close (struct adios_file_struct * fd
                 }
             }
 
-            // everyone writes their data
-            MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
-            MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE
-                           ,&md->status
-                           );
+            if (fd->shared_buffer == adios_flag_yes)
+            {
+                // everyone writes their data
+                MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
+                MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE
+                               ,&md->status
+                               );
+            }
 
             if (md->rank == 0)
             {
@@ -1144,6 +1268,86 @@ void adios_mpi_close (struct adios_file_struct * fd
             uint64_t buffer_offset = 0;
             uint64_t index_start = md->b.pg_index_offset;
 
+            if (fd->shared_buffer == adios_flag_no)
+            {
+                MPI_Offset new_off;
+                // set it up so that it will start at 0, but have correct sizes
+                MPI_File_get_position (md->fh, &new_off);
+                fd->offset = fd->base_offset - md->vars_start;
+                fd->vars_start = 0;
+                fd->buffer_size = 0;
+                adios_write_close_vars_v1 (fd);
+                // fd->vars_start gets updated with the size written
+                MPI_File_seek (md->fh, md->vars_start, MPI_SEEK_SET);
+                MPI_File_write (md->fh, fd->buffer, md->vars_header_size
+                               ,MPI_BYTE, &md->status
+                               );
+                if (md->status.count != md->vars_header_size)
+                {
+                    fprintf (stderr, "d:MPI method tried to write %llu, "
+                                     "only wrote %llu\n"
+                            ,md->vars_header_size
+                            ,md->status.count
+                            );
+                }
+                fd->offset = 0;
+                fd->bytes_written = 0;
+                adios_shared_buffer_free (&md->b);
+
+                adios_write_open_attributes_v1 (fd);
+                md->vars_start = new_off;
+                md->vars_header_size = fd->offset;
+                MPI_File_seek (md->fh, new_off + md->vars_header_size
+                              ,MPI_SEEK_SET
+                              ); // go back to end, but after attr header
+                fd->base_offset += fd->offset;  // add size of header
+                fd->offset = 0;
+                fd->bytes_written = 0;
+
+                while (a)
+                {
+                    adios_write_attribute_v1 (fd, a);
+                    MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+                                   ,MPI_BYTE, &md->status
+                                   );
+                    if (md->status.count != fd->bytes_written)
+                    {
+                        fprintf (stderr, "e:MPI method tried to write %llu, "
+                                         "only wrote %llu\n"
+                                ,fd->bytes_written
+                                ,md->status.count
+                                );
+                    }
+                    fd->base_offset += md->status.count;
+                    fd->offset = 0;
+                    fd->bytes_written = 0;
+                    adios_shared_buffer_free (&md->b);
+
+                    a = a->next;
+                }
+
+                // set it up so that it will start at 0, but have correct sizes
+                fd->offset = fd->base_offset - md->vars_start;
+                fd->vars_start = 0;
+                fd->buffer_size = 0;
+                adios_write_close_attributes_v1 (fd);
+                MPI_File_seek (md->fh, md->vars_start, MPI_SEEK_SET);
+                // fd->vars_start gets updated with the size written
+                MPI_File_write (md->fh, fd->buffer, md->vars_header_size
+                               ,MPI_BYTE, &md->status
+                               );
+                if (md->status.count != md->vars_header_size)
+                {
+                    fprintf (stderr, "f:MPI method tried to write %llu, "
+                                     "only wrote %llu\n"
+                            ,md->vars_header_size
+                            ,md->status.count
+                            );
+                }
+                fd->offset = 0;
+                fd->bytes_written = 0;
+            }
+
             // build index appending to any existing index
             adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
                                  ,&md->old_attrs_root
@@ -1230,11 +1434,14 @@ void adios_mpi_close (struct adios_file_struct * fd
                 }
             }
 
-            // everyone writes their data
-            MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
-            MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE
-                           ,&md->status
-                           );
+            if (fd->shared_buffer == adios_flag_yes)
+            {
+                // everyone writes their data
+                MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
+                MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE
+                               ,&md->status
+                               );
+            }
 
             if (md->rank == 0)
             {

@@ -193,7 +193,22 @@ static int common_adios_group_size (int64_t fd_p
                                    )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    if (!fd)
+    {
+        fprintf (stderr, "Invalid handle pased to adios_group_size\n");
+
+        return 1;
+    }
     struct adios_method_list_struct * m = fd->group->methods;
+    if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
+    {
+        // nothing to do so just return
+        fd->shared_buffer = adios_flag_no;
+        fd->write_size_bytes = 0;
+        fd->buffer = 0;
+        *total_size = 0;
+        return 0;
+    }
 
     fd->write_size_bytes = data_size;
 
@@ -212,10 +227,10 @@ static int common_adios_group_size (int64_t fd_p
     {
         fd->shared_buffer = adios_flag_no;
 
-        fprintf (stderr, "adios_group_size: Insufficient buffer space for "
-                         "building the output before writing.  Defaulting "
-                         "to direct writing all output.  Performance may "
-                         "suffer.\n");
+        fprintf (stderr, "adios_group_size (%s): Not buffering. "
+                         "needs: %llu available: %llu.\n"
+                ,fd->group->name, fd->write_size_bytes, allocated
+                );
     }
     else
     {
@@ -302,8 +317,20 @@ void adios_group_size_ (int64_t * fd_p, int64_t * data_size
 static int common_adios_write (int64_t fd_p, const char * name, void * var)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    if (!fd)
+    {
+        fprintf (stderr, "Invalid handle pased to adios_write\n");
+
+        return 1;
+    }
     struct adios_var_struct * v = fd->group->vars;
     struct adios_method_list_struct * m = fd->group->methods;
+
+    if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
+    {
+        // nothing to do so just return
+        return 0;
+    }
 
     v = adios_find_var_by_name (v, name, fd->group->all_unique_var_names);
 
@@ -439,6 +466,12 @@ static int common_adios_get_write_buffer (int64_t fd_p, const char * name
                                          )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    if (!fd)
+    {
+        fprintf (stderr, "Invalid handle pased to adios_get_write_buffer\n");
+
+        return 1;
+    }
     struct adios_var_struct * v = fd->group->vars;
     struct adios_method_list_struct * m = fd->group->methods;
 
@@ -470,7 +503,7 @@ static int common_adios_get_write_buffer (int64_t fd_p, const char * name
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
             && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_write_fn
+            && adios_transports [m->method->m].adios_get_write_buffer_fn
            )
         {
             adios_transports [m->method->m].adios_get_write_buffer_fn
@@ -501,7 +534,9 @@ void adios_get_write_buffer_ (int64_t * fd_p, const char * name
 
     adios_extract_string (&buf1, name, name_size);
 
-    *err = common_adios_get_write_buffer (*fd_p, buf1, size, buffer);
+    *err = common_adios_get_write_buffer (*fd_p, buf1, (uint64_t *) size
+                                         ,buffer
+                                         );
 
     free (buf1);
 }
@@ -512,7 +547,20 @@ static int common_adios_read (int64_t fd_p, const char * name, void * buffer
                              )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    if (!fd)
+    {
+        fprintf (stderr, "Invalid handle pased to adios_read\n");
+
+        return 1;
+    }
     struct adios_var_struct * v;
+    struct adios_method_list_struct * m = fd->group->methods;
+
+    if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
+    {
+        // nothing to do so just return
+        return 0;
+    }
 
     if (!(fd->mode == adios_mode_read))
     {
@@ -528,8 +576,6 @@ static int common_adios_read (int64_t fd_p, const char * name, void * buffer
                                );
     if (v)
     {
-        struct adios_method_list_struct * m = fd->group->methods;
-
         // since can only read from one place into the buffer,
         // read from the first transport method that can
         while (m)
@@ -583,6 +629,12 @@ void adios_read_ (int64_t * fd_p, const char * name, void * buffer
 static int common_adios_set_path (int64_t fd_p, const char * path)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    if (!fd)
+    {
+        fprintf (stderr, "Invalid handle pased to adios_set_path\n");
+
+        return 1;
+    }
     struct adios_group_struct * t = fd->group;
     struct adios_var_struct * v = t->vars;
     struct adios_attribute_struct * a = t->attributes;
@@ -638,6 +690,12 @@ static int common_adios_set_path_var (int64_t fd_p, const char * path
                                      )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    if (!fd)
+    {
+        fprintf (stderr, "Invalid handle pased to adios_set_path_var\n");
+
+        return 1;
+    }
     struct adios_group_struct * t = fd->group;
     struct adios_var_struct * v = t->vars;
 
@@ -787,7 +845,19 @@ void adios_stop_calculation_ (int * err)
 static int common_adios_close (int64_t fd_p)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    if (!fd)
+    {
+        fprintf (stderr, "Invalid handle pased to adios_close\n");
+
+        return 1;
+    }
     struct adios_method_list_struct * m = fd->group->methods;
+    if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
+    {
+        // nothing to do so just return
+        return 0;
+    }
+
     struct adios_attribute_struct * a = fd->group->attributes;
     struct adios_var_struct * v = fd->group->vars;
 
