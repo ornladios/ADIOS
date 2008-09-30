@@ -28,6 +28,7 @@ int hw_makeh5 (char * filename)
     int size;
     struct adios_bp_element_struct * element = NULL;
     long long element_size = 0;
+    int i;
 
     handle = br_fopen (filename);
     if (!handle)
@@ -95,7 +96,7 @@ int hw_makeh5 (char * filename)
                         ,element->type
                         );
                 printf ("\tRanks: %u\n", element->ranks);
-                for (int i = 0; i < element->ranks; i++)
+                for (i = 0; i < element->ranks; i++)
                 {
                     printf ("\t\tDim(%d): %d(%d)[%d]\n"
                            ,i
@@ -164,12 +165,13 @@ void hw_dset (hid_t root_id,
         hid_t dataset;
         herr_t h5_status;
         h5_status = bp_getH5TypeId (type, &type_id, data);
+        int i;
 
         global_h5dims = (hsize_t *) malloc (ranks * sizeof (hsize_t));
         local_h5dims = (hsize_t *) malloc (ranks * sizeof (hsize_t));
         offset_h5dims= (hsize_t *) malloc (ranks * sizeof (hsize_t));
 
-        for (int i = 0; i < ranks; i++)
+        for (i = 0; i < ranks; i++)
         {
             global_h5dims [i] =   element->dims[i].global_bound;
             local_h5dims [i] =   element->dims [i].local_bound;
@@ -199,9 +201,10 @@ void hw_dset (hid_t root_id,
     }
     else
     {
+        int i;
         hsize_t * local_h5dims;
         local_h5dims = (hsize_t *) malloc (ranks * sizeof (hsize_t));    
-        for (int i = 0; i < ranks; i++)
+        for (i = 0; i < ranks; i++)
             local_h5dims [i] =   element->dims [i].local_bound;
         herr_t h5_status;
         h5_status = bp_getH5TypeId (type, &type_id, data);
@@ -256,6 +259,7 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
         hid_t type_id;
 
         herr_t h5_status;
+        int i;
 
         h5_status = bp_getH5TypeId (type, &type_id, data);
 
@@ -265,7 +269,7 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
         stride = (hsize_t *) malloc (rank * sizeof (hsize_t));
         count = (hsize_t *) malloc (rank * sizeof (hsize_t));
 
-        for (int i = 0; i < rank; i++)
+        for (i = 0; i < rank; i++)
         {
             global_h5dims [i] =   global_dims [i].upper_bound
                                 - global_dims [i].lower_bound
@@ -316,9 +320,10 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
     }
     else
     {
+        int i;
         hsize_t * h5dims;
         h5dims = (hsize_t *) malloc (rank * sizeof (hsize_t));    
-        for (int i = 0; i < rank; i++)
+        for (i = 0; i < rank; i++)
         {
             h5dims [i] = dims [i].use_upper_bound - dims [i].use_lower_bound + 1;
         }

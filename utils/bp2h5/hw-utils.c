@@ -684,8 +684,9 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
         count = (hsize_t *) malloc (rank * sizeof (hsize_t));
 
         if(array_dim_order_fortran == USE_FORTRAN) { 
+            int i;
             // transpose dimension order for Fortran arrays
-            for (int i = 0; i < rank; i++)
+            for (i = 0; i < rank; i++)
             {
                 int reverse_i = rank - 1 - i;
 
@@ -701,7 +702,8 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
             }
         }
         else if(array_dim_order_fortran == USE_C) {
-            for (int i = 0; i < rank; i++)
+            int i;
+            for (i = 0; i < rank; i++)
             {
                 global_h5dims [i] = global_dims[i];
 
@@ -716,7 +718,8 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
         }
 
         if(verbose >= DEBUG_INFO) {
-            for (int i = 0; i < rank; i++)
+            int i;
+            for (i = 0; i < rank; i++)
                 fprintf(stderr, "  Hyperslab index = %d local bound = %d global bound = %d start = %d\n"
                        ,i
                        ,local_h5dims[i]
@@ -761,20 +764,23 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
         h5dims = (hsize_t *) malloc (rank * sizeof (hsize_t));    
         if(array_dim_order_fortran == USE_FORTRAN) { 
             // transpose dimension order for Fortran arrays
-            for (int i = 0; i < rank; i++)
+            int i;
+            for (i = 0; i < rank; i++)
             {
                 h5dims [rank-1-i] = dims[i];
             }
         }
         else if(array_dim_order_fortran == USE_C) {
-            for (int i = 0; i < rank; i++)
+            int i;
+            for (i = 0; i < rank; i++)
             {
                 h5dims [i] = dims[i];
             }
         }
 
         if(verbose >= DEBUG_INFO) {
-            for (int i = 0; i < rank; i++) {
+            int i;
+            for (i = 0; i < rank; i++) {
                 fprintf(stderr, "  Dataspace index = %d dimension = %d \n"
                        ,i
                        ,h5dims[i]

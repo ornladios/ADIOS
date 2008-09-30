@@ -55,12 +55,11 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_bp2ascii_OBJECTS = bp2ascii-bp2ascii.$(OBJEXT) \
-	bp2ascii-hw-utils.$(OBJEXT)
+am_bp2ascii_OBJECTS = bp2ascii-bp2ascii.$(OBJEXT)
 bp2ascii_OBJECTS = $(am_bp2ascii_OBJECTS)
 am__DEPENDENCIES_1 =
-bp2ascii_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(top_builddir)/src/libadios_int.a $(am__DEPENDENCIES_1)
+bp2ascii_DEPENDENCIES = $(top_builddir)/src/libadios_int.a \
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -199,13 +198,12 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
-bp2ascii_SOURCES = bp2ascii.c \
-                 hw-utils.c
+bp2ascii_SOURCES = bp2ascii.c 
+bp2ascii_LDFLAGS = $(MXML_LDFLAGS)
+bp2ascii_CPPFLAGS = $(MXML_CPPFLAGS)
 
-bp2ascii_LDFLAGS = $(MXML_LDFLAGS) $(HDF5_LDFLAGS)
-bp2ascii_CPPFLAGS = $(MXML_CPPFLAGS) $(HDF5_CPPFLAGS)
-bp2ascii_LDADD = $(top_builddir)/src/libadios.a \
-	$(top_builddir)/src/libadios_int.a $(MXML_LIBS) -lhdf5 -lz
+#bp2ascii_LDADD = $(top_builddir)/src/libadios.a
+bp2ascii_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -291,12 +289,6 @@ bp2ascii-bp2ascii.o: bp2ascii.c
 
 bp2ascii-bp2ascii.obj: bp2ascii.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp2ascii_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bp2ascii-bp2ascii.obj `if test -f 'bp2ascii.c'; then $(CYGPATH_W) 'bp2ascii.c'; else $(CYGPATH_W) '$(srcdir)/bp2ascii.c'; fi`
-
-bp2ascii-hw-utils.o: hw-utils.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp2ascii_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bp2ascii-hw-utils.o `test -f 'hw-utils.c' || echo '$(srcdir)/'`hw-utils.c
-
-bp2ascii-hw-utils.obj: hw-utils.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp2ascii_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bp2ascii-hw-utils.obj `if test -f 'hw-utils.c'; then $(CYGPATH_W) 'hw-utils.c'; else $(CYGPATH_W) '$(srcdir)/hw-utils.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
