@@ -553,6 +553,8 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 		            hw_attr_str_ds (root_id, attribute.path, attribute.name, attribute.value);
 			    break;
 			case adios_byte:
+		            hw_attr_str_ds (root_id, attribute.path, attribute.name, attribute.value);
+			    break;
 			case adios_real:
 			case adios_double:
 			case adios_long_double:
@@ -579,13 +581,48 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 		else {
                     for (j = vars_header.count; j <var_dims_count; j++) {
                         //printf("id=%d rank=%d %llu\n",attribute.var_id,attribute.var_id,var_dims[j].offset);
- 
 		        if (attribute.var_id == var_dims[j].id) { 
-                            if (var_dims[j].rank >= 0) {
-                                printf("\tattribute %s -> id (%d): %d\n",attribute.name,attribute.var_id, var_dims[j].rank);
-                                printf("\tattribute %s -> id (%d):value (%llu)\n",attribute.name,attribute.id, var_dims[j].rank);
+                            if (var_dims[j].rank > 0) {
+                                //printf("\tattribute %s -> id (%d): %d\n",
+                                //     attribute.name,attribute.var_id, var_dims[j].rank);
+                                //printf("\tattribute %s -> id (%d):value (%llu)\n"
+                                //      ,attribute.name
+                                //      ,attribute.id
+                                //      ,var_dims[j].rank);
 		                hw_attr_num_ds (root_id, attribute.path, attribute.name
                                               ,&var_dims[j].rank,adios_long); 
+			    //case adios_byte:
+	                    }
+		            else {
+                                //printf("\tattribute %s/%s -> id (%d)\n"
+                                //      ,attribute.path
+                                //      ,attribute.name
+                                //      ,attribute.id);
+                                copy_buffer(b0,b);
+                                b0->offset = var_dims[j].offset; 
+                                adios_parse_var_data_header_v1 (b0, &var_header);
+                                if (!var_payload.payload) { 
+		                    var_payload.payload = malloc (var_header.payload_size);
+		                    adios_parse_var_data_payload_v1 (b0, &var_header, &var_payload
+				                             ,var_header.payload_size
+				    );
+                                    if (var_header.type==adios_byte || var_header.type==adios_string)
+                                        //printf("\t varname: %s %d %s\n"
+                                        //      , var_header.name
+                                        //      , var_header.type
+                                        //      , var_payload.payload);
+                                        hw_attr_str_ds (root_id, attribute.path
+                                                       ,attribute.name
+                                                       ,var_payload.payload);
+                                    else
+		                        hw_attr_num_ds (root_id, attribute.path
+                                                       ,attribute.name
+                                                       ,var_payload.payload,var_header.type);
+                                    if (var_payload.payload)
+                                        free(var_payload.payload);
+		                    //hw_attr_num_ds (root_id, attribute.path, attribute.name
+                                    //        ,var_header.type, var_payload.payload);
+	                        }
 	                    }
                          }
 #if 0 
