@@ -3418,7 +3418,9 @@ int adios_parse_config (const char * config)
         }
         else
         {
-            if (!strcasecmp (node->value.element.name, "method"))
+            if (   !strcasecmp (node->value.element.name, "transport")
+                || !strcasecmp (node->value.element.name, "method")
+               )
             {
                 if (!parseMethod (node))
                     break;
