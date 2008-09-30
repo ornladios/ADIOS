@@ -51,6 +51,8 @@ int main (int argc, char ** argv)
     int node = 0;
 
     uint64_t total;
+    int i;
+    int j;
 
     zion1 [0] = 10.0;
     zion1 [1] = 11.0;
@@ -63,8 +65,8 @@ int main (int argc, char ** argv)
     zion1 [8] = 18.0;
     zion1 [9] = 19.0;
 
-    for (int i = 0; i < 100; i++)
-        for (int j = 0; j < 26; j++)
+    for (i = 0; i < 100; i++)
+        for (j = 0; j < 26; j++)
             byte_test [i * 26 + j] = 'a' + j;
 
     MPI_Init (&argc, &argv);
@@ -120,7 +122,7 @@ printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
 
     MPI_Barrier (MPI_COMM_WORLD);
 
-    for (int i = 0; i < byte_test_length; i++)
+    for (i = 0; i < byte_test_length; i++)
             if (r_byte_test [i] != byte_test [i])
             {
                 printf ("byte_test doesn't match %d\n", i);
