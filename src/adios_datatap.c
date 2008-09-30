@@ -68,7 +68,8 @@ static char * getFixedName(char *name)
 		
     do
     {
-	for(int i = 0; i < OPLEN; i ++)
+        int i;
+	for(i = 0; i < OPLEN; i ++)
 	{
 	    //checking operator OP[i]
 	    loc = strchr(oldname, OP[i]);
