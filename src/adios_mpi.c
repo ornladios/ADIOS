@@ -1142,46 +1142,41 @@ void adios_mpi_close (struct adios_file_struct * fd
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
             {
-                if (md->rank != md->size - 1)
-                    MPI_Wait (&md->req, &md->status);
-
                 if (md->rank == 0)
                 {
-                    int ranks_sent = 1; // assume that we have sent to ourselves
-                    buffer_size = 100 * 1024; // try 100k to start
-                    buffer = malloc (buffer_size);
-                    buffer_offset = 0;
-                    int count = 0;
+                    int * index_sizes = malloc (4 * md->size);
+                    int * index_offsets = malloc (4 * md->size);
+                    char * recv_buffer = 0;
+                    uint32_t size = 0;
+                    uint32_t total_size = 0;
+                    int i;
 
-                    while (ranks_sent < md->size)
+                    MPI_Gather (&size, 1, MPI_INT
+                               ,index_sizes, 1, MPI_INT
+                               ,0, md->group_comm
+                               );
+
+                    for (i = 0; i < md->size; i++)
                     {
-                        MPI_Probe (ranks_sent, MPI_ANY_TAG, md->group_comm
-                                  ,&md->status
-                                  );
-                        MPI_Get_count (&md->status, MPI_BYTE, &count);
-                        if (buffer_size < count)
-                        {
-                            buffer_size = count;
-                            buffer = realloc (buffer, buffer_size);
-                            if (!buffer)
-                            {
-                                fprintf (stderr, "cannot allocate memory for "
-                                                 "index: %llu\n"
-                                        ,buffer_size
-                                        );
-                            }
-                        }
+                        index_offsets [i] = total_size;
+                        total_size += index_sizes [i];
+                    } 
 
-                        MPI_Recv (buffer, buffer_size, MPI_BYTE, ranks_sent
-                                 ,0, md->group_comm, &md->status
-                                 );
+                    recv_buffer = malloc (total_size);
 
-                        char * buffer_save = md->b.buff;
-                        uint64_t buffer_size_save = md->b.length;
-                        uint64_t offset_save = md->b.offset;
+                    MPI_Gatherv (&size, 0, MPI_BYTE
+                                ,recv_buffer, index_sizes, index_offsets
+                                ,MPI_BYTE, 0, md->group_comm
+                                );
 
-                        md->b.buff = buffer;
-                        md->b.length = count;
+                    char * buffer_save = md->b.buff;
+                    uint64_t buffer_size_save = md->b.length;
+                    uint64_t offset_save = md->b.offset;
+
+                    for (i = 1; i < md->size; i++)
+                    {
+                        md->b.buff = recv_buffer + index_offsets [i];
+                        md->b.length = index_sizes [i];
                         md->b.offset = 0;
 
                         adios_parse_process_group_index_v1 (&md->b
@@ -1200,12 +1195,14 @@ void adios_mpi_close (struct adios_file_struct * fd
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
-                        md->b.buff = buffer_save;
-                        md->b.length = buffer_size_save;
-                        md->b.offset = offset_save;
+                    }
+                    md->b.buff = buffer_save;
+                    md->b.length = buffer_size_save;
+                    md->b.offset = offset_save;
 
-                        ranks_sent++;
-		    }
+                    free (recv_buffer);
+                    free (index_sizes);
+                    free (index_offsets);
                 }
                 else
                 {
@@ -1215,9 +1212,13 @@ void adios_mpi_close (struct adios_file_struct * fd
                                          ,md->old_attrs_root
                                          );
 
-                    MPI_Send (buffer, buffer_offset, MPI_BYTE, 0, 0
-                             ,md->group_comm
-                             );
+                    MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
+                               ,0, md->group_comm
+                               );
+                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
+                                ,0, 0, 0, MPI_BYTE
+                                ,0, md->group_comm
+                                );
                 }
             }
 
@@ -1355,46 +1356,41 @@ void adios_mpi_close (struct adios_file_struct * fd
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
             {
-                if (md->rank != md->size - 1)
-                    MPI_Wait (&md->req, &md->status);
-
                 if (md->rank == 0)
                 {
-                    int ranks_sent = 1; // assume that we have sent to ourselves
-                    buffer_size = 100 * 1024; // try 100k to start
-                    buffer = malloc (buffer_size);
-                    buffer_offset = 0;
-                    int count = 0;
+                    int * index_sizes = malloc (4 * md->size);
+                    int * index_offsets = malloc (4 * md->size);
+                    char * recv_buffer = 0;
+                    uint32_t size = 0;
+                    uint32_t total_size = 0;
+                    int i;
 
-                    while (ranks_sent < md->size)
+                    MPI_Gather (&size, 1, MPI_INT
+                               ,index_sizes, 1, MPI_INT
+                               ,0, md->group_comm
+                               );
+
+                    for (i = 0; i < md->size; i++)
                     {
-                        MPI_Probe (ranks_sent, MPI_ANY_TAG, md->group_comm
-                                  ,&md->status
-                                  );
-                        MPI_Get_count (&md->status, MPI_BYTE, &count);
-                        if (buffer_size < count)
-                        {
-                            buffer_size = count;
-                            buffer = realloc (buffer, buffer_size);
-                            if (!buffer)
-                            {
-                                fprintf (stderr, "cannot allocate memory for "
-                                                 "index: %llu\n"
-                                        ,buffer_size
-                                        );
-                            }
-                        }
+                        index_offsets [i] = total_size;
+                        total_size += index_sizes [i];
+                    }
 
-                        MPI_Recv (buffer, buffer_size, MPI_BYTE, ranks_sent
-                                 ,0, md->group_comm, &md->status
-                                 );
+                    recv_buffer = malloc (total_size);
 
-                        char * buffer_save = md->b.buff;
-                        uint64_t buffer_size_save = md->b.length;
-                        uint64_t offset_save = md->b.offset;
+                    MPI_Gatherv (&size, 0, MPI_BYTE
+                                ,recv_buffer, index_sizes, index_offsets
+                                ,MPI_BYTE, 0, md->group_comm
+                                );
 
-                        md->b.buff = buffer;
-                        md->b.length = count;
+                    char * buffer_save = md->b.buff;
+                    uint64_t buffer_size_save = md->b.length;
+                    uint64_t offset_save = md->b.offset;
+
+                    for (i = 1; i < md->size; i++)
+                    {
+                        md->b.buff = recv_buffer + index_offsets [i];
+                        md->b.length = index_sizes [i];
                         md->b.offset = 0;
 
                         adios_parse_process_group_index_v1 (&md->b
@@ -1413,12 +1409,14 @@ void adios_mpi_close (struct adios_file_struct * fd
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
-                        md->b.buff = buffer_save;
-                        md->b.length = buffer_size_save;
-                        md->b.offset = offset_save;
+                    }
+                    md->b.buff = buffer_save;
+                    md->b.length = buffer_size_save;
+                    md->b.offset = offset_save;
 
-                        ranks_sent++;
-		    }
+                    free (recv_buffer);
+                    free (index_sizes);
+                    free (index_offsets);
                 }
                 else
                 {
@@ -1428,9 +1426,13 @@ void adios_mpi_close (struct adios_file_struct * fd
                                          ,md->old_attrs_root
                                          );
 
-                    MPI_Send (buffer, buffer_offset, MPI_BYTE, 0, 0
-                             ,md->group_comm
-                             );
+                    MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
+                               ,0, md->group_comm
+                               );
+                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
+                                ,0, 0, 0, MPI_BYTE
+                                ,0, md->group_comm
+                                );
                 }
             }
 
