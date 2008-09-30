@@ -1947,7 +1947,7 @@ static int validatePath (const struct adios_var_struct * vars
         sprintf (path_var, "%s/%s", vars->path, vars->name);
         char path_var_matches = (!strcasecmp (path_var, path));
 
-        if (var_path_len >= len)
+        if (var_path_len >= len && path_only_len > 0)
             prefix_matches = (!strncmp (vars->path, path_only, path_only_len));
         if (!prefix_matches)
             prefix_matches = (!strncmp (vars->path, path, len));
@@ -2330,16 +2330,6 @@ static int parseGroup (mxml_node_t * node)
 
                 return 0;
             }
-            if (!validatePath (new_group->vars, path))
-            {
-                fprintf (stderr, "config.xml: attribute element '%s' "
-                                 "has path '%s' that does not match "
-                                 "an existing var path or name.\n"
-                        ,name, path
-                        );
-
-                return 0;
-            }
             if (!type && value)
             {
                 type = "string";
@@ -2463,6 +2453,24 @@ static int parseGroup (mxml_node_t * node)
                 return 0;
             }
         }
+    }
+
+    // now that we have declared the whole group, validate that the
+    // paths specified in attributes refer to real things or give
+    // a warning
+    struct adios_attribute_struct * a = new_group->attributes;
+    while (a)
+    {
+        if (!validatePath (new_group->vars, a->path))
+        {
+            fprintf (stderr, "config.xml warning: attribute element '%s' "
+                             "has path '%s' that does not match "
+                             "any var path or name.\n"
+                    ,a->name, a->path
+                    );
+        }
+
+        a = a->next;
     }
 
     return 1;
