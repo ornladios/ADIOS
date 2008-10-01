@@ -459,12 +459,12 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 
 		    while (d) {
 			if (d->dimension.var_id != 0) {
-                                printf("%s %d %d\n",var_header.name,d->dimension.var_id, var_dims_count); 
+                                //printf("%s %d %d\n",var_header.name,d->dimension.var_id, var_dims_count); 
                             for (i = 0; i < var_dims_count; i++) {
                                 if (var_dims [i].id == d->dimension.var_id){ 
                                     *dims_t = var_dims [i].rank; 
                                     i = var_dims_count+1;
-                                printf("%s %d %d\n",var_header.name,d->dimension.var_id, *dims_t); 
+                                //printf("%s %d %d\n",var_header.name,d->dimension.var_id, *dims_t); 
            
 			        }
 			    }
