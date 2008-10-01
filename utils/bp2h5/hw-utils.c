@@ -388,6 +388,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 		    var_dims [var_dims_count].offset = 0;
 		    for (j=0; j<var_dims_count;j++) {
 	                if (attribute.var_id == var_dims [j].id) {
+			    var_dims [var_dims_count].id = attribute.id;
 			    var_dims [var_dims_count].rank = var_dims [j].rank;
 			    var_dims [var_dims_count].offset = var_dims [j].offset;
                             //printf("attribute: %s  vid= %llu rank: %llu\n",attribute.name,
@@ -458,9 +459,13 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 
 		    while (d) {
 			if (d->dimension.var_id != 0) {
+                                printf("%s %d %d\n",var_header.name,d->dimension.var_id, var_dims_count); 
                             for (i = 0; i < var_dims_count; i++) {
                                 if (var_dims [i].id == d->dimension.var_id){ 
-                                    *dims_t = var_dims [i].rank; i = var_dims_count+1;
+                                    *dims_t = var_dims [i].rank; 
+                                    i = var_dims_count+1;
+                                printf("%s %d %d\n",var_header.name,d->dimension.var_id, *dims_t); 
+           
 			        }
 			    }
 			}
@@ -483,6 +488,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 			    for (i = 0; i < var_dims_count; i++) {
                                 if (var_dims [i].id == d->global_dimension.var_id)
                                     *dims_t = var_dims [i].rank;
+                                    i = var_dims_count+1;
 			    }
 			}
 			else
@@ -502,6 +508,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 		            for (i = 0; i < var_dims_count; i++) {
                                 if (var_dims [i].id == d->local_offset.var_id)
                                     *dims_t = var_dims [i].rank;
+                                    i = var_dims_count+1;
                             }
                         }
                         else
