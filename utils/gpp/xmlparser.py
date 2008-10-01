@@ -264,26 +264,32 @@ def getVarlistFromXML(xmlFile):
             #items[0] = items[0]+line
             items=["",""]
             processnode(nodelist,glanguage,coord_comm,coord_var,time_var)
-            line = sizeformular[0] 
+
+            if(glanguage==1):
+               if (coord_comm == ''):
+                  line="call adios_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ 'mpi_comm_self, adios_err)\n'
+               else:
+                  line="call adios_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ coord_comm+ ', adios_err)\n'
+            else:
+               if (coord_comm == ''):
+                   line="adios_group_size (adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ 'mpi_comm_self);\n'
+               else:
+                   line="adios_group_size (adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ coord_comm + ');\n'
+            items[0]=line+items[0]
+            items[1]=line+items[1]
+            var_gname_dict={}
+            line = sizeformular[0]
             if (glanguage == 1): 
 		for i in range(1,len(sizeformular)):
                     line =line +' &\n                + '+sizeformular[i]
+                items[0]="adios_groupsize = " + line+"\n"+items[0]
             elif (glanguage == 2): 
 		for i in range(1,len(sizeformular)):
                     line =line +' \\\n                + '+sizeformular[i]
-            line = "adios_groupsize = "+line  
-            if(glanguage==1):
-               if (coord_comm == ''):
-                  line=line+"\ncall adios_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ 'mpi_comm_self, adios_err)\n'
-               else:
-                  line=line+"\ncall adios_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ coord_comm+ ', adios_err)\n'
-            else:
-               if (coord_comm == ''):
-                   line=line+";\nadios_group_size (adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ 'mpi_comm_self);\n'
-               else:
-                   line=line+";\nadios_group_size (adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ coord_comm + ');\n'
-            var_gname_dict={}
+                items[0]="adios_groupsize = " + line+";\n"+items[0]
+
             language_group_dict[gname]=glanguage
+             
             variables[str(gname)]=items
             sizestr[str(gname)] = line
             sizeformular=[]
