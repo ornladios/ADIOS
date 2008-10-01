@@ -5,22 +5,22 @@
 
 <var name="myid" path="/" type="integer"  />
 <var name="nx" path="/" type="integer"  />
-<var name="nx+1" path="/" type="integer"   copy-on-write="yes"/>
+<var name="nx+1" path="/" type="integer"   />
 <var name="ny" path="/" type="integer"  />
-<var name="ny+1" path="/" type="integer"   copy-on-write="yes"/>
+<var name="ny+1" path="/" type="integer"   />
 <var name="nz" path="/" type="integer"  />
-<var name="nz+1" path="/" type="integer"   copy-on-write="yes"/>
+<var name="nz+1" path="/" type="integer"   />
 <var name="nez" path="/" type="integer"  />
 <var name="nnu" path="/" type="integer"  />
-<var name="nnu+1" path="/" type="integer"   copy-on-write="yes"/>
+<var name="nnu+1" path="/" type="integer"   />
 <var name="nnc" path="/" type="integer"  />
-<var name="ij_ray_dim" path="/" type="integer"   gname="my_j_ray_dim"/> <!-- my_j_ray_dim -->
-<var name="ik_ray_dim" path="/" type="integer"   gname="my_k_ray_dim"/> <!-- my_k_ray_dim -->
+<var name="ij_ray_dim" path="/" type="integer"   gwrite="my_j_ray_dim"/> <!-- my_j_ray_dim -->
+<var name="ik_ray_dim" path="/" type="integer"   gwrite="my_k_ray_dim"/> <!-- my_k_ray_dim -->
 <var name="mpi_comm_per_hyperslab_group" path="/" type="integer"/>
 <var name="j_ray_min" path="/" type="integer"/> 
-<var name="j_ray_min-1" path="/" type="integer"   copy-on-write="yes"/> 
+<var name="j_ray_min-1" path="/" type="integer"   /> 
 <var name="k_ray_min" path="/" type="integer"  /> 
-<var name="k_ray_min-1" path="/" type="integer"   copy-on-write="yes"/> 
+<var name="k_ray_min-1" path="/" type="integer"   /> 
 
 <!-- /mesh -->
 
@@ -33,7 +33,7 @@
 
 <!-- Problem Cycle and Time -->
 <var name="time" path="/mesh" type="double"/>
-<var name="cycle" path="/mesh" type="integer" gname="ncycle"/> <!-- var name: ncycle -->
+<var name="cycle" path="/mesh" type="integer" gwrite="ncycle"/> <!-- var name: ncycle -->
 <var name="nz_hyperslabs" path="/mesh" type="integer"/>
 <var name="my_hyperslab_group" path="/mesh" type="integer"/>
 <var name="nz_hyperslab_width" path="/mesh" type="integer"  />
