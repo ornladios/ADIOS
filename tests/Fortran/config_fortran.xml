@@ -15,6 +15,8 @@
     <var name="istep2" type="integer"/>
     <var name="istep3" type="integer"/>
 
+    <var name="str" type="string"/>
+
     <attribute name="units" path="/abc/me/" value="m/s"/>
     <attribute name="units1" path="/abc/me" value="m/s"/>
     <attribute name="timestep1" path="/" var="istep1"/>
@@ -22,7 +24,7 @@
     <attribute name="timestep3" path="/abc/" var="istep3"/>
   </adios-group>
 
-  <method method="POSIX" group="restart"/>
+  <method method="MPI" group="restart"/>
 
   <buffer size-MB="5" allocate-time="now"/>
 

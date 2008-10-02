@@ -43,6 +43,7 @@ program adios_test
     call test_write (group, filename, group_comm, small_int, big_int, small_real, big_real, z_size, z_array)
 
     call MPI_Barrier (MPI_COMM_WORLD, ierr)
+write (*,*) "write completed"
 
     call test_read (group, filename, group_comm, r_small_int, r_big_int, r_small_real, r_big_real, r_z_size, r_z_array)
 
@@ -111,6 +112,8 @@ subroutine test_write (group, filename, group_comm, small_int, big_int, small_re
     call adios_write (handle, "istep2"//char(0), istep2, err)
     call adios_write (handle, "istep3"//char(0), istep3, err)
 
+    call adios_write (handle, "str"//char(0), trim('abc')//char(0), err)
+
     call adios_close (handle, err)
 
 end subroutine test_write
@@ -128,6 +131,7 @@ subroutine test_read (group, filename, group_comm, small_int, big_int, small_rea
     integer, intent(inout) :: a_size
     real, intent(out) :: a_array (a_size)
 
+    integer*8 :: group_size = 0
     integer*8 :: total_size
     integer :: err
 
@@ -138,13 +142,17 @@ subroutine test_read (group, filename, group_comm, small_int, big_int, small_rea
     integer*8 :: handle
     integer*8 :: buffer_size
 
+    character (len=40) :: str
+
+    str = '1234567890123456789012345678901234567890'
+
     istep1 = 11
     istep2 = 22
     istep3 = 33
 
     call adios_open (handle, trim(group)//char(0), trim(filename)//char(0), "r"//char(0), err)
 
-    call adios_group_size (handle, 0, total_size, group_comm, err)
+    call adios_group_size (handle, group_size, total_size, group_comm, err)
     buffer_size = 4
     call adios_read (handle, "small_int"//char(0), small_int, buffer_size, err)
     buffer_size = 8
@@ -158,6 +166,10 @@ subroutine test_read (group, filename, group_comm, small_int, big_int, small_rea
     buffer_size = 4 * a_size
     call adios_read (handle, "zelectron0"//char(0), a_array, buffer_size, err)
 
+    !call adios_read (handle, "str"//char(0), str, err)
+
     call adios_close (handle, err)
+
+    !write (*,*) "read str: ", str
 
 end subroutine test_read
