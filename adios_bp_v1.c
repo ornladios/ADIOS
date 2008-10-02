@@ -368,20 +368,6 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                             data_size = adios_get_type_size ((*root)->type, "");
                         }
 
-                        data = malloc (data_size + 1);
-                        ((char *) data) [data_size] = '\0';
-
-                        if (!data)
-                        {
-                            fprintf (stderr, "cannot allocate %d bytes to "
-                                             "copy scalar %s\n"
-                                    ,data_size
-                                    ,(*root)->var_name
-                                    );
-
-                            return 1;
-                        }
-
                         switch ((*root)->type)
                         {
                             case adios_byte:
@@ -395,15 +381,45 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                             case adios_real:
                             case adios_double:
                             case adios_long_double:
-                            case adios_string:
                             case adios_complex:
                             case adios_double_complex:
+                                data = malloc (data_size);
+
+                                if (!data)
+                                {
+                                    fprintf (stderr, "cannot allocate %d bytes "
+                                                     "to copy scalar %s\n"
+                                            ,data_size
+                                            ,(*root)->var_name
+                                            );
+
+                                    return 1;
+                                }
+
+                                memcpy (data, (b->buff + b->offset), data_size);
+                                b->offset += data_size;
+                                break;
+
+                            case adios_string:
+                                data = malloc (data_size + 1);
+
+                                if (!data)
+                                {
+                                    fprintf (stderr, "cannot allocate %d bytes "
+                                                     "to copy scalar %s\n"
+                                            ,data_size
+                                            ,(*root)->var_name
+                                            );
+
+                                    return 1;
+                                }
+
+                                ((char *) data) [data_size] = '\0';
                                 memcpy (data, (b->buff + b->offset), data_size);
                                 b->offset += data_size;
                                 break;
 
                             default:
-                                free (data);
                                 data = 0;
                                 break;
                         }

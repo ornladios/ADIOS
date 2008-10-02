@@ -4412,6 +4412,8 @@ static uint16_t adios_calc_var_characteristics_overhead
     switch (v->type)
     {
         case adios_string:   // nothing for strings
+            overhead += 1; // id
+            overhead += 2; // size
             break;
 
         default:   // the 12 numeric types
@@ -5119,6 +5121,9 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             v_index->characteristics_count = 1;
             v_index->characteristics_allocated = 1;
             v_index->characteristics [0].offset = v->write_offset;
+            v_index->characteristics [0].min = 0;
+            v_index->characteristics [0].max = 0;
+            v_index->characteristics [0].value = 0;
             v_index->characteristics [0].dims.count = 0;
 
             uint64_t size = adios_get_type_size (v->type, v->data);
@@ -5553,6 +5558,16 @@ int adios_write_index_v1 (char ** buffer
                         index_size += 1;
                         var_size += 1;
                         characteristic_set_length += 1;
+                        if (vars_root->type == adios_string)
+                        {
+                            uint16_t len = (uint16_t) size;
+                            buffer_write (buffer, buffer_size, buffer_offset
+                                         ,&len, 2
+                                         );
+                            index_size += 2;
+                            var_size += 2;
+                            characteristic_set_length += 2;
+                        }
                         buffer_write (buffer, buffer_size, buffer_offset
                                      ,vars_root->characteristics [i].value, size
                                      );

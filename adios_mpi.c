@@ -1246,7 +1246,13 @@ void adios_mpi_close (struct adios_file_struct * fd
                                );
             }
 
-            free (buffer);
+            if (buffer)
+            {
+                free (buffer);
+                buffer = 0;
+                buffer_size = 0;
+                buffer_offset = 0;
+            }
 
             adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
             adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
