@@ -588,8 +588,8 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 		else {
                     for (j = vars_header.count; j <var_dims_count; j++) {
                         //printf("id=%d rank=%d %llu\n",attribute.var_id,attribute.var_id,var_dims[j].offset);
-		        if (attribute.var_id == var_dims[j].id) { 
-                            if (var_dims[j].rank > 0) {
+		       if (attribute.id== var_dims[j].id) { 
+                            if (var_dims[j].rank> 0) {
                                 //printf("\tattribute %s -> id (%d): %d\n",
                                 //     attribute.name,attribute.var_id, var_dims[j].rank);
                                 //printf("\tattribute %s -> id (%d):value (%llu)\n"
