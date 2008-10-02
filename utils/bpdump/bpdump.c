@@ -198,7 +198,8 @@ int main (int argc, char ** argv)
                    && !strcasecmp (dump.dump_var, var_header.name)
                )
             {
-                var_payload.payload = malloc (var_header.payload_size);
+                // add one for string null terminators
+                var_payload.payload = malloc (var_header.payload_size + 1);
                 adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
                                                 ,var_header.payload_size
                                                 );
