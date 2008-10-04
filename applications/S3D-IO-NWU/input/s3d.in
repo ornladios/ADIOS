@@ -1,0 +1,74 @@
+==========================================================================================
+MODE
+==========================================================================================
+0                   - 0 = run DNS code, 1 = post-process DNS results     (mode)
+==========================================================================================
+GRID DIMENSION PARAMETERS
+==========================================================================================
+200                 - global number of grid points in the x-direction    (nx_g)
+100                 - global number of grid points in the y-direction    (ny_g)
+50                  - global number of grid points in the z-direction    (nz_g)
+4                   - number of processors in x-direction                (npx)
+2                   - number of processors in y-direction                (npy)
+2                   - number of processors in z-direction                (npz)
+==========================================================================================
+RUN-TIME PARAMETERS
+==========================================================================================
+0                   - 0 for write output to screen, 1 for write to file  (i_write)
+0                   - 0 for new run, 1 for restart                       (i_restart)
+10                  - ending time step                                   (i_time_end)
+1                   - frequency to save fields in restart files          (i_time_save)
+1.0e+5              - time period to save fields in restart files        (time_save_inc)
+==========================================================================================
+GEOMETRY PARAMETERS
+==========================================================================================
+pressure_wave_test        - title of run, sets initialiation of flow field     (run_title)
+1                   - 0 for no x-direction dependence, 1 for so          (vary_in_x)
+1                   - 0 for no y-direction dependence, 1 for so          (vary_in_y)
+1                   - 0 for no z-direction dependence, 1 for so          (vary_in_z)
+0                   - 0 for non-periodic in x-direction, 1 for periodic  (periodic_x)
+0                   - 0 for non-periodic in y-diretcion, 1 for periodic  (periodic_y)
+0                   - 0 for non-periodic in z-dirtecion, 1 for periodic  (periodic_z)
+0                   - 0 for no turbulence, 1 for isotropic turbulence    (i_turbulence)
+1                   - BC at x=0 boundary; 1 nonreflecting, 0 hard inflow (nrf_x0)
+1                   - BC at x=L boundary; 1 nonreflecting, 0 hard inflow (nrf_xl)
+1                   - BC at y=0 boundary; 1 nonreflecting, 0 hard inflow (nrf_y0)
+1                   - BC at y=L boundary; 1 nonreflecting, 0 hard inflow (nrf_yl)
+1                   - BC at z=0 boundary; 1 nonreflecting, 0 hard inflow (nrf_z0)
+1                   - BC at z=L boundary; 1 nonreflecting, 0 hard inflow (nrf_zl)
+0.2                 - fix factor for pressure drift                      (relax_ct)
+==========================================================================================
+PHYSICAL PARAMETERS
+==========================================================================================
+0.0                 - minimum value of grid in x-direction in cm         (xmin)
+0.0                 - minimum value of grid in y-direction in cm         (ymin)
+0.0                 - minimum value of grid in z-direction in cm         (zmin)
+0.1                 - maximum value of grid in x-direction in cm         (xmax)
+0.1                 - maximum value of grid in y-direction in cm         (ymax)
+0.1                 - minimum value of grid in z-direction in cm         (zmax)
+0.001               - Mach number where re_real/mach_no = re_acoustic    (mach_no)
+100.0               - real convective Reynolds number                    (re_real)
+0.708               - Prandtl number                                     (pr)
+==========================================================================================
+NUMERICS PARAMETERS
+==========================================================================================
+1                   - 0 for no reaction, 1 for reaction                    (i_react)
+8                   - order of spatial derivatives: 6th or 8th only        (iorder)
+10                  - frequency to monitor min/max and active              (i_time_mon)
+-1                  - frequency to check spatial resolution                (i_time_res)
+-1                  - frequency to write tecplot file                      (i_time_tec)
+10                  - order of spatial filter                              (i_filter)
+10                  - frequency to filter solution vector                  (i_time_fil)
+==========================================================================================
+REQUIRED REFERENCE VALUES
+==========================================================================================
+1.4                 - reference ratio of specific heats                    (g_ref)
+347.2               - reference speed of sound (m/s)                       (a_ref)
+300.0               - freestream temperature (K)                           (to)
+1.1766              - reference density (kg/m^3)                           (rho_ref)
+26.14e-3            - reference thermal conductivity (W/m-s)               (lambda_ref)
+==========================================================================================
+flag to enable/disable MPI I/O
+===============================================================================
+4                   - I/O method: 0:Fortran I/O, 1:MPI-IO, 2:PnetCDF, 3:HDF5 4:ADIOS
+

@@ -1,0 +1,24 @@
+# optimized runs
+
+directives = -DCPQ -DSAVEFILEINSEPDIR -DSYSTEMCALLWONTWORK
+
+OPTS = -g
+OPTS = -fast
+
+COMPILE_F90  = mpif90 -byteswapio ${OPTS} -r8 -c -Mpreprocess $(directives) -o $@ 
+COMPILE_F77  = mpif90 -byteswapio ${OPTS} -r8 -c -Mpreprocess -o $@
+COMPILE_C  = mpicc ${OPTS} -c -Mpreprocess -o $@
+
+LINK         = mpif90 -byteswapio ${OPTS} -r8
+
+# run "module load hdf5/1.6.5_par_pgi625" on ewok to load HDF5
+BUILD_IO_METHODS = -D_BUILD_HDF5_F -D_BUILD_PNETCDF_F -D_BUILD_ADIOS_F
+BUILD_IO_METHODS = -D_BUILD_HDF5_F -D_BUILD_ADIOS_F
+
+PNETCDF_DIR = ${HOME}/PnetCDF/ewok
+PNETCDF_LIB = -L${PNETCDF_DIR}/lib -lpnetcdf
+PNETCDF_LIB =
+
+ADIOS_LIB   = -L/ccs/home/ge1/work/ewok/lib -ladios -lmxml
+ADIOS_LIB   = -L${HOME}/ADIOS/svn-ewok/ADIOS/lib -ladios -lmxml
+IO_LIB      = $(HDF5_FLIB) $(PNETCDF_LIB) $(ADIOS_LIB)

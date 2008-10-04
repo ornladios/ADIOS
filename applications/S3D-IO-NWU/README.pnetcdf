@@ -1,0 +1,89 @@
+Source file for parallel netCDF I/O method is in
+    source/modules/pnetcdf_m.f90
+Two subroutines are :
+    pnetcdf_write() and pnetcdf_read()
+
+
+
+To compile and link a parallel netcdf library, a pnetcdf library is
+available in ~wkliao/PnetCDF
+
+To check the datasets and attributes saved in a netcdf file, use command
+% ncdump -c netcdf_file_name.nc
+
+A serial netcdf library is built in ~wkliao/NetCDF. The command ncdump is
+available in ~wkliao/NetCDF/bin
+
+An example of using ncdump is given below.
+
+jaguar10 ::run(12:59am) #423% ~wkliao/NetCDF/bin/ncdump -c ../data/pressure_wave_test.1.000E-06.field.nc
+
+netcdf pressure_wave_test.0.000E+00.field {
+dimensions:
+        nx_g = 100 ;
+        ny_g = 100 ;
+        nz_g = 50 ;
+        number_of_species = 11 ;
+        number_of_velocity_components = 3 ;
+variables:
+        double yspecies(number_of_species, nz_g, ny_g, nx_g) ;
+                yspecies:specie_name_01 = "Y-H2              " ;
+                yspecies:specie_name_02 = "Y-O2              " ;
+                yspecies:specie_name_03 = "Y-O               " ;
+                yspecies:specie_name_04 = "Y-OH              " ;
+                yspecies:specie_name_05 = "Y-H2O             " ;
+                yspecies:specie_name_06 = "Y-H               " ;
+                yspecies:specie_name_07 = "Y-HO2             " ;
+                yspecies:specie_name_08 = "Y-CO              " ;
+                yspecies:specie_name_09 = "Y-CO2             " ;
+                yspecies:specie_name_10 = "Y-HCO             " ;
+                yspecies:specie_name_11 = "Y-N2              " ;
+        double temp(nz_g, ny_g, nx_g) ;
+        double pressure(nz_g, ny_g, nx_g) ;
+        double u(number_of_velocity_components, nz_g, ny_g, nx_g) ;
+                u:velocity_component_1 = "u" ;
+                u:velocity_component_2 = "v" ;
+                u:velocity_component_3 = "w" ;
+
+// global attributes:
+                :number_of_elements_in_reaction_mechansim = 4 ;
+                :number_of_species_in_reaction_mechansim = 11 ;
+                :number_of_steps_in_reaction_mechansims = 21 ;
+                :number_of_reaction_third-body_reactions = 7 ;
+                :element_name_1 = "C               " ;
+                :element_name_2 = "H               " ;
+                :element_name_3 = "O               " ;
+                :element_name_4 = "N               " ;
+                :molecular_weight:H2 = 0.00201594 ;
+                :molecular_weight:O2 = 0.0319988 ;
+                :molecular_weight:O = 0.0159994 ;
+                :molecular_weight:OH = 0.01700737 ;
+                :molecular_weight:H2O = 0.01801534 ;
+                :molecular_weight:H = 0.00100797 ;
+                :molecular_weight:HO2 = 0.03300677 ;
+                :molecular_weight:CO = 0.02801055 ;
+                :molecular_weight:CO2 = 0.04400995 ;
+                :molecular_weight:HCO = 0.02901852 ;
+                :molecular_weight:N2 = 0.0280134 ;
+                :universal_gas_constant = 8.314 ;
+                :freestream_temperature = 300. ;
+                :reference_ratio_of_specifice_heats = 1.4 ;
+                :reference_speed_of_sound = 347.2 ;
+                :reference_density = 1.1766 ;
+                :reference_conductivity = 0.02614 ;
+                :reference_temperature = 120. ;
+                :reference_pressure = 141836.588544 ;
+                :standard_atmospheric_pressure = 101325. ;
+                :reference_time = 1.29889001100892e-05 ;
+                :reference_specific_heat = 1004.56533333333 ;
+                :reference_length = 0.00450974611822298 ;
+                :reference_viscosity = 1.84230128055384 ;
+                :acoustic_Reynolds_number = 100000. ;
+                :Mach_number = 0.001 ;
+                :convective_Reynolds_number = 100. ;
+                :time = 0. ;
+                :tstep = 0. ;
+                :time_save = 100000. ;
+                :pout = 0. ;
+}
+

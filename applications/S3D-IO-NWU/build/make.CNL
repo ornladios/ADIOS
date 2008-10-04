@@ -1,0 +1,14 @@
+# optimized runs
+
+directives = -DCPQ -DSAVEFILEINSEPDIR -DSYSTEMCALLWONTWORK
+
+COMPILE_F90  = ftn -byteswapio -fast -r8 -c -Mpreprocess $(directives) -o $@ 
+COMPILE_F77  = ftn -byteswapio -fast -r8 -c -Mpreprocess -o $@
+COMPILE_C  = cc -fast -c -Mpreprocess -o $@
+
+LINK         = ftn -byteswapio -fast -r8
+
+# run "module load hdf5/1.6.5_par" on Jaguar to load HDF5
+BUILD_HDF5_PNETCDF = -D_BUILD_HDF5_F -D_BUILD_PNETCDF_F
+PNETCDF_DIR        = /ccs/home/wkliao/PnetCDF
+IO_LIB = -L${PNETCDF_DIR}/lib -lpnetcdf $(HDF5_FLIB) -L/ccs/home/wkliao/ROMIO/lib -lmpio

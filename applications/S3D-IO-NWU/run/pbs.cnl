@@ -1,0 +1,22 @@
+#!/usr/bin/csh
+#PBS -A CSC025ewk
+#PBS -j oe
+#PBS -m ea
+#PBS -M wkliao@ece.northwestern.edu
+#PBS -V
+#PBS -N s3d_io.27000
+#PBS -l walltime=0:10:00,size=27000
+#PBS -q batch
+
+setenv MPICH_MSGS_PER_PROC     32768
+setenv MPICH_ALLTOALLVW_FCSIZE $PBS_NNODES
+setenv MPICH_FAST_MEMCPY       1
+setenv MPICH_NO_RECORD_LOCKING 1
+setenv MPICH_PTL_OTHER_EVENTS  32768
+setenv MPICH_PTL_UNEX_EVENTS   80000
+setenv MPICH_UNEX_BUFFER_SIZE  128M
+
+cd $PBS_O_WORKDIR
+
+aprun -n $PBS_NNODES s3d_f90.x
+

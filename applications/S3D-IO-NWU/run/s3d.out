@@ -1,0 +1,189 @@
+yod:  -sz is 1, so -proc is reset from VN to 0
+ ================================================================================
+ Hello, and welcome to S3D!
+ ================================================================================
+ --------------------------------------------------------------------------------
+ this run started at:
+
+ date = 01/16/2007
+ time = 17:56:58
+ --------------------------------------------------------------------------------
+ initializing chemkin module...
+
+ opening chemkin link file...
+ setting chemkin work array lengths...
+ allocating chemkin work arrays...
+ filling chemkin work arrays based on chemkin link file...
+
+ CKLIB: CHEMKIN-III GAS-PHASE CHEMICAL KINETICS LIBRARY,
+ DOUBLE PRECISION Vers. 5.36 2000/12/15      
+ Copyright 1995, Sandia Corporation.
+ The U.S. Government retains a limited license in this software.
+
+
+ number of elements in reaction mechansim =    4
+ number of species in reaction mechansim  =   11
+ number of steps in reaction mechansims   =   21
+
+ the following was extracted from the ../input/chem.asc file:
+
+ element names are as follows:
+ index   name
+   1     C               
+   2     H               
+   3     O               
+   4     N               
+
+ species names are as follows:
+ index   name
+   1     H2              
+   2     O2              
+   3     O               
+   4     OH              
+   5     H2O             
+   6     H               
+   7     HO2             
+   8     CO              
+   9     CO2             
+  10     HCO             
+  11     N2              
+
+ species molecular weights are as follows:
+ index   name  value (kg/mol)
+   1     H2                2.01594E-03
+   2     O2                3.19988E-02
+   3     O                 1.59994E-02
+   4     OH                1.70074E-02
+   5     H2O               1.80153E-02
+   6     H                 1.00797E-03
+   7     HO2               3.30068E-02
+   8     CO                2.80105E-02
+   9     CO2               4.40100E-02
+  10     HCO               2.90185E-02
+  11     N2                2.80134E-02
+
+ --------------------------------------------------------------------------------
+ initializing param module...
+
+ number of elements in reaction mechansim =    4
+ number of species in reaction mechansim  =   11
+ number of steps in reaction mechansims   =   21
+
+ number of reaction third-body reactions =    7
+ --------------------------------------------------------------------------------
+ initializing topology module...
+
+ --------------------------------------------------------------------------------
+ initializing reference module...
+
+ the various reference values are as follows:
+
+   universal gas constant (J/mol-K)   =  8.31400E+00
+   freestream temperature (K)         =  3.00000E+02
+   reference ratio of specifice heats =  1.40000E+00
+   reference speed of sound (m/s)     =  3.47200E+02
+   reference density (kg/m^3)         =  1.17660E+00
+   reference conductivity (W/m-K)     =  2.61400E-02
+   reference temperature (K)          =  1.20000E+02
+   reference pressure (Pa)            =  1.41837E+05
+   standard atmospheric pressure (Pa) =  1.01325E+05
+   reference time (s)                 =  1.29889E-05
+   reference specific heat (J/kg-K)   =  1.00457E+03
+   reference length (m)               =  4.50975E-03
+   reference viscosity (Pa-s)         =  1.84230E+00
+   acoustic Reynolds number           =  1.00000E+05
+   Mach number                        =  1.00000E-03
+   convective Reynolds number         =  1.00000E+02
+
+ --------------------------------------------------------------------------------
+ initializing derivative module...
+
+ --------------------------------------------------------------------------------
+ initializing thermchem module...
+
+   ***WARNING***
+    Table T is lower than valid range for polynomial on species  1
+    polynomial lower temperature limit:   300.0
+    cp&h table lower temperature limit:   250.0
+
+   ***WARNING***
+    Table T is lower than valid range for polynomial on species  2
+    polynomial lower temperature limit:   300.0
+    cp&h table lower temperature limit:   250.0
+
+   ***WARNING***
+    Table T is lower than valid range for polynomial on species  3
+    polynomial lower temperature limit:   300.0
+    cp&h table lower temperature limit:   250.0
+
+   ***WARNING***
+    Table T is lower than valid range for polynomial on species  5
+    polynomial lower temperature limit:   300.0
+    cp&h table lower temperature limit:   250.0
+
+   ***WARNING***
+    Table T is lower than valid range for polynomial on species  6
+    polynomial lower temperature limit:   300.0
+    cp&h table lower temperature limit:   250.0
+
+   ***WARNING***
+    Table T is lower than valid range for polynomial on species  8
+    polynomial lower temperature limit:   300.0
+    cp&h table lower temperature limit:   250.0
+
+   ***WARNING***
+    Table T is lower than valid range for polynomial on species  9
+    polynomial lower temperature limit:   300.0
+    cp&h table lower temperature limit:   250.0
+
+   ***WARNING***
+    Table T is lower than valid range for polynomial on species 10
+    polynomial lower temperature limit:   300.0
+    cp&h table lower temperature limit:   250.0
+
+   ***WARNING***
+    Table T is lower than valid range for polynomial on species 11
+    polynomial lower temperature limit:   300.0
+    cp&h table lower temperature limit:   250.0
+
+ --------------------------------------------------------------------------------
+ initializing grid module...
+
+ --------------------------------------------------------------------------------
+ initializing boundary condition module...
+
+ --------------------------------------------------------------------------------
+ initializing variables...
+
+ initializing pressure wave test...
+
+ --------------------------------------------------------------------------------
+ continuing with initialization...
+
+ initialization completed for time =  0.00E+00
+ --------------------------------------------------------------------------------
+ generating active.in file...
+
+ --------------------------------------------------------------------------------
+       1  0.000E+00  0.000E+00  0.000E+00     0.00    0.00
+ ================================================================================
+ Timestepping began at: 
+ date = 01/16/2007
+ time = 17:56:58
+ Timestepping ended at: 
+ date = 01/16/2007
+ time = 17:56:58
+ ================================================================================
+ --------------------------------------------------------------------------------
+ S3D started at:
+
+ date = 01/16/2007
+ time = 17:56:58
+
+ S3D ended at:
+
+ date = 01/16/2007
+ time = 17:56:58
+ ================================================================================
+ Program finished normally, goodbye!
+ ================================================================================

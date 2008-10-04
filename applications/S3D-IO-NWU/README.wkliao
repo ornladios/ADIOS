@@ -1,0 +1,28 @@
+There are four additional I/O methods implemented:
+  1. MPI collective I/O method in source/modules/mpi_io_m.f90
+  2. Parallel netCDF method in source/modules/pnetcdf_m.f90
+  3. HDF5 method in source/modules/hdf5_m.f90
+  4. ADIOS method in source/modules/adios_m.f90
+
+The I/O method is enabled by the last line of input file input/s3d.in
+
+When using these methods, there will be only one file created per checkpoint.
+For the MPI collective I/O, pnetCDF, and HDF5 methods, at each checkpoint,
+all variables are saved in a single file in its global cacnonical order.
+
+File extensions are added to the filenames for these I/O methods:
+ .mpi, .nc, .h5, .bp are for MPI-IO, PnetCDF, HDF5, and ADIOS, respectively.
+
+
+A separate MPI-IO library s built with a few optimizations for MPI collective
+I/O enhancement particularly for Jaguar. The library is located in
+   /ccs/home/wkliao/ROMIO/lib on Jaguar.
+Please check the make file in build/make.CNL for compiling and linking.
+
+To run on Ewok, please check the make file in build/make.ewok.
+
+Please send questions to:
+
+Wei-keng Liao
+wkliao@ece.northwestern.edu
+Oct. 3, 2008

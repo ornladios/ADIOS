@@ -1,0 +1,20 @@
+H2                fuel name
+1.0               equivalence ratio
+1.0               pressure in atm
+2000.0            maximum temperature in K (overall for zero-dimensions)
+300.0             minumum temperature in K (multi-dimensions only)
+0.1               variance for temperature gaussians (multi-dimensions only)
+0.333             shift factor for temperature gaussian (multi-dimensions only)
+
+
+
+
+Notes:
+
+1. The variance is scaled with a characteristic (longest) length in the domain.
+   This results in a fixed ratio bewteen the width of the gaussian profile and
+   the size of the domain.
+2. The shift factor is the fractional location of the peak gaussian in the domain.
+   The value should always be 0 < shift factor < 1.0. A value of 0.5 will place the
+   peak in the center of the domain. The fractional location is the same for all
+   coordinate directions in multi-dimensions.
