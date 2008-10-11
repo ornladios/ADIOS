@@ -4,8 +4,8 @@
 #export LDFLAGS='-L/home/gflofst/software/pnetcdf/lib'
 
 #ewok
-export CC=mpicc
-./configure --prefix=/ccs/home/ge1/work/ewok --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/ewok --with-hdf5=/apps/HDF5/1.6.5/ewok_par/pgi625v2 --with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
+#export CC=mpicc
+#./configure --prefix=/ccs/home/ge1/work/ewok --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/ewok --with-hdf5=/apps/HDF5/1.6.5/ewok_par/pgi625v2 --with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
 
 #jaguar
 #export CC=cc
@@ -14,3 +14,7 @@ export CC=mpicc
 #export CC=mpicc
 #export FC=mpif90
 #./configure --prefix=/ccs/home/ge1/work/jaguar --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/jaguar --with-hdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par --with-hdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" --with-netcdf=/sw/xt/netcdf/3.6.2/sles9.2_pgi7.0.7
+
+#lens
+export CC=mpicc
+./configure --prefix=/ccs/home/ge1/work/lens --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/lens --with-hdf5=/sw/analysis-x64/hdf5/1.6.7/sl5.0_pgi7.1.5_ompi1.2.6 --with-netcdf=/sw/analysis-x64/netcdf/3.6.2/sl5.0_pgi7.1.5
