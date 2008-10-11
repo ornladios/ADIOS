@@ -748,15 +748,17 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
         MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE
                        ,&md->status
                        );
-        if (md->status.count != fd->bytes_written)
+        int count;
+        MPI_Get_count (&md->status, MPI_BYTE, &count);
+        if (count != fd->bytes_written)
         {
             fprintf (stderr, "a:MPI method tried to write %llu, "
-                             "only wrote %llu\n"
+                             "only wrote %d\n"
                     ,fd->bytes_written
-                    ,md->status.count
+                    ,count
                     );
         }
-        fd->base_offset += md->status.count;
+        fd->base_offset += count;
         fd->offset = 0;
         fd->bytes_written = 0;
         adios_shared_buffer_free (&md->b);
@@ -809,15 +811,17 @@ void adios_mpi_write (struct adios_file_struct * fd
         MPI_File_write (md->fh, fd->buffer, fd->bytes_written
                        ,MPI_BYTE, &md->status
                        );
-        if (md->status.count != fd->bytes_written)
+        int count;
+        MPI_Get_count (&md->status, MPI_BYTE, &count);
+        if (count != fd->bytes_written)
         {
             fprintf (stderr, "b:MPI method tried to write %llu, "
-                             "only wrote %llu\n"
+                             "only wrote %d\n"
                     ,fd->bytes_written
-                    ,md->status.count
+                    ,count
                     );
         }
-        fd->base_offset += md->status.count;
+        fd->base_offset += count;
         fd->offset = 0;
         fd->bytes_written = 0;
         adios_shared_buffer_free (&md->b);
@@ -826,15 +830,16 @@ void adios_mpi_write (struct adios_file_struct * fd
         // adios_write_var_payload_v1 (fd, v);
         uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
         MPI_File_write (md->fh, v->data, var_size, MPI_BYTE, &md->status);
-        if (md->status.count != var_size)
+        MPI_Get_count (&md->status, MPI_BYTE, &count);
+        if (count != var_size)
         {
             fprintf (stderr, "c:MPI method tried to write %llu, "
-                             "only wrote %llu\n"
+                             "only wrote %d\n"
                     ,var_size
-                    ,md->status.count
+                    ,count
                     );
         }
-        fd->base_offset += md->status.count;
+        fd->base_offset += count;
         fd->offset = 0;
         fd->bytes_written = 0;
         adios_shared_buffer_free (&md->b);
@@ -1069,12 +1074,14 @@ void adios_mpi_close (struct adios_file_struct * fd
                 MPI_File_write (md->fh, fd->buffer, md->vars_header_size
                                ,MPI_BYTE, &md->status
                                );
-                if (md->status.count != md->vars_header_size)
+                int count;
+                MPI_Get_count (&md->status, MPI_BYTE, &count);
+                if (count != md->vars_header_size)
                 {
                     fprintf (stderr, "d:MPI method tried to write %llu, "
-                                     "only wrote %llu\n"
+                                     "only wrote %d\n"
                             ,md->vars_header_size
-                            ,md->status.count
+                            ,count
                             );
                 }
                 fd->offset = 0;
@@ -1097,15 +1104,16 @@ void adios_mpi_close (struct adios_file_struct * fd
                     MPI_File_write (md->fh, fd->buffer, fd->bytes_written
                                    ,MPI_BYTE, &md->status
                                    );
-                    if (md->status.count != fd->bytes_written)
+                    MPI_Get_count (&md->status, MPI_BYTE, &count);
+                    if (count != fd->bytes_written)
                     {
                         fprintf (stderr, "e:MPI method tried to write %llu, "
-                                         "only wrote %llu\n"
+                                         "only wrote %d\n"
                                 ,fd->bytes_written
-                                ,md->status.count
+                                ,count
                                 );
                     }
-                    fd->base_offset += md->status.count;
+                    fd->base_offset += count;
                     fd->offset = 0;
                     fd->bytes_written = 0;
                     adios_shared_buffer_free (&md->b);
@@ -1123,12 +1131,13 @@ void adios_mpi_close (struct adios_file_struct * fd
                 MPI_File_write (md->fh, fd->buffer, md->vars_header_size
                                ,MPI_BYTE, &md->status
                                );
-                if (md->status.count != md->vars_header_size)
+                MPI_Get_count (&md->status, MPI_BYTE, &count);
+                if (count != md->vars_header_size)
                 {
                     fprintf (stderr, "f:MPI method tried to write %llu, "
-                                     "only wrote %llu\n"
+                                     "only wrote %d\n"
                             ,md->vars_header_size
-                            ,md->status.count
+                            ,count
                             );
                 }
                 fd->offset = 0;
@@ -1289,12 +1298,14 @@ void adios_mpi_close (struct adios_file_struct * fd
                 MPI_File_write (md->fh, fd->buffer, md->vars_header_size
                                ,MPI_BYTE, &md->status
                                );
-                if (md->status.count != md->vars_header_size)
+                int count;
+                MPI_Get_count (&md->status, MPI_BYTE, &count);
+                if (count != md->vars_header_size)
                 {
                     fprintf (stderr, "d:MPI method tried to write %llu, "
-                                     "only wrote %llu\n"
+                                     "only wrote %d\n"
                             ,md->vars_header_size
-                            ,md->status.count
+                            ,count
                             );
                 }
                 fd->offset = 0;
@@ -1317,15 +1328,16 @@ void adios_mpi_close (struct adios_file_struct * fd
                     MPI_File_write (md->fh, fd->buffer, fd->bytes_written
                                    ,MPI_BYTE, &md->status
                                    );
-                    if (md->status.count != fd->bytes_written)
+                    MPI_Get_count (&md->status, MPI_BYTE, &count);
+                    if (count != fd->bytes_written)
                     {
                         fprintf (stderr, "e:MPI method tried to write %llu, "
-                                         "only wrote %llu\n"
+                                         "only wrote %d\n"
                                 ,fd->bytes_written
-                                ,md->status.count
+                                ,count
                                 );
                     }
-                    fd->base_offset += md->status.count;
+                    fd->base_offset += count;
                     fd->offset = 0;
                     fd->bytes_written = 0;
                     adios_shared_buffer_free (&md->b);
@@ -1343,12 +1355,13 @@ void adios_mpi_close (struct adios_file_struct * fd
                 MPI_File_write (md->fh, fd->buffer, md->vars_header_size
                                ,MPI_BYTE, &md->status
                                );
-                if (md->status.count != md->vars_header_size)
+                MPI_Get_count (&md->status, MPI_BYTE, &count);
+                if (count != md->vars_header_size)
                 {
                     fprintf (stderr, "f:MPI method tried to write %llu, "
-                                     "only wrote %llu\n"
+                                     "only wrote %d\n"
                             ,md->vars_header_size
-                            ,md->status.count
+                            ,count
                             );
                 }
                 fd->offset = 0;
