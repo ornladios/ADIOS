@@ -39,6 +39,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+#		     adios_datatap.c
+#		     adios_dart.c
+@HAVE_HDF5_TRUE@am__append_1 = -DPHDF5
 subdir = src
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -142,7 +145,7 @@ HAVE_MXML_FALSE = @HAVE_MXML_FALSE@
 HAVE_MXML_TRUE = @HAVE_MXML_TRUE@
 HAVE_NETCDF_FALSE = @HAVE_NETCDF_FALSE@
 HAVE_NETCDF_TRUE = @HAVE_NETCDF_TRUE@
-HDF5_CPPFLAGS = @HDF5_CPPFLAGS@
+HDF5_CPPFLAGS = @HDF5_CPPFLAGS@ $(am__append_1)
 HDF5_LDFLAGS = @HDF5_LDFLAGS@
 HDF5_LIBS = @HDF5_LIBS@
 INSTALL_DATA = @INSTALL_DATA@
@@ -229,12 +232,12 @@ METASOURCES = AUTO
 include_HEADERS = adios.h adios_types.h adios_internals.h \
 	adios_transport_hooks.h
 lib_LIBRARIES = libadios.a libadios_int.a
-libadios_a_SOURCES = adios.c \
+libadios_a_SOURCES := adios.c \
                      adios_transport_hooks.c \
                      adios_mpi.c \
                      adios_mpi_cio.c \
                      adios_phdf5.c \
-                     adios_posix.c \
+		     adios_posix.c \
                      adios_posix_ascii.c \
                      adios_vtk.c \
 		     adios_provenance.c \
@@ -242,8 +245,6 @@ libadios_a_SOURCES = adios.c \
 		     adios_socket.c \
                      adios_bp_v1.c
 
-#		     adios_datatap.c
-#		     adios_dart.c
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS) $(HDF5_CPPFLAGS)
 libadios_int_a_SOURCES = adios_internals.c \
                         adios_transport_hooks_dummy.c \
