@@ -7,12 +7,12 @@ include_HEADERS=
 lib_LIBRARIES=
 
 lib_LIBRARIES += libadios.a
-libadios_a_SOURCES = adios.c \
+libadios_a_SOURCES := adios.c \
                      adios_transport_hooks.c \
                      adios_mpi.c \
                      adios_mpi_cio.c \
                      adios_phdf5.c \
-                     adios_posix.c \
+		     adios_posix.c \
                      adios_posix_ascii.c \
                      adios_vtk.c \
 		     adios_provenance.c \
@@ -21,6 +21,9 @@ libadios_a_SOURCES = adios.c \
                      adios_bp_v1.c
 #		     adios_datatap.c
 #		     adios_dart.c
+if HAVE_HDF5
+HDF5_CPPFLAGS += -DPHDF5
+endif
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS) $(HDF5_CPPFLAGS)
 include_HEADERS += adios.h \
                    adios_types.h
