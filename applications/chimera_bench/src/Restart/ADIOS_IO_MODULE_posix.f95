@@ -276,6 +276,7 @@ integer*8, private :: io_type, adios_handle,adios_groupsize, adios_totalsize, ad
     INTEGER, dimension(2)            :: radial_index_bound
     INTEGER, dimension(2)            :: theta_index_bound
     INTEGER, dimension(2)            :: phi_index_bound
+    INTEGER :: error
 
     CALL initialized_io()    
     
