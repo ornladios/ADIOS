@@ -25,6 +25,7 @@ AC_PROG_LIBTOOL
 AC_PROG_MXML
 AC_PROG_GENGETOPT
 AC_HDF5
+AC_PHDF5
 AC_NETCDF
 
 AC_LANG(C)
@@ -127,6 +128,18 @@ fi
 
 echo
 
+if test -z "${HAVE_PHDF5_TRUE}"; then
+        echo "  - PHDF5";
+        echo "      - PHDF5_CFLAGS = $PHDF5_CFLAGS";
+        echo "      - PHDF5_CPPFLAGS = $PHDF5_CPPFLAGS";
+        echo "      - PHDF5_LDFLAGS = $PHDF5_LDFLAGS";
+        echo "      - PHDF5_LIBS = $PHDF5_LIBS";
+else
+	echo "No PHDF5"
+fi
+
+echo
+
 if test -z "${HAVE_HDF5_TRUE}"; then
         echo "  - HDF5";
         echo "      - HDF5_CFLAGS = $HDF5_CFLAGS";
@@ -134,19 +147,19 @@ if test -z "${HAVE_HDF5_TRUE}"; then
         echo "      - HDF5_LDFLAGS = $HDF5_LDFLAGS";
         echo "      - HDF5_LIBS = $HDF5_LIBS";
 else
-echo "No HDF5"
+	echo "No HDF5"
 fi
 
 echo
 
-if test -z "${HAVE_HDF5_TRUE}"; then
+if test -z "${HAVE_NETCDF_TRUE}"; then
         echo "  - NetCDF";
         echo "      - NETCDF_CFLAGS = $NETCDF_CFLAGS";
         echo "      - NETCDF_CPPFLAGS = $NETCDF_CPPFLAGS";
         echo "      - NETCDF_LDFLAGS = $NETCDF_LDFLAGS";
         echo "      - NETCDF_LIBS = $NETCDF_LIBS";
 else
-echo "No NETCDF"
+	echo "No NETCDF"
 fi
 
 

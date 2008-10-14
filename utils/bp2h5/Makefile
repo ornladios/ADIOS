@@ -46,6 +46,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_gengetopt.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
+	$(top_srcdir)/config/ac_phdf5.m4 \
 	$(top_srcdir)/config/acx_mpi.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -116,8 +117,10 @@ HAVE_MXML_FALSE = #
 HAVE_MXML_TRUE = 
 HAVE_NETCDF_FALSE = #
 HAVE_NETCDF_TRUE = 
-HDF5_CPPFLAGS = -I/apps/HDF5/1.6.5/ewok_par/pgi625v2/include
-HDF5_LDFLAGS = -L/apps/HDF5/1.6.5/ewok_par/pgi625v2/lib
+HAVE_PHDF5_FALSE = #
+HAVE_PHDF5_TRUE = 
+HDF5_CPPFLAGS = -I/apps/HDF5/1.6.5/ewok_ser/include
+HDF5_LDFLAGS = -L/apps/HDF5/1.6.5/ewok_ser/lib
 HDF5_LIBS = -lhdf5
 INSTALL_DATA = ${INSTALL} -m 644
 INSTALL_PROGRAM = ${INSTALL}
@@ -147,6 +150,9 @@ PACKAGE_STRING =
 PACKAGE_TARNAME = 
 PACKAGE_VERSION = 
 PATH_SEPARATOR = :
+PHDF5_CPPFLAGS = -I/apps/HDF5/1.6.5/ewok_par/pgi625v2/include
+PHDF5_LDFLAGS = -L/apps/HDF5/1.6.5/ewok_par/pgi625v2/lib
+PHDF5_LIBS = -lhdf5
 RANLIB = ranlib
 SET_MAKE = 
 SHELL = /bin/sh

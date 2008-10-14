@@ -21,7 +21,7 @@ libadios_a_SOURCES := adios.c \
                      adios_bp_v1.c
 #		     adios_datatap.c
 #		     adios_dart.c
-if HAVE_HDF5
+if HAVE_PHDF5
 HDF5_CPPFLAGS += -DPHDF5
 endif
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS) $(HDF5_CPPFLAGS)
