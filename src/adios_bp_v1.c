@@ -6,7 +6,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include "adios_types.h"
-#include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
 

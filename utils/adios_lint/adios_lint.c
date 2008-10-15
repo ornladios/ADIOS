@@ -12,7 +12,7 @@
 #include <sys/uio.h>
 
 #include "adios.h"
-#include "adios_transport_hooks.h"
+//#include "adios_transport_hooks.h"
 #include "adios_internals.h"
 
 #define STR_LEN 1000
