@@ -131,7 +131,9 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
 	FORWARD_DECLARE_DUMMY(vtk)
 	FORWARD_DECLARE_DUMMY(posix_ascii)
 	FORWARD_DECLARE_DUMMY(provenance)
+   //#ifdef PHDF5
 	FORWARD_DECLARE_DUMMY(phdf5)
+   //#endif
 #endif
 #ifndef ADIOS_EMPTY_TRANSPORTS
 	FORWARD_DECLARE(mpi)
@@ -142,11 +144,10 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
 	FORWARD_DECLARE(provenance)
    #ifdef PHDF5
 	FORWARD_DECLARE(phdf5)
-   #else
-	FORWARD_DECLARE_DUMMY(phdf5)
+  // #else
+  //	FORWARD_DECLARE_DUMMY(phdf5)
    #endif
 #endif
-
 
 #if USE_PORTALS
 FORWARD_DECLARE(datatap)
