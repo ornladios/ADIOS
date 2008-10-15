@@ -7,10 +7,13 @@ bin_PROGRAMS=adios_test_f
 
 #adios_test_f_SOURCES = adios_test_f.F90 adios_module.F90
 adios_test_f_SOURCES = adios_test_f.F90
-adios_test_f_LDFLAGS = $(MXML_LDFLAGS) $(HDF5_LDFLAGS)
+adios_test_f_LDFLAGS = $(MXML_LDFLAGS)
 adios_test_f_LDADD = $(top_builddir)/src/libadios.a
-adios_test_f_LDADD += $(MXML_LIBS) $(HDF5_LIBS)
-
+adios_test_f_LDADD += $(MXML_LIBS)
+if HAVE_PHDF5
+adios_test_f_LDADD += $(top_builddir)/src/libadios_phdf5.a $(MXML_LIBS) $(HDF5_LIBS)
+adios_test_f_LDFLAGS += $(HDF5_LDFLAGS)
+endif
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) "$()" \
 	$(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
