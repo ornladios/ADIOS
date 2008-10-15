@@ -5,11 +5,7 @@
 
 #ewok
 export CC=mpicc
-./configure --prefix=/ccs/proj/e2e/adios/ewok.gcc --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/ewok --with-hdf5=/apps/HDF5/1.6.5/ewok_par/pgi625 --with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
-#./configure --prefix=/ccs/proj/e2e/adios/ewok.gcc --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/ewok --with-phdf5=/apps/HDF5/1.6.5/ewok_par/pgi625v2  --with-hdf5=/apps/HDF5/1.6.5/ewok_par/pgi625 --with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
-
-#export CC=mpicc
-#./configure --prefix=/ccs/proj/e2e/adios/ewok.gcc --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/ewok
+./configure --prefix=/ccs/proj/e2e/adios/ewok.gcc --enable-dependency-tracking --with-mxml=/ccs/home/ge1/work/ewok --with-phdf5=/apps/HDF5/1.6.5/ewok_par/pgi625v2  --with-hdf5=/apps/HDF5/1.6.5/ewok_par/pgi625 --with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
  
 #jaguar
 #export CC=cc
