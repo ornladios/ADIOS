@@ -41,9 +41,9 @@ build_triplet = @build@
 host_triplet = @host@
 #		     adios_datatap.c
 #		     adios_dart.c
-#libadios_a_SOURCES += adios_phdf5.c 
 @HAVE_PHDF5_TRUE@am__append_1 = libadios_phdf5.a
 @HAVE_PHDF5_TRUE@am__append_2 = -DPHDF5
+@HAVE_PHDF5_FALSE@am__append_3 = adios_phdf5.c 
 subdir = src
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -71,6 +71,11 @@ LIBRARIES = $(lib_LIBRARIES)
 ARFLAGS = cru
 libadios_a_AR = $(AR) $(ARFLAGS)
 libadios_a_LIBADD =
+am__libadios_a_SOURCES_DIST = adios.c adios_transport_hooks.c \
+	adios_mpi.c adios_mpi_cio.c adios_posix.c adios_posix_ascii.c \
+	adios_vtk.c adios_provenance.c adios_internals.c \
+	adios_socket.c adios_bp_v1.c adios_phdf5.c
+@HAVE_PHDF5_FALSE@am__objects_1 = libadios_a-adios_phdf5.$(OBJEXT)
 am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
 	libadios_a-adios_transport_hooks.$(OBJEXT) \
 	libadios_a-adios_mpi.$(OBJEXT) \
@@ -81,7 +86,7 @@ am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
 	libadios_a-adios_provenance.$(OBJEXT) \
 	libadios_a-adios_internals.$(OBJEXT) \
 	libadios_a-adios_socket.$(OBJEXT) \
-	libadios_a-adios_bp_v1.$(OBJEXT)
+	libadios_a-adios_bp_v1.$(OBJEXT) $(am__objects_1)
 libadios_a_OBJECTS = $(am_libadios_a_OBJECTS)
 libadios_int_a_AR = $(AR) $(ARFLAGS)
 libadios_int_a_LIBADD =
@@ -108,8 +113,8 @@ LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libadios_a_SOURCES) $(libadios_int_a_SOURCES) \
 	$(libadios_phdf5_a_SOURCES)
-DIST_SOURCES = $(libadios_a_SOURCES) $(libadios_int_a_SOURCES) \
-	$(am__libadios_phdf5_a_SOURCES_DIST)
+DIST_SOURCES = $(am__libadios_a_SOURCES_DIST) \
+	$(libadios_int_a_SOURCES) $(am__libadios_phdf5_a_SOURCES_DIST)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -247,18 +252,10 @@ METASOURCES = AUTO
 include_HEADERS = adios.h adios_types.h adios_internals.h \
 	adios_transport_hooks.h
 lib_LIBRARIES = libadios.a $(am__append_1) libadios_int.a
-libadios_a_SOURCES = adios.c \
-                     adios_transport_hooks.c \
-                     adios_mpi.c \
-                     adios_mpi_cio.c \
-		     adios_posix.c \
-                     adios_posix_ascii.c \
-                     adios_vtk.c \
-		     adios_provenance.c \
-		     adios_internals.c \
-		     adios_socket.c \
-                     adios_bp_v1.c
-
+libadios_a_SOURCES = adios.c adios_transport_hooks.c adios_mpi.c \
+	adios_mpi_cio.c adios_posix.c adios_posix_ascii.c adios_vtk.c \
+	adios_provenance.c adios_internals.c adios_socket.c \
+	adios_bp_v1.c $(am__append_3)
 @HAVE_PHDF5_TRUE@libadios_phdf5_a_SOURCES = adios_phdf5.c
 @HAVE_PHDF5_TRUE@libadios_phdf5_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
@@ -422,6 +419,12 @@ libadios_a-adios_bp_v1.o: adios_bp_v1.c
 
 libadios_a-adios_bp_v1.obj: adios_bp_v1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_bp_v1.obj `if test -f 'adios_bp_v1.c'; then $(CYGPATH_W) 'adios_bp_v1.c'; else $(CYGPATH_W) '$(srcdir)/adios_bp_v1.c'; fi`
+
+libadios_a-adios_phdf5.o: adios_phdf5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_phdf5.o `test -f 'adios_phdf5.c' || echo '$(srcdir)/'`adios_phdf5.c
+
+libadios_a-adios_phdf5.obj: adios_phdf5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_phdf5.obj `if test -f 'adios_phdf5.c'; then $(CYGPATH_W) 'adios_phdf5.c'; else $(CYGPATH_W) '$(srcdir)/adios_phdf5.c'; fi`
 
 libadios_int_a-adios_internals.o: adios_internals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-adios_internals.o `test -f 'adios_internals.c' || echo '$(srcdir)/'`adios_internals.c

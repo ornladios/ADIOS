@@ -21,11 +21,12 @@ libadios_a_SOURCES = adios.c \
 #		     adios_datatap.c
 #		     adios_dart.c
 if HAVE_PHDF5
-#libadios_a_SOURCES += adios_phdf5.c 
 lib_LIBRARIES += libadios_phdf5.a
 libadios_phdf5_a_SOURCES = adios_phdf5.c
 PHDF5_CPPFLAGS += -DPHDF5
 libadios_phdf5_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
+else
+libadios_a_SOURCES += adios_phdf5.c 
 endif
 
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
