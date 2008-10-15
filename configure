@@ -20825,24 +20825,24 @@ fi;
 
 if test -n "${HDF5_DIR}" -a -z "${HDF5_INCDIR}"; then
         HDF5_INCDIR="${HDF5_DIR}/include";
-else
-	ac_hdf5_ok=no
 fi
 
 if test -n "${HDF5_DIR}" -a -z "${HDF5_LIBDIR}"; then
         HDF5_LIBDIR="${HDF5_DIR}/lib";
-else
-	ac_hdf5_ok=no
 fi
 
 if test -n "${HDF5_INCDIR}"; then
-	HDF5_CPPFLAGS="-I${HDF5_INCDIR}"
+ 	HDF5_CPPFLAGS="-I${HDF5_INCDIR}"
+elif test -n "${HDF5_CLIB}"; then
+        HDF5_CPPFLAGS="${HDF5_CLIB}"
 else
 	ac_hdf5_ok=no
 fi
 
 if test -n "${HDF5_LIBDIR}"; then
-	HDF5_LDFLAGS="-L${HDF5_LIBDIR}"
+ 	HDF5_LDFLAGS="-L${HDF5_LIBDIR}"
+elif test -n "${HDF5_CLIB}"; then
+        HDF5_LDFLAGS="${HDF5_CLIB}"
 else
 	ac_hdf5_ok=no
 fi
@@ -21441,16 +21441,17 @@ if test "${with_netcdf_libdir+set}" = set; then
   NETCDF_LIBDIR=$withval
 fi;
 
+
 if test -n "${NETCDF_DIR}" -a -z "${NETCDF_INCDIR}"; then
         NETCDF_INCDIR="${NETCDF_DIR}/include";
-else
-	ac_netcdf_ok=no
+elif test -n "${NETCDF}" -a -d "${NETCDF}"; then
+        NETCDF_INCDIR="${NETCDF}/include"
 fi
 
 if test -n "${NETCDF_DIR}" -a -z "${NETCDF_LIBDIR}"; then
         NETCDF_LIBDIR="${NETCDF_DIR}/lib";
-else
-	ac_netcdf_ok=no
+elif test -n "${NETCDF}" -a -d "${NETCDF}"; then
+        NETCDF_LIBDIR="${NETCDF}/lib"
 fi
 
 if test -n "${NETCDF_INCDIR}"; then

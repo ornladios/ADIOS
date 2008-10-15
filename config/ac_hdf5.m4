@@ -24,28 +24,30 @@ dnl If we know HDF5_DIR, then we can know HDF5_INCDIR.
 dnl We don't overwrite HDF5_INCDIR.
 if test -n "${HDF5_DIR}" -a -z "${HDF5_INCDIR}"; then
         HDF5_INCDIR="${HDF5_DIR}/include";
-else
-	ac_hdf5_ok=no
 fi
 
 dnl If we know HDF5_DIR, then we can know HDF5_LIBDIR.
 dnl We don't overwrite HDF5_LIBDIR.
 if test -n "${HDF5_DIR}" -a -z "${HDF5_LIBDIR}"; then
         HDF5_LIBDIR="${HDF5_DIR}/lib";
-else
-	ac_hdf5_ok=no
 fi
 
 dnl Add "-I" to HDF5_INCDIR.
 if test -n "${HDF5_INCDIR}"; then
-	HDF5_CPPFLAGS="-I${HDF5_INCDIR}"
+ 	HDF5_CPPFLAGS="-I${HDF5_INCDIR}"
+elif test -n "${HDF5_CLIB}"; then
+        HDF5_CPPFLAGS="${HDF5_CLIB}"
+dnl	echo " --- HDF5_CLIB was defined. HDF5_CPPFLAGS=${HDF5_CPPFLAGS}"
 else
 	ac_hdf5_ok=no
 fi
 
 dnl Add "-L" to HDF5_LIBDIR.
 if test -n "${HDF5_LIBDIR}"; then
-	HDF5_LDFLAGS="-L${HDF5_LIBDIR}"
+ 	HDF5_LDFLAGS="-L${HDF5_LIBDIR}"
+elif test -n "${HDF5_CLIB}"; then
+        HDF5_LDFLAGS="${HDF5_CLIB}"
+dnl	echo " --- HDF5_CLIB was defined. HDF5_LDFLAGS=${HDF5_CPPFLAGS}"
 else
 	ac_hdf5_ok=no
 fi

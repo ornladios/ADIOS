@@ -20,20 +20,23 @@ AC_ARG_WITH(netcdf-libdir,
             [  --with-netcdf-libdir=<location of NetCDF library>],
             [NETCDF_LIBDIR=$withval])
 
+
 dnl If we know NETCDF_DIR, then we can know NETCDF_INCDIR.
 dnl We don't overwrite NETCDF_INCDIR.
 if test -n "${NETCDF_DIR}" -a -z "${NETCDF_INCDIR}"; then
         NETCDF_INCDIR="${NETCDF_DIR}/include";
-else
-	ac_netcdf_ok=no
+dnl We may have NETCDF denoting the dir (e.g. on ewok BUT on franklin it contains all flags)
+elif test -n "${NETCDF}" -a -d "${NETCDF}"; then
+        NETCDF_INCDIR="${NETCDF}/include"
 fi
 
 dnl If we know NETCDF_DIR, then we can know NETCDF_LIBDIR.
 dnl We don't overwrite NETCDF_LIBDIR.
 if test -n "${NETCDF_DIR}" -a -z "${NETCDF_LIBDIR}"; then
         NETCDF_LIBDIR="${NETCDF_DIR}/lib";
-else
-	ac_netcdf_ok=no
+dnl We may have NETCDF denoting the dir (e.g. on ewok BUT on franklin it contains all flags)
+elif test -n "${NETCDF}" -a -d "${NETCDF}"; then
+        NETCDF_LIBDIR="${NETCDF}/lib"
 fi
 
 dnl Add "-I" to NETCDF_INCDIR.
