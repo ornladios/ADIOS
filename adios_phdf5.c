@@ -15,7 +15,6 @@
 //#endif
 
 #define NUM_GP 24
-/*
 void adios_phdf5_end_iteration (struct adios_method_struct * method)
 {
 }
@@ -36,6 +35,7 @@ void adios_phdf5_get_write_buffer (struct adios_file_struct * fd
 {
 }
 
+/*
 #ifndef PHDF5
 void adios_phdf5_init(const char *parameters
                      ,struct adios_method_struct * method
