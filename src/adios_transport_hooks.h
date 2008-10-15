@@ -3,8 +3,8 @@
 
 #include <stdint.h>
 // this is defined in the lint program to get empty implementations
-#ifdef ADIOS_EMPTY_TRANSPORTS
-#define FORWARD_DECLARE(a) \
+//#ifdef ADIOS_EMPTY_TRANSPORTS
+#define FORWARD_DECLARE_DUMMY(a) \
 void adios_##a##_init (const char * parameters \
                       ,struct adios_method_struct * method \
                       ) {} \
@@ -39,7 +39,7 @@ void adios_##a##_finalize (int mype, struct adios_method_struct * method) {} \
 void adios_##a##_end_iteration (struct adios_method_struct * method) {} \
 void adios_##a##_start_calculation (struct adios_method_struct * method) {} \
 void adios_##a##_stop_calculation (struct adios_method_struct * method) {}
-#else
+//#else
 #define FORWARD_DECLARE(a) \
 void adios_##a##_init (const char * parameters \
                       ,struct adios_method_struct * method \
@@ -75,7 +75,7 @@ void adios_##a##_finalize (int mype, struct adios_method_struct * method); \
 void adios_##a##_end_iteration (struct adios_method_struct * method); \
 void adios_##a##_start_calculation (struct adios_method_struct * method); \
 void adios_##a##_stop_calculation (struct adios_method_struct * method);
-#endif
+//#endif
 
 #define MATCH_STRING_TO_METHOD(b,d,r) \
 if (!strcasecmp (buf,b)) \
@@ -124,13 +124,30 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
                      };
 
 // forward declare the functions (or dummies for internals use)
-FORWARD_DECLARE(mpi)
-FORWARD_DECLARE(mpi_cio)
-FORWARD_DECLARE(phdf5)
-FORWARD_DECLARE(posix)
-FORWARD_DECLARE(vtk)
-FORWARD_DECLARE(posix_ascii)
-FORWARD_DECLARE(provenance)
+#ifdef ADIOS_EMPTY_TRANSPORTS
+	FORWARD_DECLARE_DUMMY(mpi)
+	FORWARD_DECLARE_DUMMY(mpi_cio)
+	FORWARD_DECLARE_DUMMY(posix)
+	FORWARD_DECLARE_DUMMY(vtk)
+	FORWARD_DECLARE_DUMMY(posix_ascii)
+	FORWARD_DECLARE_DUMMY(provenance)
+	FORWARD_DECLARE_DUMMY(phdf5)
+#endif
+#ifndef ADIOS_EMPTY_TRANSPORTS
+	FORWARD_DECLARE(mpi)
+	FORWARD_DECLARE(mpi_cio)
+	FORWARD_DECLARE(posix)
+	FORWARD_DECLARE(vtk)
+	FORWARD_DECLARE(posix_ascii)
+	FORWARD_DECLARE(provenance)
+   #ifdef PHDF5
+	FORWARD_DECLARE(phdf5)
+   #else
+	FORWARD_DECLARE_DUMMY(phdf5)
+   #endif
+#endif
+
+
 #if USE_PORTALS
 FORWARD_DECLARE(datatap)
 FORWARD_DECLARE(dart)

@@ -10,12 +10,12 @@
 #include "adios_bp_v1.h"
 #include "adios_transport_hooks.h"
 #include "adios_internals.h"
-#ifdef PHDF5 
+//#ifdef PHDF5 
 #include "hdf5.h"
-#endif
+//#endif
 
 #define NUM_GP 24
-
+/*
 void adios_phdf5_end_iteration (struct adios_method_struct * method)
 {
 }
@@ -62,6 +62,7 @@ void adios_phdf5_read (struct adios_file_struct * fd
                     ,struct adios_method_struct * method
                     ){}
 #else
+*/
 ///////////////////////////
 // Function Declarations
 ///////////////////////////
@@ -1180,4 +1181,3 @@ hsize_t parse_dimension(struct adios_var_struct *pvar_root
     }
     return dimsize; 
 }
-#endif
