@@ -91,7 +91,7 @@ int adios_parse_version (struct adios_bp_buffer_struct_v1 * b
                         )
 {
     // if high bit set, big endian
-    uint64_t test = 1;
+    uint32_t test = 1;
 
     if (b->length < 4)
     {

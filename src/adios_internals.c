@@ -5766,7 +5766,7 @@ int adios_write_version_v1 (char ** buffer
                            ,uint64_t * buffer_offset
                            )
 {
-    uint64_t test = 1;
+    uint32_t test = 1;
 
     if (!*(char *) &test)
         test = 0x80000000;
