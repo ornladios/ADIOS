@@ -1,6 +1,0 @@
-
-F           F = no baro-diffusion,     T = on        (baro_switch)
-F           F = no thermal diffusion,  T = on        (thermDiff_switch)
-
-T           F = no lagging of coefficients,  T = on  (lagging_switch)
-1           number of steps lagged                   (lag_steps)

@@ -1,6 +1,0 @@
-restart.f90 --fix the rewind and sheareb.out mix prob
-main.f90 --- dataout3d maybe add dataout2d
-Makefile --- add dataout3d.o to the list
-dataout3d.f90 --- write down RUNdimen.ncd
-ncdpost.f90 --- compile and run to get time 3d record
-

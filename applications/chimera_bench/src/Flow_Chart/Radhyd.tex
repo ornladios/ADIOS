@@ -1,312 +1,0 @@
-\documentclass[11pt,doublespace]{article} \topmargin=-0.5in \oddsidemargin=0in \textheight=9in \textwidth=6.5in \newcommand{\pderiv}[2]{\ensuremath{\frac{\partial #1 }{\partial #2}}}\usepackage{latexsym}%\pagestyle{empty}\usepackage{graphicx}\begin{document}\begin{center}{\large {\bf Radhyd\\Outline}}\end{center}\bigskip{\Large Initialization or Re-Initialization {\bf radhyd}}\\{\Large Program {\bf radhyd}}\bigskip\noindent..........{\Large Initialization}\begin{itemize}  \item Call {\bf initialize}
-\begin{enumerate}  \item Call {\bf model\_initialize}\begin{enumerate}
-  \item Assign unit 'nread' to Data3/reset.d  \item Assign unit 'nprint' to Data3/superdump.d  \item Assign unit 'nrstd1' to Data3/rstdmp1.d  \item Assign unit 'nrstd2' to Data3/rstdmp2.d  \item Call {\bf genrd}
-\begin{enumerate}
-  \item Assign values to array dimensions $nz$, $nez$, $nnu$, and $nnc$
-  \item Call {\bf mgfld\_array\_initialize} Initialize the dimensions of the mgfld arrays
-\begin{enumerate}
-  \item Call {\bf set\_abem\_arrays}
-  \item Call {\bf set\_brem\_arrays}
-  \item Call {\bf set\_e\_advct\_arrays}
-  \item Call {\bf set\_eos\_snc\_arrays}
-  \item Call {\bf set\_incrmnt\_arrays}
-  \item Call {\bf set\_mdl\_cnfg\_arrays}
-  \item Call {\bf set\_nu\_dist\_arrays}
-  \item Call {\bf set\_pair\_arrays}
-  \item Call {\bf set\_scat\_a\_arrays}
-  \item Call {\bf set\_scat\_e\_arrays}
-  \item Call {\bf set\_scat\_i\_arrays}
-  \item Call {\bf set\_scat\_n\_arrays}
-  \item Call {\bf set\_scat\_nn\_arrays}
-  \item Call {\bf set\_t\_cntrl\_arrays}
-\end{enumerate}
-  \item Initialize the dimensions of the non-mgfld arrays  \item Call {\bf set\_boundary\_arrays}
-  \item Call {\bf set\_convect\_arrays}
-  \item Call {\bf set\_eos\_bck\_arrays}
-  \item Call {\bf set\_eos\_ls\_arrays}
-  \item Call {\bf set\_hydro\_arrays}
-  \item Call {\bf set\_mgfld\_remap\_arrays}
-  \item Call {\bf set\_psi0p\_arrays}
-  \item Call {\bf set\_nucbrn\_arrays}
-  \item Call {\bf set\_shock\_arrays}
-  \item Initialize q0
-  \item Call {\bf read\_init}---Reads 'head' (problem description) and 'nrst' (cycle number)
-  \item If nrst = 0
- \begin{enumerate}
-  \item Call {\bf mgfld\_var\_initialize} Initializes some of the mglfd variables
-  \item Call {\bf init\_var} Initializes some of the non-mglfd variables
-  \item Call {\bf mgfld\_read}---Reads in mglfd keys\\
-.....Open 'Data3/transport\_keys.d'\\
-.....Call {\bf read\_transport\_keys}\\
-.....Close 'Data3/transport\_keys.d'\\
-.....Open 'Data3/edit\_keys.d'\\
-.....Call {\bf read\_edit\_keys}\\
-.....Close 'Data3/edit\_keys.d'
-  \item Call {\bf model\_read}---Reads in non-mglfd keys\\
-.....Open 'Data3/hydro\_keys.d'\\
-.....Call {\bf read\_hydro\_keys}\\
-.....Close 'Data3/hydro\_keys.d'\\
-.....Open 'Data3/initial\_model.d'\\
-.....Call {\bf read\_initial\_model}\\
-.....Close 'Data3/initial\_model.d'
-\end{enumerate}  \item If nrst /= 0
-\begin{enumerate}
-  \item Call {\bf reset\_var}---Initializes nse
-  \item Call {\bf readst}---Reads in restart file from rstdmp1 or rstdmp2
-  \item Call {\bf readst}---Reads in changes from reset.d
-\end{enumerate}\end{enumerate}  \item Close unit 'nrstd1'  \item Close unit 'nrstd2'  \item Close unit 'nread'  \item Call {\bf genst\_hy}
-\begin{enumerate}
-  \item Sets quantities at inner edge of configuration
-  \item Compute rest masses of zones assuming Newtonian description
-  \item Loads equation of state tables
-\end{enumerate}\end{enumerate}  \item If lagr /= 0\\.....lagrangian= .true. if jj = 1 and kk = 1\\
-ELSE\\
-.....lagrangian= .false.
-END IF lagr /= 0
-  \item Check that 1D arrays are large enough to accommodate all 3 sweeps
-  \item Set number of zones per PE  \item Call {\bf evh1\_load}\begin{enumerate}
-  \item Set EVH1 globals  \item Set the geometry and boundary conditions
-  \item Get radial limits from MGFLD  \item IF rezn = ye\\
- .....IF lagrangian\\
- ..........Call {\bf lagregrid}\\
- ..........Load radial grid into sweep arrays, offseting for ghosts\\ ..........Call {\bf coord\_bc}---Set coordinates in ghost zones of sweep arrays\\
- ..........Call {\bf volume}---Calculate zone volumes\\
- ..........Call {\bf paraset}---Set up coefficients for parabola subroutine\\
- ..........Set jm and jnumax to imax+1\\
- .....IF not lagrangian\\
-..........Call {\bf eulregrid}\\
-..........Set jnumax \& jm to maximum zone number\\
-.....END IF lagrangian\\
-.....Put state variables into 1D arrays, padding with 6 ghost zones\\
-.....Load EVH1 boundary conditions from MGFLD\\
-.....Call {\bf e\_compose}---Compute the total energy e(n)\\
-.....Reload values changed by rezoning into MGFLD variables\\
-.....Build a j grid\\
-.....Build a k grid\\
-.....Set transverse velocities initially to zero\\
-ELSE iF rezn = no\\
-.....Set imax to maximum zone number\\
-.....Call {\bf mgfld\_to\_evh1\_restart}---Load evh1 arrays
-\begin{enumerate}  \item Load quantities from MGFLD to EVH1 arrays  \item Put radial grid and sweep arrays, offsetting for ghosts  \item Call {\bf coord\_bc}---Set coordinates in ghost zones of sweep arrays  \item Call {\bf volume}---Calculate zone volumes  \item Call {\bf paraset}---Set up coefficients for parabola subroutine  \item Load EVH1 boundary conditions from MGFLD  \item Put state variables into 1D arrays, offsetting for ghosts  \item Compute the total energy e(n)\end{enumerate}END IF rezn
-\end{enumerate}  \item Call {\bf mgfld\_setup}\begin{enumerate}  \item Call {\bf genst} if nrst = 0, otherwise Call {\bf genrst}  \item Call {\bf time\_step\_select}  \item Call {\bf mgfld\_reset}  \item Call {\bf mgfld\_edit}\end{enumerate}  \item Call {\bf mgfld\_to\_evh1}\begin{enumerate}  \item Load arrays zte, zei, and zye\end{enumerate}  \item Call {\bf svel\_init}\end{enumerate}\end{itemize}\bigskip\noindent..........{\Large Problem Cycling}---Program {\bf radhyd}\begin{itemize}
-  \item Set $nmin = 7, \quad nmax= imax + 6$  \item Call {\bf cycle}\begin{enumerate}
-  \item Update cycle number
-  \item Print cycle number to {\bf 'Data3/cycle.d' }\end{enumerate}
-  \item Zero increment variables  \item Call {\bf evh1\_evolve\_xy}---Perform hydro step with x-sweeps preceding y-sweeps\begin{enumerate}  \item Compute and print the total energy  \item Save pre-Lagrange step variables in \_\_i arrays for mgfld (xxx make these multi-D arrays)  \item Call {\bf sweepx}\begin{enumerate}
-  \item Set $nmin = 7, \quad nmax = imax+6, \quad ntot = imax+12$
-  \item Loop over $j$, $k$ (i.e., different (radial) rays)  \item Put state variables for a given radial ray into 1D arrays, padding with 6 ghost zones  \item Load grid coordinates in xa0, dxa0, xa, and dx  \item Call {\bf eos\_result} (Computes $T$ from $ei$, and then $p$, $s$, and $gamma$)  \item Call {\bf sweepbc}
-\begin{enumerate}
-  \item Call {\bf coord\_bc} (Loads ghost coordinates with boundary coordinates)
-  \item Load ghost zones with state variables
-\end{enumerate}
-  \item Call {\bf volume} (Computes volume elements)  \item Call {\bf paraset} (Updates parabolic coefficients with initial grid coordinates for later use in obtaining parabolic interpolants of flow variables inside each grid zone)  \item Call {\bf e\_compose} (Computes $e(n)$ from $ei(n)$, $ekin(n)$, and $egrav(n)$, which is needed for subroutine {\bf evolve} to advance the total energy)  \item Call {\bf ppm}\begin{enumerate}  \item Call {\bf flatten} (Calculate flattening coefficients for smoothing near shocks)  \item Call {\bf parabola} (Computes parabolic interpolants for flow variables in each grid zone)  \item Call {\bf states} (Integrate parabolae over causal domain to get input states for Riemann problem)  \item Call {\bf riemann} (Obtain the zone face averages, $umid$ and $pmid$)  \item Call {\bf evolve} (Lagrangian update is performed---mass conservation ($\rho$ update), momentum conservation ($u$ update; energy conservation ($e$ update) )\begin{enumerate}  \item Grid positions are updated from $umid$ and $dt$  \item Call {\bf zone\_center} (Calculates volume averaged zone centers, which are used to calculate external forces)  \item Call {\bf forces} (Calculate forces using zone-centered coordinates at t (0) and at t+dt (1))  \item Calculate dvolume and average area based on geometry of sweep  \item Update the density from the new zone positions  \item Update the velocity due to pressure gradients and forces  \item Update the energy due to net work performed on the zone surfaces by pressure and by the zone-centered forces times the zone-centered displacement
-  \item Call {\bf sweepbc} (Grid change requires updated boundary  conditions\\.....Call {\bf coord\_bc} (Loads ghost coordinates with boundary coordinates)\\
-.....Load ghost zones with state variables
-  \item Call {\bf paraset} (Grid change requires updated parabolic coefficients  \item Call {\bf e\_decompose} (Extract the internal energy from the updated total energy)  \item Call {\bf etotal} (Total fluid energy check)
-  \item Compute and store $dei$, the internal energy change due to the hydro step\end{enumerate}\end{enumerate}
-  \item {\bf sweepx} $\leftarrow$  \item Save Lagrangian updated variables (except $T$) in \_\_l arrays for mgfld  \item For a Lagrangian run, updated the coordinates to $zxa$, $xdz$, $zxc$\end{enumerate}
-  \item {\bf evh1\_evolve\_xy} $\leftarrow$  \item Call {\bf sweepy} (This has not yet been interfaced with MGFLD)\end{enumerate}
-  \item {\bf radhyd} $\leftarrow$  \item Call {\bf evh1\_to\_mgfld\_hydro} (Loads results of EVH1 Lagrangian hydro ($roi$, $ye0i$, $t0i$, $rol$, $dei$, $u0l$, $x0l$) to advance temperature and compute pseudoviscosities)\begin{enumerate}
-  \item Call {\bf hydro\_t\_change} (Compute temperature change from $dei$ and store in $dtmpmn(j,1)$)
-  \item Call {\bf mgfld\_hydro}
-\begin{enumerate}
-  \item Call {\bf pseudo} Computes pseudoviscosities for editting purposes
-  \item Call {\bf snuc} Updates composition from nuclear reactions
-  \item Call {\bf nsetest} Flashes or deflashed zones, as appropriate
-\end{enumerate}
-\end{enumerate}
-  \item Ramp up an explosion, if criteria are satisfied
-  \item Call {\bf evh1\_to\_mgfld\_transport} (Loads arrays \_\_i into arrays for transfer to MGFLD transport)\begin{enumerate}  \item $roi \rightarrow rhop$\\
-           $t0i \rightarrow tp$\\           $ye0i \rightarrow yep$\\           $u0i \rightarrow up$\\           $xai \rightarrow rp$\\
-           $psi0p \mbox{ from } {\bf psi0p_module}$\\           $dtnphn\_aetr \rightarrow dtime$  \item Call {\bf mgfld\_transport\_in}\begin{enumerate}
-  \item $rhop \rightarrow rho$\\          $tp \rightarrow t$\\           $yep \rightarrow ye$\\           $up \rightarrow u$\\           $psi0p \rightarrow psi0$\\           $up \rightarrow u$\\           compute $dr$\\
-           compute $dmrst, \quad rstmss$
-           $rho \rightarrow rhoa$\\
-           $t \rightarrow ta$\\
-           $dr \rightarrow dra$\\
-           $r \rightarrow ra$\\
-           $u \rightarrow ua$\\
-           $dtime \rightarrow dtnphn\_aetr$  \item Call {\bf mgfld\_transport} (Do the neutrino transport)\begin{enumerate}
-  \item Call {\bf agr\_nu\_cal} (Transfer the lapse functions to transport variables (GR runs))  \item Call {\bf enu\_cal} (Updates the neutrino bin energies on the basis of the new lapse functions (GR runs))  \item Call {\bf gamgr\_nu\_call} (Transfers the GR gammas for transport modules (GR runs))  \item Call {\bf extrap} (At the moment, a dummy subroutine)
-  \item $r \rightarrow r\_nu$\\
-           $rho \rightarrow rho\_nu$\\
-           $t      \rightarrow t\_nu$\\
-           $ye   \rightarrow ye\_nu$\\
-           $ra   \rightarrow ra\_nu$\\
-           $rhoa   \rightarrow rhoa\_nu$\\
-           $ta   \rightarrow ta\_nu$\\
-           $yea   \rightarrow yea\_nu$
-  \item Call {\bf eddington} (Compute Eddington factors)  \item Call {\bf comvcf\_cal} (Compute the stress-energy coupling (for editing purposes)  \item Call {\bf w\_cal} (Update the relativistic enthalpy using $rhoa\_nu$, $ta\_nu$, and $ye\_nu$  (GR runs))  \item Call {\bf agr\_cal} (Update the lapse functions $rhoa\_nu$, $ta\_nu$, $ye\_nu$, and $ra\_nu$ (GR runs))  \item Call {\bf agr\_cal\_cal} (Transfer the lapse functions to transport variables (GR runs))  \item Call {\bf gamgra\_nu\_call} (Transfers the GR gammas for transport modules (GR runs))  \item Call {\bf enua\_cal} (Updates the neutrino bin energies on the basis of the new lapse functions (GR runs))
-  \item Transfer updated neutrino energies, lapse functions, and GR gammas into original arrays\\           $unuea \rightarrow unue$\\
-           $dunuea \rightarrow dunue$\\           $unubea \rightarrow unube$\\           $unua \rightarrow unu$\\           $dunua \rightarrow dunu$\\           $unuba \rightarrow unub$\\           $ncoefaa \rightarrow ncoefa$\\           $ecoefaa \rightarrow ecoefa$\\           $ecoefaea \rightarrow ecoefae$\\           $agra_nu \rightarrow agr_nu$\\           $agrajmh_nu \rightarrow agrjmh_nu$\\           $gamgra_nu \rightarrow gamgr_nu$  \item Call {\bf eqstz_x} (Update thermodynamic quantities for transport)  \item Call {\bf nu\_adv} Perform the source and transport step\begin{enumerate}
-  \item Transfer variables from calling statement to transport module\\
-           $r\_in \rightarrow ra\_nu$\\           $rho\_in \rightarrow rhoa\_nu$\\            $t\_in \rightarrow ta\_nu$\\            $ye\_in \rightarrow yea\_nu$\\  \item Call {\bf pre\_trans} (Compute $area$, $vol$, $dr$,  $drjmh$, $c\_r$, $c\_e$)  \item Call {\bf nu\_abemtr} (Advance neutrino occupation probabilities due to emission, absorption and transport)\\
- .....Initialize increment variables $dye\_emabtr$, $dt\_emabtr$, $dt\_emabtrk$, $dye\_emabtrk$, $dpsi_emabtr$\\
- .....$ta\_nu \rightarrow t_nu_0 \quad yea\_nu \rightarrow ye\_nu\_0$\\
- .....Call {\bf dtau\_aetr} (Get time step for transport)\\
- .....$psi0 \rightarrow psi0\_0$\\
- .....$psi0\_0 \rightarrow psi0\_i$\\
- .....$psi1 \rightarrow psi1\_i$\\
- .....$t\_nu\_0 \rightarrow ta\_nu$\\
- .....$t\_nu\_0 \rightarrow t\_nu\_i$\\
- .....$ye\_nu\_0 \rightarrow yea\_nu$\\
- .....$ye\_nu\_0 \rightarrow ye\_nu\_i$\\
- .....Iterate\\
-..........$t\_nu\_i \rightarrow ta\_nu$\\
-..........$ye\_nu\_i \rightarrow yea\_nu$\\
-..........Call {\bf c\_psi\_set} (Update thermodynamic quantities for transport)\\
-...............Update absorption and emission scattering rates\\
-...............Update isoenergetic scattering rates\\
-...............Compute inverse mean free paths\\
-...............Compute diffusion coefficients\\
-...............Compute $psi1\_i$\\
-...............Compute $d_ye$, $d\_ye\_t$, $d\_ye\_ye$, $d\_ye\_psi$, $d\_t$, $d\_t\_t$, $d\_t\_ye$, $d\_t\_psi$\\
-..........Call {\bf pre\_c\_psi\_set} (Implement switches $iyenu$, $itnu$)\\
-..........Call {\bf a\_psi\_set} (Compute recursion coefficients)\\
-..........Call {\bf psi\_bd} (Implement boundary conditions)\\
-..........Call {\bf d\_sub} (Compute $dpsi0\_iph(j)$, this iterations increment of $pis0$)\\
-..........$psi0\_i + dpsi0\_iph \rightarrow psi0\_ip1$\\
-..........$dpsi\_emabtr + dpsi0\_iph \rightarrow dpsi_emabtr$\\
-..........$t\_nu\_i + cf\_t + cf\_t\_psi(j,k)  \times dpsi0\_iph \rightarrow t\_nu\_i$\\
-..........$ye\_nu\_i + cf\_ye + cf\_ye\_psi \times dpsi0\_iph \rightarrow ye\_nu\_i$\\
-..........$dt\_emabtrk + cf\_t  + cf\_t\_psi \times dpsi0\_iph \rightarrow dt\_emabtrk$\\
-..........$dye\_emabtrk + cf\_ye + cf\_ye\_psi \times dpsi0\_iph \rightarrow dye\_emabtrk$\\
-..........Test for convergence\\
-.....End iteration\\
-.....$t\_nu\_0 \rightarrow ta\_nu$ (Restore initial value to $ta\_nu$\\
-.....$ye\_nu\_0 \rightarrow yea\_nu$ (Restore initial value to $yea\_nu$\\
-.....$dt\_emabtr  + dt\_emabtrk \rightarrow dt\_emabtr$ (Add changes to $t$ due to all energy zones)\\
-.....$dye\_emabtr  + dye\_emabtrk \rightarrow dye\_emabtr$ (Add changes to $ye$ due to all energy zones)\\
-.....$psi0 + dpsi\_emabtr \rightarrow psi0$ (Update $psi0$)\\
-.....Compute $psi1$\\
-.....$dc \rightarrow dcr$
-  \item $dye\_emabtr \rightarrow dye$
-  \item $dt\_emabtr \rightarrow dtmpnn$
-  \item Call {\bf nu\_scat} (Advance neutrino occupation probabilities due to inelastic scattering and pair production)
-\end{enumerate}
-  \item {\bf mgfld\_transport} $\leftarrow$
-  \item Call {\bf t\_adv} (Update the temperatures)
-  \item Call {\bf ye\_adv} (Update the electron fractions)
-  \item Switch arrays\\
-  $r \rightarrow rr$\\
-  $ra \rightarrow r$\\
-  $ra\_nu \rightarrow r\_nu$\\
-  etc.
-  \item Call {\bf eqstz_x} (Recompute thermodynamic functions)
-  \item Call {\bf gammaz_x} (Recompute thermodynamic gammas)
-  \item Call {\bf nu\_stress} (Compute neutrino stresses)
-\end{enumerate}
-  \item {\bf mgfld\_transport\_in} $\leftarrow$
-  \item Call {\bf mgfld\_reset} (Reset thermodynamic and rate tables)
-\begin{enumerate}  \item Call {\bf eqstt_x} (Compute the internal energy prior to resetting tables)  \item Call {\bf esrgnz_x} (Reset EOS tables)  \item Call {\bf eqstz_x} (Recompute thermodynamic quantities)  \item Call {\bf gammaz_x} (Recompute thermodynamic gammas)  \item Call {\bf abemset, bremset, scataset, scateset, scatiset, scatnnset, scatnset, pairset} (Recompute rate tables)  \item Call {\bf nucset} (Recompute nuclear reaction rate tables)
-\end{enumerate}
-  \item {\bf mgfld\_transport\_in} $\leftarrow$
-\end{enumerate}
-  \item {\bf evh1\_to\_mgfld\_transport} $\leftarrow$
-\end{enumerate}
-  \item {\bf radhyd} $\leftarrow$
-  \item Call {\bf mgfld\_transport\_to\_evh1}
-\begin{enumerate}
-  \item Call {\bf mgfld\_transport\_out} (Load results of MGFLD transport into arrays for export)
-\begin{enumerate}
-  \item $ta \rightarrow tp$\\
-            $yea \rightarrow yep$\\
-            $aesv \rightarrow ep$\\
-            $psi0 \rightarrow psi0p$\\
-            $stress \rightarrow nu\_stress$ (Combine stresses of different neutrino flavors)
-\end{enumerate}
-  \item {\bf mgfld\_transport\_to\_evh1} $\leftarrow$
-  \item $tp \rightarrow zte$\\
-           $ep \rightarrow zei$\\
-           $yep \rightarrow zye$\\
-           $nu\_stress \rightarrow znu\_str$\\
-\end{enumerate}
-  \item {\bf radhyd} $\leftarrow$
-  \item Call {\bf evh1\_to\_mgfld\_e\_advct} (Load variables for export to energy advection)
-\begin{enumerate}
-  \item $r0i \rightarrow rhop$\\
-            $r0l \rightarrow rhoap$\\
-            $t0i \rightarrow tp$\\
-            $zte \rightarrow tap$\\
-            $ye0i \rightarrow yep$\\
-            $zye \rightarrow yeap$\\
-            $u0i \rightarrow up$\\
-            $xai \rightarrow rp$\\
-            $xal \rightarrow rap$\\
-            $dtnphn\_aetr \rightarrow dtime$
-  \item Call {\bf mgfld\_nu\_energy\_advct\_in} (Export variables to neutrino energy advection modules)
-\begin{enumerate}
-  \item $rhop \rightarrow rho$\\
-            $rhoap \rightarrow rhoa$\\
-            $tp \rightarrow t$\\
-            $tap \rightarrow ta$\\
-            $yep \rightarrow ye$\\
-            $yeap \rightarrow yea$\\
-            $up \rightarrow u$\\
-            $psi0p \rightarrow psi0$\\
-            $rp \rightarrow r$\\
-            $rap \rightarrow ra$\\
-            Compute $dmrst$ and $rstmss$\\
-            $ua \rightarrow u$\\
-            $dtime \rightarrow dtj$
-  \item Call {\bf nu\_energy\_advct} (Perform the energy advection step)
-\begin{enumerate}
-  \item $r\_in \rightarrow r\_nu$\\
-            $ra\_in \rightarrow ra\_nu$\\
-            $rho\_in \rightarrow rho\_nu$\\
-            $rhoa\_in \rightarrow rhoa\_nu$\\
-            $t\_in \rightarrow t\_nu$\\
-            $ta\_in \rightarrow ta\_nu$\\
-            $ye\_in \rightarrow ye\_nu$\\
-            $yea\_in \rightarrow yea\_nu$
-  \item Call {\bf eddington} (Compute Eddington factors)  \item Call {\bf comvcf\_cal} (Compute the stress-energy coupling (for editing purposes)  \item Call {\bf w\_cal} (Update the relativistic enthalpy using $rho\_nu$, $t\_nu$, and $ye\_nu$  (GR runs))  \item Call {\bf agr\_cal} (Update the lapse functions $rho\_nu$, $t\_nu$, $ye\_nu$, and $r\_nu$ (GR runs))  \item Call {\bf agr\_cal\_cal} (Transfer the lapse functions to transport variables (GR runs))  \item Call {\bf enu\_cal} (Compute the neutrino bin energies))
-  \item Call {\bf nu\_U} (Compute the initial neutrino energy per unit mass)  \item Call {\bf w\_cal} (Update the relativistic enthalpy using $rhoa\_nu$, $ta\_nu$, and $ye\_nu$  (GR runs))  \item Call {\bf agr\_cal} (Update the lapse functions $rhoa\_nu$, $ta\_nu$, $ye\_nu$, and $ra\_nu$ (GR runs))  \item Call {\bf agra\_cal\_cal} (Transfer the lapse functions to transport variables (GR runs))  \item Call {\bf enua\_cal} (Compute the neutrino bin energies)
-  \item Call {\bf e\_advct} (Perform the neutrino energy advection)
-  \item $psi0\_a \rightarrow \psi0$ (Restore updated neutrino distribution to psi0 array)
-  \item Call {\bf rebal} (Prevent overfilling of neutrinos states)  \item Call {\bf nu\_Ua} (Compute the final neutrino energy per unit mass)  \item Call {\bf nu\_stress} (Update the neutrino stresses)\end{enumerate}
-\end{enumerate}
-  \item {\bf mgfld\_nu\_energy\_advct\_in} $\leftarrow$
-\end{enumerate}
-  \item {\bf evh1\_to\_mgfld\_e\_advct}  $\leftarrow$
-  \item Call {\bf mgfld\_e\_advct\_to\_evh1}
-\begin{enumerate}
-  \item Call {\bf mgfld\_nu\_energy\_advct\_out}
-\begin{enumerate}
-  \item $nu\_stress \rightarrow znu\_str$
-  \item $psi0p \rightarrow$ {\bf psi0p\_module}
-\end{enumerate}
-\end{enumerate}
-  \item {\bf evh1\_to\_mgfld\_e\_advct}  $\leftarrow$
-  \item Call {\bf mgfld\_to\_evh1} (Load undated $T$, $ye$, and $ei$ for EVH1)
-  \item Loop over $y$ and $z$ and put $x$ variables in 1D arrays, padding with 6 ghost zones
-  \item Call {\bf pre\_remap\_psi} (Prepare for $psi0$ remap)
- \begin{enumerate}  \item Divide $psi0$'s by Larangian updated $rho$ and store in array $psi0_re$, padding with 6 ghost zones)
-  \item Put initial (Lagrangian updated) and final (Eulerian) grids, $rho$'s and $psi0$'s into arrays, padding with 6 ghost zones)
- \item Call {\bf coordbc\_psi} (Find grid coordinates of ghost zones)
- \item Call {\bf CALL sweepbc\_r} (Fill $rho$ ghost zones with boundary values)\end{enumerate}  \item Call {\bf remap\_psi}\begin{enumerate}
-  \item Call {\bf paraset} (Updates parabolic coefficients for later use with Lagrangian grid coordinates   in obtaining parabolic interpolants of flow variables inside each grid zone)*****
-  \item Call {\bf parabola} (Computes parabolic interpolants for $rho$ and $psi0$ in each grid zone)
-  \item Calculate the volume of the overlapping subshells
-  \item Integrate over the parabolic profiles to calculate the total mass and neutrino number in the overlapping subshells
-  \item Calculate the volumes before and after remap
-  \item Advect $psi0$ by moving the subshell quantities into the appropriate Eulerian zone  \item Restore $psi0$ by multiplying remapped $psi0_re$ by remapped $rho$\end{enumerate}  \item Call {\bf pre\_remap\_comp} (Prepare for composition remap)
- \begin{enumerate}  \item Put initial (Lagrangian updated) and final (Eulerian) grids, $rho$'s into arrays, padding with 6 ghost zones)
- \item Find nse - nonnse boundary
-  \item Put initial (Lagrangian updated) $xn$'s into array $comp$, padding with 6 ghost zones)
- \item Call {\bf coordbc\_psi} Find grid coordinates of ghost zones
- \item Call {\bf sweepbc\_r} (Fill $rho$ ghost zones with boundary values) *****
- \item Fill left and right ghosts with boundary $rho$'s and $comp$'s\end{enumerate}  \item Call {\bf remap\_comp} (Remap composition)\begin{enumerate}
-  \item Call {\bf paraset} (Updates parabolic coefficients for later use with Lagrangian grid coordinates  in obtaining parabolic interpolants of flow variables inside each grid zone)*****
-  \item Call {\bf parabola} (Computes parabolic interpolants for $rho$ and $comp$ in each grid zone)
-  \item Calculate the volume of the overlapping subshells
-  \item Integrate over the parabolic profiles to calculate the total mass and mass of each specie in the overlapping subshells
-  \item Calculate the volumes before and after remap
-  \item Advect $comp$ by moving the subshell quantities into the appropriate Eulerian zone
-  \item Restore $comp$ to $xn$\end{enumerate}\begin{enumerate}  \item Add six ghost zones to $psi0$ array, and divide by the updated density  \item Find ghost coordinates\end{enumerate}  \item Call {\bf remap} (Remap flow variables)\begin{enumerate}  \item Call {\bf paraset} (Updates parabolic coefficients for later use in obtaining parabolic interpolants of flow variables inside each grid zone)*****
-  \item Call {\bf parabola} (Computes parabolic interpolants for flow variables in each grid zone)
-  \item Call {\bf e\_compose} (Computes $e(n)$ from $ei(n)$, $ekin(n)$, and $egrav(n)$, which is needed remap the total energy)  \item Call {\bf parabola} (Computes parabolic interpolants for $e$ variables in each grid zone)
-  \item Calculate the volume of the overlapping subshells  \item Calculate the total mass (fluxr), etc. in overlap  \item Advect mass, etc. by moving the subshell quantities into the appropriate Eulerian zone  \item Reload Eulerian grid coordinates  \item Call {\bf paraset} (Updates parabolic coefficients for later use with Eulerian grid coordinates in obtaining parabolic interpolants of flow variables inside each grid zone)
-  \item Call {\bf e\_decompose} (Extract the internal energy from the total energy)\end{enumerate}
-  \item Call {\bf eos\_result} (Computes $T$ from $ei$, and then $p$, $s$, and $gamma$)
-  \item Fill in multi-D arrays, $zro$, etc.
-  \item Put updated values into zone arrays (\_\_e) for {\bf mgfld\_edit}  \item Call {\bf evh1\_to\_mgfldseted} (Transfer remapped variables to mgfld variables ($rho$, $t$, $ye$, etc.) for edit)  \item Call {\bf mgfld\_edit} (Edit)  \item Call {\bf mgfld\_terminate} (Examine termination criteria)  \item Call {\bf time\_step\_select} (Compute timestep for next cycle)  \item {\Large {\bf Repeat}}, but call {\bf sweepy} before {\bf sweepx}\end{itemize}\end{document}

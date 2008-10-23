@@ -1,8 +1,0 @@
-#PBS -N itg120
-#PBS -A FUS017tt
-#PBS -l walltime=00:10:00,size=128
-#PBS -q debug
-#PBS -j eo
-cd /tmp/work/hardes/itg120
-aprun -n 128 ./gtc 
-

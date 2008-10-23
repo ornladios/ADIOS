@@ -1,9 +1,0 @@
-0-continue, 1-terminate soon with savefiles         (term_status)            0
-ending time step                                     (i_time_end)           10
-frequency to save fields in restart files           (i_time_save)            1
-time period to save fields in restart files       (time_save_inc)  1.00000E+05
-frequency to monitor min/max files and active        (i_time_mon)           10
-frequency to check resolution; set < 0 for no check  (i_time_res)           -1
-frequency write current tecplot file                 (i_time_tec)           -1
-initial/constant timestep (sec)                      (tstep_init)  0.00000E+00
-timestep frequency to write controller info         (i_time_cont)            0

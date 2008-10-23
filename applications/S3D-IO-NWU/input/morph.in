@@ -1,7 +1,0 @@
-256  188  56            nx_g, ny_g, nz_g   - GLOBAL grid size    
-1    1    1             npx, npy, npz      - processor grid1
-8    4    1             npx, npy, npz      - processor grid2
-5                       number of species INCLUDING N2
-1                       mode  (mode=0 -> process only the file below, else process all files in log file)
-jet                     run title
-1.900E-03               time stamp

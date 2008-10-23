@@ -1,8 +1,0 @@
-#PBS -N timing
-#PBS -lwalltime=2:00:00,nodes=32
-#PBS -A csc025ewk
-
-cd /tmp/work/zf2/gtc
-./cleanup
-date >log
-mpirun -np 32 ./gtc
