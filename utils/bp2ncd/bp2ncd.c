@@ -110,7 +110,7 @@ int ncd_attr_str_ds (int ncid
 
     void *value = attribute->value;
     size_t len = 1; 
-    enum ADIOS_DATATYES type =  attribute->type;
+    enum ADIOS_DATATYPES type =  attribute->type;
     struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;  
     uint64_t offset; 
