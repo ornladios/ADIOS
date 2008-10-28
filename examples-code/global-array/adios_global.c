@@ -16,6 +16,7 @@ MPI_Comm comm;
  
 int         color, key;
 int         size;
+int         i;
 MPI_Init (&argc, &argv);
 MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
@@ -28,7 +29,7 @@ key = rank / 2;
 MPI_Comm_split (MPI_COMM_WORLD, color, key, &comm);
 MPI_Comm_rank (comm, &rank);
 MPI_Comm_size (comm, &size);
-for (int i = 0; i < NX; i++)
+for (i = 0; i < NX; i++)
     t [i] = 10*(key*2+color)+i;
 /* every P/2 processes write into the same file 
   * there are 2 files generated. 
