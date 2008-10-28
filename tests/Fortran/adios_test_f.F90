@@ -26,7 +26,7 @@ program adios_test
     group = "restart"
     filename = "restart.bp"
     small_int = 10
-    big_int = 4294967296
+    big_int = 429496726
     small_real = 0.3
     big_real = 0.00000000000004
     z_size = 2
@@ -47,7 +47,9 @@ write (*,*) "write completed"
 
     call test_read (group, filename, group_comm, r_small_int, r_big_int, r_small_real, r_big_real, r_z_size, r_z_array)
 
-    if (small_int /= r_small_int .or. big_int /= r_big_int .or. small_real /= r_small_real .or. big_real /= r_big_real .or. z_size /= r_z_size) then
+    if (small_int /= r_small_int .or. big_int /= r_big_int .or. &
+     & small_real /= r_small_real .or. big_real /= r_big_real .or.&
+      z_size /= r_z_size) then
         write (*,*) 'rank ', rank, ' read did not match write'
     else
         write (*,*) 'rank ', rank, ' read matched write'
