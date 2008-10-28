@@ -13,7 +13,9 @@
 #define NUM_GP 24
 #define  MAX_RANK 10 * 5
 #define STRLEN 1000 
-
+static int  time_id = -1000;
+static int  time_flag = 0;
+static int  time_step=-1;
 struct var_dim
 {
     uint16_t id;
@@ -112,7 +114,6 @@ void copy_buffer(struct adios_bp_buffer_struct_v1 *dest
                 ,struct adios_bp_buffer_struct_v1 *src) {
 
     memcpy (dest, src, sizeof(struct adios_bp_buffer_struct_v1));
-
 }
 
 /*
@@ -222,83 +223,8 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 
     adios_posix_read_vars_index (b);
     adios_parse_vars_index_v1 (b, &vars_root);
-/*
-    while (vars_root)
-    {
-       if (vars_root->characteristics_count==1 && vars_root->characteristics[0].dims.count==0) {
-          var_dims = realloc (var_dims,   (var_dims_count + 1)
-                             * sizeof (struct var_dim)
-                             );
-          var_dims [var_dims_count].id = vars_root->id;
-          switch (vars_root->type ) {
-              case adios_integer:
-                   dimval =(uint64_t) *(int *) vars_root->characteristics[0].value;
-                   printf("%s %d %llu\n", vars_root->var_name,vars_root->id,dimval); 
-                   break;
-              case adios_long: 
-                   dimval =(uint64_t) *(long *) vars_root->characteristics[0].value;
-                   printf("%s %d %llu\n", vars_root->var_name,vars_root->id,dimval); 
-                   break;
-              default:
-                   printf("ERROR: unsupported var adios type %s %d\n",vars_root->var_name,vars_root->type); 
-                   break;
-           }
-           var_dims [var_dims_count].rank = dimval;
-           var_dims_count++;
-       }
-       vars_root = vars_root->next;
-    } 
-*/ 
     adios_posix_read_attributes_index (b);
     adios_parse_attributes_index_v1 (b, &attrs_root);
-/*
-    while (attrs_root)
-    {
-       if  (  attrs_root->characteristics_count==1 
-           && attrs_root->characteristics[0].dims.count==0
-           && attrs_root->type != adios_string) {
-          var_dims = realloc (var_dims,   (var_dims_count + 1)
-                             * sizeof (struct var_dim)
-                             );
-          var_dims [var_dims_count].id = attrs_root->id;
-          if (attrs_root->characteristics[0].var_id !=0) {
-              printf("attribute:%s %d\n",attrs_root->attr_name, attrs_root->characteristics[0].var_id); 
-              for (i = 0; i<var_dims_count;i++) {
-                   if (var_dims[i].id == attrs_root->characteristics[0].var_id) {
-                       dimval = var_dims[i].rank;
-                       printf("attribute:%s %d\n",attrs_root->attr_name, dimval); 
-                       hw_attr_num_ds (root_id, attrs_root->attr_path,attrs_root->attr_name, &dimval
-                                       ,adios_integer
-                                      );
-                   }
-              }
-          }
-          else {
-              switch (attrs_root->type ) {
-                  case adios_integer:
-                      dimval =(uint64_t) *(int *) attrs_root->characteristics[0].value;
-                      //printf("%s %d %llu\n", attrs_root->attr_name,attrs_root->id,dimval); 
-                      break;
-                  case adios_long: 
-		      dimval =(uint64_t) *(long *) attrs_root->characteristics[0].value;
-		      //printf("%s %d %llu\n", attrs_root->attr_name,attrs_root->id,dimval); 
-		      break;
-		  default:
-		      printf("ERROR: unsupported adios type: %s \n",attrs_root->attr_name);//,vars_root->type); 
-		      //value_to_string (attrs_root->type,attrs_root->characteristics[0].value)); 
-		      break ;
-              }
-          }
-           var_dims [var_dims_count].rank = dimval;
-           var_dims_count++;
-       }
-       attrs_root = attrs_root->next;
-    }
-
-    for (i = 0; i< var_dims_count; i++)
-       printf("total: %d %d %d\n",var_dims_count, var_dims[i].id, var_dims[i].rank); 
-*/
-
     // xxx.bp --> xxx.h5
     // parse element from bp file and write to hdf5 file
     uint64_t element_num = 0;
@@ -345,6 +271,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                 copy_buffer(b0,b); 
                 length_of_var = *(uint64_t *) (b->buff + b->offset);
                 adios_parse_var_data_header_v1 (b, &var_header);
+		//printf("%d %s\n",var_header.id, var_header.name);
 		if (var_header.is_dim == adios_flag_yes || var_header.dims == 0) {
                     if (!var_payload.payload) { 
 		        var_payload.payload = malloc (var_header.payload_size);
@@ -730,33 +657,23 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
         if(array_dim_order_fortran == USE_FORTRAN) { 
             int i;
             // transpose dimension order for Fortran arrays
-            for (i = 0; i < rank; i++)
-            {
+            for (i = 0; i < rank; i++) {
                 int reverse_i = rank - 1 - i;
 
                 global_h5dims [reverse_i] = global_dims[i];
-
                 local_h5dims [reverse_i] = dims[i];
-
                 start [reverse_i] = offsets[i];
-
                 stride [reverse_i] = 1;
-
                 count [reverse_i] = dims[i];
             }
         }
         else if(array_dim_order_fortran == USE_C) {
             int i;
-            for (i = 0; i < rank; i++)
-            {
+            for (i = 0; i < rank; i++) {
                 global_h5dims [i] = global_dims[i];
-
                 local_h5dims [i] = dims[i];
-
                 start [i] = offsets[i];
-
                 stride [i] = 1;
-
                 count [i] = dims[i];
             }
         }
@@ -810,16 +727,12 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
             // transpose dimension order for Fortran arrays
             int i;
             for (i = 0; i < rank; i++)
-            {
                 h5dims [rank-1-i] = dims[i];
-            }
         }
         else if(array_dim_order_fortran == USE_C) {
             int i;
             for (i = 0; i < rank; i++)
-            {
                 h5dims [i] = dims[i];
-            }
         }
 
         if(verbose >= DEBUG_INFO) {
@@ -1386,6 +1299,8 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
     hsize_t *maxdims;
     maxdims = (hsize_t*)malloc(sizeof(hsize_t)*rank);
     offset = (hsize_t*)malloc(sizeof(hsize_t)*rank);
+//    printf("******************************\n");
+//    printf("  \t%s\n",name);
     for(i=0;i<rank;i++)
     {
         maxdims[i] = H5S_UNLIMITED;    
@@ -1394,41 +1309,62 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
     cparms = H5Pcreate(H5P_DATASET_CREATE);
     h5_status = H5Pset_chunk(cparms,rank,dims);
     h5_status = bp_getH5TypeId(type, &type_id, data);
-    if(h5_status == 0 && type_id>0)
-    {
+    if(h5_status == 0 && type_id>0) {
         dataset_id = H5Dopen(parent_id,name);
-        if(dataset_id<0) 
-        {
+        if(dataset_id<0) {
+            for (i=0;i<rank;i++) {
+		if (dims[i]==0) {
+		    dims[i] = 1;
+		    //if (time_id == -1000)
+     		    //    time_flag = 1;
+		    break;
+		}
+	    }
             dataspace_id = H5Screate_simple(rank, dims, NULL);
-            if(dataspace_id>0 && h5_status==0) 
-            {
+            if(dataspace_id>0 && h5_status==0) {
                 dataset_id = H5Dcreate(parent_id, name, type_id, dataspace_id,cparms);
-                if(dataset_id<0)
-                {
+	        //printf("\tdataset_id %d is created\n",dataset_id);
+		//if (time_flag) {
+		//     time_id = dataset_id;
+		//     time_flag = 0;
+		//}
+                if(dataset_id<0) {
                     H5Sclose(dataspace_id);
                     return;
                 }
+		//if (time_id == dataset_id) {
+		//    time_step = time_step + 1; 
+		//    offset[i] = time_step;
+		//}
+	        //printf("\tdataset %d is created\n",offset[i]);
                 h5_status = H5Dextend (dataset_id, dims);
                 filespace = H5Dget_space(dataset_id);
                 h5_status = H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offset,NULL,dims,NULL);
                 h5_status = H5Dwrite(dataset_id,type_id,dataspace_id,filespace,H5P_DEFAULT,data);
             }
         }
-        else
-        {
+        else {
+            for (i=0;i<rank;i++) {
+		if (dims[i]==0) {
+		    dims[i]=1;
+		    break;
+		}
+	    }
             filespace = H5Dget_space(dataset_id);
             rank_old = H5Sget_simple_extent_ndims(filespace);
-            if(rank_old!=rank && filespace>0)
-            {
+            if(rank_old!=rank && filespace>0) {
                 H5Sclose(filespace);
                 return;
             }
             h5_status = H5Sget_simple_extent_dims(filespace,maxdims,NULL);
-            
-            offset[0] = maxdims[0];
-            maxdims [0] += dims [0];
+            offset[i] = maxdims[i];
+            maxdims [i] += dims[i];
+            //int j;
+	    //for (j=0;j<rank;j++)
+            //	printf("dims[%d]=%d\n",j, maxdims[j]);
+
             h5_status = H5Dextend (dataset_id, maxdims);
-            dataspace_id = H5Screate_simple(rank,dims,NULL);
+            //dataspace_id = H5Screate_simple(rank,dims,NULL);
             h5_status = H5Sget_simple_extent_dims(filespace,maxdims,NULL);
             filespace = H5Dget_space(dataset_id);
 
@@ -1441,8 +1377,10 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
             dataspace_id = H5Screate_simple(rank, dims, NULL);
             h5_status = H5Dwrite(dataset_id,type_id,dataspace_id,filespace,H5P_DEFAULT,data);
         }
-        if(dataset_id>0)
+        if(dataset_id>0) {
             h5_status = H5Dclose(dataset_id);
+	    //printf("status=%d\n",h5_status);
+	}
         if(dataspace_id>0)
             h5_status = H5Sclose(dataspace_id);
         if(filespace>0)
