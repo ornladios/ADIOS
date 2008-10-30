@@ -64,8 +64,17 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
 
 # Add var-size-mapping   
     line="" 
-    if(dimsname==""):
-       line=str(getsize[typename])
+    if (dimsname==""):
+       if (typename=="string"):
+    	   if (language_sw==1):
+               line="len_trim("+gwname+")" 
+               liner="len_trim("+grname+")" 
+	   else:	
+               line="strlen("+gwname+")" 
+               liner="strlen("+grname+")" 
+       else:
+	   line=str(getsize[typename])
+           liner=line 
     else:
        str_varsize=str(getsize[typename])
        dimsarr=dimsname.split(',');
@@ -93,18 +102,29 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
               + "\""+varname+"\"//char(0), "         \
               + gwname +", adios_err)\n"         
         if (readyn): 
-           liner = "adios_buf_size = "+line                 \
+           liner = "adios_buf_size = "+liner                 \
                  + "\ncall adios_read (adios_handle, " \
                  + "\"" + varname                      \
                  + "\"//char(0), " + grname            \
                  + ", adios_buf_size, adios_err)\n"
     elif(language_sw==2):
-        if (dimsname==""): 
-           linew = "adios_write (adios_handle, "          \
-                 + "\"" + varname + "\", &"               \
+        if (dimsname==""):
+	   if(typename=="string"): 
+              linew = "adios_write (adios_handle, "          \
+                 + "\"" + varname + "\", "                   \
                  + gwname + ");\n"                         
-           if (readyn): 
-               liner = "adios_buf_size = "+line                  \
+	   else: 
+              linew = "adios_write (adios_handle, "          \
+                 + "\"" + varname + "\", &"                  \
+                 + gwname + ");\n"                         
+           if (readyn):
+	     if(typename=="string"): 
+               liner = "adios_buf_size = "+liner                  \
+                     + ";\nadios_read (adios_handle, "      \
+                     + "\"" + varname + "\", "             \
+                     + grname + ", adios_buf_size);\n"
+	     else: 
+               liner = "adios_buf_size = "+liner                  \
                      + ";\nadios_read (adios_handle, "      \
                      + "\"" + varname + "\", &"             \
                      + grname + ", adios_buf_size);\n"
