@@ -1464,7 +1464,11 @@ void adios_mpi_close (struct adios_file_struct * fd
                 while (a)
                 {
                     adios_write_attribute_v1 (fd, a);
-                    MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+#if 1
+		    adios_mpi_buffer_write(md, fd->buffer, (uint64_t)(-1), 
+				           fd->bytes_written); 
+#else		    
+		    MPI_File_write (md->fh, fd->buffer, fd->bytes_written
                                    ,MPI_BYTE, &md->status
                                    );
                     if (md->status.count != fd->bytes_written)
@@ -1475,6 +1479,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                                 ,md->status.count
                                 );
                     }
+#endif
                     fd->base_offset += md->status.count;
                     fd->offset = 0;
                     fd->bytes_written = 0;
