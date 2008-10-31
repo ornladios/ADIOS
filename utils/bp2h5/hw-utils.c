@@ -369,7 +369,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                 var_payload.payload = 0;
                 adios_parse_var_data_header_v1 (b, &var_header);
                 if (var_header.dims) {
-                    printf("\tdataset name: %s (%d)\n",var_header.name,i);
+                    printf("\t%3d) dataset : %s\n",i,var_header.name);
 		    uint64_t element = 0;
 		    struct adios_dimension_struct_v1 * d = var_header.dims;
 		    int i = 0, ranks = 0, c = 0;
@@ -461,7 +461,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 		}
 		else {
                     // scalar var
-                    printf("\tscalar  name: %s (%d)\n",var_header.name,i);
+                    printf("\t%3d) scalar  : %s\n",i,var_header.name);
 		    if (!var_payload.payload) 
                         var_payload.payload = malloc (var_header.payload_size);
 		    adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
@@ -1305,7 +1305,6 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
             dataspace = H5Screate_simple(rank, dims, NULL);
             if(dataspace>0 && h5_status==0) {
                 dataset_id = H5Dcreate(parent_id, name, type_id, dataspace,cparms);
-	        printf("\tdataset_id %d is created\n",dataset_id);
                 if(dataset_id<0) {
                     H5Sclose(dataspace);
                     return;
