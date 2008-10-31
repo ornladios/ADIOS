@@ -364,12 +364,12 @@ int hw_makeh5 (char * fnamein, char * fnameout)
         // write to h5 file
         // make sure the buffer is big enough or send in null
         else {
+            printf("total vars : %d\n",vars_header.count);
             for (i = 0; i < vars_header.count; i++) {
                 var_payload.payload = 0;
                 adios_parse_var_data_header_v1 (b, &var_header);
                 if (var_header.dims) {
-                    printf("generate datasets :%d (%d)\n",vars_header.count, i);
-                    printf("\t dataset_name:%s\n",var_header.name);
+                    printf("\tgenerate dataset name:%s (%d)\n",var_header.name,i);
 		    uint64_t element = 0;
 		    struct adios_dimension_struct_v1 * d = var_header.dims;
 		    int i = 0, ranks = 0, c = 0;
@@ -455,14 +455,13 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 		    hw_dset (root_id, var_header.path, var_header.name, var_payload.payload
                             ,var_header.type, ranks, dims, global_dims, offsets
 			    );       
-		    printf("\twriting finished\n");
 		    free(dims);
 		    free(global_dims);
 		    free(offsets);
 		}
 		else {
                     // scalar var
-                    printf("generate scalar:%s\n",var_header.name);
+                    printf("\tgenerate scalar name: %s (%d)\n",var_header.name,i);
 		    if (!var_payload.payload) 
                         var_payload.payload = malloc (var_header.payload_size);
 		    adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
@@ -1297,7 +1296,6 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
 	    break;
 	}
     }
-    printf("\t time-index=%d\n",i);
     cparms = H5Pcreate(H5P_DATASET_CREATE);
     h5_status = H5Pset_chunk(cparms,rank,dims);
     h5_status = bp_getH5TypeId(type, &type_id, data);
@@ -1319,7 +1317,6 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
             }
         }
         else {
-	    printf("\tdataset_id %d is opened\n",dataset_id);
             filespace = H5Dget_space(dataset_id);
             rank_old = H5Sget_simple_extent_ndims(filespace);
             if(rank_old!=rank && filespace>0) {
@@ -1328,44 +1325,26 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
             }
             h5_status = H5Sget_simple_extent_dims(filespace,maxdims,NULL);
             int j;
-	    for (j=0;j<rank;j++)
-            	printf("dims[%d]=%d\n",j, maxdims[j]);
-            offset[i] = maxdims[i];
-            maxdims [i] += dims[i];
-	    for (j=0;j<rank;j++) 
-            	printf("dims[%d]=%d\n",j, maxdims[j]);
+            if (i<rank) {
+		printf("\ttime step: %d\n",maxdims[i]);
+                offset[i] = maxdims[i];
+                maxdims [i] += dims[i];
+            }
             h5_status = H5Dextend (dataset_id, maxdims);
-            printf("\textent status=%d\n",h5_status);
             filespace = H5Dget_space(dataset_id);
             int ret_rank = H5Sget_simple_extent_dims(filespace,maxdims,NULL);
-	    if (ret_rank != rank)
-		printf("rank of filespace is not equal to the rank set in XML!\n");
-            printf("\tget_space status=%d\n",h5_status);
-	    for (j=0;j<rank;j++)
-            	printf("dims[%d]=%d\n",j, maxdims[j]);
-	    for (j=0;j<rank;j++)
-            	printf("offset[%d]=%d\n",j, offset[j]);
-
             if(verbose >= DEBUG_INFO) {
                 printf("parent_id=%d,dataset_id=%d, name=%s,filespace=%d\n",\
                         parent_id,dataset_id, name,filespace);
             }
 
             h5_status = H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offset,NULL,dims,NULL);
-            printf("\thyperslab status=%d dataset_id=%d\n",h5_status,dataset_id);
             dataspace = H5Screate_simple(rank, dims, NULL);
             h5_status = H5Dwrite(dataset_id,type_id,dataspace,filespace,H5P_DEFAULT,data);
- 	    H5Eprint(stdout);
-            h5_status = H5Dclose(dataset_id);
- 	    H5Eprint(stdout);
-            printf("\tclose status=%d dataset_id=%d\n",h5_status,dataset_id);
-       	    dataset_id = 0;
-	    printf("dclose status=%d\n",h5_status);
+ 	    //H5Eprint(stdout);
         }
         if(dataset_id>0) {
             h5_status = H5Dclose(dataset_id);
- 	    H5Eprint(stdout);
-	    printf("dclose status=%d\n",h5_status);
 	}
         if(dataspace>0)
             h5_status = H5Sclose(dataspace);
