@@ -13,9 +13,6 @@
 #define NUM_GP 24
 #define  MAX_RANK 10 * 5
 #define STRLEN 1000 
-static int  time_id = -1000;
-static int  time_flag = 0;
-static int  time_step=-1;
 struct var_dim
 {
     uint16_t id;
@@ -416,9 +413,10 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 		    while (d) {
 			if (d->global_dimension.var_id != 0) {
 			    for (i = 0; i < var_dims_count; i++) {
-                                if (var_dims [i].id == d->global_dimension.var_id)
+                                if (var_dims [i].id == d->global_dimension.var_id) {
                                     *dims_t = var_dims [i].rank;
                                     i = var_dims_count+1;
+			    	}
 			    }
 			}
 			else
@@ -436,9 +434,10 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 		    while (d) {
 			if (d->local_offset.var_id != 0) {
 		            for (i = 0; i < var_dims_count; i++) {
-                                if (var_dims [i].id == d->local_offset.var_id)
+                                if (var_dims [i].id == d->local_offset.var_id) {
                                     *dims_t = var_dims [i].rank;
                                     i = var_dims_count+1;
+                            	}
                             }
                         }
                         else
