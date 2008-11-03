@@ -344,7 +344,8 @@ adios_mpi_set_write_buffer(struct adios_MPI_data_struct *md,
 	}
     	mem_allowed = adios_method_buffer_alloc ((uint64_t)bsize);
 	if (mem_allowed != (uint64_t)bsize) {
-		fprintf(stderr, "write_buffer alloc failed %d \n");
+		fprintf(stderr, "write_buffer alloc failed for %d\n",
+			bsize);
 		mem_allowed = 0;
 		return;
 	}
@@ -1464,22 +1465,9 @@ void adios_mpi_close (struct adios_file_struct * fd
                 while (a)
                 {
                     adios_write_attribute_v1 (fd, a);
-#if 1
 		    adios_mpi_buffer_write(md, fd->buffer, (uint64_t)(-1), 
 				           fd->bytes_written); 
-#else		    
-		    MPI_File_write (md->fh, fd->buffer, fd->bytes_written
-                                   ,MPI_BYTE, &md->status
-                                   );
-                    if (md->status.count != fd->bytes_written)
-                    {
-                        fprintf (stderr, "e:MPI method tried to write %llu, "
-                                         "only wrote %llu\n"
-                                ,fd->bytes_written
-                                ,md->status.count
-                                );
-                    }
-#endif
+
                     fd->base_offset += md->status.count;
                     fd->offset = 0;
                     fd->bytes_written = 0;
