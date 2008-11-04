@@ -53,7 +53,10 @@ AC_CONFIG_FILES([Makefile
                  utils/bpdump/Makefile
                  utils/bp2h5/Makefile
                  utils/bp2ncd/Makefile
-                 utils/bp2ascii/Makefile
+                 examples-code/Makefile
+                 examples-code/global-array/Makefile
+                 examples-code/global-array-time/Makefile
+                 examples-code/time-index/Makefile
                 ])
 
 AC_OUTPUT

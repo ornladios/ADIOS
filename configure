@@ -22477,7 +22477,7 @@ FC="$MPIFC"
 
 LIBS="$MPILIBS $LIBS"
 
-                                                                                                                        ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile utils/Makefile utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile"
+                                                                                                                                                      ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile utils/Makefile utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile examples-code/Makefile examples-code/global-array/Makefile examples-code/global-array-time/Makefile examples-code/time-index/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -23152,7 +23152,10 @@ do
   "utils/bpdump/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/bpdump/Makefile" ;;
   "utils/bp2h5/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/bp2h5/Makefile" ;;
   "utils/bp2ncd/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/bp2ncd/Makefile" ;;
-  "utils/bp2ascii/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/bp2ascii/Makefile" ;;
+  "examples-code/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples-code/Makefile" ;;
+  "examples-code/global-array/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples-code/global-array/Makefile" ;;
+  "examples-code/global-array-time/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples-code/global-array-time/Makefile" ;;
+  "examples-code/time-index/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples-code/time-index/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
