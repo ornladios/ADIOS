@@ -319,6 +319,9 @@ adios_mpi_set_write_buffer(struct adios_MPI_data_struct *md,
 	int err, bsize = 1048576;
 	uint64_t mem_allowed;
 
+	if (write_buffer->buffer == NULL)
+		return;
+
 	/*Note: Since each file might have different write_buffer,
 	 *So we will reset write_buffer even buffer_size != 0 */ 
 	err = statfs(filename, &fsbuf);
@@ -342,7 +345,7 @@ adios_mpi_set_write_buffer(struct adios_MPI_data_struct *md,
 	} else {
 		bsize = 1048576;
 	}
-    	mem_allowed = adios_method_buffer_alloc ((uint64_t)bsize);
+    	mem_allowed = adios_method_buffer_alloc((uint64_t)bsize);
 	if (mem_allowed != (uint64_t)bsize) {
 		fprintf(stderr, "write_buffer alloc failed for %d\n",
 			bsize);
@@ -353,6 +356,7 @@ adios_mpi_set_write_buffer(struct adios_MPI_data_struct *md,
 	if (write_buffer->buffer == NULL) {
 		fprintf(stderr, "write_buffer alloc failed %d \n",
 			bsize);
+		adios_method_buffer_free((uint64_t)bsize);
 		bsize = 0;
 	}
 	write_buffer->buffer_size = (int)bsize;		
@@ -1657,6 +1661,7 @@ void adios_mpi_finalize (int mype, struct adios_method_struct * method)
 	    }
 	    free(write_buffer->buffer);
     	    adios_method_buffer_free((uint64_t)write_buffer->buffer_size);
+	    write_buffer->buffer = NULL;
     	}
 	write_buffer->buffer_size = -1;
     }
