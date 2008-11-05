@@ -64,17 +64,29 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
 
 # Add var-size-mapping   
     line="" 
-    if(dimsname==""):
-       line=str(getsize[typename])
+    if (dimsname==""):
+       if (typename=="string"):
+    	   if (language_sw==1):
+               line="len_trim("+gwname+")" 
+               liner="len_trim("+grname+")" 
+	   else:	
+               line="strlen("+gwname+")" 
+               liner="strlen("+grname+")" 
+       else:
+	   line=str(getsize[typename])
+           liner=line 
     else:
        str_varsize=str(getsize[typename])
-       dimsarr=dimsname.split(',');
+       dimsarr=dimsname.split(',')
        for dimsele in dimsarr:
          if(dimsele==dimsarr[0]):
             if(dimsele.isdigit()):
                line=str_varsize+' * '+'('+dimsele+')'
             elif(var_gname_dict.has_key(dimsele)):
                line=str_varsize+' * '+'('+var_gname_dict[dimsele]+')'
+	    else:
+               line=str_varsize
+		
          else:
             if(dimsele.isdigit()):
                line = line+' * '+'('+dimsele+')'
@@ -84,7 +96,9 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
                line = line + ' * (' + var_gname_dict[dimsele]+')'
             else: 
                line = line
-    sizeformular.append(line)    
+    sizeformular.append(line)   
+    if (varname=="temperature"):
+        print str_varsize,  line 
     var_size_dict[varname]=line
     #var_size_dict = {var_size_dict.items(), varname:line}
     #print var_size_dict.items()
@@ -93,18 +107,29 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
               + "\""+varname+"\"//char(0), "         \
               + gwname +", adios_err)\n"         
         if (readyn): 
-           liner = "adios_buf_size = "+line                 \
+           liner = "adios_buf_size = "+liner                 \
                  + "\ncall adios_read (adios_handle, " \
                  + "\"" + varname                      \
                  + "\"//char(0), " + grname            \
                  + ", adios_buf_size, adios_err)\n"
     elif(language_sw==2):
-        if (dimsname==""): 
-           linew = "adios_write (adios_handle, "          \
-                 + "\"" + varname + "\", &"               \
+        if (dimsname==""):
+	   if(typename=="string"): 
+              linew = "adios_write (adios_handle, "          \
+                 + "\"" + varname + "\", "                   \
                  + gwname + ");\n"                         
-           if (readyn): 
-               liner = "adios_buf_size = "+line                  \
+	   else: 
+              linew = "adios_write (adios_handle, "          \
+                 + "\"" + varname + "\", &"                  \
+                 + gwname + ");\n"                         
+           if (readyn):
+	     if(typename=="string"): 
+               liner = "adios_buf_size = "+liner                  \
+                     + ";\nadios_read (adios_handle, "      \
+                     + "\"" + varname + "\", "             \
+                     + grname + ", adios_buf_size);\n"
+	     else: 
+               liner = "adios_buf_size = "+liner                  \
                      + ";\nadios_read (adios_handle, "      \
                      + "\"" + varname + "\", &"             \
                      + grname + ", adios_buf_size);\n"
@@ -264,26 +289,32 @@ def getVarlistFromXML(xmlFile):
             #items[0] = items[0]+line
             items=["",""]
             processnode(nodelist,glanguage,coord_comm,coord_var,time_var)
-            line = sizeformular[0] 
+
+            if(glanguage==1):
+               if (coord_comm == ''):
+                  line="call adios_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ 'mpi_comm_self, adios_err)\n'
+               else:
+                  line="call adios_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ coord_comm+ ', adios_err)\n'
+            else:
+               if (coord_comm == ''):
+                   line="adios_group_size (adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ 'mpi_comm_self);\n'
+               else:
+                   line="adios_group_size (adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ coord_comm + ');\n'
+            items[0]=line+items[0]
+            items[1]=line+items[1]
+            var_gname_dict={}
+            line = sizeformular[0]
             if (glanguage == 1): 
 		for i in range(1,len(sizeformular)):
                     line =line +' &\n                + '+sizeformular[i]
+                items[0]="adios_groupsize = " + line+"\n"+items[0]
             elif (glanguage == 2): 
 		for i in range(1,len(sizeformular)):
                     line =line +' \\\n                + '+sizeformular[i]
-            line = "adios_groupsize = "+line  
-            if(glanguage==1):
-               if (coord_comm == ''):
-                  line=line+"\ncall adios_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ 'mpi_comm_self, adios_err)\n'
-               else:
-                  line=line+"\ncall adios_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ coord_comm+ ', adios_err)\n'
-            else:
-               if (coord_comm == ''):
-                   line=line+";\nadios_group_size (adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ 'mpi_comm_self);\n'
-               else:
-                   line=line+";\nadios_group_size (adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ coord_comm + ');\n'
-            var_gname_dict={}
+                items[0]="adios_groupsize = " + line+";\n"+items[0]
+
             language_group_dict[gname]=glanguage
+             
             variables[str(gname)]=items
             sizestr[str(gname)] = line
             sizeformular=[]

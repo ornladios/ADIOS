@@ -17,7 +17,8 @@ def main(argv=None):
     global vardict
     vardict = xmlparser.getVarlistFromXML(sys.argv[1])
     for fname in vardict:
-        line=xmlparser.sizestr[fname]
+        #line=xmlparser.sizestr[fname]
+        line = ""
         if(xmlparser.language_group_dict[fname]==1):
            wfile= open("gwrite_"+fname+".fh","w") 
            rfile= open("gread_"+fname+".fh","w")

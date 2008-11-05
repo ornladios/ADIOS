@@ -11,6 +11,7 @@ adios_size["integer*2"]=2
 adios_size["integer"]=4
 adios_size["integer*4"]=4
 
+adios_size["string"]=1
 adios_size["long"]=8
 adios_size["integer*8"]=8
 
