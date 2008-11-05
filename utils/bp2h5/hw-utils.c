@@ -651,6 +651,7 @@ void hw_dset(hid_t root_id,
 
         if(array_dim_order_fortran == USE_FORTRAN) {
             int reverse_i; 
+            time_idx=-1;
             // transpose dimension order for Fortran arrays
             for (i = 0; i < rank; i++) {
                 reverse_i = rank - 1 - i;
@@ -678,6 +679,7 @@ void hw_dset(hid_t root_id,
             }
         }
         else if(array_dim_order_fortran == USE_C) {
+            time_idx=-1;
             for (i = 0; i < rank; i++) {
                 global_h5dims[i] = global_dims[i];
                 local_h5dims[i] = dims[i];
@@ -720,10 +722,11 @@ void hw_dset(hid_t root_id,
 		}
 		hsize_t *maxdims = (hsize_t *) malloc (rank * sizeof (hsize_t));
 		h5_status = H5Sget_simple_extent_dims(dataspace,maxdims,NULL);
-                 
-		global_h5dims[time_idx] = time_index;
-	        start[time_idx] = time_index-1;
-		stride[time_idx] = 1;
+                if(time_idx>=0) {  
+			global_h5dims[time_idx] = time_index;
+			start[time_idx] = time_index-1;
+			stride[time_idx] = 1;
+		}
 		if (maxdims[time_idx] < global_h5dims[time_idx]) {
                 	if (verbose >= DEBUG_INFO)
                             fprintf(stderr, "%d %d now extend the dataset!\n", 
@@ -732,7 +735,7 @@ void hw_dset(hid_t root_id,
                     	h5_status = H5Dextend (dataset, global_h5dims);
                     	if (h5_status<0)
                         	fprintf(stderr, "H5Dextent has error!\n");
-			H5Dclose(dataset);
+			h5_status=H5Dclose(dataset);
                         dataset = H5Dopen (grp_id [level], name);
 		}
                 free (maxdims);
@@ -757,7 +760,6 @@ void hw_dset(hid_t root_id,
         memspace = H5Screate_simple (rank, local_h5dims, NULL);
         if (memspace< 0)
             fprintf(stderr, "memspace is not created!\n");
-
 	h5_status = H5Sselect_hyperslab (dataspace, H5S_SELECT_SET
                                   ,start, stride, local_h5dims, NULL
                                   );
@@ -774,7 +776,6 @@ void hw_dset(hid_t root_id,
         H5Sclose (dataspace);
         H5Dclose (dataset);
         H5Tclose (type_id);
-        //H5Fflush (root_id, H5F_SCOPE_LOCAL); 
         free (global_h5dims);
         free (local_h5dims);
         free (start);
@@ -1360,7 +1361,6 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
     hsize_t *maxdims;
     maxdims = (hsize_t*)malloc(sizeof(hsize_t)*rank);
     offset = (hsize_t*)malloc(sizeof(hsize_t)*rank);
-//    printf("******************************\n");
     for(i=0;i<rank;i++)
     {
         maxdims[i] = H5S_UNLIMITED;    
