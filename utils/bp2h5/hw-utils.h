@@ -16,7 +16,8 @@ enum scalar_convention {
 
 enum verbose_level {
     NO_INFO = 0,
-	DEBUG_INFO = 1    
+    LIST_INFO = 1,    
+    DEBUG_INFO = 2   
 };
 
 /*
@@ -88,6 +89,7 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
              ,uint64_t *dims
              ,uint64_t *global_dims
              ,uint64_t *offsets
+             ,uint32_t time_index 
              );
 
 /*

@@ -124,7 +124,7 @@ int initialize_bp2h5(enum lang_convention array_dim_order,
                      enum lang_convention attr_str_ds,
                      enum lang_convention attr_str_gp,
                      enum scalar_convention scalar_ds,
-                     enum verbose_level verb
+                     enum verbose_level verb 
                      )
 {
     if(!bp2h5_initialized) {
@@ -134,7 +134,6 @@ int initialize_bp2h5(enum lang_convention array_dim_order,
         attr_str_gp_fortran = attr_str_gp;
         scalar_dataspace = scalar_ds;
         verbose = verb;
-        
         bp2h5_initialized = 1;
     }
 
@@ -168,7 +167,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 
     // initialization
     if(!bp2h5_initialized && 
-        (initialize_bp2h5(USE_FORTRAN, USE_FORTRAN, USE_FORTRAN, USE_FORTRAN, USE_SCALAR, NO_INFO))) {
+        (initialize_bp2h5(USE_FORTRAN, USE_FORTRAN, USE_FORTRAN, USE_FORTRAN, USE_SCALAR,NO_INFO))) {
         return -1;
     }
 
@@ -259,6 +258,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
         // process each var in current process group
         
         if (element_num%2 == 0) {
+            //if (pg->time_index==3) return;
 	     var_dims = realloc (var_dims, (vars_header.count)
 				* sizeof (struct var_dim)
 			        );
@@ -267,7 +267,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                 copy_buffer(b0,b); 
                 length_of_var = *(uint64_t *) (b->buff + b->offset);
                 adios_parse_var_data_header_v1 (b, &var_header);
-		//printf("---------%d %s---------\n",var_header.id, var_header.name);
+               
 		if (var_header.is_dim == adios_flag_yes || var_header.dims == 0) {
                     if (!var_payload.payload) { 
 		        var_payload.payload = malloc (var_header.payload_size);
@@ -361,12 +361,18 @@ int hw_makeh5 (char * fnamein, char * fnameout)
         // write to h5 file
         // make sure the buffer is big enough or send in null
         else {
-            printf("total vars: %d, pg timeindex: %d\n",vars_header.count, pg->time_index);
+	    if (verbose >= LIST_INFO) {
+		fprintf(stderr, "-------------------------------------------\n");
+                fprintf(stderr, "total vars: %d, pg timeindex: %d\n",
+                        vars_header.count, 
+                        pg->time_index);
+	    }
             for (i = 0; i < vars_header.count; i++) {
                 var_payload.payload = 0;
                 adios_parse_var_data_header_v1 (b, &var_header);
                 if (var_header.dims) {
-                    printf("\t%3d) dataset : %s\n",i,var_header.name);
+		    if (verbose >= LIST_INFO)
+                        fprintf(stderr, "\t%3d) dataset : %s\n",i,var_header.name);
 		    uint64_t element = 0;
 		    struct adios_dimension_struct_v1 * d = var_header.dims;
 		    int i = 0, ranks = 0, c = 0;
@@ -451,8 +457,9 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                                                     ,var_header.payload_size
                                                     );
 		    // now ready to write dataset to h5 file
-		    hw_dset (root_id, var_header.path, var_header.name, var_payload.payload
-                            ,var_header.type, ranks, dims, global_dims, offsets
+		    hw_dset(root_id, var_header.path, var_header.name, var_payload.payload,
+                            var_header.type, ranks, dims, global_dims, offsets,
+  	 		    pg->time_index
 			    );       
 		    free(dims);
 		    free(global_dims);
@@ -460,7 +467,8 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 		}
 		else {
                     // scalar var
-                    printf("\t%3d) scalar  : %s\n",i,var_header.name);
+		    if (verbose >= LIST_INFO)
+	                    fprintf(stderr, "\t%3d) scalar  : %s\n",i,var_header.name);
 		    if (!var_payload.payload) 
                         var_payload.payload = malloc (var_header.payload_size);
 		    adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
@@ -588,21 +596,24 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 /*
  * Write dataset to h5 file
  */
-void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
-             ,enum ADIOS_DATATYPES type, int rank
-             ,uint64_t *dims
-             ,uint64_t *global_dims
-             ,uint64_t *offsets
-             )
+void hw_dset(hid_t root_id, 
+             char * dirstr, 
+             char * name, 
+             void * data,
+             enum ADIOS_DATATYPES type, 
+	     int rank,
+             uint64_t *dims,
+             uint64_t *global_dims,
+             uint64_t *offsets,
+             uint32_t time_index 
+            )
 {
     H5Eset_auto (NULL,NULL);
     char ** grp_name;
     int level;
     int i;
     hid_t grp_id [NUM_GP + 1];
-    
     grp_id [0] = root_id;
-    
     grp_name = bp_dirparser (dirstr, &level);
     
     for (i = 0; i < level; i++)
@@ -635,72 +646,139 @@ void hw_dset (hid_t root_id, char * dirstr, char * name, void * data
         local_h5dims = (hsize_t *) malloc (rank * sizeof (hsize_t));
         start = (hsize_t *) malloc (rank * sizeof (hsize_t));
         stride = (hsize_t *) malloc (rank * sizeof (hsize_t));
-        count = (hsize_t *) malloc (rank * sizeof (hsize_t));
 
-        if(array_dim_order_fortran == USE_FORTRAN) { 
-            int i;
+        int i, time_idx;
+
+        if(array_dim_order_fortran == USE_FORTRAN) {
+            int reverse_i; 
             // transpose dimension order for Fortran arrays
             for (i = 0; i < rank; i++) {
-                int reverse_i = rank - 1 - i;
-
+                reverse_i = rank - 1 - i;
                 global_h5dims [reverse_i] = global_dims[i];
                 local_h5dims [reverse_i] = dims[i];
                 start [reverse_i] = offsets[i];
                 stride [reverse_i] = 1;
-                count [reverse_i] = dims[i];
+		if (dims[i]==0) {
+                    if (verbose >= DEBUG_INFO)
+                        printf("timeindex=%d rank=%d\n",i, rank);
+                    time_idx = i;
+		    local_h5dims[i]=1;
+                }
+            }
+            if (time_idx == 0 && global_h5dims[time_idx]!=0) {
+	        for (i=0;i<rank-1;i++) {
+                    global_h5dims[i+1] = global_h5dims[i];
+                    start[i+1] = start[i];
+                }
+		global_h5dims[time_idx] = 1;
+            }
+            if (time_idx == rank-1 && global_h5dims[time_idx]==0) {
+		global_h5dims[time_idx] = 1;
+		start[time_idx] = 0;
             }
         }
         else if(array_dim_order_fortran == USE_C) {
-            int i;
             for (i = 0; i < rank; i++) {
-                global_h5dims [i] = global_dims[i];
-                local_h5dims [i] = dims[i];
+                global_h5dims[i] = global_dims[i];
+                local_h5dims[i] = dims[i];
                 start [i] = offsets[i];
                 stride [i] = 1;
-                count [i] = dims[i];
+		if (dims[i]==0) {
+                    time_idx = i;
+		    local_h5dims[i]=1;
+		}
+            }
+            if (time_idx == 0 && global_h5dims[time_idx]!=0) {
+	        for (i=rank-1;i>0;i--) {
+                    global_h5dims [i] = global_h5dims[i-1];
+                    start[i] = start[i-1];
+                }
+
+		global_h5dims[time_idx] = 1;
+		start[time_idx] = 0;
+            }
+            if (time_idx == rank-1 && global_h5dims[time_idx]==0) {
+	        for (i=rank-1;i>0;i--) {
+                    global_h5dims [i] = global_h5dims[i-1];
+                    local_h5dims [i] = local_h5dims[i-1];
+                    start[i] = start[i-1];
+                }
+                time_idx=0;
+		global_h5dims[time_idx] = 1;
+		start[time_idx] = 0;
             }
         }
 
-        if(verbose >= DEBUG_INFO) {
-            int i;
-            for (i = 0; i < rank; i++)
-                fprintf(stderr, "  Hyperslab index = %d local bound = %d global bound = %d start = %d\n"
-                       ,i
-                       ,local_h5dims[i]
-                       ,global_h5dims[i]
-                       ,start[i]
-                       );
-        }
-
-        dataspace = H5Screate_simple (rank, global_h5dims, NULL);
-
-        h5_status = H5Sselect_hyperslab (dataspace, H5S_SELECT_SET
-                                  ,start, stride, count, NULL
-                                  );
-
-        memspace = H5Screate_simple (rank, local_h5dims, NULL);
-
         dataset = H5Dopen (grp_id [level], name);
-        if (dataset < 0)
-        {
-            dataset = H5Dcreate (grp_id [level], name, type_id
-                                ,dataspace, H5P_DEFAULT
-                                );
+        if (dataset>0) {
+		dataspace = H5Dget_space(dataset);
+		int rank_old = H5Sget_simple_extent_ndims(dataspace);
+		if (rank_old!=rank && dataspace>0) {
+			printf("rank doesnot match!\n");
+			H5Sclose(dataspace);
+			return;
+		}
+		hsize_t *maxdims = (hsize_t *) malloc (rank * sizeof (hsize_t));
+		h5_status = H5Sget_simple_extent_dims(dataspace,maxdims,NULL);
+                 
+		global_h5dims[time_idx] = time_index;
+	        start[time_idx] = time_index-1;
+		stride[time_idx] = 1;
+		if (maxdims[time_idx] < global_h5dims[time_idx]) {
+                	if (verbose >= DEBUG_INFO)
+                            fprintf(stderr, "%d %d now extend the dataset!\n", 
+					maxdims[time_idx],
+					global_h5dims[time_idx]);
+                    	h5_status = H5Dextend (dataset, global_h5dims);
+                    	if (h5_status<0)
+                        	fprintf(stderr, "H5Dextent has error!\n");
+			H5Dclose(dataset);
+                        dataset = H5Dopen (grp_id [level], name);
+		}
+                free (maxdims);
+		dataspace = H5Dget_space(dataset);
         }
+        else {
+		global_h5dims[time_idx] = 1;
+		dataspace = H5Screate_simple (rank, global_h5dims, NULL);
+		if (dataspace < 0)
+			fprintf(stderr, "dataspace is not created!\n");
+		dataset = H5Dcreate (grp_id [level], name, type_id
+				,dataspace,H5P_DEFAULT 
+				);
+		if (dataset< 0)
+			fprintf(stderr, "dataset is not created!\n");
+        } 
+        if (verbose >= LIST_INFO) {
+		for (i=0;i<rank;i++) 
+			fprintf(stderr,"\t     [%d]:\tg(%d)c(%d)o(%d)\n",
+				i, global_h5dims[i],local_h5dims[i],start[i]);
+	}
+        memspace = H5Screate_simple (rank, local_h5dims, NULL);
+        if (memspace< 0)
+            fprintf(stderr, "memspace is not created!\n");
 
-        h5_status = H5Dwrite (dataset, type_id, memspace, dataspace
+	h5_status = H5Sselect_hyperslab (dataspace, H5S_SELECT_SET
+                                  ,start, stride, local_h5dims, NULL
+                                  );
+	if (h5_status< 0)
+		fprintf(stderr, "H5Sselect_hyperslab returns error!\n");
+
+	h5_status = H5Dwrite (dataset, type_id, memspace, dataspace
                              ,H5P_DEFAULT, data
                              );
+	if (h5_status< 0)
+		fprintf(stderr, "dataset is not written! (err=%d)\n", h5_status);
 
         H5Sclose (memspace);
         H5Sclose (dataspace);
         H5Dclose (dataset);
-
+        H5Tclose (type_id);
+        //H5Fflush (root_id, H5F_SCOPE_LOCAL); 
         free (global_h5dims);
         free (local_h5dims);
         free (start);
         free (stride);
-        free (count);
     }
     else
     {
@@ -1276,14 +1354,13 @@ void hw_scalar_attr_array ( hid_t parent_id, const char *name, void *value, enum
 void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES type, int rank, hsize_t* dims)
 {
     hid_t dataset_id, dataspace, cparms, type_id,filespace;    
-    int i,rank_old;
+    int i,rank_old, time_idx;
     herr_t h5_status;
     hsize_t *offset;
     hsize_t *maxdims;
     maxdims = (hsize_t*)malloc(sizeof(hsize_t)*rank);
     offset = (hsize_t*)malloc(sizeof(hsize_t)*rank);
 //    printf("******************************\n");
-//    printf("  \t%s\n",name);
     for(i=0;i<rank;i++)
     {
         maxdims[i] = H5S_UNLIMITED;    
@@ -1295,6 +1372,7 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
 	    break;
 	}
     }
+    time_idx = i; 
     cparms = H5Pcreate(H5P_DATASET_CREATE);
     h5_status = H5Pset_chunk(cparms,rank,dims);
     h5_status = bp_getH5TypeId(type, &type_id, data);
@@ -1322,11 +1400,11 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
                 return;
             }
             h5_status = H5Sget_simple_extent_dims(filespace,maxdims,NULL);
-            int j;
-            if (i<rank) {
-		//printf("\ttime step: %d\n",maxdims[i]);
-                offset[i] = maxdims[i];
-                maxdims [i] += dims[i];
+            if (time_idx<rank) {
+                if (verbose >= DEBUG_INFO) 
+ 			printf("\ttime step: %d\n",maxdims[i]);
+                offset[time_idx] = maxdims[time_idx];
+                maxdims [time_idx] += dims[time_idx];
             }
             h5_status = H5Dextend (dataset_id, maxdims);
             filespace = H5Dget_space(dataset_id);

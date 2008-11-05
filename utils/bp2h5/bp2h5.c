@@ -52,7 +52,7 @@ int parse_cmdline(int argc, char **argv
             *scalar_as_array = USE_SINGLE_ELE_ARRAY;
         }
         else if(!strcmp(argv[i], "--verbose") || !strcmp(argv[i], "-V")) {
-            *verb = DEBUG_INFO;
+            *verb = LIST_INFO;
         }
         else if(!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
             print_usage();
