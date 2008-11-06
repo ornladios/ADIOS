@@ -625,13 +625,7 @@ void hw_dset(hid_t root_id,
         }
     }
 
-    if (global_dims[0])
-    {
-        hsize_t * global_h5dims;
-        hsize_t * local_h5dims;
-        hsize_t * start;
-        hsize_t * stride;
-        hsize_t * count;
+    if (global_dims[0]) {
 
         hid_t dataspace;
         hid_t memspace;
@@ -640,13 +634,23 @@ void hw_dset(hid_t root_id,
 
         herr_t h5_status;
 
-        h5_status = bp_getH5TypeId (type, &type_id, data);
 
+        hsize_t * global_h5dims;
+        hsize_t * local_h5dims;
+        hsize_t * start;
+        hsize_t * stride;
+
+        h5_status = bp_getH5TypeId (type, &type_id, data);
         global_h5dims = (hsize_t *) malloc (rank * sizeof (hsize_t));
         local_h5dims = (hsize_t *) malloc (rank * sizeof (hsize_t));
         start = (hsize_t *) malloc (rank * sizeof (hsize_t));
         stride = (hsize_t *) malloc (rank * sizeof (hsize_t));
-
+	/*
+	hsize_t global_h5dims[10];
+	hsize_t local_h5dims[10];
+	hsize_t start[10];
+	hsize_t stride[10];
+	*/
         int i, time_idx;
 
         if(array_dim_order_fortran == USE_FORTRAN) {
@@ -726,29 +730,32 @@ void hw_dset(hid_t root_id,
 			global_h5dims[time_idx] = time_index;
 			start[time_idx] = time_index-1;
 			stride[time_idx] = 1;
-		}
-		if (maxdims[time_idx] < global_h5dims[time_idx]) {
-                	if (verbose >= DEBUG_INFO)
-                            fprintf(stderr, "%d %d now extend the dataset!\n", 
-					maxdims[time_idx],
-					global_h5dims[time_idx]);
-                    	h5_status = H5Dextend (dataset, global_h5dims);
-                    	if (h5_status<0)
-                        	fprintf(stderr, "H5Dextent has error!\n");
-			h5_status=H5Dclose(dataset);
-                        dataset = H5Dopen (grp_id [level], name);
+			if (maxdims[time_idx] < global_h5dims[time_idx]) {
+				if (verbose >= DEBUG_INFO)
+					fprintf(stderr, "%d %d now extend the dataset!\n", 
+							maxdims[time_idx],
+							global_h5dims[time_idx]);
+				h5_status = H5Dextend (dataset, global_h5dims);
+				if (h5_status<0)
+					fprintf(stderr, "H5Dextent has error!\n");
+				h5_status=H5Dclose(dataset);
+				dataset = H5Dopen (grp_id [level], name);
+				dataspace = H5Dget_space(dataset);
+			}
 		}
                 free (maxdims);
-		dataspace = H5Dget_space(dataset);
         }
         else {
 		global_h5dims[time_idx] = 1;
 		dataspace = H5Screate_simple (rank, global_h5dims, NULL);
 		if (dataspace < 0)
 			fprintf(stderr, "dataspace is not created!\n");
+    		hid_t cparms = H5Pcreate(H5P_DATASET_CREATE);
+    		h5_status = H5Pset_chunk(cparms,rank,local_h5dims);
 		dataset = H5Dcreate (grp_id [level], name, type_id
-				,dataspace,H5P_DEFAULT 
+				,dataspace,cparms
 				);
+		H5Pclose(cparms);
 		if (dataset< 0)
 			fprintf(stderr, "dataset is not created!\n");
         } 
@@ -765,7 +772,6 @@ void hw_dset(hid_t root_id,
                                   );
 	if (h5_status< 0)
 		fprintf(stderr, "H5Sselect_hyperslab returns error!\n");
-
 	h5_status = H5Dwrite (dataset, type_id, memspace, dataspace
                              ,H5P_DEFAULT, data
                              );
@@ -776,13 +782,14 @@ void hw_dset(hid_t root_id,
         H5Sclose (dataspace);
         H5Dclose (dataset);
         H5Tclose (type_id);
-        free (global_h5dims);
+	//if (global_h5dims)
+        free(global_h5dims);
         free (local_h5dims);
         free (start);
         free (stride);
+	
     }
-    else
-    {
+    else {
         hsize_t * h5dims;
         h5dims = (hsize_t *) malloc (rank * sizeof (hsize_t));    
         if(array_dim_order_fortran == USE_FORTRAN) { 
