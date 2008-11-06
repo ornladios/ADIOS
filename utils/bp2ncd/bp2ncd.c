@@ -470,7 +470,7 @@ int ncd_dataset (int ncid
         val = ptr_var_payload->payload;    
         nc_inq_varid(ncid,fullname,&valid);
         nc_redef(ncid);
-	int time_idx;
+	int time_idx=-1;
         for (rank = 0; rank < maxrank; rank++) {
         	if (count_dims[rank]==0) {
 			count_dims[rank]=1;
