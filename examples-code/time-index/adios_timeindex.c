@@ -4,8 +4,8 @@
 int main (int argc, char ** argv) 
 {
 	char        filename [256];
-	int         rank;
-	int         NX = 10; 
+	int         rank, it, i;
+	int         NX = 30; 
 	double      t[NX];
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
@@ -27,8 +27,8 @@ int main (int argc, char ** argv)
 	sprintf (filename,"restart%5.5d.bp",rank);
 	comm = MPI_COMM_SELF;
 	adios_init ("config_timeindex.xml");
-	for (int it=0;it<10;it++) {
-		for (int i = 0; i < NX; i++)
+	for (it=0;it<10;it++) {
+		for (i = 0; i < NX; i++)
 			t [i] = 10*it+i;
 		adios_open (&adios_handle, "temperature", filename, "a");
 #include "gwrite_temperature.ch"
