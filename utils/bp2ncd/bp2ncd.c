@@ -36,6 +36,9 @@ int main(int argc, char **argv)
 		}
 	}
 	fprintf(stderr, "bp2ncd\n\tconvert %s to %s\n", bp_fname, ncd_fname);
+	if (to==0)
+		fprintf(stderr, "\tfrom time step %d to the end\n", from);
+	else
 	fprintf(stderr, "\tfrom time step %d to %d\n", from, to);
 	time_slice.from=from;
 	time_slice.to=to;
@@ -147,16 +150,13 @@ int makencd(char *bp_fname, char *ncd_fname,int from, int to)
 */
 		if ((pg->time_index_name) &&
 	  	    (pg->time_index<from || 
-		     pg->time_index>to && to!=-1)) {
+		     pg->time_index>to && to!=0)) {
 			pg=pg->next;
 		}
 		else {	
 		var_dims[0].rank = pg->time_index-from;
-		//fprintf(stderr, "TABLE: %d\n",var_dims[0].rank);
 		if (element_num%2 == 0) {
-
 			for (i=0;i<vars_header.count;i++) {
-
 				var_payload.payload = 0;
 				copy_buffer(b0, b);
 				length_of_var = *(uint64_t*)(b->buff+b->offset);
@@ -223,7 +223,6 @@ int makencd(char *bp_fname, char *ncd_fname,int from, int to)
 				if (var_payload.payload)
 					free(var_payload.payload);
 			}
-			printf("att start!\n");
 			adios_parse_attributes_header_v1(b,&attrs_header);
 			for (i=0;i<attrs_header.count;i++) {
 				adios_parse_attribute_v1(b,&attribute);
