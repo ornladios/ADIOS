@@ -154,7 +154,7 @@ int makencd(char *bp_fname, char *ncd_fname,int from, int to)
 			pg=pg->next;
 		}
 		else {	
-		var_dims[0].rank = pg->time_index-from;
+		var_dims[0].rank = pg->time_index-from+1;
 		if (element_num%2 == 0) {
 			for (i=0;i<vars_header.count;i++) {
 				var_payload.payload = 0;
