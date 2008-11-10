@@ -319,7 +319,7 @@ adios_mpi_set_write_buffer(struct adios_MPI_data_struct *md,
 	int err, bsize = 1048576;
 	uint64_t mem_allowed;
 
-	if (write_buffer->buffer == NULL)
+	if (write_buffer->buffer != NULL)
 		return;
 
 	/*Note: Since each file might have different write_buffer,
@@ -342,10 +342,9 @@ adios_mpi_set_write_buffer(struct adios_MPI_data_struct *md,
 			}
 			close(fd);
 		}
-	} else {
-		bsize = 1048576;
 	}
-    	mem_allowed = adios_method_buffer_alloc((uint64_t)bsize);
+    	
+	mem_allowed = adios_method_buffer_alloc((uint64_t)bsize);
 	if (mem_allowed != (uint64_t)bsize) {
 		fprintf(stderr, "write_buffer alloc failed for %d\n",
 			bsize);
@@ -458,9 +457,6 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
      * buffer allocation over flow happened. Note: in error handler, it should
      * be released. 
      */
-    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append) {
-    	adios_mpi_set_write_buffer(md, name);
-    }
     switch (fd->mode)
     {
         case adios_mode_read:
@@ -957,6 +953,9 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
             return adios_flag_no;
         }
     }
+
+    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
+    	adios_mpi_set_write_buffer(md, name);
 
     /* Try to get write buffer size */
     free (name);
