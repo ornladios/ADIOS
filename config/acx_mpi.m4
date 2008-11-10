@@ -74,6 +74,12 @@
 AC_DEFUN([ACX_MPI], [
 AC_PREREQ(2.50) dnl for AC_LANG_CASE
 
+AM_CONDITIONAL(HAVE_MPI,true)
+
+AC_ARG_WITH(mpi,
+            [  --with-mpi=<location of MPI installation>],
+            [MPI_DIR=$withval])
+
 AC_LANG_CASE([C], [
 	AC_REQUIRE([AC_PROG_CC])
 	AC_ARG_VAR(MPICC,[MPI C compiler command])

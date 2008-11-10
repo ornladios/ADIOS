@@ -27,7 +27,7 @@
   
   </adios-group>
 
-  <method group="restart" method="POSIX"/>
+  <method group="restart" method="MPI"/>
 
   <buffer size-MB="1" allocate-time="now"/>
 

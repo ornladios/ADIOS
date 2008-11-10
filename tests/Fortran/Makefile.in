@@ -39,8 +39,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = adios_test_f$(EXEEXT)
-@HAVE_PHDF5_TRUE@am__append_1 = $(top_builddir)/src/libadios_phdf5.a $(MXML_LIBS) $(HDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_2 = $(HDF5_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_1 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_2 = $(PHDF5_LDFLAGS)
 subdir = tests/Fortran
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -63,7 +63,7 @@ adios_test_f_OBJECTS = $(am_adios_test_f_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
-@HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+@HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
 adios_test_f_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
@@ -116,6 +116,8 @@ HAVE_GENGETOPT_FALSE = @HAVE_GENGETOPT_FALSE@
 HAVE_GENGETOPT_TRUE = @HAVE_GENGETOPT_TRUE@
 HAVE_HDF5_FALSE = @HAVE_HDF5_FALSE@
 HAVE_HDF5_TRUE = @HAVE_HDF5_TRUE@
+HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
+HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_MXML_FALSE = @HAVE_MXML_FALSE@
 HAVE_MXML_TRUE = @HAVE_MXML_TRUE@
 HAVE_NETCDF_FALSE = @HAVE_NETCDF_FALSE@

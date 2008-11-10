@@ -113,6 +113,8 @@ HAVE_GENGETOPT_FALSE = @HAVE_GENGETOPT_FALSE@
 HAVE_GENGETOPT_TRUE = @HAVE_GENGETOPT_TRUE@
 HAVE_HDF5_FALSE = @HAVE_HDF5_FALSE@
 HAVE_HDF5_TRUE = @HAVE_HDF5_TRUE@
+HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
+HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_MXML_FALSE = @HAVE_MXML_FALSE@
 HAVE_MXML_TRUE = @HAVE_MXML_TRUE@
 HAVE_NETCDF_FALSE = @HAVE_NETCDF_FALSE@
@@ -202,7 +204,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = src utils tests
+SUBDIRS = src utils tests examples-code
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
