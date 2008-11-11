@@ -234,16 +234,19 @@ adios_mpi_file_write(MPI_File fh, struct adios_MPI_write_buffer *wbuf,
 	MPI_File_seek (fh, wbuf->file_offset, MPI_SEEK_SET);
 	MPI_File_write(fh, wbuf->buffer, wbuf->buffer_offset,
 		       MPI_BYTE, status);
-        if (status->count != wbuf->buffer_offset) {
+        int count;
+        MPI_Get_count (status, MPI_BYTE, &count);
+        if (count != wbuf->buffer_offset)
+        {
         	fprintf (stderr, "d:MPI tried to write %d, only wrote %llu\n",
-		     	 wbuf->buffer_offset, status->count);
+		     	 wbuf->buffer_offset, count);
 		/*FIXME error handling */
 		return -1;
         }
 	/*reset the write buffer */
 	wbuf->buffer_offset = 0;
-	wbuf->file_offset += status->count;
-	return status->count;
+	wbuf->file_offset += count;
+	return count;
 }
 
 /* Note: Only write seek now */
@@ -378,11 +381,14 @@ adios_mpi_buffer_write(struct adios_MPI_data_struct *md,
 		if (offset != -1)
 			MPI_File_seek (md->fh, offset, MPI_SEEK_SET);
                 MPI_File_write (md->fh, data, data_len, MPI_BYTE, &md->status);
-	        if (md->status.count != data_len){
-                	fprintf(stderr, "d:MPI method tried to write %d, only wrote %llu\n",
-			     	data_len, md->status.count);
+                int count;
+                MPI_Get_count (&md->status, MPI_BYTE, &count);
+                if (count != data_len)
+                {
+                    fprintf(stderr, "d:MPI method tried to write %d, only wrote %llu\n",
+			     	data_len, count);
             	}
-		return (uint64_t)md->status.count;
+		return (uint64_t) count;
 	}
 
 	if (offset != (uint64_t)(-1) && offset != curr_off) {
@@ -402,7 +408,9 @@ adios_mpi_buffer_write(struct adios_MPI_data_struct *md,
 		if (write_buffer->buffer_offset == write_buffer->buffer_size) {
 			if (adios_mpi_file_write(md->fh, write_buffer, 
 						 &md->status) <= 0) {
-				write_bytes += md->status.count;
+                            int count;
+                            MPI_Get_count (&md->status, MPI_BYTE, &count);
+				write_bytes += count;
 				break;
 			}
 		}
@@ -1471,7 +1479,9 @@ void adios_mpi_close (struct adios_file_struct * fd
 		    adios_mpi_buffer_write(md, fd->buffer, (uint64_t)(-1), 
 				           fd->bytes_written); 
 
-                    fd->base_offset += md->status.count;
+                    int count;
+                    MPI_Get_count (&md->status, MPI_BYTE, &count);
+                    fd->base_offset += count;
                     fd->offset = 0;
                     fd->bytes_written = 0;
                     adios_shared_buffer_free (&md->b);
