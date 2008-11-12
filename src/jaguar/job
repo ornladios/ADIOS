@@ -1,8 +1,0 @@
-#PBS -A csc025ewk
-#PBS -N adios
-#PBS -j oe
-#PBS -q debug
-#PBS -l walltime=0:01:00,size=2
-
-cd $PBS_O_WORKDIR
-aprun -n 1 adios_test_c
