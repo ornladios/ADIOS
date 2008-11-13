@@ -26,9 +26,9 @@ program adios_test
     group = "restart"
     filename = "restart.bp"
     small_int = 10
-    big_int = 429496726
+    big_int = 42949672
     small_real = 0.3
-    big_real = 0.00000000000004
+    big_real = 0.0000000000004
     z_size = 2
     z_array (1) = 11.1
     z_array (2) = 22.2
@@ -86,6 +86,7 @@ subroutine test_write (group, filename, group_comm, small_int, big_int, small_re
     integer*8 :: total_size
     integer :: err
     integer*8 :: size
+    integer :: i,j
 
     a_size2 = 10
 
@@ -94,7 +95,11 @@ subroutine test_write (group, filename, group_comm, small_int, big_int, small_re
     istep1 = 11
     istep2 = 22
     istep3 = 33
-
+    do j=1,10
+       do i=1,a_size
+          a_array2(i,j) = 1.0*i + (j-1)*a_size
+       end do
+    end do
     size = 4 + 8 + 4 + 8 + 4 + 4 + a_size * 4 + a_size * 10 * 4 + 4 + 4 + 4
 
     call adios_open (handle, trim(group)//char(0), trim(filename)//char(0), "w"//char(0), err)
