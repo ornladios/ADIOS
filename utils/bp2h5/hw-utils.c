@@ -318,8 +318,8 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 			    var_dims [var_dims_count].id = attribute.id;
 			    var_dims [var_dims_count].rank = var_dims [j].rank;
 			    var_dims [var_dims_count].offset = var_dims [j].offset;
-                            printf("attribute: %s  vid= %llu rank: %llu\n",attribute.name,
-                                      var_dims[j].rank,var_dims[var_dims_count].rank);
+                            //printf("attribute: %s  vid= %llu rank: %llu\n",attribute.name,
+                            //          var_dims[j].rank,var_dims[var_dims_count].rank);
                             j = var_dims_count;
 			}
 		    }
