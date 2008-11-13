@@ -446,8 +446,9 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                             	}
                             }
                         }
-                        else
+                        else {
                             *dims_t = d->local_offset.rank;
+                        }
 			d = d->next;
 			dims_t++;
 		    }
@@ -634,23 +635,25 @@ void hw_dset(hid_t root_id,
 
         herr_t h5_status;
 
-
+        h5_status = bp_getH5TypeId (type, &type_id, data);
+         
+	/*
         hsize_t * global_h5dims;
         hsize_t * local_h5dims;
         hsize_t * start;
         hsize_t * stride;
 
-        h5_status = bp_getH5TypeId (type, &type_id, data);
         global_h5dims = (hsize_t *) malloc (rank * sizeof (hsize_t));
         local_h5dims = (hsize_t *) malloc (rank * sizeof (hsize_t));
         start = (hsize_t *) malloc (rank * sizeof (hsize_t));
         stride = (hsize_t *) malloc (rank * sizeof (hsize_t));
-	/*
+	*/
+
 	hsize_t global_h5dims[10];
 	hsize_t local_h5dims[10];
 	hsize_t start[10];
 	hsize_t stride[10];
-	*/
+
         int i, time_idx;
 
         if(array_dim_order_fortran == USE_FORTRAN) {
@@ -759,11 +762,13 @@ void hw_dset(hid_t root_id,
 		if (dataset< 0)
 			fprintf(stderr, "dataset is not created!\n");
         } 
+
         if (verbose >= LIST_INFO) {
 		for (i=0;i<rank;i++) 
 			fprintf(stderr,"\t     [%d]:\tg(%d)c(%d)o(%d)\n",
 				i, global_h5dims[i],local_h5dims[i],start[i]);
 	}
+
         memspace = H5Screate_simple (rank, local_h5dims, NULL);
         if (memspace< 0)
             fprintf(stderr, "memspace is not created!\n");
@@ -782,12 +787,12 @@ void hw_dset(hid_t root_id,
         H5Sclose (dataspace);
         H5Dclose (dataset);
         H5Tclose (type_id);
-	//if (global_h5dims)
+	/*
         free(global_h5dims);
-        free (local_h5dims);
-        free (start);
-        free (stride);
-	
+        free(local_h5dims);
+        free(start);
+        free(stride);
+	*/
     }
     else {
         hsize_t * h5dims;
