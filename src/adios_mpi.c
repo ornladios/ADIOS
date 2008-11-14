@@ -313,17 +313,11 @@ struct lov_user_md {           /* LOV EA user data (host-endian) */
         struct lov_user_ost_data  lmm_objects[0]; /* per-stripe data */
 } __attribute__((packed));
 
-static void 
-adios_mpi_set_write_buffer(struct adios_MPI_data_struct *md,
-			   char *filename)
+#define DEFAULT_BSIZE 1048576
+static int adios_mpi_get_stripe_size (char *filename)
 {
-	struct adios_MPI_write_buffer *write_buffer = &md->write_buffer;
 	struct statfs fsbuf;
-	int err, bsize = 1048576;
-	uint64_t mem_allowed;
-
-	if (write_buffer->buffer != NULL)
-		return;
+	int bsize = DEFAULT_BSIZE, err;
 
 	/*Note: Since each file might have different write_buffer,
 	 *So we will reset write_buffer even buffer_size != 0 */ 
@@ -346,22 +340,52 @@ adios_mpi_set_write_buffer(struct adios_MPI_data_struct *md,
 			close(fd);
 		}
 	}
-    	
-	mem_allowed = adios_method_buffer_alloc((uint64_t)bsize);
-	if (mem_allowed != (uint64_t)bsize) {
-		fprintf(stderr, "write_buffer alloc failed for %d\n",
-			bsize);
+	return bsize;
+}
+
+static void 
+adios_mpi_set_stripe_size_aligned(struct adios_file_struct *fd, 
+			    	  int stripe_size)
+{
+	uint64_t size = fd->write_size_bytes;
+	uint64_t increase, mem_allowed;
+
+	if (fd->shared_buffer == adios_flag_no || 
+	    stripe_size == 0)
+	       return;
+
+	size = ((size + stripe_size - 1) / stripe_size) * stripe_size;
+
+	if (size == fd->write_size_bytes)
+		return;
+
+	increase = size - fd->write_size_bytes;
+	mem_allowed = adios_method_buffer_alloc((uint64_t)increase);
+	if (mem_allowed == increase)
+		fd->write_size_bytes += increase;
+}
+
+static void 
+adios_mpi_set_write_buffer(struct adios_MPI_data_struct *md,
+			   uint64_t stripe_size)
+{
+	struct adios_MPI_write_buffer *write_buffer = &md->write_buffer;
+	uint64_t mem_allowed;
+
+	if (write_buffer->buffer != NULL)
+		return;
+
+	mem_allowed = adios_method_buffer_alloc((uint64_t)stripe_size);
+	if (mem_allowed != (uint64_t)stripe_size) {
 		mem_allowed = 0;
 		return;
 	}
-	write_buffer->buffer = malloc(bsize);
+	write_buffer->buffer = malloc(stripe_size);
 	if (write_buffer->buffer == NULL) {
-		fprintf(stderr, "write_buffer alloc failed %d \n",
-			bsize);
-		adios_method_buffer_free((uint64_t)bsize);
-		bsize = 0;
+		adios_method_buffer_free((uint64_t)stripe_size);
+		stripe_size = 0;
 	}
-	write_buffer->buffer_size = (int)bsize;		
+	write_buffer->buffer_size = (int)stripe_size;		
 }
 
 static uint64_t
@@ -403,7 +427,7 @@ adios_mpi_buffer_write(struct adios_MPI_data_struct *md,
 		int wsize = buf_left > left_len ? left_len : buf_left;
 
 		memcpy(write_buffer->buffer +
-		             write_buffer->buffer_offset, data + write_bytes, wsize);
+		       write_buffer->buffer_offset, data + write_bytes, wsize);
 		write_buffer->buffer_offset += wsize;
 		if (write_buffer->buffer_offset == write_buffer->buffer_size) {
 			if (adios_mpi_file_write(md->fh, write_buffer, 
@@ -418,6 +442,81 @@ adios_mpi_buffer_write(struct adios_MPI_data_struct *md,
 		write_bytes += wsize;
 	}
 	return write_bytes;
+}
+
+static void 
+adios_prepare_stripe_size_write(struct adios_file_struct *fd, 
+				struct adios_MPI_data_struct *md, 
+				char *filename)
+{
+	struct adios_MPI_write_buffer *write_buffer = &md->write_buffer;
+	uint64_t stripe_size;
+
+	if (write_buffer->buffer != NULL)
+		return;
+
+	stripe_size = adios_mpi_get_stripe_size(filename);
+	if (stripe_size > 0) {
+	    adios_mpi_set_stripe_size_aligned(fd, stripe_size);
+    	    adios_mpi_set_write_buffer(md, stripe_size);
+	}
+}
+
+static void
+adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
+		            struct adios_file_struct *fd, char *name)
+{
+    adios_prepare_stripe_size_write(fd, md, name);
+    if (md->group_comm != MPI_COMM_NULL) {
+	if (md->rank == 0) {
+	    MPI_Offset * offsets = malloc(sizeof (MPI_Offset)
+					   * md->size);
+	    int i;
+
+	    offsets [0] = fd->write_size_bytes;
+	    MPI_Gather (offsets, 1, MPI_LONG_LONG
+		       ,offsets, 1, MPI_LONG_LONG
+		       ,0, md->group_comm);
+
+	    uint64_t last_offset = offsets [0];
+	    offsets [0] = fd->base_offset;
+	    for (i = 1; i < md->size; i++)
+	    {
+		uint64_t this_offset = offsets [i];
+		offsets [i] = offsets [i - 1] + last_offset;
+		last_offset = this_offset;
+	    }
+	    md->b.pg_index_offset =   offsets [md->size - 1]
+				    + last_offset;
+	    MPI_Scatter (offsets, 1, MPI_LONG_LONG
+			,offsets, 1, MPI_LONG_LONG
+			,0, md->group_comm
+			);
+	    fd->base_offset = offsets [0];
+	    fd->pg_start_in_file = fd->base_offset;
+	    free (offsets);
+	}
+	else
+	{
+	    MPI_Offset offset = fd->write_size_bytes;
+
+	    MPI_Gather (&offset, 1, MPI_LONG_LONG
+		       ,&offset, 1, MPI_LONG_LONG
+		       ,0, md->group_comm
+		       );
+
+	    MPI_Scatter (&offset, 1, MPI_LONG_LONG
+			,&offset, 1, MPI_LONG_LONG
+			,0, md->group_comm
+			);
+	    fd->base_offset = offset;
+	    fd->pg_start_in_file = fd->base_offset;
+	}
+    }
+    else
+    {
+	md->b.pg_index_offset = fd->write_size_bytes;
+    }
 }
 
 enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
@@ -631,59 +730,6 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
             fd->base_offset = 0;
             fd->pg_start_in_file = 0;
 
-            if (md->group_comm != MPI_COMM_NULL)
-            {
-                if (md->rank == 0)
-                {
-                    MPI_Offset * offsets = malloc (  sizeof (MPI_Offset)
-                                                   * md->size
-                                                  );
-
-                    offsets [0] = fd->write_size_bytes;
-                    MPI_Gather (offsets, 1, MPI_LONG_LONG
-                               ,offsets, 1, MPI_LONG_LONG
-                               ,0, md->group_comm
-                               );
-
-                    uint64_t last_offset = offsets [0];
-                    offsets [0] = fd->base_offset;
-                    for (i = 1; i < md->size; i++)
-                    {
-                        uint64_t this_offset = offsets [i];
-                        offsets [i] = offsets [i - 1] + last_offset;
-                        last_offset = this_offset;
-                    }
-                    md->b.pg_index_offset =   offsets [md->size - 1]
-                                            + last_offset;
-                    MPI_Scatter (offsets, 1, MPI_LONG_LONG
-                                ,offsets, 1, MPI_LONG_LONG
-                                ,0, md->group_comm
-                                );
-                    fd->base_offset = offsets [0];
-                    fd->pg_start_in_file = fd->base_offset;
-                    free (offsets);
-                }
-                else
-                {
-                    MPI_Offset offset = fd->write_size_bytes;
-
-                    MPI_Gather (&offset, 1, MPI_LONG_LONG
-                               ,&offset, 1, MPI_LONG_LONG
-                               ,0, md->group_comm
-                               );
-
-                    MPI_Scatter (&offset, 1, MPI_LONG_LONG
-                                ,&offset, 1, MPI_LONG_LONG
-                                ,0, md->group_comm
-                                );
-                    fd->base_offset = offset;
-                    fd->pg_start_in_file = fd->base_offset;
-                }
-            }
-            else
-            {
-                md->b.pg_index_offset = fd->write_size_bytes;
-            }
 
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
@@ -733,8 +779,8 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
                 return adios_flag_no;
             }
-
-            break;
+	    adios_mpi_build_file_offset(md, fd, name);
+	    break;
         }
 
         case adios_mode_append:
@@ -844,60 +890,6 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 fd->pg_start_in_file = 0;
             }
 
-            if (md->group_comm != MPI_COMM_NULL)
-            {
-                if (md->rank == 0)
-                {
-                    MPI_Offset * offsets = malloc (  sizeof (MPI_Offset)
-                                                   * md->size
-                                                  );
-
-                    offsets [0] = fd->write_size_bytes;
-                    MPI_Gather (offsets, 1, MPI_LONG_LONG
-                               ,offsets, 1, MPI_LONG_LONG
-                               ,0, md->group_comm
-                               );
-
-                    uint64_t last_offset = offsets [0];
-                    offsets [0] = fd->base_offset;
-                    for (i = 1; i < md->size; i++)
-                    {
-                        uint64_t this_offset = offsets [i];
-                        offsets [i] = offsets [i - 1] + last_offset;
-                        last_offset = this_offset;
-                    }
-                    md->b.pg_index_offset =   offsets [md->size - 1]
-                                            + last_offset;
-                    MPI_Scatter (offsets, 1, MPI_LONG_LONG
-                                ,offsets, 1, MPI_LONG_LONG
-                                ,0, md->group_comm
-                                );
-                    fd->base_offset = offsets [0];
-                    fd->pg_start_in_file = fd->base_offset;
-                    free (offsets);
-                }
-                else
-                {
-                    MPI_Offset offset = fd->write_size_bytes;
-
-                    MPI_Gather (&offset, 1, MPI_LONG_LONG
-                               ,&offset, 1, MPI_LONG_LONG
-                               ,0, md->group_comm
-                               );
-
-                    MPI_Scatter (&offset, 1, MPI_LONG_LONG
-                                ,&offset, 1, MPI_LONG_LONG
-                                ,0, md->group_comm
-                                );
-                    fd->base_offset = offset;
-                    fd->pg_start_in_file = fd->base_offset;
-                }
-            }
-            else
-            {
-                md->b.pg_index_offset = fd->write_size_bytes;
-            }
-
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
             {
@@ -949,6 +941,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 return adios_flag_no;
             }
 
+	    adios_mpi_build_file_offset(md, fd, name);
             break;
         }
 
@@ -961,9 +954,6 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
             return adios_flag_no;
         }
     }
-
-    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
-    	adios_mpi_set_write_buffer(md, name);
 
     /* Try to get write buffer size */
     free (name);
