@@ -84,6 +84,8 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
                line=str_varsize+' * '+'('+dimsele+')'
             elif(var_gname_dict.has_key(dimsele)):
                line=str_varsize+' * '+'('+var_gname_dict[dimsele]+')'
+	    else:
+               line=str_varsize
          else:
             if(dimsele.isdigit()):
                line = line+' * '+'('+dimsele+')'
