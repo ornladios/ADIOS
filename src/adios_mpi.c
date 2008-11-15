@@ -226,6 +226,8 @@ static int
 adios_mpi_file_write(MPI_File fh, struct adios_MPI_write_buffer *wbuf,
 		     MPI_Status *status)
 {
+        int count;
+	
 	/* dump the write buffer */
 	if (wbuf->buffer_offset == 0 || wbuf->buffer_size == 0 ||
 	    wbuf->buffer_size == -1)
@@ -234,7 +236,6 @@ adios_mpi_file_write(MPI_File fh, struct adios_MPI_write_buffer *wbuf,
 	MPI_File_seek (fh, wbuf->file_offset, MPI_SEEK_SET);
 	MPI_File_write(fh, wbuf->buffer, wbuf->buffer_offset,
 		       MPI_BYTE, status);
-        int count;
         MPI_Get_count (status, MPI_BYTE, &count);
         if (count != wbuf->buffer_offset)
         {
@@ -457,7 +458,8 @@ adios_prepare_stripe_size_write(struct adios_file_struct *fd,
 
 	stripe_size = adios_mpi_get_stripe_size(filename);
 	if (stripe_size > 0) {
-	    adios_mpi_set_stripe_size_aligned(fd, stripe_size);
+	    if (adios_stripe_size_aligned()) 
+	    	adios_mpi_set_stripe_size_aligned(fd, stripe_size);
     	    adios_mpi_set_write_buffer(md, stripe_size);
 	}
 }
@@ -611,7 +613,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 MPI_File_read (md->fh, md->b.buff, md->b.pg_size, MPI_BYTE
                               ,&md->status
                               );
-                adios_parse_process_group_index_v1 (&md->b
+		adios_parse_process_group_index_v1 (&md->b
                                                    ,&md->old_pg_root
                                                    );
 
@@ -849,7 +851,8 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                     MPI_File_read (md->fh, md->b.buff, md->b.pg_size, MPI_BYTE
                                   ,&md->status
                                   );
-                    adios_parse_process_group_index_v1 (&md->b
+                    
+		    adios_parse_process_group_index_v1 (&md->b
                                                        ,&md->old_pg_root
                                                        );
 
