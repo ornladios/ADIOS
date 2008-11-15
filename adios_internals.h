@@ -302,6 +302,7 @@ struct adios_mesh_unstructured_struct
 // Function Delcarations
 //////////////////////////////////////////////////////////////////////////////
 int adios_set_buffer_size (void);
+int adios_stripe_size_aligned(void);
 
 uint64_t adios_method_buffer_alloc (uint64_t size);
 int adios_method_buffer_free (uint64_t size);
