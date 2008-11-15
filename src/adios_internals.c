@@ -6131,6 +6131,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
     uint64_t total_size = adios_get_var_size (var, fd->group, var->data);
     uint64_t size = 0;
 
+#if 1
 #define MIN_MAX(a,b) \
 {\
 a * data = (a *) var->data; \
@@ -6151,6 +6152,19 @@ while ((size * b) < total_size) \
 } \
 return; \
 }
+#else
+#define MIN_MAX(a,b)\
+{\
+a * data = (a *) var->data; \
+var->min = malloc (b); \
+var->max = malloc (b); \
+a * min = (a *) var->min; \
+a * max = (a *) var->max; \
+*min = data [0]; \
+*max = data [0]; \
+return; \
+}
+#endif
 
     switch (var->type)
     {
