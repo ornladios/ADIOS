@@ -2633,6 +2633,9 @@ static int parseBuffer (mxml_node_t * node)
                 return 0;
             }
 
+            if (size < 1)
+                size = 1; // we need a minimum 1 MB buffer
+
             adios_buffer_size_requested = (  (uint64_t) size
                                            * 1024
                                            * 1024
