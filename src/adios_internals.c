@@ -5,9 +5,15 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <stdint.h>
+#include <sys/stat.h>
 
 // xml parser
 #include <mxml.h>
+
+#include "config.h"
+#if HAVE_MPI
+#include "mpi.h"
+#endif
 
 #include "adios.h"
 //#include "adios_transport_hooks.h"
@@ -3302,15 +3308,71 @@ int adios_parse_config (const char * config)
         adios_init_transports (&adios_transports);
     }
 
-    fp = fopen (config, "r");
-    if (!fp)
+    char * buffer = NULL;
+#if HAVE_MPI
+    int buffer_size = 0;
+    int rank;
+    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+    if (rank == 0)
     {
-        fprintf (stderr, "missing config file %s\n", config);
+#endif
+        fp = fopen (config, "r");
+        if (!fp)
+        {
+            fprintf (stderr, "missing config file %s\n", config);
 
-        return 0;
+            return 0;
+        }
+        struct stat s;
+        if (stat (config, &s) == 0)
+            buffer = malloc (s.st_size + 1);
+        if (buffer)
+        {
+            size_t bytes_read = fread (buffer, 1, s.st_size, fp);
+            if (bytes_read != s.st_size)
+            {
+                fprintf (stderr, "error reading config file: %s. Expected %d "
+                                 "Got %d\n"
+                        ,s.st_size, bytes_read, config
+                        );
+
+                return 0;
+            }
+        }
+        else
+        {
+            fprintf (stderr, "error allocating %d for reading config.\n"
+                    ,s.st_size + 1
+                    );
+
+            return 0;
+        }
+        fclose (fp);
+#if HAVE_MPI
+        buffer_size = s.st_size;
+        MPI_Bcast (&buffer_size, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
+        MPI_Bcast (buffer, buffer_size, MPI_BYTE, 0, MPI_COMM_WORLD);
     }
-    doc = mxmlLoadFile (NULL, fp, MXML_TEXT_CALLBACK);
-    fclose (fp);
+    else
+    {
+        MPI_Bcast (&buffer_size, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
+        buffer = malloc (buffer_size + 1);
+        if (!buffer)
+        {
+            fprintf (stderr, "cannot allocate %d bytes to receive config file\n"
+                    ,buffer_size + 1
+                    );
+
+            return 0;
+        }
+        MPI_Bcast (buffer, buffer_size, MPI_BYTE, 0, MPI_COMM_WORLD);
+    }
+#endif
+
+    doc = mxmlLoadString (NULL, buffer, MXML_TEXT_CALLBACK);
+    free (buffer);
+    buffer = NULL;
+
     if (!doc)
     {
         fprintf (stderr, "config.xml: unknown error parsing XML "
