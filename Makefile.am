@@ -17,7 +17,8 @@ libadios_a_SOURCES = adios.c \
 		     adios_provenance.c \
 		     adios_internals.c \
 		     adios_socket.c \
-                     adios_bp_v1.c
+                     adios_bp_v1.c  \
+                     adios_mpi_nwu.c
 #		     adios_datatap.c
 #		     adios_dart.c
 if HAVE_PHDF5

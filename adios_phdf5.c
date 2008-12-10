@@ -1118,15 +1118,14 @@ void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level, enum ADI
     free (grp_name);
     free (tmpstr);
 }
-hsize_t parse_dimension(struct adios_var_struct *pvar_root
-                       ,struct adios_attribute_struct *patt_root 
-                       ,struct adios_dimension_item_struct * dim) {
+hsize_t parse_dimension(struct adios_var_struct *pvar_root,
+                        struct adios_attribute_struct *patt_root, 
+                        struct adios_dimension_item_struct * dim) {
     hsize_t dimsize;
     struct adios_var_struct *var_linked = NULL;
-    struct adios_attribute_struct *attr_linked = NULL;   
+    struct adios_attribute_struct *attr_linked;
     if ( dim->id) {
         var_linked = adios_find_var_by_id (pvar_root , dim->id);
-        //printf("linked var: %s\n", var_linked->name);
         if (!var_linked) {
             attr_linked = adios_find_attribute_by_id ( patt_root, dim->id);
             if (!attr_linked->var) {

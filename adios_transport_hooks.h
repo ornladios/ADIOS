@@ -120,7 +120,8 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
                      ,ADIOS_METHOD_MPI_CIO     = 6
                      ,ADIOS_METHOD_PHDF5       = 7
                      ,ADIOS_METHOD_PROVENANCE  = 8
-                     ,ADIOS_METHOD_COUNT       = 9
+                     ,ADIOS_METHOD_MPI_NWU     = 9
+                     ,ADIOS_METHOD_COUNT       = 10
                      };
 
 // the list of the methods that have been integrated
@@ -136,12 +137,14 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
                      ,ADIOS_METHOD_MPI_CIO     = 6
                      ,ADIOS_METHOD_PHDF5       = -2 
                      ,ADIOS_METHOD_PROVENANCE  = 7
-                     ,ADIOS_METHOD_COUNT       = 8
+                     ,ADIOS_METHOD_MPI_NWU     = 8
+                     ,ADIOS_METHOD_COUNT       = 9
                      };
 #endif
 // forward declare the functions (or dummies for internals use)
 	FORWARD_DECLARE(mpi)
 	FORWARD_DECLARE(mpi_cio)
+	FORWARD_DECLARE(mpi_nwu)
 	FORWARD_DECLARE(posix)
 	FORWARD_DECLARE(vtk)
 	FORWARD_DECLARE(posix_ascii)
@@ -166,6 +169,7 @@ FORWARD_DECLARE(dart)
     MATCH_STRING_TO_METHOD("VTK",ADIOS_METHOD_VTK,0)                 \
     MATCH_STRING_TO_METHOD("POSIX_ASCII",ADIOS_METHOD_POSIX_ASCII,0) \
     MATCH_STRING_TO_METHOD("MPI_CIO",ADIOS_METHOD_MPI_CIO,1)         \
+    MATCH_STRING_TO_METHOD("MPI_NWU",ADIOS_METHOD_MPI_NWU,1)         \
     MATCH_STRING_TO_METHOD("PHDF5",ADIOS_METHOD_PHDF5,1)             \
     MATCH_STRING_TO_METHOD("PROVENANCE",ADIOS_METHOD_PROVENANCE,1)   \
     MATCH_STRING_TO_METHOD("NULL",ADIOS_METHOD_NULL,0)
@@ -173,6 +177,7 @@ FORWARD_DECLARE(dart)
 #define ADIOS_PARSE_METHOD_SETUP \
     MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI,1)                 \
     MATCH_STRING_TO_METHOD("MPI_CIO",ADIOS_METHOD_MPI_CIO,1)         \
+    MATCH_STRING_TO_METHOD("MPI_NWU",ADIOS_METHOD_MPI_NWU,1)         \
     MATCH_STRING_TO_METHOD("PHDF5",ADIOS_METHOD_PHDF5,1)             \
     MATCH_STRING_TO_METHOD("POSIX",ADIOS_METHOD_POSIX,0)             \
     MATCH_STRING_TO_METHOD("FB",ADIOS_METHOD_POSIX,0)                \
@@ -187,6 +192,7 @@ FORWARD_DECLARE(dart)
 #define ADIOS_INIT_TRANSPORTS_SETUP \
     ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)                 \
     ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)         \
+    ASSIGN_FNS(mpi_nwu,ADIOS_METHOD_MPI_NWU)         \
     ASSIGN_FNS(phdf5,ADIOS_METHOD_PHDF5)             \
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)             \
     ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP)         \
@@ -198,6 +204,7 @@ FORWARD_DECLARE(dart)
 #define ADIOS_INIT_TRANSPORTS_SETUP \
     ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)                 \
     ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)         \
+    ASSIGN_FNS(mpi_nwu,ADIOS_METHOD_MPI_NWU)         \
     ASSIGN_FNS(phdf5,ADIOS_METHOD_PHDF5)             \
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)             \
     ASSIGN_FNS(vtk,ADIOS_METHOD_VTK)                 \
