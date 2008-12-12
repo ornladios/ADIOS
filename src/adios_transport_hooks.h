@@ -1,7 +1,9 @@
 #ifndef ADIOS_TRANSPORT_HOOKS_H
 #define ADIOS_TRANSPORT_HOOKS_H
 
+#include "config.h"
 #include <stdint.h>
+
 // this is defined in the lint program to get empty implementations
 #ifdef ADIOS_EMPTY_TRANSPORTS
 #define FORWARD_DECLARE(a) \
@@ -107,7 +109,6 @@ if (!strcasecmp (buf,b)) \
 struct adios_method_struct;
 struct adios_file_struct;
 struct adios_var_struct;
-#ifdef PHDF5
 // the list of the methods that have been integrated
 enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
                      ,ADIOS_METHOD_NULL        = -1
@@ -124,32 +125,15 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
                      ,ADIOS_METHOD_COUNT       = 10
                      };
 
-// the list of the methods that have been integrated
-#else
-enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
-                     ,ADIOS_METHOD_NULL        = -1
-                     ,ADIOS_METHOD_MPI         = 0
-                     ,ADIOS_METHOD_DATATAP     = 1
-                     ,ADIOS_METHOD_POSIX       = 2
-                     ,ADIOS_METHOD_DART        = 3
-                     ,ADIOS_METHOD_VTK         = 4
-                     ,ADIOS_METHOD_POSIX_ASCII = 5
-                     ,ADIOS_METHOD_MPI_CIO     = 6
-                     ,ADIOS_METHOD_PHDF5       = -2 
-                     ,ADIOS_METHOD_PROVENANCE  = 7
-                     ,ADIOS_METHOD_MPI_NWU     = 8
-                     ,ADIOS_METHOD_COUNT       = 9
-                     };
-#endif
 // forward declare the functions (or dummies for internals use)
-	FORWARD_DECLARE(mpi)
-	FORWARD_DECLARE(mpi_cio)
-	FORWARD_DECLARE(mpi_nwu)
-	FORWARD_DECLARE(posix)
-	FORWARD_DECLARE(vtk)
-	FORWARD_DECLARE(posix_ascii)
-	FORWARD_DECLARE(provenance)
-	FORWARD_DECLARE(phdf5)
+FORWARD_DECLARE(mpi)
+FORWARD_DECLARE(mpi_cio)
+FORWARD_DECLARE(mpi_nwu)
+FORWARD_DECLARE(posix)
+FORWARD_DECLARE(vtk)
+FORWARD_DECLARE(posix_ascii)
+FORWARD_DECLARE(provenance)
+FORWARD_DECLARE(phdf5)
 
 #if USE_PORTALS
 FORWARD_DECLARE(datatap)
@@ -158,6 +142,7 @@ FORWARD_DECLARE(dart)
 
 // add the string<->ID mapping here (also add ID in adios_internals.h)
 // use a '1' for requires a communicator or '0' if not as the last param
+#if HAVE_PHDF5
 #if USE_PORTALS
 #define ADIOS_PARSE_METHOD_SETUP \
     MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI,1)                 \
@@ -186,8 +171,37 @@ FORWARD_DECLARE(dart)
     MATCH_STRING_TO_METHOD("PROVENANCE",ADIOS_METHOD_PROVENANCE,1)   \
     MATCH_STRING_TO_METHOD("NULL",ADIOS_METHOD_NULL,0)
 #endif
+#else
+#if USE_PORTALS
+#define ADIOS_PARSE_METHOD_SETUP \
+    MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI,1)                 \
+    MATCH_STRING_TO_METHOD("DATATAP",ADIOS_METHOD_DATATAP,0)         \
+    MATCH_STRING_TO_METHOD("PBIO",ADIOS_METHOD_DATATAP,0)            \
+    MATCH_STRING_TO_METHOD("POSIX",ADIOS_METHOD_POSIX,0)             \
+    MATCH_STRING_TO_METHOD("FB",ADIOS_METHOD_POSIX,0)                \
+    MATCH_STRING_TO_METHOD("DART",ADIOS_METHOD_DART,0)               \
+    MATCH_STRING_TO_METHOD("VTK",ADIOS_METHOD_VTK,0)                 \
+    MATCH_STRING_TO_METHOD("POSIX_ASCII",ADIOS_METHOD_POSIX_ASCII,0) \
+    MATCH_STRING_TO_METHOD("MPI_CIO",ADIOS_METHOD_MPI_CIO,1)         \
+    MATCH_STRING_TO_METHOD("MPI_NWU",ADIOS_METHOD_MPI_NWU,1)         \
+    MATCH_STRING_TO_METHOD("PROVENANCE",ADIOS_METHOD_PROVENANCE,1)   \
+    MATCH_STRING_TO_METHOD("NULL",ADIOS_METHOD_NULL,0)
+#else
+#define ADIOS_PARSE_METHOD_SETUP \
+    MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI,1)                 \
+    MATCH_STRING_TO_METHOD("MPI_CIO",ADIOS_METHOD_MPI_CIO,1)         \
+    MATCH_STRING_TO_METHOD("MPI_NWU",ADIOS_METHOD_MPI_NWU,1)         \
+    MATCH_STRING_TO_METHOD("POSIX",ADIOS_METHOD_POSIX,0)             \
+    MATCH_STRING_TO_METHOD("FB",ADIOS_METHOD_POSIX,0)                \
+    MATCH_STRING_TO_METHOD("VTK",ADIOS_METHOD_VTK,0)                 \
+    MATCH_STRING_TO_METHOD("POSIX_ASCII",ADIOS_METHOD_POSIX_ASCII,0) \
+    MATCH_STRING_TO_METHOD("PROVENANCE",ADIOS_METHOD_PROVENANCE,1)   \
+    MATCH_STRING_TO_METHOD("NULL",ADIOS_METHOD_NULL,0)
+#endif
+#endif
 
 // add the initialization of the functions for the calls here
+#if HAVE_PHDF5
 #if USE_PORTALS
 #define ADIOS_INIT_TRANSPORTS_SETUP \
     ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)                 \
@@ -210,6 +224,29 @@ FORWARD_DECLARE(dart)
     ASSIGN_FNS(vtk,ADIOS_METHOD_VTK)                 \
     ASSIGN_FNS(posix_ascii,ADIOS_METHOD_POSIX_ASCII) \
     ASSIGN_FNS(provenance,ADIOS_METHOD_PROVENANCE)       
+#endif
+#else
+#if USE_PORTALS
+#define ADIOS_INIT_TRANSPORTS_SETUP \
+    ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)                 \
+    ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)         \
+    ASSIGN_FNS(mpi_nwu,ADIOS_METHOD_MPI_NWU)         \
+    ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)             \
+    ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP)         \
+    ASSIGN_FNS(dart,ADIOS_METHOD_DART)               \
+    ASSIGN_FNS(vtk,ADIOS_METHOD_VTK)                 \
+    ASSIGN_FNS(posix_ascii,ADIOS_METHOD_POSIX_ASCII) \
+    ASSIGN_FNS(provenance,ADIOS_METHOD_PROVENANCE)       
+#else
+#define ADIOS_INIT_TRANSPORTS_SETUP \
+    ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)                 \
+    ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)         \
+    ASSIGN_FNS(mpi_nwu,ADIOS_METHOD_MPI_NWU)         \
+    ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)             \
+    ASSIGN_FNS(vtk,ADIOS_METHOD_VTK)                 \
+    ASSIGN_FNS(posix_ascii,ADIOS_METHOD_POSIX_ASCII) \
+    ASSIGN_FNS(provenance,ADIOS_METHOD_PROVENANCE)       
+#endif
 #endif
 
 #endif
