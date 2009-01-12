@@ -3302,14 +3302,16 @@ int adios_parse_config (const char * config)
     int saw_method = 0;
     int saw_buffer = 0;
 
+    return 0;
     if (!adios_transports_initialized)
     {
         adios_transports_initialized = 1;
         adios_init_transports (&adios_transports);
     }
-
-    char * buffer = NULL;
+    char buffer[100000];
+    //char * buffer = NULL;
 #if HAVE_MPI
+    printf("have mpi\n");
     int buffer_size = 0;
     int rank;
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
@@ -3324,8 +3326,8 @@ int adios_parse_config (const char * config)
             return 0;
         }
         struct stat s;
-        if (stat (config, &s) == 0)
-            buffer = malloc (s.st_size + 1);
+        //if (stat (config, &s) == 0)
+        //    buffer = malloc (s.st_size + 1);
         if (buffer)
         {
             size_t bytes_read = fread (buffer, 1, s.st_size, fp);
@@ -3356,7 +3358,7 @@ int adios_parse_config (const char * config)
     else
     {
         MPI_Bcast (&buffer_size, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
-        buffer = malloc (buffer_size + 1);
+        //buffer = malloc (buffer_size + 1);
         if (!buffer)
         {
             fprintf (stderr, "cannot allocate %d bytes to receive config file\n"
@@ -3369,9 +3371,13 @@ int adios_parse_config (const char * config)
     }
 #endif
 
+    //free (buffer);
+    //buffer = NULL;
+
+    return 0;
     doc = mxmlLoadString (NULL, buffer, MXML_TEXT_CALLBACK);
-    free (buffer);
-    buffer = NULL;
+    mxmlRelease (doc);
+
 
     if (!doc)
     {

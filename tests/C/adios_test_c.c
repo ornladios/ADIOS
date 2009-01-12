@@ -33,10 +33,12 @@ int main (int argc, char ** argv)
     float * zion1;
     float * zion2;
     float * zion3;
-
+    int node = 0;
+/*
     zion1 = malloc (zionsize1 * sizeof (float));
     zion2 = malloc (zionsize2 * zionsize2 * sizeof (float));
     zion3 = malloc (zionsize2 * zionsize3 * sizeof (float));
+
     assert (zion1);
     assert (zion2);
     assert (zion3);
@@ -48,7 +50,6 @@ int main (int argc, char ** argv)
     int r_zsize;
     float r_z [zionsize1];
 
-    int node = 0;
 
     uint64_t total;
     int i;
@@ -69,12 +70,19 @@ int main (int argc, char ** argv)
         for (j = 0; j < 26; j++)
             byte_test [i * 26 + j] = 'a' + j;
 
+*/
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-    if (!adios_init ("config_c.xml"))
-        return -1;
+    printf("rank =  %d\n",rank);
+    int rc=0;
+    //if (!adios_init ("config_c.xml"))
+    //    return -1;
+    rc = adios_init ("config_c.xml");
+    if(rc!=0)
+ 	return -1;
+    printf("init passed!\n");
 
-#if 1
+#if 0
 printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
     adios_open (&io_handle, type_name, filename, "w");
     adios_group_size (io_handle,  4 + 4
@@ -108,7 +116,7 @@ printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
     MPI_Barrier (MPI_COMM_WORLD);
 #endif
 
-#if 1
+#if 0
 printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
 
     adios_open (&io_handle, type_name, filename, "r");
@@ -160,7 +168,7 @@ printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
     }
 #endif
 
-#if 1
+#if 0
 printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
     var_x1 = 11;
     adios_open (&io_handle, type_name, filename, "a");
@@ -186,14 +194,15 @@ printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
 
 #endif
 
-    MPI_Barrier (MPI_COMM_WORLD);
+    //MPI_Barrier (MPI_COMM_WORLD);
 
     adios_finalize (node);
+    printf("finalized pass!\n");
     MPI_Finalize ();
-
+/*
     free (zion1);
     free (zion2);
     free (zion3);
-
+*/
     return 0;
 }
