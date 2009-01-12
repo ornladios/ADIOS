@@ -1,0 +1,29 @@
+EWOK=n
+JAGUAR=n
+CCMP = cc -g
+DRAGON=y
+ifeq ($(JAGUAR),y)
+   ARCH=jaguar
+endif
+ifeq ($(DRAGON),y)
+   ARCH=ewok
+   NETCDF_CLIB=-I/usr/lib/netcdf-3.6.1/incude -L/usr/lib/netcdf-3.6.1/lib -lnetcdf
+endif
+
+ifeq ($(EWOK),y)
+   CCMP = mpicc -g
+   ARCH=ewok
+   NETCDF_CLIB=${NETCDF_LIB}
+endif
+
+INC=-I. -I$(HOME)/work/$(ARCH)/include
+LIBDIR=$(HOME)/work/$(ARCH)/lib
+
+bp2ncd:  bp2ncd.o Makefile
+	$(CCMP) $(INC) -o bp2ncd bp2ncd.o ${NETCDF_CLIB} -L$(LIBDIR) -ladios -lmxml
+
+bp2ncd.o: bp2ncd.c
+	$(CCMP) $(INC) -c bp2ncd.c ${NETCDF_CLIB}
+
+clean:
+	rm -f *.o bp2ncd

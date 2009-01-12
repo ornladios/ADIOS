@@ -1,0 +1,19 @@
+folders
+  adios
+  -- include adios source, test case for Fortran/C
+
+  adios_att
+  -- include adios source, test case for Fortran/C
+  -- take care of dynamic attribute values beside the constant string value
+ 
+  bpdump
+  -- parse the bp file in ASCII format to the stand output   
+
+  bp2ascii
+  -- convert bp format to ASCII format
+
+  bp2h5
+  -- convert bp format to bp2h5 format
+
+  bp2ncd
+  -- convert bp format to bpncd format
