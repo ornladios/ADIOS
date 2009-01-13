@@ -23,9 +23,7 @@ static int common_adios_init (const char * config)
 
 int adios_init (const char * config)
 {
-    printf("adios_init\n");
-    return 0;
-    //return common_adios_init (config);
+    return common_adios_init (config);
 }
 
 void adios_init_ (const char * config, int * err, int config_size)
@@ -42,8 +40,6 @@ void adios_init_ (const char * config, int * err, int config_size)
 ///////////////////////////////////////////////////////////////////////////////
 static int common_adios_finalize (int mype)
 {
-    printf("finalize\n");
-    return 0;
     struct adios_method_list_struct * m;
 
     for (m = adios_get_methods (); m; m = m->next)

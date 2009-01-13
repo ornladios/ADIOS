@@ -3,8 +3,8 @@
 !_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
 !_TAG_PROGRAM_NAME	Exuberant Ctags	//
 !_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
-!_TAG_PROGRAM_VERSION	5.5.4	//
-ACLOCAL	Makefile	/^ACLOCAL = ${SHELL} \/gpfs\/fs0\/cgj\/adios.svn\/trunk\/config\/missing --run aclocal-1.9$/;"	m
+!_TAG_PROGRAM_VERSION	5.6	//
+ACLOCAL	Makefile	/^ACLOCAL = ${SHELL} \/ccs\/home\/cgj\/e2e\/cgj\/adios.svn\/trunk\/config\/missing --run aclocal-1.9$/;"	m
 ACLOCAL_M4	Makefile	/^ACLOCAL_M4 = $(top_srcdir)\/aclocal.m4$/;"	m
 ADIOS_BP_V1_H	adios_bp_v1.h	2;"	d
 ADIOS_BUFFER_ALLOC_LATER	adios_internals.c	/^                                    ,ADIOS_BUFFER_ALLOC_LATER$/;"	e	enum:ADIOS_BUFFER_ALLOC_WHEN	file:
@@ -21,43 +21,38 @@ ADIOS_FLAG	adios_types.h	/^enum ADIOS_FLAG {adios_flag_unknown = 0$/;"	g
 ADIOS_GET_WRITE_BUFFER_FN	adios_internals.h	/^typedef void (* ADIOS_GET_WRITE_BUFFER_FN) (struct adios_file_struct * fd$/;"	t
 ADIOS_H	adios.h	2;"	d
 ADIOS_INIT_FN	adios_internals.h	/^typedef void (* ADIOS_INIT_FN) (const char * parameters$/;"	t
-ADIOS_INIT_TRANSPORTS_SETUP	adios_transport_hooks.h	206;"	d
-ADIOS_INIT_TRANSPORTS_SETUP	adios_transport_hooks.h	218;"	d
-ADIOS_INIT_TRANSPORTS_SETUP	adios_transport_hooks.h	230;"	d
-ADIOS_INIT_TRANSPORTS_SETUP	adios_transport_hooks.h	241;"	d
+ADIOS_INIT_TRANSPORTS_SETUP	adios_transport_hooks.h	187;"	d
 ADIOS_INTERNALS_H	adios_internals.h	2;"	d
 ADIOS_IO_METHOD	adios_transport_hooks.h	/^enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2$/;"	g
-ADIOS_LUSTRE	adios_mpi_nwu.c	45;"	d	file:
 ADIOS_MESH_RECTILINEAR	adios_internals.h	/^    ,ADIOS_MESH_RECTILINEAR  = 3$/;"	e	enum:ADIOS_MESH_TYPE
 ADIOS_MESH_STRUCTURED	adios_internals.h	/^    ,ADIOS_MESH_STRUCTURED   = 2$/;"	e	enum:ADIOS_MESH_TYPE
 ADIOS_MESH_TYPE	adios_internals.h	/^enum ADIOS_MESH_TYPE$/;"	g
 ADIOS_MESH_UNIFORM	adios_internals.h	/^     ADIOS_MESH_UNIFORM      = 1$/;"	e	enum:ADIOS_MESH_TYPE
 ADIOS_MESH_UNSTRUCTURED	adios_internals.h	/^    ,ADIOS_MESH_UNSTRUCTURED = 4$/;"	e	enum:ADIOS_MESH_TYPE
-ADIOS_METHOD_COUNT	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_COUNT       = 10$/;"	e	enum:ADIOS_IO_METHOD
+ADIOS_METHOD_COUNT	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_COUNT       = 8$/;"	e	enum:ADIOS_IO_METHOD
+ADIOS_METHOD_COUNT	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_COUNT       = 9$/;"	e	enum:ADIOS_IO_METHOD
 ADIOS_METHOD_DART	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_DART        = 3$/;"	e	enum:ADIOS_IO_METHOD
 ADIOS_METHOD_DATATAP	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_DATATAP     = 1$/;"	e	enum:ADIOS_IO_METHOD
 ADIOS_METHOD_MODE	adios_internals.h	/^enum ADIOS_METHOD_MODE {adios_mode_write  = 1$/;"	g
 ADIOS_METHOD_MPI	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_MPI         = 0$/;"	e	enum:ADIOS_IO_METHOD
 ADIOS_METHOD_MPI_CIO	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_MPI_CIO     = 6$/;"	e	enum:ADIOS_IO_METHOD
-ADIOS_METHOD_MPI_NWU	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_MPI_NWU     = 9$/;"	e	enum:ADIOS_IO_METHOD
 ADIOS_METHOD_NULL	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_NULL        = -1$/;"	e	enum:ADIOS_IO_METHOD
+ADIOS_METHOD_PHDF5	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_PHDF5       = -2 $/;"	e	enum:ADIOS_IO_METHOD
 ADIOS_METHOD_PHDF5	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_PHDF5       = 7$/;"	e	enum:ADIOS_IO_METHOD
 ADIOS_METHOD_POSIX	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_POSIX       = 2$/;"	e	enum:ADIOS_IO_METHOD
 ADIOS_METHOD_POSIX_ASCII	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_POSIX_ASCII = 5$/;"	e	enum:ADIOS_IO_METHOD
+ADIOS_METHOD_PROVENANCE	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_PROVENANCE  = 7$/;"	e	enum:ADIOS_IO_METHOD
 ADIOS_METHOD_PROVENANCE	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_PROVENANCE  = 8$/;"	e	enum:ADIOS_IO_METHOD
 ADIOS_METHOD_UNKNOWN	adios_transport_hooks.h	/^enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2$/;"	e	enum:ADIOS_IO_METHOD
 ADIOS_METHOD_VTK	adios_transport_hooks.h	/^                     ,ADIOS_METHOD_VTK         = 4$/;"	e	enum:ADIOS_IO_METHOD
 ADIOS_OPEN_FN	adios_internals.h	/^typedef int (* ADIOS_OPEN_FN) (struct adios_file_struct * fd$/;"	t
-ADIOS_PARSE_METHOD_SETUP	adios_transport_hooks.h	147;"	d
-ADIOS_PARSE_METHOD_SETUP	adios_transport_hooks.h	162;"	d
-ADIOS_PARSE_METHOD_SETUP	adios_transport_hooks.h	176;"	d
-ADIOS_PARSE_METHOD_SETUP	adios_transport_hooks.h	190;"	d
+ADIOS_PARSE_METHOD_SETUP	adios_transport_hooks.h	159;"	d
 ADIOS_PROVENANCE_OUTPUTFILE	adios_provenance.c	/^static char ADIOS_PROVENANCE_OUTPUTFILE[] = "provenance.out";$/;"	v	file:
 ADIOS_PROVENANCE_OUTPUTMETHOD	adios_provenance.c	/^enum ADIOS_PROVENANCE_OUTPUTMETHOD {adios_provenance_outputmethod_file = 1$/;"	g	file:
 ADIOS_PROVENANCE_SOCKETINFOENV	adios_provenance.c	/^static char ADIOS_PROVENANCE_SOCKETINFOENV[] = "ADIOS_PROVENANCE_SOCKETINFOFILE";$/;"	v	file:
 ADIOS_PROVENANCE_SOCKETINFOFILE	adios_provenance.c	/^static char ADIOS_PROVENANCE_SOCKETINFOFILE[] = "provenance.conf";$/;"	v	file:
 ADIOS_READ_FN	adios_internals.h	/^typedef void (* ADIOS_READ_FN) (struct adios_file_struct * fd$/;"	t
-ADIOS_SHOULD_BUFFER_FN	adios_internals.h	/^typedef enum ADIOS_FLAG (* ADIOS_SHOULD_BUFFER_FN)$/;"	t
+ADIOS_SHOULD_BUFFER_FN	adios_internals.h	/^typedef enum ADIOS_FLAG (* ADIOS_SHOULD_BUFFER_FN)$/;"	t	typeref:enum:ADIOS_SHOULD_BUFFER_FN
 ADIOS_START_CALCULATION_FN	adios_internals.h	/^typedef void (* ADIOS_START_CALCULATION_FN)$/;"	t
 ADIOS_STOP_CALCULATION_FN	adios_internals.h	/^typedef void (* ADIOS_STOP_CALCULATION_FN)$/;"	t
 ADIOS_TRANSPORT_HOOKS_H	adios_transport_hooks.h	2;"	d
@@ -65,25 +60,24 @@ ADIOS_TYPES_H	adios_types.h	2;"	d
 ADIOS_WRITE_FN	adios_internals.h	/^typedef void (* ADIOS_WRITE_FN) (struct adios_file_struct * fd$/;"	t
 AMDEP_FALSE	Makefile	/^AMDEP_FALSE = #$/;"	m
 AMDEP_TRUE	Makefile	/^AMDEP_TRUE = $/;"	m
-AMTAR	Makefile	/^AMTAR = ${SHELL} \/gpfs\/fs0\/cgj\/adios.svn\/trunk\/config\/missing --run tar$/;"	m
+AMTAR	Makefile	/^AMTAR = ${SHELL} \/ccs\/home\/cgj\/e2e\/cgj\/adios.svn\/trunk\/config\/missing --run tar$/;"	m
 AR	Makefile	/^AR = ar$/;"	m
 ARFLAGS	Makefile	/^ARFLAGS = cru$/;"	m
-ASSIGN_FNS	adios_transport_hooks.h	86;"	d
-AUTOCONF	Makefile	/^AUTOCONF = ${SHELL} \/gpfs\/fs0\/cgj\/adios.svn\/trunk\/config\/missing --run autoconf$/;"	m
-AUTOHEADER	Makefile	/^AUTOHEADER = ${SHELL} \/gpfs\/fs0\/cgj\/adios.svn\/trunk\/config\/missing --run autoheader$/;"	m
-AUTOMAKE	Makefile	/^AUTOMAKE = ${SHELL} \/gpfs\/fs0\/cgj\/adios.svn\/trunk\/config\/missing --run automake-1.9$/;"	m
+ASSIGN_FNS	adios_transport_hooks.h	84;"	d
+AUTOCONF	Makefile	/^AUTOCONF = ${SHELL} \/ccs\/home\/cgj\/e2e\/cgj\/adios.svn\/trunk\/config\/missing --run autoconf$/;"	m
+AUTOHEADER	Makefile	/^AUTOHEADER = ${SHELL} \/ccs\/home\/cgj\/e2e\/cgj\/adios.svn\/trunk\/config\/missing --run autoheader$/;"	m
+AUTOMAKE	Makefile	/^AUTOMAKE = ${SHELL} \/ccs\/home\/cgj\/e2e\/cgj\/adios.svn\/trunk\/config\/missing --run automake-1.9$/;"	m
 AUTOMAKE_OPTIONS	Makefile	/^AUTOMAKE_OPTIONS = no-dependencies$/;"	m
 AWK	Makefile	/^AWK = gawk$/;"	m
 BYTE_ALIGN	adios_bp_v1.c	12;"	d	file:
-CC	Makefile	/^CC = mpixlc_r$/;"	m
+CC	Makefile	/^CC = mpicc$/;"	m
 CCDEPMODE	Makefile	/^CCDEPMODE = depmode=none$/;"	m
 CCLD	Makefile	/^CCLD = $(CC)$/;"	m
-CDPATH	Makefile	/^am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd$/;"	m
-CFLAGS	Makefile	/^CFLAGS = -g -O0$/;"	m
+CFLAGS	Makefile	/^CFLAGS = -g$/;"	m
 COMPILE	Makefile	/^COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \\$/;"	m
 CONFIG_CLEAN_FILES	Makefile	/^CONFIG_CLEAN_FILES =$/;"	m
 CONFIG_HEADER	Makefile	/^CONFIG_HEADER = $(top_builddir)\/config.h$/;"	m
-CPP	Makefile	/^CPP = mpixlc_r -E$/;"	m
+CPP	Makefile	/^CPP = mpicc -E$/;"	m
 CPPFLAGS	Makefile	/^CPPFLAGS = $/;"	m
 CTAGS	Makefile	/^CTAGS = ctags$/;"	m
 CXX	Makefile	/^CXX = $/;"	m
@@ -91,7 +85,7 @@ CXXCPP	Makefile	/^CXXCPP = g++ -E$/;"	m
 CXXDEPMODE	Makefile	/^CXXDEPMODE = depmode=none$/;"	m
 CXXFLAGS	Makefile	/^CXXFLAGS = -g -O2$/;"	m
 CYGPATH_W	Makefile	/^CYGPATH_W = echo$/;"	m
-DEFAULT_BSIZE	adios_mpi.c	317;"	d	file:
+DEFAULT_BSIZE	adios_mpi.c	316;"	d	file:
 DEFAULT_INCLUDES	Makefile	/^DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)$/;"	m
 DEFS	Makefile	/^DEFS = -DHAVE_CONFIG_H$/;"	m
 DEPDIR	Makefile	/^DEPDIR = .deps$/;"	m
@@ -107,39 +101,36 @@ EGREP	Makefile	/^EGREP = grep -E$/;"	m
 ELSIZE	adios_datatap.c	314;"	d	file:
 ETAGS	Makefile	/^ETAGS = etags$/;"	m
 EXEEXT	Makefile	/^EXEEXT = $/;"	m
-F77	Makefile	/^F77 = f77$/;"	m
-FC	Makefile	/^FC = mpixlf90_r$/;"	m
-FCFLAGS	Makefile	/^FCFLAGS = -g$/;"	m
+F77	Makefile	/^F77 = pgf77$/;"	m
+FC	Makefile	/^FC = mpif90$/;"	m
+FCFLAGS	Makefile	/^FCFLAGS = -g -O2$/;"	m
 FFLAGS	Makefile	/^FFLAGS = -g$/;"	m
-FORWARD_DECLARE	adios_transport_hooks.h	45;"	d
-FORWARD_DECLARE	adios_transport_hooks.h	9;"	d
+FORWARD_DECLARE	adios_transport_hooks.h	43;"	d
+FORWARD_DECLARE	adios_transport_hooks.h	7;"	d
 GENGETOPT	Makefile	/^GENGETOPT = no$/;"	m
-GET_ATTR	adios_internals.c	45;"	d	file:
+GET_ATTR	adios_internals.c	38;"	d	file:
 HAVE_GENGETOPT_FALSE	Makefile	/^HAVE_GENGETOPT_FALSE = $/;"	m
 HAVE_GENGETOPT_TRUE	Makefile	/^HAVE_GENGETOPT_TRUE = #$/;"	m
-HAVE_HDF5_FALSE	Makefile	/^HAVE_HDF5_FALSE = #$/;"	m
-HAVE_HDF5_TRUE	Makefile	/^HAVE_HDF5_TRUE = $/;"	m
+HAVE_HDF5_FALSE	Makefile	/^HAVE_HDF5_FALSE = $/;"	m
+HAVE_HDF5_TRUE	Makefile	/^HAVE_HDF5_TRUE = #$/;"	m
 HAVE_MPI_FALSE	Makefile	/^HAVE_MPI_FALSE = #$/;"	m
 HAVE_MPI_TRUE	Makefile	/^HAVE_MPI_TRUE = $/;"	m
 HAVE_MXML_FALSE	Makefile	/^HAVE_MXML_FALSE = #$/;"	m
 HAVE_MXML_TRUE	Makefile	/^HAVE_MXML_TRUE = $/;"	m
 HAVE_NETCDF_FALSE	Makefile	/^HAVE_NETCDF_FALSE = #$/;"	m
 HAVE_NETCDF_TRUE	Makefile	/^HAVE_NETCDF_TRUE = $/;"	m
-HAVE_PHDF5_FALSE	Makefile	/^HAVE_PHDF5_FALSE = #$/;"	m
-HAVE_PHDF5_TRUE	Makefile	/^HAVE_PHDF5_TRUE = $/;"	m
-HDF5_CPPFLAGS	Makefile	/^HDF5_CPPFLAGS = -I\/sw\/bgp\/hdf5\/1.6.5\/cnk1.0_bgxlc9bgxlf9011\/include$/;"	m
-HDF5_LDFLAGS	Makefile	/^HDF5_LDFLAGS = -L\/sw\/bgp\/hdf5\/1.6.5\/cnk1.0_bgxlc9bgxlf9011\/lib$/;"	m
-HDF5_LIBS	Makefile	/^HDF5_LIBS = -lhdf5$/;"	m
+HAVE_PHDF5_FALSE	Makefile	/^HAVE_PHDF5_FALSE = $/;"	m
+HAVE_PHDF5_TRUE	Makefile	/^HAVE_PHDF5_TRUE = #$/;"	m
+HDF5_CPPFLAGS	Makefile	/^HDF5_CPPFLAGS = $/;"	m
+HDF5_LDFLAGS	Makefile	/^HDF5_LDFLAGS = $/;"	m
+HDF5_LIBS	Makefile	/^HDF5_LIBS = $/;"	m
 HEADERS	Makefile	/^HEADERS = $(include_HEADERS)$/;"	m
 INCLUDES	Makefile	/^INCLUDES = -I$(top_srcdir) $/;"	m
 INSTALL	Makefile	/^INSTALL = \/usr\/bin\/install -c$/;"	m
 INSTALL_DATA	Makefile	/^INSTALL_DATA = ${INSTALL} -m 644$/;"	m
 INSTALL_HEADER	Makefile	/^INSTALL_HEADER = $(INSTALL_DATA)$/;"	m
-INSTALL_PROGRAM	Makefile	/^	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \\$/;"	m
 INSTALL_PROGRAM	Makefile	/^INSTALL_PROGRAM = ${INSTALL}$/;"	m
-INSTALL_PROGRAM_ENV	Makefile	/^	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install$/;"	m
 INSTALL_SCRIPT	Makefile	/^INSTALL_SCRIPT = ${INSTALL}$/;"	m
-INSTALL_STRIP_FLAG	Makefile	/^	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \\$/;"	m
 INSTALL_STRIP_PROGRAM	Makefile	/^INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s$/;"	m
 LDFLAGS	Makefile	/^LDFLAGS = $/;"	m
 LIBOBJS	Makefile	/^LIBOBJS = $/;"	m
@@ -147,26 +138,25 @@ LIBRARIES	Makefile	/^LIBRARIES = $(lib_LIBRARIES)$/;"	m
 LIBS	Makefile	/^LIBS =   $/;"	m
 LIBTOOL	Makefile	/^LIBTOOL = $(SHELL) $(top_builddir)\/libtool$/;"	m
 LINK	Makefile	/^LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \\$/;"	m
-LL_IOC_LOV_GETSTRIPE	adios_mpi.c	299;"	d	file:
+LL_IOC_LOV_GETSTRIPE	adios_mpi.c	298;"	d	file:
 LN_S	Makefile	/^LN_S = ln -s$/;"	m
 LOGHDR	adios_provenance.c	/^static char LOGHDR[]="provenance method:";$/;"	v	file:
-LOV_USER_MAGIC	adios_mpi.c	298;"	d	file:
+LOV_USER_MAGIC	adios_mpi.c	297;"	d	file:
 LTCOMPILE	Makefile	/^LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) \\$/;"	m
 LTLIBOBJS	Makefile	/^LTLIBOBJS = $/;"	m
-LUSTRE_SUPER_MAGIC	adios_mpi.c	297;"	d	file:
-MAKEINFO	Makefile	/^MAKEINFO = ${SHELL} \/gpfs\/fs0\/cgj\/adios.svn\/trunk\/config\/missing --run makeinfo$/;"	m
-MATCH_STRING_TO_METHOD	adios_transport_hooks.h	82;"	d
+LUSTRE_SUPER_MAGIC	adios_mpi.c	296;"	d	file:
+MAKEINFO	Makefile	/^MAKEINFO = ${SHELL} \/ccs\/home\/cgj\/e2e\/cgj\/adios.svn\/trunk\/config\/missing --run makeinfo$/;"	m
+MATCH_STRING_TO_METHOD	adios_transport_hooks.h	80;"	d
 METASOURCES	Makefile	/^METASOURCES = AUTO$/;"	m
-MIN_MAX	adios_internals.c	6200;"	d	file:
-MIN_MAX	adios_internals.c	6221;"	d	file:
-MPICC	Makefile	/^MPICC = mpixlc_r$/;"	m
-MPIFC	Makefile	/^MPIFC = mpixlf90_r$/;"	m
+MIN_MAX	adios_internals.c	6114;"	d	file:
+MPICC	Makefile	/^MPICC = mpicc$/;"	m
+MPIFC	Makefile	/^MPIFC = mpif90$/;"	m
 MPILIBS	Makefile	/^MPILIBS =  $/;"	m
-MXML_CPPFLAGS	Makefile	/^MXML_CPPFLAGS = -I\/ccs\/proj\/e2e\/adios\/bgp\/include$/;"	m
-MXML_LDFLAGS	Makefile	/^MXML_LDFLAGS = -L\/ccs\/proj\/e2e\/adios\/bgp\/lib$/;"	m
+MXML_CPPFLAGS	Makefile	/^MXML_CPPFLAGS = -I\/ccs\/home\/ge1\/work\/lens\/include$/;"	m
+MXML_LDFLAGS	Makefile	/^MXML_LDFLAGS = -L\/ccs\/home\/ge1\/work\/lens\/lib$/;"	m
 MXML_LIBS	Makefile	/^MXML_LIBS = -lmxml$/;"	m
-NETCDF_CPPFLAGS	Makefile	/^NETCDF_CPPFLAGS = -I\/sw\/bgp\/netcdf\/3.6.2\/cnk1.1_bgxlc9.0bgxlf11.1\/include$/;"	m
-NETCDF_LDFLAGS	Makefile	/^NETCDF_LDFLAGS = -L\/sw\/bgp\/netcdf\/3.6.2\/cnk1.1_bgxlc9.0bgxlf11.1\/lib$/;"	m
+NETCDF_CPPFLAGS	Makefile	/^NETCDF_CPPFLAGS = -I\/sw\/analysis-x64\/netcdf\/3.6.2\/sl5.0_pgi7.1.5\/include$/;"	m
+NETCDF_LDFLAGS	Makefile	/^NETCDF_LDFLAGS = -L\/sw\/analysis-x64\/netcdf\/3.6.2\/sl5.0_pgi7.1.5\/lib$/;"	m
 NETCDF_LIBS	Makefile	/^NETCDF_LIBS = -lnetcdf$/;"	m
 NORMAL_INSTALL	Makefile	/^NORMAL_INSTALL = :$/;"	m
 NORMAL_UNINSTALL	Makefile	/^NORMAL_UNINSTALL = :$/;"	m
@@ -182,9 +172,9 @@ PACKAGE_STRING	Makefile	/^PACKAGE_STRING = $/;"	m
 PACKAGE_TARNAME	Makefile	/^PACKAGE_TARNAME = $/;"	m
 PACKAGE_VERSION	Makefile	/^PACKAGE_VERSION = $/;"	m
 PATH_SEPARATOR	Makefile	/^PATH_SEPARATOR = :$/;"	m
-PHDF5_CPPFLAGS	Makefile	/^PHDF5_CPPFLAGS = -I\/sw\/bgp\/hdf5\/1.6.5\/cnk1.0_mpixlc9mpixlf9011\/include $(am__append_2)$/;"	m
-PHDF5_LDFLAGS	Makefile	/^PHDF5_LDFLAGS = -L\/sw\/bgp\/hdf5\/1.6.5\/cnk1.0_mpixlc9mpixlf9011\/lib$/;"	m
-PHDF5_LIBS	Makefile	/^PHDF5_LIBS = -lhdf5$/;"	m
+PHDF5_CPPFLAGS	Makefile	/^PHDF5_CPPFLAGS =  $(am__append_2)$/;"	m
+PHDF5_LDFLAGS	Makefile	/^PHDF5_LDFLAGS = $/;"	m
+PHDF5_LIBS	Makefile	/^PHDF5_LIBS = $/;"	m
 POST_INSTALL	Makefile	/^POST_INSTALL = :$/;"	m
 POST_UNINSTALL	Makefile	/^POST_UNINSTALL = :$/;"	m
 PRE_INSTALL	Makefile	/^PRE_INSTALL = :$/;"	m
@@ -196,7 +186,6 @@ SOURCES	Makefile	/^SOURCES = $(libadios_a_SOURCES) $(libadios_int_a_SOURCES) $(l
 SOURCES	Makefile	/^SOURCES = $(libadios_a_SOURCES) $(libadios_int_a_SOURCES) \\$/;"	m
 STARTINGSIZE	adios_datatap.c	18;"	d	file:
 STRIP	Makefile	/^STRIP = strip$/;"	m
-STRIPPROG	Makefile	/^	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install$/;"	m
 STR_LEN	adios_mpi_cio.c	18;"	d	file:
 VERSION	Makefile	/^VERSION = 0.8$/;"	m
 _check_other_methods	adios_provenance.c	/^static void _check_other_methods(struct adios_file_struct * fd$/;"	f	file:
@@ -207,16 +196,15 @@ _look_for_listener	adios_provenance.c	/^static void _look_for_listener(char *env
 _parse_hoststr	adios_provenance.c	/^static void _parse_hoststr (char *str, int default_port, char **host, int *port)$/;"	f	file:
 _var_to_comm	adios_provenance.c	/^static MPI_Comm _var_to_comm (enum ADIOS_FLAG host_language_fortran, void * data)$/;"	f	file:
 ac_ct_AR	Makefile	/^ac_ct_AR = ar$/;"	m
-ac_ct_CC	Makefile	/^ac_ct_CC = mpixlc_r$/;"	m
+ac_ct_CC	Makefile	/^ac_ct_CC = mpicc$/;"	m
 ac_ct_CXX	Makefile	/^ac_ct_CXX = g++$/;"	m
-ac_ct_F77	Makefile	/^ac_ct_F77 = f77$/;"	m
-ac_ct_FC	Makefile	/^ac_ct_FC = $/;"	m
+ac_ct_F77	Makefile	/^ac_ct_F77 = pgf77$/;"	m
+ac_ct_FC	Makefile	/^ac_ct_FC = f95$/;"	m
 ac_ct_RANLIB	Makefile	/^ac_ct_RANLIB = ranlib$/;"	m
 ac_ct_STRIP	Makefile	/^ac_ct_STRIP = strip$/;"	m
 adios_DART_data_struct	adios_dart.c	/^struct adios_DART_data_struct$/;"	s	file:
 adios_MPI_Collective_data_struct	adios_mpi_cio.c	/^struct adios_MPI_Collective_data_struct$/;"	s	file:
 adios_MPI_data_struct	adios_mpi.c	/^struct adios_MPI_data_struct$/;"	s	file:
-adios_MPI_data_struct	adios_mpi_nwu.c	/^struct adios_MPI_data_struct$/;"	s	file:
 adios_MPI_write_buffer	adios_mpi.c	/^struct adios_MPI_write_buffer {$/;"	s	file:
 adios_POSIX_data_struct	adios_posix.c	/^struct adios_POSIX_data_struct$/;"	s	file:
 adios_PROVENANCE_data_struct	adios_provenance.c	/^struct adios_PROVENANCE_data_struct$/;"	s	file:
@@ -239,12 +227,11 @@ adios_blocking_read_request	adios_socket.c	/^int adios_blocking_read_request(int
 adios_blocking_write_request	adios_socket.c	/^int adios_blocking_write_request(int socketid,char *buffer,int length)$/;"	f
 adios_bp_buffer_struct_v1	adios_bp_v1.h	/^struct adios_bp_buffer_struct_v1$/;"	s
 adios_buffer_alloc_percentage	adios_internals.c	/^static int adios_buffer_alloc_percentage = 0;  \/\/ 1 = yes, 0 = no$/;"	v	file:
-adios_buffer_alloc_when	adios_internals.c	/^                                    } adios_buffer_alloc_when$/;"	v	file:
+adios_buffer_alloc_when	adios_internals.c	/^                                    } adios_buffer_alloc_when$/;"	v	typeref:enum:ADIOS_BUFFER_ALLOC_WHEN	file:
 adios_buffer_part_entry	adios_internals.h	/^struct adios_buffer_part_entry$/;"	s
 adios_buffer_size_max	adios_internals.c	/^static uint64_t adios_buffer_size_max = 0;$/;"	v	file:
 adios_buffer_size_remaining	adios_internals.c	/^static uint64_t adios_buffer_size_remaining = 0;$/;"	v	file:
 adios_buffer_size_requested	adios_internals.c	/^static uint64_t adios_buffer_size_requested = 0;$/;"	v	file:
-adios_buffer_stripe_aligned	adios_internals.c	/^static int adios_buffer_stripe_aligned = 0;$/;"	v	file:
 adios_buffer_struct_clear	adios_bp_v1.c	/^void adios_buffer_struct_clear (struct adios_bp_buffer_struct_v1 * b)$/;"	f
 adios_buffer_struct_init	adios_bp_v1.c	/^void adios_buffer_struct_init (struct adios_bp_buffer_struct_v1 * b)$/;"	f
 adios_build_index_v1	adios_internals.c	/^void adios_build_index_v1 (struct adios_file_struct * fd$/;"	f
@@ -347,10 +334,10 @@ adios_group_list_struct	adios_internals.h	/^struct adios_group_list_struct$/;"	s
 adios_group_size	adios.c	/^int adios_group_size (int64_t fd_p, uint64_t data_size$/;"	f
 adios_group_size_	adios.c	/^void adios_group_size_ (int64_t * fd_p, int64_t * data_size$/;"	f
 adios_group_struct	adios_internals.h	/^struct adios_group_struct$/;"	s
-adios_groups	adios_internals.c	/^static struct adios_group_list_struct * adios_groups = 0;$/;"	v	file:
-adios_host_language_fortran	adios_bp_v1.h	/^    enum ADIOS_FLAG adios_host_language_fortran;$/;"	m	struct:adios_index_process_group_struct_v1
-adios_host_language_fortran	adios_internals.c	/^enum ADIOS_FLAG adios_host_language_fortran = adios_flag_yes;$/;"	v
-adios_host_language_fortran	adios_internals.h	/^    enum ADIOS_FLAG adios_host_language_fortran;$/;"	m	struct:adios_group_struct
+adios_groups	adios_internals.c	/^static struct adios_group_list_struct * adios_groups = 0;$/;"	v	typeref:struct:adios_group_list_struct	file:
+adios_host_language_fortran	adios_bp_v1.h	/^    enum ADIOS_FLAG adios_host_language_fortran;$/;"	m	struct:adios_index_process_group_struct_v1	typeref:enum:adios_index_process_group_struct_v1::ADIOS_FLAG
+adios_host_language_fortran	adios_internals.c	/^enum ADIOS_FLAG adios_host_language_fortran = adios_flag_yes;$/;"	v	typeref:enum:ADIOS_FLAG
+adios_host_language_fortran	adios_internals.h	/^    enum ADIOS_FLAG adios_host_language_fortran;$/;"	m	struct:adios_group_struct	typeref:enum:adios_group_struct::ADIOS_FLAG
 adios_index_attribute_struct_v1	adios_bp_v1.h	/^struct adios_index_attribute_struct_v1$/;"	s
 adios_index_characteristic_dims_struct_v1	adios_bp_v1.h	/^struct adios_index_characteristic_dims_struct_v1$/;"	s
 adios_index_characteristic_struct_v1	adios_bp_v1.h	/^struct adios_index_characteristic_struct_v1$/;"	s
@@ -386,7 +373,7 @@ adios_method_buffer_free	adios_internals.c	/^int adios_method_buffer_free (uint6
 adios_method_info_struct_v1	adios_bp_v1.h	/^struct adios_method_info_struct_v1$/;"	s
 adios_method_list_struct	adios_internals.h	/^struct adios_method_list_struct$/;"	s
 adios_method_struct	adios_internals.h	/^struct adios_method_struct$/;"	s
-adios_methods	adios_internals.c	/^static struct adios_method_list_struct * adios_methods = 0;$/;"	v	file:
+adios_methods	adios_internals.c	/^static struct adios_method_list_struct * adios_methods = 0;$/;"	v	typeref:struct:adios_method_list_struct	file:
 adios_mode_append	adios_internals.h	/^                       ,adios_mode_append = 4$/;"	e	enum:ADIOS_METHOD_MODE
 adios_mode_read	adios_internals.h	/^                       ,adios_mode_read   = 2$/;"	e	enum:ADIOS_METHOD_MODE
 adios_mode_update	adios_internals.h	/^                       ,adios_mode_update = 3 \/\/ not supported yet$/;"	e	enum:ADIOS_METHOD_MODE
@@ -419,21 +406,6 @@ adios_mpi_get_write_buffer	adios_mpi.c	/^void adios_mpi_get_write_buffer (struct
 adios_mpi_info	adios_mpi_cio.c	/^MPI_Info adios_mpi_info = MPI_INFO_NULL;$/;"	v
 adios_mpi_init	adios_mpi.c	/^void adios_mpi_init (const char * parameters$/;"	f
 adios_mpi_initialized	adios_mpi.c	/^static int adios_mpi_initialized = 0;$/;"	v	file:
-adios_mpi_nwu_close	adios_mpi_nwu.c	/^void adios_mpi_nwu_close (struct adios_file_struct * fd$/;"	f
-adios_mpi_nwu_do_read	adios_mpi_nwu.c	/^static void adios_mpi_nwu_do_read (struct adios_file_struct * fd$/;"	f	file:
-adios_mpi_nwu_end_iteration	adios_mpi_nwu.c	/^void adios_mpi_nwu_end_iteration (struct adios_method_struct * method)$/;"	f
-adios_mpi_nwu_finalize	adios_mpi_nwu.c	/^void adios_mpi_nwu_finalize (int mype, struct adios_method_struct * method)$/;"	f
-adios_mpi_nwu_get_striping_unit	adios_mpi_nwu.c	/^adios_mpi_nwu_get_striping_unit(MPI_File fh, char *filename)$/;"	f	file:
-adios_mpi_nwu_get_write_buffer	adios_mpi_nwu.c	/^void adios_mpi_nwu_get_write_buffer (struct adios_file_struct * fd$/;"	f
-adios_mpi_nwu_init	adios_mpi_nwu.c	/^void adios_mpi_nwu_init (const char * parameters$/;"	f
-adios_mpi_nwu_initialized	adios_mpi_nwu.c	/^static int adios_mpi_nwu_initialized = 0;$/;"	v	file:
-adios_mpi_nwu_open	adios_mpi_nwu.c	/^int adios_mpi_nwu_open (struct adios_file_struct * fd$/;"	f
-adios_mpi_nwu_read	adios_mpi_nwu.c	/^void adios_mpi_nwu_read (struct adios_file_struct * fd$/;"	f
-adios_mpi_nwu_should_buffer	adios_mpi_nwu.c	/^enum ADIOS_FLAG adios_mpi_nwu_should_buffer (struct adios_file_struct * fd$/;"	f
-adios_mpi_nwu_start_calculation	adios_mpi_nwu.c	/^void adios_mpi_nwu_start_calculation (struct adios_method_struct * method)$/;"	f
-adios_mpi_nwu_stop_calculation	adios_mpi_nwu.c	/^void adios_mpi_nwu_stop_calculation (struct adios_method_struct * method)$/;"	f
-adios_mpi_nwu_striping_unit_write	adios_mpi_nwu.c	/^adios_mpi_nwu_striping_unit_write(MPI_File    fh,$/;"	f	file:
-adios_mpi_nwu_write	adios_mpi_nwu.c	/^void adios_mpi_nwu_write (struct adios_file_struct * fd$/;"	f
 adios_mpi_open	adios_mpi.c	/^int adios_mpi_open (struct adios_file_struct * fd$/;"	f
 adios_mpi_read	adios_mpi.c	/^void adios_mpi_read (struct adios_file_struct * fd$/;"	f
 adios_mpi_set_stripe_size_aligned	adios_mpi.c	/^adios_mpi_set_stripe_size_aligned(struct adios_file_struct *fd, $/;"	f	file:
@@ -554,9 +526,8 @@ adios_stop_calculation	adios.c	/^int adios_stop_calculation ()$/;"	f
 adios_stop_calculation_	adios.c	/^void adios_stop_calculation_ (int * err)$/;"	f
 adios_stop_calculation_fn	adios_internals.h	/^    ADIOS_STOP_CALCULATION_FN adios_stop_calculation_fn;$/;"	m	struct:adios_transport_struct
 adios_string	adios_types.h	/^                     ,adios_string = 9               \/\/ (?)$/;"	e	enum:ADIOS_DATATYPES
-adios_stripe_size_aligned	adios_internals.c	/^int adios_stripe_size_aligned()$/;"	f
 adios_transport_struct	adios_internals.h	/^struct adios_transport_struct$/;"	s
-adios_transports	adios_internals.c	/^struct adios_transport_struct * adios_transports = 0;$/;"	v
+adios_transports	adios_internals.c	/^struct adios_transport_struct * adios_transports = 0;$/;"	v	typeref:struct:adios_transport_struct
 adios_transports_initialized	adios_internals.c	/^static int adios_transports_initialized = 0;$/;"	v	file:
 adios_type_to_string	adios_internals.c	/^const char * adios_type_to_string (int type)$/;"	f
 adios_unknown	adios_types.h	/^enum ADIOS_DATATYPES {adios_unknown = -1             \/\/ (size)$/;"	e	enum:ADIOS_DATATYPES
@@ -569,7 +540,6 @@ adios_var_payload_struct_v1	adios_bp_v1.h	/^struct adios_var_payload_struct_v1$/
 adios_var_struct	adios_internals.h	/^struct adios_var_struct$/;"	s
 adios_var_to_comm	adios_mpi.c	/^static void adios_var_to_comm (const char * comm_name$/;"	f	file:
 adios_var_to_comm	adios_mpi_cio.c	/^static void adios_var_to_comm (const char * varname$/;"	f	file:
-adios_var_to_comm	adios_mpi_nwu.c	/^static void adios_var_to_comm (const char * comm_name$/;"	f	file:
 adios_var_to_comm_phdf5	adios_phdf5.c	/^static void adios_var_to_comm_phdf5 (enum ADIOS_FLAG host_language_fortran$/;"	f	file:
 adios_vars_header_struct_v1	adios_bp_v1.h	/^struct adios_vars_header_struct_v1$/;"	s
 adios_vtk_close	adios_vtk.c	/^void adios_vtk_close (struct adios_file_struct * fd$/;"	f
@@ -601,13 +571,12 @@ adios_write_var_characteristics_v1	adios_internals.c	/^uint16_t adios_write_var_
 adios_write_var_header_v1	adios_internals.c	/^uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd$/;"	f
 adios_write_var_payload_v1	adios_internals.c	/^int adios_write_var_payload_v1 (struct adios_file_struct * fd$/;"	f
 adios_write_version_v1	adios_internals.c	/^int adios_write_version_v1 (char ** buffer$/;"	f
-all_unique_var_names	adios_internals.h	/^    enum ADIOS_FLAG all_unique_var_names;$/;"	m	struct:adios_group_struct
-all_unique_var_names	adios_internals.h	/^    enum ADIOS_FLAG all_unique_var_names;$/;"	m	struct:adios_parse_buffer_struct
+all_unique_var_names	adios_internals.h	/^    enum ADIOS_FLAG all_unique_var_names;$/;"	m	struct:adios_group_struct	typeref:enum:adios_group_struct::ADIOS_FLAG
+all_unique_var_names	adios_internals.h	/^    enum ADIOS_FLAG all_unique_var_names;$/;"	m	struct:adios_parse_buffer_struct	typeref:enum:adios_parse_buffer_struct::ADIOS_FLAG
 alloc_aligned	adios_bp_v1.c	/^static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)$/;"	f	file:
 allocated_buff_ptr	adios_bp_v1.h	/^    char * allocated_buff_ptr;  \/\/ initial alloc for aligning on 8-byte boundary$/;"	m	struct:adios_bp_buffer_struct_v1
 am__aclocal_m4_deps	Makefile	/^am__aclocal_m4_deps = $(top_srcdir)\/config\/ac_gengetopt.m4 \\$/;"	m
-am__append_1	Makefile	/^am__append_1 = libadios_phdf5.a$/;"	m
-am__append_2	Makefile	/^am__append_2 = -DPHDF5 -DH5_USE_16_API $/;"	m
+am__append_3	Makefile	/^am__append_3 = adios_phdf5.c $/;"	m
 am__cd	Makefile	/^am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd$/;"	m
 am__configure_deps	Makefile	/^am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \\$/;"	m
 am__depfiles_maybe	Makefile	/^am__depfiles_maybe =$/;"	m
@@ -620,6 +589,7 @@ am__installdirs	Makefile	/^am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(
 am__leading_dot	Makefile	/^am__leading_dot = .$/;"	m
 am__libadios_a_SOURCES_DIST	Makefile	/^am__libadios_a_SOURCES_DIST = adios.c adios_transport_hooks.c \\$/;"	m
 am__libadios_phdf5_a_SOURCES_DIST	Makefile	/^am__libadios_phdf5_a_SOURCES_DIST = adios_phdf5.c$/;"	m
+am__objects_1	Makefile	/^am__objects_1 = libadios_a-adios_phdf5.$(OBJEXT)$/;"	m
 am__quote	Makefile	/^am__quote = $/;"	m
 am__strip_dir	Makefile	/^am__strip_dir = `echo $$p | sed -e 's|^.*\/||'`;$/;"	m
 am__tar	Makefile	/^am__tar = ${AMTAR} chof - "$$tardir"$/;"	m
@@ -628,17 +598,15 @@ am__vpath_adj	Makefile	/^am__vpath_adj = case $$p in \\$/;"	m
 am__vpath_adj_setup	Makefile	/^am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;$/;"	m
 am_libadios_a_OBJECTS	Makefile	/^am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \\$/;"	m
 am_libadios_int_a_OBJECTS	Makefile	/^am_libadios_int_a_OBJECTS = libadios_int_a-adios_internals.$(OBJEXT) \\$/;"	m
-am_libadios_phdf5_a_OBJECTS	Makefile	/^am_libadios_phdf5_a_OBJECTS =  \\$/;"	m
-another_method	adios_provenance.c	/^    enum   ADIOS_IO_METHOD another_method;  \/\/ the other method in case of multiple methods$/;"	m	struct:adios_PROVENANCE_data_struct	file:
+another_method	adios_provenance.c	/^    enum   ADIOS_IO_METHOD another_method;  \/\/ the other method in case of multiple methods$/;"	m	struct:adios_PROVENANCE_data_struct	typeref:enum:adios_PROVENANCE_data_struct::ADIOS_IO_METHOD	file:
 attr_name	adios_bp_v1.h	/^    char * attr_name;$/;"	m	struct:adios_index_attribute_struct_v1
 attr_path	adios_bp_v1.h	/^    char * attr_path;$/;"	m	struct:adios_index_attribute_struct_v1
-attributes	adios_internals.h	/^    struct adios_attribute_struct * attributes;$/;"	m	struct:adios_group_struct
+attributes	adios_internals.h	/^    struct adios_attribute_struct * attributes;$/;"	m	struct:adios_group_struct	typeref:struct:adios_group_struct::adios_attribute_struct
 attrs_index_offset	adios_bp_v1.h	/^    uint64_t attrs_index_offset;  \/\/ attributes index start$/;"	m	struct:adios_bp_buffer_struct_v1
 attrs_size	adios_bp_v1.h	/^    uint64_t attrs_size;          \/\/ attributes index size$/;"	m	struct:adios_bp_buffer_struct_v1
-b	adios_mpi.c	/^    struct adios_bp_buffer_struct_v1 b;$/;"	m	struct:adios_MPI_data_struct	file:
-b	adios_mpi_nwu.c	/^    struct adios_bp_buffer_struct_v1 b;$/;"	m	struct:adios_MPI_data_struct	file:
-b	adios_posix.c	/^    struct adios_bp_buffer_struct_v1 b;$/;"	m	struct:adios_POSIX_data_struct	file:
-b	adios_provenance.c	/^    struct adios_bp_buffer_struct_v1 b;$/;"	m	struct:adios_PROVENANCE_data_struct	file:
+b	adios_mpi.c	/^    struct adios_bp_buffer_struct_v1 b;$/;"	m	struct:adios_MPI_data_struct	typeref:struct:adios_MPI_data_struct::adios_bp_buffer_struct_v1	file:
+b	adios_posix.c	/^    struct adios_bp_buffer_struct_v1 b;$/;"	m	struct:adios_POSIX_data_struct	typeref:struct:adios_POSIX_data_struct::adios_bp_buffer_struct_v1	file:
+b	adios_provenance.c	/^    struct adios_bp_buffer_struct_v1 b;$/;"	m	struct:adios_PROVENANCE_data_struct	typeref:struct:adios_PROVENANCE_data_struct::adios_bp_buffer_struct_v1	file:
 base_offset	adios_internals.h	/^    uint64_t base_offset;   \/\/ where writing last ocurred$/;"	m	struct:adios_file_struct
 base_offset	adios_mpi_cio.c	/^    uint64_t base_offset;$/;"	m	struct:adios_MPI_Collective_data_struct	file:
 base_path	adios_internals.h	/^    char * base_path;$/;"	m	struct:adios_method_struct
@@ -657,25 +625,24 @@ buffer_size	adios_internals.h	/^    uint64_t buffer_size;   \/\/ how big the buf
 buffer_size	adios_mpi.c	/^    int    	buffer_size;$/;"	m	struct:adios_MPI_write_buffer	file:
 buffer_size	adios_mpi_cio.c	/^    uint64_t buffer_size;$/;"	m	struct:adios_MPI_Collective_data_struct	file:
 buffer_write	adios_internals.c	/^static void buffer_write (char ** buffer, uint64_t * buffer_size$/;"	f	file:
-build	Makefile	/^build = powerpc64-unknown-linux-gnu$/;"	m
+build	Makefile	/^build = x86_64-redhat-linux-gnu$/;"	m
 build_alias	Makefile	/^build_alias = $/;"	m
-build_cpu	Makefile	/^build_cpu = powerpc64$/;"	m
+build_cpu	Makefile	/^build_cpu = x86_64$/;"	m
 build_offsets	adios_mpi.c	/^void build_offsets (struct adios_bp_buffer_struct_v1 * b$/;"	f	file:
-build_offsets	adios_mpi_nwu.c	/^void build_offsets (struct adios_bp_buffer_struct_v1 * b$/;"	f	file:
 build_os	Makefile	/^build_os = linux-gnu$/;"	m
-build_triplet	Makefile	/^build_triplet = powerpc64-unknown-linux-gnu$/;"	m
-build_vendor	Makefile	/^build_vendor = unknown$/;"	m
+build_triplet	Makefile	/^build_triplet = x86_64-redhat-linux-gnu$/;"	m
+build_vendor	Makefile	/^build_vendor = redhat$/;"	m
 bytes_written	adios_internals.h	/^    uint64_t bytes_written; \/\/ largest offset into buffer written to$/;"	m	struct:adios_file_struct
 calc_dimension_size	adios_internals.c	/^static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)$/;"	f	file:
 calc_dimensions_size	adios_internals.c	/^static uint16_t calc_dimensions_size (struct adios_dimension_struct * dimension)$/;"	f	file:
 cast_var_data_as_uint64	adios_internals.c	/^static uint64_t cast_var_data_as_uint64 (const char * parent_name$/;"	f	file:
-cell_list	adios_internals.h	/^    struct adios_mesh_cell_list_list_struct * cell_list;$/;"	m	struct:adios_mesh_unstructured_struct
-cell_list	adios_internals.h	/^    struct adios_mesh_cell_list_struct cell_list;$/;"	m	struct:adios_mesh_cell_list_list_struct
-cells_uniform	adios_internals.h	/^    enum ADIOS_FLAG cells_uniform;$/;"	m	struct:adios_mesh_cell_list_struct
-change_endianness	adios_bp_v1.h	/^    enum ADIOS_FLAG change_endianness;$/;"	m	struct:adios_bp_buffer_struct_v1
-characteristics	adios_bp_v1.h	/^    struct adios_index_characteristic_struct_v1 * characteristics;$/;"	m	struct:adios_index_attribute_struct_v1
-characteristics	adios_bp_v1.h	/^    struct adios_index_characteristic_struct_v1 * characteristics;$/;"	m	struct:adios_index_var_struct_v1
-characteristics	adios_bp_v1.h	/^    struct adios_index_characteristic_struct_v1 characteristics;$/;"	m	struct:adios_var_header_struct_v1
+cell_list	adios_internals.h	/^    struct adios_mesh_cell_list_list_struct * cell_list;$/;"	m	struct:adios_mesh_unstructured_struct	typeref:struct:adios_mesh_unstructured_struct::adios_mesh_cell_list_list_struct
+cell_list	adios_internals.h	/^    struct adios_mesh_cell_list_struct cell_list;$/;"	m	struct:adios_mesh_cell_list_list_struct	typeref:struct:adios_mesh_cell_list_list_struct::adios_mesh_cell_list_struct
+cells_uniform	adios_internals.h	/^    enum ADIOS_FLAG cells_uniform;$/;"	m	struct:adios_mesh_cell_list_struct	typeref:enum:adios_mesh_cell_list_struct::ADIOS_FLAG
+change_endianness	adios_bp_v1.h	/^    enum ADIOS_FLAG change_endianness;$/;"	m	struct:adios_bp_buffer_struct_v1	typeref:enum:adios_bp_buffer_struct_v1::ADIOS_FLAG
+characteristics	adios_bp_v1.h	/^    struct adios_index_characteristic_struct_v1 * characteristics;$/;"	m	struct:adios_index_attribute_struct_v1	typeref:struct:adios_index_attribute_struct_v1::adios_index_characteristic_struct_v1
+characteristics	adios_bp_v1.h	/^    struct adios_index_characteristic_struct_v1 * characteristics;$/;"	m	struct:adios_index_var_struct_v1	typeref:struct:adios_index_var_struct_v1::adios_index_characteristic_struct_v1
+characteristics	adios_bp_v1.h	/^    struct adios_index_characteristic_struct_v1 characteristics;$/;"	m	struct:adios_var_header_struct_v1	typeref:struct:adios_var_header_struct_v1::adios_index_characteristic_struct_v1
 characteristics_allocated	adios_bp_v1.h	/^    uint64_t characteristics_allocated;$/;"	m	struct:adios_index_attribute_struct_v1
 characteristics_allocated	adios_bp_v1.h	/^    uint64_t characteristics_allocated;$/;"	m	struct:adios_index_var_struct_v1
 characteristics_count	adios_bp_v1.h	/^    uint64_t characteristics_count;$/;"	m	struct:adios_index_attribute_struct_v1
@@ -695,94 +662,79 @@ common_adios_set_path_var	adios.c	/^static int common_adios_set_path_var (int64_
 common_adios_start_calculation	adios.c	/^static int common_adios_start_calculation ()$/;"	f	file:
 common_adios_stop_calculation	adios.c	/^static int common_adios_stop_calculation ()$/;"	f	file:
 common_adios_write	adios.c	/^static int common_adios_write (int64_t fd_p, const char * name, void * var)$/;"	f	file:
-components	adios_internals.h	/^    struct adios_mesh_item_struct * components;$/;"	m	struct:adios_mesh_unstructured_struct
+components	adios_internals.h	/^    struct adios_mesh_item_struct * components;$/;"	m	struct:adios_mesh_unstructured_struct	typeref:struct:adios_mesh_unstructured_struct::adios_mesh_item_struct
 coord_var_id	adios_bp_v1.h	/^    uint16_t coord_var_id;$/;"	m	struct:adios_process_group_header_struct_v1
-coordinates	adios_internals.h	/^    struct adios_mesh_var_list_struct * coordinates;$/;"	m	struct:adios_mesh_rectilinear_struct
-coordinates_single_var	adios_internals.h	/^    enum ADIOS_FLAG coordinates_single_var;$/;"	m	struct:adios_mesh_rectilinear_struct
+coordinates	adios_internals.h	/^    struct adios_mesh_var_list_struct * coordinates;$/;"	m	struct:adios_mesh_rectilinear_struct	typeref:struct:adios_mesh_rectilinear_struct::adios_mesh_var_list_struct
+coordinates_single_var	adios_internals.h	/^    enum ADIOS_FLAG coordinates_single_var;$/;"	m	struct:adios_mesh_rectilinear_struct	typeref:enum:adios_mesh_rectilinear_struct::ADIOS_FLAG
 count	adios_bp_v1.h	/^    uint16_t count;$/;"	m	struct:adios_attributes_header_struct_v1
 count	adios_bp_v1.h	/^    uint32_t count;$/;"	m	struct:adios_vars_header_struct_v1
 count	adios_bp_v1.h	/^    uint8_t count;$/;"	m	struct:adios_index_characteristic_dims_struct_v1
-count	adios_internals.h	/^    struct adios_mesh_item_struct count;$/;"	m	struct:adios_mesh_cell_list_struct
+count	adios_internals.h	/^    struct adios_mesh_item_struct count;$/;"	m	struct:adios_mesh_cell_list_struct	typeref:struct:adios_mesh_cell_list_struct::adios_mesh_item_struct
 count_dimensions	adios_internals.c	/^static uint8_t count_dimensions (struct adios_dimension_struct * dimensions)$/;"	f	file:
 cycle_id	adios_datatap.c	/^    int cycle_id;$/;"	m	struct:datatap_method_data	file:
-data	adios_internals.h	/^    struct adios_var_struct * data;$/;"	m	struct:adios_mesh_cell_list_struct
+data	adios_internals.h	/^    struct adios_var_struct * data;$/;"	m	struct:adios_mesh_cell_list_struct	typeref:struct:adios_mesh_cell_list_struct::adios_var_struct
 data	adios_internals.h	/^    void * data;                  \/\/ primarily used for reading$/;"	m	struct:adios_var_struct
 data_size	adios_internals.h	/^    uint64_t data_size;           \/\/ primarily used for reading$/;"	m	struct:adios_var_struct
 data_size	adios_internals.h	/^    uint64_t data_size;$/;"	m	struct:adios_file_struct
 datadir	Makefile	/^datadir = ${prefix}\/share$/;"	m
 datatap_method_data	adios_datatap.c	/^typedef struct datatap_method_data$/;"	s	file:
 depcomp	Makefile	/^depcomp =$/;"	m
-depmode	Makefile	/^CCDEPMODE = depmode=none$/;"	m
-depmode	Makefile	/^CXXDEPMODE = depmode=none$/;"	m
-dimension	adios_bp_v1.h	/^    struct adios_dimension_item_struct_v1 dimension;$/;"	m	struct:adios_dimension_struct_v1
-dimension	adios_internals.h	/^    struct adios_dimension_item_struct dimension;$/;"	m	struct:adios_dimension_struct
-dimensions	adios_internals.h	/^    struct adios_dimension_struct * dimensions;$/;"	m	struct:adios_var_struct
-dimensions	adios_internals.h	/^    struct adios_mesh_item_list_struct * dimensions;$/;"	m	struct:adios_mesh_rectilinear_struct
-dimensions	adios_internals.h	/^    struct adios_mesh_item_list_struct * dimensions;$/;"	m	struct:adios_mesh_structured_struct
-dimensions	adios_internals.h	/^    struct adios_mesh_item_list_struct * dimensions;$/;"	m	struct:adios_mesh_uniform_struct
-dims	adios_bp_v1.h	/^    struct adios_dimension_struct_v1 * dims;$/;"	m	struct:adios_var_header_struct_v1
-dims	adios_bp_v1.h	/^    struct adios_index_characteristic_dims_struct_v1 dims;$/;"	m	struct:adios_index_characteristic_struct_v1
+dimension	adios_bp_v1.h	/^    struct adios_dimension_item_struct_v1 dimension;$/;"	m	struct:adios_dimension_struct_v1	typeref:struct:adios_dimension_struct_v1::adios_dimension_item_struct_v1
+dimension	adios_internals.h	/^    struct adios_dimension_item_struct dimension;$/;"	m	struct:adios_dimension_struct	typeref:struct:adios_dimension_struct::adios_dimension_item_struct
+dimensions	adios_internals.h	/^    struct adios_dimension_struct * dimensions;$/;"	m	struct:adios_var_struct	typeref:struct:adios_var_struct::adios_dimension_struct
+dimensions	adios_internals.h	/^    struct adios_mesh_item_list_struct * dimensions;$/;"	m	struct:adios_mesh_rectilinear_struct	typeref:struct:adios_mesh_rectilinear_struct::adios_mesh_item_list_struct
+dimensions	adios_internals.h	/^    struct adios_mesh_item_list_struct * dimensions;$/;"	m	struct:adios_mesh_structured_struct	typeref:struct:adios_mesh_structured_struct::adios_mesh_item_list_struct
+dimensions	adios_internals.h	/^    struct adios_mesh_item_list_struct * dimensions;$/;"	m	struct:adios_mesh_uniform_struct	typeref:struct:adios_mesh_uniform_struct::adios_mesh_item_list_struct
+dims	adios_bp_v1.h	/^    struct adios_dimension_struct_v1 * dims;$/;"	m	struct:adios_var_header_struct_v1	typeref:struct:adios_var_header_struct_v1::adios_dimension_struct_v1
+dims	adios_bp_v1.h	/^    struct adios_index_characteristic_dims_struct_v1 dims;$/;"	m	struct:adios_index_characteristic_struct_v1	typeref:struct:adios_index_characteristic_struct_v1::adios_index_characteristic_dims_struct_v1
 dims	adios_bp_v1.h	/^    uint64_t * dims;  \/\/ each 3 uint64_t represents one dimension (l, g, o)$/;"	m	struct:adios_index_characteristic_dims_struct_v1
-dir	Makefile	/^	    dir="\/$$dir"; \\$/;"	m
-dir	Makefile	/^	    dir=''; \\$/;"	m
-dir	Makefile	/^	  dir=`echo "$$file" | sed -e 's,\/[^\/]*$$,,'`; \\$/;"	m
-dmd	adios_datatap.c	/^}dmd;$/;"	t	file:
+dmd	adios_datatap.c	/^}dmd;$/;"	t	typeref:struct:datatap_method_data	file:
 dxpl_id	adios_phdf5.c	/^  hid_t dxpl_id;$/;"	m	struct:adios_phdf5_data_struct	file:
 end_of_pgs	adios_bp_v1.h	/^    uint64_t end_of_pgs;          \/\/ where the last process group ends$/;"	m	struct:adios_bp_buffer_struct_v1
 exec_prefix	Makefile	/^exec_prefix = ${prefix}$/;"	m
-f	Makefile	/^	    f=$(am__strip_dir) \\$/;"	m
-f	Makefile	/^	  f=$(am__strip_dir) \\$/;"	m
-f	Makefile	/^    $(srcdir)\/*) f=`echo "$$p" | sed "s|^$$srcdirstrip\/||"`;; \\$/;"	m
-f	Makefile	/^    *) f=$$p;; \\$/;"	m
 f	adios_bp_v1.h	/^    int f;             \/\/ the file handle$/;"	m	struct:adios_bp_buffer_struct_v1
 fh	adios_mpi.c	/^    MPI_File fh;$/;"	m	struct:adios_MPI_data_struct	file:
 fh	adios_mpi_cio.c	/^    MPI_File fh;$/;"	m	struct:adios_MPI_Collective_data_struct	file:
-fh	adios_mpi_nwu.c	/^    MPI_File fh;$/;"	m	struct:adios_MPI_data_struct	file:
 fh	adios_phdf5.c	/^  hid_t fh;$/;"	m	struct:adios_phdf5_data_struct	file:
-file	Makefile	/^	    $(srcdir)\/*) file=`echo "$$file" | sed "s|^$$srcdirstrip\/||"`;; \\$/;"	m
-file	Makefile	/^	    $(top_srcdir)\/*) file=`echo "$$file" | sed "s|^$$topsrcdirstrip\/|$(top_builddir)\/|"`;; \\$/;"	m
 file_offset	adios_bp_v1.h	/^    off_t file_offset;$/;"	m	struct:adios_bp_buffer_struct_v1
 file_offset	adios_mpi.c	/^    uint64_t 	file_offset;$/;"	m	struct:adios_MPI_write_buffer	file:
 file_size	adios_bp_v1.h	/^    uint64_t file_size;$/;"	m	struct:adios_bp_buffer_struct_v1
 findFixedName	adios_datatap.c	/^static char *findFixedName(struct fm_structure *fm, char *name)$/;"	f	file:
-fm	adios_datatap.c	/^    struct fm_structure *fm;$/;"	m	struct:datatap_method_data	file:
+fm	adios_datatap.c	/^    struct fm_structure *fm;$/;"	m	struct:datatap_method_data	typeref:struct:datatap_method_data::fm_structure	file:
 fm_structure	adios_datatap.c	/^struct fm_structure$/;"	s	file:
 format	adios_datatap.c	/^    FMFormatRec *format;$/;"	m	struct:fm_structure	file:
-free_data	adios_internals.h	/^    enum ADIOS_FLAG free_data;    \/\/ primarily used for writing$/;"	m	struct:adios_var_struct
+free_data	adios_internals.h	/^    enum ADIOS_FLAG free_data;    \/\/ primarily used for writing$/;"	m	struct:adios_var_struct	typeref:enum:adios_var_struct::ADIOS_FLAG
 getFixedName	adios_datatap.c	/^static char * getFixedName(char *name)$/;"	f	file:
 getH5TypeId	adios_phdf5.c	/^int getH5TypeId(enum ADIOS_DATATYPES type, hid_t* h5_type_id \\$/;"	f
 get_value_for_dim	adios_internals.c	/^static uint64_t get_value_for_dim (struct adios_file_struct * fd$/;"	f	file:
-global_dimension	adios_bp_v1.h	/^    struct adios_dimension_item_struct_v1 global_dimension;$/;"	m	struct:adios_dimension_struct_v1
-global_dimension	adios_internals.h	/^    struct adios_dimension_item_struct global_dimension;$/;"	m	struct:adios_dimension_struct
-got_buffer	adios_internals.h	/^    enum ADIOS_FLAG got_buffer;$/;"	m	struct:adios_var_struct
-group	adios_internals.h	/^    struct adios_group_struct * group;$/;"	m	struct:adios_file_struct
-group	adios_internals.h	/^    struct adios_group_struct * group;$/;"	m	struct:adios_group_list_struct
-group	adios_internals.h	/^    struct adios_group_struct * group;$/;"	m	struct:adios_method_struct
+global_dimension	adios_bp_v1.h	/^    struct adios_dimension_item_struct_v1 global_dimension;$/;"	m	struct:adios_dimension_struct_v1	typeref:struct:adios_dimension_struct_v1::adios_dimension_item_struct_v1
+global_dimension	adios_internals.h	/^    struct adios_dimension_item_struct global_dimension;$/;"	m	struct:adios_dimension_struct	typeref:struct:adios_dimension_struct::adios_dimension_item_struct
+got_buffer	adios_internals.h	/^    enum ADIOS_FLAG got_buffer;$/;"	m	struct:adios_var_struct	typeref:enum:adios_var_struct::ADIOS_FLAG
+group	adios_internals.h	/^    struct adios_group_struct * group;$/;"	m	struct:adios_file_struct	typeref:struct:adios_file_struct::adios_group_struct
+group	adios_internals.h	/^    struct adios_group_struct * group;$/;"	m	struct:adios_group_list_struct	typeref:struct:adios_group_list_struct::adios_group_struct
+group	adios_internals.h	/^    struct adios_group_struct * group;$/;"	m	struct:adios_method_struct	typeref:struct:adios_method_struct::adios_group_struct
 group_by	adios_internals.h	/^    char * group_by;$/;"	m	struct:adios_group_struct
 group_comm	adios_internals.h	/^    char * group_comm;$/;"	m	struct:adios_group_struct
 group_comm	adios_mpi.c	/^    MPI_Comm group_comm;$/;"	m	struct:adios_MPI_data_struct	file:
-group_comm	adios_mpi_nwu.c	/^    MPI_Comm group_comm;$/;"	m	struct:adios_MPI_data_struct	file:
 group_comm	adios_phdf5.c	/^  MPI_Comm group_comm;$/;"	m	struct:adios_phdf5_data_struct	file:
 group_comm	adios_provenance.c	/^    MPI_Comm group_comm; \/\/ communication for this group$/;"	m	struct:adios_PROVENANCE_data_struct	file:
 group_name	adios_bp_v1.h	/^    char * group_name;$/;"	m	struct:adios_index_attribute_struct_v1
 group_name	adios_bp_v1.h	/^    char * group_name;$/;"	m	struct:adios_index_process_group_struct_v1
 group_name	adios_bp_v1.h	/^    char * group_name;$/;"	m	struct:adios_index_var_struct_v1
 group_offset	adios_internals.h	/^    uint64_t group_offset;$/;"	m	struct:adios_group_struct
-here	Makefile	/^	here=`$(am__cd) $(top_builddir) && pwd` \\$/;"	m
-here	Makefile	/^	here=`pwd`; \\$/;"	m
-host	Makefile	/^host = powerpc64-unknown-linux-gnu$/;"	m
+host	Makefile	/^host = x86_64-redhat-linux-gnu$/;"	m
 host_alias	Makefile	/^host_alias = $/;"	m
-host_cpu	Makefile	/^host_cpu = powerpc64$/;"	m
-host_language_fortran	adios_bp_v1.h	/^    enum ADIOS_FLAG host_language_fortran;$/;"	m	struct:adios_process_group_header_struct_v1
+host_cpu	Makefile	/^host_cpu = x86_64$/;"	m
+host_language_fortran	adios_bp_v1.h	/^    enum ADIOS_FLAG host_language_fortran;$/;"	m	struct:adios_process_group_header_struct_v1	typeref:enum:adios_process_group_header_struct_v1::ADIOS_FLAG
 host_os	Makefile	/^host_os = linux-gnu$/;"	m
-host_triplet	Makefile	/^host_triplet = powerpc64-unknown-linux-gnu$/;"	m
-host_vendor	Makefile	/^host_vendor = unknown$/;"	m
+host_triplet	Makefile	/^host_triplet = x86_64-redhat-linux-gnu$/;"	m
+host_vendor	Makefile	/^host_vendor = redhat$/;"	m
 hr_var	adios_phdf5.c	/^int hr_var (hid_t root_id$/;"	f
 hw_attribute	adios_phdf5.c	/^int hw_attribute ( hid_t root_id$/;"	f
 hw_gclose	adios_phdf5.c	/^void hw_gclose (hid_t * grp_id, int level, enum ADIOS_FLAG flag) {$/;"	f
 hw_gopen	adios_phdf5.c	/^void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level, enum ADIOS_FLAG flag) {$/;"	f
 hw_var	adios_phdf5.c	/^int hw_var (hid_t root_id$/;"	f
-id	adios_bp_v1.h	/^    enum ADIOS_IO_METHOD id;$/;"	m	struct:adios_method_info_struct_v1
+id	adios_bp_v1.h	/^    enum ADIOS_IO_METHOD id;$/;"	m	struct:adios_method_info_struct_v1	typeref:enum:adios_method_info_struct_v1::ADIOS_IO_METHOD
 id	adios_bp_v1.h	/^    uint16_t id;$/;"	m	struct:adios_attribute_struct_v1
 id	adios_bp_v1.h	/^    uint16_t id;$/;"	m	struct:adios_index_attribute_struct_v1
 id	adios_bp_v1.h	/^    uint16_t id;$/;"	m	struct:adios_index_var_struct_v1
@@ -800,21 +752,20 @@ index_append_var_v1	adios_internals.c	/^static void index_append_var_v1 (struct 
 infodir	Makefile	/^infodir = ${prefix}\/info$/;"	m
 initialized	adios_datatap.c	/^    int initialized;	$/;"	m	struct:datatap_method_data	file:
 initialized	adios_datatap.c	/^int initialized = 0;$/;"	v
-install_sh	Makefile	/^install_sh = \/gpfs\/fs0\/cgj\/adios.svn\/trunk\/config\/install-sh$/;"	m
+install_sh	Makefile	/^install_sh = \/ccs\/home\/cgj\/e2e\/cgj\/adios.svn\/trunk\/config\/install-sh$/;"	m
 install_sh_DATA	Makefile	/^install_sh_DATA = $(install_sh) -c -m 644$/;"	m
-install_sh_PROGRAM	Makefile	/^	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \\$/;"	m
 install_sh_PROGRAM	Makefile	/^install_sh_PROGRAM = $(install_sh) -c$/;"	m
 install_sh_SCRIPT	Makefile	/^install_sh_SCRIPT = $(install_sh) -c$/;"	m
 internal_adios_datatap_write	adios_datatap.c	/^void internal_adios_datatap_write (struct adios_file_struct * fd, struct adios_method_struct *method)$/;"	f
 internal_find_field	adios_datatap.c	/^static FMField* internal_find_field(char *name, FMFieldList flist)$/;"	f	file:
-ioarr	adios_dart.c	/^    struct iovec ioarr;$/;"	m	struct:adios_DART_data_struct	file:
+ioarr	adios_dart.c	/^    struct iovec ioarr;$/;"	m	struct:adios_DART_data_struct	typeref:struct:adios_DART_data_struct::iovec	file:
 ioformat	adios_datatap.c	/^    FMFormat ioformat;$/;"	m	struct:fm_structure	file:
-is_dim	adios_bp_v1.h	/^    enum ADIOS_FLAG is_dim;$/;"	m	struct:adios_var_header_struct_v1
-is_dim	adios_internals.h	/^    enum ADIOS_FLAG is_dim;   \/\/ if it is a dimension, we need to$/;"	m	struct:adios_var_struct
+is_dim	adios_bp_v1.h	/^    enum ADIOS_FLAG is_dim;$/;"	m	struct:adios_var_header_struct_v1	typeref:enum:adios_var_header_struct_v1::ADIOS_FLAG
+is_dim	adios_internals.h	/^    enum ADIOS_FLAG is_dim;   \/\/ if it is a dimension, we need to$/;"	m	struct:adios_var_struct	typeref:enum:adios_var_struct::ADIOS_FLAG
 is_num	adios_internals.c	/^static int is_num (char * temp) \/\/ 1 == yes, 0 == no$/;"	f	file:
-is_var	adios_bp_v1.h	/^    enum ADIOS_FLAG is_var;$/;"	m	struct:adios_attribute_struct_v1
+is_var	adios_bp_v1.h	/^    enum ADIOS_FLAG is_var;$/;"	m	struct:adios_attribute_struct_v1	typeref:enum:adios_attribute_struct_v1::ADIOS_FLAG
 is_var	adios_internals.c	/^static int is_var (const char * temp) \/\/ 1 == yes, 0 == no$/;"	f	file:
-item	adios_internals.h	/^    struct adios_mesh_item_struct item;$/;"	m	struct:adios_mesh_item_list_struct
+item	adios_internals.h	/^    struct adios_mesh_item_struct item;$/;"	m	struct:adios_mesh_item_list_struct	typeref:struct:adios_mesh_item_list_struct::adios_mesh_item_struct
 iterations	adios_internals.h	/^    int iterations;$/;"	m	struct:adios_method_struct
 l_object_gr	adios_mpi.c	/^        uint64_t l_object_gr;        \/* OST object group (creating MDS number) *\/$/;"	m	struct:lov_user_ost_data	file:
 l_object_id	adios_mpi.c	/^        uint64_t l_object_id;        \/* OST object ID *\/$/;"	m	struct:lov_user_ost_data	file:
@@ -838,46 +789,41 @@ libadios_int_a_LIBADD	Makefile	/^libadios_int_a_LIBADD =$/;"	m
 libadios_int_a_OBJECTS	Makefile	/^libadios_int_a_OBJECTS = $(am_libadios_int_a_OBJECTS)$/;"	m
 libadios_int_a_SOURCES	Makefile	/^libadios_int_a_SOURCES = adios_internals.c \\$/;"	m
 libadios_phdf5_a_AR	Makefile	/^libadios_phdf5_a_AR = $(AR) $(ARFLAGS)$/;"	m
-libadios_phdf5_a_CPPFLAGS	Makefile	/^libadios_phdf5_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)$/;"	m
 libadios_phdf5_a_LIBADD	Makefile	/^libadios_phdf5_a_LIBADD =$/;"	m
 libadios_phdf5_a_OBJECTS	Makefile	/^libadios_phdf5_a_OBJECTS = $(am_libadios_phdf5_a_OBJECTS)$/;"	m
-libadios_phdf5_a_SOURCES	Makefile	/^libadios_phdf5_a_SOURCES = adios_phdf5.c$/;"	m
 libdir	Makefile	/^libdir = ${exec_prefix}\/lib$/;"	m
 libexecdir	Makefile	/^libexecdir = ${exec_prefix}\/libexec$/;"	m
-list	Makefile	/^	list='$(DISTFILES)'; for file in $$list; do \\$/;"	m
-list	Makefile	/^	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \\$/;"	m
-list	Makefile	/^	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \\$/;"	m
 lmm_magic	adios_mpi.c	/^        uint32_t lmm_magic;          \/* magic number = LOV_USER_MAGIC_V1 *\/$/;"	m	struct:lov_user_md	file:
 lmm_object_gr	adios_mpi.c	/^        uint64_t lmm_object_gr;      \/* LOV object group *\/$/;"	m	struct:lov_user_md	file:
 lmm_object_id	adios_mpi.c	/^        uint64_t lmm_object_id;      \/* LOV object ID *\/$/;"	m	struct:lov_user_md	file:
-lmm_objects	adios_mpi.c	/^        struct lov_user_ost_data  lmm_objects[0]; \/* per-stripe data *\/$/;"	m	struct:lov_user_md	file:
+lmm_objects	adios_mpi.c	/^        struct lov_user_ost_data  lmm_objects[0]; \/* per-stripe data *\/$/;"	m	struct:lov_user_md	typeref:struct:lov_user_md::lov_user_ost_data	file:
 lmm_pattern	adios_mpi.c	/^        uint32_t lmm_pattern;        \/* LOV_PATTERN_RAID0, LOV_PATTERN_RAID1 *\/$/;"	m	struct:lov_user_md	file:
 lmm_stripe_count	adios_mpi.c	/^        uint16_t lmm_stripe_count;   \/* num stripes in use for this object *\/$/;"	m	struct:lov_user_md	file:
 lmm_stripe_offset	adios_mpi.c	/^        uint16_t lmm_stripe_offset;  \/* starting stripe offset in lmm_objects *\/$/;"	m	struct:lov_user_md	file:
 lmm_stripe_size	adios_mpi.c	/^        uint32_t lmm_stripe_size;    \/* size of stripe in bytes *\/$/;"	m	struct:lov_user_md	file:
-local_offset	adios_bp_v1.h	/^    struct adios_dimension_item_struct_v1 local_offset;$/;"	m	struct:adios_dimension_struct_v1
-local_offset	adios_internals.h	/^    struct adios_dimension_item_struct local_offset;$/;"	m	struct:adios_dimension_struct
+local_offset	adios_bp_v1.h	/^    struct adios_dimension_item_struct_v1 local_offset;$/;"	m	struct:adios_dimension_struct_v1	typeref:struct:adios_dimension_struct_v1::adios_dimension_item_struct_v1
+local_offset	adios_internals.h	/^    struct adios_dimension_item_struct local_offset;$/;"	m	struct:adios_dimension_struct	typeref:struct:adios_dimension_struct::adios_dimension_item_struct
 localstatedir	Makefile	/^localstatedir = ${prefix}\/var$/;"	m
 lov_user_md	adios_mpi.c	/^struct lov_user_md {           \/* LOV EA user data (host-endian) *\/$/;"	s	file:
 lov_user_ost_data	adios_mpi.c	/^struct lov_user_ost_data {     \/* per-stripe data structure *\/$/;"	s	file:
-m	adios_internals.h	/^    enum ADIOS_IO_METHOD m;$/;"	m	struct:adios_method_struct
+m	adios_internals.h	/^    enum ADIOS_IO_METHOD m;$/;"	m	struct:adios_method_struct	typeref:enum:adios_method_struct::ADIOS_IO_METHOD
 mandir	Makefile	/^mandir = ${prefix}\/man$/;"	m
 mangledname	adios_datatap.c	/^    char *mangledname;$/;"	m	struct:nametable_	file:
 max	adios_bp_v1.h	/^    void * max;$/;"	m	struct:adios_index_characteristic_struct_v1
 max	adios_internals.h	/^    void * max;             \/\/ maximum value                   [for writes]$/;"	m	struct:adios_var_struct
 member_count	adios_internals.h	/^    uint16_t member_count;$/;"	m	struct:adios_group_struct
-mesh	adios_internals.h	/^    struct adios_mesh_struct * mesh;$/;"	m	struct:adios_group_struct
+mesh	adios_internals.h	/^    struct adios_mesh_struct * mesh;$/;"	m	struct:adios_group_struct	typeref:struct:adios_group_struct::adios_mesh_struct
 method	adios_internals.h	/^    char * method;$/;"	m	struct:adios_method_struct
-method	adios_internals.h	/^    struct adios_method_struct * method;$/;"	m	struct:adios_method_list_struct
+method	adios_internals.h	/^    struct adios_method_struct * method;$/;"	m	struct:adios_method_list_struct	typeref:struct:adios_method_list_struct::adios_method_struct
 method_data	adios_internals.h	/^    void * method_data;$/;"	m	struct:adios_method_struct
-methods	adios_bp_v1.h	/^    struct adios_method_info_struct_v1 * methods;$/;"	m	struct:adios_process_group_header_struct_v1
-methods	adios_internals.h	/^    struct adios_method_list_struct * methods;$/;"	m	struct:adios_group_struct
+methods	adios_bp_v1.h	/^    struct adios_method_info_struct_v1 * methods;$/;"	m	struct:adios_process_group_header_struct_v1	typeref:struct:adios_process_group_header_struct_v1::adios_method_info_struct_v1
+methods	adios_internals.h	/^    struct adios_method_list_struct * methods;$/;"	m	struct:adios_group_struct	typeref:struct:adios_group_struct::adios_method_list_struct
 methods_count	adios_bp_v1.h	/^    uint8_t methods_count;$/;"	m	struct:adios_process_group_header_struct_v1
 min	adios_bp_v1.h	/^    void * min;$/;"	m	struct:adios_index_characteristic_struct_v1
 min	adios_internals.h	/^    void * min;             \/\/ minimum value                   [for writes]$/;"	m	struct:adios_var_struct
 mkdir_p	Makefile	/^mkdir_p = mkdir -p --$/;"	m
 mkinstalldirs	Makefile	/^mkinstalldirs = $(install_sh) -d$/;"	m
-mode	adios_internals.h	/^    enum ADIOS_METHOD_MODE mode;$/;"	m	struct:adios_file_struct
+mode	adios_internals.h	/^    enum ADIOS_METHOD_MODE mode;$/;"	m	struct:adios_file_struct	typeref:enum:adios_file_struct::ADIOS_METHOD_MODE
 name	adios_bp_v1.h	/^    char * name;$/;"	m	struct:adios_attribute_struct_v1
 name	adios_bp_v1.h	/^    char * name;$/;"	m	struct:adios_process_group_header_struct_v1
 name	adios_bp_v1.h	/^    char * name;$/;"	m	struct:adios_var_header_struct_v1
@@ -885,45 +831,40 @@ name	adios_internals.h	/^    char * name;$/;"	m	struct:adios_attribute_struct
 name	adios_internals.h	/^    char * name;$/;"	m	struct:adios_file_struct
 name	adios_internals.h	/^    char * name;$/;"	m	struct:adios_group_struct
 name	adios_internals.h	/^    char * name;$/;"	m	struct:adios_var_struct
-nametable	adios_datatap.c	/^}nametable;$/;"	t	file:
+nametable	adios_datatap.c	/^}nametable;$/;"	t	typeref:struct:nametable_	file:
 nametable_	adios_datatap.c	/^typedef struct nametable_$/;"	s	file:
-next	adios_bp_v1.h	/^    struct adios_dimension_struct_v1 * next;$/;"	m	struct:adios_dimension_struct_v1
-next	adios_bp_v1.h	/^    struct adios_index_attribute_struct_v1 * next;$/;"	m	struct:adios_index_attribute_struct_v1
-next	adios_bp_v1.h	/^    struct adios_index_process_group_struct_v1 * next;$/;"	m	struct:adios_index_process_group_struct_v1
-next	adios_bp_v1.h	/^    struct adios_index_var_struct_v1 * next;$/;"	m	struct:adios_index_var_struct_v1
-next	adios_bp_v1.h	/^    struct adios_method_info_struct_v1 * next;$/;"	m	struct:adios_method_info_struct_v1
-next	adios_internals.h	/^    struct adios_attribute_struct * next;$/;"	m	struct:adios_attribute_struct
-next	adios_internals.h	/^    struct adios_dimension_struct * next;$/;"	m	struct:adios_dimension_struct
-next	adios_internals.h	/^    struct adios_group_list_struct * next;$/;"	m	struct:adios_group_list_struct
-next	adios_internals.h	/^    struct adios_mesh_cell_list_list_struct * next;$/;"	m	struct:adios_mesh_cell_list_list_struct
-next	adios_internals.h	/^    struct adios_mesh_item_list_struct * next;$/;"	m	struct:adios_mesh_item_list_struct
-next	adios_internals.h	/^    struct adios_mesh_var_list_struct * next;$/;"	m	struct:adios_mesh_var_list_struct
-next	adios_internals.h	/^    struct adios_method_list_struct * next;$/;"	m	struct:adios_method_list_struct
-next	adios_internals.h	/^    struct adios_var_struct * next;$/;"	m	struct:adios_var_struct
-nspace	adios_internals.h	/^    struct adios_mesh_item_struct * nspace;$/;"	m	struct:adios_mesh_structured_struct
+next	adios_bp_v1.h	/^    struct adios_dimension_struct_v1 * next;$/;"	m	struct:adios_dimension_struct_v1	typeref:struct:adios_dimension_struct_v1::adios_dimension_struct_v1
+next	adios_bp_v1.h	/^    struct adios_index_attribute_struct_v1 * next;$/;"	m	struct:adios_index_attribute_struct_v1	typeref:struct:adios_index_attribute_struct_v1::adios_index_attribute_struct_v1
+next	adios_bp_v1.h	/^    struct adios_index_process_group_struct_v1 * next;$/;"	m	struct:adios_index_process_group_struct_v1	typeref:struct:adios_index_process_group_struct_v1::adios_index_process_group_struct_v1
+next	adios_bp_v1.h	/^    struct adios_index_var_struct_v1 * next;$/;"	m	struct:adios_index_var_struct_v1	typeref:struct:adios_index_var_struct_v1::adios_index_var_struct_v1
+next	adios_bp_v1.h	/^    struct adios_method_info_struct_v1 * next;$/;"	m	struct:adios_method_info_struct_v1	typeref:struct:adios_method_info_struct_v1::adios_method_info_struct_v1
+next	adios_internals.h	/^    struct adios_attribute_struct * next;$/;"	m	struct:adios_attribute_struct	typeref:struct:adios_attribute_struct::adios_attribute_struct
+next	adios_internals.h	/^    struct adios_dimension_struct * next;$/;"	m	struct:adios_dimension_struct	typeref:struct:adios_dimension_struct::adios_dimension_struct
+next	adios_internals.h	/^    struct adios_group_list_struct * next;$/;"	m	struct:adios_group_list_struct	typeref:struct:adios_group_list_struct::adios_group_list_struct
+next	adios_internals.h	/^    struct adios_mesh_cell_list_list_struct * next;$/;"	m	struct:adios_mesh_cell_list_list_struct	typeref:struct:adios_mesh_cell_list_list_struct::adios_mesh_cell_list_list_struct
+next	adios_internals.h	/^    struct adios_mesh_item_list_struct * next;$/;"	m	struct:adios_mesh_item_list_struct	typeref:struct:adios_mesh_item_list_struct::adios_mesh_item_list_struct
+next	adios_internals.h	/^    struct adios_mesh_var_list_struct * next;$/;"	m	struct:adios_mesh_var_list_struct	typeref:struct:adios_mesh_var_list_struct::adios_mesh_var_list_struct
+next	adios_internals.h	/^    struct adios_method_list_struct * next;$/;"	m	struct:adios_method_list_struct	typeref:struct:adios_method_list_struct::adios_method_list_struct
+next	adios_internals.h	/^    struct adios_var_struct * next;$/;"	m	struct:adios_var_struct	typeref:struct:adios_var_struct::adios_var_struct
+nspace	adios_internals.h	/^    struct adios_mesh_item_struct * nspace;$/;"	m	struct:adios_mesh_structured_struct	typeref:struct:adios_mesh_structured_struct::adios_mesh_item_struct
 offset	adios_bp_v1.h	/^    uint64_t offset;   \/\/ buffer_offset$/;"	m	struct:adios_bp_buffer_struct_v1
 offset	adios_bp_v1.h	/^    uint64_t offset;$/;"	m	struct:adios_index_characteristic_struct_v1
 offset	adios_internals.h	/^    uint64_t offset;        \/\/ current offset to write at$/;"	m	struct:adios_file_struct
 offset_in_file	adios_bp_v1.h	/^    uint64_t offset_in_file;$/;"	m	struct:adios_index_process_group_struct_v1
-old_attrs_root	adios_mpi.c	/^    struct adios_index_attribute_struct_v1 * old_attrs_root;$/;"	m	struct:adios_MPI_data_struct	file:
-old_attrs_root	adios_mpi_nwu.c	/^    struct adios_index_attribute_struct_v1 * old_attrs_root;$/;"	m	struct:adios_MPI_data_struct	file:
-old_attrs_root	adios_posix.c	/^    struct adios_index_attribute_struct_v1 * old_attrs_root;$/;"	m	struct:adios_POSIX_data_struct	file:
-old_attrs_root	adios_provenance.c	/^    struct adios_index_attribute_struct_v1 * old_attrs_root;  \/\/ attributes index$/;"	m	struct:adios_PROVENANCE_data_struct	file:
-old_pg_root	adios_mpi.c	/^    struct adios_index_process_group_struct_v1 * old_pg_root;$/;"	m	struct:adios_MPI_data_struct	file:
-old_pg_root	adios_mpi_nwu.c	/^    struct adios_index_process_group_struct_v1 * old_pg_root;$/;"	m	struct:adios_MPI_data_struct	file:
-old_pg_root	adios_posix.c	/^    struct adios_index_process_group_struct_v1 * old_pg_root;$/;"	m	struct:adios_POSIX_data_struct	file:
-old_pg_root	adios_provenance.c	/^    struct adios_index_process_group_struct_v1 * old_pg_root; \/\/ process group index$/;"	m	struct:adios_PROVENANCE_data_struct	file:
-old_vars_root	adios_mpi.c	/^    struct adios_index_var_struct_v1 * old_vars_root;$/;"	m	struct:adios_MPI_data_struct	file:
-old_vars_root	adios_mpi_nwu.c	/^    struct adios_index_var_struct_v1 * old_vars_root;$/;"	m	struct:adios_MPI_data_struct	file:
-old_vars_root	adios_posix.c	/^    struct adios_index_var_struct_v1 * old_vars_root;$/;"	m	struct:adios_POSIX_data_struct	file:
-old_vars_root	adios_provenance.c	/^    struct adios_index_var_struct_v1 * old_vars_root;         \/\/ vars index$/;"	m	struct:adios_PROVENANCE_data_struct	file:
+old_attrs_root	adios_mpi.c	/^    struct adios_index_attribute_struct_v1 * old_attrs_root;$/;"	m	struct:adios_MPI_data_struct	typeref:struct:adios_MPI_data_struct::adios_index_attribute_struct_v1	file:
+old_attrs_root	adios_posix.c	/^    struct adios_index_attribute_struct_v1 * old_attrs_root;$/;"	m	struct:adios_POSIX_data_struct	typeref:struct:adios_POSIX_data_struct::adios_index_attribute_struct_v1	file:
+old_attrs_root	adios_provenance.c	/^    struct adios_index_attribute_struct_v1 * old_attrs_root;  \/\/ attributes index$/;"	m	struct:adios_PROVENANCE_data_struct	typeref:struct:adios_PROVENANCE_data_struct::adios_index_attribute_struct_v1	file:
+old_pg_root	adios_mpi.c	/^    struct adios_index_process_group_struct_v1 * old_pg_root;$/;"	m	struct:adios_MPI_data_struct	typeref:struct:adios_MPI_data_struct::adios_index_process_group_struct_v1	file:
+old_pg_root	adios_posix.c	/^    struct adios_index_process_group_struct_v1 * old_pg_root;$/;"	m	struct:adios_POSIX_data_struct	typeref:struct:adios_POSIX_data_struct::adios_index_process_group_struct_v1	file:
+old_pg_root	adios_provenance.c	/^    struct adios_index_process_group_struct_v1 * old_pg_root; \/\/ process group index$/;"	m	struct:adios_PROVENANCE_data_struct	typeref:struct:adios_PROVENANCE_data_struct::adios_index_process_group_struct_v1	file:
+old_vars_root	adios_mpi.c	/^    struct adios_index_var_struct_v1 * old_vars_root;$/;"	m	struct:adios_MPI_data_struct	typeref:struct:adios_MPI_data_struct::adios_index_var_struct_v1	file:
+old_vars_root	adios_posix.c	/^    struct adios_index_var_struct_v1 * old_vars_root;$/;"	m	struct:adios_POSIX_data_struct	typeref:struct:adios_POSIX_data_struct::adios_index_var_struct_v1	file:
+old_vars_root	adios_provenance.c	/^    struct adios_index_var_struct_v1 * old_vars_root;         \/\/ vars index$/;"	m	struct:adios_PROVENANCE_data_struct	typeref:struct:adios_PROVENANCE_data_struct::adios_index_var_struct_v1	file:
 oldincludedir	Makefile	/^oldincludedir = \/usr\/include$/;"	m
 opencount	adios_datatap.c	/^    int opencount;$/;"	m	struct:datatap_method_data	file:
-origin	adios_internals.h	/^    struct adios_mesh_item_list_struct * origin;$/;"	m	struct:adios_mesh_uniform_struct
+origin	adios_internals.h	/^    struct adios_mesh_item_list_struct * origin;$/;"	m	struct:adios_mesh_uniform_struct	typeref:struct:adios_mesh_uniform_struct::adios_mesh_item_list_struct
 originalname	adios_datatap.c	/^    char *originalname;$/;"	m	struct:nametable_	file:
-output_method	adios_provenance.c	/^    enum   ADIOS_PROVENANCE_OUTPUTMETHOD output_method;$/;"	m	struct:adios_PROVENANCE_data_struct	file:
-p	Makefile	/^	    p=$(am__strip_dir) \\$/;"	m
-p	Makefile	/^	  p=$(am__strip_dir) \\$/;"	m
+output_method	adios_provenance.c	/^    enum   ADIOS_PROVENANCE_OUTPUTMETHOD output_method;$/;"	m	struct:adios_PROVENANCE_data_struct	typeref:enum:adios_PROVENANCE_data_struct::ADIOS_PROVENANCE_OUTPUTMETHOD	file:
 parameters	adios_bp_v1.h	/^    char * parameters;$/;"	m	struct:adios_method_info_struct_v1
 parameters	adios_internals.h	/^    char * parameters;$/;"	m	struct:adios_method_struct
 parseBuffer	adios_internals.c	/^static int parseBuffer (mxml_node_t * node)$/;"	f	file:
@@ -948,7 +889,7 @@ parseMeshUnstructuredPoints	adios_internals.c	/^static int parseMeshUnstructured
 parseMeshUnstructuredUniformCells	adios_internals.c	/^static int parseMeshUnstructuredUniformCells (const char * count$/;"	f	file:
 parseMethod	adios_internals.c	/^static int parseMethod (mxml_node_t * node)$/;"	f	file:
 parseType	adios_internals.c	/^static enum ADIOS_DATATYPES parseType (const char * type, const char * name)$/;"	f	file:
-parse_dimension	adios_phdf5.c	/^hsize_t parse_dimension(struct adios_var_struct *pvar_root,$/;"	f
+parse_dimension	adios_phdf5.c	/^hsize_t parse_dimension(struct adios_var_struct *pvar_root$/;"	f
 path	adios_bp_v1.h	/^    char * path;$/;"	m	struct:adios_attribute_struct_v1
 path	adios_bp_v1.h	/^    char * path;$/;"	m	struct:adios_var_header_struct_v1
 path	adios_internals.h	/^    char * path;$/;"	m	struct:adios_attribute_struct
@@ -962,11 +903,11 @@ pg_start_in_file	adios_internals.h	/^    uint64_t pg_start_in_file; \/\/  where 
 pkgdatadir	Makefile	/^pkgdatadir = $(datadir)\/ADIOS$/;"	m
 pkgincludedir	Makefile	/^pkgincludedir = $(includedir)\/ADIOS$/;"	m
 pkglibdir	Makefile	/^pkglibdir = $(libdir)\/ADIOS$/;"	m
-points	adios_internals.h	/^    struct adios_mesh_var_list_struct * points;$/;"	m	struct:adios_mesh_structured_struct
-points	adios_internals.h	/^    struct adios_var_struct * points;$/;"	m	struct:adios_mesh_unstructured_struct
-points_count	adios_internals.h	/^    struct adios_mesh_item_struct * points_count;$/;"	m	struct:adios_mesh_unstructured_struct
-points_single_var	adios_internals.h	/^    enum ADIOS_FLAG points_single_var;$/;"	m	struct:adios_mesh_structured_struct
-prefix	Makefile	/^prefix = \/ccs\/proj\/e2e\/adios\/bgp$/;"	m
+points	adios_internals.h	/^    struct adios_mesh_var_list_struct * points;$/;"	m	struct:adios_mesh_structured_struct	typeref:struct:adios_mesh_structured_struct::adios_mesh_var_list_struct
+points	adios_internals.h	/^    struct adios_var_struct * points;$/;"	m	struct:adios_mesh_unstructured_struct	typeref:struct:adios_mesh_unstructured_struct::adios_var_struct
+points_count	adios_internals.h	/^    struct adios_mesh_item_struct * points_count;$/;"	m	struct:adios_mesh_unstructured_struct	typeref:struct:adios_mesh_unstructured_struct::adios_mesh_item_struct
+points_single_var	adios_internals.h	/^    enum ADIOS_FLAG points_single_var;$/;"	m	struct:adios_mesh_structured_struct	typeref:enum:adios_mesh_structured_struct::ADIOS_FLAG
+prefix	Makefile	/^prefix = \/ccs\/proj\/e2e\/adios\/lens\/$/;"	m
 priority	adios_internals.h	/^    int priority;$/;"	m	struct:adios_method_struct
 process_id	adios_bp_v1.h	/^    uint32_t process_id;$/;"	m	struct:adios_index_process_group_struct_v1
 process_id	adios_internals.h	/^    uint32_t process_id;$/;"	m	struct:adios_group_struct
@@ -977,96 +918,84 @@ rank	adios_internals.h	/^    double rank;$/;"	m	struct:adios_mesh_item_struct
 rank	adios_internals.h	/^    uint64_t rank;$/;"	m	struct:adios_dimension_item_struct
 rank	adios_mpi.c	/^    int rank;$/;"	m	struct:adios_MPI_data_struct	file:
 rank	adios_mpi_cio.c	/^    int rank;$/;"	m	struct:adios_MPI_Collective_data_struct	file:
-rank	adios_mpi_nwu.c	/^    int rank;$/;"	m	struct:adios_MPI_data_struct	file:
 rank	adios_phdf5.c	/^  int rank;$/;"	m	struct:adios_phdf5_data_struct	file:
 rank	adios_provenance.c	/^    int rank;            \/\/ rank of this process within this group$/;"	m	struct:adios_PROVENANCE_data_struct	file:
 read_pg_offset	adios_bp_v1.h	/^    uint64_t read_pg_offset;$/;"	m	struct:adios_bp_buffer_struct_v1
 read_pg_size	adios_bp_v1.h	/^    uint64_t read_pg_size;$/;"	m	struct:adios_bp_buffer_struct_v1
 realloc_aligned	adios_bp_v1.c	/^static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b$/;"	f	file:
-rectilinear	adios_internals.h	/^        struct adios_mesh_rectilinear_struct * rectilinear;$/;"	m	union:adios_mesh_struct::<anonymous>
+rectilinear	adios_internals.h	/^        struct adios_mesh_rectilinear_struct * rectilinear;$/;"	m	union:adios_mesh_struct::__anon1	typeref:struct:adios_mesh_struct::__anon1::adios_mesh_rectilinear_struct
 req	adios_mpi.c	/^    MPI_Request req;$/;"	m	struct:adios_MPI_data_struct	file:
 req	adios_mpi_cio.c	/^    MPI_Request req;$/;"	m	struct:adios_MPI_Collective_data_struct	file:
-req	adios_mpi_nwu.c	/^    MPI_Request req;$/;"	m	struct:adios_MPI_data_struct	file:
 root_id	adios_phdf5.c	/^  hid_t root_id;$/;"	m	struct:adios_phdf5_data_struct	file:
 s	adios_datatap.c	/^    IOhandle *s;$/;"	m	struct:fm_structure	file:
 sbindir	Makefile	/^sbindir = ${exec_prefix}\/sbin$/;"	m
-shared_buffer	adios_internals.h	/^    enum ADIOS_FLAG shared_buffer;$/;"	m	struct:adios_file_struct
+shared_buffer	adios_internals.h	/^    enum ADIOS_FLAG shared_buffer;$/;"	m	struct:adios_file_struct	typeref:enum:adios_file_struct::ADIOS_FLAG
 sharedstatedir	Makefile	/^sharedstatedir = ${prefix}\/com$/;"	m
 size	adios_datatap.c	/^    int size; \/\/in bytes - no padding$/;"	m	struct:fm_structure	file:
 size	adios_mpi.c	/^    int size;$/;"	m	struct:adios_MPI_data_struct	file:
 size	adios_mpi_cio.c	/^    int size;$/;"	m	struct:adios_MPI_Collective_data_struct	file:
-size	adios_mpi_nwu.c	/^    int size;$/;"	m	struct:adios_MPI_data_struct	file:
 size	adios_phdf5.c	/^  int size;$/;"	m	struct:adios_phdf5_data_struct	file:
 size	adios_provenance.c	/^    int size;            \/\/ number of processes in this group$/;"	m	struct:adios_PROVENANCE_data_struct	file:
 snd_count	adios_datatap.c	/^    int snd_count;$/;"	m	struct:fm_structure	file:
-spacing	adios_internals.h	/^    struct adios_mesh_item_list_struct * spacing;$/;"	m	struct:adios_mesh_uniform_struct
+spacing	adios_internals.h	/^    struct adios_mesh_item_list_struct * spacing;$/;"	m	struct:adios_mesh_uniform_struct	typeref:struct:adios_mesh_uniform_struct::adios_mesh_item_list_struct
 srcdir	Makefile	/^srcdir = .$/;"	m
-srcdirstrip	Makefile	/^am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;$/;"	m
 start	adios_mpi_cio.c	/^    uint64_t start;$/;"	m	struct:adios_MPI_Collective_data_struct	file:
 status	adios_mpi.c	/^    MPI_Status status;$/;"	m	struct:adios_MPI_data_struct	file:
 status	adios_mpi_cio.c	/^    MPI_Status status;$/;"	m	struct:adios_MPI_Collective_data_struct	file:
-status	adios_mpi_nwu.c	/^    MPI_Status status;$/;"	m	struct:adios_MPI_data_struct	file:
 status	adios_provenance.c	/^    MPI_Status status;   \/\/ status for MPI queries here to allocate memory $/;"	m	struct:adios_PROVENANCE_data_struct	file:
-striping_unit	adios_mpi_nwu.c	/^    int striping_unit;  \/* file system stripe size *\/$/;"	m	struct:adios_MPI_data_struct	file:
-structured	adios_internals.h	/^        struct adios_mesh_structured_struct * structured;$/;"	m	union:adios_mesh_struct::<anonymous>
+structured	adios_internals.h	/^        struct adios_mesh_structured_struct * structured;$/;"	m	union:adios_mesh_struct::__anon1	typeref:struct:adios_mesh_struct::__anon1::adios_mesh_structured_struct
 subdir	Makefile	/^subdir = src$/;"	m
 sysconfdir	Makefile	/^sysconfdir = ${prefix}\/etc$/;"	m
-tags	Makefile	/^	tags=; \\$/;"	m
 target_alias	Makefile	/^target_alias = $/;"	m
-time_index	adios_bp_v1.h	/^    enum ADIOS_FLAG time_index;$/;"	m	struct:adios_dimension_item_struct_v1
+time_index	adios_bp_v1.h	/^    enum ADIOS_FLAG time_index;$/;"	m	struct:adios_dimension_item_struct_v1	typeref:enum:adios_dimension_item_struct_v1::ADIOS_FLAG
 time_index	adios_bp_v1.h	/^    uint32_t time_index;$/;"	m	struct:adios_index_process_group_struct_v1
 time_index	adios_bp_v1.h	/^    uint32_t time_index;$/;"	m	struct:adios_process_group_header_struct_v1
-time_index	adios_internals.h	/^    enum ADIOS_FLAG time_index;$/;"	m	struct:adios_dimension_item_struct
+time_index	adios_internals.h	/^    enum ADIOS_FLAG time_index;$/;"	m	struct:adios_dimension_item_struct	typeref:enum:adios_dimension_item_struct::ADIOS_FLAG
 time_index	adios_internals.h	/^    uint32_t time_index;$/;"	m	struct:adios_group_struct
 time_index_name	adios_bp_v1.h	/^    char * time_index_name;$/;"	m	struct:adios_index_process_group_struct_v1
 time_index_name	adios_bp_v1.h	/^    char * time_index_name;$/;"	m	struct:adios_process_group_header_struct_v1
 time_index_name	adios_internals.h	/^    char * time_index_name;$/;"	m	struct:adios_group_struct
-time_varying	adios_internals.h	/^    enum ADIOS_FLAG time_varying;$/;"	m	struct:adios_mesh_struct
+time_varying	adios_internals.h	/^    enum ADIOS_FLAG time_varying;$/;"	m	struct:adios_mesh_struct	typeref:enum:adios_mesh_struct::ADIOS_FLAG
 tokenize_dimensions	adios_internals.c	/^static void tokenize_dimensions (char * str, char *** tokens, int * count)$/;"	f	file:
 top_builddir	Makefile	/^top_builddir = ..$/;"	m
 top_srcdir	Makefile	/^top_srcdir = ..$/;"	m
-topsrcdirstrip	Makefile	/^	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \\$/;"	m
 transform	Makefile	/^transform = $(program_transform_name)$/;"	m
-type	adios_bp_v1.h	/^    enum ADIOS_DATATYPES type;$/;"	m	struct:adios_attribute_struct_v1
-type	adios_bp_v1.h	/^    enum ADIOS_DATATYPES type;$/;"	m	struct:adios_index_attribute_struct_v1
-type	adios_bp_v1.h	/^    enum ADIOS_DATATYPES type;$/;"	m	struct:adios_index_var_struct_v1
-type	adios_bp_v1.h	/^    enum ADIOS_DATATYPES type;$/;"	m	struct:adios_var_header_struct_v1
-type	adios_internals.h	/^    enum ADIOS_DATATYPES type;$/;"	m	struct:adios_attribute_struct
-type	adios_internals.h	/^    enum ADIOS_DATATYPES type;$/;"	m	struct:adios_var_struct
-type	adios_internals.h	/^    enum ADIOS_MESH_TYPE type;$/;"	m	struct:adios_mesh_struct
-type	adios_internals.h	/^    struct adios_mesh_item_struct type;$/;"	m	struct:adios_mesh_cell_list_struct
-uniform	adios_internals.h	/^        struct adios_mesh_uniform_struct * uniform;$/;"	m	union:adios_mesh_struct::<anonymous>
-unique	Makefile	/^	  test -n "$$unique" || unique=$$empty_fix; \\$/;"	m
-unique	Makefile	/^	unique=`for i in $$list; do \\$/;"	m
-unstructured	adios_internals.h	/^        struct adios_mesh_unstructured_struct * unstructured;$/;"	m	union:adios_mesh_struct::<anonymous>
+type	adios_bp_v1.h	/^    enum ADIOS_DATATYPES type;$/;"	m	struct:adios_attribute_struct_v1	typeref:enum:adios_attribute_struct_v1::ADIOS_DATATYPES
+type	adios_bp_v1.h	/^    enum ADIOS_DATATYPES type;$/;"	m	struct:adios_index_attribute_struct_v1	typeref:enum:adios_index_attribute_struct_v1::ADIOS_DATATYPES
+type	adios_bp_v1.h	/^    enum ADIOS_DATATYPES type;$/;"	m	struct:adios_index_var_struct_v1	typeref:enum:adios_index_var_struct_v1::ADIOS_DATATYPES
+type	adios_bp_v1.h	/^    enum ADIOS_DATATYPES type;$/;"	m	struct:adios_var_header_struct_v1	typeref:enum:adios_var_header_struct_v1::ADIOS_DATATYPES
+type	adios_internals.h	/^    enum ADIOS_DATATYPES type;$/;"	m	struct:adios_attribute_struct	typeref:enum:adios_attribute_struct::ADIOS_DATATYPES
+type	adios_internals.h	/^    enum ADIOS_DATATYPES type;$/;"	m	struct:adios_var_struct	typeref:enum:adios_var_struct::ADIOS_DATATYPES
+type	adios_internals.h	/^    enum ADIOS_MESH_TYPE type;$/;"	m	struct:adios_mesh_struct	typeref:enum:adios_mesh_struct::ADIOS_MESH_TYPE
+type	adios_internals.h	/^    struct adios_mesh_item_struct type;$/;"	m	struct:adios_mesh_cell_list_struct	typeref:struct:adios_mesh_cell_list_struct::adios_mesh_item_struct
+uniform	adios_internals.h	/^        struct adios_mesh_uniform_struct * uniform;$/;"	m	union:adios_mesh_struct::__anon1	typeref:struct:adios_mesh_struct::__anon1::adios_mesh_uniform_struct
+unstructured	adios_internals.h	/^        struct adios_mesh_unstructured_struct * unstructured;$/;"	m	union:adios_mesh_struct::__anon1	typeref:struct:adios_mesh_struct::__anon1::adios_mesh_unstructured_struct
 validatePath	adios_internals.c	/^static int validatePath (const struct adios_var_struct * vars$/;"	f	file:
 value	adios_bp_v1.h	/^    void * value;$/;"	m	struct:adios_attribute_struct_v1
 value	adios_bp_v1.h	/^    void * value;$/;"	m	struct:adios_index_characteristic_struct_v1
 value	adios_internals.h	/^    void * value;$/;"	m	struct:adios_attribute_struct
 value_to_string	adios_provenance.c	/^static const char * value_to_string (enum ADIOS_DATATYPES type, void * data)$/;"	f	file:
-var	adios_internals.h	/^    struct adios_var_struct * var;$/;"	m	struct:adios_attribute_struct
-var	adios_internals.h	/^    struct adios_var_struct * var;$/;"	m	struct:adios_mesh_item_struct
-var	adios_internals.h	/^    struct adios_var_struct * var;$/;"	m	struct:adios_mesh_var_list_struct
+var	adios_internals.h	/^    struct adios_var_struct * var;$/;"	m	struct:adios_attribute_struct	typeref:struct:adios_attribute_struct::adios_var_struct
+var	adios_internals.h	/^    struct adios_var_struct * var;$/;"	m	struct:adios_mesh_item_struct	typeref:struct:adios_mesh_item_struct::adios_var_struct
+var	adios_internals.h	/^    struct adios_var_struct * var;$/;"	m	struct:adios_mesh_var_list_struct	typeref:struct:adios_mesh_var_list_struct::adios_var_struct
 var_count	adios_internals.h	/^    int var_count;$/;"	m	struct:adios_group_struct
 var_id	adios_bp_v1.h	/^    uint16_t var_id;$/;"	m	struct:adios_attribute_struct_v1
 var_id	adios_bp_v1.h	/^    uint16_t var_id;$/;"	m	struct:adios_dimension_item_struct_v1
 var_id	adios_bp_v1.h	/^    uint16_t var_id;$/;"	m	struct:adios_index_characteristic_struct_v1
 var_name	adios_bp_v1.h	/^    char * var_name;$/;"	m	struct:adios_index_var_struct_v1
 var_path	adios_bp_v1.h	/^    char * var_path;$/;"	m	struct:adios_index_var_struct_v1
-vars	adios_internals.h	/^    struct adios_var_struct * vars;$/;"	m	struct:adios_group_struct
-vars	adios_internals.h	/^    struct adios_var_struct * vars;$/;"	m	struct:adios_parse_buffer_struct
+vars	adios_internals.h	/^    struct adios_var_struct * vars;$/;"	m	struct:adios_group_struct	typeref:struct:adios_group_struct::adios_var_struct
+vars	adios_internals.h	/^    struct adios_var_struct * vars;$/;"	m	struct:adios_parse_buffer_struct	typeref:struct:adios_parse_buffer_struct::adios_var_struct
 vars_header_size	adios_mpi.c	/^    uint64_t vars_header_size;$/;"	m	struct:adios_MPI_data_struct	file:
-vars_header_size	adios_mpi_nwu.c	/^    uint64_t vars_header_size;$/;"	m	struct:adios_MPI_data_struct	file:
 vars_header_size	adios_posix.c	/^    uint64_t vars_header_size;$/;"	m	struct:adios_POSIX_data_struct	file:
 vars_index_offset	adios_bp_v1.h	/^    uint64_t vars_index_offset;   \/\/ vars index start$/;"	m	struct:adios_bp_buffer_struct_v1
 vars_size	adios_bp_v1.h	/^    uint64_t vars_size;           \/\/ vars index size$/;"	m	struct:adios_bp_buffer_struct_v1
 vars_start	adios_internals.h	/^    uint64_t vars_start;    \/\/ offset for where to put the var\/attr count$/;"	m	struct:adios_file_struct
 vars_start	adios_mpi.c	/^    uint64_t vars_start;$/;"	m	struct:adios_MPI_data_struct	file:
-vars_start	adios_mpi_nwu.c	/^    uint64_t vars_start;$/;"	m	struct:adios_MPI_data_struct	file:
 vars_start	adios_posix.c	/^    uint64_t vars_start;$/;"	m	struct:adios_POSIX_data_struct	file:
 vars_written	adios_internals.h	/^    uint16_t vars_written;  \/\/ count of vars\/attrs to write$/;"	m	struct:adios_file_struct
 version	adios_bp_v1.h	/^    uint32_t version;$/;"	m	struct:adios_bp_buffer_struct_v1
-write_buffer	adios_mpi.c	/^    struct adios_MPI_write_buffer write_buffer;$/;"	m	struct:adios_MPI_data_struct	file:
+write_buffer	adios_mpi.c	/^    struct adios_MPI_write_buffer write_buffer;$/;"	m	struct:adios_MPI_data_struct	typeref:struct:adios_MPI_data_struct::adios_MPI_write_buffer	file:
 write_offset	adios_internals.h	/^    uint64_t write_offset;  \/\/ offset this var was written at  [for writes]$/;"	m	struct:adios_attribute_struct
 write_offset	adios_internals.h	/^    uint64_t write_offset;  \/\/ offset this var was written at  [for writes]$/;"	m	struct:adios_var_struct
 write_size_bytes	adios_internals.h	/^    uint64_t write_size_bytes;$/;"	m	struct:adios_file_struct

@@ -10,13 +10,11 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     ########
     echo "Configure on EWOK"
 export CC=mpicc
-#./configure --prefix=/ccs/proj/e2e/adios/ewok.gcc \
-#./configure --prefix=/autofs/na1_sw/ewok/adios/0.9.8/rhel_mvapich_pgi7.2.3 \
-./configure --prefix=/autofs/na1_sw/ewok/adios/0.9.8/rhel_mvapich_pgi7.2.3_hdf51.6.5par \
+./configure --prefix=/ccs/proj/e2e/adios/ewok.gcc \
             --enable-dependency-tracking \
             --with-mxml=/ccs/home/ge1/work/ewok \
-            --with-hdf5=/apps/HDF5/1.6.5/ewok_ser \
             --with-phdf5=/apps/HDF5/1.6.5/ewok_par/pgi625 \
+            --with-hdf5=/apps/HDF5/1.6.5/ewok_ser \
             --with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
  
 elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
@@ -31,16 +29,14 @@ export FC=ftn
 #export CC=mpicc
 #export FC=mpif90
 # use for both MPI implementations
-#./configure --prefix=/ccs/home/ge1/work/jaguar \
-#./configure --prefix=/autofs/na1_sw/xt/adios/0.9.8/cnl2.1_pgi7.2.3_hdf51.7.6par \
-./configure --prefix=/autofs/na1_sw/xt/adios/0.9.8/cnl2.1_pgi7.2.3 \
+./configure --prefix=/ccs/home/ge1/work/jaguar \
             --enable-dependency-tracking \
             --with-mxml=/ccs/home/ge1/work/jaguar \
             --with-hdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6 \
             --with-hdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" \
+            --with-phdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par \
+            --with-phdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" \
             --with-netcdf=/sw/xt/netcdf/3.6.2/sles9.2_pgi7.0.7
-#            --with-phdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par \
-#            --with-phdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" \
 
 elif [ `hostname | cut -c 1-4` == "lens" ]; then
 
