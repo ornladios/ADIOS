@@ -42,6 +42,7 @@ struct adios_transport_struct * adios_transports = 0;
 static int adios_transports_initialized = 0;
 
 // this macro makes getting the attributes easier
+// fix the bgp bugs
 #define GET_ATTR(n,attr,var,en)                              \
 if (!strcasecmp (n, attr->name))                             \
     if (!var)                                                \
@@ -51,11 +52,7 @@ if (!strcasecmp (n, attr->name))                             \
     }                                                        \
     else                                                     \
     {                                                        \
-        fprintf (stderr, "config.xml: duplicate attribute "  \
-                         n                                   \
-                         " on "                              \
-                         en                                  \
-                         " (ignored)");                      \
+        fprintf (stderr, "xml: duplicate attribute %s on %s (ignored)",n,en); \
         continue;                                            \
     }
 
@@ -1996,6 +1993,7 @@ static int parseGroup (mxml_node_t * node)
     const char * host_language = 0;
     const char * time_index_name = 0;
 
+    int64_t      ptr_new_group;
     struct adios_group_struct * new_group;
     enum ADIOS_FLAG host_language_fortran = adios_flag_yes;
     int i;
@@ -2050,10 +2048,18 @@ static int parseGroup (mxml_node_t * node)
         }
     }
 
+// fix the bgp bugs 
+/*
     adios_common_declare_group ((int64_t *) &new_group, datagroup_name
                                ,host_language_fortran, coordination_comm
                                ,coordination_var, time_index_name
                                );
+*/
+    adios_common_declare_group (&ptr_new_group, datagroup_name
+                               ,host_language_fortran, coordination_comm
+                               ,coordination_var, time_index_name
+                               );
+     new_group = (struct adios_group_struct *)ptr_new_group;
 
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
         ;n
@@ -2117,7 +2123,9 @@ static int parseGroup (mxml_node_t * node)
             if (read_flag)
                 parseFlag ("read", read_flag, adios_flag_no);
 
-            if (!adios_common_define_var (*(int64_t *) &new_group, name
+// fix the bgp bugs
+//            if (!adios_common_define_var (*(int64_t *) &new_group, name
+            if (!adios_common_define_var (ptr_new_group, name
                                          ,path, t1, dimensions
                                          ,gb_global_dimensions
                                          ,gb_local_offsets
@@ -2244,8 +2252,9 @@ static int parseGroup (mxml_node_t * node)
 
                     if (read_flag)
                         parseFlag ("read", read_flag, adios_flag_no);
-
-                    if (!adios_common_define_var (*(int64_t *) &new_group
+// fix the bgp bugs
+//                    if (!adios_common_define_var (*(int64_t *) &new_group
+                    if (!adios_common_define_var (ptr_new_group
                                                  ,name
                                                  ,path, t1, dimensions
                                                  ,gb_global_dimensions
@@ -2349,8 +2358,9 @@ static int parseGroup (mxml_node_t * node)
             {
                 t1 = adios_unknown;
             }
-
-            if (!adios_common_define_attribute (*(int64_t *) &new_group, name
+// fix the bgp bugs
+//            if (!adios_common_define_attribute (*(int64_t *) &new_group, name
+            if (!adios_common_define_attribute (ptr_new_group, name
                                                ,path, t1, value, var
                                                )
                )

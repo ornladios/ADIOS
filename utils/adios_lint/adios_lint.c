@@ -3,7 +3,7 @@
 #include <string.h>
 
 // mpi
-#include "mpi.h"
+//#include "mpi.h"
 
 // xml parser
 #include <mxml.h>

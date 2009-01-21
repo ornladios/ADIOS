@@ -14,3 +14,4 @@ adios_test_c_LDFLAGS += $(PHDF5_LDFLAGS)
 adios_test_c_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 endif
 CLEANFILES = restart.bp
+CC=$(MPICC)

@@ -9,8 +9,9 @@ bp2h5_SOURCES = bp2h5.c \
                  hw-utils.c
 #                 parse_config.c
 bp2h5_LDFLAGS = $(MXML_LDFLAGS)
-bp2h5_CPPFLAGS = $(MXML_CPPFLAGS)
-
+#bp2h5_CPPFLAGS = $(MXML_CPPFLAGS)
+bp2h5_CPPFLAGS = -DH5_USE_16_API
+bp2h5_CPPFLAGS += $(MXML_CPPFLAGS)
 # change these to use proper autoconf settings
 bp2h5_LDFLAGS += $(HDF5_LDFLAGS)
 bp2h5_CPPFLAGS += $(HDF5_CPPFLAGS)

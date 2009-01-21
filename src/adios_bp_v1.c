@@ -1390,9 +1390,18 @@ void adios_init_buffer_read_process_group_index (
 void adios_posix_read_process_group_index (struct adios_bp_buffer_struct_v1 * b)
 {
     adios_init_buffer_read_process_group_index (b);
+//  check if the machine is 32 bits or not
+//    lseek (b->f, b->pg_index_offset, SEEK_SET);
+//    read (b->f, b->buff, b->pg_size);
 
-    lseek (b->f, b->pg_index_offset, SEEK_SET);
-    read (b->f, b->buff, b->pg_size);
+    if (sizeof (char *) == 4) {
+	lseek (b->f, (off_t) b->pg_index_offset, SEEK_SET);
+        read (b->f, b->buff, (size_t) b->pg_size);
+    }
+    else {
+        lseek (b->f, b->pg_index_offset, SEEK_SET);
+        read (b->f, b->buff, b->pg_size);
+    }
 }
 
 void adios_init_buffer_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
@@ -1405,8 +1414,18 @@ void adios_posix_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
 {
     adios_init_buffer_read_vars_index (b);
 
-    lseek (b->f, b->vars_index_offset, SEEK_SET);
-    uint64_t r = read (b->f, b->buff, b->vars_size);
+    uint64_t r;
+//  check if the machine is 32 bits or not
+//    lseek (b->f, b->vars_index_offset, SEEK_SET);
+//    r = read (b->f, b->buff, b->vars_size);
+    if (sizeof (char *) == 4) {
+       lseek (b->f, (off_t) b->vars_index_offset, SEEK_SET);
+        r = read (b->f, b->buff, (size_t) b->vars_size);
+    }
+    else {
+        lseek (b->f, b->vars_index_offset, SEEK_SET);
+        r = read (b->f, b->buff, b->vars_size);
+    }
     if (r != b->vars_size)
         fprintf (stderr, "reading vars_index: wanted %llu, read: %llu\n"
                 ,b->vars_size, r
@@ -1424,8 +1443,19 @@ void adios_posix_read_attributes_index (struct adios_bp_buffer_struct_v1 * b)
 {
     adios_init_buffer_read_attributes_index (b);
 
-    lseek (b->f, b->attrs_index_offset, SEEK_SET);
-    uint64_t r = read (b->f, b->buff, b->attrs_size);
+    uint64_t r;
+//  check if the machine is 32 bits or not
+//    lseek (b->f, b->attrs_index_offset, SEEK_SET);
+//    r = read (b->f, b->buff, b->attrs_size);
+    if (sizeof (char *) == 4) {
+        lseek (b->f, (off_t) b->attrs_index_offset, SEEK_SET);
+        r = read (b->f, b->buff, (size_t) b->attrs_size);
+    }
+    else {
+        lseek (b->f, b->attrs_index_offset, SEEK_SET);
+        r = read (b->f, b->buff, b->attrs_size);
+    }
+
     if (r != b->attrs_size)
         fprintf (stderr, "reading attributess_index: wanted %llu, read: %llu\n"
                 ,b->attrs_size, r
@@ -1443,8 +1473,19 @@ uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b)
     uint64_t pg_size;
 
     adios_init_buffer_read_process_group (b);
-    lseek (b->f, b->read_pg_offset, SEEK_SET);
-    pg_size = read (b->f, b->buff, b->read_pg_size);
+
+//  check if the machine is 32 bits or not
+//    lseek (b->f, b->read_pg_offset, SEEK_SET);
+//    pg_size = read (b->f, b->buff, b->read_pg_size);
+
+    if (sizeof (char *) == 4) {
+        lseek (b->f, (off_t) b->read_pg_offset, SEEK_SET);
+        pg_size = read (b->f, b->buff, (size_t) b->read_pg_size);
+    }
+    else {
+        lseek (b->f, b->read_pg_offset, SEEK_SET);
+        pg_size = read (b->f, b->buff, b->read_pg_size);
+    }
     if (pg_size != b->read_pg_size)
     {
         fprintf (stderr, "adios_read_process_group: "

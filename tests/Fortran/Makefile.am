@@ -13,6 +13,9 @@ if HAVE_PHDF5
 adios_test_f_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 adios_test_f_LDFLAGS += $(PHDF5_LDFLAGS)
 endif
+
+FC=$(MPIFC)
+
 FCLINK = \
-	$(LIBTOOL) --mode=link --tag F77 $(FC) "$()" \
+	$(LIBTOOL) --mode=link --tag F77 $(FC) \
 	$(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@

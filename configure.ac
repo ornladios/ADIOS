@@ -36,7 +36,7 @@ ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for Fortran])])
 
 AC_LANG(C)
 
-CC="$MPICC"
+dnl CC="$MPICC"
 CXX="$MPICXX"
 FC="$MPIFC"
 

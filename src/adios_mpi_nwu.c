@@ -42,7 +42,7 @@ struct adios_MPI_data_struct
 #include <sys/statfs.h>
 
 /* this should be determined at configure time */
-#define ADIOS_LUSTRE
+//#define ADIOS_LUSTRE
 
 #ifdef ADIOS_LUSTRE
 #include <sys/ioctl.h>

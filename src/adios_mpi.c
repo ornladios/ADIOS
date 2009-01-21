@@ -1316,7 +1316,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                     int * index_sizes = malloc (4 * md->size);
                     int * index_offsets = malloc (4 * md->size);
                     char * recv_buffer = 0;
-                    uint32_t size = 0;
+		    uint32_t size = 0;
                     uint32_t total_size = 0;
                     int i;
 
@@ -1329,6 +1329,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                     {
                         index_offsets [i] = total_size;
                         total_size += index_sizes [i];
+		  	printf("index_offset[%d]=%d\n",i,index_sizes[i]);
                     } 
 
                     recv_buffer = malloc (total_size);
@@ -1380,8 +1381,14 @@ void adios_mpi_close (struct adios_file_struct * fd
                                          ,md->old_vars_root
                                          ,md->old_attrs_root
                                          );
-
+		    int size = (int) buffer_size;
+// fix the bugs on bgp
+/*
                     MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
+                               ,0, md->group_comm
+                               );
+*/
+                    MPI_Gather (&size, 1, MPI_INT, 0, 0, MPI_INT
                                ,0, md->group_comm
                                );
                     MPI_Gatherv (buffer, buffer_size, MPI_BYTE
@@ -1569,8 +1576,14 @@ void adios_mpi_close (struct adios_file_struct * fd
                                          ,md->old_vars_root
                                          ,md->old_attrs_root
                                          );
-
+// fix the bugs on bgp
+/*
                     MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
+                               ,0, md->group_comm
+                               );
+*/
+		    int size = (int) buffer_size;
+                    MPI_Gather (&size, 1, MPI_INT, 0, 0, MPI_INT
                                ,0, md->group_comm
                                );
                     MPI_Gatherv (buffer, buffer_size, MPI_BYTE

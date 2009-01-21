@@ -154,7 +154,6 @@ PHDF5_CPPFLAGS = @PHDF5_CPPFLAGS@
 PHDF5_LDFLAGS = @PHDF5_LDFLAGS@
 PHDF5_LIBS = @PHDF5_LIBS@
 RANLIB = @RANLIB@
-SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -209,10 +208,10 @@ bp2h5_SOURCES = bp2h5.c \
                  hw-utils.c
 
 #                 parse_config.c
-
 # change these to use proper autoconf settings
 bp2h5_LDFLAGS = $(MXML_LDFLAGS) $(HDF5_LDFLAGS)
-bp2h5_CPPFLAGS = $(MXML_CPPFLAGS) $(HDF5_CPPFLAGS)
+#bp2h5_CPPFLAGS = $(MXML_CPPFLAGS)
+bp2h5_CPPFLAGS = -DH5_USE_16_API $(MXML_CPPFLAGS) $(HDF5_CPPFLAGS)
 bp2h5_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS) -lhdf5 \
 	-lz
 all: all-am

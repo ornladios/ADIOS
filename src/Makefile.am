@@ -42,3 +42,4 @@ libadios_int_a_CPPFLAGS = $(MXML_CPPFLAGS)
 #libadios_int_a_LIBADD = $(MXML_LIBS)
 include_HEADERS += adios_internals.h \
                    adios_transport_hooks.h
+CC=$(MPICC)
