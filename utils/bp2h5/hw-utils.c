@@ -107,6 +107,14 @@ char** bp_dirparser(char *str, int *nLevel)
   free(tmpstr);
   return grp_name;
 }
+
+void print_process_group_header (uint64_t num
+                      ,struct adios_process_group_header_struct_v1 * pg_header
+                      );
+void print_vars_header (struct adios_vars_header_struct_v1 * vars_header)
+{
+    printf ("\tVars Count: %u\n", vars_header->count);
+}
 void copy_buffer(struct adios_bp_buffer_struct_v1 *dest
                 ,struct adios_bp_buffer_struct_v1 *src) {
 
@@ -223,6 +231,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
      * parse element from bp file and write to hdf5 file
      */
     uint64_t element_num = 0;
+    uint64_t pg_num = 0;
     pg = pg_root;
     int var_dims_count = 0;
     struct var_dim * var_dims = 0;
@@ -235,7 +244,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
         struct adios_var_header_struct_v1 var_header;
         struct adios_var_payload_struct_v1 var_payload;
         struct adios_attribute_struct_v1 attribute;
-
+	
         // setup where to read the process group from (and size)
         b->read_pg_offset = pg->offset_in_file;
         if (pg->next)
@@ -248,17 +257,16 @@ int hw_makeh5 (char * fnamein, char * fnameout)
             b->read_pg_size =   b->pg_index_offset
                               - pg->offset_in_file;
         }
-
         adios_posix_read_process_group (b);
         adios_parse_process_group_header_v1 (b, &pg_header);
-        //print_process_group_header (element_num++, &pg_header);
+        //print_process_group_header (pg_num++, &pg_header);
         adios_parse_vars_header_v1 (b, &vars_header);
+	//print_vars_header (&vars_header);
+	
         set_lang_convention(pg_header.host_language_fortran);
         uint64_t length_of_var;
         // process each var in current process group
-        
         if (element_num%2 == 0) {
-            //if (pg->time_index==3) return;
 	     var_dims = realloc (var_dims, (vars_header.count)
 				* sizeof (struct var_dim)
 			        );
@@ -275,7 +283,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 				    ,var_header.payload_size
 				    );
 		        var_dims [var_dims_count].id = var_header.id;
-		        var_dims [var_dims_count].rank = *(unsigned int *)
+		        var_dims [var_dims_count].rank = *(uint32_t *)
 			    var_payload.payload;
                         var_dims [var_dims_count].offset = b0->offset; 
                     }
@@ -296,12 +304,13 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                     free (var_payload.payload);
                     var_payload.payload = 0;
                 }
-                /*printf("var id=%d name=%s rank=%d offset=%llu\n", 
+/*
+                printf("var id=%d name=%s rank=%d offset=%llu\n", 
 				var_header.id, 
 				var_header.name,
 				var_dims[var_dims_count-1].rank,
  				var_dims[var_dims_count-1].offset);
-		*/
+*/		
             }
             adios_parse_attributes_header_v1 (b, &attrs_header);
             for (i = 0; i < attrs_header.count; i++) {
@@ -318,8 +327,10 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 			    var_dims [var_dims_count].id = attribute.id;
 			    var_dims [var_dims_count].rank = var_dims [j].rank;
 			    var_dims [var_dims_count].offset = var_dims [j].offset;
-                            //printf("attribute: %s  vid= %llu rank: %llu\n",attribute.name,
-                            //          var_dims[j].rank,var_dims[var_dims_count].rank);
+/*
+                            printf("attribute: %s  vid= %llu rank: %llu\n",attribute.name,
+                                      attribute.id,var_dims[var_dims_count].rank);
+ */
                             j = var_dims_count;
 			}
 		    }
@@ -331,14 +342,19 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                     switch(attribute.type) { 
 			case adios_unsigned_short:
 		            var_dims [var_dims_count].rank = (uint64_t)*((unsigned short*) attribute.value);
+			    break;
 			case adios_unsigned_integer:
 		            var_dims [var_dims_count].rank = (uint64_t) *((unsigned int *) attribute.value);
+			    break;
 			case adios_unsigned_long:
 		            var_dims [var_dims_count].rank = (uint64_t) *((unsigned long*) attribute.value);
+			    break;
 			case adios_short:
 		            var_dims [var_dims_count].rank = (uint64_t)*((short*) attribute.value);
+			    break;
 			case adios_integer:
 		            var_dims [var_dims_count].rank = (uint64_t) *((int *) attribute.value);
+			    break;
 			case adios_long:
 		            var_dims [var_dims_count].rank = (uint64_t) *((long *) attribute.value);
 			    break;
@@ -362,8 +378,8 @@ int hw_makeh5 (char * fnamein, char * fnameout)
         // make sure the buffer is big enough or send in null
         else {
 	    if (verbose >= LIST_INFO) {
-		fprintf(stderr, "-------------------------------------------\n");
-                fprintf(stderr, "total vars: %d, pg timeindex: %d\n",
+		printf("-------------------------------------------\n");
+                printf("total vars: %d, pg timeindex: %d\n",
                         vars_header.count, 
                         pg->time_index);
 	    }
@@ -372,7 +388,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                 adios_parse_var_data_header_v1 (b, &var_header);
                 if (var_header.dims) {
 		    if (verbose >= LIST_INFO)
-                        fprintf(stderr, "\t%3d) dataset : %s\n",i,var_header.name);
+                        printf("\t%3d) dataset : %s\n",i,var_header.name);
 		    uint64_t element = 0;
 		    struct adios_dimension_struct_v1 * d = var_header.dims;
 		    int i = 0, ranks = 0, c = 0;
@@ -381,7 +397,6 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                         ranks++;
 			d = d->next;
 		    }
-
                     //adios_parse_var_data_payload_v1 (b, &var_header, NULL, 0);
 		    // get local dimensions
 		    dims = (uint64_t *) malloc (8 * ranks);
@@ -392,20 +407,17 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 
 		    while (d) {
 			if (d->dimension.var_id != 0) {
-                                //printf("%s %d %d\n",var_header.name,d->dimension.var_id, var_dims_count); 
                             for (i = 0; i < var_dims_count; i++) {
+                                //printf("%s: %d %llu \n",var_header.name,i,var_dims [i].rank); 
                                 if (var_dims [i].id == d->dimension.var_id){ 
                                     *dims_t = var_dims [i].rank; 
                                     i = var_dims_count+1;
-                                //printf("%s %d %d\n",var_header.name,d->dimension.var_id, *dims_t); 
-           
 			        }
 			    }
 			}
-			else 
+			else { 
 		            *dims_t = d->dimension.rank;
-                        //printf("%s %d\n",var_header.name,d->dimension.var_id); 
-                        //printf(" \tfind match:  %llu\n");
+			}
 			d = d->next;
 			dims_t++;
 		    }
@@ -452,16 +464,24 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 			d = d->next;
 			dims_t++;
 		    }
-                    //printf("\t payload_size:%llu\n",var_header.payload_size);
+
 		    var_payload.payload = malloc (var_header.payload_size);
 		    adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
                                                     ,var_header.payload_size
                                                     );
 		    // now ready to write dataset to h5 file
+/*
+		    if (!strcmp(var_header.name,"nextnode") ||
+			!strcmp(var_header.name,"itheta0") )
+ 		    printf("==============\n");
+			printf("  %s\n",var_header.name);
+ 		    printf("==============\n");
+*/
 		    hw_dset(root_id, var_header.path, var_header.name, var_payload.payload,
                             var_header.type, ranks, dims, global_dims, offsets,
   	 		    pg->time_index
-			    );       
+			    );      
+
 		    free(dims);
 		    free(global_dims);
 		    free(offsets);
@@ -576,6 +596,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 	    var_dims_count = 0;
             pg = pg->next;
         }
+
         element_num ++;
 	//printf("*****number%d*********\n",element_num);
 	element_num = element_num%2;
@@ -587,10 +608,9 @@ int hw_makeh5 (char * fnamein, char * fnameout)
     if (tmpstr)
 	free (tmpstr);
     adios_posix_close_internal (b);
-
-    H5Gclose (root_id);
-    H5Fclose (h5file_id);
-
+    hid_t h5_status;
+    h5_status = H5Gclose (root_id);
+    h5_status = H5Fclose (h5file_id);
     return 0;
 }
 
@@ -799,14 +819,15 @@ void hw_dset(hid_t root_id,
         h5dims = (hsize_t *) malloc (rank * sizeof (hsize_t));    
         if(array_dim_order_fortran == USE_FORTRAN) { 
             // transpose dimension order for Fortran arrays
-            int i;
-            for (i = 0; i < rank; i++)
-                h5dims [rank-1-i] = dims[i];
+            int i, time_idx, upper;
+            for (i = 0; i < rank; i++) {
+                h5dims [rank-1-i] = (hsize_t) dims[i];
+	     }
         }
         else if(array_dim_order_fortran == USE_C) {
             int i;
             for (i = 0; i < rank; i++)
-                h5dims [i] = dims[i];
+                h5dims [i] = (hsize_t) dims[i];
         }
 
         if(verbose >= DEBUG_INFO) {
@@ -818,7 +839,6 @@ void hw_dset(hid_t root_id,
                        );
             }
         }
-        
         hw_dataset (grp_id [level], name, data, type, rank, h5dims);
         for (i = 1; i < level + 1; i++)
             H5Gclose (grp_id [i]);
@@ -1364,7 +1384,7 @@ void hw_scalar_attr_array ( hid_t parent_id, const char *name, void *value, enum
 /*
  * Write an array as a dataset to a h5 file 
  */
-void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES type, int rank, hsize_t* dims)
+void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES type, int rank, hsize_t * dims)
 {
     hid_t dataset_id, dataspace, cparms, type_id,filespace;    
     int i,rank_old, time_idx;
@@ -1373,8 +1393,16 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
     hsize_t *maxdims;
     maxdims = (hsize_t*)malloc(sizeof(hsize_t)*rank);
     offset = (hsize_t*)malloc(sizeof(hsize_t)*rank);
-    for(i=0;i<rank;i++)
-    {
+    cparms = H5Pcreate(H5P_DATASET_CREATE);
+/*
+    for (i=0;i<rank;i++) {
+	time_idx = dims[i];
+        dims[i] = time_idx;
+    }
+*/
+   h5_status = H5Pset_chunk(cparms,rank,dims);
+
+    for(i=0;i<rank;i++) {
         maxdims[i] = H5S_UNLIMITED;    
         offset[i] = 0;
     }
@@ -1385,8 +1413,7 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
 	}
     }
     time_idx = i; 
-    cparms = H5Pcreate(H5P_DATASET_CREATE);
-    h5_status = H5Pset_chunk(cparms,rank,dims);
+
     h5_status = bp_getH5TypeId(type, &type_id, data);
     if(h5_status == 0 && type_id>0) {
         dataset_id = H5Dopen(parent_id,name);
@@ -1429,7 +1456,6 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
             h5_status = H5Sselect_hyperslab(filespace,H5S_SELECT_SET,offset,NULL,dims,NULL);
             dataspace = H5Screate_simple(rank, dims, NULL);
             h5_status = H5Dwrite(dataset_id,type_id,dataspace,filespace,H5P_DEFAULT,data);
- 	    //H5Eprint(stdout);
         }
         if(dataset_id>0) {
             h5_status = H5Dclose(dataset_id);
@@ -1439,8 +1465,8 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
         if(filespace>0)
             h5_status = H5Sclose(filespace);
     }
-    H5Tclose(type_id);
-    H5Pclose(cparms);
+    h5_status=H5Tclose(type_id);
+    h5_status=H5Pclose(cparms);
     free(maxdims);
     free(offset);
     return;
@@ -1581,3 +1607,30 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data)
 
     return s;
 }
+
+void print_process_group_header (uint64_t num
+                      ,struct adios_process_group_header_struct_v1 * pg_header
+                      )
+{
+    int i;
+    struct adios_method_info_struct_v1 * m;
+
+    printf ("Process Group: %llu\n", num);
+    printf ("\tGroup Name: %s\n", pg_header->name);
+    printf ("\tHost Language Fortran?: %c\n"
+           ,(pg_header->host_language_fortran == adios_flag_yes ? 'Y' : 'N')
+           );
+    printf ("\tCoordination Var Member ID: %d\n", pg_header->coord_var_id);
+    printf ("\tTime Name: %s\n", pg_header->time_index_name);
+    printf ("\tTime: %d\n", pg_header->time_index);
+    printf ("\tMethods used in output: %d\n", pg_header->methods_count);
+    m = pg_header->methods;
+    while (m)
+    {
+        printf ("\t\tMethod ID: %d\n", m->id);
+        printf ("\t\tMethod Parameters: %s\n", m->parameters);
+
+        m = m->next;
+    }
+}
+
