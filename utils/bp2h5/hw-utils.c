@@ -510,7 +510,6 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                 // process each attribute in current process group
             for (i = 0; i < attrs_header.count; i++) {
                 adios_parse_attribute_v1 (b, &attribute);
-		printf("attr %s_%s %s\n",attribute.path,attribute.name, attribute.value);
 		// write to h5 file
 		if(attribute.is_var == adios_flag_no) {
                     switch(attribute.type) { 
@@ -1423,12 +1422,9 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
 		if (dataset_id < 0) {
 			dataset_id = H5Gopen (parent_id, name);
 			if (dataset_id > 0) {
-				fprintf(stderr, "Group %s Existed!\n",name);
 				H5Gunlink(parent_id,name);	
                 		dataset_id = H5Dcreate(parent_id, name, type_id, dataspace,cparms);
 			}
-			if (dataset_id < 0)
-				fprintf(stderr, "Dataset %s Creation failed!\n",name);
 		}
                 if(dataset_id<0) {
 			fprintf(stderr, "Dataset %s Creation failed!\n",name);
