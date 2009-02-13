@@ -145,7 +145,7 @@ void hw_attr_num_gp(hid_t root_id, char *dirstr, char *aname, void *avalue, enum
 /*
  * Write an array as a dataset to an h5 file 
  */
-void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES type, int ndims, hsize_t* dims);
+void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES type, int ndims, hsize_t * dims);
 
 /*
  * Maps bp datatypes to h5 datatypes 

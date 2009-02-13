@@ -53,6 +53,8 @@ int parse_cmdline(int argc, char **argv
         }
         else if(!strcmp(argv[i], "--verbose") || !strcmp(argv[i], "-V")) {
             *verb = LIST_INFO;
+            *verb = atoi(argv[i+1]);
+	    i=i+1;
         }
         else if(!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
             print_usage();
@@ -95,6 +97,7 @@ int main (int argc, char ** argv)
     if(parse_cmdline(argc, argv, &bp_filename, &h5_filename, &scalar_as_array, &verb)) {
         return -1;
     }
+
 
     initialize_bp2h5(USE_FORTRAN, USE_FORTRAN, USE_FORTRAN, USE_FORTRAN, scalar_as_array, verb);
 

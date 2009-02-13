@@ -510,7 +510,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                 // process each attribute in current process group
             for (i = 0; i < attrs_header.count; i++) {
                 adios_parse_attribute_v1 (b, &attribute);
-		//printf("%s_%s %s\n",attribute.path,attribute.name, attribute.value);
+		printf("attr %s_%s %s\n",attribute.path,attribute.name, attribute.value);
 		// write to h5 file
 		if(attribute.is_var == adios_flag_no) {
                     switch(attribute.type) { 
@@ -596,11 +596,8 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 	    var_dims_count = 0;
             pg = pg->next;
         }
-
         element_num ++;
-	//printf("*****number%d*********\n",element_num);
 	element_num = element_num%2;
-	//if (element_num==8) break;
     }
     if (var_dims) 
         free (var_dims);
@@ -1393,14 +1390,13 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
     hsize_t *maxdims;
     maxdims = (hsize_t*)malloc(sizeof(hsize_t)*rank);
     offset = (hsize_t*)malloc(sizeof(hsize_t)*rank);
-    cparms = H5Pcreate(H5P_DATASET_CREATE);
 /*
     for (i=0;i<rank;i++) {
 	time_idx = dims[i];
         dims[i] = time_idx;
     }
 */
-   h5_status = H5Pset_chunk(cparms,rank,dims);
+    cparms = H5Pcreate(H5P_DATASET_CREATE);
 
     for(i=0;i<rank;i++) {
         maxdims[i] = H5S_UNLIMITED;    
@@ -1412,6 +1408,9 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
 	    break;
 	}
     }
+
+    h5_status = H5Pset_chunk(cparms,rank,dims);
+
     time_idx = i; 
 
     h5_status = bp_getH5TypeId(type, &type_id, data);
@@ -1421,7 +1420,18 @@ void hw_dataset(hid_t parent_id, char* name, void* data,enum ADIOS_DATATYPES typ
             dataspace = H5Screate_simple(rank, dims, NULL);
             if(dataspace>0 && h5_status==0) {
                 dataset_id = H5Dcreate(parent_id, name, type_id, dataspace,cparms);
+		if (dataset_id < 0) {
+			dataset_id = H5Gopen (parent_id, name);
+			if (dataset_id > 0) {
+				fprintf(stderr, "Group %s Existed!\n",name);
+				H5Gunlink(parent_id,name);	
+                		dataset_id = H5Dcreate(parent_id, name, type_id, dataspace,cparms);
+			}
+			if (dataset_id < 0)
+				fprintf(stderr, "Dataset %s Creation failed!\n",name);
+		}
                 if(dataset_id<0) {
+			fprintf(stderr, "Dataset %s Creation failed!\n",name);
                     H5Sclose(dataspace);
                     return;
                 }
