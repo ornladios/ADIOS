@@ -294,8 +294,10 @@ adios_mpi_buffer_get_position(struct adios_MPI_data_struct *md,
 }
 
 /* LUSTRE Structure */ 
+// from /usr/include/lustre/lustre_user.h
 #define LUSTRE_SUPER_MAGIC 0x0BD00BD0
 #  define LOV_USER_MAGIC 0x0BD10BD0
+#  define LL_IOC_LOV_SETSTRIPE            _IOW ('f', 154, long)
 #  define LL_IOC_LOV_GETSTRIPE  _IOW ('f', 155, long)
 struct lov_user_ost_data {     /* per-stripe data structure */
         uint64_t l_object_id;        /* OST object ID */
