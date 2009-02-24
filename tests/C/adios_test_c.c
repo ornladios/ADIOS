@@ -9,6 +9,36 @@
 
 #include "adios.h"
 
+#include <sys/time.h>
+/* Subtract the `struct timeval' values X and Y,
+   storing the result in RESULT.
+   Return 1 if the difference is negative, otherwise 0.  */
+
+int
+timeval_subtract (result, x, y)
+     struct timeval *result, *x, *y;
+{
+  /* Perform the carry for the later subtraction by updating y. */
+  if (x->tv_usec < y->tv_usec) {
+    int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
+    y->tv_usec -= 1000000 * nsec;
+    y->tv_sec += nsec;
+  }
+  if (x->tv_usec - y->tv_usec > 1000000) {
+    int nsec = (x->tv_usec - y->tv_usec) / 1000000;
+    y->tv_usec += 1000000 * nsec;
+    y->tv_sec -= nsec;
+  }
+
+  /* Compute the time remaining to wait.
+     tv_usec is certainly positive. */
+  result->tv_sec = x->tv_sec - y->tv_sec;
+  result->tv_usec = x->tv_usec - y->tv_usec;
+
+  /* Return 1 if result is negative. */
+  return x->tv_sec < y->tv_sec;
+}
+
 int main (int argc, char ** argv)
 {
     char * type_name = "restart";
@@ -16,8 +46,13 @@ int main (int argc, char ** argv)
     long long io_handle;  // io handle
     MPI_Comm comm = MPI_COMM_WORLD;
     int rank;
+    int size;
+    struct timeval time_start;
+    struct timeval time_end;
+    struct timeval time_diff;
+    struct timeval * time_diff_all;
 
-    int byte_test_length = 2600;
+    int byte_test_length = 10 * 1024 * 1024;
     char byte_test [byte_test_length + 1];
     char r_byte_test [byte_test_length + 1];
     byte_test [byte_test_length] = 0;
@@ -71,18 +106,27 @@ int main (int argc, char ** argv)
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+    MPI_Comm_size (MPI_COMM_WORLD, &size);
     if (!adios_init ("config_c.xml"))
         return -1;
 
+    if (rank == 0)
+    time_diff_all = (struct timeval *) malloc (size * sizeof (struct timeval));
+    else
+        time_diff_all = 0;
+
 #if 1
 printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
+    gettimeofday (&time_start, NULL);
     adios_open (&io_handle, type_name, filename, "w");
+    adios_group_size (io_handle, 4 + byte_test_length, &total, &comm);
+#if 0
     adios_group_size (io_handle,  4 + 4
                                 + 4 * zionsize1
                                 + 4 + 4 * zionsize2 * zionsize2
                                 + 4 + 4 * zionsize2 * zionsize3
                                 + 4
-                                + 4 + 2600
+                                + 4 + byte_test_length
                      ,&total, &comm
                      );
     adios_write (io_handle, "/mype", &var_x1);
@@ -98,17 +142,39 @@ printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
 
     adios_write (io_handle, "node-attr", &node);
 
+#endif
     adios_write (io_handle, "byte_test_length", &byte_test_length);
     adios_write (io_handle, "byte_test", byte_test);
 
+    printf ("rank: %d write completed\n", rank);
     adios_close (io_handle);
+    printf ("rank: %d write completed\n", rank);
+    gettimeofday (&time_end, NULL);
 
     printf ("rank: %d write completed\n", rank);
 
     MPI_Barrier (MPI_COMM_WORLD);
+
+    timeval_subtract (&time_diff, &time_end, &time_start);
+    MPI_Gather (&time_diff, sizeof (struct timeval), MPI_BYTE
+               ,time_diff_all, sizeof (struct timeval), MPI_BYTE
+               ,0, MPI_COMM_WORLD
+               );
+    if (rank == 0)
+    {
+        memcpy (&(time_diff_all [0]), &time_diff, sizeof (struct timeval));
+        int i;
+        for (i = 0; i < size; i++)
+        {
+            printf ("%d\t%d\t%d\n", i, time_diff_all [i].tv_sec, time_diff_all [i].tv_usec);
+        }
+        printf ("\n\n");
+    }
+
+    MPI_Barrier (MPI_COMM_WORLD);
 #endif
 
-#if 1
+#if 0
 printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
 
     adios_open (&io_handle, type_name, filename, "r");
@@ -160,7 +226,7 @@ printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
     }
 #endif
 
-#if 1
+#if 0
 printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
     var_x1 = 11;
     adios_open (&io_handle, type_name, filename, "a");
