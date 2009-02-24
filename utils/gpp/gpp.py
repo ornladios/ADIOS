@@ -22,9 +22,13 @@ def main(argv=None):
         if(xmlparser.language_group_dict[fname]==1):
            wfile= open("gwrite_"+fname+".fh","w") 
            rfile= open("gread_"+fname+".fh","w")
+	   rfile.write("adios_groupsize = 0\n"); 
+	   rfile.write("adios_totalsize = 0\n"); 
         elif(xmlparser.language_group_dict[fname]==2):
            wfile= open("gwrite_"+fname+".ch","w") 
            rfile= open("gread_"+fname+".ch","w")
+	   rfile.write("adios_groupsize = 0;\n"); 
+	   rfile.write("adios_totalsize = 0;\n"); 
         wfile.write(line); 
         rfile.write(line); 
         linerw = vardict[fname]

@@ -74,7 +74,8 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
                liner="strlen("+grname+")" 
        else:
 	   line=str(getsize[typename])
-           liner=line 
+	   if (readyn==True):
+		liner=line 
     else:
        str_varsize=str(getsize[typename])
        dimsarr=dimsname.split(',');
@@ -95,10 +96,10 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
                line = line + ' * (' + var_gname_dict[dimsele]+')'
             else: 
                line = line
+       liner = line
     sizeformular.append(line)    
     var_size_dict[varname]=line
-    #var_size_dict = {var_size_dict.items(), varname:line}
-    #print var_size_dict.items()
+
     if (language_sw==1):
         linew = "call adios_write (adios_handle, "   \
               + "\""+varname+"\"//char(0), "         \
