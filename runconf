@@ -2,6 +2,7 @@
 #export CFLAGS='-g -W -Wall -pedantic -isystem /home/gflofst/software/pnetcdf/include'
 #export CXXFLAGS='-g -W -Wall -pedantic -fpermissive -isystem /home/gflofst/software/pnetcdf/include'
 #export LDFLAGS='-L/home/gflofst/software/pnetcdf/lib'
+echo Please verify install prefix is correct for this configure
 
 if [ `hostname | cut -c 1-4` == "ewok" ]; then
 
@@ -10,7 +11,7 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     ########
     echo "Configure on EWOK"
 export CC=mpicc
-./configure --prefix=/ccs/proj/e2e/adios/ewok.gcc \
+./configure --prefix=/ccs/home/ge1/work/ewok \
             --enable-dependency-tracking \
             --with-mxml=/ccs/home/ge1/work/ewok \
             --with-phdf5=/apps/HDF5/1.6.5/ewok_par/pgi625 \
@@ -32,11 +33,11 @@ export FC=ftn
 ./configure --prefix=/ccs/home/ge1/work/jaguar \
             --enable-dependency-tracking \
             --with-mxml=/ccs/home/ge1/work/jaguar \
-            --with-hdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6 \
-            --with-hdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" \
-            --with-phdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par \
-            --with-phdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" \
-            --with-netcdf=/sw/xt/netcdf/3.6.2/sles9.2_pgi7.0.7
+            --with-hdf5=/sw/xt5/hdf5/1.6.7/cnl2.0_pgi7.1.6 \
+            --with-hdf5-libdir="/sw/xt5/hdf5/1.6.7/cnl2.0_pgi7.1.6/lib -L/sw/xt5/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" \
+            --with-phdf5=/sw/xt5/hdf5/1.6.7/cnl2.0_pgi7.1.6_par \
+            --with-phdf5-libdir="/sw/xt5/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt5/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" \
+            --with-netcdf=/sw/xt5/netcdf/3.6.2/sles9.2_pgi7.0.7
 
 elif [ `hostname | cut -c 1-4` == "lens" ]; then
 
