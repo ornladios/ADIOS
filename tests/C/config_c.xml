@@ -29,6 +29,6 @@
 
   <method group="restart" method="MPI"/>
 
-  <buffer size-MB="1" allocate-time="now"/>
+  <buffer size-MB="11" allocate-time="now"/>
 
 </adios-config>
