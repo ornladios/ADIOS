@@ -14,7 +14,7 @@ void adios_init_ (const char * config, int* err, int config_size);
 // yet to be worked out
 // TODO
 int adios_init_local (void);
-void adios_init_ (void);
+void adios_init_local_ (int * err);
 
 int adios_finalize (int mype);
 void adios_finalize_ (int * mype, int * err);

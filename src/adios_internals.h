@@ -313,6 +313,7 @@ uint64_t adios_size_of_attribute (struct adios_attribute_struct * a);
 uint64_t adios_data_size (struct adios_group_struct * g);
 
 int adios_parse_config (const char * config);
+int adios_local_config ();
 struct adios_method_list_struct * adios_get_methods (void);
 struct adios_group_list_struct * adios_get_groups (void);
 

@@ -3578,6 +3578,17 @@ int adios_parse_config (const char * config)
     return 1;
 }
 
+int adios_local_config ()
+{
+    if (!adios_transports_initialized)
+    {
+        adios_transports_initialized = 1;
+        adios_init_transports (&adios_transports);
+    }
+
+    return 1;
+}
+
 int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                               ,void ** out
                               )
@@ -6811,12 +6822,12 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
             // calculate the size for this dimension element
             if (d->dimension.id != 0)
             {
-                struct adios_var_struct * var = 0;
+                struct adios_var_struct * dim_var = 0;
 
-                var = adios_find_var_by_id (group->vars, d->dimension.id);
+                dim_var = adios_find_var_by_id (group->vars, d->dimension.id);
 
                 // first check to make sure all vars are provided
-                if (!var)
+                if (!dim_var)
                 {
                     struct adios_attribute_struct * attr = 0;
                     attr = adios_find_attribute_by_id (group->attributes
@@ -6875,13 +6886,13 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                 }
                 else
                 {
-                    if (!var->data)
+                    if (!dim_var->data)
                     {
                         fprintf (stderr, "adios_get_var_size: "
                                          "sizing of %s failed because "
                                          "dimension component %s was not "
                                          "provided\n"
-                                ,var->name, var->name
+                                ,var->name, dim_var->name
                                 );
 
                         return 0;
@@ -6889,8 +6900,8 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                     else
                     {
                         if (!adios_multiply_dimensions (&size, var
-                                                       ,var->type
-                                                       ,var->data
+                                                       ,dim_var->type
+                                                       ,dim_var->data
                                                        )
                            )
                         {
