@@ -38,6 +38,23 @@ void adios_init_ (const char * config, int * err, int config_size)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// all XML file pieces will be provided by another series of calls
+static int common_adios_init_local ()
+{
+    return adios_local_config ();
+}
+
+int adios_init_local ()
+{
+    return common_adios_init_local ();
+}
+
+void adios_init_local_ (int * err)
+{
+    *err = common_adios_init_local ();
+}
+
+///////////////////////////////////////////////////////////////////////////////
 static int common_adios_finalize (int mype)
 {
     struct adios_method_list_struct * m;

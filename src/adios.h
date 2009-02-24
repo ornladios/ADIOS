@@ -6,9 +6,15 @@
 
 // ADIOS - Adaptable IO System
 
-// Global setup and cleanup
+// Global setup using the XML file
 int adios_init (const char * config);
 void adios_init_ (const char * config, int* err, int config_size);
+
+// setup, but all XML file pieces will be provided by another series of calls
+// yet to be worked out
+// TODO
+int adios_init_local (void);
+void adios_init_ (void);
 
 int adios_finalize (int mype);
 void adios_finalize_ (int * mype, int * err);
