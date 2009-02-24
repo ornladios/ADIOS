@@ -55,5 +55,7 @@ int main (int argc, char ** argv)
     check_groups (groups);
     check_methods (methods, groups);
 
+    adios_cleanup ();
+
     return 0;
 }
