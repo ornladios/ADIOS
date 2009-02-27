@@ -133,7 +133,7 @@ struct adios_process_group_header_struct_v1
 
 struct adios_vars_header_struct_v1
 {
-    uint32_t count;
+    uint16_t count;
     uint64_t length;
 };
 

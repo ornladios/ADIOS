@@ -18,7 +18,8 @@ libadios_a_SOURCES = adios.c \
 		     adios_internals.c \
 		     adios_socket.c \
                      adios_bp_v1.c  \
-                     adios_mpi_nwu.c
+                     adios_mpi_nwu.c \
+                     adios_endianness.c
 #		     adios_datatap.c
 #		     adios_dart.c
 if HAVE_PHDF5
@@ -37,7 +38,8 @@ include_HEADERS += adios.h \
 lib_LIBRARIES += libadios_int.a
 libadios_int_a_SOURCES= adios_internals.c \
                         adios_transport_hooks_dummy.c \
-                        adios_bp_v1.c
+                        adios_bp_v1.c \
+                        adios_endianness.c 
 libadios_int_a_CPPFLAGS = $(MXML_CPPFLAGS)
 #libadios_int_a_LIBADD = $(MXML_LIBS)
 include_HEADERS += adios_internals.h \

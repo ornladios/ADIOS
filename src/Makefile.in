@@ -72,7 +72,8 @@ libadios_a_LIBADD =
 am__libadios_a_SOURCES_DIST = adios.c adios_transport_hooks.c \
 	adios_mpi.c adios_mpi_cio.c adios_posix.c adios_posix_ascii.c \
 	adios_vtk.c adios_provenance.c adios_internals.c \
-	adios_socket.c adios_bp_v1.c adios_mpi_nwu.c adios_phdf5.c
+	adios_socket.c adios_bp_v1.c adios_mpi_nwu.c \
+	adios_endianness.c adios_phdf5.c
 @HAVE_PHDF5_FALSE@am__objects_1 = libadios_a-adios_phdf5.$(OBJEXT)
 am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
 	libadios_a-adios_transport_hooks.$(OBJEXT) \
@@ -85,13 +86,15 @@ am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
 	libadios_a-adios_internals.$(OBJEXT) \
 	libadios_a-adios_socket.$(OBJEXT) \
 	libadios_a-adios_bp_v1.$(OBJEXT) \
-	libadios_a-adios_mpi_nwu.$(OBJEXT) $(am__objects_1)
+	libadios_a-adios_mpi_nwu.$(OBJEXT) \
+	libadios_a-adios_endianness.$(OBJEXT) $(am__objects_1)
 libadios_a_OBJECTS = $(am_libadios_a_OBJECTS)
 libadios_int_a_AR = $(AR) $(ARFLAGS)
 libadios_int_a_LIBADD =
 am_libadios_int_a_OBJECTS = libadios_int_a-adios_internals.$(OBJEXT) \
 	libadios_int_a-adios_transport_hooks_dummy.$(OBJEXT) \
-	libadios_int_a-adios_bp_v1.$(OBJEXT)
+	libadios_int_a-adios_bp_v1.$(OBJEXT) \
+	libadios_int_a-adios_endianness.$(OBJEXT)
 libadios_int_a_OBJECTS = $(am_libadios_int_a_OBJECTS)
 libadios_phdf5_a_AR = $(AR) $(ARFLAGS)
 libadios_phdf5_a_LIBADD =
@@ -256,13 +259,15 @@ lib_LIBRARIES = libadios.a $(am__append_1) libadios_int.a
 libadios_a_SOURCES = adios.c adios_transport_hooks.c adios_mpi.c \
 	adios_mpi_cio.c adios_posix.c adios_posix_ascii.c adios_vtk.c \
 	adios_provenance.c adios_internals.c adios_socket.c \
-	adios_bp_v1.c adios_mpi_nwu.c $(am__append_3)
+	adios_bp_v1.c adios_mpi_nwu.c adios_endianness.c \
+	$(am__append_3)
 @HAVE_PHDF5_TRUE@libadios_phdf5_a_SOURCES = adios_phdf5.c
 @HAVE_PHDF5_TRUE@libadios_phdf5_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 libadios_int_a_SOURCES = adios_internals.c \
                         adios_transport_hooks_dummy.c \
-                        adios_bp_v1.c
+                        adios_bp_v1.c \
+                        adios_endianness.c 
 
 libadios_int_a_CPPFLAGS = $(MXML_CPPFLAGS)
 all: all-am
@@ -427,6 +432,12 @@ libadios_a-adios_mpi_nwu.o: adios_mpi_nwu.c
 libadios_a-adios_mpi_nwu.obj: adios_mpi_nwu.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_nwu.obj `if test -f 'adios_mpi_nwu.c'; then $(CYGPATH_W) 'adios_mpi_nwu.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_nwu.c'; fi`
 
+libadios_a-adios_endianness.o: adios_endianness.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_endianness.o `test -f 'adios_endianness.c' || echo '$(srcdir)/'`adios_endianness.c
+
+libadios_a-adios_endianness.obj: adios_endianness.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_endianness.obj `if test -f 'adios_endianness.c'; then $(CYGPATH_W) 'adios_endianness.c'; else $(CYGPATH_W) '$(srcdir)/adios_endianness.c'; fi`
+
 libadios_a-adios_phdf5.o: adios_phdf5.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_phdf5.o `test -f 'adios_phdf5.c' || echo '$(srcdir)/'`adios_phdf5.c
 
@@ -450,6 +461,12 @@ libadios_int_a-adios_bp_v1.o: adios_bp_v1.c
 
 libadios_int_a-adios_bp_v1.obj: adios_bp_v1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-adios_bp_v1.obj `if test -f 'adios_bp_v1.c'; then $(CYGPATH_W) 'adios_bp_v1.c'; else $(CYGPATH_W) '$(srcdir)/adios_bp_v1.c'; fi`
+
+libadios_int_a-adios_endianness.o: adios_endianness.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-adios_endianness.o `test -f 'adios_endianness.c' || echo '$(srcdir)/'`adios_endianness.c
+
+libadios_int_a-adios_endianness.obj: adios_endianness.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_int_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_int_a-adios_endianness.obj `if test -f 'adios_endianness.c'; then $(CYGPATH_W) 'adios_endianness.c'; else $(CYGPATH_W) '$(srcdir)/adios_endianness.c'; fi`
 
 libadios_phdf5_a-adios_phdf5.o: adios_phdf5.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_phdf5_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_phdf5_a-adios_phdf5.o `test -f 'adios_phdf5.c' || echo '$(srcdir)/'`adios_phdf5.c
