@@ -1337,13 +1337,20 @@ void adios_mpi_aggregate_close (struct adios_file_struct * fd
                             b = malloc (size);
                         }
 
+                        // write the aggregator's data
+                        MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
+                        MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+                                       ,MPI_BYTE, &md->status
+                                       );
+
+                        // write the other process data
                         for (int i = 1; i < md->storage_targets; i++)
                         {
                             MPI_Recv (&b, size, MPI_BYTE
                                      ,aggregator + i, aggregator
                                      ,md->group_comm, &md->status
                                      );
-                            MPI_File_seek (md->fh, fd->base_offset
+                            MPI_File_seek (md->fh, fd->base_offset + (md->biggest_size * i)
                                           ,MPI_SEEK_SET
                                           );
                             MPI_File_write (md->fh, b
