@@ -147,6 +147,7 @@ static int common_adios_open (int64_t * fd, const char * group_name
     fd_p->offset = 0;
     fd_p->bytes_written = 0;
     fd_p->buffer_size = 0;
+    fd_p->biggest_size = 0;
     fd_p->vars_start = 0;
     fd_p->vars_written = 0;
     fd_p->write_size_bytes = 0;

@@ -28,7 +28,6 @@ static uint64_t adios_buffer_size_requested = 0;
 static uint64_t adios_buffer_size_max = 0;
 static uint64_t adios_buffer_size_remaining = 0;
 static int adios_buffer_alloc_percentage = 0;  // 1 = yes, 0 = no
-static int adios_buffer_stripe_aligned = 0;
 static enum ADIOS_BUFFER_ALLOC_WHEN {ADIOS_BUFFER_ALLOC_UNKNOWN
                                     ,ADIOS_BUFFER_ALLOC_NOW
                                     ,ADIOS_BUFFER_ALLOC_LATER
@@ -2580,7 +2579,6 @@ static int parseBuffer (mxml_node_t * node)
     const char * size_MB = 0;
     const char * free_memory_percentage = 0;
     const char * allocate_time = 0;
-    const char * stripe_aligned = 0;
 
     int i;
 
@@ -2593,7 +2591,6 @@ static int parseBuffer (mxml_node_t * node)
         GET_ATTR("size-MB",attr,size_MB,"method")
         GET_ATTR("free-memory-percentage",attr,free_memory_percentage,"method")
         GET_ATTR("allocate-time",attr,allocate_time,"method")
-        GET_ATTR("stripe-aligned",attr,stripe_aligned,"method")
         fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
                          "(ignored)\n"
                 ,attr->name
@@ -2676,18 +2673,6 @@ static int parseBuffer (mxml_node_t * node)
             }
         }
 
-	if (stripe_aligned != NULL) {
-            if (!strcasecmp (stripe_aligned, "yes")) {
-	       adios_buffer_stripe_aligned = 1;
-	    } else if (!strcasecmp(stripe_aligned, "no")) {
-		adios_buffer_stripe_aligned = 0;
-	    } else {
-		fprintf(stderr, "config.xml: stripe_aligned should"
-			        "only be yes or no! \n");	
-		return 0;
-	    }
-	}
-
         if (adios_buffer_alloc_when == ADIOS_BUFFER_ALLOC_NOW)
         {
             return adios_set_buffer_size ();
@@ -2695,11 +2680,6 @@ static int parseBuffer (mxml_node_t * node)
     }
 
     return 1;
-}
-
-int adios_stripe_size_aligned()
-{
-    return adios_buffer_stripe_aligned;
 }
 
 int adios_set_buffer_size ()

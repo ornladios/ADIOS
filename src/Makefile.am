@@ -10,7 +10,11 @@ lib_LIBRARIES += libadios.a
 libadios_a_SOURCES = adios.c \
                      adios_transport_hooks.c \
                      adios_mpi.c \
+                     adios_mpi_stripe.c \
                      adios_mpi_cio.c \
+                     adios_mpi_nwu.c \
+                     adios_mpi_stagger.c \
+                     adios_mpi_aggregate.c \
 		     adios_posix.c \
                      adios_posix_ascii.c \
                      adios_vtk.c \
@@ -18,7 +22,6 @@ libadios_a_SOURCES = adios.c \
 		     adios_internals.c \
 		     adios_socket.c \
                      adios_bp_v1.c  \
-                     adios_mpi_nwu.c \
                      adios_endianness.c
 #		     adios_datatap.c
 #		     adios_dart.c

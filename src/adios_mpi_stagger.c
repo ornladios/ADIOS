@@ -17,7 +17,7 @@
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
 
-static int adios_mpi_initialized = 0;
+static int adios_mpi_stagger_initialized = 0;
 
 struct adios_MPI_data_struct
 {
@@ -133,15 +133,15 @@ static void adios_var_to_comm (const char * comm_name
     }
 }
 
-void adios_mpi_init (const char * parameters
+void adios_mpi_stagger_init (const char * parameters
                     ,struct adios_method_struct * method
                     )
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
-    if (!adios_mpi_initialized)
+    if (!adios_mpi_stagger_initialized)
     {
-        adios_mpi_initialized = 1;
+        adios_mpi_stagger_initialized = 1;
     }
     method->method_data = malloc (sizeof (struct adios_MPI_data_struct));
     md = (struct adios_MPI_data_struct *) method->method_data;
@@ -162,7 +162,7 @@ void adios_mpi_init (const char * parameters
     adios_buffer_struct_init (&md->b);
 }
 
-int adios_mpi_open (struct adios_file_struct * fd
+int adios_mpi_stagger_open (struct adios_file_struct * fd
                    ,struct adios_method_struct * method
                    )
 {
@@ -372,7 +372,7 @@ static void set_stripe_size (struct adios_file_struct * fd
     }
 }
 
-enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
+enum ADIOS_FLAG adios_mpi_stagger_should_buffer (struct adios_file_struct * fd
                                         ,struct adios_method_struct * method
                                         ,void * comm
                                         )
@@ -852,7 +852,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
     return fd->shared_buffer;
 }
 
-void adios_mpi_write (struct adios_file_struct * fd
+void adios_mpi_stagger_write (struct adios_file_struct * fd
                      ,struct adios_var_struct * v
                      ,void * data
                      ,struct adios_method_struct * method
@@ -921,7 +921,7 @@ void adios_mpi_write (struct adios_file_struct * fd
     }
 }
 
-void adios_mpi_get_write_buffer (struct adios_file_struct * fd
+void adios_mpi_stagger_get_write_buffer (struct adios_file_struct * fd
                                 ,struct adios_var_struct * v
                                 ,uint64_t * size
                                 ,void ** buffer
@@ -981,7 +981,7 @@ void adios_mpi_get_write_buffer (struct adios_file_struct * fd
     }
 }
 
-void adios_mpi_read (struct adios_file_struct * fd
+void adios_mpi_stagger_read (struct adios_file_struct * fd
                     ,struct adios_var_struct * v, void * buffer
                     ,uint64_t buffer_size
                     ,struct adios_method_struct * method
@@ -1100,7 +1100,7 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
     adios_buffer_struct_clear (&md->b);
 }
 
-void adios_mpi_close (struct adios_file_struct * fd
+void adios_mpi_stagger_close (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
@@ -1600,21 +1600,21 @@ void adios_mpi_close (struct adios_file_struct * fd
     md->old_attrs_root = 0;
 }
 
-void adios_mpi_finalize (int mype, struct adios_method_struct * method)
+void adios_mpi_stagger_finalize (int mype, struct adios_method_struct * method)
 {
 // nothing to do here
-    if (adios_mpi_initialized)
-        adios_mpi_initialized = 0;
+    if (adios_mpi_stagger_initialized)
+        adios_mpi_stagger_initialized = 0;
 }
 
-void adios_mpi_end_iteration (struct adios_method_struct * method)
+void adios_mpi_stagger_end_iteration (struct adios_method_struct * method)
 {
 }
 
-void adios_mpi_start_calculation (struct adios_method_struct * method)
+void adios_mpi_stagger_start_calculation (struct adios_method_struct * method)
 {
 }
 
-void adios_mpi_stop_calculation (struct adios_method_struct * method)
+void adios_mpi_stagger_stop_calculation (struct adios_method_struct * method)
 {
 }
