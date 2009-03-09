@@ -1343,7 +1343,7 @@ void adios_mpi_stagger_close (struct adios_file_struct * fd
                                    );
                     if (next_rank != -1)
                     {
-                        MPI_ISend (&flag, 1, MPI_INTEGER, next_rank
+                        MPI_Isend (&flag, 1, MPI_INTEGER, next_rank
                                   ,current_rank, md->group_comm, &md->req
                                   );
                     }

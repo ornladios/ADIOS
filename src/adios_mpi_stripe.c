@@ -471,8 +471,7 @@ adios_prepare_stripe_size_write(struct adios_file_struct *fd,
 
         stripe_size = adios_mpi_get_stripe_size(filename);
         if (stripe_size > 0) {
-            if (adios_stripe_size_aligned()) 
-                    adios_mpi_set_stripe_size_aligned(fd, stripe_size);
+                adios_mpi_set_stripe_size_aligned(fd, stripe_size);
                 adios_mpi_set_write_buffer(md, stripe_size);
         }
 }
