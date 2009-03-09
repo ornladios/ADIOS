@@ -1308,11 +1308,54 @@ void adios_mpi_stagger_close (struct adios_file_struct * fd
 
             if (fd->shared_buffer == adios_flag_yes)
             {
-                // everyone writes their data
-                MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
-                MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE
-                               ,&md->status
-                               );
+                // if we have a comm and an OST count, stagger writing
+                if (md->group_comm != MPI_COMM_NULL && md->storage_targets)
+                {
+                    // ordering (4 OSTs and 10 ranks):
+                    // 0: A 1: B 2: C 3: D
+                    // 4: A 5: B 6: C 7: D
+                    // 8: A 9: B
+                    // write all As, then Bs, then Cs, then Ds.
+                    // each A will send to B, etc. to do the ordering
+                    int next_rank = md->rank + 1;
+                    int prev_rank = md->rank - 1;
+                    int current_rank = md->rank;
+                    int flag = 0;
+
+                    if (   next_rank >= md->size
+                        ||    current_rank % md->storage_targets
+                           == md->storage_targets - 1
+                       )
+                        next_rank = -1;
+                    if (current_rank % md->storage_targets == 0)
+                        prev_rank = -1;
+
+                    if (prev_rank != -1)
+                    {
+                        MPI_Recv (&flag, 1, MPI_INTEGER, prev_rank, prev_rank
+                                 ,md->group_comm, &md->status
+                                 );
+                    }
+                    //write
+                    MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
+                    MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+                                   ,MPI_BYTE, &md->status
+                                   );
+                    if (next_rank != -1)
+                    {
+                        MPI_ISend (&flag, 1, MPI_INTEGER, next_rank
+                                  ,current_rank, md->group_comm, &md->req
+                                  );
+                    }
+                }
+                else
+                {
+                    // everyone writes their data
+                    MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
+                    MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+                                   ,MPI_BYTE, &md->status
+                                   );
+                }
             }
 
             if (md->rank == 0)

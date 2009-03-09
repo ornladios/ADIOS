@@ -1308,11 +1308,73 @@ void adios_mpi_aggregate_close (struct adios_file_struct * fd
 
             if (fd->shared_buffer == adios_flag_yes)
             {
-                // everyone writes their data
-                MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
-                MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE
-                               ,&md->status
-                               );
+                // if we have a comm and an OST count, stagger writing
+                if (md->group_comm != MPI_COMM_NULL && md->storage_targets)
+                {
+                    // ordering (4 OSTs and 10 ranks):
+                    // 0: A 1: B 2: C 3: D
+                    // 4: A 5: B 6: C 7: D
+                    // 8: A 9: B
+                    // write all As, then Bs, then Cs, then Ds.
+                    // each A will send to B, etc. to do the ordering
+                    int aggregator =   md->rank
+                                     - (md->rank % md->storage_targets);
+
+                    if (aggregator == md->rank)
+                    {
+                        uint64_t size = adios_method_buffer_alloc
+                                                           (md->biggest_size);
+                        char * b = 0;
+                        if (size != md->biggest_size)
+                        {
+                            fprintf (stderr, "cannot allocate mem for aggregate"
+                                             " transfers: %lld\n"
+                                    ,size
+                                    );
+                        }
+                        else
+                        {
+                            b = malloc (size);
+                        }
+
+                        for (int i = 1; i < md->storage_targets; i++)
+                        {
+                            MPI_Recv (&b, size, MPI_BYTE
+                                     ,aggregator + i, aggregator
+                                     ,md->group_comm, &md->status
+                                     );
+                            MPI_File_seek (md->fh, fd->base_offset
+                                          ,MPI_SEEK_SET
+                                          );
+                            MPI_File_write (md->fh, b
+                                           ,size
+                                           ,MPI_BYTE, &md->status
+                                           );
+                        }
+
+                        if (b)
+                        {
+                            adios_method_buffer_free (size);
+                            free (b);
+                            b = 0;
+                        }
+                    }
+                    else
+                    {
+                        MPI_Send (&fd->buffer, fd->bytes_written, MPI_BYTE
+                                 ,aggregator, aggregator
+                                 ,md->group_comm
+                                 );
+                    }
+                }
+                else
+                {
+                    // everyone writes their data
+                    MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
+                    MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+                                   ,MPI_BYTE, &md->status
+                                   );
+                }
             }
 
             if (md->rank == 0)
