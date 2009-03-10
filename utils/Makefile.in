@@ -45,7 +45,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_gengetopt.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
 	$(top_srcdir)/config/ac_phdf5.m4 \
-	$(top_srcdir)/config/acx_mpi.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/config/acx_mpi.m4 $(top_srcdir)/config/cercs.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -61,7 +62,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = adios_lint gpp bpdump bp2ascii bp2h5 bp2ncd
+DIST_SUBDIRS = gpp bpdump bp2ascii bp2h5 bp2ncd
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -77,11 +78,14 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CSH = @CSH@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
+DATATAP_FALSE = @DATATAP_FALSE@
+DATATAP_TRUE = @DATATAP_TRUE@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 ECHO = @ECHO@
@@ -110,6 +114,8 @@ HAVE_PHDF5_TRUE = @HAVE_PHDF5_TRUE@
 HDF5_CPPFLAGS = @HDF5_CPPFLAGS@
 HDF5_LDFLAGS = @HDF5_LDFLAGS@
 HDF5_LIBS = @HDF5_LIBS@
+INFINIBAND_FALSE = @INFINIBAND_FALSE@
+INFINIBAND_TRUE = @INFINIBAND_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -137,10 +143,13 @@ PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PATHPROG = @PATHPROG@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PHDF5_CPPFLAGS = @PHDF5_CPPFLAGS@
 PHDF5_LDFLAGS = @PHDF5_LDFLAGS@
 PHDF5_LIBS = @PHDF5_LIBS@
+PTL_FALSE = @PTL_FALSE@
+PTL_TRUE = @PTL_TRUE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -190,8 +199,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = adios_lint gpp bpdump bp2ascii $(am__append_1) \
-	$(am__append_2)
+SUBDIRS = gpp bpdump bp2ascii $(am__append_1) $(am__append_2)
 all: all-recursive
 
 .SUFFIXES:

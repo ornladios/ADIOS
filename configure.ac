@@ -36,6 +36,82 @@ ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for Fortran])])
 
 AC_LANG(C)
 
+dnl give an option to the user to enable datatap (with either ib or portals)
+dnl by default datatap will be disabled
+
+datatap=disable
+AC_ARG_ENABLE(datatap, [  --enable-datatap[=TRANSPORT] 	Enable the datatap transport in ADIOS. Use value "ib" or "ptl". Default is disabled],
+	[ if test "x$enableval"	= "xib"; then
+		echo "Using IB"
+		AC_DEFINE(HAVE_INFINIBAND, 1, [Infiniband is enabled in the datatap])
+		AC_DEFINE(NO_DATATAP, 0, [Datatap is disabled])
+		CERCS_REQUIRE_PACKAGE(ibpbio, thin_ib.h, libibclient.a)
+		CERCS_REQUIRE_PACKAGE(ffs, ffs.h, libffs.a)
+		CERCS_REQUIRE_PACKAGE(gen_thread, gen_thread.h, libgen_thread.a)
+		CERCS_REQUIRE_PACKAGE(cercs_env, cercs_env.h, libcercs_env.a)
+dnl		CERCS_REQUIRE_PACKAGE(atl, alt.h, liatl.a)
+		if test -n "$cercs_cv_ibpbio_link_dir";then
+			LDFLAGS="$LDFLAGS -L$cercs_cv_ibpbio_link_dir"
+			LIBS="$LIBS -libclient"
+		fi
+		if test -n "$cercs_cv_ffs_link_dir";then
+			LDFLAGS="$LDFLAGS -L$cercs_cv_ffs_link_dir"
+			LIBS="$LIBS -lffs"
+		fi
+		if test -n "$cercs_cv_gen_thread_link_dir";then
+			LDFLAGS="$LDFLAGS -L$cercs_cv_gen_thread_link_dir"
+			LIBS="$LIBS -lgen_thread"
+		fi
+		if test -n "$cercs_cv_cercs_env_link_dir";then
+			LDFLAGS="$LDFLAGS -L$cercs_cv_cercs_env_link_dir"
+			LIBS="$LIBS -lcercs_env"
+		fi
+		datatap=ib
+	  elif test "x$enableval" = "xptl"; then
+		echo "Using portals"
+		AC_DEFINE(HAVE_PTL, 1, [Portals is enabled in the datatap])
+		AC_DEFINE(NO_DATATAP, 0, [Datatap is disabled])
+		CERCS_REQUIRE_PACKAGE(ptlpbio, thin_ptl.h, libptlclient.a)
+dnl 		CERCS_REQUIRE_PACKAGE(ffs, ffs.h, libffs.a)
+dnl 		CERCS_REQUIRE_PACKAGE(gen_thread, gen_thread.h, libgen_thread.a)
+dnl 		CERCS_REQUIRE_PACKAGE(cercs_env, cercs_env.h, libcercs_env.a)
+dnl dnl		CERCS_REQUIRE_PACKAGE(atl, alt.h, liatl.a)
+		echo "$LDFLAGS"
+		echo "$LIBS"
+		if test -n "$cercs_cv_ptlpbio_link_dir";then
+			LDFLAGS="$LDFLAGS -L$cercs_cv_ptlpbio_link_dir"
+			LIBS="$LIBS -lptlclient"
+		fi
+		echo "$LDFLAGS"
+		echo "$LIBS"
+
+dnl 		if test -n "$cercs_cv_ffs_link_dir";then
+dnl 			LDFLAGS="$LDFLAGS -L$cercs_cv_ffs_link_dir"
+dnl 			LIBS="$LIBS -lffs"
+dnl 		fi
+dnl 		if test -n "$cercs_cv_gen_thread_link_dir";then
+dnl 			LDFLAGS="$LDFLAGS -L$cercs_cv_gen_thread_link_dir"
+dnl 			LIBS="$LIBS -lgen_thread"
+dnl 		fi
+dnl 		if test -n "$cercs_cv_cercs_env_link_dir";then
+dnl 			LDFLAGS="$LDFLAGS -L$cercs_cv_cercs_env_link_dir"
+dnl 			LIBS="$LIBS -lcercs_env"
+dnl 		fi
+		datatap=ptl
+	  else 	
+		AC_DEFINE(NO_DATATAP, 1, [Datatap is disabled])
+		AC_DEFINE(HAVE_INFINIBAND, 0, [Infiniband is enabled in the datatap])
+		AC_DEFINE(HAVE_PTL, 0, [Portals is enabled in the datatap])		
+		datatap=disable
+	  fi])
+
+AC_LANG(C)
+
+AM_CONDITIONAL([PTL], [test x$datatap = xptl])
+AM_CONDITIONAL([INFINIBAND], [test x$datatap = xib])
+AM_CONDITIONAL([DATATAP], [test x$datatap != xdisable])
+
+
 dnl CC="$MPICC"
 CXX="$MPICXX"
 FC="$MPIFC"

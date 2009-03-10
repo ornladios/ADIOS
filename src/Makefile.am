@@ -22,8 +22,8 @@ libadios_a_SOURCES = adios.c \
 		     adios_internals.c \
 		     adios_socket.c \
                      adios_bp_v1.c  \
-                     adios_endianness.c
-#		     adios_datatap.c
+                     adios_endianness.c\
+		     adios_datatap.c
 #		     adios_dart.c
 if HAVE_PHDF5
 lib_LIBRARIES += libadios_phdf5.a
@@ -33,6 +33,10 @@ libadios_phdf5_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 else
 libadios_a_SOURCES += adios_phdf5.c 
 endif
+
+#if DATATAP
+#libadios_a_SOURCES += adios_datatap.c
+#endif
 
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 include_HEADERS += adios.h \

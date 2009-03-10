@@ -4412,6 +4412,8 @@ int adios_common_select_method (int priority, const char * method
             return 0;
         }
         adios_add_method_to_group (&g->methods, new_method);
+	new_method->group = g;
+	
     }
 
     adios_append_method (new_method);

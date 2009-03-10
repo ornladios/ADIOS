@@ -1,16 +1,21 @@
+#include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ffs.h>
 #include <mpi.h>
 #include "adios.h"
 #include "adios_internals.h"
 #include "adios_transport_hooks.h"
+#include <sys/stat.h>
 
 #include <sys/queue.h>
-#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+
+#ifdef NO_DATATAP
+#if NO_DATATAP == 0
+#include <ffs.h>
+#if HAVE_PTL == 1
 #include <thin_portal.h>
-#else
+#elif HAVE_INFINIBAND == 1
 #include <thin_ib.h>
 #endif
 
@@ -32,6 +37,15 @@ typedef struct nametable_
     LIST_ENTRY(nametable_) entries;
 }nametable;
 
+/*
+static inline double getlocaltime()
+{
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    double dt = tv_time_to_secs(&t);
+    return dt;
+}
+*/
 
 struct fm_structure
 {
@@ -44,6 +58,8 @@ struct fm_structure
     LIST_HEAD(tablehead, nametable_) namelist;
 };
 
+IOhandle *s = NULL;
+
 
 typedef struct datatap_method_data
 {
@@ -54,6 +70,7 @@ typedef struct datatap_method_data
     struct fm_structure *fm;
 }dmd;
 
+extern MPI_Comm adios_mpi_comm_world;
 int initialized = 0;
 
 
@@ -68,8 +85,7 @@ static char * getFixedName(char *name)
 		
     do
     {
-        int i;
-	for(i = 0; i < OPLEN; i ++)
+	for(int i = 0; i < OPLEN; i ++)
 	{
 	    //checking operator OP[i]
 	    loc = strchr(oldname, OP[i]);
@@ -108,6 +124,7 @@ static char *findFixedName(struct fm_structure *fm, char *name)
 
 extern void adios_datatap_init (const char *params, struct adios_method_struct *method)
 {
+
     if(method->method_data != NULL)
     {
 	dmd *mdata = (dmd*)method->method_data;
@@ -130,6 +147,7 @@ extern void adios_datatap_init (const char *params, struct adios_method_struct *
 	mdata->pfile = strdup("params");
 
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+
 }
 
 
@@ -212,7 +230,7 @@ extern int adios_datatap_open (struct adios_file_struct * fd,
     if(t->var_count == 0)
     {
 	fprintf(stderr, "no variables in this group - possibly an error\n");
-	return 0;
+	return  0;
 		
     }
 		
@@ -269,6 +287,13 @@ extern int adios_datatap_open (struct adios_file_struct * fd,
 		current_fm->size += sizeof(int);
 		break;
 				
+	    case adios_long:
+		field_list[fieldno].field_type = strdup("integer");
+		field_list[fieldno].field_size = sizeof(long long);
+		field_list[fieldno].field_offset = current_fm->size;
+		current_fm->size += sizeof(long long);
+		break;
+
 	    case adios_real:
 		field_list[fieldno].field_type = strdup("float");
 		field_list[fieldno].field_size = sizeof(float);
@@ -313,16 +338,20 @@ extern int adios_datatap_open (struct adios_file_struct * fd,
 	    char dims[DIMSIZE] = {0};
 #define ELSIZE 256
 	    char el[ELSIZE] ={0};
-				
+		
+	    struct adios_var_struct *var = NULL;
+	    
 				
 	    //create the dimension thingy
 	    for(; d != NULL;d = d->next)
 	    {
 		//for each dimension just take the upper_bound
-		if(d->dimension.var)
+		var = adios_find_var_by_id(fields, d->dimension.id);
+		
+		if(var)
 		{
 		    //findFixedName returns the mangled name from the original name
-		    char *name = findFixedName(current_fm, d->dimension.var->name);
+		    char *name = findFixedName(current_fm, var->name);
 		    snprintf(el,ELSIZE,"[%s]", name);
 		}
 		else //its a number
@@ -346,6 +375,16 @@ extern int adios_datatap_open (struct adios_file_struct * fd,
 		field_list[fieldno].field_offset = current_fm->size;
 		current_fm->size += sizeof(int*);
 		break;
+
+	    case adios_long:
+		field_list[fieldno].field_type = (char*)malloc(sizeof(char)*255);
+		snprintf((char*)field_list[fieldno].field_type, 255,
+			 "integer%s", dims);
+		field_list[fieldno].field_size = sizeof(long long);
+		field_list[fieldno].field_offset = current_fm->size;
+		current_fm->size += sizeof(int*);
+		break;
+
 				
 	    case adios_real:
 		field_list[fieldno].field_type = (char*)malloc(sizeof(char)*255);
@@ -402,11 +441,16 @@ extern int adios_datatap_open (struct adios_file_struct * fd,
     current_fm->buffer = (unsigned char*)malloc(current_fm->size);
     memset(current_fm->buffer, 0, current_fm->size);
 
-#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
-    current_fm->s = InitIOFromFile("param");
+
+//    current_fm->s = s;
+
+#if HAVE_PTL == 1
+//defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+//fprintf(stderr, "im here rank = %d %s %d\n", rank, __FILE__, __LINE__);
+    current_fm->s = InitIOFromFile("param", rank);
     current_fm->s->rank = rank;
     current_fm->ioformat = register_data(current_fm->s, current_fm->format);
-#else
+#elif HAVE_INFINIBAND == 1
     current_fm->s = EVthin_ib_InitIOFile("param", 1);
     current_fm->ioformat = EVthin_ib_registerData(current_fm->s, current_fm->format);
 #endif
@@ -414,16 +458,9 @@ extern int adios_datatap_open (struct adios_file_struct * fd,
     current_fm->snd_count = 0;
 
     mdata->fm = current_fm;
-    
-    return 1;
-}
 
-enum ADIOS_FLAG adios_datatap_should_buffer (struct adios_file_struct * fd
-                                            ,struct adios_method_struct * method
-                                            ,void * comm
-                                            )
-{
-    return adios_flag_no;   // we'll buffer internally
+    return 1;
+    
 }
 
 static FMField* internal_find_field(char *name, FMFieldList flist)
@@ -519,7 +556,7 @@ extern void adios_datatap_close(struct adios_file_struct *fd,
     }
 	
 
-    if(fd->mode == adios_mode_write || fd->mode == adios_mode_append)
+    if(fd->mode & adios_mode_write)
     {
 	internal_adios_datatap_write(fd, method);
     }
@@ -559,24 +596,32 @@ void internal_adios_datatap_write (struct adios_file_struct * fd, struct adios_m
 	
     }
     
-#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+//#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+#if HAVE_PTL == 1
     if(fm->snd_count > 0)
     {
+	if(rank == 0)
+	    fprintf(stderr, "Ending send\n");
 	send_end(fm->s);
+	fm->snd_count --;
+	
     }
-#else
+#elif HAVE_INFINIBAND == 1
     if(fm->snd_count > 0)
     {
 	EVthin_ib_endSend(fm->s);
+	fm->snd_count --;
+
     }
 #endif
     
 
     //now that we have all the info lets call write on each of these data types
-#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
-    start_send(fm->s, fm->buffer, fm->size, fm->ioformat);
+//#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+#if HAVE_PTL == 1
+    start_send(fm->s, fm->buffer, fm->size, fm->ioformat, NULL);
 
-#else
+#elif HAVE_INFINIBAND == 1
     EVthin_ib_startSend(fm->s, fm->buffer, fm->size, fm->ioformat);
 #endif
 
@@ -611,25 +656,31 @@ extern void adios_datatap_finalize (int mype, struct adios_method_struct *method
 		
     if(t == NULL || fm == NULL)
     {
-	fprintf(stderr, "improperly initialized for finalize\n");
+	fprintf(stderr, "improperly initialized for finalize %p %p\n", t, fm);
 	
 	return;
 	
     }
     
-#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+    
+    
+#if HAVE_PTL == 1
     if(fm->snd_count > 0)
     {
 	send_end(fm->s);
     }
-#else
+#elif HAVE_INFINIBAND == 1
     if(fm->snd_count > 0)
     {
 	EVthin_ib_endSend(fm->s);
     }
 #endif
-    
-    fprintf(stderr, "finializing adios\n");
+
+    char buffer[255];
+    mkdir("client", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    snprintf(buffer, 255, "client/client-%d", fm->s->rank);
+
+    outputTimingInfo(buffer);
 }
 
 
@@ -643,9 +694,9 @@ extern void adios_datatap_end_iteration (struct adios_method_struct *method)
 	return;
     
 	
-#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+#if HAVE_PTL == 1
     startIter(fm->s);
-#else
+#elif HAVE_INFINIBAND == 1
     EVthin_ib_startIter(fm->s);
 #endif
 	
@@ -663,9 +714,9 @@ extern void adios_datatap_start_calculation (struct adios_method_struct *method)
 	return;
  
 
-#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+#if HAVE_PTL == 1
     startCompute(fm->s, mdata->cycle_id);
-#else
+#elif HAVE_INFINIBAND == 1
     EVthin_ib_startCompute(fm->s, mdata->cycle_id);	
 #endif
 	
@@ -682,9 +733,9 @@ extern void adios_datatap_stop_calculation (struct adios_method_struct * method)
 	return;
  
 	
-#if defined(__CRAYXT_COMPUTE_LINUX_TARGET)
+#if HAVE_PTL == 1
     endCompute(fm->s, mdata->cycle_id);
-#else
+#elif HAVE_INFINIBAND == 1
     EVthin_ib_endCompute(fm->s, mdata->cycle_id);
 #endif
 
@@ -705,9 +756,200 @@ extern void adios_datatap_get_write_buffer (struct adios_file_struct * fd,
 void adios_datatap_read (struct adios_file_struct * fd,
 			 struct adios_var_struct * f,
 			 void * buffer,
-                         uint64_t buffer_size,
+			 uint64_t buffer_size,
 			 struct adios_method_struct *method)
 {
 
 }
 
+extern enum ADIOS_FLAG adios_datatap_should_buffer(struct adios_file_struct * fd, 
+					struct adios_method_struct * method, void * comm) 
+{
+    return adios_flag_no;
+}					\
+
+#else
+
+
+void adios_datatap_init (const char * parameters  
+                      ,struct adios_method_struct * method  
+                      ) {}  
+int adios_datatap_open (struct adios_file_struct * fd  
+                     ,struct adios_method_struct * method  
+                     ) {return 0;}  
+enum ADIOS_FLAG adios_datatap_should_buffer (struct adios_file_struct * fd  
+                                          ,struct adios_method_struct * method  
+                                          ,void * comm  
+                                          ) {return 0;}  
+void adios_datatap_write (struct adios_file_struct * fd  
+                       ,struct adios_var_struct * v  
+                       ,void * data  
+                       ,struct adios_method_struct * method  
+                       ) {}  
+void adios_datatap_get_write_buffer (struct adios_file_struct * fd  
+                                  ,struct adios_var_struct * v  
+                                  ,uint64_t * size  
+                                  ,void ** buffer  
+                                  ,struct adios_method_struct * method  
+                                  ) {}  
+void adios_datatap_read (struct adios_file_struct * fd  
+                      ,struct adios_var_struct * v  
+                      ,void * buffer  
+                      ,uint64_t buffer_size  
+                      ,struct adios_method_struct * method  
+                      ) {}  
+void adios_datatap_close (struct adios_file_struct * fd  
+                       ,struct adios_method_struct * method  
+                       ) {}  
+void adios_datatap_finalize (int mype, struct adios_method_struct * method) {}  
+void adios_datatap_end_iteration (struct adios_method_struct * method) {}  
+void adios_datatap_start_calculation (struct adios_method_struct * method) {}  
+void adios_datatap_stop_calculation (struct adios_method_struct * method) {}
+
+#endif
+#else
+
+
+void adios_datatap_init (const char * parameters  
+                      ,struct adios_method_struct * method  
+                      ) {}  
+int adios_datatap_open (struct adios_file_struct * fd  
+                     ,struct adios_method_struct * method  
+                     ) {return 0;}  
+enum ADIOS_FLAG adios_datatap_should_buffer (struct adios_file_struct * fd  
+                                          ,struct adios_method_struct * method  
+                                          ,void * comm  
+                                          ) {return 0;}  
+void adios_datatap_write (struct adios_file_struct * fd  
+                       ,struct adios_var_struct * v  
+                       ,void * data  
+                       ,struct adios_method_struct * method  
+                       ) {}  
+void adios_datatap_get_write_buffer (struct adios_file_struct * fd  
+                                  ,struct adios_var_struct * v  
+                                  ,uint64_t * size  
+                                  ,void ** buffer  
+                                  ,struct adios_method_struct * method  
+                                  ) {}  
+void adios_datatap_read (struct adios_file_struct * fd  
+                      ,struct adios_var_struct * v  
+                      ,void * buffer  
+                      ,uint64_t buffer_size  
+                      ,struct adios_method_struct * method  
+                      ) {}  
+void adios_datatap_close (struct adios_file_struct * fd  
+                       ,struct adios_method_struct * method  
+                       ) {}  
+void adios_datatap_finalize (int mype, struct adios_method_struct * method) {}  
+void adios_datatap_end_iteration (struct adios_method_struct * method) {}  
+void adios_datatap_start_calculation (struct adios_method_struct * method) {}  
+void adios_datatap_stop_calculation (struct adios_method_struct * method) {}
+
+#endif 
+
+extern void adios_empty_init (const char * parameters  
+                      ,struct adios_method_struct * method  
+                      ) {}  
+extern void adios_empty_open (struct adios_file_struct * fd  
+                      ,struct adios_method_struct * method  
+                      ) {}  
+extern void adios_empty_write (struct adios_file_struct * fd  
+                       ,struct adios_var_struct * v  
+                       ,void * data  
+                       ,struct adios_method_struct * method  
+                       ) {}  
+extern void adios_empty_get_write_buffer (struct adios_file_struct * fd  
+                                  ,struct adios_var_struct * v  
+                                  ,unsigned long long * size  
+                                  ,void ** buffer  
+                                  ,struct adios_method_struct * method  
+                                  ) {}  
+extern void adios_empty_read (struct adios_file_struct * fd  
+                      ,struct adios_var_struct * v  
+                      ,void * buffer  
+                      ,struct adios_method_struct * method  
+                      ) {}  
+extern void adios_empty_close (struct adios_file_struct * fd  
+                       ,struct adios_method_struct * method  
+                       ) {}  
+extern void adios_empty_finalize (int mype, struct adios_method_struct * method) {}  
+extern void adios_empty_end_iteration (struct adios_method_struct * method) {}  
+extern void adios_empty_start_calculation (struct adios_method_struct * method) {}  
+extern void adios_empty_stop_calculation (struct adios_method_struct * method) {}
+
+
+
+
+FILE *prof_fp;
+struct timeval prof_tm;
+
+/* This should be called only after adios_init */
+void prof_init_()
+{
+    int my_rank = 0, mysize= 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mysize);
+
+    #include <stdlib.h>
+    
+    srand(my_rank);
+    srand48(my_rank);
+
+    int tenpercent = (0.01 *(double)mysize);
+
+    int rand1 = lrand48() % tenpercent;
+    
+    int rand2 = lrand48()% mysize;
+    
+    
+    if (rand2 > rand1 && my_rank != 0)
+    {
+	prof_fp = NULL;
+	return;
+    }
+
+    char prof_file[128];
+    sprintf(prof_file,"profile/prof.%d", my_rank);
+    prof_fp = fopen(prof_file, "w");
+    if(!prof_fp){
+	fprintf(stderr, "Unable to open profiling file: %s\n", prof_file);
+	prof_fp = stdout;
+    }
+    else {
+	fseek(prof_fp, 0, SEEK_END);
+    }
+	
+}
+
+void prof_finish_()
+{
+    if(prof_fp == NULL)
+	return;
+    
+    if(fclose(prof_fp)){
+	fprintf(stderr, "Unable to close profiling file\n");		
+    }
+	
+}
+
+const char *prof_type[3] = {"COMP", "COMM", "IO"};
+
+/* Assuming null terminated strings as of now! */
+void prof_evt_start_(const char *event, int *type)
+{
+    if(prof_fp == NULL)
+	return;
+    gettimeofday(&prof_tm, 0);
+    fprintf(prof_fp, "%s:S \t%.0f \t%s\n", event,
+	    prof_tm.tv_sec * 1e6 + prof_tm.tv_usec,
+	    prof_type[*type]);
+}
+
+void prof_evt_end_(const char *event)
+{
+    if(prof_fp == NULL)
+	return;
+    gettimeofday(&prof_tm, 0);
+    fprintf(prof_fp, "%s:E \t%.0f\n", event, 
+	    prof_tm.tv_sec * 1e6 + prof_tm.tv_usec);
+}

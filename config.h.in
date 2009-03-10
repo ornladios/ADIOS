@@ -15,6 +15,9 @@
 /* Define to 1 if you have the <hdf5.h> header file. */
 #undef HAVE_HDF5_H
 
+/* Infiniband is enabled in the datatap */
+#undef HAVE_INFINIBAND
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -39,6 +42,9 @@
 /* Define if you have PHDF5. */
 #undef HAVE_PHDF5
 
+/* Portals is enabled in the datatap */
+#undef HAVE_PTL
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -62,6 +68,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Datatap is disabled */
+#undef NO_DATATAP
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O

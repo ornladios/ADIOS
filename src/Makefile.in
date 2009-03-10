@@ -37,7 +37,6 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-#		     adios_datatap.c
 #		     adios_dart.c
 @HAVE_PHDF5_TRUE@am__append_1 = libadios_phdf5.a
 @HAVE_PHDF5_TRUE@am__append_2 = -DPHDF5 -DH5_USE_16_API 
@@ -51,7 +50,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_gengetopt.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
 	$(top_srcdir)/config/ac_phdf5.m4 \
-	$(top_srcdir)/config/acx_mpi.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/config/acx_mpi.m4 $(top_srcdir)/config/cercs.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -74,7 +74,7 @@ am__libadios_a_SOURCES_DIST = adios.c adios_transport_hooks.c \
 	adios_mpi_stagger.c adios_mpi_aggregate.c adios_posix.c \
 	adios_posix_ascii.c adios_vtk.c adios_provenance.c \
 	adios_internals.c adios_socket.c adios_bp_v1.c \
-	adios_endianness.c adios_phdf5.c
+	adios_endianness.c adios_datatap.c adios_phdf5.c
 @HAVE_PHDF5_FALSE@am__objects_1 = libadios_a-adios_phdf5.$(OBJEXT)
 am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
 	libadios_a-adios_transport_hooks.$(OBJEXT) \
@@ -91,7 +91,8 @@ am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
 	libadios_a-adios_internals.$(OBJEXT) \
 	libadios_a-adios_socket.$(OBJEXT) \
 	libadios_a-adios_bp_v1.$(OBJEXT) \
-	libadios_a-adios_endianness.$(OBJEXT) $(am__objects_1)
+	libadios_a-adios_endianness.$(OBJEXT) \
+	libadios_a-adios_datatap.$(OBJEXT) $(am__objects_1)
 libadios_a_OBJECTS = $(am_libadios_a_OBJECTS)
 libadios_int_a_AR = $(AR) $(ARFLAGS)
 libadios_int_a_LIBADD =
@@ -140,11 +141,14 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
+CSH = @CSH@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
+DATATAP_FALSE = @DATATAP_FALSE@
+DATATAP_TRUE = @DATATAP_TRUE@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 ECHO = @ECHO@
@@ -173,6 +177,8 @@ HAVE_PHDF5_TRUE = @HAVE_PHDF5_TRUE@
 HDF5_CPPFLAGS = @HDF5_CPPFLAGS@
 HDF5_LDFLAGS = @HDF5_LDFLAGS@
 HDF5_LIBS = @HDF5_LIBS@
+INFINIBAND_FALSE = @INFINIBAND_FALSE@
+INFINIBAND_TRUE = @INFINIBAND_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -200,10 +206,13 @@ PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PATHPROG = @PATHPROG@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PHDF5_CPPFLAGS = @PHDF5_CPPFLAGS@ $(am__append_2)
 PHDF5_LDFLAGS = @PHDF5_LDFLAGS@
 PHDF5_LIBS = @PHDF5_LIBS@
+PTL_FALSE = @PTL_FALSE@
+PTL_TRUE = @PTL_TRUE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -265,9 +274,13 @@ libadios_a_SOURCES = adios.c adios_transport_hooks.c adios_mpi.c \
 	adios_mpi_stagger.c adios_mpi_aggregate.c adios_posix.c \
 	adios_posix_ascii.c adios_vtk.c adios_provenance.c \
 	adios_internals.c adios_socket.c adios_bp_v1.c \
-	adios_endianness.c $(am__append_3)
+	adios_endianness.c adios_datatap.c $(am__append_3)
 @HAVE_PHDF5_TRUE@libadios_phdf5_a_SOURCES = adios_phdf5.c
 @HAVE_PHDF5_TRUE@libadios_phdf5_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
+
+#if DATATAP
+#libadios_a_SOURCES += adios_datatap.c
+#endif
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 libadios_int_a_SOURCES = adios_internals.c \
                         adios_transport_hooks_dummy.c \
@@ -460,6 +473,12 @@ libadios_a-adios_endianness.o: adios_endianness.c
 
 libadios_a-adios_endianness.obj: adios_endianness.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_endianness.obj `if test -f 'adios_endianness.c'; then $(CYGPATH_W) 'adios_endianness.c'; else $(CYGPATH_W) '$(srcdir)/adios_endianness.c'; fi`
+
+libadios_a-adios_datatap.o: adios_datatap.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_datatap.o `test -f 'adios_datatap.c' || echo '$(srcdir)/'`adios_datatap.c
+
+libadios_a-adios_datatap.obj: adios_datatap.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_datatap.obj `if test -f 'adios_datatap.c'; then $(CYGPATH_W) 'adios_datatap.c'; else $(CYGPATH_W) '$(srcdir)/adios_datatap.c'; fi`
 
 libadios_a-adios_phdf5.o: adios_phdf5.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_phdf5.o `test -f 'adios_phdf5.c' || echo '$(srcdir)/'`adios_phdf5.c
