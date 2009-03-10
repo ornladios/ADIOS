@@ -65,9 +65,15 @@ int main (int argc, char ** argv)
 	MPI_Comm_size (comm, &pe_size);
 
 	bp_fopen (&fh, filename, comm);
-
+	// fh = file handle, filename = name of file, comm is the 
+	// communicator for the processors which will read in the data.
+	// in this call, the header is actually being read, and this is done by proc 0, and
+	// then it is broadcast to all of the processors.
 	bp_inq_file (fh, &ngroup, &nvar, &nattr, &ntstep, 0);
-
+	// this API gets the number of groups, variables, timesteps, and attributes from
+	// the file
+	// all parameters are integers, besides the last parameter, which is an array of 
+	// strings
 	if (rank == 0) {
                 printf(DIVIDER);
                 printf("bp_inq():\n"); 
@@ -83,7 +89,8 @@ int main (int argc, char ** argv)
 	alloc_namelist (&gnamelist, ngroup);
 
 	bp_inq_file (fh, &ngroup, &nvar, &nattr, &ntstep, gnamelist);
-
+	// if the last parameter is not zero, then this routine will return the list of 
+	// group names into gnamelist (the last parameter)
 	if (rank == 0) {
 		printf(SUBDIVIDER);
 		printf("%d groups in the group!\n", ngroup);
@@ -91,9 +98,15 @@ int main (int argc, char ** argv)
 	}
 
 	bp_gopen (fh, &gh, gnamelist[0]);
+	// this opens up the specific group, given by the name (last parameter).
+	// returns the second parameter.
 	bp_inq_group (gh, &nvar, 0);
+	// this gets the number of variables inside the group
+	// if we give the last parameter as an array of strings, then we can return this
+	// which is the name of variables in the group.
 	alloc_namelist (&vnamelist, nvar);
 	bp_inq_group (gh, &nvar, vnamelist);
+	// this rotuine is now returning the name of the variables.
 
 	if (rank == 0) {
 		printf(SUBDIVIDER);
@@ -104,7 +117,8 @@ int main (int argc, char ** argv)
 	int type, ndim;
 
 	bp_inq_var (gh, vnamelist[nvar-1], &type, &ndim, dims);
-
+	// nowe we are getting the type, the number of dimensions, and the dimensions
+	// dims is stored as the ordering of how it was written.
 	int start[3], size[3];
 	//printf("dim: %d %d %d\n", dims[0],dims[1],dims[2]);
 	start[0] = 0, start[1] = 0, start[2] = (dims[2]/pe_size)*rank;
@@ -118,6 +132,12 @@ int main (int argc, char ** argv)
 	for (i=0;i<100;i++) {
 		bp_get_var (gh, "varible_4", var, start, size, i+1);
 		MPI_Barrier(comm);
+		// parameters... gh is the group handle, where the variable lives.
+		// variable name = second parameter
+		// var = buffer to store the data.
+		// start = offsets in the global space
+		// size = size of chunk/slab to read (local dimension)
+		// last parameter (i+1) is the timestep; this always starts from 1.
 	}
 	MPI_Barrier (comm);
 	readtime=MPI_Wtime ()-starttime;
