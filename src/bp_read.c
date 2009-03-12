@@ -237,22 +237,27 @@ void bp_inq_var (int64_t gh_p, char * varname,
 			for (k=0;k<(*ndim);k++) {
 				gdims[k]=var_root->characteristics[0].dims.dims[k*3+1];
 				ldims[k]=var_root->characteristics[0].dims.dims[k*3];
-				if (!dims) {
-				}
 			}
 			int is_global=0;
 			for (k=0;i<(*ndim);i++) {
 			 	is_global = is_global || gdims[k];
 			}
 			if (!is_global) {
-				for (k=0;i<(*ndim);i++) {
+				for (k=0;k<(*ndim);k++) {
 					if (   ldims[k] == 1 
-				  	    && var_root->characteristics_count > 1)
+				  	    && var_root->characteristics_count > 1) {
+						*is_timebased = 1;
 						time_flag = k;
-					if (time_flag==0 && k>0)
-						dims[k-1]=ldims[k];
-					else
-						dims[k]=ldims[k];
+					}
+					if (dims) {
+						if (time_flag==0) {
+							if (k>0)
+								dims[k-1]=ldims[k];
+						}
+						else { 
+							dims[k]=ldims[k];
+						}
+					}
 				}		 
 			}		 
 			else {
@@ -261,16 +266,20 @@ void bp_inq_var (int64_t gh_p, char * varname,
 						time_flag = k;
 						*is_timebased = 1;
 					}
-					if (time_flag==0 && k>0)
-						dims[k-1]=gdims[k];
-					else
-						dims[k]=gdims[k];
+					if (dims) {
+						if (time_flag==0) {
+							if (k>0)
+								dims[k-1]=gdims[k];
+						}
+						else
+							dims[k]=gdims[k];
+					}
 				}
 			}
 					
 			free(gdims);
 			free(ldims);
-			if (time_flag > -1)
+			if ((*is_timebased))
 				*ndim = *ndim - 1;
 			
 			break;
