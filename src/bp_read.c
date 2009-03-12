@@ -138,8 +138,8 @@ void bp_fclose ( int64_t fh_p)
 	return;
 }
 
-void bp_gopen ( int64_t fh_p,
-		int64_t * gh_p, 
+void bp_gopen ( int64_t * gh_p,
+		int64_t fh_p, 
 		char * grpname)
 {
 	struct BP_FILE * fh = (struct BP_FILE *) fh_p;
@@ -226,27 +226,50 @@ void bp_inq_var (int64_t gh_p, char * varname,
 			*type = var_root->type;
 			*is_timebased = 0;
 			*ndim = var_root->characteristics [0].dims.count;
-//			printf ("\tDatatype: %s\n",\ 
-//					adios_type_to_string (var_root->type));
-//			printf("\tndim:%d\n",*ndim);
-			if (!dims || !ndim)
+			if (!dims || !(*ndim))
 				return;
-			uint64_t * gdims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
 			int time_flag = -1;
-			memset(dims,0,sizeof(int)*(*ndim)); 
-			//for (j=0;j<var_root->characteristics_count;j++) 
-			for (k=0;k<var_root->characteristics [0].dims.count;k++) {
+			uint64_t * gdims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
+			uint64_t * ldims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
+			printf("dims\n");
+			memset(dims,0,sizeof(int)*(*ndim));
+			//for (j=0;j<var_root->characteristics_count;j++)  
+			for (k=0;k<(*ndim);k++) {
 				gdims[k]=var_root->characteristics[0].dims.dims[k*3+1];
-				if (gdims[k]==0)
-					time_flag = k;
+				ldims[k]=var_root->characteristics[0].dims.dims[k*3];
 				if (!dims) {
+				}
+			}
+			int is_global=0;
+			for (k=0;i<(*ndim);i++) {
+			 	is_global = is_global || gdims[k];
+			}
+			if (!is_global) {
+				for (k=0;i<(*ndim);i++) {
+					if (   ldims[k] == 1 
+				  	    && var_root->characteristics_count > 1)
+						time_flag = k;
+					if (time_flag==0 && k>0)
+						dims[k-1]=ldims[k];
+					else
+						dims[k]=ldims[k];
+				}		 
+			}		 
+			else {
+				for (k=0;i<(*ndim);i++) {
+					if (gdims[k]==0) {
+						time_flag = k;
+						*is_timebased = 1;
+					}
 					if (time_flag==0 && k>0)
 						dims[k-1]=gdims[k];
 					else
 						dims[k]=gdims[k];
 				}
 			}
+					
 			free(gdims);
+			free(ldims);
 			if (time_flag > -1)
 				*ndim = *ndim - 1;
 			
@@ -255,7 +278,6 @@ void bp_inq_var (int64_t gh_p, char * varname,
 		else
 			var_root = var_root->next;
 	}
-	*is_timebased = 1;
 	return;
 }
 
