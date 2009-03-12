@@ -107,6 +107,12 @@ am__libadios_phdf5_a_SOURCES_DIST = adios_phdf5.c
 @HAVE_PHDF5_TRUE@am_libadios_phdf5_a_OBJECTS =  \
 @HAVE_PHDF5_TRUE@	libadios_phdf5_a-adios_phdf5.$(OBJEXT)
 libadios_phdf5_a_OBJECTS = $(am_libadios_phdf5_a_OBJECTS)
+libbpread_a_AR = $(AR) $(ARFLAGS)
+libbpread_a_LIBADD =
+am_libbpread_a_OBJECTS = adios_bp_v1.$(OBJEXT) \
+	adios_endianness.$(OBJEXT) bp_utils.$(OBJEXT) \
+	bp_apis.$(OBJEXT)
+libbpread_a_OBJECTS = $(am_libbpread_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -119,9 +125,10 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libadios_a_SOURCES) $(libadios_int_a_SOURCES) \
-	$(libadios_phdf5_a_SOURCES)
+	$(libadios_phdf5_a_SOURCES) $(libbpread_a_SOURCES)
 DIST_SOURCES = $(am__libadios_a_SOURCES_DIST) \
-	$(libadios_int_a_SOURCES) $(am__libadios_phdf5_a_SOURCES_DIST)
+	$(libadios_int_a_SOURCES) $(am__libadios_phdf5_a_SOURCES_DIST) \
+	$(libbpread_a_SOURCES)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -265,10 +272,13 @@ target_alias = @target_alias@
 INCLUDES = -I$(top_srcdir) 
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES = AUTO
-#libadios_int_a_LIBADD = $(MXML_LIBS)
+#		      adios_internals.c \
+#libbpread_a_CPPFLAGS = $(MXML_CPPFLAGS)
+#libbpread_a_LIBADD = 
 include_HEADERS = adios.h adios_types.h adios_internals.h \
-	adios_transport_hooks.h
-lib_LIBRARIES = libadios.a $(am__append_1) libadios_int.a
+	adios_transport_hooks.h bp_apis.h
+#libadios_int_a_LIBADD = $(MXML_LIBS)
+lib_LIBRARIES = libadios.a $(am__append_1) libadios_int.a libbpread.a
 libadios_a_SOURCES = adios.c adios_transport_hooks.c adios_mpi.c \
 	adios_mpi_stripe.c adios_mpi_cio.c adios_mpi_nwu.c \
 	adios_mpi_stagger.c adios_mpi_aggregate.c adios_posix.c \
@@ -288,6 +298,11 @@ libadios_int_a_SOURCES = adios_internals.c \
                         adios_endianness.c 
 
 libadios_int_a_CPPFLAGS = $(MXML_CPPFLAGS)
+libbpread_a_SOURCES = adios_bp_v1.c \
+		      adios_endianness.c \
+		      bp_utils.c \
+		      bp_apis.c
+
 all: all-am
 
 .SUFFIXES:
@@ -362,6 +377,10 @@ libadios_phdf5.a: $(libadios_phdf5_a_OBJECTS) $(libadios_phdf5_a_DEPENDENCIES)
 	-rm -f libadios_phdf5.a
 	$(libadios_phdf5_a_AR) libadios_phdf5.a $(libadios_phdf5_a_OBJECTS) $(libadios_phdf5_a_LIBADD)
 	$(RANLIB) libadios_phdf5.a
+libbpread.a: $(libbpread_a_OBJECTS) $(libbpread_a_DEPENDENCIES) 
+	-rm -f libbpread.a
+	$(libbpread_a_AR) libbpread.a $(libbpread_a_OBJECTS) $(libbpread_a_LIBADD)
+	$(RANLIB) libbpread.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

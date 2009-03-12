@@ -76,7 +76,7 @@ void swap_adios_type(void *data, enum ADIOS_DATATYPES type)
         return;
 	}
 	else {
-		uint64_t size = adios_get_type_size (type, "");
+		uint64_t size = bp_get_type_size (type, "");
 
 		switch (size)
 		{
@@ -105,7 +105,7 @@ void swap_adios_type(void *data, enum ADIOS_DATATYPES type)
 
 void swap_adios_type_array(void *data, enum ADIOS_DATATYPES type, uint64_t payload_size)
 {
-    uint64_t size = adios_get_type_size (type, "");
+    uint64_t size = bp_get_type_size (type, "");
     uint64_t num_elements = payload_size / size;
 
     uint64_t i = 0;
