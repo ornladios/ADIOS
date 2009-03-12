@@ -372,7 +372,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
         flag = *(b->buff + b->offset);
         (*root)->type = (enum ADIOS_DATATYPES) flag;
         b->offset += 1;
-        type_size = bp_get_type_size ((*root)->type, "");
+        type_size = adios_get_type_size ((*root)->type, "");
 
         characteristics_sets_count = *(uint64_t *) (b->buff + b->offset);
         if(b->change_endianness == adios_flag_yes) {
@@ -433,7 +433,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                         }
                         else
                         {
-                            data_size = bp_get_type_size ((*root)->type, "");
+                            data_size = adios_get_type_size ((*root)->type, "");
                         }
 
                         switch ((*root)->type)
@@ -536,7 +536,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                     case adios_characteristic_offset:
                     {
-                        uint64_t size = bp_get_type_size ((*root)->type, "");
+                        uint64_t size = adios_get_type_size ((*root)->type, "");
                         (*root)->characteristics [j].offset =
                                             *(uint64_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
@@ -682,7 +682,7 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
         flag = *(b->buff + b->offset);
         (*root)->type = (enum ADIOS_DATATYPES) flag;
         b->offset += 1;
-        type_size = bp_get_type_size ((*root)->type, "");
+        type_size = adios_get_type_size ((*root)->type, "");
 
         characteristics_sets_count = *(uint64_t *) (b->buff + b->offset);
         if(b->change_endianness == adios_flag_yes) { 
@@ -741,7 +741,7 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                         }
                         else
                         {
-                            data_size = bp_get_type_size ((*root)->type, "");
+                            data_size = adios_get_type_size ((*root)->type, "");
                         }
 
                         data = malloc (data_size + 1);
@@ -821,7 +821,7 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                     case adios_characteristic_offset:
                     {
-                        uint64_t size = bp_get_type_size ((*root)->type, "");
+                        uint64_t size = adios_get_type_size ((*root)->type, "");
                         (*root)->characteristics [j].offset =
                                             *(uint64_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) { 
@@ -1180,7 +1180,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
     }
     b->offset += 4;
 
-    uint64_t size = bp_get_type_size (var_header->type, "");
+    uint64_t size = adios_get_type_size (var_header->type, "");
 
     var_header->characteristics.offset = 0;
     var_header->characteristics.min = 0;
@@ -1402,7 +1402,7 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
         return 1;
     }
 
-    uint64_t size = bp_get_type_size (var_header->type, "");
+    uint64_t size = adios_get_type_size (var_header->type, "");
 
     if (var_payload)
     {
@@ -1580,7 +1580,7 @@ int adios_clear_attribute_v1 (struct adios_attribute_struct_v1 * attribute)
 void * adios_dupe_data_scalar (enum ADIOS_DATATYPES type, void * in)
 {
     void * out;
-    int element_size = bp_get_type_size (type, in);
+    int element_size = adios_get_type_size (type, in);
 
     void * d;
 
@@ -1832,3 +1832,50 @@ void adios_posix_close_internal (struct adios_bp_buffer_struct_v1 * b)
     b->f = -1;
     adios_buffer_struct_clear (b);
 }
+
+uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var)
+{
+    switch (type)
+    {
+        case adios_byte:
+        case adios_unsigned_byte:
+            return 1;
+
+        case adios_string:
+            if (!var)
+                return 0;
+            else
+                return strlen ((char *) var);
+
+        case adios_short:
+        case adios_unsigned_short:
+            return 2;
+
+        case adios_integer:
+        case adios_unsigned_integer:
+            return 4;
+
+        case adios_long:
+        case adios_unsigned_long:
+            return 8;
+
+        case adios_real:
+            return 4;
+
+        case adios_double:
+            return 8;
+
+        case adios_long_double:
+            return 16;
+
+        case adios_complex:
+            return 2 * 4;
+
+        case adios_double_complex:
+            return 2 * 8;
+
+        default:
+            return -1;
+    }
+}
+
