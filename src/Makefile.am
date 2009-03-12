@@ -53,11 +53,11 @@ lib_LIBRARIES += libbpread.a
 libbpread_a_SOURCES = adios_bp_v1.c \
 		      adios_endianness.c \
 		      bp_utils.c \
-		      bp_apis.c
+		      bp_read.c
 #		      adios_internals.c \
 libbpread_a_CPPFLAGS = $(MXML_CPPFLAGS)
 #libbpread_a_LIBADD = 
 include_HEADERS += adios_internals.h \
                    adios_transport_hooks.h
-include_HEADERS += bp_apis.h
+include_HEADERS += bp_read.h
 CC=$(MPICC)

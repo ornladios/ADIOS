@@ -111,7 +111,7 @@ libbpread_a_AR = $(AR) $(ARFLAGS)
 libbpread_a_LIBADD =
 am_libbpread_a_OBJECTS = adios_bp_v1.$(OBJEXT) \
 	adios_endianness.$(OBJEXT) bp_utils.$(OBJEXT) \
-	bp_apis.$(OBJEXT)
+	bp_read.$(OBJEXT)
 libbpread_a_OBJECTS = $(am_libbpread_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
@@ -221,6 +221,7 @@ PHDF5_LIBS = @PHDF5_LIBS@
 PTL_FALSE = @PTL_FALSE@
 PTL_TRUE = @PTL_TRUE@
 RANLIB = @RANLIB@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -276,7 +277,7 @@ METASOURCES = AUTO
 #libbpread_a_CPPFLAGS = $(MXML_CPPFLAGS)
 #libbpread_a_LIBADD = 
 include_HEADERS = adios.h adios_types.h adios_internals.h \
-	adios_transport_hooks.h bp_apis.h
+	adios_transport_hooks.h bp_read.h
 #libadios_int_a_LIBADD = $(MXML_LIBS)
 lib_LIBRARIES = libadios.a $(am__append_1) libadios_int.a libbpread.a
 libadios_a_SOURCES = adios.c adios_transport_hooks.c adios_mpi.c \
@@ -301,7 +302,7 @@ libadios_int_a_CPPFLAGS = $(MXML_CPPFLAGS)
 libbpread_a_SOURCES = adios_bp_v1.c \
 		      adios_endianness.c \
 		      bp_utils.c \
-		      bp_apis.c
+		      bp_read.c
 
 all: all-am
 
