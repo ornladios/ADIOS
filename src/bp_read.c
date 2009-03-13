@@ -231,7 +231,6 @@ void bp_inq_var (int64_t gh_p, char * varname,
 			int time_flag = -1;
 			uint64_t * gdims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
 			uint64_t * ldims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
-			printf("dims\n");
 			memset(dims,0,sizeof(int)*(*ndim));
 			//for (j=0;j<var_root->characteristics_count;j++)  
 			for (k=0;k<(*ndim);k++) {
@@ -243,36 +242,36 @@ void bp_inq_var (int64_t gh_p, char * varname,
 			 	is_global = is_global || gdims[k];
 			}
 			if (!is_global) {
-				for (k=0;k<(*ndim);k++) {
-					if (   ldims[k] == 1 
+				for (i=0;i<(*ndim);i++) {
+					if (   ldims[i] == 1 
 				  	    && var_root->characteristics_count > 1) {
 						*is_timebased = 1;
-						time_flag = k;
+						time_flag = i;
 					}
 					if (dims) {
 						if (time_flag==0) {
-							if (k>0)
-								dims[k-1]=ldims[k];
+							if (i>0)
+								dims[i-1]=ldims[i];
 						}
 						else { 
-							dims[k]=ldims[k];
+							dims[i]=ldims[i];
 						}
 					}
 				}		 
 			}		 
 			else {
-				for (k=0;i<(*ndim);i++) {
-					if (gdims[k]==0) {
-						time_flag = k;
+				for (i=0;i<(*ndim);i++) {
+					if (gdims[i]==0) {
+						time_flag = i;
 						*is_timebased = 1;
 					}
 					if (dims) {
 						if (time_flag==0) {
-							if (k>0)
-								dims[k-1]=gdims[k];
+							if (i>0)
+								dims[i-1]=gdims[i];
 						}
 						else
-							dims[k]=gdims[k];
+							dims[i]=gdims[i];
 					}
 				}
 			}
@@ -314,8 +313,11 @@ void bp_get_var (int64_t gh_p,
 		var_root = var_root->next;
 	gh->var_current = var_root;
 
-
 	int offset, count, start_idx;
+	if (timestep < 1) {
+		fprintf(stderr, "time index should start from 1!");
+		return; 
+	}
 	offset = fh->gh->time_index[0][gh->group_id][timestep-1];
         count = fh->gh->time_index[1][gh->group_id][timestep-1];
 	for (i=0;i<var_root->characteristics_count;i++) {
@@ -324,7 +326,7 @@ void bp_get_var (int64_t gh_p,
 			break;
 		}
 	}
-	printf("time step: %d %d %d\n", offset, count, start_idx);
+	//printf("time step: %d %d %d\n", offset, count, start_idx);
         struct adios_var_header_struct_v1 var_header;
         struct adios_var_payload_struct_v1 var_payload;
 	uint64_t size;	
@@ -346,8 +348,40 @@ void bp_get_var (int64_t gh_p,
 	// main for loop
 	int rank;
 	MPI_Comm_rank(gh->fh->comm, &rank);
+	int time_flag = -1;
+	for (i=0;i<ndim;i++) {
+		gdims[i]=var_root->characteristics[0].dims.dims[i*3+1];
+		offsets[i]=var_root->characteristics[0].dims.dims[i*3+2];
+		ldims[i]=var_root->characteristics[0].dims.dims[i*3];
+	}
+	int is_global=0, is_timebased = 0;
+	for (i=0;i<ndim;i++) {
+		is_global = is_global || gdims[i];
+	}
+	if (!is_global) {
+		for (i=0;i<ndim;i++) {
+			if (   ldims[i] == 1
+			    && var_root->characteristics_count > 1) {
+				is_timebased = 1;
+				time_flag = i;
+			}
+		}
+	}
+	else {
+		for (i=0;i<ndim;i++) {
+			if (gdims[i]==0) {
+				time_flag = i;
+				is_timebased = 1;
+			}
+		}
+	}
+	
+	if (is_timebased)
+		ndim = ndim -1;
+		
 	for (idx = 0; idx < count; idx++) {
-		idx_table[idx] = 1; 
+		idx_table[idx] = 1;
+/* 
 		for (i=0;i<ndim;i++) { 
 			gdims[i]=var_root->characteristics[start_idx+idx].dims.dims[i*3+1];
 			if (gdims[i] == 0)
@@ -355,29 +389,37 @@ void bp_get_var (int64_t gh_p,
 		}
 		if (i != ndim) { 
 			ndim = ndim - 1;
-		}	
+		}
+*/	
 		for (j=0;j<ndim;j++) {
-			if (i == 0) { 
+			if (time_flag == 0) {
 				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+3];
-				gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
+				if (is_global) 
+					gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
+				else
+					gdims[j]=ldims[j];
 				offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
 			}
-			else if (i == ndim) {
+			else if (time_flag == ndim) {
 				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3];
-				gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
+				if (is_global) 
+					gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
+				else
+					gdims[j]=ldims[j];
 				offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
 			}
-
+				
 			flag = (offsets[j] >= start[j] 
-				&& offsets[j] <start[j]+readsize[j])
-			    || (offsets[j] < start[j]
-				&& offsets[j]+ldims[j]>start[j]+readsize[j]) 
-			    || (offsets[j]+ldims[j] > start[j] 
-				&& offsets[j]+ldims[j] <= start[j]+readsize[j]);
+					&& offsets[j] <start[j]+readsize[j])
+				|| (offsets[j] < start[j]
+						&& offsets[j]+ldims[j]>start[j]+readsize[j]) 
+				|| (offsets[j]+ldims[j] > start[j] 
+						&& offsets[j]+ldims[j] <= start[j]+readsize[j]);
 			idx_table [idx] = idx_table[idx] && flag;
 		}
 	}
-
+//	for (i=0;i<count;i++)
+//		printf("%d %d\n",i,idx_table[i]);
 	uint64_t read_offset = 0;
 	int npg=0;
 	for (idx = 0; idx < count; idx++) {
@@ -412,6 +454,7 @@ void bp_get_var (int64_t gh_p,
 
 		struct   adios_dimension_struct_v1 * d = var_header.dims;
 		d = var_header.dims;
+/*
 		int time_flag = -1;
 		while (d) {
 			if (d->dimension.time_index==adios_flag_yes) {
@@ -419,7 +462,6 @@ void bp_get_var (int64_t gh_p,
 				break;
 			}
 			else {
-				//++time_flag;
 				d=d->next;
 			}
 		}
@@ -428,30 +470,35 @@ void bp_get_var (int64_t gh_p,
 			ndim = var_root->characteristics[start_idx].dims.count;
 		else
 			ndim = var_root->characteristics[start_idx].dims.count-1;
-
-		if (!read_offset)
-			for (i = 0; i < ndim; i++) 
-				total_size *= readsize[i];
-
-		d = var_header.dims;
+		//d = var_header.dims;
+*/
 
 		if (time_flag == 0) { 
 			for (j=0;j<ndim;j++) {
-				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+3];
-				gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
 				offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
+				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+3];
+				if (is_global)
+					gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
+				else
+					gdims[j]=ldims[j];
 			}
 		}
-		else if (time_flag == var_root->characteristics[i].dims.count-1 
-				|| time_flag == -1) {
+		else {
 			for (j=0;j<ndim;j++) {
-				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3];
-				gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
 				offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
+				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3];
+				if (is_global)
+					gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
+				else
+					gdims[j]=ldims[j];
 			}
 		}
 
 		//--data filtering--//
+		if (!read_offset)
+			for (i = 0; i < ndim; i++) 
+				total_size *= readsize[i];
+
 		int hole_break;
 		for (i=ndim-1;i>-1;i--) {
 			if (ldims[i] == readsize[i])
@@ -459,6 +506,14 @@ void bp_get_var (int64_t gh_p,
 			else 
 				break;
 		}
+/*
+		printf("time_flag:%d ndim=%d\n",time_flag,ndim);
+		printf("local: %d %d\n",ldims[0],ldims[1]);
+		printf("global: %d %d\n",gdims[0],gdims[1]);
+		printf("offset: %d %d\n",offsets[0],offsets[1]);
+		printf("readsize:%d %d\n",readsize[0],readsize[1]);
+		printf("start:%d %d\n",start[0],start[1]);
+*/
 		hole_break = i;	
 
 		if (hole_break==-1)
@@ -469,7 +524,10 @@ void bp_get_var (int64_t gh_p,
 				read_offset +=  var_header.payload_size;	
 			}
 			else { 
-				memcpy(var+read_offset, fh->b->buff+fh->b->offset, datasize*size_of_type);
+				printf("datasize:%d \n",datasize);
+				memcpy (var+read_offset, 
+					fh->b->buff+fh->b->offset+start[0]*datasize*size_of_type, 
+					datasize*size_of_type);
 			}
 		}
 		else {
@@ -530,6 +588,7 @@ void bp_get_var (int64_t gh_p,
 			for ( i = 0; i < hole_break; i++) { 
 				nloop *= size_in_dset[i];
 			}
+/*
 			if(rank==-1) 
 			{	
 				printf("\n\nhits:%d hole_break=%d nloop=%d\n",hit,hole_break, nloop);	
@@ -545,13 +604,12 @@ void bp_get_var (int64_t gh_p,
 				}
 				printf("datasize=%d\n",datasize);
 			}
-//
+*/
 
 			for ( i = 0; i < ndim ; i++) {
 				var_offset = offset_in_var[i] + var_offset * readsize[i];
 				dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
 			}
-
 
 			copy_data (var, fh->b->buff+fh->b->offset,
 					0,
@@ -565,7 +623,7 @@ void bp_get_var (int64_t gh_p,
 					dset_offset,
 					datasize,
 					size_of_type);
-
+/*
 			if(rank==-1) {
 				//for(i=0;i<ndim;i++){
 				//	printf("%llu %llu %llu\n", ldims[i], gdims[i], offsets[i]);	
@@ -579,10 +637,12 @@ void bp_get_var (int64_t gh_p,
 					"dset_offset=%llu dset_stride=%llu\n",
 					rank,var_offset,var_stride,dset_offset,dset_stride);
 			}
+*/
 		}
+/*
 		if(rank==-1) 
 			printf("how many blocks:%d \n",npg);
-
+*/
 	}  // end of loop
 
 	return;

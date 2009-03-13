@@ -531,7 +531,6 @@ int bp_parse_vars (struct BP_FILE * fh_p)
 	memset ( var_counts_per_group, 0, fh->gh->group_count*sizeof(uint16_t));
 
 	for (i = 0; i < mh->vars_count; i++) {
-		//printf("%d :%s %s\n",(*root)->id,(*root)->group_name,(*root)->var_name);
 		struct adios_index_characteristic_dims_struct_v1 * pdims;
 		for (grpid=0;grpid<fh->gh->group_count;grpid++) {
 			if (!strcmp((*root)->group_name,fh->gh->namelist[grpid])) {
@@ -540,9 +539,19 @@ int bp_parse_vars (struct BP_FILE * fh_p)
 				break;
 			}
 		}
-		var_namelist [i] = (char *) malloc (strlen((*root)->var_name));
-		strcpy(var_namelist[i], (*root)->var_name);	
-		var_offsets[i] = (uint64_t *) malloc (sizeof(uint64_t)*(*root)->characteristics_count);
+		if (strcmp ((*root)->var_path,"/")) {
+			var_namelist [i] = (char *) malloc ( strlen((*root)->var_name)
+					+strlen((*root)->var_path)
+					);
+			strcpy(var_namelist[i], (*root)->var_path);
+			strcat(var_namelist[i], (*root)->var_name);
+		}
+		else {
+			var_namelist [i] = (char *) malloc ( strlen((*root)->var_name));
+			strcpy(var_namelist[i], (*root)->var_name);
+		}
+		var_offsets[i] = (uint64_t *) malloc (
+				sizeof(uint64_t)*(*root)->characteristics_count);
 		for (j=0;j < (*root)->characteristics_count;j++) {
 			var_offsets[i][j] = (*root)->characteristics [j].offset;
 		}
