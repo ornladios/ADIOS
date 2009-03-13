@@ -90,7 +90,7 @@ int bp_fopen ( int64_t * fh_p,
 	return rc;
 }
 
-void bp_fclose ( int64_t fh_p)
+int bp_fclose ( int64_t fh_p)
 {
 	struct BP_FILE * fh = (struct BP_FILE *) fh_p;
 	struct BP_GROUP_VAR * gh = fh->gh;
@@ -138,7 +138,7 @@ void bp_fclose ( int64_t fh_p)
 	return;
 }
 
-void bp_gopen ( int64_t * gh_p,
+int bp_gopen ( int64_t * gh_p,
 		int64_t fh_p, 
 		char * grpname)
 {
@@ -164,15 +164,25 @@ void bp_gopen ( int64_t * gh_p,
 	return;
 }
 	   			
-void bp_gclose ( int64_t gh_p)
+int bp_gclose ( int64_t gh_p)
 {
-	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;	
-	free (gh);
-	return;	   			
+	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+	if (!gh) {
+		fprintf(stderr, "group handle is NULL!\n");
+		return  -2;
+	}
+	else
+		free (gh);
+	return 0;
 }
-void bp_inq_file ( int64_t fh_p, int *ngroup, 
+
+int bp_inq_file ( int64_t fh_p, int *ngroup, 
 		  int *nvar, int *nattr, int *nt, char **gnamelist) 
 {
+	if (!fh_p) {
+		fprintf(stderr, "file handle is NULL!\n");
+		return -2;
+	}
 	struct BP_FILE * fh = (struct BP_FILE *) fh_p;
 	int i;
 	*ngroup = fh->gh->group_count;
@@ -180,38 +190,67 @@ void bp_inq_file ( int64_t fh_p, int *ngroup,
 	*nt = fh->mfooter.time_steps;
 	*nattr = 0;
 	if (!gnamelist)
-		return;
-	for (i=0;i<fh->gh->group_count;i++) 
-		strcpy(gnamelist[i],fh->gh->namelist[i]);
-	return ;
+		return 0;
+	for (i=0;i<fh->gh->group_count;i++) {
+		if (!gnamelist[i]) {
+			fprintf(stderr, 
+				"buffer given is too small, only hold %d entries",
+				i);
+			return -1;
+		}
+		else 
+			strcpy(gnamelist[i],fh->gh->namelist[i]);
+	}
+	return 0;
 }
 
 
-void bp_inq_group (int64_t gh_p, int *nvar, char ** vnamelist)
+int bp_inq_group (int64_t gh_p, int *nvar, char ** vnamelist)
 {
-	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;	
+	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+	if (!gh_p) {
+		fprintf(stderr, "group handle is NULL!\n");
+		return -3;
+	}
 	int i, offset;
 
 	* nvar = gh->count;
+	
 	if (!vnamelist)
-		return;
+		return 0;
 
 	offset = gh->offset;
 
-	for (i=0;i<*nvar;i++)
-		strcpy(vnamelist[i], gh->fh->gh->var_namelist[i+offset]);
-
-	return;	
+	for (i=0;i<*nvar;i++) {
+		if (!vnamelist[i]) { 
+			fprintf(stderr, 
+					"given buffer only can hold %d entries",
+					i);
+			return -1;
+		}
+		else
+			strcpy(vnamelist[i], gh->fh->gh->var_namelist[i+offset]);
+	}
+	return 0;	
 }
 	
-void bp_inq_var (int64_t gh_p, char * varname,
+int bp_inq_var (int64_t gh_p, char * varname,
 		 int * type,
 		 int * ndim,
 		 int * is_timebased,
 		 int * dims)
 {
 	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+	if (!gh_p) {
+		fprintf(stderr, "group handle is NULL!\n");
+		return -3;
+	}
 	struct BP_FILE * fh = gh->fh;
+	if (!fh) {
+		fprintf(stderr, "file handle is NULL!\n");
+		return -2;
+	}
+	
 	struct adios_index_var_struct_v1 * var_root;
 	int i,k;
 	gh->var_current = 0;
@@ -221,8 +260,8 @@ void bp_inq_var (int64_t gh_p, char * varname,
 		var_root = var_root->next;
 	for (i=0;i<gh->count;i++) {
 		if (!strcmp(varname, var_root->var_name)) {
-			gh->var_current = var_root;
 	
+			gh->var_current = var_root;
 			*type = var_root->type;
 			*is_timebased = 0;
 			*ndim = var_root->characteristics [0].dims.count;
@@ -286,10 +325,10 @@ void bp_inq_var (int64_t gh_p, char * varname,
 		else
 			var_root = var_root->next;
 	}
-	return;
+	return 0;
 }
 
-void bp_get_var (int64_t gh_p,
+int bp_get_var (int64_t gh_p,
 		 char * varname, 
 		 void * var,
 		 int  * start,
@@ -645,5 +684,26 @@ void bp_get_var (int64_t gh_p,
 */
 	}  // end of loop
 
-	return;
+	return 0;
+}
+
+void bp_fread_( int64_t * fh,
+		const char * fname, 
+		MPI_Comm comm,
+		int * err,
+		int fname_len)
+{
+	*err = bp_fread (fh,fname,comm);
+}
+
+void bp_fclose_ ( int64_t * fh, int * err)
+{
+	*err = bp_fclose (*fh);
+}
+
+void bp_inq_file_ ( int64_t * fh_p, int * ngroup, 
+		   int * nvar, int * nattr, 
+		   int * ntime, char ** gnamelist, int * err)
+{
+	bp_inq_file ( fh_p, ngroup, nvar, nattr, ntime, gnamelist);
 }

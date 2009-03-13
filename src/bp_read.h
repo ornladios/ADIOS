@@ -19,7 +19,7 @@ int bp_fread ( int64_t * fh,
 /*
 	IN: fh 
 */
-void bp_fclose ( int64_t fh);
+int bp_fclose ( int64_t fh);
 
 /*
 	IN:  fh_p 
@@ -29,7 +29,7 @@ void bp_fclose ( int64_t fh);
 	     nt
 	     gnamelist
  */ 
-void bp_inq_file ( int64_t fh_p, int *ngroup, 
+int bp_inq_file ( int64_t fh_p, int *ngroup, 
 		  int *nvar, int *nattr, int *nt, char **gnamelist);
  
 /*
@@ -37,19 +37,19 @@ void bp_inq_file ( int64_t fh_p, int *ngroup,
 	     grpname 
 	OUT: gh_p 
 */
-void bp_gopen ( int64_t * gh_p,
+int bp_gopen ( int64_t * gh_p,
 		int64_t fh, 
 		char * grpname);
 
 /*
 	IN:  fh
 */
-void bp_gclose ( int64_t gh);
+int bp_gclose ( int64_t gh);
 
 /*
 	IN:  gh_p
 */
-void bp_inq_group (int64_t gh, int *nvar, char ** vnamelist);
+int bp_inq_group (int64_t gh, int *nvar, char ** vnamelist);
 
 /*
 	IN:  gh
@@ -59,7 +59,7 @@ void bp_inq_group (int64_t gh, int *nvar, char ** vnamelist);
 	     timestep 
 	OUT: var 
 */
-void bp_get_var (int64_t gh,
+int bp_get_var (int64_t gh,
 		 char * varname,
 		 void * var, 
 		 int  * start,
@@ -74,7 +74,7 @@ void bp_get_var (int64_t gh,
 	     is_timebased
 	     dims  
 */
-void bp_inq_var (int64_t gh, char * varname,
+int bp_inq_var (int64_t gh, char * varname,
 		 int * type,
 		 int * ndim,
 		 int * is_timebased,
@@ -82,32 +82,34 @@ void bp_inq_var (int64_t gh, char * varname,
 
 // Fortran interface
 
-int bp_fread_ ( int64_t * fh,
+void bp_fread_ ( int64_t * fh,
 	        char * fname,
-		MPI_Comm comm
+		MPI_Comm comm,
+		int * err,
+		int fname_len
 	      );
 
-void bp_fclose_ ( int64_t fh);
+void bp_fclose_ ( int64_t * fh, int * err);
 
-void bp_inq_file_ ( int64_t fh_p, int *ngroup, 
-		  int *nvar, int *nattr, int *nt, char **gnamelist); 
+void bp_inq_file_ ( int64_t * fh_p, int *ngroup, 
+		  int *nvar, int *nattr, int *nt, char **gnamelist, int * err); 
 
 void bp_gopen_ (int64_t * gh_p,
 		int64_t fh, 
 		char * grpname);
 
-void bp_gclose_ ( int64_t gh);
+void bp_gclose_ ( int64_t * gh);
 
-void bp_inq_group_ (int64_t gh, int *nvar, char ** vnamelist);
+void bp_inq_group_ (int64_t * gh, int *nvar, char ** vnamelist);
 
-void bp_get_var_ (int64_t gh,
+void bp_get_var_ (int64_t * gh,
 		 char * varname,
 		 void * var, 
 		 int  * start,
 		 int  * readsize, 
 		 int timestep);
 
-void bp_inq_var_ (int64_t gh_p, char * varname,
+void bp_inq_var_ (int64_t * gh_p, char * varname,
 		 int * type,
 		 int * ndim,
 		 int * is_timebased,
