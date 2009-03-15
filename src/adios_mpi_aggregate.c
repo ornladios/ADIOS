@@ -339,33 +339,50 @@ static void set_stripe_size (struct adios_file_struct * fd
 {
     struct statfs fsbuf;
     int err;
+    int f;
+    int old_mask;
+    int perm;
+
+    old_mask = umask (0);
+    umask (old_mask);
+    perm = old_mask ^ 0666;
+
+//printf ("HERE\n");
+
+    // be sure to create the file first so we can stat it
+    //f = open (filename, O_RDONLY | O_CREAT, perm);
+    f = open (filename, O_WRONLY | O_CREAT, perm);
 
     // Note: Since each file might have different write_buffer,
     // So we will reset write_buffer even buffer_size != 0
     err = statfs (filename, &fsbuf);
+//printf ("err: %d fsbuf.f_type: %d\n", err, fsbuf.f_type);
     if (!err && fsbuf.f_type == LUSTRE_SUPER_MAGIC)
     {
-        int f;
-        int old_mask;
-        int perm;
-
-        old_mask = umask (022);
-        umask (old_mask);
-        perm = old_mask ^ 0666;
-
-        f = open (filename, O_RDONLY | O_CREAT, perm);
+//printf ("file: %d\n", f);
         if (f != -1)
         {
             struct lov_user_md lum;
             lum.lmm_magic = LOV_USER_MAGIC;
+            // get what Lustre assigns by default
+            err = ioctl (f, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
+//printf ("start: stripe info: size: %d count: %d\n", lum.lmm_stripe_size, lum.lmm_stripe_count);
+            // fixup for our desires
+            lum.lmm_magic = LOV_USER_MAGIC;
+            lum.lmm_pattern = 0;
             lum.lmm_stripe_size = md->biggest_size;
+            lum.lmm_stripe_count = 12; //UINT16_MAX; // maximize number of targets
+//printf ("set_stripe 1\n");
             err = ioctl (f, LL_IOC_LOV_SETSTRIPE, (void *) &lum);
+//printf ("set_stripe 2\n");
             // if err != 0, the must not be Lustre
             err = ioctl (f, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
+//printf ("set_stripe 3\n");
             // if err != 0, the must not be Lustre
             if (err == 0)
             {
                 md->storage_targets = lum.lmm_stripe_count;
+//printf ("end: stripe info: size: %d count: %d\n", lum.lmm_stripe_size, lum.lmm_stripe_count);
             }
             close (f);
         }

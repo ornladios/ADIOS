@@ -357,8 +357,12 @@ static void set_stripe_size (struct adios_file_struct * fd
         if (f != -1)
         {
             struct lov_user_md lum;
+            // get what Lustre assigns by default
+            err = ioctl (f, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
+            // fixup for our desires
             lum.lmm_magic = LOV_USER_MAGIC;
             lum.lmm_stripe_size = md->biggest_size;
+            lum.lmm_stripe_count = UINT16_MAX; // maximize number of targets
             err = ioctl (f, LL_IOC_LOV_SETSTRIPE, (void *) &lum);
             // if err != 0, the must not be Lustre
             err = ioctl (f, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
