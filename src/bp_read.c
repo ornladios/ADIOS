@@ -352,19 +352,28 @@ int bp_get_var (int64_t gh_p,
 		var_root = var_root->next;
 	gh->var_current = var_root;
 
-	int offset, count, start_idx;
-	if (timestep < 1) {
-		fprintf(stderr, "time index should start from 1!");
+	int offset, count, start_idx=-1;
+	if (timestep < 0) {
+		fprintf(stderr, "time index should start from 0!");
 		return; 
 	}
-	offset = fh->gh->time_index[0][gh->group_id][timestep-1];
-        count = fh->gh->time_index[1][gh->group_id][timestep-1];
+	offset = fh->gh->time_index[0][gh->group_id][timestep];
+        count = fh->gh->time_index[1][gh->group_id][timestep];
 	for (i=0;i<var_root->characteristics_count;i++) {
-		if (var_root->characteristics[i].offset > fh->gh->pg_offsets[offset]) {
+		/*printf("%d %d %d\n",
+			var_root->characteristics[i].offset,
+			fh->gh->pg_offsets[offset],
+			fh->gh->pg_offsets[offset+1]);
+		*/
+		if (   (var_root->characteristics[i].offset > fh->gh->pg_offsets[offset])
+		    && (var_root->characteristics[i].offset < fh->gh->pg_offsets[offset+1])) {
 			start_idx = i;
 			break;
 		}
 	}
+	if (start_idx<0)
+		fprintf(stderr,"there is no entry for timestep %d\n",timestep);
+	//printf ("%d\n",var_root->characteristics_count); 
 	//printf("time step: %d %d %d\n", offset, count, start_idx);
         struct adios_var_header_struct_v1 var_header;
         struct adios_var_payload_struct_v1 var_payload;
@@ -687,13 +696,13 @@ int bp_get_var (int64_t gh_p,
 	return 0;
 }
 
-void bp_fread_( int64_t * fh,
+void bp_fopen_( int64_t * fh,
 		const char * fname, 
 		MPI_Comm comm,
 		int * err,
 		int fname_len)
 {
-	*err = bp_fread (fh,fname,comm);
+	*err = bp_fopen (fh,fname,comm);
 }
 
 void bp_fclose_ ( int64_t * fh, int * err)
