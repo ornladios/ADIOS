@@ -1,12 +1,12 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-#include "adios.h"
 #include "mpi.h"
-#include "bp_utils.h"
-#include "adios_bp_v1.h"
-#include "adios_internals.h"
-
+#include "bp_read.h"
+#include "bp_types.h"
+#define VARS_MINIHEADER_SIZE 10
+#define DIVIDER "========================================================\n"
+#define SUBDIVIDER "------------------------------------\n"
 void alloc_namelist (char ***namelist, int length)
 {
 	int j;
@@ -76,11 +76,11 @@ int main (int argc, char ** argv)
 	// strings
 	if (rank == 0) {
                 printf(DIVIDER);
-                printf("bp_inq():\n"); 
-                printf ("# of groups: %d\n", ngroup);
-                printf ("# of variables: %d\n", nvar);
-                printf ("# of attributes: %d\n", nattr);
-                printf ("# of time steps: %d\n", ntstep);
+                printf("bp_inq_file():\n"); 
+                printf ("\t# of groups: %d\n", ngroup);
+                printf ("\t# of variables: %d\n", nvar);
+                printf ("\t# of attributes: %d\n", nattr);
+                printf ("\t# of time steps: %d\n", ntstep);
         }
 
 	char ** gnamelist = NULL;
@@ -97,7 +97,7 @@ int main (int argc, char ** argv)
 		print_namelist (gnamelist, ngroup);
 	}
 
-	bp_gopen (fh, &gh, gnamelist[0]);
+	bp_gopen (&gh, fh, gnamelist[0]);
 	// this opens up the specific group, given by the name (last parameter).
 	// returns the second parameter.
 	bp_inq_group (gh, &nvar, 0);
@@ -114,43 +114,42 @@ int main (int argc, char ** argv)
 		print_namelist (vnamelist, nvar);
 	}
 
-	int type, ndim;
+	int type, ndim, time_flag;
+			
+	bp_inq_var (gh, vnamelist[14], &type, &ndim, &time_flag, dims);
+	
+	char *type_str = bp_type_to_string (type);
+        printf("%s:\n"
+		"\t\tis_timebased: %d\n"
+		"\t\ttype: %s\n\t\tdimensions:",
+		vnamelist[14], time_flag, type_str);
+	for (i=0;i<ndim;i++) {
+		printf(" [%d]", dims[i]); 
+	}
+	printf("\n");
 
-	bp_inq_var (gh, vnamelist[nvar-1], &type, &ndim, dims);
 	// nowe we are getting the type, the number of dimensions, and the dimensions
 	// dims is stored as the ordering of how it was written.
+	
 	int start[3], size[3];
-	//printf("dim: %d %d %d\n", dims[0],dims[1],dims[2]);
-	start[0] = 0, start[1] = 0, start[2] = (dims[2]/pe_size)*rank;
-	size[0] = dims[0], size[1] = dims[1], size[2] = dims[2]/pe_size;
+
+	start[0]=0;
+	size[0]=50;
 
 	void * var = NULL;
-	var = malloc (sizeof(double) * size[0] * size[1] * size[2]);
-	MPI_Barrier (comm);
-	double starttime, readtime;
-	starttime=MPI_Wtime ();
-	for (i=0;i<100;i++) {
-		bp_get_var (gh, "varible_4", var, start, size, i+1);
-		MPI_Barrier(comm);
-		// parameters... gh is the group handle, where the variable lives.
-		// variable name = second parameter
-		// var = buffer to store the data.
-		// start = offsets in the global space
-		// size = size of chunk/slab to read (local dimension)
-		// last parameter (i+1) is the timestep; this always starts from 1.
-	}
-	MPI_Barrier (comm);
-	readtime=MPI_Wtime ()-starttime;
-	//printf("rank=%d,size=%d,start=%d,pe_size=%d\n", rank, size[2], start[2], pe_size);
-	uint64_t readsize = size[0]*size[1]*size[2]*pe_size*8/1024/1024;
-	if (rank == 0 && readtime != 0)
-		printf("size=%llu MB time=%lfs ior=%lf MB/s\n",
-		  	readsize,
-			readtime,
-			readsize/readtime);
-			
-	//double tmp;
-	//double tmp_set;
+	var = malloc (sizeof(double) * size[0]);
+
+	// time step should be no less than zero
+	// vnamelist[14] is not written at time step 0
+	// so the function returns as error
+	bp_get_var (gh, vnamelist[14], var, start, size, 0);
+	
+	bp_get_var (gh, vnamelist[14], var, start, size, 1);
+
+	printf("data:\n");
+	for (i=0;i<size[0];i++)
+		printf("%lf\t",*(double*)(var+8*i));
+	printf("\n");
 
 	if (var)
 		free(var);
