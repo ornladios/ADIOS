@@ -160,11 +160,9 @@ int main (int argc, char ** argv)
 
 	bp_gclose (gh);
 
-
 	bp_fclose (fh);
 
 	MPI_Finalize ();
-
 
 	return 0;
 }
