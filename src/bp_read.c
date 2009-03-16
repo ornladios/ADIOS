@@ -382,8 +382,7 @@ int bp_get_var (int64_t gh_p,
 		}
 	}
 	if (start_idx<0) {
-		fprintf(stderr,"Error: %s has no %d time step, "
-			"please use valid time step\n",
+		fprintf(stderr,"Error: %s has no data at %d time step\n",
 			varname, timestep);
 		return -4;
 	}
