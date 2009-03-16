@@ -255,6 +255,7 @@ int bp_inq_var (int64_t gh_p, char * varname,
 	int i,k;
 	gh->var_current = 0;
 	var_root = fh->vars_root;
+	*is_timebased = 0;
 
 	for(i=0;i<gh->offset;i++)
 		var_root = var_root->next;
@@ -263,7 +264,6 @@ int bp_inq_var (int64_t gh_p, char * varname,
 	
 			gh->var_current = var_root;
 			*type = var_root->type;
-			*is_timebased = 0;
 			*ndim = var_root->characteristics [0].dims.count;
 			if (!dims || !(*ndim))
 				return;
@@ -314,17 +314,17 @@ int bp_inq_var (int64_t gh_p, char * varname,
 					}
 				}
 			}
-					
 			free(gdims);
 			free(ldims);
+					
 			if ((*is_timebased))
 				*ndim = *ndim - 1;
-			
 			break;
 		}
 		else
 			var_root = var_root->next;
 	}
+	
 	return 0;
 }
 
@@ -337,10 +337,19 @@ int bp_get_var (int64_t gh_p,
 		)
 {
 	
-	int i, j, var_id;
+	int    i, j, var_id, idx;
+  	int    flag;
+	int    offset, count, start_idx=-1;
 	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
 	struct BP_FILE * fh = (struct BP_FILE *) (gh->fh);
 	struct adios_index_var_struct_v1 * var_root = fh->vars_root;
+        struct adios_var_header_struct_v1 var_header;
+        struct adios_var_payload_struct_v1 var_payload;
+	uint8_t  ndim;  
+	uint64_t size, * ldims, * offsets, * gdims;
+	uint64_t datasize, nloop, dset_stride,var_stride, total_size=1;
+	MPI_Status status;
+
 
 	for (i = 0; i < gh->count; i++) {
 		if (!strcmp(fh->gh->var_namelist[i+gh->offset], varname)) {
@@ -348,64 +357,59 @@ int bp_get_var (int64_t gh_p,
 			break;
 		}
 	}
+	if (i==gh->count) {
+		fprintf(stderr, "Error: %s doesnot exist in the file!\n",varname);
+		return -4;
+	}
+
 	for (i=0;i<var_id;i++) 
 		var_root = var_root->next;
+
 	gh->var_current = var_root;
 
-	int offset, count, start_idx=-1;
 	if (timestep < 0) {
-		fprintf(stderr, "time index should start from 0!");
+		fprintf(stderr, "Error: time step should start from 0!");
 		return; 
 	}
+	// get the starting offset for the given time step
 	offset = fh->gh->time_index[0][gh->group_id][timestep];
         count = fh->gh->time_index[1][gh->group_id][timestep];
 	for (i=0;i<var_root->characteristics_count;i++) {
-		/*printf("%d %d %d\n",
-			var_root->characteristics[i].offset,
-			fh->gh->pg_offsets[offset],
-			fh->gh->pg_offsets[offset+1]);
-		*/
 		if (   (var_root->characteristics[i].offset > fh->gh->pg_offsets[offset])
 		    && (var_root->characteristics[i].offset < fh->gh->pg_offsets[offset+1])) {
 			start_idx = i;
 			break;
 		}
 	}
-	if (start_idx<0)
-		fprintf(stderr,"there is no entry for timestep %d\n",timestep);
-	//printf ("%d\n",var_root->characteristics_count); 
-	//printf("time step: %d %d %d\n", offset, count, start_idx);
-        struct adios_var_header_struct_v1 var_header;
-        struct adios_var_payload_struct_v1 var_payload;
-	uint64_t size;	
-	MPI_Status status;
- 	int idx;
-	uint8_t ndim;  
-	uint64_t * ldims, * offsets, * gdims;
-	int *idx_start, *idx_stop;
+	if (start_idx<0) {
+		fprintf(stderr,"Error: %s has no %d time step, "
+			"please use valid time step\n",
+			varname, timestep);
+		return -4;
+	}
 	ndim = var_root->characteristics[start_idx].dims.count;
 	ldims = (uint64_t *) malloc (sizeof(uint64_t) * ndim);
 	offsets = (uint64_t *) malloc (sizeof(uint64_t) * ndim);
 	gdims = (uint64_t *) malloc (sizeof(uint64_t) * ndim);
         int * idx_table = (int *) malloc (sizeof(int)*count);
 	
-	int idx_count = 0;
-  	int flag;
-	uint64_t datasize, nloop, dset_stride,var_stride, total_size=1;
-
 	// main for loop
 	int rank;
 	MPI_Comm_rank(gh->fh->comm, &rank);
 	int time_flag = -1;
+
 	for (i=0;i<ndim;i++) {
 		gdims[i]=var_root->characteristics[0].dims.dims[i*3+1];
 		offsets[i]=var_root->characteristics[0].dims.dims[i*3+2];
 		ldims[i]=var_root->characteristics[0].dims.dims[i*3];
 	}
+
 	int is_global=0, is_timebased = 0;
+
 	for (i=0;i<ndim;i++) {
 		is_global = is_global || gdims[i];
 	}
+
 	if (!is_global) {
 		for (i=0;i<ndim;i++) {
 			if (   ldims[i] == 1
@@ -426,37 +430,39 @@ int bp_get_var (int64_t gh_p,
 	
 	if (is_timebased)
 		ndim = ndim -1;
-		
+
+	// generate the list of pgs to be read from
+
+	uint64_t read_offset = 0;
+	int npg=0;
+	int tmpcount = 0;
+	int size_of_type = bp_get_type_size (var_root->type, "");
 	for (idx = 0; idx < count; idx++) {
+		datasize = 1;
+		nloop = 1;
+		var_stride = 1;
+		dset_stride = 1;
 		idx_table[idx] = 1;
-/* 
-		for (i=0;i<ndim;i++) { 
-			gdims[i]=var_root->characteristics[start_idx+idx].dims.dims[i*3+1];
-			if (gdims[i] == 0)
-				break;
-		}
-		if (i != ndim) { 
-			ndim = ndim - 1;
-		}
-*/	
+
 		for (j=0;j<ndim;j++) {
-			if (time_flag == 0) {
+			offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
+			if (time_flag == 0)
 				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+3];
-				if (is_global) 
-					gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
-				else
-					gdims[j]=ldims[j];
-				offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
-			}
-			else if (time_flag == ndim) {
+			else
 				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3];
-				if (is_global) 
-					gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
-				else
-					gdims[j]=ldims[j];
-				offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
+			
+			if (is_global)
+				gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
+			else
+				gdims[j]=ldims[j];
+			if (readsize[j] > gdims[j]) {
+				fprintf(stderr, "Error: %s out of bound ("
+					"the size to read is %llu,"
+					" but the actual size is %llu)\n",
+					varname, readsize[j], gdims[j]);
+				return -3;
 			}
-				
+
 			flag = (offsets[j] >= start[j] 
 					&& offsets[j] <start[j]+readsize[j])
 				|| (offsets[j] < start[j]
@@ -465,27 +471,16 @@ int bp_get_var (int64_t gh_p,
 						&& offsets[j]+ldims[j] <= start[j]+readsize[j]);
 			idx_table [idx] = idx_table[idx] && flag;
 		}
-	}
-//	for (i=0;i<count;i++)
-//		printf("%d %d\n",i,idx_table[i]);
-	uint64_t read_offset = 0;
-	int npg=0;
-	for (idx = 0; idx < count; idx++) {
-		datasize = 1;
-		nloop = 1;
-		var_stride = 1;
-		dset_stride = 1;
+		
 		if ( !idx_table[idx] ) {
 			continue;
 		}
-		//printf("start to read npg=%d !\n", npg);
 		++npg;
 		MPI_File_seek (fh->mpi_fh, 
 			       (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
 			       MPI_SEEK_SET);
 		MPI_File_read (fh->mpi_fh, fh->b->buff, 4, MPI_BYTE, &status);
-		int tmpcount = 0;
-		MPI_Get_count (&status, MPI_BYTE, &tmpcount);
+		//MPI_Get_count (&status, MPI_BYTE, &tmpcount);
 		tmpcount= *((uint64_t*)fh->b->buff);	
 		realloc_aligned(fh->b, tmpcount+4);
 
@@ -493,54 +488,9 @@ int bp_get_var (int64_t gh_p,
 			       (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
 			       MPI_SEEK_SET);
 		MPI_File_read (fh->mpi_fh, fh->b->buff, tmpcount+4, MPI_BYTE, &status);
-		MPI_Get_count (&status, MPI_BYTE, &tmpcount);
+		
 		fh->b->offset = 0;
 		adios_parse_var_data_header_v1 (fh->b, &var_header);
-
-		//print_var_header (&var_header);
-		int size_of_type = bp_get_type_size (var_root->type, "");
-
-		struct   adios_dimension_struct_v1 * d = var_header.dims;
-		d = var_header.dims;
-/*
-		int time_flag = -1;
-		while (d) {
-			if (d->dimension.time_index==adios_flag_yes) {
-				++time_flag;
-				break;
-			}
-			else {
-				d=d->next;
-			}
-		}
-
-		if (time_flag == -1)
-			ndim = var_root->characteristics[start_idx].dims.count;
-		else
-			ndim = var_root->characteristics[start_idx].dims.count-1;
-		//d = var_header.dims;
-*/
-
-		if (time_flag == 0) { 
-			for (j=0;j<ndim;j++) {
-				offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
-				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+3];
-				if (is_global)
-					gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
-				else
-					gdims[j]=ldims[j];
-			}
-		}
-		else {
-			for (j=0;j<ndim;j++) {
-				offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
-				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3];
-				if (is_global)
-					gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
-				else
-					gdims[j]=ldims[j];
-			}
-		}
 
 		//--data filtering--//
 		if (!read_offset)
@@ -572,7 +522,6 @@ int bp_get_var (int64_t gh_p,
 				read_offset +=  var_header.payload_size;	
 			}
 			else { 
-				printf("datasize:%d \n",datasize);
 				memcpy (var+read_offset, 
 					fh->b->buff+fh->b->offset+start[0]*datasize*size_of_type, 
 					datasize*size_of_type);
@@ -593,7 +542,6 @@ int bp_get_var (int64_t gh_p,
 				if (start[i] >= offsets[i]) {
 					// head is in
 					if (start[i]<isize) {
-						//printf("head!\n");
 						if (start[i]+readsize[i]>isize)
 							size_in_dset[i] = isize - start[i];
 						else 
@@ -601,7 +549,6 @@ int bp_get_var (int64_t gh_p,
 						offset_in_dset[i] = start[i]-offsets[i];
 						offset_in_var[i] = 0;
 						hit = 1+hit*10; 
-						//offset_in_var[i] = start[i]; 
 					}
 					else
 						hit = -1;
@@ -611,13 +558,11 @@ int bp_get_var (int64_t gh_p,
 					if (isize < start[i]+readsize[i]) { 
 						size_in_dset[i] = ldims[i];
 						hit = 2+hit*10;
-						//printf("middle!\n");
 					}
 					else { 
-						//printf("tail!\n");
+						// tail is in
 						size_in_dset[i] = readsize[i]+start[i]-offsets[i];
 						hit = 3+hit*10;
-						// tail is in
 					}
 					offset_in_dset[i] = 0;
 					offset_in_var[i] = offsets[i]-start[i]; 
@@ -671,28 +616,12 @@ int bp_get_var (int64_t gh_p,
 					dset_offset,
 					datasize,
 					size_of_type);
-/*
-			if(rank==-1) {
-				//for(i=0;i<ndim;i++){
-				//	printf("%llu %llu %llu\n", ldims[i], gdims[i], offsets[i]);	
-//					printf("rank %d: size_in_dset=%d, offset_in_dset=%d, offset_in_var=%d\n",
-//							rank, size_in_dset[i], offset_in_dset[i], offset_in_var[i]);
-					//printf("rank %d: start=%d,offsets=%d isize=%d ldims=%d\n",
-					//		rank, start[i], offsets[i],isize, ldims[i]);
-//
-				//}
-				printf("rank %d: var_offset=%llu, var_stride=%llu, " 
-					"dset_offset=%llu dset_stride=%llu\n",
-					rank,var_offset,var_stride,dset_offset,dset_stride);
-			}
-*/
 		}
-/*
-		if(rank==-1) 
-			printf("how many blocks:%d \n",npg);
-*/
 	}  // end of loop
-
+	free (gdims);
+	free (offsets);
+	free (ldims);
+	free (idx_table);
 	return 0;
 }
 
@@ -715,4 +644,35 @@ void bp_inq_file_ ( int64_t * fh_p, int * ngroup,
 		   int * ntime, char ** gnamelist, int * err)
 {
 	bp_inq_file ( fh_p, ngroup, nvar, nattr, ntime, gnamelist);
+}
+
+const char * bp_type_to_string (int type)
+{
+    switch (type)
+    {
+        case adios_unsigned_byte:    return "unsigned byte";
+        case adios_unsigned_short:   return "unsigned short";
+        case adios_unsigned_integer: return "unsigned integer";
+        case adios_unsigned_long:    return "unsigned long long";
+
+        case adios_byte:             return "byte";
+        case adios_short:            return "short";
+        case adios_integer:          return "integer";
+        case adios_long:             return "long long";
+
+        case adios_real:             return "real";
+        case adios_double:           return "double";
+        case adios_long_double:      return "long double";
+
+        case adios_string:           return "string";
+        case adios_complex:          return "complex";
+        case adios_double_complex:   return "double complex";
+
+        default:
+        {
+            static char buf [50];
+            sprintf (buf, "(unknown: %d)", type);
+            return buf;
+        }
+    }
 }
