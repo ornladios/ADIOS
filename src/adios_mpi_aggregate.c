@@ -40,6 +40,11 @@ struct adios_MPI_data_struct
     uint16_t storage_targets;  // number of storage targets being used
 };
 
+static void set_stripe_size (struct adios_file_struct * fd
+                            ,struct adios_MPI_data_struct * md
+                            ,const char * filename
+                            );
+
 static void adios_var_to_comm (const char * comm_name
                               ,enum ADIOS_FLAG host_language_fortran
                               ,void * data
@@ -215,7 +220,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
         {
             // make one space for offset and one for size
             MPI_Offset * offsets = malloc(sizeof (MPI_Offset)
-                                           * md->size * 2);
+                                           * md->size * 3);
             int i;
 
             offsets [0] = fd->write_size_bytes;
@@ -251,18 +256,22 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
                                    * STRIPE_INCREMENT
                                   );
             }
+            md->biggest_size = biggest_size;
+            set_stripe_size (fd, md, name);
 #undef STRIPE_INCREMENT
             offsets [0 + 0] = fd->base_offset;
             offsets [0 + 1] = biggest_size;
+            offsets [0 + 2] = md->storage_targets;
             for (i = 1; i < md->size; i++)
             {
-                offsets [i * 2 + 0] = offsets [(i - 1) * 2 + 0] + biggest_size;
-                offsets [i * 2 + 1] = biggest_size;
+                offsets [i * 3 + 0] = offsets [(i - 1) * 3 + 0] + biggest_size;
+                offsets [i * 3 + 1] = biggest_size;
+                offsets [i * 3 + 2] = md->storage_targets;
             }
-            md->b.pg_index_offset =   offsets [(md->size - 1) * 2 + 0]
+            md->b.pg_index_offset =   offsets [(md->size - 1) * 3 + 0]
                                     + biggest_size;
 #else
-
+            uint64_t biggest_size = 0;
             uint64_t last_offset = offsets [0];
             offsets [0] = fd->base_offset;
             for (i = 1; i < md->size; i++)
@@ -273,19 +282,19 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
             }
             md->b.pg_index_offset =   offsets [md->size - 1]
                                     + last_offset;
+            md->biggest_size = biggest_size;
 #endif
-            MPI_Scatter (offsets, 2, MPI_LONG_LONG
-                        ,offsets, 2, MPI_LONG_LONG
+            MPI_Scatter (offsets, 3, MPI_LONG_LONG
+                        ,offsets, 3, MPI_LONG_LONG
                         ,0, md->group_comm
                         );
             fd->base_offset = offsets [0];
             fd->pg_start_in_file = fd->base_offset;
-            md->biggest_size = biggest_size;
             free (offsets);
         }
         else
         {
-            MPI_Offset offset [2];
+            MPI_Offset offset [3];
             offset [0] = fd->write_size_bytes;
 
             MPI_Gather (offset, 1, MPI_LONG_LONG
@@ -293,12 +302,13 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
                        ,0, md->group_comm
                        );
 
-            MPI_Scatter (offset, 2, MPI_LONG_LONG
-                        ,offset, 2, MPI_LONG_LONG
+            MPI_Scatter (offset, 3, MPI_LONG_LONG
+                        ,offset, 3, MPI_LONG_LONG
                         ,0, md->group_comm
                         );
             fd->base_offset = offset [0];
             md->biggest_size = offset [1];
+            md->storage_targets = offset [2];
             fd->pg_start_in_file = fd->base_offset;
         }
     }
@@ -314,6 +324,8 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
 #  define LOV_USER_MAGIC 0x0BD10BD0
 #  define LL_IOC_LOV_SETSTRIPE  _IOW ('f', 154, long)
 #  define LL_IOC_LOV_GETSTRIPE  _IOW ('f', 155, long)
+#define O_LOV_DELAY_CREATE 0100000000
+
 struct lov_user_ost_data {           // per-stripe data structure
         uint64_t l_object_id;        // OST object ID
         uint64_t l_object_gr;        // OST object group (creating MDS number)
@@ -328,7 +340,7 @@ struct lov_user_md {                 // LOV EA user data (host-endian)
         uint32_t lmm_stripe_size;    // size of stripe in bytes
         uint16_t lmm_stripe_count;   // num stripes in use for this object
         uint16_t lmm_stripe_offset;  // starting stripe offset in lmm_objects
-        struct lov_user_ost_data  lmm_objects[0]; // per-stripe data
+        struct lov_user_ost_data  lmm_objects[12]; // per-stripe data
 } __attribute__((packed));
 
 // do the magic ioctl calls to set Lustre's stripe size
@@ -347,42 +359,31 @@ static void set_stripe_size (struct adios_file_struct * fd
     umask (old_mask);
     perm = old_mask ^ 0666;
 
-//printf ("HERE\n");
-
     // be sure to create the file first so we can stat it
-    //f = open (filename, O_RDONLY | O_CREAT, perm);
-    f = open (filename, O_WRONLY | O_CREAT, perm);
+    f = open (filename, O_RDONLY | O_CREAT | O_LOV_DELAY_CREATE, perm);
 
     // Note: Since each file might have different write_buffer,
     // So we will reset write_buffer even buffer_size != 0
     err = statfs (filename, &fsbuf);
-//printf ("err: %d fsbuf.f_type: %d\n", err, fsbuf.f_type);
     if (!err && fsbuf.f_type == LUSTRE_SUPER_MAGIC)
     {
-//printf ("file: %d\n", f);
         if (f != -1)
         {
             struct lov_user_md lum;
             lum.lmm_magic = LOV_USER_MAGIC;
             // get what Lustre assigns by default
             err = ioctl (f, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
-//printf ("start: stripe info: size: %d count: %d\n", lum.lmm_stripe_size, lum.lmm_stripe_count);
             // fixup for our desires
             lum.lmm_magic = LOV_USER_MAGIC;
             lum.lmm_pattern = 0;
             lum.lmm_stripe_size = md->biggest_size;
-            lum.lmm_stripe_count = 12; //UINT16_MAX; // maximize number of targets
-//printf ("set_stripe 1\n");
+            lum.lmm_stripe_count = UINT16_MAX; // maximize number of targets
             err = ioctl (f, LL_IOC_LOV_SETSTRIPE, (void *) &lum);
-//printf ("set_stripe 2\n");
-            // if err != 0, the must not be Lustre
             err = ioctl (f, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
-//printf ("set_stripe 3\n");
             // if err != 0, the must not be Lustre
             if (err == 0)
             {
                 md->storage_targets = lum.lmm_stripe_count;
-//printf ("end: stripe info: size: %d count: %d\n", lum.lmm_stripe_size, lum.lmm_stripe_count);
             }
             close (f);
         }
@@ -595,16 +596,17 @@ enum ADIOS_FLAG adios_mpi_aggregate_should_buffer (struct adios_file_struct * fd
             fd->base_offset = 0;
             fd->pg_start_in_file = 0;
 
+            if (previous == -1)
+            {
+                MPI_File_delete (name, MPI_INFO_NULL);  // make sure clean
+            }
             // figure out the offsets and create the file with proper striping
             // before the MPI_File_open is called
             adios_mpi_build_file_offset (md, fd, name);
-            set_stripe_size (fd, md, name);
 
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
             {
-                MPI_File_delete (name, MPI_INFO_NULL);  // make sure clean
-
                 err = MPI_File_open (MPI_COMM_SELF, name
                                     ,MPI_MODE_WRONLY | MPI_MODE_CREATE
                                     ,MPI_INFO_NULL
@@ -763,7 +765,6 @@ enum ADIOS_FLAG adios_mpi_aggregate_should_buffer (struct adios_file_struct * fd
             // figure out the offsets and create the file with proper striping
             // before the MPI_File_open is called
             adios_mpi_build_file_offset (md, fd, name);
-            set_stripe_size (fd, md, name);
 
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
@@ -1363,7 +1364,10 @@ void adios_mpi_aggregate_close (struct adios_file_struct * fd
                         // write the other process data
                         for (int i = 1; i < md->storage_targets; i++)
                         {
-                            MPI_Recv (&b, size, MPI_BYTE
+                            if (aggregator + i >= md->size)
+                                break;
+
+                            MPI_Recv (b, size, MPI_BYTE
                                      ,aggregator + i, aggregator
                                      ,md->group_comm, &md->status
                                      );
