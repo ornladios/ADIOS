@@ -1133,8 +1133,6 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
                                                       method->method_data;
     struct adios_var_struct * v = fd->group->vars;
 
-    uint64_t element_size = 0;
-    struct adios_bp_element_struct * element = NULL;
     struct adios_parse_buffer_struct data;
 
     data.vars = v;

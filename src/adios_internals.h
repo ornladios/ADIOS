@@ -323,6 +323,10 @@ struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
 struct adios_var_struct * adios_find_var_by_id (struct adios_var_struct * root
                                                ,uint16_t id
                                                );
+struct adios_attribute_struct * adios_find_attribute_by_id
+                                         (struct adios_attribute_struct * root
+                                         ,uint16_t id
+                                         );
 
 struct adios_attribute_struct * adios_find_attribute_var_by_name
                                        (struct adios_attribute_struct * root
@@ -333,16 +337,6 @@ struct adios_attribute_struct * adios_find_attribute_var_by_id
                                        (struct adios_attribute_struct * root
                                        ,uint16_t id
                                        );
-
-void adios_pre_element_fetch (struct adios_bp_element_struct * element
-                             ,void ** buffer, uint64_t * buffer_size
-                             ,void * private_data
-                             );
-
-void adios_post_element_fetch (struct adios_bp_element_struct * element
-                              ,void * buffer, uint64_t buffer_size
-                              ,void * private_data
-                              );
 
 void adios_parse_buffer (struct adios_file_struct * fd, char * buffer
                         ,uint64_t len

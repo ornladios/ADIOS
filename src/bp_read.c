@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "adios.h"
 #include "adios_bp_v1.h"
 #include "bp_utils.h"
@@ -66,7 +67,8 @@ int bp_fopen ( int64_t * fh_p,
 	
 	MPI_Comm_rank (comm, &rank);
 	if ( rank == 0 ) {
-		bp_read_minifooter (fh->b, &(fh->mfooter));
+		//bp_read_minifooter (fh->b, &(fh->mfooter));
+		bp_read_minifooter (fh);
 	}
 	MPI_Bcast (&fh->mfooter, sizeof(struct bp_minifooter),MPI_BYTE, 0, comm);
 	

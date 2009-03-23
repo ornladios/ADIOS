@@ -1,8 +1,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "adios_types.h"
-#include "adios_transport_hooks.h"
-#include "adios_internals.h"
 
 void show_bytes(unsigned char * start, int len)
 {

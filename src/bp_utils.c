@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <string.h>
 #include "adios.h"
 #include "bp_utils.h"
 #include "adios_bp_v1.h"
@@ -78,17 +79,18 @@ int bp_read_open (char * filename,
 	MPI_File_get_size (fh->mpi_fh, &file_size);
 	fh->b->file_size = file_size;
 	fh->mfooter.file_size = file_size;
-	fh->b->f = (int) fh->mpi_fh;
 	 
 	return 0;
 }
 
-int bp_read_minifooter (struct adios_bp_buffer_struct_v1 * b,
-			struct bp_minifooter * mh)
+int bp_read_minifooter (struct BP_FILE * bp_struct)
 {
-	uint64_t r = 0;
+        struct adios_bp_buffer_struct_v1 * b = bp_struct->b;
+        struct bp_minifooter * mh = &bp_struct->mfooter;
+
 	uint64_t attrs_end = b->file_size - MINIFOOTER_SIZE;
 	uint32_t test = 1;
+        int r;
 
 	MPI_Status status;
 
@@ -100,11 +102,11 @@ int bp_read_minifooter (struct adios_bp_buffer_struct_v1 * b,
 				MINIFOOTER_SIZE);
 		b->offset = 0;
 	}
-	MPI_File_seek ((MPI_File) b->f, 
+	MPI_File_seek (bp_struct->mpi_fh, 
 			(MPI_Offset) attrs_end, 
 			MPI_SEEK_SET);
 
-	MPI_File_read ((MPI_File) b->f, b->buff, MINIFOOTER_SIZE, 
+	MPI_File_read (bp_struct->mpi_fh, b->buff, MINIFOOTER_SIZE, 
 			MPI_BYTE, &status);
 	
 	memset (&mh->pgs_index_offset, 0, MINIFOOTER_SIZE);
@@ -149,10 +151,10 @@ int bp_read_minifooter (struct adios_bp_buffer_struct_v1 * b,
 		
 	uint64_t footer_size = mh->file_size - mh->pgs_index_offset;
 	realloc_aligned (b, footer_size);
-	MPI_File_seek ((MPI_File) b->f,
+	MPI_File_seek (bp_struct->mpi_fh,
                         (MPI_Offset)  mh->pgs_index_offset,
                         MPI_SEEK_SET);
-	MPI_File_read ((MPI_File) b->f, b->buff, footer_size,
+	MPI_File_read (bp_struct->mpi_fh, b->buff, footer_size,
 			MPI_BYTE, &status);
 
 	MPI_Get_count (&status, MPI_BYTE, &r);
@@ -272,12 +274,12 @@ int bp_parse_pgs (uint64_t fh_p)
 	uint32_t *** time_index = 0;
 	pg_offsets = (uint64_t *) 
 		malloc (sizeof(uint64_t)*mh->pgs_count);
-	pg_pids = (uint32_t) 
+	pg_pids = (uint32_t *)
 		malloc (sizeof(uint32_t)*mh->pgs_count);
-	time_index = (uint32_t **) malloc (sizeof(uint32_t **)*2);
+	time_index = (uint32_t ***) malloc (sizeof(uint32_t **)*2);
 	for (j=0;j<2;j++) {
-		time_index[j] = (uint32_t *) 
-			malloc (sizeof(uint32_t)*group_count);
+		time_index[j] = (uint32_t **) 
+			malloc (sizeof(uint32_t*)*group_count);
 		for (i=0;i<group_count;i++) {
 			time_index[j][i] = (uint32_t *) 
 			malloc (sizeof(uint32_t)*mh->time_steps);
@@ -340,7 +342,7 @@ int bp_parse_pgs (uint64_t fh_p)
 	char ** grp_namelist;
 	uint64_t ** grp_timelist;
  
-	grp_namelist = (char *) malloc (sizeof(char*) * group_count);
+	grp_namelist = (char **) malloc (sizeof(char*) * group_count);
 	for (i=0;i<group_count;i++) {
 		grp_namelist[i] = (char *) malloc (strlen(namelist[i]));
 		strcpy(grp_namelist[i],namelist[i]);
@@ -407,11 +409,10 @@ here we need:
 	return;
 }
 
-int bp_parse_vars (struct BP_FILE * fh_p)
+int bp_parse_vars (struct BP_FILE * fh)
 {
-	struct BP_FILE * fh = (struct BP_FILE *) fh_p;
 	struct adios_bp_buffer_struct_v1 * b = fh->b;
-	struct bp_index_var_struct_v1 ** vars_root = &(fh->vars_root);
+	struct adios_index_var_struct_v1 ** vars_root = &(fh->vars_root);
 	struct bp_minifooter * mh = &(fh->mfooter);
 
 	struct adios_index_var_struct_v1 ** root;
@@ -833,29 +834,30 @@ void bp_grouping ( struct BP_FILE * fh_p,
 	return;
 }
 
-int bp_read_pgs (struct adios_bp_buffer_struct_v1 * b)
+int bp_read_pgs (struct BP_FILE * bp_struct)
 {
-	uint64_t r = 0;
+        struct adios_bp_buffer_struct_v1 * b = bp_struct->b;
+	int r = 0;
 	MPI_Status status;
 // init buffer for pg reading
 	realloc_aligned (b, b->pg_size);
 	b->offset = 0;
 
 	if (sizeof (char *) == 4) { 
-		MPI_File_seek ((MPI_File) b->f, 
+		MPI_File_seek (bp_struct->mpi_fh, 
 				(MPI_Offset) b->pg_index_offset, 
 				MPI_SEEK_SET);
 
-		MPI_File_read ((MPI_File) b->f, b->buff, 
+		MPI_File_read (bp_struct->mpi_fh, b->buff, 
 				b->pg_size, MPI_BYTE, &status);
 		MPI_Get_count (&status, MPI_BYTE, &r);
 	}
 	else { 
-		MPI_File_seek ((MPI_File) b->f, 
+		MPI_File_seek (bp_struct->mpi_fh, 
 				(MPI_Offset) b->pg_index_offset, 
 				MPI_SEEK_SET);
 
-		MPI_File_read ((MPI_File) b->f, b->buff, 
+		MPI_File_read (bp_struct->mpi_fh, b->buff, 
 				b->pg_size, MPI_BYTE, &status);
 		MPI_Get_count (&status, MPI_BYTE, &r);
 	}
@@ -866,9 +868,10 @@ int bp_read_pgs (struct adios_bp_buffer_struct_v1 * b)
 	return 0;
 }
 
-int bp_read_vars (struct adios_bp_buffer_struct_v1 * b)
+int bp_read_vars (struct BP_FILE * bp_struct)
 {
-	uint64_t r = 0;
+        struct adios_bp_buffer_struct_v1 * b = bp_struct->b;
+	int r = 0;
 	MPI_Status status;
 
 	//init buffer for vars reading
@@ -876,20 +879,20 @@ int bp_read_vars (struct adios_bp_buffer_struct_v1 * b)
 	b->offset = 0;
 
 	if (sizeof (char *) == 4) { 
-		MPI_File_seek ((MPI_File) b->f, 
+		MPI_File_seek (bp_struct->mpi_fh, 
 				(MPI_Offset) b->vars_index_offset, 
 				MPI_SEEK_SET);
 
-		MPI_File_read ((MPI_File) b->f, b->buff, 
+		MPI_File_read (bp_struct->mpi_fh, b->buff, 
 				b->vars_size, MPI_BYTE, &status);
 		MPI_Get_count (&status, MPI_BYTE, &r);
 	}
 	else { 
-		MPI_File_seek ((MPI_File) b->f, 
+		MPI_File_seek (bp_struct->mpi_fh,
 				(MPI_Offset) b->vars_index_offset, 
 				MPI_SEEK_SET);
 
-		MPI_File_read ((MPI_File) b->f, b->buff, 
+		MPI_File_read (bp_struct->mpi_fh, b->buff, 
 				b->vars_size, MPI_BYTE, &status);
 		MPI_Get_count (&status, MPI_BYTE, &r);
 	}
@@ -908,7 +911,7 @@ void print_pg_index (struct bp_index_pg_struct_v1 * pg_root,
 	uint64_t pg_time_count = 0;
 	uint64_t * pg_offsets = (uint64_t *) 
 		malloc (sizeof(uint64_t)*mh->pgs_count);
-	uint32_t * pg_pids = (uint32_t) 
+	uint32_t * pg_pids = (uint32_t *) 
 		malloc (sizeof(uint32_t)*mh->pgs_count);
 	uint64_t * time_index = (uint64_t *) 
 		malloc (sizeof(uint64_t)*mh->time_steps);
