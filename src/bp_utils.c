@@ -1,7 +1,7 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include "adios.h"
 #include "bp_utils.h"
 #include "adios_bp_v1.h"
 #include "mpi.h"

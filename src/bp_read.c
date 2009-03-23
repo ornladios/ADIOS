@@ -1,8 +1,8 @@
-//#include "bp_types.h"
 #include <stdlib.h>
+#include "adios.h"
+#include "adios_bp_v1.h"
 #include "bp_utils.h"
 #include "bp_read.h"
-#include "adios_bp_v1.h"
 #define BYTE_ALIGN 8
 
 static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)

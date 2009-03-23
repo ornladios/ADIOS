@@ -4,8 +4,8 @@
 #include <string.h>
 #include <mpi.h>
 #include "adios.h"
-#include "adios_internals.h"
 #include "adios_transport_hooks.h"
+#include "adios_internals.h"
 #include <sys/stat.h>
 
 #include <sys/queue.h>
