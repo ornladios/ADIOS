@@ -361,6 +361,7 @@ static void set_stripe_size (struct adios_file_struct * fd
             lum.lmm_stripe_size = md->biggest_size;
             err = ioctl (f, LL_IOC_LOV_SETSTRIPE, (void *) &lum);
             // if err != 0, the must not be Lustre
+            lum.lmm_stripe_count = 0;
             err = ioctl (f, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
             // if err != 0, the must not be Lustre
             if (err == 0)

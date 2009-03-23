@@ -340,7 +340,7 @@ struct lov_user_md {                 // LOV EA user data (host-endian)
         uint32_t lmm_stripe_size;    // size of stripe in bytes
         uint16_t lmm_stripe_count;   // num stripes in use for this object
         uint16_t lmm_stripe_offset;  // starting stripe offset in lmm_objects
-        struct lov_user_ost_data  lmm_objects[12]; // per-stripe data
+        struct lov_user_ost_data  lmm_objects[0]; // per-stripe data
 } __attribute__((packed));
 
 // do the magic ioctl calls to set Lustre's stripe size
@@ -378,6 +378,7 @@ static void set_stripe_size (struct adios_file_struct * fd
             lum.lmm_stripe_size = md->biggest_size;
             lum.lmm_stripe_count = UINT16_MAX; // maximize number of targets
             err = ioctl (f, LL_IOC_LOV_SETSTRIPE, (void *) &lum);
+            lum.lmm_stripe_count = 0;
             err = ioctl (f, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
             // if err != 0, the must not be Lustre
             if (err == 0)
