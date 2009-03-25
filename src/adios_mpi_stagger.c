@@ -38,6 +38,12 @@ struct adios_MPI_data_struct
     uint64_t vars_header_size;
     uint64_t biggest_size;     // largest writer's data size (round up)
     uint16_t storage_targets;  // number of storage targets being used
+
+    int16_t max_storage_targets;
+    int16_t max_stripe_count;
+    int16_t min_stripe_count;
+    int16_t files_number;
+    int16_t overlap_factor;
 };
 
 static void set_stripe_size (struct adios_file_struct * fd
@@ -163,6 +169,83 @@ void adios_mpi_stagger_init (const char * parameters
     md->vars_header_size = 0;
     md->biggest_size = 0;
     md->storage_targets = 0;
+
+    md->max_storage_targets = -1;
+    md->max_stripe_count = -1;
+    md->min_stripe_count = -1;
+    md->files_number = -1;
+    md->overlap_factor = -1;
+
+    // parse the parameters into key=value segments for optional settings
+    if (parameters)
+    {
+        int param_len = strlen (parameters);
+        if (param_len > 0)
+        {
+            char * p = strdup (parameters);
+            char * token = strtok (p, ";");
+
+            while (token)
+            {
+                char * equal_pos = strchr (token, '=');
+                if (!equal_pos)
+                {
+                    continue;
+                }
+                int equal = equal_pos - token + 1;
+                int len = strlen (token);
+                char * key = malloc (len);
+                char * value = malloc (len);
+                strncpy (key, token, equal);
+                key [equal - 1] = 0;
+                strncpy (value, equal_pos + 1, len - equal);
+                value [len - equal] = 0;
+
+                if (key && value)
+                {
+                    if (strcasecmp (key, "max_storage_targets") == 0)
+                    {
+                        int v = atoi (value);
+                        md->max_storage_targets = v;
+                    }
+                    else if (strcasecmp (key, "max_stripe_count") == 0)
+                    {
+                        int v = atoi (value);
+                        md->max_stripe_count = v;
+                    }
+                    else if (strcasecmp (key, "min_stripe_count") == 0)
+                    {
+                        int v = atoi (value);
+                        md->min_stripe_count = v;
+                    }
+                    else if (strcasecmp (key, "files_number") == 0)
+                    {
+                        int v = atoi (value);
+                        md->files_number = v;
+                    }
+                    else if (strcasecmp (key, "overlap_factor") == 0)
+                    {
+                        int v = atoi (value);
+                        md->overlap_factor = v;
+                    }
+                    else
+                    {
+                        printf ("MPI_STAGGER parameter: key: {%s} value: {%s} "
+                                "not recognized. Ignored\n"
+                               ,key, value
+                               );
+                    }
+                }
+
+                free (key);
+                free (value);
+
+                token = strtok (NULL, ";");
+            }
+
+            free (p);
+        }
+    }
 
     adios_buffer_struct_init (&md->b);
 }
