@@ -1554,9 +1554,12 @@ void adios_mpi_stagger_close (struct adios_file_struct * fd
                                    );
                     if (next_rank != -1)
                     {
-                        MPI_Isend (&flag, 1, MPI_INTEGER, next_rank
-                                  ,current_rank, md->group_comm, &md->req
-                                  );
+                        //MPI_Isend (&flag, 1, MPI_INTEGER, next_rank
+                        //          ,current_rank, md->group_comm, &md->req
+                        //          );
+                        MPI_Send (&flag, 1, MPI_INTEGER, next_rank
+                                 ,current_rank, md->group_comm
+                                 );
                     }
                 }
                 else
