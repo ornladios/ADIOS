@@ -3315,7 +3315,10 @@ int adios_parse_config (const char * config)
         }
         struct stat s;
         if (stat (config, &s) == 0)
+        {
             buffer = malloc (s.st_size + 1);
+            buffer [s.st_size] = 0;
+        }
         if (buffer)
         {
             size_t bytes_read = fread (buffer, 1, s.st_size, fp);
@@ -3356,6 +3359,7 @@ int adios_parse_config (const char * config)
             return 0;
         }
         MPI_Bcast (buffer, buffer_size, MPI_BYTE, 0, MPI_COMM_WORLD);
+        buffer [buffer_size] = 0;
     }
 #endif
 

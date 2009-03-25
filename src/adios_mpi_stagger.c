@@ -476,10 +476,23 @@ static void calc_stripe_info (struct adios_MPI_data_struct * md
 
         *stripe_offset = targets_per_file * number;
         *stripe_count = net_targets_per_file;
+        printf ("rank: %d calculated stripe offset: %d count: %d\n", rank, *stripe_offset, *stripe_count);
     }
     else
     {
         *stripe_count = UINT16_MAX;
+        printf ("defaulting\n"
+                "max storage targets: %d\n"
+                "max stripe count: %d\n"
+                "files number: %d\n"
+                "overlap factor: %d\n"
+                "min stripe count: %d\n"
+               ,md->max_storage_targets
+               ,md->max_stripe_count
+               ,md->files_number
+               ,md->overlap_factor
+               ,md->min_stripe_count
+               );
     }
 }
 
@@ -542,7 +555,7 @@ static void set_stripe_size (struct adios_file_struct * fd
             err = ioctl (f, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
             stripe_count = lum.lmm_stripe_count;
             stripe_offset = lum.lmm_stripe_offset;
-            calc_stripe_info (md, &stripe_count, &stripe_offset);
+            calc_stripe_info (md, &stripe_offset, &stripe_count);
 
             // fixup for our desires
             lum.lmm_magic = LOV_USER_MAGIC;
