@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <assert.h>
+#include <limits.h>
 
 // mpi
 #include "mpi.h"
@@ -43,7 +44,7 @@ int main (int argc, char ** argv)
 {
     char * type_name = "restart";
     char * filename = "restart.bp";
-    long long io_handle;  // io handle
+    int64_t io_handle;  // io handle
     MPI_Comm comm = MPI_COMM_WORLD;
     int rank;
     int size;
@@ -52,7 +53,7 @@ int main (int argc, char ** argv)
     struct timeval time_diff;
     struct timeval * time_diff_all;
 
-    int byte_test_length = 10 * 1024 * 1024;
+    int byte_test_length = 128 * 1024 * 1024;
     char byte_test [byte_test_length + 1];
     char r_byte_test [byte_test_length + 1];
     byte_test [byte_test_length] = 0;
@@ -104,6 +105,10 @@ int main (int argc, char ** argv)
         for (j = 0; j < 26; j++)
             byte_test [i * 26 + j] = 'a' + j;
 
+    // allocate a big block of memory to stymie unwanted local caching
+    // that would make the numbers suspect
+    char * memory_thief = malloc (1 * 1024 * 1024 * 1024);
+
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
     MPI_Comm_size (MPI_COMM_WORLD, &size);
@@ -116,7 +121,7 @@ int main (int argc, char ** argv)
         time_diff_all = 0;
 
 #if 1
-printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
+//printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
     gettimeofday (&time_start, NULL);
     adios_open (&io_handle, type_name, filename, "w");
     adios_group_size (io_handle, 4 + byte_test_length, &total, &comm);
@@ -146,12 +151,12 @@ printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
     adios_write (io_handle, "byte_test_length", &byte_test_length);
     adios_write (io_handle, "byte_test", byte_test);
 
-    printf ("rank: %d write completed\n", rank);
+    //printf ("A rank: %d write completed\n", rank);
     adios_close (io_handle);
-    printf ("rank: %d write completed\n", rank);
+    //printf ("B rank: %d write completed\n", rank);
     gettimeofday (&time_end, NULL);
 
-    printf ("rank: %d write completed\n", rank);
+    //printf ("C rank: %d write completed\n", rank);
 
     MPI_Barrier (MPI_COMM_WORLD);
 
@@ -164,10 +169,43 @@ printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
     {
         memcpy (&(time_diff_all [0]), &time_diff, sizeof (struct timeval));
         int i;
+        int max_sec = 0;
+        int max_usec = 0;
+        int min_sec = INT_MAX;
+        int min_usec = INT_MAX;
+        printf ("proc\tsec\tusec\n");
         for (i = 0; i < size; i++)
         {
-            printf ("%d\t%d\t%d\n", i, time_diff_all [i].tv_sec, time_diff_all [i].tv_usec);
+            printf ("%d\t%d\t%d\n", i, time_diff_all [i].tv_sec
+                   ,time_diff_all [i].tv_usec
+                   );
+
+            if (time_diff_all [i].tv_sec >= max_sec)
+            {
+                if (   time_diff_all [i].tv_usec > max_usec
+                    || time_diff_all [i].tv_sec > max_sec
+                   )
+                {
+                    max_sec = time_diff_all [i].tv_sec;
+                    max_usec = time_diff_all [i].tv_usec;
+                }
+            }
+
+            if (time_diff_all [i].tv_sec <=  min_sec)
+            {
+                if (   time_diff_all [i].tv_usec < min_usec
+                    || time_diff_all [i].tv_sec < min_sec
+                   )
+                {
+                    min_sec = time_diff_all [i].tv_sec;
+                    min_usec = time_diff_all [i].tv_usec;
+                }
+            }
         }
+
+        printf ("max time: %d %d\n", max_sec, max_usec);
+        printf ("Aggregate GB/sec: %f\n", (1.0 * byte_test_length * size / (1024 * 1024 * 1024)) / (max_sec + (max_usec / 1000000.0)));
+
         printf ("\n\n");
     }
 
@@ -260,6 +298,8 @@ printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
     free (zion1);
     free (zion2);
     free (zion3);
+
+    free (memory_thief);
 
     return 0;
 }
