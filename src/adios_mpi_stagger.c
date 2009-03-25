@@ -401,6 +401,89 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
     }
 }
 
+// calc_stripe_info figures out how many OSTs to use based on either an
+// assumption of one file for all processes or a different count if the
+// parameters are supplied in the XML file. These parameters are defined as
+// follows:
+
+// max_storage_targets - the number of OSTs in the system.
+//                       On ewok, this is 12. On jaguarpf, this is 671, I think.
+// max_stripe_count - the maximum number of OSTs available for a single file.
+//                    This is 160 on jaguarpf and 12 on ewok.
+// files_number - the number of files being written simultaneously. This also
+//                implies that all MPI processes are involved in the write.
+// overlap_factor - what percentage of the allocated portion of the OSTs should
+//                  be allowed to overlap with the next file set. For example,
+//                  a value of 50 means that half of the next set of OSTs will
+//                  also be used for this set (e.g., set 0= 0-15, set 1= 10-25,
+//                  set 2=20-35, ...).
+// min_stripe_count - the fewest OSTs to use per file. This will override the
+//                    overlap_factor, if necessary.
+
+// The way to put it into the XML, which is currently pretty unforgiving, is
+// like this:
+// <transport method="MPI_STAGGER" group="restart">max_storage_targets=671;max_stripe_count=160;files_number=16;overlap_factor=50;min_stripe_count=10</transport>
+
+// This says to divide the 671 OSTs so that there are 16 groups. Each group
+// will consist of 1/16 portion of the whole plus 1/32 as an overlap factor.
+// This will not exceed the max_stripe_count. (671/16 = 112 + 50% = 178, but
+// max is 160 so limited to 160 [0-159, 112-272, 225-385, etc.]).
+
+// If this were set for 600 files, then it would be 10 OSTs per file at an
+// offset of 2 [0-9, 2-11, 4-13, etc.]
+
+// Initial assumption is that based on the rank, we can guess which set of OSTs
+// to use. If this won’t work, then we need to add a communication to exchange
+// information so that the processes can make that decision (and MPI_All_to_all
+// of the rank is sufficient so that each main process can determine the
+// ordering and then calculate which set to use).
+static void calc_stripe_info (struct adios_MPI_data_struct * md
+                             ,int * stripe_offset
+                             ,int * stripe_count
+                             )
+{
+    if (   md->max_storage_targets > 0
+        && md->max_stripe_count > 0
+        && md->files_number > 0
+        && md->overlap_factor > 0
+        && md->min_stripe_count > 0
+       )
+    {
+        int targets_per_file = md->max_storage_targets / md->files_number;
+        if (md->max_storage_targets % md->files_number)
+            targets_per_file++;
+
+        int overlap_count = (int) (  targets_per_file
+                                   * (md->overlap_factor/100.0)
+                                  );
+
+        int net_targets_per_file = targets_per_file + overlap_count;
+
+        if (net_targets_per_file < md->min_stripe_count)
+            net_targets_per_file = md->min_stripe_count;
+        if (net_targets_per_file > md->max_stripe_count)
+            net_targets_per_file = md->max_stripe_count;
+
+        int rank = 0;
+        int size = 0;
+        int range = 0;
+        int number = 0;
+        MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+        MPI_Comm_size (MPI_COMM_WORLD, &size);
+
+        range = size / md->files_number;
+        number = rank / range;
+
+        *stripe_offset = targets_per_file * number;
+        *stripe_count = net_targets_per_file;
+    }
+    else
+    {
+        *stripe_count = UINT16_MAX;
+    }
+}
+
+
 // LUSTRE Structure
 // from /usr/include/lustre/lustre_user.h
 #define LUSTRE_SUPER_MAGIC 0x0BD00BD0
@@ -451,15 +534,22 @@ static void set_stripe_size (struct adios_file_struct * fd
     {
         if (f != -1)
         {
+            int stripe_count;
+            int stripe_offset;
             struct lov_user_md lum;
             lum.lmm_magic = LOV_USER_MAGIC;
             // get what Lustre assigns by default
             err = ioctl (f, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
+            stripe_count = lum.lmm_stripe_count;
+            stripe_offset = lum.lmm_stripe_offset;
+            calc_stripe_info (md, &stripe_count, &stripe_offset);
+
             // fixup for our desires
             lum.lmm_magic = LOV_USER_MAGIC;
             lum.lmm_pattern = 0;
             lum.lmm_stripe_size = md->biggest_size;
-            lum.lmm_stripe_count = UINT16_MAX; // maximize number of targets
+            lum.lmm_stripe_count = stripe_count; // maximize number of targets
+            lum.lmm_stripe_offset = stripe_offset;
             err = ioctl (f, LL_IOC_LOV_SETSTRIPE, (void *) &lum);
             lum.lmm_stripe_count = 0;
             err = ioctl (f, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
@@ -469,6 +559,14 @@ static void set_stripe_size (struct adios_file_struct * fd
                 md->storage_targets = lum.lmm_stripe_count;
             }
             close (f);
+
+            int rank = 0;
+            MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+            printf ("rank: %d stripe_offset: %d stripe_count: %d "
+                    "stripe_size: %d\n"
+                   ,rank, lum.lmm_stripe_offset, lum.lmm_stripe_count
+                   ,lum.lmm_stripe_size
+                   );
         }
     }
 }
