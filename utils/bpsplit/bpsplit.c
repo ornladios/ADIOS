@@ -66,10 +66,11 @@ char *prgname; /* argv[0] */
 
 void display_help() {
    printf(
-"Copy some timesteps from a time-stepped BP file into another file.\n"
 "Usage: %s [-h | --help] [-v | --verbose] [--from N | -n N] [--to M | -m M]\n"
 "          [--recordfile path | -r path ] [ --skiplast | -s ] \n"
 "          inputfile outputfile\n"
+"\n"
+"Copy some timesteps from a time-stepped BP file into another file.\n"
 "\n"
 "  --help | -h     Print this help.\n"
 "  --verbose | -v  Log activity about what this program is doing.\n"
@@ -78,13 +79,15 @@ void display_help() {
 "                  Note: BP file timesteps starts from 1.\n"
 "  --to | -m M     Finish at Mth timestep.\n"
 "                  -k means last+k+1 (-1=last)\n"
-"  --recordfile \n"
+"  --recordfile | \n"
 "   -r path        write out last timestep into file <path>\n"
 "  --skiplast      Skip the last timestep (like -m -2)\n"
 "\n"
-"Default behavior: %s -r last in.bp out.bp\n"
-"  will examine the content of file 'last' and splits all timesteps from\n"
-"  in.bp that are newer (greater) then that timestep into out.bp\n"
+"  Default behavior: -n -1 -m -1 \n"
+"\n"
+"  Do not use -r and -n together. If -r is used, bpsplit will examine the\n" 
+"  content of file 'last' and splits all timesteps from inputfile that\n"
+"  are newer (greater) then that timestep\n"
 "\n"
 "  --skiplast would do the same up to the one before last timestep.\n"
 "  This is useful if you expect a process may be still writing in.bp\n"
@@ -103,6 +106,7 @@ int main( int argc, char *argv[] ) {
     char *filein  = NULL;
     char *fileout = NULL;       
     char *recordfile = NULL;      // contains last timestep splitted before
+    bool n_was_set = false;       // test if both n and recordfile is specified 
 
     prgname = strdup(argv[0]);
 
@@ -125,6 +129,7 @@ int main( int argc, char *argv[] ) {
                 fprintf(stderr, "Error: could not convert --from/-n option's value: %s\n", optarg);
                 return 1;
             }
+            n_was_set=true;
             break;
         case 'm':
             errno = 0; 
@@ -167,6 +172,11 @@ int main( int argc, char *argv[] ) {
     } else {
         display_help();
         return 1;
+    }
+
+    if (n_was_set && recordfile) {
+        fprintf(stderr, "Error: -n/--from index and -r/--recordfile should not be used together!\n");
+        return 2;
     }
 
     /* Do the work */
@@ -259,7 +269,10 @@ uint32_t timesteps_available() {
 
 /** get last timestep written into the recordfile (if exist) 
  *  lasttime is set to the value in the file or 0
- *  return value is error code, 0 on success, 1 for failure to read existing file
+ *  return value is error code, 
+ *  0 on success, 
+ *  -1 if file does not exists (not an error!) 
+ *  1 for failure to read existing file
  */
 int get_last_time(char *recordfile) {
     int excode = 0;
@@ -268,9 +281,11 @@ int get_last_time(char *recordfile) {
     lasttime = 0;  // there is at least 1 group with Time=1 in a bp file
     if (recordfile == NULL) 
         return 0;
+    if (verbose>1) printf("Try to read recordfile: %s\n", recordfile);
     rf = fopen( recordfile, "r");
     if (rf == NULL) 
-        return 0; // no problem, just no such file (yet)
+        return -1; // no problem, just no such file (yet)
+    if (verbose) printf("Read recordfile: %s\n", recordfile);
     n = fscanf(rf, "%u\n", &lasttime);
     if (n != 1) {
         fprintf(stderr, "Recordfile %s does not contain an unsigned integer value in the first line: %s\n",
@@ -282,6 +297,24 @@ int get_last_time(char *recordfile) {
     fclose(rf);
 
     return excode;
+}
+
+/** Write out last timestep into the recordfile.
+ */
+int record_last_time(char *recordfile, int laststep) {
+    FILE * rf;
+    if (recordfile == NULL) 
+        return 0;
+    if (verbose>1) printf("Try to write last step into recordfile: %s\n", recordfile);
+    rf = fopen( recordfile, "w");
+    if (rf == NULL) {
+        fprintf(stderr, "Could not create recordfile %s: %s\n", recordfile, strerror(errno));
+        return 1;
+    }
+    if (verbose) printf("Write step %d into recordfile: %s\n", laststep, recordfile);
+    fprintf( rf, "%u\n", laststep);
+    fclose(rf);
+    return 0;
 }
 
 /** Handle -maxt+1 ... -1 and 1 ... maxt indexes.
@@ -549,10 +582,28 @@ int bpsplit(char *filein, char *fileout, char *recordfile, int from_in, int to_i
         return excode; // finish here on error
     maxtime = timesteps_available();
 
+    // get last timestep from recordfile (if exists)
+    excode = get_last_time(recordfile);
+    if (excode > 0) // -1 is not an error
+        return excode; // finish here on error
+    if (excode == -1)
+        from = 1;  // nothing in recordfile, so we start from beginning
+    if (lasttime >= maxtime) {
+        fprintf(stderr, "Error: last timestep recorded in recordfile %s (%u) >= maxtime %u. No output file is created\n",
+            recordfile, lasttime, maxtime);
+        return 5; // finish here on error
+    }
+    // if recordfile was given, it's content is stronger than from, to!
+    if (lasttime > 0) {
+        from = lasttime+1;
+    }
+
+
     // set from and to correctly now (handle negative values)
     //  type is converted from int to uint32_t at this point
-    from = handle_negative_index(from_in, maxtime, "from");
-    to   = handle_negative_index(to_in, maxtime, "to");
+    if (!recordfile) 
+        from = handle_negative_index(from_in, maxtime, "from");
+    to  = handle_negative_index(to_in, maxtime, "to");
     // handle skiplast option
     if (skiplast && to == maxtime) {
         if (verbose) printf("Skip-last option applied.\n");
@@ -566,22 +617,6 @@ int bpsplit(char *filein, char *fileout, char *recordfile, int from_in, int to_i
         return 4; // finish here on error
     }
 
-    // get last timestep from recordfile (if exists)
-    excode = get_last_time(recordfile);
-    if (excode) 
-        return excode; // finish here on error
-    if (lasttime >= maxtime) {
-        fprintf(stderr, "Error: last timestep recorded in recordfile %s (%u) >= maxtime %u. No output file is created\n",
-            recordfile, lasttime, maxtime);
-        return 5; // finish here on error
-    }
-
-    // if recordfile was given, it's content is stronger than from, to!
-    if (lasttime >= from) {
-        fprintf(stderr, "Warning: From index %u <= what was recorded in recordfile %s (%u). Set to %u\n",
-            from, recordfile, lasttime, lasttime+1);
-        from = lasttime+1;
-    }
     if (lasttime >= to) {
         fprintf(stderr, "Error: To index %u <=  what was recorded in recordfile %s (%u).\n",
             to, recordfile, lasttime);
@@ -599,6 +634,11 @@ int bpsplit(char *filein, char *fileout, char *recordfile, int from_in, int to_i
     
     // write output file
     excode = write_out(fileout, filein);  // filein just for error messages
+    if (excode > 0) 
+        return excode; // finish here on error
+
+    // write recordfile (if exists)
+    excode = record_last_time( recordfile, to);
 
     return excode;
 }
