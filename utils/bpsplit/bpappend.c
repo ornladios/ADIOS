@@ -63,8 +63,9 @@ char *prgname; /* argv[0] */
 void display_help() {
    printf(
 "Usage: %s [-h | --help] [-v | --verbose] splitfile appendfile\n"
-"append timesteps into a time-stepped BP file from another file BP file splitted by bpsplit.\n"
-"\nappendfile will be appended with the data in splitfile\n."
+"\n"
+"Append timesteps into a time-stepped BP file from another file BP file splitted by bpsplit.\n"
+"splitfile will be appended to appendfile.\n"
 "\n"
 "  --help | -h     Print this help.\n"
 "  --verbose | -v  Log activity about what this program is doing.\n"
