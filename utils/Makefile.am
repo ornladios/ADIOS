@@ -1,4 +1,4 @@
-SUBDIRS= gpp bpdump bp2ascii
+SUBDIRS= gpp bpdump bp2ascii bpsplit
 if HAVE_HDF5
 SUBDIRS += bp2h5
 endif
