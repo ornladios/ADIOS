@@ -45,7 +45,7 @@ static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b
     b->length = size;
 }
 int bp_fopen ( int64_t * fh_p,
-	        char * fname,
+	        const char * fname,
 		MPI_Comm comm
 	      )
 {
@@ -161,7 +161,7 @@ int bp_gopen ( int64_t * gh_p,
 	bp_gh->group_id = grpid;
 	bp_gh->offset = offset;
 	bp_gh->count = fh->gh->var_counts_per_group[grpid];
-	bp_gh->fh = fh_p;
+	bp_gh->fh = fh;
 	*gh_p = (uint64_t) bp_gh;
 	return;
 }
@@ -236,6 +236,33 @@ int bp_inq_group (int64_t gh_p, int *nvar, char ** vnamelist)
 	return 0;	
 }
 	
+
+/** Find a string (variable by full name) in a list of strings (variable name list)
+  * from an 'offset' within the first 'count' elements.
+  * Return the index of the variable in [offset .. offset+count-1] if found,
+  *  or -1 if not found.
+  */
+static int find_var( char ** varnamelist, int offset, int count, char * varname) 
+{
+        /* Find the variable: full path is stored with a starting / 
+           Like in HDF5, we need to match names given with or without the starting /
+           startpos is 0 or 1 to indicate if the argument has starting / or not
+        */
+        int i, endp;
+        int startpos = 0; 
+        if (varname[0] != '/')
+        	startpos = 1;
+        
+        endp = offset + count;
+	for (i = offset; i < endp; i++) {
+                //printf("-- find_var: compare %s with %s, startpos=%d\n", varname, varnamelist[i], startpos);
+		if (!strcmp( &(varnamelist[i][startpos]), varname)) {
+			return i;
+		}
+	}
+        return -1;
+}
+
 int bp_inq_var (int64_t gh_p, char * varname,
 		 int * type,
 		 int * ndim,
@@ -254,78 +281,82 @@ int bp_inq_var (int64_t gh_p, char * varname,
 	}
 	
 	struct adios_index_var_struct_v1 * var_root;
-	int i,k;
+	int i,k, var_id;
 	gh->var_current = 0;
 	var_root = fh->vars_root;
 	*is_timebased = 0;
 
 	for(i=0;i<gh->offset;i++)
 		var_root = var_root->next;
-	for (i=0;i<gh->count;i++) {
-		if (!strcmp(varname, var_root->var_name)) {
-	
-			gh->var_current = var_root;
-			*type = var_root->type;
-			*ndim = var_root->characteristics [0].dims.count;
-			if (!dims || !(*ndim))
-				return;
-			int time_flag = -1;
-			uint64_t * gdims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
-			uint64_t * ldims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
-			memset(dims,0,sizeof(int)*(*ndim));
-			//for (j=0;j<var_root->characteristics_count;j++)  
-			for (k=0;k<(*ndim);k++) {
-				gdims[k]=var_root->characteristics[0].dims.dims[k*3+1];
-				ldims[k]=var_root->characteristics[0].dims.dims[k*3];
+
+	// find variable in var list
+	var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
+	if (var_id<0) {
+		fprintf(stderr, "Error: Variable %s does not exist in the group %s!\n",
+                	varname, fh->gh->namelist[gh->group_id]);
+		return -4;
+	}
+
+	for (i=0;i<var_id;i++) 
+		var_root = var_root->next;
+
+	gh->var_current = var_root;
+	*type = var_root->type;
+	*ndim = var_root->characteristics [0].dims.count;
+	if (!dims || !(*ndim))
+		return;
+	int time_flag = -1;
+	uint64_t * gdims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
+	uint64_t * ldims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
+	memset(dims,0,sizeof(int)*(*ndim));
+	//for (j=0;j<var_root->characteristics_count;j++)  
+	for (k=0;k<(*ndim);k++) {
+		gdims[k]=var_root->characteristics[0].dims.dims[k*3+1];
+		ldims[k]=var_root->characteristics[0].dims.dims[k*3];
+	}
+	int is_global=0;
+	for (k=0;i<(*ndim);i++) {
+	 	is_global = is_global || gdims[k];
+	}
+	if (!is_global) {
+		for (i=0;i<(*ndim);i++) {
+			if (   ldims[i] == 1 
+		  	    && var_root->characteristics_count > 1) {
+				*is_timebased = 1;
+				time_flag = i;
 			}
-			int is_global=0;
-			for (k=0;i<(*ndim);i++) {
-			 	is_global = is_global || gdims[k];
-			}
-			if (!is_global) {
-				for (i=0;i<(*ndim);i++) {
-					if (   ldims[i] == 1 
-				  	    && var_root->characteristics_count > 1) {
-						*is_timebased = 1;
-						time_flag = i;
-					}
-					if (dims) {
-						if (time_flag==0) {
-							if (i>0)
-								dims[i-1]=ldims[i];
-						}
-						else { 
-							dims[i]=ldims[i];
-						}
-					}
-				}		 
-			}		 
-			else {
-				for (i=0;i<(*ndim);i++) {
-					if (gdims[i]==0) {
-						time_flag = i;
-						*is_timebased = 1;
-					}
-					if (dims) {
-						if (time_flag==0) {
-							if (i>0)
-								dims[i-1]=gdims[i];
-						}
-						else
-							dims[i]=gdims[i];
-					}
+			if (dims) {
+				if (time_flag==0) {
+					if (i>0)
+						dims[i-1]=ldims[i];
+				}
+				else { 
+					dims[i]=ldims[i];
 				}
 			}
-			free(gdims);
-			free(ldims);
-					
-			if ((*is_timebased))
-				*ndim = *ndim - 1;
-			break;
+		}		 
+	}		 
+	else {
+		for (i=0;i<(*ndim);i++) {
+			if (gdims[i]==0) {
+				time_flag = i;
+				*is_timebased = 1;
+			}
+			if (dims) {
+				if (time_flag==0) {
+					if (i>0)
+						dims[i-1]=gdims[i];
+				}
+				else
+					dims[i]=gdims[i];
+			}
 		}
-		else
-			var_root = var_root->next;
 	}
+	free(gdims);
+	free(ldims);
+			
+	if ((*is_timebased))
+		*ndim = *ndim - 1;
 	
 	return 0;
 }
@@ -353,14 +384,10 @@ int bp_get_var (int64_t gh_p,
 	MPI_Status status;
 
 
-	for (i = 0; i < gh->count; i++) {
-		if (!strcmp(fh->gh->var_namelist[i+gh->offset], varname)) {
-			var_id = i+gh->offset;
-			break;
-		}
-	}
-	if (i==gh->count) {
-		fprintf(stderr, "Error: %s doesnot exist in the file!\n",varname);
+	var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
+	if (var_id<0) {
+		fprintf(stderr, "Error: Variable %s does not exist in the group %s!\n",
+                	varname, fh->gh->namelist[gh->group_id]);
 		return -4;
 	}
 
@@ -644,7 +671,7 @@ void bp_inq_file_ ( int64_t * fh_p, int * ngroup,
 		   int * nvar, int * nattr, 
 		   int * ntime, char ** gnamelist, int * err)
 {
-	bp_inq_file ( fh_p, ngroup, nvar, nattr, ntime, gnamelist);
+	bp_inq_file ( *fh_p, ngroup, nvar, nattr, ntime, gnamelist);
 }
 
 const char * bp_type_to_string (int type)

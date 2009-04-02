@@ -49,7 +49,7 @@ static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b
     b->length = size;
 }
 
-int bp_read_open (char * filename,
+int bp_read_open (const char * filename,
 		  MPI_Comm comm,
 		  struct BP_FILE * fh)
 {
@@ -540,17 +540,22 @@ int bp_parse_vars (struct BP_FILE * fh)
 				break;
 			}
 		}
+                /* Full name of variable: concatenate var_path and var_name
+                   Always have / in the beginning of the full name
+                */
 		if (strcmp ((*root)->var_path,"/")) {
 			var_namelist [i] = (char *) malloc ( strlen((*root)->var_name)
-					+strlen((*root)->var_path)
+					+strlen((*root)->var_path) + 1
 					);
 			strcpy(var_namelist[i], (*root)->var_path);
-			strcat(var_namelist[i], (*root)->var_name);
 		}
 		else {
-			var_namelist [i] = (char *) malloc ( strlen((*root)->var_name));
-			strcpy(var_namelist[i], (*root)->var_name);
+			var_namelist [i] = (char *) malloc ( strlen((*root)->var_name)+1);
+                        var_namelist[i][0] = '\0';
 		}
+		strcat(var_namelist[i], "/");
+		strcat(var_namelist[i], (*root)->var_name);
+
 		var_offsets[i] = (uint64_t *) malloc (
 				sizeof(uint64_t)*(*root)->characteristics_count);
 		for (j=0;j < (*root)->characteristics_count;j++) {

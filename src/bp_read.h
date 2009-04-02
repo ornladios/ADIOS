@@ -8,13 +8,12 @@ March 2009, ORNL
 /*
 	IN:  fname
 	     comm
-	OUT: fh
+	OUT: fh_p
 */
-
-int bp_fread ( int64_t * fh,
-	        char * fname,
-		MPI_Comm comm
-	      );
+int bp_fopen ( int64_t * fh_p,
+               const char * fname,
+               MPI_Comm comm
+             );
 
 /*
 	IN: fh 
@@ -83,7 +82,7 @@ const char * bp_type_to_string (int type);
 
 // Fortran interface
 
-void bp_fread_ ( int64_t * fh,
+void bp_fopen_ ( int64_t * fh,
 	        char * fname,
 		MPI_Comm comm,
 		int * err,
