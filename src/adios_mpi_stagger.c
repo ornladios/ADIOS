@@ -39,6 +39,9 @@ struct adios_MPI_data_struct
     uint64_t biggest_size;     // largest writer's data size (round up)
     uint16_t storage_targets;  // number of storage targets being used
     uint16_t split_groups;     // number of files to split output into
+    MPI_Comm split_comm;
+    int split_size;
+    int split_rank;
 
     // these correspond to the series of parameters available to this transport
     // and control how it performs
@@ -178,6 +181,9 @@ void adios_mpi_stagger_init (const char * parameters
     md->biggest_size = 0;
     md->storage_targets = 0;
     md->split_groups = 1;
+    md->split_comm = MPI_COMM_NULL;
+    md->split_size = -1;
+    md->split_rank = -1;
 
     md->max_storage_targets = -1;
     md->max_stripe_count = -1;
@@ -409,7 +415,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
             md->b.pg_index_offset =   offsets [(md->size - 1) * 3 + 0]
                                     + biggest_size;
 #else
-            int groups = md->storage_targets;
+            int groups = md->max_storage_targets / md->storage_targets;
             int group_size = md->size / groups;
             uint64_t last_offset = 0;   // how far into file is last group?
             for (i = 0; i < md->size; i++)
@@ -418,9 +424,22 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
                 int rank_in_group = i % group_size;
                 // # groups is the number of storage_targets for this file
                 // base + group_base + (rank in group * # groups * size)
+//                offsets [i * 3 + 0] =   fd->base_offset
+//                                      + (group * biggest_size)
+//                                    + (rank_in_group * groups * biggest_size);
+                // which OST for this group we write to
+                int ost = rank_in_group / (group_size / md->storage_targets);
+                // how many procs write to each OST
+                int sub_group_size = group_size / md->storage_targets;
+                // which split file we are part of
+                int sub_group = ost;
+                // write order for this OST (duplicate # in each OST)
+                int order = rank_in_group % sub_group_size;
+                // overall file offset to force each process to write to the
+                // desired OST
+                int offset = order * md->storage_targets + sub_group;
                 offsets [i * 3 + 0] =   fd->base_offset
-                                      + (group * biggest_size)
-                                      + (rank_in_group * groups * biggest_size);
+                                      + (offset * biggest_size);
                 if (last_offset < offsets [i * 3 + 0])
                     last_offset = offsets [i * 3 + 0];
                 offsets [i * 3 + 1] = biggest_size;
@@ -472,6 +491,39 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
             md->storage_targets = offset [2];
             md->split_groups = md->max_storage_targets / md->storage_targets;
             fd->pg_start_in_file = fd->base_offset;
+        }
+
+        // if we should split, make a new comm
+        if (md->split_groups > 1)
+        {
+            // how many groups we split into
+            int groups = md->max_storage_targets / md->storage_targets;
+            // which group we are part of
+            int group = md->rank / (md->size / groups);
+            // how big each group is
+            int group_size = md->size / groups;
+            // our rank within our group
+            int group_rank = md->rank % group_size;
+            // how many procs write to each OST for this group
+            int procs_per_ost = group_size / md->storage_targets;
+
+            MPI_Comm_split (md->group_comm, group, group_rank, &md->split_comm);
+            MPI_Comm_size (md->split_comm, &md->split_size);
+            MPI_Comm_rank (md->split_comm, &md->split_rank);
+
+            // which OST for this group we write to
+            int ost = md->split_rank / (md->split_size / md->storage_targets);
+            // how many files are we splitting into
+            int sub_groups = md->storage_targets;
+            // how many procs write to each OST
+            int sub_group_size = md->split_size / sub_groups;
+            // which split file we are part of
+            int sub_group = ost;
+            // write order for this OST (duplicate # in each OST)
+            int order = md->split_rank % sub_group_size;
+            // overall file offset to force each process to write to the
+            // desired OST
+            int offset = order * sub_groups + sub_group;
         }
     }
     else
@@ -564,7 +616,7 @@ static void calc_stripe_info (struct adios_MPI_data_struct * md
 
         *stripe_offset = targets_per_file * number;
         *stripe_count = net_targets_per_file;
-        printf ("rank: %d calculated stripe offset: %d count: %d\n", rank, *stripe_offset, *stripe_count);
+//printf ("rank: %d calculated stripe offset: %d count: %d\n", rank, *stripe_offset, *stripe_count);
 
         // split, if we must
         if (md->split_files_count != split_files_unknown)
@@ -577,7 +629,8 @@ static void calc_stripe_info (struct adios_MPI_data_struct * md
                      {
                          int groups = md->max_storage_targets / *stripe_count;
                          int group = md->rank / (md->size / groups);
-printf ("groups: %d group: %d\n", groups, group);
+                         int group_size = md->size / groups;
+                         int group_rank = md->rank % group_size;
 
                          md->split_groups = groups;
                          if (rank == 0)
@@ -712,7 +765,7 @@ static void set_stripe_size (struct adios_file_struct * fd
             }
             close (f);
 	    md->split_groups = md->max_storage_targets / md->storage_targets;
-printf ("md->split_groups: %d md->max_storage_targets: %d md->storage_targets: %d\n", md->split_groups, md->max_storage_targets, md->storage_targets);
+//printf ("md->split_groups: %d md->max_storage_targets: %d md->storage_targets: %d\n", md->split_groups, md->max_storage_targets, md->storage_targets);
 
             // if we are splitting files, fixup now (need to do above to get
             // the real max storage targets from the filesystem).
@@ -727,7 +780,7 @@ printf ("md->split_groups: %d md->max_storage_targets: %d md->storage_targets: %
                 {
                     sprintf (split_name, split_format, i);
                     sprintf (new_name, "%s%s", filename, split_name);
-printf ("md->split_groups: %d new_name: %s\n", md->split_groups, new_name);
+//printf ("md->split_groups: %d new_name: %s\n", md->split_groups, new_name);
                     if (fd->mode == adios_mode_write)
                         unlink (new_name);  // clean up old stuff
                     f_split [i] = open (new_name
@@ -746,7 +799,7 @@ printf ("md->split_groups: %d new_name: %s\n", md->split_groups, new_name);
                     err = ioctl (f_split [i], LL_IOC_LOV_SETSTRIPE
                                 ,(void *) &lum
                                 );
-printf ("i: %d stripe_count: %d stripe_offset: %d\n", i, md->storage_targets, md->storage_targets * i);
+//printf ("i: %d stripe_count: %d stripe_offset: %d\n", i, md->storage_targets, md->storage_targets * i);
                     close (f_split [i]);
                 }
                 free (f_split);
@@ -755,11 +808,9 @@ printf ("i: %d stripe_count: %d stripe_offset: %d\n", i, md->storage_targets, md
 
             int rank = 0;
             MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-            printf ("rank: %d stripe_offset: %d stripe_count: %d "
-                    "stripe_size: %d\n"
-                   ,rank, lum.lmm_stripe_offset, lum.lmm_stripe_count
-                   ,lum.lmm_stripe_size
-                   );
+//printf ("rank: %d stripe_offset: %d stripe_count: %d stripe_size: %d\n"
+//       ,rank, lum.lmm_stripe_offset, lum.lmm_stripe_count, lum.lmm_stripe_size
+//       );
         }
     }
 }
@@ -994,12 +1045,12 @@ enum ADIOS_FLAG adios_mpi_stagger_should_buffer (struct adios_file_struct * fd
                 // num_files is max_targets / storage_targets
                 // use calculated storage_targets since min_targets might win
                 int group = md->rank / (md->size / (md->max_storage_targets / md->storage_targets));
-printf ("rank: %d size: %d targets: %d\n", md->rank, md->size, md->max_storage_targets);
+//printf ("rank: %d size: %d targets: %d\n", md->rank, md->size, md->max_storage_targets);
                 char split_format [7] = ".%d";
                 char split_name [7];
                 sprintf (split_name, split_format, group);
                 strcat (name, split_name);
-printf ("rank: %d group: %d new_name: %s\n", md->rank, group, name);
+//printf ("rank: %d group: %d new_name: %s\n", md->rank, group, name);
                 // ordering (4 OSTs and 10 ranks):
                 // 0: A 1: B 2: C 3: D
                 // 4: A 5: B 6: C 7: D
@@ -1022,12 +1073,12 @@ printf ("rank: %d group: %d new_name: %s\n", md->rank, group, name);
                 // file creation was handled when the stripe information
                 // was calculated and encoded.
             }
-printf ("split_groups: %d rank: %d previous: %d next: %d\n", md->split_groups, current, previous, next);
+//printf ("split_groups: %d rank: %d previous: %d next: %d\n", md->split_groups, current, previous, next);
 
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
             {
-printf ("MPI_File_open (create): %s rank: %d\n", name, md->rank);
+//printf ("MPI_File_open (create): %s rank: %d\n", name, md->rank);
                 err = MPI_File_open (MPI_COMM_SELF, name
                                     ,MPI_MODE_WRONLY | MPI_MODE_CREATE
                                     ,MPI_INFO_NULL
@@ -1051,7 +1102,7 @@ printf ("MPI_File_open (create): %s rank: %d\n", name, md->rank);
                               ,md->group_comm, &md->req
                               );
                 }
-printf ("MPI_File_open (open): %s rank: %d\n", name, md->rank);
+//printf ("MPI_File_open (open): %s rank: %d\n", name, md->rank);
                 err = MPI_File_open (MPI_COMM_SELF, name
                                     ,MPI_MODE_WRONLY
                                     ,MPI_INFO_NULL
@@ -2076,6 +2127,13 @@ void adios_mpi_stagger_close (struct adios_file_struct * fd
        )
     {
         md->group_comm = MPI_COMM_NULL;
+    }
+    if (md && md->split_comm != MPI_COMM_NULL)
+    {
+        MPI_Comm_free (&md->split_comm);
+        md->split_comm = MPI_COMM_NULL;
+        md->split_size = -1;
+        md->split_rank = -1;
     }
 
     md->fh = 0;
