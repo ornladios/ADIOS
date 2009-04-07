@@ -45,16 +45,16 @@ struct adios_MPI_data_struct
 
     // these correspond to the series of parameters available to this transport
     // and control how it performs
+    int16_t files_number;       // # files user is creating as part of output
     int16_t max_storage_targets;// number of OSTs in parallel filesystem
     int16_t max_stripe_count;   // max OSTs per file (system max)
     int16_t min_stripe_count;   // min OSTs per file (user desire)
-    int16_t files_number;       // # files user is creating as part of output
     int16_t overlap_factor;     // percentage of OSTs to overlap for efficiency
-    int16_t split_target_count; // number of OSTs for each 'split' file
     enum {split_files_unknown
          ,split_files_min
          ,split_files_max
          } split_files_count;   // how many 'split' files to generate
+    int16_t split_target_count; // number of OSTs for each 'split' file
 };
 
 static void set_stripe_size (struct adios_file_struct * fd
@@ -185,11 +185,11 @@ void adios_mpi_stagger_init (const char * parameters
     md->split_size = -1;
     md->split_rank = -1;
 
+    md->files_number = -1;
     md->max_storage_targets = -1;
     md->max_stripe_count = -1;
-    md->min_stripe_count = -1;
-    md->files_number = -1;
-    md->overlap_factor = -1;
+    md->min_stripe_count = 1;      // always can do only 1 by default
+    md->overlap_factor = 0;        // always can not overlap by default
     md->split_target_count = -1;
     md->split_files_count = split_files_unknown;
 
@@ -270,11 +270,11 @@ void adios_mpi_stagger_init (const char * parameters
                     }
                     else if (strcasecmp (key, "split_files_count") == 0)
                     {
-                        if (strcasecmp (value, "min"))
+                        if (strcasecmp (value, "min") == 0)
                         {
                             md->split_files_count = split_files_min;
                         }
-                        else if (strcasecmp (value, "max"))
+                        else if (strcasecmp (value, "max") == 0)
                         {
                             md->split_files_count = split_files_max;
                         }
@@ -541,19 +541,19 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
 // parameters are supplied in the XML file. These parameters are defined as
 // follows:
 
+// files_number - the number of files being written simultaneously. This also
+//                implies that all MPI processes are involved in the write.
 // max_storage_targets - the number of OSTs in the system.
 //                       On ewok, this is 12. On jaguarpf, this is 672.
 // max_stripe_count - the maximum number of OSTs available for a single file.
 //                    This is 160 on jaguarpf and 12 on ewok.
-// files_number - the number of files being written simultaneously. This also
-//                implies that all MPI processes are involved in the write.
+// min_stripe_count - the fewest OSTs to use per file. This will override the
+//                    overlap_factor, if necessary.
 // overlap_factor - what percentage of the allocated portion of the OSTs should
 //                  be allowed to overlap with the next file set. For example,
 //                  a value of 50 means that half of the next set of OSTs will
 //                  also be used for this set (e.g., set 0= 0-15, set 1= 10-25,
 //                  set 2=20-35, ...).
-// min_stripe_count - the fewest OSTs to use per file. This will override the
-//                    overlap_factor, if necessary.
 
 // The way to put it into the XML, which is currently pretty unforgiving, is
 // like this:
@@ -586,11 +586,21 @@ static void calc_stripe_info (struct adios_MPI_data_struct * md
                              ,int * stripe_count
                              )
 {
-    if (   md->max_storage_targets > 0
+/*
+if (md->rank == 0)
+printf ("files_number: %d max_storage_targets: %d max_stripe_count: %d min_stripe_count: %d split_files_count: %s split_target_count: %d\n"
+,md->files_number
+,md->max_storage_targets
+,md->max_stripe_count
+,md->min_stripe_count
+,(md->split_files_count == split_files_min ? "min" : (md->split_files_count == split_files_max ? "max" : "unknown"))
+,md->split_target_count
+);
+*/
+    // these 3 are the required parameters to decide to do stripe manipulation
+    if (   md->files_number > 0
+        && md->max_storage_targets > 0
         && md->max_stripe_count > 0
-        && md->files_number > 0
-        && md->overlap_factor >= 0
-        && md->min_stripe_count > 0
        )
     {
         int targets_per_file = md->max_storage_targets / md->files_number;
@@ -628,6 +638,7 @@ static void calc_stripe_info (struct adios_MPI_data_struct * md
             {
                 case split_files_min:
                 {
+                     // if we can split to our advantage, do so
                      if (  net_targets_per_file * md->files_number
                          < md->max_storage_targets
                         )
@@ -638,35 +649,23 @@ static void calc_stripe_info (struct adios_MPI_data_struct * md
                          int group_rank = md->rank % group_size;
 
                          md->split_groups = groups;
-                         if (rank == 0)
-                         printf ("split_files_min (need to split)\n");
+                         *stripe_count = group_size;
                      }
-                     else
-                     if (rank == 0)
-                     printf ("minimum number of files using all OSTs achieved "
-                             "already. No split necessary\n"
-                            );
                      break;
                 }
 
                 case split_files_max:
                 {
+                     // if we can split to our advantage, do so
                      if (net_targets_per_file > md->split_target_count)
                      {
-                         int groups = md->max_storage_targets / *stripe_count;
+                         int groups =   md->max_storage_targets
+                                      / md->split_target_count;
                          int group = md->rank / (md->size / groups);
 
                          md->split_groups = groups;
-                         if (rank == 0)
-                             printf ("need to split into more files (%d)\n"
-                                    ,md->split_target_count
-                                    );
+                         *stripe_count = md->split_target_count;
                      }
-                     else
-                     if (rank == 0)
-                     printf ("rank: %d split_files_max. %d OSTs each\n"
-                            ,md->split_target_count
-                            );
                      break;
                 }
             }

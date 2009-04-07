@@ -6682,52 +6682,6 @@ void adios_cleanup ()
     }
 }
 
-uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var)
-{
-    switch (type)
-    {
-        case adios_byte:
-        case adios_unsigned_byte:
-            return 1;
-
-        case adios_string:
-            if (!var)
-                return 0;
-            else
-                return strlen ((char *) var);
-
-        case adios_short:
-        case adios_unsigned_short:
-            return 2;
-
-        case adios_integer:
-        case adios_unsigned_integer:
-            return 4;
-
-        case adios_long:
-        case adios_unsigned_long:
-            return 8;
-
-        case adios_real:
-            return 4;
-
-        case adios_double:
-            return 8;
-
-        case adios_long_double:
-            return 16;
-
-        case adios_complex:
-            return 2 * 4;
-
-        case adios_double_complex:
-            return 2 * 8;
-
-        default:
-            return -1;
-    }
-}
-
 static int adios_multiply_dimensions (uint64_t * size
                                      ,struct adios_var_struct * var
                                      ,enum ADIOS_DATATYPES type

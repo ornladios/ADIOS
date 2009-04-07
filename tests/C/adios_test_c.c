@@ -176,7 +176,7 @@ int main (int argc, char ** argv)
         printf ("proc\tsec\tusec\n");
         for (i = 0; i < size; i++)
         {
-            printf ("%d\t%d\t%d\n", i, time_diff_all [i].tv_sec
+            printf ("%06d\t%02d\t%06d\n", i, time_diff_all [i].tv_sec
                    ,time_diff_all [i].tv_usec
                    );
 
@@ -203,7 +203,7 @@ int main (int argc, char ** argv)
             }
         }
 
-        printf ("max time: %d %d\n", max_sec, max_usec);
+        printf ("max time: %02d.%06d\n", max_sec, max_usec);
         printf ("Aggregate GB/sec: %f\n", (1.0 * byte_test_length * size / (1024 * 1024 * 1024)) / (max_sec + (max_usec / 1000000.0)));
 
         printf ("\n\n");

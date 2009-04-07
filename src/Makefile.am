@@ -49,6 +49,15 @@ libadios_int_a_SOURCES= adios_internals.c \
                         adios_endianness.c 
 libadios_int_a_CPPFLAGS = $(MXML_CPPFLAGS)
 #libadios_int_a_LIBADD = $(MXML_LIBS)
+
+lib_LIBRARIES += libadios_int_nompi.a
+libadios_int_nompi_a_SOURCES=adios_internals_nompi.c \
+                        adios_transport_hooks_dummy.c \
+                        adios_bp_v1.c \
+                        adios_endianness.c 
+libadios_int_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS)
+#libadios_int_nompi_a_LIBADD = $(MXML_LIBS)
+
 lib_LIBRARIES += libbpread.a
 libbpread_a_SOURCES = adios_bp_v1.c \
 		      adios_endianness.c \
@@ -57,6 +66,7 @@ libbpread_a_SOURCES = adios_bp_v1.c \
 #		      adios_internals.c \
 libbpread_a_CPPFLAGS = $(MXML_CPPFLAGS)
 #libbpread_a_LIBADD = 
+
 include_HEADERS += adios_internals.h \
                    adios_transport_hooks.h
 include_HEADERS += bp_read.h
