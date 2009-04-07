@@ -654,7 +654,7 @@ int bp_get_var (int64_t gh_p,
 }
 
 void bp_fopen_( int64_t * fh,
-		const char * fname, 
+		char * fname, 
 		MPI_Comm comm,
 		int * err,
 		int fname_len)
