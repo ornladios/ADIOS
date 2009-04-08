@@ -495,7 +495,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
             int groups = md->max_storage_targets / md->storage_targets;
             // which group we are part of
             int group = md->rank / (md->size / groups);
-            // how big each group is
+            // how big each group is max (round up)
             int group_size = md->size / groups;
             // our rank within our group
             int group_rank = md->rank % group_size;
@@ -1819,6 +1819,8 @@ void adios_mpi_stagger_close (struct adios_file_struct * fd
                         int sub_groups = md->storage_targets;
                         // how many procs write to each OST
                         int sub_group_size = md->split_size / sub_groups;
+                        if (md->split_size % sub_groups > 0)
+                            sub_group_size++;
 
                         // change the prev/cur/next to be for each OST
                         current_rank = group_rank;
@@ -1828,6 +1830,7 @@ void adios_mpi_stagger_close (struct adios_file_struct * fd
                             prev_rank = -1;
                         if (   group_rank % sub_group_size == sub_group_size - 1
                             || md->rank == md->size - 1
+                            || md->split_rank == md->split_size - 1
                            )
                             next_rank = -1;
                     }
