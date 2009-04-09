@@ -38,8 +38,8 @@
 
 
 typedef int bool;
-const bool true=1;
-const bool false=0;
+#define true 1
+#define false 0
 
 /** Prototypes */
 int bpappend(char *filein, char *fileout);

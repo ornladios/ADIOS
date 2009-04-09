@@ -38,8 +38,8 @@
 
 
 typedef int bool;
-const bool true=1;
-const bool false=0;
+#define true 1
+#define false 0
 
 /** Prototypes */
 int bpsplit(char *filein, char *fileout, char *recordfile, int from_in, int to_in, bool skiplast);
