@@ -405,11 +405,14 @@ int bp_get_var (int64_t gh_p,
         count = fh->gh->time_index[1][gh->group_id][timestep];
 	for (i=0;i<var_root->characteristics_count;i++) {
 		if (   (var_root->characteristics[i].offset > fh->gh->pg_offsets[offset])
-		    && (var_root->characteristics[i].offset < fh->gh->pg_offsets[offset+1])) {
-			start_idx = i;
+		    && (i == var_root->characteristics_count-1 || 
+                        var_root->characteristics[i].offset < fh->gh->pg_offsets[offset+1])) {
+
+                        start_idx = i;
 			break;
 		}
 	}
+
 	if (start_idx<0) {
 		fprintf(stderr,"Error: %s has no data at %d time step\n",
 			varname, timestep);
