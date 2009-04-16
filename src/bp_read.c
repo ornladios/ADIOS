@@ -89,6 +89,7 @@ int bp_fopen ( int64_t * fh_p,
 		   MPI_BYTE, 0 , comm);
 	bp_parse_pgs (fh);
 	bp_parse_vars (fh);
+	bp_parse_attrs (fh);
 	return rc;
 }
 
@@ -169,16 +170,47 @@ int bp_gopen ( int64_t * gh_p,
 int bp_gclose ( int64_t gh_p)
 {
 	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+
 	if (!gh) {
 		fprintf(stderr, "group handle is NULL!\n");
 		return  -2;
 	}
 	else
 		free (gh);
+
 	return 0;
 }
 
-int bp_inq_file ( int64_t fh_p, int *ngroup, 
+int bp_inq_file ( int64_t fh_p, struct BP_FILE_INFO *pfinfo)
+{
+	if (!fh_p) {
+		fprintf(stderr, "file handle is NULL!\n");
+		return -2;
+	}
+	struct BP_FILE * fh = (struct BP_FILE *) fh_p;
+	int i;
+	pfinfo->groups_count = fh->gh->group_count;
+	pfinfo->vars_count = fh->mfooter.vars_count;
+	pfinfo->attrs_count = fh->mfooter.attrs_count;
+	pfinfo->tidx_start = fh->tidx_start;
+	pfinfo->tidx_stop = fh->tidx_stop;
+	if (!pfinfo->namelist_true)
+		return 0;
+	alloc_namelist (&pfinfo->group_namelist,pfinfo->groups_count); 
+	for (i=0;i<pfinfo->groups_count;i++) {
+		if (!pfinfo->group_namelist[i]) {
+			fprintf(stderr, 
+				"buffer given is too small, only hold %d entries",
+				i);
+			return -1;
+		}
+		else 
+			strcpy(pfinfo->group_namelist[i],fh->gh->namelist[i]);
+	}
+	return 0;
+}
+/* 
+int bp_inq_file_t ( int64_t fh_p, int *ngroup, 
 		  int *nvar, int *nattr, int *nt, char **gnamelist) 
 {
 	if (!fh_p) {
@@ -189,8 +221,8 @@ int bp_inq_file ( int64_t fh_p, int *ngroup,
 	int i;
 	*ngroup = fh->gh->group_count;
 	*nvar = fh->mfooter.vars_count;
+	*nattr = fh->mfooter.attrs_count;
 	*nt = fh->mfooter.time_steps;
-	*nattr = 0;
 	if (!gnamelist)
 		return 0;
 	for (i=0;i<fh->gh->group_count;i++) {
@@ -205,8 +237,38 @@ int bp_inq_file ( int64_t fh_p, int *ngroup,
 	}
 	return 0;
 }
+*/
 
+int bp_inq_group (int64_t gh_p, struct BP_GROUP_INFO * pginfo)
+{
+	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+	if (!gh_p) {
+		fprintf(stderr, "group handle is NULL!\n");
+		return -3;
+	}
+	int i, offset;
 
+	pginfo->vars_count = gh->count;
+	
+	if (!pginfo->namelist_true)
+		return 0;
+
+	offset = gh->offset;
+	alloc_namelist (&(pginfo->var_namelist), pginfo->vars_count);
+	for (i=0;i<pginfo->vars_count;i++) {
+		if (!pginfo->var_namelist[i]) { 
+			fprintf(stderr, 
+					"given buffer only can hold %d entries",
+					i);
+			return -1;
+		}
+		else
+			strcpy(pginfo->var_namelist[i], gh->fh->gh->var_namelist[i+offset]);
+	}
+
+	return 0;
+}
+#if 0
 int bp_inq_group (int64_t gh_p, int *nvar, char ** vnamelist)
 {
 	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
@@ -235,7 +297,7 @@ int bp_inq_group (int64_t gh_p, int *nvar, char ** vnamelist)
 	}
 	return 0;	
 }
-	
+#endif	
 
 /** Find a string (variable by full name) in a list of strings (variable name list)
   * from an 'offset' within the first 'count' elements.
@@ -288,7 +350,6 @@ int bp_inq_var (int64_t gh_p, char * varname,
 
 	for(i=0;i<gh->offset;i++)
 		var_root = var_root->next;
-
 	// find variable in var list
 	var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
 	if (var_id<0) {
@@ -401,8 +462,9 @@ int bp_get_var (int64_t gh_p,
 		return; 
 	}
 	// get the starting offset for the given time step
-	offset = fh->gh->time_index[0][gh->group_id][timestep];
-        count = fh->gh->time_index[1][gh->group_id][timestep];
+	
+	offset = fh->gh->time_index[0][gh->group_id][timestep-fh->tidx_start];
+        count = fh->gh->time_index[1][gh->group_id][timestep-fh->tidx_start];
 	for (i=0;i<var_root->characteristics_count;i++) {
 		if (   (var_root->characteristics[i].offset > fh->gh->pg_offsets[offset])
 		    && (i == var_root->characteristics_count-1 || 
@@ -468,6 +530,8 @@ int bp_get_var (int64_t gh_p,
 	int npg=0;
 	int tmpcount = 0;
 	int size_of_type = bp_get_type_size (var_root->type, "");
+	printf("offset count: %d %d\n",offset, count);
+
 	for (idx = 0; idx < count; idx++) {
 		datasize = 1;
 		nloop = 1;
@@ -543,7 +607,10 @@ int bp_get_var (int64_t gh_p,
 		printf("readsize:%d %d\n",readsize[0],readsize[1]);
 		printf("start:%d %d\n",start[0],start[1]);
 */
+
 		hole_break = i;	
+
+//		printf("hole break:%d\n",hole_break);
 
 		if (hole_break==-1)
 			memcpy(var, fh->b->buff+fh->b->offset,var_header.payload_size);
@@ -619,6 +686,7 @@ int bp_get_var (int64_t gh_p,
 				if (ndim==2) {
 					printf("local: %llu %llu \n",ldims[0],ldims[1]);
 					printf("offsets: %llu %llu \n",offsets[0],offsets[1]);
+					printf("size  : %llu %llu \n",readsize[0],readsize[1]);
 					printf("global: %llu %llu \n",gdims[0],gdims[1]);
 				}
 				if (ndim==3) {
@@ -628,8 +696,8 @@ int bp_get_var (int64_t gh_p,
 				}
 				printf("datasize=%d\n",datasize);
 			}
-*/
 
+*/
 			for ( i = 0; i < ndim ; i++) {
 				var_offset = offset_in_var[i] + var_offset * readsize[i];
 				dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
@@ -647,6 +715,7 @@ int bp_get_var (int64_t gh_p,
 					dset_offset,
 					datasize,
 					size_of_type);
+
 		}
 	}  // end of loop
 	free (gdims);
@@ -674,7 +743,7 @@ void bp_inq_file_ ( int64_t * fh_p, int * ngroup,
 		   int * nvar, int * nattr, 
 		   int * ntime, char ** gnamelist, int * err)
 {
-	bp_inq_file ( *fh_p, ngroup, nvar, nattr, ntime, gnamelist);
+	//bp_inq_file ( *fh_p, ngroup, nvar, nattr, ntime, gnamelist);
 }
 
 const char * bp_type_to_string (int type)
@@ -707,3 +776,76 @@ const char * bp_type_to_string (int type)
         }
     }
 }
+void bp_init_groupinfo(struct BP_GROUP_INFO * pginfo, int flag)
+{
+	if (pginfo) {
+		memset (pginfo, 0, sizeof(struct BP_GROUP_INFO));
+		pginfo->namelist_true = flag;
+	}
+	else 
+		printf ("fileinfo is NULL\n");
+	return;	
+
+}
+
+void bp_free_groupinfo (struct BP_GROUP_INFO * pginfo)
+{
+	free_namelist ((pginfo->var_namelist),pginfo->vars_count);
+	return;
+}
+
+void bp_print_groupinfo (struct BP_GROUP_INFO *pginfo) 
+{
+	int i;
+	printf ("---------------------------\n");
+	printf ("     var information\n");
+	printf ("---------------------------\n");
+	printf ("    var id\tname\n");
+	if (pginfo->var_namelist) {
+		for (i=0; i<pginfo->vars_count; i++)
+			printf("\t%d)\t%s\n", i, pginfo->var_namelist[i]);
+	}
+	return;
+}
+
+void bp_init_fileinfo(struct BP_FILE_INFO * pfinfo, int flag)
+{
+	if (pfinfo) {
+		memset (pfinfo, 0, sizeof(struct BP_FILE_INFO));
+		pfinfo->namelist_true = flag;
+	}
+	else 
+		printf ("fileinfo is NULL\n");
+	return;	
+}
+
+void bp_free_fileinfo (struct BP_FILE_INFO * pfinfo)
+{
+	free_namelist ((pfinfo->group_namelist),pfinfo->groups_count);
+	return;
+}
+
+void bp_print_fileinfo (struct BP_FILE_INFO *pfinfo) 
+{
+	int i;
+	printf ("---------------------------\n");
+	printf ("     group information\n");
+	printf ("---------------------------\n");
+	printf ("\t# of groups:\t%d\n"
+	 	"\t# of variables:\t%d\n"
+		"\t# of attributes:%d\n"
+		"\t# of timesteps:\t%d-->%d\n",
+		pfinfo->groups_count,
+		pfinfo->vars_count,
+		pfinfo->attrs_count,
+		pfinfo->tidx_start,
+		pfinfo->tidx_stop);
+	printf ("\t----------------\n");
+	printf ("\t  group id\tname\n");
+	if (pfinfo->group_namelist) {
+		for (i=0; i<pfinfo->groups_count; i++)
+			printf("\t\t%d)\t%s\n", i, pfinfo->group_namelist[i]);
+	}
+	return;
+}
+
