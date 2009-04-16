@@ -36,7 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = bpsplit$(EXEEXT) bpappend$(EXEEXT)
+bin_PROGRAMS = bpsplit$(EXEEXT) bpappend$(EXEEXT) bpgettime$(EXEEXT)
 subdir = utils/bpsplit
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -60,6 +60,10 @@ bpappend_OBJECTS = $(am_bpappend_OBJECTS)
 am__DEPENDENCIES_1 =
 bpappend_DEPENDENCIES = $(top_builddir)/src/libadios_int.a \
 	$(am__DEPENDENCIES_1)
+am_bpgettime_OBJECTS = bpgettime.$(OBJEXT)
+bpgettime_OBJECTS = $(am_bpgettime_OBJECTS)
+bpgettime_DEPENDENCIES = $(top_builddir)/src/libadios_int.a \
+	$(am__DEPENDENCIES_1)
 am_bpsplit_OBJECTS = bpsplit.$(OBJEXT)
 bpsplit_OBJECTS = $(am_bpsplit_OBJECTS)
 bpsplit_DEPENDENCIES = $(top_builddir)/src/libadios_int.a \
@@ -75,8 +79,9 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(bpappend_SOURCES) $(bpsplit_SOURCES)
-DIST_SOURCES = $(bpappend_SOURCES) $(bpsplit_SOURCES)
+SOURCES = $(bpappend_SOURCES) $(bpgettime_SOURCES) $(bpsplit_SOURCES)
+DIST_SOURCES = $(bpappend_SOURCES) $(bpgettime_SOURCES) \
+	$(bpsplit_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -224,6 +229,9 @@ bpsplit_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS)
 bpappend_SOURCES = bpappend.c
 bpappend_LDFLAGS = $(MXML_LDFLAGS)
 bpappend_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS)
+bpgettime_SOURCES = bpgettime.c
+bpgettime_LDFLAGS = $(MXML_LDFLAGS)
+bpgettime_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -288,6 +296,9 @@ clean-binPROGRAMS:
 bpappend$(EXEEXT): $(bpappend_OBJECTS) $(bpappend_DEPENDENCIES) 
 	@rm -f bpappend$(EXEEXT)
 	$(LINK) $(bpappend_LDFLAGS) $(bpappend_OBJECTS) $(bpappend_LDADD) $(LIBS)
+bpgettime$(EXEEXT): $(bpgettime_OBJECTS) $(bpgettime_DEPENDENCIES) 
+	@rm -f bpgettime$(EXEEXT)
+	$(LINK) $(bpgettime_LDFLAGS) $(bpgettime_OBJECTS) $(bpgettime_LDADD) $(LIBS)
 bpsplit$(EXEEXT): $(bpsplit_OBJECTS) $(bpsplit_DEPENDENCIES) 
 	@rm -f bpsplit$(EXEEXT)
 	$(LINK) $(bpsplit_LDFLAGS) $(bpsplit_OBJECTS) $(bpsplit_LDADD) $(LIBS)
