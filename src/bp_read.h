@@ -1,9 +1,32 @@
+#ifndef __BP_READ_H__
+#define __BP_READ_H__
 
-#include "bp_utils.h"
+#include "mpi.h"
 /*
 header file for the subsetting read routines
 March 2009, ORNL
 */
+
+// Types used in the API
+
+typedef struct {
+	uint16_t namelist_true;
+	uint16_t vars_count;
+	char 	 ** var_namelist;
+}BP_GROUP_INFO;
+
+typedef struct {
+	uint16_t namelist_true;
+	uint16_t groups_count;
+	uint16_t vars_count;
+	uint16_t attrs_count;
+	uint32_t tidx_start;
+	uint32_t tidx_stop;
+	uint32_t version;
+	uint32_t file_size;
+	char 	 ** group_namelist;
+}BP_FILE_INFO;
+
 
 // C interface
 /*
@@ -124,3 +147,5 @@ void bp_inq_var_ (int64_t * gh_p, char * varname,
 		 int * ndim,
 		 int * is_timebased,
 		 int * dims);
+
+#endif

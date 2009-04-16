@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "adios.h"
+#include "bp_utils.h"
 #include "bp_read.h"
 #define BYTE_ALIGN 8
 

@@ -1,3 +1,6 @@
+#ifndef __BP_UTILS_H__
+#define __BP_UTILS_H__
+
 #include <stdio.h>
 #include <sys/types.h>
 #include "mpi.h"
@@ -26,3 +29,4 @@ void print_process_group_index (
                          struct adios_index_process_group_struct_v1 * pg_root
                          );
 
+#endif

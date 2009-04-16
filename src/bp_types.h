@@ -1,3 +1,6 @@
+#ifndef __BP_TYPES_H__
+#define __BP_TYPES_H__
+
 #include "adios_bp_v1.h"
 #include "adios_types.h"
 
@@ -63,21 +66,4 @@ struct BP_GROUP {
 	struct adios_index_var_struct_v1 * var_current;
 };
 
-typedef struct {
-	uint16_t namelist_true;
-	uint16_t vars_count;
-	char 	 ** var_namelist;
-}BP_GROUP_INFO;
-
-typedef struct {
-	uint16_t namelist_true;
-	uint16_t groups_count;
-	uint16_t vars_count;
-	uint16_t attrs_count;
-	uint32_t tidx_start;
-	uint32_t tidx_stop;
-	uint32_t version;
-	uint32_t file_size;
-	char 	 ** group_namelist;
-}BP_FILE_INFO;
-
+#endif
