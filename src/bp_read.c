@@ -1,8 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "adios.h"
-#include "adios_bp_v1.h"
-#include "bp_utils.h"
 #include "bp_read.h"
 #define BYTE_ALIGN 8
 
@@ -181,7 +179,7 @@ int bp_gclose ( int64_t gh_p)
 	return 0;
 }
 
-int bp_inq_file ( int64_t fh_p, struct BP_FILE_INFO *pfinfo)
+int bp_inq_file ( int64_t fh_p, BP_FILE_INFO *pfinfo)
 {
 	if (!fh_p) {
 		fprintf(stderr, "file handle is NULL!\n");
@@ -239,7 +237,7 @@ int bp_inq_file_t ( int64_t fh_p, int *ngroup,
 }
 */
 
-int bp_inq_group (int64_t gh_p, struct BP_GROUP_INFO * pginfo)
+int bp_inq_group (int64_t gh_p, BP_GROUP_INFO * pginfo)
 {
 	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
 	if (!gh_p) {
@@ -776,10 +774,10 @@ const char * bp_type_to_string (int type)
         }
     }
 }
-void bp_init_groupinfo(struct BP_GROUP_INFO * pginfo, int flag)
+void bp_init_groupinfo(BP_GROUP_INFO * pginfo, int flag)
 {
 	if (pginfo) {
-		memset (pginfo, 0, sizeof(struct BP_GROUP_INFO));
+		memset (pginfo, 0, sizeof(BP_GROUP_INFO));
 		pginfo->namelist_true = flag;
 	}
 	else 
@@ -788,13 +786,13 @@ void bp_init_groupinfo(struct BP_GROUP_INFO * pginfo, int flag)
 
 }
 
-void bp_free_groupinfo (struct BP_GROUP_INFO * pginfo)
+void bp_free_groupinfo (BP_GROUP_INFO * pginfo)
 {
 	free_namelist ((pginfo->var_namelist),pginfo->vars_count);
 	return;
 }
 
-void bp_print_groupinfo (struct BP_GROUP_INFO *pginfo) 
+void bp_print_groupinfo (BP_GROUP_INFO *pginfo) 
 {
 	int i;
 	printf ("---------------------------\n");
@@ -808,10 +806,10 @@ void bp_print_groupinfo (struct BP_GROUP_INFO *pginfo)
 	return;
 }
 
-void bp_init_fileinfo(struct BP_FILE_INFO * pfinfo, int flag)
+void bp_init_fileinfo(BP_FILE_INFO * pfinfo, int flag)
 {
 	if (pfinfo) {
-		memset (pfinfo, 0, sizeof(struct BP_FILE_INFO));
+		memset (pfinfo, 0, sizeof(BP_FILE_INFO));
 		pfinfo->namelist_true = flag;
 	}
 	else 
@@ -819,13 +817,13 @@ void bp_init_fileinfo(struct BP_FILE_INFO * pfinfo, int flag)
 	return;	
 }
 
-void bp_free_fileinfo (struct BP_FILE_INFO * pfinfo)
+void bp_free_fileinfo (BP_FILE_INFO * pfinfo)
 {
 	free_namelist ((pfinfo->group_namelist),pfinfo->groups_count);
 	return;
 }
 
-void bp_print_fileinfo (struct BP_FILE_INFO *pfinfo) 
+void bp_print_fileinfo (BP_FILE_INFO *pfinfo) 
 {
 	int i;
 	printf ("---------------------------\n");

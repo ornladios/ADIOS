@@ -3,8 +3,6 @@
 #include "mpi.h"
 #include "bp_types.h"
 #define VARS_MINIHEADER_SIZE 10
-#define DIVIDER "========================================================\n"
-#define SUBDIVIDER "------------------------------------\n"
 
 //static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
 //static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
