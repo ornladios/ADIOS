@@ -40,6 +40,26 @@ struct BP_FILE {
 	struct adios_index_attribute_struct_v1 * attrs_root;
 	struct bp_minifooter mfooter; 
 	struct BP_GROUP_VAR * gh;
+        uint32_t tidx_start;
+        uint32_t tidx_stop;
+};
+
+struct BP_GROUP_INFO {
+	uint16_t namelist_true;
+	uint16_t vars_count;
+	char 	 ** var_namelist;
+};
+
+struct BP_FILE_INFO {
+	uint16_t namelist_true;
+	uint16_t groups_count;
+	uint16_t vars_count;
+	uint16_t attrs_count;
+	uint32_t tidx_start;
+	uint32_t tidx_stop;
+	uint32_t version;
+	uint32_t file_size;
+	char 	 ** group_namelist;
 };
 
 struct BP_GROUP_VAR {

@@ -1,4 +1,3 @@
-
 /*
 header file for the subsetting read routines
 March 2009, ORNL
@@ -28,9 +27,17 @@ int bp_fclose ( int64_t fh);
 	     nt
 	     gnamelist
  */ 
-int bp_inq_file ( int64_t fh_p, int *ngroup, 
+int bp_inq_file ( int64_t fh_p, struct BP_FILE_INFO * pfinfo); 
+/*
+ * int bp_inq_file ( int64_t fh_p, int *ngroup, 
 		  int *nvar, int *nattr, int *nt, char **gnamelist);
- 
+*/ 
+void bp_print_groupinfo (struct BP_GROUP_INFO * pginfo);
+void bp_init_groupinfo  (struct BP_GROUP_INFO * pginfo, int flag);
+void bp_free_groupinfo  (struct BP_GROUP_INFO * pginfo);
+void bp_print_fileinfo (struct BP_FILE_INFO * pfinfo);
+void bp_init_fileinfo  (struct BP_FILE_INFO * pfinfo, int flag);
+void bp_free_fileinfo  (struct BP_FILE_INFO * pfinfo);
 /*
 	IN:  fh
 	     grpname 
@@ -48,7 +55,8 @@ int bp_gclose ( int64_t gh);
 /*
 	IN:  gh_p
 */
-int bp_inq_group (int64_t gh, int *nvar, char ** vnamelist);
+int bp_inq_group (int64_t gh, struct BP_GROUP_INFO *);
+//int bp_inq_group (int64_t gh, int *nvar, char ** vnamelist);
 
 /*
 	IN:  gh

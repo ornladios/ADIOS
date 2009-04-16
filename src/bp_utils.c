@@ -276,22 +276,30 @@ int bp_parse_pgs (uint64_t fh_p)
 		malloc (sizeof(uint64_t)*mh->pgs_count);
 	pg_pids = (uint32_t *)
 		malloc (sizeof(uint32_t)*mh->pgs_count);
+	// time_index[0]: record which pg to start from per timestep per group
+	// time_index[1]: record the # of pgs per timesteps per group 
 	time_index = (uint32_t ***) malloc (sizeof(uint32_t **)*2);
+
 	for (j=0;j<2;j++) {
 		time_index[j] = (uint32_t **) 
 			malloc (sizeof(uint32_t*)*group_count);
 		for (i=0;i<group_count;i++) {
-			time_index[j][i] = (uint32_t *) 
-			malloc (sizeof(uint32_t)*mh->time_steps);
+			if (mh->pgs_count < mh->time_steps)
+				time_index[j][i] = (uint32_t *) 
+					malloc (sizeof(uint32_t)*mh->pgs_count);
+			else	
+				time_index[j][i] = (uint32_t *) 
+					malloc (sizeof(uint32_t)*mh->time_steps);
 		}
 	}
 
 	root = &(fh->pgs_root);
-	uint32_t time_id = 1;
+	uint32_t time_id, tidx_start, tidx_stop;
 	uint64_t grpid = grpidlist[0];
 	uint32_t pg_time_count = 0;
-
 	time_index [0][0][0] = 0;
+	tidx_start = (*root)->time_index;
+	time_id = tidx_start;
 	for (i = 0; i < mh->pgs_count; i++) {
 		pg_pids [i] = (*root)->process_id;
 		pg_offsets [i] = (*root)->offset_in_file;
@@ -299,24 +307,24 @@ int bp_parse_pgs (uint64_t fh_p)
 			if (grpid == grpidlist[i])
 				pg_time_count += 1;
 			else {
-				time_index [1][grpid][time_id-1] = pg_time_count;
+				time_index [1][grpid][time_id-tidx_start] = pg_time_count;
 				grpid = grpidlist [i];	
 				pg_time_count = 1;
-				time_index [0][grpid][time_id-1] = i;
+				time_index [0][grpid][time_id-tidx_start] = i;
 			}
 		}	
 		else {
 			if (group_count == 1) {
-				time_index [1][grpid][time_id-1] = pg_time_count;
-				time_index [0][grpid][time_id] = i;
+				time_index [1][grpid][time_id-tidx_start] = pg_time_count;
+				time_index [0][grpid][time_id-tidx_start+1] = i;
 			}
 			else {	
 				if (grpid == grpidlist[i])
 					pg_time_count += 1;
 				else {
-					time_index [1][grpid][time_id-1] = pg_time_count;
+					time_index [1][grpid][time_id-tidx_start] = pg_time_count;
 					grpid = grpidlist [i];	
-					time_index [0][grpid][time_id-1] = i;
+					time_index [0][grpid][time_id-tidx_start] = i;
 				}
 			}
 			time_id = (*root)->time_index;
@@ -330,7 +338,8 @@ int bp_parse_pgs (uint64_t fh_p)
 			time_index [1][grpid][time_id-1]);
 */
 	}
-	time_index [1][grpid][time_id-1] = pg_time_count;
+	time_index [1][grpid][time_id-tidx_start] = pg_time_count;
+	tidx_stop = time_id;
 /*
 	printf(DIVIDER); 
 	printf ("# of groups: %llu\n", group_count);
@@ -405,10 +414,34 @@ here we need:
 	fh->gh->var_offsets = 0;
 	fh->gh->var_namelist = 0;
 	fh->gh->var_counts_per_group = 0;
-	 
+	fh->tidx_start = tidx_start; 
+	fh->tidx_stop= tidx_stop; 
 	return;
 }
 
+int bp_parse_attrs (struct BP_FILE * fh)
+{
+	struct adios_bp_buffer_struct_v1 * b = fh->b;
+	struct adios_index_attribute_struct_v1 ** attrs_root = &(fh->attrs_root);
+	struct bp_minifooter * mh = &(fh->mfooter);
+
+	struct adios_index_attribute_struct_v1 ** root;
+
+	if (b->length - b->offset < VARS_MINIHEADER_SIZE) {
+		fprintf (stderr, "adios_parse_attrs_index_v1 requires a buffer "
+				"of at least %d bytes.  Only %llu were provided\n"
+				,VARS_MINIHEADER_SIZE
+				,b->length - b->offset
+			);
+
+		return 1;
+	}
+
+	root = attrs_root;
+
+	memcpy (&mh->attrs_count, b->buff + b->offset, VARS_MINIHEADER_SIZE);
+	b->offset += VARS_MINIHEADER_SIZE;
+}
 int bp_parse_vars (struct BP_FILE * fh)
 {
 	struct adios_bp_buffer_struct_v1 * b = fh->b;
@@ -1291,4 +1324,26 @@ uint64_t bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
             return -1;
     }
 }
+void alloc_namelist (char ***namelist, int length)
+{
+        int j;
 
+        *namelist = (char **) malloc(length*sizeof(char*));
+        for (j=0;j<length;j++)
+                (*namelist)[j] = (char *) malloc(255);
+
+        return;
+}
+
+void free_namelist (char **namelist, int length)
+{
+        int i;
+        if (namelist) {
+                for (i=0;i<length;i++) {
+                        if(namelist[i])
+                                free(namelist[i]);
+                }
+                free(namelist);
+        }
+        return;
+}
