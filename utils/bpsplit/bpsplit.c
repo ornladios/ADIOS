@@ -429,7 +429,9 @@ void determine_pg_offsets() {
  */
 void weed_out_indexes(void) {
     struct adios_index_var_struct_v1       * vg = vars_root;
+    struct adios_index_var_struct_v1       * vg_prev = NULL;
     struct adios_index_attribute_struct_v1 * ag = attrs_root;
+    struct adios_index_attribute_struct_v1 * ag_prev = NULL;
     int i, start, count;
     
     // process variables
@@ -457,6 +459,14 @@ void weed_out_indexes(void) {
                 vg->characteristics[i] = vg->characteristics[start+i];
         }
         vg->characteristics_count = count;
+        if (count == 0) {
+            // no characteristics <=> this variable is not contained in the output slice
+            // take it out from the chain
+            if (vg_prev != NULL) vg_prev->next = vg->next;
+            else vars_root = vg->next;
+        } else {
+            vg_prev = vg; // advance prev only if this variable is kept in chain
+        }
         vg = vg->next;
     }
 
@@ -483,9 +493,15 @@ void weed_out_indexes(void) {
         if (start > 0) {
             for (i=0; i<count; i++) 
                 ag->characteristics[i] = ag->characteristics[start+i];
-            ag->characteristics_count = count;
-        } else if ( count < ag->characteristics_count ) {
-            ag->characteristics_count = count;
+        }
+        ag->characteristics_count = count;
+        if (count == 0) {
+            // no characteristics <=> this attribute is not contained in the output slice
+            // take it out from the chain
+            if (ag_prev != NULL) ag_prev->next = ag->next;
+            else attrs_root = ag->next;
+        } else {
+            ag_prev = ag; // advance prev only if this attribute is kept in chain
         }
         ag = ag->next;
     }
