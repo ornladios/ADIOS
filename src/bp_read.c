@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "adios.h"
-#include "bp_utils.h"
 #include "bp_read.h"
 #define BYTE_ALIGN 8
 
@@ -43,6 +42,7 @@ static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b
     b->buff = (char *) ((p + BYTE_ALIGN - 1) & ~(BYTE_ALIGN - 1));
     b->length = size;
 }
+
 int bp_fopen ( int64_t * fh_p,
 	        const char * fname,
 		MPI_Comm comm
@@ -352,7 +352,8 @@ int bp_inq_var (int64_t gh_p, char * varname,
 	// find variable in var list
 	var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
 	if (var_id<0) {
-		fprintf(stderr, "Error: Variable %s does not exist in the group %s!\n",
+		fprintf(stderr, 
+			"Error: Variable %s does not exist in the group %s!\n",
                 	varname, fh->gh->namelist[gh->group_id]);
 		return -4;
 	}
@@ -362,14 +363,29 @@ int bp_inq_var (int64_t gh_p, char * varname,
 
 	gh->var_current = var_root;
 	*type = var_root->type;
+	if (!var_root->characteristics_count) {
+		fprintf(stderr, 
+			"Error: Variable %s does not exist in the file!\n",
+                	varname);
+		*ndim = -1;
+		return -4;
+	}
+		
 	*ndim = var_root->characteristics [0].dims.count;
-	if (!dims || !(*ndim))
-		return;
+#if 0
+	printf("var: %s,%d %d %d\n", var_root->var_name, 
+		*ndim, 
+		var_root->characteristics[0].value,
+		var_root->characteristics_count);
+#endif
+	if (!dims || !(*ndim)) {
+        //printf(stderr, "scalar or dims is NULL\n");
+		return 0;
+    }
 	int time_flag = -1;
 	uint64_t * gdims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
 	uint64_t * ldims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
 	memset(dims,0,sizeof(int)*(*ndim));
-	//for (j=0;j<var_root->characteristics_count;j++)  
 	for (k=0;k<(*ndim);k++) {
 		gdims[k]=var_root->characteristics[0].dims.dims[k*3+1];
 		ldims[k]=var_root->characteristics[0].dims.dims[k*3];
@@ -509,19 +525,27 @@ int bp_get_var (int64_t gh_p,
 				is_timebased = 1;
 				time_flag = i;
 			}
+            break;
 		}
 	}
 	else {
 		for (i=0;i<ndim;i++) {
-			if (gdims[i]==0) {
-				time_flag = i;
+			if (gdims[i]==0) { 
 				is_timebased = 1;
-			}
+                break;
+            }
 		}
 	}
 	
-	if (is_timebased)
+	if (is_timebased) {
+        if ((ldims[0] != 1) && (ldims[ndim] == 1)) 
+            time_flag == ndim;
+        else if ((ldims[0] == 1) && (ldims[ndim] != 1)) { 
+            time_flag = 0;
+        }
 		ndim = ndim -1;
+        //printf("dim: %d %d\n",ndim,time_flag);
+    }
 
 	// generate the list of pgs to be read from
 
@@ -529,7 +553,7 @@ int bp_get_var (int64_t gh_p,
 	int npg=0;
 	int tmpcount = 0;
 	int size_of_type = bp_get_type_size (var_root->type, "");
-	printf("offset count: %d %d\n",offset, count);
+	//printf("offset count: %d %d\n",offset, count);
 
 	for (idx = 0; idx < count; idx++) {
 		datasize = 1;
@@ -537,18 +561,17 @@ int bp_get_var (int64_t gh_p,
 		var_stride = 1;
 		dset_stride = 1;
 		idx_table[idx] = 1;
-
 		for (j=0;j<ndim;j++) {
 			offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
-			if (time_flag == 0)
+	        if (!time_flag)
 				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+3];
 			else
 				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3];
-			
 			if (is_global)
 				gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
 			else
 				gdims[j]=ldims[j];
+
 			if (readsize[j] > gdims[j]) {
 				fprintf(stderr, "Error: %s out of bound ("
 					"the size to read is %llu,"
