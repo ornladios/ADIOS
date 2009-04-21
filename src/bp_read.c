@@ -768,7 +768,7 @@ int bp_get_var (int64_t gh_p,
 					dset_offset,
 					datasize,
 					size_of_type);
-            printf("finish read pg: %d\n",npg);
+            //printf("finish read pg: %d\n",npg);
 		}
 	}  // end of loop
 	free (gdims);
