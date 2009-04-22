@@ -347,11 +347,14 @@ int bp_inq_var (int64_t gh_p, char * varname,
 	gh->var_current = 0;
 	var_root = fh->vars_root;
 	*is_timebased = 0;
-
-	for(i=0;i<gh->offset;i++)
-		var_root = var_root->next;
+    if (!varname) {
+		fprintf(stderr, "Error: Variable %s is NULL!\n");
+		return -4;
+    }
 	// find variable in var list
 	var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
+	for(i=0;i<gh->offset;i++)
+		var_root = var_root->next;
 	if (var_id<0) {
 		fprintf(stderr, 
 			"Error: Variable %s does not exist in the group %s!\n",
@@ -371,10 +374,11 @@ int bp_inq_var (int64_t gh_p, char * varname,
 		*ndim = -1;
 		return -4;
 	}
-		
+    	
 	*ndim = var_root->characteristics [0].dims.count;
 #if 0
-	printf("var: %s,%d %d %d\n", var_root->var_name, 
+	printf("var: %s,id=%d %d %d %d\n", var_root->var_name,
+        var_id,
 		*ndim, 
 		var_root->characteristics[0].value,
 		var_root->characteristics_count);
@@ -427,17 +431,8 @@ int bp_inq_var (int64_t gh_p, char * varname,
         if (is_timebased) {
             for (i=0;i<(*ndim)-1;i++) {
                 //printf("time_flag:%d\n",time_flag);
-                if (dims) {
-                    /*
-                       if (time_flag==0) {
-                       if (i>0)
-                       dims[i-1]=gdims[i];
-                       }
-                       else
-                       dims[i]=gdims[i];
-                       */
+                if (dims) 
                     dims[i]=gdims[i];
-                }
             }
         }
         else {
@@ -535,26 +530,25 @@ int bp_get_var (int64_t gh_p,
 	for (i=0;i<ndim;i++) {
 		is_global = is_global || gdims[i];
 	}
-
 	if (!is_global) {
-		for (i=0;i<ndim;i++) {
-			if (   ldims[i] == 1
-			    && var_root->characteristics_count > 1) {
+		for (i=0;i<(ndim);i++) {
+			if (   ldims[i] == 1 
+		  	    && var_root->characteristics_count > 1) {
 				is_timebased = 1;
 				time_flag = i;
 			}
-            break;
-		}
-	}
+		}		 
+	}		 
 	else {
-		for (i=0;i<ndim;i++) {
-			if (gdims[i]==0) { 
-				is_timebased = 1;
-                break;
-            }
-		}
+        if (ldims[0]==1 && ldims[ndim]!=1) {
+            time_flag = 0;
+            is_timebased = 1;
+        }
+        else if (ldims[0]!=1 && ldims[ndim]==1) {
+            time_flag = ndim;
+            is_timebased = 1;
+        }
 	}
-	
 	if (is_timebased) {
         if ((ldims[0] != 1) && (ldims[ndim] == 1)) 
             time_flag == ndim;
@@ -570,7 +564,8 @@ int bp_get_var (int64_t gh_p,
 	int npg=0;
 	int tmpcount = 0;
 	int size_of_type = bp_get_type_size (var_root->type, "");
-	//printf("offset count: %d %d\n",offset, count);
+	//printf("offset count: %d %d \n",offset, count);
+	printf("ndim: %d \n",ndim);
 
 	for (idx = 0; idx < count; idx++) {
 		datasize = 1;
@@ -589,6 +584,7 @@ int bp_get_var (int64_t gh_p,
 			else
 				gdims[j]=ldims[j];
 
+		    printf("global: %d \n",gdims[j]);
 			if (readsize[j] > gdims[j]) {
 				fprintf(stderr, "Error: %s out of bound ("
 					"the size to read is %llu,"
