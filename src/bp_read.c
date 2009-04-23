@@ -565,7 +565,7 @@ int bp_get_var (int64_t gh_p,
 	int tmpcount = 0;
 	int size_of_type = bp_get_type_size (var_root->type, "");
 	//printf("offset count: %d %d \n",offset, count);
-	printf("ndim: %d \n",ndim);
+	//printf("ndim: %d \n",ndim);
 
 	for (idx = 0; idx < count; idx++) {
 		datasize = 1;
@@ -584,7 +584,7 @@ int bp_get_var (int64_t gh_p,
 			else
 				gdims[j]=ldims[j];
 
-		    printf("global: %d \n",gdims[j]);
+		    //printf("global: %d \n",gdims[j]);
 			if (readsize[j] > gdims[j]) {
 				fprintf(stderr, "Error: %s out of bound ("
 					"the size to read is %llu,"
