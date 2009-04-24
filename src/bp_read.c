@@ -482,13 +482,15 @@ int bp_get_var (int64_t gh_p,
 		var_root = var_root->next;
 
 	gh->var_current = var_root;
-
 	if (timestep < 0) {
-		fprintf(stderr, "Error: time step should start from 0!");
-		return; 
+		fprintf(stderr, "Error: time step should start from 1!");
+		return -5; 
+	}
+	if (timestep< fh->tidx_start) {
+		fprintf(stderr, "Error: time step should start from 1!");
+		return -5; 
 	}
 	// get the starting offset for the given time step
-	
 	offset = fh->gh->time_index[0][gh->group_id][timestep-fh->tidx_start];
     count = fh->gh->time_index[1][gh->group_id][timestep-fh->tidx_start];
 	for (i=0;i<var_root->characteristics_count;i++) {
