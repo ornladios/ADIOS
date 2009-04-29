@@ -2,6 +2,7 @@
 #define __BP_READ_H__
 
 #include "mpi.h"
+#include <stdint.h>
 /*
 header file for the subsetting read routines
 March 2009, ORNL

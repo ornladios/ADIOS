@@ -280,7 +280,7 @@ int adios_mpi_nwu_open (struct adios_file_struct * fd
 
     // we have to wait for the group_size (should_buffer) to get the comm
     // before we can do an open for any of the modes
-    printf("I am using nwu version!\n");
+    //printf("I am using nwu version!\n");
     return 1;
 }
 

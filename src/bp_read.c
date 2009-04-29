@@ -459,7 +459,7 @@ int bp_get_var (int64_t gh_p,
 {
 	
 	int    i, j, var_id, idx;
-  	int    flag;
+  	int    flag, tmpreadsize=readsize[0];
 	int    offset, count, start_idx=-1;
 	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
 	struct BP_FILE * fh = (struct BP_FILE *) (gh->fh);
@@ -566,8 +566,10 @@ int bp_get_var (int64_t gh_p,
 	int npg=0;
 	int tmpcount = 0;
 	int size_of_type = bp_get_type_size (var_root->type, "");
-	//printf("offset count: %d %d \n",offset, count);
-	//printf("ndim: %d \n",ndim);
+
+    /* actions */
+	//printf("rank=%d offset count: %d %d \n",rank, offset, count);
+	//printf("rank=%d ndim: %d \n",rank, ndim);
 
 	for (idx = 0; idx < count; idx++) {
 		datasize = 1;
@@ -585,8 +587,9 @@ int bp_get_var (int64_t gh_p,
 				gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
 			else
 				gdims[j]=ldims[j];
-
-		    //printf("global: %d \n",gdims[j]);
+//		    printf("rank=%d var_name:%s global: %llu offset:%llu local:%llu\n",
+//                    rank, varname,gdims[j],offsets[j],ldims[j]);
+//            printf("timeflag=%d is_global=%d\n",time_flag,is_global);
 			if (readsize[j] > gdims[j]) {
 				fprintf(stderr, "Error: %s out of bound ("
 					"the size to read is %llu,"
@@ -636,8 +639,19 @@ int bp_get_var (int64_t gh_p,
 			else 
 				break;
 		}
-		hole_break = i;	
-		//printf("hole break:%d\n",hole_break);
+		hole_break = i;
+/*        
+		printf("rank=%d hole break:%d ndim:%d\n",rank,hole_break,ndim);
+        if (ndim == 1) {
+		    printf("time_flag:%d ndim=%d\n",time_flag,ndim);
+		    printf("local: %llu\n",ldims[0]);
+		    printf("global: %llu\n",gdims[0]);
+		    printf("offset: %llu\n",offsets[0]);
+		    printf("readsize:%d\n",readsize[0]);
+		    printf("start:%d\n",start[0]);
+        }
+        MPI_Barrier(gh->fh->comm);
+*/        
 /*
         if (rank == 0 && ndim == 2) {
 		    printf("time_flag:%d ndim=%d\n",time_flag,ndim);
@@ -664,15 +678,22 @@ int bp_get_var (int64_t gh_p,
 		if (hole_break==-1)
 			memcpy(var, fh->b->buff+fh->b->offset,var_header.payload_size);
 		else if (hole_break==0) {
-			if (readsize[0]>ldims[0]) {
+//            printf("rank:%d npg:%d tmpreadsize=%d,"
+//                    "readsize=%d read_offset=%llu\n",
+//                    rank, npg,tmpreadsize,readsize[0],read_offset);
+			//if (readsize[0]>ldims[0]) {
+			if (tmpreadsize > ldims[0]) {
 				memcpy ( var+read_offset, fh->b->buff+fh->b->offset, 
                          var_header.payload_size);
 				read_offset +=  var_header.payload_size;
-                //printf("read offset: %lld %d\n",read_offset, npg);
+                tmpreadsize = readsize[0]-read_offset/size_of_type; 
+//                printf("read_offset=%lld,sizetype=%d, plsize=%lld\n",
+//                        read_offset,size_of_type,var_header.payload_size);
 			}
 			else { 
+					//fh->b->buff+fh->b->offset+start[0]*datasize*size_of_type, 
 				memcpy (var+read_offset, 
-					fh->b->buff+fh->b->offset+start[0]*datasize*size_of_type, 
+					fh->b->buff+fh->b->offset+tmpreadsize*datasize*size_of_type, 
 					datasize*size_of_type);
 			}
 		}
