@@ -458,15 +458,16 @@ int bp_get_var (int64_t gh_p,
 		)
 {
 	
+    double  start_time, stop_time;
 	int    i, j, var_id, idx;
-  	int    flag, tmpreadsize=readsize[0];
-	int    offset, count, start_idx=-1;
+	int    flag, offset, count, start_idx=-1;
 	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
 	struct BP_FILE * fh = (struct BP_FILE *) (gh->fh);
 	struct adios_index_var_struct_v1 * var_root = fh->vars_root;
     struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;
 	uint8_t  ndim;  
+  	uint64_t tmpreadsize = (uint64_t) readsize[0];
 	uint64_t size, * ldims, * offsets, * gdims;
 	uint64_t datasize, nloop, dset_stride,var_stride, total_size=1;
 	MPI_Status status;
@@ -478,10 +479,16 @@ int bp_get_var (int64_t gh_p,
 		return -4;
 	}
 
-	for (i=0;i<var_id;i++) 
+	for (i=0;i<var_id && var_root;i++) 
 		var_root = var_root->next;
 
+    if (i!=var_id) {
+		fprintf(stderr, "Error: time step should start from 1!");
+		return -5; 
+    }
+
 	gh->var_current = var_root;
+
 	if (timestep < 0) {
 		fprintf(stderr, "Error: time step should start from 1!");
 		return -5; 
@@ -493,6 +500,9 @@ int bp_get_var (int64_t gh_p,
 	// get the starting offset for the given time step
 	offset = fh->gh->time_index[0][gh->group_id][timestep-fh->tidx_start];
     count = fh->gh->time_index[1][gh->group_id][timestep-fh->tidx_start];
+    //printf("var_id:%d offset: %d count:%d varname: %s\n",
+    //        var_id,offset,count,varname);
+
 	for (i=0;i<var_root->characteristics_count;i++) {
         if (   (  var_root->characteristics[i].offset 
                 > fh->gh->pg_offsets[offset])
@@ -587,9 +597,11 @@ int bp_get_var (int64_t gh_p,
 				gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
 			else
 				gdims[j]=ldims[j];
-//		    printf("rank=%d var_name:%s global: %llu offset:%llu local:%llu\n",
-//                    rank, varname,gdims[j],offsets[j],ldims[j]);
-//            printf("timeflag=%d is_global=%d\n",time_flag,is_global);
+            /*
+		    printf("rank=%d var_name:%s global: %llu offset:%llu local:%llu\n",
+                    rank, varname,gdims[j],offsets[j],ldims[j]);
+            printf("timeflag=%d is_global=%d\n",time_flag,is_global);
+            */
 			if (readsize[j] > gdims[j]) {
 				fprintf(stderr, "Error: %s out of bound ("
 					"the size to read is %llu,"
@@ -610,7 +622,9 @@ int bp_get_var (int64_t gh_p,
 		if ( !idx_table[idx] ) {
 			continue;
 		}
-		++npg;
+        ++npg;
+        MPI_Barrier(MPI_COMM_WORLD);
+        start_time = MPI_Wtime();
 		MPI_File_seek (fh->mpi_fh, 
 			       (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
 			       MPI_SEEK_SET);
@@ -627,6 +641,9 @@ int bp_get_var (int64_t gh_p,
 		fh->b->offset = 0;
 		adios_parse_var_data_header_v1 (fh->b, &var_header);
 
+        MPI_Barrier(MPI_COMM_WORLD);
+        stop_time = MPI_Wtime();
+        printf("%f\t",stop_time-start_time);
 		//--data filtering--//
 		if (!read_offset)
 			for (i = 0; i < ndim; i++) 
@@ -652,7 +669,7 @@ int bp_get_var (int64_t gh_p,
         }
         MPI_Barrier(gh->fh->comm);
 */        
-/*
+        /*
         if (rank == 0 && ndim == 2) {
 		    printf("time_flag:%d ndim=%d\n",time_flag,ndim);
 		    printf("local: %d %d\n",ldims[0],ldims[1]);
@@ -661,6 +678,8 @@ int bp_get_var (int64_t gh_p,
 		    printf("readsize:%d %d\n",readsize[0],readsize[1]);
 		    printf("start:%d %d\n",start[0],start[1]);
         }
+        */
+        /*
         if (rank == 0 && ndim = 3) {
             printf("time_flag:%d ndim=%d\n",time_flag,ndim);
             printf("local: %d %d %d\n",ldims[0],ldims[1],ldims[2]);
@@ -669,7 +688,7 @@ int bp_get_var (int64_t gh_p,
             printf("start:%d %d %d\n",start[0],start[1],start[2]);
             printf("readsize:%d %d %d\n",readsize[0],readsize[1],readsize[2]);
         }
-*/
+        */
         /* hole_break 
          * -1: the content in the pg is exactly the same as request size 
          * 0 : the content is the pg is the subset of the read request
@@ -678,20 +697,23 @@ int bp_get_var (int64_t gh_p,
 		if (hole_break==-1)
 			memcpy(var, fh->b->buff+fh->b->offset,var_header.payload_size);
 		else if (hole_break==0) {
-//            printf("rank:%d npg:%d tmpreadsize=%d,"
-//                    "readsize=%d read_offset=%llu\n",
-//                    rank, npg,tmpreadsize,readsize[0],read_offset);
+        /*
+          printf("rank:%d npg:%d tmpreadsize=%llu,"
+                    "readsize=%d read_offset=%llu\n",
+                    rank, npg, tmpreadsize,readsize[0],read_offset);
+        */
 			//if (readsize[0]>ldims[0]) {
 			if (tmpreadsize > ldims[0]) {
 				memcpy ( var+read_offset, fh->b->buff+fh->b->offset, 
                          var_header.payload_size);
 				read_offset +=  var_header.payload_size;
-                tmpreadsize = readsize[0]-read_offset/size_of_type; 
-//                printf("read_offset=%lld,sizetype=%d, plsize=%lld\n",
-//                        read_offset,size_of_type,var_header.payload_size);
+                
+                tmpreadsize -= ldims[0]; 
+                //tmpreadsize = readsize[0]-read_offset/size_of_type; 
+                //printf("read_offset=%lld,sizetype=%d, plsize=%lld\n",
+                //        read_offset,size_of_type,var_header.payload_size);
 			}
 			else { 
-					//fh->b->buff+fh->b->offset+start[0]*datasize*size_of_type, 
 				memcpy (var+read_offset, 
 					fh->b->buff+fh->b->offset+tmpreadsize*datasize*size_of_type, 
 					datasize*size_of_type);
