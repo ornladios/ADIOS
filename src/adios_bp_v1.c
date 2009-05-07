@@ -111,11 +111,11 @@ int adios_parse_version (struct adios_bp_buffer_struct_v1 * b
        )
     {
         b->change_endianness = adios_flag_no;
-        fprintf(stderr, "no need to change endianness\n");
+        //fprintf(stderr, "no need to change endianness\n");
     }
     else
     {
-        fprintf(stderr, "change endianness\n");
+        //fprintf(stderr, "change endianness\n");
         b->change_endianness = adios_flag_yes;
     }
 
