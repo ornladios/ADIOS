@@ -155,6 +155,18 @@ int adios_posix_open (struct adios_file_struct * fd
                                                            ,&p->old_pg_root
                                                            );
 
+                        // find the largest time index so we can append properly
+                        struct adios_index_process_group_struct_v1 * pg;
+                        uint32_t max_time_index = 0;
+                        pg = p->old_pg_root;
+                        while (pg)
+                        {
+                            if (pg->time_index > max_time_index)
+                                max_time_index = pg->time_index;
+                            pg = pg->next;
+                        }
+                        fd->group->time_index = ++max_time_index;
+
                         adios_posix_read_vars_index (&p->b);
                         adios_parse_vars_index_v1 (&p->b, &p->old_vars_root);
 
