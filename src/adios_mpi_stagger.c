@@ -1237,30 +1237,40 @@ enum ADIOS_FLAG adios_mpi_stagger_should_buffer (struct adios_file_struct * fd
             int old_file = 1;
             adios_buffer_struct_clear (&md->b);
 
-            err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
-                                ,MPI_INFO_NULL, &md->fh
-                                );
 
-            if (err != MPI_SUCCESS)
+            if (md->group_comm == MPI_COMM_NULL || md->rank == 0)
             {
-                old_file = 0;
-                err = MPI_File_open (MPI_COMM_SELF, name
-                                    ,MPI_MODE_WRONLY | MPI_MODE_CREATE
+                err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
                                     ,MPI_INFO_NULL, &md->fh
                                     );
+
                 if (err != MPI_SUCCESS)
                 {
-                    char e [MPI_MAX_ERROR_STRING];
-                    int len = 0;
-                    memset (e, 0, MPI_MAX_ERROR_STRING);
-                    MPI_Error_string (err, e, &len);
-                    fprintf (stderr, "MPI open write failed for %s: '%s'\n"
-                            ,name, e
-                            );
-                    free (name);
+                    old_file = 0;
+                    err = MPI_File_open (MPI_COMM_SELF, name
+                                        ,MPI_MODE_WRONLY | MPI_MODE_CREATE
+                                        ,MPI_INFO_NULL, &md->fh
+                                        );
+                    if (err != MPI_SUCCESS)
+                    {
+                        char e [MPI_MAX_ERROR_STRING];
+                        int len = 0;
+                        memset (e, 0, MPI_MAX_ERROR_STRING);
+                        MPI_Error_string (err, e, &len);
+                        fprintf (stderr, "MPI open write failed for %s: '%s'\n"
+                                ,name, e
+                                );
+                        free (name);
 
-                    return adios_flag_no;
+                        return adios_flag_no;
+                    }
                 }
+                MPI_Bcast (&old_file, 1, MPI_INTEGER, 0, md->group_comm);
+            }
+            else
+            {
+                if (md->group_comm != MPI_COMM_NULL)
+                    MPI_Bcast (&old_file, 1, MPI_INTEGER, 0, md->group_comm);
             }
 
             if (old_file)
@@ -1303,6 +1313,21 @@ enum ADIOS_FLAG adios_mpi_stagger_should_buffer (struct adios_file_struct * fd
                                                        ,&md->old_pg_root
                                                        );
 
+                    // find the largest time index so we can append properly
+                    struct adios_index_process_group_struct_v1 * p;
+                    uint32_t max_time_index = 0;
+                    p = md->old_pg_root;
+                    while (p)
+                    {
+                        if (p->time_index > max_time_index)
+                            max_time_index = p->time_index;
+                        p = p->next;
+                    }
+                    fd->group->time_index = ++max_time_index;
+                    MPI_Bcast (&fd->group->time_index, 1, MPI_INTEGER, 0
+                              ,md->group_comm
+                              );
+
                     adios_init_buffer_read_vars_index (&md->b);
                     MPI_File_seek (md->fh, md->b.vars_index_offset
                                   ,MPI_SEEK_SET
@@ -1330,6 +1355,10 @@ enum ADIOS_FLAG adios_mpi_stagger_should_buffer (struct adios_file_struct * fd
                 {
                     fd->base_offset = 0;
                     fd->pg_start_in_file = 0;
+                    MPI_Bcast (&fd->group->time_index, 1, MPI_INTEGER, 0
+                              ,md->group_comm
+                              );
+
                 }
 
                 MPI_File_close (&md->fh);
