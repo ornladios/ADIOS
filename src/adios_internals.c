@@ -2479,11 +2479,13 @@ static int parseGroup (mxml_node_t * node)
     {
         if (!validatePath (new_group->vars, a->path))
         {
+/*
             fprintf (stderr, "config.xml warning: attribute element '%s' "
                              "has path '%s' that does not match "
                              "any var path or name.\n"
                     ,a->name, a->path
                     );
+*/
         }
 
         a = a->next;
