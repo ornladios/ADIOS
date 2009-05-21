@@ -52,9 +52,11 @@ int parse_cmdline(int argc, char **argv
             *scalar_as_array = USE_SINGLE_ELE_ARRAY;
         }
         else if(!strcmp(argv[i], "--verbose") || !strcmp(argv[i], "-V")) {
+            //fprintf(stderr, "i:%d\n",i);
+            //fprintf(stderr, "verbose:%d\n",*verb);
             *verb = LIST_INFO;
-            *verb = atoi(argv[i+1]);
-	    i=i+1;
+            //*verb = atoi(argv[i+1]);
+            i=i+1;
         }
         else if(!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
             print_usage();
@@ -76,7 +78,7 @@ int parse_cmdline(int argc, char **argv
         }
         i ++;
     }
-    
+
     if(!found_bp_file) {
         fprintf(stderr, "Error in parsing command line: bp_file not provided\n");
         print_usage();
@@ -92,15 +94,15 @@ int main (int argc, char ** argv)
     char *h5_filename = NULL;
     enum scalar_convention scalar_as_array;
     enum verbose_level verb;
-    
+
     // parse cmdline options
-    if(parse_cmdline(argc, argv, &bp_filename, &h5_filename, &scalar_as_array, &verb)) {
+    if(parse_cmdline(argc, argv, &bp_filename, &h5_filename,
+                &scalar_as_array, &verb)) {
         return -1;
     }
 
 
     initialize_bp2h5(USE_FORTRAN, USE_FORTRAN, USE_FORTRAN, USE_FORTRAN, scalar_as_array, verb);
-
     // generate h5 file
     return hw_makeh5(bp_filename, h5_filename);
 }

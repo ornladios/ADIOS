@@ -244,243 +244,250 @@ int hw_makeh5 (char * fnamein, char * fnameout)
         struct adios_var_header_struct_v1 var_header;
         struct adios_var_payload_struct_v1 var_payload;
         struct adios_attribute_struct_v1 attribute;
-	
+
         // setup where to read the process group from (and size)
         b->read_pg_offset = pg->offset_in_file;
-        if (pg->next)
-        {
+        if (pg->next) {
             b->read_pg_size =   pg->next->offset_in_file
-                              - pg->offset_in_file;
+                - pg->offset_in_file;
         }
-        else
-        {
+        else {
             b->read_pg_size =   b->pg_index_offset
-                              - pg->offset_in_file;
+                - pg->offset_in_file;
         }
         adios_posix_read_process_group (b);
         adios_parse_process_group_header_v1 (b, &pg_header);
-        //print_process_group_header (pg_num++, &pg_header);
         adios_parse_vars_header_v1 (b, &vars_header);
-	//print_vars_header (&vars_header);
-	
+
         set_lang_convention(pg_header.host_language_fortran);
         uint64_t length_of_var;
         // process each var in current process group
         if (element_num%2 == 0) {
-	     var_dims = realloc (var_dims, (vars_header.count)
-				* sizeof (struct var_dim)
-			        );
+            var_dims = realloc (var_dims, (vars_header.count)
+                    * sizeof (struct var_dim)
+                    );
             for (i = 0; i < vars_header.count; i++) {
                 var_payload.payload = 0;
                 copy_buffer(b0,b); 
                 length_of_var = *(uint64_t *) (b->buff + b->offset);
                 adios_parse_var_data_header_v1 (b, &var_header);
-               
-		if (var_header.is_dim == adios_flag_yes || var_header.dims == 0) {
+
+                if (   var_header.is_dim == adios_flag_yes
+                    || var_header.dims == 0) {
                     if (!var_payload.payload) { 
-		        var_payload.payload = malloc (var_header.payload_size);
-		        adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
-				    ,var_header.payload_size
-				    );
-		        var_dims [var_dims_count].id = var_header.id;
-		        var_dims [var_dims_count].rank = *(uint32_t *)
-			    var_payload.payload;
+                        var_payload.payload = malloc (var_header.payload_size);
+                        adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
+                                ,var_header.payload_size
+                                );
+                        var_dims [var_dims_count].id = var_header.id;
+                        var_dims [var_dims_count].rank = *(uint32_t *)
+                            var_payload.payload;
                         var_dims [var_dims_count].offset = b0->offset; 
                     }
                     else {
-                        //printf("payload malloc : %s %d\n",__FILE__,__LINE__); return;
-		   }
-		}
+                        //printf("payload malloc : %s %d\n",__FILE__,__LINE__);
+                        //return;
+                    }
+                }
                 else {
-		    var_dims [var_dims_count].id = var_header.id;
-		    var_dims [var_dims_count].rank = 0;
+                    var_dims [var_dims_count].id = var_header.id;
+                    var_dims [var_dims_count].rank = 0;
                     var_dims [var_dims_count].offset = b0->offset; 
-		}
-     
-		var_dims_count ++;
-		copy_buffer(b,b0); 
+                }
+
+                var_dims_count ++;
+                copy_buffer(b,b0); 
                 b->offset = b->offset+length_of_var;
                 if (var_payload.payload) {
                     free (var_payload.payload);
                     var_payload.payload = 0;
                 }
-/*
-                printf("var id=%d name=%s rank=%d offset=%llu\n", 
-				var_header.id, 
-				var_header.name,
-				var_dims[var_dims_count-1].rank,
- 				var_dims[var_dims_count-1].offset);
-*/		
+                /*
+                   printf("var id=%d name=%s rank=%d offset=%llu\n", 
+                   var_header.id, 
+                   var_header.name,
+                   var_dims[var_dims_count-1].rank,
+                   var_dims[var_dims_count-1].offset);
+                   */		
             }
             adios_parse_attributes_header_v1 (b, &attrs_header);
             for (i = 0; i < attrs_header.count; i++) {
                 adios_parse_attribute_v1 (b, &attribute);
-	            var_dims = realloc (var_dims, (var_dims_count+1)
-				* sizeof (struct var_dim)
-			        );
-		if (attribute.is_var == adios_flag_yes) {
+                var_dims = realloc (var_dims, (var_dims_count+1)
+                        * sizeof (struct var_dim)
+                        );
+                if (attribute.is_var == adios_flag_yes) {
                     var_dims [var_dims_count].id = attribute.var_id;
-		    var_dims [var_dims_count].rank = 0;
-		    var_dims [var_dims_count].offset = 0;
-		    for (j=0; j<var_dims_count;j++) {
-	                if (attribute.var_id == var_dims [j].id) {
-			    var_dims [var_dims_count].id = attribute.id;
-			    var_dims [var_dims_count].rank = var_dims [j].rank;
-			    var_dims [var_dims_count].offset = var_dims [j].offset;
-/*
-                            printf("attribute: %s  vid= %llu rank: %llu\n",attribute.name,
-                                      attribute.id,var_dims[var_dims_count].rank);
- */
+                    var_dims [var_dims_count].rank = 0;
+                    var_dims [var_dims_count].offset = 0;
+                    for (j=0; j<var_dims_count;j++) {
+                        if (attribute.var_id == var_dims [j].id) {
+                            var_dims [var_dims_count].id = attribute.id;
+                            var_dims [var_dims_count].rank = var_dims [j].rank;
+                            var_dims [var_dims_count].offset = var_dims [j].offset;
+                            /*
+                               printf("attribute: %s  vid= %llu rank: %llu\n",attribute.name,
+                               attribute.id,var_dims[var_dims_count].rank);
+                               */
                             j = var_dims_count;
-			}
-		    }
-		}
+                        }
+                    }
+                }
                 else {
                     var_dims [var_dims_count].id = attribute.id;
-		    var_dims [var_dims_count].rank = 0;
-		    var_dims [var_dims_count].offset = 0;
-                    switch(attribute.type) { 
-			case adios_unsigned_short:
-		            var_dims [var_dims_count].rank = (uint64_t)*((unsigned short*) attribute.value);
-			    break;
-			case adios_unsigned_integer:
-		            var_dims [var_dims_count].rank = (uint64_t) *((unsigned int *) attribute.value);
-			    break;
-			case adios_unsigned_long:
-		            var_dims [var_dims_count].rank = (uint64_t) *((unsigned long*) attribute.value);
-			    break;
-			case adios_short:
-		            var_dims [var_dims_count].rank = (uint64_t)*((short*) attribute.value);
-			    break;
-			case adios_integer:
-		            var_dims [var_dims_count].rank = (uint64_t) *((int *) attribute.value);
-			    break;
-			case adios_long:
-		            var_dims [var_dims_count].rank = (uint64_t) *((long *) attribute.value);
-			    break;
-                        case adios_byte:
-                        case adios_unsigned_byte:
-                        case adios_string:
-                            break;
-                        case adios_complex:
-			case adios_double_complex:
-		            fprintf(stderr, "Error in mapping ADIOS Data Types to HDF5: complex not supported yet.\n");
-			    break;
-			case adios_unknown:
-			default:
-			    fprintf(stderr, "Error in mapping ADIOS Data Types to HDF5: unknown data type.\n");
-		    }
-		}
-		    var_dims_count ++;
-	    }
-	}
+            var_dims [var_dims_count].rank = 0;
+            var_dims [var_dims_count].offset = 0;
+            switch(attribute.type) { 
+                case adios_unsigned_short:
+                    var_dims [var_dims_count].rank = (uint64_t)*((unsigned short*) attribute.value);
+                    break;
+                case adios_unsigned_integer:
+                    var_dims [var_dims_count].rank = (uint64_t) *((unsigned int *) attribute.value);
+                    break;
+                case adios_unsigned_long:
+                    var_dims [var_dims_count].rank = (uint64_t) *((unsigned long*) attribute.value);
+                    break;
+                case adios_short:
+                    var_dims [var_dims_count].rank = (uint64_t)*((short*) attribute.value);
+                    break;
+                case adios_integer:
+                    var_dims [var_dims_count].rank = (uint64_t) *((int *) attribute.value);
+                    break;
+                case adios_long:
+                    var_dims [var_dims_count].rank = (uint64_t) *((long *) attribute.value);
+                    break;
+                case adios_byte:
+                case adios_unsigned_byte:
+                case adios_string:
+                    break;
+                case adios_complex:
+                case adios_double_complex:
+                    fprintf(stderr, "Error in mapping ADIOS Data Types to HDF5: complex not supported yet.\n");
+                    break;
+                case adios_unknown:
+                default:
+                    fprintf(stderr, "Error in mapping ADIOS Data Types to HDF5: unknown data type.\n");
+            }
+        }
+        var_dims_count ++;
+            }
+        }
         // write to h5 file
         // make sure the buffer is big enough or send in null
         else {
-	    if (verbose >= LIST_INFO) {
-		printf("-------------------------------------------\n");
+            if (verbose >= LIST_INFO) {
+                printf("-------------------------------------------\n");
                 printf("total vars: %d, pg timeindex: %d\n",
                         vars_header.count, 
                         pg->time_index);
-	    }
+            }
             for (i = 0; i < vars_header.count; i++) {
                 var_payload.payload = 0;
                 adios_parse_var_data_header_v1 (b, &var_header);
                 if (var_header.dims) {
-		    if (verbose >= LIST_INFO)
+                    if (verbose >= LIST_INFO)
                         printf("\t%3d) dataset : %s\n",i,var_header.name);
-		    uint64_t element = 0;
-		    struct adios_dimension_struct_v1 * d = var_header.dims;
-		    int i = 0, ranks = 0, c = 0;
-		    uint64_t * dims,* global_dims,* offsets;
-		    while (d) {
+                    uint64_t element = 0;
+                    struct adios_dimension_struct_v1 * d = var_header.dims;
+                    int i = 0, ranks = 0, c = 0;
+                    uint64_t * dims,* global_dims,* offsets;
+                    while (d) {
                         ranks++;
-			d = d->next;
-		    }
+                        d = d->next;
+                    }
                     //adios_parse_var_data_payload_v1 (b, &var_header, NULL, 0);
-		    // get local dimensions
-		    dims = (uint64_t *) malloc (8 * ranks);
-		    memset (dims, 0, 8 * ranks);
+                    // get local dimensions
+                    dims = (uint64_t *) malloc (8 * ranks);
+                    memset (dims, 0, 8 * ranks);
 
-		    d = var_header.dims;
-		    uint64_t * dims_t = dims;
+                    d = var_header.dims;
+                    uint64_t * dims_t = dims;
 
-		    while (d) {
-			if (d->dimension.var_id != 0) {
+                    while (d) {
+                        if (d->dimension.var_id != 0) {
                             for (i = 0; i < var_dims_count; i++) {
-                                //printf("%s: %d %llu \n",var_header.name,i,var_dims [i].rank); 
-                                if (var_dims [i].id == d->dimension.var_id){ 
-                                    *dims_t = var_dims [i].rank; 
-                                    i = var_dims_count+1;
-			        }
-			    }
-			}
-			else { 
-		            *dims_t = d->dimension.rank;
-			}
-			d = d->next;
-			dims_t++;
-		    }
-		    // get global dimensions
-		    global_dims = (uint64_t *) malloc (8 * ranks);
-		    memset (global_dims, 0, 8 * ranks);
+                                //printf("%s: %d %llu \n",var_header.name,
+                        //i,var_dims [i].rank); 
+                        if (var_dims [i].id == d->dimension.var_id){ 
+                            *dims_t = var_dims [i].rank; 
+                            i = var_dims_count+1;
+                        }
+                    }
+                }
+                else { 
+                    *dims_t = d->dimension.rank;
+                }
+                d = d->next;
+                dims_t++;
+            }
+            // get global dimensions
+            global_dims = (uint64_t *) malloc (8 * ranks);
+            memset (global_dims, 0, 8 * ranks);
 
-		    d = var_header.dims;
-		    dims_t = global_dims;
+            d = var_header.dims;
+            dims_t = global_dims;
 
-		    while (d) {
-			if (d->global_dimension.var_id != 0) {
-			    for (i = 0; i < var_dims_count; i++) {
-                                if (var_dims [i].id == d->global_dimension.var_id) {
-                                    *dims_t = var_dims [i].rank;
-                                    i = var_dims_count+1;
-			    	}
-			    }
-			}
-			else
-                            *dims_t = d->global_dimension.rank;
-			d = d->next;
-			dims_t++;
-		    }
+            while (d) {
+                if (d->global_dimension.var_id != 0) {
+                    for (i = 0; i < var_dims_count; i++) {
+                        if (var_dims [i].id == \
+                                d->global_dimension.var_id) {
+                            *dims_t = var_dims [i].rank;
+                            i = var_dims_count+1;
+                        }
+                    }
+                }
+                else
+                    *dims_t = d->global_dimension.rank;
+                d = d->next;
+                dims_t++;
+            }
 
-		    // get offsets
+            // get offsets
 		    offsets = (uint64_t *) malloc (8 * ranks);
 		    memset (offsets, 0, 8 * ranks);
 
 		    d = var_header.dims;
 		    dims_t = offsets;
-		    while (d) {
-			if (d->local_offset.var_id != 0) {
-		            for (i = 0; i < var_dims_count; i++) {
-                                if (var_dims [i].id == d->local_offset.var_id) {
-                                    *dims_t = var_dims [i].rank;
-                                    i = var_dims_count+1;
-                            	}
-                            }
-                        }
-                        else {
-                            *dims_t = d->local_offset.rank;
-                        }
-			d = d->next;
-			dims_t++;
-		    }
 
-		    var_payload.payload = malloc (var_header.payload_size);
-		    adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
-                                                    ,var_header.payload_size
-                                                    );
-		    // now ready to write dataset to h5 file
-/*
-		    if (!strcmp(var_header.name,"nextnode") ||
-			!strcmp(var_header.name,"itheta0") )
- 		    printf("==============\n");
-			printf("  %s\n",var_header.name);
- 		    printf("==============\n");
-*/
-		    hw_dset(root_id, var_header.path, var_header.name, var_payload.payload,
-                            var_header.type, ranks, dims, global_dims, offsets,
-  	 		    pg->time_index
-			    );      
+            while (d) {
+                if (d->local_offset.var_id != 0) {
+                    for (i = 0; i < var_dims_count; i++) {
+                        if (var_dims [i].id == d->local_offset.var_id) {
+                            *dims_t = var_dims [i].rank;
+                            i = var_dims_count+1;
+                        }
+                    }
+                }
+                else {
+                    *dims_t = d->local_offset.rank;
+                }
+                d = d->next;
+                dims_t++;
+            }
+
+            var_payload.payload = malloc (var_header.payload_size);
+            adios_parse_var_data_payload_v1 (b, &var_header, &var_payload
+                    ,var_header.payload_size
+                    );
+            // now ready to write dataset to h5 file
+            /*
+               if (!strcmp(var_header.name,"nextnode") ||
+               !strcmp(var_header.name,"itheta0") )
+               printf("==============\n");
+               printf("  %s\n",var_header.name);
+               printf("==============\n");
+            printf("%d %d %d %d\n",ranks, global_dims[0],dims[0],offsets[0]); 
+            printf("%d %d %d %d\n",ranks, global_dims[1],dims[1],offsets[1]); 
+            printf("%d %d %d %d\n",ranks, global_dims[2],dims[2],offsets[2]); 
+            printf("%d %d %d %d\n",ranks, global_dims[3],dims[3],offsets[3]); 
+            */
+            fprintf(stderr, "verbose: %d\n",verbose);
+            hw_dset(root_id, var_header.path, var_header.name, 
+                    var_payload.payload,var_header.type, 
+                    ranks, dims, global_dims, offsets,
+                    pg->time_index
+                   );      
 
 		    free(dims);
 		    free(global_dims);
@@ -618,7 +625,7 @@ void hw_dset(hid_t root_id,
              char * name, 
              void * data,
              enum ADIOS_DATATYPES type, 
-	     int rank,
+             int rank,
              uint64_t *dims,
              uint64_t *global_dims,
              uint64_t *offsets,
@@ -653,7 +660,7 @@ void hw_dset(hid_t root_id,
 
         h5_status = bp_getH5TypeId (type, &type_id, data);
          
-	/*
+    	/*
         hsize_t * global_h5dims;
         hsize_t * local_h5dims;
         hsize_t * start;
@@ -663,15 +670,14 @@ void hw_dset(hid_t root_id,
         local_h5dims = (hsize_t *) malloc (rank * sizeof (hsize_t));
         start = (hsize_t *) malloc (rank * sizeof (hsize_t));
         stride = (hsize_t *) malloc (rank * sizeof (hsize_t));
-	*/
+        */
 
-	hsize_t global_h5dims[10];
-	hsize_t local_h5dims[10];
-	hsize_t start[10];
-	hsize_t stride[10];
+        hsize_t global_h5dims[10];
+        hsize_t local_h5dims[10];
+        hsize_t start[10];
+        hsize_t stride[10];
 
         int i, time_idx;
-
         if(array_dim_order_fortran == USE_FORTRAN) {
             int reverse_i; 
             time_idx=-1;
@@ -682,23 +688,32 @@ void hw_dset(hid_t root_id,
                 local_h5dims [reverse_i] = dims[i];
                 start [reverse_i] = offsets[i];
                 stride [reverse_i] = 1;
-		if (dims[i]==0) {
-                    if (verbose >= DEBUG_INFO)
-                        printf("timeindex=%d rank=%d\n",i, rank);
+                if (dims[i]==0) {
+                    if (verbose >= LIST_INFO)
+                        fprintf(stderr, "timeindex=%d rank=%d\n",i, rank);
                     time_idx = i;
-		    local_h5dims[i]=1;
+                    local_h5dims[i]=1;
                 }
             }
-            if (time_idx == 0 && global_h5dims[time_idx]!=0) {
-	        for (i=0;i<rank-1;i++) {
-                    global_h5dims[i+1] = global_h5dims[i];
-                    start[i+1] = start[i];
+            if (time_idx == 0) {
+                if (global_h5dims[time_idx]!=0) {
+                    for (i=0;i<rank-1;i++) {
+                        global_h5dims[i+1] = global_h5dims[i];
+                        start[i+1] = start[i];
+                    }
+                    global_h5dims[time_idx] = 1;
                 }
-		global_h5dims[time_idx] = 1;
+                else if (global_h5dims[time_idx]==0 &&
+                        local_h5dims[time_idx]!=0) {
+                    for (i=rank-1;i>0;i--) {
+                        local_h5dims[i] = local_h5dims[i-1];
+                    }
+                    local_h5dims[0] = 1;
+                }
             }
             if (time_idx == rank-1 && global_h5dims[time_idx]==0) {
-		global_h5dims[time_idx] = 1;
-		start[time_idx] = 0;
+                global_h5dims[time_idx] = 1;
+                start[time_idx] = 0;
             }
         }
         else if(array_dim_order_fortran == USE_C) {
