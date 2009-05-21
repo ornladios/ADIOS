@@ -623,27 +623,25 @@ int bp_get_var (int64_t gh_p,
 			continue;
 		}
         ++npg;
-        MPI_Barrier(MPI_COMM_WORLD);
-        start_time = MPI_Wtime();
+        //MPI_Barrier(MPI_COMM_WORLD);
+        //start_time = MPI_Wtime();
 		MPI_File_seek (fh->mpi_fh, 
 			       (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
 			       MPI_SEEK_SET);
 		MPI_File_read (fh->mpi_fh, fh->b->buff, 4, MPI_BYTE, &status);
-		tmpcount= *((uint64_t*)fh->b->buff);	
+		tmpcount= *((uint64_t*)fh->b->buff);
 		realloc_aligned(fh->b, tmpcount+4);
-
 		MPI_File_seek (fh->mpi_fh, 
 			       (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
 			       MPI_SEEK_SET);
 		MPI_File_read (fh->mpi_fh, fh->b->buff, tmpcount+4, MPI_BYTE, &status);
 		//MPI_Get_count (&status, MPI_BYTE, &tmpcount);
-	    //printf("read back: %d\n",tmpcount);	
+        //MPI_Barrier(MPI_COMM_WORLD);
+        //stop_time = MPI_Wtime();
 		fh->b->offset = 0;
 		adios_parse_var_data_header_v1 (fh->b, &var_header);
 
-        MPI_Barrier(MPI_COMM_WORLD);
-        stop_time = MPI_Wtime();
-        printf("%f\t",stop_time-start_time);
+        //printf("%f\t",stop_time-start_time);
 		//--data filtering--//
 		if (!read_offset)
 			for (i = 0; i < ndim; i++) 
@@ -812,11 +810,12 @@ int bp_get_var (int64_t gh_p,
             //printf("finish read pg: %d\n",npg);
 		}
 	}  // end of loop
-	free (gdims);
+//    printf("%d finished!\n",rank);
+    free (gdims);
 	free (offsets);
 	free (ldims);
 	free (idx_table);
-	return 0;
+	return total_size*sizeof(double);
 }
 
 void bp_fopen_( int64_t * fh,
