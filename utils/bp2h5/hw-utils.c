@@ -482,7 +482,6 @@ int hw_makeh5 (char * fnamein, char * fnameout)
             printf("%d %d %d %d\n",ranks, global_dims[2],dims[2],offsets[2]); 
             printf("%d %d %d %d\n",ranks, global_dims[3],dims[3],offsets[3]); 
             */
-            fprintf(stderr, "verbose: %d\n",verbose);
             hw_dset(root_id, var_header.path, var_header.name, 
                     var_payload.payload,var_header.type, 
                     ranks, dims, global_dims, offsets,
