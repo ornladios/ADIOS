@@ -117,36 +117,46 @@ const char * bp_type_to_string (int type);
 // Fortran interface
 
 void bp_fopen_ ( int64_t * fh,
-	        char * fname,
-		MPI_Comm comm,
-		int * err,
-		int fname_len
-	      );
+        char * fname,
+        void * comm,
+        int * err,
+        int fname_len
+        );
 
 void bp_fclose_ ( int64_t * fh, int * err);
 
-void bp_inq_file_ ( int64_t * fh_p, int *ngroup, 
-		  int *nvar, int *nattr, int *nt, char **gnamelist, int * err); 
+void bp_inq_file_ ( int64_t * fh_p,
+                    int * groups_count,
+                    int * vars_count,
+                    int * attrs_count,
+                    int * tstart,
+                    int * tstop,
+                    void * gnamelist,
+                    int * err,
+                    int gnamelist_len);
 
-void bp_gopen_ (int64_t * gh_p,
-		int64_t fh, 
-		char * grpname);
+void bp_gopen_ (int64_t * gh_p,int64_t * fh, 
+		char * grpname, int *err, int grpname_len);
 
-void bp_gclose_ ( int64_t * gh);
+void bp_gclose_ ( int64_t * gh, int * err);
 
-void bp_inq_group_ (int64_t * gh, int *nvar, char ** vnamelist);
+void bp_inq_group_ (int64_t * gh, int *vcnt, void *v, int * err, int);
 
 void bp_get_var_ (int64_t * gh,
 		 char * varname,
 		 void * var, 
 		 int  * start,
 		 int  * readsize, 
-		 int timestep);
+		 int  * timestep,
+         int  * err,
+         int  varname_len);
 
 void bp_inq_var_ (int64_t * gh_p, char * varname,
 		 int * type,
 		 int * ndim,
 		 int * is_timebased,
-		 int * dims);
+		 int * dims,
+         int * err,
+         int varname_len);
 
 #endif

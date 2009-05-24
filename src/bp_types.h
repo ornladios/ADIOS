@@ -35,16 +35,16 @@ struct bp_minifooter {
 } __attribute__((__packed__));
 
 struct BP_FILE {
-	MPI_File mpi_fh;
-	MPI_Comm comm;
-	struct adios_bp_buffer_struct_v1 * b;
-	struct bp_index_pg_struct_v1 * pgs_root;
-	struct adios_index_var_struct_v1 * vars_root;
-	struct adios_index_attribute_struct_v1 * attrs_root;
-	struct bp_minifooter mfooter; 
-	struct BP_GROUP_VAR * gh;
-        uint32_t tidx_start;
-        uint32_t tidx_stop;
+    MPI_File mpi_fh;
+    MPI_Comm comm;
+    struct adios_bp_buffer_struct_v1 * b;
+    struct bp_index_pg_struct_v1 * pgs_root;
+    struct adios_index_var_struct_v1 * vars_root;
+    struct adios_index_attribute_struct_v1 * attrs_root;
+    struct bp_minifooter mfooter; 
+    struct BP_GROUP_VAR * gh;
+    uint32_t tidx_start;
+    uint32_t tidx_stop;
 };
 
 struct BP_GROUP_VAR {

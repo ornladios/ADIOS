@@ -65,7 +65,6 @@ int bp_read_open (const char * filename,
 	// communicator
 	err = MPI_File_open (comm, filename, MPI_MODE_RDONLY, 
 			MPI_INFO_NULL, &(fh->mpi_fh));
-
 	if (err != MPI_SUCCESS) {
 		char e [MPI_MAX_ERROR_STRING];
 		int len = 0;
@@ -1220,39 +1219,50 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
 }
 
 void copy_data (void *dst, void *src,
-		int idim,
-		int ndim,
-		uint64_t* size_in_dset, 
-		uint64_t* ldims, 
-		int * readsize, 
-	      	uint64_t dst_stride, 
-	       	uint64_t src_stride,
-	      	uint64_t dst_offset, 
-	       	uint64_t src_offset,
-		uint64_t ele_num,
+        int idim,
+        int ndim,
+        uint64_t* size_in_dset, 
+        uint64_t* ldims, 
+        int * readsize, 
+        uint64_t dst_stride, 
+        uint64_t src_stride,
+        uint64_t dst_offset, 
+        uint64_t src_offset,
+        uint64_t ele_num,
 		int      size_of_type
 		)
 {
-	unsigned int i;
+	unsigned int i, j;
 	uint64_t dst_offset_new=0; 
 	uint64_t src_offset_new=0;
-
+    uint64_t src_step, dst_step;
 	if (ndim-1==idim) {
-/*
-		printf ("size_in_dset= %d\n"
+#if 0
+		printf (
+            "----------------\n"
+            "size_in_dset= %d\n"
 			"dst_stride  = %d\n"
 			"dst_offset  = %d\n"
 			"src_stride  = %d\n"
 			"src_offset  = %d\n"
-			"ele_num     = %d\n", 
+			"ele_num     = %d\n" 
+			"ndim        = %d\n" 
+			"idim        = %d\n" 
+            "----------------\n",
 			size_in_dset[idim],
 			dst_stride,
 			dst_offset,
 			src_stride,
-			src_offset,ele_num);
-*/
+			src_offset,ele_num,ndim,idim);
+#endif
 //
 		for (i=0;i<size_in_dset[idim];i++) {
+            /*
+             * printf("memcpy: %d %d %d\n", 
+             (i*dst_stride+dst_offset)*size_of_type,
+             (i*src_stride+src_offset)*size_of_type,
+             ele_num*size_of_type);
+             */
 			memcpy (dst + (i*dst_stride+dst_offset)*size_of_type,
 					src + (i*src_stride+src_offset)*size_of_type,
 					ele_num*size_of_type);
@@ -1262,20 +1272,43 @@ void copy_data (void *dst, void *src,
 	}
 
 	for (i = 0; i<size_in_dset[idim];i++) {
-
-		src_offset_new =src_offset + i * src_stride * ldims[ndim-idim-1];
-//		printf("ndim=%d idim=%d\n", ndim, idim);
-//		dst_offset_new = dst_offset+i*dst_stride*readsize[ndim-idim-1];
-//		printf("i*dst_stride*readsize=%llu\n", 
-//			readsize[ndim-idim-1]);
-
-//		printf("src_offset=%llu dst_offset_new=%llu\n", src_offset_new, dst_offset_new);
-
-		copy_data (dst, src, idim+1, ndim, size_in_dset,
-				ldims,readsize, 
-				dst_stride, src_stride,
-				dst_offset_new, src_offset_new,
-				ele_num, size_of_type);
+        /* get the different step granularity 
+         * for each different reading pattern broke
+         */
+        src_step = 1;
+        dst_step = 1;
+        for (j = idim+1; j <= ndim-1;j++) {
+            src_step *= ldims[j];
+            dst_step *= readsize[j];
+        }
+        //src_offset_new = src_offset + i * src_stride * step;
+        //src_step = i * src_stride * ldim[ndims-] 
+        //dst_step = 
+        //src_offset_new =src_offset + i * src_stride * ldims[ndim-idim-1];
+        //dst_offset_new = dst_offset + i * dst_stride\
+        //                            * readsize[ndim-idim-1];
+        src_offset_new =src_offset + i * src_stride * src_step;
+        dst_offset_new = dst_offset + i * dst_stride * dst_step;
+#if 0
+        printf("%d: readsize[%d]=%d   "
+                "ldims[%d]=%d\n",i, 
+                idim,readsize[idim],
+                idim,ldims[idim]);
+        printf("ndim=%d idim=%d ldims[%d]=%d step=%llu\n", 
+                ndim, idim, 
+                ndim-idim-1,
+                ldims[ndim-idim-1],
+                step);
+        printf("%d: src_offset=%llu src_offset_new=%llu\n"
+                "   dst_offset=%llu dst_offset_new=%llu\n", 
+                i, src_offset, dst_offset,
+                src_offset_new, dst_offset_new);
+#endif
+        copy_data (dst, src, idim+1, ndim, size_in_dset,
+                ldims,readsize, 
+                dst_stride, src_stride,
+                dst_offset_new, src_offset_new,
+                ele_num, size_of_type);
 	}
 }
 
