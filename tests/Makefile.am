@@ -1,1 +1,1 @@
-SUBDIRS=C Fortran
+SUBDIRS=C Fortran genarray

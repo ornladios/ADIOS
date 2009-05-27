@@ -123,6 +123,7 @@ AC_CONFIG_FILES([Makefile
                  tests/Makefile
                  tests/C/Makefile
                  tests/Fortran/Makefile
+                 tests/genarray/Makefile
                  utils/Makefile
                  utils/adios_lint/Makefile
                  utils/gpp/Makefile

@@ -23880,7 +23880,7 @@ FC="$MPIFC"
 
 LIBS="$MPILIBS $LIBS"
 
-                                                                                                                                                                          ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile utils/Makefile utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile examples-code/Makefile examples-code/global-array/Makefile examples-code/global-array-time/Makefile examples-code/time-index/Makefile"
+                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile tests/genarray/Makefile utils/Makefile utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile examples-code/Makefile examples-code/global-array/Makefile examples-code/global-array-time/Makefile examples-code/time-index/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -24584,6 +24584,7 @@ do
   "tests/Makefile" ) CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
   "tests/C/Makefile" ) CONFIG_FILES="$CONFIG_FILES tests/C/Makefile" ;;
   "tests/Fortran/Makefile" ) CONFIG_FILES="$CONFIG_FILES tests/Fortran/Makefile" ;;
+  "tests/genarray/Makefile" ) CONFIG_FILES="$CONFIG_FILES tests/genarray/Makefile" ;;
   "utils/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/Makefile" ;;
   "utils/adios_lint/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/adios_lint/Makefile" ;;
   "utils/gpp/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/gpp/Makefile" ;;
