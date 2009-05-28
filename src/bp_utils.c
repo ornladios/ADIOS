@@ -340,12 +340,14 @@ int bp_parse_pgs (uint64_t fh_p)
 	time_index [1][grpid][time_id-tidx_start] = pg_time_count;
 	tidx_stop = time_id;
 /*
-	printf(DIVIDER); 
 	printf ("# of groups: %llu\n", group_count);
 	printf ("time index table: %d x %d\n",group_count, mh->time_steps);
-	for (i=0;i< mh->time_steps;i++)
-		printf("\t%d %d\n",time_index[0][0][i],time_index[1][0][i]);
-*/	
+	for (i=0;i< mh->time_steps;i++) {
+        for (j=0;j<group_count;j++)
+            printf("\t%d %d\n",time_index[0][j][i],
+                               time_index[1][j][i]);
+    }	
+*/
 
 	char ** grp_namelist;
 	uint64_t ** grp_timelist;
