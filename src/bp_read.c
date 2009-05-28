@@ -354,17 +354,19 @@ int bp_inq_var (int64_t gh_p, char * varname,
     }
 	// find variable in var list
 	var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
+    for (i=0;i<gh->group_id;i++)
+        var_id -= fh->gh->var_counts_per_group[i];
 	for(i=0;i<gh->offset;i++)
 		var_root = var_root->next;
-	if (var_id<0) {
+	if (var_id < 0) {
 		fprintf(stderr, 
 			"Error: Variable %s does not exist in the group %s!\n",
                 	varname, fh->gh->namelist[gh->group_id]);
 		return -4;
 	}
-
-	for (i=0;i<var_id;i++) 
+	for (i=0;i<var_id;i++) {
 		var_root = var_root->next;
+    }
 
 	gh->var_current = var_root;
 	*type = var_root->type;
@@ -1031,8 +1033,11 @@ void bp_inq_group_ (int64_t * gh, int *vcnt, void *vnamelist,
     bp_inq_group ( *gh, &ginfo);
     * vcnt = ginfo.vars_count;
     * err = 0;
-    for (i=0;i<*vcnt;i++)
-        strcpy(vnamelist+i*vnamelist_len,ginfo.var_namelist[i]); 
+    for (i=0;i<*vcnt;i++) {
+        strncpy(vnamelist+i*vnamelist_len,ginfo.var_namelist[i],
+                strlen(ginfo.var_namelist[i]));
+        *((char*)(vnamelist+i*vnamelist_len+strlen(ginfo.var_namelist[i])))='\0';
+    } 
     bp_free_groupinfo(&ginfo);
 }
 
