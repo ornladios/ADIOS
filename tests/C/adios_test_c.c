@@ -40,6 +40,11 @@ timeval_subtract (result, x, y)
   return x->tv_sec < y->tv_sec;
 }
 
+#define DO_WRITE 1
+#define DO_READ 0
+#define DO_APPEND 0
+#define MEMORY_THIEF 0
+
 int main (int argc, char ** argv)
 {
     char * type_name = "restart";
@@ -53,11 +58,33 @@ int main (int argc, char ** argv)
     struct timeval time_diff;
     struct timeval * time_diff_all;
 
-    int byte_test_length = 128 * 1024 * 1024;
-    char byte_test [byte_test_length + 1];
-    char r_byte_test [byte_test_length + 1];
+    uint64_t byte_test_length = 2LL * 1024 * 1024 * 1024;
+printf ("byte_test_length: %llu\n", byte_test_length);
+#if DO_WRITE
+    char * byte_test = 0;
+    byte_test = malloc (byte_test_length);
+    if (byte_test == 0)
+    {
+        fprintf (stderr, "Error allocating memory for write byte_test: %llu\n"
+                ,byte_test_length
+                );
+        exit (-1);
+    }
     byte_test [byte_test_length] = 0;
+#endif
+#if DO_READ
+    char * r_byte_test = 0;
+    r_byte_test = malloc (byte_test_length);
+    if (byte_test == 0)
+    {
+        fprintf (stderr, "Error allocating memory for read byte_test: %llu\n"
+                ,byte_test_length
+                );
+        exit (-1);
+    }
+    r_byte_test = malloc (byte_test_length);
     r_byte_test [byte_test_length] = 0;
+#endif
 
     int var_x1 = 101;
     int var_x2 = 102;
@@ -107,7 +134,9 @@ int main (int argc, char ** argv)
 
     // allocate a big block of memory to stymie unwanted local caching
     // that would make the numbers suspect
+#if MEMORY_THIEF
     char * memory_thief = malloc (1 * 1024 * 1024 * 1024);
+#endif
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
@@ -120,7 +149,7 @@ int main (int argc, char ** argv)
     else
         time_diff_all = 0;
 
-#if 1
+#if DO_WRITE
 //printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
     gettimeofday (&time_start, NULL);
     adios_open (&io_handle, type_name, filename, "w");
@@ -212,7 +241,7 @@ int main (int argc, char ** argv)
     MPI_Barrier (MPI_COMM_WORLD);
 #endif
 
-#if 0
+#if DO_READ
 printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
 
     adios_open (&io_handle, type_name, filename, "r");
@@ -264,7 +293,9 @@ printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
     }
 #endif
 
-#if 0
+#if DO_APPEND
+for (int i = 0; i < 3; i++)
+{
 printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
     var_x1 = 11;
     adios_open (&io_handle, type_name, filename, "a");
@@ -287,6 +318,7 @@ printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
     adios_close (io_handle);
 
     printf ("rank: %d append completed\n", rank);
+}
 
 #endif
 
@@ -299,7 +331,16 @@ printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
     free (zion2);
     free (zion3);
 
+#if DO_WRITE
+    free (byte_test);
+#endif
+#if DO_READ
+    free (r_byte_test);
+#endif
+
+#if MEMORY_THIEF
     free (memory_thief);
+#endif
 
     return 0;
 }
