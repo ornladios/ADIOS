@@ -59,6 +59,9 @@ int main (int argc, char ** argv)
     struct timeval * time_diff_all;
 
     uint64_t byte_test_length = 2LL * 1024 * 1024 * 1024;
+    uint64_t memory_thief_length =  1024 * 1024 * 1024  // 1 GB
+                             + 128 * 1024 * 1024   // 128 MB
+                             - byte_test_length;
 printf ("byte_test_length: %llu\n", byte_test_length);
 #if DO_WRITE
     char * byte_test = 0;
