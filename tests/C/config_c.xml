@@ -1,5 +1,6 @@
 <adios-config host-language="C">
   <adios-group name="restart" coordination-communicator="comm" time-index="time">
+<!--
     <var name="mype" path="/" type="integer"/>
     <var name="mype" path="/test" type="integer"/>
 
@@ -20,6 +21,7 @@
     <attribute name="units2" path="/abc/me" value="m/s"/>
     <attribute name="timestep1" path="/" value="1"/>
     <attribute name="timestep2" path="/abc" value="1"/>
+-->
 
     <var name="byte_test_length" type="integer"/>
 

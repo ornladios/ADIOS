@@ -180,11 +180,15 @@ printf ("byte_test_length: %llu\n", byte_test_length);
     adios_write (io_handle, "node-attr", &node);
 
 #endif
+printf ("1\n");
     adios_write (io_handle, "byte_test_length", &byte_test_length);
+printf ("1\n");
     adios_write (io_handle, "byte_test", byte_test);
+printf ("1\n");
 
     //printf ("A rank: %d write completed\n", rank);
     adios_close (io_handle);
+printf ("1\n");
     //printf ("B rank: %d write completed\n", rank);
     gettimeofday (&time_end, NULL);
 
