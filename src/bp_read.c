@@ -432,7 +432,7 @@ int bp_inq_var (int64_t gh_p, char * varname,
             time_flag = *ndim;
             *is_timebased = 1;
         }
-        if (is_timebased) {
+        if (*is_timebased) {
             for (i=0;i<(*ndim)-1;i++) {
                 if (dims) 
                     dims[i]=gdims[i];
