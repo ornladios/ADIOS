@@ -386,7 +386,7 @@ static int common_adios_write (int64_t fd_p, const char * name, void * var)
     }
     else
     {
-        int element_size = adios_get_type_size (v->type, var);
+        uint64_t element_size = adios_get_type_size (v->type, var);
 
         switch (v->type)
         {

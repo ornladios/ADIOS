@@ -1656,7 +1656,7 @@ void adios_posix_read_version (struct adios_bp_buffer_struct_v1 * b)
 
     adios_init_buffer_read_version (b);
 
-    lseek64 (b->f, b->file_size - 28, SEEK_SET);
+    llseek (b->f, b->file_size - 28, SEEK_SET);
 
     r = read (b->f, b->buff, 28);
     if (r != 28)
@@ -1689,11 +1689,11 @@ void adios_posix_read_process_group_index (struct adios_bp_buffer_struct_v1 * b)
 //    read (b->f, b->buff, b->pg_size);
 
     if (sizeof (char *) == 4) {
-    lseek (b->f, (off_t) b->pg_index_offset, SEEK_SET);
+    llseek (b->f, (loff_t) b->pg_index_offset, SEEK_SET);
         read (b->f, b->buff, (size_t) b->pg_size);
     }
     else {
-        lseek (b->f, b->pg_index_offset, SEEK_SET);
+        llseek (b->f, b->pg_index_offset, SEEK_SET);
         read (b->f, b->buff, b->pg_size);
     }
 }
@@ -1713,11 +1713,11 @@ void adios_posix_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
 //    lseek (b->f, b->vars_index_offset, SEEK_SET);
 //    r = read (b->f, b->buff, b->vars_size);
     if (sizeof (char *) == 4) {
-       lseek (b->f, (off_t) b->vars_index_offset, SEEK_SET);
+       llseek (b->f, (loff_t) b->vars_index_offset, SEEK_SET);
         r = read (b->f, b->buff, (size_t) b->vars_size);
     }
     else {
-        lseek (b->f, b->vars_index_offset, SEEK_SET);
+        llseek (b->f, b->vars_index_offset, SEEK_SET);
         r = read (b->f, b->buff, b->vars_size);
     }
     if (r != b->vars_size)
@@ -1742,11 +1742,11 @@ void adios_posix_read_attributes_index (struct adios_bp_buffer_struct_v1 * b)
 //    lseek (b->f, b->attrs_index_offset, SEEK_SET);
 //    r = read (b->f, b->buff, b->attrs_size);
     if (sizeof (char *) == 4) {
-        lseek (b->f, (off_t) b->attrs_index_offset, SEEK_SET);
+        llseek (b->f, (loff_t) b->attrs_index_offset, SEEK_SET);
         r = read (b->f, b->buff, (size_t) b->attrs_size);
     }
     else {
-        lseek (b->f, b->attrs_index_offset, SEEK_SET);
+        llseek (b->f, b->attrs_index_offset, SEEK_SET);
         r = read (b->f, b->buff, b->attrs_size);
     }
 
@@ -1773,11 +1773,11 @@ uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b)
 //    pg_size = read (b->f, b->buff, b->read_pg_size);
 
     if (sizeof (char *) == 4) {
-        lseek (b->f, (off_t) b->read_pg_offset, SEEK_SET);
+        llseek (b->f, (loff_t) b->read_pg_offset, SEEK_SET);
         pg_size = read (b->f, b->buff, (size_t) b->read_pg_size);
     }
     else {
-        lseek (b->f, b->read_pg_offset, SEEK_SET);
+        llseek (b->f, b->read_pg_offset, SEEK_SET);
         pg_size = read (b->f, b->buff, b->read_pg_size);
     }
     if (pg_size != b->read_pg_size)
