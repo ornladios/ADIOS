@@ -65,7 +65,7 @@ int main (int argc, char ** argv)
 printf ("byte_test_length: %llu\n", byte_test_length);
 #if DO_WRITE
     char * byte_test = 0;
-    byte_test = malloc (byte_test_length);
+    byte_test = malloc (byte_test_length + 1);
     if (byte_test == 0)
     {
         fprintf (stderr, "Error allocating memory for write byte_test: %llu\n"
@@ -77,7 +77,7 @@ printf ("byte_test_length: %llu\n", byte_test_length);
 #endif
 #if DO_READ
     char * r_byte_test = 0;
-    r_byte_test = malloc (byte_test_length);
+    r_byte_test = malloc (byte_test_length + 1);
     if (byte_test == 0)
     {
         fprintf (stderr, "Error allocating memory for read byte_test: %llu\n"
@@ -85,7 +85,6 @@ printf ("byte_test_length: %llu\n", byte_test_length);
                 );
         exit (-1);
     }
-    r_byte_test = malloc (byte_test_length);
     r_byte_test [byte_test_length] = 0;
 #endif
 
@@ -180,19 +179,12 @@ printf ("byte_test_length: %llu\n", byte_test_length);
     adios_write (io_handle, "node-attr", &node);
 
 #endif
-printf ("1\n");
     adios_write (io_handle, "byte_test_length", &byte_test_length);
-printf ("1\n");
     adios_write (io_handle, "byte_test", byte_test);
-printf ("1\n");
 
-    //printf ("A rank: %d write completed\n", rank);
     adios_close (io_handle);
-printf ("1\n");
-    //printf ("B rank: %d write completed\n", rank);
     gettimeofday (&time_end, NULL);
 
-    //printf ("C rank: %d write completed\n", rank);
 
     MPI_Barrier (MPI_COMM_WORLD);
 
