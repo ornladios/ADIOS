@@ -307,23 +307,26 @@ int bp_inq_group (int64_t gh_p, int *nvar, char ** vnamelist)
   */
 static int find_var( char ** varnamelist, int offset, int count, char * varname) 
 {
-        /* Find the variable: full path is stored with a starting / 
-           Like in HDF5, we need to match names given with or without the starting /
-           startpos is 0 or 1 to indicate if the argument has starting / or not
-        */
-        int i, endp;
-        int startpos = 0; 
-        if (varname[0] != '/')
-        	startpos = 1;
+    /* Find the variable: full path is stored with a starting / 
+       Like in HDF5, we need to match names given with or without the starting /
+       startpos is 0 or 1 to indicate if the argument has starting / or not
+    */
+    int i, endp;
+    int vstartpos = 0, fstartpos = 0; 
+    if (varname[0] == '/')
+        vstartpos = 1;
         
-        endp = offset + count;
-	for (i = offset; i < endp; i++) {
-                //printf("-- find_var: compare %s with %s, startpos=%d\n", varname, varnamelist[i], startpos);
-		if (!strcmp( &(varnamelist[i][startpos]), varname)) {
-			return i;
-		}
-	}
-        return -1;
+    endp = offset + count;
+    for (i = offset; i < endp; i++) {
+        if (varnamelist[i][0] == '/')
+            fstartpos = 1;
+        printf("-- find_var: compare %s with %s, vstartpos=%d, fstartpos=%d\n", 
+                varname, varnamelist[i], vstartpos, fstartpos);
+        if (!strcmp( varnamelist[i]+fstartpos, varname+vstartpos )) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 int bp_inq_var (int64_t gh_p, char * varname,
@@ -352,8 +355,12 @@ int bp_inq_var (int64_t gh_p, char * varname,
 		fprintf(stderr, "Error: Variable %s is NULL!\n");
 		return -4;
     }
-	// find variable in var list
-	var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
+
+    // find variable in var list
+    var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
+    //printf("Find var %s: var_id=%d, gh->count=%d, gh->offset=%d\n", 
+    //        varname, var_id, gh->count, gh->offset);
+    
 
     for (i=0;i<gh->group_id;i++)
         var_id -= fh->gh->var_counts_per_group[i];
