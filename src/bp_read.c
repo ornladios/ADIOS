@@ -661,7 +661,7 @@ int bp_get_var (int64_t gh_p,
 			       MPI_SEEK_SET);
 		MPI_File_read (fh->mpi_fh, fh->b->buff, tmpcount+4, MPI_BYTE, &status);
 		MPI_Get_count (&status, MPI_BYTE, &tmpcount);
-        printf("%d\n",tmpcount);
+        //printf("%d\n",tmpcount);
         //MPI_Barrier(MPI_COMM_WORLD);
         //stop_time = MPI_Wtime();
 		fh->b->offset = 0;
@@ -720,7 +720,7 @@ int bp_get_var (int64_t gh_p,
          * 0 : the content is the pg is the subset of the read request
          * >0: there is hole in content of the pg need to be read
          */
-        printf("hole_break:%d\n",hole_break);
+        //printf("hole_break:%d\n",hole_break);
 		if (hole_break==-1) {
 			memcpy(var, fh->b->buff+fh->b->offset,var_header.payload_size);
         }
