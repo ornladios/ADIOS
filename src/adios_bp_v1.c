@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <errno.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -1764,7 +1765,7 @@ void adios_init_buffer_read_process_group (struct adios_bp_buffer_struct_v1 * b)
 
 uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b)
 {
-    uint64_t pg_size;
+    uint64_t pg_size = 0;
 
     adios_init_buffer_read_process_group (b);
 
@@ -1772,19 +1773,22 @@ uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b)
 //    lseek (b->f, b->read_pg_offset, SEEK_SET);
 //    pg_size = read (b->f, b->buff, b->read_pg_size);
 
+    while (!errno && pg_size != b->read_pg_size)
+    {
     if (sizeof (char *) == 4) {
-        llseek (b->f, (loff_t) b->read_pg_offset, SEEK_SET);
-        pg_size = read (b->f, b->buff, (size_t) b->read_pg_size);
+        llseek (b->f, (loff_t) b->read_pg_offset + pg_size, SEEK_SET);
+        pg_size += read (b->f, b->buff, (size_t) b->read_pg_size);
     }
     else {
-        llseek (b->f, b->read_pg_offset, SEEK_SET);
-        pg_size = read (b->f, b->buff, b->read_pg_size);
+        llseek (b->f, b->read_pg_offset + pg_size, SEEK_SET);
+        pg_size += read (b->f, b->buff + pg_size, b->read_pg_size - pg_size);
+    }
     }
     if (pg_size != b->read_pg_size)
     {
         fprintf (stderr, "adios_read_process_group: "
-                         "Tried to read: %llu, but only got: %llu\n"
-                ,b->read_pg_size, pg_size
+                         "Tried to read: %llu, but only got: %llu errno: %d\n"
+                ,b->read_pg_size, pg_size, errno
                 );
 
         pg_size = 0;
