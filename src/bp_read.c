@@ -320,8 +320,8 @@ static int find_var( char ** varnamelist, int offset, int count, char * varname)
     for (i = offset; i < endp; i++) {
         if (varnamelist[i][0] == '/')
             fstartpos = 1;
-        printf("-- find_var: compare %s with %s, vstartpos=%d, fstartpos=%d\n", 
-                varname, varnamelist[i], vstartpos, fstartpos);
+        //printf("-- find_var: compare %s with %s, vstartpos=%d, fstartpos=%d\n", 
+        //        varname, varnamelist[i], vstartpos, fstartpos);
         if (!strcmp( varnamelist[i]+fstartpos, varname+vstartpos )) {
             return i;
         }
