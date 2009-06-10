@@ -844,13 +844,28 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
     if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
     {
+        int err;
         // write the process group header
         adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
 
         MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
-        MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE
-                       ,&md->status
-                       );
+        err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE
+                             ,&md->status
+                             );
+        if (err != MPI_SUCCESS)
+        {
+            char e [MPI_MAX_ERROR_STRING];
+            int len = 0;
+            memset (e, 0, MPI_MAX_ERROR_STRING);
+            MPI_Error_string (err, e, &len);
+            fprintf (stderr, "adios_mpi_should_buffer failed %s: '%s'\n"
+                    ,fd->name, e
+                    );
+            free (name);
+
+            return adios_flag_no;
+        }
+
         int count;
         MPI_Get_count (&md->status, MPI_BYTE, &count);
         if (count != fd->bytes_written)
@@ -908,12 +923,24 @@ void adios_mpi_write (struct adios_file_struct * fd
 
     if (fd->shared_buffer == adios_flag_no)
     {
+        int err;
         // var payload sent for sizing information
         adios_write_var_header_v1 (fd, v);
 
-        MPI_File_write (md->fh, fd->buffer, fd->bytes_written
-                       ,MPI_BYTE, &md->status
-                       );
+        err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+                             ,MPI_BYTE, &md->status
+                             );
+        if (err != MPI_SUCCESS) 
+        {              
+            char e [MPI_MAX_ERROR_STRING];
+            int len = 0;
+            memset (e, 0, MPI_MAX_ERROR_STRING);
+            MPI_Error_string (err, e, &len);
+            fprintf (stderr, "adios_mpi_write (1) failed %s: '%s'\n"
+                    ,fd->name, e
+                    );       
+        }
+
         int count;
         MPI_Get_count (&md->status, MPI_BYTE, &count);
         if (count != fd->bytes_written)
@@ -932,7 +959,18 @@ void adios_mpi_write (struct adios_file_struct * fd
         // write payload
         // adios_write_var_payload_v1 (fd, v);
         uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
-        MPI_File_write (md->fh, v->data, var_size, MPI_BYTE, &md->status);
+        err = MPI_File_write (md->fh, v->data, var_size, MPI_BYTE, &md->status);
+        if (err != MPI_SUCCESS) 
+        {              
+            char e [MPI_MAX_ERROR_STRING];
+            int len = 0;
+            memset (e, 0, MPI_MAX_ERROR_STRING);
+            MPI_Error_string (err, e, &len);
+            fprintf (stderr, "adios_mpi_write (2) failed %s: '%s'\n"
+                    ,fd->name, e
+                    );       
+        }
+
         MPI_Get_count (&md->status, MPI_BYTE, &count);
         if (count != var_size)
         {
@@ -1160,6 +1198,7 @@ void adios_mpi_close (struct adios_file_struct * fd
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
             uint64_t index_start = md->b.pg_index_offset;
+            int err;
 
             if (fd->shared_buffer == adios_flag_no)
             {
@@ -1172,9 +1211,21 @@ void adios_mpi_close (struct adios_file_struct * fd
                 adios_write_close_vars_v1 (fd);
                 // fd->vars_start gets updated with the size written
                 MPI_File_seek (md->fh, md->vars_start, MPI_SEEK_SET);
-                MPI_File_write (md->fh, fd->buffer, md->vars_header_size
-                               ,MPI_BYTE, &md->status
-                               );
+                err = MPI_File_write (md->fh, fd->buffer, md->vars_header_size
+                                     ,MPI_BYTE, &md->status
+                                     );
+                if (err != MPI_SUCCESS) 
+                {              
+                    char e [MPI_MAX_ERROR_STRING];
+                    int len = 0;
+                    memset (e, 0, MPI_MAX_ERROR_STRING);
+                    MPI_Error_string (err, e, &len);
+                    fprintf (stderr, "adios_mpi_close (1) failed %s: '%s'\n"
+                            ,fd->name, e
+                            );       
+
+                }
+
                 int count;
                 MPI_Get_count (&md->status, MPI_BYTE, &count);
                 if (count != md->vars_header_size)
@@ -1202,9 +1253,21 @@ void adios_mpi_close (struct adios_file_struct * fd
                 while (a)
                 {
                     adios_write_attribute_v1 (fd, a);
-                    MPI_File_write (md->fh, fd->buffer, fd->bytes_written
-                                   ,MPI_BYTE, &md->status
-                                   );
+                    err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+                                         ,MPI_BYTE, &md->status
+                                         );
+                    if (err != MPI_SUCCESS) 
+                    {              
+                        char e [MPI_MAX_ERROR_STRING];
+                        int len = 0;
+                        memset (e, 0, MPI_MAX_ERROR_STRING);
+                        MPI_Error_string (err, e, &len);
+                        fprintf (stderr, "adios_mpi_close (2) failed %s: '%s'\n"
+                                ,fd->name, e
+                                );       
+
+                    }
+
                     MPI_Get_count (&md->status, MPI_BYTE, &count);
                     if (count != fd->bytes_written)
                     {
@@ -1229,9 +1292,20 @@ void adios_mpi_close (struct adios_file_struct * fd
                 adios_write_close_attributes_v1 (fd);
                 MPI_File_seek (md->fh, md->vars_start, MPI_SEEK_SET);
                 // fd->vars_start gets updated with the size written
-                MPI_File_write (md->fh, fd->buffer, md->vars_header_size
-                               ,MPI_BYTE, &md->status
-                               );
+                err = MPI_File_write (md->fh, fd->buffer, md->vars_header_size
+                                     ,MPI_BYTE, &md->status
+                                     );
+                if (err != MPI_SUCCESS) 
+                {              
+                    char e [MPI_MAX_ERROR_STRING];
+                    int len = 0;
+                    memset (e, 0, MPI_MAX_ERROR_STRING);
+                    MPI_Error_string (err, e, &len);
+                    fprintf (stderr, "adios_mpi_close (3) failed %s: '%s'\n"
+                            ,fd->name, e
+                            );       
+                }
+
                 MPI_Get_count (&md->status, MPI_BYTE, &count);
                 if (count != md->vars_header_size)
                 {
@@ -1334,11 +1408,51 @@ void adios_mpi_close (struct adios_file_struct * fd
 
             if (fd->shared_buffer == adios_flag_yes)
             {
-                // everyone writes their data
-                MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
-                MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE
-                               ,&md->status
-                               );
+                // if we need to write > 2 GB, need to do it in parts
+                // since count is limited to INT32_MAX (signed 32-bit max).
+                uint64_t bytes_written = 0;
+                int32_t to_write = 0;
+                if (fd->bytes_written > INT32_MAX)
+                {
+                    to_write = INT32_MAX;
+                }
+                else
+                {
+                    to_write = (int32_t) fd->bytes_written;
+                }
+
+                while (bytes_written < fd->bytes_written)
+                {
+                    // everyone writes their data
+                    MPI_File_seek (md->fh, fd->base_offset + bytes_written
+                                  ,MPI_SEEK_SET
+                                  );
+                    err = MPI_File_write (md->fh, fd->buffer + bytes_written
+                                         ,to_write, MPI_BYTE, &md->status
+                                         );
+                    if (err != MPI_SUCCESS) 
+                    {              
+                        char e [MPI_MAX_ERROR_STRING];
+                        int len = 0;
+                        memset (e, 0, MPI_MAX_ERROR_STRING);
+                        MPI_Error_string (err, e, &len);
+                        fprintf (stderr, "adios_mpi_close (4) failed %s: '%s'\n"
+                                ,fd->name, e
+                                );       
+                    }
+                    bytes_written += to_write;
+                    if (fd->bytes_written > bytes_written)
+                    {
+                        if (fd->bytes_written - bytes_written > INT32_MAX)
+                        {
+                            to_write = INT32_MAX;
+                        }
+                        else
+                        {
+                            to_write = fd->bytes_written - bytes_written;
+                        }
+                    }
+                }
             }
 
             if (md->rank == 0)
@@ -1351,9 +1465,19 @@ void adios_mpi_close (struct adios_file_struct * fd
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
                 MPI_File_seek (md->fh, md->b.pg_index_offset, MPI_SEEK_SET);
-                MPI_File_write (md->fh, buffer, buffer_offset, MPI_BYTE
-                               ,&md->status
-                               );
+                err = MPI_File_write (md->fh, buffer, buffer_offset, MPI_BYTE
+                                     ,&md->status
+                                     );
+                if (err != MPI_SUCCESS) 
+                {              
+                    char e [MPI_MAX_ERROR_STRING];
+                    int len = 0;
+                    memset (e, 0, MPI_MAX_ERROR_STRING);
+                    MPI_Error_string (err, e, &len);
+                    fprintf (stderr, "adios_mpi_close (5) failed %s: '%s'\n"
+                            ,fd->name, e
+                            );       
+                }
             }
 
             if (buffer)
@@ -1384,6 +1508,7 @@ void adios_mpi_close (struct adios_file_struct * fd
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
             uint64_t index_start = md->b.pg_index_offset;
+            int err;
 
             if (fd->shared_buffer == adios_flag_no)
             {
@@ -1396,9 +1521,20 @@ void adios_mpi_close (struct adios_file_struct * fd
                 adios_write_close_vars_v1 (fd);
                 // fd->vars_start gets updated with the size written
                 MPI_File_seek (md->fh, md->vars_start, MPI_SEEK_SET);
-                MPI_File_write (md->fh, fd->buffer, md->vars_header_size
-                               ,MPI_BYTE, &md->status
-                               );
+                err = MPI_File_write (md->fh, fd->buffer, md->vars_header_size
+                                     ,MPI_BYTE, &md->status
+                                     );
+                if (err != MPI_SUCCESS) 
+                {              
+                    char e [MPI_MAX_ERROR_STRING];
+                    int len = 0;
+                    memset (e, 0, MPI_MAX_ERROR_STRING);
+                    MPI_Error_string (err, e, &len);
+                    fprintf (stderr, "adios_mpi_close (6) failed %s: '%s'\n"
+                            ,fd->name, e
+                            );       
+                }
+
                 int count;
                 MPI_Get_count (&md->status, MPI_BYTE, &count);
                 if (count != md->vars_header_size)
@@ -1426,9 +1562,20 @@ void adios_mpi_close (struct adios_file_struct * fd
                 while (a)
                 {
                     adios_write_attribute_v1 (fd, a);
-                    MPI_File_write (md->fh, fd->buffer, fd->bytes_written
-                                   ,MPI_BYTE, &md->status
-                                   );
+                    err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+                                         ,MPI_BYTE, &md->status
+                                         );
+                    if (err != MPI_SUCCESS) 
+                    {              
+                        char e [MPI_MAX_ERROR_STRING];
+                        int len = 0;
+                        memset (e, 0, MPI_MAX_ERROR_STRING);
+                        MPI_Error_string (err, e, &len);
+                        fprintf (stderr, "adios_mpi_close (7) failed %s: '%s'\n"
+                                ,fd->name, e
+                                );       
+                    }
+
                     MPI_Get_count (&md->status, MPI_BYTE, &count);
                     if (count != fd->bytes_written)
                     {
@@ -1453,9 +1600,21 @@ void adios_mpi_close (struct adios_file_struct * fd
                 adios_write_close_attributes_v1 (fd);
                 MPI_File_seek (md->fh, md->vars_start, MPI_SEEK_SET);
                 // fd->vars_start gets updated with the size written
-                MPI_File_write (md->fh, fd->buffer, md->vars_header_size
-                               ,MPI_BYTE, &md->status
-                               );
+                err = MPI_File_write (md->fh, fd->buffer, md->vars_header_size
+                                     ,MPI_BYTE, &md->status
+                                     );
+                if (err != MPI_SUCCESS) 
+                {              
+                    char e [MPI_MAX_ERROR_STRING];
+                    int len = 0;
+                    memset (e, 0, MPI_MAX_ERROR_STRING);
+                    MPI_Error_string (err, e, &len);
+                    fprintf (stderr, "adios_mpi_close (8) failed %s: '%s'\n"
+                            ,fd->name, e
+                            );       
+
+                }
+
                 MPI_Get_count (&md->status, MPI_BYTE, &count);
                 if (count != md->vars_header_size)
                 {
@@ -1560,9 +1719,19 @@ void adios_mpi_close (struct adios_file_struct * fd
             {
                 // everyone writes their data
                 MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
-                MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE
-                               ,&md->status
-                               );
+                err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+                                     ,MPI_BYTE, &md->status
+                                     );
+                if (err != MPI_SUCCESS) 
+                {              
+                    char e [MPI_MAX_ERROR_STRING];
+                    int len = 0;
+                    memset (e, 0, MPI_MAX_ERROR_STRING);
+                    MPI_Error_string (err, e, &len);
+                    fprintf (stderr, "adios_mpi_close (9) failed %s: '%s'\n"
+                            ,fd->name, e
+                            );       
+                }
             }
 
             if (md->rank == 0)
@@ -1575,9 +1744,19 @@ void adios_mpi_close (struct adios_file_struct * fd
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
                 MPI_File_seek (md->fh, md->b.pg_index_offset, MPI_SEEK_SET);
-                MPI_File_write (md->fh, buffer, buffer_offset, MPI_BYTE
-                               ,&md->status
-                               );
+                err = MPI_File_write (md->fh, buffer, buffer_offset, MPI_BYTE
+                                     ,&md->status
+                                     );
+                if (err != MPI_SUCCESS) 
+                {              
+                    char e [MPI_MAX_ERROR_STRING];
+                    int len = 0;
+                    memset (e, 0, MPI_MAX_ERROR_STRING);
+                    MPI_Error_string (err, e, &len);
+                    fprintf (stderr, "adios_mpi_close (10) failed %s: '%s'\n"
+                            ,fd->name, e
+                            );       
+                }
             }
 
             free (buffer);
