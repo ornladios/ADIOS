@@ -989,9 +989,8 @@ void bp_fopen_(int64_t * fh_p,
         )
 {
     int64_t fh;
-    MPI_Comm comm = *((int *) fcomm);
-    comm = MPI_Comm_f2c (comm);
-	*err = bp_fopen (&fh,fname,comm);
+    MPI_Comm comm = MPI_Comm_f2c (*((int *) fcomm));
+    *err = bp_fopen (&fh,fname,comm);
     * fh_p = fh;
     //printf("before: %lld\n", fh);
     //printf("after: %lld\n", fh);

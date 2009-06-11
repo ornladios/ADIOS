@@ -1,4 +1,7 @@
 #include <sys/types.h>
+#define __USE_FILE_OFFSET64
+#define __USE_LARGEFILE
+#define __USE_LARGEFILE64
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -222,7 +225,7 @@ enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd
         // write the process group header
         adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
 
-        llseek (p->b.f, fd->base_offset, SEEK_SET);
+        lseek64 (p->b.f, fd->base_offset, SEEK_SET);
         ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
         if (s != fd->bytes_written)
         {
@@ -239,7 +242,7 @@ enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd
 
         // setup for writing vars
         adios_write_open_vars_v1 (fd);
-        p->vars_start = llseek (p->b.f, fd->offset, SEEK_CUR);  // save loc
+        p->vars_start = lseek64 (p->b.f, fd->offset, SEEK_CUR);  // save loc
         p->vars_header_size = p->vars_start - fd->base_offset;  // the size
         p->vars_start -= fd->offset; // adjust to start of header
         fd->base_offset += fd->offset;  // add the size of the vars header
@@ -397,7 +400,7 @@ static void adios_posix_do_write (struct adios_file_struct * fd
 
     if (fd->shared_buffer == adios_flag_yes)
     {
-        llseek (p->b.f, p->b.end_of_pgs, SEEK_SET);
+        lseek64 (p->b.f, p->b.end_of_pgs, SEEK_SET);
         write (p->b.f, fd->buffer, fd->bytes_written);
     }
 
@@ -405,7 +408,7 @@ static void adios_posix_do_write (struct adios_file_struct * fd
     // for buffered, base_offset = 0, fd->offset = write loc
     // for unbuffered, base_offset = write loc, fd->offset = 0
     // for append buffered, base_offset = start, fd->offset = size
-    llseek (p->b.f, fd->base_offset + fd->offset, SEEK_SET);
+    lseek64 (p->b.f, fd->base_offset + fd->offset, SEEK_SET);
     write (p->b.f, buffer, buffer_size);
 }
 
@@ -564,13 +567,13 @@ void adios_posix_close (struct adios_file_struct * fd
             {
                 off_t new_off;
                 // set it up so that it will start at 0, but have correct sizes
-                new_off = llseek (p->b.f, 0, SEEK_CUR);
+                new_off = lseek64 (p->b.f, 0, SEEK_CUR);
                 fd->offset = fd->base_offset - p->vars_start;
                 fd->vars_start = 0;
                 fd->buffer_size = 0;
                 adios_write_close_vars_v1 (fd);
                 // fd->vars_start gets updated with the size written
-                fd->offset = llseek (p->b.f, p->vars_start, SEEK_SET);
+                fd->offset = lseek64 (p->b.f, p->vars_start, SEEK_SET);
                 ssize_t s = write (p->b.f, fd->buffer, p->vars_header_size);
                 if (s != fd->vars_start)
                 {
@@ -584,9 +587,9 @@ void adios_posix_close (struct adios_file_struct * fd
                 fd->bytes_written = 0;
                 adios_shared_buffer_free (&p->b);
 
-                new_off = llseek (p->b.f, new_off, SEEK_SET);  // go back to end
+                new_off = lseek64 (p->b.f, new_off, SEEK_SET);  // go back to end
                 adios_write_open_attributes_v1 (fd);
-                p->vars_start = llseek (p->b.f, fd->offset, SEEK_CUR); // save loc
+                p->vars_start = lseek64 (p->b.f, fd->offset, SEEK_CUR); // save loc
                 p->vars_header_size = p->vars_start - fd->base_offset;
                 p->vars_start -= fd->offset; // adjust to start of header
                 fd->base_offset += fd->offset;  // add size of header
@@ -618,7 +621,7 @@ void adios_posix_close (struct adios_file_struct * fd
                 fd->vars_start = 0;
                 fd->buffer_size = 0;
                 adios_write_close_attributes_v1 (fd);
-                fd->offset = llseek (p->b.f, p->vars_start, SEEK_SET);
+                fd->offset = lseek64 (p->b.f, p->vars_start, SEEK_SET);
                 // fd->vars_start gets updated with the size written
                 s = write (p->b.f, fd->buffer, p->vars_header_size);
                 if (s != p->vars_header_size)
@@ -665,13 +668,13 @@ void adios_posix_close (struct adios_file_struct * fd
             {
                 off_t new_off;
                 // set it up so that it will start at 0, but have correct sizes
-                new_off = llseek (p->b.f, 0, SEEK_CUR);
+                new_off = lseek64 (p->b.f, 0, SEEK_CUR);
                 fd->offset = fd->base_offset - p->vars_start;
                 fd->vars_start = 0;
                 fd->buffer_size = 0;
                 adios_write_close_vars_v1 (fd);
                 // fd->vars_start gets updated with the size written
-                fd->offset = llseek (p->b.f, p->vars_start, SEEK_SET);
+                fd->offset = lseek64 (p->b.f, p->vars_start, SEEK_SET);
                 ssize_t s = write (p->b.f, fd->buffer, p->vars_header_size);
                 if (s != fd->vars_start)
                 {
@@ -685,9 +688,9 @@ void adios_posix_close (struct adios_file_struct * fd
                 fd->bytes_written = 0;
                 adios_shared_buffer_free (&p->b);
 
-                new_off = llseek (p->b.f, new_off, SEEK_SET);  // go back to end
+                new_off = lseek64 (p->b.f, new_off, SEEK_SET);  // go back to end
                 adios_write_open_attributes_v1 (fd);
-                p->vars_start = llseek (p->b.f, fd->offset, SEEK_CUR); // save loc
+                p->vars_start = lseek64 (p->b.f, fd->offset, SEEK_CUR); // save loc
                 p->vars_header_size = p->vars_start - fd->base_offset;
                 p->vars_start -= fd->offset; // adjust to start of header
                 fd->base_offset += fd->offset;  // add size of header
@@ -719,7 +722,7 @@ void adios_posix_close (struct adios_file_struct * fd
                 fd->vars_start = 0;
                 fd->buffer_size = 0;
                 adios_write_close_attributes_v1 (fd);
-                fd->offset = llseek (p->b.f, p->vars_start, SEEK_SET);
+                fd->offset = lseek64 (p->b.f, p->vars_start, SEEK_SET);
                 // fd->vars_start gets updated with the size written
                 s = write (p->b.f, fd->buffer, p->vars_header_size);
                 if (s != p->vars_header_size)

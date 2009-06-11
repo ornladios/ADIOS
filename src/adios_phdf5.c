@@ -337,7 +337,7 @@ void adios_phdf5_close (struct adios_file_struct * fd
         H5Gclose (md->root_id);
     }
     H5Fclose (md->fh);
-    md->group_comm = -1;
+    md->group_comm = MPI_COMM_NULL;
     md->fh = 0;
     md->rank = -1;
     md->size = 0;

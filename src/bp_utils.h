@@ -29,4 +29,19 @@ void print_process_group_index (
                          struct adios_index_process_group_struct_v1 * pg_root
                          );
 
+void copy_data (void *dst, void *src,
+        int idim,
+        int ndim,
+        uint64_t* size_in_dset,
+        uint64_t* ldims,
+        int * readsize,
+        uint64_t dst_stride,
+        uint64_t src_stride,
+        uint64_t dst_offset,
+        uint64_t src_offset,
+        uint64_t ele_num,
+                int      size_of_type
+                );
+
+
 #endif

@@ -63,7 +63,7 @@ int bp_read_open (const char * filename,
 
 	// open a file by the multiple processors within the same
 	// communicator
-	err = MPI_File_open (comm, filename, MPI_MODE_RDONLY, 
+	err = MPI_File_open (comm, (char *) filename, MPI_MODE_RDONLY, 
 			MPI_INFO_NULL, &(fh->mpi_fh));
 	if (err != MPI_SUCCESS) {
 		char e [MPI_MAX_ERROR_STRING];
