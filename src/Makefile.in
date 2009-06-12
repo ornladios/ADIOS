@@ -121,6 +121,14 @@ am_libbpread_a_OBJECTS = adios_bp_v1.$(OBJEXT) \
 	adios_endianness.$(OBJEXT) bp_utils.$(OBJEXT) \
 	bp_read.$(OBJEXT)
 libbpread_a_OBJECTS = $(am_libbpread_a_OBJECTS)
+libbpread_nompi_a_AR = $(AR) $(ARFLAGS)
+libbpread_nompi_a_LIBADD =
+am_libbpread_nompi_a_OBJECTS = libbpread_nompi_a-mpidummy.$(OBJEXT) \
+	libbpread_nompi_a-adios_bp_v1.$(OBJEXT) \
+	libbpread_nompi_a-adios_endianness.$(OBJEXT) \
+	libbpread_nompi_a-bp_utils.$(OBJEXT) \
+	libbpread_nompi_a-bp_read.$(OBJEXT)
+libbpread_nompi_a_OBJECTS = $(am_libbpread_nompi_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -134,10 +142,11 @@ LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libadios_a_SOURCES) $(libadios_int_a_SOURCES) \
 	$(libadios_int_nompi_a_SOURCES) $(libadios_phdf5_a_SOURCES) \
-	$(libbpread_a_SOURCES)
+	$(libbpread_a_SOURCES) $(libbpread_nompi_a_SOURCES)
 DIST_SOURCES = $(am__libadios_a_SOURCES_DIST) \
 	$(libadios_int_a_SOURCES) $(libadios_int_nompi_a_SOURCES) \
-	$(am__libadios_phdf5_a_SOURCES_DIST) $(libbpread_a_SOURCES)
+	$(am__libadios_phdf5_a_SOURCES_DIST) $(libbpread_a_SOURCES) \
+	$(libbpread_nompi_a_SOURCES)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -282,15 +291,15 @@ target_alias = @target_alias@
 INCLUDES = -I$(top_srcdir) 
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES = AUTO
-#		      adios_internals.c \
-#libbpread_a_CPPFLAGS = $(MXML_CPPFLAGS)
-#libbpread_a_LIBADD = 
 include_HEADERS = adios.h adios_types.h adios_internals.h \
 	adios_transport_hooks.h bp_read.h
 #libadios_int_a_LIBADD = $(MXML_LIBS)
 #libadios_int_nompi_a_LIBADD = $(MXML_LIBS)
+#		      adios_internals.c \
+#libbpread_a_CPPFLAGS = $(MXML_CPPFLAGS)
+#libbpread_a_LIBADD = 
 lib_LIBRARIES = libadios.a $(am__append_1) libadios_int.a \
-	libadios_int_nompi.a libbpread.a
+	libadios_int_nompi.a libbpread.a libbpread_nompi.a
 libadios_a_SOURCES = adios.c adios_transport_hooks.c adios_mpi.c \
 	adios_mpi_stripe.c adios_mpi_cio.c adios_mpi_nwu.c \
 	adios_mpi_stagger.c adios_mpi_aggregate.c adios_posix.c \
@@ -321,6 +330,13 @@ libbpread_a_SOURCES = adios_bp_v1.c \
 		      bp_utils.c \
 		      bp_read.c
 
+libbpread_nompi_a_SOURCES = mpidummy.c\
+                      adios_bp_v1.c \
+		      adios_endianness.c \
+		      bp_utils.c \
+		      bp_read.c
+
+libbpread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI
 all: all-am
 
 .SUFFIXES:
@@ -403,6 +419,10 @@ libbpread.a: $(libbpread_a_OBJECTS) $(libbpread_a_DEPENDENCIES)
 	-rm -f libbpread.a
 	$(libbpread_a_AR) libbpread.a $(libbpread_a_OBJECTS) $(libbpread_a_LIBADD)
 	$(RANLIB) libbpread.a
+libbpread_nompi.a: $(libbpread_nompi_a_OBJECTS) $(libbpread_nompi_a_DEPENDENCIES) 
+	-rm -f libbpread_nompi.a
+	$(libbpread_nompi_a_AR) libbpread_nompi.a $(libbpread_nompi_a_OBJECTS) $(libbpread_nompi_a_LIBADD)
+	$(RANLIB) libbpread_nompi.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -580,6 +600,36 @@ libadios_phdf5_a-adios_phdf5.o: adios_phdf5.c
 
 libadios_phdf5_a-adios_phdf5.obj: adios_phdf5.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_phdf5_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_phdf5_a-adios_phdf5.obj `if test -f 'adios_phdf5.c'; then $(CYGPATH_W) 'adios_phdf5.c'; else $(CYGPATH_W) '$(srcdir)/adios_phdf5.c'; fi`
+
+libbpread_nompi_a-mpidummy.o: mpidummy.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbpread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libbpread_nompi_a-mpidummy.o `test -f 'mpidummy.c' || echo '$(srcdir)/'`mpidummy.c
+
+libbpread_nompi_a-mpidummy.obj: mpidummy.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbpread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libbpread_nompi_a-mpidummy.obj `if test -f 'mpidummy.c'; then $(CYGPATH_W) 'mpidummy.c'; else $(CYGPATH_W) '$(srcdir)/mpidummy.c'; fi`
+
+libbpread_nompi_a-adios_bp_v1.o: adios_bp_v1.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbpread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libbpread_nompi_a-adios_bp_v1.o `test -f 'adios_bp_v1.c' || echo '$(srcdir)/'`adios_bp_v1.c
+
+libbpread_nompi_a-adios_bp_v1.obj: adios_bp_v1.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbpread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libbpread_nompi_a-adios_bp_v1.obj `if test -f 'adios_bp_v1.c'; then $(CYGPATH_W) 'adios_bp_v1.c'; else $(CYGPATH_W) '$(srcdir)/adios_bp_v1.c'; fi`
+
+libbpread_nompi_a-adios_endianness.o: adios_endianness.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbpread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libbpread_nompi_a-adios_endianness.o `test -f 'adios_endianness.c' || echo '$(srcdir)/'`adios_endianness.c
+
+libbpread_nompi_a-adios_endianness.obj: adios_endianness.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbpread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libbpread_nompi_a-adios_endianness.obj `if test -f 'adios_endianness.c'; then $(CYGPATH_W) 'adios_endianness.c'; else $(CYGPATH_W) '$(srcdir)/adios_endianness.c'; fi`
+
+libbpread_nompi_a-bp_utils.o: bp_utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbpread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libbpread_nompi_a-bp_utils.o `test -f 'bp_utils.c' || echo '$(srcdir)/'`bp_utils.c
+
+libbpread_nompi_a-bp_utils.obj: bp_utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbpread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libbpread_nompi_a-bp_utils.obj `if test -f 'bp_utils.c'; then $(CYGPATH_W) 'bp_utils.c'; else $(CYGPATH_W) '$(srcdir)/bp_utils.c'; fi`
+
+libbpread_nompi_a-bp_read.o: bp_read.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbpread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libbpread_nompi_a-bp_read.o `test -f 'bp_read.c' || echo '$(srcdir)/'`bp_read.c
+
+libbpread_nompi_a-bp_read.obj: bp_read.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libbpread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libbpread_nompi_a-bp_read.obj `if test -f 'bp_read.c'; then $(CYGPATH_W) 'bp_read.c'; else $(CYGPATH_W) '$(srcdir)/bp_read.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
