@@ -67,6 +67,13 @@ libbpread_a_SOURCES = adios_bp_v1.c \
 libbpread_a_CPPFLAGS = $(MXML_CPPFLAGS)
 #libbpread_a_LIBADD = 
 
+lib_LIBRARIES += libbpread_nompi.a
+libbpread_nompi_a_SOURCES = mpidummy.c\
+                      adios_bp_v1.c \
+		      adios_endianness.c \
+		      bp_utils.c \
+		      bp_read.c
+libbpread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI
 include_HEADERS += adios_internals.h \
                    adios_transport_hooks.h
 include_HEADERS += bp_read.h

@@ -3,7 +3,11 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-#include "mpi.h"
+#ifdef NOMPI
+#   include "mpidummy.h"
+#else
+#   include "mpi.h"
+#endif
 #include "bp_types.h"
 #define VARS_MINIHEADER_SIZE 10
 

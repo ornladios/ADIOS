@@ -5,7 +5,6 @@
 #include "adios.h"
 #include "bp_utils.h"
 #include "adios_bp_v1.h"
-#include "mpi.h"
 #define BYTE_ALIGN 8
 #define MINIFOOTER_SIZE 28
 #define PG_MINIHEADER_SIZE 16

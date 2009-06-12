@@ -1,7 +1,12 @@
 #ifndef __BP_READ_H__
 #define __BP_READ_H__
 
-#include "mpi.h"
+#ifdef NOMPI
+#   include "mpidummy.h"
+#else
+#   include "mpi.h"
+#endif
+
 #include <stdint.h>
 /*
 header file for the subsetting read routines
