@@ -738,8 +738,8 @@ int hw_var (hid_t root_id
     }
     dims = pvar->dimensions;
     hsize_t * h5_globaldims, * h5_localdims, * h5_offsets, * h5_strides, * h5_gbdims; 
-    if ( dims->global_dimension.rank 
-        || (dims->global_dimension.rank == 0  && dims->global_dimension.id)) {
+    if ( dims->dimension.rank 
+        || (dims->dimension.rank == 0  && dims->dimension.id)) {
 
         hsize_t h5_gbstrides[2], h5_gbglobaldims[2], h5_gblocaldims[2], h5_gboffsets[2];
         char name[256];
