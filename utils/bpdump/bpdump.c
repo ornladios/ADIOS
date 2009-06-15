@@ -937,6 +937,7 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
         for (i = 0; i < vars_root->characteristics_count; i++)
         {
             printf ("\t\tOffset(%llu)", vars_root->characteristics [i].offset);
+            printf ("\t\tPayload Offset(%llu)", vars_root->characteristics [i].payload_offset);
             if (vars_root->characteristics [i].min)
             {
                 printf ("\t\tMin(%s)", value_to_string (vars_root->type
@@ -1021,6 +1022,7 @@ void print_attributes_index
         for (i = 0; i < attrs_root->characteristics_count; i++)
         {
             printf ("\t\tOffset(%llu)", attrs_root->characteristics [i].offset);
+            printf ("\t\tPayload Offset(%llu)", attrs_root->characteristics [i].payload_offset);
             if (attrs_root->characteristics [i].min)
             {
                 printf ("\t\tMin(%s)", value_to_string (attrs_root->type
