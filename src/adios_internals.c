@@ -5215,6 +5215,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             v_index->characteristics_count = 1;
             v_index->characteristics_allocated = 1;
             v_index->characteristics [0].offset = v->write_offset;
+            v_index->characteristics [0].payload_offset = v->write_offset + adios_calc_var_overhead_v1 (v);
             v_index->characteristics [0].min = 0;
             v_index->characteristics [0].max = 0;
             v_index->characteristics [0].value = 0;
@@ -5316,6 +5317,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             uint64_t size = adios_get_type_size (a->type, a->value);
 
             a_index->characteristics [0].offset = a->write_offset;
+            a_index->characteristics [0].payload_offset = a->write_offset + adios_calc_attribute_overhead_v1 (a);
             a_index->characteristics [0].min = 0;
             a_index->characteristics [0].max = 0;
             if (a->value)
@@ -5528,6 +5530,21 @@ int adios_write_index_v1 (char ** buffer
 
             buffer_write (buffer, buffer_size, buffer_offset
                          ,&vars_root->characteristics [i].offset, 8
+                         );
+            index_size += 8;
+            var_size += 8;
+            characteristic_set_length += 8;
+
+            // add a payload offset characteristic for all vars
+            characteristic_set_count++;
+            flag = (uint8_t) adios_characteristic_payload_offset;
+            buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
+            index_size += 1;
+            var_size += 1;
+            characteristic_set_length += 1;
+
+            buffer_write (buffer, buffer_size, buffer_offset
+                         ,&vars_root->characteristics [i].payload_offset, 8
                          );
             index_size += 8;
             var_size += 8;
@@ -5773,6 +5790,21 @@ int adios_write_index_v1 (char ** buffer
 
             buffer_write (buffer, buffer_size, buffer_offset
                          ,&attrs_root->characteristics [i].offset, 8
+                         );
+            index_size += 8;
+            attr_size += 8;
+            characteristic_set_length += 8;
+
+            // add a payload offset characteristic for all attrs
+            characteristic_set_count++;
+            flag = (uint8_t) adios_characteristic_payload_offset;
+            buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
+            index_size += 1;
+            attr_size += 1;
+            characteristic_set_length += 1;
+
+            buffer_write (buffer, buffer_size, buffer_offset
+                         ,&attrs_root->characteristics [i].payload_offset, 8
                          );
             index_size += 8;
             attr_size += 8;

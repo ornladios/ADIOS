@@ -4,12 +4,13 @@
 #include "adios_transport_hooks.h" 
 enum ADIOS_CHARACTERISTICS
 {
-     adios_characteristic_value      = 0
-    ,adios_characteristic_min        = 1
-    ,adios_characteristic_max        = 2
-    ,adios_characteristic_offset     = 3
-    ,adios_characteristic_dimensions = 4
-    ,adios_characteristic_var_id     = 5
+     adios_characteristic_value          = 0
+    ,adios_characteristic_min            = 1
+    ,adios_characteristic_max            = 2
+    ,adios_characteristic_offset         = 3
+    ,adios_characteristic_dimensions     = 4
+    ,adios_characteristic_var_id         = 5
+    ,adios_characteristic_payload_offset = 6
 };
 
 struct adios_bp_buffer_struct_v1
@@ -59,12 +60,13 @@ struct adios_index_characteristic_dims_struct_v1
 
 struct adios_index_characteristic_struct_v1
 {
-    uint64_t offset;
+    uint64_t offset;  // beginning of the var or attr entry
     void * min;
     void * max;
     struct adios_index_characteristic_dims_struct_v1 dims;
     void * value;
     uint16_t var_id;
+    uint64_t payload_offset;   // beginning of the var or attr payload
 };
 
 struct adios_index_var_struct_v1

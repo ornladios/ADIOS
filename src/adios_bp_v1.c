@@ -7,9 +7,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#define __USE_FILE_OFFSET64
-#define __USE_LARGEFILE
-#define __USE_LARGEFILE64
 #include <unistd.h>
 #include "adios_types.h"
 #include "adios_bp_v1.h"
@@ -553,6 +550,19 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                         break;
                     }
 
+                    case adios_characteristic_payload_offset:
+                    {
+                        uint64_t size = adios_get_type_size ((*root)->type, "");
+                        (*root)->characteristics [j].payload_offset =
+                                            *(uint64_t *) (b->buff + b->offset);
+                        if(b->change_endianness == adios_flag_yes) {
+                            swap_64((*root)->characteristics [j].payload_offset);
+                        }
+                        b->offset += 8;
+
+                        break;
+                    }
+
                     case adios_characteristic_dimensions:
                     {
                         uint16_t dims_length;
@@ -832,6 +842,19 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                                             *(uint64_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) { 
                             swap_64((*root)->characteristics [j].offset);
+                        }
+                        b->offset += 8;
+
+                        break;
+                    }
+
+                    case adios_characteristic_payload_offset:
+                    {
+                        uint64_t size = adios_get_type_size ((*root)->type, "");
+                        (*root)->characteristics [j].payload_offset =
+                                            *(uint64_t *) (b->buff + b->offset);
+                        if(b->change_endianness == adios_flag_yes) { 
+                            swap_64((*root)->characteristics [j].payload_offset);
                         }
                         b->offset += 8;
 
@@ -1210,6 +1233,15 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
                                                         (b->buff + b->offset);
                 if(b->change_endianness == adios_flag_yes) { 
                     swap_64(var_header->characteristics.offset);
+                }
+                b->offset += 8;
+                break;
+
+            case adios_characteristic_payload_offset:
+                var_header->characteristics.payload_offset = *(uint64_t *)
+                                                        (b->buff + b->offset);
+                if(b->change_endianness == adios_flag_yes) { 
+                    swap_64(var_header->characteristics.payload_offset);
                 }
                 b->offset += 8;
                 break;
@@ -1662,7 +1694,7 @@ void adios_posix_read_version (struct adios_bp_buffer_struct_v1 * b)
 
     adios_init_buffer_read_version (b);
 
-    lseek64 (b->f, b->file_size - 28, SEEK_SET);
+    lseek (b->f, b->file_size - 28, SEEK_SET);
 
     r = read (b->f, b->buff, 28);
     if (r != 28)
@@ -1690,18 +1722,9 @@ void adios_init_buffer_read_process_group_index (
 void adios_posix_read_process_group_index (struct adios_bp_buffer_struct_v1 * b)
 {
     adios_init_buffer_read_process_group_index (b);
-//  check if the machine is 32 bits or not
-//    lseek (b->f, b->pg_index_offset, SEEK_SET);
-//    read (b->f, b->buff, b->pg_size);
 
-    if (sizeof (char *) == 4) {
-    lseek64 (b->f, (loff_t) b->pg_index_offset, SEEK_SET);
-        read (b->f, b->buff, (size_t) b->pg_size);
-    }
-    else {
-        lseek64 (b->f, b->pg_index_offset, SEEK_SET);
-        read (b->f, b->buff, b->pg_size);
-    }
+    lseek (b->f, b->pg_index_offset, SEEK_SET);
+    read (b->f, b->buff, b->pg_size);
 }
 
 void adios_init_buffer_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
@@ -1715,17 +1738,10 @@ void adios_posix_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
     adios_init_buffer_read_vars_index (b);
 
     uint64_t r;
-//  check if the machine is 32 bits or not
-//    lseek (b->f, b->vars_index_offset, SEEK_SET);
-//    r = read (b->f, b->buff, b->vars_size);
-    if (sizeof (char *) == 4) {
-       lseek64 (b->f, (loff_t) b->vars_index_offset, SEEK_SET);
-        r = read (b->f, b->buff, (size_t) b->vars_size);
-    }
-    else {
-        lseek64 (b->f, b->vars_index_offset, SEEK_SET);
-        r = read (b->f, b->buff, b->vars_size);
-    }
+
+    lseek (b->f, b->vars_index_offset, SEEK_SET);
+    r = read (b->f, b->buff, b->vars_size);
+
     if (r != b->vars_size)
         fprintf (stderr, "reading vars_index: wanted %llu, read: %llu\n"
                 ,b->vars_size, r
@@ -1744,17 +1760,9 @@ void adios_posix_read_attributes_index (struct adios_bp_buffer_struct_v1 * b)
     adios_init_buffer_read_attributes_index (b);
 
     uint64_t r;
-//  check if the machine is 32 bits or not
-//    lseek (b->f, b->attrs_index_offset, SEEK_SET);
-//    r = read (b->f, b->buff, b->attrs_size);
-    if (sizeof (char *) == 4) {
-        lseek64 (b->f, (loff_t) b->attrs_index_offset, SEEK_SET);
-        r = read (b->f, b->buff, (size_t) b->attrs_size);
-    }
-    else {
-        lseek64 (b->f, b->attrs_index_offset, SEEK_SET);
-        r = read (b->f, b->buff, b->attrs_size);
-    }
+
+    lseek (b->f, b->attrs_index_offset, SEEK_SET);
+    r = read (b->f, b->buff, b->attrs_size);
 
     if (r != b->attrs_size)
         fprintf (stderr, "reading attributess_index: wanted %llu, read: %llu\n"
@@ -1774,21 +1782,12 @@ uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b)
 
     adios_init_buffer_read_process_group (b);
 
-//  check if the machine is 32 bits or not
-//    lseek (b->f, b->read_pg_offset, SEEK_SET);
-//    pg_size = read (b->f, b->buff, b->read_pg_size);
-
     while (!errno && pg_size != b->read_pg_size)
     {
-    if (sizeof (char *) == 4) {
-        lseek64 (b->f, (loff_t) b->read_pg_offset + pg_size, SEEK_SET);
-        pg_size += read (b->f, b->buff, (size_t) b->read_pg_size);
-    }
-    else {
-        lseek64 (b->f, b->read_pg_offset + pg_size, SEEK_SET);
+        lseek (b->f, b->read_pg_offset + pg_size, SEEK_SET);
         pg_size += read (b->f, b->buff + pg_size, b->read_pg_size - pg_size);
     }
-    }
+
     if (pg_size != b->read_pg_size)
     {
         fprintf (stderr, "adios_read_process_group: "
@@ -1816,7 +1815,7 @@ int adios_posix_open_read_internal (const char * filename
     if (stat (name, &s) == 0)
         b->file_size = s.st_size;
 
-    b->f = open64 (name, O_RDONLY);
+    b->f = open (name, O_RDONLY | O_LARGEFILE);
     if (b->f == -1)
     {
         fprintf (stderr, "ADIOS POSIX: file not found: %s\n", name);

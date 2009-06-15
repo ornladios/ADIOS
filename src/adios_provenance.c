@@ -223,8 +223,8 @@ int adios_provenance_open (struct adios_file_struct * fd
 			md->b.f = open (ADIOS_PROVENANCE_OUTPUTFILE, O_RDWR);
 			if (md->b.f == -1)
 			{
-			    md->b.f = open64 (ADIOS_PROVENANCE_OUTPUTFILE
-				    ,O_WRONLY | O_CREAT | O_TRUNC
+			    md->b.f = open (ADIOS_PROVENANCE_OUTPUTFILE
+				    ,O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE
 				    ,S_IRUSR | S_IWUSR 
 				    | S_IRGRP | S_IWGRP 
 				    | S_IROTH | S_IWOTH
