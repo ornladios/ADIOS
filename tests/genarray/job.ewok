@@ -5,9 +5,9 @@
 #PBS -l walltime=0:15:00
 #PBS -j eo
 
-NPX=8
-NPY=8
-NPZ=1
+NPX=4
+NPY=4
+NPZ=4
 NDX=100
 NDY=100
 NDZ=100

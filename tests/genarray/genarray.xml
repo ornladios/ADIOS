@@ -23,6 +23,11 @@
     <var name="size_y" path="/aux" type="integer"/>
     <var name="size_z" path="/aux" type="integer"/>
 
+    <global-bounds dimensions="X,Y" offsets="offs_x,offs_y">
+        <var name="int_xy" path="/var" type="integer" dimensions="size_x,size_y"/>
+    </global-bounds>
+    <attribute name="description" path="/var/int_xy" 
+               value="2D array with 2D decomposition"/>
     <global-bounds dimensions="X,Y,Z" offsets="offs_x,offs_y,offs_z">
         <var name="int_xyz" path="/var" type="integer" dimensions="size_x,size_y,size_z"/>
     </global-bounds>
@@ -34,6 +39,6 @@
 
   <method group="genarray" method="MPI"/>
 
-  <buffer size-MB="1000" allocate-time="now"/>
+  <buffer size-MB="400" allocate-time="now"/>
 
 </adios-config>

@@ -36,9 +36,11 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = genarray$(EXEEXT)
+bin_PROGRAMS = genarray$(EXEEXT) genarray2D$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_1 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 @HAVE_PHDF5_TRUE@am__append_2 = $(PHDF5_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_3 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_4 = $(PHDF5_LDFLAGS)
 subdir = tests/genarray
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -65,6 +67,10 @@ am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
 genarray_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
+am_genarray2D_OBJECTS = genarray2D.$(OBJEXT)
+genarray2D_OBJECTS = $(am_genarray2D_OBJECTS)
+genarray2D_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -74,8 +80,8 @@ LTPPFCCOMPILE = $(LIBTOOL) --mode=compile $(FC) $(DEFS) \
 	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
 	$(AM_FCFLAGS) $(FCFLAGS)
 FCLD = $(FC)
-SOURCES = $(genarray_SOURCES)
-DIST_SOURCES = $(genarray_SOURCES)
+SOURCES = $(genarray_SOURCES) $(genarray2D_SOURCES)
+DIST_SOURCES = $(genarray_SOURCES) $(genarray2D_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -221,11 +227,15 @@ genarray_SOURCES = genarray.F90
 genarray_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2)
 genarray_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(am__append_1)
+genarray2D_SOURCES = genarray2D.F90
+genarray2D_LDFLAGS = $(MXML_LDFLAGS) $(am__append_4)
+genarray2D_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
+	$(am__append_3)
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
 	$(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
 
-CLEANFILES = genarray_comm.mod
+CLEANFILES = genarray_comm.mod genarray2D_comm.mod
 all: all-am
 
 .SUFFIXES:
@@ -290,6 +300,9 @@ clean-binPROGRAMS:
 genarray$(EXEEXT): $(genarray_OBJECTS) $(genarray_DEPENDENCIES) 
 	@rm -f genarray$(EXEEXT)
 	$(FCLINK) $(genarray_LDFLAGS) $(genarray_OBJECTS) $(genarray_LDADD) $(LIBS)
+genarray2D$(EXEEXT): $(genarray2D_OBJECTS) $(genarray2D_DEPENDENCIES) 
+	@rm -f genarray2D$(EXEEXT)
+	$(FCLINK) $(genarray2D_LDFLAGS) $(genarray2D_OBJECTS) $(genarray2D_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
