@@ -25,12 +25,13 @@ int main (int argc, char ** argv)
 	MPI_Comm comm; 
 
 	filename = argv[1];
+        if (!filename)
+            filename = "testbp_c.bp";
 	comm = MPI_COMM_WORLD;
 	MPI_Init (&argc, &argv);
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &pe_size);
 	bp_fopen (&fh, filename, comm);
-    printf("open!\n");
 	// fh = file handle, filename = name of file, comm is the 
 	// communicator for the processors which will read in the data.
 	// in this call, the header is actually being read, and this is done by proc 0, and
