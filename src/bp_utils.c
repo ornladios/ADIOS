@@ -125,28 +125,6 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
 	b->vars_size = b->attrs_index_offset - b->vars_index_offset;
 	b->attrs_size = attrs_end - b->attrs_index_offset;
 
-/*
-	mh->version = ntohl (*(uint32_t *) (b->buff + b->offset));
-
-	if ( !*(char *) &mh->version && !*(char *) &test
-	    || *(char *) &mh->version && *(char *) &test
-	   )
-		b->change_endianness = adios_flag_no;
-	else
-		b->change_endianness = adios_flag_yes;
-
-	mh->version = mh->version & 0x7fffffff;
-					     - MINIFOOTER_SIZE;
-*/	
-/*
-	if (footer_size > 1024*1024)
-		printf("the footer is too big! break it down later!\n");	
-	else
-		printf ("total footer_size = %llu\n",
-			footer_size);
-
-*/
-		
 	uint64_t footer_size = mh->file_size - mh->pgs_index_offset;
 	realloc_aligned (b, footer_size);
 	MPI_File_seek (bp_struct->mpi_fh,
@@ -156,7 +134,6 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
 			MPI_BYTE, &status);
 
 	MPI_Get_count (&status, MPI_BYTE, &r);
-//	printf ("the bytes read = %d\n", r);
 
 	// reset the pointer to the beginning of buffer
 	b->offset = 0;	
@@ -258,14 +235,6 @@ int bp_parse_pgs (uint64_t fh_p)
 	}
 
 	*root = fh->pgs_root;
-/*
-	printf(DIVIDER); 
-	printf ("Group     : %s\n", (*root)->group_name);
-	printf ("Time Name : %s\n", (*root)->time_index_name);
-	printf ("Time Steps: %u\n", mh->time_steps);
-	printf ("ProcessGroup: %llu\n", mh->pgs_count);
-	printf(DIVIDER);
-*/
 
 	uint64_t * pg_offsets = 0; 
 	uint32_t * pg_pids = 0; 
@@ -329,24 +298,9 @@ int bp_parse_pgs (uint64_t fh_p)
 			pg_time_count = 1;
 		}
 		root = &(*root)->next;
-/*
-		printf("time_index: %d %d %d\n",
-			(*root)->time_index,
-			time_index [0][grpid][time_id-1],
-			time_index [1][grpid][time_id-1]);
-*/
 	}
 	time_index [1][grpid][time_id-tidx_start] = pg_time_count;
 	tidx_stop = time_id;
-/*
-	printf ("# of groups: %llu\n", group_count);
-	printf ("time index table: %d x %d\n",group_count, mh->time_steps);
-	for (i=0;i< mh->time_steps;i++) {
-        for (j=0;j<group_count;j++)
-            printf("\t%d %d\n",time_index[0][j][i],
-                               time_index[1][j][i]);
-    }	
-*/
 
 	char ** grp_namelist;
 	uint64_t ** grp_timelist;
@@ -357,54 +311,13 @@ int bp_parse_pgs (uint64_t fh_p)
 		strcpy(grp_namelist[i],namelist[i]);
 	}
 	
-/*
-here we need:
-    	grp_namelist [ngroup]
-	time_index   [2][ngroup][nprocess]
-	pg_offsets   [npgs]
-*/
+	// here we need:
+	//    	grp_namelist [ngroup]
+	//	time_index   [2][ngroup][nprocess]
+	//	pg_offsets   [npgs]
 
-/*
-	int k;
-	for (i = 0; i<group_count; i++) {
-		printf("%s(Group):\n",grp_namelist[i]);
-		for (j=0; j < mh->time_steps;j++) {
-			printf("\ttime %d: \t",j);
-			for (k=0;k<time_index[1][i][j];k++)
-				printf("%llu\t", pg_offsets[time_index[0][i][j]+k]);
-			printf("\n");
-		}
-		printf("\n");
-	}
-*/	
 	free (pg_pids);
-/*
 
-	for (i=0;i<mh->pgs_count;i++) {
-		if (namelist[i])
-			free(namelist[i]);
-	}
-	free (namelist);
-
-	for (j=0;j<2;j++) { 
-		for (i=0;i<group_count;i++) {
-			if (time_index[j][i])
-				free(time_index[j][i]);
-		}
-		if (time_index[j])
-			free(time_index[j]);
-	}
-	free(time_index);
-	
-	for (i=0;i<group_count;i++) { 
-		if (grp_namelist[i])
-			free(grp_namelist[i]);
-	}
-	if (grp_namelist)
-		free (grp_namelist);
-	if (pg_offsets)
-		free (pg_offsets);
-*/
 	fh->gh = (struct BP_GROUP_VAR *) malloc (sizeof(struct BP_GROUP_VAR));
 	fh->gh->group_count = group_count;
 	fh->gh->pg_offsets = pg_offsets;
@@ -573,9 +486,8 @@ int bp_parse_vars (struct BP_FILE * fh)
 				break;
 			}
 		}
-                /* Full name of variable: concatenate var_path and var_name
-                   Always have / in the beginning of the full name
-                */
+                // Full name of variable: concatenate var_path and var_name
+                // Always have / in the beginning of the full name
 		if (strcmp ((*root)->var_path,"/")) {
 			var_namelist [i] = (char *) malloc ( strlen((*root)->var_name)
 					+strlen((*root)->var_path) + 1
@@ -597,53 +509,19 @@ int bp_parse_vars (struct BP_FILE * fh)
 
 		pdims = &(*root)->characteristics [0].dims;
 		cnt = pdims->count;
-/*
-		if (cnt != 0) {
-			printf ("dimension(");
-			for (j = 0; j < cnt; j++) { 
-				if (j>0)
-					printf (", ");
-				if (pdims->dims [j*3 + 1] != 0) {
-					printf ("%llu", pdims->dims [j*3 + 1]);
-				}
-				else {
-					printf ("%llu", pdims->dims [j*3 + 0]);
-				}
-			}
-			printf (")\n");
-		}
-*/
 		root = &(*root)->next;
 	}
-/*here is the asssumption that var_gids is linearly increased*/
-/*
-	root = vars_root;
-	for (i = 0; i < mh->vars_count; i++) {
-		if (grpid != var_gids[i]) {
-			printf("\n");
-			j +=  var_counts_per_group[i-1];	
-			grpid = var_gids[i];	
-		}
-		len = strlen((*root)->var_name);
-		//%var_counts_per_group[grpid];
-		var_namelist[grpid][i-j] = (char *)malloc (len);
-		strcpy(var_namelist[grpid][i-j],(*root)->var_name);
-		printf("%s ",var_namelist[grpid][i-j]);
-		root = &(*root)->next;
-	}
-	printf("\n");
-*/
+	//here is the asssumption that var_gids is linearly increased
  	free( var_gids);
 	fh->gh->var_namelist = var_namelist;
 	fh->gh->var_counts_per_group=var_counts_per_group;
 	fh->gh->var_offsets = var_offsets;
 	return 0;
 	
-/* here we need
-   number of group
-   number of vars in each group
-   the offsets for each vars
-*/
+	// here we need
+	// number of group
+	// number of vars in each group
+	// the offsets for each vars
 }
 
 int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
@@ -704,6 +582,15 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 
 			break;
 		}
+		case adios_characteristic_payload_offset: 
+		{
+			uint64_t size = bp_get_type_size ((*root)->type, "");
+			(*root)->characteristics [j].payload_offset =
+				*(uint64_t *) (b->buff + b->offset);
+			b->offset += 8;
+
+			break;
+		}
 		case adios_characteristic_dimensions:
 		{
 			uint16_t dims_length;
@@ -717,17 +604,17 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 
 			(*root)->characteristics [j].dims.dims = (uint64_t *)
 				malloc (dims_length);
-/*
-			printf("nd:%d, dims_len: %d\n",
-				 (*root)->characteristics [j].dims.count ,
-				dims_length);
-*/
 			memcpy ((*root)->characteristics [j].dims.dims
 					,(b->buff + b->offset)
 					,dims_length
 			       );
 			b->offset += dims_length;
+
+                        break;
 		}
+            default:
+                fprintf (stderr, "Unknown characteristic:%d. skipped.\n", c);
+                break;
 	}
 }
 
@@ -810,13 +697,6 @@ void bp_grouping ( struct BP_FILE * fh_p,
 		malloc (sizeof(uint64_t)*mh->time_steps);
 	time_id = pg_root->time_index;
 
-/*	printf(DIVIDER); 
-	printf ("Group     : %s\n", pg_root->group_name);
-	printf ("Time Name : %s\n", pg_root->time_index_name);
-	printf ("Time Steps: %llu\n", mh->time_steps);
-	printf ("ProcessGroup: %llu\n", mh->pgs_count);
-	printf(DIVIDER);
-*/
 	uint16_t group_count = 0;
 	 
 	for (i = 0; i < mh->pgs_count; i++) {
@@ -839,16 +719,8 @@ void bp_grouping ( struct BP_FILE * fh_p,
 	time_index [time_id-1] = pg_time_count;
 	time_id = 0;
 	for (i = 0; i < mh->time_steps; i++) {
-/*
-		printf (SUBDIVIDER);
-		printf ("      time: %d\n" ,i);
-		printf ("      pid : offset_in_file\n");
-		printf (SUBDIVIDER);
-*/
 		if (i > 0) 
 			time_id += time_index[i-1];
-		//for (j = 0; j < time_index[i]; j++)
-			//printf("\t%d : %llu\n",pg_pids[time_id+j],pg_offsets[time_id+j]);
 
 	}
 	struct adios_index_var_struct_v1 * vars = fh->vars_root;
@@ -863,7 +735,6 @@ void bp_grouping ( struct BP_FILE * fh_p,
 				vars->id
 				);
 			++vars_cnt;	
-//			if (characteristics_count < )
 		}
 		vars = vars->next;	
 	}
@@ -877,7 +748,7 @@ int bp_read_pgs (struct BP_FILE * bp_struct)
         struct adios_bp_buffer_struct_v1 * b = bp_struct->b;
 	int r = 0;
 	MPI_Status status;
-// init buffer for pg reading
+	// init buffer for pg reading
 	realloc_aligned (b, b->pg_size);
 	b->offset = 0;
 
@@ -954,11 +825,6 @@ void print_pg_index (struct bp_index_pg_struct_v1 * pg_root,
 	uint64_t * time_index = (uint64_t *) 
 		malloc (sizeof(uint64_t)*mh->time_steps);
 	time_id = pg_root->time_index;
-	/*printf(DIVIDER); 
-	printf ("Group     : %s\n", pg_root->group_name);
-	printf ("Time Name : %s\n", pg_root->time_index_name);
-	printf ("Time Steps: %llu\n", mh->time_steps);
-	*/
 	for (i = 0; i < mh->pgs_count; i++)
 	{
 		pg_pids [i] = pg_root->process_id;
@@ -966,13 +832,11 @@ void print_pg_index (struct bp_index_pg_struct_v1 * pg_root,
 		if (pg_root->time_index == time_id)
 		{
 			pg_time_count += 1;
-			//printf("%u %llu\n",pg_root->time_index, pg_time_count);
 		}	
 		else {
 			time_index [time_id-1] = pg_time_count;
 			time_id = pg_root->time_index;
 			pg_time_count = 1;
-			//printf("%u %llu\n",pg_root->time_index, pg_time_count);
 		}	
 		pg_root = pg_root->next;
 	}
@@ -980,41 +844,9 @@ void print_pg_index (struct bp_index_pg_struct_v1 * pg_root,
 	time_index [time_id-1] = pg_time_count;
 	time_id = 0;
 	for (i = 0; i < mh->time_steps; i++) {
-/*
-		printf (SUBDIVIDER);
-		printf ("      time: %d\n" ,i);
-		printf ("      pid : offset_in_file\n");
-		printf (SUBDIVIDER);
-*/
 		if (i > 0) 
 			time_id += time_index[i-1];
-		//for (j = 0; j < time_index[i]; j++)
-			//printf("\t%d : %llu\n",pg_pids[time_id+j],pg_offsets[time_id+j]);
-
 	}
-/*
-	struct adios_index_var_struct_v1 * vars = fh->vars_root;
-	int vars_cnt = 0;
-	while (vars) {
-		if (!strcmp(vars->group_name, pg_root->group_name)) {
-	 		printf ("%s %s %d %d %d %d\n",vars->var_name,
-				vars->group_name,
-				vars->characteristics_count,
-				vars->characteristics->dims.count,
-				vars->characteristics->var_id,
-				vars->id
-				);
-			++vars_cnt;	
-//			if (characteristics_count < )
-		}
-		vars = vars->next;	
-	}
-
-		for (j = 0; j < time_index[i]; j++)
-			printf("\t%d : %llu\n",pg_pids[time_id+j],pg_offsets[time_id+j]);
-
-	}
-*/
 }
 
 void print_vars_index_top (struct adios_index_var_struct_v1 * vars_root)
@@ -1022,19 +854,11 @@ void print_vars_index_top (struct adios_index_var_struct_v1 * vars_root)
 	printf("Variables (group) :\n");	
 	while (vars_root) {
 		if (!strcmp (vars_root->var_path, "/")) {
-			//printf ("\t%s\t %s", 
-			//	adios_type_to_string(vars_root->type),
-			//	vars_root->var_name
 			printf ("\t %s", 
 				vars_root->var_name
 				);
 		}
 		else {
-		//	printf ("\t%s\t %s/%s",
-		//		adios_type_to_string(vars_root->type),
-		//		vars_root->var_path,
-		//		vars_root->var_name
-		//		);
 			printf ("\t %s/%s",
 				vars_root->var_path,
 				vars_root->var_name
@@ -1238,73 +1062,25 @@ void copy_data (void *dst, void *src,
 	uint64_t src_offset_new=0;
     uint64_t src_step, dst_step;
 	if (ndim-1==idim) {
-#if 0
-		printf (
-            "----------------\n"
-            "size_in_dset= %d\n"
-			"dst_stride  = %d\n"
-			"dst_offset  = %d\n"
-			"src_stride  = %d\n"
-			"src_offset  = %d\n"
-			"ele_num     = %d\n" 
-			"ndim        = %d\n" 
-			"idim        = %d\n" 
-            "----------------\n",
-			size_in_dset[idim],
-			dst_stride,
-			dst_offset,
-			src_stride,
-			src_offset,ele_num,ndim,idim);
-#endif
-//
 		for (i=0;i<size_in_dset[idim];i++) {
-            /*
-             * printf("memcpy: %d %d %d\n", 
-             (i*dst_stride+dst_offset)*size_of_type,
-             (i*src_stride+src_offset)*size_of_type,
-             ele_num*size_of_type);
-             */
 			memcpy (dst + (i*dst_stride+dst_offset)*size_of_type,
 					src + (i*src_stride+src_offset)*size_of_type,
 					ele_num*size_of_type);
 		}
-//
 		return;
 	}
 
 	for (i = 0; i<size_in_dset[idim];i++) {
-        /* get the different step granularity 
-         * for each different reading pattern broke
-         */
+        // get the different step granularity 
+        // for each different reading pattern broke
         src_step = 1;
         dst_step = 1;
         for (j = idim+1; j <= ndim-1;j++) {
             src_step *= ldims[j];
             dst_step *= readsize[j];
         }
-        //src_offset_new = src_offset + i * src_stride * step;
-        //src_step = i * src_stride * ldim[ndims-] 
-        //dst_step = 
-        //src_offset_new =src_offset + i * src_stride * ldims[ndim-idim-1];
-        //dst_offset_new = dst_offset + i * dst_stride\
-        //                            * readsize[ndim-idim-1];
         src_offset_new =src_offset + i * src_stride * src_step;
         dst_offset_new = dst_offset + i * dst_stride * dst_step;
-#if 0
-        printf("%d: readsize[%d]=%d   "
-                "ldims[%d]=%d\n",i, 
-                idim,readsize[idim],
-                idim,ldims[idim]);
-        printf("ndim=%d idim=%d ldims[%d]=%d step=%llu\n", 
-                ndim, idim, 
-                ndim-idim-1,
-                ldims[ndim-idim-1],
-                step);
-        printf("%d: src_offset=%llu src_offset_new=%llu\n"
-                "   dst_offset=%llu dst_offset_new=%llu\n", 
-                i, src_offset, dst_offset,
-                src_offset_new, dst_offset_new);
-#endif
         copy_data (dst, src, idim+1, ndim, size_in_dset,
                 ldims,readsize, 
                 dst_stride, src_stride,

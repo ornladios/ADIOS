@@ -307,10 +307,9 @@ int bp_inq_group (int64_t gh_p, int *nvar, char ** vnamelist)
   */
 static int find_var( char ** varnamelist, int offset, int count, char * varname) 
 {
-    /* Find the variable: full path is stored with a starting / 
-       Like in HDF5, we need to match names given with or without the starting /
-       startpos is 0 or 1 to indicate if the argument has starting / or not
-    */
+    // Find the variable: full path is stored with a starting / 
+    // Like in HDF5, we need to match names given with or without the starting /
+    // startpos is 0 or 1 to indicate if the argument has starting / or not
     int i, endp;
     int vstartpos = 0, fstartpos = 0; 
     if (varname[0] == '/')
@@ -320,8 +319,6 @@ static int find_var( char ** varnamelist, int offset, int count, char * varname)
     for (i = offset; i < endp; i++) {
         if (varnamelist[i][0] == '/')
             fstartpos = 1;
-        //printf("-- find_var: compare %s with %s, vstartpos=%d, fstartpos=%d\n", 
-        //        varname, varnamelist[i], vstartpos, fstartpos);
         if (!strcmp( varnamelist[i]+fstartpos, varname+vstartpos )) {
             return i;
         }
@@ -358,9 +355,6 @@ int bp_inq_var (int64_t gh_p, char * varname,
 
     // find variable in var list
     var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
-    //printf("Find var %s: var_id=%d, gh->count=%d, gh->offset=%d\n", 
-    //        varname, var_id, gh->count, gh->offset);
-    
 
     for (i=0;i<gh->group_id;i++)
         var_id -= fh->gh->var_counts_per_group[i];
@@ -387,15 +381,7 @@ int bp_inq_var (int64_t gh_p, char * varname,
 	}
     	
 	*ndim = var_root->characteristics [0].dims.count;
-#if 0
-	printf("var: %s,id=%d %d %d %d\n", var_root->var_name,
-        var_id,
-		*ndim, 
-		var_root->characteristics[0].value,
-		var_root->characteristics_count);
-#endif
 	if (!dims || !(*ndim)) {
-        //printf(stderr, "scalar or dims is NULL\n");
 		return 0;
     }
 
@@ -467,11 +453,6 @@ int bp_get_var (int64_t gh_p,
 		 int timestep
 		)
 {
-    /*
-    printf("%d %d %d\n",readsize[0],readsize[1],readsize[2]);
-    printf("%d %d %d\n",start[0],start[1],start[2]);
-    printf("%s %d \n", varname, timestep);
-    */
     double  start_time, stop_time;
 	int    i, j, var_id, idx;
 	int    flag, offset, count, start_idx=-1;
@@ -521,10 +502,6 @@ int bp_get_var (int64_t gh_p,
 	// get the starting offset for the given time step
 	offset = fh->gh->time_index[0][gh->group_id][timestep-fh->tidx_start];
     count = fh->gh->time_index[1][gh->group_id][timestep-fh->tidx_start];
-    /*   
-    printf("var_id:%d offset: %d count:%d varname: %s\n",
-            var_id,offset,count,varname);
-    */ 
 	for (i=0;i<var_root->characteristics_count;i++) {
         if (   (  var_root->characteristics[i].offset 
                 > fh->gh->pg_offsets[offset])
@@ -599,10 +576,7 @@ int bp_get_var (int64_t gh_p,
 	int tmpcount = 0;
 	int size_of_type = bp_get_type_size (var_root->type, "");
 
-    /* actions */
-    //printf("var_id:%d varname: %s\n", var_id,varname);
-	//printf("rank=%d offset count: %d %d \n",rank, offset, count);
-	//printf("rank=%d ndim: %d \n",rank, ndim);
+    // actions
     if (count > var_root->characteristics_count)
         count = var_root->characteristics_count;
 	for (idx = 0; idx < count; idx++) {
@@ -621,11 +595,6 @@ int bp_get_var (int64_t gh_p,
 				gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
 			else
 				gdims[j]=ldims[j];
-#if 0 
-		    printf("rank=%d var_name:%s global: %llu offset:%llu local:%llu\n",
-                    rank, varname,gdims[j],offsets[j],ldims[j]);
-            printf("timeflag=%d is_global=%d\n",time_flag,is_global);
-#endif
 			if (readsize[j] > gdims[j]) {
 				fprintf(stderr, "Error: %s out of bound ("
 					"the size to read is %llu,"
@@ -684,43 +653,10 @@ int bp_get_var (int64_t gh_p,
 				break;
 		}
         hole_break = i;
-        /*        
-        if (ndim == 1) {
-		    printf("time_flag:%d ndim=%d\n",time_flag,ndim);
-		    printf("local: %llu\n",ldims[0]);
-		    printf("global: %llu\n",gdims[0]);
-		    printf("offset: %llu\n",offsets[0]);
-		    printf("readsize:%d\n",readsize[0]);
-		    printf("start:%d\n",start[0]);
-        }
-        MPI_Barrier(gh->fh->comm);
-        */        
-        /*
-        if (rank == 0 && ndim == 2) {
-		    printf("time_flag:%d ndim=%d\n",time_flag,ndim);
-		    printf("local: %d %d\n",ldims[0],ldims[1]);
-		    printf("global: %d %d\n",gdims[0],gdims[1]);
-		    printf("offset: %d %d\n",offsets[0],offsets[1]);
-		    printf("readsize:%d %d\n",readsize[0],readsize[1]);
-		    printf("start:%d %d\n",start[0],start[1]);
-        }
-        */
-        /*
-        if (rank == 0 && ndim == 3) {
-            printf("time_flag:%d ndim=%d\n",time_flag,ndim);
-            printf("local: %d %d %d\n",ldims[0],ldims[1],ldims[2]);
-            printf("global: %d %d %d\n",gdims[0],gdims[1],gdims[2]);
-            printf("offset: %d %d %d\n",offsets[0],offsets[1],offsets[2]);
-            printf("start:%d %d %d\n",start[0],start[1],start[2]);
-            printf("readsize:%d %d %d\n",readsize[0],readsize[1],readsize[2]);
-        }
-        */
-        /* hole_break 
-         * -1: the content in the pg is exactly the same as request size 
-         * 0 : the content is the pg is the subset of the read request
-         * >0: there is hole in content of the pg need to be read
-         */
-        //printf("hole_break:%d\n",hole_break);
+        // hole_break 
+        // -1: the content in the pg is exactly the same as request size 
+        // 0 : the content is the pg is the subset of the read request
+        // >0: there is hole in content of the pg need to be read
 		if (hole_break==-1) {
 			memcpy(var, fh->b->buff+fh->b->offset,var_header.payload_size);
         }
@@ -738,17 +674,8 @@ int bp_get_var (int64_t gh_p,
 				read_offset +=  var_header.payload_size;
                 
                 tmpreadsize -= ldims[0]; 
-                //tmpreadsize = readsize[0]-read_offset/size_of_type; 
-                //printf("read_offset=%lld,sizetype=%d, plsize=%lld\n",
-                //        read_offset,size_of_type,var_header.payload_size);
 			}
 			else {
-                /*
-                   memcpy (var+read_offset, 
-                   fh->b->buff+fh->b->offset+
-                   tmpreadsize*datasize*size_of_type, 
-                   datasize*size_of_type);
-                   */
 				memcpy (var+read_offset, 
 					    fh->b->buff+fh->b->offset,
 					    tmpreadsize*datasize*size_of_type);
@@ -816,45 +743,10 @@ int bp_get_var (int64_t gh_p,
 				nloop *= size_in_dset[i];
 			}
 
-            /*
-			if(rank==0) 
-			{	
-				printf("\n\nhits:%d hole_break=%d nloop=%d\n",
-                        hit,hole_break, nloop);	
-				if (ndim==2) {
-					printf("local: %llu %llu \n",ldims[0],ldims[1]);
-					printf("offsets: %llu %llu \n",offsets[0],offsets[1]);
-					printf("size  : %llu %llu \n",readsize[0],readsize[1]);
-					printf("global: %llu %llu \n",gdims[0],gdims[1]);
-				}
-				if (ndim==3) {
-					printf("local: %llu %llu %llu\n",
-                            ldims[0],ldims[1], ldims[2]);
-					printf("global: %llu %llu %llu\n",
-                            gdims[0],gdims[1], gdims[2]);
-					printf("offsets: %llu %llu %llu \n",
-                            offsets[0],offsets[1], offsets[2]);
-                    printf("\treadsize : %llu %llu %llu \n", 
-                            readsize[0],readsize[1],readsize[2]);
-                    printf("\tsize_in_dset: %llu %llu %llu \n", 
-                            size_in_dset[0],size_in_dset[1],size_in_dset[2]);
-				}
-				printf("datasize=%d\n",datasize);
-			}
-            */
 			for ( i = 0; i < ndim ; i++) {
 				var_offset = offset_in_var[i] + var_offset * readsize[i];
 				dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
             }
-            /*
-            printf("array:%d\n",*((int*)(fh->b->buff+fh->b->offset)));
-            printf("array:%d\n",*((int*)(fh->b->buff+fh->b->offset+4)));
-            printf("array:%d\n",*((int*)(fh->b->buff+fh->b->offset+8)));
-            printf("\tdsetstride  : %d\n", dset_stride);
-            printf("\tvar_stride  : %d\n", var_stride);
-            printf("\tvar_offset  : %d\n", var_offset);
-            printf("\tdatasize    : %d\n", datasize);
-            */
 			copy_data (var, fh->b->buff+fh->b->offset,
 					0,
 					hole_break,
@@ -867,7 +759,6 @@ int bp_get_var (int64_t gh_p,
 					dset_offset,
 					datasize,
 					size_of_type);
-            //printf("finish read pg: %d\n",npg);
 		}
         
 	}  // end of loop
@@ -992,11 +883,6 @@ void bp_fopen_(int64_t * fh_p,
     MPI_Comm comm = MPI_Comm_f2c (*((int *) fcomm));
     *err = bp_fopen (&fh,fname,comm);
     * fh_p = fh;
-    //printf("before: %lld\n", fh);
-    //printf("after: %lld\n", fh);
-    //printf("start:%d\n",((struct BP_FILE *)fh)->tidx_start);
-    //printf("comm:%d\n",((struct BP_FILE *)fh)->comm);
-    
 }
 
 void bp_fclose_( int64_t * fh, int * err)
