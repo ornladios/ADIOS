@@ -25,6 +25,7 @@ struct adios_MPI_data_struct
     MPI_Request req;
     MPI_Status status;
     MPI_Comm group_comm;
+    MPI_Info info;      // set with base hints for Lustre
     int rank;
     int size;
 
@@ -148,6 +149,10 @@ void adios_mpi_init (const char * parameters
     md->fh = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
+    MPI_Info_create (&md->info);
+    MPI_Info_set (md->info, "romio_ds_read", "disable");
+    MPI_Info_set (md->info, "romio_ds_write", "disable");
+    MPI_Info_set (md->info, "ind_wr_buffer_size", "16777216");
     md->rank = 0;
     md->size = 0;
     md->group_comm = MPI_COMM_NULL;
@@ -420,7 +425,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
             if (md->group_comm == MPI_COMM_NULL || md->rank == 0)
             {
                 err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
-                                    ,MPI_INFO_NULL, &md->fh
+                                    ,md->info, &md->fh
                                     );
                 if (err != MPI_SUCCESS)
                 {
@@ -552,7 +557,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 }
                 err = MPI_File_open (MPI_COMM_SELF, name
                                     ,MPI_MODE_RDONLY
-                                    ,MPI_INFO_NULL
+                                    ,md->info
                                     ,&md->fh
                                     );
             }
@@ -591,7 +596,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
                 err = MPI_File_open (MPI_COMM_SELF, name
                                     ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                                    ,MPI_INFO_NULL
+                                    ,md->info
                                     ,&md->fh
                                     );
                 if (next != -1)
@@ -614,7 +619,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 }
                 err = MPI_File_open (MPI_COMM_SELF, name
                                     ,MPI_MODE_WRONLY
-                                    ,MPI_INFO_NULL
+                                    ,md->info
                                     ,&md->fh
                                     );
             }
@@ -644,7 +649,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
             if (md->group_comm == MPI_COMM_NULL || md->rank == 0)
             {
                 err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
-                                    ,MPI_INFO_NULL, &md->fh
+                                    ,md->info, &md->fh
                                     );
 
                 if (err != MPI_SUCCESS)
@@ -652,7 +657,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                     old_file = 0;
                     err = MPI_File_open (MPI_COMM_SELF, name
                                         ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                                        ,MPI_INFO_NULL, &md->fh
+                                        ,md->info, &md->fh
                                         );
                     if (err != MPI_SUCCESS)
                     {
@@ -785,7 +790,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 // so it is easier to merge write/append later
                 err = MPI_File_open (MPI_COMM_SELF, name
                                     ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                                    ,MPI_INFO_NULL
+                                    ,md->info
                                     ,&md->fh
                                     );
                 if (next != -1)
@@ -808,7 +813,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 }
                 err = MPI_File_open (MPI_COMM_SELF, name
                                     ,MPI_MODE_WRONLY
-                                    ,MPI_INFO_NULL
+                                    ,md->info
                                     ,&md->fh
                                     );
             }
@@ -1807,9 +1812,13 @@ void adios_mpi_close (struct adios_file_struct * fd
 
 void adios_mpi_finalize (int mype, struct adios_method_struct * method)
 {
-// nothing to do here
+    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+                                                    method->method_data;
     if (adios_mpi_initialized)
+    {
         adios_mpi_initialized = 0;
+        MPI_Info_free (&md->info);
+    }
 }
 
 void adios_mpi_end_iteration (struct adios_method_struct * method)
