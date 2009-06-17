@@ -205,10 +205,14 @@ end subroutine usage
 subroutine processArgs()
     use genarray_comm
 
+#ifndef __GFORTRAN__
+#ifndef __GNUC__
     interface
          integer function iargc()
          end function iargc
     end interface
+#endif
+#endif
 
     character(len=256) :: npx_str, npy_str, npz_str, ndx_str, ndy_str, ndz_str 
     integer :: numargs
@@ -224,9 +228,9 @@ subroutine processArgs()
     call getarg(2, npx_str)
     call getarg(3, npy_str)
     call getarg(4, npz_str)
-    read (npx_str,'i5') npx
-    read (npy_str,'i5') npy
-    read (npz_str,'i5') npz
+    read (npx_str,'(i5)') npx
+    read (npy_str,'(i5)') npy
+    read (npz_str,'(i5)') npz
     if ( numargs == 5 ) then
         call getarg(5, inputfile)
         ndx = 0
@@ -237,9 +241,9 @@ subroutine processArgs()
         call getarg(5, ndx_str)
         call getarg(6, ndy_str)
         call getarg(7, ndz_str)
-        read (ndx_str,'i6') ndx
-        read (ndy_str,'i6') ndy
-        read (ndz_str,'i6') ndz
+        read (ndx_str,'(i6)') ndx
+        read (ndy_str,'(i6)') ndy
+        read (ndz_str,'(i6)') ndz
         inputfile=char(0)
         common_size = .true.
     else
