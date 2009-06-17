@@ -23877,10 +23877,11 @@ fi
 
 CXX="$MPICXX"
 FC="$MPIFC"
+CPPFLAGS+="-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -D_GNU_SOURCE"
 
 LIBS="$MPILIBS $LIBS"
 
-                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile tests/genarray/Makefile utils/Makefile utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile examples-code/Makefile examples-code/global-array/Makefile examples-code/global-array-time/Makefile examples-code/time-index/Makefile"
+                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile tests/genarray/Makefile tests/bp_read/Makefile utils/Makefile utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile examples-code/Makefile examples-code/global-array/Makefile examples-code/global-array-time/Makefile examples-code/time-index/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -24585,6 +24586,7 @@ do
   "tests/C/Makefile" ) CONFIG_FILES="$CONFIG_FILES tests/C/Makefile" ;;
   "tests/Fortran/Makefile" ) CONFIG_FILES="$CONFIG_FILES tests/Fortran/Makefile" ;;
   "tests/genarray/Makefile" ) CONFIG_FILES="$CONFIG_FILES tests/genarray/Makefile" ;;
+  "tests/bp_read/Makefile" ) CONFIG_FILES="$CONFIG_FILES tests/bp_read/Makefile" ;;
   "utils/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/Makefile" ;;
   "utils/adios_lint/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/adios_lint/Makefile" ;;
   "utils/gpp/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/gpp/Makefile" ;;
