@@ -1782,17 +1782,17 @@ uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b)
 
     adios_init_buffer_read_process_group (b);
 
-    while (!errno && pg_size != b->read_pg_size)
+    do
     {
         lseek (b->f, b->read_pg_offset + pg_size, SEEK_SET);
         pg_size += read (b->f, b->buff + pg_size, b->read_pg_size - pg_size);
-    }
+    } while (errno && pg_size != b->read_pg_size);
 
     if (pg_size != b->read_pg_size)
     {
         fprintf (stderr, "adios_read_process_group: "
-                         "Tried to read: %llu, but only got: %llu errno: %d\n"
-                ,b->read_pg_size, pg_size, errno
+                         "Tried to read: %llu, but only got: %llu error: %s\n"
+                ,b->read_pg_size, pg_size, strerror (errno)
                 );
 
         pg_size = 0;
