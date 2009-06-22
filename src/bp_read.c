@@ -618,17 +618,17 @@ int bp_get_var (int64_t gh_p,
         ++npg;
         //MPI_Barrier(MPI_COMM_WORLD);
         //start_time = MPI_Wtime();
-/*
+#if 1
         MPI_File_seek (fh->mpi_fh, 
                    (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
                    MPI_SEEK_SET);
         MPI_File_read (fh->mpi_fh, fh->b->buff, 4, MPI_BYTE, &status);
         tmpcount= *((uint64_t*)fh->b->buff);
-*/
+#endif
         realloc_aligned(fh->b, tmpcount+4);
         
         MPI_File_seek (fh->mpi_fh, 
-                   (MPI_Offset) var_root->characteristics[start_idx+idx].payload_offset,
+                   (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
                    MPI_SEEK_SET);
         MPI_File_read (fh->mpi_fh, fh->b->buff, tmpcount+4, MPI_BYTE, &status);
         MPI_Get_count (&status, MPI_BYTE, &tmpcount);
