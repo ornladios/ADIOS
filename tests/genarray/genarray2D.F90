@@ -13,11 +13,11 @@
 !      R*ndx+ndy-1      R*ndx+ndy-1
 !  
 ! E.g 2x2 processes writing 2x2 blocks:
-!     0 0 | 2 2
-!     1 1 | 3 3
-!     ----+----
-!     4 4 | 6 6
-!     5 5 | 7 7
+!     0 0 | 2 2        0 1 | 2 3 
+!     1 1 | 3 3        4 5 | 6 7
+!     ----+----   or  -----+----
+!     4 4 | 6 6        8 9 | 10 11
+!     5 5 | 7 7       12 13| 14 15
 !
 ! (c) Oak Ridge National Laboratory, 2009
 ! Author: Norbert Podhorszki
@@ -27,11 +27,13 @@ module genarray2D_comm
     character(len=256) :: outputfile, inputfile
     integer :: npx, npy    ! # of processors in x-y direction
     integer :: ndx, ndy    ! size of array per processor
+    integer :: timesteps   ! number of timesteps to write
     logical :: common_size ! .true.  if common local sizes are given as argument
                            ! .false. if we have to read sizes from a file
 
     integer :: gndx, gndy  ! size of the global array
-    integer :: offx,offy   ! offsets of local array in the global array
+    integer :: posx, posy  ! position index in the array 
+    integer :: offx, offy  ! offsets of local array in the global array
 
     integer, dimension(:,:), allocatable :: int_xy
 
@@ -126,7 +128,6 @@ end subroutine determineGlobalSize
 subroutine determineOffsets()
     use genarray2D_comm
     implicit none
-    integer :: posx, posy         ! position index in the array
     if (common_size) then
         posx = mod(rank, npx)     ! 1st dim easy: 0, npx, 2npx... are in the same X position
         posy = rank/npx           ! 2nd dim: npx processes belong into one dim
@@ -146,11 +147,13 @@ end subroutine determineOffsets
 subroutine generateLocalArray()
     use genarray2D_comm
     implicit none
-    integer :: i,j,k
+    integer :: i,j,k, startv
     allocate( int_xy(1:ndx, 1:ndy) )
     do j=1,ndy
+        startv = (offy+j-1)*gndx + offx
         do i=1,ndx
-            int_xy(i,j) = rank*ndx+j-1 
+            int_xy(i,j) =  startv+i-1
+            !int_xy(i,j) = rank*ndx+j-1 
             !int_xy(i,j) = rank 
         enddo
     enddo
@@ -161,46 +164,58 @@ end subroutine generateLocalArray
 subroutine writeArray()
     use genarray2D_comm
     implicit none
+    integer :: tstep
+    character(2) :: mode = "w"//char(0)
+
     ! Write out data using ADIOS
     group = "genarray"
     !  calculate how much we write from this processor
     group_size = 4 * 9               + &  ! X,Y, nproc, all size_ and offs_ integers
-                 4 * ndx * ndy            ! int_xy 
+                 4 * ndx * ndy       + &  ! int_xy 
+                 4 * ndx * ndy            ! int_xyt
 
-    !print '("rank=",i0," group=",A," file=",A," group_size=",i0)', rank, trim(group)//char(0), &
-    !    trim(outputfile)//char(0), group_size
-    call adios_open (handle, trim(group)//char(0), trim(outputfile)//char(0), "w"//char(0), err)
-    call adios_group_size (handle, group_size, total_size, group_comm, err)
-    !print '("rank=",i0," total_size=",i0," err=",i0)', rank, total_size, err
+    do tstep=1,timesteps
+        if (tstep > 1) mode = "a"//char(0)
+        !print '("rank=",i0," group=",A," file=",A," group_size=",i0)', rank, trim(group)//char(0), &
+        !    trim(outputfile)//char(0), group_size
+        call adios_open (handle, trim(group)//char(0), trim(outputfile)//char(0), mode, err)
+        call adios_group_size (handle, group_size, total_size, group_comm, err)
+        !print '("rank=",i0," total_size=",i0," err=",i0)', rank, total_size, err
 
-    ! write dimensions and nproc 
-    call adios_write (handle, "X"//char(0), gndx, err)
-    call adios_write (handle, "Y"//char(0), gndy, err)
-    call adios_write (handle, "npx"//char(0), npx, err)
-    call adios_write (handle, "npy"//char(0), npy, err)
-    call adios_write (handle, "nproc"//char(0), nproc, err)
+        ! write dimensions and nproc 
+        call adios_write (handle, "X"//char(0), gndx, err)
+        call adios_write (handle, "Y"//char(0), gndy, err)
+        call adios_write (handle, "npx"//char(0), npx, err)
+        call adios_write (handle, "npy"//char(0), npy, err)
+        call adios_write (handle, "nproc"//char(0), nproc, err)
 
-    call adios_write (handle, "size_x"//char(0), ndx, err)
-    call adios_write (handle, "size_y"//char(0), ndy, err)
-    call adios_write (handle, "offs_x"//char(0), offx, err) 
-    call adios_write (handle, "offs_y"//char(0), offy, err)
-    call adios_write (handle, "int_xy"//char(0), int_xy, err) 
+        call adios_write (handle, "size_x"//char(0), ndx, err)
+        call adios_write (handle, "size_y"//char(0), ndy, err)
+        call adios_write (handle, "offs_x"//char(0), offx, err) 
+        call adios_write (handle, "offs_y"//char(0), offy, err)
 
-    ! start streaming from buffer to disk
-    call adios_close (handle, err)
-    print '("rank=",i0,": write completed")', rank
+        if (tstep == 1) then
+            call adios_write (handle, "int_xy"//char(0), int_xy, err) 
+        endif
+        call adios_write (handle, "int_xyt"//char(0), int_xy, err) 
+
+        ! start streaming from buffer to disk
+        call adios_close (handle, err)
+        print '("rank=",i0,": write completed")', rank
+    enddo
 end subroutine writeArray
 
 
 !!***************************
 subroutine usage()
-    print *, "Usage: genarray  output N  M [nx  ny | infile]"
+    print *, "Usage: genarray  output N  M [nx  ny | infile] timesteps"
     print *, "output: name of output file"
     print *, "N:      number of processes in X dimension"
     print *, "M:      number of processes in Y dimension"
     print *, "nx:     local array size in X dimension per processor"
     print *, "ny:     local array size in Y dimension per processor"
     print *, "infile: file that describes nx ny for each processor"
+    print *, "timesteps: number of time steps to write"
 end subroutine usage
 
 !!***************************
@@ -216,7 +231,7 @@ subroutine processArgs()
 #endif
 #endif
 
-    character(len=256) :: npx_str, npy_str, ndx_str, ndy_str 
+    character(len=256) :: npx_str, npy_str, ndx_str, ndy_str, time_str
     integer :: numargs
 
     !! process arguments
@@ -231,16 +246,20 @@ subroutine processArgs()
     call getarg(3, npy_str)
     read (npx_str,'(i5)') npx
     read (npy_str,'(i5)') npy
-    if ( numargs == 4 ) then
+    if ( numargs == 5 ) then
         call getarg(4, inputfile)
+        call getarg(5, time_str)
+        read (timesteps,'(i6)') time_str
         ndx = 0
         ndy = 0
         common_size = .false.
-    else if (numargs == 5) then
+    else if (numargs == 6) then
         call getarg(4, ndx_str)
         call getarg(5, ndy_str)
+        call getarg(6, time_str)
         read (ndx_str,'(i6)') ndx
         read (ndy_str,'(i6)') ndy
+        read (time_str,'(i6)') timesteps
         inputfile=char(0)
         common_size = .true.
     else
