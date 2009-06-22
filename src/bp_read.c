@@ -7,20 +7,20 @@
 
 static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
 {
-		
-	b->allocated_buff_ptr =  malloc (size + BYTE_ALIGN - 1);
-	if (!b->allocated_buff_ptr)
-	{
-		fprintf (stderr, "Cannot allocate: %llu\n", size);
+        
+    b->allocated_buff_ptr =  malloc (size + BYTE_ALIGN - 1);
+    if (!b->allocated_buff_ptr)
+    {
+        fprintf (stderr, "Cannot allocate: %llu\n", size);
 
-		b->buff = 0;
-		b->length = 0;
+        b->buff = 0;
+        b->length = 0;
 
-		return;
-	}
-	uint64_t p = (uint64_t) b->allocated_buff_ptr;
-	b->buff = (char *) ((p + BYTE_ALIGN - 1) & ~(BYTE_ALIGN - 1));
-	b->length = size;
+        return;
+    }
+    uint64_t p = (uint64_t) b->allocated_buff_ptr;
+    b->buff = (char *) ((p + BYTE_ALIGN - 1) & ~(BYTE_ALIGN - 1));
+    b->length = size;
 }
 
 static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b
@@ -47,9 +47,9 @@ static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b
 int bp_fopen ( int64_t * fh_p,
         const char * fname,
         MPI_Comm comm
-	      )
+          )
 {
-    int rc, rank;	
+    int rc, rank;    
     struct BP_FILE * fh = (struct BP_FILE *)
         malloc (sizeof (struct BP_FILE));
     fh->comm =  comm;
@@ -57,248 +57,248 @@ int bp_fopen ( int64_t * fh_p,
     fh->pgs_root = 0;
     fh->vars_root = 0;
     fh->attrs_root = 0;
-	fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
+    fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
 
-	adios_buffer_struct_init (fh->b);
-	MPI_Comm_rank (comm, &rank);
-	rc = bp_read_open (fname, comm, fh);
-	*fh_p = (int64_t) fh;
-	if ( rank == 0 ) {
-		bp_read_minifooter (fh);
-	}
-	MPI_Bcast (&fh->mfooter, sizeof(struct bp_minifooter),MPI_BYTE, 0, comm);
-	
-	uint64_t header_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
+    adios_buffer_struct_init (fh->b);
+    MPI_Comm_rank (comm, &rank);
+    rc = bp_read_open (fname, comm, fh);
+    *fh_p = (int64_t) fh;
+    if ( rank == 0 ) {
+        bp_read_minifooter (fh);
+    }
+    MPI_Bcast (&fh->mfooter, sizeof(struct bp_minifooter),MPI_BYTE, 0, comm);
+    
+    uint64_t header_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
 
-	if ( rank != 0) {
-		if (!fh->b->buff) {
-			alloc_aligned (fh->b, header_size);
-			memset (fh->b->buff, 0, header_size);
-			if (!fh->b->buff)
-				fprintf(stderr, "could not allocate %d bytes\n",
-						header_size);
-			fh->b->offset = 0;
-		}
-	}
-	MPI_Barrier(comm);
-	MPI_Bcast (fh->b->buff, fh->mfooter.file_size-fh->mfooter.pgs_index_offset,
-		   MPI_BYTE, 0 , comm);
-	bp_parse_pgs (fh);
-	bp_parse_vars (fh);
-	bp_parse_attrs (fh);
-	return rc;
+    if ( rank != 0) {
+        if (!fh->b->buff) {
+            alloc_aligned (fh->b, header_size);
+            memset (fh->b->buff, 0, header_size);
+            if (!fh->b->buff)
+                fprintf(stderr, "could not allocate %d bytes\n",
+                        header_size);
+            fh->b->offset = 0;
+        }
+    }
+    MPI_Barrier(comm);
+    MPI_Bcast (fh->b->buff, fh->mfooter.file_size-fh->mfooter.pgs_index_offset,
+           MPI_BYTE, 0 , comm);
+    bp_parse_pgs (fh);
+    bp_parse_vars (fh);
+    bp_parse_attrs (fh);
+    return rc;
 }
 
 int bp_fclose ( int64_t fh_p)
 {
-	struct BP_FILE * fh = (struct BP_FILE *) fh_p;
-	struct BP_GROUP_VAR * gh = fh->gh;
-	int i,j;
-	MPI_File mpi_fh = fh->mpi_fh;
+    struct BP_FILE * fh = (struct BP_FILE *) fh_p;
+    struct BP_GROUP_VAR * gh = fh->gh;
+    int i,j;
+    MPI_File mpi_fh = fh->mpi_fh;
 
-	if (fh->mpi_fh) 
-		MPI_File_close (&mpi_fh);
-	if (fh->b)
-		adios_posix_close_internal (fh->b);
-	if (gh) {
-		for (j=0;j<2;j++) { 
-			for (i=0;i<gh->group_count;i++) {
-				if (gh->time_index[j][i])
-					free(gh->time_index[j][i]);
-			}
-			if (gh->time_index[j])
-				free(gh->time_index[j]);
-		}
-		free (gh->time_index);
-	
-		for (i=0;i<gh->group_count;i++) { 
-			if (gh->namelist[i])
-				free(gh->namelist[i]);
-		}
-		if (gh->namelist)
-			free (gh->namelist);
+    if (fh->mpi_fh) 
+        MPI_File_close (&mpi_fh);
+    if (fh->b)
+        adios_posix_close_internal (fh->b);
+    if (gh) {
+        for (j=0;j<2;j++) { 
+            for (i=0;i<gh->group_count;i++) {
+                if (gh->time_index[j][i])
+                    free(gh->time_index[j][i]);
+            }
+            if (gh->time_index[j])
+                free(gh->time_index[j]);
+        }
+        free (gh->time_index);
+    
+        for (i=0;i<gh->group_count;i++) { 
+            if (gh->namelist[i])
+                free(gh->namelist[i]);
+        }
+        if (gh->namelist)
+            free (gh->namelist);
 
-		for (i=0;i<fh->mfooter.vars_count;i++) 
-			if (gh->var_namelist[i])
-				free(gh->var_namelist[i]);
-		if (gh->var_namelist)
-			free (gh->var_namelist);
+        for (i=0;i<fh->mfooter.vars_count;i++) 
+            if (gh->var_namelist[i])
+                free(gh->var_namelist[i]);
+        if (gh->var_namelist)
+            free (gh->var_namelist);
 
-		if (gh->var_counts_per_group)
-			free(gh->var_counts_per_group);
+        if (gh->var_counts_per_group)
+            free(gh->var_counts_per_group);
 
-		if (gh->pg_offsets)
-			free (gh->pg_offsets);
+        if (gh->pg_offsets)
+            free (gh->pg_offsets);
 
-		free (gh);
-	}
-	if (fh)
-		free (fh);	
-	return;
+        free (gh);
+    }
+    if (fh)
+        free (fh);    
+    return;
 }
 
 int bp_gopen ( int64_t * gh_p,
-		int64_t fh_p, 
-		char * grpname)
+        int64_t fh_p, 
+        char * grpname)
 {
-	struct BP_FILE * fh = (struct BP_FILE *) fh_p;
-	struct BP_GROUP * bp_gh = (struct BP_GROUP *)
-				malloc(sizeof(struct BP_GROUP));
-	bp_gh->var_current = 0; 
-	int i, grpid, offset=0;
+    struct BP_FILE * fh = (struct BP_FILE *) fh_p;
+    struct BP_GROUP * bp_gh = (struct BP_GROUP *)
+                malloc(sizeof(struct BP_GROUP));
+    bp_gh->var_current = 0; 
+    int i, grpid, offset=0;
 
-	for (grpid=0;grpid<(fh->gh->group_count);grpid++) {
-		if (!strcmp(fh->gh->namelist[grpid], grpname))
-			break; 
-	}
+    for (grpid=0;grpid<(fh->gh->group_count);grpid++) {
+        if (!strcmp(fh->gh->namelist[grpid], grpname))
+            break; 
+    }
 
-	for(i=0;i<grpid;i++)
-		offset += fh->gh->var_counts_per_group[i];
+    for(i=0;i<grpid;i++)
+        offset += fh->gh->var_counts_per_group[i];
 
-	bp_gh->group_id = grpid;
-	bp_gh->offset = offset;
-	bp_gh->count = fh->gh->var_counts_per_group[grpid];
-	bp_gh->fh = fh;
-	*gh_p = (uint64_t) bp_gh;
-	return;
+    bp_gh->group_id = grpid;
+    bp_gh->offset = offset;
+    bp_gh->count = fh->gh->var_counts_per_group[grpid];
+    bp_gh->fh = fh;
+    *gh_p = (uint64_t) bp_gh;
+    return;
 }
-	   			
+                   
 int bp_gclose ( int64_t gh_p)
 {
-	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+    struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
 
-	if (!gh) {
-		fprintf(stderr, "group handle is NULL!\n");
-		return  -2;
-	}
-	else
-		free (gh);
+    if (!gh) {
+        fprintf(stderr, "group handle is NULL!\n");
+        return  -2;
+    }
+    else
+        free (gh);
 
-	return 0;
+    return 0;
 }
 
 int bp_inq_file ( int64_t fh_p, BP_FILE_INFO *pfinfo)
 {
-	if (!fh_p) {
-		fprintf(stderr, "file handle is NULL!\n");
-		return -2;
-	}
-	struct BP_FILE * fh = (struct BP_FILE *) fh_p;
-    if (!fh->gh) {
-		fprintf(stderr, "file handle is NULL!\n");
-		return -2;
+    if (!fh_p) {
+        fprintf(stderr, "file handle is NULL!\n");
+        return -2;
     }
-	int i;
-	pfinfo->groups_count = fh->gh->group_count;
-	pfinfo->vars_count = fh->mfooter.vars_count;
-	pfinfo->attrs_count = fh->mfooter.attrs_count;
-	pfinfo->tidx_start = fh->tidx_start;
-	pfinfo->tidx_stop = fh->tidx_stop;
-	if (!pfinfo->namelist_true)
-		return 0;
+    struct BP_FILE * fh = (struct BP_FILE *) fh_p;
+    if (!fh->gh) {
+        fprintf(stderr, "file handle is NULL!\n");
+        return -2;
+    }
+    int i;
+    pfinfo->groups_count = fh->gh->group_count;
+    pfinfo->vars_count = fh->mfooter.vars_count;
+    pfinfo->attrs_count = fh->mfooter.attrs_count;
+    pfinfo->tidx_start = fh->tidx_start;
+    pfinfo->tidx_stop = fh->tidx_stop;
+    if (!pfinfo->namelist_true)
+        return 0;
     if (!pfinfo->group_namelist)
         alloc_namelist (&pfinfo->group_namelist,pfinfo->groups_count); 
-	for (i=0;i<pfinfo->groups_count;i++) {
-		if (!pfinfo->group_namelist[i]) {
-			fprintf(stderr, 
-				"buffer given is too small, only hold %d entries",
-				i);
-			return -1;
-		}
-		else 
-			strcpy(pfinfo->group_namelist[i],fh->gh->namelist[i]);
-	}
-	return 0;
+    for (i=0;i<pfinfo->groups_count;i++) {
+        if (!pfinfo->group_namelist[i]) {
+            fprintf(stderr, 
+                "buffer given is too small, only hold %d entries",
+                i);
+            return -1;
+        }
+        else 
+            strcpy(pfinfo->group_namelist[i],fh->gh->namelist[i]);
+    }
+    return 0;
 }
 /* 
 int bp_inq_file_t ( int64_t fh_p, int *ngroup, 
-		  int *nvar, int *nattr, int *nt, char **gnamelist) 
+          int *nvar, int *nattr, int *nt, char **gnamelist) 
 {
-	if (!fh_p) {
-		fprintf(stderr, "file handle is NULL!\n");
-		return -2;
-	}
-	struct BP_FILE * fh = (struct BP_FILE *) fh_p;
-	int i;
-	*ngroup = fh->gh->group_count;
-	*nvar = fh->mfooter.vars_count;
-	*nattr = fh->mfooter.attrs_count;
-	*nt = fh->mfooter.time_steps;
-	if (!gnamelist)
-		return 0;
-	for (i=0;i<fh->gh->group_count;i++) {
-		if (!gnamelist[i]) {
-			fprintf(stderr, 
-				"buffer given is too small, only hold %d entries",
-				i);
-			return -1;
-		}
-		else 
-			strcpy(gnamelist[i],fh->gh->namelist[i]);
-	}
-	return 0;
+    if (!fh_p) {
+        fprintf(stderr, "file handle is NULL!\n");
+        return -2;
+    }
+    struct BP_FILE * fh = (struct BP_FILE *) fh_p;
+    int i;
+    *ngroup = fh->gh->group_count;
+    *nvar = fh->mfooter.vars_count;
+    *nattr = fh->mfooter.attrs_count;
+    *nt = fh->mfooter.time_steps;
+    if (!gnamelist)
+        return 0;
+    for (i=0;i<fh->gh->group_count;i++) {
+        if (!gnamelist[i]) {
+            fprintf(stderr, 
+                "buffer given is too small, only hold %d entries",
+                i);
+            return -1;
+        }
+        else 
+            strcpy(gnamelist[i],fh->gh->namelist[i]);
+    }
+    return 0;
 }
 */
 
 int bp_inq_group (int64_t gh_p, BP_GROUP_INFO * pginfo)
 {
-	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
-	if (!gh_p) {
-		fprintf(stderr, "group handle is NULL!\n");
-		return -3;
-	}
-	int i, offset;
+    struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+    if (!gh_p) {
+        fprintf(stderr, "group handle is NULL!\n");
+        return -3;
+    }
+    int i, offset;
 
-	pginfo->vars_count = gh->count;
-	
-	if (!pginfo->namelist_true)
-		return 0;
+    pginfo->vars_count = gh->count;
+    
+    if (!pginfo->namelist_true)
+        return 0;
 
-	offset = gh->offset;
-	alloc_namelist (&(pginfo->var_namelist), pginfo->vars_count);
-	for (i=0;i<pginfo->vars_count;i++) {
-		if (!pginfo->var_namelist[i]) { 
-			fprintf(stderr, 
-					"given buffer only can hold %d entries",
-					i);
-			return -1;
-		}
-		else
-			strcpy(pginfo->var_namelist[i], gh->fh->gh->var_namelist[i+offset]);
-	}
+    offset = gh->offset;
+    alloc_namelist (&(pginfo->var_namelist), pginfo->vars_count);
+    for (i=0;i<pginfo->vars_count;i++) {
+        if (!pginfo->var_namelist[i]) { 
+            fprintf(stderr, 
+                    "given buffer only can hold %d entries",
+                    i);
+            return -1;
+        }
+        else
+            strcpy(pginfo->var_namelist[i], gh->fh->gh->var_namelist[i+offset]);
+    }
 
-	return 0;
+    return 0;
 }
 #if 0
 int bp_inq_group (int64_t gh_p, int *nvar, char ** vnamelist)
 {
-	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
-	if (!gh_p) {
-		fprintf(stderr, "group handle is NULL!\n");
-		return -3;
-	}
-	int i, offset;
+    struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+    if (!gh_p) {
+        fprintf(stderr, "group handle is NULL!\n");
+        return -3;
+    }
+    int i, offset;
 
-	* nvar = gh->count;
-	
-	if (!vnamelist)
-		return 0;
+    * nvar = gh->count;
+    
+    if (!vnamelist)
+        return 0;
 
-	offset = gh->offset;
+    offset = gh->offset;
 
-	for (i=0;i<*nvar;i++) {
-		if (!vnamelist[i]) { 
-			fprintf(stderr, 
-					"given buffer only can hold %d entries",
-					i);
-			return -1;
-		}
-		else
-			strcpy(vnamelist[i], gh->fh->gh->var_namelist[i+offset]);
-	}
-	return 0;	
+    for (i=0;i<*nvar;i++) {
+        if (!vnamelist[i]) { 
+            fprintf(stderr, 
+                    "given buffer only can hold %d entries",
+                    i);
+            return -1;
+        }
+        else
+            strcpy(vnamelist[i], gh->fh->gh->var_namelist[i+offset]);
+    }
+    return 0;    
 }
-#endif	
+#endif    
 
 /** Find a string (variable by full name) in a list of strings (variable name list)
   * from an 'offset' within the first 'count' elements.
@@ -327,30 +327,30 @@ static int find_var( char ** varnamelist, int offset, int count, char * varname)
 }
 
 int bp_inq_var (int64_t gh_p, char * varname,
-		 int * type,
-		 int * ndim,
-		 int * is_timebased,
-		 int * dims)
+         int * type,
+         int * ndim,
+         int * is_timebased,
+         int * dims)
 {
-	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
-	if (!gh_p) {
-		fprintf(stderr, "group handle is NULL!\n");
-		return -3;
-	}
-	struct BP_FILE * fh = gh->fh;
-	if (!fh) {
-		fprintf(stderr, "file handle is NULL!\n");
-		return -2;
-	}
-	
-	struct adios_index_var_struct_v1 * var_root;
-	int i,k, var_id;
-	gh->var_current = 0;
-	var_root = fh->vars_root;
-	*is_timebased = 0;
+    struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+    if (!gh_p) {
+        fprintf(stderr, "group handle is NULL!\n");
+        return -3;
+    }
+    struct BP_FILE * fh = gh->fh;
+    if (!fh) {
+        fprintf(stderr, "file handle is NULL!\n");
+        return -2;
+    }
+    
+    struct adios_index_var_struct_v1 * var_root;
+    int i,k, var_id;
+    gh->var_current = 0;
+    var_root = fh->vars_root;
+    *is_timebased = 0;
     if (!varname) {
-		fprintf(stderr, "Error: Variable %s is NULL!\n");
-		return -4;
+        fprintf(stderr, "Error: Variable %s is NULL!\n");
+        return -4;
     }
 
     // find variable in var list
@@ -358,65 +358,65 @@ int bp_inq_var (int64_t gh_p, char * varname,
 
     for (i=0;i<gh->group_id;i++)
         var_id -= fh->gh->var_counts_per_group[i];
-	for(i=0;i<gh->offset;i++)
-		var_root = var_root->next;
-	if (var_id < 0) {
-		fprintf(stderr, 
-			"Error: Variable %s does not exist in the group %s!\n",
-                	varname, fh->gh->namelist[gh->group_id]);
-		return -4;
-	}
-	for (i=0;i<var_id;i++) {
-		var_root = var_root->next;
+    for(i=0;i<gh->offset;i++)
+        var_root = var_root->next;
+    if (var_id < 0) {
+        fprintf(stderr, 
+            "Error: Variable %s does not exist in the group %s!\n",
+                    varname, fh->gh->namelist[gh->group_id]);
+        return -4;
+    }
+    for (i=0;i<var_id;i++) {
+        var_root = var_root->next;
     }
 
-	gh->var_current = var_root;
-	*type = var_root->type;
-	if (!var_root->characteristics_count) {
-		fprintf(stderr, 
-			"Error: Variable %s does not exist in the file!\n",
-                	varname);
-		*ndim = -1;
-		return -4;
-	}
-    	
-	*ndim = var_root->characteristics [0].dims.count;
-	if (!dims || !(*ndim)) {
-		return 0;
+    gh->var_current = var_root;
+    *type = var_root->type;
+    if (!var_root->characteristics_count) {
+        fprintf(stderr, 
+            "Error: Variable %s does not exist in the file!\n",
+                    varname);
+        *ndim = -1;
+        return -4;
+    }
+        
+    *ndim = var_root->characteristics [0].dims.count;
+    if (!dims || !(*ndim)) {
+        return 0;
     }
 
     int time_flag = -1;
-	uint64_t * gdims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
-	uint64_t * ldims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
-	int is_global=0;
-	memset(dims,0,sizeof(int)*(*ndim));
+    uint64_t * gdims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
+    uint64_t * ldims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
+    int is_global=0;
+    memset(dims,0,sizeof(int)*(*ndim));
 
-	for (k=0;k<(*ndim);k++) {
-		gdims[k]=var_root->characteristics[0].dims.dims[k*3+1];
-		ldims[k]=var_root->characteristics[0].dims.dims[k*3];
-	}
-	for (i=0;i<(*ndim);i++) {
-	 	is_global = is_global || gdims[i];
-	}
-	if (!is_global) {
-		for (i=0;i<(*ndim);i++) {
-			if (   ldims[i] == 1 
-		  	    && var_root->characteristics_count > 1) {
-				*is_timebased = 1;
-				time_flag = i;
-			}
-			if (dims) {
-				if (time_flag==0) {
-					if (i>0)
-						dims[i-1]=ldims[i];
-				}
-				else { 
-					dims[i]=ldims[i];
-				}
-			}
-		}		 
-	}		 
-	else {
+    for (k=0;k<(*ndim);k++) {
+        gdims[k]=var_root->characteristics[0].dims.dims[k*3+1];
+        ldims[k]=var_root->characteristics[0].dims.dims[k*3];
+    }
+    for (i=0;i<(*ndim);i++) {
+         is_global = is_global || gdims[i];
+    }
+    if (!is_global) {
+        for (i=0;i<(*ndim);i++) {
+            if (   ldims[i] == 1 
+                  && var_root->characteristics_count > 1) {
+                *is_timebased = 1;
+                time_flag = i;
+            }
+            if (dims) {
+                if (time_flag==0) {
+                    if (i>0)
+                        dims[i-1]=ldims[i];
+                }
+                else { 
+                    dims[i]=ldims[i];
+                }
+            }
+        }         
+    }         
+    else {
         if (ldims[0]==1 && ldims[*ndim]!=1) {
             time_flag = 0;
             *is_timebased = 1;
@@ -435,37 +435,37 @@ int bp_inq_var (int64_t gh_p, char * varname,
             for (i=0;i<(*ndim);i++) 
                 dims[i]=gdims[i];
         }
-	}
-	free(gdims);
-	free(ldims);
-			
-	if ((*is_timebased))
-		*ndim = *ndim - 1;
-	
-	return 0;
+    }
+    free(gdims);
+    free(ldims);
+            
+    if ((*is_timebased))
+        *ndim = *ndim - 1;
+    
+    return 0;
 }
 
 int bp_get_var (int64_t gh_p,
-		 char * varname, 
-		 void * var,
-		 int  * start,
-		 int  * readsize,
-		 int timestep
-		)
+         char * varname, 
+         void * var,
+         int  * start,
+         int  * readsize,
+         int timestep
+        )
 {
     double  start_time, stop_time;
-	int    i, j, var_id, idx;
-	int    flag, offset, count, start_idx=-1;
-	struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
-	struct BP_FILE * fh = (struct BP_FILE *) (gh->fh);
-	struct adios_index_var_struct_v1 * var_root = fh->vars_root;
+    int    i, j, var_id, idx;
+    int    flag, offset, count, start_idx=-1;
+    struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+    struct BP_FILE * fh = (struct BP_FILE *) (gh->fh);
+    struct adios_index_var_struct_v1 * var_root = fh->vars_root;
     struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;
-	uint8_t  ndim;  
-  	uint64_t tmpreadsize;
-	uint64_t size, * ldims, * offsets, * gdims;
-	uint64_t datasize, nloop, dset_stride,var_stride, total_size=1;
-	MPI_Status status;
+    uint8_t  ndim;  
+      uint64_t tmpreadsize;
+    uint64_t size, * ldims, * offsets, * gdims;
+    uint64_t datasize, nloop, dset_stride,var_stride, total_size=1;
+    MPI_Status status;
 
     if (readsize)
         tmpreadsize = (uint64_t) readsize[0];
@@ -473,36 +473,36 @@ int bp_get_var (int64_t gh_p,
     var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
     for (i=0;i<gh->group_id;i++)
         var_id -= fh->gh->var_counts_per_group[i];
-	if (var_id<0) {
-		fprintf(stderr, "Error: Variable %s does not exist in the group %s!\n",
-                	varname, fh->gh->namelist[gh->group_id]);
-		return -4;
-	}
-
-	for (i=0;i<var_id && var_root;i++) 
-		var_root = var_root->next;
-    
-    if (i!=var_id) {
-		fprintf(stderr, "Error: time step should start from 1 %d %d!\n",
-                i, var_id);
-		return -5; 
+    if (var_id<0) {
+        fprintf(stderr, "Error: Variable %s does not exist in the group %s!\n",
+                    varname, fh->gh->namelist[gh->group_id]);
+        return -4;
     }
 
-	gh->var_current = var_root;
+    for (i=0;i<var_id && var_root;i++) 
+        var_root = var_root->next;
+    
+    if (i!=var_id) {
+        fprintf(stderr, "Error: time step should start from 1 %d %d!\n",
+                i, var_id);
+        return -5; 
+    }
 
-	if (timestep < 0) {
-		fprintf(stderr, "Error: time step should start from 1!\n");
-		return -5; 
-	}
-	if (timestep< fh->tidx_start) {
-		fprintf(stderr, "Error: time step should start from 1:%d %d!\n",
+    gh->var_current = var_root;
+
+    if (timestep < 0) {
+        fprintf(stderr, "Error: time step should start from 1!\n");
+        return -5; 
+    }
+    if (timestep< fh->tidx_start) {
+        fprintf(stderr, "Error: time step should start from 1:%d %d!\n",
                 timestep, fh->tidx_start);
-		return -5; 
-	}
-	// get the starting offset for the given time step
-	offset = fh->gh->time_index[0][gh->group_id][timestep-fh->tidx_start];
+        return -5; 
+    }
+    // get the starting offset for the given time step
+    offset = fh->gh->time_index[0][gh->group_id][timestep-fh->tidx_start];
     count = fh->gh->time_index[1][gh->group_id][timestep-fh->tidx_start];
-	for (i=0;i<var_root->characteristics_count;i++) {
+    for (i=0;i<var_root->characteristics_count;i++) {
         if (   (  var_root->characteristics[i].offset 
                 > fh->gh->pg_offsets[offset])
             && (  (i == var_root->characteristics_count-1) 
@@ -514,43 +514,43 @@ int bp_get_var (int64_t gh_p,
         }
     }
 
-	if (start_idx<0) {
-		fprintf(stderr,"Error: %s has no data at %d time step\n",
-			varname, timestep);
-		return -4;
-	}
-	ndim = var_root->characteristics[start_idx].dims.count;
-	ldims = (uint64_t *) malloc (sizeof(uint64_t) * ndim);
-	gdims = (uint64_t *) malloc (sizeof(uint64_t) * ndim);
-	offsets = (uint64_t *) malloc (sizeof(uint64_t) * ndim);
+    if (start_idx<0) {
+        fprintf(stderr,"Error: %s has no data at %d time step\n",
+            varname, timestep);
+        return -4;
+    }
+    ndim = var_root->characteristics[start_idx].dims.count;
+    ldims = (uint64_t *) malloc (sizeof(uint64_t) * ndim);
+    gdims = (uint64_t *) malloc (sizeof(uint64_t) * ndim);
+    offsets = (uint64_t *) malloc (sizeof(uint64_t) * ndim);
     int * idx_table = (int *) malloc (sizeof(int)*count);
-	
-	// main for loop
-	int time_flag = -1;
-	int rank;
-	int is_global=0, is_timebased = 0;
-	MPI_Comm_rank(gh->fh->comm, &rank);
+    
+    // main for loop
+    int time_flag = -1;
+    int rank;
+    int is_global=0, is_timebased = 0;
+    MPI_Comm_rank(gh->fh->comm, &rank);
 
-	for (i=0;i<ndim;i++) {
-		gdims[i]=var_root->characteristics[0].dims.dims[i*3+1];
-		offsets[i]=var_root->characteristics[0].dims.dims[i*3+2];
-		ldims[i]=var_root->characteristics[0].dims.dims[i*3];
-	}
+    for (i=0;i<ndim;i++) {
+        gdims[i]=var_root->characteristics[0].dims.dims[i*3+1];
+        offsets[i]=var_root->characteristics[0].dims.dims[i*3+2];
+        ldims[i]=var_root->characteristics[0].dims.dims[i*3];
+    }
 
-	for (i=0;i<ndim;i++) {
-		is_global = is_global || gdims[i];
-	}
-	if (!is_global) {
-		for (i=0;i<(ndim);i++) {
-			if (   ldims[i] == 1 
-		  	    && var_root->characteristics_count > 1
+    for (i=0;i<ndim;i++) {
+        is_global = is_global || gdims[i];
+    }
+    if (!is_global) {
+        for (i=0;i<(ndim);i++) {
+            if (   ldims[i] == 1 
+                  && var_root->characteristics_count > 1
                 && ndim>1) {
-				is_timebased = 1;
-				time_flag = i;
-			}
-		}	
-	}		 
-	else {
+                is_timebased = 1;
+                time_flag = i;
+            }
+        }    
+    }         
+    else {
         if (ldims[0]==1 && ldims[ndim]!=1) {
             time_flag = 0;
             is_timebased = 1;
@@ -559,106 +559,108 @@ int bp_get_var (int64_t gh_p,
             time_flag = ndim;
             is_timebased = 1;
         }
-	}
-	if (is_timebased) {
+    }
+    if (is_timebased) {
         if ((ldims[0] != 1) && (ldims[ndim] == 1)) 
             time_flag == ndim;
         else if ((ldims[0] == 1) && (ldims[ndim] != 1)) { 
             time_flag = 0;
         }
-		ndim = ndim -1;
+        ndim = ndim -1;
     }
 
-	// generate the list of pgs to be read from
+    // generate the list of pgs to be read from
 
-	uint64_t read_offset = 0;
-	int npg=0;
-	int tmpcount = 0;
-	int size_of_type = bp_get_type_size (var_root->type, "");
+    uint64_t read_offset = 0;
+    int npg=0;
+    int tmpcount = 0;
+    int size_of_type = bp_get_type_size (var_root->type, "");
 
     // actions
     if (count > var_root->characteristics_count)
         count = var_root->characteristics_count;
-	for (idx = 0; idx < count; idx++) {
-		datasize = 1;
-		nloop = 1;
-		var_stride = 1;
-		dset_stride = 1;
-		idx_table[idx] = 1;
-		for (j=0;j<ndim;j++) {
-			offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
-	        if (!time_flag)
-				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+3];
-			else
-				ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3];
-			if (is_global)
-				gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
-			else
-				gdims[j]=ldims[j];
-			if (readsize[j] > gdims[j]) {
-				fprintf(stderr, "Error: %s out of bound ("
-					"the size to read is %llu,"
-					" but the actual size is %llu)\n",
-					varname, readsize[j], gdims[j]);
-				return -3;
-			}
+    for (idx = 0; idx < count; idx++) {
+        datasize = 1;
+        nloop = 1;
+        var_stride = 1;
+        dset_stride = 1;
+        idx_table[idx] = 1;
+        for (j=0;j<ndim;j++) {
+            offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
+            if (!time_flag)
+                ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+3];
+            else
+                ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3];
+            if (is_global)
+                gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
+            else
+                gdims[j]=ldims[j];
+            if (readsize[j] > gdims[j]) {
+                fprintf(stderr, "Error: %s out of bound ("
+                    "the size to read is %llu,"
+                    " but the actual size is %llu)\n",
+                    varname, readsize[j], gdims[j]);
+                return -3;
+            }
 
-			flag = (offsets[j] >= start[j] 
-					&& offsets[j] <start[j]+readsize[j])
-				|| (offsets[j] < start[j]
-						&& offsets[j]+ldims[j]>start[j]+readsize[j]) 
-				|| (offsets[j]+ldims[j] > start[j] 
-						&& offsets[j]+ldims[j] <= start[j]+readsize[j]);
-			idx_table [idx] = idx_table[idx] && flag;
-		}
-		
-		if ( !idx_table[idx] ) {
-			continue;
-		}
+            flag = (offsets[j] >= start[j] 
+                    && offsets[j] <start[j]+readsize[j])
+                || (offsets[j] < start[j]
+                        && offsets[j]+ldims[j]>start[j]+readsize[j]) 
+                || (offsets[j]+ldims[j] > start[j] 
+                        && offsets[j]+ldims[j] <= start[j]+readsize[j]);
+            idx_table [idx] = idx_table[idx] && flag;
+        }
+        
+        if ( !idx_table[idx] ) {
+            continue;
+        }
         ++npg;
         //MPI_Barrier(MPI_COMM_WORLD);
         //start_time = MPI_Wtime();
-		MPI_File_seek (fh->mpi_fh, 
-			       (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
-			       MPI_SEEK_SET);
-		MPI_File_read (fh->mpi_fh, fh->b->buff, 4, MPI_BYTE, &status);
-		tmpcount= *((uint64_t*)fh->b->buff);
-		realloc_aligned(fh->b, tmpcount+4);
+/*
+        MPI_File_seek (fh->mpi_fh, 
+                   (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
+                   MPI_SEEK_SET);
+        MPI_File_read (fh->mpi_fh, fh->b->buff, 4, MPI_BYTE, &status);
+        tmpcount= *((uint64_t*)fh->b->buff);
+*/
+        realloc_aligned(fh->b, tmpcount+4);
         
-		MPI_File_seek (fh->mpi_fh, 
-			       (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
-			       MPI_SEEK_SET);
-		MPI_File_read (fh->mpi_fh, fh->b->buff, tmpcount+4, MPI_BYTE, &status);
-		MPI_Get_count (&status, MPI_BYTE, &tmpcount);
+        MPI_File_seek (fh->mpi_fh, 
+                   (MPI_Offset) var_root->characteristics[start_idx+idx].payload_offset,
+                   MPI_SEEK_SET);
+        MPI_File_read (fh->mpi_fh, fh->b->buff, tmpcount+4, MPI_BYTE, &status);
+        MPI_Get_count (&status, MPI_BYTE, &tmpcount);
         //printf("%d\n",tmpcount);
         //MPI_Barrier(MPI_COMM_WORLD);
         //stop_time = MPI_Wtime();
-		fh->b->offset = 0;
-		adios_parse_var_data_header_v1 (fh->b, &var_header);
+        fh->b->offset = 0;
+        adios_parse_var_data_header_v1 (fh->b, &var_header);
         //printf("%f\t",stop_time-start_time);
-		//--data filtering--//
-		if (!read_offset)
-			for (i = 0; i < ndim; i++) 
-				total_size *= readsize[i];
+        //--data filtering--//
+        if (!read_offset)
+            for (i = 0; i < ndim; i++) 
+                total_size *= readsize[i];
 
-		int hole_break;
-		for (i=ndim-1;i>-1;i--) {
-			if (ldims[i] == readsize[i]) {
-				datasize *= ldims[i];
+        int hole_break;
+        for (i=ndim-1;i>-1;i--) {
+            if (ldims[i] == readsize[i]) {
+                datasize *= ldims[i];
             }
             else if (ldims[i] < readsize[i]) {
-				break;
+                break;
             }
-			else 
-				break;
-		}
+            else 
+                break;
+        }
         hole_break = i;
         // hole_break 
         // -1: the content in the pg is exactly the same as request size 
         // 0 : the content is the pg is the subset of the read request
         // >0: there is hole in content of the pg need to be read
-		if (hole_break==-1) {
-			memcpy(var, fh->b->buff+fh->b->offset,var_header.payload_size);
+        if (hole_break==-1) {
+            memcpy(var, fh->b->buff+fh->b->offset,var_header.payload_size);
         }
 
         else if (hole_break==0) {
@@ -668,105 +670,105 @@ int bp_get_var (int64_t gh_p,
                     rank, npg, tmpreadsize,readsize[0],read_offset,
                     var_header.payload_size);
              
-			if (tmpreadsize > ldims[0]) {
-				memcpy ( var+read_offset, fh->b->buff+fh->b->offset, 
+            if (tmpreadsize > ldims[0]) {
+                memcpy ( var+read_offset, fh->b->buff+fh->b->offset, 
                          var_header.payload_size);
-				read_offset +=  var_header.payload_size;
+                read_offset +=  var_header.payload_size;
                 
                 tmpreadsize -= ldims[0]; 
-			}
-			else {
-				memcpy (var+read_offset, 
-					    fh->b->buff+fh->b->offset,
-					    tmpreadsize*datasize*size_of_type);
-			}
+            }
+            else {
+                memcpy (var+read_offset, 
+                        fh->b->buff+fh->b->offset,
+                        tmpreadsize*datasize*size_of_type);
+            }
             printf("tmpreadsize=%llu\n",
                      tmpreadsize*datasize*size_of_type);
             for (i=0;i<tmpreadsize;i++)
                 printf("var:%d) %lf %lf\n",
                        i, *((double*)(fh->b->buff+fh->b->offset+i*8)),
                        *(double*)(var+8*i));
-		}
-		else {
-			uint64_t stride_offset = 0;
-			int isize;
-			uint64_t size_in_dset[10];
-			uint64_t offset_in_dset[10];
-			uint64_t offset_in_var[10];
-			memset(size_in_dset,0,10*8);
-			memset(offset_in_dset,0,10*8);
-			memset(offset_in_var,0,10*8);
-			int hit=0;
-			for ( i = 0; i < ndim ; i++) {
-				isize = offsets[i] + ldims[i];
-				if (start[i] >= offsets[i]) {
-					// head is in
-					if (start[i]<isize) {
-						if (start[i]+readsize[i]>isize)
-							size_in_dset[i] = isize - start[i];
-						else 
-							size_in_dset[i] = readsize[i];	
-						offset_in_dset[i] = start[i]-offsets[i];
-						offset_in_var[i] = 0;
-						hit = 1+hit*10; 
-					}
-					else
-						hit = -1;
-				}
-				else {
-					// middle is in
-					if (isize < start[i]+readsize[i]) { 
-						size_in_dset[i] = ldims[i];
-						hit = 2+hit*10;
-					}
-					else { 
-						// tail is in
-						size_in_dset[i] = readsize[i]+start[i]-offsets[i];
-						hit = 3+hit*10;
-					}
-					offset_in_dset[i] = 0;
-					offset_in_var[i] = offsets[i]-start[i]; 
-				}
-			}
-
-			datasize = 1;
-			var_stride = 1;
-			for ( i = ndim-1; i >= hole_break; i--) {
-				datasize *= size_in_dset[i];
-				dset_stride *= ldims[i];
-				var_stride *= readsize[i];
-			}
-
-			uint64_t var_offset=0;
-			uint64_t dset_offset=0;
-			for ( i = 0; i < hole_break; i++) { 
-				nloop *= size_in_dset[i];
-			}
-
-			for ( i = 0; i < ndim ; i++) {
-				var_offset = offset_in_var[i] + var_offset * readsize[i];
-				dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
+        }
+        else {
+            uint64_t stride_offset = 0;
+            int isize;
+            uint64_t size_in_dset[10];
+            uint64_t offset_in_dset[10];
+            uint64_t offset_in_var[10];
+            memset(size_in_dset,0,10*8);
+            memset(offset_in_dset,0,10*8);
+            memset(offset_in_var,0,10*8);
+            int hit=0;
+            for ( i = 0; i < ndim ; i++) {
+                isize = offsets[i] + ldims[i];
+                if (start[i] >= offsets[i]) {
+                    // head is in
+                    if (start[i]<isize) {
+                        if (start[i]+readsize[i]>isize)
+                            size_in_dset[i] = isize - start[i];
+                        else 
+                            size_in_dset[i] = readsize[i];    
+                        offset_in_dset[i] = start[i]-offsets[i];
+                        offset_in_var[i] = 0;
+                        hit = 1+hit*10; 
+                    }
+                    else
+                        hit = -1;
+                }
+                else {
+                    // middle is in
+                    if (isize < start[i]+readsize[i]) { 
+                        size_in_dset[i] = ldims[i];
+                        hit = 2+hit*10;
+                    }
+                    else { 
+                        // tail is in
+                        size_in_dset[i] = readsize[i]+start[i]-offsets[i];
+                        hit = 3+hit*10;
+                    }
+                    offset_in_dset[i] = 0;
+                    offset_in_var[i] = offsets[i]-start[i]; 
+                }
             }
-			copy_data (var, fh->b->buff+fh->b->offset,
-					0,
-					hole_break,
-					size_in_dset,
-					ldims,
-					readsize,
-					var_stride,
-					dset_stride,
-					var_offset,
-					dset_offset,
-					datasize,
-					size_of_type);
-		}
+
+            datasize = 1;
+            var_stride = 1;
+            for ( i = ndim-1; i >= hole_break; i--) {
+                datasize *= size_in_dset[i];
+                dset_stride *= ldims[i];
+                var_stride *= readsize[i];
+            }
+
+            uint64_t var_offset=0;
+            uint64_t dset_offset=0;
+            for ( i = 0; i < hole_break; i++) { 
+                nloop *= size_in_dset[i];
+            }
+
+            for ( i = 0; i < ndim ; i++) {
+                var_offset = offset_in_var[i] + var_offset * readsize[i];
+                dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
+            }
+            copy_data (var, fh->b->buff+fh->b->offset,
+                    0,
+                    hole_break,
+                    size_in_dset,
+                    ldims,
+                    readsize,
+                    var_stride,
+                    dset_stride,
+                    var_offset,
+                    dset_offset,
+                    datasize,
+                    size_of_type);
+        }
         
-	}  // end of loop
+    }  // end of loop
     free (gdims);
-	free (offsets);
-	free (ldims);
-	free (idx_table);
-	return total_size*sizeof(double);
+    free (offsets);
+    free (ldims);
+    free (idx_table);
+    return total_size*sizeof(double);
 }
 
 const char * bp_type_to_string (int type)
@@ -801,75 +803,75 @@ const char * bp_type_to_string (int type)
 }
 void bp_init_groupinfo(BP_GROUP_INFO * pginfo, int flag)
 {
-	if (pginfo) {
-		memset (pginfo, 0, sizeof(BP_GROUP_INFO));
-		pginfo->namelist_true = flag;
-	}
-	else 
-		printf ("fileinfo is NULL\n");
-	return;	
+    if (pginfo) {
+        memset (pginfo, 0, sizeof(BP_GROUP_INFO));
+        pginfo->namelist_true = flag;
+    }
+    else 
+        printf ("fileinfo is NULL\n");
+    return;    
 
 }
 
 void bp_free_groupinfo (BP_GROUP_INFO * pginfo)
 {
-	free_namelist ((pginfo->var_namelist),pginfo->vars_count);
-	return;
+    free_namelist ((pginfo->var_namelist),pginfo->vars_count);
+    return;
 }
 
 void bp_print_groupinfo (BP_GROUP_INFO *pginfo) 
 {
-	int i;
-	printf ("---------------------------\n");
-	printf ("     var information\n");
-	printf ("---------------------------\n");
-	printf ("    var id\tname\n");
-	if (pginfo->var_namelist) {
-		for (i=0; i<pginfo->vars_count; i++)
-			printf("\t%d)\t%s\n", i, pginfo->var_namelist[i]);
-	}
-	return;
+    int i;
+    printf ("---------------------------\n");
+    printf ("     var information\n");
+    printf ("---------------------------\n");
+    printf ("    var id\tname\n");
+    if (pginfo->var_namelist) {
+        for (i=0; i<pginfo->vars_count; i++)
+            printf("\t%d)\t%s\n", i, pginfo->var_namelist[i]);
+    }
+    return;
 }
 
 void bp_init_fileinfo(BP_FILE_INFO * pfinfo, int flag)
 {
-	if (pfinfo) {
-		memset (pfinfo, 0, sizeof(BP_FILE_INFO));
-		pfinfo->namelist_true = flag;
-	}
-	else 
-		printf ("fileinfo is NULL\n");
-	return;	
+    if (pfinfo) {
+        memset (pfinfo, 0, sizeof(BP_FILE_INFO));
+        pfinfo->namelist_true = flag;
+    }
+    else 
+        printf ("fileinfo is NULL\n");
+    return;    
 }
 
 void bp_free_fileinfo (BP_FILE_INFO * pfinfo)
 {
-	free_namelist ((pfinfo->group_namelist),pfinfo->groups_count);
-	return;
+    free_namelist ((pfinfo->group_namelist),pfinfo->groups_count);
+    return;
 }
 
 void bp_print_fileinfo (BP_FILE_INFO *pfinfo) 
 {
-	int i;
-	printf ("---------------------------\n");
-	printf ("     group information\n");
-	printf ("---------------------------\n");
-	printf ("\t# of groups:\t%d\n"
-	 	"\t# of variables:\t%d\n"
-		"\t# of attributes:%d\n"
-		"\t# of timesteps:\t%d-->%d\n",
-		pfinfo->groups_count,
-		pfinfo->vars_count,
-		pfinfo->attrs_count,
-		pfinfo->tidx_start,
-		pfinfo->tidx_stop);
-	printf ("\t----------------\n");
-	printf ("\t  group id\tname\n");
-	if (pfinfo->group_namelist) {
-		for (i=0; i<pfinfo->groups_count; i++)
-			printf("\t\t%d)\t%s\n", i, pfinfo->group_namelist[i]);
-	}
-	return;
+    int i;
+    printf ("---------------------------\n");
+    printf ("     group information\n");
+    printf ("---------------------------\n");
+    printf ("\t# of groups:\t%d\n"
+         "\t# of variables:\t%d\n"
+        "\t# of attributes:%d\n"
+        "\t# of timesteps:\t%d-->%d\n",
+        pfinfo->groups_count,
+        pfinfo->vars_count,
+        pfinfo->attrs_count,
+        pfinfo->tidx_start,
+        pfinfo->tidx_stop);
+    printf ("\t----------------\n");
+    printf ("\t  group id\tname\n");
+    if (pfinfo->group_namelist) {
+        for (i=0; i<pfinfo->groups_count; i++)
+            printf("\t\t%d)\t%s\n", i, pfinfo->group_namelist[i]);
+    }
+    return;
 }
 
 void bp_fopen_(int64_t * fh_p,
@@ -887,7 +889,7 @@ void bp_fopen_(int64_t * fh_p,
 
 void bp_fclose_( int64_t * fh, int * err)
 {
-	*err = bp_fclose (*fh);
+    *err = bp_fclose (*fh);
 }
 void bp_inq_file_ ( int64_t * fh_p,
                     int * groups_count,
