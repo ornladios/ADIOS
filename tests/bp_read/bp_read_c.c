@@ -78,9 +78,10 @@ int main (int argc, char ** argv)
     printf("%s:\n\t\tis_timebased: %d\n\t\ttype: %s\n",
 		    "int_1D", time_flag, type_str);
     if (ndim==0) 
-        printf("\t\tscalar\n");
+        printf("\t\tscalar");
     else 
             printf("\t\tdimension: [%d]", dims[0]);
+    printf ("\n");
     size[0] = 1;
     start[0] = 0;
 	bp_get_var (gh, "int_1D", &nvar, start, size, 1);
