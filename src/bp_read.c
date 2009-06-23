@@ -455,14 +455,14 @@ int bp_get_var (int64_t gh_p,
 {
     double  start_time, stop_time;
     int    i, j, var_id, idx;
-    int    flag, offset, count, start_idx=-1;
+    int    offset, count, start_idx=-1;
     struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
     struct BP_FILE * fh = (struct BP_FILE *) (gh->fh);
     struct adios_index_var_struct_v1 * var_root = fh->vars_root;
     struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;
     uint8_t  ndim;  
-      uint64_t tmpreadsize;
+    uint64_t tmpreadsize;
     uint64_t size, * ldims, * offsets, * gdims;
     uint64_t datasize, nloop, dset_stride,var_stride, total_size=1;
     MPI_Status status;
@@ -535,11 +535,9 @@ int bp_get_var (int64_t gh_p,
         gdims[i]=var_root->characteristics[0].dims.dims[i*3+1];
         offsets[i]=var_root->characteristics[0].dims.dims[i*3+2];
         ldims[i]=var_root->characteristics[0].dims.dims[i*3];
-    }
-
-    for (i=0;i<ndim;i++) {
         is_global = is_global || gdims[i];
     }
+
     if (!is_global) {
         for (i=0;i<(ndim);i++) {
             if (   ldims[i] == 1 
@@ -573,13 +571,15 @@ int bp_get_var (int64_t gh_p,
 
     uint64_t read_offset = 0;
     int npg=0;
-    int tmpcount = 0;
+    uint64_t tmpcount = 0;
     int size_of_type = bp_get_type_size (var_root->type, "");
+    uint64_t payload_size = size_of_type;
 
     // actions
     if (count > var_root->characteristics_count)
         count = var_root->characteristics_count;
     for (idx = 0; idx < count; idx++) {
+        int flag;
         datasize = 1;
         nloop = 1;
         var_stride = 1;
@@ -591,6 +591,7 @@ int bp_get_var (int64_t gh_p,
                 ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+3];
             else
                 ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3];
+            payload_size *= ldims [j];
             if (is_global)
                 gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
             else
@@ -618,25 +619,17 @@ int bp_get_var (int64_t gh_p,
         ++npg;
         //MPI_Barrier(MPI_COMM_WORLD);
         //start_time = MPI_Wtime();
-#if 1
+        realloc_aligned(fh->b, payload_size);
+        fh->b->offset = 0;
         MPI_File_seek (fh->mpi_fh, 
-                   (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
-                   MPI_SEEK_SET);
-        MPI_File_read (fh->mpi_fh, fh->b->buff, 4, MPI_BYTE, &status);
-        tmpcount= *((uint64_t*)fh->b->buff);
-#endif
-        realloc_aligned(fh->b, tmpcount+4);
-        
-        MPI_File_seek (fh->mpi_fh, 
-                   (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
-                   MPI_SEEK_SET);
-        MPI_File_read (fh->mpi_fh, fh->b->buff, tmpcount+4, MPI_BYTE, &status);
-        MPI_Get_count (&status, MPI_BYTE, &tmpcount);
-        //printf("%d\n",tmpcount);
+          (MPI_Offset) var_root->characteristics[start_idx+idx].payload_offset,
+          MPI_SEEK_SET);
+        MPI_File_read (fh->mpi_fh, fh->b->buff, payload_size, MPI_BYTE
+                      ,&status
+                      );
         //MPI_Barrier(MPI_COMM_WORLD);
         //stop_time = MPI_Wtime();
         fh->b->offset = 0;
-        adios_parse_var_data_header_v1 (fh->b, &var_header);
         //printf("%f\t",stop_time-start_time);
         //--data filtering--//
         if (!read_offset)
@@ -662,14 +655,7 @@ int bp_get_var (int64_t gh_p,
         if (hole_break==-1) {
             memcpy(var, fh->b->buff+fh->b->offset,var_header.payload_size);
         }
-
         else if (hole_break==0) {
-             
-            printf("rank:%d npg:%d tmpreadsize=%llu\n"
-                    "readsize=%d read_offset=%llu, plsize=%llu\n",
-                    rank, npg, tmpreadsize,readsize[0],read_offset,
-                    var_header.payload_size);
-             
             if (tmpreadsize > ldims[0]) {
                 memcpy ( var+read_offset, fh->b->buff+fh->b->offset, 
                          var_header.payload_size);
@@ -682,12 +668,6 @@ int bp_get_var (int64_t gh_p,
                         fh->b->buff+fh->b->offset,
                         tmpreadsize*datasize*size_of_type);
             }
-            printf("tmpreadsize=%llu\n",
-                     tmpreadsize*datasize*size_of_type);
-            for (i=0;i<tmpreadsize;i++)
-                printf("var:%d) %lf %lf\n",
-                       i, *((double*)(fh->b->buff+fh->b->offset+i*8)),
-                       *(double*)(var+8*i));
         }
         else {
             uint64_t stride_offset = 0;

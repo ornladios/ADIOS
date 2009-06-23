@@ -4418,8 +4418,7 @@ int adios_common_select_method (int priority, const char * method
             return 0;
         }
         adios_add_method_to_group (&g->methods, new_method);
-	new_method->group = g;
-	
+        new_method->group = g;
     }
 
     adios_append_method (new_method);
@@ -4547,28 +4546,40 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
     while (d)
     {
         overhead += 1; // var flag
-        if (   d->dimension.id != 0
-            || d->dimension.time_index == adios_flag_yes
+        if (   d->dimension.id == 0
+            && d->dimension.time_index == adios_flag_no
            )
-            overhead += 2; // member id
-        else
+        {
             overhead += 8; // value
+        }
+        else
+        {
+            overhead += 2; // member id
+        }
 
         overhead += 1; // var flag
-        if (   d->global_dimension.id != 0
-            || d->dimension.time_index == adios_flag_yes
+        if (   d->global_dimension.id == 0
+            && d->global_dimension.time_index == adios_flag_no
            )
-            overhead += 2; // member id
-        else
+        {
             overhead += 8; // value
+        }
+        else
+        {
+            overhead += 2; // member id
+        }
 
         overhead += 1; // var flag
-        if (   d->local_offset.id != 0
-            || d->dimension.time_index == adios_flag_yes
+        if (   d->local_offset.id == 0
+            && d->local_offset.time_index == adios_flag_no
            )
-            overhead += 2; // member id
-        else
+        {
             overhead += 8; // value
+        }
+        else
+        {
+            overhead += 2; // member id
+        }
 
         d = d->next;
     }
@@ -5935,16 +5946,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
     }
     else
     {
-        if (   dimension->global_dimension.id == 0
-            && dimension->global_dimension.time_index == adios_flag_no
-           )  // it is a number
-        {
-            size += 8;  // size of value
-        }
-        else   // it is a var
-        {
-            size += 2;  // size of var ID
-        }
+        size += 2;  // size of var ID
     }
 
     size += 1; // var (y or n)
@@ -5957,16 +5959,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
     }
     else
     {
-        if (   dimension->local_offset.id == 0
-            && dimension->local_offset.time_index == adios_flag_no
-           )  // it is a number
-        {
-            size += 8;  // size of value
-        }
-        else   // it is a var
-        {
-            size += 2;  // size of var ID
-        }
+        size += 2;  // size of var ID
     }
 
     return size;

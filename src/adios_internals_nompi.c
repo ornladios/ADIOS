@@ -3563,6 +3563,17 @@ int adios_parse_config (const char * config)
     return 1;
 }
 
+int adios_local_config ()
+{
+    if (!adios_transports_initialized)
+    {
+        adios_transports_initialized = 1;
+        adios_init_transports (&adios_transports);
+    }
+
+    return 1;
+}
+
 int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                               ,void ** out
                               )
@@ -4406,6 +4417,7 @@ int adios_common_select_method (int priority, const char * method
             return 0;
         }
         adios_add_method_to_group (&g->methods, new_method);
+        new_method->group = g;
     }
 
     adios_append_method (new_method);
@@ -4533,28 +4545,40 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
     while (d)
     {
         overhead += 1; // var flag
-        if (   d->dimension.id != 0
-            || d->dimension.time_index == adios_flag_yes
+        if (   d->dimension.id == 0
+            && d->dimension.time_index == adios_flag_no
            )
-            overhead += 2; // member id
-        else
+        {
             overhead += 8; // value
+        }
+        else
+        {
+            overhead += 2; // member id
+        }
 
         overhead += 1; // var flag
-        if (   d->global_dimension.id != 0
-            || d->dimension.time_index == adios_flag_yes
+        if (   d->global_dimension.id == 0
+            && d->global_dimension.time_index == adios_flag_no
            )
-            overhead += 2; // member id
-        else
+        {
             overhead += 8; // value
+        }
+        else
+        {
+            overhead += 2; // member id
+        }
 
         overhead += 1; // var flag
-        if (   d->local_offset.id != 0
-            || d->dimension.time_index == adios_flag_yes
+        if (   d->local_offset.id == 0
+            && d->local_offset.time_index == adios_flag_no
            )
-            overhead += 2; // member id
-        else
+        {
             overhead += 8; // value
+        }
+        else
+        {
+            overhead += 2; // member id
+        }
 
         d = d->next;
     }
@@ -5201,6 +5225,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             v_index->characteristics_count = 1;
             v_index->characteristics_allocated = 1;
             v_index->characteristics [0].offset = v->write_offset;
+            v_index->characteristics [0].payload_offset = v->write_offset + adios_calc_var_overhead_v1 (v);
             v_index->characteristics [0].min = 0;
             v_index->characteristics [0].max = 0;
             v_index->characteristics [0].value = 0;
@@ -5302,6 +5327,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             uint64_t size = adios_get_type_size (a->type, a->value);
 
             a_index->characteristics [0].offset = a->write_offset;
+            a_index->characteristics [0].payload_offset = a->write_offset + adios_calc_attribute_overhead_v1 (a);
             a_index->characteristics [0].min = 0;
             a_index->characteristics [0].max = 0;
             if (a->value)
@@ -5514,6 +5540,21 @@ int adios_write_index_v1 (char ** buffer
 
             buffer_write (buffer, buffer_size, buffer_offset
                          ,&vars_root->characteristics [i].offset, 8
+                         );
+            index_size += 8;
+            var_size += 8;
+            characteristic_set_length += 8;
+
+            // add a payload offset characteristic for all vars
+            characteristic_set_count++;
+            flag = (uint8_t) adios_characteristic_payload_offset;
+            buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
+            index_size += 1;
+            var_size += 1;
+            characteristic_set_length += 1;
+
+            buffer_write (buffer, buffer_size, buffer_offset
+                         ,&vars_root->characteristics [i].payload_offset, 8
                          );
             index_size += 8;
             var_size += 8;
@@ -5764,6 +5805,21 @@ int adios_write_index_v1 (char ** buffer
             attr_size += 8;
             characteristic_set_length += 8;
 
+            // add a payload offset characteristic for all attrs
+            characteristic_set_count++;
+            flag = (uint8_t) adios_characteristic_payload_offset;
+            buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
+            index_size += 1;
+            attr_size += 1;
+            characteristic_set_length += 1;
+
+            buffer_write (buffer, buffer_size, buffer_offset
+                         ,&attrs_root->characteristics [i].payload_offset, 8
+                         );
+            index_size += 8;
+            attr_size += 8;
+            characteristic_set_length += 8;
+
             size = adios_get_type_size (attrs_root->type
                                        ,attrs_root->characteristics [i].value
                                        );
@@ -5889,16 +5945,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
     }
     else
     {
-        if (   dimension->global_dimension.id == 0
-            && dimension->global_dimension.time_index == adios_flag_no
-           )  // it is a number
-        {
-            size += 8;  // size of value
-        }
-        else   // it is a var
-        {
-            size += 2;  // size of var ID
-        }
+        size += 2;  // size of var ID
     }
 
     size += 1; // var (y or n)
@@ -5911,16 +5958,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
     }
     else
     {
-        if (   dimension->local_offset.id == 0
-            && dimension->local_offset.time_index == adios_flag_no
-           )  // it is a number
-        {
-            size += 8;  // size of value
-        }
-        else   // it is a var
-        {
-            size += 2;  // size of var ID
-        }
+        size += 2;  // size of var ID
     }
 
     return size;
@@ -6750,12 +6788,12 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
             // calculate the size for this dimension element
             if (d->dimension.id != 0)
             {
-                struct adios_var_struct * var = 0;
+                struct adios_var_struct * dim_var = 0;
 
-                var = adios_find_var_by_id (group->vars, d->dimension.id);
+                dim_var = adios_find_var_by_id (group->vars, d->dimension.id);
 
                 // first check to make sure all vars are provided
-                if (!var)
+                if (!dim_var)
                 {
                     struct adios_attribute_struct * attr = 0;
                     attr = adios_find_attribute_by_id (group->attributes
@@ -6814,13 +6852,13 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                 }
                 else
                 {
-                    if (!var->data)
+                    if (!dim_var->data)
                     {
                         fprintf (stderr, "adios_get_var_size: "
                                          "sizing of %s failed because "
                                          "dimension component %s was not "
                                          "provided\n"
-                                ,var->name, var->name
+                                ,var->name, dim_var->name
                                 );
 
                         return 0;
@@ -6828,8 +6866,8 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                     else
                     {
                         if (!adios_multiply_dimensions (&size, var
-                                                       ,var->type
-                                                       ,var->data
+                                                       ,dim_var->type
+                                                       ,dim_var->data
                                                        )
                            )
                         {

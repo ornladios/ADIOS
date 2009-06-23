@@ -1212,6 +1212,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
     uint64_t size = adios_get_type_size (var_header->type, "");
 
     var_header->characteristics.offset = 0;
+    var_header->characteristics.payload_offset = 0;
     var_header->characteristics.min = 0;
     var_header->characteristics.max = 0;
     var_header->characteristics.value = 0;
