@@ -690,8 +690,8 @@ void hw_dset(hid_t root_id,
                 if (dims[i]==0) {
                     if (verbose >= LIST_INFO)
                         fprintf(stderr, "timeindex=%d rank=%d\n",i, rank);
-                    time_idx = i;
-                    local_h5dims[i]=1;
+                    time_idx = reverse_i;
+                    local_h5dims[reverse_i]=1;
                 }
             }
             if (time_idx == 0) {
@@ -704,9 +704,11 @@ void hw_dset(hid_t root_id,
                 }
                 else if (global_h5dims[time_idx]==0 &&
                         local_h5dims[time_idx]!=0) {
+/*
                     for (i=rank-1;i>0;i--) {
                         local_h5dims[i] = local_h5dims[i-1];
                     }
+*/
                     local_h5dims[0] = 1;
                 }
             }
