@@ -459,7 +459,7 @@ int bp_get_var (int64_t gh_p,
     struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
     struct BP_FILE * fh = (struct BP_FILE *) (gh->fh);
     struct adios_index_var_struct_v1 * var_root = fh->vars_root;
-    struct adios_var_header_struct_v1 var_header;
+    //struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;
     uint8_t  ndim;  
     uint64_t tmpreadsize;
@@ -653,13 +653,13 @@ int bp_get_var (int64_t gh_p,
         // 0 : the content is the pg is the subset of the read request
         // >0: there is hole in content of the pg need to be read
         if (hole_break==-1) {
-            memcpy(var, fh->b->buff+fh->b->offset,var_header.payload_size);
+            memcpy(var, fh->b->buff+fh->b->offset,payload_size);
         }
         else if (hole_break==0) {
             if (tmpreadsize > ldims[0]) {
                 memcpy ( var+read_offset, fh->b->buff+fh->b->offset, 
-                         var_header.payload_size);
-                read_offset +=  var_header.payload_size;
+                         payload_size);
+                read_offset +=  payload_size;
                 
                 tmpreadsize -= ldims[0]; 
             }
