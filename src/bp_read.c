@@ -460,7 +460,7 @@ int bp_get_var (int64_t gh_p,
     struct BP_FILE * fh = (struct BP_FILE *) (gh->fh);
     struct adios_index_var_struct_v1 * var_root = fh->vars_root;
     //struct adios_var_header_struct_v1 var_header;
-    struct adios_var_payload_struct_v1 var_payload;
+    //struct adios_var_payload_struct_v1 var_payload;
     uint8_t  ndim;  
     uint64_t tmpreadsize;
     uint64_t size, * ldims, * offsets, * gdims;
