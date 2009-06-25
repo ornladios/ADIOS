@@ -572,7 +572,6 @@ int bp_get_var (int64_t gh_p,
         if (readsize)
             tmpreadsize = (uint64_t) readsize[ndim - 1];
 
-        printf("tmpreadsize = %llu\n", tmpreadsize);
         for (i = 0; i < ndim; i++)
         {
             readsize_tmp[i] = readsize[i];
