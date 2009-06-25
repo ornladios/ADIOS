@@ -417,12 +417,12 @@ int bp_inq_var (int64_t gh_p, char * varname,
         }         
     }         
     else {
-        if (ldims[0]==1 && ldims[*ndim]!=1) {
+        if (ldims[0]==1 && ldims[*ndim - 1]!=1) {
             time_flag = 0;
             *is_timebased = 1;
         }
-        else if (ldims[0]!=1 && ldims[*ndim]==1) {
-            time_flag = *ndim;
+        else if (ldims[0]!=1 && ldims[*ndim - 1]==1) {
+            time_flag = *ndim - 1;
             *is_timebased = 1;
         }
         if (*is_timebased) {
@@ -459,16 +459,15 @@ int bp_get_var (int64_t gh_p,
     struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
     struct BP_FILE * fh = (struct BP_FILE *) (gh->fh);
     struct adios_index_var_struct_v1 * var_root = fh->vars_root;
-    //struct adios_var_header_struct_v1 var_header;
-    //struct adios_var_payload_struct_v1 var_payload;
+    struct adios_var_header_struct_v1 var_header;
+    struct adios_var_payload_struct_v1 var_payload;
     uint8_t  ndim;  
     uint64_t tmpreadsize;
     uint64_t size, * ldims, * offsets, * gdims;
     uint64_t datasize, nloop, dset_stride,var_stride, total_size=1;
+    int readsize_tmp[10], start_tmp[10];
     MPI_Status status;
-
-    if (readsize)
-        tmpreadsize = (uint64_t) readsize[0];
+    enum ADIOS_FLAG adios_host_language_fortran = fh->pgs_root->adios_host_language_fortran;
 
     var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
     for (i=0;i<gh->group_id;i++)
@@ -549,22 +548,47 @@ int bp_get_var (int64_t gh_p,
         }    
     }         
     else {
-        if (ldims[0]==1 && ldims[ndim]!=1) {
+        if (ldims[0]==1 && ldims[ndim - 1]!=1) {
             time_flag = 0;
             is_timebased = 1;
         }
-        else if (ldims[0]!=1 && ldims[ndim]==1) {
-            time_flag = ndim;
+        else if (ldims[0]!=1 && ldims[ndim - 1]==1) {
+            time_flag = ndim - 1;
             is_timebased = 1;
         }
     }
     if (is_timebased) {
-        if ((ldims[0] != 1) && (ldims[ndim] == 1)) 
-            time_flag == ndim;
-        else if ((ldims[0] == 1) && (ldims[ndim] != 1)) { 
+        if ((ldims[0] != 1) && (ldims[ndim - 1] == 1)) 
+            time_flag = ndim - 1;
+        else if ((ldims[0] == 1) && (ldims[ndim - 1] != 1)) { 
             time_flag = 0;
         }
         ndim = ndim -1;
+    }
+
+    // if bp is written by fortran, flip read size and offset
+    if (adios_host_language_fortran)
+    {
+        if (readsize)
+            tmpreadsize = (uint64_t) readsize[ndim - 1];
+
+        printf("tmpreadsize = %llu\n", tmpreadsize);
+        for (i = 0; i < ndim; i++)
+        {
+            readsize_tmp[i] = readsize[i];
+            start_tmp[i] = start[i];
+        }
+
+        for (i = 0; i < ndim; i++)
+        {
+            readsize[i] = readsize_tmp[ndim - 1 - i];
+            start[i] = start_tmp[ndim -1 - i];
+        }
+    }
+    else
+    {
+        if (readsize)
+            tmpreadsize = (uint64_t) readsize[0];
     }
 
     // generate the list of pgs to be read from
@@ -586,16 +610,35 @@ int bp_get_var (int64_t gh_p,
         dset_stride = 1;
         idx_table[idx] = 1;
         for (j=0;j<ndim;j++) {
-            offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
-            if (!time_flag)
-                ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+3];
+            if (adios_host_language_fortran)
+            {
+                offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[(ndim -1 - j)*3+2];
+                if (!time_flag)
+                    ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[(ndim-1-j)*3+3];
+                else
+                    ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[(ndim-1-j)*3];
+
+                if (is_global)
+                    gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[(ndim-1-j)*3+1];
+                else
+                    gdims[j]=ldims[j];
+            }
             else
-                ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3];
+            {
+                offsets[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+2];
+                if (!time_flag)
+                    ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+3];
+                else
+                    ldims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3];
+
+                if (is_global)
+                    gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
+                else
+                    gdims[j]=ldims[j];
+            }
+
             payload_size *= ldims [j];
-            if (is_global)
-                gdims[j]=var_root->characteristics[start_idx+idx].dims.dims[j*3+1];
-            else
-                gdims[j]=ldims[j];
+
             if (readsize[j] > gdims[j]) {
                 fprintf(stderr, "Error: %s out of bound ("
                     "the size to read is %llu,"
@@ -619,14 +662,17 @@ int bp_get_var (int64_t gh_p,
         ++npg;
         //MPI_Barrier(MPI_COMM_WORLD);
         //start_time = MPI_Wtime();
+
         realloc_aligned(fh->b, payload_size);
         fh->b->offset = 0;
+
         MPI_File_seek (fh->mpi_fh, 
           (MPI_Offset) var_root->characteristics[start_idx+idx].payload_offset,
           MPI_SEEK_SET);
         MPI_File_read (fh->mpi_fh, fh->b->buff, payload_size, MPI_BYTE
                       ,&status
                       );
+
         //MPI_Barrier(MPI_COMM_WORLD);
         //stop_time = MPI_Wtime();
         fh->b->offset = 0;
@@ -657,16 +703,16 @@ int bp_get_var (int64_t gh_p,
         }
         else if (hole_break==0) {
             if (tmpreadsize > ldims[0]) {
-                memcpy ( var+read_offset, fh->b->buff+fh->b->offset, 
+                memcpy ( var+read_offset, fh->b->buff+fh->b->offset,
                          payload_size);
-                read_offset +=  payload_size;
-                
+                read_offset +=  payload_size; 
                 tmpreadsize -= ldims[0]; 
             }
             else {
                 memcpy (var+read_offset, 
                         fh->b->buff+fh->b->offset,
                         tmpreadsize*datasize*size_of_type);
+                read_offset +=  tmpreadsize*datasize*size_of_type;
             }
         }
         else {
@@ -744,6 +790,23 @@ int bp_get_var (int64_t gh_p,
         }
         
     }  // end of loop
+
+    // if bp is written by fortran, flip read size and offset
+    if (adios_host_language_fortran)
+    {
+        for (i = 0; i < ndim; i++)
+        {
+            readsize_tmp[i] = readsize[i];
+            start_tmp[i] = start[i];
+        }
+
+        for (i = 0; i < ndim; i++)
+        {
+            readsize[i] = readsize_tmp[ndim - 1 - i];
+            start[i] = start_tmp[ndim -1 - i];
+        }
+    }
+
     free (gdims);
     free (offsets);
     free (ldims);
