@@ -97,7 +97,7 @@ int bp_inq_group (int64_t gh, BP_GROUP_INFO *);
 	     timestep 
 	OUT: var 
 */
-int bp_get_var (int64_t gh,
+int64_t bp_get_var (int64_t gh,
 		 char * varname,
 		 void * var, 
 		 int  * start,
@@ -148,13 +148,13 @@ void bp_gclose_ ( int64_t * gh, int * err);
 void bp_inq_group_ (int64_t * gh, int *vcnt, void *v, int * err, int);
 
 void bp_get_var_ (int64_t * gh,
-		 char * varname,
-		 void * var, 
-		 int  * start,
-		 int  * readsize, 
-		 int  * timestep,
-         int  * err,
-         int  varname_len);
+		  char * varname,
+		  void * var, 
+		  int  * start,
+		  int  * readsize, 
+		  int  * timestep,
+                  int64_t  * err,
+                  int  varname_len);
 
 void bp_inq_var_ (int64_t * gh_p, char * varname,
 		 int * type,
