@@ -590,6 +590,9 @@ int bp_get_var (int64_t gh_p,
             tmpreadsize = (uint64_t) readsize[0];
     }
 
+    for (i = 0; i < ndim; i++)
+        total_size *= readsize[i];
+
     // generate the list of pgs to be read from
 
     uint64_t read_offset = 0;
@@ -662,24 +665,56 @@ int bp_get_var (int64_t gh_p,
         //MPI_Barrier(MPI_COMM_WORLD);
         //start_time = MPI_Wtime();
 
-        realloc_aligned(fh->b, payload_size);
-        fh->b->offset = 0;
+        // for some old .bp, payload_offset characteristic is not available
+        if (var_root->characteristics[start_idx+idx].payload_offset > 0) {
+            realloc_aligned(fh->b, payload_size);
+            fh->b->offset = 0;
 
-        MPI_File_seek (fh->mpi_fh, 
-          (MPI_Offset) var_root->characteristics[start_idx+idx].payload_offset,
-          MPI_SEEK_SET);
-        MPI_File_read (fh->mpi_fh, fh->b->buff, payload_size, MPI_BYTE
-                      ,&status
-                      );
+            MPI_File_seek (fh->mpi_fh, 
+                (MPI_Offset) var_root->characteristics[start_idx+idx].payload_offset,
+                MPI_SEEK_SET);
+            MPI_File_read (fh->mpi_fh
+                          ,fh->b->buff
+                          ,payload_size
+                          ,MPI_BYTE
+                          ,&status
+                          );
 
+            fh->b->offset = 0;
+        }
+        else {
+            printf ("WARNING: payload offset characteristic"
+                    " is not available in this file\n");
+
+            MPI_File_seek (fh->mpi_fh,
+                           (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
+                           MPI_SEEK_SET);
+            MPI_File_read (fh->mpi_fh
+                          ,fh->b->buff
+                          ,4
+                          ,MPI_BYTE
+                          ,&status
+                          );
+            tmpcount= *((uint64_t*)fh->b->buff);
+            realloc_aligned(fh->b, tmpcount+4);
+
+            MPI_File_seek (fh->mpi_fh,
+                           (MPI_Offset) var_root->characteristics[start_idx+idx].offset,
+                           MPI_SEEK_SET);
+            MPI_File_read (fh->mpi_fh
+                          ,fh->b->buff
+                          ,tmpcount+4
+                          ,MPI_BYTE
+                          ,&status
+                          );
+
+            fh->b->offset = 0;
+            adios_parse_var_data_header_v1 (fh->b, &var_header);
+        }
+      
         //MPI_Barrier(MPI_COMM_WORLD);
         //stop_time = MPI_Wtime();
-        fh->b->offset = 0;
         //printf("%f\t",stop_time-start_time);
-        //--data filtering--//
-        if (!read_offset)
-            for (i = 0; i < ndim; i++) 
-                total_size *= readsize[i];
 
         int hole_break;
         for (i=ndim-1;i>-1;i--) {
@@ -810,7 +845,7 @@ int bp_get_var (int64_t gh_p,
     free (offsets);
     free (ldims);
     free (idx_table);
-    return total_size*sizeof(double);
+    return total_size * size_of_type;
 }
 
 const char * bp_type_to_string (int type)
