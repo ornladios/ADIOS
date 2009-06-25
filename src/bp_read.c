@@ -445,13 +445,13 @@ int bp_inq_var (int64_t gh_p, char * varname,
     return 0;
 }
 
-int bp_get_var (int64_t gh_p,
-         char * varname, 
-         void * var,
-         int  * start,
-         int  * readsize,
-         int timestep
-        )
+int64_t bp_get_var (int64_t gh_p,
+                    char * varname, 
+                    void * var,
+                    int  * start,
+                    int  * readsize,
+                    int timestep
+                    )
 {
     double  start_time, stop_time;
     int    i, j, var_id, idx;
@@ -1030,7 +1030,7 @@ void bp_get_var_ (int64_t * gh,
         int  * start,
         int  * readsize,
         int * timestep,
-        int * err,
+        int64_t * err,
         int varname_len)
 {
     *err=bp_get_var (*gh,varname, var,start,readsize,*timestep);
