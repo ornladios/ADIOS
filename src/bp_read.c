@@ -472,6 +472,10 @@ int64_t bp_get_var (int64_t gh_p,
     var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
     for (i=0;i<gh->group_id;i++)
         var_id -= fh->gh->var_counts_per_group[i];
+
+    for(i=0;i<gh->offset && var_root;i++)
+        var_root = var_root->next;
+
     if (var_id<0) {
         fprintf(stderr, "Error: Variable %s does not exist in the group %s!\n",
                     varname, fh->gh->namelist[gh->group_id]);
