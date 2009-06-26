@@ -599,7 +599,6 @@ int64_t bp_get_var (int64_t gh_p,
     int npg=0;
     uint64_t tmpcount = 0;
     int size_of_type = bp_get_type_size (var_root->type, "");
-    uint64_t payload_size = size_of_type;
 
     // actions
     if (count > var_root->characteristics_count)
@@ -611,6 +610,8 @@ int64_t bp_get_var (int64_t gh_p,
         var_stride = 1;
         dset_stride = 1;
         idx_table[idx] = 1;
+        uint64_t payload_size = size_of_type;
+
         for (j=0;j<ndim;j++) {
             if (adios_host_language_fortran)
             {
