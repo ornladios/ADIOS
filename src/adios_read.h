@@ -117,7 +117,7 @@ int adios_inq_var (int64_t gh, char * varname,
 		   int * ndim,
 		   int * is_timebased,
 		   int * dims);
-const char * adios_type_to_string (int type);
+const char * bp_type_to_string (int type);
 
 // Fortran interface
 
