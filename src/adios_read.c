@@ -863,7 +863,7 @@ int64_t adios_get_var (int64_t gh_p,
     return total_size * size_of_type;
 }
 
-const char * adios_type_to_string (int type)
+const char * bp_type_to_string (int type)
 {
     switch (type)
     {
