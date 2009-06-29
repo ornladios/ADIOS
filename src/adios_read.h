@@ -40,15 +40,15 @@ typedef struct {
 	     comm
 	OUT: fh_p
 */
-int bp_fopen ( int64_t * fh_p,
-               const char * fname,
-               MPI_Comm comm
-             );
+int adios_fopen ( int64_t * fh_p,
+                  const char * fname,
+                  MPI_Comm comm
+                );
 
 /*
 	IN: fh 
 */
-int bp_fclose ( int64_t fh);
+int adios_fclose ( int64_t fh);
 
 /*
 	IN:  fh_p 
@@ -58,36 +58,36 @@ int bp_fclose ( int64_t fh);
 	     nt
 	     gnamelist
  */ 
-int bp_inq_file ( int64_t fh_p, BP_FILE_INFO * pfinfo); 
-void bp_print_fileinfo (BP_FILE_INFO * pfinfo);
-void bp_init_fileinfo  (BP_FILE_INFO * pfinfo, int flag);
-void bp_free_fileinfo  (BP_FILE_INFO * pfinfo);
+int adios_inq_file ( int64_t fh_p, BP_FILE_INFO * pfinfo); 
+void adios_print_fileinfo (BP_FILE_INFO * pfinfo);
+void adios_init_fileinfo  (BP_FILE_INFO * pfinfo, int flag);
+void adios_free_fileinfo  (BP_FILE_INFO * pfinfo);
 /*
- * int bp_inq_file ( int64_t fh_p, int *ngroup, 
+ * int adios_inq_file ( int64_t fh_p, int *ngroup, 
 		  int *nvar, int *nattr, int *nt, char **gnamelist);
 */ 
-void bp_print_groupinfo (BP_GROUP_INFO * pginfo);
-void bp_init_groupinfo  (BP_GROUP_INFO * pginfo, int flag);
-void bp_free_groupinfo  (BP_GROUP_INFO * pginfo);
+void adios_print_groupinfo (BP_GROUP_INFO * pginfo);
+void adios_init_groupinfo  (BP_GROUP_INFO * pginfo, int flag);
+void adios_free_groupinfo  (BP_GROUP_INFO * pginfo);
 /*
 	IN:  fh
 	     grpname 
 	OUT: gh_p 
 */
-int bp_gopen ( int64_t * gh_p,
-		int64_t fh, 
-		char * grpname);
+int adios_gopen ( int64_t fh,
+                  int64_t * gh_p,
+		  char * grpname);
 
 /*
 	IN:  fh
 */
-int bp_gclose ( int64_t gh);
+int adios_gclose ( int64_t gh);
 
 /*
 	IN:  gh_p
 */
-int bp_inq_group (int64_t gh, BP_GROUP_INFO *);
-//int bp_inq_group (int64_t gh, int *nvar, char ** vnamelist);
+int adios_inq_group (int64_t gh, BP_GROUP_INFO *);
+//int adios_inq_group (int64_t gh, int *nvar, char ** vnamelist);
 
 /*
 	IN:  gh
@@ -97,12 +97,12 @@ int bp_inq_group (int64_t gh, BP_GROUP_INFO *);
 	     timestep 
 	OUT: var 
 */
-int64_t bp_get_var (int64_t gh,
-		 char * varname,
-		 void * var, 
-		 int  * start,
-		 int  * readsize, 
-		 int    timestep);
+int64_t adios_get_var (int64_t gh,
+		       char * varname,
+		       void * var, 
+		       int  * start,
+		       int  * readsize, 
+		       int    timestep);
 
 /*
 	IN:  gh
@@ -112,56 +112,56 @@ int64_t bp_get_var (int64_t gh,
 	     is_timebased
 	     dims  
 */
-int bp_inq_var (int64_t gh, char * varname,
-		 int * type,
-		 int * ndim,
-		 int * is_timebased,
-		 int * dims);
-const char * bp_type_to_string (int type);
+int adios_inq_var (int64_t gh, char * varname,
+		   int * type,
+		   int * ndim,
+		   int * is_timebased,
+		   int * dims);
+const char * adios_type_to_string (int type);
 
 // Fortran interface
 
-void bp_fopen_ ( int64_t * fh,
-        char * fname,
-        void * comm,
-        int * err,
-        int fname_len
-        );
-
-void bp_fclose_ ( int64_t * fh, int * err);
-
-void bp_inq_file_ ( int64_t * fh_p,
-                    int * groups_count,
-                    int * vars_count,
-                    int * attrs_count,
-                    int * tstart,
-                    int * tstop,
-                    void * gnamelist,
+void adios_fopen_ ( int64_t * fh,
+                    char * fname,
+                    void * comm,
                     int * err,
-                    int gnamelist_len);
+                    int fname_len
+                  );
 
-void bp_gopen_ (int64_t * gh_p,int64_t * fh, 
-		char * grpname, int *err, int grpname_len);
+void adios_fclose_ ( int64_t * fh, int * err);
 
-void bp_gclose_ ( int64_t * gh, int * err);
+void adios_inq_file_ ( int64_t * fh_p,
+                       int * groups_count,
+                       int * vars_count,
+                       int * attrs_count,
+                       int * tstart,
+                       int * tstop,
+                       void * gnamelist,
+                       int * err,
+                       int gnamelist_len);
 
-void bp_inq_group_ (int64_t * gh, int *vcnt, void *v, int * err, int);
+void adios_gopen_ (int64_t * fh, int64_t * gh_p, 
+		   char * grpname, int *err, int grpname_len);
 
-void bp_get_var_ (int64_t * gh,
-		  char * varname,
-		  void * var, 
-		  int  * start,
-		  int  * readsize, 
-		  int  * timestep,
-                  int64_t  * err,
-                  int  varname_len);
+void adios_gclose_ ( int64_t * gh, int * err);
 
-void bp_inq_var_ (int64_t * gh_p, char * varname,
-		 int * type,
-		 int * ndim,
-		 int * is_timebased,
-		 int * dims,
-         int * err,
-         int varname_len);
+void adios_inq_group_ (int64_t * gh, int *vcnt, void *v, int * err, int);
+
+void adios_get_var_ (int64_t * gh,
+		     char * varname,
+		     void * var, 
+		     int  * start,
+		     int  * readsize, 
+		     int  * timestep,
+                     int64_t  * err,
+                     int  varname_len);
+
+void adios_inq_var_ (int64_t * gh_p, char * varname,
+		     int * type,
+		     int * ndim,
+		     int * is_timebased,
+		     int * dims,
+                     int * err,
+                     int varname_len);
 
 #endif
