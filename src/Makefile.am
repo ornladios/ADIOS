@@ -58,23 +58,23 @@ libadios_int_nompi_a_SOURCES=adios_internals_nompi.c \
 libadios_int_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS)
 #libadios_int_nompi_a_LIBADD = $(MXML_LIBS)
 
-lib_LIBRARIES += libbpread.a
-libbpread_a_SOURCES = adios_bp_v1.c \
+lib_LIBRARIES += libadiosread.a
+libadiosread_a_SOURCES = adios_bp_v1.c \
 		      adios_endianness.c \
 		      bp_utils.c \
-		      bp_read.c
+		      adios_read.c
 #		      adios_internals.c \
-libbpread_a_CPPFLAGS = $(MXML_CPPFLAGS)
-#libbpread_a_LIBADD = 
+libadiosread_a_CPPFLAGS = $(MXML_CPPFLAGS)
+#libadiosread_a_LIBADD = 
 
-lib_LIBRARIES += libbpread_nompi.a
-libbpread_nompi_a_SOURCES = mpidummy.c\
+lib_LIBRARIES += libadiosread_nompi.a
+libadiosread_nompi_a_SOURCES = mpidummy.c\
                       adios_bp_v1.c \
 		      adios_endianness.c \
 		      bp_utils.c \
-		      bp_read.c
-libbpread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI
+		      adios_read.c
+libadiosread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI
 include_HEADERS += adios_internals.h \
                    adios_transport_hooks.h
-include_HEADERS += bp_read.h
+include_HEADERS += adios_read.h
 CC=$(MPICC)
