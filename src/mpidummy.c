@@ -39,7 +39,7 @@ int MPI_File_get_size(MPI_File fh, MPI_Offset *size) {
     uint64_t endpos = lseek64(fh, 0, SEEK_END); // go to end, returned is the size in bytes
     lseek64(fh, curpos, SEEK_SET);             // go back where we were
     *size = (MPI_Offset) endpos;
-    printf("MPI_File_get_size: fh=%d, size=%lld\n", fh, *size);
+    //printf("MPI_File_get_size: fh=%d, size=%lld\n", fh, *size);
     return MPI_SUCCESS;
 }
 
@@ -53,7 +53,7 @@ int MPI_File_read(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_
         fprintf (stderr, "could not read %llu bytes. read only: %llu\n", bytes_to_read, bytes_read);
     }
     *status = bytes_read;
-    printf("MPI_File_read: fh=%d, count=%d, typesize=%d, bytes read=%lld\n", fh, count, datatype, *status);
+    //printf("MPI_File_read: fh=%d, count=%d, typesize=%d, bytes read=%lld\n", fh, count, datatype, *status);
     return MPI_SUCCESS;
 }
 
@@ -61,7 +61,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 {
     uint64_t off = (uint64_t) offset;
     lseek64 (fh, off, whence);
-    printf("MPI_File_seek: fh=%d, offset=%lld, whence=%d\n", fh, off, whence);
+    //printf("MPI_File_seek: fh=%d, offset=%lld, whence=%d\n", fh, off, whence);
     return MPI_SUCCESS;
 }
 
