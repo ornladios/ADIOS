@@ -123,7 +123,8 @@ am_libadiosread_a_OBJECTS = adios_bp_v1.$(OBJEXT) \
 libadiosread_a_OBJECTS = $(am_libadiosread_a_OBJECTS)
 libadiosread_nompi_a_AR = $(AR) $(ARFLAGS)
 libadiosread_nompi_a_LIBADD =
-am_libadiosread_nompi_a_OBJECTS = libadiosread_nompi_a-mpidummy.$(OBJEXT) \
+am_libadiosread_nompi_a_OBJECTS =  \
+	libadiosread_nompi_a-mpidummy.$(OBJEXT) \
 	libadiosread_nompi_a-adios_bp_v1.$(OBJEXT) \
 	libadiosread_nompi_a-adios_endianness.$(OBJEXT) \
 	libadiosread_nompi_a-bp_utils.$(OBJEXT) \

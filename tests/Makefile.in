@@ -198,7 +198,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = C Fortran genarray
+SUBDIRS = C Fortran genarray bp_read
 all: all-recursive
 
 .SUFFIXES:
