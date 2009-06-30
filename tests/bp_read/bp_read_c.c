@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include "mpi.h"
-#include "bp_read.h"
+#include "adios_read.h"
 
 int main (int argc, char ** argv)
 {
@@ -31,7 +31,7 @@ int main (int argc, char ** argv)
 	MPI_Init (&argc, &argv);
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &pe_size);
-	bp_fopen (&fh, filename, comm);
+	adios_fopen (&fh, filename, comm);
 	// fh = file handle, filename = name of file, comm is the 
 	// communicator for the processors which will read in the data.
 	// in this call, the header is actually being read, and this is done by proc 0, and
@@ -49,31 +49,31 @@ int main (int argc, char ** argv)
 		uint32_t file_size;
 		char     ** group_namelist;
 	 */
-	bp_init_fileinfo ( &finfo, 1);
+	adios_init_fileinfo ( &finfo, 1);
 	// initialize the FILE_INFO structure
 	//       IN: 
 	// 	    struct BP_FILE_INFO * 
  	// 	    int flag: 1 means allocate the momory for group_namelist
         //		      0 means no allocation 
-	// * bp_free_fileinfo (&finfo) need to be paired with this function call
-	bp_inq_file (fh, &finfo);
+	// * adios_free_fileinfo (&finfo) need to be paired with this function call
+	adios_inq_file (fh, &finfo);
 	
 	if (rank == 0) 
-		bp_print_fileinfo (&finfo);
+		adios_print_fileinfo (&finfo);
 
 	BP_GROUP_INFO ginfo;
-	bp_gopen (&gh, fh, finfo.group_namelist[0]);
-	bp_init_groupinfo (&ginfo,1);
-	bp_inq_group (gh, &ginfo);
+	adios_gopen (&gh, fh, finfo.group_namelist[0]);
+	adios_init_groupinfo (&ginfo,1);
+	adios_inq_group (gh, &ginfo);
 	if (rank == 0) 
-		bp_print_groupinfo (&ginfo);
+		adios_print_groupinfo (&ginfo);
 
 	int type, ndim, time_flag;
 	int start[3], size[3];
 	char *type_str;
     double time;
     // get scalar data
-	bp_inq_var (gh, "int_1D", &type, &ndim, &time_flag, dims);
+	adios_inq_var (gh, "int_1D", &type, &ndim, &time_flag, dims);
 	type_str = bp_type_to_string (type);
     printf("%s:\n\t\tis_timebased: %d\n\t\ttype: %s\n",
 		    "int_1D", time_flag, type_str);
@@ -84,10 +84,10 @@ int main (int argc, char ** argv)
     printf ("\n");
     size[0] = 1;
     start[0] = 0;
-	bp_get_var (gh, "int_1D", &nvar, start, size, 1);
+	adios_get_var (gh, "int_1D", &nvar, start, size, 1);
     printf("\t\tvalue: %d\n",(nvar));
     // get 2D data
-	bp_inq_var (gh, "int_2D", &type, &ndim, &time_flag, dims);
+	adios_inq_var (gh, "int_2D", &type, &ndim, &time_flag, dims);
     printf("%s:\n\t\tis_timebased: %d\n\t\ttype: %s\n\t\tdimensions:",
     		"int_2D", time_flag, type_str);
     if (ndim==0) {
@@ -108,7 +108,7 @@ int main (int argc, char ** argv)
 	// time step should be no less than zero
 	// vnamelist[14] is not written at time step 0
 	// so the function returns as error
-	bp_get_var (gh, "int_2D", var, start, size, 1);
+	adios_get_var (gh, "int_2D", var, start, size, 1);
 	k=0;
     printf("\t\t[%d:%d, %d:%d]", 
            start[0], size[0],
@@ -123,7 +123,7 @@ int main (int argc, char ** argv)
     }
 	printf("\n");
 
-	bp_inq_var (gh, "int_3D", &type, &ndim, &time_flag, dims);
+	adios_inq_var (gh, "int_3D", &type, &ndim, &time_flag, dims);
     printf("%s:\n\t\tis_timebased: %d\n\t\ttype: %s\n\t\tdimensions:",
     		"int_3D", time_flag, type_str);
     if (ndim==0) {
@@ -145,7 +145,7 @@ int main (int argc, char ** argv)
 	size[0]=2;
 	size[1]=5;
 	size[2]=3;
-	bp_get_var (gh, "int_3D", var, start, size, 1);
+	adios_get_var (gh, "int_3D", var, start, size, 1);
 	k=0;
     printf("\t\t[%d:%d, %d:%d, %d:%d]", 
            start[0], size[0],
@@ -168,11 +168,11 @@ int main (int argc, char ** argv)
     if (var)
 		free(var);
         
-	bp_free_groupinfo (&ginfo);
-	bp_free_fileinfo (&finfo);
+	adios_free_groupinfo (&ginfo);
+	adios_free_fileinfo (&finfo);
 
-	bp_gclose (gh);
-	bp_fclose (fh);
+	adios_gclose (gh);
+	adios_fclose (fh);
 	MPI_Finalize ();
 
 	return 0;

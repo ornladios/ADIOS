@@ -37,12 +37,12 @@ POST_UNINSTALL = :
 build_triplet = x86_64-redhat-linux-gnu
 host_triplet = x86_64-redhat-linux-gnu
 bin_PROGRAMS = genbp$(EXEEXT) bp_read_f$(EXEEXT) bp_read_c$(EXEEXT)
-am__append_1 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-am__append_2 = $(PHDF5_LDFLAGS)
-am__append_3 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-am__append_4 = $(PHDF5_LDFLAGS)
-am__append_5 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-am__append_6 = $(PHDF5_LDFLAGS)
+#am__append_1 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+#am__append_2 = $(PHDF5_LDFLAGS)
+#am__append_3 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+#am__append_4 = $(PHDF5_LDFLAGS)
+#am__append_5 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+#am__append_6 = $(PHDF5_LDFLAGS)
 subdir = tests/bp_read
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -64,21 +64,19 @@ PROGRAMS = $(bin_PROGRAMS)
 am_bp_read_c_OBJECTS = bp_read_c.$(OBJEXT)
 bp_read_c_OBJECTS = $(am_bp_read_c_OBJECTS)
 am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 =  \
-	$(top_builddir)/src/libadios_phdf5.a \
-	$(am__DEPENDENCIES_1)
-bp_read_c_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(top_builddir)/src/libbpread.a \
+#am__DEPENDENCIES_2 =  \
+#	$(top_builddir)/src/libadios_phdf5.a \
+#	$(am__DEPENDENCIES_1)
+bp_read_c_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
 	$(am__DEPENDENCIES_2)
 am_bp_read_f_OBJECTS = bp_read_f.$(OBJEXT)
 bp_read_f_OBJECTS = $(am_bp_read_f_OBJECTS)
-bp_read_f_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(top_builddir)/src/libbpread.a \
+bp_read_f_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
 	$(am__DEPENDENCIES_2)
 am_genbp_OBJECTS = genbp.$(OBJEXT)
 genbp_OBJECTS = $(am_genbp_OBJECTS)
 genbp_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(top_builddir)/src/libbpread.a \
+	$(am__DEPENDENCIES_1) $(top_builddir)/src/libadiosread.a \
 	$(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
@@ -103,18 +101,18 @@ DIST_SOURCES = $(bp_read_c_SOURCES) $(bp_read_f_SOURCES) \
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = ${SHELL} /ccs/home/ge1/work/ADIOS/trunk/config/missing --run aclocal-1.9
+ACLOCAL = ${SHELL} /ccs/proj/e2e/pnorbert/ADIOS/ADIOS/trunk/config/missing --run aclocal-1.9
 AMDEP_FALSE = #
 AMDEP_TRUE = 
-AMTAR = ${SHELL} /ccs/home/ge1/work/ADIOS/trunk/config/missing --run tar
+AMTAR = ${SHELL} /ccs/proj/e2e/pnorbert/ADIOS/ADIOS/trunk/config/missing --run tar
 AR = ar
-AUTOCONF = ${SHELL} /ccs/home/ge1/work/ADIOS/trunk/config/missing --run autoconf
-AUTOHEADER = ${SHELL} /ccs/home/ge1/work/ADIOS/trunk/config/missing --run autoheader
-AUTOMAKE = ${SHELL} /ccs/home/ge1/work/ADIOS/trunk/config/missing --run automake-1.9
+AUTOCONF = ${SHELL} /ccs/proj/e2e/pnorbert/ADIOS/ADIOS/trunk/config/missing --run autoconf
+AUTOHEADER = ${SHELL} /ccs/proj/e2e/pnorbert/ADIOS/ADIOS/trunk/config/missing --run autoheader
+AUTOMAKE = ${SHELL} /ccs/proj/e2e/pnorbert/ADIOS/ADIOS/trunk/config/missing --run automake-1.9
 AWK = gawk
 CC = mpicc
 CCDEPMODE = depmode=none
-CFLAGS = -g
+CFLAGS = -g -O2
 CPP = mpicc -E
 CPPFLAGS = -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
 CSH = /bin/csh
@@ -148,10 +146,10 @@ HAVE_MXML_FALSE = #
 HAVE_MXML_TRUE = 
 HAVE_NETCDF_FALSE = #
 HAVE_NETCDF_TRUE = 
-HAVE_PHDF5_FALSE = #
-HAVE_PHDF5_TRUE = 
-HDF5_CPPFLAGS = -I/apps/HDF5/1.6.5/ewok_ser/include
-HDF5_LDFLAGS = -L/apps/HDF5/1.6.5/ewok_ser/lib
+HAVE_PHDF5_FALSE = 
+HAVE_PHDF5_TRUE = #
+HDF5_CPPFLAGS = -I/sw/ewok/hdf5/1.6.7/sl5.2_gnu4.1.2/include
+HDF5_LDFLAGS = -L/sw/ewok/hdf5/1.6.7/sl5.2_gnu4.1.2/lib
 HDF5_LIBS = -lhdf5
 INFINIBAND_FALSE = 
 INFINIBAND_TRUE = #
@@ -165,15 +163,15 @@ LIBS =
 LIBTOOL = $(SHELL) $(top_builddir)/libtool
 LN_S = ln -s
 LTLIBOBJS = 
-MAKEINFO = ${SHELL} /ccs/home/ge1/work/ADIOS/trunk/config/missing --run makeinfo
+MAKEINFO = ${SHELL} /ccs/proj/e2e/pnorbert/ADIOS/ADIOS/trunk/config/missing --run makeinfo
 MPICC = mpicc
 MPIFC = mpif90
 MPILIBS =  
-MXML_CPPFLAGS = -I/ccs/home/ge1/work/ewok/include
-MXML_LDFLAGS = -L/ccs/home/ge1/work/ewok/lib
+MXML_CPPFLAGS = -I/ccs/proj/e2e/pnorbert/mxml/include
+MXML_LDFLAGS = -L/ccs/proj/e2e/pnorbert/mxml/lib
 MXML_LIBS = -lmxml
-NETCDF_CPPFLAGS = -I/apps/netcdf/3.6.1/ewok_x86_64_pgi625/include
-NETCDF_LDFLAGS = -L/apps/netcdf/3.6.1/ewok_x86_64_pgi625/lib
+NETCDF_CPPFLAGS = -I/sw/ewok/netcdf/3.6.2/sl5.2_gnu4.1.2/include
+NETCDF_LDFLAGS = -L/sw/ewok/netcdf/3.6.2/sl5.2_gnu4.1.2/lib
 NETCDF_LIBS = -lnetcdf
 OBJEXT = o
 PACKAGE = ADIOS
@@ -184,9 +182,9 @@ PACKAGE_TARNAME =
 PACKAGE_VERSION = 
 PATHPROG = echo
 PATH_SEPARATOR = :
-PHDF5_CPPFLAGS = -I/apps/HDF5/1.6.5/ewok_par/pgi625/include
-PHDF5_LDFLAGS = -L/apps/HDF5/1.6.5/ewok_par/pgi625/lib
-PHDF5_LIBS = -lhdf5
+PHDF5_CPPFLAGS = 
+PHDF5_LDFLAGS = 
+PHDF5_LIBS = 
 PTL_FALSE = 
 PTL_TRUE = #
 RANLIB = ranlib
@@ -226,14 +224,14 @@ host_os = linux-gnu
 host_vendor = redhat
 includedir = ${prefix}/include
 infodir = ${prefix}/info
-install_sh = /ccs/home/ge1/work/ADIOS/trunk/config/install-sh
+install_sh = /ccs/proj/e2e/pnorbert/ADIOS/ADIOS/trunk/config/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localstatedir = ${prefix}/var
 mandir = ${prefix}/man
 mkdir_p = mkdir -p --
 oldincludedir = /usr/include
-prefix = /ccs/home/ge1/work/ewok
+prefix = /ccs/proj/e2e/pnorbert/ADIOS/ewok.gnu
 program_transform_name = s,x,x,
 sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
@@ -244,15 +242,13 @@ AUTOMAKE_OPTIONS = no-dependencies
 genbp_SOURCES = genbp.c
 genbp_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2)
 genbp_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(top_builddir)/src/libbpread.a $(am__append_1)
+	$(top_builddir)/src/libadiosread.a $(am__append_1)
 bp_read_f_SOURCES = bp_read_f.F90
 bp_read_f_LDFLAGS = $(MXML_LDFLAGS) $(am__append_4)
-bp_read_f_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(top_builddir)/src/libbpread.a $(am__append_3)
+bp_read_f_LDADD = $(top_builddir)/src/libadiosread.a $(am__append_3)
 bp_read_c_SOURCES = bp_read_c.c
 bp_read_c_LDFLAGS = $(MXML_LDFLAGS) $(am__append_6)
-bp_read_c_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(top_builddir)/src/libbpread.a $(am__append_5)
+bp_read_c_LDADD = $(top_builddir)/src/libadiosread.a $(am__append_5)
 FCLINK = \
         $(LIBTOOL) --mode=link --tag F77 $(FC) \
         $(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
