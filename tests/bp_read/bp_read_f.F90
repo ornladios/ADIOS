@@ -16,7 +16,7 @@ program read_bp_f
     call adios_fopen (fh, "testbp_c.bp"//char(0), comm, ierr)
     call adios_inq_file (fh,gcnt,vcnt,acnt,tstart,tstop,gnamelist,ierr) 
 
-    call adios_gopen (gh, fh, gnamelist(1), ierr) 
+    call adios_gopen (fh, gh, gnamelist(1), ierr) 
     call adios_inq_group(gh, vcnt, vnamelist, ierr)
 
     do i=1,vcnt 

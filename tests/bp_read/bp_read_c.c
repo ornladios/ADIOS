@@ -62,7 +62,7 @@ int main (int argc, char ** argv)
 		adios_print_fileinfo (&finfo);
 
 	BP_GROUP_INFO ginfo;
-	adios_gopen (&gh, fh, finfo.group_namelist[0]);
+	adios_gopen (fh, &gh, finfo.group_namelist[0]);
 	adios_init_groupinfo (&ginfo,1);
 	adios_inq_group (gh, &ginfo);
 	if (rank == 0) 
