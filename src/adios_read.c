@@ -811,7 +811,7 @@ int64_t adios_get_var (int64_t gh_p,
                 s *= ldims[i];
             }
 
-            printf ("start in payload = %llu, end in payload = %llu\n", start_in_payload, end_in_payload); 
+            //printf ("start in payload = %llu, end in payload = %llu\n", start_in_payload, end_in_payload); 
             slice_size = end_in_payload - start_in_payload + 1 * size_of_type;
 
             if (var_root->characteristics[start_idx + idx].payload_offset > 0) {
