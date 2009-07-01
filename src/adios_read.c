@@ -70,6 +70,7 @@ int adios_fopen ( int64_t * fh_p,
     
     uint64_t header_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
 
+    if (rank == 5) printf ("gary = %llu\n", header_size);
     if ( rank != 0) {
         if (!fh->b->buff) {
             alloc_aligned (fh->b, header_size);
@@ -603,7 +604,6 @@ int64_t adios_get_var (int64_t gh_p,
     int npg = 0;
     uint64_t tmpcount = 0;
     int size_of_type = bp_get_type_size (var_root->type, "");
-
     // actions
     if (count > var_root->characteristics_count)
         count = var_root->characteristics_count;
@@ -733,13 +733,36 @@ int64_t adios_get_var (int64_t gh_p,
         }
         else if (hole_break == 0) 
         {
-            if (tmpreadsize > ldims[0])
-                slice_size = payload_size;
-            else
-                slice_size = tmpreadsize * datasize * size_of_type;
+            int isize;
+            uint64_t size_in_dset = 0;
+            uint64_t offset_in_dset = 0;
+
+            isize = offsets[0] + ldims[0];
+            if (start_tmp[0] >= offsets[0]) {
+                // head is in
+                if (start_tmp[0]<isize) {
+                    if (start_tmp[0] + readsize_tmp[0] > isize)
+                        size_in_dset = isize - start_tmp[0];
+                    else
+                        size_in_dset = readsize_tmp[0];
+                    offset_in_dset = start_tmp[0] - offsets[0];
+                }
+            }
+            else {
+                // middle is in
+                if (isize < start_tmp[0] + readsize_tmp[0])
+                    size_in_dset = ldims[0];
+                else
+                // tail is in
+                    size_in_dset = readsize_tmp[0] + start_tmp[0] - offsets[0];
+                offset_in_dset = 0;
+            }
+
+            slice_size = size_in_dset * datasize * size_of_type;
 
             if (var_root->characteristics[start_idx + idx].payload_offset > 0) {
-                slice_offset = var_root->characteristics[start_idx + idx].payload_offset;
+                slice_offset = var_root->characteristics[start_idx + idx].payload_offset 
+                             + offset_in_dset * datasize * size_of_type;
                 MPI_FILE_READ_OPS
             } else {
                 slice_offset = 0;
@@ -811,7 +834,7 @@ int64_t adios_get_var (int64_t gh_p,
                 s *= ldims[i];
             }
 
-            //printf ("start in payload = %llu, end in payload = %llu\n", start_in_payload, end_in_payload); 
+            printf ("start in payload = %llu, end in payload = %llu\n", start_in_payload, end_in_payload); 
             slice_size = end_in_payload - start_in_payload + 1 * size_of_type;
 
             if (var_root->characteristics[start_idx + idx].payload_offset > 0) {
@@ -863,7 +886,7 @@ int64_t adios_get_var (int64_t gh_p,
     return total_size * size_of_type;
 }
 
-const char * bp_type_to_string (int type)
+const char * adios_type_to_string (int type)
 {
     switch (type)
     {
