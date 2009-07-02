@@ -70,7 +70,6 @@ int adios_fopen ( int64_t * fh_p,
     
     uint64_t header_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
 
-    if (rank == 5) printf ("gary = %llu\n", header_size);
     if ( rank != 0) {
         if (!fh->b->buff) {
             alloc_aligned (fh->b, header_size);
@@ -446,6 +445,133 @@ int adios_inq_var (int64_t gh_p, char * varname,
     return 0;
 }
 
+#define MPI_FILE_READ_OPS                           \
+        realloc_aligned(fh->b, slice_size);         \
+        fh->b->offset = 0;                          \
+                                                    \
+        MPI_File_seek (fh->mpi_fh                   \
+                      ,(MPI_Offset)slice_offset     \
+                      ,MPI_SEEK_SET                 \
+                      );                            \
+                                                    \
+        MPI_File_read (fh->mpi_fh                   \
+                      ,fh->b->buff                  \
+                      ,slice_size                   \
+                      ,MPI_BYTE                     \
+                      ,&status                      \
+                      );                            \
+        fh->b->offset = 0;                          \
+
+//We also need to be able to read old .bp which doesn't have 'payload_offset'
+#define MPI_FILE_READ_OPS1                                                                  \
+        MPI_File_seek (fh->mpi_fh                                                           \
+                      ,(MPI_Offset) var_root->characteristics[start_idx + idx].offset       \
+                      ,MPI_SEEK_SET);                                                       \
+        MPI_File_read (fh->mpi_fh, fh->b->buff, 8, MPI_BYTE, &status);                      \
+        tmpcount= *((uint64_t*)fh->b->buff);                                                \
+                                                                                            \
+        realloc_aligned(fh->b, tmpcount + 8);                                               \
+        fh->b->offset = 0;                                                                  \
+                                                                                            \
+        MPI_File_seek (fh->mpi_fh                                                           \
+                      ,(MPI_Offset) (var_root->characteristics[start_idx + idx].offset)     \
+                      ,MPI_SEEK_SET);                                                       \
+        MPI_File_read (fh->mpi_fh, fh->b->buff, tmpcount + 8, MPI_BYTE, &status);           \
+        fh->b->offset = 0;                                                                  \
+        adios_parse_var_data_header_v1 (fh->b, &var_header);                                \
+
+int64_t adios_get_scalar (int64_t gh_p,
+                          char * varname, 
+                          void * var,
+                          int timestep
+                          )
+{
+    double  start_time, stop_time;
+    int    i, j, var_id, idx;
+    int    offset, count, start_idx=-1;
+    struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+    struct BP_FILE * fh = (struct BP_FILE *) (gh->fh);
+    struct adios_index_var_struct_v1 * var_root = fh->vars_root;
+    struct adios_var_header_struct_v1 var_header;
+    struct adios_var_payload_struct_v1 var_payload;
+    uint8_t  ndim;  
+    uint64_t datasize, nloop, dset_stride,var_stride, total_size=1;
+    uint64_t tmpcount = 0;
+    MPI_Status status;
+
+    var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
+    for (i=0;i<gh->group_id;i++)
+        var_id -= fh->gh->var_counts_per_group[i];
+
+    for(i=0;i<gh->offset && var_root;i++)
+        var_root = var_root->next;
+
+    if (var_id<0) {
+        fprintf(stderr, "Error: Variable %s does not exist in the group %s!\n",
+                    varname, fh->gh->namelist[gh->group_id]);
+        return -4;
+    }
+
+    for (i=0;i<var_id && var_root;i++) 
+        var_root = var_root->next;
+    
+    if (i!=var_id) {
+        fprintf(stderr, "Error: time step should start from 1 %d %d!\n",
+                i, var_id);
+        return -5; 
+    }
+
+    gh->var_current = var_root;
+
+    if (timestep < 0) {
+        fprintf(stderr, "Error: time step should start from 1!\n");
+        return -5; 
+    }
+    if (timestep < fh->tidx_start) {
+        fprintf(stderr, "Error: time step should start from 1:%d %d!\n",
+                timestep, fh->tidx_start);
+        return -5; 
+    }
+    // get the starting offset for the given time step
+    offset = fh->gh->time_index[0][gh->group_id][timestep - fh->tidx_start];
+    count = fh->gh->time_index[1][gh->group_id][timestep - fh->tidx_start];
+
+    for (i = 0;i < var_root->characteristics_count; i++) {
+        if (   (  var_root->characteristics[i].offset 
+                > fh->gh->pg_offsets[offset])
+            && (  (i == var_root->characteristics_count-1) 
+                ||(  var_root->characteristics[i].offset 
+                   < fh->gh->pg_offsets[offset + 1]))
+           ) {
+            start_idx = i;
+            break;
+        }
+    }
+    idx = 0;
+    if (start_idx < 0) {
+        fprintf (stderr,"Error: %s has no data at %d time step\n",
+                 varname, timestep);
+        return -4;
+    }
+
+    int size_of_type = bp_get_type_size (var_root->type, "");
+
+    uint64_t slice_offset = 0;
+    uint64_t slice_size = size_of_type;
+
+    if (var_root->characteristics[start_idx + idx].payload_offset > 0) {
+        slice_offset = var_root->characteristics[start_idx + idx].payload_offset;
+        MPI_FILE_READ_OPS
+    } else {
+        slice_offset = 0;
+        MPI_FILE_READ_OPS1
+    }
+
+    memcpy(var, fh->b->buff + fh->b->offset, size_of_type);
+
+    return size_of_type;
+}
+
 int64_t adios_get_var (int64_t gh_p,
                        char * varname, 
                        void * var,
@@ -470,6 +596,11 @@ int64_t adios_get_var (int64_t gh_p,
     int readsize_tmp[10], start_tmp[10];
     MPI_Status status;
 
+    if (timestep < fh->tidx_start || timestep > fh->tidx_stop) {
+        fprintf(stderr, "Error: Invalid timestep!\n");
+        return -1;
+    }
+    
     var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
     for (i=0;i<gh->group_id;i++)
         var_id -= fh->gh->var_counts_per_group[i];
@@ -546,7 +677,7 @@ int64_t adios_get_var (int64_t gh_p,
         for (i = 0; i < ndim; i++) {
             if (   ldims[i] == 1 
                   && var_root->characteristics_count > 1
-                && ndim>1) {
+                && ndim>=1) {
                 is_timebased = 1;
                 time_flag = i;
             }
@@ -570,6 +701,13 @@ int64_t adios_get_var (int64_t gh_p,
         }
         ndim = ndim -1;
     }
+
+    if (ndim == 0)
+        return adios_get_scalar (gh_p
+                                ,varname
+                                ,var
+                                ,timestep
+                                );
 
     // if bp is written by fortran, flip read size and offset
     if (adios_host_language_fortran)
@@ -682,41 +820,6 @@ int64_t adios_get_var (int64_t gh_p,
         hole_break = i;
         uint64_t slice_offset = 0;
         uint64_t slice_size = 0;
-
-#define MPI_FILE_READ_OPS                           \
-        realloc_aligned(fh->b, slice_size);         \
-        fh->b->offset = 0;                          \
-                                                    \
-        MPI_File_seek (fh->mpi_fh                   \
-                      ,(MPI_Offset)slice_offset     \
-                      ,MPI_SEEK_SET                 \
-                      );                            \
-                                                    \
-        MPI_File_read (fh->mpi_fh                   \
-                      ,fh->b->buff                  \
-                      ,slice_size                   \
-                      ,MPI_BYTE                     \
-                      ,&status                      \
-                      );                            \
-        fh->b->offset = 0;                          \
-
-//We also need to be able to read old .bp which doesn't have 'payload_offset'
-#define MPI_FILE_READ_OPS1                                                                  \
-        MPI_File_seek (fh->mpi_fh                                                           \
-                      ,(MPI_Offset) var_root->characteristics[start_idx + idx].offset       \
-                      ,MPI_SEEK_SET);                                                       \
-        MPI_File_read (fh->mpi_fh, fh->b->buff, 8, MPI_BYTE, &status);                      \
-        tmpcount= *((uint64_t*)fh->b->buff);                                                \
-                                                                                            \
-        realloc_aligned(fh->b, tmpcount + 8);                                               \
-        fh->b->offset = 0;                                                                  \
-                                                                                            \
-        MPI_File_seek (fh->mpi_fh                                                           \
-                      ,(MPI_Offset) (var_root->characteristics[start_idx + idx].offset)     \
-                      ,MPI_SEEK_SET);                                                       \
-        MPI_File_read (fh->mpi_fh, fh->b->buff, tmpcount + 8, MPI_BYTE, &status);           \
-        fh->b->offset = 0;                                                                  \
-        adios_parse_var_data_header_v1 (fh->b, &var_header);                                \
 
         if (hole_break == -1) {
             slice_size = payload_size;
@@ -834,7 +937,6 @@ int64_t adios_get_var (int64_t gh_p,
                 s *= ldims[i];
             }
 
-            printf ("start in payload = %llu, end in payload = %llu\n", start_in_payload, end_in_payload); 
             slice_size = end_in_payload - start_in_payload + 1 * size_of_type;
 
             if (var_root->characteristics[start_idx + idx].payload_offset > 0) {
@@ -886,7 +988,7 @@ int64_t adios_get_var (int64_t gh_p,
     return total_size * size_of_type;
 }
 
-const char * adios_type_to_string (int type)
+const char * bp_type_to_string (int type)
 {
     switch (type)
     {
