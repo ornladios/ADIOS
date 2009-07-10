@@ -70,18 +70,18 @@ ARFLAGS = cru
 libadios_a_AR = $(AR) $(ARFLAGS)
 libadios_a_LIBADD =
 am__libadios_a_SOURCES_DIST = adios.c adios_transport_hooks.c \
-	adios_mpi.c adios_mpi_stripe.c adios_mpi_cio.c adios_mpi_nwu.c \
-	adios_mpi_stagger.c adios_mpi_aggregate.c adios_posix.c \
-	adios_posix_ascii.c adios_vtk.c adios_provenance.c \
-	adios_internals.c adios_socket.c adios_bp_v1.c \
-	adios_endianness.c adios_datatap.c adios_phdf5.c
+	adios_mpi.c adios_mpi_stripe2.c adios_mpi_cio.c \
+	adios_mpi_stripe.c adios_mpi_stagger.c adios_mpi_aggregate.c \
+	adios_posix.c adios_posix_ascii.c adios_vtk.c \
+	adios_provenance.c adios_internals.c adios_socket.c \
+	adios_bp_v1.c adios_endianness.c adios_datatap.c adios_phdf5.c
 @HAVE_PHDF5_FALSE@am__objects_1 = libadios_a-adios_phdf5.$(OBJEXT)
 am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
 	libadios_a-adios_transport_hooks.$(OBJEXT) \
 	libadios_a-adios_mpi.$(OBJEXT) \
-	libadios_a-adios_mpi_stripe.$(OBJEXT) \
+	libadios_a-adios_mpi_stripe2.$(OBJEXT) \
 	libadios_a-adios_mpi_cio.$(OBJEXT) \
-	libadios_a-adios_mpi_nwu.$(OBJEXT) \
+	libadios_a-adios_mpi_stripe.$(OBJEXT) \
 	libadios_a-adios_mpi_stagger.$(OBJEXT) \
 	libadios_a-adios_mpi_aggregate.$(OBJEXT) \
 	libadios_a-adios_posix.$(OBJEXT) \
@@ -302,7 +302,7 @@ include_HEADERS = adios.h adios_types.h adios_internals.h \
 lib_LIBRARIES = libadios.a $(am__append_1) libadios_int.a \
 	libadios_int_nompi.a libadiosread.a libadiosread_nompi.a
 libadios_a_SOURCES = adios.c adios_transport_hooks.c adios_mpi.c \
-	adios_mpi_stripe.c adios_mpi_cio.c adios_mpi_nwu.c \
+	adios_mpi_stripe2.c adios_mpi_cio.c adios_mpi_stripe.c \
 	adios_mpi_stagger.c adios_mpi_aggregate.c adios_posix.c \
 	adios_posix_ascii.c adios_vtk.c adios_provenance.c \
 	adios_internals.c adios_socket.c adios_bp_v1.c \
@@ -458,11 +458,11 @@ libadios_a-adios_mpi.o: adios_mpi.c
 libadios_a-adios_mpi.obj: adios_mpi.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi.obj `if test -f 'adios_mpi.c'; then $(CYGPATH_W) 'adios_mpi.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi.c'; fi`
 
-libadios_a-adios_mpi_stripe.o: adios_mpi_stripe.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_stripe.o `test -f 'adios_mpi_stripe.c' || echo '$(srcdir)/'`adios_mpi_stripe.c
+libadios_a-adios_mpi_stripe2.o: adios_mpi_stripe2.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_stripe2.o `test -f 'adios_mpi_stripe2.c' || echo '$(srcdir)/'`adios_mpi_stripe2.c
 
-libadios_a-adios_mpi_stripe.obj: adios_mpi_stripe.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_stripe.obj `if test -f 'adios_mpi_stripe.c'; then $(CYGPATH_W) 'adios_mpi_stripe.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_stripe.c'; fi`
+libadios_a-adios_mpi_stripe2.obj: adios_mpi_stripe2.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_stripe2.obj `if test -f 'adios_mpi_stripe2.c'; then $(CYGPATH_W) 'adios_mpi_stripe2.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_stripe2.c'; fi`
 
 libadios_a-adios_mpi_cio.o: adios_mpi_cio.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_cio.o `test -f 'adios_mpi_cio.c' || echo '$(srcdir)/'`adios_mpi_cio.c
@@ -470,11 +470,11 @@ libadios_a-adios_mpi_cio.o: adios_mpi_cio.c
 libadios_a-adios_mpi_cio.obj: adios_mpi_cio.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_cio.obj `if test -f 'adios_mpi_cio.c'; then $(CYGPATH_W) 'adios_mpi_cio.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_cio.c'; fi`
 
-libadios_a-adios_mpi_nwu.o: adios_mpi_nwu.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_nwu.o `test -f 'adios_mpi_nwu.c' || echo '$(srcdir)/'`adios_mpi_nwu.c
+libadios_a-adios_mpi_stripe.o: adios_mpi_stripe.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_stripe.o `test -f 'adios_mpi_stripe.c' || echo '$(srcdir)/'`adios_mpi_stripe.c
 
-libadios_a-adios_mpi_nwu.obj: adios_mpi_nwu.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_nwu.obj `if test -f 'adios_mpi_nwu.c'; then $(CYGPATH_W) 'adios_mpi_nwu.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_nwu.c'; fi`
+libadios_a-adios_mpi_stripe.obj: adios_mpi_stripe.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_stripe.obj `if test -f 'adios_mpi_stripe.c'; then $(CYGPATH_W) 'adios_mpi_stripe.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_stripe.c'; fi`
 
 libadios_a-adios_mpi_stagger.o: adios_mpi_stagger.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_stagger.o `test -f 'adios_mpi_stagger.c' || echo '$(srcdir)/'`adios_mpi_stagger.c
