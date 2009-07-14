@@ -36,12 +36,12 @@ struct adios_MPI_data_struct
     uint64_t vars_start;
     uint64_t vars_header_size;
 
-    int striping_unit;  /* file system stripe size */
+    uint64_t striping_unit;  // file system stripe size
 };
 
 #include <sys/statfs.h>
 
-/* this should be determined at configure time */
+// this should be determined at configure time
 //#define ADIOS_LUSTRE
 
 #ifdef ADIOS_LUSTRE
@@ -53,21 +53,22 @@ static int
 adios_mpi_stripe_get_striping_unit(MPI_File fh, char *filename)
 {
     struct statfs fsbuf;
-    int err, flag, striping_unit = 1048576;
+    int err, flag;
+    uint64_t striping_unit = 1048576;
     char     value[64];
     MPI_Info info_used;
 
 #ifndef ADIOS_LUSTRE
-    return 0;  /* disable stripe-size I/O for non-Lustre file system */
+    return 0;  // disable stripe-size I/O for non-Lustre file system
 #else
-    /* get striping_unit from MPI hint if it has */
+    // get striping_unit from MPI hint if it has
     MPI_File_get_info(fh, &info_used);
     MPI_Info_get(info_used, "striping_unit", 63, value, &flag);
     MPI_Info_free(&info_used);
 
     if (flag) return atoi(value);
 
-    /* if striping_unit is not set in MPI file info, get it from system */
+    // if striping_unit is not set in MPI file info, get it from system
     err = statfs(filename, &fsbuf);
     if (err == -1) {
         printf("Warning: statfs failed %s %s.\n",filename,strerror(errno));
@@ -100,12 +101,12 @@ adios_mpi_stripe_get_striping_unit(MPI_File fh, char *filename)
 #endif
 }
 
-static int
+static uint64_t
 adios_mpi_stripe_striping_unit_write(MPI_File    fh,
                               MPI_Offset  offset,
                               void       *buf,
-                              int         len,
-                              int         striping_unit)
+                              uint64_t   len,
+                              uint64_t   striping_unit)
 {
     int err = -1;
     MPI_Status status;
@@ -119,13 +120,13 @@ adios_mpi_stripe_striping_unit_write(MPI_File    fh,
 
     if (striping_unit > 0) {
         MPI_Offset  rem_off = offset;
-        int         rem_size = len;
+        uint64_t         rem_size = len;
         char       *buf_ptr = buf;
 
         err = 0;
         while (rem_size > 0) {
-            int rem_unit  = striping_unit - rem_off % striping_unit;
-            int write_len = (rem_unit < rem_size) ? rem_unit : rem_size;
+            uint64_t rem_unit  = striping_unit - rem_off % striping_unit;
+            uint64_t write_len = (rem_unit < rem_size) ? rem_unit : rem_size;
             int ret_len;
 
 #ifdef _WKL_CHECK_STRIPE_IO
@@ -286,7 +287,7 @@ int adios_mpi_stripe_open (struct adios_file_struct * fd
 
 static
 void build_offsets (struct adios_bp_buffer_struct_v1 * b
-                   ,MPI_Offset * offsets, int size, char * group_name
+                   ,MPI_Offset * offsets, uint64_t size, char * group_name
                    ,struct adios_index_process_group_struct_v1 * pg_root
                    )
 {
@@ -868,7 +869,7 @@ enum ADIOS_FLAG adios_mpi_stripe_should_buffer (struct adios_file_struct * fd
         // write the process group header
         adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
 
-        int count;
+        uint64_t count;
         count = adios_mpi_stripe_striping_unit_write(
                           md->fh,
                           fd->base_offset,
@@ -933,7 +934,7 @@ void adios_mpi_stripe_write (struct adios_file_struct * fd
         // var payload sent for sizing information
         adios_write_var_header_v1 (fd, v);
 
-        int count;
+        uint64_t count;
         count = adios_mpi_stripe_striping_unit_write(
                           md->fh,
                           -1,
@@ -1074,7 +1075,7 @@ static void adios_mpi_stripe_do_read (struct adios_file_struct * fd
             struct adios_var_payload_struct_v1 var_payload;
             struct adios_attribute_struct_v1 attribute;
 
-            int i;
+            uint64_t i;
 
             adios_init_buffer_read_process_group (&md->b);
             MPI_File_seek (md->fh, md->b.read_pg_offset
@@ -1199,20 +1200,21 @@ void adios_mpi_stripe_close (struct adios_file_struct * fd
                 fd->buffer_size = 0;
                 adios_write_close_vars_v1 (fd);
                 // fd->vars_start gets updated with the size written
-                int count;
+                uint64_t count;
+                int retlen;
                 count = adios_mpi_stripe_striping_unit_write(
                                   md->fh,
                                   md->vars_start,
                                   fd->buffer,
                                   md->vars_header_size,
                                   md->striping_unit);
-                MPI_Get_count (&md->status, MPI_BYTE, &count);
-                if (count != md->vars_header_size)
+                MPI_Get_count (&md->status, MPI_BYTE, &retlen);
+                if (retlen != md->vars_header_size)
                 {
                     fprintf (stderr, "d:MPI method tried to write %llu, "
                                      "only wrote %d\n"
                             ,md->vars_header_size
-                            ,count
+                            ,retlen
                             );
                 }
                 fd->offset = 0;
@@ -1432,7 +1434,7 @@ void adios_mpi_stripe_close (struct adios_file_struct * fd
                 fd->buffer_size = 0;
                 adios_write_close_vars_v1 (fd);
                 // fd->vars_start gets updated with the size written
-                int count;
+                uint64_t count;
                 count = adios_mpi_stripe_striping_unit_write(
                                   md->fh,
                                   md->vars_start,
