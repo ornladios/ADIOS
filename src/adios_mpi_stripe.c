@@ -96,7 +96,7 @@ adios_mpi_stripe_get_striping_unit(MPI_File fh, char *filename)
             printf("Warning: open failed on file %s %s.\n",filename,strerror(errno));
     }
 
-    /* set the file striping size */
+    // set the file striping size
     return striping_unit;
 #endif
 }
@@ -108,25 +108,25 @@ adios_mpi_stripe_striping_unit_write(MPI_File    fh,
                               uint64_t   len,
                               uint64_t   striping_unit)
 {
-    int err = -1;
+    uint64_t err = -1;
     MPI_Status status;
 
     if (len == 0) return 0;
 
-    if (offset == -1) /* use current position */
+    if (offset == -1) // use current position
         MPI_File_get_position(fh, &offset);
     else
         MPI_File_seek (fh, offset, MPI_SEEK_SET);
 
     if (striping_unit > 0) {
         MPI_Offset  rem_off = offset;
-        uint64_t         rem_size = len;
+        uint64_t    rem_size = len;
         char       *buf_ptr = buf;
 
         err = 0;
         while (rem_size > 0) {
             uint64_t rem_unit  = striping_unit - rem_off % striping_unit;
-            uint64_t write_len = (rem_unit < rem_size) ? rem_unit : rem_size;
+            int write_len = (rem_unit < rem_size) ? rem_unit : rem_size;
             int ret_len;
 
 #ifdef _WKL_CHECK_STRIPE_IO
@@ -146,8 +146,25 @@ printf("adios_mpi_stripe_striping_unit_write offset=%12lld len=%12d\n",offset,wr
 #ifdef _WKL_CHECK_STRIPE_IO
 printf("adios_mpi_stripe_striping_unit_write offset=%12lld len=%12d\n",offset,len);
 #endif
-        MPI_File_write (fh, buf, len, MPI_BYTE, &status);
-        MPI_Get_count(&status, MPI_BYTE, &err);
+        uint64_t total_written = 0;
+        uint64_t to_write = len;
+        int write_len = 0;
+        int count;
+        char * buf_ptr = buf;
+        while (total_written < len)
+        {
+            write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+            MPI_File_write (fh, buf_ptr, write_len, MPI_BYTE, &status);
+            MPI_Get_count(&status, MPI_BYTE, &count);
+            if (count != write_len)
+            {
+                err = count;
+                break;
+            }
+            total_written += count;
+            buf_ptr += count;
+            to_write -= count;
+        }
     }
     return err;
 }
@@ -578,9 +595,7 @@ enum ADIOS_FLAG adios_mpi_stripe_should_buffer (struct adios_file_struct * fd
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
             {
-                // MPI_File_delete (name, MPI_INFO_NULL);  // make sure clean
-#include <unistd.h>
-                unlink (name);
+                unlink (name);  // make sure clean
 
                 err = MPI_File_open (MPI_COMM_SELF, name
                                     ,MPI_MODE_WRONLY | MPI_MODE_CREATE
