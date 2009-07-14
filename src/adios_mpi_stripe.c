@@ -164,6 +164,7 @@ printf("adios_mpi_stripe_striping_unit_write offset=%12lld len=%12d\n",offset,le
             total_written += count;
             buf_ptr += count;
             to_write -= count;
+            err = total_written;
         }
     }
     return err;
