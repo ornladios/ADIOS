@@ -10,7 +10,6 @@
 #include <unistd.h>
 #include "adios_types.h"
 #include "adios_bp_v1.h"
-#include "adios_bp_v2.h"
 #include "adios_internals.h"
 #include "adios_endianness.h"
 

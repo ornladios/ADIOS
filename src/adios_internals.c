@@ -4375,7 +4375,7 @@ int adios_common_select_method (int priority, const char * method
     }
     else
     {
-        fprintf (stderr, "config.xml: invalid method: %s\n", method);
+        fprintf (stderr, "config.xml: invalid transport: %s\n", method);
 
         free (new_method->base_path);
         free (new_method->method);
@@ -4389,7 +4389,7 @@ int adios_common_select_method (int priority, const char * method
     g = (struct adios_group_struct *) group_id;
     if (!g)
     {
-        fprintf (stderr, "config.xml: Didn't find group: %s for method: %s\n"
+        fprintf (stderr, "config.xml: Didn't find group: %s for transport: %s\n"
                 ,group, method
                 );
 
