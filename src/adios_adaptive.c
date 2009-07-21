@@ -1911,11 +1911,11 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 fd->bytes_written = 0;
             }
 
+#if 0
             // build index appending to any existing index
             adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
                                  ,&md->old_attrs_root
                                  );
-#if 0
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
             {
@@ -2087,12 +2087,9 @@ void adios_adaptive_close (struct adios_file_struct * fd
                                );
             }
 #endif
-            // we need the size of the buffer for responding to the write
-            adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                 ,0, md->old_pg_root
-                                 ,md->old_vars_root
-                                 ,md->old_attrs_root
-                                 );
+            char * index_buffer = 0;
+            uint64_t index_buffer_size = 0;
+            uint64_t index_buffer_offset = 0;
 
             if (md->rank == md->coord_rank)
             {
@@ -2121,6 +2118,22 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 writer_flag [0] = NO_FLAG;
             }
 //printf ("f: rank: %2d writing\n", md->rank);
+
+            // set our base offset for building the index
+            fd->base_offset = msg [5] * md->stripe_size;
+            // build index appending to any existing index
+            adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
+                                 ,&md->old_attrs_root
+                                 );
+
+            // we need the size of the buffer for responding to the write
+            adios_write_index_v1 (&index_buffer, &index_buffer_size
+                                 ,&index_buffer_offset
+                                 ,0, md->old_pg_root
+                                 ,md->old_vars_root
+                                 ,md->old_attrs_root
+                                 );
+printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
 
             if (msg [1] == msg [3]) // same file
             {
@@ -2559,6 +2572,12 @@ void adios_adaptive_close (struct adios_file_struct * fd
         }
     }
 
+    if (md && md->f)
+    {
+        close (md->f);
+        md->f = -1;
+    }
+
     if (md && md->fh)
         MPI_File_close (&md->fh);
 
@@ -2661,12 +2680,11 @@ static void * sub_coordinator_main (void * param)
         if (message_available)
         {
             uint64_t msgx [PARAMETER_COUNT];
-            MPI_Irecv (msgx, PARAMETER_COUNT, MPI_LONG_LONG, MPI_ANY_SOURCE
-                      ,TAG_SUB_COORDINATOR
-                      ,md->group_comm, &req
-                      );
+            MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG, MPI_ANY_SOURCE
+                     ,TAG_SUB_COORDINATOR
+                     ,md->group_comm, &status
+                     );
 
-            MPI_Wait (&req, &status);
             COPY_ALL_PARAMS(msg,msgx);
             source = status.MPI_SOURCE;
             i++;
@@ -2748,12 +2766,11 @@ static void * sub_coordinator_main (void * param)
         if (message_available)
         {
             uint64_t msgx [PARAMETER_COUNT];
-            MPI_Irecv (msgx, PARAMETER_COUNT, MPI_LONG_LONG, MPI_ANY_SOURCE
-                      ,TAG_SUB_COORDINATOR
-                      ,md->group_comm, &req
-                      );
+            MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG, MPI_ANY_SOURCE
+                     ,TAG_SUB_COORDINATOR
+                     ,md->group_comm, &status
+                     );
 
-            MPI_Wait (&req, &status);
             source = status.MPI_SOURCE;
             COPY_ALL_PARAMS(msg,msgx);
         }
@@ -3170,12 +3187,11 @@ static void * coordinator_main (void * param)
         if (message_available)
         {
             uint64_t msgx [PARAMETER_COUNT];
-            MPI_Irecv (msgx, PARAMETER_COUNT, MPI_LONG_LONG
-                      ,MPI_ANY_SOURCE, TAG_COORDINATOR
-                      ,md->group_comm, &req
-                      );
+            MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG
+                     ,MPI_ANY_SOURCE, TAG_COORDINATOR
+                     ,md->group_comm, &status
+                     );
 
-            MPI_Wait (&req, &status);
             COPY_ALL_PARAMS(msg,msgx);
             source = msgx [2];
             i++;
@@ -3256,12 +3272,11 @@ static void * coordinator_main (void * param)
         if (message_available)
         {
             uint64_t msgx [PARAMETER_COUNT];
-            MPI_Irecv (msgx, PARAMETER_COUNT, MPI_LONG_LONG
-                      ,MPI_ANY_SOURCE, TAG_COORDINATOR
-                      ,md->group_comm, &req
-                      );
+            MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG
+                     ,MPI_ANY_SOURCE, TAG_COORDINATOR
+                     ,md->group_comm, &status
+                     );
 
-            MPI_Wait (&req, &status);
             source = status.MPI_SOURCE;
             COPY_ALL_PARAMS(msg,msgx);
         }
