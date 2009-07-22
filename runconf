@@ -33,11 +33,11 @@ export FC=ftn
 ./configure --prefix=/ccs/home/ge1/work/jaguar \
             --enable-dependency-tracking \
             --with-mxml=/ccs/home/ge1/work/jaguar \
-            --with-hdf5=/sw/xt5/hdf5/1.6.7/cnl2.0_pgi7.1.6 \
-            --with-hdf5-libdir="/sw/xt5/hdf5/1.6.7/cnl2.0_pgi7.1.6/lib -L/sw/xt5/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" \
-            --with-phdf5=/sw/xt5/hdf5/1.6.7/cnl2.0_pgi7.1.6_par \
-            --with-phdf5-libdir="/sw/xt5/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt5/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" \
-            --with-netcdf=/sw/xt5/netcdf/3.6.2/sles9.2_pgi7.0.7
+            --with-hdf5=/sw/xt5/hdf5/1.6.7/cnl2.1_gnu4.2.4 \
+            --with-hdf5-libdir="/sw/xt5/hdf5/1.6.7/cnl2.1_gnu4.2.4/lib -L/sw/xt5/szip/2.1/sles10.1_gnu4.2.4/lib -lsz -lz" \
+            --with-phdf5=/sw/xt5/hdf5/1.6.7/cnl2.1_gnu4.2.4_par \
+            --with-phdf5-libdir="/sw/xt5/hdf5/1.6.7/cnl2.1_gnu4.2.4_par/lib -L/sw/xt5/szip/2.1/sles10.1_gnu4.2.4/lib -lsz -lz" \
+            --with-netcdf=/sw/xt5/netcdf/3.6.2/sles10.1_gnu4.2.0
 
 elif [ `hostname | cut -c 1-4` == "lens" ]; then
 
