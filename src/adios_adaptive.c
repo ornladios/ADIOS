@@ -44,9 +44,6 @@ struct adios_adaptive_data_struct
     uint16_t storage_targets;  // number of storage targets being used
     uint16_t split_groups;     // number of files to split output into
     uint16_t split_group_size; // how big the groups are at max (smaller at end)
-    MPI_Comm split_comm;
-    int split_size;
-    int split_rank;
 
     // these correspond to the series of parameters available to this transport
     // and control how it performs
@@ -307,9 +304,6 @@ void adios_adaptive_init (const char * parameters
     md->storage_targets = 0;
     md->split_groups = 1;
     md->split_group_size = 0;
-    md->split_comm = MPI_COMM_NULL;
-    md->split_size = -1;
-    md->split_rank = -1;
 
     md->files_number = 1;          // always can be 1 by default
     md->max_storage_targets = -1;
@@ -548,7 +542,6 @@ adios_build_file_offset (struct adios_adaptive_data_struct *md
             offsets [1] = biggest_size;
             offsets [2] = md->storage_targets;
             offsets [3] = md->split_groups;
-            offsets [4] = md->split_size;
             // need to use this calc since last grouping may be incomplete
             // with a previous group having a piece later in the file.
             //md->b.pg_index_offset =   last_offset + biggest_size;
@@ -580,7 +573,6 @@ adios_build_file_offset (struct adios_adaptive_data_struct *md
             md->stripe_size = offset [1];
             md->storage_targets = offset [2];
             md->split_groups = offset [3];
-            md->split_size = offset [4];
             md->groups = offset [3];
             md->groups = (md->size > md->max_storage_targets) ? md->max_storage_targets : md->size;
             calc_groups (md->rank, md->size, md->groups
@@ -910,12 +902,6 @@ static void set_stripe_size (struct adios_adaptive_data_struct * md
 #if 0
             }
 #endif
-
-            // #groups employed for this file is md->split_groups
-            // group_size for each part of this file is md->split_size
-            md->split_size = md->size / md->split_groups;
-            if (md->size % md->split_groups)
-                md->split_size++;
         }
     }
 }
@@ -957,14 +943,15 @@ static void setup_threads_and_register (struct adios_adaptive_data_struct * md
         uint64_t msgx [PARAMETER_COUNT];
         msgx [0] = REGISTER_FLAG;
         msgx [1] = md->rank;
+printf ("%d lock 1\n", md->rank);
         pthread_mutex_lock (&md->mutex);
         MPI_Isend (msgx, PARAMETER_COUNT, MPI_LONG_LONG
                   ,md->sub_coord_rank, TAG_SUB_COORDINATOR
                   ,md->group_comm, &req
                   );
 
-        MPI_Wait (&req, &status);
         pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 1\n", md->rank);
     }
     else
     {
@@ -972,18 +959,17 @@ static void setup_threads_and_register (struct adios_adaptive_data_struct * md
             ;
         w_sub_coordinator_flag [1] = md->rank;
         w_sub_coordinator_flag [0] = REGISTER_FLAG;
-        while (w_sub_coordinator_flag [0] == md->rank)
+        //while (w_sub_coordinator_flag [0] == REGISTER_FLAG)
             ;
     }
 
     // set the registration as complete to change mode
-    MPI_Barrier (md->group_comm);
     if (md->rank == md->coord_rank)
     {
         while (w_coordinator_flag [0] != NO_FLAG)
             ;
         w_coordinator_flag [0] = REGISTER_COMPLETE;
-        while (w_coordinator_flag [0] == REGISTER_COMPLETE)
+        //while (w_coordinator_flag [0] == REGISTER_COMPLETE)
             ;
     }
     if (md->rank == md->sub_coord_rank)
@@ -991,10 +977,9 @@ static void setup_threads_and_register (struct adios_adaptive_data_struct * md
         while (w_sub_coordinator_flag [0] != NO_FLAG)
             ;
         w_sub_coordinator_flag [0] = REGISTER_COMPLETE;
-        while (w_sub_coordinator_flag [0] == REGISTER_COMPLETE)
+        //while (w_sub_coordinator_flag [0] == REGISTER_COMPLETE)
             ;
     }
-    MPI_Barrier (md->group_comm);
 }
 
 enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
@@ -1839,14 +1824,6 @@ void adios_adaptive_close (struct adios_file_struct * fd
             int index_size = md->size;
             MPI_Comm index_comm = md->group_comm;
 
-            // if we split, change to each new file for index
-            if (md->split_comm != MPI_COMM_NULL)
-            {
-                index_comm = md->split_comm;
-                MPI_Comm_size (index_comm, &index_size);
-                MPI_Comm_rank (index_comm, &index_rank);
-            }
-
             if (fd->shared_buffer == adios_flag_no)
             {
                 MPI_Offset new_off;
@@ -2116,20 +2093,23 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 while (w_coordinator_flag [0] != NO_FLAG)
                     ;
                 w_coordinator_flag [0] = START_WRITES;
+                //while (w_coordinator_flag [0] != NO_FLAG)
+                    ;
             }
 //printf ("e: rank: %2d waiting to write\n", md->rank);
 
             if (md->rank != md->sub_coord_rank)
             {
                 uint64_t msgx [PARAMETER_COUNT];
+printf ("%d lock 2\n", md->rank);
                 pthread_mutex_lock (&md->mutex);
-                MPI_Irecv (msgx, PARAMETER_COUNT, MPI_LONG_LONG
+                MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG
                           ,md->sub_coord_rank, TAG_WRITER
-                          ,md->group_comm, &req
+                          ,md->group_comm, &status
                           );
 
-                MPI_Wait (&req, &status);
                 pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 2\n", md->rank);
                 COPY_ALL_PARAMS(msg,msgx);
             }
             else
@@ -2224,24 +2204,27 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
             int source; // who to tell our index to
             if (md->rank != msg [2])
             {
+printf ("rank: %d sending WRITE_COMPLETE to %d\n", md->rank, msg [2]);
                 uint64_t msgx [PARAMETER_COUNT];
                 msgx [0] = WRITE_COMPLETE;
                 msgx [1] = msg [1];
                 msgx [2] = msg [3];
                 msgx [3] = new_offset;
                 msgx [4] = index_size;
+printf ("%d lock 3\n", md->rank);
                 pthread_mutex_lock (&md->mutex);
                 MPI_Isend (msgx, PARAMETER_COUNT, MPI_LONG_LONG
                           ,msg [2], TAG_SUB_COORDINATOR
                           ,md->group_comm, &req
                           );
 
-                MPI_Wait (&req, &status);
                 pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 3\n", md->rank);
                 source = msg [2];
             }
             else
             {
+printf ("rank: %d sending WRITE_COMPLETE to %d\n", md->rank, msg [2]);
                 while (w_sub_coordinator_flag [0] != NO_FLAG)
                     ;
                 w_sub_coordinator_flag [1] = msg [1];
@@ -2250,6 +2233,8 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
                 w_sub_coordinator_flag [4] = index_size;
                 w_sub_coordinator_flag [0] = WRITE_COMPLETE;
                 source = md->rank;
+                //while (w_sub_coordinator_flag [0] != NO_FLAG)
+                    ;
             }
 //printf ("rank: %2d responding from write if adaptive\n", md->rank);
 
@@ -2258,28 +2243,33 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
             {
                 if (md->rank != msg [4])
                 {
+printf ("rank: %d sending WRITE_COMPLETE to %d\n", md->rank, msg [4]);
                     uint64_t msgx [PARAMETER_COUNT];
                     msgx [0] = WRITE_COMPLETE;
                     msgx [1] = msg [1];
                     msgx [2] = msg [3];
                     msgx [3] = new_offset;
+printf ("%d lock 4\n", md->rank);
                     pthread_mutex_lock (&md->mutex);
                     MPI_Isend (msgx, PARAMETER_COUNT, MPI_LONG_LONG
                               ,msg [4], TAG_SUB_COORDINATOR
                               ,md->group_comm, &req
                               );
 
-                    MPI_Wait (&req, &status);
                     pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 4\n", md->rank);
                 }
                 else
                 {
+printf ("rank: %d sending WRITE_COMPLETE to %d\n", md->rank, msg [4]);
                     while (w_sub_coordinator_flag [0] != NO_FLAG)
                         ;
                     w_sub_coordinator_flag [1] = msg [1];
                     w_sub_coordinator_flag [2] = msg [3];
                     w_sub_coordinator_flag [3] = new_offset;
                     w_sub_coordinator_flag [0] = WRITE_COMPLETE;
+                    //while (w_sub_coordinator_flag [0] != NO_FLAG)
+                        ;
                 }
             }
 //printf ("rank: %2d done responding from write if adaptive\n", md->rank);
@@ -2288,14 +2278,15 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
             if (md->rank != source)
             {
                 uint64_t msgx [PARAMETER_COUNT];
+printf ("%d lock 5\n", md->rank);
                 pthread_mutex_lock (&md->mutex);
-                MPI_Irecv (msgx, PARAMETER_COUNT, MPI_LONG_LONG
+                MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG
                           ,source, TAG_WRITER
-                          ,md->group_comm, &req
+                          ,md->group_comm, &status
                           );
 
-                MPI_Wait (&req, &status);
                 pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 5\n", md->rank);
                 msg [0] = msgx [0];
                 // do not get the rest of the parameters because
                 // we need the old ones
@@ -2314,13 +2305,14 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
             // send index
             if (md->rank != msg [2])
             {
+printf ("%d lock 6\n", md->rank);
                 pthread_mutex_lock (&md->mutex);
                 MPI_Isend (index_buffer, index_buffer_offset, MPI_BYTE, msg [2]
                           ,TAG_SUB_COORDINATOR, md->group_comm, &req
                           );
 
-                MPI_Wait (&req, &status);
                 pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 6\n", md->rank);
             }
             else
             {
@@ -2328,7 +2320,7 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
                     ;
                 writer_flag [0] = (uint64_t) index_buffer;
 
-                while (writer_flag [0] != NO_FLAG)
+                //while (writer_flag [0] != NO_FLAG)
                     ;
             }
 //printf ("rank: %2d index sent\n", md->rank);
@@ -2339,7 +2331,7 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
                 while (w_sub_coordinator_flag [0] != NO_FLAG)
                     ;
                 w_sub_coordinator_flag [0] = SHUTDOWN_FLAG;
-                while (w_sub_coordinator_flag [0] == SHUTDOWN_FLAG)
+                //while (w_sub_coordinator_flag [0] == SHUTDOWN_FLAG)
                     ;
 
                 err = pthread_join (md->sub_coordinator, NULL);
@@ -2350,7 +2342,7 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
                 while (w_coordinator_flag [0] != NO_FLAG)
                     ;
                 w_coordinator_flag [0] = SHUTDOWN_FLAG;
-                while (w_coordinator_flag [0] == SHUTDOWN_FLAG)
+                //while (w_coordinator_flag [0] == SHUTDOWN_FLAG)
                     ;
 
                 err = pthread_join (md->coordinator, NULL);
@@ -2619,13 +2611,6 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
     {
         md->group_comm = MPI_COMM_NULL;
     }
-    if (md && md->split_comm != MPI_COMM_NULL)
-    {
-        MPI_Comm_free (&md->split_comm);
-        md->split_comm = MPI_COMM_NULL;
-        md->split_size = -1;
-        md->split_rank = -1;
-    }
 
     md->fh = 0;
     md->req = 0;
@@ -2691,13 +2676,14 @@ static void * sub_coordinator_main (void * param)
         msgx [0] = REGISTER_FLAG;
         msgx [1] = md->group;
         msgx [2] = md->rank;
+printf ("%d lock 7\n", md->rank);
         pthread_mutex_lock (&md->mutex);
         MPI_Isend (msgx, PARAMETER_COUNT, MPI_LONG_LONG, md->coord_rank
                   ,TAG_COORDINATOR, md->group_comm, &req
                   );
 
-        MPI_Wait (&req, &status);
         pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 7\n", md->rank);
     }
     else
     {
@@ -2706,6 +2692,8 @@ static void * sub_coordinator_main (void * param)
         c_coordinator_flag [1] = md->group;
         c_coordinator_flag [2] = md->rank;
         c_coordinator_flag [0] = REGISTER_FLAG;
+        //while (c_coordinator_flag [0] != NO_FLAG)
+            ;
     }
 
     // get the registration from the writers
@@ -2718,7 +2706,7 @@ static void * sub_coordinator_main (void * param)
         if (message_available)
         {
             uint64_t msgx [PARAMETER_COUNT];
-            MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG, MPI_ANY_SOURCE
+            MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG, status.MPI_SOURCE
                      ,TAG_SUB_COORDINATOR
                      ,md->group_comm, &status
                      );
@@ -2759,23 +2747,24 @@ static void * sub_coordinator_main (void * param)
     {
 //printf ("rank: %2d waiting for remote START_WRITES\n", md->rank);
         uint64_t msgx [PARAMETER_COUNT];
+printf ("%d lock 8\n", md->rank);
         pthread_mutex_lock (&md->mutex);
-        MPI_Irecv (msgx, PARAMETER_COUNT, MPI_LONG_LONG, md->coord_rank
+        MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG, md->coord_rank
                   ,TAG_SUB_COORDINATOR
-                  ,md->group_comm, &req
+                  ,md->group_comm, &status
                   );
 
-        MPI_Wait (&req, &status);
         pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 8\n", md->rank);
     }
     else
     {
-//printf ("rank: %2d waiting for local START_WRITES\n", md->rank);
+printf ("rank: %2d waiting for local START_WRITES\n", md->rank);
         while (c_sub_coordinator_flag [0] != START_WRITES)
             ;
         c_sub_coordinator_flag [0] = NO_FLAG;
     }
-//printf ("rank: %2d starting write loop\n", md->rank);
+printf ("rank: %2d starting write loop\n", md->rank);
 
     // do writing
     int completed_writing = 0;  // track when we have notified coordinator we
@@ -2806,7 +2795,7 @@ static void * sub_coordinator_main (void * param)
         if (message_available)
         {
             uint64_t msgx [PARAMETER_COUNT];
-            MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG, MPI_ANY_SOURCE
+            MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG, status.MPI_SOURCE
                      ,TAG_SUB_COORDINATOR
                      ,md->group_comm, &status
                      );
@@ -2842,6 +2831,7 @@ static void * sub_coordinator_main (void * param)
             {
                 case WRITE_COMPLETE:
                 {
+printf ("rank: %d got a WRITE_COMPLETE from %d\n", md->rank, source);
                     // if the proc is from our group, we were tracking it
                     if (msg [2] == md->group)
                         active_writers--;
@@ -2872,10 +2862,12 @@ static void * sub_coordinator_main (void * param)
                         && source <= md->rank
                        )
                     {
+printf ("rank: %d just do the next rank\n", md->rank);
                         currently_writing = 0;
                     }
                     else
                     {
+printf ("rank: %d tell the coord this one is done\n", md->rank);
                         // tell coordinator done with this one
                         // and if we have more capacity
                         // only if we were writing to our group
@@ -2888,14 +2880,15 @@ static void * sub_coordinator_main (void * param)
                                 msgx [1] = msg [1];
                                 msgx [2] = msg [2];
                                 msgx [3] = msg [3];
+printf ("%d lock 9\n", md->rank);
                                 pthread_mutex_lock (&md->mutex);
                                 MPI_Isend (msgx, PARAMETER_COUNT, MPI_LONG_LONG
                                           ,md->coord_rank, TAG_COORDINATOR
                                           ,md->group_comm, &req
                                           );
 
-                                MPI_Wait (&req, &status);
                                 pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 9\n", md->rank);
                             }
                             else
                             {
@@ -2905,6 +2898,8 @@ static void * sub_coordinator_main (void * param)
                                 c_coordinator_flag [2] = msg [2];
                                 c_coordinator_flag [3] = msg [3];
                                 c_coordinator_flag [0] = WRITE_COMPLETE;
+                                //while (c_coordinator_flag [0] != NO_FLAG)
+                                    ;
                             }
                         }
                     }
@@ -2922,14 +2917,15 @@ static void * sub_coordinator_main (void * param)
                             msgx [0] = WRITERS_BUSY;
                             msgx [1] = msg [1];
                             msgx [2] = md->group;
+printf ("%d lock 10\n", md->rank);
                             pthread_mutex_lock (&md->mutex);
                             MPI_Isend (msgx, PARAMETER_COUNT, MPI_LONG_LONG
                                       ,md->coord_rank, TAG_COORDINATOR
                                       ,md->group_comm, &req
                                       );
 
-                            MPI_Wait (&req, &status);
                             pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 10\n", md->rank);
                         }
                         else
                         {
@@ -2938,6 +2934,8 @@ static void * sub_coordinator_main (void * param)
                             c_coordinator_flag [1] = msg [1];
                             c_coordinator_flag [2] = md->group;
                             c_coordinator_flag [0] = WRITERS_BUSY;
+                            //while (c_coordinator_flag [0] != NO_FLAG)
+                                ;
                         }
                     }
                     if (adaptive_writers_size >= adaptive_writers_being_served + 1)
@@ -2958,14 +2956,15 @@ static void * sub_coordinator_main (void * param)
                         msgx [3] = md->group;
                         msgx [4] = md->rank;
                         msgx [5] = msg [3];
+printf ("%d lock 11\n", md->rank);
                         pthread_mutex_lock (&md->mutex);
                         MPI_Isend (msgx, PARAMETER_COUNT, MPI_LONG_LONG
                                   ,next_writer, TAG_WRITER
                                   ,md->group_comm, &req
                                   );
 
-                        MPI_Wait (&req, &status);
                         pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 11\n", md->rank);
                         next_writer++;
                     }
                     else
@@ -2981,6 +2980,8 @@ static void * sub_coordinator_main (void * param)
                             writer_flag [4] = md->rank;
                             writer_flag [5] = msg [3];
                             writer_flag [0] = DO_WRITE_FLAG;
+                            //while (writer_flag [0] != NO_FLAG)
+                                ;
                             next_writer++;
                         }
                     }
@@ -2997,21 +2998,22 @@ static void * sub_coordinator_main (void * param)
                         {
                             uint64_t msgx [PARAMETER_COUNT];
                             msgx [0] = SEND_INDEX;
+printf ("%d lock 12\n", md->rank);
                             pthread_mutex_lock (&md->mutex);
                             MPI_Isend (msgx, PARAMETER_COUNT, MPI_LONG_LONG
                                       ,writers [i], TAG_WRITER
                                       ,md->group_comm, &req
                                       );
 
-                            MPI_Wait (&req, &status);
                             pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 12\n", md->rank);
                         }
                         else
                         {
                             while (writer_flag [0] != NO_FLAG)
                                 ;
                             writer_flag [0] = SEND_INDEX;
-                            while (writer_flag [0] == SEND_INDEX)
+                            //while (writer_flag [0] == SEND_INDEX)
                                 ;
                         }
                     }
@@ -3029,14 +3031,16 @@ printf ("g: %d writer: %d 2\n", md->group, i);
                         if (writers [i] != md->rank)
                         {
 printf ("g: %d writer: %d 3\n", md->group, i);
+printf ("%d lock 13\n", md->rank);
                             pthread_mutex_lock (&md->mutex);
-                            MPI_Irecv (buf, index_sizes [i], MPI_BYTE
+                            MPI_Recv (buf, index_sizes [i], MPI_BYTE
                                       ,writers [i]
-                                      ,TAG_SUB_COORDINATOR, md->group_comm, &req
+                                      ,TAG_SUB_COORDINATOR, md->group_comm
+                                      ,&status
                                       );
 
-                            MPI_Wait (&req, &status);
                             pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 13\n", md->rank);
 printf ("index: group: %d writer rank: %2d index: %s\n", md->group, writers [i], buf);
                             // merge buf into the index
                             strcat (sub_index, buf);
@@ -3068,24 +3072,26 @@ printf ("g: %d  8\n", md->group);
                         msgx [0] = INDEX_SIZE;
                         msgx [1] = md->group;
                         msgx [2] = index_size;
+printf ("%d lock 14\n", md->rank);
                         pthread_mutex_lock (&md->mutex);
                         MPI_Isend (msgx, PARAMETER_COUNT, MPI_LONG_LONG
                                   ,md->coord_rank, TAG_COORDINATOR
                                   ,md->group_comm, &req
                                   );
 
-                        MPI_Wait (&req, &status);
                         pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 14\n", md->rank);
 printf ("g: %d  9\n", md->group);
 
+printf ("%d lock 15\n", md->rank);
                         pthread_mutex_lock (&md->mutex);
                         MPI_Isend (sub_index, index_size, MPI_BYTE
                                   ,md->coord_rank, TAG_COORDINATOR
                                   ,md->group_comm, &req
                                   );
 
-                        MPI_Wait (&req, &status);
                         pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 15\n", md->rank);
 printf ("g: %d 10\n", md->group);
                     }
                     else
@@ -3100,7 +3106,7 @@ printf ("g: %d 11\n", md->group);
                             ;
 printf ("g: %d 12\n", md->group);
                         c_coordinator_flag [0] = (uint64_t) sub_index;
-                        while (c_coordinator_flag [0] != NO_FLAG)
+                        //while (c_coordinator_flag [0] != NO_FLAG)
                             ;
 printf ("g: %d 13\n", md->group);
                     }
@@ -3136,6 +3142,7 @@ printf ("g: %d 14\n", md->group);
         {
             if (current_writer < md->rank)
             {
+printf ("sub_coord: %d tell %d to start writing\n", md->group, current_writer);
                 active_writers++;
                 uint64_t msgx [PARAMETER_COUNT];
                 msgx [0] = DO_WRITE_FLAG;
@@ -3144,20 +3151,22 @@ printf ("g: %d 14\n", md->group);
                 msgx [3] = md->group;
                 msgx [4] = md->rank;
                 msgx [5] = current_offset++;
+printf ("%d lock 16\n", md->rank);
                 pthread_mutex_lock (&md->mutex);
                 MPI_Isend (msgx, PARAMETER_COUNT, MPI_LONG_LONG
                           ,current_writer, TAG_WRITER
                           ,md->group_comm, &req
                           );
 
-                MPI_Wait (&req, &status);
                 pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 16\n", md->rank);
                 currently_writing = 1;
             }
             else
             {
                 if (current_writer == md->rank)
                 {
+printf ("sub_coord: %d tell %d to start writing\n", md->group, current_writer);
                     active_writers++;
                     while (writer_flag [0] != NO_FLAG)
                         ;
@@ -3168,36 +3177,45 @@ printf ("g: %d 14\n", md->group);
                     writer_flag [5] = current_offset++;
                     writer_flag [0] = DO_WRITE_FLAG;
                     currently_writing = 1;
+                    //while (writer_flag [0] != NO_FLAG)
+                        ;
                 }
                 else
                 {
+if (!completed_writing) printf ("sub_coord: %d completed_writing: %d active_writers: %d\n", md->group, completed_writing, active_writers);
                     if (!completed_writing && !active_writers)
                     {
                         completed_writing = 1;
                         if (md->rank != md->coord_rank)
                         {
+printf ("sub_coord: %d tell coord done writing A\n", md->group);
                             uint64_t msgx [PARAMETER_COUNT];
                             msgx [0] = WRITE_COMPLETE;
                             msgx [1] = msg [1];
                             msgx [2] = msg [2];
                             msgx [3] = msg [3];
+printf ("%d lock 17\n", md->rank);
                             pthread_mutex_lock (&md->mutex);
                             MPI_Isend (msgx, PARAMETER_COUNT, MPI_LONG_LONG
                                       ,md->coord_rank, TAG_COORDINATOR
                                       ,md->group_comm, &req
                                       );
 
-                            MPI_Wait (&req, &status);
                             pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 17\n", md->rank);
                         }
                         else
                         {
+printf ("sub_coord: %d tell coord done writing B\n", md->group);
                             while (c_coordinator_flag [0] != NO_FLAG)
                                 ;
                             c_coordinator_flag [1] = msg [1];
                             c_coordinator_flag [2] = msg [2];
                             c_coordinator_flag [3] = msg [3];
                             c_coordinator_flag [0] = WRITE_COMPLETE;
+                            //while (c_coordinator_flag [0] != NO_FLAG)
+                                ;
+printf ("sub_coord: %d tell coord done writing B completed\n", md->group);
                         }
                     }
                 }
@@ -3264,7 +3282,7 @@ static void * coordinator_main (void * param)
         {
             uint64_t msgx [PARAMETER_COUNT];
             MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG
-                     ,MPI_ANY_SOURCE, TAG_COORDINATOR
+                     ,status.MPI_SOURCE, TAG_COORDINATOR
                      ,md->group_comm, &status
                      );
 
@@ -3314,12 +3332,14 @@ static void * coordinator_main (void * param)
     while (w_coordinator_flag [0] != START_WRITES)
         ;
     w_coordinator_flag [0] = NO_FLAG;
+
     for (i = 0; i < md->groups; i++)
     {
         if (sub_coord_ranks [i] != md->rank)
         {
             uint64_t msgx [PARAMETER_COUNT];
             msgx [0] = START_WRITES;
+printf ("%d lock 18\n", md->rank);
             pthread_mutex_lock (&md->mutex);
             MPI_Isend (msgx, PARAMETER_COUNT
                       ,MPI_LONG_LONG
@@ -3328,17 +3348,15 @@ static void * coordinator_main (void * param)
                       ,md->group_comm, &req
                       );
 
-printf ("K\n");
-            MPI_Wait (&req, &status);
-printf ("L\n");
             pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 18\n", md->rank);
         }
         else
         {
             while (c_sub_coordinator_flag [0] != NO_FLAG)
                 ;
             c_sub_coordinator_flag [0] = START_WRITES;
-            while (c_sub_coordinator_flag [0] != NO_FLAG)
+            //while (c_sub_coordinator_flag [0] != NO_FLAG)
                 ;
         }
     }
@@ -3357,11 +3375,15 @@ printf ("L\n");
         if (message_available)
         {
             uint64_t msgx [PARAMETER_COUNT];
+printf ("%d lock 19\n", md->rank);
+            pthread_mutex_lock (&md->mutex);
             MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG
-                     ,MPI_ANY_SOURCE, TAG_COORDINATOR
+                     ,status.MPI_SOURCE, TAG_COORDINATOR
                      ,md->group_comm, &status
                      );
 
+            pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 19\n", md->rank);
             source = status.MPI_SOURCE;
             COPY_ALL_PARAMS(msg,msgx);
         }
@@ -3388,33 +3410,42 @@ printf ("L\n");
 
         if (message_available)
         {
+printf ("coord msg 4: %lld\n", msg [0]);
             message_available = 0;
             switch (msg [0])
             {
                 case WRITE_COMPLETE:
                 {
+printf ("coord: WRITE_COMPLETE src: %d\n", source);
                     group_offset [msg [1]] = msg [3];
                     // start an adaptive write for this file
                     if (msg [1] == msg [2])
                     {
+printf ("coord msg 3A\n");
                         groups_complete++;
                         group_state [msg [1]] = STATE_COMPLETE;
+printf ("coord: WRITE_COMPLETE src: %d total_complete: %d\n", source, groups_complete);
                         if (groups_complete != md->groups)
                         {
+printf ("coord msg 3AA\n");
                             int i = (msg [1] + 1) % md->groups;
                             while (i != msg [1])
                             {
+printf ("coord msg 3AAA i: %d msg [1]: %lld group_state [i]: %d\n", i, msg [1], group_state [i]);
                                 if (group_state [i] == STATE_WRITING)
                                 {
+printf ("coord msg 3AAAA: sub_coord_ranks [i]: %d md->rank: %d\n", sub_coord_ranks [i], md->rank);
                                     // tell the subcoordinator to write
                                     // to this file
                                     if (sub_coord_ranks [i] != md->rank)
                                     {
+printf ("coord msg 3AAAAX\n");
                                         uint64_t msgx [PARAMETER_COUNT];
                                         msgx [0] = ADAPTIVE_WRITE_START;
                                         msgx [1] = msg [1];
                                         msgx [2] = sub_coord_ranks [msg [1]];
                                         msgx [3] = group_offset [msg [1]];
+printf ("%d lock 20\n", md->rank);
                                         pthread_mutex_lock (&md->mutex);
                                         MPI_Isend (msgx, PARAMETER_COUNT
                                                   ,MPI_LONG_LONG
@@ -3423,19 +3454,23 @@ printf ("L\n");
                                                   ,md->group_comm, &req
                                                   );
 
-printf ("I\n");
-                                        MPI_Wait (&req, &status);
-printf ("J\n");
                                         pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 20\n", md->rank);
                                     }
                                     else
                                     {
+printf ("coord msg 3AAAAY1\n");
                                         while (c_sub_coordinator_flag [0] != NO_FLAG)
                                             ;
+printf ("coord msg 3AAAAY2\n");
                                         c_sub_coordinator_flag [1] = msg [1];
                                         c_sub_coordinator_flag [2] = sub_coord_ranks [msg [1]];
                                         c_sub_coordinator_flag [3] = group_offset [msg [1]];
                                         c_sub_coordinator_flag [0] = ADAPTIVE_WRITE_START;
+printf ("coord msg 3AAAAY3\n");
+                                        //while (c_sub_coordinator_flag [0] != NO_FLAG)
+                                            ;
+printf ("coord msg 3AAAAY4\n");
                                     }
                                     break;
                                 }
@@ -3452,6 +3487,7 @@ printf ("J\n");
                                     uint64_t msgx [PARAMETER_COUNT];
                                     msgx [0] = OVERALL_WRITE_COMPLETE;
                                     msgx [1] = group_offset [i];
+printf ("%d lock 21\n", md->rank);
                                     pthread_mutex_lock (&md->mutex);
                                     MPI_Isend (msgx, PARAMETER_COUNT
                                               ,MPI_LONG_LONG
@@ -3460,10 +3496,8 @@ printf ("J\n");
                                               ,md->group_comm, &req
                                               );
 
-printf ("G\n");
-                                    MPI_Wait (&req, &status);
-printf ("H\n");
                                     pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 21\n", md->rank);
                                 }
                                 else
                                 {
@@ -3471,12 +3505,16 @@ printf ("H\n");
                                         ;
                                     c_sub_coordinator_flag [1] = group_offset [i];
                                     c_sub_coordinator_flag [0] = OVERALL_WRITE_COMPLETE;
+                                    //while (c_sub_coordinator_flag [0] != NO_FLAG)
+                                        ;
                                 }
                             }
                         }
                     }
                     else  // move to the next adaptive writer
                     {
+printf ("coord msg 3B\n");
+printf ("coord: adaptive WRITE_COMPLETE total_complete: %d\n", groups_complete);
                         int i = (msg [1] + 1) % md->groups;
                         while (i != msg [1])
                         {
@@ -3493,6 +3531,7 @@ printf ("H\n");
                                     msgx [1] = msg [1];
                                     msgx [2] = sub_coord_ranks [msg [1]];
                                     msgx [3] = group_offset [msg [1]];
+printf ("%d lock 22\n", md->rank);
                                     pthread_mutex_lock (&md->mutex);
                                     MPI_Isend (msgx, PARAMETER_COUNT
                                               ,MPI_LONG_LONG
@@ -3501,10 +3540,8 @@ printf ("H\n");
                                               ,md->group_comm, &req
                                               );
 
-printf ("E\n");
-                                    MPI_Wait (&req, &status);
-printf ("F\n");
                                     pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 22\n", md->rank);
                                 }
                                 else
                                 {
@@ -3514,6 +3551,8 @@ printf ("F\n");
                                     c_sub_coordinator_flag [2] = sub_coord_ranks [msg [1]];
                                     c_sub_coordinator_flag [3] = group_offset [msg [1]];
                                     c_sub_coordinator_flag [0] = ADAPTIVE_WRITE_START;
+                                    //while (c_sub_coordinator_flag [0] != NO_FLAG)
+                                        ;
                                 }
 
                                 break;
@@ -3521,6 +3560,7 @@ printf ("F\n");
                             i = (i + 1) % md->groups;
                         }
                     }
+printf ("coord msg 4 done: %lld\n", msg [0]);
                     break;
                 }
                 case WRITERS_BUSY: // we told it to adaptive write, but
@@ -3544,6 +3584,7 @@ printf ("F\n");
                                 msgx [1] = msg [1];
                                 msgx [2] = sub_coord_ranks [msg [1]];
                                 msgx [3] = group_offset [msg [1]];
+printf ("%d lock 23\n", md->rank);
                                 pthread_mutex_lock (&md->mutex);
                                 MPI_Isend (msgx, PARAMETER_COUNT
                                           ,MPI_LONG_LONG
@@ -3552,10 +3593,8 @@ printf ("F\n");
                                           ,md->group_comm, &req
                                           );
 
-printf ("C\n");
-                                MPI_Wait (&req, &status);
-printf ("D\n");
                                 pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 23\n", md->rank);
                             }
                             else
                             {
@@ -3565,6 +3604,8 @@ printf ("D\n");
                                 c_sub_coordinator_flag [2] = sub_coord_ranks [msg [1]];
                                 c_sub_coordinator_flag [3] = group_offset [msg [1]];
                                 c_sub_coordinator_flag [0] = ADAPTIVE_WRITE_START;
+                                //while (c_sub_coordinator_flag [0] != NO_FLAG)
+                                    ;
                             }
                             break;
                         }
@@ -3593,18 +3634,16 @@ printf ("%d index size: %lld\n", source_group, proc_index_size);
 
                     if (source_group != md->group)
                     {
+printf ("%d lock 24\n", md->rank);
                         pthread_mutex_lock (&md->mutex);
-                        MPI_Irecv (index_buf, proc_index_size
+                        MPI_Recv (index_buf, proc_index_size
                                   ,MPI_BYTE
                                   ,sub_coord_ranks [source_group]
                                   ,TAG_COORDINATOR
-                                  ,md->group_comm, &req
+                                  ,md->group_comm, &status
                                   );
-
-printf ("A\n");
-                        MPI_Wait (&req, &status);
-printf ("B\n");
                         pthread_mutex_unlock (&md->mutex);
+printf ("%d unlock 24\n", md->rank);
                         index_buf [proc_index_size] = 0;
 printf ("overall index: group: %d index: %s\n", source_group, index_buf);
                     }
