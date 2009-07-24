@@ -68,6 +68,9 @@ struct adios_adaptive_data_struct
     int sub_coord_rank;  // what is the rank of our sub coordinator
     int coord_rank;      // what is the rank of the coordinator
     int stripe_size;     // how big each stripe piece is
+
+    struct adios_file_struct * fd; // link to what was passed in
+    struct adios_method_struct * method; // link to main struct
 };
 
 // adaptive support stuff start
@@ -341,6 +344,8 @@ void adios_adaptive_init (const char * parameters
 
     md->group = -1;
     md->sub_coord_rank = -1;
+    md->fd = 0;
+    md->method = 0;
     pthread_mutex_init (&md->mutex, NULL);
 
     // parse the parameters into key=value segments for optional settings
@@ -480,6 +485,8 @@ int adios_adaptive_open (struct adios_file_struct * fd
 
     // we have to wait for the group_size (should_buffer) to get the comm
     // before we can do an open for any of the modes
+    md->fd = fd;
+    md->method = method;
 
     return 1;
 }
@@ -1990,7 +1997,7 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
                 ssize_t s = write (md->f, fd->buffer, fd->bytes_written);
                 if (s != fd->bytes_written)
                 {
-                    fprintf (stderr, "Need to do multi-write\n");
+                    fprintf (stderr, "Need to do multi-write 1\n");
                 }
             }
             else // we are adaptive writing and need to use the other file
@@ -2013,7 +2020,7 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
                     ssize_t s = write (f, fd->buffer, fd->bytes_written);
                     if (s != fd->bytes_written)
                     {
-                        fprintf (stderr, "Need to do multi-write\n");
+                        fprintf (stderr, "Need to do multi-write 2\n");
                     }
                     close (f);
                 }
@@ -2180,6 +2187,9 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
             md->old_pg_root = 0;
             md->old_vars_root = 0;
             md->old_attrs_root = 0;
+
+            if (index_buffer)
+                free (index_buffer);
 
             break;
         }
@@ -2559,10 +2569,6 @@ if (count != PARAMETER_COUNT * 8) printf ("*****3 message wrong size: %d\n", cou
 
     if (md->rank != md->coord_rank)
     {
-int count;
-MPI_Datatype dt = MPI_BYTE;
-MPI_Get_count (&status, dt, &count);
-if (count != PARAMETER_COUNT * 8) printf ("*****4 message wrong size: %d\n", count);
         uint64_t msgx [PARAMETER_COUNT];
         pthread_mutex_lock (&md->mutex);
         MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG, md->coord_rank
@@ -2807,7 +2813,6 @@ printf ("rank: %d tell the coord this one is done\n", md->rank);
 
                 case OVERALL_WRITE_COMPLETE:
                 {
-                    printf ("group: %d do index creation at %lld\n", md->group, msg [1]);
                     // tell writers to enter send index mode
                     for (i = 0; i < writers_served; i++)
                     {
@@ -2828,11 +2833,11 @@ printf ("rank: %d tell the coord this one is done\n", md->rank);
                             while (writer_flag [0] != NO_FLAG)
                                 ;
                             writer_flag [0] = SEND_INDEX;
+                            w_sub_coordinator_flag [0] = NO_FLAG;
                             //while (writer_flag [0] == SEND_INDEX)
                                 ;
                         }
                     }
-printf ("group: %d got all index parts. writers_served: %d\n", md->group, writers_served);
 
                     char * buf = malloc (largest_index + 1);
                     buf [largest_index] = 0;
@@ -2856,15 +2861,14 @@ printf ("group: %d got all index parts. writers_served: %d\n", md->group, writer
                                       );
 
                             pthread_mutex_unlock (&md->mutex);
-printf ("index: group: %d writer rank: %2d index: %s\n", md->group, writers [i], buf);
                             b.buff = buf;
                         }
                         else
                         {
                             while (w_sub_coordinator_flag [0] == NO_FLAG)
                                 ;
+                            b.buff = (char *) (w_sub_coordinator_flag [0]);
                             w_sub_coordinator_flag [0] = NO_FLAG;
-                            b.buff = (char *) w_sub_coordinator_flag [1];
                         }
 
                         // merge buf into the index
@@ -2899,7 +2903,7 @@ printf ("index: group: %d writer rank: %2d index: %s\n", md->group, writers [i],
                     ssize_t s = write (md->f, buffer, buffer_offset);
                     if (s != buffer_offset)
                     {
-                        fprintf (stderr, "Need to do multi-write\n");
+                        fprintf (stderr, "Need to do multi-write 3\n");
                     }
 
                     uint64_t index_size = buffer_offset;
@@ -2934,10 +2938,8 @@ printf ("index: group: %d writer rank: %2d index: %s\n", md->group, writers [i],
                             ;
                         c_coordinator_flag [1] = md->group;
                         c_coordinator_flag [2] = only_index_buffer_offset;
+                        c_coordinator_flag [3] = (uint64_t) buffer;
                         c_coordinator_flag [0] = INDEX_SIZE;
-                        while (c_coordinator_flag [0] != NO_FLAG)
-                            ;
-                        c_coordinator_flag [0] = (uint64_t) buffer;
                         while (c_coordinator_flag [0] != NO_FLAG)
                             ;
                     }
@@ -3170,8 +3172,27 @@ if (count != PARAMETER_COUNT * 8) printf ("*****7 message wrong size: %d\n", cou
 
     uint64_t largest_index_size = 0;
     int index_sizes_received = 0;
-    char * index_buf = 0;
+    char * index_buf = 0;     // for receiving from remote
     ssize_t index_size = 0;
+
+    char * buffer = 0;          // for building overall
+    uint64_t buffer_size = 0;
+    uint64_t buffer_offset = 0;
+
+    struct adios_file_index_format_v2
+    {
+        uint32_t file_number;
+        uint16_t name_len;
+        char * name;
+        uint64_t offset;
+        uint64_t length;
+    };
+
+    uint64_t file_index_count = 0;
+
+    struct adios_file_index_format_v2 * file_index =
+       (struct adios_file_index_format_v2 *)
+              malloc (sizeof (struct adios_file_index_format_v2) * md->groups);
 
     // process messages for the coordinator either on or off process
     do
@@ -3425,7 +3446,20 @@ if (count != PARAMETER_COUNT * 8) printf ("*****8 message wrong size: %d\n", cou
                             free (index_buf);
                         index_buf = malloc (largest_index_size + 1);
                     }
-printf ("%d index size: %lld\n", source_group, proc_index_size);
+
+                    char * new_name;
+                    int new_name_len;
+
+                    new_name = malloc (  strlen (md->method->base_path)
+                                       + strlen (md->fd->name) + 1 + 6
+                                      );
+                    char split_format [10] = "%s%s.%lld";
+                    sprintf (new_name, split_format, md->method->base_path
+                            ,md->fd->name, source_group
+                            );
+                    new_name_len = strlen (new_name);
+                    uint64_t buffer_offset_tmp = buffer_offset;
+                    buffer_offset += 8 + 4 + 2 + new_name_len;
 
                     if (source_group != md->group)
                     {
@@ -3437,102 +3471,75 @@ printf ("%d index size: %lld\n", source_group, proc_index_size);
                                   ,md->group_comm, &status
                                   );
                         pthread_mutex_unlock (&md->mutex);
-                        index_buf [proc_index_size] = 0;
                         b.buff = index_buf;
                         buffer_write (&buffer, &buffer_size, &buffer_offset
                                      ,index_buf, proc_index_size
                                      );
-printf ("overall index: group: %d index: %s\n", source_group, index_buf);
                     }
                     else
                     {
-                        while (c_coordinator_flag [0] == NO_FLAG)
+                        //while (c_coordinator_flag [0] == NO_FLAG)
                             ;
-                        ((char *) c_coordinator_flag [0])[proc_index_size] = 0;
-printf ("overall index: group: %d index: %s\n", md->group, (char *) c_coordinator_flag [0]);
                         c_coordinator_flag [0] = NO_FLAG;
                         buffer_write (&buffer, &buffer_size, &buffer_offset
-                                     ,c_coordinator_flag [1], proc_index_size
+                                     ,(void *) c_coordinator_flag [3]
+                                     ,proc_index_size
                                      );
                     }
 
-
-                    // merge buf into the index
-                    b.length = index_sizes [i];
-                    b.offset = 0;
-
-                    adios_parse_process_group_index_v1 (&b ,&new_pg_root);
-                    adios_parse_vars_index_v1 (&b, &new_vars_root);
-                    adios_parse_attributes_index_v1 (&b ,&new_attrs_root);
-                    adios_merge_index_v1 (&md->old_pg_root
-                                         ,&md->old_vars_root
-                                         ,&md->old_attrs_root
-                                         ,new_pg_root, new_vars_root
-                                         ,new_attrs_root
-                                         );
-                    new_pg_root = 0;
-                    new_vars_root = 0;
-                    new_attrs_root = 0;
+                    file_index [file_index_count].file_number = file_index_count + 1;
+                    file_index [file_index_count].name_len = new_name_len;
+                    file_index [file_index_count].name = new_name;
+                    file_index [file_index_count].offset = buffer_offset_tmp;
+                    file_index [file_index_count].length = proc_index_size
+                                                         + new_name_len
+                                                         + 2   // name len
+                                                         + 4   // number
+                                                         + 8;  // length
+                    buffer_write (&buffer, &buffer_size, &buffer_offset_tmp
+                                 ,&file_index [file_index_count].offset, 8
+                                 );
+                    buffer_write (&buffer, &buffer_size, &buffer_offset_tmp
+                                 ,&file_index [file_index_count].file_number, 4
+                                 );
+                    buffer_write (&buffer, &buffer_size, &buffer_offset_tmp
+                                 ,&file_index [file_index_count].name_len, 2
+                                 );
+                    buffer_write (&buffer, &buffer_size, &buffer_offset_tmp
+                                 ,&file_index [file_index_count].name
+                                 ,new_name_len
+                                 );
+                    file_index_count++;
 
                     // if we have recieved all, write to the file
                     if (index_sizes_received == md->groups)
                     {
-                    adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                         ,0, md->old_pg_root
-                                         ,md->old_vars_root
-                                         ,md->old_attrs_root
-                                         );
-                    adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
+                        adios_write_version_v2 (&buffer, &buffer_size, &buffer_offset);
 
-                    int f = open (name, O_WRONLY | O_LARGEFILE);
-                    //lseek (f, md->stripe_size * msg [1], SEEK_SET);
-                    ssize_t s = write (f, buffer, buffer_offset);
-                    if (s != buffer_offset)
-                    {
-                        fprintf (stderr, "Need to do multi-write\n");
+                        char * new_name;
+
+                        new_name = malloc (  strlen (md->method->base_path)
+                                           + strlen (md->fd->name) + 1
+                                          );
+                        char split_format [10] = "%s%s";
+                        sprintf (new_name, split_format, md->method->base_path
+                                ,md->fd->name
+                                );
+                        int f = open (new_name, O_WRONLY | O_LARGEFILE | O_CREAT | O_TRUNC);
+                        if (f == -1) printf ("oops! %s\n", new_name);
+printf ("attempting to write: %llu %s\n", buffer_offset, new_name);
+                        ssize_t s = write (f, buffer, buffer_offset);
+                        if (s != buffer_offset)
+                        {
+                            fprintf (stderr, "Need to do multi-write 4\n");
+                        }
+                        close (f);
+                        free (new_name);
+
+                        for (i = 0; i < md->groups; i++)
+                            free (file_index [i].name);
+                        free (file_index);
                     }
-                    close (f);
-                    }
-#if 0
-                    free (buf);
-
-                            // THIS NEEDS TO CHANGE TO ONLY DEAL WITH THE
-                            // SUB COORDINATORS AND THEN BUILD THE OVERALL
-                            // INDEX WITH THE FILE PIECE ADDED
-                            // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-                            // now gather the local index pieces to make
-                            // the master index file
-                            char * buffer_save = md->b.buff;
-                            uint64_t buffer_size_save = md->b.length;
-                            uint64_t offset_save = md->b.offset;
-
-                            for (i = 1; i < md->size; i++)
-                            {
-                                md->b.buff = recv_buffer + index_offsets [i];
-                                md->b.length = index_sizes [i];
-                                md->b.offset = 0;
-
-                                adios_parse_process_group_index_v1 (&md->b
-                                                                   ,&new_pg_root
-                                                                   );
-                                adios_parse_vars_index_v1 (&md->b, &new_vars_root);
-                                adios_parse_attributes_index_v1 (&md->b
-                                                                ,&new_attrs_root
-                                                                );
-                                adios_merge_index_v1 (&md->old_pg_root
-                                                     ,&md->old_vars_root
-                                                     ,&md->old_attrs_root
-                                                     ,new_pg_root, new_vars_root
-                                                     ,new_attrs_root
-                                                     );
-                                new_pg_root = 0;
-                                new_vars_root = 0;
-                                new_attrs_root = 0;
-                            }
-                            md->b.buff = buffer_save;
-                            md->b.length = buffer_size_save;
-                            md->b.offset = offset_save;
-#endif
                     break;
                 }
                 case SHUTDOWN_FLAG:
@@ -3553,6 +3560,8 @@ printf ("overall index: group: %d index: %s\n", md->group, (char *) c_coordinato
 
     if (index_buf)
         free (index_buf);
+    if (buffer)
+        free (buffer);
 
     pthread_exit (NULL);
     return NULL;
