@@ -5910,7 +5910,28 @@ int adios_write_version_v1 (char ** buffer
     else
         test = 0;
 
-    test += 1;   // current version
+    test += 1;   // first data storage version
+
+    test = htonl (test);
+
+    buffer_write (buffer, buffer_size, buffer_offset, &test, 4);
+
+    return 0;
+}
+
+int adios_write_version_v2 (char ** buffer
+                           ,uint64_t * buffer_size
+                           ,uint64_t * buffer_offset
+                           )
+{
+    uint32_t test = 1;
+
+    if (!*(char *) &test)
+        test = 0x80000000;
+    else
+        test = 0;
+
+    test += 2;   // master index file version
 
     test = htonl (test);
 
