@@ -71,16 +71,16 @@ struct adios_adaptive_data_struct
 
     struct adios_file_struct * fd; // link to what was passed in
     struct adios_method_struct * method; // link to main struct
-};
 
 // adaptive support stuff start
 // messaging between threads ([0] is msg, others are parameters)
 #define PARAMETER_COUNT 6
-static uint64_t writer_flag [PARAMETER_COUNT];
-static uint64_t w_sub_coordinator_flag [PARAMETER_COUNT]; // writer->sub_coord
-static uint64_t c_sub_coordinator_flag [PARAMETER_COUNT]; // coord->sub_coord
-static uint64_t c_coordinator_flag [PARAMETER_COUNT];
-static uint64_t w_coordinator_flag [PARAMETER_COUNT];
+volatile uint64_t * writer_flag;
+volatile uint64_t * w_sub_coordinator_flag; // writer->sub_coord
+volatile uint64_t * c_sub_coordinator_flag; // coord->sub_coord
+volatile uint64_t * c_coordinator_flag;
+volatile uint64_t * w_coordinator_flag;
+};
 
 #define COPY_ALL_PARAMS(dst,src) \
 { \
@@ -348,6 +348,12 @@ void adios_adaptive_init (const char * parameters
     md->method = 0;
     pthread_mutex_init (&md->mutex, NULL);
 
+    md->writer_flag = malloc (8 * PARAMETER_COUNT);
+    md->w_sub_coordinator_flag = malloc (8 * PARAMETER_COUNT);
+    md->c_sub_coordinator_flag = malloc (8 * PARAMETER_COUNT);
+    md->c_coordinator_flag = malloc (8 * PARAMETER_COUNT);
+    md->w_coordinator_flag = malloc (8 * PARAMETER_COUNT);
+
     // parse the parameters into key=value segments for optional settings
     if (parameters)
     {
@@ -473,8 +479,8 @@ void adios_adaptive_init (const char * parameters
     adios_buffer_struct_init (&md->b);
 }
 
-void * sub_coordinator_main (void * param);
-void * coordinator_main (void * param);
+static void * sub_coordinator_main (void * param);
+static void * coordinator_main (void * param);
 
 int adios_adaptive_open (struct adios_file_struct * fd
                    ,struct adios_method_struct * method
@@ -951,11 +957,11 @@ static void setup_threads_and_register (struct adios_adaptive_data_struct * md
     int i;
     for (i = 0; i < PARAMETER_COUNT; i++)
     {
-        writer_flag [i] = NO_FLAG;
-        w_sub_coordinator_flag [i] = NO_FLAG;
-        c_sub_coordinator_flag [i] = NO_FLAG;
-        c_coordinator_flag [i] = NO_FLAG;
-        w_coordinator_flag [i] = NO_FLAG;
+        md->writer_flag [i] = NO_FLAG;
+        md->w_sub_coordinator_flag [i] = NO_FLAG;
+        md->c_sub_coordinator_flag [i] = NO_FLAG;
+        md->c_coordinator_flag [i] = NO_FLAG;
+        md->w_coordinator_flag [i] = NO_FLAG;
     }
 
     // spawn worker threads for coordination
@@ -986,30 +992,24 @@ static void setup_threads_and_register (struct adios_adaptive_data_struct * md
     }
     else
     {
-        while (w_sub_coordinator_flag [0] != NO_FLAG)
+        while (md->w_sub_coordinator_flag [0] != NO_FLAG)
             ;
-        w_sub_coordinator_flag [1] = md->rank;
-        w_sub_coordinator_flag [0] = REGISTER_FLAG;
-        //while (w_sub_coordinator_flag [0] == REGISTER_FLAG)
-            ;
+        md->w_sub_coordinator_flag [1] = md->rank;
+        md->w_sub_coordinator_flag [0] = REGISTER_FLAG;
     }
 
     // set the registration as complete to change mode
     if (md->rank == md->coord_rank)
     {
-        while (w_coordinator_flag [0] != NO_FLAG)
+        while (md->w_coordinator_flag [0] != NO_FLAG)
             ;
-        w_coordinator_flag [0] = REGISTER_COMPLETE;
-        //while (w_coordinator_flag [0] == REGISTER_COMPLETE)
-            ;
+        md->w_coordinator_flag [0] = REGISTER_COMPLETE;
     }
     if (md->rank == md->sub_coord_rank)
     {
-        while (w_sub_coordinator_flag [0] != NO_FLAG)
+        while (md->w_sub_coordinator_flag [0] != NO_FLAG)
             ;
-        w_sub_coordinator_flag [0] = REGISTER_COMPLETE;
-        //while (w_sub_coordinator_flag [0] == REGISTER_COMPLETE)
-            ;
+        md->w_sub_coordinator_flag [0] = REGISTER_COMPLETE;
     }
 }
 
@@ -1947,11 +1947,9 @@ void adios_adaptive_close (struct adios_file_struct * fd
 
             if (md->rank == md->coord_rank)
             {
-                while (w_coordinator_flag [0] != NO_FLAG)
+                while (md->w_coordinator_flag [0] != NO_FLAG)
                     ;
-                w_coordinator_flag [0] = START_WRITES;
-                //while (w_coordinator_flag [0] != NO_FLAG)
-                    ;
+                md->w_coordinator_flag [0] = START_WRITES;
             }
 //printf ("e: rank: %2d waiting to write\n", md->rank);
 
@@ -1969,10 +1967,10 @@ void adios_adaptive_close (struct adios_file_struct * fd
             }
             else
             {
-                while (writer_flag [0] != DO_WRITE_FLAG)
+                while (md->writer_flag [0] != DO_WRITE_FLAG)
                     ;
-                COPY_ALL_PARAMS(msg,writer_flag);
-                writer_flag [0] = NO_FLAG;
+                COPY_ALL_PARAMS(msg,md->writer_flag);
+                md->writer_flag [0] = NO_FLAG;
             }
 //printf ("f: rank: %2d writing\n", md->rank);
 
@@ -2055,16 +2053,16 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
             }
             else
             {
-                while (w_sub_coordinator_flag [0] != NO_FLAG)
+printf ("rank: %d 1\n", md->rank);
+                while (md->w_sub_coordinator_flag [0] != NO_FLAG)
                     ;
-                w_sub_coordinator_flag [1] = msg [1];
-                w_sub_coordinator_flag [2] = msg [3];
-                w_sub_coordinator_flag [3] = new_offset;
-                w_sub_coordinator_flag [4] = index_buffer_offset;
-                w_sub_coordinator_flag [0] = WRITE_COMPLETE;
+printf ("rank: %d 2\n", md->rank);
+                md->w_sub_coordinator_flag [1] = msg [1];
+                md->w_sub_coordinator_flag [2] = msg [3];
+                md->w_sub_coordinator_flag [3] = new_offset;
+                md->w_sub_coordinator_flag [4] = index_buffer_offset;
+                md->w_sub_coordinator_flag [0] = WRITE_COMPLETE;
                 source = md->rank;
-                //while (w_sub_coordinator_flag [0] != NO_FLAG)
-                    ;
             }
 //printf ("rank: %2d responding from write if adaptive\n", md->rank);
 
@@ -2088,14 +2086,12 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
                 }
                 else
                 {
-                    while (w_sub_coordinator_flag [0] != NO_FLAG)
+                    while (md->w_sub_coordinator_flag [0] != NO_FLAG)
                         ;
-                    w_sub_coordinator_flag [1] = msg [1];
-                    w_sub_coordinator_flag [2] = msg [3];
-                    w_sub_coordinator_flag [3] = new_offset;
-                    w_sub_coordinator_flag [0] = WRITE_COMPLETE;
-                    //while (w_sub_coordinator_flag [0] != NO_FLAG)
-                        ;
+                    md->w_sub_coordinator_flag [1] = msg [1];
+                    md->w_sub_coordinator_flag [2] = msg [3];
+                    md->w_sub_coordinator_flag [3] = new_offset;
+                    md->w_sub_coordinator_flag [0] = WRITE_COMPLETE;
                 }
             }
 //printf ("rank: %2d done responding from write if adaptive\n", md->rank);
@@ -2117,14 +2113,14 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
             }
             else
             {
-                while (writer_flag [0] == NO_FLAG)
+                while (md->writer_flag [0] == NO_FLAG)
                     ;
-                msg [0] = writer_flag [0];
+                msg [0] = md->writer_flag [0];
                 // do not get the rest of the parameters because
                 // we need the old ones
-                writer_flag [0] = NO_FLAG;
+                md->writer_flag [0] = NO_FLAG;
             }
-//printf ("rank: %2d start sending index\n", md->rank);
+printf ("rank: %2d start sending index\n", md->rank);
 
             // send index
             if (md->rank != msg [2])
@@ -2138,34 +2134,29 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
             }
             else
             {
-                while (w_sub_coordinator_flag [0] != NO_FLAG)
+printf ("rank: %d wait for flag to send index\n", md->rank);
+                while (md->w_sub_coordinator_flag [0] != NO_FLAG)
                     ;
-                w_sub_coordinator_flag [0] = (uint64_t) index_buffer;
-
-                //while (w_sub_coordinator_flag [0] != NO_FLAG)
-                    ;
+printf ("rank: %d got flag to send index\n", md->rank);
+                md->w_sub_coordinator_flag [0] = (uint64_t) index_buffer;
             }
 //printf ("rank: %2d index sent\n", md->rank);
 
             // finished with output. Shutdown the system
             if (md->rank == md->sub_coord_rank)
             {
-                while (w_sub_coordinator_flag [0] != NO_FLAG)
+                while (md->w_sub_coordinator_flag [0] != NO_FLAG)
                     ;
-                w_sub_coordinator_flag [0] = SHUTDOWN_FLAG;
-                //while (w_sub_coordinator_flag [0] == SHUTDOWN_FLAG)
-                    ;
+                md->w_sub_coordinator_flag [0] = SHUTDOWN_FLAG;
 
                 err = pthread_join (md->sub_coordinator, NULL);
                 if (err != 0) printf ("join sub coord error: %d\n", err);
             }
             if (md->rank == md->coord_rank)
             {
-                while (w_coordinator_flag [0] != NO_FLAG)
+                while (md->w_coordinator_flag [0] != NO_FLAG)
                     ;
-                w_coordinator_flag [0] = SHUTDOWN_FLAG;
-                //while (w_coordinator_flag [0] == SHUTDOWN_FLAG)
-                    ;
+                md->w_coordinator_flag [0] = SHUTDOWN_FLAG;
 
                 err = pthread_join (md->coordinator, NULL);
                 if (err != 0) printf ("join sub coord error: %d\n", err);
@@ -2459,6 +2450,16 @@ void adios_adaptive_finalize (int mype, struct adios_method_struct * method)
     {
         adios_adaptive_initialized = 0;
         pthread_mutex_destroy (&md->mutex);
+        if (md->writer_flag)
+            free (md->writer_flag);
+        if (md->w_sub_coordinator_flag)
+            free (md->w_sub_coordinator_flag);
+        if (md->c_sub_coordinator_flag)
+            free (md->c_sub_coordinator_flag);
+        if (md->c_coordinator_flag)
+            free (md->c_coordinator_flag);
+        if (md->w_coordinator_flag)
+            free (md->w_coordinator_flag);
     }
 }
 
@@ -2510,13 +2511,11 @@ static void * sub_coordinator_main (void * param)
     }
     else
     {
-        while (c_coordinator_flag [0] != NO_FLAG)
+        while (md->c_coordinator_flag [0] != NO_FLAG)
             ;
-        c_coordinator_flag [1] = md->group;
-        c_coordinator_flag [2] = md->rank;
-        c_coordinator_flag [0] = REGISTER_FLAG;
-        //while (c_coordinator_flag [0] != NO_FLAG)
-            ;
+        md->c_coordinator_flag [1] = md->group;
+        md->c_coordinator_flag [2] = md->rank;
+        md->c_coordinator_flag [0] = REGISTER_FLAG;
     }
 
     // get the registration from the writers
@@ -2544,12 +2543,12 @@ if (count != PARAMETER_COUNT * 8) printf ("*****3 message wrong size: %d\n", cou
         }
         else
         {
-            if (w_sub_coordinator_flag [0] == REGISTER_FLAG)
+            if (md->w_sub_coordinator_flag [0] == REGISTER_FLAG)
             {
                 message_available = 1;
-                COPY_ALL_PARAMS(msg,w_sub_coordinator_flag);
+                COPY_ALL_PARAMS(msg,md->w_sub_coordinator_flag);
                 source = md->rank;
-                w_sub_coordinator_flag [0] = NO_FLAG;
+                md->w_sub_coordinator_flag [0] = NO_FLAG;
                 i++;
             }
         }
@@ -2565,9 +2564,9 @@ if (count != PARAMETER_COUNT * 8) printf ("*****3 message wrong size: %d\n", cou
     }
 
     // wait for the registration to finish before continuing
-    while (w_sub_coordinator_flag [0] != REGISTER_COMPLETE)
+    while (md->w_sub_coordinator_flag [0] != REGISTER_COMPLETE)
         ;
-    w_sub_coordinator_flag [0] = NO_FLAG;
+    md->w_sub_coordinator_flag [0] = NO_FLAG;
 
     if (md->rank != md->coord_rank)
     {
@@ -2582,9 +2581,9 @@ if (count != PARAMETER_COUNT * 8) printf ("*****3 message wrong size: %d\n", cou
     }
     else
     {
-        while (c_sub_coordinator_flag [0] != START_WRITES)
+        while (md->c_sub_coordinator_flag [0] != START_WRITES)
             ;
-        c_sub_coordinator_flag [0] = NO_FLAG;
+        md->c_sub_coordinator_flag [0] = NO_FLAG;
     }
 
     // do writing
@@ -2637,21 +2636,21 @@ if (count != PARAMETER_COUNT * 8) printf ("*****5 message wrong size: %d\n", cou
         }
         else
         {
-            if (w_sub_coordinator_flag [0] != NO_FLAG)
+            if (md->w_sub_coordinator_flag [0] != NO_FLAG)
             {
                 message_available = 1;
-                COPY_ALL_PARAMS(msg,w_sub_coordinator_flag);
+                COPY_ALL_PARAMS(msg,md->w_sub_coordinator_flag);
                 source = md->rank;
-                w_sub_coordinator_flag [0] = NO_FLAG;
+                md->w_sub_coordinator_flag [0] = NO_FLAG;
             }
             else
             {
-                if (c_sub_coordinator_flag [0] != NO_FLAG)
+                if (md->c_sub_coordinator_flag [0] != NO_FLAG)
                 {
                     message_available = 1;
-                    COPY_ALL_PARAMS(msg,c_sub_coordinator_flag);
+                    COPY_ALL_PARAMS(msg,md->c_sub_coordinator_flag);
                     source = md->rank;
-                    c_sub_coordinator_flag [0] = NO_FLAG;
+                    md->c_sub_coordinator_flag [0] = NO_FLAG;
                 }
             }
         }
@@ -2663,6 +2662,7 @@ if (count != PARAMETER_COUNT * 8) printf ("*****5 message wrong size: %d\n", cou
             {
                 case WRITE_COMPLETE:
                 {
+printf ("rank complete: %d\n", source);
                     // if the proc is from our group, we were tracking it
                     if (msg [2] == md->group)
                         active_writers--;
@@ -2693,10 +2693,12 @@ if (count != PARAMETER_COUNT * 8) printf ("*****5 message wrong size: %d\n", cou
                         && source <= md->rank
                        )
                     {
+printf ("rank: %d A\n", source);
                         currently_writing = 0;
                     }
                     else
                     {
+printf ("rank: %d B\n", source);
 printf ("rank: %d tell the coord this one is done\n", md->rank);
                         // tell coordinator done with this one
                         // and if we have more capacity
@@ -2720,14 +2722,12 @@ printf ("rank: %d tell the coord this one is done\n", md->rank);
                             }
                             else
                             {
-                                while (c_coordinator_flag [0] != NO_FLAG)
+                                while (md->c_coordinator_flag [0] != NO_FLAG)
                                     ;
-                                c_coordinator_flag [1] = msg [1];
-                                c_coordinator_flag [2] = msg [2];
-                                c_coordinator_flag [3] = msg [3];
-                                c_coordinator_flag [0] = WRITE_COMPLETE;
-                                //while (c_coordinator_flag [0] != NO_FLAG)
-                                    ;
+                                md->c_coordinator_flag [1] = msg [1];
+                                md->c_coordinator_flag [2] = msg [2];
+                                md->c_coordinator_flag [3] = msg [3];
+                                md->c_coordinator_flag [0] = WRITE_COMPLETE;
                             }
                         }
                     }
@@ -2755,13 +2755,11 @@ printf ("rank: %d tell the coord this one is done\n", md->rank);
                         }
                         else
                         {
-                            while (c_coordinator_flag [0] != NO_FLAG)
+                            while (md->c_coordinator_flag [0] != NO_FLAG)
                                 ;
-                            c_coordinator_flag [1] = msg [1];
-                            c_coordinator_flag [2] = md->group;
-                            c_coordinator_flag [0] = WRITERS_BUSY;
-                            //while (c_coordinator_flag [0] != NO_FLAG)
-                                ;
+                            md->c_coordinator_flag [1] = msg [1];
+                            md->c_coordinator_flag [2] = md->group;
+                            md->c_coordinator_flag [0] = WRITERS_BUSY;
                         }
                     }
                     if (adaptive_writers_size >= adaptive_writers_being_served + 1)
@@ -2796,16 +2794,14 @@ printf ("rank: %d tell the coord this one is done\n", md->rank);
                         if (next_writer == md->rank)
                         {
                             active_writers++;
-                            while (writer_flag [0] != NO_FLAG)
+                            while (md->writer_flag [0] != NO_FLAG)
                                 ;
-                            writer_flag [1] = msg [1];
-                            writer_flag [2] = msg [2];
-                            writer_flag [3] = md->group;
-                            writer_flag [4] = md->rank;
-                            writer_flag [5] = msg [3];
-                            writer_flag [0] = DO_WRITE_FLAG;
-                            //while (writer_flag [0] != NO_FLAG)
-                                ;
+                            md->writer_flag [1] = msg [1];
+                            md->writer_flag [2] = msg [2];
+                            md->writer_flag [3] = md->group;
+                            md->writer_flag [4] = md->rank;
+                            md->writer_flag [5] = msg [3];
+                            md->writer_flag [0] = DO_WRITE_FLAG;
                             next_writer++;
                         }
                     }
@@ -2831,12 +2827,11 @@ printf ("rank: %d tell the coord this one is done\n", md->rank);
                         }
                         else
                         {
-                            while (writer_flag [0] != NO_FLAG)
+                            while (md->writer_flag [0] != NO_FLAG)
                                 ;
-                            writer_flag [0] = SEND_INDEX;
-                            w_sub_coordinator_flag [0] = NO_FLAG;
-                            //while (writer_flag [0] == SEND_INDEX)
-                                ;
+                            md->writer_flag [0] = SEND_INDEX;
+printf ("do I need this?\n");
+                            md->w_sub_coordinator_flag [0] = NO_FLAG;
                         }
                     }
 
@@ -2866,10 +2861,12 @@ printf ("rank: %d tell the coord this one is done\n", md->rank);
                         }
                         else
                         {
-                            while (w_sub_coordinator_flag [0] == NO_FLAG)
+printf ("rank: %d waiting for index buffer\n", md->rank);
+                            while (md->w_sub_coordinator_flag [0] == NO_FLAG)
                                 ;
-                            b.buff = (char *) (w_sub_coordinator_flag [0]);
-                            w_sub_coordinator_flag [0] = NO_FLAG;
+printf ("rank: %d got index buffer\n", md->rank);
+                            b.buff = (char *) (md->w_sub_coordinator_flag [0]);
+                            md->w_sub_coordinator_flag [0] = NO_FLAG;
                         }
 
                         // merge buf into the index
@@ -2936,13 +2933,13 @@ printf ("full footer: %llu only index: %llu\n", buffer_offset, only_index_buffer
                     }
                     else
                     {
-                        while (c_coordinator_flag [0] != NO_FLAG)
+                        while (md->c_coordinator_flag [0] != NO_FLAG)
                             ;
-                        c_coordinator_flag [1] = md->group;
-                        c_coordinator_flag [2] = only_index_buffer_offset;
-                        c_coordinator_flag [3] = (uint64_t) buffer;
-                        c_coordinator_flag [0] = INDEX_SIZE;
-                        while (c_coordinator_flag [0] != NO_FLAG)
+                        md->c_coordinator_flag [1] = md->group;
+                        md->c_coordinator_flag [2] = only_index_buffer_offset;
+                        md->c_coordinator_flag [3] = (uint64_t) buffer;
+                        md->c_coordinator_flag [0] = INDEX_SIZE;
+                        while (md->c_coordinator_flag [0] != NO_FLAG)
                             ;
                     }
                     free (buffer);
@@ -2981,17 +2978,15 @@ printf ("full footer: %llu only index: %llu\n", buffer_offset, only_index_buffer
                 if (current_writer == md->rank)
                 {
                     active_writers++;
-                    while (writer_flag [0] != NO_FLAG)
+                    while (md->writer_flag [0] != NO_FLAG)
                         ;
-                    writer_flag [1] = md->group; //msg [1];
-                    writer_flag [2] = md->rank;
-                    writer_flag [3] = md->group; //msg [1];
-                    writer_flag [4] = md->rank;
-                    writer_flag [5] = current_offset++;
-                    writer_flag [0] = DO_WRITE_FLAG;
+                    md->writer_flag [1] = md->group; //msg [1];
+                    md->writer_flag [2] = md->rank;
+                    md->writer_flag [3] = md->group; //msg [1];
+                    md->writer_flag [4] = md->rank;
+                    md->writer_flag [5] = current_offset++;
+                    md->writer_flag [0] = DO_WRITE_FLAG;
                     currently_writing = 1;
-                    //while (writer_flag [0] != NO_FLAG)
-                        ;
                 }
                 else
                 {
@@ -3015,14 +3010,14 @@ printf ("full footer: %llu only index: %llu\n", buffer_offset, only_index_buffer
                         }
                         else
                         {
-                            while (c_coordinator_flag [0] != NO_FLAG)
+printf ("rank: %d sending write_complete to coord\n", source);
+                            while (md->c_coordinator_flag [0] != NO_FLAG)
                                 ;
-                            c_coordinator_flag [1] = msg [1];
-                            c_coordinator_flag [2] = msg [2];
-                            c_coordinator_flag [3] = msg [3];
-                            c_coordinator_flag [0] = WRITE_COMPLETE;
-                            //while (c_coordinator_flag [0] != NO_FLAG)
-                                ;
+printf ("rank: %d sending write_complete to coord B\n", source);
+                            md->c_coordinator_flag [1] = msg [1];
+                            md->c_coordinator_flag [2] = msg [2];
+                            md->c_coordinator_flag [3] = msg [3];
+                            md->c_coordinator_flag [0] = WRITE_COMPLETE;
                         }
                     }
                 }
@@ -3105,22 +3100,22 @@ if (count != PARAMETER_COUNT * 8) printf ("*****7 message wrong size: %d\n", cou
         }
         else
         {
-            if (w_coordinator_flag [0] == REGISTER_FLAG)
+            if (md->w_coordinator_flag [0] == REGISTER_FLAG)
             {
                 message_available = 1;
-                COPY_ALL_PARAMS(msg,w_coordinator_flag);
-                source = w_coordinator_flag [2];
-                w_coordinator_flag [0] = NO_FLAG;
+                COPY_ALL_PARAMS(msg,md->w_coordinator_flag);
+                source = md->w_coordinator_flag [2];
+                md->w_coordinator_flag [0] = NO_FLAG;
                 i++;
             }
             else
             {
-                if (c_coordinator_flag [0] == REGISTER_FLAG)
+                if (md->c_coordinator_flag [0] == REGISTER_FLAG)
                 {
                     message_available = 1;
-                    COPY_ALL_PARAMS(msg,c_coordinator_flag);
-                    source = c_coordinator_flag [2];
-                    c_coordinator_flag [0] = NO_FLAG;
+                    COPY_ALL_PARAMS(msg,md->c_coordinator_flag);
+                    source = md->c_coordinator_flag [2];
+                    md->c_coordinator_flag [0] = NO_FLAG;
                     i++;
                 }
             }
@@ -3138,13 +3133,13 @@ if (count != PARAMETER_COUNT * 8) printf ("*****7 message wrong size: %d\n", cou
     }
 
     // wait for registration to complete before continuing
-    while (w_coordinator_flag [0] != REGISTER_COMPLETE)
+    while (md->w_coordinator_flag [0] != REGISTER_COMPLETE)
         ;
-    w_coordinator_flag [0] = NO_FLAG;
+    md->w_coordinator_flag [0] = NO_FLAG;
 
-    while (w_coordinator_flag [0] != START_WRITES)
+    while (md->w_coordinator_flag [0] != START_WRITES)
         ;
-    w_coordinator_flag [0] = NO_FLAG;
+    md->w_coordinator_flag [0] = NO_FLAG;
 
     for (i = 0; i < md->groups; i++)
     {
@@ -3164,11 +3159,9 @@ if (count != PARAMETER_COUNT * 8) printf ("*****7 message wrong size: %d\n", cou
         }
         else
         {
-            while (c_sub_coordinator_flag [0] != NO_FLAG)
+            while (md->c_sub_coordinator_flag [0] != NO_FLAG)
                 ;
-            c_sub_coordinator_flag [0] = START_WRITES;
-            //while (c_sub_coordinator_flag [0] != NO_FLAG)
-                ;
+            md->c_sub_coordinator_flag [0] = START_WRITES;
         }
     }
 
@@ -3221,21 +3214,21 @@ if (count != PARAMETER_COUNT * 8) printf ("*****8 message wrong size: %d\n", cou
         }
         else
         {
-            if (c_coordinator_flag [0] != NO_FLAG)
+            if (md->c_coordinator_flag [0] != NO_FLAG)
             {
                 message_available = 1;
                 source = md->rank;
-                COPY_ALL_PARAMS(msg,c_coordinator_flag);
-                c_coordinator_flag [0] = NO_FLAG;
+                COPY_ALL_PARAMS(msg,md->c_coordinator_flag);
+                md->c_coordinator_flag [0] = NO_FLAG;
             }
             else
             {
-                if (w_coordinator_flag [0] != NO_FLAG)
+                if (md->w_coordinator_flag [0] != NO_FLAG)
                 {
                     message_available = 1;
                     source = md->rank;
-                    COPY_ALL_PARAMS(msg,w_coordinator_flag);
-                    w_coordinator_flag [0] = NO_FLAG;
+                    COPY_ALL_PARAMS(msg,md->w_coordinator_flag);
+                    md->w_coordinator_flag [0] = NO_FLAG;
                 }
             }
         }
@@ -3284,14 +3277,12 @@ if (count != PARAMETER_COUNT * 8) printf ("*****8 message wrong size: %d\n", cou
                                     }
                                     else
                                     {
-                                        while (c_sub_coordinator_flag [0] != NO_FLAG)
+                                        while (md->c_sub_coordinator_flag [0] == NO_FLAG)
                                             ;
-                                        c_sub_coordinator_flag [1] = msg [1];
-                                        c_sub_coordinator_flag [2] = sub_coord_ranks [msg [1]];
-                                        c_sub_coordinator_flag [3] = group_offset [msg [1]];
-                                        c_sub_coordinator_flag [0] = ADAPTIVE_WRITE_START;
-                                        //while (c_sub_coordinator_flag [0] != NO_FLAG)
-                                            ;
+                                        md->c_sub_coordinator_flag [1] = msg [1];
+                                        md->c_sub_coordinator_flag [2] = sub_coord_ranks [msg [1]];
+                                        md->c_sub_coordinator_flag [3] = group_offset [msg [1]];
+                                        md->c_sub_coordinator_flag [0] = ADAPTIVE_WRITE_START;
                                     }
                                     break;
                                 }
@@ -3320,12 +3311,10 @@ if (count != PARAMETER_COUNT * 8) printf ("*****8 message wrong size: %d\n", cou
                                 }
                                 else
                                 {
-                                    while (c_sub_coordinator_flag [0] != NO_FLAG)
+                                    while (md->c_sub_coordinator_flag [0] != NO_FLAG)
                                         ;
-                                    c_sub_coordinator_flag [1] = group_offset [i];
-                                    c_sub_coordinator_flag [0] = OVERALL_WRITE_COMPLETE;
-                                    //while (c_sub_coordinator_flag [0] != NO_FLAG)
-                                        ;
+                                    md->c_sub_coordinator_flag [1] = group_offset [i];
+                                    md->c_sub_coordinator_flag [0] = OVERALL_WRITE_COMPLETE;
                                 }
                             }
                         }
@@ -3335,7 +3324,7 @@ if (count != PARAMETER_COUNT * 8) printf ("*****8 message wrong size: %d\n", cou
                         int i = (msg [1] + 1) % md->groups;
                         while (i != msg [1])
                         {
-                            if (   i != c_coordinator_flag [1]
+                            if (   i != md->c_coordinator_flag [1]
                                 && group_state [i] == STATE_WRITING
                                )
                             {
@@ -3360,14 +3349,12 @@ if (count != PARAMETER_COUNT * 8) printf ("*****8 message wrong size: %d\n", cou
                                 }
                                 else
                                 {
-                                    while (c_sub_coordinator_flag [0] != NO_FLAG)
+                                    while (md->c_sub_coordinator_flag [0] != NO_FLAG)
                                         ;
-                                    c_sub_coordinator_flag [1] = msg [1];
-                                    c_sub_coordinator_flag [2] = sub_coord_ranks [msg [1]];
-                                    c_sub_coordinator_flag [3] = group_offset [msg [1]];
-                                    c_sub_coordinator_flag [0] = ADAPTIVE_WRITE_START;
-                                    //while (c_sub_coordinator_flag [0] != NO_FLAG)
-                                        ;
+                                    md->c_sub_coordinator_flag [1] = msg [1];
+                                    md->c_sub_coordinator_flag [2] = sub_coord_ranks [msg [1]];
+                                    md->c_sub_coordinator_flag [3] = group_offset [msg [1]];
+                                    md->c_sub_coordinator_flag [0] = ADAPTIVE_WRITE_START;
                                 }
 
                                 break;
@@ -3411,14 +3398,12 @@ if (count != PARAMETER_COUNT * 8) printf ("*****8 message wrong size: %d\n", cou
                             }
                             else
                             {
-                                while (c_sub_coordinator_flag [0] != NO_FLAG)
+                                while (md->c_sub_coordinator_flag [0] != NO_FLAG)
                                     ;
-                                c_sub_coordinator_flag [1] = msg [1];
-                                c_sub_coordinator_flag [2] = sub_coord_ranks [msg [1]];
-                                c_sub_coordinator_flag [3] = group_offset [msg [1]];
-                                c_sub_coordinator_flag [0] = ADAPTIVE_WRITE_START;
-                                //while (c_sub_coordinator_flag [0] != NO_FLAG)
-                                    ;
+                                md->c_sub_coordinator_flag [1] = msg [1];
+                                md->c_sub_coordinator_flag [2] = sub_coord_ranks [msg [1]];
+                                md->c_sub_coordinator_flag [3] = group_offset [msg [1]];
+                                md->c_sub_coordinator_flag [0] = ADAPTIVE_WRITE_START;
                             }
                             break;
                         }
@@ -3475,11 +3460,9 @@ if (count != PARAMETER_COUNT * 8) printf ("*****8 message wrong size: %d\n", cou
                     }
                     else
                     {
-                        //while (c_coordinator_flag [0] == NO_FLAG)
-                            ;
-                        c_coordinator_flag [0] = NO_FLAG;
+                        md->c_coordinator_flag [0] = NO_FLAG;
                         buffer_write (&buffer, &buffer_size, &buffer_offset
-                                     ,(void *) c_coordinator_flag [3]
+                                     ,(void *) md->c_coordinator_flag [3]
                                      ,proc_index_size
                                      );
                     }
