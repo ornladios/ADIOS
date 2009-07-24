@@ -1249,8 +1249,9 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 strcat (name, split_name);
             }
 
+#define BLAST_OPENS 1
 #if BLAST_OPENS
-            md->f = open (name, O_WRONLY | O_LARGEFILE);
+            md->f = open (name, O_WRONLY | O_LARGEFILE | O_CREAT | O_TRUNC);
 #else
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
@@ -1993,11 +1994,12 @@ printf ("rank: %d index_buffer_size: %lld\n", md->rank, index_buffer_offset);
 
             if (msg [1] == msg [3]) // same file
             {
+                if (md->f == -1) printf ("we got a bad file handle\n");
                 lseek (md->f, md->stripe_size * msg [5], SEEK_SET);
                 ssize_t s = write (md->f, fd->buffer, fd->bytes_written);
                 if (s != fd->bytes_written)
                 {
-                    fprintf (stderr, "Need to do multi-write 1\n");
+                    fprintf (stderr, "Need to do multi-write 1 (tried: %llu wrote: %lld) errno %d\n", fd->bytes_written, s, errno);
                 }
             }
             else // we are adaptive writing and need to use the other file
@@ -2677,7 +2679,6 @@ if (count != PARAMETER_COUNT * 8) printf ("*****5 message wrong size: %d\n", cou
                                                       );
                         }
                         writers [writers_served] = source;
-printf ("index size: %lld\n", msg [4]);
                         index_sizes [writers_served] = msg [4];
                         if (index_sizes [writers_served] > largest_index)
                             largest_index = index_sizes [writers_served];
@@ -2899,6 +2900,7 @@ printf ("rank: %d tell the coord this one is done\n", md->rank);
                     only_index_buffer_offset = buffer_offset;
                     adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
+printf ("full footer: %llu only index: %llu\n", buffer_offset, only_index_buffer_offset);
                     lseek (md->f, md->stripe_size * msg [1], SEEK_SET);
                     ssize_t s = write (md->f, buffer, buffer_offset);
                     if (s != buffer_offset)
@@ -3240,6 +3242,9 @@ if (count != PARAMETER_COUNT * 8) printf ("*****8 message wrong size: %d\n", cou
 
         if (message_available)
         {
+            printf ("C:coordinator source: %d msg: %s B\n"
+                   ,source, message_to_string (msg [0])
+                   );
             message_available = 0;
             switch (msg [0])
             {
@@ -3426,13 +3431,6 @@ if (count != PARAMETER_COUNT * 8) printf ("*****8 message wrong size: %d\n", cou
                 {
                     int source_group = msg [1];
                     uint64_t proc_index_size = msg [2];
-                    struct adios_bp_buffer_struct_v1 b;
-                    struct adios_index_process_group_struct_v1 * new_pg_root;
-                    struct adios_index_var_struct_v1 * new_vars_root;
-                    struct adios_index_attribute_struct_v1 * new_attrs_root;
-                    new_pg_root = 0;
-                    new_vars_root = 0;
-                    new_attrs_root = 0;
 
                     index_sizes_received++;
 
@@ -3471,7 +3469,6 @@ if (count != PARAMETER_COUNT * 8) printf ("*****8 message wrong size: %d\n", cou
                                   ,md->group_comm, &status
                                   );
                         pthread_mutex_unlock (&md->mutex);
-                        b.buff = index_buf;
                         buffer_write (&buffer, &buffer_size, &buffer_offset
                                      ,index_buf, proc_index_size
                                      );
@@ -3558,8 +3555,8 @@ printf ("attempting to write: %llu %s\n", buffer_offset, new_name);
         }
     } while (msg [0] != SHUTDOWN_FLAG);
 
-    if (index_buf)
-        free (index_buf);
+    //if (index_buf)
+    //    free (index_buf);
     if (buffer)
         free (buffer);
 
