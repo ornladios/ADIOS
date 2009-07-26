@@ -479,4 +479,51 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
                        ,int * requires_group_comm
                        );
 
+// queue code for adaptive message passing
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* LIST */
+typedef struct ListElmt_
+{
+    void             * data;
+    struct ListElmt_ * next;
+} ListElmt;
+
+typedef struct List_
+{
+    int      size;
+    int      (* match) (const void * key1, const void * key2);
+    void     (* destroy) (void * data);
+    ListElmt * head;
+    ListElmt * tail;
+} List;
+
+void list_init (List * list, void (* destroy) (void * data));
+void list_destroy (List * list);
+int list_ins_next (List * list, ListElmt * element, const void * data);
+int list_rem_next (List * list, ListElmt * element, void ** data);
+#define list_size(list) ((list)->size)
+#define list_head(list) ((list)->head)
+#define list_tail(list) ((list)->tail)
+#define list_is_head(list, element) ((element) == (list)->head ? 1 : 0)
+#define list_is_tail(element) ((element)->next == NULL ? 1 : 0)
+#define list_data(element) ((element)->data)
+#define list_next(element) ((element)->next)
+
+/* QUEUE */
+typedef List Queue;
+
+#define queue_init list_init
+#define queue_destroy list_destroy
+int queue_enqueue (Queue * queue, const void * data);
+int queue_dequeue (Queue * queue, void ** data);
+#define queue_peek(queue) ((queue)->head == NULL ? NULL : (queue)->head->data)
+#define queue_size list_size
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
