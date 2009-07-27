@@ -24,6 +24,8 @@
 static int adios_adaptive_initialized = 0;
 
 #define PRINT_MESSAGES 0
+#define PHYSICAL_REGISTER 0
+#define DO_INDEX_COLLECTION 0
 
 struct adios_adaptive_data_struct
 {
@@ -1025,6 +1027,7 @@ static void setup_threads_and_register (struct adios_adaptive_data_struct * md
                        );
     }                  
 
+#if PHYSICAL_REGISTER
     // register writer with sub_coordinator
     if (md->rank != md->sub_coord_rank)
     {
@@ -1049,6 +1052,7 @@ static void setup_threads_and_register (struct adios_adaptive_data_struct * md
         queue_enqueue (&md->sub_coordinator_flag, flag);
         pthread_mutex_unlock (&md->sub_coordinator_mutex);
     }
+#endif
 }
 
 enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
@@ -1970,10 +1974,12 @@ void adios_adaptive_close (struct adios_file_struct * fd
             // registration should be complete, so start writing
             if (md->rank == md->coord_rank)
             {
+#if PHYSICAL_REGISTER
                 // wait for registration to complete
                 while (md->writer_flag [0] != REGISTER_COMPLETE)
                     ;
                 md->writer_flag [0] = NO_FLAG;
+#endif
 
                 uint64_t * flag = malloc (8 * PARAMETER_COUNT);
                 flag [0] = START_WRITES;
@@ -2125,16 +2131,21 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 }
             }
 
+#if DO_INDEX_COLLECTION
             // wait to do index
             if (md->rank != source)
             {
                 uint64_t msgx [PARAMETER_COUNT];
                 int message_available = 0;
                 while (!message_available)
+                {
+                    pthread_mutex_lock (&md->mutex);
                     MPI_Iprobe (MPI_ANY_SOURCE, TAG_WRITER
                                ,md->group_comm
                                ,&message_available, &status
                                );
+                    pthread_mutex_unlock (&md->mutex);
+                }
 
                 pthread_mutex_lock (&md->mutex);
                 MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG
@@ -2179,6 +2190,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 queue_enqueue (&md->sub_coordinator_flag, flag);
                 pthread_mutex_unlock (&md->sub_coordinator_mutex);
             }
+#endif
 
             // finished with output. Shutdown the system
             if (md->rank == md->sub_coord_rank)
@@ -2547,6 +2559,7 @@ static void * sub_coordinator_main (void * param)
     int message_available;
     int source;
 
+#if PHYSICAL_REGISTER
     // register the sub_coordinator with the coordinator
     if (md->rank != md->coord_rank)
     {
@@ -2577,9 +2590,11 @@ static void * sub_coordinator_main (void * param)
     i = 0;
     while (i < md->group_size)
     {
+        pthread_mutex_lock (&md->mutex);
         MPI_Iprobe (MPI_ANY_SOURCE, TAG_SUB_COORDINATOR, md->group_comm
                    ,&message_available, &status
                    );
+        pthread_mutex_unlock (&md->mutex);
         if (message_available)
         {
             uint64_t msgx [PARAMETER_COUNT];
@@ -2620,6 +2635,7 @@ static void * sub_coordinator_main (void * param)
             message_available = 0;
         }
     }
+#endif
 
     // wait for START_WRITES
     if (md->rank != md->coord_rank)
@@ -2671,14 +2687,20 @@ static void * sub_coordinator_main (void * param)
     uint64_t buffer_size = 0;
     uint64_t buffer_offset = 0;
 
+#if PRINT_MESSAGES
 int xxx = 0;
+#endif
     int currently_writing = 0;
     do
     {
+#if PRINT_MESSAGES
 if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
+#endif
+        pthread_mutex_lock (&md->mutex);
         MPI_Iprobe (MPI_ANY_SOURCE, TAG_SUB_COORDINATOR, md->group_comm
                    ,&message_available, &status
                    );
+        pthread_mutex_unlock (&md->mutex);
         if (message_available)
         {
             uint64_t msgx [PARAMETER_COUNT];
@@ -2888,6 +2910,7 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                         }
                     }
 
+#if DO_INDEX_COLLECTION
                     char * buf = malloc (largest_index + 1);
                     buf [largest_index] = 0;
                     struct adios_bp_buffer_struct_v1 b;
@@ -2904,10 +2927,14 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                         {
                             int message_available = 0;
                             while (!message_available)
+                            {
+                                pthread_mutex_lock (&md->mutex);
                                 MPI_Iprobe (MPI_ANY_SOURCE, TAG_SUB_COORDINATOR
                                            ,md->group_comm
                                            ,&message_available, &status
                                            );
+                                pthread_mutex_unlock (&md->mutex);
+                            }
 
                             pthread_mutex_lock (&md->mutex);
                             MPI_Recv (buf, index_sizes [i], MPI_BYTE
@@ -3005,6 +3032,7 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                         pthread_mutex_unlock (&md->coordinator_mutex);
                     }
                     free (buffer);
+#endif
 
                     break;
                 }
@@ -3137,11 +3165,14 @@ static void * coordinator_main (void * param)
     memset (group_state, STATE_WRITING, md->groups);
     // process sub_coordinator registrations
     i = 0;
+#if PHYSICAL_REGISTER
     while (i < md->groups)
     {
+        pthread_mutex_lock (&md->mutex);
         MPI_Iprobe (MPI_ANY_SOURCE, TAG_COORDINATOR, md->group_comm
                    ,&message_available, &status
                    );
+        pthread_mutex_unlock (&md->mutex);
         if (message_available)
         {
             uint64_t msgx [PARAMETER_COUNT];
@@ -3193,8 +3224,29 @@ static void * coordinator_main (void * param)
     }
 
     md->writer_flag [0] = REGISTER_COMPLETE;
+#else
+    i = 0;
+    int rank = 0;
+    while (rank < md->size)
+    {
+        int group;
+        int group_size;
+        int sub_coord_rank;
+        int coord_rank;
 
-    // wait for registration to complete before continuing
+        calc_groups (rank, md->size, md->groups
+                    ,&group, &group_size, &sub_coord_rank
+                    ,&coord_rank
+                    );
+        sub_coord_ranks [i++] = sub_coord_rank;
+        rank += group_size;
+#if PRINT_MESSAGES
+        printf ("sc: %d rank: %d\n", i - 1, sub_coord_ranks [i - 1]);
+#endif
+    }
+#endif
+
+    // wait for START_WRITE to complete before continuing
     while (queue_size (&md->coordinator_flag) == 0)
         ;
     uint64_t * flag;
@@ -3259,13 +3311,19 @@ static void * coordinator_main (void * param)
               malloc (sizeof (struct adios_file_index_format_v2) * md->groups);
 
     // process messages for the coordinator either on or off process
+#if PRINT_MESSAGES
 int xxx = 0;
+#endif
     do
     {
+#if PRINT_MESSAGES
 if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", adaptive_writes_outstanding);
+#endif
+        pthread_mutex_lock (&md->mutex);
         MPI_Iprobe (MPI_ANY_SOURCE, TAG_COORDINATOR, md->group_comm
                    ,&message_available, &status
                    );
+        pthread_mutex_unlock (&md->mutex);
         if (message_available)
         {
             uint64_t msgx [PARAMETER_COUNT];
