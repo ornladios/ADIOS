@@ -2719,8 +2719,10 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                 {
                     // if this group was writing it, we were tracking it
                     if (msg [2] == md->group)
+                    {
                         active_writers--;
 printf ("sc: %d active writers remaining: %d\n", md->group, active_writers);
+                    }
 
                     // if the target group is our group (we wrote to our file)
                     if (msg [1] == md->group)
@@ -2739,24 +2741,21 @@ printf ("sc: %d active writers remaining: %d\n", md->group, active_writers);
                             largest_index = index_sizes [writers_served];
 
                         writers_served++;
+printf ("sc: %d saved writer for indexing: %lld\n", md->group, source);
                     }
 
-                    // figure out if it is local or foreign sourced
-                    // if it is local, just do the next one.
-                    // if it is foreign, tell the coordinator it is done
-                    if (msg [2] == md->group)
+                    // if it is adaptive, tell the coordinator it is done
+                    if (msg [2] == md->group && msg [1] != msg [2])
                     {
-                        currently_writing = 0;
-                    }
-                    else
-                    {
+                         printf ("What do we do here? group: %d msg [1] %lld msg [2] %lld msg [3] %lld\n", md->group, msg [1], msg [2], msg [3]);
                         // tell coordinator done with this one
                         // and if we have more capacity
                         // only if we were writing to our group
-                        if (msg [1] == msg [2])
+                        //if (msg [1] != msg [2])
                         {
                             if (md->rank != md->coord_rank)
                             {
+printf ("sending write_complete: 1 g: %d 1: %lld 2: %lld 3: %lld\n", md->group, msg [1], msg [2], msg [3]);
                                 uint64_t msgx [PARAMETER_COUNT];
                                 msgx [0] = WRITE_COMPLETE;
                                 msgx [1] = msg [1];
@@ -2772,6 +2771,7 @@ printf ("sc: %d active writers remaining: %d\n", md->group, active_writers);
                             }
                             else
                             {
+printf ("sending write_complete: 2 g: %d 1: %lld 2: %lld 3: %lld\n", md->group, msg [1], msg [2], msg [3]);
                                 uint64_t * flag = malloc (8 * PARAMETER_COUNT);
                                 INIT_PARAMS(flag);
                                 flag [0] = WRITE_COMPLETE;
@@ -2783,17 +2783,27 @@ printf ("sc: %d active writers remaining: %d\n", md->group, active_writers);
                                 pthread_mutex_unlock (&md->coordinator_mutex);
                             }
                         }
+#if 0
                         else
                         {
-                            printf ("What do we do here?\n");
+                            printf ("we shouldn't ever get here\n");
                         }
+#endif
+                    }
+
+                    // if it was local, start the next write or send
+                    // the write complete for this group (at bottom)
+                    if (msg [1] == msg [2])
+                    {
+                        assert (msg [1] == md->group);
+                        currently_writing = 0;
+                        current_writer = next_writer++;
                     }
                     break;
                 }
 
                 case ADAPTIVE_WRITE_START:
                 {
-printf ("ADAPTIVE_WRITE_START A\n");
 printf ("next_writer %d md->rank %d\n", next_writer, md->rank);
                     if (next_writer > md->rank)
                     {
@@ -2804,7 +2814,6 @@ printf ("next_writer %d md->rank %d\n", next_writer, md->rank);
                             msgx [0] = WRITERS_BUSY;
                             msgx [1] = msg [1];
                             msgx [2] = md->group;
-printf ("Y 1\n");
                             pthread_mutex_lock (&md->mutex);
                             MPI_Isend (msgx, PARAMETER_COUNT, MPI_LONG_LONG
                                       ,md->coord_rank, TAG_COORDINATOR
@@ -2812,7 +2821,6 @@ printf ("Y 1\n");
                                       );
 
                             pthread_mutex_unlock (&md->mutex);
-printf ("Y 2\n");
                         }
                         else
                         {
@@ -2821,15 +2829,14 @@ printf ("Y 2\n");
                             flag [0] = WRITERS_BUSY;
                             flag [1] = msg [1];
                             flag [2] = md->group;
-printf ("Z 1\n");
                             pthread_mutex_lock (&md->coordinator_mutex);
                             queue_enqueue (&md->coordinator_flag, flag);
                             pthread_mutex_unlock (&md->coordinator_mutex);
-printf ("Z 2\n");
                         }
                     }
                     else
                     {
+#if 0
 printf ("AA\n");
                     if (adaptive_writers_size <= adaptive_writers_being_served + 1)
                     {
@@ -2840,6 +2847,7 @@ printf ("BB\n");
                                                            );
                     }
                     adaptive_writers [adaptive_writers_being_served++] = next_writer;
+#endif
                     if (next_writer < md->rank)
                     {
 printf ("CC\n");
@@ -2880,7 +2888,6 @@ printf ("EE\n");
                     }
 printf ("FF\n");
                     }
-printf ("ADAPTIVE_WRITE_START B\n");
                     break;
                 }
 
@@ -3081,10 +3088,11 @@ printf ("ADAPTIVE_WRITE_START B\n");
                         completed_writing = 1;
                         if (md->rank != md->coord_rank)
                         {
+printf ("sending write_complete: 3 g: %d 1: %lld 2: %lld 3: %lld\n", md->group, msg [1], msg [2], msg [3]);
                             uint64_t msgx [PARAMETER_COUNT];
                             msgx [0] = WRITE_COMPLETE;
-                            msgx [1] = msg [1];
-                            msgx [2] = msg [2];
+                            msgx [1] = md->group;//msg [1];
+                            msgx [2] = md->group;//msg [2];
                             msgx [3] = msg [3];
                             pthread_mutex_lock (&md->mutex);
                             MPI_Isend (msgx, PARAMETER_COUNT, MPI_LONG_LONG
@@ -3096,11 +3104,12 @@ printf ("ADAPTIVE_WRITE_START B\n");
                         }
                         else
                         {
+printf ("sending write_complete: 4 g: %d 1: %lld 2: %lld 3: %lld\n", md->group, msg [1], msg [2], msg [3]);
                             uint64_t * flag = malloc (8 * PARAMETER_COUNT);
                             INIT_PARAMS(flag);
                             flag [0] = WRITE_COMPLETE;
-                            flag [1] = msg [1];
-                            flag [2] = msg [2];
+                            flag [1] = md->group; //msg [1];
+                            flag [2] = md->group; //msg [2];
                             flag [3] = msg [3];
                             pthread_mutex_lock (&md->coordinator_mutex);
                             queue_enqueue (&md->coordinator_flag, flag);
@@ -3109,10 +3118,12 @@ printf ("ADAPTIVE_WRITE_START B\n");
                     }
                 }
             }
+#if 0
             if (currently_writing)
             {
                 current_writer = next_writer++;
             }
+#endif
         }
     } while (msg [0] != SHUTDOWN_FLAG);
     free (writers);
@@ -3332,7 +3343,12 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
             {
                 case WRITE_COMPLETE:
                 {
-                    group_offset [msg [1]] = msg [3];
+                    // what part of the file finished writing last is unknown
+                    // so only save the largest final offset
+                    if (msg [3] > group_offset [msg [1]])
+                        group_offset [msg [1]] = msg [3];
+
+                    // we just finished this group, so
                     // start an adaptive write for this file
                     if (msg [1] == msg [2])
                     {
@@ -3340,7 +3356,6 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
                         group_state [msg [1]] = STATE_COMPLETE;
                         if (groups_complete != md->groups)
                         {
-printf ("START ADAPTIVE WRITE A\n");
                             int i = (msg [1] + 1) % md->groups;
                             while (i != msg [1])
                             {
@@ -3348,9 +3363,9 @@ printf ("START ADAPTIVE WRITE A\n");
                                 {
                                     // tell the subcoordinator to write
                                     // to this file
+                                    adaptive_writes_outstanding++;
                                     if (sub_coord_ranks [i] != md->rank)
                                     {
-                                        adaptive_writes_outstanding++;
 printf ("new adaptive writes: %lld A1 ++ to: %d for: %d\n", adaptive_writes_outstanding, i, msg [1]);
                                         uint64_t msgx [PARAMETER_COUNT];
                                         msgx [0] = ADAPTIVE_WRITE_START;
@@ -3369,7 +3384,6 @@ printf ("new adaptive writes: %lld A1 ++ to: %d for: %d\n", adaptive_writes_outs
                                     }
                                     else
                                     {
-                                        adaptive_writes_outstanding++;
 printf ("new adaptive writes: %lld A2 ++ to: %d for: %d\n", adaptive_writes_outstanding, i, msg [1]);
                                         uint64_t * flag = malloc (8 * PARAMETER_COUNT);
                                         INIT_PARAMS(flag);
@@ -3385,11 +3399,12 @@ printf ("new adaptive writes: %lld A2 ++ to: %d for: %d\n", adaptive_writes_outs
                                 }
                                 i = (i + 1) % md->groups;
                             }
-printf ("START ADAPTIVE WRITE B\n");
+                            if (i == msg [1]) // we didn't find someplace to write
+                                printf ("c: ending adaptive write for group: %lld\n", msg [1]);
                         }
                         else // start index collection if no adaptive left
                         {
-                            if (adaptive_writes_outstanding == 0 && groups_complete == md->groups)
+                            if (!adaptive_writes_outstanding)
                             {
 printf ("START INDEX COLLECTION A\n");
                                 start_index_collection = 1;
@@ -3400,20 +3415,17 @@ printf ("START INDEX COLLECTION B\n");
                     else  // move to the next adaptive writer
                     {
                         adaptive_writes_outstanding--;
-printf ("new adaptive writes: %lld B --\n", adaptive_writes_outstanding);
-printf ("MOVE TO NEXT ADAPTIVE WRITER A\n");
-                        int i = (msg [1] + 1) % md->groups;
-                        while (i != msg [1])
+printf ("new adaptive writes: %lld B -- msg [1] %lld msg [2] %lld\n", adaptive_writes_outstanding, msg [1], msg [2]);
+                        int i = (msg [2] + 1) % md->groups;
+                        while (i != msg [2])
                         {
-                            if (   i != msg [1]
-                                && group_state [i] == STATE_WRITING
-                               )
+                            if (group_state [i] == STATE_WRITING)
                             {
                                 // tell the subcoordinator to write
                                 // to this file
+                                adaptive_writes_outstanding++;
                                 if (sub_coord_ranks [i] != md->rank)
                                 {
-                                    adaptive_writes_outstanding++;
 printf ("new adaptive writes: %lld C1 ++ to: %d for: %d\n", adaptive_writes_outstanding, i, msg [1]);
                                     uint64_t msgx [PARAMETER_COUNT];
                                     msgx [0] = ADAPTIVE_WRITE_START;
@@ -3432,7 +3444,6 @@ printf ("new adaptive writes: %lld C1 ++ to: %d for: %d\n", adaptive_writes_outs
                                 }
                                 else
                                 {
-                                    adaptive_writes_outstanding++;
 printf ("new adaptive writes: %lld C2 ++ to: %d for: %d\n", adaptive_writes_outstanding, i, msg [1]);
                                     uint64_t * flag = malloc (8 * PARAMETER_COUNT);
                                     INIT_PARAMS(flag);
@@ -3449,36 +3460,42 @@ printf ("new adaptive writes: %lld C2 ++ to: %d for: %d\n", adaptive_writes_outs
                             }
                             i = (i + 1) % md->groups;
                         }
-printf ("i: %d msg [1] %lld\n", i, msg [1]);
-                        if (i == msg [1] && adaptive_writes_outstanding == 0 && groups_complete == md->groups)
+                        if (i == msg [2]) // we didn't find someplace to write
+                            printf ("c: ending adaptive write for group: %lld\n", msg [1]);
+printf ("i: %d msg [1] %lld wb adaptive_writes_outstanding: %d\n", i, msg [1], adaptive_writes_outstanding);
+                        if (i == msg [1] && !adaptive_writes_outstanding && groups_complete == md->groups)
                         {
 printf ("START INDEX COLLECTION Y\n");
                             start_index_collection = 1;
                         }
-printf ("MOVE TO NEXT ADAPTIVE WRITER B\n");
                     }
                     break;
                 }
 
                 case WRITERS_BUSY: // we told it to adaptive write, but
-                                   // all are done
+                                   // all are writing already for that group
                 {
                     adaptive_writes_outstanding--;
-printf ("new adaptive writes: %lld D --\n", adaptive_writes_outstanding);
-                    if (group_state [msg [1]] == STATE_WRITING)
-                        group_state [msg [1]] = STATE_WRITERS_ALL_OCCUPIED;
+printf ("new adaptive writes: %lld D -- msg [1] %lld msg [2] %lld\n", adaptive_writes_outstanding, msg [1], msg [2]);
+                    // the writer that told us this can't take any more
+                    // adaptive requests so mark as occupied (only if still
+                    // marked as writing)
+                    if (group_state [msg [2]] == STATE_WRITING)
+                        group_state [msg [2]] = STATE_WRITERS_ALL_OCCUPIED;
+
+                    // look for the next group we can ask to write
                     int i = (msg [2] + 1) % md->groups;
-                    while (i != msg [1])
+                    while (i != msg [2])  // look at all
                     {
-                        if (   i != msg [2]
+                        if (   i != msg [1]  // don't write to the source group
                             && group_state [i] == STATE_WRITING
                            )
                         {
                             // tell the subcoordinator to write
                             // to this file
+                            adaptive_writes_outstanding++;
                             if (sub_coord_ranks [i] != md->rank)
                             {
-                                adaptive_writes_outstanding++;
 printf ("new adaptive writes: %lld E1 ++ to: %d for: %d\n", adaptive_writes_outstanding, i, msg [1]);
                                 uint64_t msgx [PARAMETER_COUNT];
                                 msgx [0] = ADAPTIVE_WRITE_START;
@@ -3498,7 +3515,6 @@ printf ("new adaptive writes: %lld E1 ++ to: %d for: %d\n", adaptive_writes_outs
                             }
                             else
                             {
-                                adaptive_writes_outstanding++;
 printf ("new adaptive writes: %lld E2 ++ to: %d for: %d\n", adaptive_writes_outstanding, i, msg [1]);
                                 uint64_t * flag = malloc (8 * PARAMETER_COUNT);
                                 INIT_PARAMS(flag);
@@ -3515,12 +3531,11 @@ printf ("new adaptive writes: %lld E2 ++ to: %d for: %d\n", adaptive_writes_outs
                         i = (i + 1) % md->groups;
                     }
 printf ("i: %d msg [1] %lld wb adaptive_writes_outstanding: %d\n", i, msg [1], adaptive_writes_outstanding);
-                    if (i == msg [1] && adaptive_writes_outstanding == 0 && groups_complete == md->groups)
+                    if (i == msg [2] && !adaptive_writes_outstanding && groups_complete == md->groups)
                     {
 printf ("START INDEX COLLECTION wb\n");
                         start_index_collection = 1;
                     }
-printf ("MOVE TO NEXT ADAPTIVE WRITER wb\n");
                     break;
                 }
 
