@@ -408,10 +408,6 @@ void adios_adaptive_init (const char * parameters
     queue_init (&md->coordinator_flag, free);
     pthread_mutex_init (&md->sub_coordinator_mutex, NULL);
     pthread_mutex_init (&md->coordinator_mutex, NULL);
-    //md->w_sub_coordinator_flag = malloc (8 * PARAMETER_COUNT);
-    //md->c_sub_coordinator_flag = malloc (8 * PARAMETER_COUNT);
-    //md->c_coordinator_flag = malloc (8 * PARAMETER_COUNT);
-    //md->w_coordinator_flag = malloc (8 * PARAMETER_COUNT);
 
     // parse the parameters into key=value segments for optional settings
     if (parameters)
@@ -2721,7 +2717,7 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
             {
                 case WRITE_COMPLETE:
                 {
-                    // if the proc is from our group, we were tracking it
+                    // if this group was writing it, we were tracking it
                     if (msg [2] == md->group)
                         active_writers--;
 printf ("sc: %d active writers remaining: %d\n", md->group, active_writers);
@@ -2787,12 +2783,17 @@ printf ("sc: %d active writers remaining: %d\n", md->group, active_writers);
                                 pthread_mutex_unlock (&md->coordinator_mutex);
                             }
                         }
+                        else
+                        {
+                            printf ("What do we do here?\n");
+                        }
                     }
                     break;
                 }
 
                 case ADAPTIVE_WRITE_START:
                 {
+printf ("ADAPTIVE_WRITE_START A\n");
 printf ("next_writer %d md->rank %d\n", next_writer, md->rank);
                     if (next_writer > md->rank)
                     {
@@ -2829,8 +2830,10 @@ printf ("Z 2\n");
                     }
                     else
                     {
+printf ("AA\n");
                     if (adaptive_writers_size <= adaptive_writers_being_served + 1)
                     {
+printf ("BB\n");
                         adaptive_writers_size += 10;
                         adaptive_writers = (int *) realloc (adaptive_writers
                                                            ,adaptive_writers_size
@@ -2839,6 +2842,7 @@ printf ("Z 2\n");
                     adaptive_writers [adaptive_writers_being_served++] = next_writer;
                     if (next_writer < md->rank)
                     {
+printf ("CC\n");
                         active_writers++;
                         uint64_t msgx [PARAMETER_COUNT];
                         msgx [0] = DO_WRITE_FLAG;
@@ -2858,8 +2862,10 @@ printf ("Z 2\n");
                     }
                     else
                     {
+printf ("DD\n");
                         if (next_writer == md->rank)
                         {
+printf ("EE\n");
                             active_writers++;
                             while (md->writer_flag [0] != NO_FLAG)
                                 ;
@@ -2872,7 +2878,9 @@ printf ("Z 2\n");
                             next_writer++;
                         }
                     }
+printf ("FF\n");
                     }
+printf ("ADAPTIVE_WRITE_START B\n");
                     break;
                 }
 
@@ -3317,6 +3325,7 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
             printf ("c: source: %2d msg: %s A\n"
                    ,source, message_to_string_full (msg)
                    );
+            assert (msg [0] != ADAPTIVE_WRITE_START);
 #endif
             message_available = 0;
             switch (msg [0])
@@ -3342,7 +3351,7 @@ printf ("START ADAPTIVE WRITE A\n");
                                     if (sub_coord_ranks [i] != md->rank)
                                     {
                                         adaptive_writes_outstanding++;
-printf ("new adaptive writes: %lld A1 ++\n", adaptive_writes_outstanding);
+printf ("new adaptive writes: %lld A1 ++ to: %d for: %d\n", adaptive_writes_outstanding, i, msg [1]);
                                         uint64_t msgx [PARAMETER_COUNT];
                                         msgx [0] = ADAPTIVE_WRITE_START;
                                         msgx [1] = msg [1];
@@ -3361,7 +3370,7 @@ printf ("new adaptive writes: %lld A1 ++\n", adaptive_writes_outstanding);
                                     else
                                     {
                                         adaptive_writes_outstanding++;
-printf ("new adaptive writes: %lld A2 ++\n", adaptive_writes_outstanding);
+printf ("new adaptive writes: %lld A2 ++ to: %d for: %d\n", adaptive_writes_outstanding, i, msg [1]);
                                         uint64_t * flag = malloc (8 * PARAMETER_COUNT);
                                         INIT_PARAMS(flag);
                                         flag [0] = ADAPTIVE_WRITE_START;
@@ -3405,7 +3414,7 @@ printf ("MOVE TO NEXT ADAPTIVE WRITER A\n");
                                 if (sub_coord_ranks [i] != md->rank)
                                 {
                                     adaptive_writes_outstanding++;
-printf ("new adaptive writes: %lld C1 ++\n", adaptive_writes_outstanding);
+printf ("new adaptive writes: %lld C1 ++ to: %d for: %d\n", adaptive_writes_outstanding, i, msg [1]);
                                     uint64_t msgx [PARAMETER_COUNT];
                                     msgx [0] = ADAPTIVE_WRITE_START;
                                     msgx [1] = msg [1];
@@ -3424,7 +3433,7 @@ printf ("new adaptive writes: %lld C1 ++\n", adaptive_writes_outstanding);
                                 else
                                 {
                                     adaptive_writes_outstanding++;
-printf ("new adaptive writes: %lld C2 ++\n", adaptive_writes_outstanding);
+printf ("new adaptive writes: %lld C2 ++ to: %d for: %d\n", adaptive_writes_outstanding, i, msg [1]);
                                     uint64_t * flag = malloc (8 * PARAMETER_COUNT);
                                     INIT_PARAMS(flag);
                                     flag [0] = ADAPTIVE_WRITE_START;
@@ -3470,7 +3479,7 @@ printf ("new adaptive writes: %lld D --\n", adaptive_writes_outstanding);
                             if (sub_coord_ranks [i] != md->rank)
                             {
                                 adaptive_writes_outstanding++;
-printf ("new adaptive writes: %lld E1 ++\n", adaptive_writes_outstanding);
+printf ("new adaptive writes: %lld E1 ++ to: %d for: %d\n", adaptive_writes_outstanding, i, msg [1]);
                                 uint64_t msgx [PARAMETER_COUNT];
                                 msgx [0] = ADAPTIVE_WRITE_START;
                                 msgx [1] = msg [1];
@@ -3490,7 +3499,7 @@ printf ("new adaptive writes: %lld E1 ++\n", adaptive_writes_outstanding);
                             else
                             {
                                 adaptive_writes_outstanding++;
-printf ("new adaptive writes: %lld E2 ++\n", adaptive_writes_outstanding);
+printf ("new adaptive writes: %lld E2 ++ to: %d for: %d\n", adaptive_writes_outstanding, i, msg [1]);
                                 uint64_t * flag = malloc (8 * PARAMETER_COUNT);
                                 INIT_PARAMS(flag);
                                 flag [0] = ADAPTIVE_WRITE_START;
@@ -3635,7 +3644,7 @@ printf ("MOVE TO NEXT ADAPTIVE WRITER wb\n");
                 }
                 default:
                 {
-                    printf ("Unknown coordinator message: %d\n", msg [0]);
+                    printf ("Unknown coordinator message: %lld\n", msg [0]);
                     break;
                 }
             }
