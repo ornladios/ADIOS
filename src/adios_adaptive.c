@@ -1011,6 +1011,7 @@ static void setup_threads_and_register (struct adios_adaptive_data_struct * md
                   ,md->group_comm, &req
                   );
 
+        MPI_Wait (&req, &status);
         pthread_mutex_unlock (&md->mutex);
     }
     else
@@ -1229,6 +1230,8 @@ printf ("20B\n");
                                     ,&md->fh
                                     );
             }
+            if (next != -1)
+                MPI_Wait (&md->req, &md->status);
 
             if (err != MPI_SUCCESS)
             {
@@ -1518,6 +1521,8 @@ printf ("17B\n");
                                     ,&md->fh
                                     );
             }
+            if (next != -1)
+                MPI_Wait (&md->req, &md->status);
 
             if (err != MPI_SUCCESS)
             {
@@ -2096,6 +2101,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
                           ,md->group_comm, &req
                           );
 
+                MPI_Wait (&req, &status);
                 pthread_mutex_unlock (&md->mutex);
             }
             else
@@ -2133,6 +2139,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
                               ,md->group_comm, &req
                               );
 
+                    MPI_Wait (&req, &status);
                     pthread_mutex_unlock (&md->mutex);
                 }
                 else
@@ -2201,6 +2208,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
                           ,TAG_SUB_COORDINATOR, md->group_comm, &req
                           );
 
+                MPI_Wait (&req, &status);
                 pthread_mutex_unlock (&md->mutex);
             }
             else
@@ -2218,6 +2226,8 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 pthread_mutex_unlock (&md->sub_coordinator_mutex);
             }
 #endif
+
+            MPI_Barrier (md->group_comm);
 
             // finished with output. Shutdown the system
             if (md->rank == md->sub_coord_rank)
@@ -2618,6 +2628,7 @@ static void * sub_coordinator_main (void * param)
                   ,TAG_COORDINATOR, md->group_comm, &req
                   );
 
+        MPI_Wait (&req, &status);
         pthread_mutex_unlock (&md->mutex);
     }
     else
@@ -2648,10 +2659,12 @@ static void * sub_coordinator_main (void * param)
         if (message_available)
         {
             uint64_t msgx [PARAMETER_COUNT];
+            pthread_mutex_lock (&md->mutex);
             MPI_Recv (msgx, PARAMETER_COUNT, MPI_LONG_LONG, status.MPI_SOURCE
                      ,TAG_SUB_COORDINATOR
                      ,md->group_comm, &status
                      );
+            pthread_mutex_unlock (&md->mutex);
 
             COPY_ALL_PARAMS(msg,msgx);
             source = status.MPI_SOURCE;
@@ -2859,6 +2872,7 @@ printf ("7B\n");
                                           ,md->group_comm, &req
                                           );
 
+                                MPI_Wait (&req, &status);
                                 pthread_mutex_unlock (&md->mutex);
                             }
                             else
@@ -2908,6 +2922,7 @@ printf ("7B\n");
                                       ,md->group_comm, &req
                                       );
 
+                            MPI_Wait (&req, &status);
                             pthread_mutex_unlock (&md->mutex);
                         }
                         else
@@ -2944,6 +2959,7 @@ printf ("7B\n");
                                       ,md->group_comm, &req
                                       );
 
+                            MPI_Wait (&req, &status);
                             pthread_mutex_unlock (&md->mutex);
                             next_writer++;
                         }
@@ -2982,6 +2998,7 @@ printf ("7B\n");
                                       ,md->group_comm, &req
                                       );
 
+                            MPI_Wait (&req, &status);
                             pthread_mutex_unlock (&md->mutex);
                         }
                         else
@@ -3102,8 +3119,8 @@ printf ("5B\n");
                                   ,md->group_comm, &req
                                   );
 
-                        pthread_mutex_unlock (&md->mutex);
                         MPI_Wait (&req, &status); // need to wait so receive
+                        pthread_mutex_unlock (&md->mutex);
                                                   // is setup
                         pthread_mutex_lock (&md->mutex);
                         MPI_Isend (buffer, only_index_buffer_offset, MPI_BYTE
@@ -3111,6 +3128,7 @@ printf ("5B\n");
                                   ,md->group_comm, &req
                                   );
 
+                        MPI_Wait (&req, &status);
                         pthread_mutex_unlock (&md->mutex);
                     }
                     else
@@ -3165,6 +3183,7 @@ printf ("4B\n");
                           ,md->group_comm, &req
                           );
 
+                MPI_Wait (&req, &status);
                 pthread_mutex_unlock (&md->mutex);
                 currently_writing = 1;
             }
@@ -3201,6 +3220,7 @@ printf ("4B\n");
                                       ,md->group_comm, &req
                                       );
 
+                            MPI_Wait (&req, &status);
                             pthread_mutex_unlock (&md->mutex);
                         }
                         else
@@ -3251,7 +3271,7 @@ static void * coordinator_main (void * param)
     int source;
     int message_available;
     MPI_Status status;
-    MPI_Request req [md->groups]; // use a different request for each sub coord
+    MPI_Request req;
     int i;
     enum group_state
     {
@@ -3385,9 +3405,10 @@ printf ("2B\n");
                       ,MPI_LONG_LONG
                       ,sub_coord_ranks [i]
                       ,TAG_SUB_COORDINATOR
-                      ,md->group_comm, &req [i]
+                      ,md->group_comm, &req
                       );
 
+            MPI_Wait (&req, &status);
             pthread_mutex_unlock (&md->mutex);
         }
         else
@@ -3528,9 +3549,10 @@ printf ("1B\n");
                                                   ,MPI_LONG_LONG
                                                   ,sub_coord_ranks [i]
                                                   ,TAG_SUB_COORDINATOR
-                                                  ,md->group_comm, &req [i]
+                                                  ,md->group_comm, &req
                                                   );
 
+                                        MPI_Wait (&req, &status);
                                         pthread_mutex_unlock (&md->mutex);
                                     }
                                     else
@@ -3587,9 +3609,10 @@ printf ("1B\n");
                                               ,MPI_LONG_LONG
                                               ,sub_coord_ranks [i]
                                               ,TAG_SUB_COORDINATOR
-                                              ,md->group_comm, &req [i]
+                                              ,md->group_comm, &req
                                               );
 
+                                    MPI_Wait (&req, &status);
                                     pthread_mutex_unlock (&md->mutex);
                                 }
                                 else
@@ -3656,9 +3679,10 @@ printf ("1B\n");
                                           ,MPI_LONG_LONG
                                           ,sub_coord_ranks [i]
                                           ,TAG_SUB_COORDINATOR
-                                          ,md->group_comm, &req [i]
+                                          ,md->group_comm, &req
                                           );
 
+                                MPI_Wait (&req, &status);
                                 pthread_mutex_unlock (&md->mutex);
                                 break;
                             }
@@ -3843,9 +3867,10 @@ printf ("1B\n");
                                   ,MPI_LONG_LONG
                                   ,sub_coord_ranks [i]
                                   ,TAG_SUB_COORDINATOR
-                                  ,md->group_comm, &req [i]
+                                  ,md->group_comm, &req
                                   );
 
+                        MPI_Wait (&req, &status);
                         pthread_mutex_unlock (&md->mutex);
                     }
                     else
