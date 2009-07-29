@@ -23,7 +23,7 @@
 
 static int adios_adaptive_initialized = 0;
 
-#define PRINT_MESSAGES 0
+#define PRINT_MESSAGES 1
 #define PHYSICAL_REGISTER 0
 #define DO_INDEX_COLLECTION 0
 
@@ -79,18 +79,13 @@ struct adios_adaptive_data_struct
 
     // adaptive support stuff start
     // messaging between threads ([0] is msg, others are parameters)
-    #define PARAMETER_COUNT 6
+#define PARAMETER_COUNT 6
     volatile uint64_t * writer_flag;
     Queue sub_coordinator_flag;
     Queue coordinator_flag;
 
     pthread_mutex_t sub_coordinator_mutex;
     pthread_mutex_t coordinator_mutex;
-
-    //volatile uint64_t * w_sub_coordinator_flag; // writer->sub_coord
-    //volatile uint64_t * c_sub_coordinator_flag; // coord->sub_coord
-    //volatile uint64_t * c_coordinator_flag;
-    //volatile uint64_t * w_coordinator_flag;
 };
 
 #define COPY_ALL_PARAMS(dst,src) \
@@ -405,7 +400,7 @@ void adios_adaptive_init (const char * parameters
     md->method = 0;
     pthread_mutex_init (&md->mutex, NULL);
 
-    md->writer_flag = malloc (8 * PARAMETER_COUNT);
+    md->writer_flag = malloc (80 * PARAMETER_COUNT);
     queue_init (&md->sub_coordinator_flag, free);
     queue_init (&md->coordinator_flag, free);
     pthread_mutex_init (&md->sub_coordinator_mutex, NULL);
@@ -523,13 +518,21 @@ void adios_adaptive_init (const char * parameters
                     }
                 }
 
-                free (key);
-                free (value);
+                pthread_mutex_lock (&md->mutex);
+printf ("25A\n");
+                //free (key);
+                //free (value);
+printf ("25B\n");
+                pthread_mutex_unlock (&md->mutex);
 
                 token = strtok (NULL, ";");
             }
 
-            free (p);
+            pthread_mutex_lock (&md->mutex);
+printf ("24A\n");
+            //free (p);
+printf ("24B\n");
+            pthread_mutex_unlock (&md->mutex);
         }
     }
 
@@ -591,11 +594,15 @@ adios_build_file_offset (struct adios_adaptive_data_struct *md
 #define SCATTER_PARAMS 5
     if (md->group_comm != MPI_COMM_NULL)
     {
+        int err;
         if (md->rank == 0)
         {
             // make one space for offset and one for size
-            MPI_Offset * offsets = malloc(sizeof (MPI_Offset)
+            pthread_mutex_lock (&md->mutex);
+printf ("md-size %d SCATTER_PARAMS %d unit64_t %d\n", md->size, SCATTER_PARAMS, sizeof(uint64_t));
+            uint64_t * offsets = malloc(sizeof (uint64_t)
                                            * md->size * SCATTER_PARAMS);
+            pthread_mutex_unlock (&md->mutex);
             int i;
 
             offsets [0] = fd->write_size_bytes;
@@ -643,29 +650,36 @@ adios_build_file_offset (struct adios_adaptive_data_struct *md
             //md->b.pg_index_offset =   last_offset + biggest_size;
 
             md->stripe_size = biggest_size;
-            MPI_Scatter (offsets, SCATTER_PARAMS, MPI_LONG_LONG
-                        ,offsets, SCATTER_PARAMS, MPI_LONG_LONG
+            err = MPI_Bcast (offsets, SCATTER_PARAMS, MPI_LONG_LONG
                         ,0, md->group_comm
                         );
+            assert (err == MPI_SUCCESS);
             fd->base_offset = offsets [0];
             fd->pg_start_in_file = fd->base_offset;
-            free (offsets);
+            pthread_mutex_lock (&md->mutex);
+printf ("23A\n");
+            //free (offsets);
+printf ("23B\n");
+            pthread_mutex_unlock (&md->mutex);
         }
         else
         {
-            MPI_Offset offset [SCATTER_PARAMS];
+            uint64_t offset [SCATTER_PARAMS];
             offset [0] = fd->write_size_bytes;
+            int i;
+            for (i = 0; i < SCATTER_PARAMS; i++) offset [i] = 0;
 
             MPI_Gather (offset, 1, MPI_LONG_LONG
                        ,offset, 1, MPI_LONG_LONG
                        ,0, md->group_comm
                        );
 
-            MPI_Scatter (offset, SCATTER_PARAMS, MPI_LONG_LONG
-                        ,offset, SCATTER_PARAMS, MPI_LONG_LONG
+            err = MPI_Bcast (offset, SCATTER_PARAMS, MPI_LONG_LONG
                         ,0, md->group_comm
                         );
+            assert (err == MPI_SUCCESS);
 
+            md->biggest_size = offset [0];
             md->stripe_size = offset [1];
             md->storage_targets = offset [2];
             md->split_groups = offset [3];
@@ -912,60 +926,16 @@ static void set_stripe_size (struct adios_adaptive_data_struct * md
             }
             close (f);
 
-#if 0
-            // figure out if we need to split to use all of the OSTs (round up)
-            int targets_per_file;
-            if (md->storage_targets > md->max_stripe_count)
-                targets_per_file = md->max_stripe_count;
-            else
-                targets_per_file = md->storage_targets;
-            // assuming our max targets per file, see if we have to split
-	    md->split_groups =   (md->max_storage_targets / md->files_number)
-                               / targets_per_file;
-            if ((md->max_storage_targets / md->files_number) % targets_per_file)
-                md->split_groups++;
-
-            // make sure we don't make more splits than we can handle with
-            // our min stripe count
-            if (md->size / md->split_groups < md->min_stripe_count)
-                md->split_groups = md->size / md->min_stripe_count;
-            if (md->size % md->min_stripe_count)
-                md->split_groups++;
-
-            // if we are splitting files, fixup now (need to do above to get
-            // the real max storage targets from the filesystem).
-            if (   md->split_groups > 1
-                || md->split_files_count != split_files_unknown
-               )
-            {
-                // adjust the split_groups based on how we want to split
-                // if not specified (or min), just use all of the OSTs
-                // in as few files as possible
-                if (md->split_files_count == split_files_max)
-                {
-                    if (md->size / md->split_groups < md->split_target_count)
-                    {
-                        md->split_groups = md->size / md->split_target_count;
-                        if (md->size % md->split_target_count)
-                            md->split_groups++;
-                    }
-                }
-
-                // adjust the storage targets to the number of groups
-                md->storage_targets =   md->max_storage_targets
-                                      / md->split_groups;
-                if (md->storage_targets < md->min_stripe_count)
-                    md->storage_targets = md->min_stripe_count;
-                if (md->storage_targets > md->max_stripe_count)
-                    md->storage_targets = md->max_stripe_count;
-#else
                 md->storage_targets = 1;
-#endif
 
+                pthread_mutex_lock (&md->mutex);
                 int * f_split = malloc (sizeof (int) * md->split_groups);
+                pthread_mutex_unlock (&md->mutex);
                 char split_format [7] = ".%d";
                 char split_name [7];
+                pthread_mutex_lock (&md->mutex);
                 char * new_name = malloc (strlen (filename) + 7 + 1);
+                pthread_mutex_unlock (&md->mutex);
                 for (i = 0; i < md->split_groups; i++)
                 {
                     sprintf (split_name, split_format, i);
@@ -991,11 +961,12 @@ static void set_stripe_size (struct adios_adaptive_data_struct * md
                                 );
                     close (f_split [i]);
                 }
-                free (f_split);
+                pthread_mutex_lock (&md->mutex);
+printf ("22A\n");
+                //free (f_split);
+printf ("22B\n");
+                pthread_mutex_unlock (&md->mutex);
                 unlink (filename);
-#if 0
-            }
-#endif
         }
     }
 }
@@ -1044,12 +1015,16 @@ static void setup_threads_and_register (struct adios_adaptive_data_struct * md
     }
     else
     {
+        pthread_mutex_lock (&md->mutex);
         uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+        pthread_mutex_unlock (&md->mutex);
         INIT_PARAMS(flag);
         flag [0] = REGISTER_FLAG;
         flag [1] = md->rank;
         pthread_mutex_lock (&md->sub_coordinator_mutex);
+        pthread_mutex_lock (&md->mutex);
         queue_enqueue (&md->sub_coordinator_flag, flag);
+        pthread_mutex_unlock (&md->mutex);
         pthread_mutex_unlock (&md->sub_coordinator_mutex);
     }
 #endif
@@ -1071,7 +1046,9 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
     int current;
     int next;
 
+    pthread_mutex_lock (&md->mutex);
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
+    pthread_mutex_unlock (&md->mutex);
     sprintf (name, "%s%s", method->base_path, fd->name);
 
     adios_var_to_comm (fd->group->group_comm
@@ -1113,7 +1090,11 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                     fprintf (stderr, "MPI open read failed for %s: '%s'\n"
                             ,name, e
                             );
-                    free (name);
+                    pthread_mutex_lock (&md->mutex);
+printf ("21A\n");
+                    //free (name);
+printf ("21B\n");
+                    pthread_mutex_unlock (&md->mutex);
 
                     return adios_flag_no;
                 }
@@ -1175,9 +1156,11 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             {
                 if (md->rank == 0)
                 {
+                    pthread_mutex_lock (&md->mutex);
                     MPI_Offset * offsets = malloc (  sizeof (MPI_Offset)
                                                    * md->size * 3
                                                   );
+                    pthread_mutex_unlock (&md->mutex);
                     memset (offsets, 0, sizeof (MPI_Offset) * md->size * 3);
 
                     // go through the pg index to build the offsets array
@@ -1190,7 +1173,11 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                                 );
                     md->b.read_pg_offset = offsets [0];
                     md->b.read_pg_size = offsets [1];
-                    free (offsets);
+                    pthread_mutex_lock (&md->mutex);
+printf ("20A\n");
+                    //free (offsets);
+printf ("20B\n");
+                    pthread_mutex_unlock (&md->mutex);
                 }
                 else
                 {
@@ -1252,7 +1239,11 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 fprintf (stderr, "MPI open write failed for %s: '%s'\n"
                         ,name, e
                         );
-                free (name);
+                pthread_mutex_lock (&md->mutex);
+printf ("19A\n");
+                //free (name);
+printf ("19B\n");
+                pthread_mutex_unlock (&md->mutex);
 
                 return adios_flag_no;
             }
@@ -1276,15 +1267,17 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             // figure out the offsets and create the file with proper striping
             // before the MPI_File_open is called
             adios_build_file_offset (md, fd, name);
-            setup_threads_and_register (md, fd);
+            //setup_threads_and_register (md, fd);
 
             if (md->split_groups != 1)
             {
                 // if we need to do a file split, we need to fixup the name
+                pthread_mutex_lock (&md->mutex);
                 name = realloc (name, (  strlen (method->base_path)
                                        + strlen (fd->name) + 1 + 6
                                       )
                                ); // 6 extra for '.XXXXX' file number
+                pthread_mutex_unlock (&md->mutex);
                 char split_format [7] = ".%d";
                 char split_name [7];
                 sprintf (split_name, split_format, md->group);
@@ -1293,7 +1286,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
 
 #define BLAST_OPENS 1
 #if BLAST_OPENS
-            md->f = open (name, O_WRONLY | O_LARGEFILE | O_CREAT | O_TRUNC);
+            md->f = open (name, O_WRONLY | O_LARGEFILE);
 #else
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
@@ -1326,18 +1319,14 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             if (next != -1)
                 MPI_Wait (&md->req, &md->status);
 #endif
-            err = MPI_SUCCESS;
-
-            if (err != MPI_SUCCESS)
+            if (md->f == -1)
             {
-                char e [MPI_MAX_ERROR_STRING];
-                int len = 0;
-                memset (e, 0, MPI_MAX_ERROR_STRING);
-                MPI_Error_string (err, e, &len);
-                fprintf (stderr, "MPI open write failed for %s: '%s'\n"
-                        ,name, e
-                        );
-                free (name);
+                printf ("File open error for %s: %s\n", name, strerror (errno));
+                pthread_mutex_lock (&md->mutex);
+printf ("18A\n");
+                //free (name);
+printf ("18B\n");
+                pthread_mutex_unlock (&md->mutex);
 
                 return adios_flag_no;
             }
@@ -1372,7 +1361,11 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                         fprintf (stderr, "MPI open write failed for %s: '%s'\n"
                                 ,name, e
                                 );
-                        free (name);
+                        pthread_mutex_lock (&md->mutex);
+printf ("17A\n");
+                        //free (name);
+printf ("17B\n");
+                        pthread_mutex_unlock (&md->mutex);
 
                         return adios_flag_no;
                     }
@@ -1535,7 +1528,11 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 fprintf (stderr, "MPI open write failed for %s: '%s'\n"
                         ,name, e
                         );
-                free (name);
+                pthread_mutex_lock (&md->mutex);
+printf ("16A\n");
+                //free (name);
+printf ("16B\n");
+                pthread_mutex_unlock (&md->mutex);
 
                 return adios_flag_no;
             }
@@ -1547,13 +1544,21 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
         {
             fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
 
-            free (name);
+            pthread_mutex_lock (&md->mutex);
+printf ("15A\n");
+            //free (name);
+printf ("15B\n");
+            pthread_mutex_unlock (&md->mutex);
 
             return adios_flag_no;
         }
     }
 
-    free (name);
+    pthread_mutex_lock (&md->mutex);
+printf ("14A\n");
+    //free (name);
+printf ("14B\n");
+    pthread_mutex_unlock (&md->mutex);
 
     if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
     {
@@ -1608,7 +1613,7 @@ void adios_adaptive_write (struct adios_file_struct * fd
         {
             if (v->free_data == adios_flag_yes)
             {
-                free (v->data);
+                //free (v->data);
                 adios_method_buffer_free (v->data_size);
             }
         }
@@ -1681,7 +1686,7 @@ void adios_adaptive_get_write_buffer (struct adios_file_struct * fd
     if (v->data && v->free_data)
     {
         adios_method_buffer_free (v->data_size);
-        free (v->data);
+        //free (v->data);
     }
 
     mem_allowed = adios_method_buffer_alloc (*size);
@@ -1883,6 +1888,8 @@ void adios_adaptive_close (struct adios_file_struct * fd
             int index_size = md->size;
             MPI_Comm index_comm = md->group_comm;
 
+            setup_threads_and_register (md, fd);
+
             if (fd->shared_buffer == adios_flag_no)
             {
                 MPI_Offset new_off;
@@ -1981,10 +1988,14 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 md->writer_flag [0] = NO_FLAG;
 #endif
 
-                uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                pthread_mutex_lock (&md->mutex);
+                uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                pthread_mutex_unlock (&md->mutex);
                 flag [0] = START_WRITES;
                 pthread_mutex_lock (&md->coordinator_mutex);
+                pthread_mutex_lock (&md->mutex);
                 queue_enqueue (&md->coordinator_flag, flag);
+                pthread_mutex_unlock (&md->mutex);
                 pthread_mutex_unlock (&md->coordinator_mutex);
             }
 
@@ -2012,6 +2023,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
             // set our base offset for building the index
             fd->base_offset = msg [5] * md->stripe_size;
             // build index appending to any existing index
+            pthread_mutex_lock (&md->mutex);
             adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
                                  ,&md->old_attrs_root
                                  );
@@ -2023,6 +2035,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
                                  ,md->old_vars_root
                                  ,md->old_attrs_root
                                  );
+            pthread_mutex_unlock (&md->mutex);
 
             if (msg [1] == msg [3]) // same file
             {
@@ -2039,9 +2052,11 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 MPI_File fh;
                 char * new_name;
 
+                pthread_mutex_lock (&md->mutex);
                 new_name = malloc (  strlen (method->base_path)
-                                   + strlen (fd->name) + 1 + 6
+                                   + strlen (fd->name) + 1 + 6 + 100
                                   ); // 6 extra for '.XXXXX' file number
+                pthread_mutex_unlock (&md->mutex);
                 char split_format [10] = "%s%s.%d";
                 sprintf (new_name, split_format, method->base_path
                         ,fd->name, md->group
@@ -2085,7 +2100,9 @@ void adios_adaptive_close (struct adios_file_struct * fd
             }
             else
             {
-                uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                pthread_mutex_lock (&md->mutex);
+                uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                pthread_mutex_unlock (&md->mutex);
                 INIT_PARAMS(flag);
                 flag [0] = WRITE_COMPLETE;
                 flag [1] = msg [1];
@@ -2093,7 +2110,9 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 flag [3] = new_offset;
                 flag [4] = index_buffer_offset;
                 pthread_mutex_lock (&md->sub_coordinator_mutex);
+                pthread_mutex_lock (&md->mutex);
                 queue_enqueue (&md->sub_coordinator_flag, flag);
+                pthread_mutex_unlock (&md->mutex);
                 pthread_mutex_unlock (&md->sub_coordinator_mutex);
             }
 
@@ -2118,7 +2137,9 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 }
                 else
                 {
-                    uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                    pthread_mutex_lock (&md->mutex);
+                    uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                    pthread_mutex_unlock (&md->mutex);
                     INIT_PARAMS(flag);
                     flag [0] = WRITE_COMPLETE;
                     flag [1] = msg [1];
@@ -2126,7 +2147,9 @@ void adios_adaptive_close (struct adios_file_struct * fd
                     flag [3] = new_offset;
                     flag [4] = index_buffer_offset;
                     pthread_mutex_lock (&md->sub_coordinator_mutex);
+                    pthread_mutex_lock (&md->mutex);
                     queue_enqueue (&md->sub_coordinator_flag, flag);
+                    pthread_mutex_unlock (&md->mutex);
                     pthread_mutex_unlock (&md->sub_coordinator_mutex);
                 }
             }
@@ -2182,12 +2205,16 @@ void adios_adaptive_close (struct adios_file_struct * fd
             }
             else
             {
-                uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                pthread_mutex_lock (&md->mutex);
+                uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                pthread_mutex_unlock (&md->mutex);
                 INIT_PARAMS(flag);
                 flag [0] = INDEX_BODY;
                 flag [1] = (uint64_t) index_buffer;
                 pthread_mutex_lock (&md->sub_coordinator_mutex);
+                pthread_mutex_lock (&md->mutex);
                 queue_enqueue (&md->sub_coordinator_flag, flag);
+                pthread_mutex_unlock (&md->mutex);
                 pthread_mutex_unlock (&md->sub_coordinator_mutex);
             }
 #endif
@@ -2195,11 +2222,15 @@ void adios_adaptive_close (struct adios_file_struct * fd
             // finished with output. Shutdown the system
             if (md->rank == md->sub_coord_rank)
             {
-                uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                pthread_mutex_lock (&md->mutex);
+                uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                pthread_mutex_unlock (&md->mutex);
                 INIT_PARAMS(flag);
                 flag [0] = SHUTDOWN_FLAG;
                 pthread_mutex_lock (&md->sub_coordinator_mutex);
+                pthread_mutex_lock (&md->mutex);
                 queue_enqueue (&md->sub_coordinator_flag, flag);
+                pthread_mutex_unlock (&md->mutex);
                 pthread_mutex_unlock (&md->sub_coordinator_mutex);
 
                 err = pthread_join (md->sub_coordinator, NULL);
@@ -2207,11 +2238,15 @@ void adios_adaptive_close (struct adios_file_struct * fd
             }
             if (md->rank == md->coord_rank)
             {
-                uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                pthread_mutex_lock (&md->mutex);
+                uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                pthread_mutex_unlock (&md->mutex);
                 INIT_PARAMS(flag);
                 flag [0] = SHUTDOWN_FLAG;
                 pthread_mutex_lock (&md->coordinator_mutex);
+                pthread_mutex_lock (&md->mutex);
                 queue_enqueue (&md->coordinator_flag, flag);
+                pthread_mutex_unlock (&md->mutex);
                 pthread_mutex_unlock (&md->coordinator_mutex);
 
                 err = pthread_join (md->coordinator, NULL);
@@ -2220,7 +2255,11 @@ void adios_adaptive_close (struct adios_file_struct * fd
 
             if (buffer)
             {
-                free (buffer);
+                pthread_mutex_lock (&md->mutex);
+printf ("13A\n");
+                //free (buffer);
+printf ("13B\n");
+                pthread_mutex_unlock (&md->mutex);
                 buffer = 0;
                 buffer_size = 0;
                 buffer_offset = 0;
@@ -2238,7 +2277,13 @@ void adios_adaptive_close (struct adios_file_struct * fd
             md->old_attrs_root = 0;
 
             if (index_buffer)
-                free (index_buffer);
+            {
+                pthread_mutex_lock (&md->mutex);
+printf ("12A\n");
+                //free (index_buffer);
+printf ("12B\n");
+                pthread_mutex_unlock (&md->mutex);
+            }
 
             break;
         }
@@ -2343,8 +2388,10 @@ void adios_adaptive_close (struct adios_file_struct * fd
             {
                 if (md->rank == 0)
                 {
-                    int * index_sizes = malloc (4 * md->size);
-                    int * index_offsets = malloc (4 * md->size);
+                    pthread_mutex_lock (&md->mutex);
+                    int * index_sizes = malloc (40 * md->size);
+                    int * index_offsets = malloc (40 * md->size);
+                    pthread_mutex_unlock (&md->mutex);
                     char * recv_buffer = 0;
                     uint32_t size = 0;
                     uint32_t total_size = 0;
@@ -2361,7 +2408,9 @@ void adios_adaptive_close (struct adios_file_struct * fd
                         total_size += index_sizes [i];
                     }
 
-                    recv_buffer = malloc (total_size);
+                    pthread_mutex_lock (&md->mutex);
+                    recv_buffer = malloc (total_size * 2);
+                    pthread_mutex_unlock (&md->mutex);
 
                     MPI_Gatherv (&size, 0, MPI_BYTE
                                 ,recv_buffer, index_sizes, index_offsets
@@ -2399,9 +2448,13 @@ void adios_adaptive_close (struct adios_file_struct * fd
                     md->b.length = buffer_size_save;
                     md->b.offset = offset_save;
 
-                    free (recv_buffer);
-                    free (index_sizes);
-                    free (index_offsets);
+                    pthread_mutex_lock (&md->mutex);
+printf ("11A\n");
+                    //free (recv_buffer);
+                    //free (index_sizes);
+                    //free (index_offsets);
+printf ("11B\n");
+                    pthread_mutex_unlock (&md->mutex);
                 }
                 else
                 {
@@ -2445,7 +2498,11 @@ void adios_adaptive_close (struct adios_file_struct * fd
                                );
             }
 
-            free (buffer);
+            pthread_mutex_lock (&md->mutex);
+printf ("10A\n");
+            //free (buffer);
+printf ("10B\n");
+            pthread_mutex_unlock (&md->mutex);
 
             adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
             adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
@@ -2508,22 +2565,11 @@ void adios_adaptive_finalize (int mype, struct adios_method_struct * method)
         pthread_mutex_destroy (&md->mutex);
         // these need a cast on the free because they are volatile
         if (md->writer_flag)
-            free ((void *) md->writer_flag);
-#if 0
-        if (md->w_sub_coordinator_flag)
-            free ((void *) md->w_sub_coordinator_flag);
-        if (md->c_sub_coordinator_flag)
-            free ((void *) md->c_sub_coordinator_flag);
-        if (md->c_coordinator_flag)
-            free ((void *) md->c_coordinator_flag);
-        if (md->w_coordinator_flag)
-            free ((void *) md->w_coordinator_flag);
-#else
+            ;//free ((void *) md->writer_flag);
         queue_destroy (&md->sub_coordinator_flag);
         queue_destroy (&md->coordinator_flag);
         pthread_mutex_destroy (&md->sub_coordinator_mutex);
         pthread_mutex_destroy (&md->coordinator_mutex);
-#endif
     }
 }
 
@@ -2576,13 +2622,17 @@ static void * sub_coordinator_main (void * param)
     }
     else
     {
-        uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+        pthread_mutex_lock (&md->mutex);
+        uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+        pthread_mutex_unlock (&md->mutex);
         INIT_PARAMS(flag);
         flag [0] = REGISTER_FLAG;
         flag [1] = md->group;
         flag [2] = md->rank;
         pthread_mutex_lock (&md->coordinator_mutex);
+        pthread_mutex_lock (&md->mutex);
         queue_enqueue (&md->coordinator_flag, flag);
+        pthread_mutex_unlock (&md->mutex);
         pthread_mutex_unlock (&md->coordinator_mutex);
     }
 
@@ -2614,11 +2664,17 @@ static void * sub_coordinator_main (void * param)
                 message_available = 1;
                 pthread_mutex_lock (&md->sub_coordinator_mutex);
                 uint64_t * flag;
+                pthread_mutex_lock (&md->mutex);
                 queue_dequeue (&md->sub_coordinator_flag, &flag);
+                pthread_mutex_unlock (&md->mutex);
                 assert (flag [0] == REGISTER_FLAG);
                 pthread_mutex_unlock (&md->sub_coordinator_mutex);
                 COPY_ALL_PARAMS(msg,flag);
-                free (flag);
+                pthread_mutex_lock (&md->mutex);
+printf ("9A\n");
+                //free (flag);
+printf ("9B\n");
+                pthread_mutex_unlock (&md->mutex);
                 source = md->rank;
                 i++;
             }
@@ -2656,17 +2712,25 @@ static void * sub_coordinator_main (void * param)
             ;
         pthread_mutex_lock (&md->sub_coordinator_mutex);
         uint64_t * flag;
+        pthread_mutex_lock (&md->mutex);
         queue_dequeue (&md->sub_coordinator_flag, &flag);
+        pthread_mutex_unlock (&md->mutex);
         pthread_mutex_unlock (&md->sub_coordinator_mutex);
         assert (flag [0] == START_WRITES);
-        free (flag);
+        pthread_mutex_lock (&md->mutex);
+printf ("8A\n");
+        //free (flag);
+printf ("8B\n");
+        pthread_mutex_unlock (&md->mutex);
     }
 
     // do writing
     int completed_writing = 0;  // track when we have notified coordinator we
                                 // have completed (avoid multiple notifies)
     int writers_size = (int) (md->group_size * 1.20); // add 20% for adaptation
-    int * writers = (int *) malloc (writers_size * sizeof (int));
+    pthread_mutex_lock (&md->mutex);
+    int * writers = (int *) malloc (writers_size * sizeof (int) * 2);
+    pthread_mutex_unlock (&md->mutex);
     int current_writer = md->sub_coord_rank - md->group_size + 1;  // start at first so that we can always write using next_writer
     int next_writer = current_writer + 1; // track the next one so the adaptive
                                       // writer knows who to start next
@@ -2679,7 +2743,9 @@ static void * sub_coordinator_main (void * param)
 
     uint64_t current_offset = 0;
 
-    int * index_sizes = (int *) malloc (sizeof (int) * writers_served);
+    pthread_mutex_lock (&md->mutex);
+    int * index_sizes = (int *) malloc (sizeof (int) * writers_served * 2);
+    pthread_mutex_unlock (&md->mutex);
     int largest_index = 0;
 
     // for encoding the local index for writing and sending to the coord
@@ -2721,10 +2787,16 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                 message_available = 1;
                 uint64_t * flag;
                 pthread_mutex_lock (&md->sub_coordinator_mutex);
+                pthread_mutex_lock (&md->mutex);
                 queue_dequeue (&md->sub_coordinator_flag, &flag);
+                pthread_mutex_unlock (&md->mutex);
                 pthread_mutex_unlock (&md->sub_coordinator_mutex);
                 COPY_ALL_PARAMS(msg,flag);
-                free (flag);
+                pthread_mutex_lock (&md->mutex);
+printf ("7A\n");
+                //free (flag);
+printf ("7B\n");
+                pthread_mutex_unlock (&md->mutex);
                 source = md->rank;
             }
         }
@@ -2752,9 +2824,11 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                         if (writers_size <= writers_served)
                         {
                             writers_size = (int) (writers_size * 1.20);
+                            pthread_mutex_lock (&md->mutex);
                             writers = (int *) realloc (writers,   writers_size
                                                                 * sizeof (int)
                                                       );
+                            pthread_mutex_unlock (&md->mutex);
                         }
                         writers [writers_served] = source;
                         index_sizes [writers_served] = msg [4];
@@ -2789,14 +2863,18 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                             }
                             else
                             {
-                                uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                                pthread_mutex_lock (&md->mutex);
+                                uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                                pthread_mutex_unlock (&md->mutex);
                                 INIT_PARAMS(flag);
                                 flag [0] = WRITE_COMPLETE;
                                 flag [1] = msg [1];
                                 flag [2] = msg [2];
                                 flag [3] = msg [3];
                                 pthread_mutex_lock (&md->coordinator_mutex);
+                                pthread_mutex_lock (&md->mutex);
                                 queue_enqueue (&md->coordinator_flag, flag);
+                                pthread_mutex_unlock (&md->mutex);
                                 pthread_mutex_unlock (&md->coordinator_mutex);
                             }
                         }
@@ -2834,13 +2912,17 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                         }
                         else
                         {
-                            uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                            pthread_mutex_lock (&md->mutex);
+                            uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                            pthread_mutex_unlock (&md->mutex);
                             INIT_PARAMS(flag);
                             flag [0] = WRITERS_BUSY;
                             flag [1] = msg [1];
                             flag [2] = md->group;
                             pthread_mutex_lock (&md->coordinator_mutex);
+                            pthread_mutex_lock (&md->mutex);
                             queue_enqueue (&md->coordinator_flag, flag);
+                            pthread_mutex_unlock (&md->mutex);
                             pthread_mutex_unlock (&md->coordinator_mutex);
                         }
                     }
@@ -2911,7 +2993,9 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                     }
 
 #if DO_INDEX_COLLECTION
-                    char * buf = malloc (largest_index + 1);
+                    pthread_mutex_lock (&md->mutex);
+                    char * buf = malloc (2 * largest_index + 1);
+                    pthread_mutex_unlock (&md->mutex);
                     buf [largest_index] = 0;
                     struct adios_bp_buffer_struct_v1 b;
                     struct adios_index_process_group_struct_v1 * new_pg_root;
@@ -2952,10 +3036,16 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                             while (queue_size (&md->sub_coordinator_flag) == 0)
                                 ;
                             pthread_mutex_lock (&md->sub_coordinator_mutex);
+                            pthread_mutex_lock (&md->mutex);
                             queue_dequeue (&md->sub_coordinator_flag, &flag);
+                            pthread_mutex_unlock (&md->mutex);
                             b.buff = (char *) (flag [1]);
                             pthread_mutex_unlock (&md->sub_coordinator_mutex);
-                            free (flag);
+                            pthread_mutex_lock (&md->mutex);
+printf ("6A\n");
+                            //free (flag);
+printf ("6B\n");
+                            pthread_mutex_unlock (&md->mutex);
                         }
 
                         // merge buf into the index
@@ -2975,7 +3065,11 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                         new_vars_root = 0;
                         new_attrs_root = 0;
                     }
-                    free (buf);
+                    pthread_mutex_lock (&md->mutex);
+printf ("5A\n");
+                    //free (buf);
+printf ("5B\n");
+                    pthread_mutex_unlock (&md->mutex);
 
                     uint64_t only_index_buffer_offset;
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
@@ -3021,17 +3115,25 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                     }
                     else
                     {
-                        uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                        pthread_mutex_lock (&md->mutex);
+                        uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                        pthread_mutex_unlock (&md->mutex);
                         INIT_PARAMS(flag);
                         flag [0] = INDEX_SIZE;
                         flag [1] = md->group;
                         flag [2] = only_index_buffer_offset;
                         flag [3] = (uint64_t) buffer;
                         pthread_mutex_lock (&md->coordinator_mutex);
+                        pthread_mutex_lock (&md->mutex);
                         queue_enqueue (&md->coordinator_flag, flag);
+                        pthread_mutex_unlock (&md->mutex);
                         pthread_mutex_unlock (&md->coordinator_mutex);
                     }
-                    free (buffer);
+                    pthread_mutex_lock (&md->mutex);
+printf ("4A\n");
+                    //free (buffer);
+printf ("4B\n");
+                    pthread_mutex_unlock (&md->mutex);
 #endif
 
                     break;
@@ -3103,14 +3205,18 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                         }
                         else
                         {
-                            uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                            pthread_mutex_lock (&md->mutex);
+                            uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                            pthread_mutex_unlock (&md->mutex);
                             INIT_PARAMS(flag);
                             flag [0] = WRITE_COMPLETE;
                             flag [1] = md->group; //msg [1];
                             flag [2] = md->group; //msg [2];
                             flag [3] = msg [3];
                             pthread_mutex_lock (&md->coordinator_mutex);
+                            pthread_mutex_lock (&md->mutex);
                             queue_enqueue (&md->coordinator_flag, flag);
+                            pthread_mutex_unlock (&md->mutex);
                             pthread_mutex_unlock (&md->coordinator_mutex);
                         }
                     }
@@ -3118,8 +3224,8 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
             }
         }
     } while (msg [0] != SHUTDOWN_FLAG);
-    free (writers);
-    free (index_sizes);
+    //free (writers);
+    //free (index_sizes);
 
     pthread_exit (NULL);
     return NULL;
@@ -3198,13 +3304,19 @@ static void * coordinator_main (void * param)
                 message_available = 1;
                 uint64_t * flag;
                 pthread_mutex_lock (&md->coordinator_mutex);
+                pthread_mutex_lock (&md->mutex);
                 queue_dequeue (&md->coordinator_flag, &flag);
+                pthread_mutex_unlock (&md->mutex);
                 pthread_mutex_unlock (&md->coordinator_mutex);
                 COPY_ALL_PARAMS(msg,flag);
                 source = flag [2];
                 assert (flag [0] == REGISTER_FLAG);
                 assert (flag [2] == md->rank);
-                free (flag);
+                pthread_mutex_lock (&md->mutex);
+printf ("3A\n");
+                //free (flag);
+printf ("3B\n");
+                pthread_mutex_unlock (&md->mutex);
                 i++;
 //printf ("X 4\n");
             }
@@ -3241,7 +3353,7 @@ static void * coordinator_main (void * param)
         sub_coord_ranks [i++] = sub_coord_rank;
         rank += group_size;
 #if PRINT_MESSAGES
-        printf ("sc: %d rank: %d\n", i - 1, sub_coord_ranks [i - 1]);
+        printf ("calc sc: %d rank: %d\n", i - 1, sub_coord_ranks [i - 1]);
 #endif
     }
 #endif
@@ -3251,10 +3363,16 @@ static void * coordinator_main (void * param)
         ;
     uint64_t * flag;
     pthread_mutex_lock (&md->coordinator_mutex);
+    pthread_mutex_lock (&md->mutex);
     queue_dequeue (&md->coordinator_flag, &flag);
+    pthread_mutex_unlock (&md->mutex);
     pthread_mutex_unlock (&md->coordinator_mutex);
     assert (flag [0] == START_WRITES);
-    free (flag);
+    pthread_mutex_lock (&md->mutex);
+printf ("2A\n");
+    //free (flag);
+printf ("2B\n");
+    pthread_mutex_unlock (&md->mutex);
 
     for (i = 0; i < md->groups; i++)
     {
@@ -3274,11 +3392,15 @@ static void * coordinator_main (void * param)
         }
         else
         {
-            flag = malloc (8 * PARAMETER_COUNT);
+            pthread_mutex_lock (&md->mutex);
+            flag = malloc (80 * PARAMETER_COUNT);
+            pthread_mutex_unlock (&md->mutex);
             INIT_PARAMS(flag);
             flag [0] = START_WRITES;
             pthread_mutex_lock (&md->sub_coordinator_mutex);
+            pthread_mutex_lock (&md->mutex);
             queue_enqueue (&md->sub_coordinator_flag, flag);
+            pthread_mutex_unlock (&md->mutex);
             pthread_mutex_unlock (&md->sub_coordinator_mutex);
         }
     }
@@ -3306,9 +3428,11 @@ static void * coordinator_main (void * param)
     char index_collection_started = 0;
     uint64_t adaptive_writes_outstanding = 0;
 
+    pthread_mutex_lock (&md->mutex);
     struct adios_file_index_format_v2 * file_index =
        (struct adios_file_index_format_v2 *)
-              malloc (sizeof (struct adios_file_index_format_v2) * md->groups);
+              malloc (2 * sizeof (struct adios_file_index_format_v2) * md->groups);
+    pthread_mutex_unlock (&md->mutex);
 
     // process messages for the coordinator either on or off process
 #if PRINT_MESSAGES
@@ -3344,11 +3468,17 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
                 message_available = 1;
                 uint64_t * flag;
                 pthread_mutex_lock (&md->coordinator_mutex);
+                pthread_mutex_lock (&md->mutex);
                 queue_dequeue (&md->coordinator_flag, &flag);
+                pthread_mutex_unlock (&md->mutex);
                 pthread_mutex_unlock (&md->coordinator_mutex);
                 COPY_ALL_PARAMS(msg,flag);
                 source = md->rank;
-                free (flag);
+                pthread_mutex_lock (&md->mutex);
+printf ("1A\n");
+                //free (flag);
+printf ("1B\n");
+                pthread_mutex_unlock (&md->mutex);
             }
         }
 
@@ -3405,14 +3535,18 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
                                     }
                                     else
                                     {
-                                        uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                                        pthread_mutex_lock (&md->mutex);
+                                        uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                                        pthread_mutex_unlock (&md->mutex);
                                         INIT_PARAMS(flag);
                                         flag [0] = ADAPTIVE_WRITE_START;
                                         flag [1] = msg [1];
                                         flag [2] = sub_coord_ranks [msg [1]];
                                         flag [3] = group_offset [msg [1]];
                                         pthread_mutex_lock (&md->sub_coordinator_mutex);
+                                        pthread_mutex_lock (&md->mutex);
                                         queue_enqueue (&md->sub_coordinator_flag, flag);
+                                        pthread_mutex_unlock (&md->mutex);
                                         pthread_mutex_unlock (&md->sub_coordinator_mutex);
                                     }
                                     break;
@@ -3460,14 +3594,18 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
                                 }
                                 else
                                 {
-                                    uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                                    pthread_mutex_lock (&md->mutex);
+                                    uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                                    pthread_mutex_unlock (&md->mutex);
                                     INIT_PARAMS(flag);
                                     flag [0] = ADAPTIVE_WRITE_START;
                                     flag [1] = msg [1];
                                     flag [2] = sub_coord_ranks [msg [1]];
                                     flag [3] = group_offset [msg [1]];
                                     pthread_mutex_lock (&md->sub_coordinator_mutex);
+                                    pthread_mutex_lock (&md->mutex);
                                     queue_enqueue (&md->sub_coordinator_flag, flag);
+                                    pthread_mutex_unlock (&md->mutex);
                                     pthread_mutex_unlock (&md->sub_coordinator_mutex);
                                 }
 
@@ -3526,14 +3664,18 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
                             }
                             else
                             {
-                                uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                                pthread_mutex_lock (&md->mutex);
+                                uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                                pthread_mutex_unlock (&md->mutex);
                                 INIT_PARAMS(flag);
                                 flag [0] = ADAPTIVE_WRITE_START;
                                 flag [1] = msg [1];
                                 flag [2] = sub_coord_ranks [msg [1]];
                                 flag [3] = group_offset [msg [1]];
                                 pthread_mutex_lock (&md->sub_coordinator_mutex);
+                                pthread_mutex_lock (&md->mutex);
                                 queue_enqueue (&md->sub_coordinator_flag, flag);
+                                pthread_mutex_unlock (&md->mutex);
                                 pthread_mutex_unlock (&md->sub_coordinator_mutex);
                                 break;
                             }
@@ -3560,17 +3702,21 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
                     if (index_size < largest_index_size)
                     {
                         index_size = largest_index_size;
+                        pthread_mutex_lock (&md->mutex);
                         if (index_buf)
-                            free (index_buf);
-                        index_buf = malloc (largest_index_size + 1);
+                            ;//free (index_buf);
+                        index_buf = malloc (2 * largest_index_size + 1);
+                        pthread_mutex_unlock (&md->mutex);
                     }
 
                     char * new_name;
                     int new_name_len;
 
+                    pthread_mutex_lock (&md->mutex);
                     new_name = malloc (  strlen (md->method->base_path)
-                                       + strlen (md->fd->name) + 1 + 6
+                                       + strlen (md->fd->name) + 1 + 6 + 100
                                       );
+                    pthread_mutex_unlock (&md->mutex);
                     char split_format [10] = "%s%s.%lld";
                     sprintf (new_name, split_format, md->method->base_path
                             ,md->fd->name, source_group
@@ -3589,16 +3735,20 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
                                   ,md->group_comm, &status
                                   );
                         pthread_mutex_unlock (&md->mutex);
+                        pthread_mutex_lock (&md->mutex);
                         buffer_write (&buffer, &buffer_size, &buffer_offset
                                      ,index_buf, proc_index_size
                                      );
+                        pthread_mutex_unlock (&md->mutex);
                     }
                     else
                     {
+                        pthread_mutex_lock (&md->mutex);
                         buffer_write (&buffer, &buffer_size, &buffer_offset
                                      ,(void *) msg [3]
                                      ,proc_index_size
                                      );
+                        pthread_mutex_unlock (&md->mutex);
                     }
 
                     file_index [file_index_count].file_number = file_index_count + 1;
@@ -3610,6 +3760,7 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
                                                          + 2   // name len
                                                          + 4   // number
                                                          + 8;  // length
+                    pthread_mutex_lock (&md->mutex);
                     buffer_write (&buffer, &buffer_size, &buffer_offset_tmp
                                  ,&file_index [file_index_count].offset, 8
                                  );
@@ -3623,6 +3774,7 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
                                  ,&file_index [file_index_count].name
                                  ,new_name_len
                                  );
+                    pthread_mutex_unlock (&md->mutex);
                     file_index_count++;
 
                     // if we have recieved all, write to the file
@@ -3638,9 +3790,11 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
                         umask (old_mask);
                         perm = old_mask ^ 0666;
 
+                        pthread_mutex_lock (&md->mutex);
                         new_name = malloc (  strlen (md->method->base_path)
-                                           + strlen (md->fd->name) + 1
+                                           + strlen (md->fd->name) + 1 + 100
                                           );
+                        pthread_mutex_unlock (&md->mutex);
                         char split_format [10] = "%s%s";
                         sprintf (new_name, split_format, md->method->base_path
                                 ,md->fd->name
@@ -3653,11 +3807,13 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
                             fprintf (stderr, "Need to do multi-write 4\n");
                         }
                         close (f);
-                        free (new_name);
+                        pthread_mutex_lock (&md->mutex);
+                        //free (new_name);
 
-                        for (i = 0; i < md->groups; i++)
-                            free (file_index [i].name);
-                        free (file_index);
+                        //for (i = 0; i < md->groups; i++)
+                        //    free (file_index [i].name);
+                        //free (file_index);
+                        pthread_mutex_unlock (&md->mutex);
                     }
                     break;
                 }
@@ -3694,12 +3850,16 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
                     }
                     else
                     {
-                        uint64_t * flag = malloc (8 * PARAMETER_COUNT);
+                        pthread_mutex_lock (&md->mutex);
+                        uint64_t * flag = malloc (80 * PARAMETER_COUNT);
+                        pthread_mutex_unlock (&md->mutex);
                         INIT_PARAMS(flag);
                         flag [0] = OVERALL_WRITE_COMPLETE;
                         flag [1] = group_offset [i];
                         pthread_mutex_lock (&md->sub_coordinator_mutex);
+                        pthread_mutex_lock (&md->mutex);
                         queue_enqueue (&md->sub_coordinator_flag, flag);
+                        pthread_mutex_unlock (&md->mutex);
                         pthread_mutex_unlock (&md->sub_coordinator_mutex);
                     }
                 }
@@ -3715,7 +3875,7 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
     //if (index_buf)
     //    free (index_buf);
     if (buffer)
-        free (buffer);
+        ;//free (buffer);
 
     pthread_exit (NULL);
     return NULL;
