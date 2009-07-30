@@ -519,19 +519,15 @@ void adios_adaptive_init (const char * parameters
                 }
 
                 pthread_mutex_lock (&md->mutex);
-printf ("25A\n");
                 free (key);
                 free (value);
-printf ("25B\n");
                 pthread_mutex_unlock (&md->mutex);
 
                 token = strtok (NULL, ";");
             }
 
             pthread_mutex_lock (&md->mutex);
-printf ("24A\n");
             //free (p);
-printf ("24B\n");
             pthread_mutex_unlock (&md->mutex);
         }
     }
@@ -599,7 +595,6 @@ adios_build_file_offset (struct adios_adaptive_data_struct *md
         {
             // make one space for offset and one for size
             pthread_mutex_lock (&md->mutex);
-printf ("md-size %d SCATTER_PARAMS %d unit64_t %d\n", md->size, SCATTER_PARAMS, sizeof(uint64_t));
             uint64_t * offsets = malloc(sizeof (uint64_t)
                                            * md->size * SCATTER_PARAMS);
             pthread_mutex_unlock (&md->mutex);
@@ -657,9 +652,7 @@ printf ("md-size %d SCATTER_PARAMS %d unit64_t %d\n", md->size, SCATTER_PARAMS, 
             fd->base_offset = offsets [0];
             fd->pg_start_in_file = fd->base_offset;
             pthread_mutex_lock (&md->mutex);
-printf ("23A\n");
             free (offsets);
-printf ("23B\n");
             pthread_mutex_unlock (&md->mutex);
         }
         else
@@ -962,9 +955,7 @@ static void set_stripe_size (struct adios_adaptive_data_struct * md
                     close (f_split [i]);
                 }
                 pthread_mutex_lock (&md->mutex);
-printf ("22A\n");
                 free (f_split);
-printf ("22B\n");
                 pthread_mutex_unlock (&md->mutex);
                 unlink (filename);
         }
@@ -1092,9 +1083,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                             ,name, e
                             );
                     pthread_mutex_lock (&md->mutex);
-printf ("21A\n");
                     free (name);
-printf ("21B\n");
                     pthread_mutex_unlock (&md->mutex);
 
                     return adios_flag_no;
@@ -1175,9 +1164,7 @@ printf ("21B\n");
                     md->b.read_pg_offset = offsets [0];
                     md->b.read_pg_size = offsets [1];
                     pthread_mutex_lock (&md->mutex);
-printf ("20A\n");
                     free (offsets);
-printf ("20B\n");
                     pthread_mutex_unlock (&md->mutex);
                 }
                 else
@@ -1243,9 +1230,7 @@ printf ("20B\n");
                         ,name, e
                         );
                 pthread_mutex_lock (&md->mutex);
-printf ("19A\n");
                 free (name);
-printf ("19B\n");
                 pthread_mutex_unlock (&md->mutex);
 
                 return adios_flag_no;
@@ -1326,9 +1311,7 @@ printf ("19B\n");
             {
                 printf ("File open error for %s: %s\n", name, strerror (errno));
                 pthread_mutex_lock (&md->mutex);
-printf ("18A\n");
                 free (name);
-printf ("18B\n");
                 pthread_mutex_unlock (&md->mutex);
 
                 return adios_flag_no;
@@ -1365,9 +1348,7 @@ printf ("18B\n");
                                 ,name, e
                                 );
                         pthread_mutex_lock (&md->mutex);
-printf ("17A\n");
                         free (name);
-printf ("17B\n");
                         pthread_mutex_unlock (&md->mutex);
 
                         return adios_flag_no;
@@ -1534,9 +1515,7 @@ printf ("17B\n");
                         ,name, e
                         );
                 pthread_mutex_lock (&md->mutex);
-printf ("16A\n");
                 free (name);
-printf ("16B\n");
                 pthread_mutex_unlock (&md->mutex);
 
                 return adios_flag_no;
@@ -1550,9 +1529,7 @@ printf ("16B\n");
             fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
 
             pthread_mutex_lock (&md->mutex);
-printf ("15A\n");
             free (name);
-printf ("15B\n");
             pthread_mutex_unlock (&md->mutex);
 
             return adios_flag_no;
@@ -1560,9 +1537,7 @@ printf ("15B\n");
     }
 
     pthread_mutex_lock (&md->mutex);
-printf ("14A\n");
     free (name);
-printf ("14B\n");
     pthread_mutex_unlock (&md->mutex);
 
     if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
@@ -2266,9 +2241,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
             if (buffer)
             {
                 pthread_mutex_lock (&md->mutex);
-printf ("13A\n");
                 free (buffer);
-printf ("13B\n");
                 pthread_mutex_unlock (&md->mutex);
                 buffer = 0;
                 buffer_size = 0;
@@ -2289,9 +2262,7 @@ printf ("13B\n");
             if (index_buffer)
             {
                 pthread_mutex_lock (&md->mutex);
-printf ("12A\n");
                 free (index_buffer);
-printf ("12B\n");
                 pthread_mutex_unlock (&md->mutex);
             }
 
@@ -2459,11 +2430,9 @@ printf ("12B\n");
                     md->b.offset = offset_save;
 
                     pthread_mutex_lock (&md->mutex);
-printf ("11A\n");
                     free (recv_buffer);
                     free (index_sizes);
                     free (index_offsets);
-printf ("11B\n");
                     pthread_mutex_unlock (&md->mutex);
                 }
                 else
@@ -2509,9 +2478,7 @@ printf ("11B\n");
             }
 
             pthread_mutex_lock (&md->mutex);
-printf ("10A\n");
             free (buffer);
-printf ("10B\n");
             pthread_mutex_unlock (&md->mutex);
 
             adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
@@ -2684,9 +2651,7 @@ static void * sub_coordinator_main (void * param)
                 pthread_mutex_unlock (&md->sub_coordinator_mutex);
                 COPY_ALL_PARAMS(msg,flag);
                 pthread_mutex_lock (&md->mutex);
-printf ("9A\n");
                 free (flag);
-printf ("9B\n");
                 pthread_mutex_unlock (&md->mutex);
                 source = md->rank;
                 i++;
@@ -2731,9 +2696,7 @@ printf ("9B\n");
         pthread_mutex_unlock (&md->sub_coordinator_mutex);
         assert (flag [0] == START_WRITES);
         pthread_mutex_lock (&md->mutex);
-printf ("8A\n");
         free (flag);
-printf ("8B\n");
         pthread_mutex_unlock (&md->mutex);
     }
 
@@ -2806,9 +2769,7 @@ if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
                 pthread_mutex_unlock (&md->sub_coordinator_mutex);
                 COPY_ALL_PARAMS(msg,flag);
                 pthread_mutex_lock (&md->mutex);
-printf ("7A\n");
                 free (flag);
-printf ("7B\n");
                 pthread_mutex_unlock (&md->mutex);
                 source = md->rank;
             }
@@ -3059,9 +3020,7 @@ printf ("7B\n");
                             b.buff = (char *) (flag [1]);
                             pthread_mutex_unlock (&md->sub_coordinator_mutex);
                             pthread_mutex_lock (&md->mutex);
-printf ("6A\n");
                             //free (flag); // freed on writer side
-printf ("6B\n");
                             pthread_mutex_unlock (&md->mutex);
                         }
 
@@ -3083,9 +3042,7 @@ printf ("6B\n");
                         new_attrs_root = 0;
                     }
                     pthread_mutex_lock (&md->mutex);
-printf ("5A\n");
                     free (buf);
-printf ("5B\n");
                     pthread_mutex_unlock (&md->mutex);
 
                     uint64_t only_index_buffer_offset;
@@ -3148,9 +3105,7 @@ printf ("5B\n");
                         pthread_mutex_unlock (&md->coordinator_mutex);
                     }
                     pthread_mutex_lock (&md->mutex);
-printf ("4A\n");
                     free (buffer);
-printf ("4B\n");
                     pthread_mutex_unlock (&md->mutex);
 #endif
 
@@ -3333,9 +3288,7 @@ static void * coordinator_main (void * param)
                 assert (flag [0] == REGISTER_FLAG);
                 assert (flag [2] == md->rank);
                 pthread_mutex_lock (&md->mutex);
-printf ("3A\n");
                 //free (flag);
-printf ("3B\n");
                 pthread_mutex_unlock (&md->mutex);
                 i++;
 //printf ("X 4\n");
@@ -3389,9 +3342,7 @@ printf ("3B\n");
     pthread_mutex_unlock (&md->coordinator_mutex);
     assert (flag [0] == START_WRITES);
     pthread_mutex_lock (&md->mutex);
-printf ("2A\n");
     //free (flag);
-printf ("2B\n");
     pthread_mutex_unlock (&md->mutex);
 
     for (i = 0; i < md->groups; i++)
@@ -3496,9 +3447,7 @@ if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", ada
                 COPY_ALL_PARAMS(msg,flag);
                 source = md->rank;
                 pthread_mutex_lock (&md->mutex);
-printf ("1A\n");
                 //free (flag);
-printf ("1B\n");
                 pthread_mutex_unlock (&md->mutex);
             }
         }
