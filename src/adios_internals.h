@@ -493,7 +493,7 @@ typedef struct ListElmt_
 
 typedef struct List_
 {
-    int      size;
+    volatile int      size;
     int      (* match) (const void * key1, const void * key2);
     void     (* destroy) (void * data);
     ListElmt * head;
