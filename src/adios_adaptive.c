@@ -1945,11 +1945,9 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 f->tag = TAG_COORDINATOR;
                 f->msg = malloc (8 * PARAMETER_COUNT);
                 ((uint64_t *) f->msg) [0] = START_WRITES;
-                pthread_mutex_lock (&md->mpi_mutex);
-                //pthread_mutex_lock (&md->coordinator_mutex);
+                pthread_mutex_lock (&md->coordinator_mutex);
                 queue_enqueue (&md->coordinator_flag, f);
-                //pthread_mutex_unlock (&md->coordinator_mutex);
-                pthread_mutex_unlock (&md->mpi_mutex);
+                pthread_mutex_unlock (&md->coordinator_mutex);
             }
 #if COLLECT_METRICS
             gettimeofday (&t19, NULL);
@@ -1976,27 +1974,28 @@ void adios_adaptive_close (struct adios_file_struct * fd
                     MPI_Recv (fs->msg, count, MPI_BYTE, fs->source, fs->tag
                              ,md->group_comm, &status
                              );
+                    pthread_mutex_unlock (&md->mpi_mutex);
 
                     switch (fs->tag)
                     {
                         case TAG_WRITER:
-                            //pthread_mutex_lock (&md->writer_mutex);
+                            pthread_mutex_lock (&md->writer_mutex);
                             queue_enqueue (&md->writer_flag, fs);
-                            //pthread_mutex_unlock (&md->writer_mutex);
+                            pthread_mutex_unlock (&md->writer_mutex);
                             break;
 
                         case TAG_SUB_COORDINATOR:
                         case TAG_SUB_COORDINATOR_INDEX_BODY:
-                            //pthread_mutex_lock (&md->sub_coordinator_mutex);
+                            pthread_mutex_lock (&md->sub_coordinator_mutex);
                             queue_enqueue (&md->sub_coordinator_flag, fs);
-                            //pthread_mutex_unlock (&md->sub_coordinator_mutex);
+                            pthread_mutex_unlock (&md->sub_coordinator_mutex);
                             break;
 
                         case TAG_COORDINATOR:
                         case TAG_COORDINATOR_INDEX_BODY:
-                            //pthread_mutex_lock (&md->coordinator_mutex);
+                            pthread_mutex_lock (&md->coordinator_mutex);
                             queue_enqueue (&md->coordinator_flag, fs);
-                            //pthread_mutex_unlock (&md->coordinator_mutex);
+                            pthread_mutex_unlock (&md->coordinator_mutex);
                             break;
 
                         default:
@@ -2007,7 +2006,6 @@ void adios_adaptive_close (struct adios_file_struct * fd
                             free (fs);
                             break;
                     }
-                    pthread_mutex_unlock (&md->mpi_mutex);
                 }
 
                 while (queue_size (&md->mpi_flag) != 0)
@@ -2497,11 +2495,9 @@ static void * sub_coordinator_main (void * param)
     ////////////////////////////////////////////////////////////////////////
     while (queue_size (&md->sub_coordinator_flag) == 0)
         ;
-    pthread_mutex_lock (&md->mpi_mutex);
-    //pthread_mutex_lock (&md->sub_coordinator_mutex);
+    pthread_mutex_lock (&md->sub_coordinator_mutex);
     queue_dequeue (&md->sub_coordinator_flag, &f);
-    //pthread_mutex_unlock (&md->sub_coordinator_mutex);
-    pthread_mutex_unlock (&md->mpi_mutex);
+    pthread_mutex_unlock (&md->sub_coordinator_mutex);
     msg = (uint64_t *) f->msg;
     assert (msg [0] == START_WRITES);
     free (f->msg);
@@ -2553,11 +2549,9 @@ int xxx = 0;
         if (queue_size (&md->sub_coordinator_flag) != 0)
         {
             message_available = 1;
-            pthread_mutex_lock (&md->mpi_mutex);
-            //pthread_mutex_lock (&md->sub_coordinator_mutex);
+            pthread_mutex_lock (&md->sub_coordinator_mutex);
             queue_dequeue (&md->sub_coordinator_flag, &f);
-            //pthread_mutex_unlock (&md->sub_coordinator_mutex);
-            pthread_mutex_unlock (&md->mpi_mutex);
+            pthread_mutex_unlock (&md->sub_coordinator_mutex);
             msg = (uint64_t *) f->msg;
         }
 
@@ -2636,11 +2630,9 @@ int xxx = 0;
                                 ((uint64_t *) f->msg) [1] = msg [1];
                                 ((uint64_t *) f->msg) [2] = msg [2];
                                 ((uint64_t *) f->msg) [3] = msg [3];
-                                pthread_mutex_lock (&md->mpi_mutex);
-                                //pthread_mutex_lock (&md->coordinator_mutex);
+                                pthread_mutex_lock (&md->coordinator_mutex);
                                 queue_enqueue (&md->coordinator_flag, f);
-                                //pthread_mutex_unlock (&md->coordinator_mutex);
-                                pthread_mutex_unlock (&md->mpi_mutex);
+                                pthread_mutex_unlock (&md->coordinator_mutex);
                             }
                         }
                     }
@@ -2692,11 +2684,9 @@ int xxx = 0;
                             ((uint64_t *) f->msg) [0] = WRITERS_BUSY;
                             ((uint64_t *) f->msg) [1] = msg [1];
                             ((uint64_t *) f->msg) [2] = md->group;
-                            pthread_mutex_lock (&md->mpi_mutex);
-                            //pthread_mutex_lock (&md->coordinator_mutex);
+                            pthread_mutex_lock (&md->coordinator_mutex);
                             queue_enqueue (&md->coordinator_flag, f);
-                            //pthread_mutex_unlock (&md->coordinator_mutex);
-                            pthread_mutex_unlock (&md->mpi_mutex);
+                            pthread_mutex_unlock (&md->coordinator_mutex);
                         }
                     }
                     else
@@ -2737,11 +2727,9 @@ int xxx = 0;
                                 ((uint64_t *) f->msg) [3] = md->group;
                                 ((uint64_t *) f->msg) [4] = md->rank;
                                 ((uint64_t *) f->msg) [5] = msg [3];
-                                pthread_mutex_lock (&md->mpi_mutex);
-                                //pthread_mutex_lock (&md->writer_mutex);
+                                pthread_mutex_lock (&md->writer_mutex);
                                 queue_enqueue (&md->writer_flag, f);
-                                //pthread_mutex_unlock (&md->writer_mutex);
-                                pthread_mutex_unlock (&md->mpi_mutex);
+                                pthread_mutex_unlock (&md->writer_mutex);
                                 next_writer++;
                             }
                         }
@@ -2779,11 +2767,9 @@ int xxx = 0;
                             f->tag = TAG_WRITER;
                             f->msg = malloc (8 * PARAMETER_COUNT);
                             ((uint64_t *) f->msg) [0] = SEND_INDEX;
-                            pthread_mutex_lock (&md->mpi_mutex);
-                            //pthread_mutex_lock (&md->writer_mutex);
+                            pthread_mutex_lock (&md->writer_mutex);
                             queue_enqueue (&md->writer_flag, f);
-                            //pthread_mutex_unlock (&md->writer_mutex);
-                            pthread_mutex_unlock (&md->mpi_mutex);
+                            pthread_mutex_unlock (&md->writer_mutex);
                         }
                     }
 
@@ -2842,11 +2828,9 @@ int xxx = 0;
                             uint64_t * flag;
                             while (queue_size (&md->sub_coordinator_flag) == 0)
                                 ;
-                            pthread_mutex_lock (&md->mpi_mutex);
-                            //pthread_mutex_lock (&md->sub_coordinator_mutex);
+                            pthread_mutex_lock (&md->sub_coordinator_mutex);
                             queue_dequeue (&md->sub_coordinator_flag, &flag);
-                            //pthread_mutex_unlock (&md->sub_coordinator_mutex);
-                            pthread_mutex_unlock (&md->mpi_mutex);
+                            pthread_mutex_unlock (&md->sub_coordinator_mutex);
                             b.buff = (char *) (flag [1]);
                             //free (flag); // freed on writer side
                         }
@@ -2924,11 +2908,9 @@ printf ("FIX THIS\n");
                         flag [1] = md->group;
                         flag [2] = only_index_buffer_offset;
                         flag [3] = (uint64_t) buffer;
-                        pthread_mutex_lock (&md->mpi_mutex);
-                        //pthread_mutex_lock (&md->coordinator_mutex);
+                        pthread_mutex_lock (&md->coordinator_mutex);
                         queue_enqueue (&md->coordinator_flag, flag);
-                        //pthread_mutex_unlock (&md->coordinator_mutex);
-                        pthread_mutex_unlock (&md->mpi_mutex);
+                        pthread_mutex_unlock (&md->coordinator_mutex);
                     }
                     free (buffer);
 #endif
@@ -3000,11 +2982,9 @@ printf ("FIX THIS\n");
                     ((uint64_t *) f->msg) [3] = md->group;
                     ((uint64_t *) f->msg) [4] = md->rank;
                     ((uint64_t *) f->msg) [5] = current_offset++;
-                    pthread_mutex_lock (&md->mpi_mutex);
-                    //pthread_mutex_lock (&md->writer_mutex);
+                    pthread_mutex_lock (&md->writer_mutex);
                     queue_enqueue (&md->writer_flag, f);
-                    //pthread_mutex_unlock (&md->writer_mutex);
-                    pthread_mutex_unlock (&md->mpi_mutex);
+                    pthread_mutex_unlock (&md->writer_mutex);
                 }
                 else
                 {
@@ -3038,11 +3018,9 @@ printf ("FIX THIS\n");
                             ((uint64_t *) f->msg) [1] = md->group; //msg [1];
                             ((uint64_t *) f->msg) [2] = md->group; //msg [2];
                             ((uint64_t *) f->msg) [3] = msg [3];
-                            pthread_mutex_lock (&md->mpi_mutex);
-                            //pthread_mutex_lock (&md->coordinator_mutex);
+                            pthread_mutex_lock (&md->coordinator_mutex);
                             queue_enqueue (&md->coordinator_flag, f);
-                            //pthread_mutex_unlock (&md->coordinator_mutex);
-                            pthread_mutex_unlock (&md->mpi_mutex);
+                            pthread_mutex_unlock (&md->coordinator_mutex);
                         }
                     }
                 }
@@ -3138,11 +3116,9 @@ static void * coordinator_main (void * param)
     ////////////////////////////////////////////////////////////////////////
     while (queue_size (&md->coordinator_flag) == 0)
         ;
-    pthread_mutex_lock (&md->mpi_mutex);
-    //pthread_mutex_lock (&md->coordinator_mutex);
+    pthread_mutex_lock (&md->coordinator_mutex);
     queue_dequeue (&md->coordinator_flag, &f);
-    //pthread_mutex_unlock (&md->coordinator_mutex);
-    pthread_mutex_unlock (&md->mpi_mutex);
+    pthread_mutex_unlock (&md->coordinator_mutex);
     msg = (uint64_t *) f->msg;
     assert (msg [0] == START_WRITES);
     free (f->msg);
@@ -3173,11 +3149,9 @@ static void * coordinator_main (void * param)
             f->tag = TAG_SUB_COORDINATOR;
             f->msg = malloc (8 * PARAMETER_COUNT);
             ((uint64_t *) f->msg) [0] = START_WRITES;
-            pthread_mutex_lock (&md->mpi_mutex);
-            //pthread_mutex_lock (&md->sub_coordinator_mutex);
+            pthread_mutex_lock (&md->sub_coordinator_mutex);
             queue_enqueue (&md->sub_coordinator_flag, f);
-            //pthread_mutex_unlock (&md->sub_coordinator_mutex);
-            pthread_mutex_unlock (&md->mpi_mutex);
+            pthread_mutex_unlock (&md->sub_coordinator_mutex);
             f = 0;
         }
     }
@@ -3225,11 +3199,9 @@ int xxx = 0;
         if (queue_size (&md->coordinator_flag) != 0)
         {
             message_available = 1;
-            pthread_mutex_lock (&md->mpi_mutex);
-            //pthread_mutex_lock (&md->coordinator_mutex);
+            pthread_mutex_lock (&md->coordinator_mutex);
             queue_dequeue (&md->coordinator_flag, &f);
-            //pthread_mutex_unlock (&md->coordinator_mutex);
-            pthread_mutex_unlock (&md->mpi_mutex);
+            pthread_mutex_unlock (&md->coordinator_mutex);
             msg = (uint64_t *) f->msg;
         }
 
@@ -3301,14 +3273,12 @@ int xxx = 0;
                                                     sub_coord_ranks [msg [1]];
                                         ((uint64_t *) f->msg) [3] =
                                                     group_offset [msg [1]];
-                                        pthread_mutex_lock (&md->mpi_mutex);
-                                        //pthread_mutex_lock
-                                        //     (&md->sub_coordinator_mutex);
+                                        pthread_mutex_lock
+                                             (&md->sub_coordinator_mutex);
                                         queue_enqueue
                                                (&md->sub_coordinator_flag, f);
-                                        //pthread_mutex_unlock
-                                        //      (&md->sub_coordinator_mutex);
-                                        pthread_mutex_unlock (&md->mpi_mutex);
+                                        pthread_mutex_unlock
+                                              (&md->sub_coordinator_mutex);
                                     }
                                     break;
                                 }
@@ -3374,14 +3344,12 @@ int xxx = 0;
                                                 sub_coord_ranks [msg [1]];
                                     ((uint64_t *) f->msg) [3] =
                                                 group_offset [msg [1]];
-                                    pthread_mutex_lock (&md->mpi_mutex);
-                                    //pthread_mutex_lock
-                                    //           (&md->sub_coordinator_mutex);
+                                    pthread_mutex_lock
+                                               (&md->sub_coordinator_mutex);
                                     queue_enqueue
                                                (&md->sub_coordinator_flag, f);
-                                    //pthread_mutex_unlock
-                                    //         (&md->sub_coordinator_mutex);
-                                    pthread_mutex_unlock (&md->mpi_mutex);
+                                    pthread_mutex_unlock
+                                               (&md->sub_coordinator_mutex);
                                 }
 
                                 break;
@@ -3454,13 +3422,11 @@ int xxx = 0;
                                             sub_coord_ranks [msg [1]];
                                 ((uint64_t *) f->msg) [3] =
                                             group_offset [msg [1]];
-                                pthread_mutex_lock (&md->mpi_mutex);
-                                //pthread_mutex_lock
-                                //              (&md->sub_coordinator_mutex);
+                                pthread_mutex_lock
+                                              (&md->sub_coordinator_mutex);
                                 queue_enqueue (&md->sub_coordinator_flag, f);
-                                //pthread_mutex_unlock
-                                //              (&md->sub_coordinator_mutex);
-                                pthread_mutex_unlock (&md->mpi_mutex);
+                                pthread_mutex_unlock
+                                              (&md->sub_coordinator_mutex);
 
                                 break;
                             }
@@ -3521,19 +3487,17 @@ int xxx = 0;
                                   ,TAG_COORDINATOR
                                   ,md->group_comm, &status
                                   );
+                        pthread_mutex_unlock (&md->mpi_mutex);
                         buffer_write (&buffer, &buffer_size, &buffer_offset
                                      ,index_buf, proc_index_size
                                      );
-                        pthread_mutex_unlock (&md->mpi_mutex);
                     }
                     else
                     {
-                        pthread_mutex_lock (&md->mpi_mutex);
                         buffer_write (&buffer, &buffer_size, &buffer_offset
                                      ,(void *) msg [3]
                                      ,proc_index_size
                                      );
-                        pthread_mutex_unlock (&md->mpi_mutex);
                     }
 
                     file_index [file_index_count].file_number =
@@ -3546,7 +3510,6 @@ int xxx = 0;
                                                          + 2   // name len
                                                          + 4   // number
                                                          + 8;  // length
-                    pthread_mutex_lock (&md->mpi_mutex);
                     buffer_write (&buffer, &buffer_size, &buffer_offset_tmp
                                  ,&file_index [file_index_count].offset, 8
                                  );
@@ -3560,7 +3523,6 @@ int xxx = 0;
                                  ,&file_index [file_index_count].name
                                  ,new_name_len
                                  );
-                    pthread_mutex_unlock (&md->mpi_mutex);
                     file_index_count++;
 
                     // if we have recieved all, write to the file
@@ -3666,11 +3628,9 @@ int xxx = 0;
                         f->msg = malloc (8 * PARAMETER_COUNT);
                         ((uint64_t *) f->msg) [0] = OVERALL_WRITE_COMPLETE;
                         ((uint64_t *) f->msg) [1] = group_offset [i];
-                        pthread_mutex_lock (&md->mpi_mutex);
-                        //pthread_mutex_lock (&md->sub_coordinator_mutex);
+                        pthread_mutex_lock (&md->sub_coordinator_mutex);
                         queue_enqueue (&md->sub_coordinator_flag, f);
-                        //pthread_mutex_unlock (&md->sub_coordinator_mutex);
-                        pthread_mutex_unlock (&md->mpi_mutex);
+                        pthread_mutex_unlock (&md->sub_coordinator_mutex);
                     }
                 }
 #if DO_INDEX_COLLECTION == 0
@@ -3751,11 +3711,9 @@ static void * writer_main (void * param)
             ;
         {
             message_available = 1;
-            pthread_mutex_lock (&md->mpi_mutex);
-            //pthread_mutex_lock (&md->writer_mutex);
+            pthread_mutex_lock (&md->writer_mutex);
             queue_dequeue (&md->writer_flag, &f);
-            //pthread_mutex_unlock (&md->writer_mutex);
-            pthread_mutex_unlock (&md->mpi_mutex);
+            pthread_mutex_unlock (&md->writer_mutex);
             msg = (uint64_t *) f->msg;
 #if PRINT_MESSAGES
             printf ("w: source: %2d rank: %2d msg: %s B\n"
@@ -3770,7 +3728,6 @@ static void * writer_main (void * param)
                 // set our base offset for building the index
                 fd->base_offset = msg [5] * md->stripe_size;
                 // build index appending to any existing index
-                pthread_mutex_lock (&md->mpi_mutex);
                 adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
                                      ,&md->old_attrs_root
                                      );
@@ -3782,7 +3739,6 @@ static void * writer_main (void * param)
                                      ,md->old_vars_root
                                      ,md->old_attrs_root
                                      );
-                pthread_mutex_unlock (&md->mpi_mutex);
 
                 if (msg [1] == msg [3]) // same file
                 {
@@ -3860,11 +3816,9 @@ static void * writer_main (void * param)
                     assert (msg [3] == md->group);
                     ((uint64_t *) f->msg) [3] = new_offset;
                     ((uint64_t *) f->msg) [4] = index_buffer_offset;
-                    pthread_mutex_lock (&md->mpi_mutex);
-                    //pthread_mutex_lock (&md->sub_coordinator_mutex);
+                    pthread_mutex_lock (&md->sub_coordinator_mutex);
                     queue_enqueue (&md->sub_coordinator_flag, f);
-                    //pthread_mutex_unlock (&md->sub_coordinator_mutex);
-                    pthread_mutex_unlock (&md->mpi_mutex);
+                    pthread_mutex_unlock (&md->sub_coordinator_mutex);
                 }
 
                 // tell our sub_coord if we are adaptive writing
@@ -3901,11 +3855,9 @@ static void * writer_main (void * param)
                         assert (msg [3] == md->group);
                         ((uint64_t *) f->msg) [3] = new_offset;
                         ((uint64_t *) f->msg) [4] = index_buffer_offset;
-                        pthread_mutex_lock (&md->mpi_mutex);
-                        //pthread_mutex_lock (&md->sub_coordinator_mutex);
+                        pthread_mutex_lock (&md->sub_coordinator_mutex);
                         queue_enqueue (&md->sub_coordinator_flag, f);
-                        //pthread_mutex_unlock (&md->sub_coordinator_mutex);
-                        pthread_mutex_unlock (&md->mpi_mutex);
+                        pthread_mutex_unlock (&md->sub_coordinator_mutex);
                     }
                 }
                 break;
@@ -3934,11 +3886,9 @@ static void * writer_main (void * param)
                     f->tag = TAG_SUB_COORDINATOR_INDEX_BODY;
                     f->msg = malloc (8 * PARAMETER_COUNT);
                     ((uint64_t *) f->msg) [0] = (uint64_t) index_buffer;
-                    pthread_mutex_lock (&md->mpi_mutex);
-                    //pthread_mutex_lock (&md->sub_coordinator_mutex);
+                    pthread_mutex_lock (&md->sub_coordinator_mutex);
                     queue_enqueue (&md->sub_coordinator_flag, f);
-                    //pthread_mutex_unlock (&md->sub_coordinator_mutex);
-                    pthread_mutex_unlock (&md->mpi_mutex);
+                    pthread_mutex_unlock (&md->sub_coordinator_mutex);
                 }
 #endif
 
