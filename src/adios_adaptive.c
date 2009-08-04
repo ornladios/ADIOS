@@ -618,17 +618,13 @@ void adios_adaptive_init (const char * parameters
                     }
                 }
 
-                pthread_mutex_lock (&md->mpi_mutex);
                 free (key);
                 free (value);
-                pthread_mutex_unlock (&md->mpi_mutex);
 
                 token = strtok (NULL, ";");
             }
 
-            pthread_mutex_lock (&md->mpi_mutex);
             free (p);
-            pthread_mutex_unlock (&md->mpi_mutex);
         }
     }
 
@@ -699,10 +695,8 @@ adios_build_file_offset (struct adios_adaptive_data_struct *md
         if (md->rank == 0)
         {
             // make one space for offset and one for size
-            pthread_mutex_lock (&md->mpi_mutex);
             uint64_t * offsets = malloc(sizeof (uint64_t)
                                            * md->size * SCATTER_PARAMS);
-            pthread_mutex_unlock (&md->mpi_mutex);
             int i;
 
             offsets [0] = fd->write_size_bytes;
@@ -756,9 +750,7 @@ adios_build_file_offset (struct adios_adaptive_data_struct *md
             assert (err == MPI_SUCCESS);
             fd->base_offset = offsets [0];
             fd->pg_start_in_file = fd->base_offset;
-            pthread_mutex_lock (&md->mpi_mutex);
             free (offsets);
-            pthread_mutex_unlock (&md->mpi_mutex);
         }
         else
         {
@@ -1030,14 +1022,10 @@ static void set_stripe_size (struct adios_adaptive_data_struct * md
 
             md->storage_targets = 1;
 
-            pthread_mutex_lock (&md->mpi_mutex);
             int * f_split = malloc (sizeof (int) * md->split_groups);
-            pthread_mutex_unlock (&md->mpi_mutex);
             char split_format [7] = ".%d";
             char split_name [7];
-            pthread_mutex_lock (&md->mpi_mutex);
             char * new_name = malloc (strlen (filename) + 7 + 1);
-            pthread_mutex_unlock (&md->mpi_mutex);
             for (i = 0; i < md->split_groups; i++)
             {
                 sprintf (split_name, split_format, i);
@@ -1063,9 +1051,7 @@ static void set_stripe_size (struct adios_adaptive_data_struct * md
                             );
                 close (f_split [i]);
             }
-            pthread_mutex_lock (&md->mpi_mutex);
             free (f_split);
-            pthread_mutex_unlock (&md->mpi_mutex);
             unlink (filename);
         }
     }
@@ -1121,9 +1107,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
     gettimeofday (&t21, NULL);
 #endif
 
-    pthread_mutex_lock (&md->mpi_mutex);
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
-    pthread_mutex_unlock (&md->mpi_mutex);
     sprintf (name, "%s%s", method->base_path, fd->name);
 
     adios_var_to_comm (fd->group->group_comm
@@ -1165,9 +1149,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                     fprintf (stderr, "MPI open read failed for %s: '%s'\n"
                             ,name, e
                             );
-                    pthread_mutex_lock (&md->mpi_mutex);
                     free (name);
-                    pthread_mutex_unlock (&md->mpi_mutex);
 
                     return adios_flag_no;
                 }
@@ -1229,11 +1211,9 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             {
                 if (md->rank == 0)
                 {
-                    pthread_mutex_lock (&md->mpi_mutex);
                     MPI_Offset * offsets = malloc (  sizeof (MPI_Offset)
                                                    * md->size * 3
                                                   );
-                    pthread_mutex_unlock (&md->mpi_mutex);
                     memset (offsets, 0, sizeof (MPI_Offset) * md->size * 3);
 
                     // go through the pg index to build the offsets array
@@ -1246,9 +1226,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                                 );
                     md->b.read_pg_offset = offsets [0];
                     md->b.read_pg_size = offsets [1];
-                    pthread_mutex_lock (&md->mpi_mutex);
                     free (offsets);
-                    pthread_mutex_unlock (&md->mpi_mutex);
                 }
                 else
                 {
@@ -1312,9 +1290,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 fprintf (stderr, "MPI open write failed for %s: '%s'\n"
                         ,name, e
                         );
-                pthread_mutex_lock (&md->mpi_mutex);
                 free (name);
-                pthread_mutex_unlock (&md->mpi_mutex);
 
                 return adios_flag_no;
             }
@@ -1345,12 +1321,10 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             if (md->split_groups != 1)
             {
                 // if we need to do a file split, we need to fixup the name
-                pthread_mutex_lock (&md->mpi_mutex);
                 name = realloc (name, (  strlen (method->base_path)
                                        + strlen (fd->name) + 1 + 6
                                       )
                                ); // 6 extra for '.XXXXX' file number
-                pthread_mutex_unlock (&md->mpi_mutex);
                 char split_format [7] = ".%d";
                 char split_name [7];
                 sprintf (split_name, split_format, md->group);
@@ -1400,9 +1374,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             if (md->f == -1)
             {
                 printf ("File open error for %s: %s\n", name, strerror (errno));
-                pthread_mutex_lock (&md->mpi_mutex);
                 free (name);
-                pthread_mutex_unlock (&md->mpi_mutex);
 
                 return adios_flag_no;
             }
@@ -1440,9 +1412,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                         fprintf (stderr, "MPI open write failed for %s: '%s'\n"
                                 ,name, e
                                 );
-                        pthread_mutex_lock (&md->mpi_mutex);
                         free (name);
-                        pthread_mutex_unlock (&md->mpi_mutex);
 
                         return adios_flag_no;
                     }
@@ -1607,9 +1577,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 fprintf (stderr, "MPI open write failed for %s: '%s'\n"
                         ,name, e
                         );
-                pthread_mutex_lock (&md->mpi_mutex);
                 free (name);
-                pthread_mutex_unlock (&md->mpi_mutex);
 
                 return adios_flag_no;
             }
@@ -1621,17 +1589,13 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
         {
             fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
 
-            pthread_mutex_lock (&md->mpi_mutex);
             free (name);
-            pthread_mutex_unlock (&md->mpi_mutex);
 
             return adios_flag_no;
         }
     }
 
-    pthread_mutex_lock (&md->mpi_mutex);
     free (name);
-    pthread_mutex_unlock (&md->mpi_mutex);
 
     if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
     {
@@ -1976,12 +1940,12 @@ void adios_adaptive_close (struct adios_file_struct * fd
 
             if (md->rank == md->coord_rank)
             {
-                pthread_mutex_lock (&md->mpi_mutex);
                 struct flag_struct * f = malloc (sizeof (struct flag_struct));
                 f->source = md->rank;
                 f->tag = TAG_COORDINATOR;
                 f->msg = malloc (8 * PARAMETER_COUNT);
                 ((uint64_t *) f->msg) [0] = START_WRITES;
+                pthread_mutex_lock (&md->mpi_mutex);
                 //pthread_mutex_lock (&md->coordinator_mutex);
                 queue_enqueue (&md->coordinator_flag, f);
                 //pthread_mutex_unlock (&md->coordinator_mutex);
@@ -2054,9 +2018,9 @@ void adios_adaptive_close (struct adios_file_struct * fd
                     MPI_Send (f->msg, f->size, MPI_BYTE, f->target, f->tag
                              ,md->group_comm
                              );
+                    pthread_mutex_unlock (&md->mpi_mutex);
                     free (f->msg);
                     free (f);
-                    pthread_mutex_unlock (&md->mpi_mutex);
                 }
 
                 if (md->rank == md->coord_rank)
@@ -2234,10 +2198,8 @@ void adios_adaptive_close (struct adios_file_struct * fd
             {
                 if (md->rank == 0)
                 {
-                    pthread_mutex_lock (&md->mpi_mutex);
                     int * index_sizes = malloc (4 * md->size);
                     int * index_offsets = malloc (4 * md->size);
-                    pthread_mutex_unlock (&md->mpi_mutex);
                     char * recv_buffer = 0;
                     uint32_t size = 0;
                     uint32_t total_size = 0;
@@ -2254,9 +2216,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
                         total_size += index_sizes [i];
                     }
 
-                    pthread_mutex_lock (&md->mpi_mutex);
                     recv_buffer = malloc (total_size + 1);
-                    pthread_mutex_unlock (&md->mpi_mutex);
 
                     MPI_Gatherv (&size, 0, MPI_BYTE
                                 ,recv_buffer, index_sizes, index_offsets
@@ -2294,11 +2254,9 @@ void adios_adaptive_close (struct adios_file_struct * fd
                     md->b.length = buffer_size_save;
                     md->b.offset = offset_save;
 
-                    pthread_mutex_lock (&md->mpi_mutex);
                     free (recv_buffer);
                     free (index_sizes);
                     free (index_offsets);
-                    pthread_mutex_unlock (&md->mpi_mutex);
                 }
                 else
                 {
@@ -2342,9 +2300,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
                                );
             }
 
-            pthread_mutex_lock (&md->mpi_mutex);
             free (buffer);
-            pthread_mutex_unlock (&md->mpi_mutex);
 
             adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
             adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
@@ -2544,14 +2500,14 @@ static void * sub_coordinator_main (void * param)
     pthread_mutex_lock (&md->mpi_mutex);
     //pthread_mutex_lock (&md->sub_coordinator_mutex);
     queue_dequeue (&md->sub_coordinator_flag, &f);
+    //pthread_mutex_unlock (&md->sub_coordinator_mutex);
+    pthread_mutex_unlock (&md->mpi_mutex);
     msg = (uint64_t *) f->msg;
     assert (msg [0] == START_WRITES);
     free (f->msg);
     free (f);
     f = 0;
     msg = 0;
-    //pthread_mutex_unlock (&md->sub_coordinator_mutex);
-    pthread_mutex_unlock (&md->mpi_mutex);
 
     ////////////////////////////////////////////////////////////////////////
     // do writing
@@ -2559,9 +2515,7 @@ static void * sub_coordinator_main (void * param)
     int completed_writing = 0;  // track when we have notified coordinator we
                                 // have completed (avoid multiple notifies)
     int writers_size = (int) (md->group_size * 1.20); // add 20% for adaptation
-    pthread_mutex_lock (&md->mpi_mutex);
     int * writers = (int *) malloc (writers_size * sizeof (int));
-    pthread_mutex_unlock (&md->mpi_mutex);
     // start at first so that we can always write using next_writer
     int current_writer = md->sub_coord_rank - md->group_size + 1;
     int next_writer = current_writer + 1; // track the next one so the adaptive
@@ -2576,9 +2530,7 @@ static void * sub_coordinator_main (void * param)
 
     uint64_t current_offset = 0;
 
-    pthread_mutex_lock (&md->mpi_mutex);
     int * index_sizes = (int *) malloc (sizeof (int) * md->size);
-    pthread_mutex_unlock (&md->mpi_mutex);
     int largest_index = 0;
 
     // for encoding the local index for writing and sending to the coord
@@ -2637,11 +2589,9 @@ int xxx = 0;
                         if (writers_size <= writers_served)
                         {
                             writers_size = (int) (writers_size * 1.20);
-                            pthread_mutex_lock (&md->mpi_mutex);
                             writers = (int *) realloc (writers,   writers_size
                                                                 * sizeof (int)
                                                       );
-                            pthread_mutex_unlock (&md->mpi_mutex);
                         }
                         writers [writers_served] = f->source;
                         index_sizes [writers_served] = msg [4];
@@ -2661,7 +2611,6 @@ int xxx = 0;
                         {
                             if (md->rank != md->coord_rank)
                             {
-                                pthread_mutex_lock (&md->mpi_mutex);
                                 struct mpi_flag_struct * f = malloc
                                            (sizeof (struct mpi_flag_struct));
                                 f->target = md->coord_rank;
@@ -2672,12 +2621,12 @@ int xxx = 0;
                                 ((uint64_t *) f->msg) [1] = msg [1];
                                 ((uint64_t *) f->msg) [2] = msg [2];
                                 ((uint64_t *) f->msg) [3] = msg [3];
+                                pthread_mutex_lock (&md->mpi_mutex);
                                 queue_enqueue (&md->mpi_flag, f);
                                 pthread_mutex_unlock (&md->mpi_mutex);
                             }
                             else
                             {
-                                pthread_mutex_lock (&md->mpi_mutex);
                                 struct flag_struct * f = malloc
                                                (sizeof (struct flag_struct));
                                 f->source = md->rank;
@@ -2687,6 +2636,7 @@ int xxx = 0;
                                 ((uint64_t *) f->msg) [1] = msg [1];
                                 ((uint64_t *) f->msg) [2] = msg [2];
                                 ((uint64_t *) f->msg) [3] = msg [3];
+                                pthread_mutex_lock (&md->mpi_mutex);
                                 //pthread_mutex_lock (&md->coordinator_mutex);
                                 queue_enqueue (&md->coordinator_flag, f);
                                 //pthread_mutex_unlock (&md->coordinator_mutex);
@@ -2719,7 +2669,6 @@ int xxx = 0;
                         // tell coordinator we are done and can't do it
                         if (md->rank != md->coord_rank)
                         {
-                            pthread_mutex_lock (&md->mpi_mutex);
                             struct mpi_flag_struct * f = malloc
                                            (sizeof (struct mpi_flag_struct));
                             f->target = md->coord_rank;
@@ -2729,12 +2678,12 @@ int xxx = 0;
                             ((uint64_t *) f->msg) [0] = WRITERS_BUSY;
                             ((uint64_t *) f->msg) [1] = msg [1];
                             ((uint64_t *) f->msg) [2] = md->group;
+                            pthread_mutex_lock (&md->mpi_mutex);
                             queue_enqueue (&md->mpi_flag, f);
                             pthread_mutex_unlock (&md->mpi_mutex);
                         }
                         else
                         {
-                            pthread_mutex_lock (&md->mpi_mutex);
                             struct flag_struct * f = malloc
                                                 (sizeof (struct flag_struct));
                             f->source = md->rank;
@@ -2743,6 +2692,7 @@ int xxx = 0;
                             ((uint64_t *) f->msg) [0] = WRITERS_BUSY;
                             ((uint64_t *) f->msg) [1] = msg [1];
                             ((uint64_t *) f->msg) [2] = md->group;
+                            pthread_mutex_lock (&md->mpi_mutex);
                             //pthread_mutex_lock (&md->coordinator_mutex);
                             queue_enqueue (&md->coordinator_flag, f);
                             //pthread_mutex_unlock (&md->coordinator_mutex);
@@ -2753,7 +2703,6 @@ int xxx = 0;
                     {
                         if (next_writer < md->rank)
                         {
-                            pthread_mutex_lock (&md->mpi_mutex);
                             struct mpi_flag_struct * f = malloc
                                            (sizeof (struct mpi_flag_struct));
                             f->target = next_writer;
@@ -2766,6 +2715,7 @@ int xxx = 0;
                             ((uint64_t *) f->msg) [3] = md->group;
                             ((uint64_t *) f->msg) [4] = md->rank;
                             ((uint64_t *) f->msg) [5] = msg [3];
+                            pthread_mutex_lock (&md->mpi_mutex);
                             queue_enqueue (&md->mpi_flag, f);
                             pthread_mutex_unlock (&md->mpi_mutex);
                             active_writers++;
@@ -2776,7 +2726,6 @@ int xxx = 0;
                             if (next_writer == md->rank)
                             {
                                 active_writers++;
-                                pthread_mutex_lock (&md->mpi_mutex);
                                 struct flag_struct * f = malloc
                                                 (sizeof (struct flag_struct));
                                 f->source = md->rank;
@@ -2788,6 +2737,7 @@ int xxx = 0;
                                 ((uint64_t *) f->msg) [3] = md->group;
                                 ((uint64_t *) f->msg) [4] = md->rank;
                                 ((uint64_t *) f->msg) [5] = msg [3];
+                                pthread_mutex_lock (&md->mpi_mutex);
                                 //pthread_mutex_lock (&md->writer_mutex);
                                 queue_enqueue (&md->writer_flag, f);
                                 //pthread_mutex_unlock (&md->writer_mutex);
@@ -2810,7 +2760,6 @@ int xxx = 0;
                     {
                         if (writers [i] != md->rank)
                         {
-                            pthread_mutex_lock (&md->mpi_mutex);
                             struct mpi_flag_struct * f = malloc
                                             (sizeof (struct mpi_flag_struct));
                             f->target = writers [i];
@@ -2818,18 +2767,19 @@ int xxx = 0;
                             f->size = 8 * PARAMETER_COUNT;
                             f->msg = malloc (8 * PARAMETER_COUNT);
                             ((uint64_t *) f->msg) [0] = SEND_INDEX;
+                            pthread_mutex_lock (&md->mpi_mutex);
                             queue_enqueue (&md->mpi_flag, f);
                             pthread_mutex_unlock (&md->mpi_mutex);
                         }
                         else
                         {
-                            pthread_mutex_lock (&md->mpi_mutex);
                             struct flag_struct * f = malloc
                                                 (sizeof (struct flag_struct));
                             f->source = md->rank;
                             f->tag = TAG_WRITER;
                             f->msg = malloc (8 * PARAMETER_COUNT);
                             ((uint64_t *) f->msg) [0] = SEND_INDEX;
+                            pthread_mutex_lock (&md->mpi_mutex);
                             //pthread_mutex_lock (&md->writer_mutex);
                             queue_enqueue (&md->writer_flag, f);
                             //pthread_mutex_unlock (&md->writer_mutex);
@@ -2852,9 +2802,7 @@ int xxx = 0;
                 {
                     indices_collected++;
 #if DO_INDEX_COLLECTION
-                    pthread_mutex_lock (&md->mpi_mutex);
                     char * buf = malloc (largest_index + 1);
-                    pthread_mutex_unlock (&md->mpi_mutex);
                     buf [largest_index] = 0;
                     struct adios_bp_buffer_struct_v1 b;
                     struct adios_index_process_group_struct_v1 * new_pg_root;
@@ -2897,10 +2845,10 @@ int xxx = 0;
                             pthread_mutex_lock (&md->mpi_mutex);
                             //pthread_mutex_lock (&md->sub_coordinator_mutex);
                             queue_dequeue (&md->sub_coordinator_flag, &flag);
-                            b.buff = (char *) (flag [1]);
-                            //free (flag); // freed on writer side
                             //pthread_mutex_unlock (&md->sub_coordinator_mutex);
                             pthread_mutex_unlock (&md->mpi_mutex);
+                            b.buff = (char *) (flag [1]);
+                            //free (flag); // freed on writer side
                         }
 
                         // merge buf into the index
@@ -2920,9 +2868,7 @@ int xxx = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
                     }
-                    pthread_mutex_lock (&md->mpi_mutex);
                     free (buf);
-                    pthread_mutex_unlock (&md->mpi_mutex);
 
                     uint64_t only_index_buffer_offset;
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
@@ -2947,7 +2893,6 @@ int xxx = 0;
                     // send index to the coordinator for global use
                     if (md->rank != md->coord_rank)
                     {
-                        pthread_mutex_lock (&md->mpi_mutex);
                         struct mpi_flag_struct * f = malloc
                                            (sizeof (struct mpi_flag_struct));
                         f->target = md->coord_rank;
@@ -2957,6 +2902,7 @@ int xxx = 0;
                         ((uint64_t *) f->msg) [0] = INDEX_SIZE;
                         ((uint64_t *) f->msg) [1] = md->group;
                         ((uint64_t *) f->msg) [2] = only_index_buffer_offset;
+                        pthread_mutex_lock (&md->mpi_mutex);
                         queue_enqueue (&md->mpi_flag, f);
                         pthread_mutex_unlock (&md->mpi_mutex);
 
@@ -2972,21 +2918,19 @@ int xxx = 0;
                     else
                     {
 printf ("FIX THIS\n");
-                        pthread_mutex_lock (&md->mpi_mutex);
                         uint64_t * flag = malloc (8 * PARAMETER_COUNT);
                         INIT_PARAMS(flag);
                         flag [0] = INDEX_SIZE;
                         flag [1] = md->group;
                         flag [2] = only_index_buffer_offset;
                         flag [3] = (uint64_t) buffer;
+                        pthread_mutex_lock (&md->mpi_mutex);
                         //pthread_mutex_lock (&md->coordinator_mutex);
                         queue_enqueue (&md->coordinator_flag, flag);
                         //pthread_mutex_unlock (&md->coordinator_mutex);
                         pthread_mutex_unlock (&md->mpi_mutex);
                     }
-                    pthread_mutex_lock (&md->mpi_mutex);
                     free (buffer);
-                    pthread_mutex_unlock (&md->mpi_mutex);
 #endif
 
                     // once we are done sending the index, shutdown the thread
@@ -3020,7 +2964,6 @@ printf ("FIX THIS\n");
             if (current_writer < md->rank)
             {
                 local_writer++;
-                pthread_mutex_lock (&md->mpi_mutex);
                 struct mpi_flag_struct * f = malloc
                                            (sizeof (struct mpi_flag_struct));
                 f->target = current_writer;
@@ -3033,6 +2976,7 @@ printf ("FIX THIS\n");
                 ((uint64_t *) f->msg) [3] = md->group;
                 ((uint64_t *) f->msg) [4] = md->rank;
                 ((uint64_t *) f->msg) [5] = current_offset++;
+                pthread_mutex_lock (&md->mpi_mutex);
                 queue_enqueue (&md->mpi_flag, f);
                 pthread_mutex_unlock (&md->mpi_mutex);
                 active_writers++;
@@ -3045,7 +2989,6 @@ printf ("FIX THIS\n");
                     active_writers++;
                     local_writer++;
                     currently_writing = 1;
-                    pthread_mutex_lock (&md->mpi_mutex);
                     struct flag_struct * f = malloc
                                               (sizeof (struct flag_struct));
                     f->source = md->rank;
@@ -3057,6 +3000,7 @@ printf ("FIX THIS\n");
                     ((uint64_t *) f->msg) [3] = md->group;
                     ((uint64_t *) f->msg) [4] = md->rank;
                     ((uint64_t *) f->msg) [5] = current_offset++;
+                    pthread_mutex_lock (&md->mpi_mutex);
                     //pthread_mutex_lock (&md->writer_mutex);
                     queue_enqueue (&md->writer_flag, f);
                     //pthread_mutex_unlock (&md->writer_mutex);
@@ -3069,7 +3013,6 @@ printf ("FIX THIS\n");
                         completed_writing = 1;
                         if (md->rank != md->coord_rank)
                         {
-                            pthread_mutex_lock (&md->mpi_mutex);
                             struct mpi_flag_struct * f = malloc
                                            (sizeof (struct mpi_flag_struct));
                             f->target = md->coord_rank;
@@ -3080,12 +3023,12 @@ printf ("FIX THIS\n");
                             ((uint64_t *) f->msg) [1] = md->group;
                             ((uint64_t *) f->msg) [2] = md->group;
                             ((uint64_t *) f->msg) [3] = msg [3];
+                            pthread_mutex_lock (&md->mpi_mutex);
                             queue_enqueue (&md->mpi_flag, f);
                             pthread_mutex_unlock (&md->mpi_mutex);
                         }
                         else
                         {
-                            pthread_mutex_lock (&md->mpi_mutex);
                             struct flag_struct * f = malloc
                                                (sizeof (struct flag_struct));
                             f->source = md->rank;
@@ -3095,6 +3038,7 @@ printf ("FIX THIS\n");
                             ((uint64_t *) f->msg) [1] = md->group; //msg [1];
                             ((uint64_t *) f->msg) [2] = md->group; //msg [2];
                             ((uint64_t *) f->msg) [3] = msg [3];
+                            pthread_mutex_lock (&md->mpi_mutex);
                             //pthread_mutex_lock (&md->coordinator_mutex);
                             queue_enqueue (&md->coordinator_flag, f);
                             //pthread_mutex_unlock (&md->coordinator_mutex);
@@ -3107,12 +3051,10 @@ printf ("FIX THIS\n");
 
         if (f)
         {
-            pthread_mutex_lock (&md->mpi_mutex);
             free (f->msg);
             free (f);
             f = 0;
             msg = 0;
-            pthread_mutex_unlock (&md->mpi_mutex);
         }
     } while (shutdown_flag != SHUTDOWN_FLAG);
     free (writers);
@@ -3203,10 +3145,8 @@ static void * coordinator_main (void * param)
     pthread_mutex_unlock (&md->mpi_mutex);
     msg = (uint64_t *) f->msg;
     assert (msg [0] == START_WRITES);
-    pthread_mutex_lock (&md->mpi_mutex);
     free (f->msg);
     free (f);
-    pthread_mutex_unlock (&md->mpi_mutex);
 #if COLLECT_METRICS
     gettimeofday (&t7, NULL);
 #endif
@@ -3215,7 +3155,6 @@ static void * coordinator_main (void * param)
     {
         if (sub_coord_ranks [i] != md->rank)
         {
-            pthread_mutex_lock (&md->mpi_mutex);
             struct mpi_flag_struct * f = malloc
                                            (sizeof (struct mpi_flag_struct));
             f->target = sub_coord_ranks [i];
@@ -3223,17 +3162,18 @@ static void * coordinator_main (void * param)
             f->size = 8;
             f->msg = malloc (8);
             ((uint64_t *) f->msg) [0] = START_WRITES;
+            pthread_mutex_lock (&md->mpi_mutex);
             queue_enqueue (&md->mpi_flag, f);
             pthread_mutex_unlock (&md->mpi_mutex);
         }
         else
         {
-            pthread_mutex_lock (&md->mpi_mutex);
             f = malloc (sizeof (struct flag_struct));
             f->source = md->rank;
             f->tag = TAG_SUB_COORDINATOR;
             f->msg = malloc (8 * PARAMETER_COUNT);
             ((uint64_t *) f->msg) [0] = START_WRITES;
+            pthread_mutex_lock (&md->mpi_mutex);
             //pthread_mutex_lock (&md->sub_coordinator_mutex);
             queue_enqueue (&md->sub_coordinator_flag, f);
             //pthread_mutex_unlock (&md->sub_coordinator_mutex);
@@ -3268,11 +3208,9 @@ static void * coordinator_main (void * param)
     char index_collection_started = 0;
     uint64_t adaptive_writes_outstanding = 0;
 
-    pthread_mutex_lock (&md->mpi_mutex);
     struct adios_file_index_format_v2 * file_index =
        (struct adios_file_index_format_v2 *)
               malloc (sizeof (struct adios_file_index_format_v2) * md->groups);
-    pthread_mutex_unlock (&md->mpi_mutex);
 
     message_available = 0;
     uint64_t shutdown_flag = NO_FLAG;
@@ -3332,7 +3270,6 @@ int xxx = 0;
                                     adaptive_writes_outstanding++;
                                     if (sub_coord_ranks [i] != md->rank)
                                     {
-                                        pthread_mutex_lock (&md->mpi_mutex);
                                         struct mpi_flag_struct * f = malloc
                                              (sizeof (struct mpi_flag_struct));
                                         f->target = sub_coord_ranks [i];
@@ -3346,12 +3283,12 @@ int xxx = 0;
                                                     sub_coord_ranks [msg [1]];
                                         ((uint64_t *) f->msg) [3] =
                                                     group_offset [msg [1]];
+                                        pthread_mutex_lock (&md->mpi_mutex);
                                         queue_enqueue (&md->mpi_flag, f);
                                         pthread_mutex_unlock (&md->mpi_mutex);
                                     }
                                     else
                                     {
-                                        pthread_mutex_lock (&md->mpi_mutex);
                                         struct flag_struct * f = malloc
                                               (sizeof (struct flag_struct));
                                         f->source = md->rank;
@@ -3364,6 +3301,7 @@ int xxx = 0;
                                                     sub_coord_ranks [msg [1]];
                                         ((uint64_t *) f->msg) [3] =
                                                     group_offset [msg [1]];
+                                        pthread_mutex_lock (&md->mpi_mutex);
                                         //pthread_mutex_lock
                                         //     (&md->sub_coordinator_mutex);
                                         queue_enqueue
@@ -3405,7 +3343,6 @@ int xxx = 0;
                                 adaptive_writes_outstanding++;
                                 if (sub_coord_ranks [i] != md->rank)
                                 {
-                                    pthread_mutex_lock (&md->mpi_mutex);
                                     struct mpi_flag_struct * f = malloc
                                            (sizeof (struct mpi_flag_struct));
                                     f->target = sub_coord_ranks [i];
@@ -3419,12 +3356,12 @@ int xxx = 0;
                                                 sub_coord_ranks [msg [1]];
                                     ((uint64_t *) f->msg) [3] =
                                                 group_offset [msg [1]];
+                                    pthread_mutex_lock (&md->mpi_mutex);
                                     queue_enqueue (&md->mpi_flag, f);
                                     pthread_mutex_unlock (&md->mpi_mutex);
                                 }
                                 else
                                 {
-                                    pthread_mutex_lock (&md->mpi_mutex);
                                     struct flag_struct * f = malloc
                                                 (sizeof (struct flag_struct));
                                     f->source = md->rank;
@@ -3437,6 +3374,7 @@ int xxx = 0;
                                                 sub_coord_ranks [msg [1]];
                                     ((uint64_t *) f->msg) [3] =
                                                 group_offset [msg [1]];
+                                    pthread_mutex_lock (&md->mpi_mutex);
                                     //pthread_mutex_lock
                                     //           (&md->sub_coordinator_mutex);
                                     queue_enqueue
@@ -3483,7 +3421,6 @@ int xxx = 0;
                             adaptive_writes_outstanding++;
                             if (sub_coord_ranks [i] != md->rank)
                             {
-                                pthread_mutex_lock (&md->mpi_mutex);
                                 struct mpi_flag_struct * f = malloc
                                             (sizeof (struct mpi_flag_struct));
                                 f->target = sub_coord_ranks [i];
@@ -3497,6 +3434,7 @@ int xxx = 0;
                                             sub_coord_ranks [msg [1]];
                                 ((uint64_t *) f->msg) [3] =
                                             group_offset [msg [1]];
+                                pthread_mutex_lock (&md->mpi_mutex);
                                 queue_enqueue (&md->mpi_flag, f);
                                 pthread_mutex_unlock (&md->mpi_mutex);
 
@@ -3504,7 +3442,6 @@ int xxx = 0;
                             }
                             else
                             {
-                                pthread_mutex_lock (&md->mpi_mutex);
                                 struct flag_struct * f = malloc
                                                (sizeof (struct flag_struct));
                                 f->source = md->rank;
@@ -3517,6 +3454,7 @@ int xxx = 0;
                                             sub_coord_ranks [msg [1]];
                                 ((uint64_t *) f->msg) [3] =
                                             group_offset [msg [1]];
+                                pthread_mutex_lock (&md->mpi_mutex);
                                 //pthread_mutex_lock
                                 //              (&md->sub_coordinator_mutex);
                                 queue_enqueue (&md->sub_coordinator_flag, f);
@@ -3555,21 +3493,17 @@ int xxx = 0;
                     if (index_size < largest_index_size)
                     {
                         index_size = largest_index_size;
-                        pthread_mutex_lock (&md->mpi_mutex);
                         if (index_buf)
                             ;//free (index_buf);
                         index_buf = malloc (largest_index_size + 1);
-                        pthread_mutex_unlock (&md->mpi_mutex);
                     }
 
                     char * new_name;
                     int new_name_len;
 
-                    pthread_mutex_lock (&md->mpi_mutex);
                     new_name = malloc (  strlen (md->method->base_path)
                                        + strlen (md->fd->name) + 1 + 6
                                       );
-                    pthread_mutex_unlock (&md->mpi_mutex);
                     char split_format [10] = "%s%s.%lld";
                     sprintf (new_name, split_format, md->method->base_path
                             ,md->fd->name, source_group
@@ -3644,11 +3578,9 @@ int xxx = 0;
                         umask (old_mask);
                         perm = old_mask ^ 0666;
 
-                        pthread_mutex_lock (&md->mpi_mutex);
                         new_name = malloc (  strlen (md->method->base_path)
                                            + strlen (md->fd->name) + 1
                                           );
-                        pthread_mutex_unlock (&md->mpi_mutex);
                         char split_format [10] = "%s%s";
                         sprintf (new_name, split_format, md->method->base_path
                                 ,md->fd->name
@@ -3666,13 +3598,11 @@ int xxx = 0;
                             fprintf (stderr, "Need to do multi-write 4\n");
                         }
                         close (f);
-                        pthread_mutex_lock (&md->mpi_mutex);
                         //free (new_name);
 
                         //for (i = 0; i < md->groups; i++)
                         //    free (file_index [i].name);
                         //free (file_index);
-                        pthread_mutex_unlock (&md->mpi_mutex);
 
                         // we are done so exit the thread
                         shutdown_flag = SHUTDOWN_FLAG;
@@ -3715,7 +3645,6 @@ int xxx = 0;
                 {
                     if (i != md->group)
                     {
-                        pthread_mutex_lock (&md->mpi_mutex);
                         struct mpi_flag_struct * f = malloc
                                             (sizeof (struct mpi_flag_struct));
                         f->target = sub_coord_ranks [i];
@@ -3724,12 +3653,12 @@ int xxx = 0;
                         f->msg = malloc (8 * PARAMETER_COUNT);
                         ((uint64_t *) f->msg) [0] = OVERALL_WRITE_COMPLETE;
                         ((uint64_t *) f->msg) [1] = group_offset [i];
+                        pthread_mutex_lock (&md->mpi_mutex);
                         queue_enqueue (&md->mpi_flag, f);
                         pthread_mutex_unlock (&md->mpi_mutex);
                     }
                     else
                     {
-                        pthread_mutex_lock (&md->mpi_mutex);
                         struct flag_struct * f = malloc
                                                (sizeof (struct flag_struct));
                         f->source = md->rank;
@@ -3737,6 +3666,7 @@ int xxx = 0;
                         f->msg = malloc (8 * PARAMETER_COUNT);
                         ((uint64_t *) f->msg) [0] = OVERALL_WRITE_COMPLETE;
                         ((uint64_t *) f->msg) [1] = group_offset [i];
+                        pthread_mutex_lock (&md->mpi_mutex);
                         //pthread_mutex_lock (&md->sub_coordinator_mutex);
                         queue_enqueue (&md->sub_coordinator_flag, f);
                         //pthread_mutex_unlock (&md->sub_coordinator_mutex);
@@ -3762,12 +3692,10 @@ int xxx = 0;
 
         if (f)
         {
-            pthread_mutex_lock (&md->mpi_mutex);
             free (f->msg);
             free (f);
             f = 0;
             msg = 0;
-            pthread_mutex_unlock (&md->mpi_mutex);
         }
     } while (shutdown_flag != SHUTDOWN_FLAG);
 
@@ -3871,11 +3799,9 @@ static void * writer_main (void * param)
                     MPI_File fh;
                     char * new_name;
 
-                    pthread_mutex_lock (&md->mpi_mutex);
                     new_name = malloc (  strlen (method->base_path)
                                        + strlen (fd->name) + 1 + 6
                                       ); // 6 extra for '.XXXXX' file number
-                    pthread_mutex_unlock (&md->mpi_mutex);
                     char split_format [10] = "%s%s.%d";
                     sprintf (new_name, split_format, method->base_path
                             ,fd->name, md->group
@@ -3905,7 +3831,6 @@ static void * writer_main (void * param)
                 f->source = msg [2]; // who to tell our index to
                 if (md->rank != msg [2])
                 {
-                    pthread_mutex_lock (&md->mpi_mutex);
                     struct mpi_flag_struct * f = malloc
                                             (sizeof (struct mpi_flag_struct));
                     f->target = msg [2];
@@ -3918,12 +3843,12 @@ static void * writer_main (void * param)
                     assert (msg [3] == md->group);
                     ((uint64_t *) f->msg) [3] = new_offset;
                     ((uint64_t *) f->msg) [4] = index_buffer_offset;
+                    pthread_mutex_lock (&md->mpi_mutex);
                     queue_enqueue (&md->mpi_flag, f);
                     pthread_mutex_unlock (&md->mpi_mutex);
                 }
                 else
                 {
-                    pthread_mutex_lock (&md->mpi_mutex);
                     struct flag_struct * f = malloc
                                               (sizeof (struct flag_struct));
                     f->source = md->rank;
@@ -3935,6 +3860,7 @@ static void * writer_main (void * param)
                     assert (msg [3] == md->group);
                     ((uint64_t *) f->msg) [3] = new_offset;
                     ((uint64_t *) f->msg) [4] = index_buffer_offset;
+                    pthread_mutex_lock (&md->mpi_mutex);
                     //pthread_mutex_lock (&md->sub_coordinator_mutex);
                     queue_enqueue (&md->sub_coordinator_flag, f);
                     //pthread_mutex_unlock (&md->sub_coordinator_mutex);
@@ -3946,7 +3872,6 @@ static void * writer_main (void * param)
                 {
                     if (md->rank != msg [4])
                     {
-                        pthread_mutex_lock (&md->mpi_mutex);
                         struct mpi_flag_struct * f = malloc
                                             (sizeof (struct mpi_flag_struct));
                         f->target = msg [4];
@@ -3959,12 +3884,12 @@ static void * writer_main (void * param)
                         assert (msg [3] == md->group);
                         ((uint64_t *) f->msg) [3] = new_offset;
                         ((uint64_t *) f->msg) [4] = index_buffer_offset;
+                        pthread_mutex_lock (&md->mpi_mutex);
                         queue_enqueue (&md->mpi_flag, f);
                         pthread_mutex_unlock (&md->mpi_mutex);
                     }
                     else
                     {
-                        pthread_mutex_lock (&md->mpi_mutex);
                         struct flag_struct * f = malloc
                                                (sizeof (struct flag_struct));
                         f->source = md->rank;
@@ -3976,6 +3901,7 @@ static void * writer_main (void * param)
                         assert (msg [3] == md->group);
                         ((uint64_t *) f->msg) [3] = new_offset;
                         ((uint64_t *) f->msg) [4] = index_buffer_offset;
+                        pthread_mutex_lock (&md->mpi_mutex);
                         //pthread_mutex_lock (&md->sub_coordinator_mutex);
                         queue_enqueue (&md->sub_coordinator_flag, f);
                         //pthread_mutex_unlock (&md->sub_coordinator_mutex);
@@ -4002,13 +3928,13 @@ static void * writer_main (void * param)
                 }
                 else
                 {
-                    pthread_mutex_lock (&md->mpi_mutex);
                     struct flag_struct * f = malloc
                                              (sizeof (struct flag_struct)));
                     f->source = md->rank;
                     f->tag = TAG_SUB_COORDINATOR_INDEX_BODY;
                     f->msg = malloc (8 * PARAMETER_COUNT);
                     ((uint64_t *) f->msg) [0] = (uint64_t) index_buffer;
+                    pthread_mutex_lock (&md->mpi_mutex);
                     //pthread_mutex_lock (&md->sub_coordinator_mutex);
                     queue_enqueue (&md->sub_coordinator_flag, f);
                     //pthread_mutex_unlock (&md->sub_coordinator_mutex);
@@ -4018,9 +3944,7 @@ static void * writer_main (void * param)
 
                 if (buffer)
                 {
-                    pthread_mutex_lock (&md->mpi_mutex);
                     free (buffer);
-                    pthread_mutex_unlock (&md->mpi_mutex);
                     buffer = 0;
                     buffer_size = 0;
                     buffer_offset = 0;
