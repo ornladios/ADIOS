@@ -102,6 +102,7 @@ struct adios_adaptive_data_struct
 };
 
 #if COLLECT_METRICS
+// see adios_adaptive_finalize for what each represents
 struct timeval t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25;
 #endif
 
@@ -626,7 +627,7 @@ void adios_adaptive_init (const char * parameters
             }
 
             pthread_mutex_lock (&md->mpi_mutex);
-            //free (p);
+            free (p);
             pthread_mutex_unlock (&md->mpi_mutex);
         }
     }
@@ -2435,6 +2436,12 @@ void adios_adaptive_finalize (int mype, struct adios_method_struct * method)
         timeval_subtract (&diff, &t10, &t0);
         printf ("xx Coord total time:\t%02d.%06d\n", diff.tv_sec, diff.tv_usec);
     }
+    if (md->rank == md->sub_coord_rank)
+    {
+        timeval_subtract (&diff, &t13, &t0);
+        printf ("yy Sub coord total time:\t%6d\t%02d.%06d\n"
+               ,md->rank, diff.tv_sec, diff.tv_usec);
+    }
 
     timeval_subtract (&diff, &t13, &t12);
     printf ("ii Local index creation:\t%6d\t%02d.%06d\n"
@@ -2469,15 +2476,11 @@ void adios_adaptive_finalize (int mype, struct adios_method_struct * method)
            ,md->rank, diff.tv_sec, diff.tv_usec);
 
     timeval_subtract (&diff, &t25, &t24);
-    printf ("qq write1->write2 time:\t%6d\t%02d.%06d\n"
+    printf ("qq1 write1->write2 time:\t%6d\t%02d.%06d\n"
            ,md->rank, diff.tv_sec, diff.tv_usec);
 
     timeval_subtract (&diff, &t23, &t25);
-    printf ("qq write2->close start time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
-
-    timeval_subtract (&diff, &t13, &t0);
-    printf ("yy Sub coord total time:\t%6d\t%02d.%06d\n"
+    printf ("qq2 write2->close start time:\t%6d\t%02d.%06d\n"
            ,md->rank, diff.tv_sec, diff.tv_usec);
 
     timeval_subtract (&diff, &t18, &t0);
