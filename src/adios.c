@@ -288,6 +288,7 @@ static int common_adios_group_size (int64_t fd_p
     else
     {
         fd->buffer = malloc (fd->write_size_bytes);
+        fd->buffer_size = fd->write_size_bytes;
         fd->offset = 0;
         fd->bytes_written = 0;
         if (!fd->buffer)
@@ -929,6 +930,9 @@ static int common_adios_close (int64_t fd_p)
     {
         adios_method_buffer_free (fd->write_size_bytes);
         free (fd->buffer);
+        fd->buffer_size = 0;
+        fd->buffer = 0;
+        fd->offset = 0;
     }
 
     while (v)
