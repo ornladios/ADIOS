@@ -102,70 +102,66 @@ void print_metrics (struct adios_MPI_data_struct * md, int iteration)
     {
         timeval_subtract (&diff, &t2, &t1);
         printf ("cc\t%2d\tFile create (stripe setup):\t%02d.%06d\n"
-               ,diff.tv_sec, diff.tv_usec);
+               ,iteration, diff.tv_sec, diff.tv_usec);
 
         timeval_subtract (&diff, &t6, &t5);
         printf ("dd\t%2d\tMass file open:\t%02d.%06d\n"
-               ,diff.tv_sec, diff.tv_usec);
+               ,iteration, diff.tv_sec, diff.tv_usec);
 
         timeval_subtract (&diff, &t17, &t16);
         printf ("ee\t%2d\tBuild file offsets:\t%02d.%06d\n"
-               ,diff.tv_sec, diff.tv_usec);
+               ,iteration, diff.tv_sec, diff.tv_usec);
     }
     if (md->rank == md->size - 1)
     {
         timeval_subtract (&diff, &t10, &t9);
         printf ("ff\t%2d\tGlobal index creation:\t%02d.%06d\n"
-               ,diff.tv_sec, diff.tv_usec);
+               ,iteration, diff.tv_sec, diff.tv_usec);
 
         timeval_subtract (&diff, &t8, &t7);
         printf ("gg\t%2d\tAll writes complete (w/ local index):\t%02d.%06d\n"
-               ,diff.tv_sec, diff.tv_usec);
+               ,iteration, diff.tv_sec, diff.tv_usec);
 
         timeval_subtract (&diff, &t11, &t0);
         printf ("hh\t%2d\tTotal time:\t%02d.%06d\n"
-               ,diff.tv_sec, diff.tv_usec);
+               ,iteration, diff.tv_sec, diff.tv_usec);
     }
 
     timeval_subtract (&diff, &t13, &t12);
     printf ("ii\t%2d\tLocal index creation:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
 
     timeval_subtract (&diff, &t22, &t21);
     printf ("kk\t%2d\tshould buffer time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
 
     timeval_subtract (&diff, &t19, &t23);
     printf ("ll\t%2d\tclose startup time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
 
     timeval_subtract (&diff, &t19, &t0);
     printf ("mm\t%2d\tsetup time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
 
     timeval_subtract (&diff, &t14, &t20);
     printf ("nn\t%2d\tcleanup time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
 
     timeval_subtract (&diff, &t21, &t0);
     printf ("oo\t%2d\topen->should_buffer time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
 
     timeval_subtract (&diff, &t24, &t21);
     printf ("pp\t%2d\tshould_buffer->write1 time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
 
     timeval_subtract (&diff, &t25, &t24);
     printf ("qq1\t%2d\twrite1->write2 time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
 
     timeval_subtract (&diff, &t23, &t25);
     printf ("qq2\t%2d\twrite2->close start time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
-
-    timeval_subtract (&diff, &t18, &t0);
-    printf ("zz\t%2d\twriter total time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
 }
 #endif
 

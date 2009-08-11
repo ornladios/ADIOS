@@ -143,10 +143,6 @@ void print_metrics (struct adios_MPI_data_struct * md, int iteration)
     timeval_subtract (&diff, &t23, &t25);
     printf ("qq2\t%2d\twrite2->close start time:\t%6d\t%02d.%06d\n"
            ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
-    
-    timeval_subtract (&diff, &t18, &t0);
-    printf ("zz\t%2d\twriter total time:\t%6d\t%02d.%06d\n"
-           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
 }
 #endif
 
