@@ -495,7 +495,7 @@ int bp_parse_vars (struct BP_FILE * fh)
             strcpy(var_namelist[i], (*root)->var_path);
         }
         else {
-            var_namelist [i] = (char *) malloc ( strlen((*root)->var_name)+1);
+            var_namelist [i] = (char *) malloc ( strlen((*root)->var_name)+1+1);
                         var_namelist[i][0] = '\0';
         }
         strcat(var_namelist[i], "/");
