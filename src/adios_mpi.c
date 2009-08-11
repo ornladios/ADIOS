@@ -19,6 +19,8 @@
 
 static int adios_mpi_initialized = 0;
 
+#define COLLECT_METRICS 0
+
 struct adios_MPI_data_struct
 {
     MPI_File fh;
@@ -40,6 +42,115 @@ struct adios_MPI_data_struct
     uint64_t biggest_size;     // largest writer's data size (round up)
     uint16_t storage_targets;  // number of storage targets being used
 };
+
+#if COLLECT_METRICS
+// see adios_adaptive_finalize for what each represents
+struct timeval t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25;
+
+// Subtract the `struct timeval' values X and Y,
+// storing the result in RESULT.
+// Return 1 if the difference is negative, otherwise 0.
+static int timeval_subtract (struct timeval * result
+                            ,struct timeval * x, struct timeval * y
+                            )
+{
+  // Perform the carry for the later subtraction by updating y.
+  if (x->tv_usec < y->tv_usec)
+  {
+    int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
+    y->tv_usec -= 1000000 * nsec;
+    y->tv_sec += nsec;
+  }
+  if (x->tv_usec - y->tv_usec > 1000000)
+  {
+    int nsec = (x->tv_usec - y->tv_usec) / 1000000;
+    y->tv_usec += 1000000 * nsec;
+    y->tv_sec -= nsec;
+  }
+
+  // Compute the time remaining to wait.
+  // tv_usec is certainly positive.
+  result->tv_sec = x->tv_sec - y->tv_sec;
+  result->tv_usec = x->tv_usec - y->tv_usec;
+
+  // Return 1 if result is negative.
+  return x->tv_sec < y->tv_sec;
+}
+
+static
+void print_metrics (struct adios_MPI_data_struct * md, int iteration)
+{
+    struct timeval diff;
+    if (md->rank == 0)
+    {
+        timeval_subtract (&diff, &t2, &t1);
+        printf ("cc\t%2d\tFile create (stripe setup):\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t6, &t5);
+        printf ("dd\t%2d\tMass file open:\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t17, &t16);
+        printf ("ee\t%2d\tBuild file offsets:\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+    }
+    if (md->rank == md->size - 1)
+    {
+        timeval_subtract (&diff, &t10, &t9);
+        printf ("ff\t%2d\tGlobal index creation:\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t8, &t7);
+        printf ("gg\t%2d\tAll writes complete (w/ local index):\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+        
+        timeval_subtract (&diff, &t11, &t0);
+        printf ("hh\t%2d\tTotal time:\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+    }
+    
+    timeval_subtract (&diff, &t13, &t12);
+    printf ("ii\t%2d\tLocal index creation:\t%6d\t%02d.%06d\n"
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    
+    timeval_subtract (&diff, &t22, &t21);
+    printf ("kk\t%2d\tshould buffer time:\t%6d\t%02d.%06d\n"
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    
+    timeval_subtract (&diff, &t19, &t23);
+    printf ("ll\t%2d\tclose startup time:\t%6d\t%02d.%06d\n"
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    
+    timeval_subtract (&diff, &t19, &t0);
+    printf ("mm\t%2d\tsetup time:\t%6d\t%02d.%06d\n"
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    
+    timeval_subtract (&diff, &t14, &t20);
+    printf ("nn\t%2d\tcleanup time:\t%6d\t%02d.%06d\n"
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    
+    timeval_subtract (&diff, &t21, &t0);
+    printf ("oo\t%2d\topen->should_buffer time:\t%6d\t%02d.%06d\n"
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    
+    timeval_subtract (&diff, &t24, &t21);
+    printf ("pp\t%2d\tshould_buffer->write1 time:\t%6d\t%02d.%06d\n"
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    
+    timeval_subtract (&diff, &t25, &t24);
+    printf ("qq1\t%2d\twrite1->write2 time:\t%6d\t%02d.%06d\n"
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    
+    timeval_subtract (&diff, &t23, &t25);
+    printf ("qq2\t%2d\twrite2->close start time:\t%6d\t%02d.%06d\n"
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    
+    timeval_subtract (&diff, &t18, &t0);
+    printf ("zz\t%2d\twriter total time:\t%6d\t%02d.%06d\n"
+           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+}
+#endif
 
 static void adios_var_to_comm (const char * comm_name
                               ,enum ADIOS_FLAG host_language_fortran
@@ -174,6 +285,10 @@ int adios_mpi_open (struct adios_file_struct * fd
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
 
+#if COLLECT_METRICS
+    gettimeofday (&t0, NULL); // only used on rank == size - 1, but we don't
+                              // have the comm yet to get the rank/size
+#endif
     // we have to wait for the group_size (should_buffer) to get the comm
     // before we can do an open for any of the modes
 
@@ -394,6 +509,10 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
     int current;
     int next;
 
+#if COLLECT_METRICS
+    gettimeofday (&t21, NULL);
+#endif
+
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf (name, "%s%s", method->base_path, fd->name);
 
@@ -583,11 +702,21 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
         {
             fd->base_offset = 0;
             fd->pg_start_in_file = 0;
+#if COLLECT_METRICS                     
+            gettimeofday (&t16, NULL);
+#endif
 
             // figure out the offsets and create the file with proper striping
             // before the MPI_File_open is called
             adios_mpi_build_file_offset (md, fd, name);
             set_stripe_size (fd, md, name);
+#if COLLECT_METRICS
+            gettimeofday (&t17, NULL);
+#endif
+
+#if COLLECT_METRICS   
+            gettimeofday (&t5, NULL);
+#endif
 
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
@@ -637,6 +766,9 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
                 return adios_flag_no;
             }
+#if COLLECT_METRICS
+            gettimeofday (&t6, NULL);
+#endif
 
             break;
         }
@@ -897,6 +1029,9 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
         adios_shared_buffer_free (&md->b);
     }
 
+#if COLLECT_METRICS
+    gettimeofday (&t22, NULL);
+#endif
     return fd->shared_buffer;
 }
 
@@ -990,6 +1125,13 @@ void adios_mpi_write (struct adios_file_struct * fd
         fd->bytes_written = 0;
         adios_shared_buffer_free (&md->b);
     }
+#if COLLECT_METRICS
+    static int writes_seen = 0;
+
+    if (writes_seen == 0) gettimeofday (&t24, NULL);
+    else if (writes_seen == 1) gettimeofday (&t25, NULL);
+    writes_seen++;
+#endif
 }
 
 void adios_mpi_get_write_buffer (struct adios_file_struct * fd
@@ -1180,6 +1322,10 @@ void adios_mpi_close (struct adios_file_struct * fd
     struct adios_index_process_group_struct_v1 * new_pg_root = 0;
     struct adios_index_var_struct_v1 * new_vars_root = 0;
     struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
+#if COLLECT_METRICS
+    gettimeofday (&t23, NULL);
+    static int iteration = 0;
+#endif
 
     switch (fd->mode)
     {
@@ -1324,6 +1470,15 @@ void adios_mpi_close (struct adios_file_struct * fd
                 fd->bytes_written = 0;
             }
 
+#if COLLECT_METRICS
+            gettimeofday (&t19, NULL);
+#endif
+#if COLLECT_METRICS
+            gettimeofday (&t7, NULL);
+#endif
+#if COLLECT_METRICS
+            gettimeofday (&t12, NULL);
+#endif
             // build index appending to any existing index
             adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
                                  ,&md->old_attrs_root
@@ -1411,6 +1566,9 @@ void adios_mpi_close (struct adios_file_struct * fd
                 }
             }
 
+#if COLLECT_METRICS
+            gettimeofday (&t13, NULL);
+#endif
             if (fd->shared_buffer == adios_flag_yes)
             {
                 // if we need to write > 2 GB, need to do it in parts
@@ -1484,6 +1642,15 @@ void adios_mpi_close (struct adios_file_struct * fd
                             );       
                 }
             }
+#if COLLECT_METRICS
+            gettimeofday (&t8, NULL);
+#endif
+#if COLLECT_METRICS
+            gettimeofday (&t20, NULL);
+#endif
+#if COLLECT_METRICS
+            gettimeofday (&t14, NULL);
+#endif
 
             if (buffer)
             {
@@ -1503,6 +1670,11 @@ void adios_mpi_close (struct adios_file_struct * fd
             md->old_pg_root = 0;
             md->old_vars_root = 0;
             md->old_attrs_root = 0;
+#if COLLECT_METRICS
+            gettimeofday (&t11, NULL);
+            t15.tv_sec = t11.tv_sec;
+            t15.tv_usec = t11.tv_usec;
+#endif
 
             break;
         }
@@ -1808,6 +1980,9 @@ void adios_mpi_close (struct adios_file_struct * fd
     md->old_pg_root = 0;
     md->old_vars_root = 0;
     md->old_attrs_root = 0;
+#if COLLECT_METRICS
+    print_metrics (md, iteration++);
+#endif
 }
 
 void adios_mpi_finalize (int mype, struct adios_method_struct * method)
