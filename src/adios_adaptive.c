@@ -104,6 +104,94 @@ struct adios_adaptive_data_struct
 #if COLLECT_METRICS
 // see adios_adaptive_finalize for what each represents
 struct timeval t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25;
+
+void print_metrics (struct adios_adaptive_data_struct * md)
+{
+    struct timeval diff;
+    if (md->rank == 0)
+    {
+        timeval_subtract (&diff, &t2, &t1);
+        printf ("cc File create (stripe setup):\t%02d.%06d\n"
+               ,diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t6, &t5);
+        printf ("dd Mass file open:\t%02d.%06d\n"
+               ,diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t17, &t16);
+        printf ("ee Build file offsets:\t%02d.%06d\n"
+               ,diff.tv_sec, diff.tv_usec);
+    }
+    if (md->rank == md->size - 1)
+    {
+        timeval_subtract (&diff, &t4, &t3);
+        printf ("bb Create threads:\t%02d.%06d\n", diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t10, &t9);
+        printf ("ff Global index creation:\t%02d.%06d\n"
+               ,diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t8, &t7);
+        printf ("gg All writes complete (w/ local index):\t%02d.%06d\n"
+               ,diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t11, &t0);
+        printf ("hh Total time:\t%02d.%06d\n", diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t10, &t0);
+        printf ("xx Coord total time:\t%02d.%06d\n", diff.tv_sec, diff.tv_usec);
+    }
+    if (md->rank == md->sub_coord_rank)
+    {
+        timeval_subtract (&diff, &t13, &t0);
+        printf ("yy Sub coord total time:\t%6d\t%02d.%06d\n"
+               ,md->rank, diff.tv_sec, diff.tv_usec);
+    }
+
+    timeval_subtract (&diff, &t13, &t12);
+    printf ("ii Local index creation:\t%6d\t%02d.%06d\n"
+           ,md->rank, diff.tv_sec, diff.tv_usec);
+
+    timeval_subtract (&diff, &t15, &t14);
+    printf ("jj Thread shutdown:\t%6d\t%02d.%06d\n"
+           ,md->rank, diff.tv_sec, diff.tv_usec);
+
+    timeval_subtract (&diff, &t22, &t21);
+    printf ("kk should buffer time:\t%6d\t%02d.%06d\n"
+           ,md->rank, diff.tv_sec, diff.tv_usec);
+
+    timeval_subtract (&diff, &t19, &t23);
+    printf ("ll close startup time:\t%6d\t%02d.%06d\n"
+           ,md->rank, diff.tv_sec, diff.tv_usec);
+
+    timeval_subtract (&diff, &t19, &t0);
+    printf ("mm setup time:\t%6d\t%02d.%06d\n"
+           ,md->rank, diff.tv_sec, diff.tv_usec);
+
+    timeval_subtract (&diff, &t14, &t20);
+    printf ("nn cleanup time:\t%6d\t%02d.%06d\n"
+           ,md->rank, diff.tv_sec, diff.tv_usec);
+
+    timeval_subtract (&diff, &t21, &t0);
+    printf ("oo open->should_buffer time:\t%6d\t%02d.%06d\n"
+           ,md->rank, diff.tv_sec, diff.tv_usec);
+
+    timeval_subtract (&diff, &t24, &t21);
+    printf ("pp should_buffer->write1 time:\t%6d\t%02d.%06d\n"
+           ,md->rank, diff.tv_sec, diff.tv_usec);
+
+    timeval_subtract (&diff, &t25, &t24);
+    printf ("qq1 write1->write2 time:\t%6d\t%02d.%06d\n"
+           ,md->rank, diff.tv_sec, diff.tv_usec);
+
+    timeval_subtract (&diff, &t23, &t25);
+    printf ("qq2 write2->close start time:\t%6d\t%02d.%06d\n"
+           ,md->rank, diff.tv_sec, diff.tv_usec);
+
+    timeval_subtract (&diff, &t18, &t0);
+    printf ("zz writer total time:\t%6d\t%02d.%06d\n"
+           ,md->rank, diff.tv_sec, diff.tv_usec);
+}
 #endif
 
 struct thread_struct
@@ -2348,99 +2436,15 @@ void adios_adaptive_close (struct adios_file_struct * fd
     md->old_pg_root = 0;
     md->old_vars_root = 0;
     md->old_attrs_root = 0;
+#if COLLECT_METRICS
+    print_metrics (md);
+#endif
 }
 
 void adios_adaptive_finalize (int mype, struct adios_method_struct * method)
 {
     struct adios_adaptive_data_struct * md =
                   (struct adios_adaptive_data_struct *) method->method_data;
-
-#if COLLECT_METRICS
-    struct timeval diff;
-    if (md->rank == 0)
-    {
-        timeval_subtract (&diff, &t2, &t1);
-        printf ("cc File create (stripe setup):\t%02d.%06d\n"
-               ,diff.tv_sec, diff.tv_usec);
-
-        timeval_subtract (&diff, &t6, &t5);
-        printf ("dd Mass file open:\t%02d.%06d\n"
-               ,diff.tv_sec, diff.tv_usec);
-
-        timeval_subtract (&diff, &t17, &t16);
-        printf ("ee Build file offsets:\t%02d.%06d\n"
-               ,diff.tv_sec, diff.tv_usec);
-    }
-    if (md->rank == md->size - 1)
-    {
-        timeval_subtract (&diff, &t4, &t3);
-        printf ("bb Create threads:\t%02d.%06d\n", diff.tv_sec, diff.tv_usec);
-
-        timeval_subtract (&diff, &t10, &t9);
-        printf ("ff Global index creation:\t%02d.%06d\n"
-               ,diff.tv_sec, diff.tv_usec);
-
-        timeval_subtract (&diff, &t8, &t7);
-        printf ("gg All writes complete (w/ local index):\t%02d.%06d\n"
-               ,diff.tv_sec, diff.tv_usec);
-
-        timeval_subtract (&diff, &t11, &t0);
-        printf ("hh Total time:\t%02d.%06d\n", diff.tv_sec, diff.tv_usec);
-
-        timeval_subtract (&diff, &t10, &t0);
-        printf ("xx Coord total time:\t%02d.%06d\n", diff.tv_sec, diff.tv_usec);
-    }
-    if (md->rank == md->sub_coord_rank)
-    {
-        timeval_subtract (&diff, &t13, &t0);
-        printf ("yy Sub coord total time:\t%6d\t%02d.%06d\n"
-               ,md->rank, diff.tv_sec, diff.tv_usec);
-    }
-
-    timeval_subtract (&diff, &t13, &t12);
-    printf ("ii Local index creation:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
-
-    timeval_subtract (&diff, &t15, &t14);
-    printf ("jj Thread shutdown:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
-
-    timeval_subtract (&diff, &t22, &t21);
-    printf ("kk should buffer time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
-
-    timeval_subtract (&diff, &t19, &t23);
-    printf ("ll close startup time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
-
-    timeval_subtract (&diff, &t19, &t0);
-    printf ("mm setup time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
-
-    timeval_subtract (&diff, &t14, &t20);
-    printf ("nn cleanup time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
-
-    timeval_subtract (&diff, &t21, &t0);
-    printf ("oo open->should_buffer time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
-
-    timeval_subtract (&diff, &t24, &t21);
-    printf ("pp should_buffer->write1 time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
-
-    timeval_subtract (&diff, &t25, &t24);
-    printf ("qq1 write1->write2 time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
-
-    timeval_subtract (&diff, &t23, &t25);
-    printf ("qq2 write2->close start time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
-
-    timeval_subtract (&diff, &t18, &t0);
-    printf ("zz writer total time:\t%6d\t%02d.%06d\n"
-           ,md->rank, diff.tv_sec, diff.tv_usec);
-#endif
 
     if (adios_adaptive_initialized)
     {
