@@ -5,11 +5,16 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#define _LARGEFILE64_SOURCE
+//#define _LARGEFILE64_SOURCE
 #include <sys/types.h>
 #include <unistd.h>
 
 #include "mpidummy.h"
+
+#if defined(__APPLE__) || defined(__WIN32__) 
+#    define lseek64 lseek
+#    define open64  open
+#endif
 
 int MPI_Init(int *argc, char ***argv) { return MPI_SUCCESS; }
 
