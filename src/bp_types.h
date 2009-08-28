@@ -25,7 +25,7 @@ struct bp_minifooter {
 	uint64_t pgs_length;
 	uint16_t vars_count;
 	uint64_t vars_length;
-	uint64_t attrs_count;
+	uint16_t attrs_count;
 	uint64_t attrs_length;
 	uint64_t pgs_index_offset;
 	uint64_t vars_index_offset;
@@ -42,7 +42,8 @@ struct BP_FILE {
     struct adios_index_var_struct_v1 * vars_root;
     struct adios_index_attribute_struct_v1 * attrs_root;
     struct bp_minifooter mfooter; 
-    struct BP_GROUP_VAR * gh;
+    struct BP_GROUP_VAR * gvar_h;
+    struct BP_GROUP_ATTR * gattr_h;
     uint32_t tidx_start;
     uint32_t tidx_stop;
 };
@@ -58,10 +59,21 @@ struct BP_GROUP_VAR {
 	uint64_t ** var_offsets;
 };
 
+struct BP_GROUP_ATTR {
+        uint16_t group_count;
+        uint16_t group_id;
+        char ** namelist;
+        char ** attr_namelist;
+        uint16_t * attr_counts_per_group;
+        uint64_t ** attr_offsets;
+};
+
 struct BP_GROUP {
 	uint16_t group_id;
-	uint16_t offset;
-	uint16_t count;
+	uint16_t vars_offset;
+	uint16_t vars_count;
+        uint16_t attrs_offset;
+        uint16_t attrs_count;
 	struct BP_FILE * fh;
 	struct adios_index_var_struct_v1 * var_current;
 };

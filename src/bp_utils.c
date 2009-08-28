@@ -318,15 +318,24 @@ int bp_parse_pgs (uint64_t fh_p)
 
     free (pg_pids);
 
-    fh->gh = (struct BP_GROUP_VAR *) malloc (sizeof(struct BP_GROUP_VAR));
-    fh->gh->group_count = group_count;
-    fh->gh->pg_offsets = pg_offsets;
-    fh->gh->namelist = grp_namelist; 
-    fh->gh->time_index = time_index; 
-    fh->gh->group_id = 0;
-    fh->gh->var_offsets = 0;
-    fh->gh->var_namelist = 0;
-    fh->gh->var_counts_per_group = 0;
+    fh->gvar_h = (struct BP_GROUP_VAR *) malloc (sizeof(struct BP_GROUP_VAR));
+    fh->gvar_h->group_count = group_count;
+    fh->gvar_h->pg_offsets = pg_offsets;
+    fh->gvar_h->namelist = grp_namelist; 
+    fh->gvar_h->time_index = time_index; 
+    fh->gvar_h->group_id = 0;
+    fh->gvar_h->var_offsets = 0;
+    fh->gvar_h->var_namelist = 0;
+    fh->gvar_h->var_counts_per_group = 0;
+
+    fh->gattr_h = (struct BP_GROUP_ATTR *) malloc (sizeof(struct BP_GROUP_ATTR));
+    fh->gattr_h->group_count = group_count;
+    fh->gattr_h->namelist = grp_namelist;
+    fh->gattr_h->group_id = 0;
+    fh->gattr_h->attr_offsets = 0;
+    fh->gattr_h->attr_namelist = 0;
+    fh->gattr_h->attr_counts_per_group = 0;
+
     fh->tidx_start = tidx_start; 
     fh->tidx_stop= tidx_stop; 
     return;
@@ -337,8 +346,8 @@ int bp_parse_attrs (struct BP_FILE * fh)
     struct adios_bp_buffer_struct_v1 * b = fh->b;
     struct adios_index_attribute_struct_v1 ** attrs_root = &(fh->attrs_root);
     struct bp_minifooter * mh = &(fh->mfooter);
-
     struct adios_index_attribute_struct_v1 ** root;
+    int i;
 
     if (b->length - b->offset < VARS_MINIHEADER_SIZE) {
         fprintf (stderr, "adios_parse_attrs_index_v1 requires a buffer "
@@ -352,8 +361,258 @@ int bp_parse_attrs (struct BP_FILE * fh)
 
     root = attrs_root;
 
-    memcpy (&mh->attrs_count, b->buff + b->offset, VARS_MINIHEADER_SIZE);
-    b->offset += VARS_MINIHEADER_SIZE;
+    memcpy (&mh->attrs_count, b->buff + b->offset, 2);
+    b->offset += 2;
+
+    memcpy (&mh->attrs_length, b->buff + b->offset, 8);
+    b->offset += 8;
+
+    for (i = 0; i < mh->attrs_count; i++) {
+        if (!*root)
+        {
+            *root = (struct adios_index_attribute_struct_v1 *)
+                      malloc (sizeof (struct adios_index_attribute_struct_v1));
+            (*root)->next = 0;
+        }
+        uint8_t flag;
+        uint32_t attr_entry_length;
+        uint16_t len;
+        uint64_t characteristics_sets_count;
+        uint64_t type_size;
+
+        attr_entry_length = *(uint32_t *) (b->buff + b->offset);
+        b->offset += 4;
+
+        (*root)->id = *(uint16_t *) (b->buff + b->offset);
+        b->offset += 2;
+
+        len = *(uint16_t *) (b->buff + b->offset);
+        b->offset += 2;
+
+        (*root)->group_name = (char *) malloc (len + 1);
+        (*root)->group_name [len] = '\0';
+        strncpy ((*root)->group_name, b->buff + b->offset, len);
+        b->offset += len;
+
+        len = *(uint16_t *) (b->buff + b->offset);
+        b->offset += 2;
+        (*root)->attr_name = (char *) malloc (len + 1);
+        (*root)->attr_name [len] = '\0';
+        strncpy ((*root)->attr_name, b->buff + b->offset, len);
+        b->offset += len;
+
+        len = *(uint16_t *) (b->buff + b->offset);
+        b->offset += 2;
+        (*root)->attr_path = (char *) malloc (len + 1);
+        (*root)->attr_path [len] = '\0';
+        strncpy ((*root)->attr_path, b->buff + b->offset, len);
+        b->offset += len;
+
+        flag = *(b->buff + b->offset);
+        (*root)->type = (enum ADIOS_DATATYPES) flag;
+
+        b->offset += 1;
+        type_size = adios_get_type_size ((*root)->type, "");
+        if (type_size == -1)
+        {
+            type_size = 4;
+            (*root)->type = adios_integer;
+        }
+
+        characteristics_sets_count = *(uint64_t *) (b->buff + b->offset);
+        (*root)->characteristics_count = characteristics_sets_count;
+        (*root)->characteristics_allocated = characteristics_sets_count;
+        b->offset += 8;
+
+        // validate remaining length: offsets_count * (8 + 2 * (size of type))
+        uint64_t j;
+        (*root)->characteristics = malloc (characteristics_sets_count
+                       * sizeof (struct adios_index_characteristic_struct_v1)
+                      );
+        memset ((*root)->characteristics, 0
+               ,  characteristics_sets_count
+                * sizeof (struct adios_index_characteristic_struct_v1)
+               );
+
+        for (j = 0; j < characteristics_sets_count; j++)
+        {
+            uint8_t characteristic_set_count;
+            uint32_t characteristic_set_length;
+            uint8_t item = 0;
+
+            characteristic_set_count = (uint8_t) *(b->buff + b->offset);
+            b->offset += 1;
+
+            characteristic_set_length = *(uint32_t *) (b->buff + b->offset);
+            b->offset += 4;
+
+            while (item < characteristic_set_count)
+            {
+                uint8_t flag;
+                enum ADIOS_CHARACTERISTICS c;
+                flag = *(b->buff + b->offset);
+                c = (enum ADIOS_CHARACTERISTICS) flag;
+                b->offset += 1;
+
+                switch (c)
+                {
+                    case adios_characteristic_value:
+                    {
+                        uint16_t data_size;
+                        void * data = 0;
+
+                        if ((*root)->type == adios_string)
+                        {
+                            data_size = *(uint16_t *) (b->buff + b->offset);
+                            b->offset += 2;
+                        }
+                        else
+                        {
+                            data_size = adios_get_type_size ((*root)->type, "");
+                        }
+
+                        data = malloc (data_size + 1);
+                        ((char *) data) [data_size] = '\0';
+
+                        if (!data)
+                        {
+                            fprintf (stderr, "cannot allocate %d bytes to "
+                                             "copy scalar %s\n"
+                                    ,data_size
+                                    ,(*root)->attr_name
+                                    );
+
+                            return 1;
+                        }
+
+                        switch ((*root)->type)
+                        {
+                            case adios_byte:
+                            case adios_short:
+                            case adios_integer:
+                            case adios_long:
+                            case adios_unsigned_byte:
+                            case adios_unsigned_short:
+                            case adios_unsigned_integer:
+                            case adios_unsigned_long:
+                            case adios_real:
+                            case adios_double:
+                            case adios_long_double:
+                            case adios_complex:
+                            case adios_double_complex:
+                                memcpy (data, (b->buff + b->offset), data_size);
+                                b->offset += data_size;
+                                break;
+
+                            case adios_string:
+                                memcpy (data, (b->buff + b->offset), data_size);
+                                b->offset += data_size;
+                                break;
+
+                            default:
+                                free (data);
+                                data = 0;
+                                break;
+                        }
+
+                        (*root)->characteristics [j].value = data;
+
+                        break;
+                    }
+
+                    case adios_characteristic_offset:
+                    {
+                        uint64_t size = adios_get_type_size ((*root)->type, "");
+                        (*root)->characteristics [j].offset =
+                                            *(uint64_t *) (b->buff + b->offset);
+                        b->offset += 8;
+
+                        break;
+                    }
+
+                    case adios_characteristic_payload_offset:
+                    {
+                        uint64_t size = adios_get_type_size ((*root)->type, "");
+                        (*root)->characteristics [j].payload_offset =
+                                            *(uint64_t *) (b->buff + b->offset);
+                        b->offset += 8;
+
+                        break;
+                    }
+
+                    case adios_characteristic_var_id:
+                    {
+                        (*root)->characteristics [j].var_id =
+                                            *(uint16_t *) (b->buff + b->offset);
+                        b->offset += 2;
+
+                        break;
+                    }
+
+                }
+                item++;
+            }
+        }
+
+        root = &(*root)->next;
+    }
+
+    root = attrs_root;
+    uint16_t * attr_counts_per_group;
+    uint16_t *  attr_gids;
+    uint64_t ** attr_offsets;
+    char ** attr_namelist;
+    int grpid, j,cnt;
+
+    attr_counts_per_group = (uint16_t *)
+        malloc (sizeof(uint16_t) * fh->gattr_h->group_count);
+    attr_gids = (uint16_t *) malloc (sizeof(uint16_t ) * mh->attrs_count);
+    attr_namelist = (char **)malloc (sizeof(char*) * mh->attrs_count);
+
+    attr_offsets = (uint64_t **) malloc (sizeof(uint64_t *) * mh->attrs_count);
+    memset (attr_counts_per_group, 0, fh->gattr_h->group_count * sizeof(uint16_t));
+
+    for (i = 0; i < mh->attrs_count; i++) {
+        struct adios_index_characteristic_dims_struct_v1 * pdims;
+        for (grpid = 0; grpid < fh->gattr_h->group_count; grpid++) {
+            if (!strcmp((*root)->group_name, fh->gattr_h->namelist[grpid])) {
+                attr_counts_per_group [grpid]++;
+                attr_gids [i] = grpid;
+                break;
+            }
+        }
+        // Full name of attributes: concatenate attr_path and attr_name
+        // Always have / in the beginning of the full name
+        if (strcmp ((*root)->attr_path,"/")) {
+            attr_namelist [i] = (char *) malloc ( strlen((*root)->attr_name)
+                    +strlen((*root)->attr_path) + 1
+                    );
+            strcpy(attr_namelist[i], (*root)->attr_path);
+        }
+        else {
+            attr_namelist [i] = (char *) malloc ( strlen((*root)->attr_name)+1+1);
+                        attr_namelist[i][0] = '\0';
+        }
+        strcat(attr_namelist[i], "/");
+        strcat(attr_namelist[i], (*root)->attr_name);
+
+        attr_offsets[i] = (uint64_t *) malloc (
+                sizeof(uint64_t)*(*root)->characteristics_count);
+        for (j=0;j < (*root)->characteristics_count;j++) {
+            attr_offsets[i][j] = (*root)->characteristics [j].offset;
+        }
+
+        pdims = &(*root)->characteristics [0].dims;
+        cnt = pdims->count;
+        root = &(*root)->next;
+    }
+    //here is the asssumption that attr_gids is linearly increased
+    free(attr_gids);
+
+    fh->gattr_h->attr_namelist = attr_namelist;
+    fh->gattr_h->attr_counts_per_group = attr_counts_per_group;
+    fh->gattr_h->attr_offsets = attr_offsets;
+
 }
 int bp_parse_vars (struct BP_FILE * fh)
 {
@@ -375,7 +634,7 @@ int bp_parse_vars (struct BP_FILE * fh)
 
     root = vars_root;
 
-    memcpy (&mh->vars_count, b->buff + b->offset, VARS_MINIHEADER_SIZE);
+    memcpy (&mh->vars_count, b->buff + b->offset, 2);
     b->offset += VARS_MINIHEADER_SIZE;
     // validate remaining length    
     int i;
@@ -470,17 +729,17 @@ int bp_parse_vars (struct BP_FILE * fh)
     int grpid, j,cnt;
 
     var_counts_per_group = (uint16_t *) 
-        malloc (sizeof(uint16_t)*fh->gh->group_count);
+        malloc (sizeof(uint16_t)*fh->gvar_h->group_count);
     var_gids = (uint16_t *) malloc (sizeof(uint16_t )*mh->vars_count);
     var_namelist = (char **)malloc(sizeof(char*)*mh->vars_count);
 
     var_offsets = (uint64_t **) malloc (sizeof(uint64_t *)*mh->vars_count);
-    memset ( var_counts_per_group, 0, fh->gh->group_count*sizeof(uint16_t));
+    memset ( var_counts_per_group, 0, fh->gvar_h->group_count*sizeof(uint16_t));
 
     for (i = 0; i < mh->vars_count; i++) {
         struct adios_index_characteristic_dims_struct_v1 * pdims;
-        for (grpid=0;grpid<fh->gh->group_count;grpid++) {
-            if (!strcmp((*root)->group_name,fh->gh->namelist[grpid])) {
+        for (grpid=0;grpid<fh->gvar_h->group_count;grpid++) {
+            if (!strcmp((*root)->group_name,fh->gvar_h->namelist[grpid])) {
                 var_counts_per_group [grpid]++;
                 var_gids [i] = grpid;
                 break;
@@ -513,9 +772,9 @@ int bp_parse_vars (struct BP_FILE * fh)
     }
     //here is the asssumption that var_gids is linearly increased
      free( var_gids);
-    fh->gh->var_namelist = var_namelist;
-    fh->gh->var_counts_per_group=var_counts_per_group;
-    fh->gh->var_offsets = var_offsets;
+    fh->gvar_h->var_namelist = var_namelist;
+    fh->gvar_h->var_counts_per_group=var_counts_per_group;
+    fh->gvar_h->var_offsets = var_offsets;
     return 0;
     
     // here we need
@@ -1048,7 +1307,7 @@ void copy_data (void *dst, void *src,
         int ndim,
         uint64_t* size_in_dset, 
         uint64_t* ldims, 
-        int * readsize, 
+        const int * readsize, 
         uint64_t dst_stride, 
         uint64_t src_stride,
         uint64_t dst_offset, 

@@ -53,7 +53,7 @@ int adios_fopen ( int64_t * fh_p,
     struct BP_FILE * fh = (struct BP_FILE *)
         malloc (sizeof (struct BP_FILE));
     fh->comm =  comm;
-    fh->gh = 0;
+    fh->gvar_h = 0;
     fh->pgs_root = 0;
     fh->vars_root = 0;
     fh->attrs_root = 0;
@@ -92,7 +92,7 @@ int adios_fopen ( int64_t * fh_p,
 int adios_fclose ( int64_t fh_p)
 {
     struct BP_FILE * fh = (struct BP_FILE *) fh_p;
-    struct BP_GROUP_VAR * gh = fh->gh;
+    struct BP_GROUP_VAR * gh = fh->gvar_h;
     int i,j;
     MPI_File mpi_fh = fh->mpi_fh;
 
@@ -139,25 +139,38 @@ int adios_fclose ( int64_t fh_p)
 
 int adios_gopen ( int64_t fh_p,
                   int64_t * gh_p,
-                  char * grpname)
+                  const char * grpname)
 {
     struct BP_FILE * fh = (struct BP_FILE *) fh_p;
     struct BP_GROUP * bp_gh = (struct BP_GROUP *)
                 malloc(sizeof(struct BP_GROUP));
     bp_gh->var_current = 0; 
-    int i, grpid, offset=0;
+    int i, grpid, offset = 0;
 
-    for (grpid=0;grpid<(fh->gh->group_count);grpid++) {
-        if (!strcmp(fh->gh->namelist[grpid], grpname))
+    for (grpid=0;grpid<(fh->gvar_h->group_count);grpid++) {
+        if (!strcmp(fh->gvar_h->namelist[grpid], grpname))
             break; 
     }
 
     for(i=0;i<grpid;i++)
-        offset += fh->gh->var_counts_per_group[i];
+        offset += fh->gvar_h->var_counts_per_group[i];
 
     bp_gh->group_id = grpid;
-    bp_gh->offset = offset;
-    bp_gh->count = fh->gh->var_counts_per_group[grpid];
+    bp_gh->vars_offset = offset;
+    bp_gh->vars_count = fh->gvar_h->var_counts_per_group[grpid];
+
+    offset = 0;
+    for (grpid=0;grpid<(fh->gattr_h->group_count);grpid++) {
+        if (!strcmp(fh->gattr_h->namelist[grpid], grpname))
+            break;
+    }
+
+    for(i=0;i<grpid;i++)
+        offset += fh->gattr_h->attr_counts_per_group[i];
+
+    bp_gh->attrs_offset = offset;
+    bp_gh->attrs_count = fh->gattr_h->attr_counts_per_group[grpid];
+
     bp_gh->fh = fh;
     *gh_p = (uint64_t) bp_gh;
     return;
@@ -184,12 +197,12 @@ int adios_inq_file ( int64_t fh_p, BP_FILE_INFO *pfinfo)
         return -2;
     }
     struct BP_FILE * fh = (struct BP_FILE *) fh_p;
-    if (!fh->gh) {
+    if (!fh->gvar_h) {
         fprintf(stderr, "file handle is NULL!\n");
         return -2;
     }
     int i;
-    pfinfo->groups_count = fh->gh->group_count;
+    pfinfo->groups_count = fh->gvar_h->group_count;
     pfinfo->vars_count = fh->mfooter.vars_count;
     pfinfo->attrs_count = fh->mfooter.attrs_count;
     pfinfo->tidx_start = fh->tidx_start;
@@ -206,7 +219,7 @@ int adios_inq_file ( int64_t fh_p, BP_FILE_INFO *pfinfo)
             return -1;
         }
         else 
-            strcpy(pfinfo->group_namelist[i],fh->gh->namelist[i]);
+            strcpy(pfinfo->group_namelist[i],fh->gvar_h->namelist[i]);
     }
     return 0;
 }
@@ -220,13 +233,13 @@ int adios_inq_file_t ( int64_t fh_p, int *ngroup,
     }
     struct BP_FILE * fh = (struct BP_FILE *) fh_p;
     int i;
-    *ngroup = fh->gh->group_count;
+    *ngroup = fh->gvar_h->group_count;
     *nvar = fh->mfooter.vars_count;
     *nattr = fh->mfooter.attrs_count;
     *nt = fh->mfooter.time_steps;
     if (!gnamelist)
         return 0;
-    for (i=0;i<fh->gh->group_count;i++) {
+    for (i=0;i<fh->gvar_h->group_count;i++) {
         if (!gnamelist[i]) {
             fprintf(stderr, 
                 "buffer given is too small, only hold %d entries",
@@ -234,7 +247,7 @@ int adios_inq_file_t ( int64_t fh_p, int *ngroup,
             return -1;
         }
         else 
-            strcpy(gnamelist[i],fh->gh->namelist[i]);
+            strcpy(gnamelist[i],fh->gvar_h->namelist[i]);
     }
     return 0;
 }
@@ -249,12 +262,13 @@ int adios_inq_group (int64_t gh_p, BP_GROUP_INFO * pginfo)
     }
     int i, offset;
 
-    pginfo->vars_count = gh->count;
+    pginfo->vars_count = gh->vars_count;
+    pginfo->attrs_count = gh->attrs_count;
     
     if (!pginfo->namelist_true)
         return 0;
 
-    offset = gh->offset;
+    offset = gh->vars_offset;
     alloc_namelist (&(pginfo->var_namelist), pginfo->vars_count);
     for (i=0;i<pginfo->vars_count;i++) {
         if (!pginfo->var_namelist[i]) { 
@@ -264,7 +278,21 @@ int adios_inq_group (int64_t gh_p, BP_GROUP_INFO * pginfo)
             return -1;
         }
         else
-            strcpy(pginfo->var_namelist[i], gh->fh->gh->var_namelist[i+offset]);
+            strcpy(pginfo->var_namelist[i], gh->fh->gvar_h->var_namelist[i+offset]);
+    }
+
+    offset = gh->attrs_offset;
+    alloc_namelist (&(pginfo->attr_namelist), pginfo->attrs_count);
+    for (i=0;i<pginfo->attrs_count;i++) {
+        if (!pginfo->attr_namelist[i]) {
+            fprintf(stderr,
+                    "given buffer only can hold %d entries",
+                    i);
+            return -1;
+        }
+        else {
+            strcpy(pginfo->attr_namelist[i], gh->fh->gattr_h->attr_namelist[i+offset]);
+        }
     }
 
     return 0;
@@ -294,18 +322,186 @@ int adios_inq_group (int64_t gh_p, int *nvar, char ** vnamelist)
             return -1;
         }
         else
-            strcpy(vnamelist[i], gh->fh->gh->var_namelist[i+offset]);
+            strcpy(vnamelist[i], gh->fh->gvar_h->var_namelist[i+offset]);
     }
     return 0;    
 }
 #endif    
+
+static int find_attr( char ** attr_namelist, int offset, int count, const char * attr_name)
+{
+    int i, endp;
+    int vstartpos = 0, fstartpos = 0;
+    if (attr_name[0] == '/')
+        vstartpos = 1;
+
+    endp = offset + count;
+    for (i = offset; i < endp; i++) {
+        if (attr_namelist[i][0] == '/')
+            fstartpos = 1;
+        if (!strcmp (attr_namelist[i] + fstartpos, attr_name + vstartpos )) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int adios_inq_attr (int64_t gh_p
+                   ,const char * attrname
+                   ,int * type
+                   ,int * size)
+{
+    int    i, j, attr_id, idx;
+    int    offset, count;
+    struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+    struct BP_FILE * fh = (struct BP_FILE *) (gh->fh);
+    struct adios_index_attribute_struct_v1 * attr_root = fh->attrs_root;
+    struct adios_index_var_struct_v1 * var_root = fh->vars_root;
+
+    attr_id = find_attr (fh->gattr_h->attr_namelist, gh->attrs_offset, gh->attrs_count, attrname);
+    for (i = 0;i < gh->group_id; i++)
+        attr_id -= fh->gattr_h->attr_counts_per_group[i];
+
+    for(i = 0; i < gh->attrs_offset && attr_root; i++)
+        attr_root = attr_root->next;
+
+    if (attr_id < 0) {
+        fprintf(stderr, "Error: Attribute %s does not exist in the group %s!\n",
+                    attrname, fh->gattr_h->namelist[gh->group_id]);
+        return -1;
+    }
+
+    for (i = 0;i < attr_id && attr_root; i++)
+        attr_root = attr_root->next;
+
+    if (attr_root->characteristics[0].value)
+    {
+        * size = bp_get_type_size (attr_root->type, attr_root->characteristics[0].value);
+        * type = attr_root->type;
+    }
+    else if (attr_root->characteristics[0].var_id)
+    {
+        while (var_root)
+        {
+            if (var_root->id == attr_root->characteristics[0].var_id)
+                break;
+            var_root = var_root->next;
+        }
+
+        * size = bp_get_type_size (var_root->type, var_root->characteristics[0].value);
+        * type = attr_root->type;
+    }
+
+    if (attr_root->type == adios_string)
+        (*size) ++;
+
+    return 0;
+}
+
+int adios_inq_attrs (int64_t gh_p
+                    ,const char * path
+                    ,int * count
+                    ,char ** attr_namelist)
+
+{
+    int    i, j, attr_id, idx;
+    int    offset;
+    struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+    struct BP_FILE * fh = (struct BP_FILE *) (gh->fh);
+    struct adios_index_attribute_struct_v1 * attr_root = fh->attrs_root;
+#if 0
+    attr_id = find_attr (fh->gattr_h->attr_namelist, gh->attrs_offset, gh->attrs_count, attrname);
+    for (i = 0;i < gh->group_id; i++)
+        attr_id -= fh->gattr_h->attr_counts_per_group[i];
+
+    for(i = 0; i < gh->attrs_offset && attr_root; i++)
+        attr_root = attr_root->next;
+
+    if (attr_id < 0) {
+        fprintf(stderr, "Error: Attribute %s does not exist in the group %s!\n",
+                    attrname, fh->gattr_h->namelist[gh->group_id]);
+        return -1;
+    }
+
+    for (i = 0;i < attr_id && attr_root; i++)
+        attr_root = attr_root->next;
+
+
+    size = bp_get_type_size (attr_root->type, attr_root->characteristics[0].value);
+    type = attr_root->type;
+
+    if (attr_root->type == adios_string)
+        size ++;
+#endif
+
+    return 0;
+}
+
+int64_t adios_get_attr (int64_t gh_p
+                       ,const char * attrname
+                       ,void * data)
+{
+    int    i, j, attr_id, idx;
+    int    offset, count;
+    struct BP_GROUP * gh = (struct BP_GROUP *) gh_p;
+    struct BP_FILE * fh = (struct BP_FILE *) (gh->fh);
+    struct adios_index_attribute_struct_v1 * attr_root = fh->attrs_root;
+    struct adios_index_var_struct_v1 * var_root = fh->vars_root;
+    uint8_t  ndim;  
+    uint64_t datasize, nloop, total_size=1;
+
+    attr_id = find_attr (fh->gattr_h->attr_namelist, gh->attrs_offset, gh->attrs_count, attrname);
+    for (i = 0;i < gh->group_id; i++)
+        attr_id -= fh->gattr_h->attr_counts_per_group[i];
+
+    for(i = 0; i < gh->attrs_offset && attr_root; i++)
+        attr_root = attr_root->next;
+
+    if (attr_id < 0) {
+        fprintf(stderr, "Error: Attribute %s does not exist in the group %s!\n",
+                    attrname, fh->gattr_h->namelist[gh->group_id]);
+        return -1;
+    }
+
+    for (i = 0;i < attr_id && attr_root; i++) 
+        attr_root = attr_root->next;
+    
+    int size_of_type = bp_get_type_size (attr_root->type, attr_root->characteristics[0].value);
+
+    if (attr_root->type == adios_string)
+        size_of_type ++;
+
+    if (attr_root->characteristics[0].value)
+    {
+        memcpy(data, attr_root->characteristics[0].value, size_of_type);
+    }
+    else if (attr_root->characteristics[0].var_id)
+    {
+        while (var_root)
+        {
+            if (var_root->id == attr_root->characteristics[0].var_id)
+                break;
+            var_root = var_root->next;
+        }
+ 
+        size_of_type = bp_get_type_size (var_root->type, var_root->characteristics[0].value);
+
+        if (var_root->type == adios_string)
+            size_of_type ++;
+
+         memcpy(data, var_root->characteristics[0].value, size_of_type);
+    }
+
+    return size_of_type;
+}
+
 
 /** Find a string (variable by full name) in a list of strings (variable name list)
   * from an 'offset' within the first 'count' elements.
   * Return the index of the variable in [offset .. offset+count-1] if found,
   *  or -1 if not found.
   */
-static int find_var( char ** varnamelist, int offset, int count, char * varname) 
+static int find_var( char ** varnamelist, int offset, int count, const char * varname) 
 {
     // Find the variable: full path is stored with a starting / 
     // Like in HDF5, we need to match names given with or without the starting /
@@ -326,7 +522,7 @@ static int find_var( char ** varnamelist, int offset, int count, char * varname)
     return -1;
 }
 
-int adios_inq_var (int64_t gh_p, char * varname,
+int adios_inq_var (int64_t gh_p, const char * varname,
          int * type,
          int * ndim,
          int * is_timebased,
@@ -354,17 +550,17 @@ int adios_inq_var (int64_t gh_p, char * varname,
     }
 
     // find variable in var list
-    var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
+    var_id = find_var(fh->gvar_h->var_namelist, gh->vars_offset, gh->vars_count, varname);
 
     for (i=0;i<gh->group_id;i++)
-        var_id -= fh->gh->var_counts_per_group[i];
-    for(i=0;i<gh->offset;i++)
+        var_id -= fh->gvar_h->var_counts_per_group[i];
+    for(i=0;i<gh->vars_offset;i++)
         var_root = var_root->next;
     if (var_id < 0) {
         fprintf(stderr, 
             "Error: Variable %s does not exist in the group %s!\n",
-                    varname, fh->gh->namelist[gh->group_id]);
-        return -4;
+                    varname, fh->gvar_h->namelist[gh->group_id]);
+        return -1;
     }
     for (i=0;i<var_id;i++) {
         var_root = var_root->next;
@@ -377,7 +573,7 @@ int adios_inq_var (int64_t gh_p, char * varname,
             "Error: Variable %s does not exist in the file!\n",
                     varname);
         *ndim = -1;
-        return -4;
+        return -1;
     }
         
     *ndim = var_root->characteristics [0].dims.count;
@@ -481,7 +677,7 @@ int adios_inq_var (int64_t gh_p, char * varname,
         adios_parse_var_data_header_v1 (fh->b, &var_header);                                \
 
 int64_t adios_get_scalar (int64_t gh_p,
-                          char * varname, 
+                          const char * varname, 
                           void * var,
                           int timestep
                           )
@@ -499,16 +695,16 @@ int64_t adios_get_scalar (int64_t gh_p,
     uint64_t tmpcount = 0;
     MPI_Status status;
 
-    var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
+    var_id = find_var(fh->gvar_h->var_namelist, gh->vars_offset, gh->vars_count, varname);
     for (i=0;i<gh->group_id;i++)
-        var_id -= fh->gh->var_counts_per_group[i];
+        var_id -= fh->gvar_h->var_counts_per_group[i];
 
-    for(i=0;i<gh->offset && var_root;i++)
+    for(i=0;i<gh->vars_offset && var_root;i++)
         var_root = var_root->next;
 
     if (var_id<0) {
         fprintf(stderr, "Error: Variable %s does not exist in the group %s!\n",
-                    varname, fh->gh->namelist[gh->group_id]);
+                    varname, fh->gvar_h->namelist[gh->group_id]);
         return -4;
     }
 
@@ -533,15 +729,15 @@ int64_t adios_get_scalar (int64_t gh_p,
         return -5; 
     }
     // get the starting offset for the given time step
-    offset = fh->gh->time_index[0][gh->group_id][timestep - fh->tidx_start];
-    count = fh->gh->time_index[1][gh->group_id][timestep - fh->tidx_start];
+    offset = fh->gvar_h->time_index[0][gh->group_id][timestep - fh->tidx_start];
+    count = fh->gvar_h->time_index[1][gh->group_id][timestep - fh->tidx_start];
 
     for (i = 0;i < var_root->characteristics_count; i++) {
         if (   (  var_root->characteristics[i].offset 
-                > fh->gh->pg_offsets[offset])
+                > fh->gvar_h->pg_offsets[offset])
             && (  (i == var_root->characteristics_count-1) 
                 ||(  var_root->characteristics[i].offset 
-                   < fh->gh->pg_offsets[offset + 1]))
+                   < fh->gvar_h->pg_offsets[offset + 1]))
            ) {
             start_idx = i;
             break;
@@ -573,10 +769,10 @@ int64_t adios_get_scalar (int64_t gh_p,
 }
 
 int64_t adios_get_var (int64_t gh_p,
-                       char * varname, 
+                       const char * varname, 
                        void * var,
-                       int  * start,
-                       int  * readsize,
+                       const int  * start,
+                       const int  * readsize,
                        int timestep
                       )
 {
@@ -601,16 +797,16 @@ int64_t adios_get_var (int64_t gh_p,
         return -1;
     }
     
-    var_id = find_var(fh->gh->var_namelist, gh->offset, gh->count, varname);
+    var_id = find_var(fh->gvar_h->var_namelist, gh->vars_offset, gh->vars_count, varname);
     for (i=0;i<gh->group_id;i++)
-        var_id -= fh->gh->var_counts_per_group[i];
+        var_id -= fh->gvar_h->var_counts_per_group[i];
 
-    for(i=0;i<gh->offset && var_root;i++)
+    for(i=0;i<gh->vars_offset && var_root;i++)
         var_root = var_root->next;
 
     if (var_id<0) {
         fprintf(stderr, "Error: Variable %s does not exist in the group %s!\n",
-                    varname, fh->gh->namelist[gh->group_id]);
+                    varname, fh->gvar_h->namelist[gh->group_id]);
         return -4;
     }
 
@@ -635,14 +831,14 @@ int64_t adios_get_var (int64_t gh_p,
         return -5; 
     }
     // get the starting offset for the given time step
-    offset = fh->gh->time_index[0][gh->group_id][timestep - fh->tidx_start];
-    count = fh->gh->time_index[1][gh->group_id][timestep - fh->tidx_start];
+    offset = fh->gvar_h->time_index[0][gh->group_id][timestep - fh->tidx_start];
+    count = fh->gvar_h->time_index[1][gh->group_id][timestep - fh->tidx_start];
     for (i=0;i<var_root->characteristics_count;i++) {
         if (   (  var_root->characteristics[i].offset 
-                > fh->gh->pg_offsets[offset])
+                > fh->gvar_h->pg_offsets[offset])
             && (  (i == var_root->characteristics_count-1) 
                 ||(  var_root->characteristics[i].offset 
-                   < fh->gh->pg_offsets[offset + 1]))
+                   < fh->gvar_h->pg_offsets[offset + 1]))
            ) {
             start_idx = i;
             break;
@@ -1173,7 +1369,12 @@ void adios_get_var_ (int64_t * gh,
         int64_t * err,
         int varname_len)
 {
-    *err=adios_get_var (*gh,varname, var,start,readsize,*timestep);
+    /* FIXME: Magically, *gh becomes 0 after the C function call, which causes abort in a next call.
+       Temporarily we save its value and reassign it but clearly it must be found out why this is
+       happening. */
+    int64_t tmp=*gh;
+    *err = adios_get_var (*gh, varname, var, start, readsize, *timestep);
+    *gh=tmp;
 }
 
 void adios_inq_var_ (int64_t * gh_p, char * varname,
@@ -1186,10 +1387,30 @@ void adios_inq_var_ (int64_t * gh_p, char * varname,
 {
     int vtype, vndim, vtimed;
     int vdims[10], i;
-    *err = adios_inq_var (*gh_p, varname, &vtype, &vndim, &vtimed, vdims);
+    *err = adios_inq_var (* gh_p, varname, &vtype, &vndim, &vtimed, vdims);
     *type = vtype;
     *ndim = vndim;
     *is_timebased = vtimed;
     for (i=0;i<vndim;i++)
         dims[i] = vdims[i];
 }
+
+void adios_get_attr_ (int64_t * gh_p
+                     ,char * attrname
+                     ,void * attr
+                     ,int * err
+                     ,int attrname_len)
+{
+    * err = adios_get_attr (* gh_p, attrname, attr);
+}
+
+void adios_inq_attr_ (int64_t * gh_p
+                     ,char * attrname
+                     ,int * type
+                     ,int * size
+                     ,int * err
+                     ,int attrname_len)
+{
+    * err = adios_inq_attr (* gh_p, attrname, type, size);
+}
+
