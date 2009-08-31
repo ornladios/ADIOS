@@ -5,6 +5,8 @@
 #include "adios_read.h"
 #define BYTE_ALIGN 8
 
+static int called_from_fortran = 0; // set to 1 when called from Fortran API
+
 static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
 {
         
@@ -522,6 +524,19 @@ static int find_var( char ** varnamelist, int offset, int count, const char * va
     return -1;
 }
 
+/* Reverse the order in an array in place.
+   use swapping from Fortran/column-major order to ADIOS-read-api/C/row-major order and back
+*/
+static void swap_order(int n, int *array)
+{
+    int i, tmp;
+    for (i=0; i<n/2; i++) {
+        tmp = array[i];
+        array[i] = array[n-1-i];
+        array[n-1-i] = tmp;
+    }
+}
+
 int adios_inq_var (int64_t gh_p, const char * varname,
          int * type,
          int * ndim,
@@ -538,6 +553,8 @@ int adios_inq_var (int64_t gh_p, const char * varname,
         fprintf(stderr, "file handle is NULL!\n");
         return -2;
     }
+
+    int file_is_fortran = (fh->pgs_root->adios_host_language_fortran == adios_flag_yes);
     
     struct adios_index_var_struct_v1 * var_root;
     int i,k, var_id;
@@ -614,10 +631,12 @@ int adios_inq_var (int64_t gh_p, const char * varname,
     }         
     else {
         if (ldims[0]==1 && ldims[*ndim - 1]!=1) {
+            // first dimension is the time
             time_flag = 0;
             *is_timebased = 1;
         }
         else if (ldims[0]!=1 && ldims[*ndim - 1]==1) {
+            // last dimension is the time
             time_flag = *ndim - 1;
             *is_timebased = 1;
         }
@@ -637,6 +656,15 @@ int adios_inq_var (int64_t gh_p, const char * varname,
             
     if ((*is_timebased))
         *ndim = *ndim - 1;
+
+    if (file_is_fortran != called_from_fortran) {
+        /* If this is a Fortran written file and this is called from C code,  
+           or this is a C written file and this is called from Fortran code ==>
+           We need to reverse the order of the dimensions */
+        swap_order(*ndim, dims);
+        printf("File was written from %s and read now from %s, so we swap order of dimensions\n",
+                (file_is_fortran ? "Fortran" : "C"), (called_from_fortran ? "Fortran" : "C"));
+    }
     
     return 0;
 }
@@ -784,7 +812,7 @@ int64_t adios_get_var (int64_t gh_p,
     struct adios_index_var_struct_v1 * var_root = fh->vars_root;
     struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;
-    enum ADIOS_FLAG adios_host_language_fortran = fh->pgs_root->adios_host_language_fortran;
+    int file_is_fortran = (fh->pgs_root->adios_host_language_fortran == adios_flag_yes);
     uint8_t  ndim;  
     uint64_t tmpreadsize;
     uint64_t size, * ldims, * offsets, * gdims;
@@ -905,8 +933,10 @@ int64_t adios_get_var (int64_t gh_p,
                                 ,timestep
                                 );
 
+    /* We do not need this anymore, because we flip the dimensions in adios_inq_var() */
     // if bp is written by fortran, flip read size and offset
-    if (adios_host_language_fortran)
+    /*
+    if (file_is_fortran)
     {
         if (readsize)
             tmpreadsize = (uint64_t) readsize[ndim - 1];
@@ -918,7 +948,7 @@ int64_t adios_get_var (int64_t gh_p,
         }
     }
     else
-    {
+    {*/
         if (readsize)
             tmpreadsize = (uint64_t) readsize[0];
 
@@ -927,7 +957,7 @@ int64_t adios_get_var (int64_t gh_p,
             readsize_tmp[i] = readsize[i];
             start_tmp[i] = start[i];
         }
-    }
+    /*}*/
 
     for (i = 0; i < ndim; i++)
         total_size *= readsize_tmp[i];
@@ -951,7 +981,7 @@ int64_t adios_get_var (int64_t gh_p,
         uint64_t payload_size = size_of_type;
 
         for (j = 0; j< ndim; j++) {
-            if (adios_host_language_fortran)
+            if (file_is_fortran != called_from_fortran)
             {
                 offsets[j]=var_root->characteristics[start_idx + idx].dims.dims[(ndim -1 - j) * 3 + 2];
                 if (!time_flag)
@@ -984,9 +1014,9 @@ int64_t adios_get_var (int64_t gh_p,
               || (start_tmp[j] > gdims[j]) 
               || (start_tmp[j] + readsize_tmp[j] > gdims[j])){
                 fprintf(stderr, "Error: %s out of bound ("
-                    "the data to read is [%llu,%llu]"
+                    "the data in dimension %d to read is %llu elements from index %llu"
                     " but the actual data is [0,%llu])\n",
-                    varname, start_tmp[j], readsize_tmp[j], gdims[j] - 1);
+                    varname, j+1, readsize_tmp[j], start_tmp[j], gdims[j] - 1);
                 return -3;
             }
 
@@ -1296,6 +1326,7 @@ void adios_fopen_(int64_t * fh_p,
 {
     int64_t fh;
     MPI_Comm comm = MPI_Comm_f2c (*((int *) fcomm));
+    called_from_fortran = 1;
     *err = adios_fopen (&fh,fname,comm);
     * fh_p = fh;
 }
@@ -1303,6 +1334,7 @@ void adios_fopen_(int64_t * fh_p,
 void adios_fclose_( int64_t * fh, int * err)
 {
     *err = adios_fclose (*fh);
+    called_from_fortran = 0;
 }
 void adios_inq_file_ ( int64_t * fh_p,
                        int * groups_count,
