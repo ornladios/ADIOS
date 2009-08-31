@@ -130,7 +130,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function checkArgCounts(varargin)
 
-if (nargin < 3)
+if (nargin < 2)
     error('MATLAB:adiosread:notEnoughInputs', ...
           'ADIOSREAD requires at least two input arguments.')
 end
