@@ -23877,11 +23877,11 @@ fi
 
 CXX="$MPICXX"
 FC="$MPIFC"
-CPPFLAGS+="-D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -D_GNU_SOURCE"
+CPPFLAGS+="-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE"
 
 LIBS="$MPILIBS $LIBS"
 
-                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile tests/genarray/Makefile tests/bp_read/Makefile utils/Makefile utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile examples-code/Makefile examples-code/global-array/Makefile examples-code/global-array-time/Makefile examples-code/time-index/Makefile"
+                                                                                                                                                                                                        ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile tests/genarray/Makefile tests/bp_read/Makefile utils/Makefile utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile utils/bpls/Makefile examples-code/Makefile examples-code/global-array/Makefile examples-code/global-array-time/Makefile examples-code/time-index/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -24595,6 +24595,7 @@ do
   "utils/bp2ncd/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/bp2ncd/Makefile" ;;
   "utils/bp2ascii/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/bp2ascii/Makefile" ;;
   "utils/bpsplit/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/bpsplit/Makefile" ;;
+  "utils/bpls/Makefile" ) CONFIG_FILES="$CONFIG_FILES utils/bpls/Makefile" ;;
   "examples-code/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples-code/Makefile" ;;
   "examples-code/global-array/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples-code/global-array/Makefile" ;;
   "examples-code/global-array-time/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples-code/global-array-time/Makefile" ;;

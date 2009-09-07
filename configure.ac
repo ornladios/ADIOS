@@ -134,6 +134,7 @@ AC_CONFIG_FILES([Makefile
                  utils/bp2ncd/Makefile
                  utils/bp2ascii/Makefile
                  utils/bpsplit/Makefile
+                 utils/bpls/Makefile
                  examples-code/Makefile
                  examples-code/global-array/Makefile
                  examples-code/global-array-time/Makefile
