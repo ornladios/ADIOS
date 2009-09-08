@@ -662,8 +662,8 @@ int adios_inq_var (int64_t gh_p, const char * varname,
            or this is a C written file and this is called from Fortran code ==>
            We need to reverse the order of the dimensions */
         swap_order(*ndim, dims);
-        printf("File was written from %s and read now from %s, so we swap order of dimensions\n",
-                (file_is_fortran ? "Fortran" : "C"), (called_from_fortran ? "Fortran" : "C"));
+        /*printf("File was written from %s and read now from %s, so we swap order of dimensions\n",
+                (file_is_fortran ? "Fortran" : "C"), (called_from_fortran ? "Fortran" : "C"));*/
     }
     
     return 0;
