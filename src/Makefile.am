@@ -78,5 +78,6 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
 libadiosread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI
 include_HEADERS += adios_internals.h \
                    adios_transport_hooks.h
-include_HEADERS += adios_read.h
+include_HEADERS += adios_read.h \
+                   mpidummy.h
 CC=$(MPICC)

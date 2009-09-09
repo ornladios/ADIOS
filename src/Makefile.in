@@ -296,7 +296,7 @@ INCLUDES = -I$(top_srcdir)
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES = AUTO
 include_HEADERS = adios.h adios_types.h adios_internals.h \
-	adios_transport_hooks.h adios_read.h
+	adios_transport_hooks.h adios_read.h mpidummy.h
 #libadios_int_a_LIBADD = $(MXML_LIBS)
 #libadios_int_nompi_a_LIBADD = $(MXML_LIBS)
 #		      adios_internals.c \
