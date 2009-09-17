@@ -21,7 +21,8 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.$TARGET --enable-shared --disable-static\
     --enable-dependency-tracking \
     --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
-    --with-hdf5=$HDF5_DIR
+    --with-hdf5=$HDF5_DIR 
+    #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET
     #--with-phdf5=/apps/HDF5/1.6.5/ewok_par/pgi625v2 \
     #--with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
 

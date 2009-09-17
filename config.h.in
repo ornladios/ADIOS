@@ -6,6 +6,12 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* Define if you have DMALLOC. */
+#undef HAVE_DMALLOC
+
+/* Define to 1 if you have the <dmalloc.h> header file. */
+#undef HAVE_DMALLOC_H
+
 /* Define if you have GENGETOPT. */
 #undef HAVE_GENGETOPT
 

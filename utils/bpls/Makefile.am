@@ -6,7 +6,13 @@ AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = bpls
 
 bpls_SOURCES = bpls.c 
-bpls_CFLAGS = -DNOMPI -g
+bpls_CFLAGS = -DNOMPI -g 
 bpls_LDFLAGS = $(MXML_LDFLAGS)
-bpls_LDADD = $(top_builddir)/src/libadiosread_nompi.a
+bpls_LDADD = $(top_builddir)/src/libadiosread_nompi.a 
 bpls_LDADD += $(MXML_LIBS)
+
+if HAVE_DMALLOC
+bpls_CFLAGS += -DDMALLOC -I/ccs/proj/e2e/pnorbert/dmalloc.gnu/include
+bpls_LDFLAGS += -L/ccs/proj/e2e/pnorbert/dmalloc.gnu/lib
+bpls_LDADD += -ldmalloc
+endif

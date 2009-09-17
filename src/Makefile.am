@@ -65,7 +65,7 @@ libadiosread_a_SOURCES = adios_bp_v1.c \
 		      adios_endianness.c \
 		      bp_utils.c \
 		      adios_read.c
-#		      adios_internals.c \
+#		      adios_internals.c 
 libadiosread_a_CPPFLAGS = $(MXML_CPPFLAGS)
 #libadiosread_a_LIBADD = 
 
@@ -75,9 +75,14 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
 		      adios_endianness.c \
 		      bp_utils.c \
 		      adios_read.c
-libadiosread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI
+libadiosread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI 
 include_HEADERS += adios_internals.h \
                    adios_transport_hooks.h
 include_HEADERS += adios_read.h \
                    mpidummy.h
 CC=$(MPICC)
+
+if HAVE_DMALLOC
+libadiosread_nompi_a_CPPFLAGS += -DDMALLOC -I/ccs/proj/e2e/pnorbert/dmalloc.gnu/include
+libadiosread_a_CPPFLAGS += -DDMALLOC -I/ccs/proj/e2e/pnorbert/dmalloc.gnu/include
+endif

@@ -27,6 +27,7 @@ AC_PROG_GENGETOPT
 AC_HDF5
 AC_PHDF5
 AC_NETCDF
+AC_DMALLOC
 
 AC_LANG(C)
 ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C])])

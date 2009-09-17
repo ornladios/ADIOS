@@ -7275,6 +7275,7 @@ AC_SUBST([am__tar])
 AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
+m4_include([config/ac_dmalloc.m4])
 m4_include([config/ac_gengetopt.m4])
 m4_include([config/ac_hdf5.m4])
 m4_include([config/ac_mxml.m4])

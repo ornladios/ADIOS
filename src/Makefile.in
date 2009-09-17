@@ -41,11 +41,14 @@ host_triplet = @host@
 @HAVE_PHDF5_TRUE@am__append_1 = libadios_phdf5.a
 @HAVE_PHDF5_TRUE@am__append_2 = -DPHDF5 -DH5_USE_16_API 
 @HAVE_PHDF5_FALSE@am__append_3 = adios_phdf5.c 
+@HAVE_DMALLOC_TRUE@am__append_4 = -DDMALLOC -I/ccs/proj/e2e/pnorbert/dmalloc.gnu/include
+@HAVE_DMALLOC_TRUE@am__append_5 = -DDMALLOC -I/ccs/proj/e2e/pnorbert/dmalloc.gnu/include
 subdir = src
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_gengetopt.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_dmalloc.m4 \
+	$(top_srcdir)/config/ac_gengetopt.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
@@ -120,9 +123,10 @@ am__libadios_phdf5_a_SOURCES_DIST = adios_phdf5.c
 libadios_phdf5_a_OBJECTS = $(am_libadios_phdf5_a_OBJECTS)
 libadiosread_a_AR = $(AR) $(ARFLAGS)
 libadiosread_a_LIBADD =
-am_libadiosread_a_OBJECTS = adios_bp_v1.$(OBJEXT) \
-	adios_endianness.$(OBJEXT) bp_utils.$(OBJEXT) \
-	adios_read.$(OBJEXT)
+am_libadiosread_a_OBJECTS = libadiosread_a-adios_bp_v1.$(OBJEXT) \
+	libadiosread_a-adios_endianness.$(OBJEXT) \
+	libadiosread_a-bp_utils.$(OBJEXT) \
+	libadiosread_a-adios_read.$(OBJEXT)
 libadiosread_a_OBJECTS = $(am_libadiosread_a_OBJECTS)
 libadiosread_nompi_a_AR = $(AR) $(ARFLAGS)
 libadiosread_nompi_a_LIBADD =
@@ -180,6 +184,9 @@ DATATAP_FALSE = @DATATAP_FALSE@
 DATATAP_TRUE = @DATATAP_TRUE@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DMALLOC_CPPFLAGS = @DMALLOC_CPPFLAGS@
+DMALLOC_LDFLAGS = @DMALLOC_LDFLAGS@
+DMALLOC_LIBS = @DMALLOC_LIBS@
 ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -191,6 +198,8 @@ FC = @FC@
 FCFLAGS = @FCFLAGS@
 FFLAGS = @FFLAGS@
 GENGETOPT = @GENGETOPT@
+HAVE_DMALLOC_FALSE = @HAVE_DMALLOC_FALSE@
+HAVE_DMALLOC_TRUE = @HAVE_DMALLOC_TRUE@
 HAVE_GENGETOPT_FALSE = @HAVE_GENGETOPT_FALSE@
 HAVE_GENGETOPT_TRUE = @HAVE_GENGETOPT_TRUE@
 HAVE_HDF5_FALSE = @HAVE_HDF5_FALSE@
@@ -299,8 +308,6 @@ include_HEADERS = adios.h adios_types.h adios_internals.h \
 	adios_transport_hooks.h adios_read.h mpidummy.h
 #libadios_int_a_LIBADD = $(MXML_LIBS)
 #libadios_int_nompi_a_LIBADD = $(MXML_LIBS)
-#		      adios_internals.c \
-#libadiosread_a_CPPFLAGS = $(MXML_CPPFLAGS)
 #libadiosread_a_LIBADD = 
 lib_LIBRARIES = libadios.a $(am__append_1) libadios_int.a \
 	libadios_int_nompi.a libadiosread.a libadiosread_nompi.a
@@ -335,13 +342,16 @@ libadiosread_a_SOURCES = adios_bp_v1.c \
 		      bp_utils.c \
 		      adios_read.c
 
+#		      adios_internals.c 
+libadiosread_a_CPPFLAGS = $(MXML_CPPFLAGS) $(am__append_5)
 libadiosread_nompi_a_SOURCES = mpidummy.c\
                       adios_bp_v1.c \
 		      adios_endianness.c \
 		      bp_utils.c \
 		      adios_read.c
 
-libadiosread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI
+libadiosread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI \
+	$(am__append_4)
 all: all-am
 
 .SUFFIXES:
@@ -617,6 +627,30 @@ libadios_phdf5_a-adios_phdf5.o: adios_phdf5.c
 
 libadios_phdf5_a-adios_phdf5.obj: adios_phdf5.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_phdf5_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_phdf5_a-adios_phdf5.obj `if test -f 'adios_phdf5.c'; then $(CYGPATH_W) 'adios_phdf5.c'; else $(CYGPATH_W) '$(srcdir)/adios_phdf5.c'; fi`
+
+libadiosread_a-adios_bp_v1.o: adios_bp_v1.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_bp_v1.o `test -f 'adios_bp_v1.c' || echo '$(srcdir)/'`adios_bp_v1.c
+
+libadiosread_a-adios_bp_v1.obj: adios_bp_v1.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_bp_v1.obj `if test -f 'adios_bp_v1.c'; then $(CYGPATH_W) 'adios_bp_v1.c'; else $(CYGPATH_W) '$(srcdir)/adios_bp_v1.c'; fi`
+
+libadiosread_a-adios_endianness.o: adios_endianness.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_endianness.o `test -f 'adios_endianness.c' || echo '$(srcdir)/'`adios_endianness.c
+
+libadiosread_a-adios_endianness.obj: adios_endianness.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_endianness.obj `if test -f 'adios_endianness.c'; then $(CYGPATH_W) 'adios_endianness.c'; else $(CYGPATH_W) '$(srcdir)/adios_endianness.c'; fi`
+
+libadiosread_a-bp_utils.o: bp_utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosread_a-bp_utils.o `test -f 'bp_utils.c' || echo '$(srcdir)/'`bp_utils.c
+
+libadiosread_a-bp_utils.obj: bp_utils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosread_a-bp_utils.obj `if test -f 'bp_utils.c'; then $(CYGPATH_W) 'bp_utils.c'; else $(CYGPATH_W) '$(srcdir)/bp_utils.c'; fi`
+
+libadiosread_a-adios_read.o: adios_read.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_read.o `test -f 'adios_read.c' || echo '$(srcdir)/'`adios_read.c
+
+libadiosread_a-adios_read.obj: adios_read.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_read.obj `if test -f 'adios_read.c'; then $(CYGPATH_W) 'adios_read.c'; else $(CYGPATH_W) '$(srcdir)/adios_read.c'; fi`
 
 libadiosread_nompi_a-mpidummy.o: mpidummy.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-mpidummy.o `test -f 'mpidummy.c' || echo '$(srcdir)/'`mpidummy.c

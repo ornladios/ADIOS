@@ -37,10 +37,14 @@ POST_UNINSTALL = :
 build_triplet = x86_64-redhat-linux-gnu
 host_triplet = x86_64-redhat-linux-gnu
 bin_PROGRAMS = bpls$(EXEEXT)
+#am__append_1 = -DDMALLOC -I/ccs/proj/e2e/pnorbert/dmalloc.gnu/include
+#am__append_2 = -L/ccs/proj/e2e/pnorbert/dmalloc.gnu/lib
+#am__append_3 = -ldmalloc
 subdir = utils/bpls
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_gengetopt.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_dmalloc.m4 \
+	$(top_srcdir)/config/ac_gengetopt.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
@@ -59,7 +63,7 @@ am_bpls_OBJECTS = bpls-bpls.$(OBJEXT)
 bpls_OBJECTS = $(am_bpls_OBJECTS)
 am__DEPENDENCIES_1 =
 bpls_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -100,6 +104,9 @@ DATATAP_FALSE =
 DATATAP_TRUE = #
 DEFS = -DHAVE_CONFIG_H
 DEPDIR = .deps
+DMALLOC_CPPFLAGS = 
+DMALLOC_LDFLAGS = 
+DMALLOC_LIBS = 
 ECHO = echo
 ECHO_C = 
 ECHO_N = -n
@@ -111,6 +118,8 @@ FC = mpif90
 FCFLAGS = -g -O2
 FFLAGS = -g -O2
 GENGETOPT = no
+HAVE_DMALLOC_FALSE = 
+HAVE_DMALLOC_TRUE = #
 HAVE_GENGETOPT_FALSE = 
 HAVE_GENGETOPT_TRUE = #
 HAVE_HDF5_FALSE = #
@@ -215,9 +224,10 @@ target_alias =
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 bpls_SOURCES = bpls.c 
-bpls_CFLAGS = -DNOMPI -g
-bpls_LDFLAGS = $(MXML_LDFLAGS)
-bpls_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(MXML_LIBS)
+bpls_CFLAGS = -DNOMPI -g $(am__append_1)
+bpls_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2)
+bpls_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(MXML_LIBS) \
+	$(am__append_3)
 all: all-am
 
 .SUFFIXES:
