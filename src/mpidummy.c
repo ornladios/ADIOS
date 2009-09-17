@@ -16,7 +16,13 @@
 #    define open64  open
 #endif
 
-int MPI_Init(int *argc, char ***argv) { return MPI_SUCCESS; }
+static char mpierrmsg[MPI_MAX_ERROR_STRING];
+
+int MPI_Init(int *argc, char ***argv) 
+{ 
+    mpierrmsg[0] = '\0'; 
+    return MPI_SUCCESS; 
+}
 
 int MPI_Barrier(MPI_Comm comm) { return MPI_SUCCESS; }
 int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm) { return MPI_SUCCESS; }
@@ -31,7 +37,7 @@ int MPI_File_open(MPI_Comm comm, char *filename, int amode, MPI_Info info, MPI_F
 {
     *fh = open64 (filename, amode);
     if (*fh == -1) {
-        fprintf (stderr, "ADIOS POSIX: file not found: %s\n", filename);
+        snprintf(mpierrmsg, MPI_MAX_ERROR_STRING, "File not found: %s", filename);
         return -1;
     }
     return MPI_SUCCESS;
@@ -55,7 +61,8 @@ int MPI_File_read(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_
     uint64_t bytes_read;
     bytes_read = read (fh, buf, bytes_to_read);
     if (bytes_read != bytes_to_read) {
-        fprintf (stderr, "could not read %llu bytes. read only: %llu\n", bytes_to_read, bytes_read);
+        snprintf(mpierrmsg, MPI_MAX_ERROR_STRING, "could not read %llu bytes. read only: %llu\n", bytes_to_read, bytes_read);
+        return -2;
     }
     *status = bytes_read;
     //printf("MPI_File_read: fh=%d, count=%d, typesize=%d, bytes read=%lld\n", fh, count, datatype, *status);
@@ -78,7 +85,8 @@ int MPI_Get_count(MPI_Status *status, MPI_Datatype datatype, int *count)
 
 int MPI_Error_string(int errorcode, char *string, int *resultlen)
 {
-    sprintf(string, "Dummy lib does not know error strings. Code=%d\n",errorcode); 
+    //sprintf(string, "Dummy lib does not know error strings. Code=%d\n",errorcode); 
+    strcpy(string, mpierrmsg);
     *resultlen = strlen(string);
     return MPI_SUCCESS;
 }

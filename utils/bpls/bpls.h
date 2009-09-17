@@ -1,5 +1,6 @@
 
 #include <stdint.h>
+#include "adios_read.h"
 
 /* definitions for bpls.c */
 #define myfree(p) if (p) { free(p); p=NULL; }
@@ -28,15 +29,14 @@ int compile_regexp_masks(void);
 void printSettings(void);
 int  doList(const char *path);
 void mergeLists(int nV, char **listV, int nA, char **listA, char **mlist, bool *isVar);
-int  readVar(int64_t gh, char *name, int vartype, 
-             int ndims, int *dims, int hastimesteps, 
-             int tidx_start, int tidx_stop);
-int readAttr( int64_t gh, char *name, int attrtype, int size);
+int  readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi);
 int cmpstringp(const void *p1, const void *p2);
 bool grpMatchesMask(char *name);
 bool matchesAMask(char *name);
 int  print_start(const char *fname);
-int print_data(void *data, int adiosvartype, int elemsize, 
-               int *s, int* c, int ndims, int *dims, int time, bool hastimesteps);  
+void print_slice_info(int ndim, uint64_t *dims, uint64_t *s, uint64_t *c);
+int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool allowformat);
+int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype, 
+               uint64_t *s, uint64_t *c, int ndims, uint64_t *dims);  
 void print_endline(void);
 void print_stop(void);

@@ -152,9 +152,9 @@ subroutine generateLocalArray()
     do j=1,ndy
         startv = (offy+j-1)*gndx + offx
         do i=1,ndx
-            int_xy(i,j) =  startv+i-1
+            !int_xy(i,j) =  startv+i-1
             !int_xy(i,j) = rank*ndx+j-1 
-            !int_xy(i,j) = rank 
+            int_xy(i,j) = rank 
         enddo
     enddo
 end subroutine generateLocalArray

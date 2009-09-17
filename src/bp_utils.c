@@ -1,23 +1,43 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <sys/types.h>
 #include <string.h>
 #include "adios.h"
 #include "bp_utils.h"
 #include "adios_bp_v1.h"
+#include "adios_errcodes.h"
 #define BYTE_ALIGN 8
 #define MINIFOOTER_SIZE 28
 #define PG_MINIHEADER_SIZE 16
 
-static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
+
+#ifdef DMALLOC
+#include "dmalloc.h"
+#endif
+
+int adios_errno;
+char aerr[ERRMSG_MAXLEN];
+char *adios_errmsg() { return aerr; }
+
+void error(int errno, char *fmt, ...) 
+{
+    va_list ap;
+    adios_errno = errno;
+    va_start(ap, fmt);
+    (void) vsnprintf(aerr, ERRMSG_MAXLEN, fmt, ap);
+    va_end(ap);
+}
+
+void bp_alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
 {
         
     b->allocated_buff_ptr =  malloc (size + BYTE_ALIGN - 1);
     if (!b->allocated_buff_ptr)
     {
-        fprintf (stderr, "Cannot allocate: %llu\n", size);
+        error( err_no_memory, "Cannot allocate %llu bytes\n", size);
 
-        b->buff = 0;
+        b->buff = NULL;
         b->length = 0;
 
         return;
@@ -27,7 +47,7 @@ static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
     b->length = size;
 }
 
-static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b
+void bp_realloc_aligned (struct adios_bp_buffer_struct_v1 * b
                             ,uint64_t size
                             )
 {
@@ -36,9 +56,9 @@ static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b
                                     );
     if (!b->allocated_buff_ptr)
     {
-        fprintf (stderr, "Cannot allocate: %llu\n", size);
+        error( err_no_memory, "Cannot allocate %llu bytes\n", size);
 
-        b->buff = 0;
+        b->buff = NULL;
         b->length = 0;
 
         return;
@@ -69,8 +89,7 @@ int bp_read_open (const char * filename,
         int len = 0;
         memset (e, 0, MPI_MAX_ERROR_STRING);
         MPI_Error_string (err, e, &len);
-        fprintf (stderr, "MPI open failed for %s: '%s'\n",
-                filename, e);
+        error(err_MPI_open_error, "MPI open failed for %s: '%s'\n", filename, e);
         return adios_flag_no;
     }
 
@@ -93,11 +112,12 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     MPI_Status status;
 
     if (!b->buff) {
-        alloc_aligned (b, MINIFOOTER_SIZE);
+        bp_alloc_aligned (b, MINIFOOTER_SIZE);
+        if (!b->buff) {
+            error (err_no_memory, "could not allocate %d bytes\n", MINIFOOTER_SIZE);
+            return 1;
+        }
         memset (b->buff, 0, MINIFOOTER_SIZE);
-        if (!b->buff)
-            fprintf(stderr, "could not allocate %d bytes\n",
-                MINIFOOTER_SIZE);
         b->offset = 0;
     }
     MPI_File_seek (bp_struct->mpi_fh, 
@@ -109,7 +129,7 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     
     memset (&mh->pgs_index_offset, 0, MINIFOOTER_SIZE);
     memcpy (&mh->pgs_index_offset, b->buff, MINIFOOTER_SIZE);
-
+    
     b->pg_index_offset = *(uint64_t *) (b->buff + b->offset);
     mh->pgs_index_offset = b->pg_index_offset;
     b->offset += 8;
@@ -120,13 +140,17 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     b->attrs_index_offset = *(uint64_t *) (b->buff + b->offset);
     b->offset += 8;
 
+    /* get version id. Needs the bp->offset be pointing to the last 4 bytes of the buffer,
+       so do not move this call upward in this source */
+    adios_parse_version (b, &mh->version);
+
     b->end_of_pgs = b->pg_index_offset;
     b->pg_size = b->vars_index_offset - b->pg_index_offset;
     b->vars_size = b->attrs_index_offset - b->vars_index_offset;
     b->attrs_size = attrs_end - b->attrs_index_offset;
 
     uint64_t footer_size = mh->file_size - mh->pgs_index_offset;
-    realloc_aligned (b, footer_size);
+    bp_realloc_aligned (b, footer_size);
     MPI_File_seek (bp_struct->mpi_fh,
                         (MPI_Offset)  mh->pgs_index_offset,
                         MPI_SEEK_SET);
@@ -143,8 +167,8 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
 int bp_parse_pgs (uint64_t fh_p)
 {
     struct BP_FILE * fh = (struct BP_FILE *) fh_p; 
-    struct bp_index_pg_struct_v1 ** root = &(fh->pgs_root);
-        struct adios_bp_buffer_struct_v1 * b = fh->b;
+    struct bp_index_pg_struct_v1 ** root = &(fh->pgs_root); // need the pointer to it to malloc below
+    struct adios_bp_buffer_struct_v1 * b = fh->b;
     struct bp_minifooter * mh = &(fh->mfooter);
     uint64_t i;
 
@@ -172,6 +196,7 @@ int bp_parse_pgs (uint64_t fh_p)
         {
             *root = (struct bp_index_pg_struct_v1 *)
                 malloc (sizeof(struct bp_index_pg_struct_v1));
+            memset (*root, 0, sizeof(struct bp_index_pg_struct_v1));
             (*root)->next = 0;
         }
         uint16_t length_of_name;
@@ -234,7 +259,13 @@ int bp_parse_pgs (uint64_t fh_p)
         root = &(*root)->next;
     }
 
-    *root = fh->pgs_root;
+    /*
+    root = &(fh->pgs_root);
+    for (i = 0; i < mh->pgs_count; i++) {
+        printf("%d\tpg pid=%d addr=%x next=%x\n",i, (*root)->process_id, *root, (*root)->next);
+        root = &(*root)->next;
+    }
+    */
 
     uint64_t * pg_offsets = 0; 
     uint32_t * pg_pids = 0; 
@@ -302,14 +333,17 @@ int bp_parse_pgs (uint64_t fh_p)
     time_index [1][grpid][time_id-tidx_start] = pg_time_count;
     tidx_stop = time_id;
 
+
+    /* Copy group_count strings from namelist and then free up namelist */
     char ** grp_namelist;
-    uint64_t ** grp_timelist;
  
     grp_namelist = (char **) malloc (sizeof(char*) * group_count);
     for (i=0;i<group_count;i++) {
-        grp_namelist[i] = (char *) malloc (strlen(namelist[i]));
-        strcpy(grp_namelist[i],namelist[i]);
+        //grp_namelist[i] = (char *) malloc (strlen(namelist[i])+1);
+        //strcpy(grp_namelist[i],namelist[i]);
+        grp_namelist[i] = namelist[i];
     }
+    free(namelist);
     
     // here we need:
     //        grp_namelist [ngroup]
@@ -338,6 +372,8 @@ int bp_parse_pgs (uint64_t fh_p)
 
     fh->tidx_start = tidx_start; 
     fh->tidx_stop= tidx_stop; 
+
+    free(grpidlist);
     return;
 }
 
@@ -566,11 +602,12 @@ int bp_parse_attrs (struct BP_FILE * fh)
 
     attr_counts_per_group = (uint16_t *)
         malloc (sizeof(uint16_t) * fh->gattr_h->group_count);
+    memset (attr_counts_per_group, 0, fh->gattr_h->group_count * sizeof(uint16_t));
     attr_gids = (uint16_t *) malloc (sizeof(uint16_t ) * mh->attrs_count);
     attr_namelist = (char **)malloc (sizeof(char*) * mh->attrs_count);
 
     attr_offsets = (uint64_t **) malloc (sizeof(uint64_t *) * mh->attrs_count);
-    memset (attr_counts_per_group, 0, fh->gattr_h->group_count * sizeof(uint16_t));
+    memset (attr_offsets, 0, mh->attrs_count * sizeof(uint64_t));
 
     for (i = 0; i < mh->attrs_count; i++) {
         struct adios_index_characteristic_dims_struct_v1 * pdims;
@@ -585,7 +622,7 @@ int bp_parse_attrs (struct BP_FILE * fh)
         // Always have / in the beginning of the full name
         if (strcmp ((*root)->attr_path,"/")) {
             attr_namelist [i] = (char *) malloc ( strlen((*root)->attr_name)
-                    +strlen((*root)->attr_path) + 1
+                    +strlen((*root)->attr_path) + 1 + 1
                     );
             strcpy(attr_namelist[i], (*root)->attr_path);
         }
@@ -730,11 +767,12 @@ int bp_parse_vars (struct BP_FILE * fh)
 
     var_counts_per_group = (uint16_t *) 
         malloc (sizeof(uint16_t)*fh->gvar_h->group_count);
+    memset ( var_counts_per_group, 0, fh->gvar_h->group_count*sizeof(uint16_t));
     var_gids = (uint16_t *) malloc (sizeof(uint16_t )*mh->vars_count);
     var_namelist = (char **)malloc(sizeof(char*)*mh->vars_count);
 
     var_offsets = (uint64_t **) malloc (sizeof(uint64_t *)*mh->vars_count);
-    memset ( var_counts_per_group, 0, fh->gvar_h->group_count*sizeof(uint16_t));
+    memset ( var_offsets, 0, mh->vars_count*sizeof(uint64_t));
 
     for (i = 0; i < mh->vars_count; i++) {
         struct adios_index_characteristic_dims_struct_v1 * pdims;
@@ -749,13 +787,13 @@ int bp_parse_vars (struct BP_FILE * fh)
                 // Always have / in the beginning of the full name
         if (strcmp ((*root)->var_path,"/")) {
             var_namelist [i] = (char *) malloc ( strlen((*root)->var_name)
-                    +strlen((*root)->var_path) + 1
+                    +strlen((*root)->var_path) + 1 + 1   // extra / and ending \0
                     );
             strcpy(var_namelist[i], (*root)->var_path);
         }
         else {
             var_namelist [i] = (char *) malloc ( strlen((*root)->var_name)+1+1);
-                        var_namelist[i][0] = '\0';
+            var_namelist[i][0] = '\0';
         }
         strcat(var_namelist[i], "/");
         strcat(var_namelist[i], (*root)->var_name);
@@ -793,7 +831,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
     flag = *(b->buff + b->offset);
     c = (enum ADIOS_CHARACTERISTICS) flag;
     b->offset += 1;
-    
+
     switch (c) {
 
         case adios_characteristic_value:
@@ -939,6 +977,8 @@ int bp_get_characteristics_data (void ** ptr_data,
     *ptr_data = data;
     return 0;
 }
+
+/*
 void bp_grouping ( struct BP_FILE * fh_p,
            uint64_t * gh_p)
 {
@@ -1001,6 +1041,7 @@ void bp_grouping ( struct BP_FILE * fh_p,
 
     return;
 }
+*/
 
 int bp_read_pgs (struct BP_FILE * bp_struct)
 {
@@ -1008,7 +1049,7 @@ int bp_read_pgs (struct BP_FILE * bp_struct)
     int r = 0;
     MPI_Status status;
     // init buffer for pg reading
-    realloc_aligned (b, b->pg_size);
+    bp_realloc_aligned (b, b->pg_size);
     b->offset = 0;
 
     if (sizeof (char *) == 4) { 
@@ -1043,7 +1084,7 @@ int bp_read_vars (struct BP_FILE * bp_struct)
     MPI_Status status;
 
     //init buffer for vars reading
-    realloc_aligned (b, b->vars_size);
+    bp_realloc_aligned (b, b->vars_size);
     b->offset = 0;
 
     if (sizeof (char *) == 4) { 
@@ -1221,6 +1262,56 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
     }
 }
 
+/* Return 1 if a < b wrt. the given type, otherwise 0 */
+int adios_lt(int type, void *a, void *b)
+{
+    double ar, ai, br, bi;
+    long double ar2, ai2, br2, bi2;
+    switch (type)
+    {
+        case adios_unsigned_byte:
+            return *((uint8_t *) a) < *((uint8_t *) b);
+        case adios_byte:
+            return *((int8_t *) a) < *((int8_t *) b);
+        case adios_short:
+            return *((int16_t *) a) < *((int16_t *) b);
+        case adios_unsigned_short:
+            return *((uint16_t *) a) < *((uint16_t *) b);
+        case adios_integer:
+            return *((int32_t *) a) < *((int32_t *) b);
+        case adios_unsigned_integer:
+            return *((uint32_t *) a) < *((uint32_t *) b);
+        case adios_long:
+            return *((int64_t *) a) < *((int64_t *) b);
+        case adios_unsigned_long:
+            return *((uint64_t *) a) < *((uint64_t *) b);
+        case adios_real:
+            return *((float *) a) < *((float *) b);
+        case adios_double:
+            return *((double *) a) < *((double *) b);
+        case adios_long_double:
+            return *((long double *) a) < *((long double *) b);
+        case adios_string:
+            return ( strcmp( (char *) a, (char *) b) < 0);
+        case adios_complex:
+            ar = (double) ((float *) a)[0];
+            ai = (double) ((float *) a)[1];
+            br = (double) ((float *) b)[0];
+            bi = (double) ((float *) b)[1];
+            return ( ar*ar+ai*ai < br*br+bi*bi );
+        case adios_double_complex:
+            ar2 = (long double) ((double *) a)[0];
+            ai2 = (long double) ((double *) a)[1];
+            br2 = (long double) ((double *) b)[0];
+            bi2 = (long double) ((double *) b)[1];
+            return ( ar2*ar2+ai2*ai2 < br2*br2+bi2*bi2 );
+        default:
+            return 1;
+    }
+
+    return 0;
+}
+
 const char * value_to_string (enum ADIOS_DATATYPES type, void * data)
 {
     static char s [100];
@@ -1307,7 +1398,7 @@ void copy_data (void *dst, void *src,
         int ndim,
         uint64_t* size_in_dset, 
         uint64_t* ldims, 
-        const int * readsize, 
+        const uint64_t * readsize, 
         uint64_t dst_stride, 
         uint64_t src_stride,
         uint64_t dst_offset, 

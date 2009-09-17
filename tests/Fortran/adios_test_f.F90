@@ -38,6 +38,8 @@ program adios_test
     call MPI_Comm_dup (MPI_COMM_WORLD, group_comm, ierr)
     call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
 
+    print '("rank=",i0," group_comm=",i0," ierr=",i0)', rank, group_comm, ierr
+
     call adios_init ("config_fortran.xml"//char(0), ierr)
 
     call test_write (group, filename, group_comm, small_int, big_int, small_real, big_real, z_size, z_array)

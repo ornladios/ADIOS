@@ -75,7 +75,8 @@ struct BP_GROUP {
         uint16_t attrs_offset;
         uint16_t attrs_count;
 	struct BP_FILE * fh;
-	struct adios_index_var_struct_v1 * var_current;
+	struct adios_index_var_struct_v1 * vars_root;  /* pointer into the list of BP_FILE.vars_root */
+        struct adios_index_attribute_struct_v1 * attrs_root;
 };
 
 #endif

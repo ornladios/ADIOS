@@ -5,27 +5,21 @@ default:
 	@echo "> make matlab"
 
 
-matlab: adiosopenc adiosreadc adiosclosec
+matlab: adiosopenc adiosclosec adiosreadc 
 
-adiosopenc:  adios_readutil
-	mex adiosopenc.c  -I. -I../../src -L. -ladios_readutil -L../../src -ladiosread_nompi
+adiosopenc:  
+	mex adiosopenc.c -DNOMPI  -I. -I../../src -L. -L../../src -ladiosread_nompi
 
-adiosreadc:  adios_readutil
-	mex adiosreadc.c  -I. -I../../src -L. -ladios_readutil -L../../src -ladiosread_nompi
+adiosreadc: 
+	mex adiosreadc.c -DNOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
 
-adiosclosec:  adios_readutil
-	mex adiosclosec.c -I. -I../../src -L. -ladios_readutil -L../../src -ladiosread_nompi
-
-adiosreadc:  adios_readutil
-adios_readutil:
-	gcc -c -fPIC -DNOMPI -I../../src adios_readutil.c
-	rm -rf libadios_readutil.a
-	ar cru libadios_readutil.a adios_readutil.o
-	ranlib libadios_readutil.a
-	rm -rf adios_readutil.o
+adiosclosec:
+	mex adiosclosec.c -DNOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
 
 clean:
-	rm -f libadios_readutil.a *.mexa64 core* *.o 
+	rm -f *.mexa64 core* *.o 
 
 install:
 	@echo "Install *.m and *.mexa64 into MATLABPATH"
+	@echo "Do not have 'adios' anywhere in the path where you install the files"
+	@echo "otherwise 'help adios' will not work in Matlab"

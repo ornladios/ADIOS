@@ -8,11 +8,6 @@ function [data, attributes] = adiosread(varargin)
 %   In these cases, the library opens the file, reads in the data
 %   and closes the file. 
 %
-%   If you have opened the file with ADIOSOPEN, you can supply the
-%   file handler and the group handler to read in a variable/attribute.
-%   When finished reading all data, you need to close the file with 
-%   ADIOSCLOSE. 
-%
 %   Note: the adios group is not the same as HDF5 groups. Each variable has
 %   a path, which defines a logical hierarchy of the variables within one 
 %   adios group. This logical hierarchy is what is similar to HDF5 groups.
@@ -26,29 +21,13 @@ function [data, attributes] = adiosread(varargin)
 %      Read complete DATA from an adios GROUP of FILE with path VARPATH.
 %      Use this form if you have more than one ADIOS group in the file.
 %      GROUP is either a group name (string) or an index of the groups
-%      (integer, starting from 1) or a GROUP handler from ADIOSOPEN (int64).
+%      (integer, starting from 1).
 % 
-%   ATTR = ADIOSREAD(FILE, ATTRPATH) 
-%   ATTR = ADIOSREAD(FILE, GROUP, ATTRPATH) 
-%      Read in an attribute similarly as you read in variables.
-%      ATTR is just a variable as DATA variables in ADIOS, although only
-%      either strings or 1-by-1 scalars and do not vary over time.
-% 
-%   DATA,ATTRS = ADIOSREAD(FILE, VARPATH) 
-%   DATA,ATTRS = ADIOSREAD(FILE, GROUP, VARPATH) 
-%      Read in a variable and all attributes 'belonging' to that variable.
-%      An attribute belongs to a variable if ATTRPATH=VARPATH/NAME.
-%      ATTRS is an array of structure where a structure contains the Name 
-%      and Value of an attribute.
-% 
-%   DATA... = ADIOSREAD( ..., 'Time', TIME)
-%      ADIOS files can contain several timesteps of data. In this case you 
-%      can specify the timestep you want to read in (default is the first
-%      timestep). Time indices start from 1 but since an ADIOS file can be 
-%      a split part containing only an interval, it may start from a larger 
-%      number (see ADIOSOPEN structure TimeOffsets field).
-%      A negative index is interpreted as counting from the last time.
-%      -1 refers to the last timestep in the file, -2 the previous one, etc.
+%   DATA = ADIOSREAD(GROUPSTRUCT, VARPATH) 
+%      If you have opened the file with ADIOSOPEN, you can supply the
+%      the group struct to read in a variable/attribute.
+%      GROUPSTRUCT must be one of the info.Groups array.
+%      When finished reading all data, close the file with ADIOSCLOSE. 
 %
 %   DATA... = ADIOSREAD( ..., 'Slice', SLICEDEF)
 %      You can read a portion of a variable. 
@@ -91,11 +70,6 @@ if (~isempty(msg))
     error('MATLAB:adiosread:inputParsing', '%s', msg);
 end
 
-if (isnumeric(args.File))
-    fn=sprintf('File handler=%lld',args.File);
-else
-    fn=sprintf('File name=%s',args.File);
-end
 if (isnumeric(args.Group))
     if (isa(args.Group, 'int64'))
         gn=sprintf('Group handler=%lld',args.Group);
@@ -109,19 +83,17 @@ offsets=sprintf('%d ', args.Offsets);
 counts=sprintf('%d ', args.Counts);
 verbose=sprintf('%d ', args.Verbose);
 
-input = sprintf('adiosreadc:\n  %s \n  %s \n  Var=%s\n  Time=%d  Offsets=[%s]  Counts=[%s] \n  Verbose=%s', ...
- fn, gn, args.Path, args.Time, offsets, counts, verbose);
+input = sprintf('adiosreadc:\n  File name=%s \n  %s \n  Var=%s\n  Offsets=[%s]  Counts=[%s] \n  Verbose=%s', ...
+ args.File, gn, args.Path, offsets, counts, verbose);
 if (args.Verbose > 0) 
     CallArguments = input
 end
 
 
 if (nargout == 1)
-    data = adiosreadc(args.File, args.Group, args.Path, args.Time, args.Offsets, args.Counts, args.Verbose);
-elseif (nargout == 2)
-    [data, attributes] = adiosreadc(args.File, args.Group, args.Path, args.Time, args.Offsets, args.Counts, args.Verbose);
+    data = adiosreadc(args.File, args.Group, args.Path, args.Offsets, args.Counts, args.Verbose);
 else 
-    adiosreadc(args.File, args.Group, args.Path, args.Time, args.Offsets, args.Counts, args.Verbose);
+    adiosreadc(args.File, args.Group, args.Path, args.Offsets, args.Counts, args.Verbose);
 end
 
 
@@ -136,9 +108,9 @@ if (nargin < 2)
 end
 
 
-if (nargout > 2)
+if (nargout > 1)
     error('MATLAB:adiosread:tooManyOutputs', ...
-          'ADIOSREAD requires two or fewer output arguments.')
+          'ADIOSREAD requires one or fewer output arguments.')
 end
 
 
@@ -152,14 +124,13 @@ function [args, msg] = parse_inputs(varargin)
 args.File    = '';
 args.Group   = '';
 args.Path    = '';
-args.Time    = int32(-1); % time, default is 'last timestep', i.e. -1
 args.Offsets = []; % start positions in each dimension for slicing
 args.Counts  = []; % counts in each dimension for slicing
 args.Verbose = 0;  % verbosity, default is off, i.e. 0
 
 msg = '';
 
-% Arg 1: file name or int64 file handler
+% Arg 1: file name or int64 group handler
 if ischar(varargin{1})
     args.File = varargin{1};
     %
@@ -180,11 +151,18 @@ if ischar(varargin{1})
         args.File = fopen(fid);
         fclose(fid);
     end
-elseif (isa(varargin{1}, 'int64'))
-    args.File = varargin{1};
+elseif (isa(varargin{1}, 'struct'))
+    try
+        grp = varargin{1};
+        args.Group = grp.GroupHandler; % int64
+    catch
+        msg = ['Input is not a group struct of the info struct ' ...
+               'returned by ADIOSOPEN'];
+        return
+    end
 else
-    msg = ['FILE input argument to ADIOSREAD must be a string ' ...
-           'or an int64 handler from ADIOSOPEN'];
+    msg = ['1st arg should be a string FILE argument to ADIOSREAD ' ...
+           'or a group struct from ADIOSOPEN'];
     return
 end
 
@@ -195,18 +173,19 @@ if (rem(nargin, 2) == 0)
     varargin = {varargin{3:end}};
 else
     % odd number of arguments: FILE, GROUP, VARPATH, ...
+    if (args.Group ~= '') 
+        msg = ['GROUPHANDLER, GROUP, VARPATH is not an accepted argument list'];
+        return
+    end
     args.Group = varargin{2};
     args.Path = varargin{3};
     varargin = {varargin{4:end}};
     % check type of Group
-    if ((~ischar(args.Group)) && ...
-        (~isnumeric(args.Group)) && ...
-        (~isa(args.Group, 'int64'))) 
-        msg = ['GROUP input argument to ADIOSREAD must be a string ' ...
-           'or an number or an int64 handler from ADIOSOPEN'];
+    if ((~ischar(args.Group)) && (~isnumeric(args.Group))) 
+        msg = ['GROUP input argument to ADIOSREAD must be a string or a number'];
         return
     end
-    if (isnumeric(args.Group) && (~isa(args.Group, 'int64')))
+    if (isnumeric(args.Group))
         % convert group index to int32
         args.Group = int32(args.Group);
     end
@@ -220,7 +199,7 @@ end
 % Parse optional arguments based on their number.
 if (length(varargin) > 0)
     
-    paramStrings = {'time', 'slice', 'verbose'};
+    paramStrings = {'slice', 'verbose'};
     
     % For each pair
     for k = 1:2:length(varargin)
@@ -242,26 +221,6 @@ if (length(varargin) > 0)
         end
 
         switch (paramStrings{idx})
-        % TIME
-        case 'time'
-            if (k == length(varargin))
-                msg = 'No time value specified for Time option.';
-                return
-            end
-        
-            time = varargin{k+1};
-            if ((~isnumeric(time)) || ...
-                (~isempty(find(rem(time, 1) ~= 0))))
-                
-                msg = sprintf('''TIME'' must be an integer.');
-                return
-            end
-            if (time == 0)
-                msg = sprintf('''TIME'' in adios files start from 1, not from 0 .');
-                return
-            end
-            args.Time = int32(fix(time));
-
         % SLICE
         case 'slice'
             if (k == length(varargin))
@@ -279,11 +238,11 @@ if (length(varargin) > 0)
             end
 
             if (~isempty(slices))
-                args.Offsets = int32(fix(slices(:,1)));
-                args.Counts = int32(fix(slices(:,2)));
+                args.Offsets = int64(fix(slices(:,1)));
+                args.Counts = int64(fix(slices(:,2)));
             else
-                args.Offsets = int32([]);
-                args.Counts = int32([]);
+                args.Offsets = int64([]);
+                args.Counts = int64([]);
             end
             
         % VERBOSE

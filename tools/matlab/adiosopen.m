@@ -32,12 +32,15 @@ function info = adiosopen(varargin)
 %           Name          path of variable
 %           Type          Matlab type class of data
 %           Dims          Array of dimensions
-%           Timed         BOOL, true: several timesteps are stored in file. 
+%           Timedim       The time dimension, 0 if there is no time varying 
+%                         part of the variable
+%           GlobalMin     global minimum  of the variable (1-by-1 mxArray)
+%           GlobalMax     global maximum of the variable
 %           
 %        Attributes  structure array of attributes
 %           Name          path of attribute
 %           Type          Matlab type class of data
-%           Size          1 or length of string in case of string attributes.
+%           Value         attribute value
 %
 %
 %   INFO = ADIOSOPEN(FILE, 'Verbose', LEVEL)

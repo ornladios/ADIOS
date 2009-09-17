@@ -10,9 +10,11 @@
 #endif
 #include "bp_types.h"
 #define VARS_MINIHEADER_SIZE 10
+#define ERRMSG_MAXLEN 256
 
-//static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
-//static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
+void error(int errno, char *fmt, ...);
+void bp_alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
+void bp_realloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
 int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 		  	      struct adios_index_var_struct_v1 ** root,
 			      uint64_t j);
@@ -38,7 +40,7 @@ void copy_data (void *dst, void *src,
         int ndim,
         uint64_t* size_in_dset,
         uint64_t* ldims,
-        const int * readsize,
+        const uint64_t * readsize,
         uint64_t dst_stride,
         uint64_t src_stride,
         uint64_t dst_offset,
@@ -47,5 +49,7 @@ void copy_data (void *dst, void *src,
                 int      size_of_type
                 );
 
+/* Return 1 if a < b wrt. the given type, otherwise 0 */
+int adios_lt(int type, void *a, void *b);
 
 #endif

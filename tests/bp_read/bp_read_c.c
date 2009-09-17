@@ -4,177 +4,190 @@
 #include "mpi.h"
 #include "adios_read.h"
 
+#define PRINTDIMS(ndim, dims, ivar) if (ndim==0) \
+        printf("\tscalar\n"); \
+    else { \
+        printf("\t%dD variable: [%lld", ndim, dims[0]); \
+        for (ivar=1; ivar<ndim; ivar++) printf(", %lld", dims[ivar]); \
+        printf("]\n"); \
+    }
+
 int main (int argc, char ** argv)
 {
-	char * filename;
-	int    rank, pe_size, rc, version;	
-	struct bp_index_pg_struct_v1 * pg_root = 0;
-	struct bp_index_pg_struct_v1 * pg = 0;
+    char * filename;
+    int    rank, pe_size, rc, version;    
+    struct bp_index_pg_struct_v1 * pg_root = 0;
+    struct bp_index_pg_struct_v1 * pg = 0;
 
-	struct  adios_index_var_struct_v1 * vars_root = 0;
-	struct  adios_index_attribute_struct_v1 * attrs_root = 0;
-	int64_t fh=0, gh=0;
-	int     ngroup, nvar, nattr, ntstep;
-	int     i,j,k;	
+    struct  adios_index_var_struct_v1 * vars_root = 0;
+    struct  adios_index_attribute_struct_v1 * attrs_root = 0;
+    int     ngroup, nvar, nattr, ntstep;
+    int     i,j,k;    
 
-	int	NX = 10, G_NX=30;
-	int	NY = 10, G_NY=30;
-	int	NZ = 10, G_NZ=30;
-	int  	dims [10];
-	void    * var = NULL;
-	MPI_Comm comm; 
+    int     NX = 10, G_NX=30;
+    int     NY = 10, G_NY=30;
+    int     NZ = 10, G_NZ=30;
+    void    * var = NULL;
+    MPI_Comm comm; 
 
-	filename = argv[1];
-        if (!filename)
-            filename = "testbp_c.bp";
-	comm = MPI_COMM_WORLD;
-	MPI_Init (&argc, &argv);
-	MPI_Comm_rank (comm, &rank);
-	MPI_Comm_size (comm, &pe_size);
-	adios_fopen (&fh, filename, comm);
-	// fh = file handle, filename = name of file, comm is the 
-	// communicator for the processors which will read in the data.
-	// in this call, the header is actually being read, and this is done by proc 0, and
-	// then it is broadcast to all of the processors.
-	BP_FILE_INFO finfo;
-	/*
-	   BP_FILE_INFO's memmbers:
-		uint16_t namelist_true;
-		uint16_t groups_count;
-		uint16_t vars_count;
-		uint16_t attrs_count;
-		uint32_t tidx_start;
-		uint32_t tidx_stop;
-		uint32_t version;
-		uint32_t file_size;
-		char     ** group_namelist;
-	 */
-	adios_init_fileinfo ( &finfo, 1);
-	// initialize the FILE_INFO structure
-	//       IN: 
-	// 	    struct BP_FILE_INFO * 
- 	// 	    int flag: 1 means allocate the momory for group_namelist
-        //		      0 means no allocation 
-	// * adios_free_fileinfo (&finfo) need to be paired with this function call
-	adios_inq_file (fh, &finfo);
-	
-	if (rank == 0) 
-		adios_print_fileinfo (&finfo);
+    ADIOS_FILE *fp;
+    ADIOS_GROUP *gp;
+    ADIOS_VARINFO *vi;
 
-	BP_GROUP_INFO ginfo;
-	adios_gopen (fh, &gh, finfo.group_namelist[0]);
-	adios_init_groupinfo (&ginfo,1);
-	adios_inq_group (gh, &ginfo);
-	if (rank == 0) 
-		adios_print_groupinfo (&ginfo);
+    filename = argv[1];
+    if (!filename)
+        filename = "testbp_c.bp";
 
-	int type, ndim, time_flag;
-	int start[3], size[3];
-	char *type_str;
+    comm = MPI_COMM_WORLD;
+    MPI_Init (&argc, &argv);
+    MPI_Comm_rank (comm, &rank);
+    MPI_Comm_size (comm, &pe_size);
+
+    /* Open ADIOS file.
+       The index is read only by rank=0 process which is then broadcasted
+       to all processes.
+    */
+    fp = adios_fopen (filename, comm);
+    if (fp == NULL) {
+        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        exit(adios_errno);
+    }
+
+    if (rank == 0) 
+        adios_print_fileinfo (fp); // function in src/adios_read.c, not exposed in .h files
+
+    /* Open a group in the file.
+       A file has one or more adios groups. They are handled separately.
+    */
+    gp = adios_gopen (fp, 0); // open the first group
+    if (gp == NULL) {
+        int retval = adios_errno;
+        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        adios_fclose(fp);
+        exit(retval);
+    }
+    if (rank == 0) 
+        adios_print_groupinfo (gp); // function in src/adios_read.c, not exposed in .h files
+
+    /* Read a variable
+       Variables should be queried first to get type and size information.
+       Then memory should be allocated for the data slice to be read in.
+       Then the variable can be read.
+    */
+    uint64_t start[3], size[3];
+    char *type_str;
     double time;
-    // get scalar data
-	adios_inq_var (gh, "int_1D", &type, &ndim, &time_flag, dims);
-	type_str = bp_type_to_string (type);
-    printf("%s:\n\t\tis_timebased: %d\n\t\ttype: %s\n",
-		    "int_1D", time_flag, type_str);
-    if (ndim==0) 
-        printf("\t\tscalar");
-    else 
-            printf("\t\tdimension: [%d]", dims[0]);
-    printf ("\n");
+
+    /* variable int_1D */
+    vi = adios_inq_var_byname (gp, "int_1D");
+    if (vi == NULL) {
+        int retval = adios_errno;
+        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        adios_fclose(fp);
+        adios_gclose(gp);
+        exit(retval);
+    }
+
+    type_str = adios_type_to_string (vi->type);
+    printf("%s:\n\thas timesteps: %s\n\ttype: %s\n",
+            "int_1D", (vi->timedim > -1 ? "yes" : "no"), type_str);
+    PRINTDIMS(vi->ndim, vi->dims, i)
     size[0] = 1;
     start[0] = 0;
-	adios_get_var (gh, "int_1D", &nvar, start, size, 1);
-    printf("\t\tvalue: %d\n",(nvar));
-    // get 2D data
-	adios_inq_var (gh, "int_2D", &type, &ndim, &time_flag, dims);
-    printf("%s:\n\t\tis_timebased: %d\n\t\ttype: %s\n\t\tdimensions:",
-    		"int_2D", time_flag, type_str);
-    if (ndim==0) {
-        printf("\t\tscalar\n");
-    }
-    else {
-        for (i=0;i<ndim;i++) {
-            printf(" [%d]", dims[i]); 
-        }
-	}
-	printf("\n");
-	start[0]=0;
-	start[1]=0;
-	size[0]=10;
-	size[1]=2;
-	var = malloc (sizeof(int) * size[0]*size[1]);
+    adios_read_var_byname (gp, "int_1D", start, size, &nvar);
+    printf("\tfirst element value: %d\n",(nvar));
+    free(vi);
 
-	// time step should be no less than zero
-	// vnamelist[14] is not written at time step 0
-	// so the function returns as error
-	adios_get_var (gh, "int_2D", var, start, size, 1);
-	k=0;
-    printf("\t\t[%d:%d, %d:%d]", 
-           start[0], size[0],
-           start[1], size[1]
-           );
+
+    /* variable int_2D */
+    vi = adios_inq_var_byname (gp, "int_2D");
+    if (vi == NULL) {
+        int retval = adios_errno;
+        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        adios_fclose(fp);
+        adios_gclose(gp);
+        exit(retval);
+    }
+    
+    type_str = adios_type_to_string (vi->type);
+    printf("%s:\n\thas timesteps: %s\n\ttype: %s\n",
+            "int_2D", (vi->timedim > -1 ? "yes" : "no"), type_str);
+    PRINTDIMS(vi->ndim, vi->dims, i)
+    start[0]=0;
+    start[1]=0;
+    size[0]=10;
+    size[1]=2;
+    var = malloc (sizeof(int) * size[0]*size[1]);
+
+    // time step should be no less than zero
+    // vnamelist[14] is not written at time step 0
+    // so the function returns as error
+    adios_read_var_byname (gp, "int_2D", start, size, var);
+    printf("\tslice (%d:%d, %d:%d) = ", 
+           start[0], start[0]+size[0]-1,
+           start[1], start[1]+size[1]-1);
+    k=0;
     for (j=0;j<size[0];j++) {
-        printf("\n\t\t");
+        printf("\n\t");
         for (i=0;i<size[1];i++){
-            printf("%d  ",*(int*)(var+4*k));
+            printf("%d  ",((int*)(var))[k]);
             k++;
         }
     }
-	printf("\n");
+    printf("\n");
+    free(vi);
+    free(var);
 
-	adios_inq_var (gh, "int_3D", &type, &ndim, &time_flag, dims);
-    printf("%s:\n\t\tis_timebased: %d\n\t\ttype: %s\n\t\tdimensions:",
-    		"int_3D", time_flag, type_str);
-    if (ndim==0) {
-        printf("\t\tscalar\n");
+
+    /* variable int_3D */
+    vi = adios_inq_var_byname (gp, "int_3D");
+    if (vi == NULL) {
+        int retval = adios_errno;
+        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        adios_fclose(fp);
+        adios_gclose(gp);
+        exit(retval);
     }
-    else {
-        for (i=0;i<ndim;i++) {
-            printf(" [%d]", dims[i]); 
-        }
-	    printf("\n");
-	}
     
-    if (var)
-        free (var);
-	var = malloc ( sizeof(int) * dims[0]*dims[1]*dims[2]);
-	start[0]=0;
-	start[1]=0;
-	start[2]=0;
-	size[0]=2;
-	size[1]=5;
-	size[2]=3;
-	adios_get_var (gh, "int_3D", var, start, size, 1);
-	k=0;
-    printf("\t\t[%d:%d, %d:%d, %d:%d]", 
-           start[0], size[0],
-           start[1], size[1],
-           start[2], size[2]
+    type_str = adios_type_to_string (vi->type);
+    printf("%s:\n\thas timesteps: %s\n\ttype: %s\n",
+            "int_3D", (vi->timedim > -1 ? "yes" : "no"), type_str);
+    PRINTDIMS(vi->ndim, vi->dims, i)
+    
+    start[0]=0;
+    start[1]=0;
+    start[2]=0;
+    size[0]=2;
+    size[1]=5;
+    size[2]=3;
+    var = malloc ( sizeof(int) * size[0]*size[1]*size[2]);
+    adios_read_var_byname (gp, "int_3D", start, size, var);
+    printf("\t[%d:%d, %d:%d, %d:%d]", 
+           start[0], start[0]+size[0]-1,
+           start[1], start[1]+size[1]-1,
+           start[2], start[2]+size[2]-1
            );
+    k=0;
     for (nvar=0;nvar<size[0];nvar++) {
         for (j=0;j<size[1];j++) {
-            printf("\n\t\t");
+            printf("\n\t");
             for (i=0;i<size[2];i++){
-                printf("%d  ",*(int*)(var+4*k));
+                printf("%d  ",((int*)(var))[k]);
                 k++;
             }
         }
         printf("\n");
     }
+    free(vi);
+    free(var);
 
     printf("\ndone\n");
 
-    if (var)
-		free(var);
         
-	adios_free_groupinfo (&ginfo);
-	adios_free_fileinfo (&finfo);
+    adios_gclose (gp);
+    adios_fclose (fp);
+    MPI_Finalize ();
 
-	adios_gclose (gh);
-	adios_fclose (fh);
-	MPI_Finalize ();
-
-	return 0;
+    return 0;
 }
 

@@ -15,17 +15,17 @@ typedef int MPI_Comm;
 typedef uint64_t MPI_Status;
 typedef int MPI_File;
 typedef int MPI_Info;
-typedef int MPI_Datatype;  // Store the byte size of a type in such vars
+typedef int MPI_Datatype;  /* Store the byte size of a type in such vars */
 typedef uint64_t MPI_Offset;
 typedef int MPI_Fint;
 
 #define MPI_SUCCESS                 0
-#define MPI_MAX_ERROR_STRING        256
+#define MPI_MAX_ERROR_STRING        512
 #define MPI_MODE_RDONLY             O_RDONLY
 #define MPI_SEEK_SET                SEEK_SET
 #define MPI_SEEK_CUR                SEEK_CUR
 #define MPI_SEEK_END                SEEK_END
-#define MPI_BYTE                    1          // I need the size of the type here
+#define MPI_BYTE                    1          /* I need the size of the type here */
 #define MPI_INFO_NULL               NULL
 
 int MPI_Init(int *argc, char ***argv);

@@ -131,6 +131,16 @@ int main (int argc, char ** argv)
     adios_posix_read_index_offsets (b);
     adios_parse_index_offsets_v1 (b);
 
+    /*
+    printf ("End of process groups       = %llu\n", b->end_of_pgs);
+    printf ("Process Groups Index Offset = %llu\n", b->pg_index_offset);
+    printf ("Process Groups Index Size   = %llu\n", b->pg_size);
+    printf ("Variable Index Offset       = %llu\n", b->vars_index_offset);
+    printf ("Variable Index Size         = %llu\n", b->vars_size);
+    printf ("Attribute Index Offset      = %llu\n", b->attrs_index_offset);
+    printf ("Attribute Index Size        = %llu\n", b->attrs_size);
+    */
+
     adios_posix_read_process_group_index (b);
     adios_parse_process_group_index_v1 (b, &pg_root);
     print_process_group_index (pg_root);
@@ -180,6 +190,7 @@ int main (int argc, char ** argv)
         adios_posix_read_process_group (b);
         adios_parse_process_group_header_v1 (b, &pg_header);
         print_process_group_header (element_num++, &pg_header);
+        //printf ("\tSize of group in fil: %llu bytes\n",  b->read_pg_size);
 
         adios_parse_vars_header_v1 (b, &vars_header);
         print_vars_header (&vars_header);

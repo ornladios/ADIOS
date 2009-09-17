@@ -1,11 +1,10 @@
 /*=================================================================
  * adiosreadc.c - read a variable/attribute from an ADIOS file
  *
- * Input: File, Group, Path, Time, Offset, Count, Verbose
+ * Input: File, Group, Path, Offset, Count, Verbose
  *    File:     string (name) or int64 (handler)
  *    Group:    string (name) or int64 (handler) or int32 (index)
  *    Path:     string (variable/attribute name with full path)
- *    Time:     int32  (timestep, 1..)
  *    Offset:   int32 array 
  *    Count:    int32 array
  *    Verbose:  numeric (double)
@@ -17,22 +16,23 @@
  * Author: Norbert Podhorszki <pnorbert@ornl.gov>
  *=================================================================*/
 
+#include <string.h>    /* strlen */
 #include "mex.h"
-#include "adios_readutil.h"
+#include "adios_read.h"
 #include "adios_types.h"
 
 static int verbose=0;
 
-mxArray* readdata( int64_t fh, int64_t gh, const char *path, int in_noffsets, 
-                   const int32_t *in_offsets, const int32_t *in_counts,
-                   int32_t in_timestep, int *isvar);
+mxArray* readdata( ADIOS_GROUP *gp, const char *path, int in_noffsets, 
+                   const int64_t *in_offsets, const int64_t *in_counts);
 void errorCheck(int nlhs, int nrhs, const mxArray *prhs[]);
 char* getString(const mxArray *mxstr);
-mxArray* createMatlabArray( int adiostype, int ndims, int *dims); 
-void recalc_offsets( int ndims, int *dims, mwSize in_noffsets, 
-                     const int32_t *in_offsets, const int32_t *in_counts,
-                     int *offsets, int *counts);
-void swap_order(int n, int *array);
+mxClassID adiostypeToMatlabClass(enum ADIOS_DATATYPES type, mxComplexity *complexity);
+mxArray* createMatlabArray( enum ADIOS_DATATYPES adiostype, int ndims, uint64_t *dims); 
+void recalc_offsets( int ndims, uint64_t *dims, mwSize in_noffsets, 
+                     const int64_t *in_offsets, const int64_t *in_counts,
+                     uint64_t *offsets, uint64_t *counts);
+static void swap_order(int n, uint64_t *array);
 
 
 
@@ -41,19 +41,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     char *gname;        /* group name */
     char *path;         /* name of variable or attribute */
     mwSize in_noffsets;    /* number of offsets provided, = number of counts */
-    int32_t *in_offsets;    /* offset array provided */
-    int32_t *in_counts;     /* count array provided */
+    int64_t *in_offsets;    /* offset array provided */
+    int64_t *in_counts;     /* count array provided */
     int status;
     char msg[512];        /* error messages from function calls */
 
     int64_t fh, gh, *int64p; /* file and group handlers and temp pointers */
-    int32_t timestep, *int32p;
+    int32_t *int32p;
     int  haveToCloseFile, haveToCloseGroup, readAttributesToo;
 
-    int  isvar;             /* 0: attribute, 1: variable */
-    adios_readutil_namelist *attrlist;  /* linked list of attrs directly under a path */
-    adios_readutil_namelist *attr;      /* one attr from the list */
-    int  nattrs;            /* number of attrs directly under a path */
+    ADIOS_FILE *fp;
+    ADIOS_GROUP *gp;
+    int mpi_comm_dummy; 
 
     int i;
     mxArray *out;        /* output data array */
@@ -66,82 +65,94 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     /***********************/
     /* 1. get verbose parameter first */
-    verbose = (int)mxGetScalar(prhs[6]);
+    verbose = (int)mxGetScalar(prhs[5]);
     if (verbose) mexPrintf("Verbosity level: %d\n", verbose);
-    adios_readutil_setverbosity(verbose);
 
     /***********************/
     /* 1. get file handler */
+    fp = NULL;
+    haveToCloseFile = 0;
     if (mxIsChar(prhs[0])) {
         fname = getString( (mxArray *)prhs[0]);
-        if (verbose) mexPrintf("File name: \"%s\"\n", fname);
-
-        /* Open ADIOS file now */
-        status = adios_readutil_fopen (fname, &fh, msg); 
-        if (status != 0) {
-            mexErrMsgIdAndTxt("MATLAB:adiosreadc:open",msg);
+        if (strlen(fname) > 0) {
+            if (verbose) mexPrintf("File name: \"%s\"\n", fname);
+            /* Open ADIOS file now */
+            fp = adios_fopen (fname, mpi_comm_dummy);
+            if (fp == NULL) {
+                mexErrMsgIdAndTxt("MATLAB:adiosreadc:open",adios_errmsg());
+            }
+            haveToCloseFile = 1;
         }
-        haveToCloseFile = 1;
-
-    } else  { /* int64 handler provided */
-        int64p = (int64_t *) mxGetData(prhs[0]); 
-        fh = *int64p;
-        haveToCloseFile = 0;
     } 
 
 
     /************************/
     /* 2. get group handler */
-    if (mxIsChar(prhs[1])) {
-        gname = getString( (mxArray *)prhs[1]);
+    if (mxIsInt64(prhs[1])) { /* int64 group handler provided */
+        int64p = (int64_t *) mxGetData(prhs[1]); 
+        gp = (ADIOS_GROUP *) *int64p;
+        mexPrintf("Group gp=%lld id=%d vcnt=%d\n", (int64_t)gp, gp->grpid, gp->vars_count);
+        haveToCloseGroup = 0;
+    } else {
+        /* reference to a group in file */
+        if (fp == NULL) {
+            mexErrMsgIdAndTxt("MATLAB:adiosreadc:open",
+               "Group argument must be an open group struct if File argument is not provided\n");
+        }
+
+        if (mxIsChar(prhs[1])) {
+            gname = getString( (mxArray *)prhs[1]);
         if (verbose) mexPrintf("Group name: \"%s\"\n", gname );
 
-        /* Open group by name */
-        status = adios_readutil_gopen_byname (gname, fh, &gh, msg); 
-        if (status != 0) {
-            mexErrMsgIdAndTxt("MATLAB:adiosreadc:open",msg);
+            /* empty groupname -> first group in the file */
+            if ( strlen(gname)==0 || !strcmp(gname,"/") || !strcmp(gname," ")) {
+                gp = adios_gopen(fp, 0);
+                if (gp == NULL) {
+                    mexErrMsgIdAndTxt("MATLAB:adiosreadc:open",adios_errmsg());
+                }
+            } else {
+                /* Open group by name */
+                gp = adios_gopen_byname(fp, gname);
+                if (gp == NULL) {
+                    mexErrMsgIdAndTxt("MATLAB:adiosreadc:open",adios_errmsg());
+                }
+            }
+            haveToCloseGroup = 1;
+
+        } else if (mxIsInt32(prhs[1])) { /* group index provided */
+            int32p  = (int32_t *) mxGetData(prhs[1]); 
+            if (verbose) mexPrintf("Group index: %d\n", *int32p);
+            gname = NULL;
+
+            /* group index in Matlab starts from 1, in adios starts from 0 */
+            /* Open group by index */
+            gp = adios_gopen(fp, *int32p-1);
+            if (gp == NULL) {
+                mexErrMsgIdAndTxt("MATLAB:adiosreadc:open",adios_errmsg());
+            }
+            haveToCloseGroup = 1;
         }
-        haveToCloseGroup = 1;
-
-    } else if (mxIsInt32(prhs[1])) { /* group index provided */
-        int32p  = (int32_t *) mxGetData(prhs[1]); 
-        if (verbose) mexPrintf("Group index: %d\n", *int32p);
-
-        /* Open group by index */
-        status = adios_readutil_gopen_byindex (*int32p, fh, &gh, msg); 
-        if (status != 0) {
-            mexErrMsgIdAndTxt("MATLAB:adiosreadc:open",msg);
-        }
-        haveToCloseGroup = 1;
-
-    } else  { /* int64 handler provided */
-        int64p = (int64_t *) mxGetData(prhs[1]); 
-        gh = *int64p;
-        haveToCloseGroup = 0;
-    } 
-
+    }
 
     /*****************************************************************************************/
-    /* 3. get other arguments: char variable name, int32 time, int32 in_offsets[], int32 in_counts[] */
+    /* 3. get other arguments: char variable name, int64 in_offsets[], int64 in_counts[] */
     path     = getString(prhs[2]);
     if (verbose) mexPrintf("Variable name: \"%s\"\n", path );
-    int32p   = (int32_t *) mxGetData(prhs[3]); 
-    timestep = *int32p;
-    if (verbose) mexPrintf("Timestep: %d\n", timestep );
-    in_noffsets = mxGetNumberOfElements(prhs[4]);
-    in_offsets  = (int32_t *) mxGetData(prhs[4]); 
-    in_counts   = (int32_t *) mxGetData(prhs[5]); 
+    in_noffsets = mxGetNumberOfElements(prhs[3]);
+    in_offsets  = (int64_t *) mxGetData(prhs[3]); 
+    in_counts   = (int64_t *) mxGetData(prhs[4]); 
 
 
     /*********************************************************************/
-    /* 4. read in variable/attribute or variable with all its attributes */
-    out = readdata( fh, gh, path, in_noffsets, in_offsets, in_counts, timestep, &isvar);
+    /* 4. read in variable */
+    out = readdata( gp, path, in_noffsets, in_offsets, in_counts);
     if ( nlhs >= 1 ) {
         plhs[0] = out;
     }
 
     /********************************************************/
     /* 5. read in all attributes of a variable if requested */
+#if 0
     if ( nlhs == 2 ) {
         if (!isvar) {
             mexErrMsgIdAndTxt("MATLAB:adiosreadc:read",
@@ -170,20 +181,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             adios_readutil_freenamelist(attrlist);
         }
     }
+#endif
 
 
     /**************************************************/
     /* 6. close group and file if opened in this call */
     if (haveToCloseGroup) {
         if (verbose) mexPrintf("Close group\n");
-        adios_readutil_gclose(gh);
-        mxFree(gname);
+        adios_gclose(gp);
+        if (gname) 
+            mxFree(gname);
     }
 
     if (haveToCloseFile) {
         if (verbose) mexPrintf("Close file\n");
-        adios_readutil_fclose(fh);
-        mxFree(fname);
+        adios_fclose(fp);
+        if (fname)
+            mxFree(fname);
     }
 
 
@@ -191,78 +205,76 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
 }
 
-mxArray* readdata( int64_t fh, int64_t gh, const char *path, mwSize in_noffsets,
-                   const int32_t *in_offsets, const int32_t *in_counts,
-                   int32_t in_timestep, int *isvar) 
+mxArray* readdata( ADIOS_GROUP *gp, const char *path, mwSize in_noffsets,
+                   const int64_t *in_offsets, const int64_t *in_counts) 
 {
-    void *data;             /* content of variable/attr read in */
-    int  ndims, dims[16];   /* size info for variable/attr read in */
-    int  type;              /* type of variable/attr read in */
-    int32_t timestep;
-    int offsets[16], counts[16]; /* extended offsets/counts */
+    /* FIXME: does not work for COMPLEX data because
+       adios stores real and imaginary together as Fortran Complex type does, 
+       while matlab stores them as two separate float/double arrays
+    */
+    void *data;             /* content of variable read in */
+    uint64_t offsets[16], counts[16]; /* extended offsets/counts */
+    int64_t read_bytes;
+    uint64_t arraysize;
     int  status, i;
     mxArray * out;
     char msg[512];
+    ADIOS_VARINFO *vinfo;
 
-    /* read in variable/attribute or variable with all its attributes */
-    if (verbose) mexPrintf("Get info on var/attr: %s\n", path);
     /* get type/size info on variable */
-    status = adios_readutil_getdatainfo( gh, path, &ndims, dims, &type, msg, isvar);
-    if (verbose) mexPrintf("Got info on var/attr %s: ndims=%d type=%s\n", path, ndims, adios_readutil_type_to_string(type));
-    /* get type/size info on variable */
-    if (status != 0) {
-        mexErrMsgIdAndTxt("MATLAB:adiosreadc:read",msg);
+    if (verbose) mexPrintf("Get info on var: %s\n", path);
+    vinfo = adios_inq_var_byname( gp, path);
+    if (vinfo == NULL) {
+        mexErrMsgIdAndTxt("MATLAB:adiosreadc:varinfo",adios_errmsg());
     }
     if (verbose) { 
-        mexPrintf("%s %s C dimensions %d [", (*isvar ? "variable" : "attribute"), path, ndims);
-        for (i=0; i<ndims; i++)
-            mexPrintf("%d ", dims[i]);
+        mexPrintf("Var=%s type=%s C dimensions %dD [", path, adios_type_to_string(vinfo->type), vinfo->ndim);
+        for (i=0; i<vinfo->ndim; i++)
+            mexPrintf("%lld ", vinfo->dims[i]);
         mexPrintf("]\n");
     }
 
     /* Flip dimensions from ADIOS-read-api/C/row-major order to Matlab/Fortran/column-major order */
-    swap_order(ndims, dims);
+    swap_order(vinfo->ndim, vinfo->dims);
 
     /* extend offsets/counts if needed, change from 1..N to 0..N-1 indexing and
        interpret negative indices */
-    recalc_offsets( ndims, dims, in_noffsets, in_offsets, in_counts, offsets, counts);
-
-    /* interpret negative timestep */
-    timestep = adios_readutil_calctimestep(fh, in_timestep);
-    if (verbose) mexPrintf("Adjusted timestep: %d\n", timestep );
+    recalc_offsets( vinfo->ndim, vinfo->dims, in_noffsets, in_offsets, in_counts, offsets, counts);
 
     /* create Matlab array with the appropriate type and size */
-    if (type == adios_string) {
+    if (vinfo->type == adios_string) {
         /* Matlab string != char array of C, so handle separately */
-        data = (void *) mxCalloc(dims[0], sizeof(char));
+        data = (void *) mxCalloc(vinfo->dims[0], sizeof(char));
     } else {
         if (verbose) { 
-            mexPrintf("Create %d-D Matlab array [", ndims);
-            for (i=0; i<ndims; i++)
-                mexPrintf("%d ", counts[i]);
+            mexPrintf("Create %d-D Matlab array [", vinfo->ndim);
+            for (i=0; i<vinfo->ndim; i++)
+                mexPrintf("%lld ", counts[i]);
             mexPrintf("]\n");
         }
-        out = createMatlabArray( type, ndims, counts); 
+        out = createMatlabArray(vinfo->type, vinfo->ndim, counts); 
         data = (void *) mxGetData(out);
     }
 
     /* Flip offsets/counts from Matlab/Fortran/column-major order to ADIOS-read-api/C/row-major order */
-    swap_order(ndims, offsets);
-    swap_order(ndims, counts);
+    swap_order(vinfo->ndim, offsets);
+    swap_order(vinfo->ndim, counts);
 
     /* read in data */
     if (verbose) mexPrintf("Read in data\n");
     
-    status = adios_readutil_readdata( gh, path, *isvar, offsets, counts, timestep, data, msg);
-    if (status != 0) {
-        mexErrMsgIdAndTxt("MATLAB:adiosreadc:read",msg);
+    read_bytes = adios_read_var( gp, vinfo->varid, offsets, counts, data);
+    if (read_bytes < 0) {
+        mexErrMsgIdAndTxt("MATLAB:adiosreadc:read",adios_errmsg());
     }
+    if (verbose) mexPrintf("Read in %lld bytes\n", read_bytes);
 
-    if (type == adios_string) {
+    if (vinfo->type == adios_string) {
         out = mxCreateString( (char *)data);
         mxFree(data);
     }
 
+    adios_free_varinfo(vinfo);
     return out;
 }
     
@@ -271,15 +283,15 @@ void errorCheck(int nlhs, int nrhs, const mxArray *prhs[]){
     /* Assume that we are called from adiosread.m which checks the arguments already */
     /* Check for proper number of arguments. */
     
-    if ( nrhs != 7 ) {
-        mexErrMsgIdAndTxt("MATLAB:adiosreadc:rhs","This function needs exactly 7 arguments: File, Group, Varpath, Time, Offsets, Counts, Verbose");
+    if ( nrhs != 6 ) {
+        mexErrMsgIdAndTxt("MATLAB:adiosreadc:rhs","This function needs exactly 6 arguments: File, Group, Varpath, Offsets, Counts, Verbose");
     }
     
     if ( !mxIsChar(prhs[0]) && !mxIsInt64(prhs[0]) ) {
         mexErrMsgIdAndTxt("MATLAB:adiosreadc:rhs","First arg must be either a string or an int64 handler.");
     } 
     
-    if ( nlhs > 2 ) {
+    if ( nlhs > 1 ) {
         mexErrMsgIdAndTxt("MATLAB:adiosreadc:lhs","Too many output arguments.");
     }
     
@@ -308,9 +320,9 @@ char* getString(const mxArray *mxstr)
 }
 
 /** return the appropriate class for an adios type */
-mxClassID adiostypeToMatlabClass(int type, int *isComplex) 
+mxClassID adiostypeToMatlabClass(enum ADIOS_DATATYPES type, mxComplexity *complexity) 
 {
-    *isComplex = 0;
+    *complexity=mxREAL;
     switch( type ) {
         case adios_unsigned_byte:
             return mxUINT8_CLASS;
@@ -340,24 +352,24 @@ mxClassID adiostypeToMatlabClass(int type, int *isComplex)
             return mxDOUBLE_CLASS;
              
         case adios_complex:     /* 8 bytes */
-            *isComplex = 1;
+            *complexity = mxCOMPLEX;
             return mxSINGLE_CLASS;
         case adios_double_complex: /*  16 bytes */
-            *isComplex = 2;
+            *complexity = mxCOMPLEX;
             return mxDOUBLE_CLASS;
 
         case adios_long_double: /* 16 bytes */
         default:
             mexErrMsgIdAndTxt("MATLAB:adiosreadc.c:dimensionTooLarge",
                  "Adios type %d (%s) not supported in visit.\n",
-                 type, adios_readutil_type_to_string(type));
+                 type, adios_type_to_string(type));
             break;
     }
     return 0; /* just to avoid warnings. never executed */
 }
 
 /* create an N-dim array with given type and dimensions */
-mxArray* createMatlabArray( int adiostype, int ndims, int *dims)
+mxArray* createMatlabArray( enum ADIOS_DATATYPES adiostype, int ndims, uint64_t *dims)
 {
     mxClassID mxtype;
     mxArray *arr;
@@ -380,14 +392,12 @@ mxArray* createMatlabArray( int adiostype, int ndims, int *dims)
     }
 
     /* get type */
-    mxtype = adiostypeToMatlabClass(adiostype, &isTypeComplex);
-    if (isTypeComplex) ComplexFlag = mxCOMPLEX;
-    else               ComplexFlag = mxREAL;
+    mxtype = adiostypeToMatlabClass(adiostype, &ComplexFlag);
 
     /* create array */
     arr = mxCreateNumericArray( mNdims, mDims, mxtype, ComplexFlag);
 
-    if (verbose) mexPrintf("Array for adios type %s is created\n", adios_readutil_type_to_string(adiostype));
+    if (verbose) mexPrintf("Array for adios type %s is created\n", adios_type_to_string(adiostype));
 
     return arr;
 }
@@ -398,22 +408,22 @@ mxArray* createMatlabArray( int adiostype, int ndims, int *dims)
     - recalculate the negative indices 
     !!! Provide the output arrays in the caller !!!
 */
-void recalc_offsets( int ndims, int *dims, mwSize in_noffsets, 
-                     const int32_t *in_offsets, const int32_t *in_counts,
-                     int *offsets, int *counts)
+void recalc_offsets( int ndims, uint64_t *dims, mwSize in_noffsets, 
+                     const int64_t *in_offsets, const int64_t *in_counts,
+                     uint64_t *offsets, uint64_t *counts)
 {
     int i;
     for (i=0; i<ndims; i++) {
         if ((mwSize)i < in_noffsets) {
             if (in_offsets[i] < 0) /* negative offset means last-|offset| */
-                offsets[i] = dims[i] + (int) in_offsets[i];
+                offsets[i] = dims[i] + in_offsets[i];
             else 
-                offsets[i] = (int) in_offsets[i] - 1; /* C index start from 0 */
+                offsets[i] = in_offsets[i] - 1; /* C index start from 0 */
 
             if (in_counts[i] < 0) /* negative count means last-|count|+1-start */
-                counts[i]  = dims[i] + (int) in_counts[i] - offsets[i] + 1;
+                counts[i]  = dims[i] + in_counts[i] - offsets[i] + 1;
             else
-                counts[i]  = (int) in_counts[i]; 
+                counts[i]  = in_counts[i]; 
         } else {
             /* extend offset/count array to match variable's dimensions */
             if (verbose) mexPrintf("Extend offset/counts for dim %d: offset=%d count=%d\n", i, 0, dims[i] );
@@ -427,7 +437,7 @@ void recalc_offsets( int ndims, int *dims, mwSize in_noffsets,
 /* Reverse the order in an array in place.
    use swapping from Matlab/Fortran/column-major order to ADIOS-read-api/C/row-major order and back
 */
-void swap_order(int n, int *array)
+static void swap_order(int n, uint64_t *array)
 {
     int i, tmp;
     for (i=0; i<n/2; i++) {
