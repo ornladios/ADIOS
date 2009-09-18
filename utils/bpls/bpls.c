@@ -449,7 +449,7 @@ int doList(const char *path) {
             continue;
         nGroupsMatched++;
         if (!dump) fprintf(outf, "Group %s:\n", fp->group_namelist[grpid]);
-        gp = adios_gopen (fp, grpid);
+        gp = adios_gopen_byid (fp, grpid);
         if (gp == NULL) {
 	    fprintf(stderr, "Error: %s\n", adios_errmsg());
 	    bpexit(8, fp, 0);
@@ -485,12 +485,12 @@ int doList(const char *path) {
         for (n=0; n<nNames; n++) {
             matches = false;
             if (isVar[n])  {
-                vi = adios_inq_var_byname (gp, names[n]);
+                vi = adios_inq_var (gp, names[n]);
                 if (!vi)
                     fprintf(stderr, "Error: %s\n", adios_errmsg());
                 vartype = vi->type;
             } else {
-                adios_get_attr_byname (gp, names[n], &vartype, &attrsize, &value);
+                adios_get_attr (gp, names[n], &vartype, &attrsize, &value);
             }
 
             matches = matchesAMask(names[n]);
@@ -783,7 +783,7 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi)
         }
 
         // read a slice finally
-        bytes_read = adios_read_var (gp, vi->varid, s, c, data); 
+        bytes_read = adios_read_var_byid (gp, vi->varid, s, c, data); 
 
         if (bytes_read < 0) {
             fprintf(stderr, "Error when reading variable %s. errno=%d : %s \n", name, bytes_read, adios_errmsg());

@@ -106,13 +106,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
             /* empty groupname -> first group in the file */
             if ( strlen(gname)==0 || !strcmp(gname,"/") || !strcmp(gname," ")) {
-                gp = adios_gopen(fp, 0);
+                gp = adios_gopen_byid(fp, 0);
                 if (gp == NULL) {
                     mexErrMsgIdAndTxt("MATLAB:adiosreadc:open",adios_errmsg());
                 }
             } else {
                 /* Open group by name */
-                gp = adios_gopen_byname(fp, gname);
+                gp = adios_gopen(fp, gname);
                 if (gp == NULL) {
                     mexErrMsgIdAndTxt("MATLAB:adiosreadc:open",adios_errmsg());
                 }
@@ -126,7 +126,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
             /* group index in Matlab starts from 1, in adios starts from 0 */
             /* Open group by index */
-            gp = adios_gopen(fp, *int32p-1);
+            gp = adios_gopen_byid(fp, *int32p-1);
             if (gp == NULL) {
                 mexErrMsgIdAndTxt("MATLAB:adiosreadc:open",adios_errmsg());
             }
@@ -223,7 +223,7 @@ mxArray* readdata( ADIOS_GROUP *gp, const char *path, mwSize in_noffsets,
 
     /* get type/size info on variable */
     if (verbose) mexPrintf("Get info on var: %s\n", path);
-    vinfo = adios_inq_var_byname( gp, path);
+    vinfo = adios_inq_var( gp, path);
     if (vinfo == NULL) {
         mexErrMsgIdAndTxt("MATLAB:adiosreadc:varinfo",adios_errmsg());
     }
@@ -263,7 +263,7 @@ mxArray* readdata( ADIOS_GROUP *gp, const char *path, mwSize in_noffsets,
     /* read in data */
     if (verbose) mexPrintf("Read in data\n");
     
-    read_bytes = adios_read_var( gp, vinfo->varid, offsets, counts, data);
+    read_bytes = adios_read_var_byid( gp, vinfo->varid, offsets, counts, data);
     if (read_bytes < 0) {
         mexErrMsgIdAndTxt("MATLAB:adiosreadc:read",adios_errmsg());
     }

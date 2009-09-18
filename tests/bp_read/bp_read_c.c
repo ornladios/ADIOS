@@ -59,7 +59,7 @@ int main (int argc, char ** argv)
     /* Open a group in the file.
        A file has one or more adios groups. They are handled separately.
     */
-    gp = adios_gopen (fp, 0); // open the first group
+    gp = adios_gopen_byid (fp, 0); // open the first group
     if (gp == NULL) {
         int retval = adios_errno;
         fprintf(stderr, "Error: %s\n", adios_errmsg());
@@ -79,7 +79,7 @@ int main (int argc, char ** argv)
     double time;
 
     /* variable int_1D */
-    vi = adios_inq_var_byname (gp, "int_1D");
+    vi = adios_inq_var (gp, "int_1D");
     if (vi == NULL) {
         int retval = adios_errno;
         fprintf(stderr, "Error: %s\n", adios_errmsg());
@@ -94,13 +94,13 @@ int main (int argc, char ** argv)
     PRINTDIMS(vi->ndim, vi->dims, i)
     size[0] = 1;
     start[0] = 0;
-    adios_read_var_byname (gp, "int_1D", start, size, &nvar);
+    adios_read_var (gp, "int_1D", start, size, &nvar);
     printf("\tfirst element value: %d\n",(nvar));
     free(vi);
 
 
     /* variable int_2D */
-    vi = adios_inq_var_byname (gp, "int_2D");
+    vi = adios_inq_var (gp, "int_2D");
     if (vi == NULL) {
         int retval = adios_errno;
         fprintf(stderr, "Error: %s\n", adios_errmsg());
@@ -122,7 +122,7 @@ int main (int argc, char ** argv)
     // time step should be no less than zero
     // vnamelist[14] is not written at time step 0
     // so the function returns as error
-    adios_read_var_byname (gp, "int_2D", start, size, var);
+    adios_read_var (gp, "int_2D", start, size, var);
     printf("\tslice (%d:%d, %d:%d) = ", 
            start[0], start[0]+size[0]-1,
            start[1], start[1]+size[1]-1);
@@ -140,7 +140,7 @@ int main (int argc, char ** argv)
 
 
     /* variable int_3D */
-    vi = adios_inq_var_byname (gp, "int_3D");
+    vi = adios_inq_var (gp, "int_3D");
     if (vi == NULL) {
         int retval = adios_errno;
         fprintf(stderr, "Error: %s\n", adios_errmsg());
@@ -161,7 +161,7 @@ int main (int argc, char ** argv)
     size[1]=5;
     size[2]=3;
     var = malloc ( sizeof(int) * size[0]*size[1]*size[2]);
-    adios_read_var_byname (gp, "int_3D", start, size, var);
+    adios_read_var (gp, "int_3D", start, size, var);
     printf("\t[%d:%d, %d:%d, %d:%d]", 
            start[0], start[0]+size[0]-1,
            start[1], start[1]+size[1]-1,

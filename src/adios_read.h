@@ -89,13 +89,16 @@ int adios_fclose (ADIOS_FILE *fp);
 /** Open an adios group. Usually there is one adios group in a file, 
  *  but there can be more than one. 
  *  IN:  fp       pointer to an (opened) ADIOS_FILE struct
- *       grpid    index of group (0..fp->groups_count-1)
+ *       grpname  name of the group
  *  RETURN:       pointer to an ADIOS_GROUP struct, NULL on error (sets adios_errno)
  */
-ADIOS_GROUP * adios_gopen (ADIOS_FILE *fp, int grpid);
+ADIOS_GROUP * adios_gopen (ADIOS_FILE *fp, const char * grpname);
 
-/** Convenience function to open a group by name instead of an index */
-ADIOS_GROUP * adios_gopen_byname (ADIOS_FILE *fp, const char * grpname);
+/** Open a group by index 
+ *       grpid    index of group (0..fp->groups_count-1)
+ *                in fp->group_namelist of ADIOS_FILE struct
+ */
+ADIOS_GROUP * adios_gopen_byid (ADIOS_FILE *fp, int grpid);
 
 /** Close an adios group. 
  *  To free the data structures allocated at gopen, you need to call this function
@@ -112,13 +115,16 @@ int adios_gclose (ADIOS_GROUP *gp);
  *  you need to free resources later with adios_free_varinfo().
  *
  *  IN:  gp       pointer to an (opened) ADIOS_GROUP struct
- *       varid    index of variable (0..gp->vars_count-1)
+ *       varname  name of the variable
  *  RETURN:       pointer to and ADIOS_VARINFO struct, NULL on error (sets adios_errno)
  */
-ADIOS_VARINFO * adios_inq_var (ADIOS_GROUP *gp, int varid);
+ADIOS_VARINFO * adios_inq_var (ADIOS_GROUP *gp, const char * varname);
 
-/** Convenience function to inquiry a variable by name */
-ADIOS_VARINFO * adios_inq_var_byname (ADIOS_GROUP *gp, const char * varname);
+/** Inquiry a variable by index
+ *       varid    index of variable (0..gp->vars_count-1)
+ *                in gp->vars_namelist of ADIOS_GROUP struct
+ */
+ADIOS_VARINFO * adios_inq_var_byid (ADIOS_GROUP *gp, int varid);
 
 /** Free memory used by an ADIOS_VARINFO struct */
 void adios_free_varinfo (ADIOS_VARINFO *cp);
@@ -126,22 +132,25 @@ void adios_free_varinfo (ADIOS_VARINFO *cp);
 /** Read a variable (slice) from the file.
  *  You need to allocate the memory for the data. 
  *  IN:  gp        pointer to an (opened) ADIOS_GROUP struct
- *       varid     index of variable (0..gp->vars_count-1)
+ *       varname   name of the variable
  *       start     array of offsets to start reading in each dimension
  *       readsize  number of data elements to read in each dimension
  *  OUT: data      data of the variable
  *  RETURN: the number of bytes read, <0 on error, sets adios_errno too
  */
 int64_t adios_read_var (ADIOS_GROUP    * gp, 
-                        int              varid,
+                        const char     * varname, 
                         const uint64_t * start,
                         const uint64_t * readsize, 
                         void           * data);
 
-/** Convenience function to read a variable by name */
-int64_t adios_read_var_byname (ADIOS_GROUP * gp, const char * varname, 
-                               const uint64_t * start, const uint64_t * readsize, 
-                               void * data);
+/** Read a variable by index 
+ *       varid    index of variable (0..gp->vars_count-1)
+ *                in gp->vars_namelist of ADIOS_GROUP struct
+ */
+int64_t adios_read_var_byid (ADIOS_GROUP * gp, int varid,
+                             const uint64_t * start, const uint64_t * readsize, 
+                             void * data);
 
 /** Get an attribute in a group.
  *  This function does not read anything from the file but processes info
@@ -150,21 +159,24 @@ int64_t adios_read_var_byname (ADIOS_GROUP * gp, const char * varname,
  *  You can use free() to free the memory after use. 
  *
  *  IN:  gp       pointer to an (opened) ADIOS_GROUP struct
- *       attrid   index of attribute (0..gp->attrs_count-1)
+ *       attrname name of the attribute
  *  OUT: type     adios type of attribute (see enum ADIOS_DATATYPES in adios_types.h)
  *       size     memory size of value (n+1 for a string of n characters)
  *       data     pointer to the value. You need to cast it afterward according to the type. 
  *  RETURN: 0 OK, error: set and return adios_errno
  */
 int adios_get_attr (ADIOS_GROUP           * gp,
-                    int                     attrid,
+                    const char            * attrname,
                     enum ADIOS_DATATYPES  * type,
                     int                   * size,
                     void                 ** data);
 
-/** Convenience function to get an attribute by name */
-int adios_get_attr_byname (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type, 
-                           int * size, void ** data); 
+/** Convenience function to get an attribute by name 
+ *       attrid   index of attribute (0..gp->attrs_count-1)
+ *                in gp->attr_namelist of ADIOS_GROUP struct
+ */
+int adios_get_attr_byid (ADIOS_GROUP * gp, int attrid, enum ADIOS_DATATYPES * type, 
+                         int * size, void ** data); 
 
 /** Return the name of an adios type */
 const char * adios_type_to_string (enum ADIOS_DATATYPES type);

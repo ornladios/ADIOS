@@ -245,7 +245,7 @@ int adios_fclose (ADIOS_FILE *fp)
 }
 
 
-ADIOS_GROUP * adios_gopen_byname (ADIOS_FILE *fp, const char * grpname)
+ADIOS_GROUP * adios_gopen (ADIOS_FILE *fp, const char * grpname)
 {
     struct BP_FILE * fh = (struct BP_FILE *) fp->fh;
     int grpid; 
@@ -259,10 +259,10 @@ ADIOS_GROUP * adios_gopen_byname (ADIOS_FILE *fp, const char * grpname)
         error( err_invalid_group, "Invalid group name %s", grpname);
         return NULL;
     }
-    return adios_gopen(fp, grpid);
+    return adios_gopen_byid(fp, grpid);
 }
 
-ADIOS_GROUP * adios_gopen (ADIOS_FILE *fp, int grpid)
+ADIOS_GROUP * adios_gopen_byid (ADIOS_FILE *fp, int grpid)
 {
     struct BP_FILE * fh = (struct BP_FILE *) fp->fh;
     struct BP_GROUP * gh;
@@ -371,8 +371,8 @@ int adios_gclose (ADIOS_GROUP *gp)
 
 
 
-int adios_get_attr_byname (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type,
-                           int * size, void ** data)
+int adios_get_attr (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type,
+                    int * size, void ** data)
 {
     // Find the attribute: full path is stored with a starting / 
     // Like in HDF5, we need to match names given with or without the starting /
@@ -384,11 +384,11 @@ int adios_get_attr_byname (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_D
 
     adios_errno = 0;
     if (!gp) {
-        error(err_invalid_group_struct, "Null pointer passed as group to adios_get_attr_byname()");
+        error(err_invalid_group_struct, "Null pointer passed as group to adios_get_attr()");
         return adios_errno;
     }
     if (!attrname) {
-        error(err_invalid_attrname, "Null pointer passed as attribute name to adios_get_attr_byname()!");
+        error(err_invalid_attrname, "Null pointer passed as attribute name to adios_get_attr()!");
         return adios_errno;
     }
 
@@ -409,10 +409,10 @@ int adios_get_attr_byname (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_D
         return adios_errno;
     }
 
-    return adios_get_attr(gp, attrid, type, size, data);
+    return adios_get_attr_byid(gp, attrid, type, size, data);
 }
 
-int adios_get_attr (ADIOS_GROUP * gp, int attrid, 
+int adios_get_attr_byid (ADIOS_GROUP * gp, int attrid, 
                     enum ADIOS_DATATYPES * type, int * size, void ** data)
 {
     int    i, offset, count;
@@ -533,7 +533,7 @@ static int find_var(ADIOS_GROUP *gp, const char *varname)
 
     /* Search in gp->fh->gvar_h->var_namelist instead of gp->var_namelist, because that
        one comes back from the user. One idiot (who writes this comment) sorted the
-       list in place after gopen and before inq_var_byname.
+       list in place after gopen and before inq_var.
     */
     offset = gh->vars_offset;
 
@@ -683,15 +683,15 @@ static void adios_get_dimensions (struct adios_index_var_struct_v1 *var_root, in
 
 }
 
-ADIOS_VARINFO * adios_inq_var_byname (ADIOS_GROUP *gp, const char * varname) 
+ADIOS_VARINFO * adios_inq_var (ADIOS_GROUP *gp, const char * varname) 
 {
     int varid = find_var(gp, varname);
     if (varid < 0)
         return NULL;
-    return adios_inq_var(gp, varid);
+    return adios_inq_var_byid(gp, varid);
 }
 
-ADIOS_VARINFO * adios_inq_var (ADIOS_GROUP *gp, int varid)
+ADIOS_VARINFO * adios_inq_var_byid (ADIOS_GROUP *gp, int varid)
 {
     struct BP_GROUP      * gh;
     struct BP_FILE       * fh;
@@ -816,21 +816,21 @@ void adios_free_varinfo (ADIOS_VARINFO *vp)
         adios_parse_var_data_header_v1 (fh->b, &var_header);                                \
 
 
-int64_t adios_read_var_byname (ADIOS_GROUP * gp, const char * varname,
-                               const uint64_t * start, const uint64_t * readsize,
-                               void * data)
+int64_t adios_read_var (ADIOS_GROUP * gp, const char * varname,
+                        const uint64_t * start, const uint64_t * readsize,
+                        void * data)
 {
     int varid = find_var(gp, varname);
     if (varid < 0)
         return -1;
-    return adios_read_var(gp, varid, start, readsize, data);
+    return adios_read_var_byid(gp, varid, start, readsize, data);
 }
 
-int64_t adios_read_var (ADIOS_GROUP    * gp,
-                        int              varid,
-                        const uint64_t  * start,
-                        const uint64_t  * readsize,
-                        void           * data)
+int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
+                             int              varid,
+                             const uint64_t  * start,
+                             const uint64_t  * readsize,
+                             void           * data)
 {
     struct BP_GROUP      * gh;
     struct BP_FILE       * fh;
@@ -1429,7 +1429,7 @@ void adios_gopen_ ( int64_t * fp,
 
     namestr = fstr_to_cstr(grpname, grpname_len);
     if (namestr != NULL) {
-        agp = adios_gopen_byname (afp, namestr);
+        agp = adios_gopen (afp, namestr);
         *gp = (int64_t)agp;
         free(namestr);
     } else {
@@ -1479,7 +1479,7 @@ void adios_inq_var_ (int64_t  * gp, char * varname,
 
     varstr = fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
-        vi = adios_inq_var_byname (agp, varstr);
+        vi = adios_inq_var (agp, varstr);
         *type = vi->type;
         *ndim = vi->ndim;
         *timedim = vi->timedim;
@@ -1513,7 +1513,7 @@ void adios_read_var_ (int64_t  * gp,
     //int64_t tmp=*gp;
     varstr = fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
-        *read_bytes = adios_read_var_byname (agp, varstr, start, readsize, data);
+        *read_bytes = adios_read_var (agp, varstr, start, readsize, data);
         free(varstr);
     } else {
         *read_bytes = -adios_errno;
@@ -1540,7 +1540,7 @@ void adios_get_varminmax_ (int64_t * gp,
 
     varstr = fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
-        vi = adios_inq_var_byname (agp, varstr);
+        vi = adios_inq_var (agp, varstr);
         size = bp_get_type_size(vi->type, vi->value);
         if (vi->type == adios_string) size++;
         if (vi->timedim > -1)
@@ -1580,7 +1580,7 @@ void adios_get_attr_ (int64_t * gp
     enum ADIOS_DATATYPES type;
     attrstr = fstr_to_cstr(attrname, attrname_len);
     if (attrstr != NULL) {
-        *err = adios_get_attr_byname (agp, attrstr, &type, &size, &data);
+        *err = adios_get_attr (agp, attrstr, &type, &size, &data);
         if (data) {
             memcpy(attr, data, size);
             free(data);
@@ -1605,7 +1605,7 @@ void adios_inq_attr_ (int64_t * gp
     void *data;
     attrstr = fstr_to_cstr(attrname, attrname_len);
     if (attrstr != NULL) {
-        *err = adios_get_attr_byname (agp, attrstr, type, size, &data);
+        *err = adios_get_attr (agp, attrstr, type, size, &data);
         free(data);
     } else {
         *err = -adios_errno;

@@ -38,7 +38,6 @@
 
 #include <string.h>              /* memcpy */
 #include "mex.h"
-#include "adios_readutil.h"
 #include "adios_types.h"
 #include "adios_read.h"
 #include "adios_types.h"
@@ -126,7 +125,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
     /**************************************/
     /* Open ADIOS file now and get groups */
-    /*DEL status = adios_readutil_open (fname, &fh, &ngroups, &groupnames, &tstart, &tend, msg); */
     fp = adios_fopen (fname, mpi_comm_dummy);
     if (fp == NULL) {
        mexErrMsgIdAndTxt("MATLAB:adiosopenc:open",adios_errmsg());
@@ -143,8 +141,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     top_field_TimeSteps = mxGetFieldNumber(plhs[0],"TimeSteps");
     top_field_Groups = mxGetFieldNumber(plhs[0],"Groups");
     mxSetFieldByNumber(plhs[0],0,top_field_Name,mxCreateString(fname));
-    /*DEL arr = mxCreateNumericMatrix( 1, 1, mxINT64_CLASS, mxREAL);
-        *(int64_t *)mxGetData(arr) = (int64_t) fp;*/
     arr = valueToMatlabValue(&fp, mxINT64_CLASS, mxREAL);
     mxSetFieldByNumber(plhs[0],0,top_field_FileHandler,arr);
     arr = mxCreateNumericMatrix( 1, 1, mxINT32_CLASS, mxREAL);
@@ -171,16 +167,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     for (gi = 0; gi < fp->groups_count; gi++) {
         /* Get info of one group: handler, list of vars, list of attrs */
         if (verbose) mexPrintf("Group %s: get info\n", fp->group_namelist[gi]);
-        /*DEL status = adios_readutil_groupinfo (fh, gname->name, &gh, &nvars, &varnames, &nattrs, &attrnames, msg); */
-        gp = adios_gopen(fp, gi);
+        gp = adios_gopen_byid(fp, gi);
         if (gp == NULL) {
            mexErrMsgIdAndTxt("MATLAB:adiosopenc:groupinfo",adios_errmsg());
         }
         if (verbose) mexPrintf("    %d variables and %d attributes\n", gp->vars_count, gp->attrs_count);
         /* Group fields for gi-th group */
         mxSetFieldByNumber(groups,gi,group_field_Name,mxCreateString(fp->group_namelist[gi]));
-        /*DEL arr = mxCreateNumericMatrix( 1, 1, mxINT64_CLASS, mxREAL);
-            *(int64_t *)mxGetData(arr) = (int64_t) gp;*/
         mexPrintf("Group gp=%lld id=%d vcnt=%d\n", (int64_t)gp, gp->grpid, gp->vars_count);
         arr = valueToMatlabValue(&gp, mxINT64_CLASS, mxREAL);
         mxSetFieldByNumber(groups,gi,group_field_GroupHandler,arr);
@@ -209,8 +202,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
         if (verbose>1) mexPrintf("    Variables\n");
         for (vi=0; vi < gp->vars_count; vi++) {
-            /*DEL status = adios_readutil_getvarinfo( gh, vname->name, &ndims, dims, &adiostype, &timed, msg);*/
-            vinfo = adios_inq_var( gp, vi);
+            vinfo = adios_inq_var_byid( gp, vi);
             if (vinfo == NULL) {
                mexErrMsgIdAndTxt("MATLAB:adiosopenc:varinfo",adios_errmsg());
             }
@@ -266,8 +258,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
         if (verbose>1) mexPrintf("    Attributes\n");
         for (ai=0; ai < gp->attrs_count; ai++) {
-            /*DEL status = adios_readutil_getattrinfo( gh, aname->name, &adiostype, &asize, msg);*/
-            status = adios_get_attr( gp, ai, &adiostype, &asize, &data);
+            status = adios_get_attr_byid( gp, ai, &adiostype, &asize, &data);
             if (status != 0) {
                mexErrMsgIdAndTxt("MATLAB:adiosopenc:varinfo",adios_errmsg());
             }
