@@ -156,7 +156,7 @@ subroutine writeArray()
     ! Write out data using ADIOS
     group = "genarray"
     !  calculate how much we write from this processor
-    group_size = 4 * 12              + &  ! X,Y,Z, nproc, all size_ and offs_ integers
+    group_size = 4 * 13              + &  ! X,Y,Z, nproc, all size_ and offs_ integers
                  4 * ndx * ndy * ndz      ! int_xyz
 
     !print '("rank=",i0," group=",A," file=",A," group_size=",i0)', rank, trim(group)//char(0), &
