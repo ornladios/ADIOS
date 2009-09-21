@@ -281,48 +281,69 @@ int bp_parse_pgs (uint64_t fh_p)
     for (j=0;j<2;j++) {
         time_index[j] = (uint32_t **) 
             malloc (sizeof(uint32_t*)*group_count);
+        //printf ("### time_index[%d]=%x  group_count=%d  #pgs=%d #ts=%d\n", j, time_index[j], group_count, mh->pgs_count,  mh->time_steps);
         for (i=0;i<group_count;i++) {
-            if (mh->pgs_count < mh->time_steps)
+            if (mh->pgs_count < mh->time_steps) {
+                /* FIXME: when can this happen? 
+                   pgs = time_steps * number of writers, if there is 1 group only
+                */
                 time_index[j][i] = (uint32_t *) 
                     malloc (sizeof(uint32_t)*mh->pgs_count);
-            else    
+            } else {
                 time_index[j][i] = (uint32_t *) 
                     malloc (sizeof(uint32_t)*mh->time_steps);
+            }
         }
     }
 
     root = &(fh->pgs_root);
     uint32_t time_id, tidx_start, tidx_stop;
     uint64_t grpid = grpidlist[0];
-    uint32_t pg_time_count = 0;
-    time_index [0][0][0] = 0;
+    uint32_t pg_time_count = 0, first_pg;
     tidx_start = (*root)->time_index;
     time_id = tidx_start;
+    first_pg = 0; /* The first pg for a given timestep and group */
     for (i = 0; i < mh->pgs_count; i++) {
         pg_pids [i] = (*root)->process_id;
         pg_offsets [i] = (*root)->offset_in_file;
+        //printf ("### root->time_index=%d,  time_id=%d\n", (*root)->time_index, time_id);
         if ((*root)->time_index == time_id) {
-            if (grpid == grpidlist[i])
+            /* processing still the same timestep */
+            if (grpid == grpidlist[i]) {
+                /* processing still the same group */
+                /* FIXME: is this the order in the file? time..groups or group..times? */
                 pg_time_count += 1;
-            else {
+            } else {
+                /* changing group: pg_time_count is for the current group the number of pgs of the same time */
+                time_index [0][grpid][time_id-tidx_start] = first_pg;
                 time_index [1][grpid][time_id-tidx_start] = pg_time_count;
+                //printf ("#-- time_index[0][%d][%d]=%d\n", grpid, time_id-tidx_start, first_pg);
+                //printf ("#   time_index[1][%d][%d]=%d\n", grpid, time_id-tidx_start, pg_time_count);
                 grpid = grpidlist [i];    
                 pg_time_count = 1;
-                time_index [0][grpid][time_id-tidx_start] = i;
+                first_pg = i; // new group starts from this pg
             }
         }    
         else {
+            /* change in timestep */
             if (group_count == 1) {
+                /* single group in file (the most frequent case) */
+                time_index [0][grpid][time_id-tidx_start] = first_pg;
                 time_index [1][grpid][time_id-tidx_start] = pg_time_count;
-                time_index [0][grpid][time_id-tidx_start+1] = i;
+                //printf ("### time_index[0][%d][%d]=%d\n", grpid, time_id-tidx_start, first_pg);
+                //printf ("    time_index[1][%d][%d]=%d\n", grpid, time_id-tidx_start, pg_time_count);
+                first_pg = i;
             }
             else {    
-                if (grpid == grpidlist[i])
+                if (grpid == grpidlist[i]) {
                     pg_time_count += 1;
-                else {
+                } else {
+                    time_index [0][grpid][time_id-tidx_start] = first_pg;
                     time_index [1][grpid][time_id-tidx_start] = pg_time_count;
+                    //printf ("#.. time_index[0][%d][%d]=%d\n", grpid, time_id-tidx_start, first_pg);
+                    //printf ("    time_index[1][%d][%d]=%d\n", grpid, time_id-tidx_start, pg_time_count);
                     grpid = grpidlist [i];    
-                    time_index [0][grpid][time_id-tidx_start] = i;
+                    first_pg = i;
                 }
             }
             time_id = (*root)->time_index;
@@ -330,7 +351,11 @@ int bp_parse_pgs (uint64_t fh_p)
         }
         root = &(*root)->next;
     }
+    /* set last grp/time count to complete the above procedure */
+    time_index [0][grpid][time_id-tidx_start] = first_pg;
     time_index [1][grpid][time_id-tidx_start] = pg_time_count;
+    //printf ("#   time_index[0][%d][%d]=%d\n", grpid, time_id-tidx_start, first_pg);
+    //printf ("    time_index[1][%d][%d]=%d\n", grpid, time_id-tidx_start, pg_time_count);
     tidx_stop = time_id;
 
 
