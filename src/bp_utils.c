@@ -164,9 +164,8 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     return 0;
 }
 
-int bp_parse_pgs (uint64_t fh_p)
+int bp_parse_pgs (struct BP_FILE * fh)
 {
-    struct BP_FILE * fh = (struct BP_FILE *) fh_p; 
     struct bp_index_pg_struct_v1 ** root = &(fh->pgs_root); // need the pointer to it to malloc below
     struct adios_bp_buffer_struct_v1 * b = fh->b;
     struct bp_minifooter * mh = &(fh->mfooter);
