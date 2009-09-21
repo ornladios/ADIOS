@@ -7,15 +7,15 @@ bin_PROGRAMS = bpsplit bpappend bpgettime
 
 bpsplit_SOURCES = bpsplit.c
 bpsplit_LDFLAGS = $(MXML_LDFLAGS)
-bpsplit_LDADD = $(top_builddir)/src/libadios_int.a
+bpsplit_LDADD = $(top_builddir)/src/libadios_int_nompi.a
 bpsplit_LDADD += $(MXML_LIBS)
 
 bpappend_SOURCES = bpappend.c
 bpappend_LDFLAGS = $(MXML_LDFLAGS)
-bpappend_LDADD = $(top_builddir)/src/libadios_int.a
+bpappend_LDADD = $(top_builddir)/src/libadios_int_nompi.a
 bpappend_LDADD += $(MXML_LIBS)
 
 bpgettime_SOURCES = bpgettime.c
 bpgettime_LDFLAGS = $(MXML_LDFLAGS)
-bpgettime_LDADD = $(top_builddir)/src/libadios_int.a
+bpgettime_LDADD = $(top_builddir)/src/libadios_int_nompi.a
 bpgettime_LDADD += $(MXML_LIBS)
