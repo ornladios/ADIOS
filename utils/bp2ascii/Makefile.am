@@ -11,5 +11,5 @@ bp2ascii_LDFLAGS = $(MXML_LDFLAGS)
 bp2ascii_CPPFLAGS = $(MXML_CPPFLAGS)
 
 #bp2ascii_LDADD = $(top_builddir)/src/libadios.a
-bp2ascii_LDADD = $(top_builddir)/src/libadios_int.a
+bp2ascii_LDADD = $(top_builddir)/src/libadios_int_nompi.a
 bp2ascii_LDADD += $(MXML_LIBS)
