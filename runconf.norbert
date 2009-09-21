@@ -58,6 +58,27 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
     #--with-netcdf=/sw/xt/netcdf/3.6.2/sles9.2_pgi7.0.7
     #--with-hdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" 
     
+elif [ `hostname | cut -c 1-4` == "euge" ]; then
+    ##########
+    # Eugene #
+    ##########
+    export MPICC=mpixlc_r
+    export MPIFC=mpixlf90
+    export CFLAGS="-g -O0"
+    export FCFLAGS="-qextname"
+    export FC=xlf90
+    export CC=xlc_r
+
+    source /etc/profile.d/modules.sh
+    module load netcdf/3.6.2-linux
+
+./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eugene \
+            --enable-dependency-tracking \
+            --with-mxml=/ccs/proj/e2e/adios/bgp  
+#	    --with-hdf5=/sw/bgp/hdf5/1.8.0/sles10.1_xlc9.0xlf11.1 \
+#	    --with-hdf5-libdir="/sw/bgp/hdf5/1.8.0/sles10.1_xlc9.0xlf11.1/lib -lhdf5 -L/sw/bgp/szip/2.1/sles10.1_xlc9.0/lib -lsz /usr/lib/libz.a" \
+#	    --with-netcdf=/sw/bgp/netcdf/3.6.2/sles10.1_xlc9.0xlf11.1
+
 elif [ `hostname | cut -c 1-4` == "lens" ]; then
 
     ########
