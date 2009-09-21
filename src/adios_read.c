@@ -627,7 +627,7 @@ static int adios_get_dimensioncharacteristics(struct adios_index_characteristic_
     return is_global;
 }
 
-static void adios_get_dimensions (struct adios_index_var_struct_v1 *var_root, int ntsteps, 
+static void adios_get_dimensions (struct adios_index_var_struct_v1 *var_root, int ntsteps, int file_is_fortran,
                                   int *ndim, uint64_t **dims, int *timedim)
 {
     int i, k;
@@ -665,14 +665,36 @@ static void adios_get_dimensions (struct adios_index_var_struct_v1 *var_root, in
         }         
     }         
     else {
-        /* global array */
-        if (ldims[0]==1 && ldims[*ndim - 1]!=1) {
+        /* global array:
+           time dimension: ldims=1, gdims=0
+           in C array, it can only be the first dim
+           in Fortran array, it can only be the last dim
+           (always the slowest changing dim)
+        */
+        if (ldims[0] == 1 && gdims[0] == 0) {
             // first dimension is the time (C array)
             *timedim = 0;
+            // error check
+            if (file_is_fortran && *ndim > 1) {
+                fprintf(stderr,"ADIOS Error: this is a BP file with Fortran ordering but we found"
+                        "an array to have time dimension in the first dimension. l:g:o = (");
+                for (i=0; i < *ndim; i++) {
+                    fprintf(stderr,"%llu:%llu:%llu%s", ldims[i], gdims[i], offsets[i], (i<*ndim-1 ? ", " : "") );
+                }
+                fprintf(stderr, ")\n");
+            }
         }
-        else if (ldims[0]!=1 && ldims[*ndim - 1]==1) {
-            // last dimension is the time
+        else if (ldims[*ndim-1] == 1 && gdims[*ndim-1] == 0) {
+            // last dimension is the time (Fortran array)
             *timedim = *ndim - 1;
+            if (!file_is_fortran && *ndim > 1) {
+                fprintf(stderr,"ADIOS Error: this is a BP file with C array ordering but we found"
+                        "an array to have time dimension in the last dimension. l:g:o = (");
+                for (i=0; i < *ndim; i++) {
+                    fprintf(stderr,"%llu:%llu:%llu%s", ldims[i], gdims[i], offsets[i], (i<*ndim-1 ? ", " : "") );
+                }
+                fprintf(stderr, ")\n");
+            }
         }
         for (i=0; i < *ndim; i++) 
              (*dims)[i]=gdims[i];
@@ -752,7 +774,7 @@ ADIOS_VARINFO * adios_inq_var_byid (ADIOS_GROUP *gp, int varid)
     /* Get value or min/max */
     adios_get_characteristics (var_root, vi);
 
-    adios_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, 
+    adios_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
                           &(vi->ndim), &(vi->dims), &(vi->timedim));
             
     if (file_is_fortran != called_from_fortran) {
@@ -894,7 +916,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
     }
 
     /* Get dimensions and flip if caller != writer language */
-    adios_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, 
+    adios_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
                           &ndim, &dims, &timedim);
 
     if (file_is_fortran != called_from_fortran) 
