@@ -149,12 +149,36 @@ void print_metrics (struct adios_MPI_data_struct * md, int iteration)
 #include <sys/statfs.h>
 
 // this should be determined at configure time
-#define ADIOS_LUSTRE
+//#define ADIOS_LUSTRE
 
-#ifdef ADIOS_LUSTRE
+//#ifdef ADIOS_LUSTRE
 #include <sys/ioctl.h>
-#include <lustre/lustre_user.h>
-#endif
+//#include <lustre/lustre_user.h>
+//#endif
+// from /usr/include/lustre/lustre_user.h
+#define LUSTRE_SUPER_MAGIC 0x0BD00BD0
+#  define LOV_USER_MAGIC 0x0BD10BD0
+#  define LL_IOC_LOV_SETSTRIPE  _IOW ('f', 154, long)
+#  define LL_IOC_LOV_GETSTRIPE  _IOW ('f', 155, long)
+#define O_LOV_DELAY_CREATE 0100000000
+
+struct lov_user_ost_data {           // per-stripe data structure
+        uint64_t l_object_id;        // OST object ID
+        uint64_t l_object_gr;        // OST object group (creating MDS number)
+        uint32_t l_ost_gen;          // generation of this OST index
+        uint32_t l_ost_idx;          // OST index in LOV
+} __attribute__((packed));
+struct lov_user_md {                 // LOV EA user data (host-endian)
+        uint32_t lmm_magic;          // magic number = LOV_USER_MAGIC_V1
+        uint32_t lmm_pattern;        // LOV_PATTERN_RAID0, LOV_PATTERN_RAID1
+        uint64_t lmm_object_id;      // LOV object ID
+        uint64_t lmm_object_gr;      // LOV object group
+        uint32_t lmm_stripe_size;    // size of stripe in bytes
+        uint16_t lmm_stripe_count;   // num stripes in use for this object
+        uint16_t lmm_stripe_offset;  // starting stripe offset in lmm_objects
+        struct lov_user_ost_data  lmm_objects[0]; // per-stripe data
+} __attribute__((packed));
+
 
 static int
 adios_mpi_stripe_get_striping_unit(MPI_File fh, char *filename)
