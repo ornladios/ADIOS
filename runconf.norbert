@@ -115,6 +115,20 @@ elif [ `hostname | cut -c 1-4` == "nid0" ]; then
     #--with-netcdf=/usr/common/usg/netcdf/3.6.2
     
     
+elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-10` == "podhorszki" ]; then
+
+    #######
+    # Mac #
+    #######
+    echo "Configure on Mac"
+    export CC=mpicc
+    export FC=mpif90
+    CFLAGS="-DO_LARGEFILE=0" ./configure --prefix=/opt/adios \
+    --enable-dependency-tracking --enable-shared --disable-static\
+    --with-mxml=/opt/mxml \
+    --with-netcdf=/opt/netcdf \
+    --with-hdf5=/opt/hdf5
+    
 else
     echo "I have no idea what machine is this"
 fi
