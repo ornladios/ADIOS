@@ -2690,8 +2690,28 @@ int adios_set_buffer_size ()
         long pagesize;
         long pages;
 
+#if defined (__APPLE__)
+# include <sys/sysctl.h>
+        int mib[2];
+        uint64_t memsize;
+        size_t len;
+
+        mib[0] = CTL_HW;
+        mib[1] = HW_MEMSIZE; /*uint64_t: physical ram size */
+        len = sizeof(memsize);
+        sysctl(mib, 2, &memsize, &len, NULL, 0);
+        printf("- memsize  = %10i k\n", memsize/1024);
+        printf("- memsize  = %10i MB\n", memsize/1024/1024);
+        printf("- memsize  = %10i GB\n", memsize/1024/1024/1024);
+
+        return memsize/1024;
+        /*return (long)memsize/1024;   /*this type cast didn't work*/
+
+
+#else
         pagesize = sysconf (_SC_PAGE_SIZE);
         pages = sysconf (_SC_AVPHYS_PAGES);
+#endif
 
         if (adios_buffer_alloc_percentage)
         {

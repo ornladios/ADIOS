@@ -14,6 +14,10 @@
 #include "adios_internals.h"
 #include "adios_endianness.h"
 
+#if defined(__APPLE__) 
+#    define O_LARGEFILE 0
+#endif
+
 #define BYTE_ALIGN 8
 static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
 {

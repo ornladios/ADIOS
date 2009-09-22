@@ -1,5 +1,6 @@
 #ifndef ADIOS_BP_V1_H
 #define ADIOS_BP_V1_H
+#include "unistd.h"
 #include "adios_types.h"
 #include "adios_transport_hooks.h" 
 enum ADIOS_CHARACTERISTICS
