@@ -143,6 +143,7 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     /* get version id. Needs the bp->offset be pointing to the last 4 bytes of the buffer,
        so do not move this call upward in this source */
     adios_parse_version (b, &mh->version);
+    mh->change_endianness = (b->change_endianness == adios_flag_yes);
 
     b->end_of_pgs = b->pg_index_offset;
     b->pg_size = b->vars_index_offset - b->pg_index_offset;
@@ -1455,7 +1456,7 @@ void copy_data (void *dst, void *src,
         }
         src_offset_new =src_offset + i * src_stride * src_step;
         dst_offset_new = dst_offset + i * dst_stride * dst_step;
-        copy_data (dst, src, idim+1, ndim, size_in_dset,
+        copy_data ( dst, src, idim+1, ndim, size_in_dset,
                 ldims,readsize, 
                 dst_stride, src_stride,
                 dst_offset_new, src_offset_new,

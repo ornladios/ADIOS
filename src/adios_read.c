@@ -57,6 +57,9 @@ ADIOS_FILE * adios_fopen (const char * fname, MPI_Comm comm)
     
     header_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
 
+//    if (fh->mfooter.change_endianness)
+//        printf("... Change endianness ...\n");
+
     if ( rank != 0) {
         if (!fh->b->buff) {
             bp_alloc_aligned (fh->b, header_size);
@@ -702,7 +705,6 @@ static void adios_get_dimensions (struct adios_index_var_struct_v1 *var_root, in
              (*dims)[*timedim] = ntsteps;
         }
     }
-
 }
 
 ADIOS_VARINFO * adios_inq_var (ADIOS_GROUP *gp, const char * varname) 
@@ -921,7 +923,6 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
 
     if (file_is_fortran != called_from_fortran) 
         swap_order(ndim, dims, &timedim);
-    
 
     /* Get the timesteps we need to read */
     if (timedim > -1) {
@@ -966,6 +967,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
 
     size_of_type = bp_get_type_size (var_root->type, "");
 
+    uint64_t write_offset = 0;
     /* For each timestep, do reading separately (they are stored in different sets of process groups */
     for (timestep = start_time; timestep <= stop_time; timestep++) {
 
@@ -1013,7 +1015,6 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
          /* READ AN ARRAY VARIABLE */
         int * idx_table = (int *) malloc (sizeof(int) * count);
 
-        uint64_t read_offset = 0;
         int npg = 0;
         tmpcount = 0;
         if (count > var_root->characteristics_count)
@@ -1154,12 +1155,13 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
                     MPI_FILE_READ_OPS1
                 }
     
-                memcpy (data + read_offset, fh->b->buff + fh->b->offset, slice_size);
+                memcpy (data + write_offset, fh->b->buff + fh->b->offset, slice_size);
     
-                read_offset +=  slice_size;
+                write_offset +=  slice_size;
             }
             else 
             {
+
                 uint64_t stride_offset = 0;
                 int isize;
                 uint64_t size_in_dset[10];
@@ -1249,7 +1251,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
                           ,hole_break
                           ,size_in_dset
                           ,ldims
-                          ,readsize
+                          ,readsize_notime
                           ,var_stride
                           ,dset_stride
                           ,var_offset
@@ -1263,6 +1265,8 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
         free (idx_table);
     
         total_size += items_read * size_of_type;
+        // shift target pointer for next read in
+        data = (char *)data + (items_read * size_of_type);
 
     } // end for (timestep ... loop over timesteps
 
