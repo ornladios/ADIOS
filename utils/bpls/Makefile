@@ -89,11 +89,13 @@ AUTOCONF = ${SHELL} /ccs/proj/e2e/pnorbert/ADIOS/ADIOS/trunk/config/missing --ru
 AUTOHEADER = ${SHELL} /ccs/proj/e2e/pnorbert/ADIOS/ADIOS/trunk/config/missing --run autoheader
 AUTOMAKE = ${SHELL} /ccs/proj/e2e/pnorbert/ADIOS/ADIOS/trunk/config/missing --run automake-1.9
 AWK = gawk
+BUILD_WRITE_FALSE = #
+BUILD_WRITE_TRUE = 
 CC = mpicc
 CCDEPMODE = depmode=none
 CFLAGS = -g -fPIC
 CPP = mpicc -E
-CPPFLAGS = -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
+CPPFLAGS =  -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
 CSH = /bin/csh
 CXX = 
 CXXCPP = g++ -E

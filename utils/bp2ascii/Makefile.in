@@ -59,7 +59,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_bp2ascii_OBJECTS = bp2ascii-bp2ascii.$(OBJEXT)
 bp2ascii_OBJECTS = $(am_bp2ascii_OBJECTS)
 am__DEPENDENCIES_1 =
-bp2ascii_DEPENDENCIES = $(top_builddir)/src/libadios_int.a \
+bp2ascii_DEPENDENCIES = $(top_builddir)/src/libadios_int_nompi.a \
 	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
@@ -86,6 +86,8 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BUILD_WRITE_FALSE = @BUILD_WRITE_FALSE@
+BUILD_WRITE_TRUE = @BUILD_WRITE_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -225,7 +227,7 @@ bp2ascii_LDFLAGS = $(MXML_LDFLAGS)
 bp2ascii_CPPFLAGS = $(MXML_CPPFLAGS)
 
 #bp2ascii_LDADD = $(top_builddir)/src/libadios.a
-bp2ascii_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS)
+bp2ascii_LDADD = $(top_builddir)/src/libadios_int_nompi.a $(MXML_LIBS)
 all: all-am
 
 .SUFFIXES:

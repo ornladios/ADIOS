@@ -1,5 +1,5 @@
 INCLUDES = $(all_includes)
-INCLUDES += -I$(top_builddir)/src -I/ccs/home/sklasky/parallel-netcdf/jaguar/include
+INCLUDES += -I$(top_builddir)/src #-I/ccs/home/sklasky/parallel-netcdf/jaguar/include
 
 AUTOMAKE_OPTIONS = no-dependencies
 

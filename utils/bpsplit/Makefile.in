@@ -59,15 +59,15 @@ PROGRAMS = $(bin_PROGRAMS)
 am_bpappend_OBJECTS = bpappend.$(OBJEXT)
 bpappend_OBJECTS = $(am_bpappend_OBJECTS)
 am__DEPENDENCIES_1 =
-bpappend_DEPENDENCIES = $(top_builddir)/src/libadios_int.a \
+bpappend_DEPENDENCIES = $(top_builddir)/src/libadios_int_nompi.a \
 	$(am__DEPENDENCIES_1)
 am_bpgettime_OBJECTS = bpgettime.$(OBJEXT)
 bpgettime_OBJECTS = $(am_bpgettime_OBJECTS)
-bpgettime_DEPENDENCIES = $(top_builddir)/src/libadios_int.a \
+bpgettime_DEPENDENCIES = $(top_builddir)/src/libadios_int_nompi.a \
 	$(am__DEPENDENCIES_1)
 am_bpsplit_OBJECTS = bpsplit.$(OBJEXT)
 bpsplit_OBJECTS = $(am_bpsplit_OBJECTS)
-bpsplit_DEPENDENCIES = $(top_builddir)/src/libadios_int.a \
+bpsplit_DEPENDENCIES = $(top_builddir)/src/libadios_int_nompi.a \
 	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
@@ -95,6 +95,8 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BUILD_WRITE_FALSE = @BUILD_WRITE_FALSE@
+BUILD_WRITE_TRUE = @BUILD_WRITE_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -231,13 +233,14 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 bpsplit_SOURCES = bpsplit.c
 bpsplit_LDFLAGS = $(MXML_LDFLAGS)
-bpsplit_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS)
+bpsplit_LDADD = $(top_builddir)/src/libadios_int_nompi.a $(MXML_LIBS)
 bpappend_SOURCES = bpappend.c
 bpappend_LDFLAGS = $(MXML_LDFLAGS)
-bpappend_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS)
+bpappend_LDADD = $(top_builddir)/src/libadios_int_nompi.a $(MXML_LIBS)
 bpgettime_SOURCES = bpgettime.c
 bpgettime_LDFLAGS = $(MXML_LDFLAGS)
-bpgettime_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS)
+bpgettime_LDADD = $(top_builddir)/src/libadios_int_nompi.a \
+	$(MXML_LIBS)
 all: all-am
 
 .SUFFIXES:

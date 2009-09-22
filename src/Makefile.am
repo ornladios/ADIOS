@@ -6,7 +6,7 @@ METASOURCES=AUTO
 include_HEADERS=
 lib_LIBRARIES=
 
-if OSX_FALSE
+if BUILD_WRITE
 lib_LIBRARIES += libadios.a
 libadios_a_SOURCES = adios.c \
                      adios_transport_hooks.c \
@@ -43,7 +43,7 @@ endif
 
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 
-endif   # not OSX
+endif   # not BUILD_WRITE
 
 include_HEADERS += adios.h \
                    adios_types.h

@@ -22,7 +22,8 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     --enable-dependency-tracking \
     --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
     --with-hdf5=$HDF5_DIR 
-    #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET
+    #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
+    #--enable-datatap=ib
     #--with-phdf5=/apps/HDF5/1.6.5/ewok_par/pgi625v2 \
     #--with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
 
@@ -120,6 +121,9 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-10` == "podhors
     #######
     # Mac #
     #######
+    #
+    # NOTE: disable-write is required to build on Mac
+    #
     echo "Configure on Mac"
     export CC=mpicc
     export FC=mpif90
@@ -127,7 +131,8 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-10` == "podhors
     --enable-dependency-tracking --enable-shared --disable-static\
     --with-mxml=/opt/mxml \
     --with-netcdf=/opt/netcdf \
-    --with-hdf5=/opt/hdf5
+    --with-hdf5=/opt/hdf5 \
+    --disable-write
     
 else
     echo "I have no idea what machine is this"

@@ -112,7 +112,10 @@ AM_CONDITIONAL([PTL], [test x$datatap = xptl])
 AM_CONDITIONAL([INFINIBAND], [test x$datatap = xib])
 AM_CONDITIONAL([DATATAP], [test x$datatap != xdisable])
 
-AM_CONDITIONAL([OSX], [test x$ARCH != xOSX])
+write=disable
+AC_ARG_ENABLE(write, 
+    [  --disable-write 	Disable building the write methods in ADIOS. Default is disabled but must be turned off on MacOSX])
+AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
 
 
 dnl CC="$MPICC"
