@@ -34,6 +34,11 @@
 #  define strndup(str,len) strdup(str)
 #endif
 
+#if defined(__APPLE__) || defined(__WIN32__) 
+#    define lseek64 lseek
+#    define open64  open
+#endif
+
 #define DIVIDER "========================================================\n"
 
 
