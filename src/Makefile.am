@@ -6,6 +6,7 @@ METASOURCES=AUTO
 include_HEADERS=
 lib_LIBRARIES=
 
+if OSX_FALSE
 lib_LIBRARIES += libadios.a
 libadios_a_SOURCES = adios.c \
                      adios_transport_hooks.c \
@@ -15,18 +16,18 @@ libadios_a_SOURCES = adios.c \
                      adios_mpi_stripe.c \
                      adios_mpi_stagger.c \
                      adios_mpi_aggregate.c \
-		     adios_posix.c \
+                     adios_posix.c \
                      adios_posix_ascii.c \
                      adios_vtk.c \
-		     adios_provenance.c \
-		     adios_internals.c \
-		     adios_socket.c \
+                     adios_provenance.c \
+                     adios_internals.c \
+                     adios_socket.c \
                      adios_bp_v1.c  \
                      adios_bp_v2.c  \
                      adios_endianness.c\
                      adios_adaptive.c\
-		     adios_datatap.c
-#		     adios_dart.c
+                     adios_datatap.c
+#  		      adios_dart.c
 if HAVE_PHDF5
 lib_LIBRARIES += libadios_phdf5.a
 libadios_phdf5_a_SOURCES = adios_phdf5.c
@@ -41,6 +42,9 @@ endif
 #endif
 
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
+
+endif   # not OSX
+
 include_HEADERS += adios.h \
                    adios_types.h
 
@@ -77,12 +81,12 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
 		      adios_read.c
 libadiosread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI 
 include_HEADERS += adios_internals.h \
-                   adios_transport_hooks.h
+                   adios_transport_hooks.h 
 include_HEADERS += adios_read.h \
                    mpidummy.h
 CC=$(MPICC)
 
 if HAVE_DMALLOC
-libadiosread_nompi_a_CPPFLAGS += -DDMALLOC -I/ccs/proj/e2e/pnorbert/dmalloc.gnu/include
-libadiosread_a_CPPFLAGS += -DDMALLOC -I/ccs/proj/e2e/pnorbert/dmalloc.gnu/include
+libadiosread_nompi_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
+libadiosread_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
 endif
