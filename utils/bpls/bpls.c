@@ -334,7 +334,7 @@ void init_globals(void) {
 
 
 #define PRINT_DIMS(str, v, n, loopvar) printf("%s = { ", str); \
-    for (loopvar=0; loopvar<n;loopvar++) printf("%d ", v[loopvar]);    \
+    for (loopvar=0; loopvar<n;loopvar++) printf("%lld ", v[loopvar]);    \
     printf("}")
 
 void printSettings(void) {
@@ -403,9 +403,9 @@ int doList(const char *path) {
     ADIOS_FILE  *fp;
     ADIOS_GROUP *gp; // reused for each group
     ADIOS_VARINFO *vi; 
+    enum ADIOS_DATATYPES vartype;
     int     grpid, i, j, n;             // loop vars
     int     status;
-    int     vartype;
     int     attrsize;                       // info about one attribute
     int     mpi_comm_dummy;
     bool    matches;
@@ -513,9 +513,9 @@ int doList(const char *path) {
                 } else if (vi->ndim > 0) {
                     // array
                     //fprintf(outf,"  {%s%d", (vi->timedim==0 ? "T-": ""),vi->dims[0]);
-                    fprintf(outf,"  {%d", vi->dims[0]);
+                    fprintf(outf,"  {%lld", vi->dims[0]);
                     for (j=1; j < vi->ndim; j++) {
-                       fprintf(outf,", %d", vi->dims[j]);
+                       fprintf(outf,", %lld", vi->dims[j]);
                     }
                     fprintf(outf,"}");
                     if (longopt && vi->gmin && vi->gmax) {
@@ -614,7 +614,7 @@ void mergeLists(int nV, char **listV, int nA, char **listA, char **mlist, bool *
     }
 }
 
-int getTypeInfo( int adiosvartype, int* elemsize)
+int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize)
 {
     switch(adiosvartype) {
         case adios_unsigned_byte:
