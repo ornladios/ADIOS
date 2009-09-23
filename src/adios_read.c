@@ -13,6 +13,26 @@
 
 static int called_from_fortran = 0; // set to 1 when called from Fortran API
 
+/* Return 0: if file is little endian, 1 if file is big endian 
+ * We know if it is different from the current system, so here
+ * we determine the current endianness and report accordingly.
+ */
+static int adios_get_endianness( enum ADIOS_FLAG change_endianness )
+{
+   int LE = 0;
+   int BE = !LE;
+   int i = 1;
+   char *p = (char *) &i;
+   int current_endianness;
+   if (p[0] == 1) // Lowest address contains the least significant byte
+       current_endianness = LE;
+   else
+       current_endianness = BE;
+    if (change_endianness == adios_flag_yes)
+        return !current_endianness;
+    else
+        return current_endianness;
+}
 
 ADIOS_FILE * adios_fopen (const char * fname, MPI_Comm comm)
 {
@@ -57,9 +77,6 @@ ADIOS_FILE * adios_fopen (const char * fname, MPI_Comm comm)
     
     header_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
 
-//    if (fh->mfooter.change_endianness)
-//        printf("... Change endianness ...\n");
-
     if ( rank != 0) {
         if (!fh->b->buff) {
             bp_alloc_aligned (fh->b, header_size);
@@ -86,6 +103,7 @@ ADIOS_FILE * adios_fopen (const char * fname, MPI_Comm comm)
     fp->ntimesteps = fh->tidx_stop - fh->tidx_start + 1;
     fp->file_size = fh->mfooter.file_size;
     fp->version = fh->mfooter.version;
+    fp->endianness = adios_get_endianness(fh->mfooter.change_endianness);
     alloc_namelist (&fp->group_namelist,fp->groups_count); 
     for (i=0;i<fp->groups_count;i++) {
         if (!fp->group_namelist[i]) {
