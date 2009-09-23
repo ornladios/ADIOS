@@ -439,6 +439,7 @@ int doList(const char *path) {
          printf ("  time steps:    %d starting from %d\n", fp->ntimesteps, fp->tidx_start);
          print_file_size(fp->file_size);
          printf ("  bp version:    %d\n", fp->version);
+         printf ("  endianness:    %s\n", (fp->endianness ? "Big Endian" : "Little Endian"));
          printf ("\n");
     }
 
