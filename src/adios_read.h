@@ -181,6 +181,14 @@ int adios_get_attr_byid (ADIOS_GROUP * gp, int attrid, enum ADIOS_DATATYPES * ty
 /** Return the name of an adios type */
 const char * adios_type_to_string (enum ADIOS_DATATYPES type);
 
+/** Return the memory size of one data element of an adios type.
+ *  If the type is adios_string, and the second argument is
+ *  the string itself, it returns strlen(data)+1.
+ *  For other types, it does not care about data and returns
+ *  the size occupied by one element. 
+ */
+int adios_type_size(enum ADIOS_DATATYPES type, void *data);
+
 
 /*********************/
 /* Fortran interface */

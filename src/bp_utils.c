@@ -465,7 +465,7 @@ int bp_parse_attrs (struct BP_FILE * fh)
         uint32_t attr_entry_length;
         uint16_t len;
         uint64_t characteristics_sets_count;
-        uint64_t type_size;
+        int type_size;
 
         BUFREAD32(b, attr_entry_length)
         BUFREAD16(b, (*root)->id)
@@ -491,7 +491,7 @@ int bp_parse_attrs (struct BP_FILE * fh)
         BUFREAD8(b, flag)
         (*root)->type = (enum ADIOS_DATATYPES) flag;
 
-        type_size = adios_get_type_size ((*root)->type, "");
+        type_size = bp_get_type_size ((*root)->type, "");
         if (type_size == -1)
         {
             type_size = 4;
@@ -651,7 +651,7 @@ int bp_parse_vars (struct BP_FILE * fh)
         uint32_t var_entry_length;
         uint16_t len;
         uint64_t characteristics_sets_count;
-        uint64_t type_size;
+        int type_size;
 
         BUFREAD32(b, var_entry_length)
         BUFREAD16(b, (*root)->id)
@@ -828,14 +828,14 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 
 void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_DATATYPES type)
 {
-    uint16_t data_size;
+    int data_size;
     void * data = 0;
 
     if (type == adios_string) {
         BUFREAD16(b, data_size)
         data = malloc (data_size + 1);
     } else {
-        data_size = adios_get_type_size (type, "");
+        data_size = bp_get_type_size (type, "");
         data = malloc (data_size);
     }
 
@@ -1448,6 +1448,15 @@ void copy_data (void *dst, void *src,
     }
 }
 
+/** Return the memory size of one data element of an adios type.
+ *  If the type is adios_string, and the second argument is
+ *  the string itself, it returns strlen(var)+1.
+ *  For other types, it does not care about var and returns
+ *  the size occupied by one element. 
+ *
+ *  Note that adios_internals:adios_get_type_size returns
+ *  strlen(var) for strings. 
+ */ 
 int bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
 {
     switch (type)
@@ -1458,9 +1467,9 @@ int bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
 
         case adios_string:
             if (!var)
-                return 0;
+                return 1;
             else
-                return strlen ((char *) var);
+                return strlen ((char *) var) + 1;
 
         case adios_short:
         case adios_unsigned_short:

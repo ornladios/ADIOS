@@ -457,8 +457,6 @@ int adios_get_attr_byid (ADIOS_GROUP * gp, int attrid,
         /* Attribute has its own value */
         *size = bp_get_type_size (attr_root->type, attr_root->characteristics[0].value);
         *type = attr_root->type;
-        if (*type == adios_string) 
-            (*size) ++;
         *data = (void *) malloc (*size);  
         if (*data)
             memcpy(*data, attr_root->characteristics[0].value, *size);
@@ -481,8 +479,6 @@ int adios_get_attr_byid (ADIOS_GROUP * gp, int attrid,
 
         *size = bp_get_type_size (var_root->type, var_root->characteristics[0].value);
         *type = attr_root->type;
-        if (*type == adios_string) 
-            (*size) ++;
         *data = (void *) malloc (*size);  
         if (*data)
             memcpy(*data, var_root->characteristics[0].value, *size);
@@ -1314,6 +1310,12 @@ const char * adios_type_to_string (enum ADIOS_DATATYPES type)
         }
     }
 }
+
+int adios_type_size(enum ADIOS_DATATYPES type, void *data)
+{
+    return bp_get_type_size(type, data);
+}
+
 
 void adios_print_groupinfo (ADIOS_GROUP *gp) 
 {
