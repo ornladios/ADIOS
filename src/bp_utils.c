@@ -125,12 +125,11 @@ int bp_read_open (const char * filename,
 
 int bp_read_minifooter (struct BP_FILE * bp_struct)
 {
-        struct adios_bp_buffer_struct_v1 * b = bp_struct->b;
-        struct bp_minifooter * mh = &bp_struct->mfooter;
-
+    struct adios_bp_buffer_struct_v1 * b = bp_struct->b;
+    struct bp_minifooter * mh = &bp_struct->mfooter;
     uint64_t attrs_end = b->file_size - MINIFOOTER_SIZE;
     uint32_t test = 1;
-        int r;
+    int r;
 
     MPI_Status status;
 
@@ -424,7 +423,7 @@ int bp_parse_pgs (struct BP_FILE * fh)
     fh->tidx_stop= tidx_stop; 
 
     free(grpidlist);
-    return;
+    return 0;
 }
 
 
@@ -611,6 +610,7 @@ int bp_parse_attrs (struct BP_FILE * fh)
     fh->gattr_h->attr_counts_per_group = attr_counts_per_group;
     fh->gattr_h->attr_offsets = attr_offsets;
 
+    return 0;
 }
 
 /*******************/
@@ -712,7 +712,7 @@ int bp_parse_vars (struct BP_FILE * fh)
     
     root = vars_root;
     uint16_t * var_counts_per_group;
-     uint16_t *  var_gids;
+    uint16_t *  var_gids;
     uint64_t ** var_offsets;
     char ** var_namelist;
     int grpid, j,cnt;
@@ -735,8 +735,8 @@ int bp_parse_vars (struct BP_FILE * fh)
                 break;
             }
         }
-                // Full name of variable: concatenate var_path and var_name
-                // Always have / in the beginning of the full name
+        // Full name of variable: concatenate var_path and var_name
+        // Always have / in the beginning of the full name
         if (strcmp ((*root)->var_path,"/")) {
             var_namelist [i] = (char *) malloc ( strlen((*root)->var_name)
                     +strlen((*root)->var_path) + 1 + 1   // extra / and ending \0
@@ -760,17 +760,13 @@ int bp_parse_vars (struct BP_FILE * fh)
         cnt = pdims->count;
         root = &(*root)->next;
     }
+
     //here is the asssumption that var_gids is linearly increased
-     free( var_gids);
+    free( var_gids);
     fh->gvar_h->var_namelist = var_namelist;
     fh->gvar_h->var_counts_per_group=var_counts_per_group;
     fh->gvar_h->var_offsets = var_offsets;
     return 0;
-    
-    // here we need
-    // number of group
-    // number of vars in each group
-    // the offsets for each vars
 }
 
 int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
