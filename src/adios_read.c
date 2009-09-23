@@ -561,7 +561,7 @@ static int find_var(ADIOS_GROUP *gp, const char *varname)
 static void adios_get_characteristics (struct adios_index_var_struct_v1 * var_root, ADIOS_VARINFO *vi)
 {
     int i;
-    uint64_t size;
+    int size;
 
     /* set value for scalars */
     void *vval = var_root->characteristics [0].value;
@@ -877,7 +877,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
     int timedim = -1;
     int rank;
     int is_global = 0;
-    int64_t size_of_type;
+    int size_of_type;
     uint64_t slice_offset;
     uint64_t slice_size;
     uint64_t tmpcount = 0;
@@ -967,7 +967,6 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
 
     size_of_type = bp_get_type_size (var_root->type, "");
 
-    uint64_t write_offset = 0;
     /* For each timestep, do reading separately (they are stored in different sets of process groups */
     for (timestep = start_time; timestep <= stop_time; timestep++) {
 
@@ -1008,6 +1007,9 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
             }
 
             memcpy((char *)data+total_size, fh->b->buff + fh->b->offset, size_of_type);
+            if (fh->mfooter.change_endianness == adios_flag_yes) {
+                change_endianness((char *)data+total_size, size_of_type, var_root->type);
+            }
             total_size += size_of_type;
             continue;
         }
@@ -1015,6 +1017,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
          /* READ AN ARRAY VARIABLE */
         int * idx_table = (int *) malloc (sizeof(int) * count);
 
+        uint64_t write_offset = 0;
         int npg = 0;
         tmpcount = 0;
         if (count > var_root->characteristics_count)
@@ -1114,6 +1117,9 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
                 }
     
                 memcpy( (char *)data, fh->b->buff + fh->b->offset, slice_size);
+                if (fh->mfooter.change_endianness == adios_flag_yes) {
+                    change_endianness(data, slice_size, var_root->type);
+                }
             }
             else if (hole_break == 0) 
             {
@@ -1155,7 +1161,10 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
                     MPI_FILE_READ_OPS1
                 }
     
-                memcpy (data + write_offset, fh->b->buff + fh->b->offset, slice_size);
+                memcpy ((char *)data + write_offset, fh->b->buff + fh->b->offset, slice_size);
+                if (fh->mfooter.change_endianness == adios_flag_yes) {
+                    change_endianness((char *)data + write_offset, slice_size, var_root->type);
+                }
     
                 write_offset +=  slice_size;
             }

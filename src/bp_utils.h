@@ -28,8 +28,8 @@ int bp_read_open (const char * filename,
 		  struct BP_FILE * fh);
 
 const char * value_to_string (enum ADIOS_DATATYPES type, void * data);
-//void bp_grouping ( struct BP_FILE * fh, uint64_t * gh);
-uint64_t bp_get_type_size (enum ADIOS_DATATYPES type, void * var);
+int bp_get_type_size (enum ADIOS_DATATYPES type, void * var);
+void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES type);
 
 void print_process_group_index (
                          struct adios_index_process_group_struct_v1 * pg_root

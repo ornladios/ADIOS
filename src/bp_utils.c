@@ -7,14 +7,37 @@
 #include "bp_utils.h"
 #include "adios_bp_v1.h"
 #include "adios_errcodes.h"
+#include "adios_endianness.h"
 #define BYTE_ALIGN 8
 #define MINIFOOTER_SIZE 28
-#define PG_MINIHEADER_SIZE 16
 
 
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
+
+#define BUFREAD8(b,var)  var = (uint8_t) *(b->buff + b->offset); \
+                         b->offset += 1;
+
+#define BUFREAD16(b,var) var = *(uint16_t *) (b->buff + b->offset); \
+                         if (b->change_endianness == adios_flag_yes) \
+                             swap_16(var); \
+                         b->offset += 2;
+
+#define BUFREAD32(b,var) var = *(uint32_t *) (b->buff + b->offset); \
+                         if (b->change_endianness == adios_flag_yes) \
+                             swap_32(var); \
+                         b->offset += 4;
+
+#define BUFREAD64(b,var) var = *(uint64_t *) (b->buff + b->offset); \
+                         if (b->change_endianness == adios_flag_yes) \
+                             swap_64(var); \
+                         b->offset += 8;
+
+/* prototypes */
+void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_DATATYPES type);
+int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b, struct adios_index_var_struct_v1 ** root, uint64_t j);
+
 
 int adios_errno;
 char aerr[ERRMSG_MAXLEN];
@@ -120,36 +143,37 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
         memset (b->buff, 0, MINIFOOTER_SIZE);
         b->offset = 0;
     }
-    MPI_File_seek (bp_struct->mpi_fh, 
-            (MPI_Offset) attrs_end, 
-            MPI_SEEK_SET);
-
-    MPI_File_read (bp_struct->mpi_fh, b->buff, MINIFOOTER_SIZE, 
-            MPI_BYTE, &status);
+    MPI_File_seek (bp_struct->mpi_fh, (MPI_Offset) attrs_end, MPI_SEEK_SET);
+    MPI_File_read (bp_struct->mpi_fh, b->buff, MINIFOOTER_SIZE, MPI_BYTE, &status);
     
-    memset (&mh->pgs_index_offset, 0, MINIFOOTER_SIZE);
-    memcpy (&mh->pgs_index_offset, b->buff, MINIFOOTER_SIZE);
+    /*memset (&mh->pgs_index_offset, 0, MINIFOOTER_SIZE);
+    memcpy (&mh->pgs_index_offset, b->buff, MINIFOOTER_SIZE);*/
     
-    b->pg_index_offset = *(uint64_t *) (b->buff + b->offset);
-    mh->pgs_index_offset = b->pg_index_offset;
-    b->offset += 8;
-
-    b->vars_index_offset = *(uint64_t *) (b->buff + b->offset);
-    b->offset += 8;
-
-    b->attrs_index_offset = *(uint64_t *) (b->buff + b->offset);
-    b->offset += 8;
-
     /* get version id. Needs the bp->offset be pointing to the last 4 bytes of the buffer,
-       so do not move this call upward in this source */
+       It also sets b->change_endianness */
+    /* Note that b is not sent over to processes, only the minifooter and then b->buff (the footer) */
+    b->offset = MINIFOOTER_SIZE - 4;
     adios_parse_version (b, &mh->version);
-    mh->change_endianness = (b->change_endianness == adios_flag_yes);
+    mh->change_endianness = b->change_endianness;
+    b->offset = 0; // reset offset to beginning 
+
+    BUFREAD64(b, b->pg_index_offset)
+    mh->pgs_index_offset = b->pg_index_offset;
+
+    BUFREAD64(b, b->vars_index_offset)
+    mh->vars_index_offset = b->vars_index_offset;
+
+    BUFREAD64(b, b->attrs_index_offset)
+    mh->attrs_index_offset = b->attrs_index_offset;
 
     b->end_of_pgs = b->pg_index_offset;
     b->pg_size = b->vars_index_offset - b->pg_index_offset;
     b->vars_size = b->attrs_index_offset - b->vars_index_offset;
     b->attrs_size = attrs_end - b->attrs_index_offset;
 
+    /* Read the whole footer */
+    /* FIXME: including the last 28 bytes read already above and it seems that is not processed anymore */
+    /* It will be sent to all processes */
     uint64_t footer_size = mh->file_size - mh->pgs_index_offset;
     bp_realloc_aligned (b, footer_size);
     MPI_File_seek (bp_struct->mpi_fh,
@@ -165,6 +189,9 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     return 0;
 }
 
+/****************/
+/* Parse GROUPS */
+/****************/
 int bp_parse_pgs (struct BP_FILE * fh)
 {
     struct bp_index_pg_struct_v1 ** root = &(fh->pgs_root); // need the pointer to it to malloc below
@@ -172,15 +199,20 @@ int bp_parse_pgs (struct BP_FILE * fh)
     struct bp_minifooter * mh = &(fh->mfooter);
     uint64_t i;
 
-    memcpy (&mh->pgs_count, b->buff, PG_MINIHEADER_SIZE);
+    /* Note that at this point, many variables of b->* is unset (init'ed to 0).
+       It's the minifooter which holds accurate information.
+       b holds the footer data from the file */
 
-    b->offset += PG_MINIHEADER_SIZE;
+    b->offset = 0;
+    b->change_endianness = mh->change_endianness;
+
+    BUFREAD64(b, mh->pgs_count)
+    BUFREAD64(b, mh->pgs_length)
 
     int j;
-
     uint64_t group_count = 0;
-
     char ** namelist;
+    char fortran_flag;
 
     namelist = (char **) malloc(sizeof(char *)*mh->pgs_count);
     uint16_t * grpidlist = (uint16_t *) malloc(sizeof(uint16_t)*mh->pgs_count);
@@ -189,8 +221,7 @@ int bp_parse_pgs (struct BP_FILE * fh)
         uint16_t length_of_group;
         namelist[i] = 0;    
         // validate remaining length
-        length_of_group = *(uint16_t *) (b->buff + b->offset);
-        b->offset += 2;
+        BUFREAD16(b, length_of_group)
 
         if (!*root)
         {
@@ -201,8 +232,7 @@ int bp_parse_pgs (struct BP_FILE * fh)
         }
         uint16_t length_of_name;
 
-        length_of_name = *(uint16_t *) (b->buff + b->offset);
-        b->offset += 2;
+        BUFREAD16(b, length_of_name)
         (*root)->group_name = (char *) malloc (length_of_name + 1);
         (*root)->group_name [length_of_name] = '\0';
         memcpy ((*root)->group_name, b->buff + b->offset, length_of_name);
@@ -232,27 +262,22 @@ int bp_parse_pgs (struct BP_FILE * fh)
                     
         }
             
+        BUFREAD8(b, fortran_flag)
         (*root)->adios_host_language_fortran =
-            (*(b->buff + b->offset) == 'y' ? adios_flag_yes
-             : adios_flag_no
-            );
-        b->offset += 1;
+            (fortran_flag == 'y' ? adios_flag_yes : adios_flag_no);
 
-        (*root)->process_id = *(uint32_t *) (b->buff + b->offset);
-        b->offset += 4;
+        BUFREAD32(b, (*root)->process_id)
 
-        length_of_name = *(uint16_t *) (b->buff + b->offset);
-        b->offset += 2;
+        BUFREAD16(b, length_of_name)
         (*root)->time_index_name = (char *) malloc (length_of_name + 1);
         (*root)->time_index_name [length_of_name] = '\0';
         memcpy ((*root)->time_index_name, b->buff + b->offset, length_of_name);
         b->offset += length_of_name;
 
-        (*root)->time_index = *(uint32_t *) (b->buff + b->offset);
-        b->offset += 4;
+        BUFREAD32(b, (*root)->time_index)
 
-        (*root)->offset_in_file = *(uint64_t *) (b->buff + b->offset);
-        b->offset += 8;
+        BUFREAD64(b, (*root)->offset_in_file)
+
         if (i == mh->pgs_count-1)
             mh->time_steps = (*root)->time_index;
 
@@ -402,6 +427,10 @@ int bp_parse_pgs (struct BP_FILE * fh)
     return;
 }
 
+
+/********************/
+/* Parse ATTRIBUTES */
+/********************/
 int bp_parse_attrs (struct BP_FILE * fh)
 {
     struct adios_bp_buffer_struct_v1 * b = fh->b;
@@ -422,11 +451,8 @@ int bp_parse_attrs (struct BP_FILE * fh)
 
     root = attrs_root;
 
-    memcpy (&mh->attrs_count, b->buff + b->offset, 2);
-    b->offset += 2;
-
-    memcpy (&mh->attrs_length, b->buff + b->offset, 8);
-    b->offset += 8;
+    BUFREAD16(b, mh->attrs_count)
+    BUFREAD64(b, mh->attrs_length)
 
     for (i = 0; i < mh->attrs_count; i++) {
         if (!*root)
@@ -441,38 +467,30 @@ int bp_parse_attrs (struct BP_FILE * fh)
         uint64_t characteristics_sets_count;
         uint64_t type_size;
 
-        attr_entry_length = *(uint32_t *) (b->buff + b->offset);
-        b->offset += 4;
+        BUFREAD32(b, attr_entry_length)
+        BUFREAD16(b, (*root)->id)
 
-        (*root)->id = *(uint16_t *) (b->buff + b->offset);
-        b->offset += 2;
-
-        len = *(uint16_t *) (b->buff + b->offset);
-        b->offset += 2;
-
+        BUFREAD16(b, len)
         (*root)->group_name = (char *) malloc (len + 1);
         (*root)->group_name [len] = '\0';
         strncpy ((*root)->group_name, b->buff + b->offset, len);
         b->offset += len;
 
-        len = *(uint16_t *) (b->buff + b->offset);
-        b->offset += 2;
+        BUFREAD16(b, len)
         (*root)->attr_name = (char *) malloc (len + 1);
         (*root)->attr_name [len] = '\0';
         strncpy ((*root)->attr_name, b->buff + b->offset, len);
         b->offset += len;
 
-        len = *(uint16_t *) (b->buff + b->offset);
-        b->offset += 2;
+        BUFREAD16(b, len)
         (*root)->attr_path = (char *) malloc (len + 1);
         (*root)->attr_path [len] = '\0';
         strncpy ((*root)->attr_path, b->buff + b->offset, len);
         b->offset += len;
 
-        flag = *(b->buff + b->offset);
+        BUFREAD8(b, flag)
         (*root)->type = (enum ADIOS_DATATYPES) flag;
 
-        b->offset += 1;
         type_size = adios_get_type_size ((*root)->type, "");
         if (type_size == -1)
         {
@@ -480,10 +498,9 @@ int bp_parse_attrs (struct BP_FILE * fh)
             (*root)->type = adios_integer;
         }
 
-        characteristics_sets_count = *(uint64_t *) (b->buff + b->offset);
+        BUFREAD64(b, characteristics_sets_count)
         (*root)->characteristics_count = characteristics_sets_count;
         (*root)->characteristics_allocated = characteristics_sets_count;
-        b->offset += 8;
 
         // validate remaining length: offsets_count * (8 + 2 * (size of type))
         uint64_t j;
@@ -501,115 +518,34 @@ int bp_parse_attrs (struct BP_FILE * fh)
             uint32_t characteristic_set_length;
             uint8_t item = 0;
 
-            characteristic_set_count = (uint8_t) *(b->buff + b->offset);
-            b->offset += 1;
-
-            characteristic_set_length = *(uint32_t *) (b->buff + b->offset);
-            b->offset += 4;
+            BUFREAD8(b, characteristic_set_count)
+            BUFREAD32(b, characteristic_set_length)
 
             while (item < characteristic_set_count)
             {
                 uint8_t flag;
                 enum ADIOS_CHARACTERISTICS c;
-                flag = *(b->buff + b->offset);
+
+                BUFREAD8(b, flag)
                 c = (enum ADIOS_CHARACTERISTICS) flag;
-                b->offset += 1;
 
                 switch (c)
                 {
                     case adios_characteristic_value:
-                    {
-                        uint16_t data_size;
-                        void * data = 0;
-
-                        if ((*root)->type == adios_string)
-                        {
-                            data_size = *(uint16_t *) (b->buff + b->offset);
-                            b->offset += 2;
-                        }
-                        else
-                        {
-                            data_size = adios_get_type_size ((*root)->type, "");
-                        }
-
-                        data = malloc (data_size + 1);
-                        ((char *) data) [data_size] = '\0';
-
-                        if (!data)
-                        {
-                            fprintf (stderr, "cannot allocate %d bytes to "
-                                             "copy scalar %s\n"
-                                    ,data_size
-                                    ,(*root)->attr_name
-                                    );
-
-                            return 1;
-                        }
-
-                        switch ((*root)->type)
-                        {
-                            case adios_byte:
-                            case adios_short:
-                            case adios_integer:
-                            case adios_long:
-                            case adios_unsigned_byte:
-                            case adios_unsigned_short:
-                            case adios_unsigned_integer:
-                            case adios_unsigned_long:
-                            case adios_real:
-                            case adios_double:
-                            case adios_long_double:
-                            case adios_complex:
-                            case adios_double_complex:
-                                memcpy (data, (b->buff + b->offset), data_size);
-                                b->offset += data_size;
-                                break;
-
-                            case adios_string:
-                                memcpy (data, (b->buff + b->offset), data_size);
-                                b->offset += data_size;
-                                break;
-
-                            default:
-                                free (data);
-                                data = 0;
-                                break;
-                        }
-
-                        (*root)->characteristics [j].value = data;
-
+                        (*root)->characteristics [j].value = bp_read_data_from_buffer(b, (*root)->type);
                         break;
-                    }
 
                     case adios_characteristic_offset:
-                    {
-                        uint64_t size = adios_get_type_size ((*root)->type, "");
-                        (*root)->characteristics [j].offset =
-                                            *(uint64_t *) (b->buff + b->offset);
-                        b->offset += 8;
-
+                        BUFREAD64(b, (*root)->characteristics [j].offset)
                         break;
-                    }
 
                     case adios_characteristic_payload_offset:
-                    {
-                        uint64_t size = adios_get_type_size ((*root)->type, "");
-                        (*root)->characteristics [j].payload_offset =
-                                            *(uint64_t *) (b->buff + b->offset);
-                        b->offset += 8;
-
+                        BUFREAD64(b, (*root)->characteristics [j].payload_offset)
                         break;
-                    }
 
                     case adios_characteristic_var_id:
-                    {
-                        (*root)->characteristics [j].var_id =
-                                            *(uint16_t *) (b->buff + b->offset);
-                        b->offset += 2;
-
+                        BUFREAD16(b, (*root)->characteristics [j].var_id)
                         break;
-                    }
-
                 }
                 item++;
             }
@@ -676,6 +612,10 @@ int bp_parse_attrs (struct BP_FILE * fh)
     fh->gattr_h->attr_offsets = attr_offsets;
 
 }
+
+/*******************/
+/* Parse VARIABLES */
+/*******************/
 int bp_parse_vars (struct BP_FILE * fh)
 {
     struct adios_bp_buffer_struct_v1 * b = fh->b;
@@ -696,8 +636,9 @@ int bp_parse_vars (struct BP_FILE * fh)
 
     root = vars_root;
 
-    memcpy (&mh->vars_count, b->buff + b->offset, 2);
-    b->offset += VARS_MINIHEADER_SIZE;
+    BUFREAD16(b, mh->vars_count)
+    BUFREAD64(b, mh->vars_length)
+
     // validate remaining length    
     int i;
     for (i = 0; i < mh->vars_count; i++) {
@@ -712,41 +653,34 @@ int bp_parse_vars (struct BP_FILE * fh)
         uint64_t characteristics_sets_count;
         uint64_t type_size;
 
-        var_entry_length = *(uint32_t *) (b->buff + b->offset);
-        b->offset += 4;
+        BUFREAD32(b, var_entry_length)
+        BUFREAD16(b, (*root)->id)
 
-        (*root)->id = *(uint16_t *) (b->buff + b->offset);
-        b->offset += 2;
-
-        len = *(uint16_t *) (b->buff + b->offset);
-        b->offset += 2;
+        BUFREAD16(b, len)
         (*root)->group_name = (char *) malloc (len + 1);
         (*root)->group_name [len] = '\0';
         strncpy ((*root)->group_name, b->buff + b->offset, len);
         b->offset += len;
 
-        len = *(uint16_t *) (b->buff + b->offset);
-        b->offset += 2;
+        BUFREAD16(b, len)
         (*root)->var_name = (char *) malloc (len + 1);
         (*root)->var_name [len] = '\0';
         strncpy ((*root)->var_name, b->buff + b->offset, len);
         b->offset += len;
 
-        len = *(uint16_t *) (b->buff + b->offset);
-        b->offset += 2;
+        BUFREAD16(b, len)
         (*root)->var_path = (char *) malloc (len + 1);
         (*root)->var_path [len] = '\0';
         strncpy ((*root)->var_path, b->buff + b->offset, len);
         b->offset += len;
-        flag = *(b->buff + b->offset);
+
+        BUFREAD8(b, flag)
         (*root)->type = (enum ADIOS_DATATYPES) flag;
-        b->offset += 1;
         type_size = bp_get_type_size ((*root)->type, "");
 
-        characteristics_sets_count = *(uint64_t *) (b->buff + b->offset);
+        BUFREAD64(b, characteristics_sets_count)
         (*root)->characteristics_count = characteristics_sets_count;
         (*root)->characteristics_allocated = characteristics_sets_count;
-        b->offset += 8;
 
         // validate remaining length: offsets_count * 
         // (8 + 2 * (size of type))
@@ -765,21 +699,14 @@ int bp_parse_vars (struct BP_FILE * fh)
             uint32_t characteristic_set_length;
             uint8_t item = 0;
 
-            characteristic_set_count = (uint8_t) 
-                           *(b->buff + b->offset);
-            b->offset += 1;
-
-            characteristic_set_length = *(uint32_t *) 
-                            (b->buff + b->offset);
-            b->offset += 4;
+            BUFREAD8(b, characteristic_set_count)
+            BUFREAD32(b, characteristic_set_length)
                 
             while (item < characteristic_set_count) {
                 bp_parse_characteristics (b, root, j);
                 item++;
             }
-
         }
-
         root = &(*root)->next;
     }
     
@@ -853,100 +780,72 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
     uint8_t flag;
     enum ADIOS_CHARACTERISTICS c;
 
-    flag = *(b->buff + b->offset);
+    BUFREAD8(b, flag)
     c = (enum ADIOS_CHARACTERISTICS) flag;
-    b->offset += 1;
 
     switch (c) {
 
         case adios_characteristic_value:
+            (*root)->characteristics [j].value = bp_read_data_from_buffer(b, (*root)->type);
+            break;
+
         case adios_characteristic_min:
+            (*root)->characteristics [j].min = bp_read_data_from_buffer(b, (*root)->type);
+            break;
+
         case adios_characteristic_max:
-        {
-            void * data = 0;
-
-            int data_size = 0;
-            if ((*root)->type == adios_string) {
-                data_size = *(uint16_t *) (b->buff + b->offset);
-                b->offset += 2;
-            }
-            else {
-                data_size = bp_get_type_size ((*root)->type, "");
-            }
-
-            bp_get_characteristics_data (&data, b->buff+b->offset,
-                             data_size, (*root)->type);
-
-            switch (c) {
-                case adios_characteristic_value:
-                    (*root)->characteristics [j].value = data;
-                    break;
-
-                case adios_characteristic_min:
-                    (*root)->characteristics [j].min = data;
-                    break;
-
-                case adios_characteristic_max:
-                    (*root)->characteristics [j].max = data;
-                    break;
-            }
-
-            b->offset += data_size;
-
+            (*root)->characteristics [j].max = bp_read_data_from_buffer(b, (*root)->type);
             break;
-        }
+
         case adios_characteristic_offset: 
-        {
-            uint64_t size = bp_get_type_size ((*root)->type, "");
-            (*root)->characteristics [j].offset =
-                *(uint64_t *) (b->buff + b->offset);
-            b->offset += 8;
-
+            BUFREAD64(b, (*root)->characteristics [j].offset)
             break;
-        }
+
         case adios_characteristic_payload_offset: 
-        {
-            uint64_t size = bp_get_type_size ((*root)->type, "");
-            (*root)->characteristics [j].payload_offset =
-                *(uint64_t *) (b->buff + b->offset);
-            b->offset += 8;
-
+            BUFREAD64(b, (*root)->characteristics [j].payload_offset)
             break;
-        }
+
         case adios_characteristic_dimensions:
         {
-            uint16_t dims_length;
+            uint16_t dims_length, di, dims_num;
+            BUFREAD8(b, (*root)->characteristics [j].dims.count)
+            BUFREAD16(b, dims_length);
 
-            (*root)->characteristics [j].dims.count =
-                *(uint8_t *) (b->buff + b->offset);
-            b->offset += 1;
+            (*root)->characteristics [j].dims.dims = (uint64_t *) malloc (dims_length);
 
-            dims_length = *(uint16_t *) (b->buff + b->offset);
-            b->offset += 2;
-
-            (*root)->characteristics [j].dims.dims = (uint64_t *)
-                malloc (dims_length);
-            memcpy ((*root)->characteristics [j].dims.dims
-                    ,(b->buff + b->offset)
-                    ,dims_length
-                   );
-            b->offset += dims_length;
-
-                        break;
+            dims_num = dims_length / 8;
+            for (di = 0; di < dims_num; di ++) {
+                BUFREAD64(b, ((*root)->characteristics [j].dims.dims)[di]);
+            }
+            break;
         }
-            default:
-                fprintf (stderr, "Unknown characteristic:%d. skipped.\n", c);
-                break;
+
+        default:
+            fprintf (stderr, "Unknown characteristic:%d. skipped.\n", c);
+            break;
     }
 }
 
-int bp_get_characteristics_data (void ** ptr_data,
-                 void * buffer,
-                 int data_size,
-                 enum ADIOS_DATATYPES type)
+void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_DATATYPES type)
 {
+    uint16_t data_size;
     void * data = 0;
-    switch (type) {
+
+    if (type == adios_string) {
+        BUFREAD16(b, data_size)
+        data = malloc (data_size + 1);
+    } else {
+        data_size = adios_get_type_size (type, "");
+        data = malloc (data_size);
+    }
+
+    if (!data) {
+        fprintf (stderr, "cannot allocate %d bytes\n",data_size);
+        return 0;
+    }
+
+    switch (type)
+    {
         case adios_byte:
         case adios_short:
         case adios_integer:
@@ -958,49 +857,52 @@ int bp_get_characteristics_data (void ** ptr_data,
         case adios_real:
         case adios_double:
         case adios_long_double:
+            memcpy (data, (b->buff + b->offset), data_size);
+            b->offset += data_size;
+            if(b->change_endianness == adios_flag_yes) {
+                switch (data_size) {
+                    case 2:
+                        swap_16_ptr(data);
+                        break;
+                    case 4:
+                        swap_32_ptr(data);
+                        break;
+                    case 8:
+                        swap_64_ptr(data);
+                        break;
+                    case 16:
+                        swap_128_ptr(data);
+                        break;
+                }
+            }
+            break;
+
         case adios_complex:
+            memcpy (data, (b->buff + b->offset), data_size);
+            swap_32_ptr(data); // swap REAL part 4 bytes
+            swap_32_ptr( ((char *)data) + 4); // swap IMG part 4 bytes
+            b->offset += data_size;
+            break;
+
         case adios_double_complex:
-        {
-            data = malloc (data_size);
-
-            if (!data)
-            {
-                fprintf (stderr, "cannot allocate %d bytes "
-                        ,data_size
-                    );
-
-                return 1;
-            }
-
-            memcpy (data, buffer, data_size);
+            memcpy (data, (b->buff + b->offset), data_size);
+            swap_64_ptr(data); // swap REAL part 8 bytes
+            swap_64_ptr( ((char *)data) + 8); // swap IMG part 8 bytes
+            b->offset += data_size;
             break;
 
-        }
         case adios_string:
-        {
-            data = malloc (data_size + 1);
-
-            if (!data)
-            {
-                fprintf (stderr, "cannot allocate %d bytes "
-                        ,data_size
-                    );
-
-                return 1;
-            }
-
+            memcpy (data, (b->buff + b->offset), data_size);
+            b->offset += data_size;
             ((char *) data) [data_size] = '\0';
-            memcpy (data, buffer, data_size);
             break;
-        }
+
         default:
-        {
+            free (data);
             data = 0;
             break;
-        }
     }
-    *ptr_data = data;
-    return 0;
+    return data;
 }
 
 /*
@@ -1067,7 +969,7 @@ void bp_grouping ( struct BP_FILE * fh_p,
     return;
 }
 */
-
+/*
 int bp_read_pgs (struct BP_FILE * bp_struct)
 {
         struct adios_bp_buffer_struct_v1 * b = bp_struct->b;
@@ -1101,7 +1003,8 @@ int bp_read_pgs (struct BP_FILE * bp_struct)
 
     return 0;
 }
-
+*/
+/*
 int bp_read_vars (struct BP_FILE * bp_struct)
 {
         struct adios_bp_buffer_struct_v1 * b = bp_struct->b;
@@ -1136,7 +1039,7 @@ int bp_read_vars (struct BP_FILE * bp_struct)
 
     return 0;
 }
-
+*/
 void print_pg_index (struct bp_index_pg_struct_v1 * pg_root,
         struct bp_minifooter * mh)
 {
@@ -1287,7 +1190,7 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
     }
 }
 
-/* Return 1 if a < b wrt. the given type, otherwise 0 */
+/* Return 1 if a < b wrt the given type, otherwise 0 */
 int adios_lt(int type, void *a, void *b)
 {
     double ar, ai, br, bi;
@@ -1418,6 +1321,87 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
            );
 }
 
+/* Change endianness of each element in an array */
+/* input: array, size in bytes(!), size of one element */
+void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES type) 
+{
+    int size_of_type = bp_get_type_size(type, "");
+    uint64_t n = slice_size / size_of_type;
+    uint64_t i;
+    char *ptr = (char *) data;
+
+    if (slice_size % size_of_type != 0) {
+        fprintf(stderr, "Adios error in bp_utils.c:change_endianness(): "
+                    "An array's endianness is to be converted but the size of array "
+                    "is not dividable by the size of the elements: "
+                    "size = %lld, element size = %d\n", slice_size, size_of_type);
+    }
+
+    switch (type)
+    {
+        case adios_byte:
+        case adios_short:
+        case adios_integer:
+        case adios_long:
+        case adios_unsigned_byte:
+        case adios_unsigned_short:
+        case adios_unsigned_integer:
+        case adios_unsigned_long:
+        case adios_real:
+        case adios_double:
+        case adios_long_double:
+            switch (size_of_type) {
+                /* case 1: nothing to do */
+                case 2:
+                    for (i=0; i < n; i++) {
+                        swap_16_ptr(ptr);
+                        ptr += size_of_type;
+                    }
+                    break;
+                case 4:
+                    for (i=0; i < n; i++) {
+                        swap_32_ptr(ptr);
+                        ptr += size_of_type;
+                    }
+                    break;
+                case 8:
+                    for (i=0; i < n; i++) {
+                        swap_64_ptr(ptr);
+                        ptr += size_of_type;
+                    }
+                    break;
+                case 16:
+                    for (i=0; i < n; i++) {
+                        swap_128_ptr(ptr);
+                        ptr += size_of_type;
+                    }
+                    break;
+            }
+            break;
+
+        case adios_complex:
+            for (i=0; i < n; i++) {
+                swap_32_ptr(ptr);   // swap REAL part 4 bytes 
+                swap_32_ptr(ptr+4); // swap IMG part 4 bytes
+                ptr += size_of_type;
+            }
+            break;
+
+        case adios_double_complex:
+            for (i=0; i < n; i++) {
+                swap_64_ptr(ptr);   // swap REAL part 8 bytes 
+                swap_64_ptr(ptr+8); // swap IMG part 8 bytes
+                ptr += size_of_type;
+            }
+            break;
+
+        case adios_string:
+        default:
+            /* nothing to do */
+            break;
+    }
+}
+
 void copy_data (void *dst, void *src,
         int idim,
         int ndim,
@@ -1464,7 +1448,7 @@ void copy_data (void *dst, void *src,
     }
 }
 
-uint64_t bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
+int bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
 {
     switch (type)
     {
@@ -1509,6 +1493,7 @@ uint64_t bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
             return -1;
     }
 }
+
 void alloc_namelist (char ***namelist, int length)
 {
         int j;

@@ -31,7 +31,7 @@ struct bp_minifooter {
 	uint64_t vars_index_offset;
 	uint64_t attrs_index_offset;
 	uint32_t version;
-	uint32_t change_endianness; /* 0: false, 1: true */
+	uint32_t change_endianness; // = enum ADIOS_FLAG, 0: unknown!, adios_flag_yes or adios_flag_no
 	uint64_t file_size;
 } __attribute__((__packed__));
 
