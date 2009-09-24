@@ -12,7 +12,7 @@ bpls_LDADD = $(top_builddir)/src/libadiosread_nompi.a
 bpls_LDADD += $(MXML_LIBS)
 
 if HAVE_DMALLOC
-bpls_CFLAGS += -DDMALLOC -I/ccs/proj/e2e/pnorbert/dmalloc.gnu/include
-bpls_LDFLAGS += -L/ccs/proj/e2e/pnorbert/dmalloc.gnu/lib
+bpls_CFLAGS += -DDMALLOC  $(DMALLOC_CPPFLAGS)
+bpls_LDFLAGS +=  $(DMALLOC_LDFLAGS)
 bpls_LDADD += -ldmalloc
 endif
