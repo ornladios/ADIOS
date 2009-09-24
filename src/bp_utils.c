@@ -491,11 +491,13 @@ int bp_parse_attrs (struct BP_FILE * fh)
         (*root)->type = (enum ADIOS_DATATYPES) flag;
 
         type_size = bp_get_type_size ((*root)->type, "");
+        
         if (type_size == -1)
         {
-            type_size = 4;
-            (*root)->type = adios_integer;
+            //type_size = 4;
+            (*root)->type = adios_unknown;
         }
+        
 
         BUFREAD64(b, characteristics_sets_count)
         (*root)->characteristics_count = characteristics_sets_count;

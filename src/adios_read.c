@@ -13,6 +13,9 @@
 
 static int called_from_fortran = 0; // set to 1 when called from Fortran API
 
+static void cstr_to_fstr(const char *cs, char *fs, int flen);
+static char * fstr_to_cstr(const char * fs, int flen);
+
 /* Return 0: if file is little endian, 1 if file is big endian 
  * We know if it is different from the current system, so here
  * we determine the current endianness and report accordingly.
@@ -441,6 +444,7 @@ int adios_get_attr_byid (ADIOS_GROUP * gp, int attrid,
     struct BP_FILE * fh;
     struct adios_index_attribute_struct_v1 * attr_root;
     struct adios_index_var_struct_v1 * var_root;
+    int    file_is_fortran;
 
     adios_errno = 0;
     if (!gp) {
@@ -470,6 +474,7 @@ int adios_get_attr_byid (ADIOS_GROUP * gp, int attrid,
         return adios_errno; 
     }
 
+    file_is_fortran = (fh->pgs_root->adios_host_language_fortran == adios_flag_yes);
 
     if (attr_root->characteristics[0].value) {
         /* Attribute has its own value */
@@ -490,20 +495,97 @@ int adios_get_attr_byid (ADIOS_GROUP * gp, int attrid,
 
         if (!var_root) {
             error (err_invalid_attribute_reference, 
-                   "Attribute is a reference to variable ID %d, which is not found", 
+                   "Attribute %s/%s in group %s is a reference to variable ID %d, which is not found", 
+                   attr_root->attr_path, attr_root->attr_name, attr_root->group_name,
                    attr_root->characteristics[0].var_id);
             return adios_errno;
         }
 
-        *size = bp_get_type_size (var_root->type, var_root->characteristics[0].value);
+        /* default values in case of error */
+        *data = NULL;
+        *size = 0;
         *type = attr_root->type;
-        *data = (void *) malloc (*size);  
-        if (*data)
-            memcpy(*data, var_root->characteristics[0].value, *size);
-    }
 
-    if (attr_root->type == adios_string)
-        (*size) ++;
+        /* FIXME: variable and attribute type may not match, then a conversion is needed. */
+        /* Cases:
+                1. attr has no type, var is byte array     ==> string
+                2. attr has no type, var is not byte array ==> var type
+                3. attr is string, var is byte array       ==> string
+                4. attr type == var type                   ==> var type 
+                5. attr type != var type                   ==> attr type and conversion needed 
+        */
+        /* Error check: attr cannot reference an array in general */
+        if (var_root->characteristics[0].dims.count > 0) {
+            if ( (var_root->type == adios_byte || var_root->type == adios_unsigned_byte) &&
+                 (attr_root->type == adios_unknown || attr_root->type == adios_string) &&
+                 (var_root->characteristics[0].dims.count == 1)) {
+                 ; // this conversions are allowed
+            } else {
+                error(err_invalid_attribute_reference, 
+                    "Attribute %s/%s in group %s, typeid=%d is a reference to an %d-dimensional array variable "
+                    "%s/%s of type %s, which is not supported in ADIOS",
+                    attr_root->attr_path, attr_root->attr_name, attr_root->group_name, attr_root->type,
+                    var_root->characteristics[0].dims.count,
+                    var_root->var_path, var_root->var_name, adios_type_to_string(var_root->type));
+                return adios_errno;
+            }
+        }
+
+        if ( (attr_root->type == adios_unknown || attr_root->type == adios_string) &&
+             (var_root->type == adios_byte || var_root->type == adios_unsigned_byte) &&
+             (var_root->characteristics[0].dims.count == 1) ) {
+            /* 1D byte arrays are converted to string */
+            /* 1. read in variable */
+            char varname[512];
+            char *tmpdata;
+            uint64_t start, count;
+            int status;
+            start = 0; 
+            count = var_root->characteristics[0].dims.dims[0];
+            snprintf(varname, 512, "%s/%s", var_root->var_path, var_root->var_name);
+            tmpdata = (char *) malloc (count+1);
+            if (tmpdata == NULL) {
+                error(err_no_memory, 
+                      "Cannot allocate memory of %lld bytes for reading in data for attribute %s/%s of group %s.",
+                      count, attr_root->attr_path, attr_root->attr_name, attr_root->group_name);
+                return adios_errno;
+            }
+
+            status = adios_read_var (gp, varname, &start, &count, tmpdata);
+            
+            if (status < 0) {
+                char *msg = strdup(adios_errmsg());
+                error(status, 
+                      "Cannot read data of variable %s/%s for attribute %s/%s of group %s: %s",
+                      var_root->var_path, var_root->var_name, 
+                      attr_root->attr_path, attr_root->attr_name, attr_root->group_name,
+                      msg);
+                free(tmpdata);
+                free(msg);
+                return status;
+            }
+
+            *type = adios_string;
+            if (file_is_fortran) {
+                /* Fortran byte array to C string */
+                *data = fstr_to_cstr( tmpdata, (int)count); /* FIXME: supports only 2GB strings... */
+                *size = strlen( (char *)data );
+                free(tmpdata);
+            } else {
+                /* C array to C string */
+                tmpdata[count] = '\0';
+                *size = count+1;
+                *data = tmpdata;
+            }
+        } else {
+            /* other types are inherited */
+            *type = var_root->type;
+            *size = bp_get_type_size (var_root->type, var_root->characteristics[0].value);
+            *data = (void *) malloc (*size);  
+            if (*data)
+                memcpy(*data, var_root->characteristics[0].value, *size);
+        }
+    }
 
     return 0;
 }
