@@ -1551,8 +1551,8 @@ void adios_mpi_close (struct adios_file_struct * fd
                                          ,md->old_vars_root
                                          ,md->old_attrs_root
                                          );
-
-                    MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
+                    uint32_t tmp_buffer_size = (uint32_t) buffer_size;
+                    MPI_Gather (&tmp_buffer_size, 1, MPI_INT, 0, 0, MPI_INT
                                ,0, md->group_comm
                                );
                     MPI_Gatherv (buffer, buffer_size, MPI_BYTE
