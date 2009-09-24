@@ -1742,7 +1742,7 @@ void adios_inq_attr_ (int64_t * gp
     void *data;
     attrstr = fstr_to_cstr(attrname, attrname_len);
     if (attrstr != NULL) {
-        *err = adios_get_attr (agp, attrstr, type, size, &data);
+        *err = adios_get_attr (agp, attrstr, (enum ADIOS_DATATYPES *)type, size, &data);
         free(data);
     } else {
         *err = -adios_errno;
