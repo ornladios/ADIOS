@@ -487,11 +487,15 @@ int doList(const char *path) {
             matches = false;
             if (isVar[n])  {
                 vi = adios_inq_var (gp, names[n]);
-                if (!vi)
+                if (!vi) {
                     fprintf(stderr, "Error: %s\n", adios_errmsg());
+                }
                 vartype = vi->type;
             } else {
-                adios_get_attr (gp, names[n], &vartype, &attrsize, &value);
+                retval = adios_get_attr (gp, names[n], &vartype, &attrsize, &value);
+                if (retval) {
+                    fprintf(stderr, "Error: %s\n", adios_errmsg());
+                }
             }
 
             matches = matchesAMask(names[n]);
@@ -506,11 +510,13 @@ int doList(const char *path) {
                         fprintf(outf,"  attr   = ");
                         print_data(value, 0, vartype, false); 
                         fprintf(outf,"\n");
-                        if (retval) return retval;
                         matches = false; // already printed
                     } else {
                         fprintf(outf,"  attr\n");
                     }
+                } else if (!vi) { 
+                    // after error
+                    fprintf(outf, "\n");
                 } else if (vi->ndim > 0) {
                     // array
                     //fprintf(outf,"  {%s%d", (vi->timedim==0 ? "T-": ""),vi->dims[0]);
@@ -970,6 +976,10 @@ int print_data_as_string(void * data, int maxlen, enum ADIOS_DATATYPES adiosvart
 int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool allowformat)
 {
     bool f = formatgiven && allowformat;
+    if (data == NULL) {
+        fprintf(outf, "null ");
+        return 0;
+    }
     // print next data item into vstr
     switch(adiosvartype) {
         case adios_unsigned_byte:
@@ -1025,6 +1035,7 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
             fprintf(outf,(f ? format : "(%g,i%g)" ), ((double *) data)[2*item], ((double *) data)[2*item+1]);
             break;
     } // end switch
+    return 0;
 }
 
 int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype, 
