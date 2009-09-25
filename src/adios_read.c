@@ -486,11 +486,25 @@ int adios_get_attr_byid (ADIOS_GROUP * gp, int attrid,
     }
     else if (attr_root->characteristics[0].var_id) {
         /* Attribute is a reference to a variable */
+        /* FIXME: var ids are not unique in BP. If a group of variables are written several
+           times under different path using adios_set_path(), the id of a variable is always
+           the same (should be different). As a temporary fix, we look first for a matching
+           id plus path between an attribute and a variable. If not found, then we look for
+           a match on the ids only.*/
         var_root = gh->vars_root; 
         while (var_root) {
-            if (var_root->id == attr_root->characteristics[0].var_id)
+            if (var_root->id == attr_root->characteristics[0].var_id && 
+                !strcmp(var_root->var_path, attr_root->attr_path))
                 break;
             var_root = var_root->next;
+        }
+        if (!var_root) {
+            var_root = gh->vars_root; 
+            while (var_root) {
+                if (var_root->id == attr_root->characteristics[0].var_id)
+                    break;
+                var_root = var_root->next;
+            }
         }
 
         if (!var_root) {
