@@ -15,11 +15,11 @@ genbp_LDFLAGS += $(PHDF5_LDFLAGS)
 endif
 
 bp_read_f_SOURCES = bp_read_f.F90
-bp_read_f_LDFLAGS = $(MXML_LDFLAGS)
-bp_read_f_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) $(top_builddir)/src/libadiosread.a
-if HAVE_PHDF5
-bp_read_f_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-bp_read_f_LDFLAGS += $(PHDF5_LDFLAGS)
+bp_read_f_LDADD = $(top_builddir)/src/libadiosread.a
+if HAVE_DMALLOC
+bp_read_f_CFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+bp_read_f_LDFLAGS =  $(DMALLOC_LDFLAGS)
+bp_read_f_LDADD += -ldmalloc
 endif
 
 #read_coords_SOURCES = read_coords.F90
@@ -58,6 +58,11 @@ endif
 
 bp_read_c_SOURCES = bp_read_c.c
 bp_read_c_LDADD = $(top_builddir)/src/libadiosread.a
+if HAVE_DMALLOC
+bp_read_c_CFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+bp_read_c_LDFLAGS =  $(DMALLOC_LDFLAGS)
+bp_read_c_LDADD += -ldmalloc
+endif
 
 FC=$(MPIFC)
 CC=$(MPICC)
