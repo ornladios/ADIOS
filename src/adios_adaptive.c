@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <pthread.h>
+#include <signal.h>
 #include <assert.h>
 
 // mpi
@@ -67,14 +68,20 @@ struct adios_adaptive_data_struct
          } split_files_count;   // how many 'split' files to generate
     int16_t split_target_count; // number of OSTs for each 'split' file
 
-    pthread_t coordinator;     // only used if in this proc
-    pthread_t sub_coordinator; // only used if in this proc
+    pthread_t coordinator;     // only used if in this proc is coord
+    pthread_t sub_coordinator; // only used if in this proc is sub coord
     pthread_t writer;
+    pthread_t probe;
 
     pthread_mutex_t mpi_mutex; // need to make sure only one thread does comm
     pthread_mutex_t writer_mutex; // need to make sure only one thread does comm
     pthread_mutex_t sub_coordinator_mutex;
     pthread_mutex_t coordinator_mutex;
+
+    pthread_cond_t mpi_cond;
+    pthread_cond_t writer_cond;
+    pthread_cond_t sub_coordinator_cond;
+    pthread_cond_t coordinator_cond;
 
     int groups;          // how many groups we split into
     int group;           // which group are we a member of
@@ -99,11 +106,55 @@ struct adios_adaptive_data_struct
     int coord_shutdown_flag;
     int sub_coord_shutdown_flag;
     int writer_shutdown_flag;
+    int probe_shutdown_flag; // tell the probe thread to die
 };
 
 #if COLLECT_METRICS
 // see adios_adaptive_finalize for what each represents
-struct timeval t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25;
+struct timeval_writer
+{
+    struct timeval t;  // time value
+    int pid;            // process id
+};
+
+int timeval_writer_compare (const void * left, const void * right)
+{
+    struct timeval_writer * l = (struct timeval_writer *) left;
+    struct timeval_writer * r = (struct timeval_writer *) right;
+
+    if (l->pid < r->pid) return -1;
+    if (l->pid == r->pid) return 0;
+    if (l->pid > r->pid) return 1;
+}
+
+struct timing_metrics
+{
+    struct timeval t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13;
+    struct timeval t14, t16, t18, t19, t20, t21, t22, t23, t25, t26;
+    struct timeval t27, t28;
+
+    uint64_t write_count; // number used
+    uint64_t write_size;  // number allocated
+    struct timeval * t24;
+
+    uint64_t do_write_count; // number used
+    uint64_t do_write_size;  // number allocated
+    struct timeval_writer * t15;  // track in sub coord do_write msgs
+
+    uint64_t write_complete_count; // number used
+    uint64_t write_complete_size;  // number allocated
+    struct timeval_writer * t17;  // track in sub coord write_complete msgs
+
+    uint64_t mpi_queue_count; // number used
+    uint64_t mpi_queue_size;  // number allocated
+    struct timeval_writer * t29;  // track in sub coord write_complete msgs
+
+    uint64_t iprobe_count; // number used (t25)
+    uint64_t send_count;   // number used (t26)
+    uint64_t recv_count;   // number used (t27)
+};
+
+static struct timing_metrics timing;
 
 // Subtract the `struct timeval' values X and Y,
 // storing the result in RESULT.
@@ -135,96 +186,391 @@ static int timeval_subtract (struct timeval * result
   return x->tv_sec < y->tv_sec;
 }
 
+static void timeval_add (struct timeval * result
+                        ,struct timeval * x, struct timeval * y
+                        )
+{
+    result->tv_usec = x->tv_usec + y->tv_usec;
+    result->tv_sec = x->tv_sec + y->tv_sec;
+    if (result->tv_usec > 1000000)
+    {
+        result->tv_usec -= 1000000;
+        result->tv_sec++;
+    }
+}
+
+static void print_metric (FILE * f, struct timing_metrics * t, int iteration, int rank, int size, int sub_coord_rank);
+
 static
 void print_metrics (struct adios_adaptive_data_struct * md, int iteration)
 {
-    struct timeval diff;
+    MPI_Barrier (md->group_comm);
     if (md->rank == 0)
     {
-        timeval_subtract (&diff, &t2, &t1);
-        printf ("cc\t%2d\tFile create (stripe setup):\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+        int i;
+        struct timing_metrics * t;
+        int * sub_coord_ranks;
 
-        timeval_subtract (&diff, &t6, &t5);
-        printf ("dd\t%2d\tMass file open:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+        t = malloc (sizeof (struct timing_metrics) * md->size);
+        sub_coord_ranks = malloc (sizeof (int) * md->size);
 
-        timeval_subtract (&diff, &t17, &t16);
-        printf ("ee\t%2d\tBuild file offsets:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+        memcpy (&t [0], &timing, sizeof (struct timing_metrics));
+
+        // get the bulk data
+        MPI_Gather (&timing, sizeof (struct timing_metrics), MPI_BYTE
+                   ,t, sizeof (struct timing_metrics), MPI_BYTE
+                   ,0, md->group_comm
+                   );
+
+        // get the write timing
+        int * index_sizes = malloc (4 * md->size);
+        int * index_offsets = malloc (4 * md->size);
+        uint32_t total_size = 0;
+        char * recv_buffer = 0;
+        char * recv_buffer1 = 0;
+        char * recv_buffer2 = 0;
+        char * recv_buffer3 = 0;
+        for (i = 0; i < md->size; i++)
+        {
+            index_sizes [i] = t [i].write_count * sizeof (struct timeval);
+            index_offsets [i] = total_size;
+            total_size += t [i].write_count * sizeof (struct timeval);
+        }
+
+        recv_buffer = malloc (total_size + 1);
+
+        MPI_Gatherv (t [0].t24, 0, MPI_BYTE
+                    ,recv_buffer, index_sizes, index_offsets, MPI_BYTE
+                    ,0, md->group_comm
+                    );
+
+        t [0].t24 = timing.t24;
+        for (i = 1; i < md->size; i++)
+        {
+            t [i].t24 = (struct timeval *) (recv_buffer + index_offsets [i]);
+        }
+
+        // get the DO_WRITE start times
+        total_size = 0;
+        for (i = 0; i < md->size; i++)
+        {
+            index_sizes [i] = t [i].do_write_count
+                                        * sizeof (struct timeval_writer);
+            index_offsets [i] = total_size;
+            total_size += t [i].do_write_count * sizeof (struct timeval_writer);
+        }
+
+        recv_buffer1 = malloc (total_size + 1);
+
+        MPI_Gatherv (t [0].t15, 0, MPI_BYTE
+                    ,recv_buffer1, index_sizes, index_offsets, MPI_BYTE
+                    ,0, md->group_comm
+                    );
+        t [0].t15 = timing.t15;
+        for (i = 1; i < md->size; i++)
+        {
+            t [i].t15 = (struct timeval_writer *)
+                                            (recv_buffer1 + index_offsets [i]);
+        }
+
+        // get the WRITE_COMPLETE start times
+        total_size = 0;
+        for (i = 0; i < md->size; i++)
+        {
+            index_sizes [i] = t [i].write_complete_count
+                                             * sizeof (struct timeval_writer);
+            index_offsets [i] = total_size;
+            total_size += t [i].write_complete_count
+                                             * sizeof (struct timeval_writer);
+        }
+
+        recv_buffer2 = malloc (total_size + 1);
+
+        MPI_Gatherv (t [0].t17, 0, MPI_BYTE
+                    ,recv_buffer2, index_sizes, index_offsets, MPI_BYTE
+                    ,0, md->group_comm
+                    );
+        t [0].t17 = timing.t17;
+        for (i = 1; i < md->size; i++)
+        {
+            t [i].t17 = (struct timeval_writer *)
+                                           (recv_buffer2 + index_offsets [i]);
+        }
+
+        // get the mpi queue dequeue times
+        total_size = 0;
+        for (i = 0; i < md->size; i++)
+        {
+            index_sizes [i] = t [i].mpi_queue_count
+                                            * sizeof (struct timeval_writer);
+            index_offsets [i] = total_size;
+            total_size += t [i].mpi_queue_count
+                                           * sizeof (struct timeval_writer);
+        }
+
+        recv_buffer3 = malloc (total_size + 1);
+
+        MPI_Gatherv (t [0].t29, 0, MPI_BYTE
+                    ,recv_buffer3, index_sizes, index_offsets, MPI_BYTE
+                    ,0, md->group_comm
+                    );
+        t [0].t29 = timing.t29;
+        for (i = 1; i < md->size; i++)
+        {
+            t [i].t29 = (struct timeval_writer *)
+                                          (recv_buffer3 + index_offsets [i]);
+        }
+
+        // get the sub coordinator ranks
+        sub_coord_ranks [0] = md->sub_coord_rank;
+        MPI_Gather (&md->sub_coord_rank, 1, MPI_INTEGER
+                   ,sub_coord_ranks, 1, MPI_INTEGER
+                   ,0, md->group_comm
+                   );
+
+        // print the detailed metrics
+        FILE * f = fopen ("adios_metrics", "a");
+        for (i = 0; i < md->size; i++)
+        {
+            print_metric (f, &t [i], iteration, i, md->size, sub_coord_ranks [i]);
+        }
+        fclose (f);
+
+        free (sub_coord_ranks);
+        free (t);
+        free (recv_buffer);
+        free (recv_buffer1);
+        free (recv_buffer2);
+        free (recv_buffer3);
+        free (index_sizes);
+        free (index_offsets);
     }
-    if (md->rank == md->size - 1)
+    else
     {
-        timeval_subtract (&diff, &t4, &t3);
-        printf ("bb\t%2d\tCreate threads:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+        // send the bulk data
+        MPI_Gather (&timing, sizeof (struct timing_metrics), MPI_BYTE
+                   ,&timing, sizeof (struct timing_metrics), MPI_BYTE
+                   ,0, md->group_comm
+                   );
 
-        timeval_subtract (&diff, &t10, &t9);
-        printf ("ff\t%2d\tGlobal index creation:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+        // send the write timing
+        MPI_Gatherv (timing.t24, timing.write_count * sizeof (struct timeval)
+                    ,MPI_BYTE
+                    ,0, 0, 0, 0
+                    ,0, md->group_comm
+                    );
 
-        timeval_subtract (&diff, &t8, &t7);
-        printf ("gg\t%2d\tAll writes complete (w/ local index):\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+        // send the write start times
+        qsort (timing.t15, timing.do_write_count, sizeof (struct timeval_writer)
+              ,timeval_writer_compare
+              );
+        MPI_Gatherv (timing.t15, timing.do_write_count
+                                              * sizeof (struct timeval_writer)
+                    ,MPI_BYTE
+                    ,0, 0, 0, 0
+                    ,0, md->group_comm
+                    );
 
-        timeval_subtract (&diff, &t11, &t0);
-        printf ("hh\t%2d\tTotal time:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+        // send the write complete times
+        qsort (timing.t17, timing.write_complete_count
+              ,sizeof (struct timeval_writer)
+              ,timeval_writer_compare
+              );
+        MPI_Gatherv (timing.t17, timing.write_complete_count
+                                              * sizeof (struct timeval_writer)
+                    ,MPI_BYTE
+                    ,0, 0, 0, 0
+                    ,0, md->group_comm
+                    );
 
-        timeval_subtract (&diff, &t10, &t0);
-        printf ("xx\t%2d\tCoord total time:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+        // send the write complete times
+        qsort (timing.t29, timing.mpi_queue_count
+              ,sizeof (struct timeval_writer)
+              ,timeval_writer_compare
+              );
+        MPI_Gatherv (timing.t29, timing.mpi_queue_count
+                                             * sizeof (struct timeval_writer)
+                    ,MPI_BYTE
+                    ,0, 0, 0, 0
+                    ,0, md->group_comm
+                    );
+
+        // send the sub coordinator rank
+        MPI_Gather (&md->sub_coord_rank, 1, MPI_INTEGER
+                   ,NULL, 1, MPI_INTEGER
+                   ,0, md->group_comm
+                   );
     }
-    if (md->rank == md->sub_coord_rank)
+    MPI_Barrier (md->group_comm);
+}
+
+static void print_metric (FILE * f, struct timing_metrics * t, int iteration, int rank, int size, int sub_coord_rank)
+{
+    struct timeval diff;
+    if (rank == 0)
     {
-        timeval_subtract (&diff, &t13, &t0);
-        printf ("yy\t%2d\tSub coord total time:\t%6d\t%02d.%06d\n"
-               ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+        timeval_subtract (&diff, &t->t2, &t->t1);
+        fprintf (f, "cc\t%2d\tFile create (stripe setup):\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t->t6, &t->t5);
+        fprintf (f, "dd\t%2d\tMass file open:\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t->t5, &t->t16);
+        fprintf (f, "ee\t%2d\tBuild file offsets:\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+    }
+    if (rank == size - 1)
+    {
+        timeval_subtract (&diff, &t->t4, &t->t3);
+        fprintf (f, "bb\t%2d\tCreate threads:\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t->t10, &t->t9);
+        fprintf (f, "ff\t%2d\tGlobal index creation:\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t->t10, &t->t7);
+        fprintf (f, "gg\t%2d\tAll writes complete (w/ local index):\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t->t11, &t->t0);
+        fprintf (f, "hh\t%2d\tTotal time:\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+
+        timeval_subtract (&diff, &t->t10, &t->t0);
+        fprintf (f, "xx\t%2d\tCoord total time:\t%02d.%06d\n"
+               ,iteration, diff.tv_sec, diff.tv_usec);
+    }
+    if (rank == sub_coord_rank)
+    {
+        timeval_subtract (&diff, &t->t13, &t->t0);
+        fprintf (f, "yy\t%2d\tSub coord total time:\t%6d\t%02d.%06d\n"
+               ,iteration, rank, diff.tv_sec, diff.tv_usec);
     }
 
-    timeval_subtract (&diff, &t13, &t12);
-    printf ("ii\t%2d\tLocal index creation:\t%6d\t%02d.%06d\n"
-           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    timeval_subtract (&diff, &t->t13, &t->t12);
+    fprintf (f, "ii\t%2d\tLocal index creation:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, diff.tv_sec, diff.tv_usec);
 
-    timeval_subtract (&diff, &t15, &t14);
-    printf ("jj\t%2d\tThread shutdown:\t%6d\t%02d.%06d\n"
-           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    timeval_subtract (&diff, &t->t11, &t->t14);
+    fprintf (f, "jj\t%2d\tThread shutdown:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, diff.tv_sec, diff.tv_usec);
 
-    timeval_subtract (&diff, &t22, &t21);
-    printf ("kk\t%2d\tshould buffer time:\t%6d\t%02d.%06d\n"
-           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    timeval_subtract (&diff, &t->t22, &t->t21);
+    fprintf (f, "kk\t%2d\tshould buffer time:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, diff.tv_sec, diff.tv_usec);
 
-    timeval_subtract (&diff, &t19, &t23);
-    printf ("ll\t%2d\tclose startup time:\t%6d\t%02d.%06d\n"
-           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    timeval_subtract (&diff, &t->t19, &t->t23);
+    fprintf (f, "ll\t%2d\tclose startup time:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, diff.tv_sec, diff.tv_usec);
 
-    timeval_subtract (&diff, &t19, &t0);
-    printf ("mm\t%2d\tsetup time:\t%6d\t%02d.%06d\n"
-           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    timeval_subtract (&diff, &t->t19, &t->t0);
+    fprintf (f, "mm\t%2d\tsetup time:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, diff.tv_sec, diff.tv_usec);
 
-    timeval_subtract (&diff, &t14, &t20);
-    printf ("nn\t%2d\tcleanup time:\t%6d\t%02d.%06d\n"
-           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    timeval_subtract (&diff, &t->t14, &t->t20);
+    fprintf (f, "nn\t%2d\tcleanup time:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, diff.tv_sec, diff.tv_usec);
 
-    timeval_subtract (&diff, &t21, &t0);
-    printf ("oo\t%2d\topen->should_buffer time:\t%6d\t%02d.%06d\n"
-           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    timeval_subtract (&diff, &t->t21, &t->t0);
+    fprintf (f, "oo\t%2d\topen->should_buffer time:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, diff.tv_sec, diff.tv_usec);
 
-    timeval_subtract (&diff, &t24, &t21);
-    printf ("pp\t%2d\tshould_buffer->write1 time:\t%6d\t%02d.%06d\n"
-           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    timeval_subtract (&diff, &t->t24 [0], &t->t22);
+    fprintf (f, "pp\t%2d\tshould_buffer->write1 time:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, diff.tv_sec, diff.tv_usec);
 
-    timeval_subtract (&diff, &t25, &t24);
-    printf ("qq1\t%2d\twrite1->write2 time:\t%6d\t%02d.%06d\n"
-           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    int i;
+    for (i = 0; i < t->write_count - 1; i++)
+    {
+        timeval_subtract (&diff, &t->t24 [i + 1], &t->t24 [i]);
+        fprintf (f, "qq[%i]\t%2d\twrite1->write2 time:\t%6d\t%02d.%06d\n"
+               ,i, iteration, rank, diff.tv_sec, diff.tv_usec);
+    }
 
-    timeval_subtract (&diff, &t23, &t25);
-    printf ("qq2\t%2d\twrite2->close start time:\t%6d\t%02d.%06d\n"
-           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    int w = 0;
+    int c = 0;
+    while (w < t->do_write_count && c < t->write_complete_count)
+    {
+        if (t->t15 [w].pid != t->t17 [c].pid)
+        {
+            if (t->t15 [w].pid < t->t17 [c].pid)
+            {
+                fprintf (f, "do_write < complete\n");
+                w++;
+            }
+            else
+            {
+                fprintf (f, "do_write > complete\n");
+                c++;
+            }
+        }
+        else
+        {
+            timeval_subtract (&diff, &t->t17 [c].t, &t->t15 [w].t);
+            fprintf (f, "AAA\t%2d\twrite->complete %d time:\t%6d\t%02d.%06d\n"
+                   ,iteration, t->t15 [w].pid, rank, diff.tv_sec, diff.tv_usec);
+            w++;
+            c++;
+        }
+    }
 
-    timeval_subtract (&diff, &t18, &t0);
-    printf ("zz\t%2d\twriter total time:\t%6d\t%02d.%06d\n"
-           ,iteration, md->rank, diff.tv_sec, diff.tv_usec);
+    w = 0;
+    c = 0;
+    while (w < t->do_write_count && c < t->mpi_queue_count)
+    {
+        if (t->t15 [w].pid != t->t29 [c].pid)
+        {
+            if (t->t15 [w].pid < t->t29 [c].pid)
+            {
+                fprintf (f, "do_write (pid: %d) < mpi queue (pid: %d)\n", t->t15 [w].pid, t->t29 [c].pid);
+                w++;
+            }
+            else
+            {
+                fprintf (f, "do_write (pid: %d) > mpi queue (pid: %d) \n", t->t15 [w].pid, t->t29 [c].pid);
+                c++;
+            }
+        }
+        else
+        {
+            timeval_subtract (&diff, &t->t29 [c].t, &t->t15 [w].t);
+            fprintf (f, "BBB\t%2d\tMPI outbound queue %d time:\t%6d\t%02d.%06d\n"
+                   ,iteration, t->t15 [w].pid, rank, diff.tv_sec, diff.tv_usec);
+            w++;
+            c++;
+        }
+    }
+
+    timeval_subtract (&diff, &t->t23, &t->t24 [t->write_count - 1]);
+    fprintf (f, "rr\t%2d\twrite[n]->close start time:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+
+    fprintf (f, "ss\t%2d\tMPI_Iprobe time:\t%6d\tcount: %d\t%02d.%06d\n"
+           ,iteration, rank, t->iprobe_count, t->t25.tv_sec, t->t25.tv_usec);
+
+    fprintf (f, "tt\t%2d\tMPI_Send time:\t%6d\tcount: %d\t%02d.%06d\n"
+           ,iteration, rank, t->send_count, t->t26.tv_sec, t->t26.tv_usec);
+
+    fprintf (f, "uu\t%2d\tMPI_Recv time:\t%6d\tcount: %d\t%02d.%06d\n"
+           ,iteration, rank, t->recv_count, t->t27.tv_sec, t->t27.tv_usec);
+
+    fprintf (f, "aa\t%2d\tprocess write time:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, t->t8.tv_sec, t->t8.tv_usec);
+
+    timeval_subtract (&diff, &t->t11, &t->t23);
+    fprintf (f, "vv\t%2d\tclose start to shutdown time:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+
+    timeval_subtract (&diff, &t->t28, &t->t23);
+    fprintf (f, "ww\t%2d\tclose total time:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+
+    timeval_subtract (&diff, &t->t18, &t->t0);
+    fprintf (f, "zz\t%2d\twriter total time:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, diff.tv_sec, diff.tv_usec);
 }
 #endif
 
@@ -305,8 +651,10 @@ const char * message_to_string (enum MESSAGE_FLAGS m)
     }
 }
 
+// s == 'c' for coordinator
+// s == 's' for sub coordinator
 static
-const char * message_to_string_full (uint64_t * msg, char src)
+const char * message_to_string_full (uint64_t * msg, char s)
 {
     static char x [100];
     switch (msg [0])
@@ -328,13 +676,9 @@ const char * message_to_string_full (uint64_t * msg, char src)
             return "REGISTER_COMPLETE";
 
         case WRITE_COMPLETE:
-            if (src == 'c')
-            sprintf (x, "WRITE_COMPLETE (tg: %lld wg: %lld eo: %lld)"
-                    ,msg [1], msg [2], msg [3]
-                    );
-            if (src == 's')
-            sprintf (x, "WRITE_COMPLETE (tg: %lld wg: %lld eo: %lld is: %lld)"
-                    ,msg [1], msg [2], msg [3], msg [4]
+            sprintf (x, "WRITE_COMPLETE (tg: %lld wg: %lld eo: %lld "
+                        "is: %lld writer: %d)"
+                    ,msg [1], msg [2], msg [3], msg [4], msg [5]
                     );
             return x;
 
@@ -594,9 +938,15 @@ void adios_adaptive_init (const char * parameters
     pthread_mutex_init (&md->sub_coordinator_mutex, NULL);
     pthread_mutex_init (&md->coordinator_mutex, NULL);
 
+    pthread_cond_init (&md->mpi_cond, NULL);
+    pthread_cond_init (&md->writer_cond, NULL);
+    pthread_cond_init (&md->sub_coordinator_cond, NULL);
+    pthread_cond_init (&md->coordinator_cond, NULL);
+
     md->coord_shutdown_flag = NO_FLAG;
     md->sub_coord_shutdown_flag = NO_FLAG;
     md->writer_shutdown_flag = NO_FLAG;
+    md->probe_shutdown_flag = NO_FLAG;
 
     // parse the parameters into key=value segments for optional settings
     if (parameters)
@@ -726,6 +1076,7 @@ void adios_adaptive_init (const char * parameters
 static void * sub_coordinator_main (void * param);
 static void * coordinator_main (void * param);
 static void * writer_main (void * param);
+static void * probe_main (void * param);
 
 int adios_adaptive_open (struct adios_file_struct * fd
                    ,struct adios_method_struct * method
@@ -735,13 +1086,49 @@ int adios_adaptive_open (struct adios_file_struct * fd
                    (struct adios_adaptive_data_struct *) method->method_data;
 
 #if COLLECT_METRICS
-    gettimeofday (&t0, NULL); // only used on rank == size - 1, but we don't
-                              // have the comm yet to get the rank/size
+    gettimeofday (&timing.t0, NULL);
 #endif
     // we have to wait for the group_size (should_buffer) to get the comm
     // before we can do an open for any of the modes
     md->fd = fd;
     md->method = method;
+
+    // reset our shutdown state to not shut down yet
+    md->coord_shutdown_flag = NO_FLAG;
+    md->sub_coord_shutdown_flag = NO_FLAG;
+    md->writer_shutdown_flag = NO_FLAG;
+    md->probe_shutdown_flag = NO_FLAG;
+
+#if COLLECT_METRICS
+    timing.write_count = 0;
+    timing.write_size = 0;
+    if (timing.t24) free (timing.t24);
+    timing.t24 = 0;
+
+    timing.do_write_count = 0;
+    timing.do_write_size = 0;
+    if (timing.t15) free (timing.t15);
+    timing.t15 = 0;
+
+    timing.write_complete_count = 0;
+    timing.write_complete_size = 0;
+    if (timing.t17) free (timing.t17);
+    timing.t17 = 0;
+
+    timing.mpi_queue_count = 0;
+    timing.mpi_queue_size = 0;
+    if (timing.t29) free (timing.t29);
+    timing.t29 = 0;
+
+    timing.iprobe_count = 0;
+    memset (&timing.t25, 0, sizeof (struct timeval));
+
+    timing.send_count = 0;
+    memset (&timing.t26, 0, sizeof (struct timeval));
+
+    timing.recv_count = 0;
+    memset (&timing.t27, 0, sizeof (struct timeval));
+#endif
 
     return 1;
 }
@@ -808,20 +1195,21 @@ adios_build_file_offset (struct adios_adaptive_data_struct *md
 #define STRIPE_INCREMENT (64 * 1024)
             if (biggest_size % (STRIPE_INCREMENT))
             {
-                biggest_size = (  ((biggest_size / STRIPE_INCREMENT) + 1) 
+                biggest_size = (  ((biggest_size / STRIPE_INCREMENT) + 1)
                                 * STRIPE_INCREMENT
                                );
             }
             // also round up the base_offset, just in case
             if (fd->base_offset % (STRIPE_INCREMENT))
             {
-                fd->base_offset = (  ((fd->base_offset / STRIPE_INCREMENT) + 1) 
+                fd->base_offset = (  ((fd->base_offset / STRIPE_INCREMENT) + 1)
                                    * STRIPE_INCREMENT
                                   );
             }
             md->biggest_size = biggest_size;
 #undef STRIPE_INCREMENT
-            md->groups = (md->size > md->max_storage_targets) ? md->max_storage_targets : md->size;
+            md->groups = (md->size > md->max_storage_targets)
+                                         ? md->max_storage_targets : md->size;
             md->split_groups = md->groups;
             calc_groups (md->rank, md->size, md->groups
                         ,&md->group, &md->group_size, &md->sub_coord_rank
@@ -1069,7 +1457,7 @@ static void set_stripe_size (struct adios_adaptive_data_struct * md
     int perm;
 
 #if COLLECT_METRICS
-    gettimeofday (&t1, NULL);
+    gettimeofday (&timing.t1, NULL);
 #endif
     old_mask = umask (0);
     umask (old_mask);
@@ -1148,11 +1536,11 @@ static void set_stripe_size (struct adios_adaptive_data_struct * md
         }
     }
 #if COLLECT_METRICS
-    gettimeofday (&t2, NULL);
+    gettimeofday (&timing.t2, NULL);
 #endif
 }
 
-static void setup_threads_and_register (struct thread_struct * t)
+static void setup_threads (struct thread_struct * t)
 {
     struct adios_adaptive_data_struct * md = t->md;
 
@@ -1160,23 +1548,24 @@ static void setup_threads_and_register (struct thread_struct * t)
     MPI_Request req;
     MPI_Status status;
 #if COLLECT_METRICS
-    gettimeofday (&t3, NULL);
+    gettimeofday (&timing.t3, NULL);
 #endif
-    
+
     // we can get the threads setup and get everyone registered though.
-    if (md->rank == md->coord_rank) 
+    if (md->rank == md->coord_rank)
     {
         pthread_create (&md->coordinator, NULL, coordinator_main, (void *) t);
-    }   
+    }
     if (md->rank == md->sub_coord_rank)
     {
         pthread_create (&md->sub_coordinator, NULL, sub_coordinator_main
                        ,(void *) t
                        );
-    }                  
+    }
     pthread_create (&md->writer, NULL, writer_main, (void *) t);
+    pthread_create (&md->probe, NULL, probe_main, (void *) t);
 #if COLLECT_METRICS
-    gettimeofday (&t4, NULL);
+    gettimeofday (&timing.t4, NULL);
 #endif
 }
 
@@ -1196,7 +1585,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
     int current;
     int next;
 #if COLLECT_METRICS
-    gettimeofday (&t21, NULL);
+    gettimeofday (&timing.t21, NULL);
 #endif
 
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
@@ -1406,7 +1795,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             // figure out the offsets and create the file with proper striping
             // before the MPI_File_open is called
 #if COLLECT_METRICS
-            gettimeofday (&t16, NULL);
+            gettimeofday (&timing.t16, NULL);
 #endif
             adios_build_file_offset (md, fd, name);
 
@@ -1423,11 +1812,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 strcat (name, split_name);
             }
 #if COLLECT_METRICS
-            gettimeofday (&t17, NULL);
-#endif
-
-#if COLLECT_METRICS
-            gettimeofday (&t5, NULL);
+            gettimeofday (&timing.t5, NULL);
 #endif
 #if BLAST_OPENS
             md->f = open (name, O_WRONLY | O_LARGEFILE);
@@ -1471,7 +1856,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 return adios_flag_no;
             }
 #if COLLECT_METRICS
-            gettimeofday (&t6, NULL);
+            gettimeofday (&timing.t6, NULL);
 #endif
 
             break;
@@ -1725,7 +2110,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
     }
 
 #if COLLECT_METRICS
-    gettimeofday (&t22, NULL);
+    gettimeofday (&timing.t22, NULL);
 #endif
     return fd->shared_buffer;
 }
@@ -1798,11 +2183,15 @@ void adios_adaptive_write (struct adios_file_struct * fd
         adios_shared_buffer_free (&md->b);
     }
 #if COLLECT_METRICS
-    static int writes_seen = 0;
-
-    if (writes_seen == 0) gettimeofday (&t24, NULL);
-    else if (writes_seen == 1) gettimeofday (&t25, NULL);
-    writes_seen++;
+    if (timing.write_count == timing.write_size)
+    {
+        timing.write_size += 10;
+        timing.t24 = realloc (timing.t24, sizeof (struct timeval)
+                                          * timing.write_size
+                             );
+        assert (timing.t24 != 0);
+    }
+    gettimeofday (&(timing.t24 [timing.write_count++]), NULL);
 #endif
 }
 
@@ -1995,7 +2384,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
     struct adios_index_var_struct_v1 * new_vars_root = 0;
     struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
 #if COLLECT_METRICS
-    gettimeofday (&t23, NULL);
+    gettimeofday (&timing.t23, NULL);
     static int iteration = 0;
 #endif
 
@@ -2029,7 +2418,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
             t.fd = fd;
             t.md = md;
 
-            setup_threads_and_register (&t);
+            setup_threads (&t);
 
             if (md->rank == md->coord_rank)
             {
@@ -2041,22 +2430,49 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 pthread_mutex_lock (&md->coordinator_mutex);
                 queue_enqueue (&md->coordinator_flag, f);
                 pthread_mutex_unlock (&md->coordinator_mutex);
+                pthread_cond_signal (&md->coordinator_cond);
             }
 #if COLLECT_METRICS
-            gettimeofday (&t19, NULL);
+            gettimeofday (&timing.t19, NULL);
 #endif
 
+            struct timespec ts;
+            struct timeval tp;
+            struct timeval interval;
+            interval.tv_sec = 0;
+            interval.tv_usec = 500000; // half a second wait
             int shutdown_flag = 0;
+#if 0
+char xx_b [10];
+sprintf (xx_b, "%d.mpi", md->rank);
+FILE * fp_mpi = fopen (xx_b, "w");
+#endif
             do
             {
+                int msg;
                 pthread_mutex_lock (&md->mpi_mutex);
+                gettimeofday (&tp, NULL);
+                timeval_add (&tp, &tp, &interval);
+                ts.tv_sec = tp.tv_sec;
+                ts.tv_nsec = tp.tv_usec * 1000;
+
+#if PRINT_MESSAGES
+                printf ("cond wait MAIN %d\n", md->rank);
+#endif
+                pthread_cond_timedwait (&md->mpi_cond, &md->mpi_mutex, &ts);
+#if PRINT_MESSAGES
+                printf ("signaled MAIN %d\n", md->rank);
+#endif
                 MPI_Iprobe (MPI_ANY_SOURCE, MPI_ANY_TAG, md->group_comm
-                           ,&message_available, &status
+                           ,&msg, &status
                            );
                 pthread_mutex_unlock (&md->mpi_mutex);
-
-                if (message_available)
+                if (msg)
                 {
+#if 0
+fprintf (fp_mpi, "get lock to receive\n");
+fflush (fp_mpi);
+#endif
                     pthread_mutex_lock (&md->mpi_mutex);
                     struct flag_struct * fs = malloc
                                                (sizeof (struct flag_struct));
@@ -2064,10 +2480,24 @@ void adios_adaptive_close (struct adios_file_struct * fd
                     fs->source = status.MPI_SOURCE;
                     fs->tag = status.MPI_TAG;
                     fs->msg = malloc (count);
+#if COLLECT_METRICS
+                    struct timeval a, b, diff;
+                    gettimeofday (&a, NULL);
+#endif
                     MPI_Recv (fs->msg, count, MPI_BYTE, fs->source, fs->tag
                              ,md->group_comm, &status
                              );
+#if 0
+fprintf (fp_mpi, "received from %d %s\n", fs->source, message_to_string (((uint64_t *) fs->msg) [0]));
+fflush (fp_mpi);
+#endif
                     pthread_mutex_unlock (&md->mpi_mutex);
+#if COLLECT_METRICS
+                    gettimeofday (&b, NULL);
+                    timeval_subtract (&diff, &b, &a);
+                    timeval_add (&timing.t27, &timing.t27, &diff);
+                    timing.recv_count++;
+#endif
 
                     switch (fs->tag)
                     {
@@ -2075,6 +2505,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
                             pthread_mutex_lock (&md->writer_mutex);
                             queue_enqueue (&md->writer_flag, fs);
                             pthread_mutex_unlock (&md->writer_mutex);
+                            pthread_cond_signal (&md->writer_cond);
                             break;
 
                         case TAG_SUB_COORDINATOR:
@@ -2082,6 +2513,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
                             pthread_mutex_lock (&md->sub_coordinator_mutex);
                             queue_enqueue (&md->sub_coordinator_flag, fs);
                             pthread_mutex_unlock (&md->sub_coordinator_mutex);
+                            pthread_cond_signal (&md->sub_coordinator_cond);
                             break;
 
                         case TAG_COORDINATOR:
@@ -2089,6 +2521,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
                             pthread_mutex_lock (&md->coordinator_mutex);
                             queue_enqueue (&md->coordinator_flag, fs);
                             pthread_mutex_unlock (&md->coordinator_mutex);
+                            pthread_cond_signal (&md->coordinator_cond);
                             break;
 
                         default:
@@ -2103,13 +2536,41 @@ void adios_adaptive_close (struct adios_file_struct * fd
 
                 while (queue_size (&md->mpi_flag) != 0)
                 {
+#if COLLECT_METRICS
+                    struct timeval a, b, diff;
+                    gettimeofday (&a, NULL);
+#endif
                     pthread_mutex_lock (&md->mpi_mutex);
                     struct mpi_flag_struct * f;
                     queue_dequeue (&md->mpi_flag, &f);
+#if 0
+fprintf (fp_mpi, "sending msg to %d %s\n", f->target, message_to_string_full (((uint64_t *) f->msg), 'w'));
+fflush (fp_mpi);
+#endif
                     MPI_Send (f->msg, f->size, MPI_BYTE, f->target, f->tag
                              ,md->group_comm
                              );
                     pthread_mutex_unlock (&md->mpi_mutex);
+#if COLLECT_METRICS
+                    gettimeofday (&b, NULL);
+                    timeval_subtract (&diff, &b, &a);
+                    timing.send_count++;
+                    timeval_add (&timing.t26, &timing.t26, &diff);
+
+                    if (timing.mpi_queue_count == timing.mpi_queue_size)
+                    {
+                        timing.mpi_queue_size += 10;
+                        timing.t29 = realloc (timing.t29
+                                             ,sizeof (struct timeval_writer)
+                                              * timing.mpi_queue_size
+                                             );
+                        assert (timing.t29 != 0);
+                    }
+                    timing.t29 [timing.mpi_queue_count].pid = f->target;
+                    gettimeofday (&(timing.t29 [timing.mpi_queue_count++].t)
+                                 ,NULL
+                                 );
+#endif
                     free (f->msg);
                     free (f);
                 }
@@ -2121,8 +2582,10 @@ void adios_adaptive_close (struct adios_file_struct * fd
                         && md->writer_shutdown_flag == SHUTDOWN_FLAG
                        )
                         shutdown_flag = SHUTDOWN_FLAG;
-                        // if (shutdown_flag == SHUTDOWN_FLAG)
-                        //     printf ("xx: %2d coord finished\n", md->rank);
+#if PRINT_MESSAGES
+                    if (shutdown_flag == SHUTDOWN_FLAG)
+                        printf ("xx: %2d coord finished\n", md->rank);
+#endif
                 }
                 else
                 {
@@ -2132,18 +2595,21 @@ void adios_adaptive_close (struct adios_file_struct * fd
                             && md->writer_shutdown_flag == SHUTDOWN_FLAG
                            )
                             shutdown_flag = SHUTDOWN_FLAG;
-                            // if (shutdown_flag == SHUTDOWN_FLAG)
-                            //     printf ("xx: %2d(%d) sub coord finished\n"
-                            //            ,md->rank, md->group);
+#if PRINT_MESSAGES
+                        if (shutdown_flag == SHUTDOWN_FLAG)
+                            printf ("xx: %2d(%d) sub coord finished\n"
+                                   ,md->rank, md->group);
+#endif
                     }
                     else
                     {
                         if (md->writer_shutdown_flag == SHUTDOWN_FLAG)
                         {
                             shutdown_flag = SHUTDOWN_FLAG;
-                            // if (shutdown_flag == SHUTDOWN_FLAG)
-                            //     printf ("xx: %2d writer finished\n"
-                            //            ,md->rank);
+#if PRINT_MESSAGES
+                            if (shutdown_flag == SHUTDOWN_FLAG)
+                                printf ("xx: %2d writer finished\n", md->rank);
+#endif
                         }
                     }
                 }
@@ -2156,17 +2622,24 @@ void adios_adaptive_close (struct adios_file_struct * fd
                        )
                    )
                 {
-                    gettimeofday (&t20, NULL);
+                    gettimeofday (&timing.t20, NULL);
                     got_shutdown = 1;
                 }
 #endif
             } while (shutdown_flag != SHUTDOWN_FLAG);
+#if 0
+fclose (fp_mpi);
+#endif
 
-
+            md->probe_shutdown_flag = SHUTDOWN_FLAG;
             // finished with output. Shutdown the system
 #if COLLECT_METRICS
-            gettimeofday (&t14, NULL);
+            gettimeofday (&timing.t14, NULL);
 #endif
+            //err = pthread_cancel (md->probe);
+            //err = pthread_kill (md->probe, SIGEND);
+            err = pthread_join (md->probe, NULL);
+            if (err != 0) printf ("thread probe kill error: %d\n", errno);
             err = pthread_join (md->writer, NULL);
             if (err != 0) printf ("thread join writer error: %d\n", err);
 
@@ -2181,9 +2654,7 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 if (err != 0) printf ("thread join sub coord error: %d\n", err);
             }
 #if COLLECT_METRICS
-            gettimeofday (&t11, NULL);
-            t15.tv_sec = t11.tv_sec;
-            t15.tv_usec = t11.tv_usec;
+            gettimeofday (&timing.t11, NULL);
 #endif
 
             break;
@@ -2422,6 +2893,18 @@ void adios_adaptive_close (struct adios_file_struct * fd
     if (md && md->fh)
         MPI_File_close (&md->fh);
 
+    adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
+                         ,md->old_attrs_root
+                         );
+    md->old_pg_root = 0;
+    md->old_vars_root = 0;
+    md->old_attrs_root = 0;
+
+#if COLLECT_METRICS
+    gettimeofday (&timing.t28, NULL);
+    print_metrics (md, iteration++);
+#endif
+
     if (   md->group_comm != MPI_COMM_WORLD
         && md->group_comm != MPI_COMM_SELF
         && md->group_comm != MPI_COMM_NULL
@@ -2434,16 +2917,6 @@ void adios_adaptive_close (struct adios_file_struct * fd
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
     md->group_comm = MPI_COMM_NULL;
-
-    adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
-                         ,md->old_attrs_root
-                         );
-    md->old_pg_root = 0;
-    md->old_vars_root = 0;
-    md->old_attrs_root = 0;
-#if COLLECT_METRICS
-    print_metrics (md, iteration++);
-#endif
 }
 
 void adios_adaptive_finalize (int mype, struct adios_method_struct * method)
@@ -2463,6 +2936,10 @@ void adios_adaptive_finalize (int mype, struct adios_method_struct * method)
         pthread_mutex_destroy (&md->writer_mutex);
         pthread_mutex_destroy (&md->sub_coordinator_mutex);
         pthread_mutex_destroy (&md->coordinator_mutex);
+        pthread_cond_destroy (&md->mpi_cond);
+        pthread_cond_destroy (&md->writer_cond);
+        pthread_cond_destroy (&md->sub_coordinator_cond);
+        pthread_cond_destroy (&md->coordinator_cond);
     }
 }
 
@@ -2502,9 +2979,16 @@ static void * sub_coordinator_main (void * param)
     ////////////////////////////////////////////////////////////////////////
     // wait for START_WRITES
     ////////////////////////////////////////////////////////////////////////
-    while (queue_size (&md->sub_coordinator_flag) == 0)
-        ;
+    //while (queue_size (&md->sub_coordinator_flag) == 0)
+    //    ;
     pthread_mutex_lock (&md->sub_coordinator_mutex);
+#if PRINT_MESSAGES
+    printf ("cond wait SUB COORDINATOR %d START_WRITES\n", md->group);
+#endif
+    pthread_cond_wait (&md->sub_coordinator_cond, &md->sub_coordinator_mutex);
+#if PRINT_MESSAGES
+    printf ("signaled SUB_COORDINATOR %d START_WRITES\n", md->group);
+#endif
     queue_dequeue (&md->sub_coordinator_flag, &f);
     pthread_mutex_unlock (&md->sub_coordinator_mutex);
     msg = (uint64_t *) f->msg;
@@ -2546,14 +3030,24 @@ static void * sub_coordinator_main (void * param)
     message_available = 0;
     uint64_t shutdown_flag = NO_FLAG;
 #if PRINT_MESSAGES
-int xxx = 0;
+    int xxx = 0;
+#else
+    int xxx = 0;
+#endif
+#if 0
+    char buf_x [10];
+    sprintf (buf_x, "%d.w", md->group);
+    FILE * fp_w = fopen (buf_x, "w");
 #endif
     int currently_writing = 0;
     int local_writer = 0;
+    enum MESSAGE_FLAGS last_message = NO_FLAG;
     do
     {
+        xxx++;
 #if PRINT_MESSAGES
-//if (!(xxx++ % 10000000)) printf ("AAAA %d\n", md->group);
+        //if (!(xxx++ % 10000000))
+            printf ("AAAA %d\n", md->group);
 #endif
         if (queue_size (&md->sub_coordinator_flag) != 0)
         {
@@ -2566,6 +3060,7 @@ int xxx = 0;
 
         if (message_available)
         {
+            last_message = (((uint64_t *) f->msg) [0]);
 #if PRINT_MESSAGES
             printf ("sc: %d source: %2d %s A\n", md->group, f->source
                    ,message_to_string_full (msg, 's')
@@ -2576,6 +3071,26 @@ int xxx = 0;
             {
                 case WRITE_COMPLETE:
                 {
+#if 0
+fprintf (fp_w, "%d\treceived %s\n", f->source, message_to_string_full ((uint64_t *) f->msg, 's'));
+fflush (fp_w);
+#endif
+#if COLLECT_METRICS
+                    if (   timing.write_complete_count
+                        == timing.write_complete_size
+                       )
+                    {
+                        timing.write_complete_size += 10;
+                        timing.t17 = realloc (timing.t17
+                                             ,sizeof (struct timeval_writer)
+                                              * timing.write_complete_size
+                                             );
+                        assert (timing.t17 != 0);
+                    }
+                    timing.t17 [timing.write_complete_count].pid = msg [5];
+                    gettimeofday (&(timing.t17
+                                      [timing.write_complete_count++].t), NULL);
+#endif
                     // if this group was writing it, we were tracking it
                     if (msg [2] == md->group)
                     {
@@ -2588,6 +3103,10 @@ int xxx = 0;
                     // if the target group is our group (we wrote to our file)
                     if (msg [1] == md->group)
                     {
+#if 0
+fprintf (fp_w, "%d\tsave for index %s\n", msg [5], message_to_string_full ((uint64_t *) f->msg, 's'));
+fflush (fp_w);
+#endif
                         // save the writer in our list for indexing
                         if (writers_size <= writers_served)
                         {
@@ -2596,7 +3115,7 @@ int xxx = 0;
                                                                 * sizeof (int)
                                                       );
                         }
-                        writers [writers_served] = f->source;
+                        writers [writers_served] = msg [5];
                         index_sizes [writers_served] = msg [4];
                         if (index_sizes [writers_served] > largest_index)
                             largest_index = index_sizes [writers_served];
@@ -2607,6 +3126,10 @@ int xxx = 0;
                     // if it is adaptive, tell the coordinator it is done
                     if (msg [2] == md->group && msg [1] != msg [2])
                     {
+#if 0
+fprintf (fp_w, "%d\ttell coord adaptive done %s\n", md->rank, message_to_string_full ((uint64_t *) f->msg, 's'));
+fflush (fp_w);
+#endif
                         // tell coordinator done with this one
                         // and if we have more capacity
                         // only if we were writing to our group
@@ -2624,9 +3147,12 @@ int xxx = 0;
                                 ((uint64_t *) f->msg) [1] = msg [1];
                                 ((uint64_t *) f->msg) [2] = msg [2];
                                 ((uint64_t *) f->msg) [3] = msg [3];
+                                ((uint64_t *) f->msg) [4] = msg [4];
+                                ((uint64_t *) f->msg) [5] = msg [5];
                                 pthread_mutex_lock (&md->mpi_mutex);
                                 queue_enqueue (&md->mpi_flag, f);
                                 pthread_mutex_unlock (&md->mpi_mutex);
+                                pthread_cond_signal (&md->mpi_cond);
                             }
                             else
                             {
@@ -2639,9 +3165,12 @@ int xxx = 0;
                                 ((uint64_t *) f->msg) [1] = msg [1];
                                 ((uint64_t *) f->msg) [2] = msg [2];
                                 ((uint64_t *) f->msg) [3] = msg [3];
+                                ((uint64_t *) f->msg) [4] = msg [4];
+                                ((uint64_t *) f->msg) [5] = msg [5];
                                 pthread_mutex_lock (&md->coordinator_mutex);
                                 queue_enqueue (&md->coordinator_flag, f);
                                 pthread_mutex_unlock (&md->coordinator_mutex);
+                                pthread_cond_signal (&md->coordinator_cond);
                             }
                         }
                     }
@@ -2665,6 +3194,10 @@ int xxx = 0;
 
                 case ADAPTIVE_WRITE_START:
                 {
+#if 0
+fprintf (fp_w, "%d\treceived %s\n", f->source, message_to_string_full ((uint64_t *) f->msg, 's'));
+fflush (fp_w);
+#endif
                     if (next_writer > md->rank)
                     {
                         // tell coordinator we are done and can't do it
@@ -2682,6 +3215,7 @@ int xxx = 0;
                             pthread_mutex_lock (&md->mpi_mutex);
                             queue_enqueue (&md->mpi_flag, f);
                             pthread_mutex_unlock (&md->mpi_mutex);
+                            pthread_cond_signal (&md->mpi_cond);
                         }
                         else
                         {
@@ -2696,12 +3230,28 @@ int xxx = 0;
                             pthread_mutex_lock (&md->coordinator_mutex);
                             queue_enqueue (&md->coordinator_flag, f);
                             pthread_mutex_unlock (&md->coordinator_mutex);
+                            pthread_cond_signal (&md->coordinator_cond);
                         }
                     }
                     else
                     {
                         if (next_writer < md->rank)
                         {
+#if COLLECT_METRICS
+                            if (timing.do_write_count == timing.do_write_size)
+                            {
+                                timing.do_write_size += 10;
+                                timing.t15 = realloc (timing.t15
+                                               ,sizeof (struct timeval_writer)
+                                                * timing.do_write_size
+                                               );
+                                assert (timing.t15 != 0);
+                            }
+                            timing.t15 [timing.do_write_count].pid
+                                                                 = next_writer;
+                            gettimeofday (&(timing.t15
+                                           [timing.do_write_count++].t), NULL);
+#endif
                             struct mpi_flag_struct * f = malloc
                                            (sizeof (struct mpi_flag_struct));
                             f->target = next_writer;
@@ -2714,9 +3264,14 @@ int xxx = 0;
                             ((uint64_t *) f->msg) [3] = md->group;
                             ((uint64_t *) f->msg) [4] = md->rank;
                             ((uint64_t *) f->msg) [5] = msg [3];
+#if 0
+fprintf (fp_w, "%d\tsending %s\n", f->target, message_to_string_full ((uint64_t *) f->msg, 's'));
+fflush (fp_w);
+#endif
                             pthread_mutex_lock (&md->mpi_mutex);
                             queue_enqueue (&md->mpi_flag, f);
                             pthread_mutex_unlock (&md->mpi_mutex);
+                            pthread_cond_signal (&md->mpi_cond);
                             active_writers++;
                             next_writer++;
                         }
@@ -2724,6 +3279,22 @@ int xxx = 0;
                         {
                             if (next_writer == md->rank)
                             {
+#if COLLECT_METRICS
+                                if (timing.do_write_count
+                                                      == timing.do_write_size)
+                                {
+                                    timing.do_write_size += 10;
+                                    timing.t15 = realloc (timing.t15
+                                              ,sizeof (struct timeval_writer)
+                                                * timing.do_write_size
+                                              );
+                                    assert (timing.t15 != 0);
+                                }
+                                timing.t15 [timing.do_write_count].pid
+                                                                = next_writer;
+                                gettimeofday (&(timing.t15
+                                           [timing.do_write_count++].t), NULL);
+#endif
                                 active_writers++;
                                 struct flag_struct * f = malloc
                                                 (sizeof (struct flag_struct));
@@ -2736,9 +3307,14 @@ int xxx = 0;
                                 ((uint64_t *) f->msg) [3] = md->group;
                                 ((uint64_t *) f->msg) [4] = md->rank;
                                 ((uint64_t *) f->msg) [5] = msg [3];
+#if 0
+fprintf (fp_w, "%d\tsending %s\n", md->rank, message_to_string_full ((uint64_t *) f->msg, 's'));
+fflush (fp_w);
+#endif
                                 pthread_mutex_lock (&md->writer_mutex);
                                 queue_enqueue (&md->writer_flag, f);
                                 pthread_mutex_unlock (&md->writer_mutex);
+                                pthread_cond_signal (&md->writer_cond);
                                 next_writer++;
                             }
                         }
@@ -2749,12 +3325,22 @@ int xxx = 0;
                 case OVERALL_WRITE_COMPLETE:
                 {
 #if COLLECT_METRICS
-                    gettimeofday (&t12, NULL);
+                    gettimeofday (&timing.t12, NULL);
 #endif
                     // tell writers to enter send index mode
                     int i;
+                    char remote_writer = 0;
+                    char local_writer = 0;
+#if 0
+char b1 [10];
+sprintf (b1, "%d", md->group);
+FILE * ff = fopen (b1, "w");
+#endif
                     for (i = 0; i < writers_served; i++)
                     {
+#if 0
+fprintf (ff, "%d\n", writers [i]);
+#endif
                         if (writers [i] != md->rank)
                         {
                             struct mpi_flag_struct * f = malloc
@@ -2767,6 +3353,7 @@ int xxx = 0;
                             pthread_mutex_lock (&md->mpi_mutex);
                             queue_enqueue (&md->mpi_flag, f);
                             pthread_mutex_unlock (&md->mpi_mutex);
+                            remote_writer = 1;
                         }
                         else
                         {
@@ -2779,14 +3366,26 @@ int xxx = 0;
                             pthread_mutex_lock (&md->writer_mutex);
                             queue_enqueue (&md->writer_flag, f);
                             pthread_mutex_unlock (&md->writer_mutex);
+                            local_writer = 1;
                         }
                     }
+#if 0
+fclose (ff);
+#endif
+                    if (remote_writer)
+                        pthread_cond_signal (&md->mpi_cond);
+                    if (local_writer)
+                        pthread_cond_signal (&md->writer_cond);
 
 #if DO_INDEX_COLLECTION == 0
 #if COLLECT_METRICS
-                    gettimeofday (&t13, NULL);
+                    gettimeofday (&timing.t13, NULL);
 #endif
                     // once we are done sending the index, shutdown the thread
+#if 0
+fprintf (fp_w, "%d\tshutdown 2\n", md->rank);
+fflush (fp_w);
+#endif
                     shutdown_flag = SHUTDOWN_FLAG;
 #endif
 
@@ -2814,14 +3413,28 @@ int xxx = 0;
                             int message_available = 0;
                             while (!message_available)
                             {
+#if COLLECT_METRICS
+                                struct timeval a, b, diff;
+                                gettimeofday (&a, NULL);
+#endif
                                 pthread_mutex_lock (&md->mpi_mutex);
                                 MPI_Iprobe (MPI_ANY_SOURCE, TAG_SUB_COORDINATOR
                                            ,md->group_comm
                                            ,&message_available, &status
                                            );
                                 pthread_mutex_unlock (&md->mpi_mutex);
+#if COLLECT_METRICS
+                                gettimeofday (&b, NULL);
+                                iprobe_count++;
+                                timeval_subtract (&diff, &b, &a);
+                                timeval_add (&timing.t25, &timing.t25, &diff);
+#endif
                             }
 
+#if COLLECT_METRICS
+                            struct timeval a, b, diff;
+                            gettimeofday (&a, NULL);
+#endif
                             pthread_mutex_lock (&md->mpi_mutex);
                             MPI_Recv (buf, index_sizes [i], MPI_BYTE
                                       ,writers [i]
@@ -2830,6 +3443,12 @@ int xxx = 0;
                                       );
 
                             pthread_mutex_unlock (&md->mpi_mutex);
+#if COLLECT_METRICS
+                            gettimeofday (&b, NULL);
+                            timeval_subtract (&diff, &b, &a);
+                            timeval_add (&timing.t27, &timing.t27, &diff);
+                            timing.recv_count++;
+#endif
                             b.buff = buf;
                         }
                         else
@@ -2898,6 +3517,7 @@ int xxx = 0;
                         pthread_mutex_lock (&md->mpi_mutex);
                         queue_enqueue (&md->mpi_flag, f);
                         pthread_mutex_unlock (&md->mpi_mutex);
+                        pthread_cond_signal (&md->mpi_cond);
 
                         pthread_mutex_lock (&md->mpi_mutex);
                         MPI_Isend (buffer, only_index_buffer_offset, MPI_BYTE
@@ -2920,10 +3540,15 @@ printf ("FIX THIS\n");
                         pthread_mutex_lock (&md->coordinator_mutex);
                         queue_enqueue (&md->coordinator_flag, flag);
                         pthread_mutex_unlock (&md->coordinator_mutex);
+                        pthread_cond_signal (&md->coordinator_cond);
                     }
                     free (buffer);
 #endif
 
+#if 0
+fprintf (fp_w, "%d\tshutdown 1\n", md->rank);
+fflush (fp_w);
+#endif
                     // once we are done sending the index, shutdown the thread
                     shutdown_flag = SHUTDOWN_FLAG;
 #if DO_INDEX_COLLECTION
@@ -2933,7 +3558,7 @@ printf ("FIX THIS\n");
                     if (indices_collected == writers_served)
                     {
 #if COLLECT_METRICS
-                        gettimeofday (&t13, NULL);
+                        gettimeofday (&timing.t13, NULL);
 #endif
                     }
                     break;
@@ -2954,6 +3579,19 @@ printf ("FIX THIS\n");
         {
             if (current_writer < md->rank)
             {
+#if COLLECT_METRICS
+                if (timing.do_write_count == timing.do_write_size)
+                {
+                    timing.do_write_size += 10;
+                    timing.t15 = realloc (timing.t15
+                                         ,sizeof (struct timeval_writer)
+                                          * timing.do_write_size
+                                         );
+                    assert (timing.t15 != 0);
+                }
+                timing.t15 [timing.do_write_count].pid = current_writer;
+                gettimeofday (&(timing.t15 [timing.do_write_count++].t), NULL);
+#endif
                 local_writer++;
                 struct mpi_flag_struct * f = malloc
                                            (sizeof (struct mpi_flag_struct));
@@ -2967,9 +3605,14 @@ printf ("FIX THIS\n");
                 ((uint64_t *) f->msg) [3] = md->group;
                 ((uint64_t *) f->msg) [4] = md->rank;
                 ((uint64_t *) f->msg) [5] = current_offset++;
+#if 0
+fprintf (fp_w, "%d\tsending %s\n", f->target, message_to_string_full ((uint64_t *) f->msg, 's'));
+fflush (fp_w);
+#endif
                 pthread_mutex_lock (&md->mpi_mutex);
                 queue_enqueue (&md->mpi_flag, f);
                 pthread_mutex_unlock (&md->mpi_mutex);
+                pthread_cond_signal (&md->mpi_cond);
                 active_writers++;
                 currently_writing = 1;
             }
@@ -2977,6 +3620,20 @@ printf ("FIX THIS\n");
             {
                 if (current_writer == md->rank)
                 {
+#if COLLECT_METRICS
+                    if (timing.do_write_count == timing.do_write_size)
+                    {
+                        timing.do_write_size += 10;
+                        timing.t15 = realloc (timing.t15
+                                             ,sizeof (struct timeval_writer)
+                                              * timing.do_write_size
+                                             );
+                        assert (timing.t15 != 0);
+                    }
+                    timing.t15 [timing.do_write_count].pid = current_writer;
+                    gettimeofday (&(timing.t15
+                                          [timing.do_write_count++].t), NULL);
+#endif
                     active_writers++;
                     local_writer++;
                     currently_writing = 1;
@@ -2991,9 +3648,14 @@ printf ("FIX THIS\n");
                     ((uint64_t *) f->msg) [3] = md->group;
                     ((uint64_t *) f->msg) [4] = md->rank;
                     ((uint64_t *) f->msg) [5] = current_offset++;
+#if 0
+fprintf (fp_w, "%d\tsending %s\n", md->rank, message_to_string_full ((uint64_t *) f->msg, 's'));
+fflush (fp_w);
+#endif
                     pthread_mutex_lock (&md->writer_mutex);
                     queue_enqueue (&md->writer_flag, f);
                     pthread_mutex_unlock (&md->writer_mutex);
+                    pthread_cond_signal (&md->writer_cond);
                 }
                 else
                 {
@@ -3012,9 +3674,16 @@ printf ("FIX THIS\n");
                             ((uint64_t *) f->msg) [1] = md->group;
                             ((uint64_t *) f->msg) [2] = md->group;
                             ((uint64_t *) f->msg) [3] = msg [3];
+                            ((uint64_t *) f->msg) [4] = msg [4];
+                            ((uint64_t *) f->msg) [5] = md->rank;
+#if 0
+fprintf (fp_w, "%d\tsending %s\n", md->rank, message_to_string_full ((uint64_t *) f->msg, 's'));
+fflush (fp_w);
+#endif
                             pthread_mutex_lock (&md->mpi_mutex);
                             queue_enqueue (&md->mpi_flag, f);
                             pthread_mutex_unlock (&md->mpi_mutex);
+                            pthread_cond_signal (&md->mpi_cond);
                         }
                         else
                         {
@@ -3027,9 +3696,16 @@ printf ("FIX THIS\n");
                             ((uint64_t *) f->msg) [1] = md->group; //msg [1];
                             ((uint64_t *) f->msg) [2] = md->group; //msg [2];
                             ((uint64_t *) f->msg) [3] = msg [3];
+                            ((uint64_t *) f->msg) [4] = msg [4];
+                            ((uint64_t *) f->msg) [5] = md->rank;
+#if 0
+fprintf (fp_w, "%d\tsending %s\n", md->rank, message_to_string_full ((uint64_t *) f->msg, 's'));
+fflush (fp_w);
+#endif
                             pthread_mutex_lock (&md->coordinator_mutex);
                             queue_enqueue (&md->coordinator_flag, f);
                             pthread_mutex_unlock (&md->coordinator_mutex);
+                            pthread_cond_signal (&md->coordinator_cond);
                         }
                     }
                 }
@@ -3043,7 +3719,39 @@ printf ("FIX THIS\n");
             f = 0;
             msg = 0;
         }
+        if (shutdown_flag != SHUTDOWN_FLAG)
+        {
+            if (queue_size (&md->sub_coordinator_flag) == 0)
+            {
+                struct timespec ts;
+                struct timeval tp;
+                struct timeval interval;
+                interval.tv_sec = 0;
+                interval.tv_usec = 500000; // half a second wait
+
+                pthread_mutex_lock (&md->sub_coordinator_mutex);
+                gettimeofday (&tp, NULL);
+                timeval_add (&tp, &tp, &interval);
+                ts.tv_sec = tp.tv_sec;
+                ts.tv_nsec = tp.tv_usec * 1000;
+
+#if PRINT_MESSAGES
+                printf ("cond wait SUB COORDINATOR %d\n", md->group);
+#endif
+                pthread_cond_timedwait (&md->sub_coordinator_cond
+                                       ,&md->sub_coordinator_mutex, &ts
+                                       );
+#if PRINT_MESSAGES
+                printf ("signaled SUB COORDINATOR %d\n", md->group);
+#endif
+                pthread_mutex_unlock (&md->sub_coordinator_mutex);
+            }
+//            if (xxx >= 300) {shutdown_flag = SHUTDOWN_FLAG; fprintf (stderr, "rank:\t%d\taborting sub coord timed out last message: %s\n", md->rank, message_to_string (last_message));}
+        }
     } while (shutdown_flag != SHUTDOWN_FLAG);
+#if 0
+fclose (fp_w);
+#endif
     free (writers);
     //free (index_sizes);
 
@@ -3052,6 +3760,7 @@ printf ("FIX THIS\n");
           )
         ;
     md->sub_coord_shutdown_flag = SHUTDOWN_FLAG;
+    pthread_cond_signal (&md->mpi_cond);
     pthread_exit (NULL);
     return NULL;
 }
@@ -3123,9 +3832,23 @@ static void * coordinator_main (void * param)
     ////////////////////////////////////////////////////////////////////////
     // wait for START_WRITE to complete before continuing
     ////////////////////////////////////////////////////////////////////////
+#if PRINT_MESSAGES
+    printf ("wait for START_WRITES\n");
+#endif
+#if 1
     while (queue_size (&md->coordinator_flag) == 0)
         ;
     pthread_mutex_lock (&md->coordinator_mutex);
+#else
+    pthread_mutex_lock (&md->coordinator_mutex);
+#if PRINT_MESSAGES
+    printf ("cond wait COORDINATOR\n");
+#endif
+    pthread_cond_wait (&md->coordinator_cond, &md->coordinator_mutex);
+#if PRINT_MESSAGES
+    printf ("signaled COORDINATOR\n");
+#endif
+#endif
     queue_dequeue (&md->coordinator_flag, &f);
     pthread_mutex_unlock (&md->coordinator_mutex);
     msg = (uint64_t *) f->msg;
@@ -3133,11 +3856,14 @@ static void * coordinator_main (void * param)
     free (f->msg);
     free (f);
 #if COLLECT_METRICS
-    gettimeofday (&t7, NULL);
+    gettimeofday (&timing.t7, NULL);
 #endif
 
     for (i = 0; i < md->groups; i++)
     {
+#if PRINT_MESSAGES
+        printf ("START_WRITES to %d BEGIN\n", sub_coord_ranks [i]);
+#endif
         if (sub_coord_ranks [i] != md->rank)
         {
             struct mpi_flag_struct * f = malloc
@@ -3163,6 +3889,11 @@ static void * coordinator_main (void * param)
             pthread_mutex_unlock (&md->sub_coordinator_mutex);
             f = 0;
         }
+        pthread_cond_signal (&md->mpi_cond);
+        pthread_cond_signal (&md->sub_coordinator_cond);
+#if PRINT_MESSAGES
+        printf ("START_WRITES to %d END\n", sub_coord_ranks [i]);
+#endif
     }
 
     ////////////////////////////////////////////////////////////////////////
@@ -3197,14 +3928,50 @@ static void * coordinator_main (void * param)
 
     message_available = 0;
     uint64_t shutdown_flag = NO_FLAG;
+    struct timespec ts;
+    struct timeval tp;
+    struct timeval interval;
+    interval.tv_sec = 0;
+    interval.tv_usec = 500000; // half a second wait
 #if PRINT_MESSAGES
-int xxx = 0;
+    int xxx = 0;
+#else
+    int xxx = 0;
+#endif
+    enum MESSAGE_FLAGS last_message = NO_FLAG;
+#if 0
+FILE * fp_c = fopen ("c", "w");
 #endif
     do
     {
+        xxx++;
 #if PRINT_MESSAGES
-//if (!(xxx++ % 10000000)) printf ("BBBB adaptive_writes_outstanding: %lld\n", adaptive_writes_outstanding);
+        //if (!(xxx++ % 10000000))
+            printf ("BBBB adaptive_writes_outstanding: %lld\n"
+                   ,adaptive_writes_outstanding
+                   );
 #endif
+        if (queue_size (&md->coordinator_flag) == 0)
+        {
+            pthread_mutex_lock (&md->coordinator_mutex);
+            gettimeofday (&tp, NULL);
+            timeval_add (&tp, &tp, &interval);
+            ts.tv_sec = tp.tv_sec;
+            ts.tv_nsec = tp.tv_usec * 1000;
+
+#if PRINT_MESSAGES
+            printf ("cond wait COORDINATOR\n");
+#endif
+            pthread_cond_timedwait (&md->coordinator_cond
+                                   ,&md->coordinator_mutex
+                                   ,&ts
+                                   );
+#if PRINT_MESSAGES
+            printf ("signaled COORDINATOR\n");
+#endif
+            pthread_mutex_unlock (&md->coordinator_mutex);
+        }
+
         if (queue_size (&md->coordinator_flag) != 0)
         {
             message_available = 1;
@@ -3216,6 +3983,7 @@ int xxx = 0;
 
         if (message_available)
         {
+            last_message = msg [0];
 #if PRINT_MESSAGES
             printf ("c: source: %2d msg: %s A\n"
                    ,f->source, message_to_string_full (msg, 'c')
@@ -3226,6 +3994,12 @@ int xxx = 0;
             {
                 case WRITE_COMPLETE:
                 {
+#if 0
+fprintf (fp_c, "adaptive_writes_outstanding: %lld msg: %s\n"
+        ,adaptive_writes_outstanding, message_to_string_full (msg, 'c')
+        );
+fflush (fp_c);
+#endif
                     // what part of the file finished writing last is unknown
                     // so only save the largest final offset
                     if (msg [3] > group_offset [msg [1]])
@@ -3249,6 +4023,10 @@ int xxx = 0;
                                     // tell the subcoordinator to write
                                     // to this file
                                     adaptive_writes_outstanding++;
+#if 0
+fprintf (fp_c, "adding adaptive write 1 (%d)\n", adaptive_writes_outstanding);
+fflush (fp_c);
+#endif
                                     if (sub_coord_ranks [i] != md->rank)
                                     {
                                         struct mpi_flag_struct * f = malloc
@@ -3267,6 +4045,7 @@ int xxx = 0;
                                         pthread_mutex_lock (&md->mpi_mutex);
                                         queue_enqueue (&md->mpi_flag, f);
                                         pthread_mutex_unlock (&md->mpi_mutex);
+                                        pthread_cond_signal (&md->mpi_cond);
                                     }
                                     else
                                     {
@@ -3288,6 +4067,8 @@ int xxx = 0;
                                                (&md->sub_coordinator_flag, f);
                                         pthread_mutex_unlock
                                               (&md->sub_coordinator_mutex);
+                                        pthread_cond_signal
+                                              (&md->sub_coordinator_cond);
                                     }
                                     break;
                                 }
@@ -3298,13 +4079,59 @@ int xxx = 0;
                         {
                             if (!adaptive_writes_outstanding)
                             {
+#if 0
+fprintf (fp_c, "start_index_collection 1\n");
+fflush (fp_c);
+#endif
                                 start_index_collection = 1;
                             }
                         }
                     }
                     else  // move to the next adaptive writer
                     {
+                        // tell the target that we wrote to it and such
+                        if (md->group != msg [1])
+                        {
+                            struct mpi_flag_struct * f = malloc
+                                          (sizeof (struct mpi_flag_struct));
+                            f->target = sub_coord_ranks [msg [1]];
+                            f->tag = TAG_SUB_COORDINATOR;
+                            f->size = 8 * PARAMETER_COUNT;
+                            f->msg = malloc (8 * PARAMETER_COUNT);
+                            ((uint64_t *) f->msg) [0] = WRITE_COMPLETE;
+                            ((uint64_t *) f->msg) [1] = msg [1];
+                            ((uint64_t *) f->msg) [2] = msg [2];
+                            ((uint64_t *) f->msg) [3] = msg [3];
+                            ((uint64_t *) f->msg) [4] = msg [4];
+                            ((uint64_t *) f->msg) [5] = msg [5];
+                            pthread_mutex_lock (&md->mpi_mutex);
+                            queue_enqueue (&md->mpi_flag, f);
+                            pthread_mutex_unlock (&md->mpi_mutex);
+                            pthread_cond_signal (&md->mpi_cond);
+                        }
+                        else
+                        {
+                            struct flag_struct * f = malloc
+                                             (sizeof (struct flag_struct));
+                            f->source = msg [5];
+                            f->tag = TAG_SUB_COORDINATOR;
+                            f->msg = malloc (8 * PARAMETER_COUNT);
+                            ((uint64_t *) f->msg) [0] = WRITE_COMPLETE;
+                            ((uint64_t *) f->msg) [1] = msg [1];
+                            ((uint64_t *) f->msg) [2] = msg [2];
+                            ((uint64_t *) f->msg) [3] = msg [3];
+                            ((uint64_t *) f->msg) [4] = msg [4];
+                            ((uint64_t *) f->msg) [5] = msg [5];
+                            pthread_mutex_lock (&md->sub_coordinator_mutex);
+                            queue_enqueue (&md->sub_coordinator_flag, f);
+                            pthread_mutex_unlock (&md->sub_coordinator_mutex);
+                            pthread_cond_signal (&md->sub_coordinator_cond);
+                        }
                         adaptive_writes_outstanding--;
+#if 0
+fprintf (fp_c, "removing adaptive write 2 (%d)\n", adaptive_writes_outstanding);
+fflush (fp_c);
+#endif
                         int i = (msg [2] + 1) % md->groups;
                         int groups_tried = 0;
                         // if we have completed, don't even try to adapt
@@ -3320,6 +4147,10 @@ int xxx = 0;
                                 // tell the subcoordinator to write
                                 // to this file
                                 adaptive_writes_outstanding++;
+#if 0
+fprintf (fp_c, "adding adaptive write 3 (%d)\n", adaptive_writes_outstanding);
+fflush (fp_c);
+#endif
                                 if (sub_coord_ranks [i] != md->rank)
                                 {
                                     struct mpi_flag_struct * f = malloc
@@ -3338,6 +4169,7 @@ int xxx = 0;
                                     pthread_mutex_lock (&md->mpi_mutex);
                                     queue_enqueue (&md->mpi_flag, f);
                                     pthread_mutex_unlock (&md->mpi_mutex);
+                                    pthread_cond_signal (&md->mpi_cond);
                                 }
                                 else
                                 {
@@ -3359,6 +4191,8 @@ int xxx = 0;
                                                (&md->sub_coordinator_flag, f);
                                     pthread_mutex_unlock
                                                (&md->sub_coordinator_mutex);
+                                    pthread_cond_signal
+                                              (&md->sub_coordinator_cond);
                                 }
 
                                 break;
@@ -3369,6 +4203,10 @@ int xxx = 0;
                             && groups_complete == md->groups
                            )
                         {
+#if 0
+fprintf (fp_c, "start_index_collection 2\n");
+fflush (fp_c);
+#endif
                             start_index_collection = 1;
                         }
                     }
@@ -3379,6 +4217,10 @@ int xxx = 0;
                                    // all are writing already for that group
                 {
                     adaptive_writes_outstanding--;
+#if 0
+fprintf (fp_c, "removing adaptive write 4 (%d)\n", adaptive_writes_outstanding);
+fflush (fp_c);
+#endif
                     // the writer that told us this can't take any more
                     // adaptive requests so mark as occupied (only if still
                     // marked as writing)
@@ -3396,6 +4238,10 @@ int xxx = 0;
                             // tell the subcoordinator to write
                             // to this file
                             adaptive_writes_outstanding++;
+#if 0
+fprintf (fp_c, "adding adaptive write 5 (%d)\n", adaptive_writes_outstanding);
+fflush (fp_c);
+#endif
                             if (sub_coord_ranks [i] != md->rank)
                             {
                                 struct mpi_flag_struct * f = malloc
@@ -3414,6 +4260,7 @@ int xxx = 0;
                                 pthread_mutex_lock (&md->mpi_mutex);
                                 queue_enqueue (&md->mpi_flag, f);
                                 pthread_mutex_unlock (&md->mpi_mutex);
+                                pthread_cond_signal (&md->mpi_cond);
 
                                 break;
                             }
@@ -3436,6 +4283,7 @@ int xxx = 0;
                                 queue_enqueue (&md->sub_coordinator_flag, f);
                                 pthread_mutex_unlock
                                               (&md->sub_coordinator_mutex);
+                                pthread_cond_signal (&md->sub_coordinator_cond);
 
                                 break;
                             }
@@ -3446,6 +4294,10 @@ int xxx = 0;
                         && groups_complete == md->groups
                        )
                     {
+#if 0
+fprintf (fp_c, "start_index_collection 3\n");
+fflush (fp_c);
+#endif
                         start_index_collection = 1;
                     }
                     break;
@@ -3455,7 +4307,8 @@ int xxx = 0;
                 case INDEX_BODY:
                 {
 #if COLLECT_METRICS
-                    if (index_sizes_received == 0) gettimeofday (&t9, NULL);
+                    if (index_sizes_received == 0)
+                        gettimeofday (&timing.t9, NULL);
 #endif
                     int source_group = msg [1];
                     uint64_t proc_index_size = msg [2];
@@ -3489,6 +4342,10 @@ int xxx = 0;
 
                     if (source_group != md->group)
                     {
+#if COLLECT_METRICS
+                        struct timeval a, b, diff;
+                        gettimeofday (&a, NULL);
+#endif
                         pthread_mutex_lock (&md->mpi_mutex);
                         MPI_Recv (index_buf, proc_index_size
                                   ,MPI_BYTE
@@ -3497,6 +4354,12 @@ int xxx = 0;
                                   ,md->group_comm, &status
                                   );
                         pthread_mutex_unlock (&md->mpi_mutex);
+#if COLLECT_METRICS
+                        gettimeofday (&b, NULL);
+                        timeval_subtract (&diff, &b, &a);
+                        timeval_add (&timing.t27, &timing.t27, &diff);
+                        timing.recv_count++;
+#endif
                         buffer_write (&buffer, &buffer_size, &buffer_offset
                                      ,index_buf, proc_index_size
                                      );
@@ -3578,7 +4441,7 @@ int xxx = 0;
                         // we are done so exit the thread
                         shutdown_flag = SHUTDOWN_FLAG;
 #if COLLECT_METRICS
-                        gettimeofday (&t10, NULL);
+                        gettimeofday (&timing.t10, NULL);
 #endif
                     }
                     break;
@@ -3607,7 +4470,7 @@ int xxx = 0;
             {
 #if DO_INDEX_COLLECTION == 0
 #if COLLECT_METRICS
-                gettimeofday (&t9, NULL);
+                gettimeofday (&timing.t9, NULL);
 #endif
 #endif
                 index_collection_started = 1;
@@ -3627,6 +4490,7 @@ int xxx = 0;
                         pthread_mutex_lock (&md->mpi_mutex);
                         queue_enqueue (&md->mpi_flag, f);
                         pthread_mutex_unlock (&md->mpi_mutex);
+                        pthread_cond_signal (&md->mpi_cond);
                     }
                     else
                     {
@@ -3640,16 +4504,16 @@ int xxx = 0;
                         pthread_mutex_lock (&md->sub_coordinator_mutex);
                         queue_enqueue (&md->sub_coordinator_flag, f);
                         pthread_mutex_unlock (&md->sub_coordinator_mutex);
+                        pthread_cond_signal (&md->sub_coordinator_cond);
                     }
                 }
 #if DO_INDEX_COLLECTION == 0
 #if COLLECT_METRICS
-                gettimeofday (&t10, NULL);
+                // while redundant with above, this will get called if
+                // we are not doing the index. The other will get call if we do
+                gettimeofday (&timing.t10, NULL);
 #endif
                 shutdown_flag = SHUTDOWN_FLAG;
-#endif
-#if COLLECT_METRICS
-                gettimeofday (&t8, NULL);
 #endif
             }
 #if PRINT_MESSAGES
@@ -3666,7 +4530,11 @@ int xxx = 0;
             f = 0;
             msg = 0;
         }
+//        if (xxx >= 300) {shutdown_flag = SHUTDOWN_FLAG; fprintf (stderr, "rank:\t%d\taborting coord timed out last message: %s\n", md->rank, message_to_string (last_message));}
     } while (shutdown_flag != SHUTDOWN_FLAG);
+#if 0
+fclose (fp_c);
+#endif
 
     //if (index_buf)
     //    free (index_buf);
@@ -3681,6 +4549,7 @@ int xxx = 0;
           )
         ;
     md->coord_shutdown_flag = SHUTDOWN_FLAG;
+    pthread_cond_signal (&md->mpi_cond);
     pthread_exit (NULL);
     return NULL;
 }
@@ -3712,12 +4581,37 @@ static void * writer_main (void * param)
     struct adios_index_var_struct_v1 * new_vars_root = 0;
     struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
 
+    int rc;
     int shutdown_flag = NO_FLAG;
+    struct timespec ts;
+    struct timeval tp;
+    struct timeval interval;
+    interval.tv_sec = 0;
+    interval.tv_usec = 500000; // half a second wait
 
+    int xxx = 0;
+    enum MESSAGE_FLAGS last_message = NO_FLAG;
     do
     {
-        while (queue_size (&md->writer_flag) == 0)
-            ;
+        xxx++;
+//        if (xxx >= 300) {shutdown_flag = SHUTDOWN_FLAG; fprintf (stderr, "rank:\t%d\taborting writer timed out last message: %s\n", md->rank, message_to_string (last_message));}
+        //while (queue_size (&md->writer_flag) == 0)
+        //    ;
+        pthread_mutex_lock (&md->writer_mutex);
+        gettimeofday (&tp, NULL);
+        timeval_add (&tp, &tp, &interval);
+        ts.tv_sec = tp.tv_sec;
+        ts.tv_nsec = tp.tv_usec * 1000;
+#if PRINT_MESSAGES
+        printf ("cond wait WRITER %d\n", md->rank);
+#endif
+        rc = pthread_cond_timedwait (&md->writer_cond, &md->writer_mutex, &ts);
+#if PRINT_MESSAGES
+        printf ("signaled WRITER %d\n", md->rank);
+#endif
+        pthread_mutex_unlock (&md->writer_mutex);
+
+        if (rc != ETIMEDOUT || queue_size (&md->writer_flag) != 0)
         {
             message_available = 1;
             pthread_mutex_lock (&md->writer_mutex);
@@ -3730,10 +4624,19 @@ static void * writer_main (void * param)
                    );
 #endif
         }
+        else
+            continue;   // loop back to try again
+
+        if (message_available) {
+            last_message = msg [0];
         switch (msg [0])
         {
             case DO_WRITE_FLAG:
             {
+#if COLLECT_METRICS
+                struct timeval a, b;
+                gettimeofday (&a, NULL);
+#endif
                 // set our base offset for building the index
                 fd->base_offset = msg [5] * md->stripe_size;
                 // build index appending to any existing index
@@ -3756,12 +4659,14 @@ static void * writer_main (void * param)
                     ssize_t s = write (md->f, fd->buffer, fd->bytes_written);
                     if (s != fd->bytes_written)
                     {
-                        fprintf (stderr, "Need to do multi-write 1 (tried: %llu wrote: %lld) errno %d\n", fd->bytes_written, s, errno);
+                        fprintf (stderr, "Need to do multi-write 1 (tried: "
+                                         "%llu wrote: %lld) errno %d\n"
+                                ,fd->bytes_written, s, errno
+                                );
                     }
                 }
                 else // we are adaptive writing and need to use the other file
                 {
-                    MPI_File fh;
                     char * new_name;
 
                     new_name = malloc (  strlen (method->base_path)
@@ -3769,7 +4674,7 @@ static void * writer_main (void * param)
                                       ); // 6 extra for '.XXXXX' file number
                     char split_format [10] = "%s%s.%d";
                     sprintf (new_name, split_format, method->base_path
-                            ,fd->name, md->group
+                            ,fd->name, msg [1]
                             );
 
                     int f = open (new_name, O_WRONLY | O_LARGEFILE);
@@ -3792,13 +4697,17 @@ static void * writer_main (void * param)
                 }
 
                 // respond to sub coord(s) we are done
+                // cannot delay the outbound messages or we will end up in a
+                // condition where the adaptive write is completed causing
+                // the overall_write_complete to be sent before we send our
+                // message to the owner of the file we wrote to.
                 uint64_t new_offset = msg [5] + 1;
                 f->source = msg [2]; // who to tell our index to
-                if (md->rank != msg [2])
+                if (md->rank != msg [4])
                 {
                     struct mpi_flag_struct * f = malloc
                                             (sizeof (struct mpi_flag_struct));
-                    f->target = msg [2];
+                    f->target = msg [4];
                     f->tag = TAG_SUB_COORDINATOR;
                     f->size = 8 * PARAMETER_COUNT;
                     f->msg = malloc (8 * PARAMETER_COUNT);
@@ -3808,9 +4717,11 @@ static void * writer_main (void * param)
                     assert (msg [3] == md->group);
                     ((uint64_t *) f->msg) [3] = new_offset;
                     ((uint64_t *) f->msg) [4] = index_buffer_offset;
+                    ((uint64_t *) f->msg) [5] = md->rank;
                     pthread_mutex_lock (&md->mpi_mutex);
                     queue_enqueue (&md->mpi_flag, f);
                     pthread_mutex_unlock (&md->mpi_mutex);
+                    pthread_cond_signal (&md->mpi_cond);
                 }
                 else
                 {
@@ -3825,11 +4736,14 @@ static void * writer_main (void * param)
                     assert (msg [3] == md->group);
                     ((uint64_t *) f->msg) [3] = new_offset;
                     ((uint64_t *) f->msg) [4] = index_buffer_offset;
+                    ((uint64_t *) f->msg) [5] = md->rank;
                     pthread_mutex_lock (&md->sub_coordinator_mutex);
                     queue_enqueue (&md->sub_coordinator_flag, f);
                     pthread_mutex_unlock (&md->sub_coordinator_mutex);
+                    pthread_cond_signal (&md->sub_coordinator_cond);
                 }
 
+#if 0
                 // tell our sub_coord if we are adaptive writing
                 if (msg [1] != msg [3])
                 {
@@ -3847,9 +4761,11 @@ static void * writer_main (void * param)
                         assert (msg [3] == md->group);
                         ((uint64_t *) f->msg) [3] = new_offset;
                         ((uint64_t *) f->msg) [4] = index_buffer_offset;
+                        ((uint64_t *) f->msg) [5] = md->rank;
                         pthread_mutex_lock (&md->mpi_mutex);
                         queue_enqueue (&md->mpi_flag, f);
                         pthread_mutex_unlock (&md->mpi_mutex);
+                        pthread_cond_signal (&md->mpi_cond);
                     }
                     else
                     {
@@ -3864,11 +4780,19 @@ static void * writer_main (void * param)
                         assert (msg [3] == md->group);
                         ((uint64_t *) f->msg) [3] = new_offset;
                         ((uint64_t *) f->msg) [4] = index_buffer_offset;
+                        ((uint64_t *) f->msg) [5] = md->rank;
                         pthread_mutex_lock (&md->sub_coordinator_mutex);
                         queue_enqueue (&md->sub_coordinator_flag, f);
                         pthread_mutex_unlock (&md->sub_coordinator_mutex);
+                        pthread_cond_signal (&md->sub_coordinator_cond);
                     }
                 }
+#endif
+                    
+#if COLLECT_METRICS
+                gettimeofday (&b, NULL);
+                timeval_subtract (&timing.t8, &b, &a);
+#endif
                 break;
             }
 
@@ -3886,6 +4810,7 @@ static void * writer_main (void * param)
                     pthread_mutex_lock (&md->mpi_mutex);
                     queue_enqueue (&md->mpi_flag);
                     pthread_mutex_unlock (&md->mpi_mutex);
+                    pthread_cond_signal (&md->mpi_cond);
                 }
                 else
                 {
@@ -3898,6 +4823,7 @@ static void * writer_main (void * param)
                     pthread_mutex_lock (&md->sub_coordinator_mutex);
                     queue_enqueue (&md->sub_coordinator_flag, f);
                     pthread_mutex_unlock (&md->sub_coordinator_mutex);
+                    pthread_cond_signal (&md->sub_coordinator_cond);
                 }
 #endif
 
@@ -3924,10 +4850,11 @@ static void * writer_main (void * param)
 
                 shutdown_flag = SHUTDOWN_FLAG;
 #if COLLECT_METRICS
-                gettimeofday (&t18, NULL);
+                gettimeofday (&timing.t18, NULL);
 #endif
                 break;
             }
+        }
         }
     }
     while (shutdown_flag != SHUTDOWN_FLAG);
@@ -3938,6 +4865,54 @@ static void * writer_main (void * param)
           )
         ;
     md->writer_shutdown_flag = SHUTDOWN_FLAG;
+    pthread_cond_signal (&md->mpi_cond);
+    pthread_exit (NULL);
+    return NULL;
+}
+
+static void * probe_main (void * param)
+{
+    struct thread_struct * t = (struct thread_struct *) param;
+
+    struct adios_method_struct * method = t->method;
+    struct adios_adaptive_data_struct * md = t->md;
+    struct adios_file_struct * fd = t->fd;
+
+    while (md->probe_shutdown_flag == NO_FLAG)
+    {
+        int msg;
+        MPI_Status status;
+
+#if COLLECT_METRICS
+                struct timeval a, b, diff;
+                gettimeofday (&a, NULL);
+#endif
+                pthread_mutex_lock (&md->mpi_mutex);
+        MPI_Iprobe (MPI_ANY_SOURCE, MPI_ANY_TAG, md->group_comm
+                   ,&msg, &status
+                   );
+                pthread_mutex_unlock (&md->mpi_mutex);
+#if COLLECT_METRICS
+                gettimeofday (&b, NULL);
+                timing.iprobe_count++;
+                timeval_subtract (&diff, &b, &a);
+                timeval_add (&timing.t25, &timing.t25, &diff);
+#endif
+        if (msg)
+        {
+#if PRINT_MESSAGES
+            printf ("MPI msg available on %d\n", md->rank);
+#endif
+            pthread_cond_signal (&md->mpi_cond);
+#if PRINT_MESSAGES
+            printf ("MPI msg signaled on %d\n", md->rank);
+#endif
+        }
+    }
+
+#if PRINT_MESSAGES
+    printf ("probe exit: %d\n", md->rank);
+#endif
     pthread_exit (NULL);
     return NULL;
 }
