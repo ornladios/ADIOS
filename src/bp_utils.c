@@ -569,7 +569,7 @@ int bp_parse_attrs (struct BP_FILE * fh)
     attr_namelist = (char **)malloc (sizeof(char*) * mh->attrs_count);
 
     attr_offsets = (uint64_t **) malloc (sizeof(uint64_t *) * mh->attrs_count);
-    memset (attr_offsets, 0, mh->attrs_count * sizeof(uint64_t));
+    memset (attr_offsets, 0, mh->attrs_count * sizeof(uint64_t *));
 
     for (i = 0; i < mh->attrs_count; i++) {
         struct adios_index_characteristic_dims_struct_v1 * pdims;
@@ -726,7 +726,7 @@ int bp_parse_vars (struct BP_FILE * fh)
     var_namelist = (char **)malloc(sizeof(char*)*mh->vars_count);
 
     var_offsets = (uint64_t **) malloc (sizeof(uint64_t *)*mh->vars_count);
-    memset ( var_offsets, 0, mh->vars_count*sizeof(uint64_t));
+    memset ( var_offsets, 0, mh->vars_count*sizeof(uint64_t *));
 
     for (i = 0; i < mh->vars_count; i++) {
         struct adios_index_characteristic_dims_struct_v1 * pdims;
