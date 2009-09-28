@@ -826,7 +826,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 
 void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_DATATYPES type)
 {
-    int data_size;
+    int16_t data_size;
     void * data = 0;
 
     if (type == adios_string) {
