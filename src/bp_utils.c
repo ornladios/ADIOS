@@ -838,7 +838,7 @@ void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_
     }
 
     if (!data) {
-        fprintf (stderr, "cannot allocate %d bytes\n",data_size);
+        fprintf (stderr, "bp_read_data_from_buffer: cannot allocate %d bytes\n",data_size);
         return 0;
     }
 
