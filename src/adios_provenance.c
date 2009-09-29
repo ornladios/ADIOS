@@ -1200,7 +1200,7 @@ static void _debug_print_index(char *ext
 	{
 	    fprintf (f, "Var (Group): %s/%s (%s)\n", vars_root->var_path ,vars_root->var_name, vars_root->group_name);
 	}
-	fprintf (f, "\tDatatype: %s\n", adios_type_to_string (vars_root->type));
+	fprintf (f, "\tDatatype: %s\n", adios_type_to_string_int (vars_root->type));
 	fprintf (f, "\tVars Entries: %llu\n", vars_root->characteristics_count);
 	uint64_t i;
 	for (i = 0; i < vars_root->characteristics_count; i++)

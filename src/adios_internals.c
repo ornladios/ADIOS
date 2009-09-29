@@ -2991,7 +2991,7 @@ int adios_parse_dimension (const char * dimension
                             fprintf (stderr, "config.xml: var dimension %s "
                                              "has an invalid type: %s\n"
                                     ,attr->name
-                                    ,adios_type_to_string (attr->var->type)
+                                    ,adios_type_to_string_int (attr->var->type)
                                     );
                             return 0;
 
@@ -3013,7 +3013,7 @@ int adios_parse_dimension (const char * dimension
                             fprintf (stderr, "config.xml: var dimension %s "
                                              "has an invalid type: %s\n"
                                     ,attr->name
-                                    ,adios_type_to_string (attr->type)
+                                    ,adios_type_to_string_int (attr->type)
                                     );
                             return 0;
 
@@ -3037,7 +3037,7 @@ int adios_parse_dimension (const char * dimension
                     fprintf (stderr, "config.xml: var dimension %s "
                                      "has an invalid type: %s\n"
                             ,var->name
-                            ,adios_type_to_string (var->type)
+                            ,adios_type_to_string_int (var->type)
                             );
                     return 0;
 
@@ -3111,7 +3111,7 @@ int adios_parse_dimension (const char * dimension
                             fprintf (stderr, "config.xml: var dimension %s "
                                              "has an invalid type: %s\n"
                                     ,attr->name
-                                    ,adios_type_to_string (attr->var->type)
+                                    ,adios_type_to_string_int (attr->var->type)
                                     );
                             return 0;
 
@@ -3133,7 +3133,7 @@ int adios_parse_dimension (const char * dimension
                             fprintf (stderr, "config.xml: var dimension %s "
                                              "has an invalid type: %s\n"
                                     ,attr->name
-                                    ,adios_type_to_string (attr->type)
+                                    ,adios_type_to_string_int (attr->type)
                                     );
                             return 0;
 
@@ -3157,7 +3157,7 @@ int adios_parse_dimension (const char * dimension
                     fprintf (stderr, "config.xml: var dimension %s "
                                      "has an invalid type: %s\n"
                             ,var->name
-                            ,adios_type_to_string (var->type)
+                            ,adios_type_to_string_int (var->type)
                             );
                     return 0;
 
@@ -3228,7 +3228,7 @@ int adios_parse_dimension (const char * dimension
                             fprintf (stderr, "config.xml: var dimension %s "
                                              "has an invalid type: %s\n"
                                     ,attr->name
-                                    ,adios_type_to_string (attr->var->type)
+                                    ,adios_type_to_string_int (attr->var->type)
                                     );
                             return 0;
 
@@ -3250,7 +3250,7 @@ int adios_parse_dimension (const char * dimension
                             fprintf (stderr, "config.xml: var dimension %s "
                                              "has an invalid type: %s\n"
                                     ,attr->name
-                                    ,adios_type_to_string (attr->type)
+                                    ,adios_type_to_string_int (attr->type)
                                     );
                             return 0;
 
@@ -3274,7 +3274,7 @@ int adios_parse_dimension (const char * dimension
                     fprintf (stderr, "config.xml: var dimension %s "
                                      "has an invalid type: %s\n"
                             ,var->name
-                            ,adios_type_to_string (var->type)
+                            ,adios_type_to_string_int (var->type)
                             );
                     return 0;
 
@@ -3626,7 +3626,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                         {
                             fprintf (stderr, "type is %s, value "
                                              "is out of range: '%s'\n"
-                                    ,adios_type_to_string (type), value
+                                    ,adios_type_to_string_int (type), value
                                     );
 
                             return 0;
@@ -3643,7 +3643,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                         {
                             fprintf (stderr, "type is %s, value "
                                              "is out of range: '%s'\n"
-                                    ,adios_type_to_string (type), value
+                                    ,adios_type_to_string_int (type), value
                                     );
 
                             return 0;
@@ -3660,7 +3660,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                         {
                             fprintf (stderr, "type is %s, value "
                                              "is out of range: '%s'\n"
-                                    ,adios_type_to_string (type), value
+                                    ,adios_type_to_string_int (type), value
                                     );
 
                             return 0;
@@ -3682,7 +3682,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
                 fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string (type), value
+                        ,adios_type_to_string_int (type), value
                         );
 
                 return 0;
@@ -3718,7 +3718,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                         {
                             fprintf (stderr, "type is %s, value "
                                              "is out of range: '%s'\n"
-                                    ,adios_type_to_string (type), value
+                                    ,adios_type_to_string_int (type), value
                                     );
 
                             return 0;
@@ -3735,7 +3735,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                         {
                             fprintf (stderr, "type is %s, value "
                                              "is out of range: '%s'\n"
-                                    ,adios_type_to_string (type), value
+                                    ,adios_type_to_string_int (type), value
                                     );
 
                             return 0;
@@ -3752,7 +3752,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                         {
                             fprintf (stderr, "type is %s, value "
                                              "is out of range: '%s'\n"
-                                    ,adios_type_to_string (type), value
+                                    ,adios_type_to_string_int (type), value
                                     );
 
                             return 0;
@@ -3774,7 +3774,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
                 fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string (type), value
+                        ,adios_type_to_string_int (type), value
                         );
 
                 return 0;
@@ -3794,7 +3794,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
                 fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string (type), value
+                        ,adios_type_to_string_int (type), value
                         );
 
                 return 0;
@@ -3814,7 +3814,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
                 fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string (type), value
+                        ,adios_type_to_string_int (type), value
                         );
 
                 return 0;
@@ -3834,7 +3834,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
                 fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string (type), value
+                        ,adios_type_to_string_int (type), value
                         );
 
                 return 0;
@@ -5123,7 +5123,7 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
         case adios_complex:
         case adios_double_complex:
             fprintf (stderr, "Cannot convert type %s to integer for var %s\n"
-                    ,adios_type_to_string (type), parent_name
+                    ,adios_type_to_string_int (type), parent_name
                     );
 
             return 0;
@@ -6806,7 +6806,7 @@ static int adios_multiply_dimensions (uint64_t * size
             fprintf (stderr, "Invalid datatype for array dimension on "
                              "var %s: %s\n"
                     ,var->name
-                    ,adios_type_to_string (type)
+                    ,adios_type_to_string_int (type)
                     );
 
             return 0;
@@ -6934,7 +6934,7 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
     return size;
 }
 
-const char * adios_type_to_string (int type)
+const char * adios_type_to_string_int (int type)
 {
     switch (type)
     {

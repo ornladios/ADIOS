@@ -468,7 +468,7 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                             ,struct adios_group_struct * group, void * data
                             );
 
-const char * adios_type_to_string (int type);
+const char * adios_type_to_string_int (int type);
 const char * adios_file_mode_to_string (int mode);
 
 void adios_cleanup ();

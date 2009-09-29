@@ -1158,7 +1158,7 @@ hsize_t parse_dimension(struct adios_var_struct *pvar_root,
                     fprintf (stderr, "Invalid datatype for array dimension on "
                              "var %s: %s\n"
                             ,attr_linked->name
-                            ,adios_type_to_string (var_linked->type)
+                            ,adios_type_to_string_int (var_linked->type)
                             );
                     break;
                 }
