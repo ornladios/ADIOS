@@ -1658,10 +1658,10 @@ void adios_read_var_ (int64_t  * gp,
     /* FIXME: Magically, *gh becomes 0 after the C function call, which causes abort in a next call.
        Temporarily we save its value and reassign it but clearly it must be found out why this is
        happening. */
+    int64_t tmp=*gp;
     ADIOS_GROUP *agp = (ADIOS_GROUP *) *gp;
     char *varstr;
     int i;
-    //int64_t tmp=*gp;
     varstr = fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
         *read_bytes = adios_read_var (agp, varstr, start, readsize, data);
@@ -1671,7 +1671,7 @@ void adios_read_var_ (int64_t  * gp,
     }
     if (*read_bytes < 0)
         fprintf(stderr, "Error: %s\n", adios_errmsg());
-    //*gp=tmp;
+    *gp=tmp;
 }
 
 void adios_get_varminmax_ (int64_t * gp,

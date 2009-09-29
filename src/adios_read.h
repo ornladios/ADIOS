@@ -216,7 +216,7 @@ void adios_inq_file_ ( int64_t * fp,
                        int * vars_count,
                        int * attrs_count,
                        int * tstart,
-                       int * tstop,
+                       int * ntsteps,
                        void * gnamelist,
                        int * err,
                        int gnamelist_len);
