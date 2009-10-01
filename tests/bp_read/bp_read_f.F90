@@ -2,7 +2,7 @@ program read_bp_f
     implicit none
     include "mpif.h"
 
-    integer :: gcnt, vcnt, acnt, tstart, tstop, vrank, vtype, timedim, ierr
+    integer :: gcnt, vcnt, acnt, tstart, ntsteps, tstop, vrank, vtype, timedim, ierr
     integer :: comm,i,j,k,l,m
     integer*8 :: fh, gh
     integer*8, dimension(10) :: dims, start, readsize
@@ -12,7 +12,7 @@ program read_bp_f
     !real*8, dimension(:), allocatable :: vardouble
     character(100000) :: varchar
     integer, dimension(100000) :: varint
-    real*8, dimension(100000) :: vardouble
+    real*8, dimension(10000000) :: vardouble
     integer :: totalsize
     character (len=100), dimension(5000) :: vnamelist
     character (len=100), dimension(5000) :: anamelist
@@ -28,6 +28,7 @@ program read_bp_f
     call MPI_Init (ierr)
     comm = MPI_COMM_WORLD
 
+    varchar = ' '
     !call adios_fopen (fh, "/lustre/spider/scratch/pnorbert/TRACKP.bp"//char(0), comm, ierr)
     !call adios_fopen (fh, "TRACKP_00010.bp"//char(0), comm, ierr)
     !call adios_fopen (fh, "g_1x4_5x1.bp"//char(0), comm, ierr)
@@ -37,10 +38,12 @@ program read_bp_f
     !call adios_fopen (fh, "pgood.bp"//char(0), comm, ierr)
     !call adios_fopen (fh, "xgc.flowdiag.bp"//char(0), comm, ierr)
     !call adios_fopen (fh, "xgc.restart.000.03600.bp"//char(0), comm, ierr)
-    call adios_fopen (fh, "g.bp"//char(0), comm, ierr)
+    !call adios_fopen (fh, "g.bp"//char(0), comm, ierr)
     !call adios_fopen (fh, "testbp.bp", comm, ierr)
+    call adios_fopen (fh, "record.bp", comm, ierr)
 
-    call adios_inq_file (fh,gcnt,vcnt,acnt,tstart,tstop,gnamelist,ierr) 
+    call adios_inq_file (fh,gcnt,vcnt,acnt,tstart,ntsteps,gnamelist,ierr) 
+    tstop = ntsteps+ntsteps-1
     write (0,'("Number of groups : ",i0)') gcnt
 
     do i=1,gcnt 
@@ -134,7 +137,7 @@ program read_bp_f
                 write (*,'(",",i0,$)') dims(j)
             enddo
             if (vtype == 0) then
-                write (*,'("] = ",a)') varchar 
+                write (*,'("] = ",a)') trim(varchar)
             else
                 write (*,'("]")') 
             endif
