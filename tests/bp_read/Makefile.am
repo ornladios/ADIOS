@@ -3,7 +3,12 @@ INCLUDES += -I$(top_builddir)/src #-I/ccs/home/sklasky/parallel-netcdf/jaguar/in
 
 AUTOMAKE_OPTIONS = no-dependencies
 
+if BUILD_FORTRAN
 bin_PROGRAMS=genbp bp_read_f bp_read_c
+else
+bin_PROGRAMS=genbp bp_read_c
+endif
+
 # read_coords read_phi read_parts_global read_gena read_gena_pncd read_pixie_all
 
 genbp_SOURCES = genbp.c
@@ -14,12 +19,14 @@ genbp_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 genbp_LDFLAGS += $(PHDF5_LDFLAGS)
 endif
 
+if BUILD_FORTRAN
 bp_read_f_SOURCES = bp_read_f.F90
 bp_read_f_LDADD = $(top_builddir)/src/libadiosread.a
 if HAVE_DMALLOC
 bp_read_f_CFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
 bp_read_f_LDFLAGS =  $(DMALLOC_LDFLAGS)
 bp_read_f_LDADD += -ldmalloc
+endif
 endif
 
 #read_coords_SOURCES = read_coords.F90
@@ -71,4 +78,9 @@ FCLINK = \
         $(LIBTOOL) --mode=link --tag F77 $(FC) \
         $(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
 
+if BUILD_FORTRAN
 CLEANFILES = *.o bp_read_c bp_read_f genbp read_coords read_phi read_parts_global
+else
+CLEANFILES = *.o bp_read_c genbp read_coords read_phi read_parts_global
+endif
+
