@@ -117,6 +117,9 @@ AC_ARG_ENABLE(write,
     [  --disable-write 	Disable building the write methods in ADIOS. Default is disabled but must be turned off on MacOSX])
 AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
 
+AC_ARG_ENABLE(fortran, 
+    [  --disable-fortran  Disable Fortran test programs in ADIOS. Default is disabled but must be turned off on MacOSX])
+AM_CONDITIONAL([BUILD_FORTRAN], [test "x$enable_fortran" != "xno"])
 
 dnl CC="$MPICC"
 CXX="$MPICXX"
