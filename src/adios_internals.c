@@ -4177,6 +4177,22 @@ int adios_common_declare_group (int64_t * id, const char * name
     return 1;
 }
 
+void trim_spaces (char * str)
+{
+    char * t = str, * p = NULL;
+    while (*t != '\0')
+    {
+        if (*t == ' ')
+        {
+            p = t + 1;
+            strcpy (t, p);
+        }
+        else
+            t++;
+    }
+
+}
+
 static void tokenize_dimensions (char * str, char *** tokens, int * count)
 {
     if (!str)
@@ -4186,6 +4202,8 @@ static void tokenize_dimensions (char * str, char *** tokens, int * count)
 
         return;
     }
+
+    trim_spaces (str);
 
     char * t = str;
     char * save_str = strdup (str);
