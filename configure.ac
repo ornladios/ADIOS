@@ -14,26 +14,34 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
 
-AC_PROG_FC
-AC_PROG_FC_C_O
-
-dnl AC_PROG_F77
-dnl AC_PROG_F77_C_O
 
 AC_PROG_LIBTOOL
 
 AC_PROG_MXML
 AC_PROG_GENGETOPT
+echo "********** HDF5 ***********"
 AC_HDF5
+echo "********** PHDF5 ***********"
 AC_PHDF5
+echo "********** NETCDF ***********"
 AC_NETCDF
 AC_DMALLOC
 
 AC_LANG(C)
 ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C])])
 
-AC_LANG(Fortran)
-ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for Fortran])])
+AC_ARG_ENABLE(fortran, 
+    [  --disable-fortran  Disable Fortran test programs in ADIOS. Default is disabled but must be turned off on MacOSX])
+AM_CONDITIONAL([BUILD_FORTRAN], [test "x$enable_fortran" != "xno"])
+
+if test "x$enable_fortran" != "xno"; then
+    AC_PROG_FC
+    AC_PROG_FC_C_O
+    dnl AC_PROG_F77
+    dnl AC_PROG_F77_C_O
+    AC_LANG(Fortran)
+    ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for Fortran])])
+fi
 
 AC_LANG(C)
 
@@ -116,10 +124,6 @@ write=disable
 AC_ARG_ENABLE(write, 
     [  --disable-write 	Disable building the write methods in ADIOS. Default is disabled but must be turned off on MacOSX])
 AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
-
-AC_ARG_ENABLE(fortran, 
-    [  --disable-fortran  Disable Fortran test programs in ADIOS. Default is disabled but must be turned off on MacOSX])
-AM_CONDITIONAL([BUILD_FORTRAN], [test "x$enable_fortran" != "xno"])
 
 dnl CC="$MPICC"
 CXX="$MPICXX"
