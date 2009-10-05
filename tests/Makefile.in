@@ -61,7 +61,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = C Fortran genarray bp_read
+DIST_SUBDIRS = C bp_read Fortran genarray
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -72,6 +72,8 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BUILD_FORTRAN_FALSE = @BUILD_FORTRAN_FALSE@
+BUILD_FORTRAN_TRUE = @BUILD_FORTRAN_TRUE@
 BUILD_WRITE_FALSE = @BUILD_WRITE_FALSE@
 BUILD_WRITE_TRUE = @BUILD_WRITE_TRUE@
 CC = @CC@
@@ -206,7 +208,8 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-@BUILD_WRITE_TRUE@SUBDIRS = C Fortran genarray bp_read
+@BUILD_FORTRAN_FALSE@@BUILD_WRITE_TRUE@SUBDIRS = C bp_read
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@SUBDIRS = C Fortran genarray bp_read
 all: all-recursive
 
 .SUFFIXES:

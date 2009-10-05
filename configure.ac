@@ -19,11 +19,8 @@ AC_PROG_LIBTOOL
 
 AC_PROG_MXML
 AC_PROG_GENGETOPT
-echo "********** HDF5 ***********"
 AC_HDF5
-echo "********** PHDF5 ***********"
 AC_PHDF5
-echo "********** NETCDF ***********"
 AC_NETCDF
 AC_DMALLOC
 
