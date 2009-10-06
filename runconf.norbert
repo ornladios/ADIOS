@@ -127,7 +127,7 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-10` == "podhors
     echo "Configure on Mac"
     export CC=mpicc
     export FC=mpif90
-    CFLAGS="-DO_LARGEFILE=0" ./configure --prefix=/opt/adios \
+    CFLAGS="-DO_LARGEFILE=0 -fno-common" ./configure --prefix=/opt/adios \
     --enable-dependency-tracking --enable-shared --disable-static\
     --with-mxml=/opt/mxml \
     --with-netcdf=/opt/netcdf \
