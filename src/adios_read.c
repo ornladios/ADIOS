@@ -1067,7 +1067,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
         ndim_notime = ndim-1;
     }
     
-    /* items_read = how many data elements are we going to read in total */
+    /* items_read = how many data elements are we going to read in total (per timestep) */
     items_read = 1;
     for (i = 0; i < ndim_notime; i++)
         items_read *= readsize_notime[i];
