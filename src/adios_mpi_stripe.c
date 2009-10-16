@@ -179,6 +179,109 @@ struct lov_user_md {                 // LOV EA user data (host-endian)
         struct lov_user_ost_data  lmm_objects[0]; // per-stripe data
 } __attribute__((packed));
 
+static void trim_spaces (char * str)
+{
+    char * t = str, * p = NULL;
+    while (*t != '\0')
+    {
+        if (*t == ' ')
+        {
+            p = t + 1;
+            strcpy (t, p);
+        }
+        else
+            t++;
+    }
+
+}
+
+static int 
+adios_mpi_stripe_set_striping_unit(MPI_File fh, char *filename, char *parameters)
+{
+    struct statfs fsbuf;
+    int err, flag;
+    uint64_t striping_unit = 0;
+    uint16_t striping_count = 0;
+    char     value[64], *temp_string, *p_count,*p_size;
+    MPI_Info info_used;
+
+#if COLLECT_METRICS
+    gettimeofday (&t1, NULL);
+#endif
+
+
+//#ifndef ADIOS_LUSTRE
+//    return 0;  // disable stripe-size I/O for non-Lustre file system
+//#else
+
+    temp_string = (char *) malloc (strlen (parameters) + 1);
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    if (p_count = strstr (temp_string, "stripe_count"))
+    {
+        char * p = strchr (p_count, '=');
+        char * q = strtok (p, ",");
+        if (!q)
+            striping_count = atoi (q + 1);
+        else
+            striping_count = atoi (p + 1);
+    }
+
+    if (striping_count <= 0)
+        striping_count = 4;
+
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    if (p_size = strstr (temp_string, "stripe_size"))
+    {
+        char * p = strchr (p_size, '=');
+        char * q = strtok (p, ",");
+        if (!q)
+            striping_unit = atoi(q + 1);
+        else
+            striping_unit = atoi(p + 1);
+    }
+
+    if (striping_unit <= 0)
+        striping_unit = 1048576;
+
+    free (temp_string);
+
+    int fd, old_mask, perm;
+
+    old_mask = umask(022);
+    umask(old_mask);
+    perm = old_mask ^ 0666;
+
+    fd =  open(filename, O_RDONLY | O_CREAT | O_LOV_DELAY_CREATE, perm);
+    if (fd != -1) {
+        struct lov_user_md lum;
+        lum.lmm_magic = LOV_USER_MAGIC;
+        lum.lmm_pattern = 0;
+        lum.lmm_stripe_size = striping_unit;
+        lum.lmm_stripe_count = striping_count;
+        lum.lmm_stripe_offset = -1;
+        ioctl (fd, LL_IOC_LOV_SETSTRIPE
+              ,(void *) &lum
+              );
+
+        if (err == 0 && lum.lmm_stripe_size > 0) {
+            striping_unit = lum.lmm_stripe_size;
+        }
+        close(fd);
+    }
+    else
+        printf("Warning: open failed on file %s %s.\n",filename,strerror(errno));
+
+#if COLLECT_METRICS         
+    gettimeofday (&t2, NULL);
+#endif
+    // set the file striping size
+    return striping_unit;
+//#endif
+}
 
 static int
 adios_mpi_stripe_get_striping_unit(MPI_File fh, char *filename)
@@ -687,7 +790,6 @@ enum ADIOS_FLAG adios_mpi_stripe_should_buffer (struct adios_file_struct * fd
 #if COLLECT_METRICS                     
             gettimeofday (&t16, NULL);
 #endif
-
             if (md->group_comm != MPI_COMM_NULL)
             {
                 if (md->rank == 0)
@@ -753,6 +855,11 @@ enum ADIOS_FLAG adios_mpi_stripe_should_buffer (struct adios_file_struct * fd
             if (previous == -1)
             {
                 unlink (name);  // make sure clean
+
+                if (method->parameters)
+                    md->striping_unit = adios_mpi_stripe_set_striping_unit (md->fh 
+                                                                           ,name
+                                                                           ,method->parameters);
 
                 err = MPI_File_open (MPI_COMM_SELF, name
                                     ,MPI_MODE_WRONLY | MPI_MODE_CREATE
