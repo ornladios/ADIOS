@@ -14,15 +14,7 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
 
-
 AC_PROG_LIBTOOL
-
-AC_PROG_MXML
-AC_PROG_GENGETOPT
-AC_HDF5
-AC_PHDF5
-AC_NETCDF
-AC_DMALLOC
 
 AC_LANG(C)
 ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C])])
@@ -34,11 +26,21 @@ AM_CONDITIONAL([BUILD_FORTRAN], [test "x$enable_fortran" != "xno"])
 if test "x$enable_fortran" != "xno"; then
     AC_PROG_FC
     AC_PROG_FC_C_O
+    AC_FC_WRAPPERS
     dnl AC_PROG_F77
     dnl AC_PROG_F77_C_O
     AC_LANG(Fortran)
     ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for Fortran])])
 fi
+
+AC_LANG(C)
+AC_PROG_MXML
+AC_PROG_GENGETOPT
+AC_HDF5
+AC_PHDF5
+AC_NETCDF
+AC_DMALLOC
+
 
 AC_LANG(C)
 

@@ -1,3 +1,4 @@
+#include "../config.h"
 #include <stdlib.h>
 #include <string.h>
 #include "adios.h"
@@ -1478,10 +1479,6 @@ void adios_print_fileinfo (ADIOS_FILE *fp)
     return;
 }
 
-/*********************/
-/* FORTRAN INTERFACE */
-/*********************/
-
 /** Copy a C string into a Fortran CHARACTER array */
 static void cstr_to_fstr(const char *cs, char *fs, int flen) 
 {
@@ -1511,7 +1508,20 @@ static char * fstr_to_cstr(const char * fs, int flen)
     return cs;
 }
 
-void adios_fopen_(int64_t * fp,
+#ifdef __cplusplus
+extern "C"  /* prevent C++ name mangling */
+#endif
+
+/*********************/
+/* FORTRAN INTERFACE */
+/*********************/
+void FC_FUNC_(adiosf_lasterrmsg, ADIOSF_LASTERRMSG) (char *msg, int msg_len)
+{
+    cstr_to_fstr( adios_errmsg(), (char *)msg, msg_len);
+}
+
+void FC_FUNC_(adiosf_fopen, ADIOSF_FOPEN)
+    (int64_t * fp,
                   char * fname,
                   void * fcomm,
                   int * err,
@@ -1536,7 +1546,7 @@ void adios_fopen_(int64_t * fp,
         fprintf(stderr, "Error: %s\n", adios_errmsg());
 }
 
-void adios_fclose_( int64_t * fp, int * err)
+void FC_FUNC_(adiosf_fclose, ADIOSF_FCLOSE)( int64_t * fp, int * err)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
     *err = adios_fclose (afp);
@@ -1545,7 +1555,7 @@ void adios_fclose_( int64_t * fp, int * err)
         fprintf(stderr, "Error: %s\n", adios_errmsg());
 }
 
-void adios_inq_file_ ( int64_t * fp,
+void FC_FUNC_(adiosf_inq_file, ADIOSF_INQ_FILE) ( int64_t * fp,
                        int * groups_count,
                        int * vars_count,
                        int * attrs_count,
@@ -1568,7 +1578,8 @@ void adios_inq_file_ ( int64_t * fp,
     }
 }
 
-void adios_gopen_ ( int64_t * fp,
+void FC_FUNC_(adiosf_gopen, ADIOSF_GOPEN) 
+    ( int64_t * fp,
                     int64_t * gp,
                     char * grpname,
                     int * err,
@@ -1591,7 +1602,7 @@ void adios_gopen_ ( int64_t * fp,
         fprintf(stderr, "Error: %s\n", adios_errmsg());
 }
 
-void adios_gclose_( int64_t * gp, int * err)
+void FC_FUNC_(adiosf_gclose, ADIOSF_GCLOSE)( int64_t * gp, int * err)
 {
     ADIOS_GROUP *agp = (ADIOS_GROUP *) *gp;
     *err=adios_gclose(agp);
@@ -1599,7 +1610,8 @@ void adios_gclose_( int64_t * gp, int * err)
         fprintf(stderr, "Error: %s\n", adios_errmsg());
 }
 
-void adios_inq_group_ (int64_t * gp, int *vcnt, void *vnamelist, int *acnt, void *anamelist,
+void FC_FUNC_(adiosf_inq_group, ADIOSF_INQ_GROUP)
+    (int64_t * gp, int *vcnt, void *vnamelist, int *acnt, void *anamelist,
         int *err, int vnamelist_len, int anamelist_len) 
 {
     ADIOS_GROUP *agp = (ADIOS_GROUP *) *gp;
@@ -1615,7 +1627,8 @@ void adios_inq_group_ (int64_t * gp, int *vcnt, void *vnamelist, int *acnt, void
     *err = 0;
 }
 
-void adios_inq_var_ (int64_t  * gp, char * varname,
+void FC_FUNC_(adiosf_inq_var, ADIOSF_INQ_VAR) 
+    (int64_t  * gp, char * varname,
                      int      * type,
                      int      * ndim,
                      uint64_t * dims,
@@ -1626,11 +1639,13 @@ void adios_inq_var_ (int64_t  * gp, char * varname,
     char *varstr;
     int  i;
     ADIOS_GROUP *agp = (ADIOS_GROUP *) *gp;
-    ADIOS_VARINFO *vi;
+    ADIOS_VARINFO *vi = NULL;
 
     varstr = fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
         vi = adios_inq_var (agp, varstr);
+    }
+    if (vi != NULL) {
         *type = vi->type;
         *ndim = vi->ndim;
         *timedim = vi->timedim;
@@ -1647,7 +1662,8 @@ void adios_inq_var_ (int64_t  * gp, char * varname,
         fprintf(stderr, "Error: %s\n", adios_errmsg());
 }
 
-void adios_read_var_ (int64_t  * gp,
+void FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) 
+    (int64_t  * gp,
                       char     * varname,
                       uint64_t * start,
                       uint64_t * readsize,
@@ -1674,7 +1690,8 @@ void adios_read_var_ (int64_t  * gp,
     *gp=tmp;
 }
 
-void adios_get_varminmax_ (int64_t * gp,
+void FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) 
+    (int64_t * gp,
                            char    * varname,
                            void    * value,
                            void    * gmin,
@@ -1685,13 +1702,15 @@ void adios_get_varminmax_ (int64_t * gp,
                            int varname_len)
 {
     ADIOS_GROUP *agp = (ADIOS_GROUP *) *gp;
-    ADIOS_VARINFO *vi;
+    ADIOS_VARINFO *vi = NULL;
     char *varstr;
     int i, size, ntime;
 
     varstr = fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
         vi = adios_inq_var (agp, varstr);
+    }
+    if (vi != NULL) {
         size = bp_get_type_size(vi->type, vi->value);
         if (vi->type == adios_string) size++;
         if (vi->timedim > -1)
@@ -1710,14 +1729,14 @@ void adios_get_varminmax_ (int64_t * gp,
                 memcpy(maxs+i*size, vi->maxs+i*size, size);
         }
         adios_free_varinfo(vi);
-    } else {
-        *err = -adios_errno;
     }
+    *err = -adios_errno;
     if (*err < 0)
         fprintf(stderr, "Error: %s\n", adios_errmsg());
 }
 
-void adios_get_attr_ (int64_t * gp
+void FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) 
+    (int64_t * gp
                      ,char * attrname
                      ,void * attr
                      ,int * err
@@ -1743,7 +1762,8 @@ void adios_get_attr_ (int64_t * gp
         fprintf(stderr, "Error: %s\n", adios_errmsg());
 }
 
-void adios_inq_attr_ (int64_t * gp
+void FC_FUNC_(adiosf_inq_attr, ADIOSF_INQ_ATTR) 
+    (int64_t * gp
                      ,char * attrname
                      ,int * type
                      ,int * size

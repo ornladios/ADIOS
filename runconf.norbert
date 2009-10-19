@@ -7,18 +7,20 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     ########
     echo "Configure on EWOK"
     export CC=mpicc
+    export FC=mpif90
     source /etc/profile.d/modules.sh
     module unload hdf5
     module unload netcdf
     module unload PE-pgi
     module unload PE-pathscale
-    TARGET=gnu
+    TARGET=pgi
     module load PE-$TARGET
     module load hdf5
     module load netcdf
     #./configure --prefix=/ccs/proj/fus022/adios.test/ewok \
     #CFLAGS="-Wall -g -O0 " ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.pgi \
-    CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.$TARGET --enable-shared --disable-static\
+    export CFLAGS="-g -fPIC" 
+    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.$TARGET --enable-shared --disable-static\
     --enable-dependency-tracking \
     --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
     --with-hdf5=$HDF5_DIR 

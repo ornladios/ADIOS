@@ -62,7 +62,7 @@ program genarray
     call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
     call MPI_Comm_size (group_comm, nproc , ierr)
 
-    call adios_init ("genarray.xml"//char(0), ierr)
+    call adiosf_init ("genarray.xml"//char(0), ierr)
     !call MPI_Barrier (group_comm, ierr)
 
     call processArgs()
@@ -92,7 +92,7 @@ program genarray
 
     ! Terminate
     call MPI_Barrier (MPI_COMM_WORLD, ierr)
-    call adios_finalize (rank, ierr)
+    call adiosf_finalize (rank, ierr)
     call MPI_Finalize (ierr)
 end program genarray
 
@@ -178,29 +178,29 @@ subroutine writeArray()
         if (tstep > 1) mode = "a"//char(0)
         !print '("rank=",i0," group=",A," file=",A," group_size=",i0)', rank, trim(group)//char(0), &
         !    trim(outputfile)//char(0), group_size
-        call adios_open (handle, trim(group)//char(0), trim(outputfile)//char(0), mode, err)
-        call adios_group_size (handle, group_size, total_size, group_comm, err)
+        call adiosf_open (handle, trim(group)//char(0), trim(outputfile)//char(0), mode, err)
+        call adiosf_group_size (handle, group_size, total_size, group_comm, err)
         !print '("rank=",i0," total_size=",i0," err=",i0)', rank, total_size, err
 
         ! write dimensions and nproc 
-        call adios_write (handle, "X"//char(0), gndx, err)
-        call adios_write (handle, "Y"//char(0), gndy, err)
-        call adios_write (handle, "npx"//char(0), npx, err)
-        call adios_write (handle, "npy"//char(0), npy, err)
-        call adios_write (handle, "nproc"//char(0), nproc, err)
+        call adiosf_write (handle, "X"//char(0), gndx, err)
+        call adiosf_write (handle, "Y"//char(0), gndy, err)
+        call adiosf_write (handle, "npx"//char(0), npx, err)
+        call adiosf_write (handle, "npy"//char(0), npy, err)
+        call adiosf_write (handle, "nproc"//char(0), nproc, err)
 
-        call adios_write (handle, "size_x"//char(0), ndx, err)
-        call adios_write (handle, "size_y"//char(0), ndy, err)
-        call adios_write (handle, "offs_x"//char(0), offx, err) 
-        call adios_write (handle, "offs_y"//char(0), offy, err)
+        call adiosf_write (handle, "size_x"//char(0), ndx, err)
+        call adiosf_write (handle, "size_y"//char(0), ndy, err)
+        call adiosf_write (handle, "offs_x"//char(0), offx, err) 
+        call adiosf_write (handle, "offs_y"//char(0), offy, err)
 
         if (tstep == 1) then
-            call adios_write (handle, "int_xy"//char(0), int_xy, err) 
+            call adiosf_write (handle, "int_xy"//char(0), int_xy, err) 
         endif
-        call adios_write (handle, "int_xyt"//char(0), int_xy, err) 
+        call adiosf_write (handle, "int_xyt"//char(0), int_xy, err) 
 
         ! start streaming from buffer to disk
-        call adios_close (handle, err)
+        call adiosf_close (handle, err)
         print '("rank=",i0,": write completed")', rank
     enddo
 end subroutine writeArray
