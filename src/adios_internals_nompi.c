@@ -3951,7 +3951,7 @@ int adios_common_define_attribute (int64_t group, const char * name
     return 1;
 }
 
-void adios_extract_string (char ** out, const char * in, int size)
+/*void adios_extract_string (char ** out, const char * in, int size)
 {
     if (in && out)
     {
@@ -3978,7 +3978,7 @@ void adios_extract_string (char ** out, const char * in, int size)
     }
     out [i] = 0;
 #endif
-}
+}*/
 
 void adios_append_method (struct adios_method_struct * method)
 {
@@ -5127,6 +5127,7 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
 
             return 0;
     }
+    return 0;
 }
 
 static uint64_t get_value_for_dim (struct adios_file_struct * fd
@@ -6268,7 +6269,7 @@ while ((size * b) < total_size) \
         *max = data [size]; \
     size++; \
 } \
-return; \
+return 0; \
 }
 #else
 #define MIN_MAX(a,b)\
@@ -6280,7 +6281,7 @@ a * min = (a *) var->min; \
 a * max = (a *) var->max; \
 *min = data [0]; \
 *max = data [0]; \
-return; \
+return 0; \
 }
 #endif
 
@@ -6327,7 +6328,7 @@ return; \
             *((uint64_t *) var->min) = ((uint64_t *) var->data) [0];
             *((uint64_t *) var->max) = ((uint64_t *) var->data) [0];
 
-            return;
+            return 0;
 	}
 
         case adios_double_complex:
@@ -6340,7 +6341,7 @@ return; \
             ((uint64_t *) var->max) [0] = ((uint64_t *) var->data) [0];
             ((uint64_t *) var->max) [1] = ((uint64_t *) var->data) [1];
 
-            return;
+            return 0;
 	}
 
         case adios_string:
@@ -6348,7 +6349,7 @@ return; \
             var->min = 0;
             var->max = 0;
 
-            return;
+            return 0;
         }
 
         default:
@@ -6356,9 +6357,10 @@ return; \
             uint64_t data = adios_unknown;
             var->min = 0;
             var->max = 0;
-            return;
+            return 0;
 	}
     }
+    return 0;
 }
 
 // data is only there for sizing

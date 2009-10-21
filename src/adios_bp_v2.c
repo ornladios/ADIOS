@@ -1343,7 +1343,7 @@ int adios_clear_process_group_header_v1 (
     while (pg_header->methods)
     {
         struct adios_method_info_struct_v1 * t = pg_header->methods->next;
-        pg_header->methods->id = 0;
+        pg_header->methods->id = (enum ADIOS_IO_METHOD) 0;
         if (pg_header->methods->parameters)
         {
             free (pg_header->methods->parameters);
@@ -1614,6 +1614,7 @@ int adios_clear_attribute_v1 (struct adios_attribute_struct_v1 * attribute)
         free (attribute->value);
         attribute->value = 0;
     }
+    return 0;
 }
 
 void * adios_dupe_data_scalar (enum ADIOS_DATATYPES type, void * in)

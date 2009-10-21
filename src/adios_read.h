@@ -201,7 +201,7 @@ int adios_type_size(enum ADIOS_DATATYPES type, void *data);
 */
 
 /*
-void FC_FUNC_(adiosf_lasterrmsg, ADIOSF_LASTERRMSG) (char *msg, int msg_len);
+void FC_FUNC_(adiosf_errmsg, ADIOSF_LASTERRMSG) (char *msg, int msg_len);
 
 void FC_FUNC_(adiosf_fopen, ADIOSF_FOPEN) ( int64_t * fp,
                     char * fname,

@@ -6,7 +6,7 @@
 #include "adios.h"
 #include "bp_utils.h"
 #include "adios_bp_v1.h"
-#include "adios_errcodes.h"
+#include "adios_error.h"
 #include "adios_endianness.h"
 #define BYTE_ALIGN 8
 #define MINIFOOTER_SIZE 28
@@ -39,18 +39,6 @@ void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_
 int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b, struct adios_index_var_struct_v1 ** root, uint64_t j);
 
 
-int adios_errno;
-char aerr[ERRMSG_MAXLEN];
-char *adios_errmsg() { return aerr; }
-
-void error(int errno, char *fmt, ...) 
-{
-    va_list ap;
-    adios_errno = errno;
-    va_start(ap, fmt);
-    (void) vsnprintf(aerr, ERRMSG_MAXLEN, fmt, ap);
-    va_end(ap);
-}
 
 void bp_alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
 {
@@ -203,7 +191,7 @@ int bp_parse_pgs (struct BP_FILE * fh)
        b holds the footer data from the file */
 
     b->offset = 0;
-    b->change_endianness = mh->change_endianness;
+    b->change_endianness = (enum ADIOS_FLAG) mh->change_endianness;
 
     BUFREAD64(b, mh->pgs_count)
     BUFREAD64(b, mh->pgs_length)
@@ -822,6 +810,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
             fprintf (stderr, "Unknown characteristic:%d. skipped.\n", c);
             break;
     }
+    return 0;
 }
 
 void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_DATATYPES type)
@@ -1420,8 +1409,8 @@ void copy_data (void *dst, void *src,
     uint64_t src_step, dst_step;
     if (ndim-1==idim) {
         for (i=0;i<size_in_dset[idim];i++) {
-            memcpy (dst + (i*dst_stride+dst_offset)*size_of_type,
-                    src + (i*src_stride+src_offset)*size_of_type,
+            memcpy ((char *)dst + (i*dst_stride+dst_offset)*size_of_type,
+                    (char *)src + (i*src_stride+src_offset)*size_of_type,
                     ele_num*size_of_type);
         }
         return;

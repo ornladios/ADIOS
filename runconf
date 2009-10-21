@@ -23,13 +23,13 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     #CFLAGS="-Wall -g -O0 " ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.pgi \
     export CFLAGS="-g -fPIC" 
     ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.$TARGET --enable-shared --disable-static\
-    --enable-dependency-tracking \
-    --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
-    --with-hdf5=$HDF5_DIR 
-    #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
-    #--enable-datatap=ib
-    #--with-phdf5=/apps/HDF5/1.6.5/ewok_par/pgi625v2 \
-    #--with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
+        --enable-dependency-tracking \
+        --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
+        --with-hdf5=$HDF5_DIR 
+        #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
+        #--enable-datatap=ib
+        #--with-phdf5=/apps/HDF5/1.6.5/ewok_par/pgi625v2 \
+        #--with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
 
 
 elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
@@ -45,9 +45,12 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
     module unload szip
     module unload hdf5
     module unload netcdf
+    module unload PrgEnv-gnu
     module unload PrgEnv-pgi
+    module unload PrgEnv-intel
+    module unload PrgEnv-cray
     #module unload xtpe-quadcore
-    TARGET=pgi
+    TARGET=intel
     module load PrgEnv-$TARGET
     module load netcdf/3.6.2
     module load hdf5/1.6.8
@@ -55,13 +58,12 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
     # use the two lines below for openmpi
     #export CC=mpicc
     #export FC=mpif90
-    #./configure --prefix=/ccs/proj/fus022/adios.test/xt5 \
     CFLAGS="-fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/jaguar.$TARGET \
-    --enable-dependency-tracking \
-    --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET
-    #--with-hdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par \
-    #--with-netcdf=/sw/xt/netcdf/3.6.2/sles9.2_pgi7.0.7
-    #--with-hdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" 
+        --enable-dependency-tracking \
+        --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET
+        #--with-hdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par \
+        #--with-netcdf=/sw/xt/netcdf/3.6.2/sles9.2_pgi7.0.7
+        #--with-hdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" 
     
 elif [ `hostname | cut -c 1-4` == "euge" ]; then
     ###################
@@ -77,12 +79,12 @@ elif [ `hostname | cut -c 1-4` == "euge" ]; then
     source /etc/profile.d/modules.sh
     module load netcdf/3.6.2-linux
 
-./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eugene \
+    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eugene \
             --enable-dependency-tracking \
             --with-mxml=/ccs/proj/e2e/adios/bgp  
-#	    --with-hdf5=/sw/bgp/hdf5/1.8.0/sles10.1_xlc9.0xlf11.1 \
-#	    --with-hdf5-libdir="/sw/bgp/hdf5/1.8.0/sles10.1_xlc9.0xlf11.1/lib -lhdf5 -L/sw/bgp/szip/2.1/sles10.1_xlc9.0/lib -lsz /usr/lib/libz.a" \
-#	    --with-netcdf=/sw/bgp/netcdf/3.6.2/sles10.1_xlc9.0xlf11.1
+        #--with-hdf5=/sw/bgp/hdf5/1.8.0/sles10.1_xlc9.0xlf11.1 \
+        #--with-hdf5-libdir="/sw/bgp/hdf5/1.8.0/sles10.1_xlc9.0xlf11.1/lib -lhdf5 -L/sw/bgp/szip/2.1/sles10.1_xlc9.0/lib -lsz /usr/lib/libz.a" \
+        #--with-netcdf=/sw/bgp/netcdf/3.6.2/sles10.1_xlc9.0xlf11.1
 
 elif [ `hostname | cut -c 1-4` == "lens" ]; then
 
@@ -95,10 +97,10 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
     module load hdf5
     module load netcdf
     CFLAGS="-fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/adios/lens \
-    --enable-dependency-tracking \
-    --with-mxml=/ccs/proj/e2e/pnorbert/mxml
-    #--with-hdf5=/sw/analysis-x64/hdf5/1.6.7/sl5.0_pgi7.1.5_ompi1.2.6 \
-    #--with-netcdf=/sw/analysis-x64/netcdf/3.6.2/sl5.0_pgi7.1.5
+        --enable-dependency-tracking \
+        --with-mxml=/ccs/proj/e2e/pnorbert/mxml
+        #--with-hdf5=/sw/analysis-x64/hdf5/1.6.7/sl5.0_pgi7.1.5_ompi1.2.6 \
+        #--with-netcdf=/sw/analysis-x64/netcdf/3.6.2/sl5.0_pgi7.1.5
     
     
 elif [ `hostname | cut -c 1-4` == "nid0" ]; then
@@ -113,11 +115,11 @@ elif [ `hostname | cut -c 1-4` == "nid0" ]; then
     module load netcdf/3.6.2
     module load hdf5_par/1.6.5
     CFLAGS="-fPIC" ./configure --prefix=/project/projectdirs/m499/adios \
-    --enable-dependency-tracking \
-    --with-mxml=$HOME/mxml 
-    #--with-phdf5=/usr/common/usg/hdf5/1.6.5/parallel/lib \
-    #--with-phdf5-libdir="/usr/common/usg/hdf5/1.6.5/parallel/lib -lhdf5_fortran -lhdf5_hl -lhdf5 -L/usr/common/usg/zlib/default/lib -lz -L/usr/common/usg/szip/default/lib -lsz -I/usr/common/usg/hdf5/1.6.5/parallel/include -I/usr/common/usg/zlib/default/include -I/usr/common/usg/szip/default/include" \
-    #--with-netcdf=/usr/common/usg/netcdf/3.6.2
+        --enable-dependency-tracking \
+        --with-mxml=$HOME/mxml 
+        #--with-phdf5=/usr/common/usg/hdf5/1.6.5/parallel/lib \
+        #--with-phdf5-libdir="/usr/common/usg/hdf5/1.6.5/parallel/lib -lhdf5_fortran -lhdf5_hl -lhdf5 -L/usr/common/usg/zlib/default/lib -lz -L/usr/common/usg/szip/default/lib -lsz -I/usr/common/usg/hdf5/1.6.5/parallel/include -I/usr/common/usg/zlib/default/include -I/usr/common/usg/szip/default/include" \
+        #--with-netcdf=/usr/common/usg/netcdf/3.6.2
     
     
 elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-10` == "podhorszki" ]; then
@@ -132,11 +134,11 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-10` == "podhors
     export CC=mpicc
     export FC=mpif90
     CFLAGS="-DO_LARGEFILE=0 -fno-common" ./configure --prefix=/opt/adios \
-    --enable-dependency-tracking --enable-shared --disable-static\
-    --with-mxml=/opt/mxml \
-    --with-netcdf=/opt/netcdf \
-    --with-hdf5=/opt/hdf5 \
-    --disable-write
+        --enable-dependency-tracking --enable-shared --disable-static\
+        --with-mxml=/opt/mxml \
+        --with-netcdf=/opt/netcdf \
+        --with-hdf5=/opt/hdf5 \
+        --disable-write
 
 elif [ `hostname | cut -c 1-4` == "skla" ]; then
 
@@ -146,11 +148,11 @@ elif [ `hostname | cut -c 1-4` == "skla" ]; then
     echo "Configure on UBUNTU"
     export CC=mpicc
     ./configure --prefix=/usr/local/adios \
-            --enable-dependency-tracking \
-            --with-mxml=/usr/local/adios \
-            --with-hdf5=/usr/local/hdf5-serial\
-            --with-phdf5=/usr/local \
-            --with-netcdf=/usr 
+        --enable-dependency-tracking \
+        --with-mxml=/usr/local/adios \
+        --with-hdf5=/usr/local/hdf5-serial\
+        --with-phdf5=/usr/local \
+        --with-netcdf=/usr 
 
 else
     echo "Could not determine what machine is this"

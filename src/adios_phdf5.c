@@ -44,10 +44,10 @@ void adios_phdf5_finalize (int mype, struct adios_method_struct * method){}
 enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
                             ,struct adios_method_struct * method
                             ,void * comm
-                            ){}
+                            ){ return adios_flag_unknown; }
 int adios_phdf5_open(struct adios_file_struct *fd
                     ,struct adios_method_struct * method
-                    ){}
+                    ){ return -1; }
 void adios_phdf5_close (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      ){}

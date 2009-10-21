@@ -9,6 +9,7 @@
 #include <mxml.h>
 
 #include "adios.h"
+#include "common_adios.h"
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
@@ -16,166 +17,32 @@
 extern struct adios_transport_struct * adios_transports;
 
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_init (const char * config)
-{
-    // parse the config file
-    return adios_parse_config (config);
-}
-
 int adios_init (const char * config)
 {
     return common_adios_init (config);
 }
 
-void FC_FUNC_(adiosf_init, ADIOSF_INIT) (const char * config, int * err, int config_size)
-{
-    char * buf1 = 0;
-
-    adios_extract_string (&buf1, config, config_size);
-
-    *err = common_adios_init (buf1);
-
-    free (buf1);
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // all XML file pieces will be provided by another series of calls
-static int common_adios_init_local ()
-{
-    return adios_local_config ();
-}
-
 int adios_init_local ()
 {
     return common_adios_init_local ();
 }
 
-void FC_FUNC_(adiosf_init_local, ADIOSF_INIT_LOCAL) (int * err)
-{
-    *err = common_adios_init_local ();
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_finalize (int mype)
-{
-    struct adios_method_list_struct * m;
-
-    for (m = adios_get_methods (); m; m = m->next)
-    {
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_finalize_fn
-           )
-        {
-            adios_transports [m->method->m].adios_finalize_fn (mype, m->method);
-        }
-    }
-
-    adios_cleanup ();
-
-    return 0;
-}
-
 int adios_finalize (int mype)
 {
     return common_adios_finalize (mype);
 }
 
-void FC_FUNC_(adiosf_finalize, ADIOSF_FINALIZE) (int * mype, int * err)
-{
-    *err = common_adios_finalize (*mype);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_allocate_buffer ()
-{
-    return adios_set_buffer_size ();
-}
-
 int adios_allocate_buffer ()
 {
     return common_adios_allocate_buffer ();
 }
 
-void FC_FUNC_(adiosf_allocate_buffer, ADIOSF_ALLOCATE_BUFFER) (int * err)
-{
-    *err = common_adios_allocate_buffer ();
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_open (int64_t * fd, const char * group_name
-                             ,const char * name, const char * file_mode
-                             )
-{
-    int64_t group_id = 0;
-    struct adios_file_struct * fd_p = (struct adios_file_struct *)
-                                  malloc (sizeof (struct adios_file_struct));
-    struct adios_group_struct * g = 0;
-    struct adios_method_list_struct * methods = 0;
-    enum ADIOS_METHOD_MODE mode;
-
-    adios_common_get_group (&group_id, group_name);
-    g = (struct adios_group_struct *) group_id;
-    methods = g->methods;
-
-    if (!strcasecmp (file_mode, "r"))
-        mode = adios_mode_read;
-    else
-        if (!strcasecmp (file_mode, "w"))
-            mode = adios_mode_write;
-        else
-            if (!strcasecmp (file_mode, "a"))
-                mode = adios_mode_append;
-            else
-                if (!strcasecmp (file_mode, "u"))
-                    mode = adios_mode_update;
-                else
-                {
-                    fprintf (stderr, "adios_open: unknown file mode: %s\n"
-                            ,file_mode
-                            );
-
-                    *fd = 0;
-
-                    return 1;
-                }
-
-    fd_p->name = strdup (name);
-    fd_p->group = g;
-    fd_p->mode = mode;
-    fd_p->data_size = 0;
-    fd_p->buffer = 0;
-    fd_p->offset = 0;
-    fd_p->bytes_written = 0;
-    fd_p->buffer_size = 0;
-    fd_p->vars_start = 0;
-    fd_p->vars_written = 0;
-    fd_p->write_size_bytes = 0;
-    fd_p->base_offset = 0;
-    fd_p->pg_start_in_file = 0;
-
-    if (mode != adios_mode_read)
-        g->time_index++;
-
-    while (methods)
-    {
-        if (   methods->method->m != ADIOS_METHOD_UNKNOWN
-            && methods->method->m != ADIOS_METHOD_NULL
-            && adios_transports [methods->method->m].adios_open_fn
-           )
-        {
-            adios_transports [methods->method->m].adios_open_fn
-                                                 (fd_p, methods->method);
-        }
-
-        methods = methods->next;
-    }
-
-    *fd = (int64_t) fd_p;
-
-    return 0;
-}
-
 int adios_open (int64_t * fd, const char * group_name, const char * name
                ,const char * mode
                )
@@ -183,139 +50,7 @@ int adios_open (int64_t * fd, const char * group_name, const char * name
     return common_adios_open (fd, group_name, name, mode);
 }
 
-void FC_FUNC_(adiosf_open, ADIOSF_OPEN) (int64_t * fd, const char * group_name, const char * name
-                 ,const char * mode, int * err
-                 ,int group_name_size, int name_size, int mode_size
-                 )
-{
-    char * buf1 = 0;
-    char * buf2 = 0;
-    char * buf3 = 0;
-
-    adios_extract_string (&buf1, group_name, group_name_size);
-    adios_extract_string (&buf2, name, name_size);
-    adios_extract_string (&buf3, mode, mode_size);
-
-    *err = common_adios_open (fd, buf1, buf2, buf3);
-
-    free (buf1);
-    free (buf2);
-    free (buf3);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_group_size (int64_t fd_p
-                                   ,uint64_t data_size
-                                   ,uint64_t * total_size
-                                   ,void * comm
-                                   )
-{
-    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
-    if (!fd)
-    {
-        fprintf (stderr, "Invalid handle pased to adios_group_size\n");
-
-        return 1;
-    }
-    struct adios_method_list_struct * m = fd->group->methods;
-    if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
-    {
-        // nothing to do so just return
-        fd->shared_buffer = adios_flag_no;
-        fd->write_size_bytes = 0;
-        fd->buffer = 0;
-        *total_size = 0;
-        return 0;
-    }
-
-    fd->write_size_bytes = data_size;
-
-    uint64_t overhead = adios_calc_overhead_v1 (fd);
-
-    *total_size = data_size + overhead;
-
-    // try to reserve a buffer using the adios_method_buffer_alloc
-    // if it does not give the correct amount, overflow.  Make sure
-    // the amount given is big enough for the first part of the file.
-
-    fd->write_size_bytes += overhead;
-
-    uint64_t allocated = adios_method_buffer_alloc (fd->write_size_bytes);
-    if (allocated != fd->write_size_bytes)
-    {
-        fd->shared_buffer = adios_flag_no;
-
-        fprintf (stderr, "adios_group_size (%s): Not buffering. "
-                         "needs: %llu available: %llu.\n"
-                ,fd->group->name, fd->write_size_bytes, allocated
-                );
-    }
-    else
-    {
-        fd->shared_buffer = adios_flag_yes;
-    }
-
-    // call each transport method to coordinate the write and handle
-    // if an overflow is detected.
-    // now tell each transport attached that it is being written
-    while (m)
-    {
-        enum ADIOS_FLAG should_buffer = adios_flag_yes;
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_should_buffer_fn
-           )
-        {
-            should_buffer = adios_transports [m->method->m].
-                                            adios_should_buffer_fn (fd
-                                                                   ,m->method
-                                                                   ,comm
-                                                                   );
-        }
-
-        if (should_buffer == adios_flag_no)     // can't write directly since
-            fd->shared_buffer = adios_flag_no;  // some might want to share
-
-        m = m->next;
-    }
-
-    if (fd->shared_buffer == adios_flag_no)
-    {
-        adios_method_buffer_free (allocated);
-        fd->buffer = 0;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-    }
-    else
-    {
-        fd->buffer = malloc (fd->write_size_bytes);
-        fd->buffer_size = fd->write_size_bytes;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        if (!fd->buffer)
-        {
-            fprintf (stderr, "Cannot allocate %llu bytes for buffered "
-                             "output.\n"
-                    );
-
-            return 1;
-        }
-        else
-        {
-            // write the process group header
-            adios_write_process_group_header_v1 (fd, *total_size);
-
-            // setup for writing vars
-            adios_write_open_vars_v1 (fd);
-        }
-    }
-
-    // each var will be added to the buffer by the adios_write calls
-    // attributes will be added by adios_close
-
-    return 0;
-}
-
 int adios_group_size (int64_t fd_p, uint64_t data_size
                      ,uint64_t * total_size, void * comm
                      )
@@ -323,25 +58,19 @@ int adios_group_size (int64_t fd_p, uint64_t data_size
     return common_adios_group_size (fd_p, data_size, total_size, comm);
 }
 
-void FC_FUNC_(adiosf_group_size, ADIOSF_GROUP_SIZE) (int64_t * fd_p, int64_t * data_size
-                       ,int64_t * total_size, void * comm, int * err
-                       )
-{
-    *err = common_adios_group_size (*fd_p, (uint64_t) *data_size
-                                   ,(uint64_t *) total_size, comm
-                                   );
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_write (int64_t fd_p, const char * name, void * var)
+/* This C api function is a bit different from the Fortran api funcion, but
+ * they call the same common_adios_write()
+ */
+int adios_write (int64_t fd_p, const char * name, void * var)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
-        fprintf (stderr, "Invalid handle pased to adios_write\n");
-
+        fprintf (stderr, "Invalid handle passed to adios_write\n");
         return 1;
     }
+
     struct adios_var_struct * v = fd->group->vars;
     struct adios_method_list_struct * m = fd->group->methods;
 
@@ -366,11 +95,7 @@ static int common_adios_write (int64_t fd_p, const char * name, void * var)
             && v->is_dim != adios_flag_yes
            )
         {
-            fprintf (stderr, "write attempted on %s in %s.  This was opened for"
-                             " read\n"
-                    ,name , fd->name
-                    );
-
+            fprintf (stderr, "write attempted on %s in %s.  This was opened for read\n" ,name , fd->name);
             return 1;
         }
     }
@@ -408,7 +133,7 @@ static int common_adios_write (int64_t fd_p, const char * name, void * var)
                 v->data = malloc (element_size);
                 if (!v->data)
                 {
-                    fprintf (stderr, "cannot allocate %d bytes to copy "
+                    fprintf (stderr, "cannot allocate %lld bytes to copy "
                                      "scalar %s\n"
                             ,element_size
                             ,v->name
@@ -424,7 +149,7 @@ static int common_adios_write (int64_t fd_p, const char * name, void * var)
                 v->data = malloc (element_size + 1);
                 if (!v->data)
                 {
-                    fprintf (stderr, "cannot allocate %d bytes to copy "
+                    fprintf (stderr, "cannot allocate %lld bytes to copy "
                                      "scalar %s\n"
                             ,element_size
                             ,v->name
@@ -442,115 +167,14 @@ static int common_adios_write (int64_t fd_p, const char * name, void * var)
         }
     }
 
-    if (fd->shared_buffer == adios_flag_yes)
-    {
-        // var payload sent for sizing information
-        adios_write_var_header_v1 (fd, v);
-
-        // write payload
-        adios_write_var_payload_v1 (fd, v);
-    }
-
-    // now tell each transport attached that it is being written
-    while (m)
-    {
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_write_fn
-           )
-        {
-            adios_transports [m->method->m].adios_write_fn
-                                   (fd, v, var, m->method);
-        }
-
-        m = m->next;
-    }
-
-    if (v->dimensions)
-    {
-        v->data = 0;
-    }
+    common_adios_write (fd, v, var);
+    // v->data is set to NULL in the above call
 
     return 0;
-}
-
-int adios_write (int64_t fd_p, const char * name, void * var)
-{
-    return common_adios_write (fd_p, name, var);
-}
-
-void FC_FUNC_(adiosf_write, ADIOSF_WRITE) (int64_t * fd_p, const char * name, void * var, int * err
-                  ,int name_size
-                  )
-{
-    char * buf1 = 0;
-
-    adios_extract_string (&buf1, name, name_size);
-
-    *err = common_adios_write (*fd_p, buf1, var);
-
-    free (buf1);
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_get_write_buffer (int64_t fd_p, const char * name
-                                         ,uint64_t * size
-                                         ,void ** buffer
-                                         )
-{
-    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
-    if (!fd)
-    {
-        fprintf (stderr, "Invalid handle pased to adios_get_write_buffer\n");
-
-        return 1;
-    }
-    struct adios_var_struct * v = fd->group->vars;
-    struct adios_method_list_struct * m = fd->group->methods;
-
-    v = adios_find_var_by_name (v, name, fd->group->all_unique_var_names);
-
-    if (!v)
-    {
-        fprintf (stderr
-                ,"Bad var name (ignored): '%s' (%c%c%c)\n"
-                ,name, name[0], name[1], name[2]
-                );
-
-        return 1;
-    }
-
-    if (fd->mode == adios_mode_read)
-    {
-        fprintf (stderr, "write attempted on %s in %s.  This was opened for"
-                         " read\n"
-                ,name , fd->name
-                );
-
-        return 1;
-    }
-
-    // since we are only getting one buffer, get it from the first
-    // transport method that can provide it.
-    while (m)
-    {
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_get_write_buffer_fn
-           )
-        {
-            adios_transports [m->method->m].adios_get_write_buffer_fn
-                                (fd, v, size, buffer, m->method);
-            m = 0;
-        }
-        else
-            m = m->next;
-    }
-
-    return 0;
-}
-
 int adios_get_write_buffer (int64_t fd_p, const char * name
                            ,uint64_t * size
                            ,void ** buffer
@@ -559,86 +183,7 @@ int adios_get_write_buffer (int64_t fd_p, const char * name
     return common_adios_get_write_buffer (fd_p, name, size, buffer);
 }
 
-void FC_FUNC_(adiosf_get_write_buffer, ADIOSF_GET_WRITE_BUFFER) (int64_t * fd_p, const char * name
-                             ,int64_t * size
-                             ,void ** buffer, int * err, int name_size
-                             )
-{
-    char * buf1 = 0;
-
-    adios_extract_string (&buf1, name, name_size);
-
-    *err = common_adios_get_write_buffer (*fd_p, buf1, (uint64_t *) size
-                                         ,buffer
-                                         );
-
-    free (buf1);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_read (int64_t fd_p, const char * name, void * buffer
-                             ,uint64_t buffer_size
-                             )
-{
-    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
-    if (!fd)
-    {
-        fprintf (stderr, "Invalid handle pased to adios_read\n");
-
-        return 1;
-    }
-    struct adios_var_struct * v;
-    struct adios_method_list_struct * m = fd->group->methods;
-
-    if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
-    {
-        // nothing to do so just return
-        return 0;
-    }
-
-    if (!(fd->mode == adios_mode_read))
-    {
-        fprintf (stderr, "read attempted on %s which was opened for write\n"
-                ,fd->name
-                );
-
-        return 1;
-    }
-
-    v = adios_find_var_by_name (fd->group->vars, name
-                               ,fd->group->all_unique_var_names
-                               );
-    if (v)
-    {
-        // since can only read from one place into the buffer,
-        // read from the first transport method that can
-        while (m)
-        {
-            if (   m->method->m != ADIOS_METHOD_UNKNOWN
-                && m->method->m != ADIOS_METHOD_NULL
-                && adios_transports [m->method->m].adios_read_fn
-               )
-            {
-                adios_transports [m->method->m].adios_read_fn
-                                     (fd, v, buffer, buffer_size, m->method);
-                m = 0;
-            }
-            else
-                m = m->next;
-	}
-    }
-    else
-    {
-        fprintf (stderr, "var %s in file %s not found on read\n"
-                ,name, fd->name
-                );
-
-        return 1;
-    }
-
-    return 0;
-}
-
 int adios_read (int64_t fd_p, const char * name, void * buffer
                ,uint64_t buffer_size
                )
@@ -646,334 +191,43 @@ int adios_read (int64_t fd_p, const char * name, void * buffer
     return common_adios_read (fd_p, name, buffer, buffer_size);
 }
 
-void FC_FUNC_(adiosf_read, ADIOSF_READ) (int64_t * fd_p, const char * name, void * buffer
-                 ,int64_t * buffer_size, int * err, int name_size
-                 )
-{
-    char * buf1 = 0;
-
-    adios_extract_string (&buf1, name, name_size);
-
-    *err = common_adios_read (*fd_p, buf1, buffer, *buffer_size);
-
-    free (buf1);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_set_path (int64_t fd_p, const char * path)
-{
-    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
-    if (!fd)
-    {
-        fprintf (stderr, "Invalid handle pased to adios_set_path\n");
-
-        return 1;
-    }
-    struct adios_group_struct * t = fd->group;
-    struct adios_var_struct * v = t->vars;
-    struct adios_attribute_struct * a = t->attributes;
-
-    while (v)
-    {
-        if (v->path)
-        {
-            free (v->path);
-        }
-
-        v->path = strdup (path);
-
-        v = v->next;
-    }
-
-    while (a)
-    {
-        if (a->path)
-        {
-            free (a->path);
-        }
-
-        a->path = strdup (path);
-
-        a = a->next;
-    }
-
-    return 0;
-}
-
 int adios_set_path (int64_t fd_p, const char * path)
 {
     return common_adios_set_path (fd_p, path);
 }
 
-void FC_FUNC_(adiosf_set_path, ADIOSF_SET_PATH) (int64_t * fd_p, const char * path, int * err
-                     ,int path_size
-                     )
-{
-    char * buf1 = 0;
-
-    adios_extract_string (&buf1, path, path_size);
-
-    *err = common_adios_set_path (*fd_p, buf1);
-
-    free (buf1);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_set_path_var (int64_t fd_p, const char * path
-                                     ,const char * name
-                                     )
-{
-    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
-    if (!fd)
-    {
-        fprintf (stderr, "Invalid handle pased to adios_set_path_var\n");
-
-        return 1;
-    }
-    struct adios_group_struct * t = fd->group;
-    struct adios_var_struct * v = t->vars;
-
-    // check for vars and then attributes
-    v = adios_find_var_by_name (t->vars, name, fd->group->all_unique_var_names);
-
-    if (v)
-    {
-        if (v->path)
-        {
-            free (v->path);
-        }
-
-        v->path = strdup (path);
-    }
-    else
-    {
-        fprintf (stderr, "adios_set_path_var (path=%s, var=%s): var not found\n"
-                ,path, name
-                );
-
-        return 1;
-    }
-
-    return 0;
-}
-
 int adios_set_path_var (int64_t fd_p, const char * path, const char * name)
 {
     return common_adios_set_path_var (fd_p, path, name);
 }
 
-void FC_FUNC_(adiosf_set_path_var, ADIOSF_SET_PATH_VAR) (int64_t * fd_p, const char * path
-                         ,const char * name, int * err, int path_size
-                         ,int name_size
-                         )
-{
-    char * buf1 = 0;
-    char * buf2 = 0;
-
-    adios_extract_string (&buf1, path, path_size);
-    adios_extract_string (&buf2, name, name_size);
-
-    *err = common_adios_set_path_var (*fd_p, buf1, buf2);
-
-    free (buf1);
-    free (buf2);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_end_iteration ()
-{
-    struct adios_method_list_struct * m;
-
-    for (m = adios_get_methods (); m; m = m->next)
-    {
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_end_iteration_fn
-           )
-        {
-            adios_transports [m->method->m].adios_end_iteration_fn
-                                                (m->method);
-        }
-    }
-
-    return 0;
-}
-
 // hint that we reached the end of an iteration (for asynchronous pacing)
 int adios_end_iteration ()
 {
     return common_adios_end_iteration ();
 }
 
-// hint that we reached the end of an iteration (for asynchronous pacing)
-void FC_FUNC_(adiosf_end_iteration, ADIOSF_END_ITERATION) (int * err)
-{
-    *err = common_adios_end_iteration ();
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_start_calculation ()
-{
-    struct adios_method_list_struct * m;
-
-    for (m = adios_get_methods (); m; m = m->next)
-    {
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_start_calculation_fn
-           )
-        {
-            adios_transports [m->method->m].adios_start_calculation_fn
-                                                  (m->method);
-        }
-    }
-
-    return 0;
-}
-
 // hint to start communicating
 int adios_start_calculation ()
 {
     return common_adios_start_calculation ();
 }
 
-// hint to start communicating
-void FC_FUNC_(adiosf_start_calculation, ADIOSF_START_CALCULATION) (int * err)
-{
-    *err = common_adios_start_calculation ();
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_stop_calculation ()
-{
-    struct adios_method_list_struct * m;
-
-    for (m = adios_get_methods (); m; m = m->next)
-    {
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_stop_calculation_fn
-           )
-        {
-            adios_transports [m->method->m].adios_stop_calculation_fn
-                                                   (m->method);
-        }
-    }
-
-    return 0;
-}
-
 // hint to stop communicating
 int adios_stop_calculation ()
 {
     return common_adios_stop_calculation ();
 }
 
-// hint to stop communicating
-void FC_FUNC_(adiosf_stop_calculation, ADIOSF_STOP_CALCULATION) (int * err)
-{
-    *err = common_adios_stop_calculation ();
-}
-
 ///////////////////////////////////////////////////////////////////////////////
-static int common_adios_close (int64_t fd_p)
-{
-    struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
-    if (!fd)
-    {
-        fprintf (stderr, "Invalid handle pased to adios_close\n");
-
-        return 1;
-    }
-    struct adios_method_list_struct * m = fd->group->methods;
-    if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
-    {
-        // nothing to do so just return
-        return 0;
-    }
-
-    struct adios_attribute_struct * a = fd->group->attributes;
-    struct adios_var_struct * v = fd->group->vars;
-
-    if (fd->shared_buffer == adios_flag_yes)
-    {
-        adios_write_close_vars_v1 (fd);
-
-        adios_write_open_attributes_v1 (fd);
-
-        while (a)
-        {
-            adios_write_attribute_v1 (fd, a);
-
-            a = a->next;
-        }
-
-        adios_write_close_attributes_v1 (fd);
-    }
-
-    // in order to get the index assembled, we need to do it in the
-    // transport once we have collected all of the pieces
-
-    // now tell all of the transports to write the buffer during close
-    for (;m; m = m->next)
-    {
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_close_fn
-           )
-        {
-            adios_transports [m->method->m].adios_close_fn
-                                 (fd, m->method);
-        }
-    }
-
-    if (fd->shared_buffer == adios_flag_yes)
-    {
-        adios_method_buffer_free (fd->write_size_bytes);
-        free (fd->buffer);
-        fd->buffer_size = 0;
-        fd->buffer = 0;
-        fd->offset = 0;
-    }
-
-    while (v)
-    {
-        v->write_offset = 0;
-        if (v->data)
-        {
-            free (v->data);
-            v->data = 0;
-        }
-        if (v->min)
-        {
-            free (v->min);
-            v->min = 0;
-        }
-        if (v->max)
-        {
-            free (v->max);
-            v->max = 0;
-        }
-
-        v = v->next;
-    }
-
-    if (fd->name)
-        free (fd->name);
-
-    free ((void *) fd_p);
-
-    return 0;
-}
-
 int adios_close (int64_t fd_p)
 {
     return common_adios_close (fd_p);
-}
-
-void FC_FUNC_(adiosf_close, ADIOSF_CLOSE) (int64_t * fd_p, int * err)
-{
-    *err = common_adios_close (*fd_p);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -996,35 +250,6 @@ int adios_declare_group (int64_t * id, const char * name
                                       ,time_index
                                       );
 }
-
-void FC_FUNC_(adiosf_declare_group, ADIOSF_DECLARE_GROUP) (int64_t * id, const char * name
-                          ,const char * coordination_comm
-                          ,const char * coordination_var
-                          ,const char * time_index, int * err
-                          ,int name_size, int coordination_comm_size
-                          ,int coordination_var_size, int time_index_size
-                          )
-{
-    char * buf1 = 0;
-    char * buf2 = 0;
-    char * buf3 = 0;
-    char * buf4 = 0;
-
-    adios_extract_string (&buf1, name, name_size);
-    adios_extract_string (&buf2, coordination_comm, coordination_comm_size);
-    adios_extract_string (&buf3, coordination_var, coordination_var_size);
-    adios_extract_string (&buf4, time_index, time_index_size);
-
-    *err = adios_common_declare_group (id, buf1, adios_flag_yes, buf2
-                                      ,buf3, buf4
-                                      );
-
-    free (buf1);
-    free (buf2);
-    free (buf3);
-    free (buf4);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 
 // adios_common_define_var is in adios_internals.c
@@ -1044,40 +269,6 @@ int adios_define_var (int64_t group_id, const char * name
                                    );
 }
 
-// declare a single var as an entry in a group
-void FC_FUNC_(adiosf_define_var, ADIOSF_DEFINE_VAR) (int64_t * group_id, const char * name
-                       ,const char * path, int * type
-                       ,const char * dimensions
-                       ,const char * global_dimensions
-                       ,const char * local_offsets, int * err
-                       ,int name_size, int path_size, int dimensions_size
-                       ,int global_dimensions_size, int local_offsets_size
-                       )
-{
-    char * buf1 = 0;
-    char * buf2 = 0;
-    char * buf3 = 0;
-    char * buf4 = 0;
-    char * buf5 = 0;
-
-    adios_extract_string (&buf1, name, name_size);
-    adios_extract_string (&buf2, path, path_size);
-    adios_extract_string (&buf3, dimensions, dimensions_size);
-    adios_extract_string (&buf4, global_dimensions, global_dimensions_size);
-    adios_extract_string (&buf5, local_offsets, local_offsets_size);
-
-    *err = adios_common_define_var (*group_id, buf1, buf2
-                                   ,(enum ADIOS_DATATYPES) *type
-                                   ,buf3, buf4, buf5
-                                   );
-
-    free (buf1);
-    free (buf2);
-    free (buf3);
-    free (buf4);
-    free (buf5);
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 
 // adios_common_define_attribute is in adios_internals.c
@@ -1088,34 +279,6 @@ int adios_define_attribute (int64_t group, const char * name
                            )
 {
     return adios_common_define_attribute (group, name, path, type, value, var);
-}
-
-void FC_FUNC_(adiosf_define_attribute, ADIOSF_DEFINE_ATTRIBUTE) (int64_t * group, const char * name
-                             ,const char * path, int type, const char * value
-                             ,const char * var, int * err
-                             ,int name_size, int path_size, int value_size
-                             ,int var_size
-                             )
-{
-    char * buf1 = 0;
-    char * buf2 = 0;
-    char * buf3 = 0;
-    char * buf4 = 0;
-
-    adios_extract_string (&buf1, name, name_size);
-    adios_extract_string (&buf2, path, path_size);
-    adios_extract_string (&buf3, value, value_size);
-    adios_extract_string (&buf4, var, var_size);
-
-    *err = adios_common_define_attribute (*group, buf1, buf2
-                                         ,(enum ADIOS_DATATYPES) type, buf3
-                                         ,buf4
-                                         );
-
-    free (buf1);
-    free (buf2);
-    free (buf3);
-    free (buf4);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1132,29 +295,3 @@ int adios_select_method (int priority, const char * method
                                       );
 }
 
-void FC_FUNC_(adiosf_select_method, ADIOSF_SELECT_METHOD) (int * priority, const char * method
-                          ,const char * parameters, const char * group
-                          ,const char * base_path, int * iters, int * err
-                          ,int method_size, int parameters_size
-                          ,int group_size, int base_path_size
-                          )
-{
-    char * buf1 = 0;
-    char * buf2 = 0;
-    char * buf3 = 0;
-    char * buf4 = 0;
-
-    adios_extract_string (&buf1, method, method_size);
-    adios_extract_string (&buf2, parameters, parameters_size);
-    adios_extract_string (&buf3, group, group_size);
-    adios_extract_string (&buf4, base_path, base_path_size);
-
-    *err = adios_common_select_method (*priority, buf1, buf2, buf3, buf4
-                                      ,*iters
-                                      );
-
-    free (buf1);
-    free (buf2);
-    free (buf3);
-    free (buf4);
-}

@@ -11,7 +11,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+
+#ifndef __USE_LARGEFILE64
 #define __USE_LARGEFILE64
+#endif
+
 #include <sys/types.h> 
 #include <unistd.h>  
 #include <fcntl.h>  // open64

@@ -62,7 +62,7 @@ program genarray
     call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
     call MPI_Comm_size (group_comm, nproc , ierr)
 
-    call adiosf_init ("genarray.xml"//char(0), ierr)
+    call adiosf_init ("genarray.xml", ierr)
     !call MPI_Barrier (group_comm, ierr)
 
     call processArgs()
@@ -165,7 +165,7 @@ subroutine writeArray()
     use genarray2D_comm
     implicit none
     integer :: tstep
-    character(2) :: mode = "w"//char(0)
+    character(2) :: mode = "w"
 
     ! Write out data using ADIOS
     group = "genarray"
@@ -175,29 +175,29 @@ subroutine writeArray()
                  4 * ndx * ndy            ! int_xyt
 
     do tstep=1,timesteps
-        if (tstep > 1) mode = "a"//char(0)
-        !print '("rank=",i0," group=",A," file=",A," group_size=",i0)', rank, trim(group)//char(0), &
-        !    trim(outputfile)//char(0), group_size
-        call adiosf_open (handle, trim(group)//char(0), trim(outputfile)//char(0), mode, err)
+        if (tstep > 1) mode = "a"
+        !print '("rank=",i0," group=",A," file=",A," group_size=",i0)', rank, trim(group), &
+        !    trim(outputfile), group_size
+        call adiosf_open (handle, group, outputfile, mode, err)
         call adiosf_group_size (handle, group_size, total_size, group_comm, err)
         !print '("rank=",i0," total_size=",i0," err=",i0)', rank, total_size, err
 
         ! write dimensions and nproc 
-        call adiosf_write (handle, "X"//char(0), gndx, err)
-        call adiosf_write (handle, "Y"//char(0), gndy, err)
-        call adiosf_write (handle, "npx"//char(0), npx, err)
-        call adiosf_write (handle, "npy"//char(0), npy, err)
-        call adiosf_write (handle, "nproc"//char(0), nproc, err)
+        call adiosf_write (handle, "X", gndx, err)
+        call adiosf_write (handle, "Y", gndy, err)
+        call adiosf_write (handle, "npx", npx, err)
+        call adiosf_write (handle, "npy", npy, err)
+        call adiosf_write (handle, "nproc", nproc, err)
 
-        call adiosf_write (handle, "size_x"//char(0), ndx, err)
-        call adiosf_write (handle, "size_y"//char(0), ndy, err)
-        call adiosf_write (handle, "offs_x"//char(0), offx, err) 
-        call adiosf_write (handle, "offs_y"//char(0), offy, err)
+        call adiosf_write (handle, "size_x", ndx, err)
+        call adiosf_write (handle, "size_y", ndy, err)
+        call adiosf_write (handle, "offs_x", offx, err) 
+        call adiosf_write (handle, "offs_y", offy, err)
 
         if (tstep == 1) then
-            call adiosf_write (handle, "int_xy"//char(0), int_xy, err) 
+            call adiosf_write (handle, "int_xy", int_xy, err) 
         endif
-        call adiosf_write (handle, "int_xyt"//char(0), int_xy, err) 
+        call adiosf_write (handle, "int_xyt", int_xy, err) 
 
         ! start streaming from buffer to disk
         call adiosf_close (handle, err)

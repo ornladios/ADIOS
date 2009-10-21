@@ -3,6 +3,7 @@
 
 #include "stdint.h"
 #include "hdf5.h"
+#include "adios_types.h"
 
 enum lang_convention {
     USE_FORTRAN = 1,

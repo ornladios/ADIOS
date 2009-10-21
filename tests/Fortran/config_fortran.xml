@@ -15,7 +15,12 @@
     <var name="istep2" type="integer"/>
     <var name="istep3" type="integer"/>
 
-    <var name="str" type="string"/>
+    <var name="str_var" type="string"/>
+    <attribute name="desc" path="/str_var" value="A character(5)='abc' variable written as string"/>
+    <var name="str_const" type="string"/>
+    <attribute name="desc" path="/str_const/" value="A constant 'abc' string written as string"/>
+    <var name="str_arr" type="byte" dimensions="5"/>
+    <attribute name="desc" path="/str_arr" value="A character(5)='abc' variable written as byte array"/>
 
     <attribute name="units" path="/abc/me/" value="m/s"/>
     <attribute name="units1" path="/abc/me" value="m/s"/>

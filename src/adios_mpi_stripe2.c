@@ -247,7 +247,7 @@ adios_mpi_file_write(MPI_File fh, struct adios_MPI_write_buffer *wbuf,
         MPI_Get_count (status, MPI_BYTE, &count);
         if (count != wbuf->buffer_offset)
         {
-                fprintf (stderr, "d:MPI tried to write %d, only wrote %llu\n",
+                fprintf (stderr, "d:MPI tried to write %llu, only wrote %d\n",
                               wbuf->buffer_offset, count);
                 // TODO error handling
                 return -1;
@@ -422,8 +422,8 @@ adios_mpi_buffer_write(struct adios_MPI_data_struct *md,
                 MPI_Get_count (&md->status, MPI_BYTE, &count);
                 if (count != data_len)
                 {
-                    fprintf(stderr, "d:MPI method tried to write %d, only "
-                                    "wrote %llu\n",
+                    fprintf(stderr, "d:MPI method tried to write %llu, only "
+                                    "wrote %d\n",
                                      data_len, count);
                     }
                 return (uint64_t) count;
@@ -1701,8 +1701,7 @@ void adios_mpi_stripe2_finalize (int mype, struct adios_method_struct * method)
             if (write_buffer->buffer_size != 0 
             && write_buffer->buffer != NULL) {
             if (write_buffer->buffer_offset != 0) {
-                    fprintf(stderr, "Some data still left in the write_buffer",
-                                "serious problems!!!");
+                    fprintf(stderr, "FIXME: Some data still left in the write_buffer. Serious problem!!!");
             }
             free(write_buffer->buffer);
                 adios_method_buffer_free((uint64_t)write_buffer->buffer_size);

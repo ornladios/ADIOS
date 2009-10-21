@@ -115,7 +115,7 @@ int main (int argc, char ** argv)
     struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;
     uint64_t offset, var_len;
-    printf("characteristics count: %d\n", element_counts); 
+    printf("characteristics count: %llu\n", element_counts); 
 
     for (i = 0; i < element_counts; i++)
     {
@@ -168,11 +168,11 @@ int main (int argc, char ** argv)
                     break;
             case adios_long:
                 for (j=0; j<(var_header.payload_size)/8;j++) 
-                    fprintf(outf, "%d ", *((long *)var_payload.payload+j));
+                    fprintf(outf, "%ld ", *((long *)var_payload.payload+j));
                     break;
             case adios_unsigned_long:
                 for (j=0; j<(var_header.payload_size)/8;j++) 
-                    fprintf(outf, "%d ", *((unsigned long*)var_payload.payload+j));
+                    fprintf(outf, "%lu ", *((unsigned long*)var_payload.payload+j));
                     break;
             case adios_integer:
                 for (j=0; j<(var_header.payload_size)/4;j++) 
@@ -180,7 +180,7 @@ int main (int argc, char ** argv)
                     break;
             case adios_unsigned_integer:
                 for (j=0; j<(var_header.payload_size)/4;j++) 
-                    fprintf(outf, "%d ", *((unsigned int *)var_payload.payload+j));
+                    fprintf(outf, "%u ", *((unsigned int *)var_payload.payload+j));
                     break;
             case adios_unsigned_short:
                 for (j=0; j<(var_header.payload_size)/2;j++) 
@@ -188,7 +188,7 @@ int main (int argc, char ** argv)
                     break;
             case adios_short:
                 for (j=0; j<(var_header.payload_size)/2;j++) 
-                    fprintf(outf, "%d ", *((short *)var_payload.payload+j));
+                    fprintf(outf, "%u ", *((short *)var_payload.payload+j));
                     break;
             case adios_unsigned_byte:
                 for (j=0; j<var_header.payload_size;j++) 

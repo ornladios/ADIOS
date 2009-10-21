@@ -42,9 +42,9 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root);
 void print_attributes_index
                          (struct adios_index_attribute_struct_v1 * attrs_root);
 
-int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
+/*int print_dataset (int type, int ranks, struct adios_bp_dimension_struct * dims
                   ,void * data
-                  );
+                  );*/
 
 const char * value_to_string (enum ADIOS_DATATYPES type, void * data);
 const char * value_to_string_ptr (enum ADIOS_DATATYPES type, void * data, uint64_t element);

@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "adios_transport_hooks.h" // ADIOS_IO_METHOD
+#include "adios_bp_v1.h"
+
 enum ADIOS_METHOD_MODE {adios_mode_write  = 1
                        ,adios_mode_read   = 2
                        ,adios_mode_update = 3 // not supported yet
@@ -349,7 +352,7 @@ int adios_parse_dimension (const char * dimension
                           ,struct adios_dimension_struct * dim
                           );
 
-void adios_extract_string (char ** out, const char * in, int size);
+/*void adios_extract_string (char ** out, const char * in, int size);*/
 
 int adios_common_define_attribute (int64_t group, const char * name
                                   ,const char * path

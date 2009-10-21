@@ -11,7 +11,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+
+#ifndef __USE_LARGEFILE64
 #define __USE_LARGEFILE64
+#endif 
+
 #include <sys/types.h> 
 #include <unistd.h>  
 #include <fcntl.h>  // open64
@@ -560,7 +564,7 @@ int write_out( const char *fileout, const char *filein) {
         bytes_written = write( f, (void *) buf, bytes_read);
         if (bytes_written != bytes_read) {
             fprintf(stderr, "Error: could not write %d bytes to output file %s at offset %llu: %s\n", 
-                    fileout, out_offset_start+bytes_copied, strerror(errno));
+                    bytes_read, fileout, out_offset_start+bytes_copied, strerror(errno));
             close(f);
             return 4;
         }

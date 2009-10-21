@@ -1126,7 +1126,7 @@ void hw_string_attr_gp_internal (hid_t parent_id, const char *name,const char *v
     if(attr_str_gp_fortran == USE_C) {
         hw_string_attr_c(parent_id, name, value);   
     }
-    else if(attr_str_gp_fortran = USE_FORTRAN) {
+    else if(attr_str_gp_fortran == USE_FORTRAN) {
         hw_string_attr_f(parent_id, name, value);    
     }
 }
@@ -1140,7 +1140,7 @@ void hw_string_attr_ds_internal (hid_t parent_id, const char *name,const char *v
     if(attr_str_ds_fortran == USE_C) {
         hw_string_attr_c(parent_id, name, value);   
     }
-    else if(attr_str_ds_fortran = USE_FORTRAN) {
+    else if(attr_str_ds_fortran == USE_FORTRAN) {
         hw_string_attr_f(parent_id, name, value);    
     }
 }
@@ -1510,7 +1510,7 @@ int bp_getH5TypeId(enum ADIOS_DATATYPES type, hid_t* h5_type_id, void * val)
             *h5_type_id = H5Tcopy(H5T_NATIVE_CHAR);
             break;
         case adios_string:
-            if(var_str_fortran = USE_FORTRAN) {
+            if(var_str_fortran == USE_FORTRAN) {
                 *h5_type_id = H5Tcopy(H5T_FORTRAN_S1);
             }
             else { // otherwise assume C

@@ -11,7 +11,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+
+#ifndef __USE_LARGEFILE64
 #define __USE_LARGEFILE64
+#endif
+
 #include <sys/types.h> 
 #include <unistd.h>  
 #include <fcntl.h>  // open64
@@ -265,8 +269,8 @@ int copy_file( const char *filein, const char *fileout) {
     while (bytes_read > 0) {
         bytes_written = write( outf, (void *) buf, bytes_read);
         if (bytes_written != bytes_read) {
-            fprintf(stderr, "Error: could not write %d bytes to output file %s at offset %llu: %s\n", 
-                    fileout, bytes_copied, strerror(errno));
+            fprintf(stderr, "Error: could not write %d bytes to output file %s at offset 0: %s\n", 
+                    bytes_read, fileout, strerror(errno));
             close(inf);
             close(outf);
             return 4;
@@ -471,7 +475,7 @@ int append_in_to_out( const char *fileout, const char *filein) {
         bytes_written = write( f, (void *) buf, bytes_read);
         if (bytes_written != bytes_read) {
             fprintf(stderr, "Error: could not write %d bytes to output file %s at offset %llu: %s\n", 
-                    fileout, out_bp->pg_index_offset+bytes_copied, strerror(errno));
+                    bytes_read, fileout, out_bp->pg_index_offset+bytes_copied, strerror(errno));
             recover(f);
             close(f);
             return 4;

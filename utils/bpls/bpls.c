@@ -407,7 +407,7 @@ int doList(const char *path) {
     int     grpid, i, j, n;             // loop vars
     int     status;
     int     attrsize;                       // info about one attribute
-    int     mpi_comm_dummy;
+    int     mpi_comm_dummy=0;
     bool    matches;
     int     len, maxlen;
     int     nVarsMatched=0;
@@ -721,17 +721,17 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi)
             ct = icount[j];
 
         if (verbose>2) 
-            printf("    j=%d, st=%d ct=%d\n", j, st, ct);
+            printf("    j=%d, st=%llu ct=%llu\n", j, st, ct);
 
         start_t[j] = st;
         count_t[j] = ct;
         nelems *= ct;
         if (verbose>1) 
-            printf("    s[%d]=%d, c[%d]=%d, n=%lld\n", j, start_t[j], j, count_t[j], nelems);
+            printf("    s[%d]=%llu, c[%d]=%llu, n=%llu\n", j, start_t[j], j, count_t[j], nelems);
     }
 
     if (verbose>1) {
-        printf(" total size of data to read = %lld\n", nelems*elemsize);
+        printf(" total size of data to read = %llu\n", nelems*elemsize);
     }
 
     print_slice_info(vi->ndim, vi->dims, start_t, count_t);
@@ -793,7 +793,7 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi)
         bytes_read = adios_read_var_byid (gp, vi->varid, s, c, data); 
 
         if (bytes_read < 0) {
-            fprintf(stderr, "Error when reading variable %s. errno=%d : %s \n", name, bytes_read, adios_errmsg());
+            fprintf(stderr, "Error when reading variable %s. errno=%d : %s \n", name, adios_errno, adios_errmsg());
             free(data);
             return 11;
         }
@@ -966,7 +966,8 @@ int print_data_as_string(void * data, int maxlen, enum ADIOS_DATATYPES adiosvart
             }
             break;
         default:
-            fprintf(stderr, "Error in bpls code: cannot use print_data_as_string() for type \"%s\"\n", adios_type_to_string);
+            fprintf(stderr, "Error in bpls code: cannot use print_data_as_string() for type \"%s\"\n", 
+                    adios_type_to_string(adiosvartype));
             return -1;
             break;
     }
@@ -1103,6 +1104,7 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
             }
         }
     }
+    return 0;
 }
 
 void print_endline(void) 

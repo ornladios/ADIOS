@@ -199,7 +199,7 @@ static int
 adios_mpi_stripe_set_striping_unit(MPI_File fh, char *filename, char *parameters)
 {
     struct statfs fsbuf;
-    int err, flag;
+    int err = 0, flag;
     uint64_t striping_unit = 0;
     uint16_t striping_count = 0;
     char     value[64], *temp_string, *p_count,*p_size;
@@ -1161,7 +1161,7 @@ enum ADIOS_FLAG adios_mpi_stripe_should_buffer (struct adios_file_struct * fd
         if (count != fd->bytes_written)
         {
             fprintf (stderr, "a:MPI method tried to write %llu, "
-                             "only wrote %d\n"
+                             "only wrote %llu\n"
                     ,fd->bytes_written
                     ,count
                     );
@@ -1229,7 +1229,7 @@ void adios_mpi_stripe_write (struct adios_file_struct * fd
         if (count != fd->bytes_written)
         {
             fprintf (stderr, "b:MPI method tried to write %llu, "
-                             "only wrote %d\n"
+                             "only wrote %llu\n"
                     ,fd->bytes_written
                     ,count
                     );
@@ -1251,7 +1251,7 @@ void adios_mpi_stripe_write (struct adios_file_struct * fd
         if (count != var_size)
         {
             fprintf (stderr, "c:MPI method tried to write %llu, "
-                             "only wrote %d\n"
+                             "only wrote %llu\n"
                     ,var_size
                     ,count
                     );
@@ -1539,7 +1539,7 @@ void adios_mpi_stripe_close (struct adios_file_struct * fd
                     if (count != fd->bytes_written)
                     {
                         fprintf (stderr, "e:MPI method tried to write %llu, "
-                                         "only wrote %d\n"
+                                         "only wrote %llu\n"
                                 ,fd->bytes_written
                                 ,count
                                 );
@@ -1567,7 +1567,7 @@ void adios_mpi_stripe_close (struct adios_file_struct * fd
                 if (count != md->vars_header_size)
                 {
                     fprintf (stderr, "f:MPI method tried to write %llu, "
-                                     "only wrote %d\n"
+                                     "only wrote %llu\n"
                             ,md->vars_header_size
                             ,count
                             );
@@ -1766,7 +1766,7 @@ void adios_mpi_stripe_close (struct adios_file_struct * fd
                 if (count != md->vars_header_size)
                 {
                     fprintf (stderr, "d:MPI method tried to write %llu, "
-                                     "only wrote %d\n"
+                                     "only wrote %llu\n"
                             ,md->vars_header_size
                             ,count
                             );
@@ -1797,7 +1797,7 @@ void adios_mpi_stripe_close (struct adios_file_struct * fd
                     if (count != fd->bytes_written)
                     {
                         fprintf (stderr, "e:MPI method tried to write %llu, "
-                                         "only wrote %d\n"
+                                         "only wrote %llu\n"
                                 ,fd->bytes_written
                                 ,count
                                 );
@@ -1825,7 +1825,7 @@ void adios_mpi_stripe_close (struct adios_file_struct * fd
                 if (count != md->vars_header_size)
                 {
                     fprintf (stderr, "f:MPI method tried to write %llu, "
-                                     "only wrote %d\n"
+                                     "only wrote %llu\n"
                             ,md->vars_header_size
                             ,count
                             );

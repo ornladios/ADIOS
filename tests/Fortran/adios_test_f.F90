@@ -40,7 +40,7 @@ program adios_test
 
     print '("rank=",i0," group_comm=",i0," ierr=",i0)', rank, group_comm, ierr
 
-    call adiosf_init ("config_fortran.xml"//char(0), ierr)
+    call adiosf_init ("config_fortran.xml", ierr)
 
     call test_write (group, filename, group_comm, small_int, big_int, small_real, big_real, z_size, z_array)
 
@@ -84,6 +84,8 @@ subroutine test_write (group, filename, group_comm, small_int, big_int, small_re
     integer :: istep2
     integer :: istep3
 
+    character(len=5) :: abcstr = 'abc'
+
     integer*8 :: handle
     integer*8 :: total_size
     integer :: err
@@ -104,24 +106,29 @@ subroutine test_write (group, filename, group_comm, small_int, big_int, small_re
     end do
     size = 4 + 8 + 4 + 8 + 4 + 4 + a_size * 4 + a_size * 10 * 4 + 4 + 4 + 4
 
-    call adiosf_open (handle, trim(group)//char(0), trim(filename)//char(0), "w"//char(0), err)
+    call adiosf_open (handle, group, filename, "w", err)
 
     call adiosf_group_size (handle, size, total_size, group_comm, err)
 
-    call adiosf_write (handle, "small_int"//char(0), small_int, err)
-    call adiosf_write (handle, "big_int"//char(0), big_int, err)
-    call adiosf_write (handle, "small_real"//char(0), small_real, err)
-    call adiosf_write (handle, "big_real"//char(0), big_real, err)
-    call adiosf_write (handle, "ze0size"//char(0), a_size, err)
-    call adiosf_write (handle, "ze1size"//char(0), a_size2, err)
-    call adiosf_write (handle, "zelectron0"//char(0), a_array, err)
-    call adiosf_write (handle, "zelectron1"//char(0), a_array2, err)
+    call adiosf_write (handle, "small_int", small_int, err)
+    call adiosf_write (handle, "big_int", big_int, err)
+    call adiosf_write (handle, "small_real", small_real, err)
+    call adiosf_write (handle, "big_real", big_real, err)
+    call adiosf_write (handle, "ze0size", a_size, err)
+    call adiosf_write (handle, "ze1size", a_size2, err)
+    call adiosf_write (handle, "zelectron0", a_array, err)
+    call adiosf_write (handle, "zelectron1", a_array2, err)
 
-    call adiosf_write (handle, "istep1"//char(0), istep1, err)
-    call adiosf_write (handle, "istep2"//char(0), istep2, err)
-    call adiosf_write (handle, "istep3"//char(0), istep3, err)
+    call adiosf_write (handle, "istep1", istep1, err)
+    call adiosf_write (handle, "istep2", istep2, err)
+    call adiosf_write (handle, "istep3", istep3, err)
 
-    call adiosf_write (handle, "str"//char(0), trim('abc')//char(0), err)
+    ! When writing out a string type variable, we need to add a char(0) 
+    ! ADIOS expects here a C string
+    !call adiosf_write (handle, "str", trim("abc")//char(0), err)
+    call adiosf_write (handle, "str_var", abcstr, err)
+    call adiosf_write (handle, "str_const", "abc", err)
+    call adiosf_write (handle, "str_arr", abcstr, err)
 
     call adiosf_close (handle, err)
 
@@ -159,23 +166,23 @@ subroutine test_read (group, filename, group_comm, small_int, big_int, small_rea
     istep2 = 22
     istep3 = 33
 
-    call adiosf_open (handle, trim(group)//char(0), trim(filename)//char(0), "r"//char(0), err)
+    call adiosf_open (handle, group, filename, "r", err)
 
     call adiosf_group_size (handle, group_size, total_size, group_comm, err)
     buffer_size = 4
-    call adiosf_read (handle, "small_int"//char(0), small_int, buffer_size, err)
+    call adiosf_read (handle, "small_int", small_int, buffer_size, err)
     buffer_size = 8
-    call adiosf_read (handle, "big_int"//char(0), big_int, buffer_size, err)
+    call adiosf_read (handle, "big_int", big_int, buffer_size, err)
     buffer_size = 4
-    call adiosf_read (handle, "small_real"//char(0), small_real, buffer_size, err)
+    call adiosf_read (handle, "small_real", small_real, buffer_size, err)
     buffer_size = 8
-    call adiosf_read (handle, "big_real"//char(0), big_real, buffer_size, err)
+    call adiosf_read (handle, "big_real", big_real, buffer_size, err)
     buffer_size = 4
-    call adiosf_read (handle, "ze0size"//char(0), a_size, buffer_size, err)
+    call adiosf_read (handle, "ze0size", a_size, buffer_size, err)
     buffer_size = 4 * a_size
-    call adiosf_read (handle, "zelectron0"//char(0), a_array, buffer_size, err)
+    call adiosf_read (handle, "zelectron0", a_array, buffer_size, err)
 
-    !call adiosf_read (handle, "str"//char(0), str, err)
+    !call adiosf_read (handle, "str", str, err)
 
     call adiosf_close (handle, err)
 

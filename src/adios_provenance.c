@@ -612,7 +612,7 @@ void adios_provenance_close (struct adios_file_struct * fd
 		    int len;   // file name length
 		    char *fname; // group file name
 
-		    printf ("close(): wrank=%d, starts gathering. buffer size=%ld, buffer=%x\n"
+		    printf ("close(): wrank=%d, starts gathering. buffer size=%llu, buffer=%x\n"
 			    ,wrank, buffer_size, buffer);
 
 		    _debug_print_index("master",md->old_pg_root, md->old_vars_root);

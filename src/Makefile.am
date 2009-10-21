@@ -9,6 +9,7 @@ lib_LIBRARIES=
 if BUILD_WRITE
 lib_LIBRARIES += libadios.a
 libadios_a_SOURCES = adios.c \
+                     common_adios.c \
                      adios_transport_hooks.c \
                      adios_mpi.c \
                      adios_mpi_stripe2.c \
@@ -28,6 +29,11 @@ libadios_a_SOURCES = adios.c \
                      adios_adaptive.c\
                      adios_datatap.c
 #  		      adios_dart.c
+if BUILD_FORTRAN
+libadios_a_SOURCES += adiosf.c \
+                      futils.c \
+                      adios_error.c
+endif
 if HAVE_PHDF5
 lib_LIBRARIES += libadios_phdf5.a
 libadios_phdf5_a_SOURCES = adios_phdf5.c
@@ -68,8 +74,13 @@ lib_LIBRARIES += libadiosread.a
 libadiosread_a_SOURCES = adios_bp_v1.c \
 		      adios_endianness.c \
 		      bp_utils.c \
+                      futils.c \
+                      adios_error.c \
 		      adios_read.c
 #		      adios_internals.c 
+if BUILD_FORTRAN
+libadiosread_a_SOURCES += adiosf_read.c
+endif
 libadiosread_a_CPPFLAGS = $(MXML_CPPFLAGS)
 #libadiosread_a_LIBADD = 
 
@@ -78,7 +89,13 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
                       adios_bp_v1.c \
 		      adios_endianness.c \
 		      bp_utils.c \
-		      adios_read.c
+                      futils.c \
+                      adios_error.c \
+		      adios_read.c 
+if BUILD_FORTRAN
+libadiosread_nompi_a_SOURCES += adiosf_read.c 
+endif
+
 libadiosread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI 
 include_HEADERS += adios_internals.h \
                    adios_transport_hooks.h 

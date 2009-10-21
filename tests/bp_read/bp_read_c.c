@@ -75,7 +75,7 @@ int main (int argc, char ** argv)
        Then the variable can be read.
     */
     uint64_t start[3], size[3];
-    char *type_str;
+    const char *type_str;
     double time;
 
     /* variable int_1D */

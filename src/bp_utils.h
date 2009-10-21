@@ -10,9 +10,7 @@
 #endif
 #include "bp_types.h"
 #define VARS_MINIHEADER_SIZE 10
-#define ERRMSG_MAXLEN 256
 
-void error(int errno, char *fmt, ...);
 void bp_alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
 void bp_realloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
 int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,

@@ -246,7 +246,7 @@ FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
 	$(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
 
-CLEANFILES = genarray_comm.mod genarray2D_comm.mod
+CLEANFILES = genarray_comm.mod genarray2d_comm.mod
 all: all-am
 
 .SUFFIXES:
