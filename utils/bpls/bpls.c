@@ -503,7 +503,7 @@ int doList(const char *path) {
             if (matches) {
                 nVarsMatched++;
                 // print definition of variable
-                fprintf(outf,"%c %-*s  %-*s", commentchar, 8, adios_type_to_string(vartype), maxlen, names[n]); 
+                fprintf(outf,"%c %-*s  %-*s", commentchar, 9, adios_type_to_string(vartype), maxlen, names[n]); 
                 if (!isVar[n]) {
                     // list (and print) attribute
                     if (readattrs || dump) {
