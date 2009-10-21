@@ -1062,7 +1062,7 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
         idxstr[0] = '\0'; // empty idx string
         if (nextcol == 0) {
             if (!noindex && ndim > 0) {
-                sprintf(idxstr,"  (%lld",ids[0]);
+                sprintf(idxstr,"    (%lld",ids[0]);
                 for (i=1; i<ndim; i++) {
                     sprintf(buf,",%lld",ids[i]);
                     strcat(idxstr, buf);
@@ -1075,7 +1075,7 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
         fprintf(outf, "%s", idxstr);
         if (printByteAsChar && (adiosvartype == adios_byte || adiosvartype == adios_unsigned_byte)) {
             print_data_as_string(data, steps, adiosvartype);
-            nextcol = 0;
+            nextcol = ncols;
             break; // break the while loop;
         } else {
             print_data(data, item, adiosvartype, true);
