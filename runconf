@@ -50,7 +50,7 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
     module unload PrgEnv-intel
     module unload PrgEnv-cray
     #module unload xtpe-quadcore
-    TARGET=intel
+    TARGET=pgi
     module load PrgEnv-$TARGET
     module load netcdf/3.6.2
     module load hdf5/1.6.8
