@@ -29,42 +29,40 @@ program read_bp_f
     comm = MPI_COMM_WORLD
 
     varchar = ' '
-    !call adiosf_fopen (fh, "/lustre/spider/scratch/pnorbert/TRACKP.bp"//char(0), comm, ierr)
-    !call adiosf_fopen (fh, "TRACKP_00010.bp"//char(0), comm, ierr)
-    !call adiosf_fopen (fh, "g_1x4_5x1.bp"//char(0), comm, ierr)
-    !call adiosf_fopen (fh, "pixie3d.bp"//char(0), comm, ierr)
-    !call adiosf_fopen (fh, "g_2x2_2x2_t1.bp"//char(0), comm, ierr)
-    !call adiosf_fopen (fh, "xgcp.bp"//char(0), comm, ierr)
-    !call adiosf_fopen (fh, "pgood.bp"//char(0), comm, ierr)
-    !call adiosf_fopen (fh, "xgc.flowdiag.bp"//char(0), comm, ierr)
-    !call adiosf_fopen (fh, "xgc.restart.000.03600.bp"//char(0), comm, ierr)
-    !call adiosf_fopen (fh, "g.bp"//char(0), comm, ierr)
+    !call adiosf_fopen (fh, "/lustre/spider/scratch/pnorbert/TRACKP.bp", comm, ierr)
+    !call adiosf_fopen (fh, "TRACKP_00010.bp", comm, ierr)
+    !call adiosf_fopen (fh, "g_1x4_5x1.bp", comm, ierr)
+    !call adiosf_fopen (fh, "pixie3d.bp", comm, ierr)
+    !call adiosf_fopen (fh, "g_2x2_2x2_t1.bp", comm, ierr)
+    !call adiosf_fopen (fh, "xgcp.bp", comm, ierr)
+    !call adiosf_fopen (fh, "pgood.bp", comm, ierr)
+    !call adiosf_fopen (fh, "xgc.flowdiag.bp", comm, ierr)
+    !call adiosf_fopen (fh, "xgc.restart.000.03600.bp", comm, ierr)
+    call adiosf_fopen (fh, "g.bp", comm, ierr)
     !call adiosf_fopen (fh, "testbp.bp", comm, ierr)
     !call adiosf_fopen (fh, "record.bp", comm, ierr)
-    call adiosf_fopen (fh, "outxz.bp", comm, ierr)
+    !call adiosf_fopen (fh, "outxz.bp", comm, ierr)
 
     call adiosf_inq_file (fh,gcnt,vcnt,acnt,tstart,ntsteps,gnamelist,ierr) 
     tstop = ntsteps+ntsteps-1
-    write (0,'("Number of groups : ",i0)') gcnt
+    write (*,'("Number of timesteps : ",i0," starting from ",i0)') ntsteps, tstart
+    write (*,'("Number of groups : ",i0)') gcnt
 
     do i=1,gcnt 
-        write (0,"(i5, a, a, a)") i,")  [", trim(gnamelist(i)),"] "
-        write (10,"(i5, a, a, a)") i,")  [", trim(gnamelist(i)),"] "
+        write (*,"(i5, a, a)") i,")  ", trim(gnamelist(i))
     enddo
 
     call adiosf_gopen (fh, gh, gnamelist(1), ierr) 
     call adiosf_inq_group(gh, vcnt, vnamelist, acnt, anamelist, ierr)
 
-    write (0,'("Number of variables in group ",a,": ",i0)') trim(gnamelist(1)), vcnt
+    write (*,'("Number of variables in group ",a,": ",i0)') trim(gnamelist(1)), vcnt
     do i=1,vcnt 
-        write (0,"(i5, a, a, a, i0)") i,")  [", trim(vnamelist(i)),"] ",index(vnamelist(i),"/var/")
-        write (10,"(i5, a, a, a, i0)") i,")  [", trim(vnamelist(i)),"] ",index(vnamelist(i),"/var/")
+        write (*,"(i5, a, a)") i,")  ", trim(vnamelist(i))
     enddo
 
-    write (0,'("Number of attributes in group ",a,": ",i0)') trim(gnamelist(1)), acnt
+    write (*,'("Number of attributes in group ",a,": ",i0)') trim(gnamelist(1)), acnt
     do i=1,acnt 
-        write (0,"(i5, a, a, a, i0)") i,")  [", trim(anamelist(i)),"] ",index(vnamelist(i),"/var/")
-        write (10,"(i5, a, a, a, i0)") i,")  [", trim(anamelist(i)),"] ",index(vnamelist(i),"/var/")
+        write (*,"(i5, a, a)") i,")  ", trim(anamelist(i))
     enddo
 
     ! vtype 
@@ -84,14 +82,6 @@ program read_bp_f
     ! 54 unsigned_long
     !write (*,*) "name    ",  "  ndim    ", "    dims"
 
-    !start(1:10)=0
-    !readsize(1:10)=1 
-    !do i=tstart,tstop
-    !    write(*,'("step ",i0,": gh = ",i0)') i, gh
-    !    call adiosf_get_var (gh, "time"//char(0), varint, start, readsize, i, ierr)
-    !    write(*,'("time[",i0,"] = ",i0)') i, varint(1)
-    !enddo
-
     write (*,*)"-----------------------------"
     do i=1,vcnt 
         call adiosf_inq_var (gh, vnamelist(i), vtype, vrank, dims, timedim, ierr)
@@ -102,73 +92,55 @@ program read_bp_f
             readsize(j) = dims(j)
             totalsize=totalsize*dims(j)
         enddo
-        write (0,'(a," vrank=",i0," type=",i0," dim1=",i0," size=",i0)') trim(vnamelist(i)),vrank,vtype,dims(1),totalsize
+        write (*,'(a," ndims=",i0," type=",i0," size=",i0)') trim(vnamelist(i)),vrank,vtype,totalsize
         if (vtype == 0) then
             !if(allocated(varchar)) deallocate(varchar)
             !allocate(varchar(totalsize))
             !varchar(1)="!"
             call adiosf_read_var (gh, vnamelist(i), start, readsize, varchar, ierr)
         else if (vtype == 2) then
-            !if(allocated(varint)) deallocate(varint)
+            !write (*,*) "  totalsize = ", totalsize
+            !if (totalsize == 1) totalsize = 10
+            !if(allocated(varint)) then
+            !    write (*,*) "  dealloc varint"
+            !    deallocate(varint)
+            !endif
+            !write (*,*) "  alloc varint, size = ", totalsize
             !allocate(varint(totalsize))
-            !varint(1)=5
-            !print *, varint(1)
+            !write (*,*) "  totalsize = ", totalsize
+            !varint(:)=5
+            !print *, varint(1:10)
             call adiosf_read_var (gh, vnamelist(i), start, readsize, varint, ierr)
-            !print *, varint(1)
+            print *, varint(1)
         else if (vtype == 6) then
             !if(allocated(vardouble)) deallocate(vardouble)
             !allocate(vardouble(totalsize))
             call adiosf_read_var (gh, vnamelist(i), start, readsize, vardouble, ierr)
         else
-            write (0,'(a16,": Only integer or double type is handled here")') trim(vnamelist(i))
+            write (*,'(a16,": Only integer or double type is handled here")') trim(vnamelist(i))
         endif
         if (vrank == 0) then
             if (vtype == 0) then
-                write(*,'(a," = ",a)') trim(vnamelist(i)),varchar(1:1)
+                write(*,'("    = ",a)') varchar(1:1)
             else if (vtype == 2) then
-                write(*,'(a," = ",i0)') trim(vnamelist(i)),varint(1)
-                !print *, trim(vnamelist(i))
+                write(*,'("    = ",i0)') varint(1)
             else if (vtype == 6) then 
-                write(*,'(a," = ",d20.10)') trim(vnamelist(i)),vardouble(1)
+                write(*,'("    = ",d20.10)') vardouble(1)
             endif
         else
             !write (*,*)"-----------------------------"
-            write (*,'(a30,t32," [",i0,$)') vnamelist(i), dims(1)
+            !write (*,'(a30,t32," dimensions = [",i0,$)') vnamelist(i), dims(1)
+            write (*,'("   dimensions = [",i0,$)') dims(1)
             do j=2,vrank
                 write (*,'(",",i0,$)') dims(j)
             enddo
             if (vtype == 0) then
-                write (*,'("] = ",a)') trim(varchar)
+                write (*,'("] = ",a)') varchar
             else
                 write (*,'("]")') 
             endif
         endif
     enddo
-
-#if 0
-    call adiosf_get_var (gh, "bconds"//char(0), bconds, 0, 48, 1, ierr)
-    write (*,'("ierr=",i0)') ierr
-    write (*,'("bconds=",48i2)') bconds
-
-    call adiosf_inq_var (gh, "/name/v1"//char(0), vtype, vrank, vtimed, dims, ierr)
-    write (*,'("/name/v1: type=",i0," ndims=",i0)') vtype, vrank
-    call adiosf_get_var (gh, "/name/v1"//char(0), vname, 0, 1, 1, ierr)
-    write (*,'("ierr=",i0)') ierr
-    write (*,'("/name/v1=[",a,"]")') trim(vname)
-
-    ilom = 0
-    jlom = 0
-    klom = 0
-    ihip = 101
-    jhip = 65
-    khip = 2
-    vstart = (/ 0,0,0 /)
-    !readcount = (/ 102,66,3 /)
-    readcount = (/  ihip-ilom+1,jhip-jlom+1,khip-klom+1 /)
-    call adiosf_get_var (gh, "/var/v1"//char(0), b1, vstart, readcount, 3, ierr)
-    write (*,'("ierr=",i0)') ierr
-    write (*,'("b1(1:10,0,0)=",10d20.12)') b1(1:10,1:1,1:1)
-#endif
 
     call adiosf_gclose(gh, ierr)
     call adiosf_fclose(fh, ierr)
