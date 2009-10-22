@@ -101,14 +101,14 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
     var_size_dict[varname]=line
 
     if (language_sw==1):
-        linew = "call adios_write (adios_handle, "   \
-              + "\""+varname+"\"//char(0), "         \
+        linew = "call adiosf_write (adios_handle, "   \
+              + "\""+varname+"\", "         \
               + gwname +", adios_err)\n"         
         if (readyn): 
            liner = "adios_buf_size = "+liner                 \
-                 + "\ncall adios_read (adios_handle, " \
+                 + "\ncall adiosf_read (adios_handle, " \
                  + "\"" + varname                      \
-                 + "\"//char(0), " + grname            \
+                 + "\", " + grname            \
                  + ", adios_buf_size, adios_err)\n"
     elif(language_sw==2):
         if (dimsname==""):
@@ -290,9 +290,9 @@ def getVarlistFromXML(xmlFile):
 
             if(glanguage==1):
                if (coord_comm == ''):
-                  line="call adios_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ 'mpi_comm_self, adios_err)\n'
+                  line="call adiosf_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ 'mpi_comm_self, adios_err)\n'
                else:
-                  line="call adios_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ coord_comm+ ', adios_err)\n'
+                  line="call adiosf_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ coord_comm+ ', adios_err)\n'
             else:
                if (coord_comm == ''):
                    line="adios_group_size (adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ 'mpi_comm_self);\n'
