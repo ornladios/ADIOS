@@ -87,9 +87,11 @@ void FC_FUNC_(adiosf_group_size, ADIOSF_GROUP_SIZE)
  * they call the same common_adios_write().
  * Difference: if the variable is string type then we need to convert
  * the void * var to a C string (add \0 to the end)
+ * We rely on the assumption/fact that Fortran compilers pass on the 
+ * length of a character array in an extra integer argument, even if
+ * the C function declares a void* array in the argument list. 
  */
 void FC_FUNC_(adiosf_write, ADIOSF_WRITE) 
-//    (int64_t * fd_p, const char * name, void * var, int * err
     (int64_t * fd_p, const char * name, void * var, int * err
     ,int name_size, int var_size
     )
@@ -115,7 +117,7 @@ void FC_FUNC_(adiosf_write, ADIOSF_WRITE)
     char * buf1 = 0;
     buf1 = futils_fstr_to_cstr (name, name_size);
 
-    printf("  -- adiosf_write: name=[%s] var size = %d\n", buf1, var_size);
+    //printf("  -- adiosf_write: name=[%s] var size = %d\n", buf1, var_size);
 
     if (!buf1) {
         *err = -adios_errno;
