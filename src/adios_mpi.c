@@ -783,6 +783,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 if (err != MPI_SUCCESS)
                 {
                     old_file = 0;
+                    MPI_File_close (&md->fh);
                     err = MPI_File_open (MPI_COMM_SELF, name
                                         ,MPI_MODE_WRONLY | MPI_MODE_CREATE
                                         ,md->info, &md->fh
@@ -902,6 +903,9 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
             {
                 fd->base_offset = 0;
                 fd->pg_start_in_file = 0;
+
+                if (md->rank == 0)
+                    MPI_File_close (&md->fh);
             }
 
             // figure out the offsets and create the file with proper striping
