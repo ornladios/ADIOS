@@ -1,9 +1,11 @@
 program read_bp_f
+    use adiosf_read
     implicit none
     include "mpif.h"
 
     integer :: gcnt, vcnt, acnt, tstart, ntsteps, tstop, vrank, vtype, timedim, ierr
     integer :: comm,i,j,k,l,m
+    integer*8 :: read_bytes
     integer*8 :: fh, gh
     integer*8, dimension(10) :: dims, start, readsize
     integer, dimension(1000) :: var, vartrue
@@ -97,7 +99,7 @@ program read_bp_f
             !if(allocated(varchar)) deallocate(varchar)
             !allocate(varchar(totalsize))
             !varchar(1)="!"
-            call adiosf_read_var (gh, vnamelist(i), start, readsize, varchar, ierr)
+            call adiosf_read_var (gh, vnamelist(i), start, readsize, varchar, read_bytes)
         else if (vtype == 2) then
             !write (*,*) "  totalsize = ", totalsize
             !if (totalsize == 1) totalsize = 10
@@ -110,12 +112,12 @@ program read_bp_f
             !write (*,*) "  totalsize = ", totalsize
             !varint(:)=5
             !print *, varint(1:10)
-            call adiosf_read_var (gh, vnamelist(i), start, readsize, varint, ierr)
+            call adiosf_read_var (gh, vnamelist(i), start, readsize, varint, read_bytes)
             print *, varint(1)
         else if (vtype == 6) then
             !if(allocated(vardouble)) deallocate(vardouble)
             !allocate(vardouble(totalsize))
-            call adiosf_read_var (gh, vnamelist(i), start, readsize, vardouble, ierr)
+            call adiosf_read_var (gh, vnamelist(i), start, readsize, vardouble, read_bytes)
         else
             write (*,'(a16,": Only integer or double type is handled here")') trim(vnamelist(i))
         endif

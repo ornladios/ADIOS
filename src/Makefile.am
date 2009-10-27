@@ -33,7 +33,12 @@ if BUILD_FORTRAN
 libadios_a_SOURCES += adiosf.c \
                       futils.c \
                       adios_error.c
+
+noinst_LIBRARIES = libadiosf_read_donotuse.a
+libadiosf_read_donotuse_a_SOURCES = adiosf_read.F90
+include_HEADERS += adiosf_read.mod 
 endif
+
 if HAVE_PHDF5
 lib_LIBRARIES += libadios_phdf5.a
 libadios_phdf5_a_SOURCES = adios_phdf5.c
@@ -49,7 +54,7 @@ endif
 
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 
-endif   # not BUILD_WRITE
+endif   # BUILD_WRITE
 
 include_HEADERS += adios.h \
                    adios_types.h

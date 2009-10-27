@@ -43,16 +43,17 @@ host_triplet = @host@
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@                      futils.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@                      adios_error.c
 
-@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_3 = libadios_phdf5.a
-@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_4 = -DPHDF5 -DH5_USE_16_API 
-@BUILD_WRITE_TRUE@@HAVE_PHDF5_FALSE@am__append_5 = adios_phdf5.c 
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_3 = adiosf_read.mod 
+@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_4 = libadios_phdf5.a
+@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_5 = -DPHDF5 -DH5_USE_16_API 
+@BUILD_WRITE_TRUE@@HAVE_PHDF5_FALSE@am__append_6 = adios_phdf5.c 
 #		      adios_internals.c 
-@BUILD_FORTRAN_TRUE@am__append_6 = adiosf_read.c
-@BUILD_FORTRAN_TRUE@am__append_7 = adiosf_read.c 
-@HAVE_DMALLOC_TRUE@am__append_8 = -DDMALLOC $(DMALLOC_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@am__append_7 = adiosf_read.c
+@BUILD_FORTRAN_TRUE@am__append_8 = adiosf_read.c 
 @HAVE_DMALLOC_TRUE@am__append_9 = -DDMALLOC $(DMALLOC_CPPFLAGS)
+@HAVE_DMALLOC_TRUE@am__append_10 = -DDMALLOC $(DMALLOC_CPPFLAGS)
 subdir = src
-DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
+DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_dmalloc.m4 \
@@ -76,7 +77,7 @@ am__vpath_adj = case $$p in \
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
-LIBRARIES = $(lib_LIBRARIES)
+LIBRARIES = $(lib_LIBRARIES) $(noinst_LIBRARIES)
 ARFLAGS = cru
 libadios_a_AR = $(AR) $(ARFLAGS)
 libadios_a_LIBADD =
@@ -134,6 +135,13 @@ libadios_phdf5_a_LIBADD =
 am__libadios_phdf5_a_SOURCES_DIST = adios_phdf5.c
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am_libadios_phdf5_a_OBJECTS = libadios_phdf5_a-adios_phdf5.$(OBJEXT)
 libadios_phdf5_a_OBJECTS = $(am_libadios_phdf5_a_OBJECTS)
+libadiosf_read_donotuse_a_AR = $(AR) $(ARFLAGS)
+libadiosf_read_donotuse_a_LIBADD =
+am__libadiosf_read_donotuse_a_SOURCES_DIST = adiosf_read.F90
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am_libadiosf_read_donotuse_a_OBJECTS =  \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adiosf_read.$(OBJEXT)
+libadiosf_read_donotuse_a_OBJECTS =  \
+	$(am_libadiosf_read_donotuse_a_OBJECTS)
 libadiosread_a_AR = $(AR) $(ARFLAGS)
 libadiosread_a_LIBADD =
 am__libadiosread_a_SOURCES_DIST = adios_bp_v1.c adios_endianness.c \
@@ -165,6 +173,14 @@ libadiosread_nompi_a_OBJECTS = $(am_libadiosread_nompi_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
+PPFCCOMPILE = $(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS)
+LTPPFCCOMPILE = $(LIBTOOL) --mode=compile $(FC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_FCFLAGS) $(FCFLAGS)
+FCLD = $(FC)
+FCLINK = $(LIBTOOL) --mode=link $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
@@ -175,12 +191,17 @@ LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libadios_a_SOURCES) $(libadios_int_a_SOURCES) \
 	$(libadios_int_nompi_a_SOURCES) $(libadios_phdf5_a_SOURCES) \
-	$(libadiosread_a_SOURCES) $(libadiosread_nompi_a_SOURCES)
+	$(libadiosf_read_donotuse_a_SOURCES) $(libadiosread_a_SOURCES) \
+	$(libadiosread_nompi_a_SOURCES)
 DIST_SOURCES = $(am__libadios_a_SOURCES_DIST) \
 	$(libadios_int_a_SOURCES) $(libadios_int_nompi_a_SOURCES) \
 	$(am__libadios_phdf5_a_SOURCES_DIST) \
+	$(am__libadiosf_read_donotuse_a_SOURCES_DIST) \
 	$(am__libadiosread_a_SOURCES_DIST) \
 	$(am__libadiosread_nompi_a_SOURCES_DIST)
+am__include_HEADERS_DIST = adiosf_read.mod adios.h adios_types.h \
+	adios_internals.h adios_transport_hooks.h adios_read.h \
+	mpidummy.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -277,7 +298,7 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATHPROG = @PATHPROG@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PHDF5_CPPFLAGS = @PHDF5_CPPFLAGS@ $(am__append_4)
+PHDF5_CPPFLAGS = @PHDF5_CPPFLAGS@ $(am__append_5)
 PHDF5_LDFLAGS = @PHDF5_LDFLAGS@
 PHDF5_LIBS = @PHDF5_LIBS@
 PTL_FALSE = @PTL_FALSE@
@@ -335,12 +356,13 @@ target_alias = @target_alias@
 INCLUDES = -I$(top_srcdir) 
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES = AUTO
-include_HEADERS = adios.h adios_types.h adios_internals.h \
-	adios_transport_hooks.h adios_read.h mpidummy.h
+include_HEADERS = $(am__append_3) adios.h adios_types.h \
+	adios_internals.h adios_transport_hooks.h adios_read.h \
+	mpidummy.h
 #libadios_int_a_LIBADD = $(MXML_LIBS)
 #libadios_int_nompi_a_LIBADD = $(MXML_LIBS)
 #libadiosread_a_LIBADD = 
-lib_LIBRARIES = $(am__append_1) $(am__append_3) libadios_int.a \
+lib_LIBRARIES = $(am__append_1) $(am__append_4) libadios_int.a \
 	libadios_int_nompi.a libadiosread.a libadiosread_nompi.a
 @BUILD_WRITE_TRUE@libadios_a_SOURCES = adios.c common_adios.c \
 @BUILD_WRITE_TRUE@	adios_transport_hooks.c adios_mpi.c \
@@ -352,7 +374,9 @@ lib_LIBRARIES = $(am__append_1) $(am__append_3) libadios_int.a \
 @BUILD_WRITE_TRUE@	adios_socket.c adios_bp_v1.c adios_bp_v2.c \
 @BUILD_WRITE_TRUE@	adios_endianness.c adios_adaptive.c \
 @BUILD_WRITE_TRUE@	adios_datatap.c $(am__append_2) \
-@BUILD_WRITE_TRUE@	$(am__append_5)
+@BUILD_WRITE_TRUE@	$(am__append_6)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@noinst_LIBRARIES = libadiosf_read_donotuse.a
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@libadiosf_read_donotuse_a_SOURCES = adiosf_read.F90
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@libadios_phdf5_a_SOURCES = adios_phdf5.c
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@libadios_phdf5_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 
@@ -373,17 +397,17 @@ libadios_int_nompi_a_SOURCES = adios_internals_nompi.c \
 
 libadios_int_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS)
 libadiosread_a_SOURCES = adios_bp_v1.c adios_endianness.c bp_utils.c \
-	futils.c adios_error.c adios_read.c $(am__append_6)
-libadiosread_a_CPPFLAGS = $(MXML_CPPFLAGS) $(am__append_9)
+	futils.c adios_error.c adios_read.c $(am__append_7)
+libadiosread_a_CPPFLAGS = $(MXML_CPPFLAGS) $(am__append_10)
 libadiosread_nompi_a_SOURCES = mpidummy.c adios_bp_v1.c \
 	adios_endianness.c bp_utils.c futils.c adios_error.c \
-	adios_read.c $(am__append_7)
+	adios_read.c $(am__append_8)
 libadiosread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI \
-	$(am__append_8)
+	$(am__append_9)
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .lo .o .obj
+.SUFFIXES: .F90 .c .lo .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -442,6 +466,9 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
 libadios.a: $(libadios_a_OBJECTS) $(libadios_a_DEPENDENCIES) 
 	-rm -f libadios.a
 	$(libadios_a_AR) libadios.a $(libadios_a_OBJECTS) $(libadios_a_LIBADD)
@@ -458,6 +485,10 @@ libadios_phdf5.a: $(libadios_phdf5_a_OBJECTS) $(libadios_phdf5_a_DEPENDENCIES)
 	-rm -f libadios_phdf5.a
 	$(libadios_phdf5_a_AR) libadios_phdf5.a $(libadios_phdf5_a_OBJECTS) $(libadios_phdf5_a_LIBADD)
 	$(RANLIB) libadios_phdf5.a
+libadiosf_read_donotuse.a: $(libadiosf_read_donotuse_a_OBJECTS) $(libadiosf_read_donotuse_a_DEPENDENCIES) 
+	-rm -f libadiosf_read_donotuse.a
+	$(libadiosf_read_donotuse_a_AR) libadiosf_read_donotuse.a $(libadiosf_read_donotuse_a_OBJECTS) $(libadiosf_read_donotuse_a_LIBADD)
+	$(RANLIB) libadiosf_read_donotuse.a
 libadiosread.a: $(libadiosread_a_OBJECTS) $(libadiosread_a_DEPENDENCIES) 
 	-rm -f libadiosread.a
 	$(libadiosread_a_AR) libadiosread.a $(libadiosread_a_OBJECTS) $(libadiosread_a_LIBADD)
@@ -472,6 +503,15 @@ mostlyclean-compile:
 
 distclean-compile:
 	-rm -f *.tab.c
+
+.F90.o:
+	$(PPFCCOMPILE) -c -o $@ $<
+
+.F90.obj:
+	$(PPFCCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.F90.lo:
+	$(LTPPFCCOMPILE) -c -o $@ $<
 
 .c.o:
 	$(COMPILE) -c $<
@@ -906,7 +946,7 @@ maintainer-clean-generic:
 clean: clean-am
 
 clean-am: clean-generic clean-libLIBRARIES clean-libtool \
-	mostlyclean-am
+	clean-noinstLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -f Makefile
@@ -954,13 +994,14 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES clean-libtool ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-includeHEADERS install-info \
-	install-info-am install-libLIBRARIES install-man install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+	clean-libLIBRARIES clean-libtool clean-noinstLIBRARIES ctags \
+	distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-exec install-exec-am \
+	install-includeHEADERS install-info install-info-am \
+	install-libLIBRARIES install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-includeHEADERS \
