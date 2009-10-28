@@ -15,11 +15,12 @@ module adiosf_read
             character(*),   intent(out) :: msg
         end subroutine
 
-        subroutine adiosf_fopen (fp, fname, comm, err)
+        subroutine adiosf_fopen (fp, fname, comm, groups_count, err)
             implicit none
             integer*8,      intent(out) :: fp
             character(*),   intent(in)  :: fname
             integer,        intent(in)  :: comm
+            integer,        intent(out) :: groups_count
             integer,        intent(out) :: err
         end subroutine
         
@@ -29,10 +30,9 @@ module adiosf_read
             integer,        intent(out) :: err
         end subroutine
 
-        subroutine adiosf_inq_file (fp, groups_count, vars_count, attrs_count, tstart, ntsteps, gnamelist, err)
+        subroutine adiosf_inq_file (fp, vars_count, attrs_count, tstart, ntsteps, gnamelist, err)
             implicit none
             integer*8,      intent(in)  :: fp
-            integer,        intent(out) :: groups_count
             integer,        intent(out) :: vars_count
             integer,        intent(out) :: attrs_count
             integer,        intent(out) :: tstart
@@ -41,11 +41,13 @@ module adiosf_read
             integer,        intent(out) :: err
         end subroutine
 
-        subroutine adiosf_gopen (fp, gp, grpname, err)
+        subroutine adiosf_gopen (fp, gp, grpname, vars_count, attrs_count, err)
             implicit none
             integer*8,      intent(in)  :: fp
             integer*8,      intent(out) :: gp
             character(*),   intent(in)  :: grpname
+            integer,        intent(out) :: vars_count 
+            integer,        intent(out) :: attrs_count 
             integer,        intent(out) :: err
         end subroutine
 
@@ -55,12 +57,10 @@ module adiosf_read
             integer,        intent(out) :: err
         end subroutine
 
-        subroutine adiosf_inq_group (gp, vcnt, vnamelist, acnt, anamelist, err)
+        subroutine adiosf_inq_group (gp, vnamelist, anamelist, err)
             implicit none
             integer*8,      intent(in)  :: gp
-            integer,        intent(out) :: vcnt 
             character(*), dimension(*), intent(inout) :: vnamelist
-            integer,        intent(out) :: acnt 
             character(*), dimension(*), intent(inout) :: anamelist
             integer,        intent(out) :: err
         end subroutine

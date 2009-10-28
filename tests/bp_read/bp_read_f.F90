@@ -40,12 +40,12 @@ program read_bp_f
     !call adiosf_fopen (fh, "pgood.bp", comm, ierr)
     !call adiosf_fopen (fh, "xgc.flowdiag.bp", comm, ierr)
     !call adiosf_fopen (fh, "xgc.restart.000.03600.bp", comm, ierr)
-    call adiosf_fopen (fh, "g.bp", comm, ierr)
+    call adiosf_fopen (fh, "g.bp", comm, gcnt, ierr)
     !call adiosf_fopen (fh, "testbp.bp", comm, ierr)
     !call adiosf_fopen (fh, "record.bp", comm, ierr)
     !call adiosf_fopen (fh, "outxz.bp", comm, ierr)
 
-    call adiosf_inq_file (fh,gcnt,vcnt,acnt,tstart,ntsteps,gnamelist,ierr) 
+    call adiosf_inq_file (fh,vcnt,acnt,tstart,ntsteps,gnamelist,ierr) 
     tstop = ntsteps+ntsteps-1
     write (*,'("Number of timesteps : ",i0," starting from ",i0)') ntsteps, tstart
     write (*,'("Number of groups : ",i0)') gcnt
@@ -54,8 +54,8 @@ program read_bp_f
         write (*,"(i5, a, a)") i,")  ", trim(gnamelist(i))
     enddo
 
-    call adiosf_gopen (fh, gh, gnamelist(1), ierr) 
-    call adiosf_inq_group(gh, vcnt, vnamelist, acnt, anamelist, ierr)
+    call adiosf_gopen (fh, gh, gnamelist(1), vcnt, acnt, ierr) 
+    call adiosf_inq_group(gh, vnamelist, anamelist, ierr)
 
     write (*,'("Number of variables in group ",a,": ",i0)') trim(gnamelist(1)), vcnt
     do i=1,vcnt 

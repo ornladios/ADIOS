@@ -186,4 +186,4 @@ const char * adios_type_to_string (enum ADIOS_DATATYPES type);
  */
 int adios_type_size(enum ADIOS_DATATYPES type, void *data);
 
-
+#endif

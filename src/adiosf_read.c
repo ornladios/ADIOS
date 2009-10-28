@@ -28,6 +28,7 @@ void FC_FUNC_(adiosf_fopen, ADIOSF_FOPEN)
         (int64_t * fp,
          char    * fname,
          void    * fcomm,
+         int     * groups_count,
          int     * err,
          int       fname_len)
 {
@@ -39,6 +40,11 @@ void FC_FUNC_(adiosf_fopen, ADIOSF_FOPEN)
     namestr = futils_fstr_to_cstr(fname, fname_len);
     if (namestr != NULL) {
         afp = adios_fopen (namestr,comm);
+        if (afp != NULL) {
+            *groups_count = afp->groups_count;
+        } else {
+            *groups_count = 0;
+        }
         *fp = (int64_t) afp;
         free(namestr);
     } else {
@@ -60,7 +66,6 @@ void FC_FUNC_(adiosf_fclose, ADIOSF_FCLOSE) (int64_t * fp, int * err)
 
 void FC_FUNC_(adiosf_inq_file, ADIOSF_INQ_FILE) 
         (int64_t * fp,
-         int     * groups_count,
          int     * vars_count,
          int     * attrs_count,
          int     * tstart,
@@ -71,14 +76,21 @@ void FC_FUNC_(adiosf_inq_file, ADIOSF_INQ_FILE)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
     int i;
-    *groups_count = afp->groups_count;
-    *vars_count = afp->vars_count;
-    *attrs_count = afp->attrs_count;
-    *tstart = afp->tidx_start;
-    *ntsteps = afp->ntimesteps;
-    *err = 0;
-    for (i=0;i<*groups_count;i++) {
-        futils_cstr_to_fstr( afp->group_namelist[i], (char *)gnamelist+i*gnamelist_len, gnamelist_len);
+    if (afp != NULL) {
+        *vars_count = afp->vars_count;
+        *attrs_count = afp->attrs_count;
+        *tstart = afp->tidx_start;
+        *ntsteps = afp->ntimesteps;
+        *err = 0;
+        for (i=0;i<afp->groups_count;i++) {
+            futils_cstr_to_fstr( afp->group_namelist[i], (char *)gnamelist+i*gnamelist_len, gnamelist_len);
+        }
+    } else {
+        *vars_count = 0;
+        *attrs_count = 0;
+        *tstart = 0;
+        *ntsteps = 0;
+        *err = 1;
     }
 }
 
@@ -86,6 +98,8 @@ void FC_FUNC_(adiosf_gopen, ADIOSF_GOPEN)
         (int64_t * fp,
          int64_t * gp,
          char    * grpname,
+         int     * vars_count, 
+         int     * attrs_count, 
          int     * err,
          int       grpname_len)
 {
@@ -96,6 +110,13 @@ void FC_FUNC_(adiosf_gopen, ADIOSF_GOPEN)
     namestr = futils_fstr_to_cstr(grpname, grpname_len);
     if (namestr != NULL) {
         agp = adios_gopen (afp, namestr);
+        if (agp != NULL) {
+            *vars_count = agp->vars_count;
+            *attrs_count = agp->attrs_count;
+        } else {
+            *vars_count = 0;
+            *attrs_count = 0;
+        }
         *gp = (int64_t)agp;
         free(namestr);
     } else {
@@ -116,9 +137,7 @@ void FC_FUNC_(adiosf_gclose, ADIOSF_GCLOSE) (int64_t * gp, int * err)
 
 void FC_FUNC_(adiosf_inq_group, ADIOSF_INQ_GROUP)
         (int64_t * gp, 
-         int     * vcnt, 
          void    * vnamelist, 
-         int     * acnt, 
          void    * anamelist,
          int     * err, 
          int       vnamelist_len, 
@@ -126,15 +145,17 @@ void FC_FUNC_(adiosf_inq_group, ADIOSF_INQ_GROUP)
 {
     ADIOS_GROUP *agp = (ADIOS_GROUP *) *gp;
     int i;
-    *vcnt = agp->vars_count;
-    for (i=0;i<*vcnt;i++) {
-        futils_cstr_to_fstr( agp->var_namelist[i], (char *)vnamelist+i*vnamelist_len, vnamelist_len);
-    } 
-    *acnt = agp->attrs_count;
-    for (i=0;i<*acnt;i++) {
-        futils_cstr_to_fstr( agp->attr_namelist[i], (char *)anamelist+i*anamelist_len, anamelist_len);
-    } 
-    *err = 0;
+    if (agp != NULL) {
+        for (i=0;i<agp->vars_count;i++) {
+            futils_cstr_to_fstr( agp->var_namelist[i], (char *)vnamelist+i*vnamelist_len, vnamelist_len);
+        } 
+        for (i=0;i<agp->attrs_count;i++) {
+            futils_cstr_to_fstr( agp->attr_namelist[i], (char *)anamelist+i*anamelist_len, anamelist_len);
+        } 
+        *err = 0;
+    } else {
+        *err = 1;
+    }
 }
 
 void FC_FUNC_(adiosf_inq_var, ADIOSF_INQ_VAR) 
