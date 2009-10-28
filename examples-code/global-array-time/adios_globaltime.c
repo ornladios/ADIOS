@@ -26,15 +26,20 @@ int main (int argc, char ** argv)
         	for (i = 0; i < NX; i++)
             		t[i] = it*100.0 + rank*10.0 + i;
 		
-		adios_open (&adios_handle, "temperature", filename, "a");
+                if (it==0)
+		    adios_open (&adios_handle, "temperature", filename, "w");
+                else
+		    adios_open (&adios_handle, "temperature", filename, "a");
         	#include "gwrite_temperature.ch"
         	adios_close (adios_handle);
 		MPI_Barrier (comm);
-   
+                //if (rank==0) printf("Timestep %d written\n", it+1);
  	}
 	MPI_Barrier (comm);
+        //if (rank==0) printf("Finalize adios\n");
     	adios_finalize (rank);
 
+        //if (rank==0) printf("Finalize MPI\n");
     	MPI_Finalize ();
 	return 0;
 }

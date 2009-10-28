@@ -50,6 +50,9 @@ else
     dnl Add "-I" to PHDF5_INCDIR.
     if test -n "${PHDF5_INCDIR}"; then
             PHDF5_CPPFLAGS="-I${PHDF5_INCDIR}"
+    elif test -n "${HDF5_CLIB}"; then
+            PHDF5_CPPFLAGS="${HDF5_CLIB}"
+            dnl    echo " --- HDF5_CLIB was defined. PHDF5_CPPFLAGS=${HDF5_CPPFLAGS}"
     else
             ac_phdf5_ok=no
     fi
@@ -57,6 +60,9 @@ else
     dnl Add "-L" to PHDF5_LIBDIR.
     if test -n "${PHDF5_LIBDIR}"; then
             PHDF5_LDFLAGS="-L${PHDF5_LIBDIR}"
+    elif test -n "${HDF5_CLIB}"; then
+            PHDF5_LDFLAGS="${HDF5_CLIB}"
+            dnl    echo " --- HDF5_CLIB was defined. PHDF5_LDFLAGS=${HDF5_CPPFLAGS}"
     else
             ac_phdf5_ok=no
     fi

@@ -20,7 +20,7 @@ AC_LANG(C)
 ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C])])
 
 AC_ARG_ENABLE(fortran, 
-    [  --disable-fortran  Disable Fortran test programs in ADIOS. Default is disabled but must be turned off on MacOSX])
+    [AS_HELP_STRING([--disable-fortran],[disable Fortran test programs in ADIOS.])])
 AM_CONDITIONAL([BUILD_FORTRAN], [test "x$enable_fortran" != "xno"])
 
 if test "x$enable_fortran" != "xno"; then
@@ -121,7 +121,7 @@ AM_CONDITIONAL([DATATAP], [test x$datatap != xdisable])
 
 write=disable
 AC_ARG_ENABLE(write, 
-    [  --disable-write 	Disable building the write methods in ADIOS. Default is disabled but must be turned off on MacOSX])
+    [AS_HELP_STRING([--disable-write],[disable building the write methods in ADIOS. Must be used on MacOSX])])
 AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
 
 dnl CC="$MPICC"
