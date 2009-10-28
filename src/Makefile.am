@@ -33,10 +33,6 @@ if BUILD_FORTRAN
 libadios_a_SOURCES += adiosf.c \
                       futils.c \
                       adios_error.c
-
-noinst_LIBRARIES = libadiosf_read_donotuse.a
-libadiosf_read_donotuse_a_SOURCES = adiosf_read.F90
-include_HEADERS += adiosf_read.mod 
 endif
 
 if HAVE_PHDF5
@@ -84,7 +80,10 @@ libadiosread_a_SOURCES = adios_bp_v1.c \
 		      adios_read.c
 #		      adios_internals.c 
 if BUILD_FORTRAN
-libadiosread_a_SOURCES += adiosf_read.c
+libadiosread_a_SOURCES += adiosf_read.c adiosf_read_mod.F90
+include_HEADERS += adiosf_read.mod 
+#noinst_LIBRARIES = libadiosf_read_donotuse.a
+#libadiosf_read_donotuse_a_SOURCES = adiosf_read.F90
 endif
 libadiosread_a_CPPFLAGS = $(MXML_CPPFLAGS)
 #libadiosread_a_LIBADD = 
@@ -98,7 +97,7 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
                       adios_error.c \
 		      adios_read.c 
 if BUILD_FORTRAN
-libadiosread_nompi_a_SOURCES += adiosf_read.c 
+libadiosread_nompi_a_SOURCES += adiosf_read.c adiosf_read_mod.F90
 endif
 
 libadiosread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI 
