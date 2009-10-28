@@ -63,7 +63,8 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = gpp bpdump bp2ascii bpsplit bpls bp2h5 bp2ncd
+DIST_SUBDIRS = gpp bpdump bp2ascii bpsplit bpls adios_lint bp2h5 \
+	bp2ncd
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -210,7 +211,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = gpp bpdump bp2ascii bpsplit bpls $(am__append_1) \
+SUBDIRS = gpp bpdump bp2ascii bpsplit bpls adios_lint $(am__append_1) \
 	$(am__append_2)
 all: all-recursive
 
