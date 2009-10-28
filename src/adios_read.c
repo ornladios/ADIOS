@@ -95,7 +95,7 @@ ADIOS_FILE * adios_fopen (const char * fname, MPI_Comm comm)
     bp_parse_attrs (fh);
 
     /* fill out ADIOS_FILE struct */
-    fp->fh = (int64_t) fh;
+    fp->fh = (uint64_t) fh;
     fp->groups_count = fh->gvar_h->group_count;
     fp->vars_count = fh->mfooter.vars_count;
     fp->attrs_count = fh->mfooter.attrs_count;

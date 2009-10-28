@@ -26,24 +26,24 @@
 /*************************/
 
 typedef struct {
-        int64_t  fh;                /* File handler                                                       */
-        uint16_t groups_count;      /* Number of adios groups in file                                     */
-        uint16_t vars_count;        /* Number of variables in all groups                                  */
-        uint16_t attrs_count;       /* Number of attributes in all groups                                 */
-        uint32_t tidx_start;        /* First timestep in file, usually 1                                  */
-        uint32_t ntimesteps;        /* Number of timesteps in file. There is always at least one timestep */
-        uint32_t version;           /* ADIOS BP version of file format                                    */
+        uint64_t fh;                /* File handler                                                       */
+        int      groups_count;      /* Number of adios groups in file                                     */
+        int      vars_count;        /* Number of variables in all groups                                  */
+        int      attrs_count;       /* Number of attributes in all groups                                 */
+        int      tidx_start;        /* First timestep in file, usually 1                                  */
+        int      ntimesteps;        /* Number of timesteps in file. There is always at least one timestep */
+        int      version;           /* ADIOS BP version of file format                                    */
         uint64_t file_size;         /* Size of file in bytes                                              */
         int      endianness;        /* 0: little endian, 1: big endian (you do not need to care)          */
         char     ** group_namelist; /* Names of the adios groups in the file (cf. groups_count)           */
 } ADIOS_FILE;
 
 typedef struct {
-        int64_t  gh;                /* Group handler                                           */
+        uint64_t gh;                /* Group handler                                           */
         int      grpid;             /* group index (0..ADIOS_FILE.groups_count-1)              */
-        uint16_t vars_count;        /* Number of variables in this adios group                 */
+        int      vars_count;        /* Number of variables in this adios group                 */
         char     ** var_namelist;   /* Variable names in a char* array                         */
-        uint16_t attrs_count;       /* Number of attributes in this adios group                */
+        int      attrs_count;       /* Number of attributes in this adios group                */
         char     ** attr_namelist;  /* Attribute names in a char* array                        */
         ADIOS_FILE * fp;            /* pointer to the parent ADIOS_FILE struct                 */
 } ADIOS_GROUP;
