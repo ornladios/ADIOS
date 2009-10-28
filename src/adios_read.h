@@ -1,5 +1,5 @@
 /*
- *   Read API for ADIOS BP format files 
+ *   Read C API for ADIOS BP format files 
  *   Copyright 2009, Oak Ridge National Laboratory
  */
 #ifndef __ADIOS_READ_H__
@@ -16,10 +16,6 @@
 #endif
 
 #include <stdint.h>
-
-/***************/
-/* C interface */
-/***************/
 
 /*************************/
 /* Types used in the API */
@@ -135,14 +131,14 @@ void adios_free_varinfo (ADIOS_VARINFO *cp);
  *  IN:  gp        pointer to an (opened) ADIOS_GROUP struct
  *       varname   name of the variable
  *       start     array of offsets to start reading in each dimension
- *       readsize  number of data elements to read in each dimension
+ *       count     number of data elements to read in each dimension
  *  OUT: data      data of the variable
  *  RETURN: the number of bytes read, <0 on error, sets adios_errno too
  */
 int64_t adios_read_var (ADIOS_GROUP    * gp, 
                         const char     * varname, 
                         const uint64_t * start,
-                        const uint64_t * readsize, 
+                        const uint64_t * count, 
                         void           * data);
 
 /** Read a variable by index 
@@ -150,7 +146,7 @@ int64_t adios_read_var (ADIOS_GROUP    * gp,
  *                in gp->vars_namelist of ADIOS_GROUP struct
  */
 int64_t adios_read_var_byid (ADIOS_GROUP * gp, int varid,
-                             const uint64_t * start, const uint64_t * readsize, 
+                             const uint64_t * start, const uint64_t * count, 
                              void * data);
 
 /** Get an attribute in a group.
@@ -191,89 +187,3 @@ const char * adios_type_to_string (enum ADIOS_DATATYPES type);
 int adios_type_size(enum ADIOS_DATATYPES type, void *data);
 
 
-/*********************/
-/* Fortran interface */
-/*********************/
-
-/* In fortran, you do not need to include this header file. 
-   Just link the code with the read library.
-   adios_errno is returned by each function as extra parameter.
-*/
-
-/*
-void FC_FUNC_(adiosf_errmsg, ADIOSF_LASTERRMSG) (char *msg, int msg_len);
-
-void FC_FUNC_(adiosf_fopen, ADIOSF_FOPEN) ( int64_t * fp,
-                    char * fname,
-                    void * comm,
-                    int * err,
-                    int fname_len
-                  );
-
-void FC_FUNC_(adiosf_fclose, ADIOSF_FCLOSE) ( int64_t * fp, int * err);
-
-void FC_FUNC_(adiosf_inq_file, ADIOSF_INQ_FILE) ( int64_t * fp,
-                       int * groups_count,
-                       int * vars_count,
-                       int * attrs_count,
-                       int * tstart,
-                       int * ntsteps,
-                       void * gnamelist,
-                       int * err,
-                       int gnamelist_len);
-
-void FC_FUNC_(adiosf_gopen, ADIOSF_GOPEN) (int64_t * fp, int64_t * gp, 
-                   char * grpname, int *err, int grpname_len);
-
-void FC_FUNC_(adiosf_gclose, ADIOSF_GCLOSE) ( int64_t * gp, int * err);
-
-void FC_FUNC_(adiosf_inq_group, ADIOSF_INQ_GROUP) (int64_t * gp, 
-                       int     * vcnt, 
-                       void    * vnamelist, 
-                       int     * acnt, 
-                       void    * anamelist, 
-                       int     * err, 
-                       int       vnamelist_len, 
-                       int       anamelist_len);
-
-void FC_FUNC_(adiosf_inq_var, ADIOSF_INQ_VAR) (int64_t  * gp, 
-                     char     * varname,
-                     int      * type,
-                     int      * ndim,
-                     uint64_t * dims,
-                     int      * timedim,
-                     int      * err,
-                     int varname_len);
-
-void FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (int64_t   * gp,
-                      char      * varname,
-                      uint64_t  * start,
-                      uint64_t  * readsize, 
-                      void      * data, 
-                      int64_t   * read_bytes,
-                      int  varname_len);
-
-void FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (int64_t * gp,
-                           char    * varname,
-                           void    * value,
-                           void    * gmin,
-                           void    * gmax,
-                           void    * mins,
-                           void    * maxs,
-                           int     * err,
-                           int  varname_len);
-
-void FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (int64_t * gp,
-                      char * attrname,
-                      void * attr,
-                      int * err,
-                      int attrname_len);
-
-void FC_FUNC_(adiosf_inq_attr, ADIOSF_INQ_ATTR) (int64_t * gp,
-                      char * attrname,
-                      int * type,
-                      int * size,
-                      int * err,
-                      int attrname_len);
-*/
-#endif

@@ -177,7 +177,7 @@ void FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR)
         (int64_t  * gp,
          char     * varname,
          uint64_t * start,
-         uint64_t * readsize,
+         uint64_t * count,
          void     * data,
          int64_t  * read_bytes,
          int varname_len)
@@ -187,7 +187,7 @@ void FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR)
     int i;
     varstr = futils_fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
-        *read_bytes = adios_read_var (agp, varstr, start, readsize, data);
+        *read_bytes = adios_read_var (agp, varstr, start, count, data);
         free(varstr);
     } else {
         *read_bytes = -adios_errno;
@@ -197,19 +197,19 @@ void FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR)
 }
 
 /* Specific function for each data type */
-void FC_FUNC_(adiosf_read_var_int1, ADIOSF_READ_VAR_INT1) (int64_t * gp, char * varname, uint64_t * start, uint64_t * readsize, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, readsize, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_int2, ADIOSF_READ_VAR_INT2) (int64_t * gp, char * varname, uint64_t * start, uint64_t * readsize, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, readsize, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_int4, ADIOSF_READ_VAR_INT4) (int64_t * gp, char * varname, uint64_t * start, uint64_t * readsize, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, readsize, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_int8, ADIOSF_READ_VAR_INT8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * readsize, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, readsize, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_real4, ADIOSF_READ_VAR_REAL4) (int64_t * gp, char * varname, uint64_t * start, uint64_t * readsize, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, readsize, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_real8, ADIOSF_READ_VAR_REAL8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * readsize, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, readsize, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_char, ADIOSF_READ_VAR_CHAR) (int64_t * gp, char * varname, uint64_t * start, uint64_t * readsize, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, readsize, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_complex8, ADIOSF_READ_VAR_COMPLEX8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * readsize, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, readsize, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_complex16, ADIOSF_READ_VAR_COMPLEX16) (int64_t * gp, char * varname, uint64_t * start, uint64_t * readsize, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, readsize, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_logical1, ADIOSF_READ_VAR_LOGICAL1) (int64_t * gp, char * varname, uint64_t * start, uint64_t * readsize, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, readsize, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_logical2, ADIOSF_READ_VAR_LOGICAL2) (int64_t * gp, char * varname, uint64_t * start, uint64_t * readsize, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, readsize, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_logical4, ADIOSF_READ_VAR_LOGICAL4) (int64_t * gp, char * varname, uint64_t * start, uint64_t * readsize, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, readsize, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_logical8, ADIOSF_READ_VAR_LOGICAL8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * readsize, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, readsize, data, read_bytes, varname_len); }
+void FC_FUNC_(adiosf_read_var_int1, ADIOSF_READ_VAR_INT1) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adiosf_read_var_int2, ADIOSF_READ_VAR_INT2) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adiosf_read_var_int4, ADIOSF_READ_VAR_INT4) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adiosf_read_var_int8, ADIOSF_READ_VAR_INT8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adiosf_read_var_real4, ADIOSF_READ_VAR_REAL4) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adiosf_read_var_real8, ADIOSF_READ_VAR_REAL8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adiosf_read_var_char, ADIOSF_READ_VAR_CHAR) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adiosf_read_var_complex8, ADIOSF_READ_VAR_COMPLEX8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adiosf_read_var_complex16, ADIOSF_READ_VAR_COMPLEX16) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adiosf_read_var_logical1, ADIOSF_READ_VAR_LOGICAL1) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adiosf_read_var_logical2, ADIOSF_READ_VAR_LOGICAL2) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adiosf_read_var_logical4, ADIOSF_READ_VAR_LOGICAL4) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adiosf_read_var_logical8, ADIOSF_READ_VAR_LOGICAL8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
 
 void FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) 
         (int64_t * gp,

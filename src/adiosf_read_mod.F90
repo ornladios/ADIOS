@@ -1,6 +1,8 @@
-!
-! ADIOS READ Fortran 90 interface 
-! Include this file in your source code to ensure that
+! 
+! Read Fortran 90 API for ADIOS BP format files 
+! Copyright 2009, Oak Ridge National Laboratory
+!    
+! Use this module in your source code to ensure that
 ! you are calling the adiosf_* reading functions with
 ! the correct arguments
 !
@@ -88,149 +90,149 @@ module adiosf_read
     !
     ! ADIOSF_READ_VAR generic interface 
     !
-    ! Usage: call adiosf_read_var (gp, varname, start, readsize, data, read_bytes)
+    ! Usage: call adiosf_read_var (gp, varname, start, count, data, read_bytes)
     !
     interface adiosf_read_var
 
         ! INTEGER*1 array
-        subroutine adiosf_read_var_int1 (gp, varname, start, readsize, data, read_bytes)
+        subroutine adiosf_read_var_int1 (gp, varname, start, count, data, read_bytes)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in) :: start
-            integer*8, dimension(*), intent(in) :: readsize
+            integer*8, dimension(*), intent(in) :: count
             integer*1, dimension(*), intent(inout) :: data
             integer*8,      intent(in)  :: read_bytes 
         end subroutine
 
         ! INTEGER*2 array
-        subroutine adiosf_read_var_int2 (gp, varname, start, readsize, data, read_bytes)
+        subroutine adiosf_read_var_int2 (gp, varname, start, count, data, read_bytes)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in) :: start
-            integer*8, dimension(*), intent(in) :: readsize
+            integer*8, dimension(*), intent(in) :: count
             integer*2, dimension(*), intent(inout) :: data
             integer*8,      intent(in)  :: read_bytes 
         end subroutine
 
         ! INTEGER*4 array
-        subroutine adiosf_read_var_int4 (gp, varname, start, readsize, data, read_bytes)
+        subroutine adiosf_read_var_int4 (gp, varname, start, count, data, read_bytes)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in) :: start
-            integer*8, dimension(*), intent(in) :: readsize
+            integer*8, dimension(*), intent(in) :: count
             integer*4, dimension(*), intent(inout) :: data
             integer*8,      intent(in)  :: read_bytes 
         end subroutine
 
         ! INTEGER*8 array
-        subroutine adiosf_read_var_int8 (gp, varname, start, readsize, data, read_bytes)
+        subroutine adiosf_read_var_int8 (gp, varname, start, count, data, read_bytes)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in) :: start
-            integer*8, dimension(*), intent(in) :: readsize
+            integer*8, dimension(*), intent(in) :: count
             integer*8, dimension(*), intent(inout) :: data
             integer*8,      intent(in)  :: read_bytes 
         end subroutine
 
         ! REAL*4 array
-        subroutine adiosf_read_var_real4 (gp, varname, start, readsize, data, read_bytes)
+        subroutine adiosf_read_var_real4 (gp, varname, start, count, data, read_bytes)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in) :: start
-            integer*8, dimension(*), intent(in) :: readsize
+            integer*8, dimension(*), intent(in) :: count
             real*4,    dimension(*), intent(inout) :: data
             integer*8,      intent(in)  :: read_bytes 
         end subroutine
 
         ! REAL*8 array
-        subroutine adiosf_read_var_real8 (gp, varname, start, readsize, data, read_bytes)
+        subroutine adiosf_read_var_real8 (gp, varname, start, count, data, read_bytes)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in) :: start
-            integer*8, dimension(*), intent(in) :: readsize
+            integer*8, dimension(*), intent(in) :: count
             real*8,   dimension(*), intent(inout) :: data
             integer*8,      intent(in)  :: read_bytes 
         end subroutine
 
         ! COMPLEX (*8) array
-        subroutine adiosf_read_var_complex8 (gp, varname, start, readsize, data, read_bytes)
+        subroutine adiosf_read_var_complex8 (gp, varname, start, count, data, read_bytes)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in) :: start
-            integer*8, dimension(*), intent(in) :: readsize
+            integer*8, dimension(*), intent(in) :: count
             complex,   dimension(*), intent(inout) :: data
             integer*8,      intent(in)  :: read_bytes 
         end subroutine
 
         ! DOUBLE-COMPLEX array
-        subroutine adiosf_read_var_complex16 (gp, varname, start, readsize, data, read_bytes)
+        subroutine adiosf_read_var_complex16 (gp, varname, start, count, data, read_bytes)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in) :: start
-            integer*8, dimension(*), intent(in) :: readsize
+            integer*8, dimension(*), intent(in) :: count
             complex*16,dimension(*), intent(inout) :: data
             integer*8,      intent(in)  :: read_bytes 
         end subroutine
 
         ! CHARACTER array
-        subroutine adiosf_read_var_char (gp, varname, start, readsize, data, read_bytes)
+        subroutine adiosf_read_var_char (gp, varname, start, count, data, read_bytes)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in) :: start
-            integer*8, dimension(*), intent(in) :: readsize
+            integer*8, dimension(*), intent(in) :: count
             character(*),   intent(inout) :: data
             integer*8,      intent(in)  :: read_bytes 
         end subroutine
 
         ! LOGICAL*1 array
-        subroutine adiosf_read_var_logical1 (gp, varname, start, readsize, data, read_bytes)
+        subroutine adiosf_read_var_logical1 (gp, varname, start, count, data, read_bytes)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in) :: start
-            integer*8, dimension(*), intent(in) :: readsize
+            integer*8, dimension(*), intent(in) :: count
             logical*1, dimension(*), intent(inout) :: data
             integer*8,      intent(in)  :: read_bytes 
         end subroutine
 
         ! LOGICAL*2 array
-        subroutine adiosf_read_var_logical2 (gp, varname, start, readsize, data, read_bytes)
+        subroutine adiosf_read_var_logical2 (gp, varname, start, count, data, read_bytes)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in) :: start
-            integer*8, dimension(*), intent(in) :: readsize
+            integer*8, dimension(*), intent(in) :: count
             logical*2, dimension(*), intent(inout) :: data
             integer*8,      intent(in)  :: read_bytes 
         end subroutine
 
         ! LOGICAL*4 array
-        subroutine adiosf_read_var_logical4 (gp, varname, start, readsize, data, read_bytes)
+        subroutine adiosf_read_var_logical4 (gp, varname, start, count, data, read_bytes)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in) :: start
-            integer*8, dimension(*), intent(in) :: readsize
+            integer*8, dimension(*), intent(in) :: count
             logical*4, dimension(*), intent(inout) :: data
             integer*8,      intent(in)  :: read_bytes 
         end subroutine
 
         ! LOGICAL*8 array
-        subroutine adiosf_read_var_logical8 (gp, varname, start, readsize, data, read_bytes)
+        subroutine adiosf_read_var_logical8 (gp, varname, start, count, data, read_bytes)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in) :: start
-            integer*8, dimension(*), intent(in) :: readsize
+            integer*8, dimension(*), intent(in) :: count
             logical*8, dimension(*), intent(inout) :: data
             integer*8,      intent(in)  :: read_bytes 
         end subroutine

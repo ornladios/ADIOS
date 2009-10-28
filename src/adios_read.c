@@ -948,19 +948,19 @@ void adios_free_varinfo (ADIOS_VARINFO *vp)
 
 
 int64_t adios_read_var (ADIOS_GROUP * gp, const char * varname,
-                        const uint64_t * start, const uint64_t * readsize,
+                        const uint64_t * start, const uint64_t * count,
                         void * data)
 {
     int varid = find_var(gp, varname);
     if (varid < 0)
         return -1;
-    return adios_read_var_byid(gp, varid, start, readsize, data);
+    return adios_read_var_byid(gp, varid, start, count, data);
 }
 
 int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
                              int              varid,
                              const uint64_t  * start,
-                             const uint64_t  * readsize,
+                             const uint64_t  * count,
                              void           * data)
 {
     struct BP_GROUP      * gh;
@@ -971,7 +971,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
     struct adios_var_payload_struct_v1 var_payload;
     int    i,j,k, idx, timestep;
     int    start_time, stop_time;
-    int    offset, count, start_idx;
+    int    pgoffset, pgcount, start_idx;
     int    ndim, ndim_notime;  
     uint64_t size;
     uint64_t *dims;
@@ -979,7 +979,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
     uint64_t gdims[32];
     uint64_t offsets[32];
     uint64_t datasize, nloop, dset_stride,var_stride, total_size=0, items_read;
-    uint64_t readsize_notime[32], start_notime[32];
+    uint64_t count_notime[32], start_notime[32];
     MPI_Status status;
     int timedim = -1;
     int rank;
@@ -1034,30 +1034,30 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
     /* Get the timesteps we need to read */
     if (timedim > -1) {
         start_time = start[timedim] + fh->tidx_start;
-        stop_time = start_time + readsize[timedim] - 1;
+        stop_time = start_time + count[timedim] - 1;
     } else {
         // timeless variable
         start_time = fh->tidx_start;
         stop_time = fh->tidx_start;
     }
 
-    /* Take out the time dimension from start[] and readsize[] */
+    /* Take out the time dimension from start[] and count[] */
     if (timedim == -1) {
         for (i = 0; i < ndim; i++) {
-             readsize_notime[i] = readsize[i];
+             count_notime[i] = count[i];
              start_notime[i] = start[i];
         }
         ndim_notime = ndim;
     } else {
         j = 0;
         for (i = 0; i < timedim; i++) {
-             readsize_notime[j] = readsize[i];
+             count_notime[j] = count[i];
              start_notime[j] = start[i];
              j++;
         }
         i++; // skip timedim
         for (; i < ndim; i++) {
-             readsize_notime[j] = readsize[i];
+             count_notime[j] = count[i];
              start_notime[j] = start[i];
              j++;
         }
@@ -1067,7 +1067,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
     /* items_read = how many data elements are we going to read in total (per timestep) */
     items_read = 1;
     for (i = 0; i < ndim_notime; i++)
-        items_read *= readsize_notime[i];
+        items_read *= count_notime[i];
     
     
     MPI_Comm_rank(gh->fh->comm, &rank);
@@ -1077,15 +1077,15 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
     /* For each timestep, do reading separately (they are stored in different sets of process groups */
     for (timestep = start_time; timestep <= stop_time; timestep++) {
 
-        // offset = the starting offset for the given time step
-        // count  = number of process groups of that time step
-        offset = fh->gvar_h->time_index[0][gh->group_id][timestep - fh->tidx_start];
-        count = fh->gvar_h->time_index[1][gh->group_id][timestep - fh->tidx_start];
+        // pgoffset = the starting offset for the given time step
+        // pgcount  = number of process groups of that time step
+        pgoffset = fh->gvar_h->time_index[0][gh->group_id][timestep - fh->tidx_start];
+        pgcount = fh->gvar_h->time_index[1][gh->group_id][timestep - fh->tidx_start];
         start_idx = -1;
         for (i=0;i<var_root->characteristics_count;i++) {
-            if (   (  var_root->characteristics[i].offset > fh->gvar_h->pg_offsets[offset])
+            if (   (  var_root->characteristics[i].offset > fh->gvar_h->pg_offsets[pgoffset])
                 && (  (i == var_root->characteristics_count-1) 
-                    ||(  var_root->characteristics[i].offset < fh->gvar_h->pg_offsets[offset + 1]))
+                    ||(  var_root->characteristics[i].offset < fh->gvar_h->pg_offsets[pgoffset + 1]))
                ) 
             {
                 start_idx = i;
@@ -1122,16 +1122,16 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
         }
 
          /* READ AN ARRAY VARIABLE */
-        int * idx_table = (int *) malloc (sizeof(int) * count);
+        int * idx_table = (int *) malloc (sizeof(int) * pgcount);
 
         uint64_t write_offset = 0;
         int npg = 0;
         tmpcount = 0;
-        if (count > var_root->characteristics_count)
-            count = var_root->characteristics_count;
+        if (pgcount > var_root->characteristics_count)
+            pgcount = var_root->characteristics_count;
 
         // loop over the list of pgs to read from one-by-one
-        for (idx = 0; idx < count; idx++) {
+        for (idx = 0; idx < pgcount; idx++) {
             int flag;
             datasize = 1;
             nloop = 1;
@@ -1170,23 +1170,23 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
     
                 payload_size *= ldims [j];
     
-                if ( (readsize_notime[j] > gdims[j]) 
+                if ( (count_notime[j] > gdims[j]) 
                   || (start_notime[j] > gdims[j]) 
-                  || (start_notime[j] + readsize_notime[j] > gdims[j])){
+                  || (start_notime[j] + count_notime[j] > gdims[j])){
                     error( err_out_of_bound, "Error: Variable (id=%d) out of bound ("
                         "the data in dimension %d to read is %llu elements from index %llu"
                         " but the actual data is [0,%llu])",
-                        varid, j+1, readsize_notime[j], start_notime[j], gdims[j] - 1);
+                        varid, j+1, count_notime[j], start_notime[j], gdims[j] - 1);
                     return -adios_errno;
                 }
     
                 /* check if there is any data in this pg and this dimension to read in */
                 flag = (offsets[j] >= start_notime[j] 
-                        && offsets[j] < start_notime[j] + readsize_notime[j])
+                        && offsets[j] < start_notime[j] + count_notime[j])
                     || (offsets[j] < start_notime[j]
-                        && offsets[j] + ldims[j] > start_notime[j] + readsize_notime[j]) 
+                        && offsets[j] + ldims[j] > start_notime[j] + count_notime[j]) 
                     || (offsets[j] + ldims[j] > start_notime[j] 
-                        && offsets[j] + ldims[j] <= start_notime[j] + readsize_notime[j]);
+                        && offsets[j] + ldims[j] <= start_notime[j] + count_notime[j]);
                 idx_table [idx] = idx_table[idx] && flag;
             }
             
@@ -1198,7 +1198,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
             /* determined how many (fastest changing) dimensions can we read in in one read */
             int hole_break; 
             for (i = ndim_notime - 1; i > -1; i--) {
-                if (offsets[i] == start_notime[i] && ldims[i] == readsize_notime[i]) {
+                if (offsets[i] == start_notime[i] && ldims[i] == count_notime[i]) {
                     datasize *= ldims[i];
                 }
                 else
@@ -1240,20 +1240,20 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
                 if (start_notime[0] >= offsets[0]) {
                     // head is in
                     if (start_notime[0]<isize) {
-                        if (start_notime[0] + readsize_notime[0] > isize)
+                        if (start_notime[0] + count_notime[0] > isize)
                             size_in_dset = isize - start_notime[0];
                         else
-                            size_in_dset = readsize_notime[0];
+                            size_in_dset = count_notime[0];
                         offset_in_dset = start_notime[0] - offsets[0];
                     }
                 }
                 else {
                     // middle is in
-                    if (isize < start_notime[0] + readsize_notime[0])
+                    if (isize < start_notime[0] + count_notime[0])
                         size_in_dset = ldims[0];
                     else
                     // tail is in
-                        size_in_dset = readsize_notime[0] + start_notime[0] - offsets[0];
+                        size_in_dset = count_notime[0] + start_notime[0] - offsets[0];
                     offset_in_dset = 0;
                 }
     
@@ -1292,10 +1292,10 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
                     if (start_notime[i] >= offsets[i]) {
                         // head is in
                         if (start_notime[i]<isize) {
-                            if (start_notime[i] + readsize_notime[i] > isize)
+                            if (start_notime[i] + count_notime[i] > isize)
                                 size_in_dset[i] = isize - start_notime[i];
                             else
-                                size_in_dset[i] = readsize_notime[i];
+                                size_in_dset[i] = count_notime[i];
                             offset_in_dset[i] = start_notime[i] - offsets[i];
                             offset_in_var[i] = 0;
                             hit = 1 + hit * 10;
@@ -1305,13 +1305,13 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
                     }
                     else {
                         // middle is in
-                        if (isize < start_notime[i] + readsize_notime[i]) {
+                        if (isize < start_notime[i] + count_notime[i]) {
                             size_in_dset[i] = ldims[i];
                             hit = 2 + hit * 10;
                         }
                         else {
                             // tail is in
-                            size_in_dset[i] = readsize_notime[i] + start_notime[i] - offsets[i];
+                            size_in_dset[i] = count_notime[i] + start_notime[i] - offsets[i];
                             hit = 3 + hit * 10;
                         }
                         offset_in_dset[i] = 0;
@@ -1325,7 +1325,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
                 for ( i = ndim_notime-1; i >= hole_break; i--) {
                     datasize *= size_in_dset[i];
                     dset_stride *= ldims[i];
-                    var_stride *= readsize_notime[i];
+                    var_stride *= count_notime[i];
                 }
     
                 uint64_t start_in_payload = 0, end_in_payload = 0, s = 1;
@@ -1357,7 +1357,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
                 }
     
                 for ( i = 0; i < ndim_notime ; i++) {
-                    var_offset = offset_in_var[i] + var_offset * readsize_notime[i];
+                    var_offset = offset_in_var[i] + var_offset * count_notime[i];
                     dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
                 }
     
@@ -1367,7 +1367,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
                           ,hole_break
                           ,size_in_dset
                           ,ldims
-                          ,readsize_notime
+                          ,count_notime
                           ,var_stride
                           ,dset_stride
                           ,var_offset
