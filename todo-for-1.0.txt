@@ -3,6 +3,9 @@ Packaging:
     take out the methods that we do not want to distribute
     review what goes into the distribution and write a script to make the tar.gz
 
+New features:
+    write an adiosf module for F90 like adiosf_read in src/adiosf_read_mod.F90
+
 BUGS:
     configure: FC=mpif90 on ewok breaks configure (it checks if Fortran lib can link with a C main program)
 
