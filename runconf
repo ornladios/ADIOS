@@ -17,7 +17,7 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     module unload pgi
     TARGET=pgi
     module load PE-$TARGET
-    module load hdf5
+    module load hdf5/1.6.7-ompi1.2.8
     module load netcdf
     #./configure --prefix=/ccs/proj/fus022/adios.test/ewok \
     #CFLAGS="-Wall -g -O0 " ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.pgi \

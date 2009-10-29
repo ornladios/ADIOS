@@ -51,6 +51,10 @@ else
     if test -n "${PHDF5_INCDIR}"; then
             PHDF5_CPPFLAGS="-I${PHDF5_INCDIR}"
     elif test -n "${HDF5_CLIB}"; then
+    dnl dnl 
+    dnl dnl Add this elif case if you want phdf5 be discovered automatically
+    dnl dnl if HDF5_CLIB is set. It breaks building utils/bp2h5 with --rpath magic!!!
+    dnl dnl
             PHDF5_CPPFLAGS="${HDF5_CLIB}"
             dnl    echo " --- HDF5_CLIB was defined. PHDF5_CPPFLAGS=${HDF5_CPPFLAGS}"
     else
@@ -61,8 +65,12 @@ else
     if test -n "${PHDF5_LIBDIR}"; then
             PHDF5_LDFLAGS="-L${PHDF5_LIBDIR}"
     elif test -n "${HDF5_CLIB}"; then
-            PHDF5_LDFLAGS="${HDF5_CLIB}"
-            dnl    echo " --- HDF5_CLIB was defined. PHDF5_LDFLAGS=${HDF5_CPPFLAGS}"
+    dnl dnl 
+    dnl dnl Add this elif case if you want phdf5 be discovered automatically
+    dnl dnl if HDF5_CLIB is set. It breaks building utils/bp2h5 with --rpath magic!!!
+    dnl dnl
+             PHDF5_LDFLAGS="${HDF5_CLIB}"
+    dnl         dnl    echo " --- HDF5_CLIB was defined. PHDF5_LDFLAGS=${HDF5_CPPFLAGS}"
     else
             ac_phdf5_ok=no
     fi
