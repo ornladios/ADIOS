@@ -37,9 +37,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = bpls$(EXEEXT)
-@HAVE_DMALLOC_TRUE@am__append_1 = -DDMALLOC  $(DMALLOC_CPPFLAGS)
-@HAVE_DMALLOC_TRUE@am__append_2 = $(DMALLOC_LDFLAGS)
-@HAVE_DMALLOC_TRUE@am__append_3 = -ldmalloc
+@HAVE_DMALLOC_TRUE@am__append_1 = -ldmalloc
 subdir = utils/bpls
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -63,7 +61,7 @@ am_bpls_OBJECTS = bpls-bpls.$(OBJEXT)
 bpls_OBJECTS = $(am_bpls_OBJECTS)
 am__DEPENDENCIES_1 =
 bpls_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -229,10 +227,10 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 bpls_SOURCES = bpls.c 
-bpls_CFLAGS = -DNOMPI -g $(am__append_1)
-bpls_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2)
-bpls_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(MXML_LIBS) \
-	$(am__append_3)
+bpls_CFLAGS = -DNOMPI -g 
+bpls_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(am__append_1)
+@HAVE_DMALLOC_TRUE@bpls_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+@HAVE_DMALLOC_TRUE@bpls_LDFLAGS = $(DMALLOC_LDFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -314,10 +312,10 @@ distclean-compile:
 	$(LTCOMPILE) -c -o $@ $<
 
 bpls-bpls.o: bpls.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bpls_CFLAGS) $(CFLAGS) -c -o bpls-bpls.o `test -f 'bpls.c' || echo '$(srcdir)/'`bpls.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bpls_CPPFLAGS) $(CPPFLAGS) $(bpls_CFLAGS) $(CFLAGS) -c -o bpls-bpls.o `test -f 'bpls.c' || echo '$(srcdir)/'`bpls.c
 
 bpls-bpls.obj: bpls.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(bpls_CFLAGS) $(CFLAGS) -c -o bpls-bpls.obj `if test -f 'bpls.c'; then $(CYGPATH_W) 'bpls.c'; else $(CYGPATH_W) '$(srcdir)/bpls.c'; fi`
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bpls_CPPFLAGS) $(CPPFLAGS) $(bpls_CFLAGS) $(CFLAGS) -c -o bpls-bpls.obj `if test -f 'bpls.c'; then $(CYGPATH_W) 'bpls.c'; else $(CYGPATH_W) '$(srcdir)/bpls.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

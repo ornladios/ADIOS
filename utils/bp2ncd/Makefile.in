@@ -37,6 +37,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = bp2ncd$(EXEEXT)
+@HAVE_DMALLOC_TRUE@am__append_1 = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+@HAVE_DMALLOC_TRUE@am__append_2 = $(DMALLOC_LDFLAGS)
+@HAVE_DMALLOC_TRUE@am__append_3 = -ldmalloc
 subdir = utils/bp2ncd
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -59,7 +62,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_bp2ncd_OBJECTS = bp2ncd-bp2ncd.$(OBJEXT)
 bp2ncd_OBJECTS = $(am_bp2ncd_OBJECTS)
 am__DEPENDENCIES_1 =
-bp2ncd_DEPENDENCIES = $(top_builddir)/src/libadios_int.a \
+bp2ncd_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
@@ -228,10 +231,10 @@ AUTOMAKE_OPTIONS = no-dependencies
 bp2ncd_SOURCES = bp2ncd.c
 
 # change these to use proper autoconf settings
-bp2ncd_LDFLAGS = $(MXML_LDFLAGS) $(NETCDF_LDFLAGS)
-bp2ncd_CPPFLAGS = $(MXML_CPPFLAGS) $(NETCDF_CPPFLAGS)
-bp2ncd_LDADD = $(top_builddir)/src/libadios_int.a $(MXML_LIBS) \
-	$(NETCDF_LIBS)
+bp2ncd_LDFLAGS = $(NETCDF_LDFLAGS) $(am__append_2)
+bp2ncd_CPPFLAGS = $(NETCDF_CPPFLAGS) $(am__append_1)
+bp2ncd_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(NETCDF_LIBS) \
+	$(am__append_3)
 all: all-am
 
 .SUFFIXES:

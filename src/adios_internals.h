@@ -314,8 +314,6 @@ uint64_t adios_size_of_attribute (struct adios_attribute_struct * a);
 
 uint64_t adios_data_size (struct adios_group_struct * g);
 
-int adios_parse_config (const char * config);
-int adios_local_config ();
 struct adios_method_list_struct * adios_get_methods (void);
 struct adios_group_list_struct * adios_get_groups (void);
 
@@ -398,11 +396,6 @@ int adios_common_define_var (int64_t group_id, const char * name
                             ,const char * local_offsets
                             );
 
-int adios_common_select_method (int priority, const char * method
-                               ,const char * parameters, const char * group 
-                               ,const char * base_path, int iters
-                               );
-
 void adios_common_get_group (int64_t * group_id, const char * name);
 
 // ADIOS file format functions
@@ -474,13 +467,15 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
 const char * adios_type_to_string_int (int type);
 const char * adios_file_mode_to_string (int mode);
 
-void adios_cleanup ();
-
 // the following are defined in adios_transport_hooks.c
 void adios_init_transports (struct adios_transport_struct ** transports);
 int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
                        ,int * requires_group_comm
                        );
+
+/* some internal functions that adios_internals.c and adios_internals_mxml.c share */
+int adios_int_is_var (const char * temp); // 1 == yes, 0 == no
+int adios_int_is_num (char * temp); // 1 == yes, 0 == no
 
 // queue code for adaptive message passing
 #ifdef __cplusplus

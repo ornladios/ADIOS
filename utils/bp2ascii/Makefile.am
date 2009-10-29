@@ -7,9 +7,10 @@ bin_PROGRAMS = bp2ascii
 
 bp2ascii_SOURCES = bp2ascii.c 
 
-bp2ascii_LDFLAGS = $(MXML_LDFLAGS)
-bp2ascii_CPPFLAGS = $(MXML_CPPFLAGS)
+bp2ascii_LDADD = $(top_builddir)/src/libadiosread_nompi.a
 
-#bp2ascii_LDADD = $(top_builddir)/src/libadios.a
-bp2ascii_LDADD = $(top_builddir)/src/libadios_int_nompi.a
-bp2ascii_LDADD += $(MXML_LIBS)
+if HAVE_DMALLOC
+bp2ascii_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+bp2ascii_LDFLAGS =  $(DMALLOC_LDFLAGS)
+bp2ascii_LDADD += -ldmalloc
+endif

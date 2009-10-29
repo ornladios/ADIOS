@@ -7,12 +7,15 @@ bin_PROGRAMS = bp2ncd
 
 bp2ncd_SOURCES = bp2ncd.c
 
-bp2ncd_LDFLAGS = $(MXML_LDFLAGS)
-bp2ncd_CPPFLAGS = $(MXML_CPPFLAGS)
-
 # change these to use proper autoconf settings
-bp2ncd_LDFLAGS += $(NETCDF_LDFLAGS)
-bp2ncd_CPPFLAGS += $(NETCDF_CPPFLAGS)
+bp2ncd_LDFLAGS = $(NETCDF_LDFLAGS)
+bp2ncd_CPPFLAGS = $(NETCDF_CPPFLAGS)
 
-bp2ncd_LDADD = $(top_builddir)/src/libadios_int.a
-bp2ncd_LDADD += $(MXML_LIBS) $(NETCDF_LIBS)
+bp2ncd_LDADD = $(top_builddir)/src/libadiosread_nompi.a
+bp2ncd_LDADD += $(NETCDF_LIBS)
+
+if HAVE_DMALLOC
+bp2ncd_CPPFLAGS += -DDMALLOC  $(DMALLOC_CPPFLAGS)
+bp2ncd_LDFLAGS +=  $(DMALLOC_LDFLAGS)
+bp2ncd_LDADD += -ldmalloc
+endif

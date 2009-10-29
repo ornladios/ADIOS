@@ -37,6 +37,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = bpsplit$(EXEEXT) bpappend$(EXEEXT) bpgettime$(EXEEXT)
+@HAVE_DMALLOC_TRUE@am__append_1 = -ldmalloc
+@HAVE_DMALLOC_TRUE@am__append_2 = -ldmalloc
+@HAVE_DMALLOC_TRUE@am__append_3 = -ldmalloc
 subdir = utils/bpsplit
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -56,18 +59,18 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_bpappend_OBJECTS = bpappend.$(OBJEXT)
+am_bpappend_OBJECTS = bpappend-bpappend.$(OBJEXT)
 bpappend_OBJECTS = $(am_bpappend_OBJECTS)
 am__DEPENDENCIES_1 =
-bpappend_DEPENDENCIES = $(top_builddir)/src/libadios_int_nompi.a \
+bpappend_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
 	$(am__DEPENDENCIES_1)
-am_bpgettime_OBJECTS = bpgettime.$(OBJEXT)
+am_bpgettime_OBJECTS = bpgettime-bpgettime.$(OBJEXT)
 bpgettime_OBJECTS = $(am_bpgettime_OBJECTS)
-bpgettime_DEPENDENCIES = $(top_builddir)/src/libadios_int_nompi.a \
+bpgettime_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
 	$(am__DEPENDENCIES_1)
-am_bpsplit_OBJECTS = bpsplit.$(OBJEXT)
+am_bpsplit_OBJECTS = bpsplit-bpsplit.$(OBJEXT)
 bpsplit_OBJECTS = $(am_bpsplit_OBJECTS)
-bpsplit_DEPENDENCIES = $(top_builddir)/src/libadios_int_nompi.a \
+bpsplit_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
 	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
@@ -235,15 +238,20 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 bpsplit_SOURCES = bpsplit.c
-bpsplit_LDFLAGS = $(MXML_LDFLAGS)
-bpsplit_LDADD = $(top_builddir)/src/libadios_int_nompi.a $(MXML_LIBS)
+bpsplit_LDADD = $(top_builddir)/src/libadiosread_nompi.a \
+	$(am__append_1)
 bpappend_SOURCES = bpappend.c
-bpappend_LDFLAGS = $(MXML_LDFLAGS)
-bpappend_LDADD = $(top_builddir)/src/libadios_int_nompi.a $(MXML_LIBS)
+bpappend_LDADD = $(top_builddir)/src/libadiosread_nompi.a \
+	$(am__append_2)
 bpgettime_SOURCES = bpgettime.c
-bpgettime_LDFLAGS = $(MXML_LDFLAGS)
-bpgettime_LDADD = $(top_builddir)/src/libadios_int_nompi.a \
-	$(MXML_LIBS)
+bpgettime_LDADD = $(top_builddir)/src/libadiosread_nompi.a \
+	$(am__append_3)
+@HAVE_DMALLOC_TRUE@bpsplit_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+@HAVE_DMALLOC_TRUE@bpappend_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+@HAVE_DMALLOC_TRUE@bpgettime_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+@HAVE_DMALLOC_TRUE@bpsplit_LDFLAGS = $(DMALLOC_LDFLAGS)
+@HAVE_DMALLOC_TRUE@bpappend_LDFLAGS = $(DMALLOC_LDFLAGS)
+@HAVE_DMALLOC_TRUE@bpgettime_LDFLAGS = $(DMALLOC_LDFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -329,6 +337,24 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
+
+bpappend-bpappend.o: bpappend.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bpappend_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bpappend-bpappend.o `test -f 'bpappend.c' || echo '$(srcdir)/'`bpappend.c
+
+bpappend-bpappend.obj: bpappend.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bpappend_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bpappend-bpappend.obj `if test -f 'bpappend.c'; then $(CYGPATH_W) 'bpappend.c'; else $(CYGPATH_W) '$(srcdir)/bpappend.c'; fi`
+
+bpgettime-bpgettime.o: bpgettime.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bpgettime_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bpgettime-bpgettime.o `test -f 'bpgettime.c' || echo '$(srcdir)/'`bpgettime.c
+
+bpgettime-bpgettime.obj: bpgettime.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bpgettime_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bpgettime-bpgettime.obj `if test -f 'bpgettime.c'; then $(CYGPATH_W) 'bpgettime.c'; else $(CYGPATH_W) '$(srcdir)/bpgettime.c'; fi`
+
+bpsplit-bpsplit.o: bpsplit.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bpsplit_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bpsplit-bpsplit.o `test -f 'bpsplit.c' || echo '$(srcdir)/'`bpsplit.c
+
+bpsplit-bpsplit.obj: bpsplit.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bpsplit_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bpsplit-bpsplit.obj `if test -f 'bpsplit.c'; then $(CYGPATH_W) 'bpsplit.c'; else $(CYGPATH_W) '$(srcdir)/bpsplit.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

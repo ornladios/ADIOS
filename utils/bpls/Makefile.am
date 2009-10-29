@@ -7,12 +7,10 @@ bin_PROGRAMS = bpls
 
 bpls_SOURCES = bpls.c 
 bpls_CFLAGS = -DNOMPI -g 
-bpls_LDFLAGS = $(MXML_LDFLAGS)
 bpls_LDADD = $(top_builddir)/src/libadiosread_nompi.a 
-bpls_LDADD += $(MXML_LIBS)
 
 if HAVE_DMALLOC
-bpls_CFLAGS += -DDMALLOC  $(DMALLOC_CPPFLAGS)
-bpls_LDFLAGS +=  $(DMALLOC_LDFLAGS)
+bpls_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+bpls_LDFLAGS =  $(DMALLOC_LDFLAGS)
 bpls_LDADD += -ldmalloc
 endif

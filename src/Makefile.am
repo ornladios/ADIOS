@@ -22,6 +22,7 @@ libadios_a_SOURCES = adios.c \
                      adios_vtk.c \
                      adios_provenance.c \
                      adios_internals.c \
+                     adios_internals_mxml.c \
                      adios_socket.c \
                      adios_bp_v1.c  \
                      adios_bp_v2.c  \
@@ -53,23 +54,9 @@ libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 endif   # BUILD_WRITE
 
 include_HEADERS += adios.h \
-                   adios_types.h
-
-lib_LIBRARIES += libadios_int.a
-libadios_int_a_SOURCES= adios_internals.c \
-                        adios_transport_hooks_dummy.c \
-                        adios_bp_v1.c \
-                        adios_endianness.c 
-libadios_int_a_CPPFLAGS = $(MXML_CPPFLAGS)
-#libadios_int_a_LIBADD = $(MXML_LIBS)
-
-lib_LIBRARIES += libadios_int_nompi.a
-libadios_int_nompi_a_SOURCES=adios_internals_nompi.c \
-                        adios_transport_hooks_dummy.c \
-                        adios_bp_v1.c \
-                        adios_endianness.c 
-libadios_int_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS)
-#libadios_int_nompi_a_LIBADD = $(MXML_LIBS)
+                   adios_types.h \
+                   adios_read.h \
+                   mpidummy.h
 
 lib_LIBRARIES += libadiosread.a
 libadiosread_a_SOURCES = adios_bp_v1.c \
@@ -77,16 +64,13 @@ libadiosread_a_SOURCES = adios_bp_v1.c \
 		      bp_utils.c \
                       futils.c \
                       adios_error.c \
-		      adios_read.c
-#		      adios_internals.c 
+		      adios_read.c \
+		      adios_internals.c \
+                      adios_transport_hooks_dummy.c
 if BUILD_FORTRAN
 libadiosread_a_SOURCES += adiosf_read.c adiosf_read_mod.F90
 include_HEADERS += adiosf_read.mod 
-#noinst_LIBRARIES = libadiosf_read_donotuse.a
-#libadiosf_read_donotuse_a_SOURCES = adiosf_read.F90
 endif
-libadiosread_a_CPPFLAGS = $(MXML_CPPFLAGS)
-#libadiosread_a_LIBADD = 
 
 lib_LIBRARIES += libadiosread_nompi.a
 libadiosread_nompi_a_SOURCES = mpidummy.c\
@@ -95,19 +79,17 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
 		      bp_utils.c \
                       futils.c \
                       adios_error.c \
-		      adios_read.c 
+		      adios_read.c \
+		      adios_internals.c \
+                      adios_transport_hooks_dummy.c
 if BUILD_FORTRAN
 libadiosread_nompi_a_SOURCES += adiosf_read.c adiosf_read_mod.F90
 endif
 
-libadiosread_nompi_a_CPPFLAGS = $(MXML_CPPFLAGS) -DNOMPI 
-include_HEADERS += adios_internals.h \
-                   adios_transport_hooks.h 
-include_HEADERS += adios_read.h \
-                   mpidummy.h
+libadiosread_nompi_a_CPPFLAGS = -DNOMPI 
 CC=$(MPICC)
 
 if HAVE_DMALLOC
+libadiosread_a_CPPFLAGS = -DDMALLOC $(DMALLOC_CPPFLAGS)
 libadiosread_nompi_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
-libadiosread_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
 endif
