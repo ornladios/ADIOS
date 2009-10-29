@@ -6,6 +6,10 @@ Packaging:
 New features:
     write an adiosf module for F90 like adiosf_read in src/adiosf_read_mod.F90
 
+Build:
+    configure: test mxml version 2.5 or higher
+    merge libadios_int into libadios_read
+
 BUGS:
     configure: FC=mpif90 on ewok breaks configure (it checks if Fortran lib can link with a C main program)
 
@@ -44,6 +48,8 @@ Doc:
         add tutorial on reading
         Section 12 is one page (Advanced programming)
         Section 14 FAQ is empty
+        add note on not handling NaN values
+        describe how to add a new transport method
 
     write INSTALL
     write README
