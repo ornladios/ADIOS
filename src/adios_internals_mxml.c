@@ -10,8 +10,8 @@
 // xml parser
 #include <mxml.h>
 
-#ifdef NOMPI
-    /* Sequential processes can use the library compiled with -DNOMPI */
+#ifdef _NOMPI
+    /* Sequential processes can use the library compiled with -D_NOMPI */
 #   include "mpidummy.h"
 #else
     /* Parallel applications should use MPI to communicate  */

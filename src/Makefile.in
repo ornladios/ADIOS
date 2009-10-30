@@ -203,6 +203,7 @@ BUILD_FORTRAN_FALSE = @BUILD_FORTRAN_FALSE@
 BUILD_FORTRAN_TRUE = @BUILD_FORTRAN_TRUE@
 BUILD_WRITE_FALSE = @BUILD_WRITE_FALSE@
 BUILD_WRITE_TRUE = @BUILD_WRITE_TRUE@
+#Note: -DNOMPI chokes IBM's bgxlf compiler but it can pass -D_NOMPI. 
 CC = $(MPICC)
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -369,7 +370,7 @@ libadiosread_nompi_a_SOURCES = mpidummy.c adios_bp_v1.c \
 	adios_endianness.c bp_utils.c futils.c adios_error.c \
 	adios_read.c adios_internals.c adios_transport_hooks.c \
 	$(am__append_8)
-libadiosread_nompi_a_CPPFLAGS = -DNOMPI $(am__append_9)
+libadiosread_nompi_a_CPPFLAGS = -D_NOMPI $(am__append_9)
 @HAVE_DMALLOC_TRUE@libadiosread_a_CPPFLAGS = -DDMALLOC $(DMALLOC_CPPFLAGS)
 all: all-am
 

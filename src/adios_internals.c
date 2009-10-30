@@ -87,7 +87,7 @@ int adios_set_buffer_size ()
 	printf("- memsize  = %10i GB\n", memsize/1024/1024/1024);
 	
 	return memsize/1024;
-        /*return (long)memsize/1024;   /*this type cast didn't work*/	
+        //return (long)memsize/1024;   /*this type cast didn't work*/	
 	
 
 #else

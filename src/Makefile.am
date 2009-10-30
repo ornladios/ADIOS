@@ -88,7 +88,9 @@ if BUILD_FORTRAN
 libadiosread_nompi_a_SOURCES += adiosf_read.c adiosf_read_mod.F90
 endif
 
-libadiosread_nompi_a_CPPFLAGS = -DNOMPI
+libadiosread_nompi_a_CPPFLAGS = -D_NOMPI
+#Note: -DNOMPI chokes IBM's bgxlf compiler but it can pass -D_NOMPI. 
+
 CC=$(MPICC)
 
 if HAVE_DMALLOC

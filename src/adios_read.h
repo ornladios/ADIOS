@@ -7,8 +7,8 @@
 
 #include "adios_types.h"
 
-#ifdef NOMPI
-    /* Sequential processes can use the library compiled with -DNOMPI */
+#ifdef _NOMPI
+    /* Sequential processes can use the library compiled with -D_NOMPI */
 #   include "mpidummy.h"
 #else
     /* Parallel applications should use MPI to communicate file info and slices of data */
@@ -70,7 +70,7 @@ char *adios_errmsg();
 /** Open an adios file.
  *  IN:  fname    pathname of file to be opened
  *       comm     the MPI communicator of all processes that want to read data from the file
- *                 if compile with -DNOMPI, pass any integer here. 
+ *                 if compile with -D_NOMPI, pass any integer here. 
  *  RETURN:       pointer to an ADIOS_FILE struct, NULL on error (sets adios_errno)
  */
 ADIOS_FILE * adios_fopen (const char * fname, MPI_Comm comm);

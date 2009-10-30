@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-#ifdef NOMPI
+#ifdef _NOMPI
 #   include "mpidummy.h"
 #else
 #   include "mpi.h"

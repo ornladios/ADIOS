@@ -1,6 +1,6 @@
 
-#ifdef NOMPI
-    /* Sequential processes can use the library compiled with -DNOMPI */
+#ifdef _NOMPI
+    /* Sequential processes can use the library compiled with -D_NOMPI */
 #   define ADIOS_EMPTY_TRANSPORTS
 #else
     /* Parallel applications should use MPI to communicate file info and slices of data */
