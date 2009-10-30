@@ -78,6 +78,7 @@ elif [ `hostname | cut -c 1-4` == "euge" ]; then
 
     source /etc/profile.d/modules.sh
     module load netcdf/3.6.2-linux
+    module load hdf5/1.8.1-linux
 
     ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eugene \
             --enable-dependency-tracking \
