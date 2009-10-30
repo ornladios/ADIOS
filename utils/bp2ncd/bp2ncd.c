@@ -80,7 +80,7 @@ int ncd_attr_str_ds (int ncid
         //printf("\tpathname:%s\n",fullname);
         retval=nc_inq_varid(ncid,fullname,&valid);
         if(retval < 0)
-           return; 
+           return 1; 
         else
             strcpy(fullname, name);
         //ERR(retval); 
@@ -93,7 +93,7 @@ int ncd_attr_str_ds (int ncid
     printf(DIVIDER);
     if (retval == NC_NOERR ) {
        printf("\tattribute (%s) existed\n", fullname);
-       return;
+       return 0;
      }
     else
        printf("\tattribute: %s \n", fullname);
@@ -555,7 +555,7 @@ int ncd_dataset (int ncid
         nc_redef(ncid);
         nc_inq_dimid ( ncid, fullname, &nc_dimid);
         if ( var_dims[j].rank == 0)
-            return;
+            return 0;
         if ( nc_dimid < 0) {
            retval = nc_def_dim ( ncid, fullname, var_dims[j].rank, &nc_dimid);
            ERR(retval);
