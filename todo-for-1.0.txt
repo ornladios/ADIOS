@@ -13,7 +13,7 @@ New features:
 Build:
     - configure: test mxml version 2.5 or higher
     + merge libadios_int into libadios_read
-    - merge adios_internals.c and adios_internals_nompi.c
+    + merge adios_internals.c and adios_internals_nompi.c
 
 BUGS:
     - configure: FC=mpif90 on ewok breaks configure (it checks if Fortran lib can link with a C main program)
