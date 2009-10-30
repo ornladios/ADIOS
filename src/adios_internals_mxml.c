@@ -10,9 +10,12 @@
 // xml parser
 #include <mxml.h>
 
-#include "config.h"
-#if HAVE_MPI
-#include "mpi.h"
+#ifdef NOMPI
+    /* Sequential processes can use the library compiled with -DNOMPI */
+#   include "mpidummy.h"
+#else
+    /* Parallel applications should use MPI to communicate  */
+#   include "mpi.h"
 #endif
 
 #include "adios.h"
@@ -2668,13 +2671,13 @@ int adios_parse_config (const char * config)
     }
 
     char * buffer = NULL;
-#if HAVE_MPI
+//#if HAVE_MPI
     int buffer_size = 0;
     int rank;
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
     if (rank == 0)
     {
-#endif
+//#endif
         fp = fopen (config, "r");
         if (!fp)
         {
@@ -2708,7 +2711,7 @@ int adios_parse_config (const char * config)
             return 0;
         }
         fclose (fp);
-#if HAVE_MPI
+//#if HAVE_MPI
         buffer_size = s.st_size;
         MPI_Bcast (&buffer_size, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
         MPI_Bcast (buffer, buffer_size, MPI_BYTE, 0, MPI_COMM_WORLD);
@@ -2728,7 +2731,7 @@ int adios_parse_config (const char * config)
         MPI_Bcast (buffer, buffer_size, MPI_BYTE, 0, MPI_COMM_WORLD);
         buffer [buffer_size] = 0;
     }
-#endif
+//#endif
 
     doc = mxmlLoadString (NULL, buffer, MXML_TEXT_CALLBACK);
     free (buffer);

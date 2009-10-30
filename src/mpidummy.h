@@ -2,7 +2,7 @@
 #define __MPI_DUMMY_H__
 
 /*
-   A dummy MPI implementation for the BP READ API, to have an MPI-free version of the API
+   A dummy MPI 'implementation' for the BP READ API, to have an MPI-free version of the API
 */
 
 #include <sys/types.h>
@@ -27,6 +27,10 @@ typedef int MPI_Fint;
 #define MPI_SEEK_END                SEEK_END
 #define MPI_BYTE                    1          /* I need the size of the type here */
 #define MPI_INFO_NULL               NULL
+
+#define MPI_COMM_WORLD              1
+
+#define MPI_INTEGER                 1
 
 int MPI_Init(int *argc, char ***argv);
 

@@ -1,5 +1,11 @@
-#include <stdlib.h>
-#include "mpi.h"
+
+#ifdef NOMPI
+    /* Sequential processes can use the library compiled with -DNOMPI */
+#   define ADIOS_EMPTY_TRANSPORTS
+#else
+    /* Parallel applications should use MPI to communicate file info and slices of data */
+#endif
+
 #include "adios.h"
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"

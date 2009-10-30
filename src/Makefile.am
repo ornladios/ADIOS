@@ -65,8 +65,7 @@ libadiosread_a_SOURCES = adios_bp_v1.c \
                       futils.c \
                       adios_error.c \
 		      adios_read.c \
-		      adios_internals.c \
-                      adios_transport_hooks_dummy.c
+		      adios_internals.c 
 if BUILD_FORTRAN
 libadiosread_a_SOURCES += adiosf_read.c adiosf_read_mod.F90
 include_HEADERS += adiosf_read.mod 
@@ -81,12 +80,15 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
                       adios_error.c \
 		      adios_read.c \
 		      adios_internals.c \
-                      adios_transport_hooks_dummy.c
+                      adios_transport_hooks.c   
+# Note: utils/adios_lint needs to link with adios_internals_mxml.o which depends
+#       on adios_transport_hooks.c. We put this latter one in libadiosread_nompi
+#       so we do not need to make another _nompi lib just for adios_lint
 if BUILD_FORTRAN
 libadiosread_nompi_a_SOURCES += adiosf_read.c adiosf_read_mod.F90
 endif
 
-libadiosread_nompi_a_CPPFLAGS = -DNOMPI 
+libadiosread_nompi_a_CPPFLAGS = -DNOMPI
 CC=$(MPICC)
 
 if HAVE_DMALLOC

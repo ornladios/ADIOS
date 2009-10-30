@@ -9,11 +9,6 @@
 #include <stdint.h>
 #include <sys/stat.h>
 
-#include "config.h"
-#if HAVE_MPI
-#include "mpi.h"
-#endif
-
 #include "adios.h"
 //#include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
