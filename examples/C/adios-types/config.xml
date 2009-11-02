@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+    <adios-group name="temperature" coordination-communicator="comm">
+    <var name="var_byte" type="byte"/>
+    <var name="var_short" type="short"/>
+    <var name="var_int" type="integer"/>
+    <var name="var_long" type="long"/>
+
+    <var name="var_ubyte" type="unsigned byte"/>
+    <var name="var_ushort" type="unsigned short"/>
+    <var name="var_uint" type="unsigned integer"/>
+    <var name="var_ulong" type="unsigned long"/>
+
+    <var name="var_real" type="real"/>
+    <var name="var_double" type="double"/>
+    <var name="var_long_double" type="long double"/>
+
+    <var name="var_string" type="string"/>
+    <var name="var_complex" type="complex"/>
+    <var name="var_double_complex" type="double_complex"/>
+</adios-group>
+
+<method group="temperature" method="MPI"/>
+
+<buffer size-MB="2" allocate-time="now"/>
+
+</adios-config>
+
