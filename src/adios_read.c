@@ -781,8 +781,13 @@ static void adios_get_dimensions (struct adios_index_var_struct_v1 *var_root, in
            in Fortran array, it can only be the last dim
            (always the slowest changing dim)
         */
-        if (ldims[0] == 1 && gdims[0] == 0) {
-            // first dimension is the time (C array)
+        if (ldims[0] == 1 && gdims[*ndim-1] == 0) {
+            /* first dimension is the time (C array)
+             * ldims[0] = 1 but gdims does not contain time info and 
+             * gdims[0] is 1st data dimension and 
+             * gdims is shorter by one value than ldims in case of C.
+             * Therefore, gdims[*ndim-1] = 0 if there is a time dimension. 
+             */
             *timedim = 0;
             // error check
             if (file_is_fortran && *ndim > 1) {
@@ -793,6 +798,9 @@ static void adios_get_dimensions (struct adios_index_var_struct_v1 *var_root, in
                 }
                 fprintf(stderr, ")\n");
             }
+            (*dims)[0] = ntsteps;
+            for (i=1; i < *ndim; i++) 
+                 (*dims)[i]=gdims[i-1];
         }
         else if (ldims[*ndim-1] == 1 && gdims[*ndim-1] == 0) {
             // last dimension is the time (Fortran array)
@@ -805,11 +813,13 @@ static void adios_get_dimensions (struct adios_index_var_struct_v1 *var_root, in
                 }
                 fprintf(stderr, ")\n");
             }
-        }
-        for (i=0; i < *ndim; i++) 
-             (*dims)[i]=gdims[i];
-        if (*timedim > -1) {
+            for (i=0; i < *ndim-1; i++) 
+                 (*dims)[i]=gdims[i];
              (*dims)[*timedim] = ntsteps;
+        } else {
+            // no time dimenstion
+            for (i=0; i < *ndim; i++) 
+                 (*dims)[i]=gdims[i];
         }
     }
 }
