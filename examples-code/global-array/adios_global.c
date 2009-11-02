@@ -1,3 +1,10 @@
+/* ADIOS C Example: write a global array from N processors with gwrite
+ *
+ * How to run: mpirun -np <N> adios_global
+ * Output: adios_global.bp
+ * ADIOS config file: adios_global.xml
+ *
+*/
 #include <stdio.h>
 #include <string.h>
 #include "mpi.h"
@@ -22,9 +29,9 @@ int main (int argc, char ** argv)
 	for (i = 0; i < NX; i++)
 		t [i] = 10*rank+i;
 
-	strcpy (filename, "restart.bp");
+	strcpy (filename, "adios_global.bp");
 
-	adios_init ("config_global.xml");
+	adios_init ("adios_global.xml");
 
 	adios_open (&adios_handle, "temperature", filename, "w");
 	#include "gwrite_temperature.ch"

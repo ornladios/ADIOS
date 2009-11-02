@@ -34,8 +34,8 @@ int main (int argc, char ** argv)
 	/* every P/2 processes write into the same file 
 	 * there are 2 files generated. 
 	 */
-	sprintf (filename, "restart_%5.5d.bp", color);
-	adios_init ("config_global.xml");
+	sprintf (filename, "adios_global_%5.5d.bp", color);
+	adios_init ("adios_global.xml");
 	adios_open (&adios_handle, "temperature", filename, "w");
 	#include "gwrite_temperature.ch"
 	adios_close (adios_handle);
