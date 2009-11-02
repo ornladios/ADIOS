@@ -27,7 +27,7 @@ int main (int argc, char ** argv)
 	MPI_Comm_size (comm, &size);
 
 	for (i = 0; i < NX; i++)
-		t [i] = 10*rank+i;
+		t[i] = rank*NX + i;
 
 	strcpy (filename, "adios_global.bp");
 
