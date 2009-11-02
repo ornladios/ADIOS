@@ -4,7 +4,7 @@
 #include "adios.h"
 
 /*************************************************************/
-/*   Example of writing various types of variable in ADIOS   */
+/*          Example of writing arrays in ADIOS               */
 /*************************************************************/
 int main (int argc, char ** argv) 
 {
