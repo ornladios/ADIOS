@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <adios-config host-language="C">
-    <adios-group name="temperature" coordination-communicator="comm">
+    <adios-group name="my_group" coordination-communicator="comm">
     <var name="var_byte" type="byte"/>
     <var name="var_short" type="short"/>
     <var name="var_int" type="integer"/>
@@ -17,12 +17,12 @@
 
     <var name="var_string" type="string"/>
     <var name="var_complex" type="complex"/>
-    <var name="var_double_complex" type="double_complex"/>
+    <var name="var_double_complex" type="double complex"/>
 </adios-group>
 
-<method group="temperature" method="MPI"/>
+<method group="my_group" method="MPI"/>
 
-<buffer size-MB="2" allocate-time="now"/>
+<buffer size-MB="20" allocate-time="now"/>
 
 </adios-config>
 
