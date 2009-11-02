@@ -7,7 +7,9 @@
     <global-bounds dimensions="size,NX" offsets="rank,0">
        <var name="temperature" gwrite="t" type="double" dimensions="iter,1,NX"/>
     </global-bounds>
-    <attribute name="recorded-date" path="/" value="Sep-19-2008" type="string"/>
+    <attribute name="description" path="/temperature" 
+        value="Global array written from 'size' processes over several timesteps" 
+        type="string"/>
 </adios-group>
 
 <method group="temperature" method="MPI"/>
