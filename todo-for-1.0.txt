@@ -17,6 +17,7 @@ Build:
 
 BUGS:
     - configure: FC=mpif90 on ewok breaks configure (it checks if Fortran lib can link with a C main program)
+    - PGI doesn't support "long double" type.
 
 Testing:
     - Install and run genarray and bp_read_f, bpls on
