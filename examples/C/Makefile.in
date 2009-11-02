@@ -160,7 +160,6 @@ PHDF5_LIBS = @PHDF5_LIBS@
 PTL_FALSE = @PTL_FALSE@
 PTL_TRUE = @PTL_TRUE@
 RANLIB = @RANLIB@
-SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -209,7 +208,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = manual global-array global-array-time 
+SUBDIRS = manual global-array global-array-time adios-types
 all: all-recursive
 
 .SUFFIXES:
