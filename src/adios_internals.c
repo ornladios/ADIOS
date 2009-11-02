@@ -21,11 +21,7 @@ static uint64_t adios_buffer_size_requested = 0;
 static uint64_t adios_buffer_size_max = 0;
 static uint64_t adios_buffer_size_remaining = 0;
 static int adios_buffer_alloc_percentage = 0;  // 1 = yes, 0 = no
-static enum ADIOS_BUFFER_ALLOC_WHEN {ADIOS_BUFFER_ALLOC_UNKNOWN
-                                    ,ADIOS_BUFFER_ALLOC_NOW
-                                    ,ADIOS_BUFFER_ALLOC_LATER
-                                    } adios_buffer_alloc_when
-                                         = ADIOS_BUFFER_ALLOC_UNKNOWN;
+static enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when = ADIOS_BUFFER_ALLOC_UNKNOWN;
 
 static struct adios_method_list_struct * adios_methods = 0;
 static struct adios_group_list_struct * adios_groups = 0;
