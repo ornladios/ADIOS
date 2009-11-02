@@ -3,9 +3,9 @@
     <adios-group name="temperature" coordination-communicator="comm">
         <attribute name="project-name" path="/" value="adios_posix" type="string"/>
         <var name="NX" type="integer"/>
-        <var name="temperature" gwrite="t" path="/" type="double" dimensions="NX"/>
-        <attribute name="description" path="temperature" 
-                   value="Temperature array written from a single process" 
+        <var name="temperature" gwrite="t" gread="t" path="/" type="double" dimensions="NX"/>
+        <attribute name="description" path="/temperature" 
+                   value="Temperature array" 
                    type="string"/>
 </adios-group>
 

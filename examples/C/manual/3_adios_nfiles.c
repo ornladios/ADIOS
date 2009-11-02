@@ -15,6 +15,7 @@ int main (int argc, char ** argv)
     int         rank, size;
     int         NX = 10; 
     double      t[NX];
+    int         i;
 
     /* ADIOS variables declarations for matching gwrite_temperature.ch */
     int         adios_err;
@@ -35,6 +36,9 @@ int main (int argc, char ** argv)
     key = rank / 2;
     MPI_Comm_split (MPI_COMM_WORLD, color, key, &comm);
 
+    for (i=0; i<NX; i++)
+        t[i] = rank*NX + i;
+            
     /* every P/2 processes write into the same file 
      * there are 2 files generated. 
      */
