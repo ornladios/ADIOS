@@ -152,6 +152,7 @@ AC_CONFIG_FILES([Makefile
                  examples/C/manual/Makefile
                  examples/C/global-array/Makefile
                  examples/C/global-array-time/Makefile
+                 examples/C/adios-types/Makefile
                  examples/Fortran/Makefile
                  examples/Fortran/global-array/Makefile
                 ])
