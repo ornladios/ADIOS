@@ -147,10 +147,13 @@ AC_CONFIG_FILES([Makefile
                  utils/bp2ascii/Makefile
                  utils/bpsplit/Makefile
                  utils/bpls/Makefile
-                 examples-code/Makefile
-                 examples-code/global-array/Makefile
-                 examples-code/global-array-time/Makefile
-                 examples-code/time-index/Makefile
+                 examples/Makefile
+                 examples/C/Makefile
+                 examples/C/manual/Makefile
+                 examples/C/global-array/Makefile
+                 examples/C/global-array-time/Makefile
+                 examples/Fortran/Makefile
+                 examples/Fortran/global-array/Makefile
                 ])
 
 AC_OUTPUT

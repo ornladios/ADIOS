@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+    <adios-group name="temperature" coordination-communicator="comm">
+        <attribute name="project-name" path="/" value="adios_posix" type="string"/>
+        <var name="NX" type="integer"/>
+        <var name="temperature" gwrite="t" path="/" type="double" dimensions="NX"/>
+        <attribute name="description" path="temperature" 
+                   value="Temperature array written from a single process" 
+                   type="string"/>
+</adios-group>
+
+<!-- Use the POSIX method for 2_adios_posix example first. 
+     Then change the method for MPI only and rerun that example.
+     Use the MPI method only for 3_adios_nfiles example.
+  -->
+<method group="temperature" method="POSIX"/>
+<!--method group="temperature" method="MPI"/-->
+
+<buffer size-MB="1" allocate-time="now"/>
+
+</adios-config>
+

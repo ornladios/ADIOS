@@ -20,7 +20,7 @@ VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ../..
+top_builddir = ../../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -36,15 +36,10 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = adios_global$(EXEEXT) adios_global_2files$(EXEEXT) \
-	adiosf_global$(EXEEXT)
+bin_PROGRAMS = adiosf_global$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_1 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_3 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_4 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_5 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_6 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-subdir = examples-code/global-array
+subdir = examples/Fortran/global-array
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_dmalloc.m4 \
@@ -63,20 +58,12 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_adios_global_OBJECTS = adios_global.$(OBJEXT)
-adios_global_OBJECTS = $(am_adios_global_OBJECTS)
+am_adiosf_global_OBJECTS = adiosf_global.$(OBJEXT)
+adiosf_global_OBJECTS = $(am_adiosf_global_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
-adios_global_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
-am_adios_global_2files_OBJECTS = adios_global_2files.$(OBJEXT)
-adios_global_2files_OBJECTS = $(am_adios_global_2files_OBJECTS)
-adios_global_2files_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
-am_adiosf_global_OBJECTS = adiosf_global.$(OBJEXT)
-adiosf_global_OBJECTS = $(am_adiosf_global_OBJECTS)
 adiosf_global_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
@@ -88,18 +75,8 @@ LTPPFCCOMPILE = $(LIBTOOL) --mode=compile $(FC) $(DEFS) \
 	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
 	$(AM_FCFLAGS) $(FCFLAGS)
 FCLD = $(FC)
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
-	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
-	$(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(adios_global_SOURCES) $(adios_global_2files_SOURCES) \
-	$(adiosf_global_SOURCES)
-DIST_SOURCES = $(adios_global_SOURCES) $(adios_global_2files_SOURCES) \
-	$(adiosf_global_SOURCES)
+SOURCES = $(adiosf_global_SOURCES)
+DIST_SOURCES = $(adiosf_global_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -251,18 +228,10 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
-adios_global_SOURCES = adios_global.c
-adios_global_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_2)
-adios_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
-adios_global_2files_SOURCES = adios_global_2files.c
-adios_global_2files_LDADD = $(top_builddir)/src/libadios.a \
-	$(MXML_LIBS) $(am__append_4)
-adios_global_2files_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
 adiosf_global_SOURCES = adiosf_global.F90
 adiosf_global_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_6)
-adiosf_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_5)
+	$(am__append_2)
+adiosf_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
 CLEANFILES = *.bp
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
@@ -271,7 +240,7 @@ FCLINK = \
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .F90 .c .lo .o .obj
+.SUFFIXES: .F90 .lo .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -281,9 +250,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  examples-code/global-array/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  examples/Fortran/global-array/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  examples-code/global-array/Makefile
+	  $(AUTOMAKE) --gnu  examples/Fortran/global-array/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -329,12 +298,6 @@ clean-binPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-adios_global$(EXEEXT): $(adios_global_OBJECTS) $(adios_global_DEPENDENCIES) 
-	@rm -f adios_global$(EXEEXT)
-	$(LINK) $(adios_global_LDFLAGS) $(adios_global_OBJECTS) $(adios_global_LDADD) $(LIBS)
-adios_global_2files$(EXEEXT): $(adios_global_2files_OBJECTS) $(adios_global_2files_DEPENDENCIES) 
-	@rm -f adios_global_2files$(EXEEXT)
-	$(LINK) $(adios_global_2files_LDFLAGS) $(adios_global_2files_OBJECTS) $(adios_global_2files_LDADD) $(LIBS)
 adiosf_global$(EXEEXT): $(adiosf_global_OBJECTS) $(adiosf_global_DEPENDENCIES) 
 	@rm -f adiosf_global$(EXEEXT)
 	$(FCLINK) $(adiosf_global_LDFLAGS) $(adiosf_global_OBJECTS) $(adiosf_global_LDADD) $(LIBS)
@@ -353,15 +316,6 @@ distclean-compile:
 
 .F90.lo:
 	$(LTPPFCCOMPILE) -c -o $@ $<
-
-.c.o:
-	$(COMPILE) -c $<
-
-.c.obj:
-	$(COMPILE) -c `$(CYGPATH_W) '$<'`
-
-.c.lo:
-	$(LTCOMPILE) -c -o $@ $<
 
 mostlyclean-libtool:
 	-rm -f *.lo

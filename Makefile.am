@@ -1,1 +1,1 @@
-SUBDIRS=src utils tests examples-code
+SUBDIRS=src utils tests examples

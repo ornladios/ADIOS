@@ -4,4 +4,4 @@
 #PBS -l walltime=00:05:00,nodes=3:ppn=2
 
 cd $PBS_O_WORKDIR
-mpirun -np 6 ./adios_timeindex >& result.dat
+mpirun -np 6 ./adiosf_global >& result.dat

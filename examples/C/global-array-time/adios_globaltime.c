@@ -19,8 +19,8 @@ int main (int argc, char ** argv)
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 	MPI_Comm_size (comm, &size);
 
-	adios_init ("config_global.xml");
-    	strcpy (filename, "restart.bp");
+	adios_init ("adios_globaltime.xml");
+    	strcpy (filename, "adios_globaltime.bp");
     	for (it =0; it < 13; it++) {
 
         	for (i = 0; i < NX; i++)
@@ -30,6 +30,7 @@ int main (int argc, char ** argv)
 		    adios_open (&adios_handle, "temperature", filename, "w");
                 else
 		    adios_open (&adios_handle, "temperature", filename, "a");
+
         	#include "gwrite_temperature.ch"
         	adios_close (adios_handle);
 		MPI_Barrier (comm);
