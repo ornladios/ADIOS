@@ -66,16 +66,16 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
     line="" 
     if (dimsname==""):
        if (typename=="string"):
-    	   if (language_sw==1):
+           if (language_sw==1):
                line="len_trim("+gwname+")" 
                liner="len_trim("+grname+")" 
-	   else:	
+           else:        
                line="strlen("+gwname+")" 
                liner="strlen("+grname+")" 
        else:
-	   line=str(getsize[typename])
-	   if (readyn==True):
-		liner=line 
+           line=str(getsize[typename])
+           if (readyn==True):
+                liner=line 
     else:
        str_varsize=str(getsize[typename])
        dimsarr=dimsname.split(',');
@@ -85,7 +85,7 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
                line=str_varsize+' * '+'('+dimsele+')'
             elif(var_gname_dict.has_key(dimsele)):
                line=str_varsize+' * '+'('+var_gname_dict[dimsele]+')'
-	    else:
+            else:
                line=str_varsize
          else:
             if(dimsele.isdigit()):
@@ -96,7 +96,8 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
                line = line + ' * (' + var_gname_dict[dimsele]+')'
             else: 
                line = line
-       liner = line
+       if (readyn==True):
+           liner = line
     sizeformular.append(line)    
     var_size_dict[varname]=line
 
@@ -112,21 +113,21 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
                  + ", adios_buf_size, adios_err)\n"
     elif(language_sw==2):
         if (dimsname==""):
-	   if(typename=="string"): 
+           if(typename=="string"): 
               linew = "adios_write (adios_handle, "          \
                  + "\"" + varname + "\", "                   \
                  + gwname + ");\n"                         
-	   else: 
+           else: 
               linew = "adios_write (adios_handle, "          \
                  + "\"" + varname + "\", &"                  \
                  + gwname + ");\n"                         
            if (readyn):
-	     if(typename=="string"): 
+             if(typename=="string"): 
                liner = "adios_buf_size = "+liner                  \
                      + ";\nadios_read (adios_handle, "      \
                      + "\"" + varname + "\", "             \
                      + grname + ", adios_buf_size);\n"
-	     else: 
+             else: 
                liner = "adios_buf_size = "+liner                  \
                      + ";\nadios_read (adios_handle, "      \
                      + "\"" + varname + "\", &"             \
@@ -136,8 +137,7 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
                  + "\"" + varname + "\", "               \
                  + gwname + ");\n"                         
            if (readyn): 
-              liner = "adios_buf_size = "                  \
-                     + str(getsize[typename])              \
+              liner = "adios_buf_size = " +liner                 \
                      + ";\nadios_read (adios_handle, " \
                      + "\"" + varname + "\", "               \
                      + grname + ", adios_buf_size);\n"
@@ -216,7 +216,7 @@ def getVarlistFromXML(xmlFile):
         if(str(attkeys[0]).lower()=="host-language"):
            language=group[0].getAttribute(attkeys[0])
         if (language.lower()=="fortran"):
-    	    language_flag=1
+            language_flag=1
         elif(language.lower()=="c" or language.lower()=="cpp"):
             language_flag=2
         else:
@@ -244,7 +244,7 @@ def getVarlistFromXML(xmlFile):
                 elif (akeystr=="host-language"):
                     language=group.attributes[akey].value
                     if (language.lower()=="fortran"):
-               	        glanguage=1
+                               glanguage=1
                     elif(language.lower()=="c" or language.lower()=="cpp"):
                         glanguage=2
                     else:
@@ -262,28 +262,28 @@ def getVarlistFromXML(xmlFile):
             nodelist=group.childNodes
              
             #line = ""
-	    #if(glanguage==1):
-	    #	if (coord_var!= ""):
-	    #	    line = line                              \
-	    #		+ "call adios_write (adios_handle, "\
-	    #		+ "\""+coord_var+"\"//char(0), "    \
-	    #		+ coord_var +")\n"         
-	    #	if (time_var != ""):
-	    # 	    line = line                              \
-	    #		  + "call adios_write (adios_handle, "\
-	    #		  + "\""+time_var+"\"//char(0), "     \
-	    #		  + time_var +")\n"        
-	    #elif(glanguage):
-	    #	if (coord_var!= ""):
-	    #	    line = line                              \
-	    #		  + "adios_write (adios_handle, "\
-	    #		  + "\""+coord_var+"\", &"    \
-	    #		  + coord_var +");\n"         
-	    #    if (time_var != ""):
-	    #	    line = line                              \
-	    #	          + "adios_write (adios_handle, "\
-	    #		  + "\""+time_var+"\", &"     \
-	    #		  + time_var +");\n"
+            #if(glanguage==1):
+            #        if (coord_var!= ""):
+            #            line = line                              \
+            #                + "call adios_write (adios_handle, "\
+            #                + "\""+coord_var+"\"//char(0), "    \
+            #                + coord_var +")\n"         
+            #        if (time_var != ""):
+            #             line = line                              \
+            #                  + "call adios_write (adios_handle, "\
+            #                  + "\""+time_var+"\"//char(0), "     \
+            #                  + time_var +")\n"        
+            #elif(glanguage):
+            #        if (coord_var!= ""):
+            #            line = line                              \
+            #                  + "adios_write (adios_handle, "\
+            #                  + "\""+coord_var+"\", &"    \
+            #                  + coord_var +");\n"         
+            #    if (time_var != ""):
+            #            line = line                              \
+            #                  + "adios_write (adios_handle, "\
+            #                  + "\""+time_var+"\", &"     \
+            #                  + time_var +");\n"
             #items[0] = items[0]+line
             items=["",""]
             processnode(nodelist,glanguage,coord_comm,coord_var,time_var)
@@ -303,11 +303,11 @@ def getVarlistFromXML(xmlFile):
             var_gname_dict={}
             line = sizeformular[0]
             if (glanguage == 1): 
-		for i in range(1,len(sizeformular)):
+                for i in range(1,len(sizeformular)):
                     line =line +' &\n                + '+sizeformular[i]
                 items[0]="adios_groupsize = " + line+"\n"+items[0]
             elif (glanguage == 2): 
-		for i in range(1,len(sizeformular)):
+                for i in range(1,len(sizeformular)):
                     line =line +' \\\n                + '+sizeformular[i]
                 items[0]="adios_groupsize = " + line+";\n"+items[0]
 
@@ -325,6 +325,6 @@ def main(argv=None):
     #print vardict.keys()
 #    for key,value in vardict.items():
 #        if(key=="restart"): 
-#	        print key,value
+#            print key,value
 if __name__ == "__main__":
      main()
