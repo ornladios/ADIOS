@@ -36,9 +36,11 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = adios_types$(EXEEXT)
+bin_PROGRAMS = adios_types$(EXEEXT) adios_types_array$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_1 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_3 = $(PHDF5_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_4 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 subdir = examples/C/adios-types
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -66,6 +68,10 @@ am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
 adios_types_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
+am_adios_types_array_OBJECTS = adios_types_array.$(OBJEXT)
+adios_types_array_OBJECTS = $(am_adios_types_array_OBJECTS)
+adios_types_array_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -77,8 +83,8 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(adios_types_SOURCES)
-DIST_SOURCES = $(adios_types_SOURCES)
+SOURCES = $(adios_types_SOURCES) $(adios_types_array_SOURCES)
+DIST_SOURCES = $(adios_types_SOURCES) $(adios_types_array_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -233,6 +239,10 @@ adios_types_SOURCES = adios_types.c
 adios_types_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(am__append_2)
 adios_types_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
+adios_types_array_SOURCES = adios_types_array.c
+adios_types_array_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
+	$(am__append_4)
+adios_types_array_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
 CLEANFILES = *.bp
 all: all-am
 
@@ -298,6 +308,9 @@ clean-binPROGRAMS:
 adios_types$(EXEEXT): $(adios_types_OBJECTS) $(adios_types_DEPENDENCIES) 
 	@rm -f adios_types$(EXEEXT)
 	$(LINK) $(adios_types_LDFLAGS) $(adios_types_OBJECTS) $(adios_types_LDADD) $(LIBS)
+adios_types_array$(EXEEXT): $(adios_types_array_OBJECTS) $(adios_types_array_DEPENDENCIES) 
+	@rm -f adios_types_array$(EXEEXT)
+	$(LINK) $(adios_types_array_LDFLAGS) $(adios_types_array_OBJECTS) $(adios_types_array_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
