@@ -208,7 +208,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = manual global-array global-array-time adios-types
+SUBDIRS = manual global-array global-array-time adios-types adios-attributes
 all: all-recursive
 
 .SUFFIXES:
