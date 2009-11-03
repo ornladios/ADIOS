@@ -25091,7 +25091,7 @@ CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SO
 
 LIBS="$MPILIBS $LIBS"
 
-                                                                                                                                                                                                                                                ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile tests/genarray/Makefile tests/bp_read/Makefile utils/Makefile utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile utils/bpls/Makefile examples/Makefile examples/C/Makefile examples/C/manual/Makefile examples/C/global-array/Makefile examples/C/global-array-time/Makefile examples/C/adios-types/Makefile examples/Fortran/Makefile examples/Fortran/global-array/Makefile"
+                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile tests/genarray/Makefile tests/bp_read/Makefile utils/Makefile utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile utils/bpls/Makefile examples/Makefile examples/C/Makefile examples/C/manual/Makefile examples/C/global-array/Makefile examples/C/global-array-time/Makefile examples/C/adios-types/Makefile examples/C/adios-attributes/Makefile examples/Fortran/Makefile examples/Fortran/global-array/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -25868,6 +25868,7 @@ do
   "examples/C/global-array/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/C/global-array/Makefile" ;;
   "examples/C/global-array-time/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/C/global-array-time/Makefile" ;;
   "examples/C/adios-types/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/C/adios-types/Makefile" ;;
+  "examples/C/adios-attributes/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/C/adios-attributes/Makefile" ;;
   "examples/Fortran/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Fortran/Makefile" ;;
   "examples/Fortran/global-array/Makefile" ) CONFIG_FILES="$CONFIG_FILES examples/Fortran/global-array/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
