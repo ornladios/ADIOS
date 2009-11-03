@@ -11,6 +11,7 @@
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
+#include "buffer.h"
 
 extern struct adios_transport_struct * adios_transports;
 

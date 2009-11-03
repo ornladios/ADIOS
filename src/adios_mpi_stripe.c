@@ -15,6 +15,7 @@
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
+#include "buffer.h"
 
 static int adios_mpi_stripe_initialized = 0;
 

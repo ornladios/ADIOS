@@ -28,8 +28,4 @@ enum ADIOS_FLAG {adios_flag_unknown = 0
                 ,adios_flag_no = 2
                 };
 
-enum ADIOS_BUFFER_ALLOC_WHEN {ADIOS_BUFFER_ALLOC_UNKNOWN
-                             ,ADIOS_BUFFER_ALLOC_NOW
-                             ,ADIOS_BUFFER_ALLOC_LATER
-                             };
 #endif

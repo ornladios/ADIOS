@@ -304,11 +304,6 @@ struct adios_mesh_unstructured_struct
 //////////////////////////////////////////////////////////////////////////////
 // Function Delcarations
 //////////////////////////////////////////////////////////////////////////////
-int adios_set_buffer_size (void);
-
-uint64_t adios_method_buffer_alloc (uint64_t size);
-int adios_method_buffer_free (uint64_t size);
-
 uint64_t adios_size_of_var (struct adios_var_struct * v, void * data);
 uint64_t adios_size_of_attribute (struct adios_attribute_struct * a);
 
@@ -339,9 +334,9 @@ struct adios_attribute_struct * adios_find_attribute_var_by_id
                                        ,uint16_t id
                                        );
 
-void adios_parse_buffer (struct adios_file_struct * fd, char * buffer
+/*void adios_parse_buffer (struct adios_file_struct * fd, char * buffer
                         ,uint64_t len
-                        );
+                        );*/
 
 int adios_parse_dimension (const char * dimension
                           ,const char * global_dimension

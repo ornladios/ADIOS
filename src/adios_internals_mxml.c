@@ -1,11 +1,7 @@
-#include <math.h>
 #include <string.h>
-#include <unistd.h>
-#include <limits.h>
 #include <stdlib.h>
-#include <arpa/inet.h>
 #include <stdint.h>
-#include <sys/stat.h>
+#include <sys/stat.h> /* struct stat */
 
 // xml parser
 #include <mxml.h>
@@ -23,16 +19,9 @@
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
 #include "adios_internals_mxml.h"
+#include "buffer.h"
 
 static enum ADIOS_FLAG adios_host_language_fortran = adios_flag_yes;
-
-// buffer sizing may be problematic.  To get a more accurate picture, check:
-// http://chandrashekar.info/vault/linux-system-programs.html
-static uint64_t adios_buffer_size_requested = 0;
-static uint64_t adios_buffer_size_max = 0;
-static uint64_t adios_buffer_size_remaining = 0;
-static int adios_buffer_alloc_percentage = 0;  // 1 = yes, 0 = no
-static enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when = ADIOS_BUFFER_ALLOC_UNKNOWN;
 
 static struct adios_method_list_struct * adios_methods = 0;
 static struct adios_group_list_struct * adios_groups = 0;
@@ -207,6 +196,7 @@ static void adios_append_mesh_cell_list
         }
     }
 }
+
 
 // dimensions is a comma separated list of dimension magnitudes
 static int parseMeshUniformDimensions (const char * dimensions
@@ -2581,13 +2571,13 @@ static int parseBuffer (mxml_node_t * node)
     {
         if (!strcasecmp (allocate_time, "now"))
         {
-            adios_buffer_alloc_when = ADIOS_BUFFER_ALLOC_NOW;
+            adios_buffer_alloc_when_set (ADIOS_BUFFER_ALLOC_NOW);
         }
         else
         {
             if (!strcasecmp (allocate_time, "oncall"))
             {
-                adios_buffer_alloc_when = ADIOS_BUFFER_ALLOC_LATER;
+                adios_buffer_alloc_when_set (ADIOS_BUFFER_ALLOC_LATER);
             }
             else
             {
@@ -2602,7 +2592,7 @@ static int parseBuffer (mxml_node_t * node)
 
         if (size_MB)
         {
-            adios_buffer_alloc_percentage = 0;
+            adios_buffer_alloc_percentage_set (0);
             size = atoi (size_MB);
             if (size_MB == 0)
             {
@@ -2617,18 +2607,15 @@ static int parseBuffer (mxml_node_t * node)
             if (size < 1)
                 size = 1; // we need a minimum 1 MB buffer
 
-            adios_buffer_size_requested = (  (uint64_t) size
-                                           * 1024
-                                           * 1024
-                                          );
+            adios_buffer_size_requested_set ((uint64_t) size * 1024 * 1024);
         }
         else
         {
-            adios_buffer_alloc_percentage = 1;
+            adios_buffer_alloc_percentage_set (1);
             size = atoi (free_memory_percentage);
             if (size > 0 && size <= 100)
             {
-                adios_buffer_size_requested = (uint64_t) size;
+                adios_buffer_size_requested_set ((uint64_t) size);
             }
             else
             {
@@ -2641,7 +2628,7 @@ static int parseBuffer (mxml_node_t * node)
             }
         }
 
-        if (adios_buffer_alloc_when == ADIOS_BUFFER_ALLOC_NOW)
+        if (adios_buffer_alloc_when_get() == ADIOS_BUFFER_ALLOC_NOW)
         {
             return adios_set_buffer_size ();
         }

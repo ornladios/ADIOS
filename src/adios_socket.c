@@ -147,7 +147,7 @@ int adios_get_own_hostname(char *host)
 int adios_get_remote_hostname(int socket,char *remotehost)
 {
   struct sockaddr_in name;
-  int namelen = sizeof (name);
+  socklen_t namelen = sizeof (name);
   struct hostent *pHost;
   char buffer[255];
   unsigned int addr;

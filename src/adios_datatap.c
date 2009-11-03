@@ -820,7 +820,7 @@ int adios_datatap_open (struct adios_file_struct * fd
 enum ADIOS_FLAG adios_datatap_should_buffer (struct adios_file_struct * fd  
                                           ,struct adios_method_struct * method  
                                           ,void * comm  
-                                          ) {adios_flag_unknown;}  
+                                          ) {return adios_flag_unknown;}  
 void adios_datatap_write (struct adios_file_struct * fd  
                        ,struct adios_var_struct * v  
                        ,void * data  

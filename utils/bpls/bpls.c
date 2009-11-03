@@ -548,7 +548,7 @@ int doList(const char *path) {
                 // print variable content 
                 if (isVar[n])
                     retval = readVar(gp, vi);
-                if (retval)
+                if (retval && retval != 10) // do not return after unsupported type
                     return retval;
                 fprintf(outf,"\n");
             }
@@ -1022,11 +1022,12 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
             fprintf(outf,(f ? format : "%g "), ((double *) data)[item]);
             break;
 
-        /*
+        
         case adios_long_double:
-            fprintf(outf,(f ? format : "%g "), ((double *) data)[item]);
+            //fprintf(outf,(f ? format : "%g "), ((double *) data)[item]);
+            fprintf(outf,(f ? format : "????????"));
             break;
-        */
+        
 
         case adios_complex:  
             fprintf(outf,(f ? format : "(%g,i%g) "), ((float *) data)[2*item], ((float *) data)[2*item+1]);

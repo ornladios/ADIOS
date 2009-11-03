@@ -1027,6 +1027,7 @@ int bp_read_vars (struct BP_FILE * bp_struct)
     return 0;
 }
 */
+/*
 void print_pg_index (struct bp_index_pg_struct_v1 * pg_root,
         struct bp_minifooter * mh)
 {
@@ -1176,6 +1177,7 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
         vars_root = vars_root->next;
     }
 }
+*/
 
 /* Return 1 if a < b wrt the given type, otherwise 0 */
 int adios_lt(int type, void *a, void *b)
@@ -1298,6 +1300,8 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data)
 
     return s;
 }
+
+/*
 void print_var_header (struct adios_var_header_struct_v1 * var_header)
 {
     int i = 0;
@@ -1307,6 +1311,7 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
            ,(var_header->is_dim == adios_flag_yes ? 'Y' : 'N')
            );
 }
+*/
 
 /* Change endianness of each element in an array */
 /* input: array, size in bytes(!), size of one element */

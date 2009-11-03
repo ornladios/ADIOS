@@ -9,4 +9,9 @@ int adios_common_select_method (int priority, const char * method
                                );
 void adios_cleanup ();
 
+int adios_set_buffer_size (void);
+
+uint64_t adios_method_buffer_alloc (uint64_t size);
+int adios_method_buffer_free (uint64_t size);
+
 #endif

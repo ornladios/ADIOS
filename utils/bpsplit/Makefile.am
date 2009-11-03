@@ -6,7 +6,7 @@ AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = bpsplit bpappend bpgettime
 
 bpsplit_SOURCES = bpsplit.c
-bpsplit_LDADD = $(top_builddir)/src/libadiosread_nompi.a
+bpsplit_LDADD = $(top_builddir)/src/libadiosread_nompi.a 
 
 bpappend_SOURCES = bpappend.c
 bpappend_LDADD = $(top_builddir)/src/libadiosread_nompi.a

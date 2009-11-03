@@ -15,6 +15,7 @@
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
+#include "buffer.h"
 
 /** A method to allow apps sending provenance info 
     - through a socket or
