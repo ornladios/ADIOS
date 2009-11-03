@@ -36,9 +36,12 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = adios_attributes$(EXEEXT)
+bin_PROGRAMS = adios_attributes$(EXEEXT) \
+	adios_read_attributes$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_1 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_3 = $(PHDF5_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_4 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 subdir = examples/C/adios-attributes
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -66,6 +69,11 @@ am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
 adios_attributes_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
+am_adios_read_attributes_OBJECTS = adios_read_attributes.$(OBJEXT)
+adios_read_attributes_OBJECTS = $(am_adios_read_attributes_OBJECTS)
+adios_read_attributes_DEPENDENCIES =  \
+	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -77,8 +85,9 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(adios_attributes_SOURCES)
-DIST_SOURCES = $(adios_attributes_SOURCES)
+SOURCES = $(adios_attributes_SOURCES) $(adios_read_attributes_SOURCES)
+DIST_SOURCES = $(adios_attributes_SOURCES) \
+	$(adios_read_attributes_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -234,6 +243,10 @@ adios_attributes_SOURCES = adios_attributes.c
 adios_attributes_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(am__append_2)
 adios_attributes_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
+adios_read_attributes_SOURCES = adios_read_attributes.c
+adios_read_attributes_LDADD = $(top_builddir)/src/libadiosread.a \
+	$(MXML_LIBS) $(am__append_4)
+adios_read_attributes_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
 CLEANFILES = *.bp
 all: all-am
 
@@ -299,6 +312,9 @@ clean-binPROGRAMS:
 adios_attributes$(EXEEXT): $(adios_attributes_OBJECTS) $(adios_attributes_DEPENDENCIES) 
 	@rm -f adios_attributes$(EXEEXT)
 	$(LINK) $(adios_attributes_LDFLAGS) $(adios_attributes_OBJECTS) $(adios_attributes_LDADD) $(LIBS)
+adios_read_attributes$(EXEEXT): $(adios_read_attributes_OBJECTS) $(adios_read_attributes_DEPENDENCIES) 
+	@rm -f adios_read_attributes$(EXEEXT)
+	$(LINK) $(adios_read_attributes_LDFLAGS) $(adios_read_attributes_OBJECTS) $(adios_read_attributes_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
