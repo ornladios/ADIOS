@@ -8,7 +8,7 @@ Packaging:
     - review what goes into the distribution and write a script to make the tar.gz
 
 New features:
-    - write an adiosf module for F90 like adiosf_read in src/adiosf_read_mod.F90
+    CANCELLED: write an adiosf module for F90 like adiosf_read in src/adiosf_read_mod.F90
 
 Build:
     - configure: test mxml version 2.5 or higher
@@ -17,6 +17,8 @@ Build:
 
 BUGS:
     - configure: FC=mpif90 on ewok breaks configure (it checks if Fortran lib can link with a C main program)
+    - bpls: 4np.bp, dump of string variable /var_string is wrong (bpls -l shows correctly)
+            dump vs -l of var_complex, var_double_complex is wrong
     - PGI doesn't support "long double" type.
 
 Testing:
