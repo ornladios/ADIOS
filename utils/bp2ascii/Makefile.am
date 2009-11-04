@@ -14,3 +14,5 @@ bp2ascii_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
 bp2ascii_LDFLAGS =  $(DMALLOC_LDFLAGS)
 bp2ascii_LDADD += -ldmalloc
 endif
+
+

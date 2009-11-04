@@ -14,3 +14,6 @@ bpls_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
 bpls_LDFLAGS =  $(DMALLOC_LDFLAGS)
 bpls_LDADD += -ldmalloc
 endif
+
+EXTRA_DIST = bpls.h
+

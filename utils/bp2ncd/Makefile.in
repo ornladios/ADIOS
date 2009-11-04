@@ -235,6 +235,7 @@ bp2ncd_LDFLAGS = $(NETCDF_LDFLAGS) $(am__append_2)
 bp2ncd_CPPFLAGS = $(NETCDF_CPPFLAGS) $(am__append_1)
 bp2ncd_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(NETCDF_LIBS) \
 	$(am__append_3)
+EXTRA_DIST = bp2ncd.h
 all: all-am
 
 .SUFFIXES:

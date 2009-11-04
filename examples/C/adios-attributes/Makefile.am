@@ -3,7 +3,7 @@ INCLUDES += -I$(top_builddir)/src
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-bin_PROGRAMS = adios_attributes adios_read_attributes
+noinst_PROGRAMS = adios_attributes adios_read_attributes
 
 adios_attributes_SOURCES = adios_attributes.c
 adios_attributes_LDADD = $(top_builddir)/src/libadios.a 
@@ -22,4 +22,5 @@ adios_read_attributes_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIB
 endif
 CLEANFILES = *.bp
 CC=$(MPICC)
+EXTRA_DIST = adios_attributes.xml 
 

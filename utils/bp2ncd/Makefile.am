@@ -19,3 +19,6 @@ bp2ncd_CPPFLAGS += -DDMALLOC  $(DMALLOC_CPPFLAGS)
 bp2ncd_LDFLAGS +=  $(DMALLOC_LDFLAGS)
 bp2ncd_LDADD += -ldmalloc
 endif
+
+EXTRA_DIST = bp2ncd.h
+

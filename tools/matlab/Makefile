@@ -8,13 +8,13 @@ default:
 matlab: adiosopenc adiosclosec adiosreadc 
 
 adiosopenc:  
-	mex adiosopenc.c -DNOMPI  -I. -I../../src -L. -L../../src -ladiosread_nompi
+	mex adiosopenc.c -D_NOMPI  -I. -I../../src -L. -L../../src -ladiosread_nompi
 
 adiosreadc: 
-	mex adiosreadc.c -DNOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
+	mex adiosreadc.c -D_NOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
 
 adiosclosec:
-	mex adiosclosec.c -DNOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
+	mex adiosclosec.c -D_NOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
 
 clean:
 	rm -f *.mexa64 core* *.o 

@@ -37,7 +37,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = bpdump$(EXEEXT)
-@HAVE_DMALLOC_TRUE@am__append_1 = -ldmalloc
+@HAVE_DMALLOC_TRUE@am__append_1 = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+@HAVE_DMALLOC_TRUE@am__append_2 = -ldmalloc
 subdir = utils/bpdump
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -227,9 +228,9 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 bpdump_SOURCES = bpdump.c
+bpdump_CPPFLAGS = -D_NOMPI $(am__append_1)
 bpdump_LDADD = $(top_builddir)/src/libadiosread_nompi.a \
-	$(am__append_1)
-@HAVE_DMALLOC_TRUE@bpdump_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+	$(am__append_2)
 @HAVE_DMALLOC_TRUE@bpdump_LDFLAGS = $(DMALLOC_LDFLAGS)
 all: all-am
 

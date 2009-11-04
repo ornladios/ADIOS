@@ -3,7 +3,7 @@ INCLUDES += -I$(top_builddir)/src
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-bin_PROGRAMS = 1_nonadios_example 2_adios_posix 3_adios_nfiles 4_read_posix
+noinst_PROGRAMS = 1_nonadios_example 2_adios_posix 3_adios_nfiles 4_read_posix
 
 1_nonadios_example_SOURCES = 1_nonadios_example.c
 1_nonadios_example_LDADD = $(top_builddir)/src/libadios.a 
@@ -33,4 +33,4 @@ if HAVE_PHDF5
 endif
 CLEANFILES = *.bp
 CC=$(MPICC)
-
+EXTRA_DIST = config.xml gread_temperature.ch gwrite_temperature.ch

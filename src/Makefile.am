@@ -100,3 +100,8 @@ if HAVE_DMALLOC
 libadiosread_a_CPPFLAGS = -DDMALLOC $(DMALLOC_CPPFLAGS)
 libadiosread_nompi_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
 endif
+
+EXTRA_DIST = adios_bp_v1.h adios_bp_v2.h adios_endianness.h adios_error.h adios_internals.h \
+             adios_internals_mxml.h adios_socket.h adios_transport_hooks.h bp_types.h \
+             bp_utils.h buffer.h common_adios.h futils.h
+

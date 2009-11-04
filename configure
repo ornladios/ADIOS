@@ -1849,7 +1849,7 @@ fi
 
 
 # Define the identity of the package.
- PACKAGE=ADIOS
+ PACKAGE=adios
  VERSION=1.0
 
 

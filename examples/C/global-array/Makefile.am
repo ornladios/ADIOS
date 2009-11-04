@@ -3,7 +3,7 @@ INCLUDES += -I$(top_builddir)/src
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-bin_PROGRAMS = adios_global adios_global_2files
+noinst_PROGRAMS = adios_global adios_global_2files
 
 adios_global_SOURCES = adios_global.c
 adios_global_LDADD = $(top_builddir)/src/libadios.a 
@@ -21,4 +21,5 @@ adios_global_2files_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 endif
 CLEANFILES = *.bp
 CC=$(MPICC)
+EXTRA_DIST = adios_global.xml gread_temperature.ch gwrite_temperature.ch job.pbs
 

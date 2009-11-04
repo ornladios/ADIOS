@@ -4,9 +4,9 @@ INCLUDES += -I$(top_builddir)/src #-I/ccs/home/sklasky/parallel-netcdf/jaguar/in
 AUTOMAKE_OPTIONS = no-dependencies
 
 if BUILD_FORTRAN
-bin_PROGRAMS=genbp bp_read_f bp_read_c
+noinst_PROGRAMS=genbp bp_read_f bp_read_c
 else
-bin_PROGRAMS=genbp bp_read_c
+noinst_PROGRAMS=genbp bp_read_c
 endif
 
 # read_coords read_phi read_parts_global read_gena read_gena_pncd read_pixie_all

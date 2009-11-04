@@ -3,7 +3,7 @@ INCLUDES += -I$(top_builddir)/src
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-bin_PROGRAMS=adios_test_c
+noinst_PROGRAMS=adios_test_c
 
 adios_test_c_SOURCES = adios_test_c.c
 adios_test_c_LDADD = $(top_builddir)/src/libadios.a
@@ -15,3 +15,5 @@ adios_test_c_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 endif
 CLEANFILES = restart.bp
 CC=$(MPICC)
+
+EXTRA_DIST = config_c.xml

@@ -3,7 +3,7 @@ INCLUDES += -I$(top_builddir)/src
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-bin_PROGRAMS=genarray genarray2D
+noinst_PROGRAMS=genarray genarray2D
 
 genarray_SOURCES = genarray.F90
 genarray_LDFLAGS = $(MXML_LDFLAGS)
@@ -29,3 +29,4 @@ FCLINK = \
 
 CLEANFILES = genarray_comm.mod genarray2d_comm.mod
 
+EXTRA_DIST = genarray.xml job.ewok job2D.ewok
