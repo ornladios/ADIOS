@@ -1429,8 +1429,8 @@ static uint16_t adios_calc_var_characteristics_overhead
     switch (v->type)
     {
         case adios_string:   // nothing for strings
-            overhead += 1; // id
-            overhead += 2; // size
+            //overhead += 1; // id
+            //overhead += 2; // size
             break;
 
         default:   // the 12 numeric types

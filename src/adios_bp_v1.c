@@ -1458,6 +1458,9 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
             if(b->change_endianness == adios_flag_yes) { 
                 swap_adios_type_array(var_payload->payload, var_header->type, var_header->payload_size);
             }
+            if (var_header->type == adios_string) {
+                ((char*)var_payload->payload)[var_header->payload_size] = '\0';
+            }
             b->offset += var_header->payload_size;
         }
         else
