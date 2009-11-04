@@ -92,6 +92,7 @@ int main (int argc, char ** argv)
         free (count);
         free (start);
         free (data);
+        adios_free_varinfo (v);
     }
 
     adios_gclose (g);
