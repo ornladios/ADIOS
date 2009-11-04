@@ -3,7 +3,7 @@
 #include <string.h>
 #include "bp_utils.h"
 #include "bp_types.h"
-#include "adios_read.h"
+#include "common_read.h"
 #include "adios_error.h"
 #include "futils.h"
 #define BYTE_ALIGN 8
@@ -19,12 +19,12 @@ extern "C"  /* prevent C++ name mangling */
 /*********************/
 /* FORTRAN INTERFACE */
 /*********************/
-void FC_FUNC_(adiosf_errmsg, ADIOSF_ERRMSG) (char *msg, int msg_len)
+void FC_FUNC_(adios_errmsg, adios_errmsg) (char *msg, int msg_len)
 {
-    futils_cstr_to_fstr( adios_errmsg(), (char *)msg, msg_len);
+    futils_cstr_to_fstr( adios_get_last_errmsg(), (char *)msg, msg_len);
 }
 
-void FC_FUNC_(adiosf_fopen, ADIOSF_FOPEN)
+void FC_FUNC_(adios_fopen, ADIOS_FOPEN)
         (int64_t * fp,
          char    * fname,
          void    * fcomm,
@@ -39,7 +39,7 @@ void FC_FUNC_(adiosf_fopen, ADIOSF_FOPEN)
 
     namestr = futils_fstr_to_cstr(fname, fname_len);
     if (namestr != NULL) {
-        afp = adios_fopen (namestr,comm);
+        afp = common_read_fopen (namestr,comm);
         if (afp != NULL) {
             *groups_count = afp->groups_count;
         } else {
@@ -52,19 +52,19 @@ void FC_FUNC_(adiosf_fopen, ADIOSF_FOPEN)
     }
     *err = -adios_errno;
     if (*err)
-        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
-void FC_FUNC_(adiosf_fclose, ADIOSF_FCLOSE) (int64_t * fp, int * err)
+void FC_FUNC_(adios_fclose, ADIOS_FCLOSE) (int64_t * fp, int * err)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
-    *err = adios_fclose (afp);
+    *err = common_read_fclose (afp);
     futils_called_from_fortran_unset();
     if (*err)
-        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
-void FC_FUNC_(adiosf_inq_file, ADIOSF_INQ_FILE) 
+void FC_FUNC_(adios_inq_file, ADIOS_INQ_FILE) 
         (int64_t * fp,
          int     * vars_count,
          int     * attrs_count,
@@ -94,7 +94,7 @@ void FC_FUNC_(adiosf_inq_file, ADIOSF_INQ_FILE)
     }
 }
 
-void FC_FUNC_(adiosf_gopen, ADIOSF_GOPEN) 
+void FC_FUNC_(adios_gopen, ADIOS_GOPEN) 
         (int64_t * fp,
          int64_t * gp,
          char    * grpname,
@@ -109,7 +109,7 @@ void FC_FUNC_(adiosf_gopen, ADIOSF_GOPEN)
 
     namestr = futils_fstr_to_cstr(grpname, grpname_len);
     if (namestr != NULL) {
-        agp = adios_gopen (afp, namestr);
+        agp = common_read_gopen (afp, namestr);
         if (agp != NULL) {
             *vars_count = agp->vars_count;
             *attrs_count = agp->attrs_count;
@@ -124,18 +124,18 @@ void FC_FUNC_(adiosf_gopen, ADIOSF_GOPEN)
     }
     *err = -adios_errno;
     if (*err)
-        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
-void FC_FUNC_(adiosf_gclose, ADIOSF_GCLOSE) (int64_t * gp, int * err)
+void FC_FUNC_(adios_gclose, ADIOS_GCLOSE) (int64_t * gp, int * err)
 {
     ADIOS_GROUP *agp = (ADIOS_GROUP *) *gp;
-    *err=adios_gclose(agp);
+    *err=common_read_gclose(agp);
     if (*err)
-        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
-void FC_FUNC_(adiosf_inq_group, ADIOSF_INQ_GROUP)
+void FC_FUNC_(adios_inq_group, ADIOS_INQ_GROUP)
         (int64_t * gp, 
          void    * vnamelist, 
          void    * anamelist,
@@ -158,7 +158,7 @@ void FC_FUNC_(adiosf_inq_group, ADIOSF_INQ_GROUP)
     }
 }
 
-void FC_FUNC_(adiosf_inq_var, ADIOSF_INQ_VAR) 
+void FC_FUNC_(adios_inq_var, ADIOS_INQ_VAR) 
         (int64_t  * gp, 
          char     * varname,
          int      * type,
@@ -175,7 +175,7 @@ void FC_FUNC_(adiosf_inq_var, ADIOSF_INQ_VAR)
 
     varstr = futils_fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
-        vi = adios_inq_var (agp, varstr);
+        vi = common_read_inq_var (agp, varstr);
     }
     if (vi != NULL) {
         *type = vi->type;
@@ -183,7 +183,7 @@ void FC_FUNC_(adiosf_inq_var, ADIOSF_INQ_VAR)
         *timedim = vi->timedim;
         for (i=0;i<vi->ndim;i++)
             dims[i] = vi->dims[i];
-        adios_free_varinfo(vi);
+        common_read_free_varinfo(vi);
     } else {
         *type = adios_unknown;
         *ndim = 0;
@@ -191,10 +191,10 @@ void FC_FUNC_(adiosf_inq_var, ADIOSF_INQ_VAR)
     }
     *err = -adios_errno;
     if (*err < 0)
-        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
-void FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) 
+void FC_FUNC_(adios_read_var, ADIOS_READ_VAR) 
         (int64_t  * gp,
          char     * varname,
          uint64_t * start,
@@ -208,31 +208,31 @@ void FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR)
     int i;
     varstr = futils_fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
-        *read_bytes = adios_read_var (agp, varstr, start, count, data);
+        *read_bytes = common_read_read_var (agp, varstr, start, count, data);
         free(varstr);
     } else {
         *read_bytes = -adios_errno;
     }
     if (*read_bytes < 0)
-        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
 /* Specific function for each data type */
-void FC_FUNC_(adiosf_read_var_int1, ADIOSF_READ_VAR_INT1) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_int2, ADIOSF_READ_VAR_INT2) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_int4, ADIOSF_READ_VAR_INT4) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_int8, ADIOSF_READ_VAR_INT8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_real4, ADIOSF_READ_VAR_REAL4) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_real8, ADIOSF_READ_VAR_REAL8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_char, ADIOSF_READ_VAR_CHAR) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_complex8, ADIOSF_READ_VAR_COMPLEX8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_complex16, ADIOSF_READ_VAR_COMPLEX16) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_logical1, ADIOSF_READ_VAR_LOGICAL1) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_logical2, ADIOSF_READ_VAR_LOGICAL2) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_logical4, ADIOSF_READ_VAR_LOGICAL4) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
-void FC_FUNC_(adiosf_read_var_logical8, ADIOSF_READ_VAR_LOGICAL8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adiosf_read_var, ADIOSF_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adios_read_var_int1, ADIOS_READ_VAR_INT1) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adios_read_var_int2, ADIOS_READ_VAR_INT2) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adios_read_var_int4, ADIOS_READ_VAR_INT4) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adios_read_var_int8, ADIOS_READ_VAR_INT8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adios_read_var_real4, ADIOS_READ_VAR_REAL4) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adios_read_var_real8, ADIOS_READ_VAR_REAL8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adios_read_var_char, ADIOS_READ_VAR_CHAR) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adios_read_var_complex8, ADIOS_READ_VAR_COMPLEX8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adios_read_var_complex16, ADIOS_READ_VAR_COMPLEX16) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adios_read_var_logical1, ADIOS_READ_VAR_LOGICAL1) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adios_read_var_logical2, ADIOS_READ_VAR_LOGICAL2) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adios_read_var_logical4, ADIOS_READ_VAR_LOGICAL4) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
+void FC_FUNC_(adios_read_var_logical8, ADIOS_READ_VAR_LOGICAL8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
 
-void FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) 
+void FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) 
         (int64_t * gp,
          char    * varname,
          void    * value,
@@ -250,7 +250,7 @@ void FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX)
 
     varstr = futils_fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
-        vi = adios_inq_var (agp, varstr);
+        vi = common_read_inq_var (agp, varstr);
     }
     if (vi != NULL) {
         size = bp_get_type_size(vi->type, vi->value);
@@ -270,29 +270,29 @@ void FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX)
             for (i=0; i<ntime; i++)
                 memcpy((char *)maxs+i*size, (char *)(vi->maxs)+i*size, size);
         }
-        adios_free_varinfo(vi);
+        common_read_free_varinfo(vi);
     }
     *err = -adios_errno;
     if (*err < 0)
-        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
 /* Specific function for each data type */
-void FC_FUNC_(adiosf_get_varminmax_int1, ADIOSF_GET_VARMINMAX_INT1) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
-void FC_FUNC_(adiosf_get_varminmax_int2, ADIOSF_GET_VARMINMAX_INT2) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
-void FC_FUNC_(adiosf_get_varminmax_int4, ADIOSF_GET_VARMINMAX_INT4) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
-void FC_FUNC_(adiosf_get_varminmax_int8, ADIOSF_GET_VARMINMAX_INT8) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
-void FC_FUNC_(adiosf_get_varminmax_real4, ADIOSF_GET_VARMINMAX_REAL4) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
-void FC_FUNC_(adiosf_get_varminmax_real8, ADIOSF_GET_VARMINMAX_REAL8) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
-void FC_FUNC_(adiosf_get_varminmax_complex8, ADIOSF_GET_VARMINMAX_COMPLEX8) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
-void FC_FUNC_(adiosf_get_varminmax_complex16, ADIOSF_GET_VARMINMAX_COMPLEX16) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
-void FC_FUNC_(adiosf_get_varminmax_char, ADIOSF_GET_VARMINMAX_CHAR) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
-void FC_FUNC_(adiosf_get_varminmax_logical1, ADIOSF_GET_VARMINMAX_LOGICAL1) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
-void FC_FUNC_(adiosf_get_varminmax_logical2, ADIOSF_GET_VARMINMAX_LOGICAL2) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
-void FC_FUNC_(adiosf_get_varminmax_logical4, ADIOSF_GET_VARMINMAX_LOGICAL4) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
-void FC_FUNC_(adiosf_get_varminmax_logical8, ADIOSF_GET_VARMINMAX_LOGICAL8) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adiosf_get_varminmax, ADIOSF_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
+void FC_FUNC_(adios_get_varminmax_int1, ADIOS_GET_VARMINMAX_INT1) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
+void FC_FUNC_(adios_get_varminmax_int2, ADIOS_GET_VARMINMAX_INT2) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
+void FC_FUNC_(adios_get_varminmax_int4, ADIOS_GET_VARMINMAX_INT4) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
+void FC_FUNC_(adios_get_varminmax_int8, ADIOS_GET_VARMINMAX_INT8) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
+void FC_FUNC_(adios_get_varminmax_real4, ADIOS_GET_VARMINMAX_REAL4) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
+void FC_FUNC_(adios_get_varminmax_real8, ADIOS_GET_VARMINMAX_REAL8) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
+void FC_FUNC_(adios_get_varminmax_complex8, ADIOS_GET_VARMINMAX_COMPLEX8) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
+void FC_FUNC_(adios_get_varminmax_complex16, ADIOS_GET_VARMINMAX_COMPLEX16) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
+void FC_FUNC_(adios_get_varminmax_char, ADIOS_GET_VARMINMAX_CHAR) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
+void FC_FUNC_(adios_get_varminmax_logical1, ADIOS_GET_VARMINMAX_LOGICAL1) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
+void FC_FUNC_(adios_get_varminmax_logical2, ADIOS_GET_VARMINMAX_LOGICAL2) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
+void FC_FUNC_(adios_get_varminmax_logical4, ADIOS_GET_VARMINMAX_LOGICAL4) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
+void FC_FUNC_(adios_get_varminmax_logical8, ADIOS_GET_VARMINMAX_LOGICAL8) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * mins, void * maxs, int * err, int varname_len) { FC_FUNC_(adios_get_varminmax, ADIOS_GET_VARMINMAX) (gp, varname, value, gmin, gmax, mins, maxs, err, varname_len); }
 
-void FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) 
+void FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) 
         (int64_t * gp,
          char    * attrname,
          void    * attr,
@@ -307,7 +307,7 @@ void FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR)
     enum ADIOS_DATATYPES type;
     attrstr = futils_fstr_to_cstr(attrname, attrname_len);
     if (attrstr != NULL) {
-        *err = adios_get_attr (agp, attrstr, &type, &size, &data);
+        *err = common_read_get_attr (agp, attrstr, &type, &size, &data);
         if (data) {
             memcpy(attr, data, size);
             free(data);
@@ -316,10 +316,10 @@ void FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR)
         *err = -adios_errno;
     }
     if (*err < 0)
-        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
-void FC_FUNC_(adiosf_inq_attr, ADIOSF_INQ_ATTR) 
+void FC_FUNC_(adios_inq_attr, ADIOS_INQ_ATTR) 
         (int64_t * gp,
          char    * attrname,
          int     * type,
@@ -333,26 +333,26 @@ void FC_FUNC_(adiosf_inq_attr, ADIOSF_INQ_ATTR)
     void *data;
     attrstr = futils_fstr_to_cstr(attrname, attrname_len);
     if (attrstr != NULL) {
-        *err = adios_get_attr (agp, attrstr, (enum ADIOS_DATATYPES *)type, size, &data);
+        *err = common_read_get_attr (agp, attrstr, (enum ADIOS_DATATYPES *)type, size, &data);
         free(data);
     } else {
         *err = -adios_errno;
     }
     if (*err < 0)
-        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
 /* Specific function for each data type */
-void FC_FUNC_(adiosf_get_attr_int1, ADIOSF_GET_ATTR_INT1) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
-void FC_FUNC_(adiosf_get_attr_int2, ADIOSF_GET_ATTR_INT2) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
-void FC_FUNC_(adiosf_get_attr_int4, ADIOSF_GET_ATTR_INT4) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
-void FC_FUNC_(adiosf_get_attr_int8, ADIOSF_GET_ATTR_INT8) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
-void FC_FUNC_(adiosf_get_attr_real4, ADIOSF_GET_ATTR_REAL4) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
-void FC_FUNC_(adiosf_get_attr_real8, ADIOSF_GET_ATTR_REAL8) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
-void FC_FUNC_(adiosf_get_attr_complex8, ADIOSF_GET_ATTR_COMPLEX8) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
-void FC_FUNC_(adiosf_get_attr_complex16, ADIOSF_GET_ATTR_COMPLEX16) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
-void FC_FUNC_(adiosf_get_attr_char, ADIOSF_GET_ATTR_CHAR) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
-void FC_FUNC_(adiosf_get_attr_logical1, ADIOSF_GET_ATTR_LOGICAL1) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
-void FC_FUNC_(adiosf_get_attr_logical2, ADIOSF_GET_ATTR_LOGICAL2) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
-void FC_FUNC_(adiosf_get_attr_logical4, ADIOSF_GET_ATTR_LOGICAL4) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
-void FC_FUNC_(adiosf_get_attr_logical8, ADIOSF_GET_ATTR_LOGICAL8) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adiosf_get_attr, ADIOSF_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
+void FC_FUNC_(adios_get_attr_int1, ADIOS_GET_ATTR_INT1) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
+void FC_FUNC_(adios_get_attr_int2, ADIOS_GET_ATTR_INT2) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
+void FC_FUNC_(adios_get_attr_int4, ADIOS_GET_ATTR_INT4) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
+void FC_FUNC_(adios_get_attr_int8, ADIOS_GET_ATTR_INT8) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
+void FC_FUNC_(adios_get_attr_real4, ADIOS_GET_ATTR_REAL4) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
+void FC_FUNC_(adios_get_attr_real8, ADIOS_GET_ATTR_REAL8) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
+void FC_FUNC_(adios_get_attr_complex8, ADIOS_GET_ATTR_COMPLEX8) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
+void FC_FUNC_(adios_get_attr_complex16, ADIOS_GET_ATTR_COMPLEX16) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
+void FC_FUNC_(adios_get_attr_char, ADIOS_GET_ATTR_CHAR) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
+void FC_FUNC_(adios_get_attr_logical1, ADIOS_GET_ATTR_LOGICAL1) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
+void FC_FUNC_(adios_get_attr_logical2, ADIOS_GET_ATTR_LOGICAL2) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
+void FC_FUNC_(adios_get_attr_logical4, ADIOS_GET_ATTR_LOGICAL4) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) (gp, attrname, attr, err, attrname_len); }
+void FC_FUNC_(adios_get_attr_logical8, ADIOS_GET_ATTR_LOGICAL8) (int64_t * gp, char * attrname, void * attr, int * err, int attrname_len) { FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) (gp, attrname, attr, err, attrname_len); }

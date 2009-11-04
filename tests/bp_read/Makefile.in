@@ -70,7 +70,7 @@ am__bp_read_f_SOURCES_DIST = bp_read_f.F90
 @BUILD_FORTRAN_TRUE@am_bp_read_f_OBJECTS = bp_read_f.$(OBJEXT)
 bp_read_f_OBJECTS = $(am_bp_read_f_OBJECTS)
 @BUILD_FORTRAN_TRUE@bp_read_f_DEPENDENCIES =  \
-@BUILD_FORTRAN_TRUE@	$(top_builddir)/src/libadiosread.a \
+@BUILD_FORTRAN_TRUE@	$(top_builddir)/src/libadiosreadf.a \
 @BUILD_FORTRAN_TRUE@	$(am__DEPENDENCIES_1)
 am_genbp_OBJECTS = genbp.$(OBJEXT)
 genbp_OBJECTS = $(am_genbp_OBJECTS)
@@ -260,7 +260,7 @@ genbp_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(top_builddir)/src/libadiosread.a $(am__append_1)
 @BUILD_FORTRAN_TRUE@bp_read_f_SOURCES = bp_read_f.F90
 @BUILD_FORTRAN_TRUE@bp_read_f_LDADD =  \
-@BUILD_FORTRAN_TRUE@	$(top_builddir)/src/libadiosread.a \
+@BUILD_FORTRAN_TRUE@	$(top_builddir)/src/libadiosreadf.a \
 @BUILD_FORTRAN_TRUE@	$(am__append_3)
 @BUILD_FORTRAN_TRUE@@HAVE_DMALLOC_TRUE@bp_read_f_CFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
 @BUILD_FORTRAN_TRUE@@HAVE_DMALLOC_TRUE@bp_read_f_LDFLAGS = $(DMALLOC_LDFLAGS)

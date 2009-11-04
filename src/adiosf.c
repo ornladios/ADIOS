@@ -14,7 +14,7 @@ extern "C"  /* prevent C++ name mangling */
 extern int adios_errno;
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adiosf_init, ADIOSF_INIT) (const char * config, int * err, int config_size)
+void FC_FUNC_(adios_init, adios_INIT) (const char * config, int * err, int config_size)
 {
     char * buf1 = 0;
 
@@ -28,25 +28,25 @@ void FC_FUNC_(adiosf_init, ADIOSF_INIT) (const char * config, int * err, int con
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adiosf_init_local, ADIOSF_INIT_LOCAL) (int * err)
+void FC_FUNC_(adios_init_local, adios_INIT_LOCAL) (int * err)
 {
     *err = common_adios_init_local ();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adiosf_finalize, ADIOSF_FINALIZE) (int * mype, int * err)
+void FC_FUNC_(adios_finalize, adios_FINALIZE) (int * mype, int * err)
 {
     *err = common_adios_finalize (*mype);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adiosf_allocate_buffer, ADIOSF_ALLOCATE_BUFFER) (int * err)
+void FC_FUNC_(adios_allocate_buffer, adios_ALLOCATE_BUFFER) (int * err)
 {
     *err = common_adios_allocate_buffer ();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adiosf_open, ADIOSF_OPEN) 
+void FC_FUNC_(adios_open, adios_OPEN) 
     (int64_t * fd, const char * group_name, const char * name
     ,const char * mode, int * err
     ,int group_name_size, int name_size, int mode_size
@@ -71,7 +71,7 @@ void FC_FUNC_(adiosf_open, ADIOSF_OPEN)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adiosf_group_size, ADIOSF_GROUP_SIZE) 
+void FC_FUNC_(adios_group_size, adios_GROUP_SIZE) 
     (int64_t * fd_p, int64_t * data_size
     ,int64_t * total_size, void * comm, int * err
     )
@@ -91,7 +91,7 @@ void FC_FUNC_(adiosf_group_size, ADIOSF_GROUP_SIZE)
  * length of a character array in an extra integer argument, even if
  * the C function declares a void* array in the argument list. 
  */
-void FC_FUNC_(adiosf_write, ADIOSF_WRITE) 
+void FC_FUNC_(adios_write, adios_WRITE) 
     (int64_t * fd_p, const char * name, void * var, int * err
     ,int name_size, int var_size
     )
@@ -117,7 +117,7 @@ void FC_FUNC_(adiosf_write, ADIOSF_WRITE)
     char * buf1 = 0;
     buf1 = futils_fstr_to_cstr (name, name_size);
 
-    //printf("  -- adiosf_write: name=[%s] var size = %d\n", buf1, var_size);
+    //printf("  -- adios_write: name=[%s] var size = %d\n", buf1, var_size);
 
     if (!buf1) {
         *err = -adios_errno;
@@ -217,7 +217,7 @@ void FC_FUNC_(adiosf_write, ADIOSF_WRITE)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adiosf_get_write_buffer, ADIOSF_GET_WRITE_BUFFER) 
+void FC_FUNC_(adios_get_write_buffer, adios_GET_WRITE_BUFFER) 
     (int64_t * fd_p, const char * name
     ,int64_t * size
     ,void ** buffer, int * err, int name_size
@@ -236,7 +236,7 @@ void FC_FUNC_(adiosf_get_write_buffer, ADIOSF_GET_WRITE_BUFFER)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adiosf_read, ADIOSF_READ) 
+void FC_FUNC_(adios_read, adios_READ) 
     (int64_t * fd_p, const char * name, void * buffer
     ,int64_t * buffer_size, int * err, int name_size
     )
@@ -254,7 +254,7 @@ void FC_FUNC_(adiosf_read, ADIOSF_READ)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adiosf_set_path, ADIOSF_SET_PATH) 
+void FC_FUNC_(adios_set_path, adios_SET_PATH) 
     (int64_t * fd_p, const char * path, int * err, int path_size)
 {
     char * buf1 = 0;
@@ -272,7 +272,7 @@ void FC_FUNC_(adiosf_set_path, ADIOSF_SET_PATH)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adiosf_set_path_var, ADIOSF_SET_PATH_VAR) 
+void FC_FUNC_(adios_set_path_var, adios_SET_PATH_VAR) 
     (int64_t * fd_p, const char * path, const char * name, int * err, int path_size, int name_size)
 {
     char * buf1 = 0;
@@ -292,27 +292,27 @@ void FC_FUNC_(adiosf_set_path_var, ADIOSF_SET_PATH_VAR)
 
 ///////////////////////////////////////////////////////////////////////////////
 // hint that we reached the end of an iteration (for asynchronous pacing)
-void FC_FUNC_(adiosf_end_iteration, ADIOSF_END_ITERATION) (int * err)
+void FC_FUNC_(adios_end_iteration, adios_END_ITERATION) (int * err)
 {
     *err = common_adios_end_iteration ();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // hint to start communicating
-void FC_FUNC_(adiosf_start_calculation, ADIOSF_START_CALCULATION) (int * err)
+void FC_FUNC_(adios_start_calculation, adios_START_CALCULATION) (int * err)
 {
     *err = common_adios_start_calculation ();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // hint to stop communicating
-void FC_FUNC_(adiosf_stop_calculation, ADIOSF_STOP_CALCULATION) (int * err)
+void FC_FUNC_(adios_stop_calculation, adios_STOP_CALCULATION) (int * err)
 {
     *err = common_adios_stop_calculation ();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adiosf_close, ADIOSF_CLOSE) (int64_t * fd_p, int * err)
+void FC_FUNC_(adios_close, adios_CLOSE) (int64_t * fd_p, int * err)
 {
     *err = common_adios_close (*fd_p);
 }
@@ -325,7 +325,7 @@ void FC_FUNC_(adiosf_close, ADIOSF_CLOSE) (int64_t * fd_p, int * err)
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_declare_group is in adios_internals.c
 // group a list of vars into a composite group
-void FC_FUNC_(adiosf_declare_group, ADIOSF_DECLARE_GROUP) 
+void FC_FUNC_(adios_declare_group, adios_DECLARE_GROUP) 
     (int64_t * id, const char * name
     ,const char * coordination_comm
     ,const char * coordination_var
@@ -358,7 +358,7 @@ void FC_FUNC_(adiosf_declare_group, ADIOSF_DECLARE_GROUP)
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_define_var is in adios_internals.c
 // declare a single var as an entry in a group
-void FC_FUNC_(adiosf_define_var, ADIOSF_DEFINE_VAR) 
+void FC_FUNC_(adios_define_var, adios_DEFINE_VAR) 
     (int64_t * group_id, const char * name
     ,const char * path, int * type
     ,const char * dimensions
@@ -398,7 +398,7 @@ void FC_FUNC_(adiosf_define_var, ADIOSF_DEFINE_VAR)
 
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_define_attribute is in adios_internals.c
-void FC_FUNC_(adiosf_define_attribute, ADIOSF_DEFINE_ATTRIBUTE) 
+void FC_FUNC_(adios_define_attribute, adios_DEFINE_ATTRIBUTE) 
     (int64_t * group, const char * name
     ,const char * path, int type, const char * value
     ,const char * var, int * err
@@ -433,7 +433,7 @@ void FC_FUNC_(adiosf_define_attribute, ADIOSF_DEFINE_ATTRIBUTE)
 
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_select_method is in adios_internals.c
-void FC_FUNC_(adiosf_select_method, ADIOSF_SELECT_METHOD) 
+void FC_FUNC_(adios_select_method, adios_SELECT_METHOD) 
     (int * priority, const char * method
     ,const char * parameters, const char * group
     ,const char * base_path, int * iters, int * err

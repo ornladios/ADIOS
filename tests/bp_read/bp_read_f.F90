@@ -1,5 +1,4 @@
 program read_bp_f
-    use adiosf_read
     implicit none
     include "mpif.h"
 
@@ -31,21 +30,21 @@ program read_bp_f
     comm = MPI_COMM_WORLD
 
     varchar = ' '
-    !call adiosf_fopen (fh, "/lustre/spider/scratch/pnorbert/TRACKP.bp", comm, ierr)
-    !call adiosf_fopen (fh, "TRACKP_00010.bp", comm, ierr)
-    !call adiosf_fopen (fh, "g_1x4_5x1.bp", comm, ierr)
-    !call adiosf_fopen (fh, "pixie3d.bp", comm, ierr)
-    !call adiosf_fopen (fh, "g_2x2_2x2_t1.bp", comm, ierr)
-    !call adiosf_fopen (fh, "xgcp.bp", comm, ierr)
-    !call adiosf_fopen (fh, "pgood.bp", comm, ierr)
-    !call adiosf_fopen (fh, "xgc.flowdiag.bp", comm, ierr)
-    !call adiosf_fopen (fh, "xgc.restart.000.03600.bp", comm, ierr)
-    call adiosf_fopen (fh, "g.bp", comm, gcnt, ierr)
-    !call adiosf_fopen (fh, "testbp.bp", comm, ierr)
-    !call adiosf_fopen (fh, "record.bp", comm, ierr)
-    !call adiosf_fopen (fh, "outxz.bp", comm, ierr)
+    !call adios_fopen (fh, "/lustre/spider/scratch/pnorbert/TRACKP.bp", comm, ierr)
+    !call adios_fopen (fh, "TRACKP_00010.bp", comm, ierr)
+    !call adios_fopen (fh, "g_1x4_5x1.bp", comm, ierr)
+    !call adios_fopen (fh, "pixie3d.bp", comm, ierr)
+    !call adios_fopen (fh, "g_2x2_2x2_t1.bp", comm, ierr)
+    !call adios_fopen (fh, "xgcp.bp", comm, ierr)
+    !call adios_fopen (fh, "pgood.bp", comm, ierr)
+    !call adios_fopen (fh, "xgc.flowdiag.bp", comm, ierr)
+    !call adios_fopen (fh, "xgc.restart.000.03600.bp", comm, ierr)
+    call adios_fopen (fh, "g.bp", comm, gcnt, ierr)
+    !call adios_fopen (fh, "testbp.bp", comm, ierr)
+    !call adios_fopen (fh, "record.bp", comm, ierr)
+    !call adios_fopen (fh, "outxz.bp", comm, ierr)
 
-    call adiosf_inq_file (fh,vcnt,acnt,tstart,ntsteps,gnamelist,ierr) 
+    call adios_inq_file (fh,vcnt,acnt,tstart,ntsteps,gnamelist,ierr) 
     tstop = ntsteps+ntsteps-1
     write (*,'("Number of timesteps : ",i0," starting from ",i0)') ntsteps, tstart
     write (*,'("Number of groups : ",i0)') gcnt
@@ -54,8 +53,8 @@ program read_bp_f
         write (*,"(i5, a, a)") i,")  ", trim(gnamelist(i))
     enddo
 
-    call adiosf_gopen (fh, gh, gnamelist(1), vcnt, acnt, ierr) 
-    call adiosf_inq_group(gh, vnamelist, anamelist, ierr)
+    call adios_gopen (fh, gh, gnamelist(1), vcnt, acnt, ierr) 
+    call adios_inq_group(gh, vnamelist, anamelist, ierr)
 
     write (*,'("Number of variables in group ",a,": ",i0)') trim(gnamelist(1)), vcnt
     do i=1,vcnt 
@@ -86,7 +85,7 @@ program read_bp_f
 
     write (*,*)"-----------------------------"
     do i=1,vcnt 
-        call adiosf_inq_var (gh, vnamelist(i), vtype, vrank, dims, timedim, ierr)
+        call adios_inq_var (gh, vnamelist(i), vtype, vrank, dims, timedim, ierr)
         start(1:10)=0
         readsize(1:10)=1 
         totalsize=1
@@ -99,7 +98,7 @@ program read_bp_f
             !if(allocated(varchar)) deallocate(varchar)
             !allocate(varchar(totalsize))
             !varchar(1)="!"
-            call adiosf_read_var (gh, vnamelist(i), start, readsize, varchar, read_bytes)
+            call adios_read_var (gh, vnamelist(i), start, readsize, varchar, read_bytes)
         else if (vtype == 2) then
             !write (*,*) "  totalsize = ", totalsize
             !if (totalsize == 1) totalsize = 10
@@ -112,12 +111,12 @@ program read_bp_f
             !write (*,*) "  totalsize = ", totalsize
             !varint(:)=5
             !print *, varint(1:10)
-            call adiosf_read_var (gh, vnamelist(i), start, readsize, varint, read_bytes)
+            call adios_read_var (gh, vnamelist(i), start, readsize, varint, read_bytes)
             print *, varint(1)
         else if (vtype == 6) then
             !if(allocated(vardouble)) deallocate(vardouble)
             !allocate(vardouble(totalsize))
-            call adiosf_read_var (gh, vnamelist(i), start, readsize, vardouble, read_bytes)
+            call adios_read_var (gh, vnamelist(i), start, readsize, vardouble, read_bytes)
         else
             write (*,'(a16,": Only integer or double type is handled here")') trim(vnamelist(i))
         endif
@@ -144,8 +143,8 @@ program read_bp_f
         endif
     enddo
 
-    call adiosf_gclose(gh, ierr)
-    call adiosf_fclose(fh, ierr)
+    call adios_gclose(gh, ierr)
+    call adios_fclose(fh, ierr)
 
     call MPI_Finalize (ierr)
 end program

@@ -19,6 +19,8 @@ enum ADIOS_ERRCODES {
     ,err_out_of_bound
 };
 
-void error(enum ADIOS_ERRCODES errno, char *fmt, ...);
+void error (enum ADIOS_ERRCODES errno, char *fmt, ...);
+
+const char* adios_get_last_errmsg (void);
 
 #endif

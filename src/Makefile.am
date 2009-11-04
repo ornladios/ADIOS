@@ -32,9 +32,31 @@ libadios_a_SOURCES = adios.c \
                      adios_datatap.c
 #  		      adios_dart.c
 if BUILD_FORTRAN
-libadios_a_SOURCES += adiosf.c \
-                      futils.c \
-                      adios_error.c
+lib_LIBRARIES += libadiosf.a
+libadiosf_a_SOURCES = adiosf.c \
+                     common_adios.c \
+                     adios_transport_hooks.c \
+                     adios_mpi.c \
+                     adios_mpi_stripe2.c \
+                     adios_mpi_cio.c \
+                     adios_mpi_stripe.c \
+                     adios_mpi_stagger.c \
+                     adios_mpi_aggregate.c \
+                     adios_posix.c \
+                     adios_posix_ascii.c \
+                     adios_vtk.c \
+                     adios_provenance.c \
+                     adios_internals.c \
+                     adios_internals_mxml.c \
+                     buffer.c \
+                     adios_socket.c \
+                     adios_bp_v1.c  \
+                     adios_bp_v2.c  \
+                     adios_endianness.c\
+                     adios_adaptive.c\
+                     adios_datatap.c \
+                     futils.c \
+                     adios_error.c
 endif
 
 if HAVE_PHDF5
@@ -44,6 +66,9 @@ PHDF5_CPPFLAGS += -DPHDF5 -DH5_USE_16_API
 libadios_phdf5_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 else
 libadios_a_SOURCES += adios_phdf5.c 
+if BUILD_FORTRAN
+libadiosf_a_SOURCES += adios_phdf5.c 
+endif
 endif
 
 #if DATATAP
@@ -51,6 +76,7 @@ endif
 #endif
 
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
+libadiosf_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 
 endif   # BUILD_WRITE
 
@@ -65,11 +91,18 @@ libadiosread_a_SOURCES = adios_bp_v1.c \
 		      bp_utils.c \
                       futils.c \
                       adios_error.c \
-		      adios_read.c 
-		      adios_internals.c \
-                      buffer.c
+		      adios_read.c \
+                      common_read.c 
+
 if BUILD_FORTRAN
-libadiosread_a_SOURCES += adiosf_read.c 
+lib_LIBRARIES += libadiosreadf.a
+libadiosreadf_a_SOURCES = adios_bp_v1.c \
+		      adios_endianness.c \
+		      bp_utils.c \
+                      futils.c \
+                      adios_error.c \
+		      adiosf_read.c \
+                      common_read.c 
 # adiosf_read.mod is not really usable, 
 # so it is not used and installed right now
 #libadiosread_a_SOURCES += adiosf_read_mod.F90
@@ -83,19 +116,30 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
 		      bp_utils.c \
                       futils.c \
                       adios_error.c \
-		      adios_read.c 
+		      adios_read.c \
+                      common_read.c \
 		      adios_internals.c \
                       buffer.c \
                       adios_transport_hooks.c   
 
 # Note: utils/adios_lint needs to link with adios_internals_mxml.o which depends
-#       on adios_transport_hooks.c. We put this latter one in libadiosread_nompi
+#       on adios_internals.c, buffer.c and adios_transport_hooks.c. 
+#       We put these objects in libadiosread_nompi
 #       so we do not need to make another _nompi lib just for adios_lint
 if BUILD_FORTRAN
-libadiosread_nompi_a_SOURCES += adiosf_read.c adiosf_read_mod.F90
+lib_LIBRARIES += libadiosreadf_nompi.a
+libadiosreadf_nompi_a_SOURCES = mpidummy.c\
+                      adios_bp_v1.c \
+		      adios_endianness.c \
+		      bp_utils.c \
+                      futils.c \
+                      adios_error.c \
+		      adiosf_read.c \
+                      common_read.c 
 endif
 
 libadiosread_nompi_a_CPPFLAGS = -D_NOMPI
+libadiosreadf_nompi_a_CPPFLAGS = -D_NOMPI
 #Note: -DNOMPI chokes IBM's bgxlf compiler but it can pass -D_NOMPI. 
 
 CC=$(MPICC)
@@ -107,5 +151,5 @@ endif
 
 EXTRA_DIST = adios_bp_v1.h adios_bp_v2.h adios_endianness.h adios_error.h adios_internals.h \
              adios_internals_mxml.h adios_socket.h adios_transport_hooks.h bp_types.h \
-             bp_utils.h buffer.h common_adios.h futils.h
+             bp_utils.h buffer.h common_adios.h common_read.h futils.h
 

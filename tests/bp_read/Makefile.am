@@ -21,7 +21,7 @@ endif
 
 if BUILD_FORTRAN
 bp_read_f_SOURCES = bp_read_f.F90
-bp_read_f_LDADD = $(top_builddir)/src/libadiosread.a
+bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf.a
 if HAVE_DMALLOC
 bp_read_f_CFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
 bp_read_f_LDFLAGS =  $(DMALLOC_LDFLAGS)

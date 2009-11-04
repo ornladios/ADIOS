@@ -17,12 +17,12 @@ int adios_errno;
 // cannot be static because adios_errmsg returns it
 char aerr[ERRMSG_MAXLEN];
 
-char *adios_errmsg() 
+const char *adios_get_last_errmsg (void) 
 { 
     return aerr; 
 }
 
-void error(enum ADIOS_ERRCODES errno, char *fmt, ...) 
+void error (enum ADIOS_ERRCODES errno, char *fmt, ...) 
 {
     va_list ap;
     adios_errno = (int)errno;

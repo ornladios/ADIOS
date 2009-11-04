@@ -48,7 +48,7 @@ program genarray
     call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
     call MPI_Comm_size (group_comm, nproc , ierr)
 
-    call adiosf_init ("genarray.xml", ierr)
+    call adios_init ("genarray.xml", ierr)
     !call MPI_Barrier (group_comm, ierr)
 
     call processArgs()
@@ -78,7 +78,7 @@ program genarray
 
     ! Terminate
     call MPI_Barrier (MPI_COMM_WORLD, ierr)
-    call adiosf_finalize (rank, ierr)
+    call adios_finalize (rank, ierr)
     call MPI_Finalize (ierr)
 end program genarray
 
@@ -161,29 +161,29 @@ subroutine writeArray()
 
     !print '("rank=",i0," group=",A," file=",A," group_size=",i0)', rank, trim(group), &
     !    trim(outputfile), group_size
-    call adiosf_open (handle, group, outputfile, "w", err)
-    call adiosf_group_size (handle, group_size, total_size, group_comm, err)
+    call adios_open (handle, group, outputfile, "w", err)
+    call adios_group_size (handle, group_size, total_size, group_comm, err)
     !print '("rank=",i0," total_size=",i0," err=",i0)', rank, total_size, err
 
     ! write dimensions and nproc 
-    call adiosf_write (handle, "X", gndx, err)
-    call adiosf_write (handle, "Y", gndy, err)
-    call adiosf_write (handle, "Z", gndz, err)
-    call adiosf_write (handle, "npx", npx, err)
-    call adiosf_write (handle, "npy", npy, err)
-    call adiosf_write (handle, "npz", npz, err)
-    call adiosf_write (handle, "nproc", nproc, err)
+    call adios_write (handle, "X", gndx, err)
+    call adios_write (handle, "Y", gndy, err)
+    call adios_write (handle, "Z", gndz, err)
+    call adios_write (handle, "npx", npx, err)
+    call adios_write (handle, "npy", npy, err)
+    call adios_write (handle, "npz", npz, err)
+    call adios_write (handle, "nproc", nproc, err)
 
-    call adiosf_write (handle, "size_x", ndx, err)
-    call adiosf_write (handle, "size_y", ndy, err)
-    call adiosf_write (handle, "size_z", ndz, err)
-    call adiosf_write (handle, "offs_x", offx, err) 
-    call adiosf_write (handle, "offs_y", offy, err)
-    call adiosf_write (handle, "offs_z", offz, err)
-    call adiosf_write (handle, "int_xyz", int_xyz, err) 
+    call adios_write (handle, "size_x", ndx, err)
+    call adios_write (handle, "size_y", ndy, err)
+    call adios_write (handle, "size_z", ndz, err)
+    call adios_write (handle, "offs_x", offx, err) 
+    call adios_write (handle, "offs_y", offy, err)
+    call adios_write (handle, "offs_z", offz, err)
+    call adios_write (handle, "int_xyz", int_xyz, err) 
 
     ! start streaming from buffer to disk
-    call adiosf_close (handle, err)
+    call adios_close (handle, err)
     print '("rank=",i0,": write completed")', rank
 end subroutine writeArray
 

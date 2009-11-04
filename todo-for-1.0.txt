@@ -36,12 +36,11 @@ Example codes:
     Both Fortran and C for each:
         - write each type supported (including double complex and long double and strings)
         - write attributes (scalars, strings and references to scalar vars and string vars + byte array vars)
-        - write many timesteps
         - write global arrays and global arrays over time (C exists)
         - read each type
         - read attributes
-        - read many timesteps
         - parallel code to read in global arrays (on different any number of processors)
+        - parallel code to read in global time arrays
 
 Doc:
     Manual

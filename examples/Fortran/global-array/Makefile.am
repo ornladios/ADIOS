@@ -6,7 +6,7 @@ AUTOMAKE_OPTIONS = no-dependencies
 noinst_PROGRAMS = adiosf_global
 
 adiosf_global_SOURCES = adiosf_global.F90
-adiosf_global_LDADD = $(top_builddir)/src/libadios.a 
+adiosf_global_LDADD = $(top_builddir)/src/libadiosf.a 
 adiosf_global_LDFLAGS = $(MXML_LDFLAGS)
 adiosf_global_LDADD += $(MXML_LIBS)
 if HAVE_PHDF5

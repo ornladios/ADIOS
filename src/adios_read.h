@@ -65,7 +65,7 @@ typedef struct {
     Only the last error message is always available. 
 */
 extern int adios_errno;
-char *adios_errmsg();
+const char *adios_errmsg();
 
 /** Open an adios file.
  *  IN:  fname    pathname of file to be opened

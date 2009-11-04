@@ -62,7 +62,7 @@ am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
-adios_test_f_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+adios_test_f_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
@@ -230,7 +230,7 @@ AUTOMAKE_OPTIONS = no-dependencies
 #adios_test_f_SOURCES = adios_test_f.F90 adios_module.F90
 adios_test_f_SOURCES = adios_test_f.F90
 adios_test_f_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2)
-adios_test_f_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
+adios_test_f_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
 	$(am__append_1)
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
