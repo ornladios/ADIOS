@@ -1082,7 +1082,7 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
     
     MPI_Comm_rank(gh->fh->comm, &rank);
 
-    size_of_type = bp_get_type_size (var_root->type, "");
+    size_of_type = bp_get_type_size (var_root->type, var_root->characteristics [0].value);
 
     /* For each timestep, do reading separately (they are stored in different sets of process groups */
     for (timestep = start_time; timestep <= stop_time; timestep++) {
