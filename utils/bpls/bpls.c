@@ -547,7 +547,14 @@ int doList(const char *path) {
             if (matches && dump) {
                 // print variable content 
                 if (isVar[n])
-                    retval = readVar(gp, vi);
+                    // special case: strings are scalars and does not work to call readVar
+                    if (vartype != adios_string) {
+                        retval = readVar(gp, vi);
+                    } else if (vi->value) {
+                        print_data(vi->value, 0, vartype, false); 
+                    } else {
+                        fprintf(outf,"null");
+                    }
                 if (retval && retval != 10) // do not return after unsupported type
                     return retval;
                 fprintf(outf,"\n");
