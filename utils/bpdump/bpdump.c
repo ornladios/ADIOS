@@ -570,21 +570,21 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
     printf ("\t\t\tOffset(%llu)", var_header->characteristics.offset);
     if (var_header->characteristics.min)
     {
-        printf ("\t\tMin(%s)", value_to_string (var_header->type
+        printf ("\t\t\tMin(%s)", value_to_string (var_header->type
                                           ,var_header->characteristics.min
                                           )
                );
     }
     if (var_header->characteristics.max)
     {
-        printf ("\t\tMax(%s)", value_to_string (var_header->type
+        printf ("\t\t\tMax(%s)", value_to_string (var_header->type
                                           ,var_header->characteristics.max
                                           )
                );
     }
     if (var_header->characteristics.value)
     {
-        printf ("\t\tValue(%s)", value_to_string (var_header->type
+        printf ("\t\t\tValue(%s)", value_to_string (var_header->type
                                           ,var_header->characteristics.value
                                           )
                );
@@ -593,7 +593,7 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
     {
         int j;
 
-        printf ("\t\tDims (l:g:o): (");
+        printf ("\t\t\tDims (l:g:o): (");
         for (j = 0; j < var_header->characteristics.dims.count; j++)
         {
             if (j != 0)
@@ -879,9 +879,9 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
     if (!var_header->dims)
     {
         if (var_header->type != adios_string) 
-            printf ("\t\tValue: %s\n", value_to_string (var_header->type ,var_payload->payload));
+            printf ("\t\t\tValue: %s\n", value_to_string (var_header->type ,var_payload->payload));
         else
-            printf ("\t\tValue: \"%s\"\n", value_to_string (var_header->type ,var_payload->payload));
+            printf ("\t\t\tValue: \"%s\"\n", value_to_string (var_header->type ,var_payload->payload));
     }
 }
 
@@ -969,10 +969,12 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
             }
             if (vars_root->characteristics [i].value)
             {
-                printf ("\t\tValue(%s)", value_to_string (vars_root->type
-                                         ,vars_root->characteristics [i].value
-                                         )
-                       );
+                if (vars_root->type != adios_string)
+                    printf ("\t\tValue(%s)", value_to_string (vars_root->type,
+                            vars_root->characteristics [i].value));
+                else
+                    printf ("\t\tValue(\"%s\")", value_to_string (vars_root->type,
+                            vars_root->characteristics [i].value));
             }
             if (vars_root->characteristics [i].dims.count != 0)
             {
