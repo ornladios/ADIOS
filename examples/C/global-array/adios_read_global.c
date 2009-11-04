@@ -1,4 +1,4 @@
-/* ADIOS C Example: read vars from a BP file
+/* ADIOS C Example: read global arrays from a BP file
  *
 */
 #include <stdio.h>
@@ -12,9 +12,8 @@ int main (int argc, char ** argv)
     char        filename [256];
     int         rank, size, i, j;
     MPI_Comm    comm = MPI_COMM_WORLD;
-    enum ADIOS_DATATYPES attr_type;
     void * data = NULL;
-    uint64_t * start = NULL, * count = NULL, bytes_read = 0;
+    uint64_t start[2], count[2], bytes_read = 0;
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
@@ -27,72 +26,40 @@ int main (int argc, char ** argv)
         return -1;
     }
 
-    ADIOS_GROUP * g = adios_gopen (f, "my_group");
+    ADIOS_GROUP * g = adios_gopen (f, "temperature");
     if (g == NULL)
     {
         printf ("%s\n", adios_errmsg());
         return -1;
     }
 
-    for (i = 0; i < g->vars_count; i++)
+    ADIOS_VARINFO * v = adios_inq_var (g, "temperature");
+
+    /* Using less readers to read the global array back, i.e., non-uniform */
+    uint64_t slice_size = v->dims[0]/size;
+
+    data = malloc (slice_size * v->dims[1] * sizeof (double));
+    if (data == NULL)
     {
-        ADIOS_VARINFO * v = adios_inq_var (g, g->var_namelist[i]);
-
-        uint64_t total_size = adios_type_size (v->type, v->value);
-
-        for (j = 0; j < v->ndim; j++)
-           total_size *= v->dims[j];
-
-        data = malloc (total_size);
-        start = (uint64_t *) malloc (v->ndim * sizeof (uint64_t));
-        count = (uint64_t *) malloc (v->ndim * sizeof (uint64_t));
-        if (data == NULL || start == NULL || count == NULL)
-        {
-            fprintf (stderr, "malloc failed.\n");
-            return -1;
-        }
-
-        for (j = 0; j < v->ndim; j++)
-        {
-            start[j] = 0;
-            count[j] = v->dims[j];   
-        }
-       
-        bytes_read = adios_read_var (g, g->var_namelist[i], start, count, data);
-
-        if (v->ndim == 0)
-        {
-            if (v->type == adios_integer)
-                printf ("%s:\t%d\n", g->var_namelist[i], * (int *)data);
-            else if (v->type == adios_double)
-                printf ("%s:\t%e\n", g->var_namelist[i], * (double *)data);
-            else if (v->type == adios_string)
-            {
-                printf ("%s:\t%s\n", g->var_namelist[i], data);
-            }
-        }
-        else if (v->ndim == 1)
-        {
-            printf ("%s:\n", g->var_namelist[i]);
-
-            if (v->type == adios_integer)
-            {
-                for (j = 0; j < v->dims[0]; j++)
-                    printf ("[%d] %d\t", j, * (int *)data + j);
-                printf ("\n");
-            }
-            else if (v->type == adios_double)
-            {
-                for (j = 0; j < v->dims[0]; j++)
-                    printf ("[%d] %e\t", j, * (double *)data + j);
-                printf ("\n");
-            }
-        }
-
-        free (count);
-        free (start);
-        free (data);
+        fprintf (stderr, "malloc failed.\n");
+        return -1;
     }
+
+    start[0] = slice_size * rank;
+    count[0] = slice_size;
+
+    start[1] = 0;
+    count[1] = v->dims[1];
+       
+    bytes_read = adios_read_var (g, "temperature", start, count, data);
+
+    for (i = 0; i < slice_size; i++)
+        for (j = 0; j < v->dims[1]; j++)
+            printf ("[%d,%d] %e\t", i, j, * (double *)data + i * v->dims[1] + j);
+
+    printf ("\n");
+
+    free (data);
 
     adios_gclose (g);
     adios_fclose (f);
