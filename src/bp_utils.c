@@ -866,15 +866,19 @@ void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_
 
         case adios_complex:
             memcpy (data, (b->buff + b->offset), data_size);
-            swap_32_ptr(data); // swap REAL part 4 bytes
-            swap_32_ptr( ((char *)data) + 4); // swap IMG part 4 bytes
+            if(b->change_endianness == adios_flag_yes) {
+                swap_32_ptr(data); // swap REAL part 4 bytes
+                swap_32_ptr( ((char *)data) + 4); // swap IMG part 4 bytes
+            }
             b->offset += data_size;
             break;
 
         case adios_double_complex:
             memcpy (data, (b->buff + b->offset), data_size);
-            swap_64_ptr(data); // swap REAL part 8 bytes
-            swap_64_ptr( ((char *)data) + 8); // swap IMG part 8 bytes
+            if(b->change_endianness == adios_flag_yes) {
+                swap_64_ptr(data); // swap REAL part 8 bytes
+                swap_64_ptr( ((char *)data) + 8); // swap IMG part 8 bytes
+            }
             b->offset += data_size;
             break;
 
