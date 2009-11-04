@@ -878,10 +878,10 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
     }
     if (!var_header->dims)
     {
-        printf ("\t\tValue: %s\n", value_to_string (var_header->type
-                                                   ,var_payload->payload
-                                                   )
-               );
+        if (var_header->type != adios_string) 
+            printf ("\t\tValue: %s\n", value_to_string (var_header->type ,var_payload->payload));
+        else
+            printf ("\t\tValue: \"%s\"\n", value_to_string (var_header->type ,var_payload->payload));
     }
 }
 
