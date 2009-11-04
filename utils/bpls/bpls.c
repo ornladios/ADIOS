@@ -547,14 +547,7 @@ int doList(const char *path) {
             if (matches && dump) {
                 // print variable content 
                 if (isVar[n])
-                    // special case: strings are scalars and does not work to call readVar
-                    if (vartype != adios_string) {
-                        retval = readVar(gp, vi);
-                    } else if (vi->value) {
-                        print_data(vi->value, 0, vartype, false); 
-                    } else {
-                        fprintf(outf,"null");
-                    }
+                    retval = readVar(gp, vi);
                 if (retval && retval != 10) // do not return after unsupported type
                     return retval;
                 fprintf(outf,"\n");
@@ -746,7 +739,14 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi)
     maxreadn = MAX_BUFFERSIZE/elemsize;
     if (nelems < maxreadn)
         maxreadn = nelems;
-   
+  
+    // special case: string. Need to use different elemsize
+    if (vi->type == adios_string) {
+        if (vi->value)
+            elemsize = strlen(vi->value)+1;
+        maxreadn = elemsize;
+    }
+
     // allocate data array
     data = (void *) malloc (maxreadn*elemsize+8); // +8 for just to be sure
 
