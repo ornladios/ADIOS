@@ -44,8 +44,8 @@ int main (int argc, char ** argv)
            total_size *= v->dims[j];
 
         data = malloc (total_size);
-        start = (uint64_t *) malloc (v->ndim * sizeof (uint64_t) + 8);
-        count = (uint64_t *) malloc (v->ndim * sizeof (uint64_t) + 8);
+        start = (uint64_t *) malloc (v->ndim * sizeof (uint64_t));
+        count = (uint64_t *) malloc (v->ndim * sizeof (uint64_t));
         if (data == NULL || start == NULL || count == NULL)
         {
             fprintf (stderr, "malloc failed.\n");
@@ -63,18 +63,30 @@ int main (int argc, char ** argv)
         if (v->ndim == 0)
         {
             if (v->type == adios_integer)
-                printf ("%s: %d\n", g->var_namelist[i], * (int *)data);
+                printf ("%s:\t%d\n", g->var_namelist[i], * (int *)data);
             else if (v->type == adios_double)
-                printf ("%s: %e\n", g->var_namelist[i], * (double *)data);
+                printf ("%s:\t%e\n", g->var_namelist[i], * (double *)data);
             else if (v->type == adios_string)
             {
-                printf ("%s: %s\n", g->var_namelist[i], data);
-                printf ("total size = %llu\n", total_size);
+                printf ("%s:\t%s\n", g->var_namelist[i], data);
             }
-
         }
         else if (v->ndim == 1)
         {
+            printf ("%s:\n", g->var_namelist[i]);
+
+            if (v->type == adios_integer)
+            {
+                for (j = 0; j < v->dims[0]; j++)
+                    printf ("[%d] %d\t", j, * (int *)data + j);
+                printf ("\n");
+            }
+            else if (v->type == adios_double)
+            {
+                for (j = 0; j < v->dims[0]; j++)
+                    printf ("[%d] %e\t", j, * (double *)data + j);
+                printf ("\n");
+            }
         }
 
         free (count);
