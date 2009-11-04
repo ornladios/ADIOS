@@ -65,12 +65,15 @@ libadiosread_a_SOURCES = adios_bp_v1.c \
 		      bp_utils.c \
                       futils.c \
                       adios_error.c \
-		      adios_read.c \
+		      adios_read.c 
 		      adios_internals.c \
                       buffer.c
 if BUILD_FORTRAN
-libadiosread_a_SOURCES += adiosf_read.c adiosf_read_mod.F90
-include_HEADERS += adiosf_read.mod 
+libadiosread_a_SOURCES += adiosf_read.c 
+# adiosf_read.mod is not really usable, 
+# so it is not used and installed right now
+#libadiosread_a_SOURCES += adiosf_read_mod.F90
+#include_HEADERS += adiosf_read.mod 
 endif
 
 lib_LIBRARIES += libadiosread_nompi.a
@@ -80,10 +83,11 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
 		      bp_utils.c \
                       futils.c \
                       adios_error.c \
-		      adios_read.c \
+		      adios_read.c 
 		      adios_internals.c \
                       buffer.c \
                       adios_transport_hooks.c   
+
 # Note: utils/adios_lint needs to link with adios_internals_mxml.o which depends
 #       on adios_transport_hooks.c. We put this latter one in libadiosread_nompi
 #       so we do not need to make another _nompi lib just for adios_lint
