@@ -1115,6 +1115,12 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
             slice_size = size_of_type;
             idx = 0; // macros below need it
 
+            if (var_root->type == adios_string) {
+                // strings are stored without \0 in file
+                // size_of_type here includes \0 so decrease by one
+                size_of_type--;
+            }
+
             if (var_root->characteristics[start_idx+idx].payload_offset > 0) {
                 slice_offset = var_root->characteristics[start_idx+idx].payload_offset;
                 MPI_FILE_READ_OPS
@@ -1127,6 +1133,14 @@ int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
             if (fh->mfooter.change_endianness == adios_flag_yes) {
                 change_endianness((char *)data+total_size, size_of_type, var_root->type);
             }
+
+            if (var_root->type == adios_string) {
+                // add \0 to the end of string
+                // size_of_type here is the length of string
+                // FIXME: how would this work for strings written over time?
+                ((char*)data+total_size)[size_of_type] = '\0';
+            }
+
             total_size += size_of_type;
             continue;
         }
