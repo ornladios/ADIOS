@@ -36,7 +36,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = adios_types$(EXEEXT) adios_types_array$(EXEEXT)
+noinst_PROGRAMS = adios_types$(EXEEXT) adios_types_array$(EXEEXT) \
+	adios_read_vars$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_1 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 @HAVE_PHDF5_TRUE@am__append_3 = $(PHDF5_LDFLAGS)
@@ -58,9 +59,13 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+am_adios_read_vars_OBJECTS = adios_read_vars.$(OBJEXT)
+adios_read_vars_OBJECTS = $(am_adios_read_vars_OBJECTS)
+am__DEPENDENCIES_1 =
+adios_read_vars_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
+	$(am__DEPENDENCIES_1)
 am_adios_types_OBJECTS = adios_types.$(OBJEXT)
 adios_types_OBJECTS = $(am_adios_types_OBJECTS)
-am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
@@ -81,8 +86,10 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(adios_types_SOURCES) $(adios_types_array_SOURCES)
-DIST_SOURCES = $(adios_types_SOURCES) $(adios_types_array_SOURCES)
+SOURCES = $(adios_read_vars_SOURCES) $(adios_types_SOURCES) \
+	$(adios_types_array_SOURCES)
+DIST_SOURCES = $(adios_read_vars_SOURCES) $(adios_types_SOURCES) \
+	$(adios_types_array_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -183,7 +190,6 @@ PHDF5_LIBS = @PHDF5_LIBS@
 PTL_FALSE = @PTL_FALSE@
 PTL_TRUE = @PTL_TRUE@
 RANLIB = @RANLIB@
-SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -242,6 +248,10 @@ adios_types_array_SOURCES = adios_types_array.c
 adios_types_array_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(am__append_4)
 adios_types_array_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
+adios_read_vars_SOURCES = adios_read_vars.c
+adios_read_vars_LDADD = $(top_builddir)/src/libadiosread.a \
+	$(MXML_LIBS)
+adios_read_vars_LDFLAGS = $(MXML_LDFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = config.xml config_array.xml job.pbs
 all: all-am
@@ -284,6 +294,9 @@ clean-noinstPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
+adios_read_vars$(EXEEXT): $(adios_read_vars_OBJECTS) $(adios_read_vars_DEPENDENCIES) 
+	@rm -f adios_read_vars$(EXEEXT)
+	$(LINK) $(adios_read_vars_LDFLAGS) $(adios_read_vars_OBJECTS) $(adios_read_vars_LDADD) $(LIBS)
 adios_types$(EXEEXT): $(adios_types_OBJECTS) $(adios_types_DEPENDENCIES) 
 	@rm -f adios_types$(EXEEXT)
 	$(LINK) $(adios_types_LDFLAGS) $(adios_types_OBJECTS) $(adios_types_LDADD) $(LIBS)
