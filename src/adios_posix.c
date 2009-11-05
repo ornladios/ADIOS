@@ -7,6 +7,9 @@
 #include <string.h>
 #include <stdint.h>
 
+// mpi
+#include "mpi.h"
+
 // xml parser
 #include <mxml.h>
 
@@ -57,10 +60,25 @@ int adios_posix_open (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
-    char * name;
+    int rank;
+    char * name, * name_with_rank, rank_string[16];
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
 
+    // Need to figure out new the new fd->name, such as restart.0.bp, restart.1.bp....
+    // Here we use MPI_COMM_WORLD as communicator, so in the case of comm being splitted,
+    // we have files generated such as restart.0.bp, restart.2.bp, restart.4.bp....
+    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+
+    sprintf (rank_string, "%d", rank);
+    name_with_rank = malloc (strlen (fd->name) + strlen (rank_string) + 2);
+    sprintf (name_with_rank, "%s.%s",  fd->name, rank_string);
+
+    free (fd->name);
+    fd->name = strdup (name_with_rank);
+    free (name_with_rank); 
+
+    // figure out the actual name of the file.
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf (name, "%s%s", method->base_path, fd->name);
     struct stat s;
