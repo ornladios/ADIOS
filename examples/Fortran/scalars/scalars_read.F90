@@ -43,6 +43,12 @@ program scalars_read
 #include "gread_scalars.fh"
     call adios_close (adios_handle, adios_err)
 
+    call MPI_Barrier (comm, ierr);
+
+    call adios_finalize (rank, adios_err);
+
+    call MPI_Finalize ();
+
     if (rank == 0) then
         write (*, '("int*1      v1  = ",i3)') v1
         write (*, '("int*2      v2  = ",i3)') v2
@@ -62,12 +68,6 @@ program scalars_read
         write (*, '("complex*8  v12 = (",f6.2,", ", f6.2,")")') v12
         write (*, '("complex*16 v13 = (",f6.2,", ", f6.2,")")') v13
     endif
-
-    call MPI_Barrier (comm, ierr);
-
-    call adios_finalize (rank, adios_err);
-
-    call MPI_Finalize ();
 
 end program
 

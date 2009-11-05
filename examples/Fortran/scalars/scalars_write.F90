@@ -39,6 +39,7 @@ program scalars
     call MPI_Comm_size (comm, size, ierr);
 
     call adios_init ("scalars.xml", adios_err);
+    ! adios_open() opens a 'group in a file', here the 'scalars' group
     call adios_open (adios_handle, "scalars", filename, "w", adios_err);
 #include "gwrite_scalars.fh"
     call adios_close (adios_handle, adios_err)

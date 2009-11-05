@@ -42,7 +42,7 @@ noinst_PROGRAMS = scalars_write$(EXEEXT) scalars_read$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_3 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_4 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 subdir = examples/Fortran/scalars
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_dmalloc.m4 \
 	$(top_srcdir)/config/ac_gengetopt.m4 \
