@@ -231,7 +231,7 @@ def getVarlistFromXML(xmlFile):
     gname=""
     time_var = ""
     coord_var = ""
-    coord_comm = ""
+    coord_comm = "MPI_COMM_WORLD"
     for group in root.childNodes:
       if (group.nodeType==group.ELEMENT_NODE): 
         if (group.tagName.lower()=="adios-group"): 
