@@ -29,7 +29,7 @@ int main (int argc, char ** argv)
 
     int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
-    int64_t     adios_handle;
+    int64_t     adios_handle, adios_buf_size;
 
     int8_t  v1 = 0;
     int16_t v2 = 0;
@@ -61,7 +61,7 @@ int main (int argc, char ** argv)
 
     adios_init ("scalars.xml");
     adios_open (&adios_handle, "scalars", filename, "r");
-#include "gwrite_read.ch"
+#include "gread_scalars.ch"
     adios_close (adios_handle);
 
     MPI_Barrier (comm);
