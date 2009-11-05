@@ -3248,24 +3248,79 @@ return 0; \
 
         case adios_complex:
 	{
-            fprintf (stderr, "fix min/max calculation for complex numbers\n");
-            var->min = malloc (8);
-            var->max = malloc (8);
-            *((uint64_t *) var->min) = ((uint64_t *) var->data) [0];
-            *((uint64_t *) var->max) = ((uint64_t *) var->data) [0];
-
+            // complex = (float, float) = double in size
+            float   minr, mini, maxr, maxi, ar, ai; 
+            double  min, max, a;
+            float    *data = (float *) var->data;   // view double array as float array 
+            uint64_t step = 0, steps = total_size / 4;  // steps in float steps over double array!
+            var->min = malloc ( 2*sizeof(float));
+            var->max = malloc ( 2*sizeof(float));
+            minr = data[0];
+            mini = data[1];
+            min  = (double)minr*minr+mini*mini;
+            max  = (double)maxr*maxr+maxi*maxi;
+            maxr = minr;
+            maxi = maxi;
+            step += 2; 
+            // loop over the elements of the complex array (step is wrt float size!)
+            while (step  < steps) {
+                ar = data[step];
+                ai = data[step+1];
+                a  = (double)ar*ar+ai*ai;
+                 
+                if ( a < min) {
+                    minr = ar; mini = ai; min  = a;
+                }
+                if ( a > max) {
+                    maxr = ar; maxi = ai; max  = a;
+                }
+                step += 2; 
+            } 
+            ((float *) var->min)[0] = minr;
+            ((float *) var->min)[1] = mini;
+            ((float *) var->max)[0] = maxr;
+            ((float *) var->max)[1] = maxi;
             return 0;
 	}
 
         case adios_double_complex:
 	{
-            fprintf (stderr, "fix min/max calculation for complex numbers\n");
-            var->min = malloc (16);
-            var->max = malloc (16);
-            ((uint64_t *) var->min) [0] = ((uint64_t *) var->data) [0];
-            ((uint64_t *) var->min) [1] = ((uint64_t *) var->data) [1];
-            ((uint64_t *) var->max) [0] = ((uint64_t *) var->data) [0];
-            ((uint64_t *) var->max) [1] = ((uint64_t *) var->data) [1];
+            // complex = (double, double) = 16 bytes in size
+            float   minr, mini, maxr, maxi, ar, ai; 
+            long double  min, max, a; 
+            /* FIXME: long double may not prevent overflow 
+               PGI compiler: long double is 8 bytes like double
+            */
+            double   *data = (double *) var->data;   // view 16-byte array as double array 
+            uint64_t step = 0, steps = total_size / 8;  // steps in double steps over 16-byte array!
+            var->min = malloc ( 2*sizeof(double));
+            var->max = malloc ( 2*sizeof(double));
+            minr = data[0];
+            mini = data[1];
+            min  = (long double)minr*minr+mini*mini;
+            max  = (long double)maxr*maxr+maxi*maxi;
+            maxr = minr;
+            maxi = maxi;
+            step += 2; 
+            // loop over the elements of the double complex array (step is wrt double size!)
+            while (step  < steps) {
+                ar = data[step];
+                ai = data[step+1];
+                a  = (long double)ar*ar+ai*ai;
+                 
+                if ( a < min) {
+                    minr = ar; mini = ai; min  = a;
+                }
+                if ( a > max) {
+                    maxr = ar; maxi = ai; max  = a;
+                }
+                step += 2; 
+            } 
+            ((double *) var->min)[0] = minr;
+            ((double *) var->min)[1] = mini;
+            ((double *) var->max)[0] = maxr;
+            ((double *) var->max)[1] = maxi;
+            return 0;
 
             return 0;
 	}
