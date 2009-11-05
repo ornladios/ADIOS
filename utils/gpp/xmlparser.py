@@ -68,10 +68,15 @@ def processvar(node,language_sw,coord_comm,coord_var,time_var):
        if (typename=="string"):
            if (language_sw==1):
                line="len_trim("+gwname+")" 
-               liner="len_trim("+grname+")" 
+               liner="len("+grname+")" 
            else:        
                line="strlen("+gwname+")" 
-               liner="strlen("+grname+")" 
+               # FIXME: we do not know how much space do we have in the 
+               #  variable when reading a string into it. 
+               #  we just give a stupidly big number (2GB) here and if the
+               #  space allocated is less then what is read in,
+               #  that is considered to be the responsibility of the programmer
+               liner="2147483648" 
        else:
            line=str(getsize[typename])
            if (readyn==True):
