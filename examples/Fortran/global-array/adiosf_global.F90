@@ -28,15 +28,15 @@ program adios_global
         t(i)  = 10*rank+i;
     enddo
 
-    call adios_init ("adiosf_global.xml", ierr);
+    call adios_init ("adiosf_global.xml", adios_err);
 
-    call adios_open (adios_handle, "temperature", filename, "w", ierr);
+    call adios_open (adios_handle, "temperature", filename, "w", adios_err);
 #include "gwrite_temperature.fh"
-    call adios_close (adios_handle, ierr);
+    call adios_close (adios_handle, adios_err);
 
     call MPI_Barrier (comm, ierr)
 
-    call adios_finalize (rank, ierr);
+    call adios_finalize (rank, adios_err);
 
     call MPI_Finalize ();
 end program

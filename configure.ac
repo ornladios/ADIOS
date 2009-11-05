@@ -155,6 +155,8 @@ AC_CONFIG_FILES([Makefile
                  examples/C/adios-types/Makefile
                  examples/C/adios-attributes/Makefile
                  examples/Fortran/Makefile
+                 examples/Fortran/scalars/Makefile
+                 examples/Fortran/arrays/Makefile
                  examples/Fortran/global-array/Makefile
                 ])
 
