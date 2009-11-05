@@ -243,7 +243,7 @@ attributes_read_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(MXML_LIBS) $(am__append_4)
 attributes_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
 CLEANFILES = *.bp
-EXTRA_DIST = attributes.xml 
+EXTRA_DIST = attributes.xml gwrite_temperature.ch gread_temperature.ch
 all: all-am
 
 .SUFFIXES:

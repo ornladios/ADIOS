@@ -22,5 +22,5 @@ attributes_read_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 endif
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = attributes.xml 
+EXTRA_DIST = attributes.xml gwrite_temperature.ch gread_temperature.ch
 

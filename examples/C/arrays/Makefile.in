@@ -243,7 +243,7 @@ arrays_read_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(am__append_4)
 arrays_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
 CLEANFILES = *.bp
-EXTRA_DIST = config.xml config_array.xml job.pbs
+EXTRA_DIST = arrays.xml gwrite_arrays.ch gread_arrays.ch job.pbs
 all: all-am
 
 .SUFFIXES:
