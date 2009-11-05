@@ -1,9 +1,4 @@
-/* ADIOS C Example: write a global array from N processors with gwrite
- *
- * How to run: mpirun -np <N> adios_global
- * Output: adios_global.bp
- * ADIOS config file: adios_global.xml
- *
+/* ADIOS C Example: write some attributes along with variables
 */
 #include <stdio.h>
 #include <string.h>
@@ -35,28 +30,12 @@ int main (int argc, char ** argv)
 
     mean /= NX;
 
-    strcpy (filename, "restart.bp");
+    strcpy (filename, "attributes.bp");
 
-    adios_init ("adios_attributes.xml");
+    adios_init ("attributes.xml");
 
     adios_open (&adios_handle, "temperature", filename, "w");
-
-    adios_groupsize = 4 \
-                    + 4 \
-                    + 4 \
-                    + 8 \
-                    + 8 * (1) * (NX) \
-                    + strlen (str) + 1;
-
-    adios_group_size (adios_handle, adios_groupsize, &adios_totalsize, &comm);
-
-    adios_write (adios_handle, "NX", &NX);
-    adios_write (adios_handle, "size", &size);
-    adios_write (adios_handle, "rank", &rank);
-    adios_write (adios_handle, "mean", &mean);
-    adios_write (adios_handle, "temperature", t);
-    adios_write (adios_handle, "date", str);
-     
+#include "gwrite_temperature.ch"
     adios_close (adios_handle);
 
     MPI_Barrier (comm);

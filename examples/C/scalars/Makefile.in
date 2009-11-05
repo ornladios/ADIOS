@@ -36,14 +36,13 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = adios_attributes$(EXEEXT) \
-	adios_read_attributes$(EXEEXT)
+noinst_PROGRAMS = scalars_write$(EXEEXT) scalars_read$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_1 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 @HAVE_PHDF5_TRUE@am__append_3 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_4 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-subdir = examples/C/adios-attributes
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+subdir = examples/C/scalars
+DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_dmalloc.m4 \
 	$(top_srcdir)/config/ac_gengetopt.m4 \
@@ -59,19 +58,18 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_adios_attributes_OBJECTS = adios_attributes.$(OBJEXT)
-adios_attributes_OBJECTS = $(am_adios_attributes_OBJECTS)
+am_scalars_read_OBJECTS = scalars_read.$(OBJEXT)
+scalars_read_OBJECTS = $(am_scalars_read_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
-adios_attributes_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+scalars_read_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
-am_adios_read_attributes_OBJECTS = adios_read_attributes.$(OBJEXT)
-adios_read_attributes_OBJECTS = $(am_adios_read_attributes_OBJECTS)
-adios_read_attributes_DEPENDENCIES =  \
-	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_2)
+am_scalars_write_OBJECTS = scalars_write.$(OBJEXT)
+scalars_write_OBJECTS = $(am_scalars_write_OBJECTS)
+scalars_write_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -83,9 +81,8 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(adios_attributes_SOURCES) $(adios_read_attributes_SOURCES)
-DIST_SOURCES = $(adios_attributes_SOURCES) \
-	$(adios_read_attributes_SOURCES)
+SOURCES = $(scalars_read_SOURCES) $(scalars_write_SOURCES)
+DIST_SOURCES = $(scalars_read_SOURCES) $(scalars_write_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -237,16 +234,16 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
-adios_attributes_SOURCES = adios_attributes.c
-adios_attributes_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
+scalars_write_SOURCES = scalars_write.c
+scalars_write_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(am__append_2)
-adios_attributes_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
-adios_read_attributes_SOURCES = adios_read_attributes.c
-adios_read_attributes_LDADD = $(top_builddir)/src/libadiosread.a \
-	$(MXML_LIBS) $(am__append_4)
-adios_read_attributes_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
+scalars_write_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
+scalars_read_SOURCES = scalars_read.c
+scalars_read_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
+	$(am__append_4)
+scalars_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
 CLEANFILES = *.bp
-EXTRA_DIST = adios_attributes.xml 
+EXTRA_DIST = config.xml config_array.xml job.pbs
 all: all-am
 
 .SUFFIXES:
@@ -260,9 +257,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  examples/C/adios-attributes/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  examples/C/scalars/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  examples/C/adios-attributes/Makefile
+	  $(AUTOMAKE) --gnu  examples/C/scalars/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -287,12 +284,12 @@ clean-noinstPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-adios_attributes$(EXEEXT): $(adios_attributes_OBJECTS) $(adios_attributes_DEPENDENCIES) 
-	@rm -f adios_attributes$(EXEEXT)
-	$(LINK) $(adios_attributes_LDFLAGS) $(adios_attributes_OBJECTS) $(adios_attributes_LDADD) $(LIBS)
-adios_read_attributes$(EXEEXT): $(adios_read_attributes_OBJECTS) $(adios_read_attributes_DEPENDENCIES) 
-	@rm -f adios_read_attributes$(EXEEXT)
-	$(LINK) $(adios_read_attributes_LDFLAGS) $(adios_read_attributes_OBJECTS) $(adios_read_attributes_LDADD) $(LIBS)
+scalars_read$(EXEEXT): $(scalars_read_OBJECTS) $(scalars_read_DEPENDENCIES) 
+	@rm -f scalars_read$(EXEEXT)
+	$(LINK) $(scalars_read_LDFLAGS) $(scalars_read_OBJECTS) $(scalars_read_LDADD) $(LIBS)
+scalars_write$(EXEEXT): $(scalars_write_OBJECTS) $(scalars_write_DEPENDENCIES) 
+	@rm -f scalars_write$(EXEEXT)
+	$(LINK) $(scalars_write_LDFLAGS) $(scalars_write_OBJECTS) $(scalars_write_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

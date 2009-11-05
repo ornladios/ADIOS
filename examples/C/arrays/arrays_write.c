@@ -24,27 +24,15 @@ int main (int argc, char ** argv)
 
     for (i = 0; i < NX; i++)
         for (j = 0; j< NY; j++)
-            t[i][j] = rank * 100 + 10 * i + j;
+            t[i][j] = rank * NX + i + j*(1.0/NY);
 
     for (i = 0; i < NX; i++)
-        p[i] = rank * 100 + 10 * i;
+        p[i] = rank * NX + i;
 
-    strcpy (filename, "restart.bp");
-    adios_init ("config_array.xml");
-    adios_open (&adios_handle, "my_group", filename, "w");
-
-    adios_groupsize = sizeof (int)              \
-                    + sizeof (int)              \
-                    + NX * NY * sizeof (double) \
-                    + NX * sizeof (int);
- 
-    adios_group_size (adios_handle, adios_groupsize, &adios_totalsize, &comm);
-
-    adios_write (adios_handle, "NX", &NX);
-    adios_write (adios_handle, "NY", &NY);
-    adios_write (adios_handle, "var_double_array", t);
-    adios_write (adios_handle, "var_int_array", p);
-
+    strcpy (filename, "arrays.bp");
+    adios_init ("arrays.xml");
+    adios_open (&adios_handle, "arrays", filename, "w");
+#include "gwrite_arrays.ch"
     adios_close (adios_handle);
 
     MPI_Barrier (comm);

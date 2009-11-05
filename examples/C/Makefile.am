@@ -1,1 +1,1 @@
-SUBDIRS=manual global-array global-array-time adios-types adios-attributes
+SUBDIRS=scalars arrays attributes manual global-array global-array-time 

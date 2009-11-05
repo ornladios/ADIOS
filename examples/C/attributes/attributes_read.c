@@ -1,5 +1,8 @@
 /* ADIOS C Example: read attributes from a BP file
  *
+ * This is possible only with the generic read API.
+ * so the GREAD stuff and the xml file is not used here.
+ *
 */
 #include <stdio.h>
 #include <string.h>
@@ -21,7 +24,7 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    ADIOS_FILE * f = adios_fopen ("restart.bp", comm);
+    ADIOS_FILE * f = adios_fopen ("attributes.bp", comm);
     if (f == NULL)
     {
         printf ("%s\n", adios_errmsg());
@@ -40,17 +43,20 @@ int main (int argc, char ** argv)
 
         adios_get_attr (g, g->attr_namelist[i], &attr_type, &attr_size, &data);
 
-        if (attr_type == adios_integer)
+        printf ("rank %d: attr: %s %s = ", rank, adios_type_to_string(attr_type), g->attr_namelist[i]);
+        switch (attr_type)  
         {
-            printf ("Attr: %s = %d\n", g->attr_namelist[i], * (int *)data);
-        }
-        else if (attr_type == adios_double)
-        {
-            printf ("Attr: %s = %e\n", g->attr_namelist[i], * (double *)data);
-        }
-        else if (attr_type == adios_string)
-        {
-            printf ("Attr: %s = %s\n", g->attr_namelist[i], (char *)data);
+            case adios_integer:
+                printf ("%d\n", *(int *)data);
+                break;
+            case adios_double:
+                printf ("%e\n", *(double *)data);
+                break;
+            case adios_string:
+                printf ("%s\n", (char *)data);
+                break;
+            default:
+                printf ("??????\n");
         }
         free (data);
         data = 0;
