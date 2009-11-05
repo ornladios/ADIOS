@@ -1233,7 +1233,7 @@ int adios_lt(int type, void *a, void *b)
     return 0;
 }
 
-const char * value_to_string (enum ADIOS_DATATYPES type, void * data)
+const char * bp_value_to_string (enum ADIOS_DATATYPES type, void * data)
 {
     static char s [100];
     s [0] = 0;

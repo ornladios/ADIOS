@@ -570,21 +570,21 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
     printf ("\t\t\tOffset(%llu)", var_header->characteristics.offset);
     if (var_header->characteristics.min)
     {
-        printf ("\t\t\tMin(%s)", value_to_string (var_header->type
+        printf ("\t\t\tMin(%s)", bp_value_to_string (var_header->type
                                           ,var_header->characteristics.min
                                           )
                );
     }
     if (var_header->characteristics.max)
     {
-        printf ("\t\t\tMax(%s)", value_to_string (var_header->type
+        printf ("\t\t\tMax(%s)", bp_value_to_string (var_header->type
                                           ,var_header->characteristics.max
                                           )
                );
     }
     if (var_header->characteristics.value)
     {
-        printf ("\t\t\tValue(%s)", value_to_string (var_header->type
+        printf ("\t\t\tValue(%s)", bp_value_to_string (var_header->type
                                           ,var_header->characteristics.value
                                           )
                );
@@ -879,9 +879,9 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
     if (!var_header->dims)
     {
         if (var_header->type != adios_string) 
-            printf ("\t\t\tValue: %s\n", value_to_string (var_header->type ,var_payload->payload));
+            printf ("\t\t\tValue: %s\n", bp_value_to_string (var_header->type ,var_payload->payload));
         else
-            printf ("\t\t\tValue: \"%s\"\n", value_to_string (var_header->type ,var_payload->payload));
+            printf ("\t\t\tValue: \"%s\"\n", bp_value_to_string (var_header->type ,var_payload->payload));
     }
 }
 
@@ -905,7 +905,7 @@ void print_attribute (struct adios_attribute_struct_v1 * attribute)
     else
     {
         printf ("\t\tDatatype: %s\n", adios_type_to_string (attribute->type));
-        printf ("\t\tValue: %s\n", value_to_string (attribute->type
+        printf ("\t\tValue: %s\n", bp_value_to_string (attribute->type
                                                    ,attribute->value
                                                    )
                );
@@ -955,14 +955,14 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
             printf ("\t\tPayload Offset(%llu)", vars_root->characteristics [i].payload_offset);
             if (vars_root->characteristics [i].min)
             {
-                printf ("\t\tMin(%s)", value_to_string (vars_root->type
+                printf ("\t\tMin(%s)", bp_value_to_string (vars_root->type
                                            ,vars_root->characteristics [i].min
                                            )
                        );
             }
             if (vars_root->characteristics [i].max)
             {
-                printf ("\t\tMax(%s)", value_to_string (vars_root->type
+                printf ("\t\tMax(%s)", bp_value_to_string (vars_root->type
                                            ,vars_root->characteristics [i].max
                                            )
                        );
@@ -970,10 +970,10 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
             if (vars_root->characteristics [i].value)
             {
                 if (vars_root->type != adios_string)
-                    printf ("\t\tValue(%s)", value_to_string (vars_root->type,
+                    printf ("\t\tValue(%s)", bp_value_to_string (vars_root->type,
                             vars_root->characteristics [i].value));
                 else
-                    printf ("\t\tValue(\"%s\")", value_to_string (vars_root->type,
+                    printf ("\t\tValue(\"%s\")", bp_value_to_string (vars_root->type,
                             vars_root->characteristics [i].value));
             }
             if (vars_root->characteristics [i].dims.count != 0)
@@ -1042,21 +1042,21 @@ void print_attributes_index
             printf ("\t\tPayload Offset(%llu)", attrs_root->characteristics [i].payload_offset);
             if (attrs_root->characteristics [i].min)
             {
-                printf ("\t\tMin(%s)", value_to_string (attrs_root->type
+                printf ("\t\tMin(%s)", bp_value_to_string (attrs_root->type
                                           ,attrs_root->characteristics [i].min
                                           )
                        );
             }
             if (attrs_root->characteristics [i].max)
             {
-                printf ("\t\tMax(%s)", value_to_string (attrs_root->type
+                printf ("\t\tMax(%s)", bp_value_to_string (attrs_root->type
                                           ,attrs_root->characteristics [i].max
                                           )
                        );
             }
             if (attrs_root->characteristics [i].value)
             {
-                printf ("\t\tValue(%s)", value_to_string (attrs_root->type
+                printf ("\t\tValue(%s)", bp_value_to_string (attrs_root->type
                                         ,attrs_root->characteristics [i].value
                                         )
                        );

@@ -25,7 +25,7 @@ int bp_read_open (const char * filename,
 	 	  MPI_Comm comm, 
 		  struct BP_FILE * fh);
 
-const char * value_to_string (enum ADIOS_DATATYPES type, void * data);
+const char * bp_value_to_string (enum ADIOS_DATATYPES type, void * data);
 int bp_get_type_size (enum ADIOS_DATATYPES type, void * var);
 void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES type);
 
