@@ -149,11 +149,13 @@ AC_CONFIG_FILES([Makefile
                  utils/bpls/Makefile
                  examples/Makefile
                  examples/C/Makefile
+                 examples/C/scalars/Makefile
+                 examples/C/arrays/Makefile
+                 examples/C/attributes/Makefile
                  examples/C/manual/Makefile
                  examples/C/global-array/Makefile
                  examples/C/global-array-time/Makefile
-                 examples/C/adios-types/Makefile
-                 examples/C/adios-attributes/Makefile
+                 examples/C/read_all/Makefile
                  examples/Fortran/Makefile
                  examples/Fortran/scalars/Makefile
                  examples/Fortran/arrays/Makefile
