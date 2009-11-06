@@ -241,7 +241,7 @@ arrays_read_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
 	$(am__append_4)
 arrays_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
 CLEANFILES = *.bp
-EXTRA_DIST = config.xml job.pbs
+EXTRA_DIST = arrays.xml gwrite_arrays.fh gread_arrays.fh job.pbs
 FCLINK = \
         $(LIBTOOL) --mode=link --tag F77 $(FC) \
         $(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@

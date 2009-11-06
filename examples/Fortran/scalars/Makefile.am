@@ -23,7 +23,7 @@ scalars_read_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 endif
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = scalars.xml job.pbs
+EXTRA_DIST = scalars.xml gwrite_scalars.fh gread_scalars.fh job.pbs
 
 FC=$(MPIFC)
 
