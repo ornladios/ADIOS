@@ -79,23 +79,6 @@ void adios_##a##_start_calculation (struct adios_method_struct * method); \
 void adios_##a##_stop_calculation (struct adios_method_struct * method);
 #endif
 
-#define MATCH_STRING_TO_METHOD(b,d,r) \
-if (!strcasecmp (buf,b)) \
-{*method=d;*requires_group_comm=r;return 1;}
-
-#define ASSIGN_FNS(a,b) \
-(*t) [b].adios_init_fn = adios_##a##_init; \
-(*t) [b].adios_open_fn = adios_##a##_open; \
-(*t) [b].adios_should_buffer_fn = adios_##a##_should_buffer; \
-(*t) [b].adios_write_fn = adios_##a##_write; \
-(*t) [b].adios_get_write_buffer_fn = adios_##a##_get_write_buffer; \
-(*t) [b].adios_read_fn = adios_##a##_read; \
-(*t) [b].adios_close_fn = adios_##a##_close; \
-(*t) [b].adios_finalize_fn = adios_##a##_finalize; \
-(*t) [b].adios_end_iteration_fn = adios_##a##_end_iteration; \
-(*t) [b].adios_start_calculation_fn = adios_##a##_start_calculation; \
-(*t) [b].adios_stop_calculation_fn = adios_##a##_stop_calculation;
-
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 //// SETUP YOUR NEW TRANSPORT METHODS BELOW (FOLLOW THE PATTERN):          ////

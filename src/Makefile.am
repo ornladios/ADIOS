@@ -54,12 +54,13 @@ libadiosf_a_SOURCES = adiosf.c \
                      adios_error.c
 endif
 
-if USE_PORTALS
-libadios_a_SOURCES += adios_dart.c
-if BUILD_FORTRAN
-libadiosf_a_SOURCES += adios_dart.c
-endif
-endif
+# this is way out of date and shouldn't be used
+#if USE_PORTALS
+#libadios_a_SOURCES += adios_dart.c
+#if BUILD_FORTRAN
+#libadiosf_a_SOURCES += adios_dart.c
+#endif
+#endif
 
 if HAVE_PHDF5
 lib_LIBRARIES += libadios_phdf5.a

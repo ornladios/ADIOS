@@ -38,8 +38,15 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @BUILD_WRITE_TRUE@am__append_1 = libadios.a
-#  		      adios_dart.c
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_2 = libadiosf.a
+
+# this is way out of date and shouldn't be used
+#if USE_PORTALS
+#libadios_a_SOURCES += adios_dart.c
+#if BUILD_FORTRAN
+#libadiosf_a_SOURCES += adios_dart.c
+#endif
+#endif
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_3 = libadios_phdf5.a
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_4 = -DPHDF5 -DH5_USE_16_API 
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_FALSE@am__append_5 = adios_phdf5.c 
@@ -420,10 +427,6 @@ lib_LIBRARIES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_6)
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@libadios_phdf5_a_SOURCES = adios_phdf5.c
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@libadios_phdf5_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
-
-#if DATATAP
-#libadios_a_SOURCES += adios_datatap.c
-#endif
 @BUILD_WRITE_TRUE@libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 @BUILD_WRITE_TRUE@libadiosf_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 libadiosread_a_SOURCES = adios_bp_v1.c \
