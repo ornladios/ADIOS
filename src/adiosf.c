@@ -5,6 +5,7 @@
 
 #include "common_adios.h"
 #include "adios_internals.h"
+#include "adios_internals_mxml.h"
 #include "adios_transport_hooks.h"
 #include "futils.h"
 
@@ -433,7 +434,7 @@ void FC_FUNC_(adios_define_attribute, adios_DEFINE_ATTRIBUTE)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// adios_common_select_method is in adios_internals.c
+// adios_common_select_method is in adios_internals_mxml.c
 void FC_FUNC_(adios_select_method, adios_SELECT_METHOD) 
     (int * priority, const char * method
     ,const char * parameters, const char * group

@@ -941,6 +941,7 @@ int hw_var (hid_t root_id
     hw_gclose(grp_ids, level, adios_flag_yes);
     H5Tclose (h5_type_id);
     H5Pclose (h5_plist_id);
+    return 0;
 }
 
 /*

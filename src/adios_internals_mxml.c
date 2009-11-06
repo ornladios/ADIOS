@@ -32,7 +32,7 @@ static int adios_transports_initialized = 0;
 // this macro makes getting the attributes easier
 // fix the bgp bugs
 #define GET_ATTR(n,attr,var,en)                              \
-if (!strcasecmp (n, attr->name))                             \
+if (!strcasecmp (n, attr->name)) {                           \
     if (!var)                                                \
     {                                                        \
         var = attr->value;                                   \
@@ -42,7 +42,8 @@ if (!strcasecmp (n, attr->name))                             \
     {                                                        \
         fprintf (stderr, "xml: duplicate attribute %s on %s (ignored)",n,en); \
         continue;                                            \
-    }
+    }                                                        \
+}
 
 static enum ADIOS_DATATYPES parseType (const char * type, const char * name)
 {

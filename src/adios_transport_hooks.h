@@ -3,6 +3,7 @@
 
 #include "config.h"
 #include <stdint.h>
+#include <string.h>
 
 // this is defined in the lint program to get empty implementations
 #ifdef ADIOS_EMPTY_TRANSPORTS

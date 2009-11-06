@@ -69,9 +69,9 @@ int adios_set_buffer_size ()
                                  "%llu requested, %llu available.  Using "
                                  "available.\n"
                         ,adios_buffer_size_requested
-                        ,(((uint64_t) pagesize) * pages)
+                        ,(uint64_t)(((uint64_t) pagesize) * pages)
                         );
-                 adios_buffer_size_max = ((uint64_t) pagesize) * pages;
+                 adios_buffer_size_max = (uint64_t)((uint64_t) pagesize) * pages;
            }
         }
 

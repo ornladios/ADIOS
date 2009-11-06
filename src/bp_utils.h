@@ -25,6 +25,11 @@ int bp_read_open (const char * filename,
 	 	  MPI_Comm comm, 
 		  struct BP_FILE * fh);
 
+int bp_read_minifooter (struct BP_FILE * bp_struct);
+int bp_parse_pgs (struct BP_FILE * fh);
+int bp_parse_attrs (struct BP_FILE * fh);
+int bp_parse_vars (struct BP_FILE * fh);
+
 const char * bp_value_to_string (enum ADIOS_DATATYPES type, void * data);
 int bp_get_type_size (enum ADIOS_DATATYPES type, void * var);
 void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES type);
@@ -50,4 +55,6 @@ void copy_data (void *dst, void *src,
 /* Return 1 if a < b wrt. the given type, otherwise 0 */
 int adios_lt(int type, void *a, void *b);
 
+void alloc_namelist (char ***namelist, int length);
+void free_namelist (char **namelist, int length);
 #endif

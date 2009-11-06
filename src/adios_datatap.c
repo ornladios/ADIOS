@@ -10,6 +10,7 @@
 
 #include <sys/stat.h>
 #include <sys/queue.h>
+#include <sys/time.h>
 
 #ifdef NO_DATATAP
 #if NO_DATATAP == 0

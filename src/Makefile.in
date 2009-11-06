@@ -93,7 +93,7 @@ am__libadios_a_SOURCES_DIST = adios.c common_adios.c \
 	adios_mpi_cio.c adios_mpi_stripe.c adios_mpi_stagger.c \
 	adios_mpi_aggregate.c adios_posix.c adios_provenance.c \
 	adios_internals.c adios_internals_mxml.c buffer.c \
-	adios_socket.c adios_bp_v1.c adios_bp_v2.c adios_endianness.c \
+	adios_socket.c adios_bp_v1.c adios_endianness.c \
 	adios_adaptive.c adios_datatap.c adios_phdf5.c
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_FALSE@am__objects_1 = libadios_a-adios_phdf5.$(OBJEXT)
 @BUILD_WRITE_TRUE@am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
@@ -112,7 +112,6 @@ am__libadios_a_SOURCES_DIST = adios.c common_adios.c \
 @BUILD_WRITE_TRUE@	libadios_a-buffer.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_socket.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_bp_v1.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	libadios_a-adios_bp_v2.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_endianness.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_adaptive.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_datatap.$(OBJEXT) \
@@ -130,7 +129,7 @@ am__libadiosf_a_SOURCES_DIST = adiosf.c common_adios.c \
 	adios_mpi_cio.c adios_mpi_stripe.c adios_mpi_stagger.c \
 	adios_mpi_aggregate.c adios_posix.c adios_provenance.c \
 	adios_internals.c adios_internals_mxml.c buffer.c \
-	adios_socket.c adios_bp_v1.c adios_bp_v2.c adios_endianness.c \
+	adios_socket.c adios_bp_v1.c adios_endianness.c \
 	adios_adaptive.c adios_datatap.c futils.c adios_error.c \
 	adios_phdf5.c
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_FALSE@am__objects_2 = libadiosf_a-adios_phdf5.$(OBJEXT)
@@ -150,7 +149,6 @@ am__libadiosf_a_SOURCES_DIST = adiosf.c common_adios.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-buffer.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_socket.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_bp_v1.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_bp_v2.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_endianness.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_adaptive.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_datatap.$(OBJEXT) \
@@ -401,7 +399,7 @@ lib_LIBRARIES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @BUILD_WRITE_TRUE@	adios_mpi_aggregate.c adios_posix.c \
 @BUILD_WRITE_TRUE@	adios_provenance.c adios_internals.c \
 @BUILD_WRITE_TRUE@	adios_internals_mxml.c buffer.c \
-@BUILD_WRITE_TRUE@	adios_socket.c adios_bp_v1.c adios_bp_v2.c \
+@BUILD_WRITE_TRUE@	adios_socket.c adios_bp_v1.c \
 @BUILD_WRITE_TRUE@	adios_endianness.c adios_adaptive.c \
 @BUILD_WRITE_TRUE@	adios_datatap.c $(am__append_5)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@libadiosf_a_SOURCES = adiosf.c \
@@ -419,7 +417,6 @@ lib_LIBRARIES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_internals_mxml.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	buffer.c adios_socket.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_bp_v1.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_bp_v2.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_endianness.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_adaptive.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_datatap.c futils.c \
@@ -469,7 +466,7 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
 libadiosread_nompi_a_CPPFLAGS = -D_NOMPI $(am__append_9)
 libadiosreadf_nompi_a_CPPFLAGS = -D_NOMPI
 @HAVE_DMALLOC_TRUE@libadiosread_a_CPPFLAGS = -DDMALLOC $(DMALLOC_CPPFLAGS)
-EXTRA_DIST = adios_bp_v1.h adios_bp_v2.h adios_endianness.h adios_error.h adios_internals.h \
+EXTRA_DIST = adios_bp_v1.h adios_endianness.h adios_error.h adios_internals.h \
              adios_internals_mxml.h adios_socket.h adios_transport_hooks.h bp_types.h \
              bp_utils.h buffer.h common_adios.h common_read.h futils.h
 
@@ -675,12 +672,6 @@ libadios_a-adios_bp_v1.o: adios_bp_v1.c
 libadios_a-adios_bp_v1.obj: adios_bp_v1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_bp_v1.obj `if test -f 'adios_bp_v1.c'; then $(CYGPATH_W) 'adios_bp_v1.c'; else $(CYGPATH_W) '$(srcdir)/adios_bp_v1.c'; fi`
 
-libadios_a-adios_bp_v2.o: adios_bp_v2.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_bp_v2.o `test -f 'adios_bp_v2.c' || echo '$(srcdir)/'`adios_bp_v2.c
-
-libadios_a-adios_bp_v2.obj: adios_bp_v2.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_bp_v2.obj `if test -f 'adios_bp_v2.c'; then $(CYGPATH_W) 'adios_bp_v2.c'; else $(CYGPATH_W) '$(srcdir)/adios_bp_v2.c'; fi`
-
 libadios_a-adios_endianness.o: adios_endianness.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_endianness.o `test -f 'adios_endianness.c' || echo '$(srcdir)/'`adios_endianness.c
 
@@ -806,12 +797,6 @@ libadiosf_a-adios_bp_v1.o: adios_bp_v1.c
 
 libadiosf_a-adios_bp_v1.obj: adios_bp_v1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_bp_v1.obj `if test -f 'adios_bp_v1.c'; then $(CYGPATH_W) 'adios_bp_v1.c'; else $(CYGPATH_W) '$(srcdir)/adios_bp_v1.c'; fi`
-
-libadiosf_a-adios_bp_v2.o: adios_bp_v2.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_bp_v2.o `test -f 'adios_bp_v2.c' || echo '$(srcdir)/'`adios_bp_v2.c
-
-libadiosf_a-adios_bp_v2.obj: adios_bp_v2.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_bp_v2.obj `if test -f 'adios_bp_v2.c'; then $(CYGPATH_W) 'adios_bp_v2.c'; else $(CYGPATH_W) '$(srcdir)/adios_bp_v2.c'; fi`
 
 libadiosf_a-adios_endianness.o: adios_endianness.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_endianness.o `test -f 'adios_endianness.c' || echo '$(srcdir)/'`adios_endianness.c

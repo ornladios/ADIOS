@@ -1,5 +1,6 @@
 #include <math.h>
 #include <string.h>
+#include <ctype.h>  /* isdigit() */
 #include <unistd.h>
 #include <limits.h>
 #include <stdio.h>

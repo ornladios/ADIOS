@@ -24,7 +24,6 @@ libadios_a_SOURCES = adios.c \
                      buffer.c \
                      adios_socket.c \
                      adios_bp_v1.c  \
-                     adios_bp_v2.c  \
                      adios_endianness.c\
                      adios_adaptive.c\
                      adios_datatap.c
@@ -46,7 +45,6 @@ libadiosf_a_SOURCES = adiosf.c \
                      buffer.c \
                      adios_socket.c \
                      adios_bp_v1.c  \
-                     adios_bp_v2.c  \
                      adios_endianness.c\
                      adios_adaptive.c\
                      adios_datatap.c \
@@ -148,7 +146,7 @@ libadiosread_a_CPPFLAGS = -DDMALLOC $(DMALLOC_CPPFLAGS)
 libadiosread_nompi_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
 endif
 
-EXTRA_DIST = adios_bp_v1.h adios_bp_v2.h adios_endianness.h adios_error.h adios_internals.h \
+EXTRA_DIST = adios_bp_v1.h adios_endianness.h adios_error.h adios_internals.h \
              adios_internals_mxml.h adios_socket.h adios_transport_hooks.h bp_types.h \
              bp_utils.h buffer.h common_adios.h common_read.h futils.h
 

@@ -13,6 +13,7 @@
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
+#include "adios_internals_mxml.h"
 
 extern struct adios_transport_struct * adios_transports;
 
@@ -283,7 +284,7 @@ int adios_define_attribute (int64_t group, const char * name
 
 ///////////////////////////////////////////////////////////////////////////////
 
-// adios_common_select_method is in adios_internals.c
+// adios_common_select_method is in adios_internals_mxml.c
 
 int adios_select_method (int priority, const char * method
                         ,const char * parameters, const char * group

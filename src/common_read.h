@@ -47,4 +47,6 @@ int common_read_get_attr_byid (ADIOS_GROUP * gp, int attrid, enum ADIOS_DATATYPE
 const char * common_read_type_to_string (enum ADIOS_DATATYPES type);
 int common_read_type_size(enum ADIOS_DATATYPES type, void *data);
 
+void common_read_print_groupinfo (ADIOS_GROUP *gp);
+void common_read_print_fileinfo (ADIOS_FILE *fp);
 #endif

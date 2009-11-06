@@ -181,6 +181,7 @@ struct adios_attribute_struct_v1
     void * value;
 };
 
+void adios_shared_buffer_free (struct adios_bp_buffer_struct_v1 * b);
 void adios_buffer_struct_init (struct adios_bp_buffer_struct_v1 * b);
 void adios_buffer_struct_clear (struct adios_bp_buffer_struct_v1 * b);
 
@@ -241,17 +242,13 @@ int adios_clear_attribute_v1 (struct adios_attribute_struct_v1 * attribute);
 void adios_init_buffer_read_version (struct adios_bp_buffer_struct_v1 * b);
 void adios_posix_read_version (struct adios_bp_buffer_struct_v1 * b);
 
-void adios_init_buffer_read_index_offsets (
-                                         struct adios_bp_buffer_struct_v1 * b
-                                         );
+void adios_init_buffer_read_index_offsets ( struct adios_bp_buffer_struct_v1 * b);
 void adios_posix_read_index_offsets (struct adios_bp_buffer_struct_v1 * b);
 
-void adios_init_buffer_read_process_group_index (
-                                          struct adios_bp_buffer_struct_v1 * b
-                                          );
-void adios_posix_read_process_group_index (struct adios_bp_buffer_struct_v1 * b
-                                          );
+void adios_init_buffer_read_process_group_index ( struct adios_bp_buffer_struct_v1 * b);
+void adios_posix_read_process_group_index (struct adios_bp_buffer_struct_v1 * b);
 
+void adios_init_buffer_read_process_group (struct adios_bp_buffer_struct_v1 * b);
 void adios_init_buffer_read_vars_index (struct adios_bp_buffer_struct_v1 * b);
 void adios_posix_read_vars_index (struct adios_bp_buffer_struct_v1 * b);
 

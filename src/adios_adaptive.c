@@ -412,83 +412,83 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
     {
         timeval_subtract (&diff, &t->t2, &t->t1);
         fprintf (f, "cc\t%2d\tFile create (stripe setup):\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+               ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
 
         timeval_subtract (&diff, &t->t6, &t->t5);
         fprintf (f, "dd\t%2d\tMass file open:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+               ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
 
         timeval_subtract (&diff, &t->t5, &t->t16);
         fprintf (f, "ee\t%2d\tBuild file offsets:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+               ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
     }
     if (rank == size - 1)
     {
         timeval_subtract (&diff, &t->t4, &t->t3);
         fprintf (f, "bb\t%2d\tCreate threads:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+               ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
 
         timeval_subtract (&diff, &t->t10, &t->t9);
         fprintf (f, "ff\t%2d\tGlobal index creation:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+               ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
 
         timeval_subtract (&diff, &t->t10, &t->t7);
         fprintf (f, "gg\t%2d\tAll writes complete (w/ local index):\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+               ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
 
         timeval_subtract (&diff, &t->t11, &t->t0);
         fprintf (f, "hh\t%2d\tTotal time:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+               ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
 
         timeval_subtract (&diff, &t->t10, &t->t0);
         fprintf (f, "xx\t%2d\tCoord total time:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+               ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
     }
     if (rank == sub_coord_rank)
     {
         timeval_subtract (&diff, &t->t13, &t->t0);
         fprintf (f, "yy\t%2d\tSub coord total time:\t%6d\t%02d.%06d\n"
-               ,iteration, rank, diff.tv_sec, diff.tv_usec);
+               ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
     }
 
     timeval_subtract (&diff, &t->t13, &t->t12);
     fprintf (f, "ii\t%2d\tLocal index creation:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     timeval_subtract (&diff, &t->t11, &t->t14);
     fprintf (f, "jj\t%2d\tThread shutdown:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     timeval_subtract (&diff, &t->t22, &t->t21);
     fprintf (f, "kk\t%2d\tshould buffer time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     timeval_subtract (&diff, &t->t19, &t->t23);
     fprintf (f, "ll\t%2d\tclose startup time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     timeval_subtract (&diff, &t->t19, &t->t0);
     fprintf (f, "mm\t%2d\tsetup time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     timeval_subtract (&diff, &t->t14, &t->t20);
     fprintf (f, "nn\t%2d\tcleanup time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     timeval_subtract (&diff, &t->t21, &t->t0);
     fprintf (f, "oo\t%2d\topen->should_buffer time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     timeval_subtract (&diff, &t->t24 [0], &t->t22);
     fprintf (f, "pp\t%2d\tshould_buffer->write1 time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     int i;
     for (i = 0; i < t->write_count - 1; i++)
     {
         timeval_subtract (&diff, &t->t24 [i + 1], &t->t24 [i]);
         fprintf (f, "qq[%i]\t%2d\twrite1->write2 time:\t%6d\t%02d.%06d\n"
-               ,i, iteration, rank, diff.tv_sec, diff.tv_usec);
+               ,i, iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
     }
 
     int w = 0;
@@ -512,7 +512,7 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
         {
             timeval_subtract (&diff, &t->t17 [c].t, &t->t15 [w].t);
             fprintf (f, "AAA\t%2d\twrite->complete %d time:\t%6d\t%02d.%06d\n"
-                   ,iteration, t->t15 [w].pid, rank, diff.tv_sec, diff.tv_usec);
+                   ,iteration, t->t15 [w].pid, rank, (int)diff.tv_sec, (int)diff.tv_usec);
             w++;
             c++;
         }
@@ -539,7 +539,7 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
         {
             timeval_subtract (&diff, &t->t29 [c].t, &t->t15 [w].t);
             fprintf (f, "BBB\t%2d\tMPI outbound queue %d time:\t%6d\t%02d.%06d\n"
-                   ,iteration, t->t15 [w].pid, rank, diff.tv_sec, diff.tv_usec);
+                   ,iteration, t->t15 [w].pid, rank, (int)diff.tv_sec, (int)diff.tv_usec);
             w++;
             c++;
         }
@@ -547,7 +547,7 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
 
     timeval_subtract (&diff, &t->t23, &t->t24 [t->write_count - 1]);
     fprintf (f, "rr\t%2d\twrite[n]->close start time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     fprintf (f, "ss\t%2d\tMPI_Iprobe time:\t%6d\tcount: %d\t%02d.%06d\n"
            ,iteration, rank, t->iprobe_count, t->t25.tv_sec, t->t25.tv_usec);
@@ -563,15 +563,15 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
 
     timeval_subtract (&diff, &t->t11, &t->t23);
     fprintf (f, "vv\t%2d\tclose start to shutdown time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     timeval_subtract (&diff, &t->t28, &t->t23);
     fprintf (f, "ww\t%2d\tclose total time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     timeval_subtract (&diff, &t->t18, &t->t0);
     fprintf (f, "zz\t%2d\twriter total time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 }
 #endif
 
@@ -678,7 +678,7 @@ const char * message_to_string_full (uint64_t * msg, char s)
 
         case WRITE_COMPLETE:
             sprintf (x, "WRITE_COMPLETE (tg: %lld wg: %lld eo: %lld "
-                        "is: %lld writer: %d)"
+                        "is: %lld writer: %lld)"
                     ,msg [1], msg [2], msg [3], msg [4], msg [5]
                     );
             return x;
@@ -715,7 +715,7 @@ const char * message_to_string_full (uint64_t * msg, char s)
             return "INDEX_BODY";
 
         default:
-            sprintf (x, "unknown (%d)", msg [0]);
+            sprintf (x, "unknown (%lld)", msg [0]);
             return x;
     }
 }
@@ -2543,7 +2543,7 @@ fflush (fp_mpi);
 #endif
                     pthread_mutex_lock (&md->mpi_mutex);
                     struct mpi_flag_struct * f;
-                    queue_dequeue (&md->mpi_flag, &f);
+                    queue_dequeue (&md->mpi_flag, (void**)&f);
 #if 0
 fprintf (fp_mpi, "sending msg to %d %s\n", f->target, message_to_string_full (((uint64_t *) f->msg), 'w'));
 fflush (fp_mpi);
@@ -2990,7 +2990,7 @@ static void * sub_coordinator_main (void * param)
 #if PRINT_MESSAGES
     printf ("signaled SUB_COORDINATOR %d START_WRITES\n", md->group);
 #endif
-    queue_dequeue (&md->sub_coordinator_flag, &f);
+    queue_dequeue (&md->sub_coordinator_flag, (void*)&f);
     pthread_mutex_unlock (&md->sub_coordinator_mutex);
     msg = (uint64_t *) f->msg;
     assert (msg [0] == START_WRITES);
@@ -3054,7 +3054,7 @@ static void * sub_coordinator_main (void * param)
         {
             message_available = 1;
             pthread_mutex_lock (&md->sub_coordinator_mutex);
-            queue_dequeue (&md->sub_coordinator_flag, &f);
+            queue_dequeue (&md->sub_coordinator_flag, (void*)&f);
             pthread_mutex_unlock (&md->sub_coordinator_mutex);
             msg = (uint64_t *) f->msg;
         }
@@ -3458,7 +3458,7 @@ fflush (fp_w);
                             while (queue_size (&md->sub_coordinator_flag) == 0)
                                 ;
                             pthread_mutex_lock (&md->sub_coordinator_mutex);
-                            queue_dequeue (&md->sub_coordinator_flag, &flag);
+                            queue_dequeue (&md->sub_coordinator_flag, (void*)&flag);
                             pthread_mutex_unlock (&md->sub_coordinator_mutex);
                             b.buff = (char *) (flag [1]);
                             //free (flag); // freed on writer side
@@ -3850,7 +3850,7 @@ static void * coordinator_main (void * param)
     printf ("signaled COORDINATOR\n");
 #endif
 #endif
-    queue_dequeue (&md->coordinator_flag, &f);
+    queue_dequeue (&md->coordinator_flag, (void*)&f);
     pthread_mutex_unlock (&md->coordinator_mutex);
     msg = (uint64_t *) f->msg;
     assert (msg [0] == START_WRITES);
@@ -3977,7 +3977,7 @@ FILE * fp_c = fopen ("c", "w");
         {
             message_available = 1;
             pthread_mutex_lock (&md->coordinator_mutex);
-            queue_dequeue (&md->coordinator_flag, &f);
+            queue_dequeue (&md->coordinator_flag, (void*)&f);
             pthread_mutex_unlock (&md->coordinator_mutex);
             msg = (uint64_t *) f->msg;
         }
@@ -4616,7 +4616,7 @@ static void * writer_main (void * param)
         {
             message_available = 1;
             pthread_mutex_lock (&md->writer_mutex);
-            queue_dequeue (&md->writer_flag, &f);
+            queue_dequeue (&md->writer_flag, (void*)&f);
             pthread_mutex_unlock (&md->writer_mutex);
             msg = (uint64_t *) f->msg;
 #if PRINT_MESSAGES
