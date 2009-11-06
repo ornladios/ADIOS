@@ -22,4 +22,4 @@ FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
 	$(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
 
-EXTRA_DIST = adios_globaltime.F90.xml gread_temperature.fh gwrite_temperature.fh job.pbs
+EXTRA_DIST = adios_globaltime.xml gread_temperature.fh gwrite_temperature.fh job.pbs
