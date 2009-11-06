@@ -35,8 +35,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@HAVE_HDF5_TRUE@am__append_1 = bp2h5
-@HAVE_NETCDF_TRUE@am__append_2 = bp2ncd
+@BUILD_WRITE_TRUE@am__append_1 = adios_lint
+@HAVE_HDF5_TRUE@am__append_2 = bp2h5
+@HAVE_NETCDF_TRUE@am__append_3 = bp2ncd
 subdir = utils
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -212,8 +213,8 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = gpp bpdump bp2ascii bpsplit bpls adios_lint $(am__append_1) \
-	$(am__append_2)
+SUBDIRS = gpp bpdump bp2ascii bpsplit bpls $(am__append_1) \
+	$(am__append_2) $(am__append_3)
 all: all-recursive
 
 .SUFFIXES:

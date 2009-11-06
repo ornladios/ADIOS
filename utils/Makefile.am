@@ -1,4 +1,7 @@
-SUBDIRS= gpp bpdump bp2ascii bpsplit bpls adios_lint
+SUBDIRS= gpp bpdump bp2ascii bpsplit bpls
+if BUILD_WRITE
+SUBDIRS += adios_lint
+endif
 if HAVE_HDF5
 SUBDIRS += bp2h5
 endif
