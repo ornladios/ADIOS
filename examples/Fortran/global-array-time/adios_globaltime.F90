@@ -11,8 +11,8 @@ program adios_global
     include 'mpif.h'
     character(len=256)      :: filename = "adios_globaltime.bp"
     integer                 :: rank, size, i, it, ierr
-    integer                 :: NX = 10
-    real*8, dimension(NX)   :: t
+    integer, parameter      :: NX = 10
+    real*8                  :: t(NX)
     integer                 :: comm
 
     ! ADIOS variables declarations for matching gwrite_temperature.fh 

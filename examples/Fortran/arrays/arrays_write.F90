@@ -15,7 +15,7 @@ program arrays
     integer*8               :: adios_handle
 
     ! variables to write out 
-    integer                 :: NX = 10, NY = 100
+    integer, parameter      :: NX = 10, NY = 100
     real*8                  :: t(NX,NY)
     integer                 :: p(NX)
 

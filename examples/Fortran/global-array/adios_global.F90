@@ -10,7 +10,7 @@ program adios_global
     include 'mpif.h'
     character(len=256)      :: filename = "adios_global.bp"
     integer                 :: rank, size, i, ierr
-    integer                 :: NX = 10
+    integer, parameter      :: NX = 10
     real*8, dimension(NX)   :: t
     integer                 :: comm
 
