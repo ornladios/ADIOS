@@ -1183,11 +1183,16 @@ int64_t common_read_read_var_byid (ADIOS_GROUP    * gp,
             }
             
             /* take out the time dimension */
+            /* For C, gdims and offset are one size shorter because the timedim part is missing,
+               so we take it out only for fortran files
+            */
             if (timedim > -1) {
                 for (i = timedim; i < ndim-1; i++) {
                     ldims[i] = ldims[i+1];
-                    gdims[i] = gdims[i+1];
-                    offsets[i] = offsets[i+1];
+                    if (file_is_fortran) {
+                        gdims[i] = gdims[i+1];
+                        offsets[i] = offsets[i+1];
+                    }
                 }
             }
                 
