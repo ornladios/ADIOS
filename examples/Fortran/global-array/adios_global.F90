@@ -1,14 +1,14 @@
 ! ADIOS Fortran Example: write a global array from N processors with gwrite
 !
-! How to run: mpirun -np <N> adiosf_global
-! Output: adiosf_global.bp
-! ADIOS config file: adiosf_global.xml
+! How to run: mpirun -np <N> adios_global
+! Output: adios_global.bp
+! ADIOS config file: adios_global.xml
 !
 
 program adios_global 
     implicit none
     include 'mpif.h'
-    character(len=256)      :: filename = "adiosf_global.bp"
+    character(len=256)      :: filename = "adios_global.bp"
     integer                 :: rank, size, i, ierr
     integer                 :: NX = 10
     real*8, dimension(NX)   :: t
@@ -22,21 +22,21 @@ program adios_global
     call MPI_Init (ierr)
     call MPI_Comm_dup (MPI_COMM_WORLD, comm, ierr)
     call MPI_Comm_rank (comm, rank, ierr)
-    call MPI_Comm_size (comm, size, ierr);
+    call MPI_Comm_size (comm, size, ierr)
 
     do i = 1, NX
-        t(i)  = 10*rank+i;
+        t(i)  = 10.0*rank+i
     enddo
 
-    call adios_init ("adiosf_global.xml", adios_err);
+    call adios_init ("adios_global.xml", adios_err)
 
-    call adios_open (adios_handle, "temperature", filename, "w", adios_err);
+    call adios_open (adios_handle, "temperature", filename, "w", adios_err)
 #include "gwrite_temperature.fh"
-    call adios_close (adios_handle, adios_err);
+    call adios_close (adios_handle, adios_err)
 
     call MPI_Barrier (comm, ierr)
 
-    call adios_finalize (rank, adios_err);
+    call adios_finalize (rank, adios_err)
 
-    call MPI_Finalize ();
+    call MPI_Finalize ()
 end program
