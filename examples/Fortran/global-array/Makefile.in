@@ -36,7 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = adiosf_global$(EXEEXT)
+noinst_PROGRAMS = adios_global$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_1 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 subdir = examples/Fortran/global-array
@@ -56,13 +56,13 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_adiosf_global_OBJECTS = adiosf_global.$(OBJEXT)
-adiosf_global_OBJECTS = $(am_adiosf_global_OBJECTS)
+am_adios_global_OBJECTS = adios_global.$(OBJEXT)
+adios_global_OBJECTS = $(am_adios_global_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
-adiosf_global_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
+adios_global_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
@@ -73,8 +73,8 @@ LTPPFCCOMPILE = $(LIBTOOL) --mode=compile $(FC) $(DEFS) \
 	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
 	$(AM_FCFLAGS) $(FCFLAGS)
 FCLD = $(FC)
-SOURCES = $(adiosf_global_SOURCES)
-DIST_SOURCES = $(adiosf_global_SOURCES)
+SOURCES = $(adios_global_SOURCES)
+DIST_SOURCES = $(adios_global_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -226,16 +226,16 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
-adiosf_global_SOURCES = adiosf_global.F90
-adiosf_global_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
+adios_global_SOURCES = adios_global.F90
+adios_global_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(am__append_2)
-adiosf_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
+adios_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
 CLEANFILES = *.bp
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
 	$(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
 
-EXTRA_DIST = adiosf_global.xml gread_temperature.fh gwrite_temperature.fh job.pbs
+EXTRA_DIST = adios_global.xml gread_temperature.fh gwrite_temperature.fh job.pbs
 all: all-am
 
 .SUFFIXES:
@@ -276,9 +276,9 @@ clean-noinstPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-adiosf_global$(EXEEXT): $(adiosf_global_OBJECTS) $(adiosf_global_DEPENDENCIES) 
-	@rm -f adiosf_global$(EXEEXT)
-	$(FCLINK) $(adiosf_global_LDFLAGS) $(adiosf_global_OBJECTS) $(adiosf_global_LDADD) $(LIBS)
+adios_global$(EXEEXT): $(adios_global_OBJECTS) $(adios_global_DEPENDENCIES) 
+	@rm -f adios_global$(EXEEXT)
+	$(FCLINK) $(adios_global_LDFLAGS) $(adios_global_OBJECTS) $(adios_global_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
