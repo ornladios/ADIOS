@@ -160,6 +160,7 @@ AC_CONFIG_FILES([Makefile
                  examples/Fortran/scalars/Makefile
                  examples/Fortran/arrays/Makefile
                  examples/Fortran/global-array/Makefile
+                 examples/Fortran/global-array-time/Makefile
                 ])
 
 AC_OUTPUT

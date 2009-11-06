@@ -24,7 +24,7 @@ int main (int argc, char ** argv)
     	for (it =0; it < 13; it++) {
 
         	for (i = 0; i < NX; i++)
-            		t[i] = it*100.0 + rank*10.0 + i;
+            		t[i] = it*100.0 + rank*NX + i;
 		
                 if (it==0)
 		    adios_open (&adios_handle, "temperature", filename, "w");

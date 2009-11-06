@@ -1,2 +1,2 @@
-SUBDIRS=scalars arrays global-array 
-#global-array-time time-index
+SUBDIRS=scalars arrays global-array global-array-time 
+#time-index
