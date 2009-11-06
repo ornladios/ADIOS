@@ -12,9 +12,7 @@ dnl generates HAVE_STRINGIZE
 
 AC_PROG_CC
 AM_PROG_CC_C_O
-AC_PROG_CXX
-
-AC_PROG_LIBTOOL
+dnl AC_PROG_CXX
 
 AC_LANG(C)
 ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C])])
@@ -34,6 +32,7 @@ if test "x$enable_fortran" != "xno"; then
 fi
 
 AC_LANG(C)
+AC_PROG_LIBTOOL
 AC_PROG_MXML
 AC_PROG_GENGETOPT
 AC_HDF5
