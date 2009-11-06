@@ -84,11 +84,10 @@ libadios_a_LIBADD =
 am__libadios_a_SOURCES_DIST = adios.c common_adios.c \
 	adios_transport_hooks.c adios_mpi.c adios_mpi_stripe2.c \
 	adios_mpi_cio.c adios_mpi_stripe.c adios_mpi_stagger.c \
-	adios_mpi_aggregate.c adios_posix.c adios_posix_ascii.c \
-	adios_vtk.c adios_provenance.c adios_internals.c \
-	adios_internals_mxml.c buffer.c adios_socket.c adios_bp_v1.c \
-	adios_bp_v2.c adios_endianness.c adios_adaptive.c \
-	adios_datatap.c adios_phdf5.c
+	adios_mpi_aggregate.c adios_posix.c adios_provenance.c \
+	adios_internals.c adios_internals_mxml.c buffer.c \
+	adios_socket.c adios_bp_v1.c adios_bp_v2.c adios_endianness.c \
+	adios_adaptive.c adios_datatap.c adios_phdf5.c
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_FALSE@am__objects_1 = libadios_a-adios_phdf5.$(OBJEXT)
 @BUILD_WRITE_TRUE@am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-common_adios.$(OBJEXT) \
@@ -100,8 +99,6 @@ am__libadios_a_SOURCES_DIST = adios.c common_adios.c \
 @BUILD_WRITE_TRUE@	libadios_a-adios_mpi_stagger.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_mpi_aggregate.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_posix.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	libadios_a-adios_posix_ascii.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	libadios_a-adios_vtk.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_provenance.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_internals.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_internals_mxml.$(OBJEXT) \
@@ -124,11 +121,11 @@ libadiosf_a_LIBADD =
 am__libadiosf_a_SOURCES_DIST = adiosf.c common_adios.c \
 	adios_transport_hooks.c adios_mpi.c adios_mpi_stripe2.c \
 	adios_mpi_cio.c adios_mpi_stripe.c adios_mpi_stagger.c \
-	adios_mpi_aggregate.c adios_posix.c adios_posix_ascii.c \
-	adios_vtk.c adios_provenance.c adios_internals.c \
-	adios_internals_mxml.c buffer.c adios_socket.c adios_bp_v1.c \
-	adios_bp_v2.c adios_endianness.c adios_adaptive.c \
-	adios_datatap.c futils.c adios_error.c adios_phdf5.c
+	adios_mpi_aggregate.c adios_posix.c adios_provenance.c \
+	adios_internals.c adios_internals_mxml.c buffer.c \
+	adios_socket.c adios_bp_v1.c adios_bp_v2.c adios_endianness.c \
+	adios_adaptive.c adios_datatap.c futils.c adios_error.c \
+	adios_phdf5.c
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_FALSE@am__objects_2 = libadiosf_a-adios_phdf5.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am_libadiosf_a_OBJECTS = libadiosf_a-adiosf.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-common_adios.$(OBJEXT) \
@@ -140,8 +137,6 @@ am__libadiosf_a_SOURCES_DIST = adiosf.c common_adios.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_mpi_stagger.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_mpi_aggregate.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_posix.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_posix_ascii.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_vtk.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_provenance.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_internals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_internals_mxml.$(OBJEXT) \
@@ -397,7 +392,6 @@ lib_LIBRARIES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @BUILD_WRITE_TRUE@	adios_mpi_stripe2.c adios_mpi_cio.c \
 @BUILD_WRITE_TRUE@	adios_mpi_stripe.c adios_mpi_stagger.c \
 @BUILD_WRITE_TRUE@	adios_mpi_aggregate.c adios_posix.c \
-@BUILD_WRITE_TRUE@	adios_posix_ascii.c adios_vtk.c \
 @BUILD_WRITE_TRUE@	adios_provenance.c adios_internals.c \
 @BUILD_WRITE_TRUE@	adios_internals_mxml.c buffer.c \
 @BUILD_WRITE_TRUE@	adios_socket.c adios_bp_v1.c adios_bp_v2.c \
@@ -413,8 +407,6 @@ lib_LIBRARIES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_mpi_stagger.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_mpi_aggregate.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_posix.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_posix_ascii.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_vtk.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_provenance.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_internals.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_internals_mxml.c \
@@ -644,18 +636,6 @@ libadios_a-adios_posix.o: adios_posix.c
 libadios_a-adios_posix.obj: adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_posix.obj `if test -f 'adios_posix.c'; then $(CYGPATH_W) 'adios_posix.c'; else $(CYGPATH_W) '$(srcdir)/adios_posix.c'; fi`
 
-libadios_a-adios_posix_ascii.o: adios_posix_ascii.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_posix_ascii.o `test -f 'adios_posix_ascii.c' || echo '$(srcdir)/'`adios_posix_ascii.c
-
-libadios_a-adios_posix_ascii.obj: adios_posix_ascii.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_posix_ascii.obj `if test -f 'adios_posix_ascii.c'; then $(CYGPATH_W) 'adios_posix_ascii.c'; else $(CYGPATH_W) '$(srcdir)/adios_posix_ascii.c'; fi`
-
-libadios_a-adios_vtk.o: adios_vtk.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_vtk.o `test -f 'adios_vtk.c' || echo '$(srcdir)/'`adios_vtk.c
-
-libadios_a-adios_vtk.obj: adios_vtk.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_vtk.obj `if test -f 'adios_vtk.c'; then $(CYGPATH_W) 'adios_vtk.c'; else $(CYGPATH_W) '$(srcdir)/adios_vtk.c'; fi`
-
 libadios_a-adios_provenance.o: adios_provenance.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_provenance.o `test -f 'adios_provenance.c' || echo '$(srcdir)/'`adios_provenance.c
 
@@ -787,18 +767,6 @@ libadiosf_a-adios_posix.o: adios_posix.c
 
 libadiosf_a-adios_posix.obj: adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_posix.obj `if test -f 'adios_posix.c'; then $(CYGPATH_W) 'adios_posix.c'; else $(CYGPATH_W) '$(srcdir)/adios_posix.c'; fi`
-
-libadiosf_a-adios_posix_ascii.o: adios_posix_ascii.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_posix_ascii.o `test -f 'adios_posix_ascii.c' || echo '$(srcdir)/'`adios_posix_ascii.c
-
-libadiosf_a-adios_posix_ascii.obj: adios_posix_ascii.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_posix_ascii.obj `if test -f 'adios_posix_ascii.c'; then $(CYGPATH_W) 'adios_posix_ascii.c'; else $(CYGPATH_W) '$(srcdir)/adios_posix_ascii.c'; fi`
-
-libadiosf_a-adios_vtk.o: adios_vtk.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_vtk.o `test -f 'adios_vtk.c' || echo '$(srcdir)/'`adios_vtk.c
-
-libadiosf_a-adios_vtk.obj: adios_vtk.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_vtk.obj `if test -f 'adios_vtk.c'; then $(CYGPATH_W) 'adios_vtk.c'; else $(CYGPATH_W) '$(srcdir)/adios_vtk.c'; fi`
 
 libadiosf_a-adios_provenance.o: adios_provenance.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_provenance.o `test -f 'adios_provenance.c' || echo '$(srcdir)/'`adios_provenance.c

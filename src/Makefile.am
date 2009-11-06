@@ -18,8 +18,6 @@ libadios_a_SOURCES = adios.c \
                      adios_mpi_stagger.c \
                      adios_mpi_aggregate.c \
                      adios_posix.c \
-                     adios_posix_ascii.c \
-                     adios_vtk.c \
                      adios_provenance.c \
                      adios_internals.c \
                      adios_internals_mxml.c \
@@ -30,7 +28,6 @@ libadios_a_SOURCES = adios.c \
                      adios_endianness.c\
                      adios_adaptive.c\
                      adios_datatap.c
-#  		      adios_dart.c
 if BUILD_FORTRAN
 lib_LIBRARIES += libadiosf.a
 libadiosf_a_SOURCES = adiosf.c \
@@ -43,8 +40,6 @@ libadiosf_a_SOURCES = adiosf.c \
                      adios_mpi_stagger.c \
                      adios_mpi_aggregate.c \
                      adios_posix.c \
-                     adios_posix_ascii.c \
-                     adios_vtk.c \
                      adios_provenance.c \
                      adios_internals.c \
                      adios_internals_mxml.c \
@@ -59,6 +54,13 @@ libadiosf_a_SOURCES = adiosf.c \
                      adios_error.c
 endif
 
+if USE_PORTALS
+libadios_a_SOURCES += adios_dart.c
+if BUILD_FORTRAN
+libadiosf_a_SOURCES += adios_dart.c
+endif
+endif
+
 if HAVE_PHDF5
 lib_LIBRARIES += libadios_phdf5.a
 libadios_phdf5_a_SOURCES = adios_phdf5.c
@@ -70,10 +72,6 @@ if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_phdf5.c 
 endif
 endif
-
-#if DATATAP
-#libadios_a_SOURCES += adios_datatap.c
-#endif
 
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 libadiosf_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
