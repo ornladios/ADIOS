@@ -3,7 +3,7 @@
 #include "stdint.h"
 #include "unistd.h"
 #include "adios_types.h"
-#include "adios_transport_hooks.h" /* enum ADIOS_IO_METHOD */
+extern enum ADIOS_IO_METHOD;
 
 enum ADIOS_CHARACTERISTICS
 {

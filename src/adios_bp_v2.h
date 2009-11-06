@@ -1,7 +1,8 @@
 #ifndef ADIOS_BP_V1_H
 #define ADIOS_BP_V1_H
 #include "adios_types.h"
-#include "adios_transport_hooks.h" 
+extern enum ADIOS_IO_METHOD;
+
 enum ADIOS_CHARACTERISTICS
 {
      adios_characteristic_value          = 0

@@ -5,6 +5,7 @@
 
 #include "common_adios.h"
 #include "adios_internals.h"
+#include "adios_transport_hooks.h"
 #include "futils.h"
 
 #ifdef __cplusplus

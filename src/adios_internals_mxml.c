@@ -15,7 +15,7 @@
 #endif
 
 #include "adios.h"
-//#include "adios_transport_hooks.h"
+#include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
 #include "adios_internals_mxml.h"
