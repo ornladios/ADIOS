@@ -37,7 +37,7 @@ int64_t common_read_read_var_byid (ADIOS_GROUP * gp, int varid,
                              void * data);
 int common_read_get_attr (ADIOS_GROUP           * gp,
                     const char            * attrname,
-                    enum common_read_DATATYPES  * type,
+                    enum ADIOS_DATATYPES  * type,
                     int                   * size,
                     void                 ** data);
 

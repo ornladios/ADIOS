@@ -1,17 +1,17 @@
 #ifndef ADIOS_BUFFER_H
 #define ADIOS_BUFFER_H
 
+enum ADIOS_BUFFER_ALLOC_WHEN {ADIOS_BUFFER_ALLOC_UNKNOWN
+                             ,ADIOS_BUFFER_ALLOC_NOW
+                             ,ADIOS_BUFFER_ALLOC_LATER
+                             };
+
 void      adios_buffer_size_requested_set (uint64_t v);
 uint64_t  adios_buffer_size_requested_get (void);
 void      adios_buffer_size_max_set (uint64_t v);
 void      adios_buffer_size_remaining_set (uint64_t v);
 void      adios_buffer_alloc_percentage_set (int v);
 void      adios_buffer_alloc_when_set (enum ADIOS_BUFFER_ALLOC_WHEN v);
-
-enum ADIOS_BUFFER_ALLOC_WHEN {ADIOS_BUFFER_ALLOC_UNKNOWN
-                             ,ADIOS_BUFFER_ALLOC_NOW
-                             ,ADIOS_BUFFER_ALLOC_LATER
-                             };
 
 enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when_get (void);
 
