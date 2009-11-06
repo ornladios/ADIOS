@@ -112,11 +112,17 @@ dnl 		fi
 		datatap=disable
 	  fi])
 
+RESEARCH=false
+AC_ARG_ENABLE(research-transports, [  --enable-research-transports  Enable building the various research transports. Default is not to build these as they are not part of the base distribution.],
+               [RESEARCH=true]
+             )
+
 AC_LANG(C)
 
 AM_CONDITIONAL([PTL], [test x$datatap = xptl])
 AM_CONDITIONAL([INFINIBAND], [test x$datatap = xib])
 AM_CONDITIONAL([DATATAP], [test x$datatap != xdisable])
+AM_CONDITIONAL([RESEARCH_TRANSPORTS], [test x$RESEARCH == xtrue])
 
 write=disable
 AC_ARG_ENABLE(write, 
@@ -185,6 +191,19 @@ echo "      - MPICC = $MPICC";
 echo "      - MPILIBS = $MPILIBS";
 echo "      - MPIFC = $MPIFC";
 echo
+
+if test "x${RESEARCH}" == "xtrue"; then
+        echo "  - Research Transports Included";
+else
+echo "  - No researh transport methods";
+fi
+
+if test "x${datatap}" != "xdisable"; then
+        echo "  - DataTap";
+        echo "      - Interconnect: $datatap";
+else
+echo "No DataTap";
+fi
 
 if test -z "${HAVE_PORTALS_TRUE}"; then
         echo "  - PORTALS";

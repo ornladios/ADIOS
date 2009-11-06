@@ -22,10 +22,11 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     #./configure --prefix=/ccs/proj/fus022/adios.test/ewok \
     #CFLAGS="-Wall -g -O0 " ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.pgi \
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.$TARGET --enable-shared --disable-static\
+    ./configure --prefix=/ccs/home/ge1/work/ewok --enable-shared --disable-static\
         --enable-dependency-tracking \
-        --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
-        --with-hdf5=$HDF5_DIR 
+        --with-mxml=/ccs/home/ge1/work/ewok \
+        --with-hdf5=$HDF5_DIR \
+        --enable-research-transports
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--enable-datatap=ib
         #--with-phdf5=/apps/HDF5/1.6.5/ewok_par/pgi625v2 \

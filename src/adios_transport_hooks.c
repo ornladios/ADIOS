@@ -32,34 +32,44 @@ if (!strcasecmp (buf,b)) \
 void adios_init_transports (struct adios_transport_struct ** t)
 {
     *t = (struct adios_transport_struct *)
-             calloc (ADIOS_METHOD_COUNT, sizeof (struct adios_transport_struct));
+           calloc (ADIOS_METHOD_COUNT, sizeof (struct adios_transport_struct));
 
+#ifndef NO_RESEARCH_TRANSPORTS
     ASSIGN_FNS(adaptive,ADIOS_METHOD_ADAPTIVE)
+#endif
 
 #if HAVE_MPI
     ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)
     ASSIGN_FNS(mpi_stripe,ADIOS_METHOD_MPI_STRIPE)
     ASSIGN_FNS(mpi_stripe2,ADIOS_METHOD_MPI_STRIPE2)
+    ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)
+#ifndef NO_RESEARCH_TRANSPORTS
     ASSIGN_FNS(mpi_stagger,ADIOS_METHOD_MPI_STAGGER)
     ASSIGN_FNS(mpi_aggregate,ADIOS_METHOD_MPI_AGG)
-    ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)
+#endif
 #endif
 
+#ifndef NO_RESEARCH_TRANSPORTS
 #if NO_DATATAP == 0
     ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP)
+#endif
 #endif
 
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)
 
+#ifndef NO_RESEARCH_TRANSPORTS
 #if USE_PORTALS
     ASSIGN_FNS(dart,ADIOS_METHOD_DART)
+#endif
 #endif
 
 #if HAVE_PHDF5
     ASSIGN_FNS(phdf5,ADIOS_METHOD_PHDF5)
 #endif
 
+#ifndef NO_RESEARCH_TRANSPORTS
     ASSIGN_FNS(provenance,ADIOS_METHOD_PROVENANCE)
+#endif
 }
 
 int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
@@ -68,34 +78,44 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 {
     // add the string<->ID mapping here (also add ID in adios_internals.h)
     // use a '1' for requires a communicator or '0' if not as the last param
+#ifndef NO_RESEARCH_TRANSPORTS
     MATCH_STRING_TO_METHOD("ADAPTIVE",ADIOS_METHOD_ADAPTIVE,1)
+#endif
 
 #if HAVE_MPI
     MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI,1)
     MATCH_STRING_TO_METHOD("MPI_STRIPE",ADIOS_METHOD_MPI_STRIPE,1)
     MATCH_STRING_TO_METHOD("MPI_STRIPE2",ADIOS_METHOD_MPI_STRIPE2,1)
+    MATCH_STRING_TO_METHOD("MPI_CIO",ADIOS_METHOD_MPI_CIO,1)
+#ifndef NO_RESEARCH_TRANSPORTS
     MATCH_STRING_TO_METHOD("MPI_STAGGER",ADIOS_METHOD_MPI_STAGGER,1)
     MATCH_STRING_TO_METHOD("MPI_AGGREGATE",ADIOS_METHOD_MPI_AGG,1)
-    MATCH_STRING_TO_METHOD("MPI_CIO",ADIOS_METHOD_MPI_CIO,1)
+#endif
 #endif
 
+#ifndef NO_RESEARCH_TRANSPORTS
 #if NO_DATATAP == 0
     MATCH_STRING_TO_METHOD("DATATAP",ADIOS_METHOD_DATATAP,0)
     MATCH_STRING_TO_METHOD("PBIO",ADIOS_METHOD_DATATAP,0)
+#endif
 #endif
 
     MATCH_STRING_TO_METHOD("POSIX",ADIOS_METHOD_POSIX,0)
     MATCH_STRING_TO_METHOD("FB",ADIOS_METHOD_POSIX,0)
 
+#ifndef NO_RESEARCH_TRANSPORTS
 #if USE_PORTALS
     MATCH_STRING_TO_METHOD("DART",ADIOS_METHOD_DART,0)
+#endif
 #endif
 
 #if HAVE_PHDF5
     MATCH_STRING_TO_METHOD("PHDF5",ADIOS_METHOD_PHDF5,1)
 #endif
 
+#ifndef NO_RESEARCH_TRANSPORTS
     MATCH_STRING_TO_METHOD("PROVENANCE",ADIOS_METHOD_PROVENANCE,1)
+#endif
 
     MATCH_STRING_TO_METHOD("NULL",ADIOS_METHOD_NULL,0)
 

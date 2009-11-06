@@ -15,18 +15,13 @@ libadios_a_SOURCES = adios.c \
                      adios_mpi_stripe2.c \
                      adios_mpi_cio.c \
                      adios_mpi_stripe.c \
-                     adios_mpi_stagger.c \
-                     adios_mpi_aggregate.c \
                      adios_posix.c \
-                     adios_provenance.c \
                      adios_internals.c \
                      adios_internals_mxml.c \
                      buffer.c \
                      adios_socket.c \
                      adios_bp_v1.c  \
-                     adios_endianness.c\
-                     adios_adaptive.c\
-                     adios_datatap.c
+                     adios_endianness.c
 if BUILD_FORTRAN
 lib_LIBRARIES += libadiosf.a
 libadiosf_a_SOURCES = adiosf.c \
@@ -36,18 +31,13 @@ libadiosf_a_SOURCES = adiosf.c \
                      adios_mpi_stripe2.c \
                      adios_mpi_cio.c \
                      adios_mpi_stripe.c \
-                     adios_mpi_stagger.c \
-                     adios_mpi_aggregate.c \
                      adios_posix.c \
-                     adios_provenance.c \
                      adios_internals.c \
                      adios_internals_mxml.c \
                      buffer.c \
                      adios_socket.c \
                      adios_bp_v1.c  \
                      adios_endianness.c\
-                     adios_adaptive.c\
-                     adios_datatap.c \
                      futils.c \
                      adios_error.c
 endif
@@ -74,6 +64,24 @@ endif
 
 libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
 libadiosf_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
+
+if RESEARCH_TRANSPORTS
+libadios_a_SOURCES += adios_mpi_stagger.c \
+                      adios_mpi_aggregate.c \
+                      adios_provenance.c \
+                      adios_adaptive.c \
+                      adios_datatap.c
+if BUILD_FORTRAN
+libadiosf_a_SOURCES += adios_mpi_stagger.c \
+                       adios_mpi_aggregate.c \
+                       adios_provenance.c \
+                       adios_adaptive.c \
+                       adios_datatap.c
+endif
+else
+libadios_a_CPPFLAGS += -DNO_RESEARCH_TRANSPORTS
+libadiosf_a_CPPFLAGS += -DNO_RESEARCH_TRANSPORTS
+endif
 
 endif   # BUILD_WRITE
 
