@@ -30,7 +30,7 @@ program adios_global
 
     call adios_init ("adios_global.xml", adios_err)
 
-    call adios_open (adios_handle, "temperature", filename, "w", adios_err)
+    call adios_open (adios_handle, "temperature", filename, "w", comm, adios_err)
 #include "gwrite_temperature.fh"
     call adios_close (adios_handle, adios_err)
 
