@@ -35,9 +35,9 @@ program adios_global
         ! We need to create the file in the first round, 
         ! then we need to append to it 
         if (it == 1) then
-            call adios_open (adios_handle, "temperature", filename, "w", adios_err)
+            call adios_open (adios_handle, "temperature", filename, "w", comm, adios_err)
         else 
-            call adios_open (adios_handle, "temperature", filename, "a", adios_err)
+            call adios_open (adios_handle, "temperature", filename, "a", comm, adios_err)
         endif
 
 #include "gwrite_temperature.fh"
