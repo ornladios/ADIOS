@@ -27,9 +27,9 @@ int main (int argc, char ** argv)
             		t[i] = it*100.0 + rank*NX + i;
 		
                 if (it==0)
-		    adios_open (&adios_handle, "temperature", filename, "w");
+		    adios_open (&adios_handle, "temperature", filename, "w", &comm);
                 else
-		    adios_open (&adios_handle, "temperature", filename, "a");
+		    adios_open (&adios_handle, "temperature", filename, "a", &comm);
 
         	#include "gwrite_temperature.ch"
         	adios_close (adios_handle);
