@@ -34,7 +34,7 @@ int main (int argc, char ** argv)
 
     adios_init ("attributes.xml");
 
-    adios_open (&adios_handle, "temperature", filename, "w");
+    adios_open (&adios_handle, "temperature", filename, "w", &comm);
 #include "gwrite_temperature.ch"
     adios_close (adios_handle);
 
