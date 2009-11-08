@@ -11,7 +11,7 @@ adios_groupsize = 1 \
                 + strlen(v11) \
                 + 8 \
                 + 16;
-adios_group_size (adios_handle, adios_groupsize, &adios_totalsize, &comm);
+adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
 adios_write (adios_handle, "var_byte", &v1);
 adios_write (adios_handle, "var_short", &v2);
 adios_write (adios_handle, "var_int", &v3);

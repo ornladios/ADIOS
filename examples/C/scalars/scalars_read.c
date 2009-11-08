@@ -60,7 +60,7 @@ int main (int argc, char ** argv)
     strcpy (filename, "scalars.bp");
 
     adios_init ("scalars.xml");
-    adios_open (&adios_handle, "scalars", filename, "r");
+    adios_open (&adios_handle, "scalars", filename, "r", &comm);
 #include "gread_scalars.ch"
     adios_close (adios_handle);
 

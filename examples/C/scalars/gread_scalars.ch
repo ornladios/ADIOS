@@ -1,6 +1,6 @@
 adios_groupsize = 0;
 adios_totalsize = 0;
-adios_group_size (adios_handle, adios_groupsize, &adios_totalsize, &comm);
+adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
 adios_buf_size = 1;
 adios_read (adios_handle, "var_byte", &v1, adios_buf_size);
 adios_buf_size = 2;
