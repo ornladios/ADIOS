@@ -26,11 +26,11 @@ program arrays
     call MPI_Comm_size (comm, size, ierr)
 
     call adios_init ("arrays.xml", adios_err);
-    call adios_open (adios_handle, "arrays", filename, "r", adios_err);
+    call adios_open (adios_handle, "arrays", filename, "r", comm, adios_err);
 
     adios_groupsize = 0
     adios_totalsize = 0
-    call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, comm, adios_err)
+    call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
 
     ! First read in the scalars to calculate the size of the arrays
     adios_buf_size = 4
@@ -48,8 +48,8 @@ program arrays
     allocate (p(NX))
 
     ! Read the arrays
-    call adios_open (adios_handle, "arrays", filename, "r", adios_err);
-    call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, comm, adios_err)
+    call adios_open (adios_handle, "arrays", filename, "r", comm, adios_err);
+    call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
     adios_buf_size = 8 * (NX) * (NY)
     call adios_read (adios_handle, "var_double_2Darray", t, adios_buf_size, adios_err)
     adios_buf_size = 4 * (NX)
