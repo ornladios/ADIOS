@@ -161,8 +161,8 @@ subroutine writeArray()
 
     !print '("rank=",i0," group=",A," file=",A," group_size=",i0)', rank, trim(group), &
     !    trim(outputfile), group_size
-    call adios_open (handle, group, outputfile, "w", err)
-    call adios_group_size (handle, group_size, total_size, group_comm, err)
+    call adios_open (handle, group, outputfile, "w", group_comm, err)
+    call adios_group_size (handle, group_size, total_size, err)
     !print '("rank=",i0," total_size=",i0," err=",i0)', rank, total_size, err
 
     ! write dimensions and nproc 
