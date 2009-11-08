@@ -40,7 +40,7 @@ program scalars
 
     call adios_init ("scalars.xml", adios_err);
     ! adios_open() opens a 'group in a file', here the 'scalars' group
-    call adios_open (adios_handle, "scalars", filename, "w", adios_err);
+    call adios_open (adios_handle, "scalars", filename, "w", comm, adios_err);
 #include "gwrite_scalars.fh"
     call adios_close (adios_handle, adios_err)
 

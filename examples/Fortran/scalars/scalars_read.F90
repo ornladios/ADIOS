@@ -39,7 +39,7 @@ program scalars_read
     call MPI_Comm_size (comm, size, ierr);
 
     call adios_init ("scalars.xml", adios_err);
-    call adios_open (adios_handle, "scalars", filename, "r", adios_err);
+    call adios_open (adios_handle, "scalars", filename, "r", comm, adios_err);
 #include "gread_scalars.fh"
     call adios_close (adios_handle, adios_err)
 
