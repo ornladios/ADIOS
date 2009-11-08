@@ -58,7 +58,8 @@ int main (int argc, char ** argv)
     struct timeval time_diff;
     struct timeval * time_diff_all;
 
-    uint64_t byte_test_length = 2LL * 1024 * 1024 * 1024;
+    //uint64_t byte_test_length = 2LL * 1024 * 1024 * 1024;
+    uint64_t byte_test_length = 2LL * 1024 * 1024;
     uint64_t memory_thief_length =  1024 * 1024 * 1024  // 1 GB
                              + 128 * 1024 * 1024   // 128 MB
                              - byte_test_length;
@@ -154,8 +155,8 @@ printf ("byte_test_length: %llu\n", byte_test_length);
 #if DO_WRITE
 //printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
     gettimeofday (&time_start, NULL);
-    adios_open (&io_handle, type_name, filename, "w");
-    adios_group_size (io_handle, 4 + byte_test_length, &total, &comm);
+    adios_open (&io_handle, type_name, filename, "w", &comm);
+    adios_group_size (io_handle, 4 + byte_test_length, &total);
 #if 0
     adios_group_size (io_handle,  4 + 4
                                 + 4 * zionsize1
@@ -243,8 +244,8 @@ printf ("byte_test_length: %llu\n", byte_test_length);
 #if DO_READ
 printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
 
-    adios_open (&io_handle, type_name, filename, "r");
-    adios_group_size (io_handle, 0, &total, &comm);
+    adios_open (&io_handle, type_name, filename, "r", &comm);
+    adios_group_size (io_handle, 0, &total);
     adios_read (io_handle, "/mype", &r_var_x1, 4);
     adios_read (io_handle, "/test/mype", &r_var_x2, 4);
     adios_read (io_handle, "zionsize2", &r_zsize, 4);
@@ -297,12 +298,12 @@ for (int i = 0; i < 3; i++)
 {
 printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
     var_x1 = 11;
-    adios_open (&io_handle, type_name, filename, "a");
+    adios_open (&io_handle, type_name, filename, "a", &comm);
     adios_group_size (io_handle,  4 + 4
                                 + 4 * zionsize1
                                 + 4 + 4 * zionsize2 * zionsize2
                                 + 4
-                     ,&total, &comm
+                     ,&total
                      );
     adios_write (io_handle, "/mype", &var_x1);
     adios_write (io_handle, "/test/mype", &var_x2);
