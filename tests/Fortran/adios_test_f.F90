@@ -40,8 +40,8 @@ program adios_test
 
     print '("rank=",i0," group_comm=",i0," ierr=",i0)', rank, group_comm, ierr
 
+    call adios_allocate_buffer (ierr);
     call adios_init ("config_fortran.xml", ierr)
-
     call test_write (group, filename, group_comm, small_int, big_int, small_real, big_real, z_size, z_array)
 
     call MPI_Barrier (MPI_COMM_WORLD, ierr)
@@ -106,9 +106,9 @@ subroutine test_write (group, filename, group_comm, small_int, big_int, small_re
     end do
     size = 4 + 8 + 4 + 8 + 4 + 4 + a_size * 4 + a_size * 10 * 4 + 4 + 4 + 4
 
-    call adios_open (handle, group, filename, "w", err)
+    call adios_open (handle, group, filename, "w", group_comm, err)
 
-    call adios_group_size (handle, size, total_size, group_comm, err)
+    call adios_group_size (handle, size, total_size, err)
 
     call adios_write (handle, "small_int", small_int, err)
     call adios_write (handle, "big_int", big_int, err)
@@ -166,9 +166,9 @@ subroutine test_read (group, filename, group_comm, small_int, big_int, small_rea
     istep2 = 22
     istep3 = 33
 
-    call adios_open (handle, group, filename, "r", err)
+    call adios_open (handle, group, filename, "r", group_comm, err)
 
-    call adios_group_size (handle, group_size, total_size, group_comm, err)
+    call adios_group_size (handle, group_size, total_size, err)
     buffer_size = 4
     call adios_read (handle, "small_int", small_int, buffer_size, err)
     buffer_size = 8
