@@ -32,6 +32,8 @@ struct adios_MPI_data_struct
     int rank;
     int size;
 
+    void * comm; // used to pass from open to should_buffer until cleaned up
+
     struct adios_bp_buffer_struct_v1 b;
 
     struct adios_index_process_group_struct_v1 * old_pg_root;
@@ -276,7 +278,7 @@ void adios_mpi_init (const char * parameters
 }
 
 int adios_mpi_open (struct adios_file_struct * fd
-                   ,struct adios_method_struct * method
+                   ,struct adios_method_struct * method, void * comm
                    )
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
@@ -288,6 +290,7 @@ int adios_mpi_open (struct adios_file_struct * fd
 #endif
     // we have to wait for the group_size (should_buffer) to get the comm
     // before we can do an open for any of the modes
+    md->comm = comm;
 
     return 1;
 }
@@ -492,7 +495,6 @@ static void set_stripe_size (struct adios_file_struct * fd
 
 enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                         ,struct adios_method_struct * method
-                                        ,void * comm
                                         )
 {
     int i;
@@ -515,7 +517,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
     adios_var_to_comm (fd->group->group_comm
                       ,fd->group->adios_host_language_fortran
-                      ,comm
+                      ,md->comm
                       ,&md->group_comm
                       );
     if (md->group_comm != MPI_COMM_NULL)

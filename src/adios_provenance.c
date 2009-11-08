@@ -120,6 +120,8 @@ struct adios_PROVENANCE_data_struct
     int rank;            // rank of this process within this group
     int size;            // number of processes in this group
 
+    void * comm; // temporary until moved from should_buffer to open
+
     enum   ADIOS_PROVENANCE_OUTPUTMETHOD output_method;
 
     enum   ADIOS_IO_METHOD another_method;  // the other method in case of multiple methods
@@ -169,11 +171,13 @@ void adios_provenance_init (const char * parameters
     
     
 int adios_provenance_open (struct adios_file_struct * fd
-                          ,struct adios_method_struct * method
+                          ,struct adios_method_struct * method, void * comm
                           )
 {
     struct adios_PROVENANCE_data_struct * md = (struct adios_PROVENANCE_data_struct *)
                                                     method->method_data;
+
+    md->comm = comm;
 
     // TODO: record the filename fd->filename, which is different for each group
     //char *name;
@@ -287,7 +291,6 @@ int adios_provenance_open (struct adios_file_struct * fd
  */
 enum ADIOS_FLAG adios_provenance_should_buffer (struct adios_file_struct * fd
                                                ,struct adios_method_struct * method
-                                               ,void * comm
                                                )
 {
     struct adios_PROVENANCE_data_struct * md = (struct adios_PROVENANCE_data_struct *)
@@ -295,7 +298,7 @@ enum ADIOS_FLAG adios_provenance_should_buffer (struct adios_file_struct * fd
 
     // Get the MPI related info
     // It is here, not in init or in open because open() does not get the communicator.
-    md->group_comm = _var_to_comm (fd->group->adios_host_language_fortran, comm);
+    md->group_comm = _var_to_comm (fd->group->adios_host_language_fortran, md->comm);
 
     /* If the other (real output) method is POSIX, we must not use the communicator
        provided here. People usually provide the world communicator in the config file

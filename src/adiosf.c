@@ -50,7 +50,7 @@ void FC_FUNC_(adios_allocate_buffer, adios_ALLOCATE_BUFFER) (int * err)
 ///////////////////////////////////////////////////////////////////////////////
 void FC_FUNC_(adios_open, adios_OPEN) 
     (int64_t * fd, const char * group_name, const char * name
-    ,const char * mode, int * err
+    ,const char * mode, void * comm, int * err
     ,int group_name_size, int name_size, int mode_size
     )
 {
@@ -63,7 +63,7 @@ void FC_FUNC_(adios_open, adios_OPEN)
     buf3 = futils_fstr_to_cstr (mode, mode_size);
 
     if (buf1 != 0 && buf2 != 0 && buf3 != 0) {
-        *err = common_adios_open (fd, buf1, buf2, buf3);
+        *err = common_adios_open (fd, buf1, buf2, buf3, comm);
         free (buf1);
         free (buf2);
         free (buf3);
@@ -75,11 +75,11 @@ void FC_FUNC_(adios_open, adios_OPEN)
 ///////////////////////////////////////////////////////////////////////////////
 void FC_FUNC_(adios_group_size, adios_GROUP_SIZE) 
     (int64_t * fd_p, int64_t * data_size
-    ,int64_t * total_size, void * comm, int * err
+    ,int64_t * total_size, int * err
     )
 {
     *err = common_adios_group_size (*fd_p, (uint64_t) *data_size
-                            ,(uint64_t *) total_size, comm
+                            ,(uint64_t *) total_size
                             );
 }
 

@@ -33,6 +33,8 @@ struct adios_MPI_Collective_data_struct
     uint64_t start;
     int last_var_write_yes; // was the last item asked to write a write="yes"?
     uint64_t base_offset;
+
+    void * comm;
 };
 
 static void adios_var_to_comm (const char * varname
@@ -101,13 +103,14 @@ void adios_mpi_cio_init (const char * parameters
 }
 
 int adios_mpi_cio_open (struct adios_file_struct * fd
-                       ,struct adios_method_struct * method
+                       ,struct adios_method_struct * method, void * comm
                        )
 {
     char name [STR_LEN];
     struct adios_MPI_Collective_data_struct * md = (struct adios_MPI_Collective_data_struct *)
                                                     method->method_data;
 
+    md->comm = comm;
     sprintf (name, "%s%s", method->base_path, fd->name);
     MPI_Offset file_size_for_offset = 0;
 
@@ -155,7 +158,6 @@ printf ("base offset: %llu\n", md->base_offset);
 
 enum ADIOS_FLAG adios_mpi_cio_should_buffer (struct adios_file_struct * fd
                                             ,struct adios_method_struct * method
-                                            ,void * comm
                                             )
 {
     return adios_flag_yes;   // as far as we care, buffer

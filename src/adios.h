@@ -21,11 +21,11 @@ int adios_allocate_buffer (void);
 // end user calls for each I/O operation
 // modes = "r" = "read", "w" = "write", "a" = "append", "u" = "update"
 int adios_open (int64_t * fd, const char * group_name, const char * name
-               ,const char * mode
+               ,const char * mode, void * comm
                );
 
 int adios_group_size (int64_t fd_p, uint64_t data_size
-                     ,uint64_t * total_size, void * comm
+                     ,uint64_t * total_size
                      );
 
 int adios_write (int64_t fd_p, const char * name, void * var);

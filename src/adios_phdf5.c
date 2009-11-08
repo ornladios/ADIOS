@@ -43,7 +43,6 @@ void adios_phdf5_init(const char *parameters
 void adios_phdf5_finalize (int mype, struct adios_method_struct * method){}
 enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
                             ,struct adios_method_struct * method
-                            ,void * comm
                             ){ return adios_flag_unknown; }
 int adios_phdf5_open(struct adios_file_struct *fd
                     ,struct adios_method_struct * method
@@ -104,6 +103,8 @@ struct adios_phdf5_data_struct
   MPI_Comm group_comm;
   int rank;
   int size;
+
+  void * comm; // temporary until moved from should_buffer to open
 };
 int adios_phdf5_initialized = 0;
 static void adios_var_to_comm_phdf5 (enum ADIOS_FLAG host_language_fortran
@@ -151,7 +152,6 @@ void adios_phdf5_init(const char *parameters
 }
 enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
                             ,struct adios_method_struct * method
-                            ,void * comm
                             )
 {
     struct adios_phdf5_data_struct * md = (struct adios_phdf5_data_struct *)
@@ -161,7 +161,7 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
     hid_t fapl_id;
     fapl_id = H5P_DEFAULT;
     adios_var_to_comm_phdf5 (fd->group->adios_host_language_fortran
-                      ,comm
+                      ,md->comm
                       ,&md->group_comm
                       );
     // no shared buffer 
@@ -222,11 +222,14 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
 }
  
 int adios_phdf5_open(struct adios_file_struct *fd
-                    ,struct adios_method_struct * method
+                    ,struct adios_method_struct * method, void * comm
                     )
 {
     struct adios_phdf5_data_struct * md = (struct adios_phdf5_data_struct *)
                                                     method->method_data;
+
+    md->comm = comm;
+
     return 1;
 }
 

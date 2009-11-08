@@ -39,7 +39,7 @@ void adios_dart_init (const char * parameters
 }
 
 int adios_dart_open (struct adios_file_struct * fd
-                    ,struct adios_method_struct * method
+                    ,struct adios_method_struct * method, void * comm
                     )
 {
     return 1;
@@ -47,7 +47,6 @@ int adios_dart_open (struct adios_file_struct * fd
 
 enum ADIOS_FLAG adios_dart_should_buffer (struct adios_file_struct * fd
                                          ,struct adios_method_struct * method
-                                         ,void * comm
                                          )
 {
     return adios_flag_no;  // this will take care of it
@@ -128,7 +127,7 @@ void adios_dart_init (const char * parameters
 }
 
 int adios_dart_open (struct adios_file_struct * fd
-                    ,struct adios_method_struct * method
+                    ,struct adios_method_struct * method, void * comm
                     )
 {
     fprintf (stderr, "adios_dart_open: DART disabled, no portals support\n");
@@ -138,7 +137,6 @@ int adios_dart_open (struct adios_file_struct * fd
 
 enum ADIOS_FLAG adios_dart_should_buffer (struct adios_file_struct * fd
                                          ,struct adios_method_struct * method
-                                         ,void * comm
                                          )
 {
     return adios_flag_no;   // we'll buffer

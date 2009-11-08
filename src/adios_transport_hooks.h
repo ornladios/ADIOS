@@ -12,11 +12,10 @@ void adios_##a##_init (const char * parameters \
                       ,struct adios_method_struct * method \
                       ) {} \
 int adios_##a##_open (struct adios_file_struct * fd \
-                     ,struct adios_method_struct * method \
+                     ,struct adios_method_struct * method, void * comm \
                      ) {return 0;} \
 enum ADIOS_FLAG adios_##a##_should_buffer (struct adios_file_struct * fd \
                                           ,struct adios_method_struct * method \
-                                          ,void * comm \
                                           ) {return 0;} \
 void adios_##a##_write (struct adios_file_struct * fd \
                        ,struct adios_var_struct * v \
@@ -48,11 +47,10 @@ void adios_##a##_init (const char * parameters \
                       ,struct adios_method_struct * method \
                       ); \
 int adios_##a##_open (struct adios_file_struct * fd \
-                     ,struct adios_method_struct * method \
+                     ,struct adios_method_struct * method, void * comm \
                      ); \
 enum ADIOS_FLAG adios_##a##_should_buffer (struct adios_file_struct * fd \
                                           ,struct adios_method_struct * method \
-                                          ,void * comm \
                                           ); \
 void adios_##a##_write (struct adios_file_struct * fd \
                        ,struct adios_var_struct * v \

@@ -168,12 +168,11 @@ typedef void (* ADIOS_INIT_FN) (const char * parameters
                                ,struct adios_method_struct * method
                                );
 typedef int (* ADIOS_OPEN_FN) (struct adios_file_struct * fd
-                              ,struct adios_method_struct * method
+                              ,struct adios_method_struct * method, void * comm
                               );
 typedef enum ADIOS_FLAG (* ADIOS_SHOULD_BUFFER_FN)
                                        (struct adios_file_struct * fd
                                        ,struct adios_method_struct * method
-                                       ,void * comm
                                        );
 typedef void (* ADIOS_WRITE_FN) (struct adios_file_struct * fd
                                 ,struct adios_var_struct * v

@@ -155,7 +155,8 @@ extern void adios_datatap_init (const char *params, struct adios_method_struct *
 
 
 extern int adios_datatap_open (struct adios_file_struct * fd, 
-				struct adios_method_struct * method)
+				struct adios_method_struct * method, void * comm
+                              )
 {
     if(fd == NULL || method == NULL)
     {
@@ -765,7 +766,7 @@ void adios_datatap_read (struct adios_file_struct * fd,
 }
 
 extern enum ADIOS_FLAG adios_datatap_should_buffer(struct adios_file_struct * fd, 
-					struct adios_method_struct * method, void * comm) 
+					struct adios_method_struct * method) 
 {
     return adios_flag_no;
 }					\
@@ -777,11 +778,10 @@ void adios_datatap_init (const char * parameters
                       ,struct adios_method_struct * method  
                       ) {}  
 int adios_datatap_open (struct adios_file_struct * fd  
-                     ,struct adios_method_struct * method  
+                     ,struct adios_method_struct * method, void * comm
                      ) {return 0;}  
 enum ADIOS_FLAG adios_datatap_should_buffer (struct adios_file_struct * fd  
                                           ,struct adios_method_struct * method  
-                                          ,void * comm  
                                           ) {return 0;}  
 void adios_datatap_write (struct adios_file_struct * fd  
                        ,struct adios_var_struct * v  
@@ -816,11 +816,10 @@ void adios_datatap_init (const char * parameters
                       ,struct adios_method_struct * method  
                       ) {}  
 int adios_datatap_open (struct adios_file_struct * fd  
-                     ,struct adios_method_struct * method  
+                     ,struct adios_method_struct * method, void * comm
                      ) {return 0;}  
 enum ADIOS_FLAG adios_datatap_should_buffer (struct adios_file_struct * fd  
                                           ,struct adios_method_struct * method  
-                                          ,void * comm  
                                           ) {return adios_flag_unknown;}  
 void adios_datatap_write (struct adios_file_struct * fd  
                        ,struct adios_var_struct * v  
@@ -853,7 +852,7 @@ extern void adios_empty_init (const char * parameters
                       ,struct adios_method_struct * method  
                       ) {}  
 extern void adios_empty_open (struct adios_file_struct * fd  
-                      ,struct adios_method_struct * method  
+                      ,struct adios_method_struct * method, void * comm
                       ) {}  
 extern void adios_empty_write (struct adios_file_struct * fd  
                        ,struct adios_var_struct * v  

@@ -7,8 +7,13 @@
 #include <string.h>
 #include <stdint.h>
 
+// see if we have MPI or other tools
+#include "config.h"
+
 // mpi
+#if HAVE_MPI
 #include "mpi.h"
+#endif
 
 // xml parser
 #include <mxml.h>
@@ -57,7 +62,7 @@ void adios_posix_init (const char * parameters
 }
 
 int adios_posix_open (struct adios_file_struct * fd
-                     ,struct adios_method_struct * method
+                     ,struct adios_method_struct * method, void * comm
                      )
 {
     int rank;
@@ -68,11 +73,15 @@ int adios_posix_open (struct adios_file_struct * fd
     // Need to figure out new the new fd->name, such as restart.0.bp, restart.1.bp....
     // Here we use MPI_COMM_WORLD as communicator, so in the case of comm being splitted,
     // we have files generated such as restart.0.bp, restart.2.bp, restart.4.bp....
+// NEED TO FIX BY REMOVING THIS CODE. THERE SHOULD NOT BE ANY MPI IN THIS METHOD
+// using this should be a separate method that reuses a base set of code
+#if HAVE_MPI
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
     sprintf (rank_string, "%d", rank);
     name_with_rank = malloc (strlen (fd->name) + strlen (rank_string) + 2);
     sprintf (name_with_rank, "%s.%s",  fd->name, rank_string);
+#endif
 
     free (fd->name);
     fd->name = strdup (name_with_rank);
@@ -230,7 +239,6 @@ int adios_posix_open (struct adios_file_struct * fd
 
 enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd
                                           ,struct adios_method_struct * method
-                                          ,void * comm
                                           )
 {
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)

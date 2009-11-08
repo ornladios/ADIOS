@@ -51,14 +51,28 @@ host_triplet = @host@
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_4 = -DPHDF5 -DH5_USE_16_API 
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_FALSE@am__append_5 = adios_phdf5.c 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_FALSE@am__append_6 = adios_phdf5.c 
-@BUILD_FORTRAN_TRUE@am__append_7 = libadiosreadf.a
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__append_7 = adios_mpi_stagger.c \
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      adios_mpi_aggregate.c \
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      adios_provenance.c \
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      adios_adaptive.c \
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      adios_datatap.c
+
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__append_8 = adios_mpi_stagger.c \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                       adios_mpi_aggregate.c \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                       adios_provenance.c \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                       adios_adaptive.c \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                       adios_datatap.c
+
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_9 = -DNO_RESEARCH_TRANSPORTS
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_10 = -DNO_RESEARCH_TRANSPORTS
+@BUILD_FORTRAN_TRUE@am__append_11 = libadiosreadf.a
 
 # Note: utils/adios_lint needs to link with adios_internals_mxml.o which depends
 #       on adios_internals.c, buffer.c and adios_transport_hooks.c. 
 #       We put these objects in libadiosread_nompi
 #       so we do not need to make another _nompi lib just for adios_lint
-@BUILD_FORTRAN_TRUE@am__append_8 = libadiosreadf_nompi.a
-@HAVE_DMALLOC_TRUE@am__append_9 = -DDMALLOC $(DMALLOC_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@am__append_12 = libadiosreadf_nompi.a
+@HAVE_DMALLOC_TRUE@am__append_13 = -DDMALLOC $(DMALLOC_CPPFLAGS)
 subdir = src
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -90,12 +104,17 @@ libadios_a_AR = $(AR) $(ARFLAGS)
 libadios_a_LIBADD =
 am__libadios_a_SOURCES_DIST = adios.c common_adios.c \
 	adios_transport_hooks.c adios_mpi.c adios_mpi_stripe2.c \
-	adios_mpi_cio.c adios_mpi_stripe.c adios_mpi_stagger.c \
-	adios_mpi_aggregate.c adios_posix.c adios_provenance.c \
+	adios_mpi_cio.c adios_mpi_stripe.c adios_posix.c \
 	adios_internals.c adios_internals_mxml.c buffer.c \
-	adios_socket.c adios_bp_v1.c adios_endianness.c \
-	adios_adaptive.c adios_datatap.c adios_phdf5.c
+	adios_socket.c adios_bp_v1.c adios_endianness.c adios_phdf5.c \
+	adios_mpi_stagger.c adios_mpi_aggregate.c adios_provenance.c \
+	adios_adaptive.c adios_datatap.c
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_FALSE@am__objects_1 = libadios_a-adios_phdf5.$(OBJEXT)
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__objects_2 = libadios_a-adios_mpi_stagger.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@	libadios_a-adios_mpi_aggregate.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@	libadios_a-adios_provenance.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@	libadios_a-adios_adaptive.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@	libadios_a-adios_datatap.$(OBJEXT)
 @BUILD_WRITE_TRUE@am_libadios_a_OBJECTS = libadios_a-adios.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-common_adios.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_transport_hooks.$(OBJEXT) \
@@ -103,19 +122,14 @@ am__libadios_a_SOURCES_DIST = adios.c common_adios.c \
 @BUILD_WRITE_TRUE@	libadios_a-adios_mpi_stripe2.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_mpi_cio.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_mpi_stripe.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	libadios_a-adios_mpi_stagger.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	libadios_a-adios_mpi_aggregate.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_posix.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	libadios_a-adios_provenance.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_internals.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_internals_mxml.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-buffer.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_socket.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_bp_v1.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_endianness.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	libadios_a-adios_adaptive.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	libadios_a-adios_datatap.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	$(am__objects_1)
+@BUILD_WRITE_TRUE@	$(am__objects_1) $(am__objects_2)
 libadios_a_OBJECTS = $(am_libadios_a_OBJECTS)
 libadios_phdf5_a_AR = $(AR) $(ARFLAGS)
 libadios_phdf5_a_LIBADD =
@@ -126,13 +140,18 @@ libadiosf_a_AR = $(AR) $(ARFLAGS)
 libadiosf_a_LIBADD =
 am__libadiosf_a_SOURCES_DIST = adiosf.c common_adios.c \
 	adios_transport_hooks.c adios_mpi.c adios_mpi_stripe2.c \
-	adios_mpi_cio.c adios_mpi_stripe.c adios_mpi_stagger.c \
-	adios_mpi_aggregate.c adios_posix.c adios_provenance.c \
+	adios_mpi_cio.c adios_mpi_stripe.c adios_posix.c \
 	adios_internals.c adios_internals_mxml.c buffer.c \
-	adios_socket.c adios_bp_v1.c adios_endianness.c \
-	adios_adaptive.c adios_datatap.c futils.c adios_error.c \
-	adios_phdf5.c
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_FALSE@am__objects_2 = libadiosf_a-adios_phdf5.$(OBJEXT)
+	adios_socket.c adios_bp_v1.c adios_endianness.c futils.c \
+	adios_error.c adios_phdf5.c adios_mpi_stagger.c \
+	adios_mpi_aggregate.c adios_provenance.c adios_adaptive.c \
+	adios_datatap.c
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_FALSE@am__objects_3 = libadiosf_a-adios_phdf5.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__objects_4 = libadiosf_a-adios_mpi_stagger.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@	libadiosf_a-adios_mpi_aggregate.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@	libadiosf_a-adios_provenance.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@	libadiosf_a-adios_adaptive.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@	libadiosf_a-adios_datatap.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am_libadiosf_a_OBJECTS = libadiosf_a-adiosf.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-common_adios.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_transport_hooks.$(OBJEXT) \
@@ -140,21 +159,17 @@ am__libadiosf_a_SOURCES_DIST = adiosf.c common_adios.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_mpi_stripe2.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_mpi_cio.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_mpi_stripe.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_mpi_stagger.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_mpi_aggregate.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_posix.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_provenance.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_internals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_internals_mxml.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-buffer.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_socket.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_bp_v1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_endianness.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_adaptive.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_datatap.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-futils.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_error.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_2)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_3) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_4)
 libadiosf_a_OBJECTS = $(am_libadiosf_a_OBJECTS)
 libadiosread_a_AR = $(AR) $(ARFLAGS)
 libadiosread_a_LIBADD =
@@ -332,6 +347,8 @@ PHDF5_LIBS = @PHDF5_LIBS@
 PTL_FALSE = @PTL_FALSE@
 PTL_TRUE = @PTL_TRUE@
 RANLIB = @RANLIB@
+RESEARCH_TRANSPORTS_FALSE = @RESEARCH_TRANSPORTS_FALSE@
+RESEARCH_TRANSPORTS_TRUE = @RESEARCH_TRANSPORTS_TRUE@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -390,18 +407,16 @@ include_HEADERS = adios.h adios_types.h adios_read.h mpidummy.h
 #libadiosread_a_SOURCES += adiosf_read_mod.F90
 #include_HEADERS += adiosf_read.mod 
 lib_LIBRARIES = $(am__append_1) $(am__append_2) $(am__append_3) \
-	libadiosread.a $(am__append_7) libadiosread_nompi.a \
-	$(am__append_8)
+	libadiosread.a $(am__append_11) libadiosread_nompi.a \
+	$(am__append_12)
 @BUILD_WRITE_TRUE@libadios_a_SOURCES = adios.c common_adios.c \
 @BUILD_WRITE_TRUE@	adios_transport_hooks.c adios_mpi.c \
 @BUILD_WRITE_TRUE@	adios_mpi_stripe2.c adios_mpi_cio.c \
-@BUILD_WRITE_TRUE@	adios_mpi_stripe.c adios_mpi_stagger.c \
-@BUILD_WRITE_TRUE@	adios_mpi_aggregate.c adios_posix.c \
-@BUILD_WRITE_TRUE@	adios_provenance.c adios_internals.c \
-@BUILD_WRITE_TRUE@	adios_internals_mxml.c buffer.c \
-@BUILD_WRITE_TRUE@	adios_socket.c adios_bp_v1.c \
-@BUILD_WRITE_TRUE@	adios_endianness.c adios_adaptive.c \
-@BUILD_WRITE_TRUE@	adios_datatap.c $(am__append_5)
+@BUILD_WRITE_TRUE@	adios_mpi_stripe.c adios_posix.c \
+@BUILD_WRITE_TRUE@	adios_internals.c adios_internals_mxml.c \
+@BUILD_WRITE_TRUE@	buffer.c adios_socket.c adios_bp_v1.c \
+@BUILD_WRITE_TRUE@	adios_endianness.c $(am__append_5) \
+@BUILD_WRITE_TRUE@	$(am__append_7)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@libadiosf_a_SOURCES = adiosf.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	common_adios.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_transport_hooks.c \
@@ -409,23 +424,21 @@ lib_LIBRARIES = $(am__append_1) $(am__append_2) $(am__append_3) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_mpi_stripe2.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_mpi_cio.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_mpi_stripe.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_mpi_stagger.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_mpi_aggregate.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_posix.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_provenance.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_internals.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_internals_mxml.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	buffer.c adios_socket.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_bp_v1.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_endianness.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_adaptive.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_datatap.c futils.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_error.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_6)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	futils.c adios_error.c \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_6) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_8)
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@libadios_phdf5_a_SOURCES = adios_phdf5.c
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@libadios_phdf5_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
-@BUILD_WRITE_TRUE@libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
-@BUILD_WRITE_TRUE@libadiosf_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
+@BUILD_WRITE_TRUE@libadios_a_CPPFLAGS = $(MXML_CPPFLAGS) \
+@BUILD_WRITE_TRUE@	$(PHDF5_CPPFLAGS) $(am__append_9)
+@BUILD_WRITE_TRUE@libadiosf_a_CPPFLAGS = $(MXML_CPPFLAGS) \
+@BUILD_WRITE_TRUE@	$(PHDF5_CPPFLAGS) $(am__append_10)
 libadiosread_a_SOURCES = adios_bp_v1.c \
 		      adios_endianness.c \
 		      bp_utils.c \
@@ -463,7 +476,7 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
 @BUILD_FORTRAN_TRUE@		      adiosf_read.c \
 @BUILD_FORTRAN_TRUE@                      common_read.c 
 
-libadiosread_nompi_a_CPPFLAGS = -D_NOMPI $(am__append_9)
+libadiosread_nompi_a_CPPFLAGS = -D_NOMPI $(am__append_13)
 libadiosreadf_nompi_a_CPPFLAGS = -D_NOMPI
 @HAVE_DMALLOC_TRUE@libadiosread_a_CPPFLAGS = -DDMALLOC $(DMALLOC_CPPFLAGS)
 EXTRA_DIST = adios_bp_v1.h adios_endianness.h adios_error.h adios_internals.h \
@@ -618,29 +631,11 @@ libadios_a-adios_mpi_stripe.o: adios_mpi_stripe.c
 libadios_a-adios_mpi_stripe.obj: adios_mpi_stripe.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_stripe.obj `if test -f 'adios_mpi_stripe.c'; then $(CYGPATH_W) 'adios_mpi_stripe.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_stripe.c'; fi`
 
-libadios_a-adios_mpi_stagger.o: adios_mpi_stagger.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_stagger.o `test -f 'adios_mpi_stagger.c' || echo '$(srcdir)/'`adios_mpi_stagger.c
-
-libadios_a-adios_mpi_stagger.obj: adios_mpi_stagger.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_stagger.obj `if test -f 'adios_mpi_stagger.c'; then $(CYGPATH_W) 'adios_mpi_stagger.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_stagger.c'; fi`
-
-libadios_a-adios_mpi_aggregate.o: adios_mpi_aggregate.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_aggregate.o `test -f 'adios_mpi_aggregate.c' || echo '$(srcdir)/'`adios_mpi_aggregate.c
-
-libadios_a-adios_mpi_aggregate.obj: adios_mpi_aggregate.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_aggregate.obj `if test -f 'adios_mpi_aggregate.c'; then $(CYGPATH_W) 'adios_mpi_aggregate.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_aggregate.c'; fi`
-
 libadios_a-adios_posix.o: adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_posix.o `test -f 'adios_posix.c' || echo '$(srcdir)/'`adios_posix.c
 
 libadios_a-adios_posix.obj: adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_posix.obj `if test -f 'adios_posix.c'; then $(CYGPATH_W) 'adios_posix.c'; else $(CYGPATH_W) '$(srcdir)/adios_posix.c'; fi`
-
-libadios_a-adios_provenance.o: adios_provenance.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_provenance.o `test -f 'adios_provenance.c' || echo '$(srcdir)/'`adios_provenance.c
-
-libadios_a-adios_provenance.obj: adios_provenance.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_provenance.obj `if test -f 'adios_provenance.c'; then $(CYGPATH_W) 'adios_provenance.c'; else $(CYGPATH_W) '$(srcdir)/adios_provenance.c'; fi`
 
 libadios_a-adios_internals.o: adios_internals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_internals.o `test -f 'adios_internals.c' || echo '$(srcdir)/'`adios_internals.c
@@ -678,6 +673,30 @@ libadios_a-adios_endianness.o: adios_endianness.c
 libadios_a-adios_endianness.obj: adios_endianness.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_endianness.obj `if test -f 'adios_endianness.c'; then $(CYGPATH_W) 'adios_endianness.c'; else $(CYGPATH_W) '$(srcdir)/adios_endianness.c'; fi`
 
+libadios_a-adios_phdf5.o: adios_phdf5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_phdf5.o `test -f 'adios_phdf5.c' || echo '$(srcdir)/'`adios_phdf5.c
+
+libadios_a-adios_phdf5.obj: adios_phdf5.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_phdf5.obj `if test -f 'adios_phdf5.c'; then $(CYGPATH_W) 'adios_phdf5.c'; else $(CYGPATH_W) '$(srcdir)/adios_phdf5.c'; fi`
+
+libadios_a-adios_mpi_stagger.o: adios_mpi_stagger.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_stagger.o `test -f 'adios_mpi_stagger.c' || echo '$(srcdir)/'`adios_mpi_stagger.c
+
+libadios_a-adios_mpi_stagger.obj: adios_mpi_stagger.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_stagger.obj `if test -f 'adios_mpi_stagger.c'; then $(CYGPATH_W) 'adios_mpi_stagger.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_stagger.c'; fi`
+
+libadios_a-adios_mpi_aggregate.o: adios_mpi_aggregate.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_aggregate.o `test -f 'adios_mpi_aggregate.c' || echo '$(srcdir)/'`adios_mpi_aggregate.c
+
+libadios_a-adios_mpi_aggregate.obj: adios_mpi_aggregate.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_aggregate.obj `if test -f 'adios_mpi_aggregate.c'; then $(CYGPATH_W) 'adios_mpi_aggregate.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_aggregate.c'; fi`
+
+libadios_a-adios_provenance.o: adios_provenance.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_provenance.o `test -f 'adios_provenance.c' || echo '$(srcdir)/'`adios_provenance.c
+
+libadios_a-adios_provenance.obj: adios_provenance.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_provenance.obj `if test -f 'adios_provenance.c'; then $(CYGPATH_W) 'adios_provenance.c'; else $(CYGPATH_W) '$(srcdir)/adios_provenance.c'; fi`
+
 libadios_a-adios_adaptive.o: adios_adaptive.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_adaptive.o `test -f 'adios_adaptive.c' || echo '$(srcdir)/'`adios_adaptive.c
 
@@ -689,12 +708,6 @@ libadios_a-adios_datatap.o: adios_datatap.c
 
 libadios_a-adios_datatap.obj: adios_datatap.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_datatap.obj `if test -f 'adios_datatap.c'; then $(CYGPATH_W) 'adios_datatap.c'; else $(CYGPATH_W) '$(srcdir)/adios_datatap.c'; fi`
-
-libadios_a-adios_phdf5.o: adios_phdf5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_phdf5.o `test -f 'adios_phdf5.c' || echo '$(srcdir)/'`adios_phdf5.c
-
-libadios_a-adios_phdf5.obj: adios_phdf5.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_phdf5.obj `if test -f 'adios_phdf5.c'; then $(CYGPATH_W) 'adios_phdf5.c'; else $(CYGPATH_W) '$(srcdir)/adios_phdf5.c'; fi`
 
 libadios_phdf5_a-adios_phdf5.o: adios_phdf5.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_phdf5_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_phdf5_a-adios_phdf5.o `test -f 'adios_phdf5.c' || echo '$(srcdir)/'`adios_phdf5.c
@@ -744,29 +757,11 @@ libadiosf_a-adios_mpi_stripe.o: adios_mpi_stripe.c
 libadiosf_a-adios_mpi_stripe.obj: adios_mpi_stripe.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_mpi_stripe.obj `if test -f 'adios_mpi_stripe.c'; then $(CYGPATH_W) 'adios_mpi_stripe.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_stripe.c'; fi`
 
-libadiosf_a-adios_mpi_stagger.o: adios_mpi_stagger.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_mpi_stagger.o `test -f 'adios_mpi_stagger.c' || echo '$(srcdir)/'`adios_mpi_stagger.c
-
-libadiosf_a-adios_mpi_stagger.obj: adios_mpi_stagger.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_mpi_stagger.obj `if test -f 'adios_mpi_stagger.c'; then $(CYGPATH_W) 'adios_mpi_stagger.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_stagger.c'; fi`
-
-libadiosf_a-adios_mpi_aggregate.o: adios_mpi_aggregate.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_mpi_aggregate.o `test -f 'adios_mpi_aggregate.c' || echo '$(srcdir)/'`adios_mpi_aggregate.c
-
-libadiosf_a-adios_mpi_aggregate.obj: adios_mpi_aggregate.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_mpi_aggregate.obj `if test -f 'adios_mpi_aggregate.c'; then $(CYGPATH_W) 'adios_mpi_aggregate.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_aggregate.c'; fi`
-
 libadiosf_a-adios_posix.o: adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_posix.o `test -f 'adios_posix.c' || echo '$(srcdir)/'`adios_posix.c
 
 libadiosf_a-adios_posix.obj: adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_posix.obj `if test -f 'adios_posix.c'; then $(CYGPATH_W) 'adios_posix.c'; else $(CYGPATH_W) '$(srcdir)/adios_posix.c'; fi`
-
-libadiosf_a-adios_provenance.o: adios_provenance.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_provenance.o `test -f 'adios_provenance.c' || echo '$(srcdir)/'`adios_provenance.c
-
-libadiosf_a-adios_provenance.obj: adios_provenance.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_provenance.obj `if test -f 'adios_provenance.c'; then $(CYGPATH_W) 'adios_provenance.c'; else $(CYGPATH_W) '$(srcdir)/adios_provenance.c'; fi`
 
 libadiosf_a-adios_internals.o: adios_internals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_internals.o `test -f 'adios_internals.c' || echo '$(srcdir)/'`adios_internals.c
@@ -804,18 +799,6 @@ libadiosf_a-adios_endianness.o: adios_endianness.c
 libadiosf_a-adios_endianness.obj: adios_endianness.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_endianness.obj `if test -f 'adios_endianness.c'; then $(CYGPATH_W) 'adios_endianness.c'; else $(CYGPATH_W) '$(srcdir)/adios_endianness.c'; fi`
 
-libadiosf_a-adios_adaptive.o: adios_adaptive.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_adaptive.o `test -f 'adios_adaptive.c' || echo '$(srcdir)/'`adios_adaptive.c
-
-libadiosf_a-adios_adaptive.obj: adios_adaptive.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_adaptive.obj `if test -f 'adios_adaptive.c'; then $(CYGPATH_W) 'adios_adaptive.c'; else $(CYGPATH_W) '$(srcdir)/adios_adaptive.c'; fi`
-
-libadiosf_a-adios_datatap.o: adios_datatap.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_datatap.o `test -f 'adios_datatap.c' || echo '$(srcdir)/'`adios_datatap.c
-
-libadiosf_a-adios_datatap.obj: adios_datatap.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_datatap.obj `if test -f 'adios_datatap.c'; then $(CYGPATH_W) 'adios_datatap.c'; else $(CYGPATH_W) '$(srcdir)/adios_datatap.c'; fi`
-
 libadiosf_a-futils.o: futils.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-futils.o `test -f 'futils.c' || echo '$(srcdir)/'`futils.c
 
@@ -833,6 +816,36 @@ libadiosf_a-adios_phdf5.o: adios_phdf5.c
 
 libadiosf_a-adios_phdf5.obj: adios_phdf5.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_phdf5.obj `if test -f 'adios_phdf5.c'; then $(CYGPATH_W) 'adios_phdf5.c'; else $(CYGPATH_W) '$(srcdir)/adios_phdf5.c'; fi`
+
+libadiosf_a-adios_mpi_stagger.o: adios_mpi_stagger.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_mpi_stagger.o `test -f 'adios_mpi_stagger.c' || echo '$(srcdir)/'`adios_mpi_stagger.c
+
+libadiosf_a-adios_mpi_stagger.obj: adios_mpi_stagger.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_mpi_stagger.obj `if test -f 'adios_mpi_stagger.c'; then $(CYGPATH_W) 'adios_mpi_stagger.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_stagger.c'; fi`
+
+libadiosf_a-adios_mpi_aggregate.o: adios_mpi_aggregate.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_mpi_aggregate.o `test -f 'adios_mpi_aggregate.c' || echo '$(srcdir)/'`adios_mpi_aggregate.c
+
+libadiosf_a-adios_mpi_aggregate.obj: adios_mpi_aggregate.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_mpi_aggregate.obj `if test -f 'adios_mpi_aggregate.c'; then $(CYGPATH_W) 'adios_mpi_aggregate.c'; else $(CYGPATH_W) '$(srcdir)/adios_mpi_aggregate.c'; fi`
+
+libadiosf_a-adios_provenance.o: adios_provenance.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_provenance.o `test -f 'adios_provenance.c' || echo '$(srcdir)/'`adios_provenance.c
+
+libadiosf_a-adios_provenance.obj: adios_provenance.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_provenance.obj `if test -f 'adios_provenance.c'; then $(CYGPATH_W) 'adios_provenance.c'; else $(CYGPATH_W) '$(srcdir)/adios_provenance.c'; fi`
+
+libadiosf_a-adios_adaptive.o: adios_adaptive.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_adaptive.o `test -f 'adios_adaptive.c' || echo '$(srcdir)/'`adios_adaptive.c
+
+libadiosf_a-adios_adaptive.obj: adios_adaptive.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_adaptive.obj `if test -f 'adios_adaptive.c'; then $(CYGPATH_W) 'adios_adaptive.c'; else $(CYGPATH_W) '$(srcdir)/adios_adaptive.c'; fi`
+
+libadiosf_a-adios_datatap.o: adios_datatap.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_datatap.o `test -f 'adios_datatap.c' || echo '$(srcdir)/'`adios_datatap.c
+
+libadiosf_a-adios_datatap.obj: adios_datatap.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_datatap.obj `if test -f 'adios_datatap.c'; then $(CYGPATH_W) 'adios_datatap.c'; else $(CYGPATH_W) '$(srcdir)/adios_datatap.c'; fi`
 
 libadiosread_a-adios_bp_v1.o: adios_bp_v1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_bp_v1.o `test -f 'adios_bp_v1.c' || echo '$(srcdir)/'`adios_bp_v1.c

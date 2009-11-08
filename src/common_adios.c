@@ -59,7 +59,7 @@ int common_adios_allocate_buffer ()
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_open (int64_t * fd, const char * group_name
-                ,const char * name, const char * file_mode
+                ,const char * name, const char * file_mode, void * comm
                )
 {
     int64_t group_id = 0;
@@ -120,7 +120,7 @@ int common_adios_open (int64_t * fd, const char * group_name
            )
         {
             adios_transports [methods->method->m].adios_open_fn
-                                                 (fd_p, methods->method);
+                                                 (fd_p, methods->method, comm);
         }
 
         methods = methods->next;
@@ -135,7 +135,6 @@ int common_adios_open (int64_t * fd, const char * group_name
 int common_adios_group_size (int64_t fd_p
                      ,uint64_t data_size
                      ,uint64_t * total_size
-                     ,void * comm
                      )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
@@ -197,7 +196,6 @@ int common_adios_group_size (int64_t fd_p
             should_buffer = adios_transports [m->method->m].
                                             adios_should_buffer_fn (fd
                                                                    ,m->method
-                                                                   ,comm
                                                                    );
         }
 

@@ -45,18 +45,18 @@ int adios_allocate_buffer ()
 
 ///////////////////////////////////////////////////////////////////////////////
 int adios_open (int64_t * fd, const char * group_name, const char * name
-               ,const char * mode
+               ,const char * mode, void * comm
                )
 {
-    return common_adios_open (fd, group_name, name, mode);
+    return common_adios_open (fd, group_name, name, mode, comm);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int adios_group_size (int64_t fd_p, uint64_t data_size
-                     ,uint64_t * total_size, void * comm
+                     ,uint64_t * total_size
                      )
 {
-    return common_adios_group_size (fd_p, data_size, total_size, comm);
+    return common_adios_group_size (fd_p, data_size, total_size);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
