@@ -66,14 +66,14 @@ int main (int argc, char ** argv)
     if (!adios_init ("testbp_c.xml"))
         return -1;
 
-    adios_open (&io_handle, type_name, filename, "w");
+    adios_open (&io_handle, type_name, filename, "w", &comm);
     adios_group_size (io_handle, 32                             // 4 integers 
                                 + 4 * dim1                      // int_1D
                                 + 4 * dim1 * dim2               // int_2D
                                 + 4 * dim1 * dim2 * dim3        // int_3D
                                 + 4 * dim1 * dim2 * dim3 * dim4 // int_4D
                                 + 4 * dim1 * dim2 * dim3 * dim4 * dim5// int_4D
-                     ,&total, &comm
+                     ,&total
                      );
     adios_write (io_handle, "dim1", &dim1);
     adios_write (io_handle, "dim2", &dim2);
