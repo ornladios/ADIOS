@@ -26,7 +26,7 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
     sprintf (filename, "restart_%5.5d.bp", rank);
     adios_init ("config.xml");
-    adios_open (&adios_handle, "temperature", filename, "r");
+    adios_open (&adios_handle, "temperature", filename, "r", &comm);
     #include "gread_temperature.ch"
     adios_close (adios_handle);
     adios_finalize (rank);

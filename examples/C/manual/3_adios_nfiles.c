@@ -44,7 +44,7 @@ int main (int argc, char ** argv)
      */
     sprintf (filename, "restart_%5.5d.bp", color);
     adios_init ("config.xml");
-    adios_open (&adios_handle, "temperature", filename, "w");
+    adios_open (&adios_handle, "temperature", filename, "w", &comm);
     #include "gwrite_temperature.ch"
     adios_close (adios_handle);
     adios_finalize (rank);
