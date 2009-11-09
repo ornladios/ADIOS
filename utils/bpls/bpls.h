@@ -29,7 +29,7 @@ int compile_regexp_masks(void);
 void printSettings(void);
 int  doList(const char *path);
 void mergeLists(int nV, char **listV, int nA, char **listA, char **mlist, bool *isVar);
-int  readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi);
+int  readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char *naQWme);
 int cmpstringp(const void *p1, const void *p2);
 bool grpMatchesMask(char *name);
 bool matchesAMask(char *name);

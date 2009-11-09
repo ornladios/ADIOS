@@ -547,7 +547,7 @@ int doList(const char *path) {
             if (matches && dump) {
                 // print variable content 
                 if (isVar[n])
-                    retval = readVar(gp, vi);
+                    retval = readVar(gp, vi, names[n]);
                 if (retval && retval != 10) // do not return after unsupported type
                     return retval;
                 fprintf(outf,"\n");
@@ -682,7 +682,7 @@ int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize)
 /** Read data of a variable and print 
   * Return: 0: ok, != 0 on error
   */
-int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi)
+int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char * name)
 {
     int i,j;
     uint64_t start_t[MAX_DIMS], count_t[MAX_DIMS]; // processed <0 values in start/count
@@ -697,8 +697,6 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi)
     int  readn[MAX_DIMS];   // how big chunk to read in in each dimension?
     int64_t bytes_read;     // retval from adios_get_var()
     bool incdim;            // used in incremental reading in
-
-    char *name = gp->var_namelist[vi->varid];
 
     if (getTypeInfo(vi->type, &elemsize)) {
         fprintf(stderr, "Adios type %d (%s) not supported in bpls. var=%s\n", 
