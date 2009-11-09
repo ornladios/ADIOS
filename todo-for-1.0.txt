@@ -17,7 +17,7 @@ Build:
 
 BUGS:
     - configure: FC=mpif90 on ewok breaks configure (it checks if Fortran lib can link with a C main program)
-    - bpls: 4np.bp, dump of string variable /var_string is wrong (bpls -l shows correctly)
+    + bpls: 4np.bp, dump of string variable /var_string is wrong (bpls -l shows correctly)
             dump vs -l of var_complex, var_double_complex is wrong
     - PGI doesn't support "long double" type.
 
@@ -34,11 +34,11 @@ Testing:
 
 Example codes:
     Both Fortran and C for each:
-        - write each type supported (including double complex and long double and strings)
-        - write attributes (scalars, strings and references to scalar vars and string vars + byte array vars)
-        - write global arrays and global arrays over time (C exists)
-        - read each type
-        - read attributes
+        + write each type supported (including double complex and long double and strings)
+        + write attributes (scalars, strings and references to scalar vars and string vars + byte array vars)
+        + write global arrays and global arrays over time (C exists)
+        + read each type
+        + read attributes
         - parallel code to read in global arrays (on different any number of processors)
         - parallel code to read in global time arrays
 
@@ -72,4 +72,4 @@ Distribution (on adiosapi.org wiki)
     - review texts on wiki
     - Can we ask some appl.scientist to publish their xml and some bp files on wiki?
 
-
++
