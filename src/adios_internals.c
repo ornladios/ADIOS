@@ -11,9 +11,8 @@
 #include <sys/stat.h>
 
 #include "adios.h"
-//#include "adios_transport_hooks.h"
-#include "adios_bp_v1.h"
 #include "adios_internals.h"
+#include "adios_bp_v1.h"
 
 static struct adios_method_list_struct * adios_methods = 0;
 static struct adios_group_list_struct * adios_groups = 0;

@@ -3,7 +3,7 @@
 #include "stdint.h"
 #include "unistd.h"
 #include "adios_types.h"
-extern enum ADIOS_IO_METHOD;
+#include "adios_transport_hooks.h"
 
 enum ADIOS_CHARACTERISTICS
 {
@@ -103,6 +103,7 @@ struct adios_index_attribute_struct_v1
 
     struct adios_index_attribute_struct_v1 * next;
 };
+
 struct adios_method_info_struct_v1
 {
     enum ADIOS_IO_METHOD id;

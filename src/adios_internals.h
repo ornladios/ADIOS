@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-extern enum ADIOS_IO_METHOD;
+// need the enum for the transports
+#include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
 
 enum ADIOS_METHOD_MODE {adios_mode_write  = 1
