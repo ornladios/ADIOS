@@ -9,7 +9,7 @@ bp2ncd_SOURCES = bp2ncd.c
 
 # change these to use proper autoconf settings
 bp2ncd_LDFLAGS = $(NETCDF_LDFLAGS)
-bp2ncd_CPPFLAGS = $(NETCDF_CPPFLAGS)
+bp2ncd_CPPFLAGS = -D_NOMPI $(NETCDF_CPPFLAGS)
 
 bp2ncd_LDADD = $(top_builddir)/src/libadiosread_nompi.a
 bp2ncd_LDADD += $(NETCDF_LIBS)

@@ -1,9 +1,11 @@
 #include "../config.h"
 #include <stdlib.h>
 #include <string.h>
+#define __INCLUDED_FROM_FORTRAN_API__
 #include "bp_utils.h"
 #include "bp_types.h"
 #include "common_read.h"
+#include "adios_read.h"
 #include "adios_error.h"
 #include "futils.h"
 #define BYTE_ALIGN 8
@@ -15,6 +17,8 @@
 #ifdef __cplusplus
 extern "C"  /* prevent C++ name mangling */
 #endif
+
+extern int adios_errno;
 
 /*********************/
 /* FORTRAN INTERFACE */

@@ -6,18 +6,21 @@ AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = bpsplit bpappend bpgettime
 
 bpsplit_SOURCES = bpsplit.c
+bpsplit_CPPFLAGS = -D_NOMPI
 bpsplit_LDADD = $(top_builddir)/src/libadiosread_nompi.a 
 
 bpappend_SOURCES = bpappend.c
+bpappend_CPPFLAGS = -D_NOMPI
 bpappend_LDADD = $(top_builddir)/src/libadiosread_nompi.a
 
 bpgettime_SOURCES = bpgettime.c
+bpgettime_CPPFLAGS = -D_NOMPI
 bpgettime_LDADD = $(top_builddir)/src/libadiosread_nompi.a
 
 if HAVE_DMALLOC
-bpsplit_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
-bpappend_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
-bpgettime_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+bpsplit_CPPFLAGS += -DDMALLOC  $(DMALLOC_CPPFLAGS)
+bpappend_CPPFLAGS += -DDMALLOC  $(DMALLOC_CPPFLAGS)
+bpgettime_CPPFLAGS += -DDMALLOC  $(DMALLOC_CPPFLAGS)
 bpsplit_LDFLAGS =  $(DMALLOC_LDFLAGS)
 bpappend_LDFLAGS =  $(DMALLOC_LDFLAGS)
 bpgettime_LDFLAGS =  $(DMALLOC_LDFLAGS)

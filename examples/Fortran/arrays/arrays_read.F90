@@ -58,13 +58,13 @@ program arrays
 
 
     ! Print the results
-    write (*,'("rank=",i0," p = (",i0,$)'), rank, p(1)
+    write (*,'("rank=",i0," p = (",i0,$)') rank, p(1)
     do i = 2,NX 
         write (*,'(", ",i0,$)') p(i)
     enddo
     write (*,'(")")')
 
-    write (*,'("rank=",i0," t(:,5) = (",f6.2,$)'), rank, t(1,5)
+    write (*,'("rank=",i0," t(:,5) = (",f6.2,$)') rank, t(1,5)
     do i = 2,NX 
         write (*,'(", ",f6.2,$)') t(i,5)
     enddo

@@ -58,6 +58,8 @@ typedef struct {
         void     * maxs;            /* maximum per each timestep (array of timestep elements)         */
 } ADIOS_VARINFO;
 
+#ifndef __INCLUDED_FROM_FORTRAN_API__
+
 /** Functions that return a pointer to some data structures (fopen, gopen), return NULL
     on error and set adios_errno to a non-zero value and writes an error string.  
     You have direct access to that string so you can print it. 
@@ -186,4 +188,5 @@ const char * adios_type_to_string (enum ADIOS_DATATYPES type);
  */
 int adios_type_size(enum ADIOS_DATATYPES type, void *data);
 
-#endif
+#endif  /*__INCLUDED_FROM_FORTRAN_API__*/
+#endif  /*__ADIOS_READ_H__*/

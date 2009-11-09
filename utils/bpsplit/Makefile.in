@@ -37,9 +37,12 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = bpsplit$(EXEEXT) bpappend$(EXEEXT) bpgettime$(EXEEXT)
-@HAVE_DMALLOC_TRUE@am__append_1 = -ldmalloc
-@HAVE_DMALLOC_TRUE@am__append_2 = -ldmalloc
-@HAVE_DMALLOC_TRUE@am__append_3 = -ldmalloc
+@HAVE_DMALLOC_TRUE@am__append_1 = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+@HAVE_DMALLOC_TRUE@am__append_2 = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+@HAVE_DMALLOC_TRUE@am__append_3 = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+@HAVE_DMALLOC_TRUE@am__append_4 = -ldmalloc
+@HAVE_DMALLOC_TRUE@am__append_5 = -ldmalloc
+@HAVE_DMALLOC_TRUE@am__append_6 = -ldmalloc
 subdir = utils/bpsplit
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -240,17 +243,17 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 bpsplit_SOURCES = bpsplit.c
+bpsplit_CPPFLAGS = -D_NOMPI $(am__append_1)
 bpsplit_LDADD = $(top_builddir)/src/libadiosread_nompi.a \
-	$(am__append_1)
+	$(am__append_4)
 bpappend_SOURCES = bpappend.c
+bpappend_CPPFLAGS = -D_NOMPI $(am__append_2)
 bpappend_LDADD = $(top_builddir)/src/libadiosread_nompi.a \
-	$(am__append_2)
+	$(am__append_5)
 bpgettime_SOURCES = bpgettime.c
+bpgettime_CPPFLAGS = -D_NOMPI $(am__append_3)
 bpgettime_LDADD = $(top_builddir)/src/libadiosread_nompi.a \
-	$(am__append_3)
-@HAVE_DMALLOC_TRUE@bpsplit_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
-@HAVE_DMALLOC_TRUE@bpappend_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
-@HAVE_DMALLOC_TRUE@bpgettime_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+	$(am__append_6)
 @HAVE_DMALLOC_TRUE@bpsplit_LDFLAGS = $(DMALLOC_LDFLAGS)
 @HAVE_DMALLOC_TRUE@bpappend_LDFLAGS = $(DMALLOC_LDFLAGS)
 @HAVE_DMALLOC_TRUE@bpgettime_LDFLAGS = $(DMALLOC_LDFLAGS)

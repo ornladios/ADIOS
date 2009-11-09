@@ -9,7 +9,7 @@ bp2h5_SOURCES = bp2h5.c hw-utils.c
 
 bp2h5_CPPFLAGS = -DH5_USE_16_API
 # change these to use proper autoconf settings
-bp2h5_LDFLAGS = $(HDF5_LDFLAGS)
+bp2h5_LDFLAGS = -D_NOMPI $(HDF5_LDFLAGS)
 bp2h5_CPPFLAGS += $(HDF5_CPPFLAGS)
 
 bp2h5_LDADD = $(top_builddir)/src/libadiosread_nompi.a

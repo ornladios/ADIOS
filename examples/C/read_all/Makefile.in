@@ -54,7 +54,7 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_read_all_OBJECTS = read_all.$(OBJEXT)
+am_read_all_OBJECTS = read_all-read_all.$(OBJEXT)
 read_all_OBJECTS = $(am_read_all_OBJECTS)
 am__DEPENDENCIES_1 =
 read_all_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
@@ -226,6 +226,7 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 read_all_SOURCES = read_all.c
+read_all_CPPFLAGS = -D_NOMPI
 read_all_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(MXML_LIBS)
 read_all_LDFLAGS = $(MXML_LDFLAGS)
 all: all-am
@@ -286,6 +287,12 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
+
+read_all-read_all.o: read_all.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(read_all_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o read_all-read_all.o `test -f 'read_all.c' || echo '$(srcdir)/'`read_all.c
+
+read_all-read_all.obj: read_all.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(read_all_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o read_all-read_all.obj `if test -f 'read_all.c'; then $(CYGPATH_W) 'read_all.c'; else $(CYGPATH_W) '$(srcdir)/read_all.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -6,7 +6,7 @@ AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = bpls
 
 bpls_SOURCES = bpls.c 
-bpls_CFLAGS = -DNOMPI -g 
+bpls_CFLAGS = -D_NOMPI -g 
 bpls_LDADD = $(top_builddir)/src/libadiosread_nompi.a 
 
 if HAVE_DMALLOC
