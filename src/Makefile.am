@@ -53,10 +53,9 @@ endif
 if HAVE_PHDF5
 lib_LIBRARIES += libadios_phdf5.a
 libadios_phdf5_a_SOURCES = adios_phdf5.c
+libadios_a_SOURCES += adios_phdf5.c 
 PHDF5_CPPFLAGS += -DPHDF5 -DH5_USE_16_API 
 libadios_phdf5_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
-else
-libadios_a_SOURCES += adios_phdf5.c 
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_phdf5.c 
 endif
