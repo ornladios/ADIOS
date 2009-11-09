@@ -11,7 +11,7 @@ bp2ncd_SOURCES = bp2ncd.c
 bp2ncd_LDFLAGS = $(NETCDF_LDFLAGS)
 bp2ncd_CPPFLAGS = -D_NOMPI $(NETCDF_CPPFLAGS)
 
-bp2ncd_LDADD = $(top_builddir)/src/libadiosread_nompi.a
+bp2ncd_LDADD = $(top_builddir)/src/libadios_internal_nompi.a
 bp2ncd_LDADD += $(NETCDF_LIBS)
 
 if HAVE_DMALLOC

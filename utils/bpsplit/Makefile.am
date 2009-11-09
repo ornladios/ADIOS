@@ -7,15 +7,15 @@ bin_PROGRAMS = bpsplit bpappend bpgettime
 
 bpsplit_SOURCES = bpsplit.c
 bpsplit_CPPFLAGS = -D_NOMPI
-bpsplit_LDADD = $(top_builddir)/src/libadiosread_nompi.a 
+bpsplit_LDADD = $(top_builddir)/src/libadios_internal_nompi.a 
 
 bpappend_SOURCES = bpappend.c
 bpappend_CPPFLAGS = -D_NOMPI
-bpappend_LDADD = $(top_builddir)/src/libadiosread_nompi.a
+bpappend_LDADD = $(top_builddir)/src/libadios_internal_nompi.a
 
 bpgettime_SOURCES = bpgettime.c
 bpgettime_CPPFLAGS = -D_NOMPI
-bpgettime_LDADD = $(top_builddir)/src/libadiosread_nompi.a
+bpgettime_LDADD = $(top_builddir)/src/libadios_internal_nompi.a
 
 if HAVE_DMALLOC
 bpsplit_CPPFLAGS += -DDMALLOC  $(DMALLOC_CPPFLAGS)

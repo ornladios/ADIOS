@@ -499,7 +499,7 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
 
     printf ("\t\tVar Name (ID): %s (%d)\n", var_header->name, var_header->id);
     printf ("\t\tVar Path: %s\n", var_header->path);
-    printf ("\t\tDatatype: %s\n", adios_type_to_string (var_header->type));
+    printf ("\t\tDatatype: %s\n", adios_type_to_string_int (var_header->type));
     printf ("\t\tIs Dimension: %c\n"
            ,(var_header->is_dim == adios_flag_yes ? 'Y' : 'N')
            );
@@ -904,7 +904,7 @@ void print_attribute (struct adios_attribute_struct_v1 * attribute)
     }
     else
     {
-        printf ("\t\tDatatype: %s\n", adios_type_to_string (attribute->type));
+        printf ("\t\tDatatype: %s\n", adios_type_to_string_int (attribute->type));
         printf ("\t\tValue: %s\n", bp_value_to_string (attribute->type
                                                    ,attribute->value
                                                    )
@@ -944,7 +944,7 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                    ,vars_root->var_name, vars_root->group_name, vars_root->id
                    );
 	}
-        printf ("\tDatatype: %s\n", adios_type_to_string (vars_root->type));
+        printf ("\tDatatype: %s\n", adios_type_to_string_int (vars_root->type));
         printf ("\tVars Characteristics: %llu\n"
                ,vars_root->characteristics_count
                );
@@ -1031,7 +1031,7 @@ void print_attributes_index
                    ,attrs_root->id
                    );
 	}
-        printf ("\tDatatype: %s\n", adios_type_to_string (attrs_root->type));
+        printf ("\tDatatype: %s\n", adios_type_to_string_int (attrs_root->type));
         printf ("\tAttribute Characteristics: %llu\n"
                ,attrs_root->characteristics_count
                );

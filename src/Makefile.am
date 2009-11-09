@@ -142,8 +142,20 @@ libadiosreadf_nompi_a_SOURCES = mpidummy.c\
                       common_read.c 
 endif
 
+noinst_LIBRARIES = libadios_internal_nompi.a
+libadios_internal_nompi_a_SOURCES = mpidummy.c \
+                      adios_bp_v1.c \
+		      adios_endianness.c \
+		      bp_utils.c \
+		      adios_internals.c \
+                      buffer.c \
+                      adios_transport_hooks.c \
+                      adios_internals_mxml.c
+
+
 libadiosread_nompi_a_CPPFLAGS = -D_NOMPI
 libadiosreadf_nompi_a_CPPFLAGS = -D_NOMPI
+libadios_internal_nompi_a_CPPFLAGS = -D_NOMPI $(MXML_CPPFLAGS)
 #Note: -DNOMPI chokes IBM's bgxlf compiler but it can pass -D_NOMPI. 
 
 CC=$(MPICC)

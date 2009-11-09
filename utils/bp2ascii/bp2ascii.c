@@ -263,7 +263,7 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
     int i = 0;
     printf ("\t\tVar Name (ID): %s (%d)\n", var_header->name, var_header->id);
     printf ("\t\tVar Path: %s\n", var_header->path);
-    printf ("\t\tDatatype: %s\n", adios_type_to_string (var_header->type));
+    printf ("\t\tDatatype: %s\n", adios_type_to_string_int (var_header->type));
     printf ("\t\tIs Dimension: %c\n"
            ,(var_header->is_dim == adios_flag_yes ? 'Y' : 'N')
            );

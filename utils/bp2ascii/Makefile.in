@@ -37,7 +37,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = bp2ascii$(EXEEXT)
-@HAVE_DMALLOC_TRUE@am__append_1 = -ldmalloc
+@HAVE_DMALLOC_TRUE@am__append_1 = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+@HAVE_DMALLOC_TRUE@am__append_2 = -ldmalloc
 subdir = utils/bp2ascii
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -60,7 +61,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_bp2ascii_OBJECTS = bp2ascii-bp2ascii.$(OBJEXT)
 bp2ascii_OBJECTS = $(am_bp2ascii_OBJECTS)
 am__DEPENDENCIES_1 =
-bp2ascii_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
+bp2ascii_DEPENDENCIES = $(top_builddir)/src/libadios_internal_nompi.a \
 	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
@@ -229,9 +230,9 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 bp2ascii_SOURCES = bp2ascii.c 
-bp2ascii_LDADD = $(top_builddir)/src/libadiosread_nompi.a \
-	$(am__append_1)
-@HAVE_DMALLOC_TRUE@bp2ascii_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+bp2ascii_CPPFLAGS = -D_NOMPI $(am__append_1)
+bp2ascii_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
+	$(am__append_2)
 @HAVE_DMALLOC_TRUE@bp2ascii_LDFLAGS = $(DMALLOC_LDFLAGS)
 all: all-am
 

@@ -12,7 +12,7 @@ bp2h5_CPPFLAGS = -DH5_USE_16_API
 bp2h5_LDFLAGS = -D_NOMPI $(HDF5_LDFLAGS)
 bp2h5_CPPFLAGS += $(HDF5_CPPFLAGS)
 
-bp2h5_LDADD = $(top_builddir)/src/libadiosread_nompi.a
+bp2h5_LDADD = $(top_builddir)/src/libadios_internal_nompi.a
 bp2h5_LDADD += -lhdf5 -lz
 
 if HAVE_DMALLOC

@@ -8,7 +8,7 @@ bin_PROGRAMS=adios_lint
 adios_lint_SOURCES = adios_lint.c
 adios_lint_CPPFLAGS = $(MXML_CPPFLAGS)
 adios_lint_LDFLAGS = $(MXML_LDFLAGS)
-adios_lint_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(top_builddir)/src/libadios_a-adios_internals_mxml.o
+adios_lint_LDADD = $(top_builddir)/src/libadios_internal_nompi.a 
 adios_lint_LDADD += $(MXML_LIBS)
 
 if HAVE_DMALLOC

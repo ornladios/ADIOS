@@ -62,8 +62,8 @@ PROGRAMS = $(bin_PROGRAMS)
 am_adios_lint_OBJECTS = adios_lint-adios_lint.$(OBJEXT)
 adios_lint_OBJECTS = $(am_adios_lint_OBJECTS)
 am__DEPENDENCIES_1 =
-adios_lint_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
-	$(top_builddir)/src/libadios_a-adios_internals_mxml.o \
+adios_lint_DEPENDENCIES =  \
+	$(top_builddir)/src/libadios_internal_nompi.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
@@ -234,8 +234,7 @@ AUTOMAKE_OPTIONS = no-dependencies
 adios_lint_SOURCES = adios_lint.c
 adios_lint_CPPFLAGS = $(MXML_CPPFLAGS) $(am__append_1)
 adios_lint_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2)
-adios_lint_LDADD = $(top_builddir)/src/libadiosread_nompi.a \
-	$(top_builddir)/src/libadios_a-adios_internals_mxml.o \
+adios_lint_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
 	$(MXML_LIBS) $(am__append_3)
 all: all-am
 
