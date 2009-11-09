@@ -19,16 +19,15 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     module load PE-$TARGET
     module load hdf5/1.6.7-ompi1.2.8
     module load netcdf
-    #./configure --prefix=/ccs/proj/fus022/adios.test/ewok \
-    #CFLAGS="-Wall -g -O0 " ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.pgi \
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/home/ge1/work/ewok --enable-shared --disable-static\
+    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.$TARGET \
         --enable-dependency-tracking \
-        --with-mxml=/ccs/home/ge1/work/ewok \
-        --with-hdf5=$HDF5_DIR \
+        --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
         --enable-research-transports
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
+        #--enable-shared --disable-static\
         #--enable-datatap=ib
+        #--with-hdf5=$HDF5_DIR 
         #--with-phdf5=/apps/HDF5/1.6.5/ewok_par/pgi625v2 \
         #--with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
 
@@ -136,13 +135,13 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-10` == "podhors
     export CC=mpicc
     export FC=mpif90
     CFLAGS="-DO_LARGEFILE=0 -fno-common" ./configure --prefix=/opt/adios \
-        --enable-dependency-tracking --enable-shared --disable-static\
         --with-mxml=/opt/mxml \
         --with-netcdf=/opt/netcdf \
         --with-hdf5=/opt/hdf5 \
         --disable-write
+        #--enable-dependency-tracking --enable-shared --disable-static
 
-elif [ `hostname | cut -c 1-4` == "skla" ]; then
+elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
 
     #########################
     # Scott's ubuntu laptop #
@@ -151,10 +150,10 @@ elif [ `hostname | cut -c 1-4` == "skla" ]; then
     export CC=mpicc
     ./configure --prefix=/usr/local/adios \
         --enable-dependency-tracking \
-        --with-mxml=/usr/local/adios \
-        --with-hdf5=/usr/local/hdf5-serial\
-        --with-phdf5=/usr/local \
-        --with-netcdf=/usr 
+        --with-mxml=/usr/local/adios 
+        #--with-hdf5=/usr/local/hdf5-serial\
+        #--with-phdf5=/usr/local \
+        #--with-netcdf=/usr 
 
 else
     echo "Could not determine what machine is this"
