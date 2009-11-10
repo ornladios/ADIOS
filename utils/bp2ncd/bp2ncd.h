@@ -1,3 +1,10 @@
+/* 
+ * ADIOS is freely available under the terms of the BSD license described
+ * in the COPYING file in the top level directory of this source distribution.
+ *
+ * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
+ */
+
 #define ERR(e){if(e){printf("Error:%s\n",nc_strerror(e));return 2;}}
 enum verbose_level
 {

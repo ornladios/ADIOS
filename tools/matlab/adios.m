@@ -42,11 +42,12 @@ function adios()
 %   practically no overhead to provide this information (along with the
 %   values of all attributes) even for file sizes of several terabytes.
 %
-%   Please read the file adioscopyright.txt for more information.
+%   Please read the file COPYING in the top directory of the ADIOS source
+%   distribution for information on the copyrights.
 %
 %   See also ADIOSOPEN, ADIOSREAD, ADIOSCLOSE.
 
-%   Copyright 2009 Oak Ridge National Laboratory
+%   Copyright 2009 UT-BATTELLE, LLC
 %   $Revision: 1.0 $  $Date: 2009/08/05 12:53:41 $
 %   Author: Norbert Podhorszki <pnorbert@ornl.gov>
 

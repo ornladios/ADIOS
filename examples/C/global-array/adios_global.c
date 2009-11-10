@@ -1,3 +1,10 @@
+/* 
+ * ADIOS is freely available under the terms of the BSD license described
+ * in the COPYING file in the top level directory of this source distribution.
+ *
+ * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
+ */
+
 /* ADIOS C Example: write a global array from N processors with gwrite
  *
  * How to run: mpirun -np <N> adios_global

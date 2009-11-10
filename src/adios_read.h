@@ -1,6 +1,12 @@
+/* 
+ * ADIOS is freely available under the terms of the BSD license described
+ * in the COPYING file in the top level directory of this source distribution.
+ *
+ * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
+ */
+
 /*
  *   Read C API for ADIOS BP format files 
- *   Copyright 2009, Oak Ridge National Laboratory
  */
 #ifndef __ADIOS_READ_H__
 #define __ADIOS_READ_H__

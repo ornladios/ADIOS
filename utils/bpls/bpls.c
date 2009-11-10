@@ -1,9 +1,15 @@
-/* List the content of a BP file.
+/* 
+ * ADIOS is freely available under the terms of the BSD license described
+ * in the COPYING file in the top level directory of this source distribution.
  *
- * Copyright Oak Ridge National Laboratory 2009
+ * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
+ */
+
+/* 
+ * List the content of a BP file.
+ *
  * Author: Norbert Podhorszki, pnorbert@ornl.gov
  *
- * TODO: -S handle int8[] as string
 **/
 
 #ifndef _GNU_SOURCE

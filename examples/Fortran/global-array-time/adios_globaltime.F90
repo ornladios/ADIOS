@@ -1,3 +1,10 @@
+!  
+!  ADIOS is freely available under the terms of the BSD license described
+!  in the COPYING file in the top level directory of this source distribution.
+!
+!  Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
+!
+
 ! ADIOS Fortran Example: write a global array from N processors with gwrite
 ! and write several timesteps into one BP file
 !

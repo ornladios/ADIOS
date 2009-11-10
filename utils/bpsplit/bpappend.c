@@ -1,10 +1,14 @@
-/*
+/* 
+ * ADIOS is freely available under the terms of the BSD license described
+ * in the COPYING file in the top level directory of this source distribution.
+ *
+ * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
+ */
 
+/*
    BPAPPEND: append a BP file to another 
 
-   Copyright Oak Ridge National Laboratory 3/2009
    Author: Norbert Podhorszki, pnorbert@ornl.gov
-
 
 **/
 

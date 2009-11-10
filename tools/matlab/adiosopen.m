@@ -47,11 +47,9 @@ function info = adiosopen(varargin)
 %      To get logging from the adiosopen code, set Verbose to 1 or higher.
 %      Higher values cause more and more details to be printed.
 %
-%   Please read the file adioscopyright.txt for more information.
-%
 %   See also ADIOSREAD, ADIOSCLOSE, ADIOS.
 
-%   Copyright 2009 Oak Ridge National Laboratory
+%   Copyright 2009 UT-BATTELLE, LLC
 %   $Revision: 1.0 $  $Date: 2009/08/05 12:53:41 $
 %   Author: Norbert Podhorszki <pnorbert@ornl.gov>
 

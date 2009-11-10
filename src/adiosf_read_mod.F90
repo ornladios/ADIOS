@@ -1,6 +1,12 @@
+!  
+!  ADIOS is freely available under the terms of the BSD license described
+!  in the COPYING file in the top level directory of this source distribution.
+!
+!  Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
+!
+
 ! 
 ! Read Fortran 90 API for ADIOS BP format files 
-! Copyright 2009, Oak Ridge National Laboratory
 !    
 ! Use this module in your source code to ensure that
 ! you are calling the adiosf_* reading functions with

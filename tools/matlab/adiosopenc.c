@@ -1,3 +1,10 @@
+/* 
+ * ADIOS is freely available under the terms of the BSD license described
+ * in the COPYING file in the top level directory of this source distribution.
+ *
+ * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
+ */
+
 /*=================================================================
  * adiosopenc.c - Open an ADIOS file
  *
@@ -31,7 +38,6 @@
  *
  *
  *
- * Copyright 2009 Oak Ridge National Laboratory
  * $Revision: 1.0 $  $Date: 2009/08/05 12:53:41 $
  * Author: Norbert Podhorszki <pnorbert@ornl.gov>
  *=================================================================*/
