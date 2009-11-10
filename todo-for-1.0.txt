@@ -4,8 +4,9 @@ Signs:
 
 Packaging:
     - make a 1.0 branch
-    - take out the methods that we do not want to distribute
-    - review what goes into the distribution and write a script to make the tar.gz
+    + take out the methods that we do not want to distribute
+    + review what goes into the distribution and write a script to make the tar.gz
+        this is now create_release.sh
 
 New features:
     CANCELLED: write an adiosf module for F90 like adiosf_read in src/adiosf_read_mod.F90
@@ -59,13 +60,13 @@ Doc:
         - describe how to add a new transport method
 
     + write INSTALL
-    - write README
+    + write README
     - write AUTHORS
 
 
 Copyright
-    - define copyright
-    - add short copyright to each file
+    + define copyright
+    + add short copyright to each file
 
 Distribution (on adiosapi.org wiki)
     - Put tar.gz on wiki
