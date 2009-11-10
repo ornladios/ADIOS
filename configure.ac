@@ -112,19 +112,17 @@ dnl 		fi
 		datatap=disable
 	  fi])
 
-RESEARCH=false
-AC_ARG_ENABLE(research-transports, [  --enable-research-transports  Enable building the various research transports. Default is not to build these as they are not part of the base distribution.],
-               [RESEARCH=true]
-             )
+AC_ARG_ENABLE(research-transports, 
+    [AS_HELP_STRING([--enable-research-transports], 
+        [Enable building the various research transports. Default is not to build these as they are not part of the base distribution.])])
+AM_CONDITIONAL([RESEARCH_TRANSPORTS], [test "x$enable_research_transports" == "xyes"])
 
 AC_LANG(C)
 
 AM_CONDITIONAL([PTL], [test x$datatap = xptl])
 AM_CONDITIONAL([INFINIBAND], [test x$datatap = xib])
 AM_CONDITIONAL([DATATAP], [test x$datatap != xdisable])
-AM_CONDITIONAL([RESEARCH_TRANSPORTS], [test x$RESEARCH == xtrue])
 
-write=disable
 AC_ARG_ENABLE(write, 
     [AS_HELP_STRING([--disable-write],[disable building the write methods in ADIOS. Must be used on MacOSX])])
 AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
@@ -192,18 +190,20 @@ echo "      - MPILIBS = $MPILIBS";
 echo "      - MPIFC = $MPIFC";
 echo
 
-if test "x${RESEARCH}" == "xtrue"; then
+if test "x$enable_research_transports" == "xyes"; then 
         echo "  - Research Transports Included";
-else
-echo "  - No researh transport methods";
-fi
 
-if test "x${datatap}" != "xdisable"; then
-        echo "  - DataTap";
-        echo "      - Interconnect: $datatap";
+    if test "x${datatap}" != "xdisable"; then
+        echo "      - DataTap";
+        echo "          - Interconnect: $datatap";
+    else
+        echo "      No DataTap transport";
+    fi
+
 else
-echo "No DataTap";
+        echo "  - No research transport methods";
 fi
+echo
 
 if test -z "${HAVE_PORTALS_TRUE}"; then
         echo "  - PORTALS";
@@ -212,7 +212,7 @@ if test -z "${HAVE_PORTALS_TRUE}"; then
         echo "      - PORTALS_LDFLAGS = $PORTALS_LDFLAGS";
         echo "      - PORTALS_LIBS = $PORTALS_LIBS";
 else
-echo "No Portals"
+        echo "No Portals"
 fi
 
 echo
