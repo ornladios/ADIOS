@@ -29,8 +29,11 @@
   
   </adios-group>
 
-  <method group="restart" method="MPI"/>
+<!--
+  <transport group="restart" method="ADAPTIVE">max_storage_targets=672;max_stripe_count=160;files_number=16;overlap_factor= 0;min_stripe_count=3;split_target_count=3;split_files_count=max</transport>
+-->
+  <transport group="restart" method="ADAPTIVE">max_storage_targets=144;max_stripe_count=144;files_number=1;overlap_factor= 0;min_stripe_count=1;split_target_count=1;split_files_count=max</transport>
 
-  <buffer size-MB="11" allocate-time="now"/>
+  <buffer size-MB="500" allocate-time="now"/>
 
 </adios-config>
