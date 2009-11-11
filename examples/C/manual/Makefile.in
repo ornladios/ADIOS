@@ -36,8 +36,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = 1_nonadios_example$(EXEEXT) 2_adios_posix$(EXEEXT) \
-	3_adios_nfiles$(EXEEXT) 4_read_posix$(EXEEXT)
+noinst_PROGRAMS = 1_nonadios_example$(EXEEXT) 2_adios_write$(EXEEXT) \
+	3_adios_read$(EXEEXT) 4_adios_nfiles$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_1 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 @HAVE_PHDF5_TRUE@am__append_3 = $(PHDF5_LDFLAGS)
@@ -71,17 +71,17 @@ am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
 1_nonadios_example_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
-am_2_adios_posix_OBJECTS = 2_adios_posix.$(OBJEXT)
-2_adios_posix_OBJECTS = $(am_2_adios_posix_OBJECTS)
-2_adios_posix_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+am_2_adios_write_OBJECTS = 2_adios_write.$(OBJEXT)
+2_adios_write_OBJECTS = $(am_2_adios_write_OBJECTS)
+2_adios_write_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
-am_3_adios_nfiles_OBJECTS = 3_adios_nfiles.$(OBJEXT)
-3_adios_nfiles_OBJECTS = $(am_3_adios_nfiles_OBJECTS)
-3_adios_nfiles_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+am_3_adios_read_OBJECTS = 3_adios_read.$(OBJEXT)
+3_adios_read_OBJECTS = $(am_3_adios_read_OBJECTS)
+3_adios_read_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
-am_4_read_posix_OBJECTS = 4_read_posix.$(OBJEXT)
-4_read_posix_OBJECTS = $(am_4_read_posix_OBJECTS)
-4_read_posix_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+am_4_adios_nfiles_OBJECTS = 4_adios_nfiles.$(OBJEXT)
+4_adios_nfiles_OBJECTS = $(am_4_adios_nfiles_OBJECTS)
+4_adios_nfiles_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
@@ -94,10 +94,10 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(1_nonadios_example_SOURCES) $(2_adios_posix_SOURCES) \
-	$(3_adios_nfiles_SOURCES) $(4_read_posix_SOURCES)
-DIST_SOURCES = $(1_nonadios_example_SOURCES) $(2_adios_posix_SOURCES) \
-	$(3_adios_nfiles_SOURCES) $(4_read_posix_SOURCES)
+SOURCES = $(1_nonadios_example_SOURCES) $(2_adios_write_SOURCES) \
+	$(3_adios_read_SOURCES) $(4_adios_nfiles_SOURCES)
+DIST_SOURCES = $(1_nonadios_example_SOURCES) $(2_adios_write_SOURCES) \
+	$(3_adios_read_SOURCES) $(4_adios_nfiles_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -255,18 +255,18 @@ AUTOMAKE_OPTIONS = no-dependencies
 1_nonadios_example_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(am__append_2)
 1_nonadios_example_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
-2_adios_posix_SOURCES = 2_adios_posix.c
-2_adios_posix_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
+2_adios_write_SOURCES = 2_adios_write.c
+2_adios_write_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(am__append_4)
-2_adios_posix_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
-3_adios_nfiles_SOURCES = 3_adios_nfiles.c
-3_adios_nfiles_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
+2_adios_write_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
+3_adios_read_SOURCES = 3_adios_read.c
+3_adios_read_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(am__append_6)
-3_adios_nfiles_LDFLAGS = $(MXML_LDFLAGS) $(am__append_5)
-4_read_posix_SOURCES = 4_read_posix.c
-4_read_posix_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
+3_adios_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_5)
+4_adios_nfiles_SOURCES = 4_adios_nfiles.c
+4_adios_nfiles_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(am__append_8)
-4_read_posix_LDFLAGS = $(MXML_LDFLAGS) $(am__append_7)
+4_adios_nfiles_LDFLAGS = $(MXML_LDFLAGS) $(am__append_7)
 CLEANFILES = *.bp
 EXTRA_DIST = config.xml gread_temperature.ch gwrite_temperature.ch
 all: all-am
@@ -312,15 +312,15 @@ clean-noinstPROGRAMS:
 1_nonadios_example$(EXEEXT): $(1_nonadios_example_OBJECTS) $(1_nonadios_example_DEPENDENCIES) 
 	@rm -f 1_nonadios_example$(EXEEXT)
 	$(LINK) $(1_nonadios_example_LDFLAGS) $(1_nonadios_example_OBJECTS) $(1_nonadios_example_LDADD) $(LIBS)
-2_adios_posix$(EXEEXT): $(2_adios_posix_OBJECTS) $(2_adios_posix_DEPENDENCIES) 
-	@rm -f 2_adios_posix$(EXEEXT)
-	$(LINK) $(2_adios_posix_LDFLAGS) $(2_adios_posix_OBJECTS) $(2_adios_posix_LDADD) $(LIBS)
-3_adios_nfiles$(EXEEXT): $(3_adios_nfiles_OBJECTS) $(3_adios_nfiles_DEPENDENCIES) 
-	@rm -f 3_adios_nfiles$(EXEEXT)
-	$(LINK) $(3_adios_nfiles_LDFLAGS) $(3_adios_nfiles_OBJECTS) $(3_adios_nfiles_LDADD) $(LIBS)
-4_read_posix$(EXEEXT): $(4_read_posix_OBJECTS) $(4_read_posix_DEPENDENCIES) 
-	@rm -f 4_read_posix$(EXEEXT)
-	$(LINK) $(4_read_posix_LDFLAGS) $(4_read_posix_OBJECTS) $(4_read_posix_LDADD) $(LIBS)
+2_adios_write$(EXEEXT): $(2_adios_write_OBJECTS) $(2_adios_write_DEPENDENCIES) 
+	@rm -f 2_adios_write$(EXEEXT)
+	$(LINK) $(2_adios_write_LDFLAGS) $(2_adios_write_OBJECTS) $(2_adios_write_LDADD) $(LIBS)
+3_adios_read$(EXEEXT): $(3_adios_read_OBJECTS) $(3_adios_read_DEPENDENCIES) 
+	@rm -f 3_adios_read$(EXEEXT)
+	$(LINK) $(3_adios_read_LDFLAGS) $(3_adios_read_OBJECTS) $(3_adios_read_LDADD) $(LIBS)
+4_adios_nfiles$(EXEEXT): $(4_adios_nfiles_OBJECTS) $(4_adios_nfiles_DEPENDENCIES) 
+	@rm -f 4_adios_nfiles$(EXEEXT)
+	$(LINK) $(4_adios_nfiles_LDFLAGS) $(4_adios_nfiles_OBJECTS) $(4_adios_nfiles_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

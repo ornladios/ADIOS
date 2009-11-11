@@ -8,7 +8,9 @@
 /*
  * ADIOS example from the User's manual
  *
- * Read back data written by 2_adios_posix
+ * Read back data written by 2_adios_posix.
+ * Use the same method and the same number of processes that were used
+ * for writing the data with 2_adios_posix.
  *
  */
 #include <stdio.h>
@@ -27,11 +29,11 @@ int main (int argc, char ** argv)
     int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize, adios_buf_size;
     int64_t     adios_handle;
-    MPI_Comm    comm =  MPI_COMM_SELF;
+    MPI_Comm    comm =  MPI_COMM_WORLD;
     
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-    sprintf (filename, "restart_%5.5d.bp", rank);
+    sprintf (filename, "restart.bp", rank);
     adios_init ("config.xml");
     adios_open (&adios_handle, "temperature", filename, "r", &comm);
     #include "gread_temperature.ch"

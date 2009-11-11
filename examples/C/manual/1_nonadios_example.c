@@ -6,7 +6,7 @@
  */
 
 /*
- * Example described in the User's manual
+ * Starting example described in the User's manual
  *
  * The initial, non-ADIOS example
  *
@@ -24,7 +24,7 @@ int main (int argc, char ** argv)
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-    sprintf (filename, "restart_%5.5d.bp", rank);
+    sprintf (filename, "restart_%5.5d.dat", rank);
     
     for (i=0; i<NX; i++)
         t[i] = rank*NX + i;

@@ -9,11 +9,11 @@
                    type="string"/>
 </adios-group>
 
-<!-- Use the POSIX method for 2_adios_posix example first. 
-     Then change the method for MPI only and rerun that example.
-     Use the MPI method only for 3_adios_nfiles example.
+<!-- Use the POSIX method for 2_adios_write and 3_adios_read examples first. 
+     Then change the method for MPI only and rerun those examples.
+     Use only the MPI method for the 4_adios_nfiles example.
   -->
-<method group="temperature" method="POSIX"/>
+<method group="temperature" method="MPI"/>
 <!--method group="temperature" method="MPI"/-->
 
 <buffer size-MB="1" allocate-time="now"/>

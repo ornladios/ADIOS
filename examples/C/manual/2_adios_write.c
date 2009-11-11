@@ -8,9 +8,24 @@
 /*
  * ADIOS example from the User's manual
  *
- * Write a N files from P processes by using 
- * the ADIOS MPI method and by grouping the 
- * processes into N groups
+ * Write a separate file from each process by using the POSIX method or
+ * write into a large single file from all processes using the MPI method.
+ * You need to change only the method in the config.xml and rerun the 
+ * program (no recompile is needed)
+ *
+ * In case of POSIX method, the output files will have the process rank 
+ * appended to the file name (e.g. restart.bp.15).
+ *
+ * 4_posix_read.c example can read the output data from the same number 
+ * of processors and using the same method. 
+ * 
+ * Application of the example: 
+ *    Checkpoint/restart files 
+ *
+ * Note: bpls utility and the generic read API can see only the array
+ * written from one of the processors. You need to use global arrays to
+ * make the data available for the utilities or for reading data from 
+ * arbitrary number of processors. 
  *
  */
 #include <stdio.h>
@@ -19,37 +34,24 @@
 int main (int argc, char ** argv) 
 {
     char        filename [256];
-    int         rank, size;
-    int         NX = 10; 
+    int         rank;
+    int         NX = 10;
     double      t[NX];
     int         i;
-
+    
     /* ADIOS variables declarations for matching gwrite_temperature.ch */
     int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
-    int         color, key;
-    MPI_Comm    comm;
- 
+    MPI_Comm    comm =  MPI_COMM_WORLD;
+    
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-    MPI_Comm_size (MPI_COMM_WORLD, &size);
-
-    /* MPI_Comm_split partitions the world group into two disjointed  subgroups, 
-     * the processes are ranked in terms of the argument key  
-     * A new communicator comm is returned for this specific grid configuration
-     */
-    color = rank % 2;
-    key = rank / 2;
-    MPI_Comm_split (MPI_COMM_WORLD, color, key, &comm);
 
     for (i=0; i<NX; i++)
         t[i] = rank*NX + i;
-            
-    /* every P/2 processes write into the same file 
-     * there are 2 files generated. 
-     */
-    sprintf (filename, "restart_%5.5d.bp", color);
+
+    sprintf (filename, "restart.bp");
     adios_init ("config.xml");
     adios_open (&adios_handle, "temperature", filename, "w", &comm);
     #include "gwrite_temperature.ch"
