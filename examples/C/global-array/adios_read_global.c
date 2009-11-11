@@ -7,6 +7,15 @@
 
 /* ADIOS C Example: read global arrays from a BP file
  *
+ * This code is using the generic read API, which can read in
+ * arbitrary slices of an array and thus we can read in an array
+ * on arbitrary number of processes (provided our code is smart 
+ * enough to do the domain decomposition).
+ *
+ * Run this example after adios_global, which generates 
+ * adios_global.bp. Run this example on equal or less 
+ * number of processes since we decompose only on one 
+ * dimension of the global array here. 
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +35,7 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    ADIOS_FILE * f = adios_fopen ("restart.bp", comm);
+    ADIOS_FILE * f = adios_fopen ("adios_global.bp", comm);
     if (f == NULL)
     {
         printf ("%s\n", adios_errmsg());
