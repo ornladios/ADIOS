@@ -49,7 +49,7 @@ Requirements and optional features
    installation configure will use it, otherwise you need to use the option
    --with phdf5=<path> to build this transport method. 
    Note that if you build this transport method, ADIOS will depend on
-   PHDF5 when you link any application with ADIOS even if you the 
+   PHDF5 when you link any application with ADIOS even if the 
    application does not intend to use this method.
 
  - Matlab is optional
