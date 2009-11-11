@@ -1,7 +1,6 @@
 <?xml version="1.0"?>
 <adios-config host-language="C">
     <adios-group name="temperature" coordination-communicator="comm">
-        <attribute name="project-name" path="/" value="adios_posix" type="string"/>
         <var name="NX" type="integer"/>
         <var name="temperature" gwrite="t" gread="t" path="/" type="double" dimensions="NX"/>
         <attribute name="description" path="/temperature" 
