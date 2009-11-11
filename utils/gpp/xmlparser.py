@@ -295,14 +295,14 @@ def getVarlistFromXML(xmlFile):
 
             if(glanguage==1):
                if (coord_comm == ''):
-                  line="call adios_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ 'adios_err)\n'
+                  line="call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)\n"
                else:
-                  line="call adios_group_size (adios_handle, "+  "adios_groupsize, adios_totalsize, "+ ', adios_err)\n'
+                  line="call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)\n"
             else:
                if (coord_comm == ''):
-                   line="adios_group_size (adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ ');\n'
+                   line="adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);\n"
                else:
-                   line="adios_group_size (adios_handle, "+  "adios_groupsize, &adios_totalsize, &"+ ');\n'
+                   line="adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);\n"
             items[0]=line+items[0]
             items[1]=line+items[1]
             var_gname_dict={}
