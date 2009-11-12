@@ -7,6 +7,8 @@
 
 !/*************************************************************/
 !/*      Example of writing of simple arrays in ADIOS         */
+!/*                                                           */
+!/*     Similar example is ../../C/manual/2_adios_write.c     */
 !/*************************************************************/
 program arrays
     implicit none

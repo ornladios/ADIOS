@@ -12,6 +12,8 @@
 
 /*************************************************************/
 /*          Example of writing arrays in ADIOS               */
+/*                                                           */
+/*        Similar example is manual/2_adios_write.c          */
 /*************************************************************/
 int main (int argc, char ** argv) 
 {

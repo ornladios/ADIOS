@@ -8,6 +8,8 @@
 /*************************************************************/
 /*          Example of reading arrays in ADIOS               */
 /*    which were written from the same number of processors  */
+/*                                                           */
+/*        Similar example is manual/2_adios_read.c           */
 /*************************************************************/
 #include <stdio.h>
 #include <stdlib.h>

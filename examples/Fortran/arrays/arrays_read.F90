@@ -8,6 +8,8 @@
 !/**************************************************************/
 !/*      Example of reading of simple arrays in ADIOS          */
 !/*      which were written from the same number of processors */
+!/*                                                            */
+!/*     Similar example is ../../C/manual/2_adios_read.c       */
 !/**************************************************************/
 program arrays
     implicit none
