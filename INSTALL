@@ -5,15 +5,13 @@ This file provides instructions for installing the ADIOS software.
 If you have any problems with the installation, please see the 
 ADIOS support page at the following location:
 
-    http://adiosapi.org/index.php5
+    http://www.nccs.gov/user-support/adios
 
 Obtaining ADIOS
 ===============
 
     You can download the latest ADIOS source package from the ADIOS 
-    home page at
-
-    http://adiosapi.org/index.php5?title=Download
+    home page.
 
 Requirements and optional features
 ==================================
@@ -87,8 +85,8 @@ Architectures and compilers
    These wrappers should be using the actual C and Fortran compilers on 
    such machines. ADIOS can be compiled with GNU, PGI and Intel compilers
    but it does not compile with the Cray compiler. If you are using the
-   Cray compilers to build your application build ADIOS with the GNU 
-   compiler.
+   Cray compilers to build your application build the ADIOS library with 
+   the GNU compiler.
 
    BlueGene machines
    -----------------
@@ -99,6 +97,15 @@ Architectures and compilers
    -------
    On Mac OSX, only the Read API and the utilities can be built. 
    Use the --disable-write option for the configure command. 
+
+   Linux
+   -----
+   ADIOS should configure and build fine on Linux. One possible issue
+   is that configure may break in one of the tests for the fortran compiler
+   test with mpif90. If you have set FC=mpif90 before configure, try to 
+   configure without setting it. Then configure will test the default
+   f90 compiler (gfortran most likely) and pass but still will use mpif90 to 
+   build ADIOS.
 
 Configuring
 -----------
@@ -115,7 +122,7 @@ Matlab
    ADIOS with gcc. It also requires relocatable code, therefore you need to
    specify -fPIC in your C compiler flags when configuring ADIOS:
 
-   $ CC=gcc CFLAGS="-fPIC" ./configure
+   $ CFLAGS="-fPIC" ./configure
    $ make
 
    After building ADIOS, you can build the reader for Matlab. Ensure that 
