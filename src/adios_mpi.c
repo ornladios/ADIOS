@@ -1892,7 +1892,9 @@ void adios_mpi_close (struct adios_file_struct * fd
                                          ,md->old_attrs_root
                                          );
 
-                    MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
+                    int _buffer_size = buffer_size;
+
+                    MPI_Gather (&_buffer_size, 1, MPI_INT, 0, 0, MPI_INT
                                ,0, md->group_comm
                                );
                     MPI_Gatherv (buffer, buffer_size, MPI_BYTE
