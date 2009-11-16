@@ -381,6 +381,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
 #undef STRIPE_INCREMENT
             offsets [0 + 0] = fd->base_offset;
             offsets [0 + 1] = biggest_size;
+
             for (i = 1; i < md->size; i++)
             {
                 offsets [i * 2 + 0] = offsets [(i - 1) * 2 + 0] + biggest_size;
@@ -1109,6 +1110,11 @@ void adios_mpi_write (struct adios_file_struct * fd
         // write payload
         // adios_write_var_payload_v1 (fd, v);
         uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
+      
+        if (fd->base_offset + var_size > fd->pg_start_in_file + md->biggest_size)
+            fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
+                             "Need to enlarge group size. \n");
+
         err = MPI_File_write (md->fh, v->data, var_size, MPI_BYTE, &md->status);
         if (err != MPI_SUCCESS) 
         {              
@@ -1597,6 +1603,11 @@ void adios_mpi_close (struct adios_file_struct * fd
                 while (bytes_written < fd->bytes_written)
                 {
                     // everyone writes their data
+                    if (fd->base_offset + bytes_written + to_write > 
+                           fd->pg_start_in_file + md->biggest_size)
+                        fprintf (stderr, "mpi_file_write exceeds PG bound. File is corrupted. "
+                                         "Need to enlarge group size.\n");
+
                     MPI_File_seek (md->fh, fd->base_offset + bytes_written
                                   ,MPI_SEEK_SET
                                   );
