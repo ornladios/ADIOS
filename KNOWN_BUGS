@@ -1,0 +1,23 @@
+
+Writing data
+============
+
+1. If the size specified to the adios_group_size is too small, the output
+will be silently corrupt. Work around: make the size bigger. An error
+message will be added in later releases.
+
+2. If attempting to write >= 2GB from a single process, only some of the
+methods correctly handle these large writes. 
+If it fails, change to open/write/close to the file multiple times using
+an append for the subsequent iterations to get all of the data written. 
+The corrected code will be incorporated in all transport methods shortly.
+
+Reading data
+============
+
+1. The read API defines void *mins and void *maxs returned by the adios_inq_var() funtion to contain the min/max of an array per timestep. In the current release these pointers are NULL always. 
+Only the gmin and gmax single values as global min/max of an array over all timesteps are available. 
+
+
+
+
