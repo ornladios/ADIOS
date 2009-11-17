@@ -559,7 +559,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                     int len = 0;
                     memset (e, 0, MPI_MAX_ERROR_STRING);
                     MPI_Error_string (err, e, &len);
-                    fprintf (stderr, "MPI open read failed for %s: '%s'\n"
+                    fprintf (stderr, "1: MPI open read failed for %s: '%s'\n"
                             ,name, e
                             );
                     free (name);
@@ -694,7 +694,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 int len = 0;
                 memset (e, 0, MPI_MAX_ERROR_STRING);
                 MPI_Error_string (err, e, &len);
-                fprintf (stderr, "MPI open write failed for %s: '%s'\n"
+                fprintf (stderr, "2: MPI open write failed for %s: '%s'\n"
                         ,name, e
                         );
                 free (name);
@@ -766,7 +766,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 int len = 0;
                 memset (e, 0, MPI_MAX_ERROR_STRING);
                 MPI_Error_string (err, e, &len);
-                fprintf (stderr, "MPI open write failed for %s: '%s'\n"
+                fprintf (stderr, "3: MPI open write failed for %s: '%s'\n"
                         ,name, e
                         );
                 free (name);
@@ -805,7 +805,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                         int len = 0;
                         memset (e, 0, MPI_MAX_ERROR_STRING);
                         MPI_Error_string (err, e, &len);
-                        fprintf (stderr, "MPI open write failed for %s: '%s'\n"
+                        fprintf (stderr, "4: MPI open write failed for %s: '%s'\n"
                                 ,name, e
                                 );
                         free (name);
@@ -967,7 +967,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 int len = 0;
                 memset (e, 0, MPI_MAX_ERROR_STRING);
                 MPI_Error_string (err, e, &len);
-                fprintf (stderr, "MPI open write failed for %s: '%s'\n"
+                fprintf (stderr, "5: MPI open write failed for %s: '%s'\n"
                         ,name, e
                         );
                 free (name);
@@ -1011,7 +1011,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
             while (total_written < fd->bytes_written)
             {
                 write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                 MPI_Get_count(&md->status, MPI_BYTE, &count);
                 if (count != write_len)
                 {
@@ -1021,7 +1021,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 total_written += count;
                 buf_ptr += count;
                 to_write -= count;
-                err = total_written;
+                //err = total_written;
             }
         }
         if (err != MPI_SUCCESS)
@@ -1116,7 +1116,7 @@ void adios_mpi_write (struct adios_file_struct * fd
             while (total_written < fd->bytes_written)
             {
                 write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                 MPI_Get_count(&md->status, MPI_BYTE, &count);
                 if (count != write_len)
                 {
@@ -1126,7 +1126,7 @@ void adios_mpi_write (struct adios_file_struct * fd
                 total_written += count;
                 buf_ptr += count;
                 to_write -= count;
-                err = total_written;
+                //err = total_written;
             }
         }
         if (err != MPI_SUCCESS) 
@@ -1175,7 +1175,7 @@ void adios_mpi_write (struct adios_file_struct * fd
             while (total_written < var_size)
             {
                 write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                 MPI_Get_count(&md->status, MPI_BYTE, &count);
                 if (count != write_len)
                 {
@@ -1185,7 +1185,7 @@ void adios_mpi_write (struct adios_file_struct * fd
                 total_written += count;
                 buf_ptr += count;
                 to_write -= count;
-                err = total_written;
+                //err = total_written;
             }
         }
         if (err != MPI_SUCCESS) 
@@ -1464,7 +1464,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                     while (total_written < md->vars_header_size)
                     {
                         write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                        MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                        err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
                         {
@@ -1474,7 +1474,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                         total_written += count;
                         buf_ptr += count;
                         to_write -= count;
-                        err = total_written;
+                        //err = total_written;
                     }
                 }
                 if (err != MPI_SUCCESS) 
@@ -1533,7 +1533,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                         while (total_written < fd->bytes_written)
                         {
                             write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                            MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                            err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                             MPI_Get_count(&md->status, MPI_BYTE, &count);
                             if (count != write_len)
                             {
@@ -1543,7 +1543,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                             total_written += count;
                             buf_ptr += count;
                             to_write -= count;
-                            err = total_written;
+                            //err = total_written;
                         }
                     }
                     if (err != MPI_SUCCESS) 
@@ -1596,7 +1596,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                     while (total_written < md->vars_header_size)
                     {
                         write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                        MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                        err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
                         {
@@ -1606,7 +1606,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                         total_written += count;
                         buf_ptr += count;
                         to_write -= count;
-                        err = total_written;
+                        //err = total_written;
                     }
                 }
                 if (err != MPI_SUCCESS) 
@@ -1810,7 +1810,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                     while (total_written < buffer_offset)
                     {
                         write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                        MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                        err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
                         {
@@ -1820,7 +1820,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                         total_written += count;
                         buf_ptr += count;
                         to_write -= count;
-                        err = total_written;
+                        //err = total_written;
                     }
                 }              
                 if (err != MPI_SUCCESS) 
@@ -1904,7 +1904,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                     while (total_written < md->vars_header_size)
                     {
                         write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                        MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                        err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
                         {
@@ -1914,7 +1914,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                         total_written += count;
                         buf_ptr += count;
                         to_write -= count;
-                        err = total_written;
+                        //err = total_written;
                     }
                 }              
                 if (err != MPI_SUCCESS) 
@@ -1969,7 +1969,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                         while (total_written < fd->bytes_written)
                         {
                             write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                            MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                            err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                             MPI_Get_count(&md->status, MPI_BYTE, &count);
                             if (count != write_len)
                             {
@@ -1979,7 +1979,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                             total_written += count;
                             buf_ptr += count;
                             to_write -= count;
-                            err = total_written;
+                            //err = total_written;
                         }
                     }              
                     if (err != MPI_SUCCESS) 
@@ -2031,7 +2031,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                     while (total_written < md->vars_header_size)
                     {
                         write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                        MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                        err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
                         {
@@ -2041,7 +2041,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                         total_written += count;
                         buf_ptr += count;
                         to_write -= count;
-                        err = total_written;
+                        //err = total_written;
                     }
                 }              
                 if (err != MPI_SUCCESS) 
@@ -2176,7 +2176,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                     while (total_written < fd->bytes_written)
                     {
                         write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                        MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                        err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
                         {
@@ -2186,7 +2186,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                         total_written += count;
                         buf_ptr += count;
                         to_write -= count;
-                        err = total_written;
+                        //err = total_written;
                     }
                 }              
                 if (err != MPI_SUCCESS) 
@@ -2225,7 +2225,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                     while (total_written < buffer_offset)
                     {
                         write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                        MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                        err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
                         {
@@ -2235,7 +2235,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                         total_written += count;
                         buf_ptr += count;
                         to_write -= count;
-                        err = total_written;
+                        //err = total_written;
                     }
                 }              
                 if (err != MPI_SUCCESS) 
