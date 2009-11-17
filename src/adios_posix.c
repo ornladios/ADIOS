@@ -336,7 +336,35 @@ void adios_posix_write (struct adios_file_struct * fd
             fprintf (stderr, "adios_posix_write exceeds pg bound. File is corrupted. "
                              "Need to enlarge group size. \n"); 
 
-        s = write (p->b.f, v->data, var_size);
+        int32_t to_write;
+        uint64_t bytes_written = 0;
+        if (var_size > INT32_MAX)
+        {
+            to_write = INT32_MAX;
+        }
+        else
+        {
+            to_write = (int32_t) fd->bytes_written;
+        }
+
+        while (bytes_written < var_size)
+        {
+            bytes_written += write (p->b.f, v->data + bytes_written, to_write);
+            if (var_size > bytes_written)
+            {
+                if (var_size - bytes_written > INT32_MAX)
+                {
+                    to_write = INT32_MAX;
+                }
+                else
+                {
+                    to_write = var_size - bytes_written;
+                }
+            }
+        }
+
+//        s = write (p->b.f, v->data, var_size);
+        s = bytes_written;
         if (s != var_size)
         {
             fprintf (stderr, "POSIX method tried to write %llu, "
@@ -431,6 +459,8 @@ static void adios_posix_do_write (struct adios_file_struct * fd
 {
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
+    int32_t to_write;
+    uint64_t bytes_written = 0;
 
     if (fd->shared_buffer == adios_flag_yes)
     {
@@ -438,7 +468,32 @@ static void adios_posix_do_write (struct adios_file_struct * fd
         if (p->b.end_of_pgs + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
             fprintf (stderr, "adios_posix_write exceeds pg bound. File is corrupted. "
                              "Need to enlarge group size. \n");
-        write (p->b.f, fd->buffer, fd->bytes_written);
+
+        if (fd->bytes_written > INT32_MAX)
+        {
+            to_write = INT32_MAX;
+        }
+        else
+        {
+            to_write = (int32_t) fd->bytes_written;
+        }
+
+        while (bytes_written < fd->bytes_written)
+        {
+            write (p->b.f, fd->buffer, to_write);
+            bytes_written += to_write;
+            if (fd->bytes_written > bytes_written)
+            {
+                if (fd->bytes_written - bytes_written > INT32_MAX)
+                {
+                    to_write = INT32_MAX;
+                }
+                else
+                {
+                    to_write = fd->bytes_written - bytes_written;
+                }
+            }
+        }
     }
 
     // index location calculation:
