@@ -1420,6 +1420,9 @@ void adios_mpi_close (struct adios_file_struct * fd
                 while (a)
                 {
                     adios_write_attribute_v1 (fd, a);
+                    if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + md->biggest_size)
+                        fprintf (stderr, "mpi_file_write exceeds PG bound. File is corrupted. "
+                                         "Need to enlarge group size.\n");
                     err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
                                          ,MPI_BYTE, &md->status
                                          );

@@ -315,7 +315,6 @@ void adios_posix_write (struct adios_file_struct * fd
     {
         // var payload sent for sizing information
         adios_write_var_header_v1 (fd, v);
-
         ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
         if (s != fd->bytes_written)
         {
@@ -333,6 +332,11 @@ void adios_posix_write (struct adios_file_struct * fd
         // write payload
         // adios_write_var_payload_v1 (fd, v);
         uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
+printf ("%llu, pg_start_in_file = %llu, size = %llu\n", fd->base_offset + var_size, fd->pg_start_in_file, fd->write_size_bytes);
+        if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes)
+            fprintf (stderr, "2 adios_posix_write exceeds pg bound. File is corrupted. "
+                             "Need to enlarge group size. \n"); 
+
         s = write (p->b.f, v->data, var_size);
         if (s != var_size)
         {
@@ -432,6 +436,9 @@ static void adios_posix_do_write (struct adios_file_struct * fd
     if (fd->shared_buffer == adios_flag_yes)
     {
         lseek (p->b.f, p->b.end_of_pgs, SEEK_SET);
+        if (p->b.end_of_pgs + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+            fprintf (stderr, "adios_posix_write exceeds pg bound. File is corrupted. "
+                             "Need to enlarge group size. \n");
         write (p->b.f, fd->buffer, fd->bytes_written);
     }
 
@@ -630,6 +637,9 @@ void adios_posix_close (struct adios_file_struct * fd
                 while (a)
                 {
                     adios_write_attribute_v1 (fd, a);
+                    if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+                        fprintf (stderr, "1 adios_posix_write exceeds pg bound. File is corrupted. "
+                                         "Need to enlarge group size. \n");
                     ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
                     if (s != fd->bytes_written)
                     {
