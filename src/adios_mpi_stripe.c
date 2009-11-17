@@ -1252,6 +1252,9 @@ void adios_mpi_stripe_write (struct adios_file_struct * fd
         // write payload
         // adios_write_var_payload_v1 (fd, v);
         uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
+        if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes) 
+            fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
+                             "Need to enlarge group size. \n");
         count = adios_mpi_stripe_striping_unit_write(
                           md->fh,
                           -1,
@@ -1514,13 +1517,12 @@ void adios_mpi_stripe_close (struct adios_file_struct * fd
                                   fd->buffer,
                                   md->vars_header_size,
                                   md->striping_unit);
-                MPI_Get_count (&md->status, MPI_BYTE, &retlen);
-                if (retlen != md->vars_header_size)
+                if (count != md->vars_header_size)
                 {
                     fprintf (stderr, "d:MPI method tried to write %llu, "
                                      "only wrote %d\n"
                             ,md->vars_header_size
-                            ,retlen
+                            ,count
                             );
                 }
                 fd->offset = 0;
@@ -1688,6 +1690,10 @@ void adios_mpi_stripe_close (struct adios_file_struct * fd
             if (fd->shared_buffer == adios_flag_yes)
             {
                 // everyone writes their data
+                if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+                    fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
+                             "Need to enlarge group size. \n");
+
                 adios_mpi_stripe_striping_unit_write(
                                   md->fh,
                                   fd->base_offset,
