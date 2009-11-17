@@ -1542,6 +1542,9 @@ void adios_mpi_stripe_close (struct adios_file_struct * fd
                 while (a)
                 {
                     adios_write_attribute_v1 (fd, a);
+                    if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+                        fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
+                                         "Need to enlarge group size. \n");
                     count = adios_mpi_stripe_striping_unit_write(
                                       md->fh,
                                       -1,
