@@ -1046,7 +1046,9 @@ int64_t common_read_read_var_byid (ADIOS_GROUP    * gp,
     common_read_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
                           &ndim, &dims, &timedim);
 
-    if ( file_is_fortran != futils_is_called_from_fortran() ) 
+    /* In a Fortran written files, dimensions are in reversed order for C */
+    //if ( file_is_fortran != futils_is_called_from_fortran() ) 
+    if ( file_is_fortran ) 
         swap_order(ndim, dims, &timedim);
 
     /* Get the timesteps we need to read */
@@ -1080,6 +1082,13 @@ int64_t common_read_read_var_byid (ADIOS_GROUP    * gp,
              j++;
         }
         ndim_notime = ndim-1;
+    }
+
+    /* Fortran reader was reported of Fortran dimension order so it gives counts and starts in that order.
+       We need to swap them here to read correctly in C order */
+    if ( futils_is_called_from_fortran()) {
+        swap_order(ndim, count_notime, &timedim);
+        swap_order(ndim, start_notime, &timedim);
     }
     
     /* items_read = how many data elements are we going to read in total (per timestep) */
@@ -1182,7 +1191,9 @@ int64_t common_read_read_var_byid (ADIOS_GROUP    * gp,
                 }
             }
 
-            if (file_is_fortran != futils_is_called_from_fortran()) {
+            /* Again, a Fortran written file has the dimensions in Fortran order we need to swap here */
+            //if (file_is_fortran != futils_is_called_from_fortran()) {
+            if (file_is_fortran ) {
                 i=-1;
                 swap_order(ndim, gdims,   &(i)); // i is dummy 
                 swap_order(ndim, ldims,   &(i));
@@ -1202,6 +1213,14 @@ int64_t common_read_read_var_byid (ADIOS_GROUP    * gp,
                     }
                 }
             }
+
+            /*
+            printf("ldims   = "); for (j = 0; j<ndim; j++) printf("%d ",ldims[j]); printf("\n");
+            printf("gdims   = "); for (j = 0; j<ndim; j++) printf("%d ",gdims[j]); printf("\n");
+            printf("offsets = "); for (j = 0; j<ndim; j++) printf("%d ",offsets[j]); printf("\n");
+            printf("count_notime   = "); for (j = 0; j<ndim_notime; j++) printf("%d ",count_notime[j]); printf("\n");
+            printf("start_notime   = "); for (j = 0; j<ndim_notime; j++) printf("%d ",start_notime[j]); printf("\n");
+            */
                 
             for (j = 0; j < ndim_notime; j++) {
     
