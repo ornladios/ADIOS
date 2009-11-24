@@ -1,0 +1,6 @@
+
+1.0.1
+    - fix: builds read API on Mac (was broken at utils/bpdump)
+    - fix: Fortran written BP files are correctly read by Fortran readers
+
+1.0  Released on Nov 18, 2009
