@@ -63,11 +63,17 @@ int main (int argc, char ** argv)
     bytes_read = adios_read_var (g, "temperature", start, count, data);
 
     printf("rank=%d: ", rank);
-    for (i = 0; i < 1; i++)
-        for (j = 0; j < v->dims[1]; j++)
-            for (k = 0; k < v->dims[2]; k++)
-            printf ("[%d,%d,%d] %e\t", start[0]+i, j, k, * (double *)data + i * v->dims[1] * v->dims[2] + j * v->dims[2] + k);
-
+    for (i = 0; i < 1; i++) {
+        printf ("[%lld,0:%lld,0:%lld] = [", start[0]+i, v->dims[1], v->dims[2]);   
+        for (j = 0; j < v->dims[1]; j++) {
+            printf (" [");
+            for (k = 0; k < v->dims[2]; k++) {
+                printf ("%g ", ((double *)data) [ i * v->dims[1] * v->dims[2] + j * v->dims[2] + k]);
+            }
+            printf ("]");
+        }
+        printf (" ]\t");
+    }
     printf ("\n");
 
     free (data);
@@ -81,3 +87,5 @@ int main (int argc, char ** argv)
     MPI_Finalize ();
     return 0;
 }
+
+

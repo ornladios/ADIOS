@@ -21,7 +21,7 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx);
 int main (int argc, char ** argv) 
 {
     char        filename [256];
-    int         rank, size, gidx, i, j, k;
+    int         rank, size, gidx, i, j, k,l;
     MPI_Comm    comm_dummy = 0;  /* MPI_Comm is defined through adios_read.h */
     enum ADIOS_DATATYPES attr_type;
     void      * data = NULL;
@@ -69,7 +69,7 @@ int main (int argc, char ** argv)
                     printf(", %d",v->dims[j]);
                 printf("] = \n");
 
-                if (total_size > 1024) {
+                if (total_size > 1024*1024) {
                     printf("        // too big, do not read in\n");
                 } else {
                     data = malloc (total_size);
@@ -96,6 +96,18 @@ int main (int argc, char ** argv)
                             for (k = 0; k < v->dims[1]; k++) 
                                printf("%s ", value_to_string(v->type, data, j*v->dims[1] + k));
                             printf ("]\n");
+                        }
+                    } else if (v->ndim == 3) {
+                        for (j = 0; j < v->dims[0]; j++) {
+                            printf ("      block %d: \n", j);
+                            for (k = 0; k < v->dims[1]; k++) {
+                                printf ("        row %d: [", j);
+                                for (l = 0; l < v->dims[2]; l++) {
+                                    printf("%s ", value_to_string(v->type, data, j*v->dims[1]*v->dims[2] + k*v->dims[1] + l));
+                                }
+                                printf ("]\n");
+                            }
+                            printf ("\n");
                         }
                     } else {
                         printf ("    cannot print arrays with >2 dimensions\n");
