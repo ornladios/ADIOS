@@ -145,6 +145,7 @@ am_libadios_internal_nompi_a_OBJECTS =  \
 	libadios_internal_nompi_a-adios_internals.$(OBJEXT) \
 	libadios_internal_nompi_a-buffer.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transport_hooks.$(OBJEXT) \
+	libadios_internal_nompi_a-adios_error.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_internals_mxml.$(OBJEXT)
 libadios_internal_nompi_a_OBJECTS =  \
 	$(am_libadios_internal_nompi_a_OBJECTS)
@@ -498,6 +499,7 @@ libadios_internal_nompi_a_SOURCES = mpidummy.c \
 		      adios_internals.c \
                       buffer.c \
                       adios_transport_hooks.c \
+                      adios_error.c \
                       adios_internals_mxml.c
 
 libadiosread_nompi_a_CPPFLAGS = -D_NOMPI $(am__append_13)
@@ -782,6 +784,12 @@ libadios_internal_nompi_a-adios_transport_hooks.o: adios_transport_hooks.c
 
 libadios_internal_nompi_a-adios_transport_hooks.obj: adios_transport_hooks.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_transport_hooks.obj `if test -f 'adios_transport_hooks.c'; then $(CYGPATH_W) 'adios_transport_hooks.c'; else $(CYGPATH_W) '$(srcdir)/adios_transport_hooks.c'; fi`
+
+libadios_internal_nompi_a-adios_error.o: adios_error.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_error.o `test -f 'adios_error.c' || echo '$(srcdir)/'`adios_error.c
+
+libadios_internal_nompi_a-adios_error.obj: adios_error.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_error.obj `if test -f 'adios_error.c'; then $(CYGPATH_W) 'adios_error.c'; else $(CYGPATH_W) '$(srcdir)/adios_error.c'; fi`
 
 libadios_internal_nompi_a-adios_internals_mxml.o: adios_internals_mxml.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_internals_mxml.o `test -f 'adios_internals_mxml.c' || echo '$(srcdir)/'`adios_internals_mxml.c

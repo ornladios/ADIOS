@@ -150,6 +150,7 @@ libadios_internal_nompi_a_SOURCES = mpidummy.c \
 		      adios_internals.c \
                       buffer.c \
                       adios_transport_hooks.c \
+                      adios_error.c \
                       adios_internals_mxml.c
 
 
