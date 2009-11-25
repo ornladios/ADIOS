@@ -85,8 +85,8 @@ program coupling
     !write (*,*) 'rank ', rank, "init completed"
     !write (nprocstr,'(i0)') nproc
 
-    !call sleep(5)
-    !call MPI_Barrier (MPI_COMM_WORLD, ierr)
+    call sleep(5)
+    call MPI_Barrier (MPI_COMM_WORLD, ierr)
     do ts = 1, timesteps
         !call readArraysWithMethod()
         call readArraysWithReadAPI()
@@ -257,7 +257,7 @@ end subroutine printArrays
 
 !!***************************
 subroutine usage()
-    print *, "Usage: genarray file N M nx ny [timesteps]"
+    print *, "Usage: coupling_reader_2D file N M nx ny [timesteps]"
     print *, "file:   name of file to write/read"
     print *, "N:      number of processes in X dimension"
     print *, "M:      number of processes in Y dimension"

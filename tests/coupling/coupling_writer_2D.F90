@@ -158,7 +158,7 @@ end subroutine writeArrays
 
 !!***************************
 subroutine usage()
-    print *, "Usage: genarray file N M nx ny [timesteps]"
+    print *, "Usage: coupling_writer_2D file N M nx ny [timesteps]"
     print *, "file:   name of file to write/read"
     print *, "N:      number of processes in X dimension"
     print *, "M:      number of processes in Y dimension"
