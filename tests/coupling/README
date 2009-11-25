@@ -20,5 +20,13 @@ Coupling scenarios
         $ diff -s w r
         Files w and r are identical
 
+2. coupling_writer_2D_dart.F90 and coupling_reader_2D_dart.F90
+   Scenario 1 using DART for memory-to-memory coupling
+   (no writer_*.bp anymore).
+   Still needs adios and coupling2D.xml for the reader to write
+   reader_*.bp
+
+
+
 
 
