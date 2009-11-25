@@ -82,7 +82,7 @@ program coupling
         print '(" Array size per process: ",i0," x ",i0)',  ndx,ndy
 
         if (nproc .ne. npx*npy) then
-            print '(" Error: Number of processors ",i0,"does not match nx*ny=",i0)', nproc, npx*npy
+            print '(" Error: Number of processors ",i0,"does not match N*M=",i0)', nproc, npx*npy
             call exit(1)
         endif
     endif

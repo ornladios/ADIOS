@@ -8,7 +8,7 @@
 !
 !  Coupling writer/reader
 !
-!  Write a 2D array 
+!  Read a 2D array 
 !  to/from a file or from/to another coupling code using DataSpaces/ADIOS
 !
 !  nx * ny          processes write a 2D array, where each process writes an
@@ -85,7 +85,7 @@ program coupling
         print '(" Array size per process: ",i0," x ",i0)',  ndx,ndy
 
         if (nproc .ne. npx*npy) then
-            print '(" Error: Number of processors ",i0,"does not match nx*ny=",i0)', nproc, npx*npy
+            print '(" Error: Number of processors ",i0,"does not match N*M=",i0)', nproc, npx*npy
             call exit(1)
         endif
     endif
@@ -200,8 +200,8 @@ subroutine usage()
     print *, "file:   name of file to write/read"
     print *, "N:      number of processes in X dimension"
     print *, "M:      number of processes in Y dimension"
-    print *, "nx:     local array size in X dimension per processor"
-    print *, "ny:     local array size in Y dimension per processor"
+    print *, "nx:     local array size in X dimension per processor (NOT USED)"
+    print *, "ny:     local array size in Y dimension per processor (NOT_USED)"
     print *, "timesteps: how many times to write data"
 end subroutine usage
 
