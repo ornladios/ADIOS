@@ -1,0 +1,36 @@
+#!/bin/sh
+#PBS -N coupling3D
+#PBS -A stf006
+#PBS -j oe
+#PBS -q batch
+#PBS -l walltime=00:05:00,size=32
+
+cd $PBS_O_WORKDIR
+
+WNPX=2
+WNPY=2
+WNPZ=2
+WNDX=7
+WNDY=9 
+WNDZ=5 
+WSTEPS=3
+RNPX=1
+RNPY=3
+RNPZ=1
+RSTEPS=3
+
+let "WPROC=WNPX*WNPY*WNPZ"
+let "RPROC=RNPX*RNPY*RNPZ"
+
+cd $PBS_O_WORKDIR
+rm -f writer_*.bp
+rm -f reader_*.bp
+rm -f reader_*.txt
+rm -f log.*
+rm -f coupling3D.[oe][0-9]*
+echo "WPROC=$WPROC ($WNPX x $WNPY x $WNPZ)   array size = $WNDX x $WNDY x $WNDZ  steps = $WSTEPS" > log.job
+echo "RPROC=$RPROC ($RNPX x $RNPY x $RNPZ)   steps = $RSTEPS" >> log.job
+aprun -n $WPROC ./coupling_writer_3D writer $WNPX $WNPY $WNPZ $WNDX $WNDY $WNDZ $WSTEPS >& log.writer3D &
+aprun -n $RPROC ./coupling_reader_3D writer $RNPX $RNPY $RNPZ   1     1     1   $RSTEPS >& log.reader3D &
+wait
+
