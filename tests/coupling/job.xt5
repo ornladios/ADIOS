@@ -1,0 +1,28 @@
+#!/bin/sh
+#PBS -N coupling2D
+#PBS -A stf006
+#PBS -j oe
+#PBS -q batch
+#PBS -l walltime=00:05:00,size=32
+
+cd $PBS_O_WORKDIR
+
+NPX=4
+NPY=4
+NDX=7
+NDY=9 
+STEPS=3
+
+let "NPROC=NPX*NPY"
+
+cd $PBS_O_WORKDIR
+rm -f writer_*.bp
+rm -f reader_*.bp
+rm -f reader_*.txt
+rm -f log.*
+rm -f coupling2D.[oe][0-9]*
+echo "NPROC=$NPROC ($NPX x $NPY)   array size = $NDX x $NDY   steps = $STEPS" >& log.job
+aprun -n $NPROC ./coupling_writer_2D writer $NPX $NPY $NDX $NDY $STEPS >& log.writer2D &
+aprun -n $NPROC ./coupling_reader_2D writer $NPX $NPY $NDX $NDY $STEPS >& log.reader2D &
+wait
+
