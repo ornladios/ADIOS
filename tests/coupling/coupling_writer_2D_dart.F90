@@ -161,6 +161,8 @@ subroutine writeArrays()
     !print '("rank=",i0," file=",A )', rank,  trim(filename)
 
     !! Syntax is: var_name, version, size_elem, {bounding box}, data values.
+    !! bounding box: {slowest changing dimension, ..., fastest changing dimension}
+    !!               { start, end,  ..., start, end}
     !! call dart_put("m3d"//char(0), i-1, 8, 0, j-1, 0, n-1, k-1, n-1, m3d(j:k,1:n,1:n))
     !! call dart_put("m3d"//char(0), i-1, 8, 0, j-1, 0, n-1, k-1, n-1, m3d)    
     if (rank == 0 .and. ts == 1) then
@@ -171,8 +173,8 @@ subroutine writeArrays()
     print '("Put rank=",i0," version=",i0,": xy(",i0,":",i0,",",i0,":",i0,")")', rank, ts-1, &
             offs_x, offs_x+dim_x_local, offs_y, offs_y+dim_y_local
     call dart_put("xy"//char(0), ts-1, 8, &
-                  offs_x, offs_y, 0, &
-                  offs_x+dim_x_local-1, offs_y+dim_y_local-1, 0, & 
+                  offs_y, offs_x, 0, &
+                  offs_y+dim_y_local-1, offs_x+dim_x_local-1, 0, & 
                   xy)    
 
     ! ??? Why do we need this ???
