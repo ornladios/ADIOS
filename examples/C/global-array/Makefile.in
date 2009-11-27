@@ -45,7 +45,8 @@ noinst_PROGRAMS = adios_global$(EXEEXT) adios_global_2files$(EXEEXT) \
 subdir = examples/C/global-array
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_dmalloc.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_dart.m4 \
+	$(top_srcdir)/config/ac_dmalloc.m4 \
 	$(top_srcdir)/config/ac_gengetopt.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
@@ -117,6 +118,9 @@ CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
+DART_CPPFLAGS = @DART_CPPFLAGS@
+DART_LDFLAGS = @DART_LDFLAGS@
+DART_LIBS = @DART_LIBS@
 DATATAP_FALSE = @DATATAP_FALSE@
 DATATAP_TRUE = @DATATAP_TRUE@
 DEFS = @DEFS@
@@ -136,6 +140,8 @@ FCFLAGS = @FCFLAGS@
 FCLIBS = @FCLIBS@
 FFLAGS = @FFLAGS@
 GENGETOPT = @GENGETOPT@
+HAVE_DART_FALSE = @HAVE_DART_FALSE@
+HAVE_DART_TRUE = @HAVE_DART_TRUE@
 HAVE_DMALLOC_FALSE = @HAVE_DMALLOC_FALSE@
 HAVE_DMALLOC_TRUE = @HAVE_DMALLOC_TRUE@
 HAVE_GENGETOPT_FALSE = @HAVE_GENGETOPT_FALSE@

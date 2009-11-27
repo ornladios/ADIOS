@@ -17,6 +17,12 @@
 /* Define to 1 if your Fortran compiler doesn't accept -c and -o together. */
 #undef FC_NO_MINUS_C_MINUS_O
 
+/* Define if you have the DART. */
+#undef HAVE_DART
+
+/* Define to 1 if you have the <dc_gspace.h> header file. */
+#undef HAVE_DC_GSPACE_H
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 

@@ -17,13 +17,14 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     module unload pgi
     TARGET=pgi
     module load PE-$TARGET
-    module load hdf5/1.6.7-ompi1.2.8
+    module load hdf5/1.8.2
     module load netcdf
     export CFLAGS="-g -fPIC" 
     ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.$TARGET \
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
-        --enable-research-transports
+        --enable-research-transports \
+        --with-dart=/ccs/proj/e2e/dart
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--enable-shared --disable-static\
         #--enable-datatap=ib

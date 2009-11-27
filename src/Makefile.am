@@ -38,13 +38,12 @@ libadiosf_a_SOURCES = adiosf.c \
                      adios_error.c
 endif
 
-# this is way out of date and shouldn't be used
-#if USE_PORTALS
-#libadios_a_SOURCES += adios_dart.c
-#if BUILD_FORTRAN
-#libadiosf_a_SOURCES += adios_dart.c
-#endif
-#endif
+if HAVE_DART
+libadios_a_SOURCES += adios_dart.c
+if BUILD_FORTRAN
+libadiosf_a_SOURCES += adios_dart.c
+endif
+endif
 
 if HAVE_PHDF5
 lib_LIBRARIES += libadios_phdf5.a
@@ -57,8 +56,8 @@ libadiosf_a_SOURCES += adios_phdf5.c
 endif
 endif
 
-libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
-libadiosf_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
+libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS) $(DART_CPPFLAGS)
+libadiosf_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS) $(DART_CPPFLAGS)
 
 if RESEARCH_TRANSPORTS
 libadios_a_SOURCES += adios_mpi_stagger.c \

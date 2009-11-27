@@ -38,6 +38,7 @@ AC_PROG_GENGETOPT
 AC_HDF5
 AC_PHDF5
 AC_NETCDF
+AC_PROG_DART
 AC_DMALLOC
 
 
@@ -205,17 +206,28 @@ else
 fi
 echo
 
-if test -z "${HAVE_PORTALS_TRUE}"; then
-        echo "  - PORTALS";
-        echo "      - PORTALS_CFLAGS = $PORTALS_CFLAGS";
-        echo "      - PORTALS_CPPFLAGS = $PORTALS_CPPFLAGS";
-        echo "      - PORTALS_LDFLAGS = $PORTALS_LDFLAGS";
-        echo "      - PORTALS_LIBS = $PORTALS_LIBS";
+if test -z "${HAVE_DART_TRUE}"; then
+        echo "  - DART transport method";
+        echo "      - DART_CFLAGS = $DART_CFLAGS";
+        echo "      - DART_CPPFLAGS = $DART_CPPFLAGS";
+        echo "      - DART_LDFLAGS = $DART_LDFLAGS";
+        echo "      - DART_LIBS = $DART_LIBS";
 else
-        echo "No Portals"
+	echo "  - No DART to build DART transport method"
 fi
-
 echo
+
+dnl if test -z "${HAVE_PORTALS_TRUE}"; then
+dnl        echo "  - PORTALS";
+dnl        echo "      - PORTALS_CFLAGS = $PORTALS_CFLAGS";
+dnl        echo "      - PORTALS_CPPFLAGS = $PORTALS_CPPFLAGS";
+dnl        echo "      - PORTALS_LDFLAGS = $PORTALS_LDFLAGS";
+dnl        echo "      - PORTALS_LIBS = $PORTALS_LIBS";
+dnl else
+dnl        echo " - No PORTALS"
+dnl fi
+dnl
+dnl echo
 
 if test -z "${HAVE_MXML_TRUE}"; then
         echo "  - MXML";
@@ -224,7 +236,7 @@ if test -z "${HAVE_MXML_TRUE}"; then
         echo "      - MXML_LDFLAGS = $MXML_LDFLAGS";
         echo "      - MXML_LIBS = $MXML_LIBS";
 else
-echo "No MXML"
+        echo "  - No MXML"
 fi
 
 echo
@@ -236,7 +248,7 @@ if test -z "${HAVE_GENGETOPT_TRUE}"; then
         echo "      - GENGETOPT_LDFLAGS = $GENGETOPT_LDFLAGS";
         echo "      - GENGETOPT_LIBS = $GENGETOPT_LIBS";
 else
-echo "No Gengetopt"
+        echo "  - No Gengetopt"
 fi
 
 echo
@@ -248,7 +260,7 @@ if test -z "${HAVE_MPI_TRUE}"; then
         echo "      - MPI_LDFLAGS = $MPI_LDFLAGS";
         echo "      - MPI_LIBS = $MPI_LIBS";
 else
-echo "No MPI"
+        echo "  - No MPI"
 fi
 
 echo
@@ -260,7 +272,7 @@ if test -z "${HAVE_PHDF5_TRUE}"; then
         echo "      - PHDF5_LDFLAGS = $PHDF5_LDFLAGS";
         echo "      - PHDF5_LIBS = $PHDF5_LIBS";
 else
-	echo "No PHDF5"
+	echo "  - No PHDF5"
 fi
 
 echo
@@ -272,7 +284,7 @@ if test -z "${HAVE_HDF5_TRUE}"; then
         echo "      - HDF5_LDFLAGS = $HDF5_LDFLAGS";
         echo "      - HDF5_LIBS = $HDF5_LIBS";
 else
-	echo "No HDF5"
+	echo "  - No HDF5"
 fi
 
 echo
@@ -284,7 +296,7 @@ if test -z "${HAVE_NETCDF_TRUE}"; then
         echo "      - NETCDF_LDFLAGS = $NETCDF_LDFLAGS";
         echo "      - NETCDF_LIBS = $NETCDF_LIBS";
 else
-	echo "No NETCDF"
+	echo "  - No NETCDF"
 fi
 
 
