@@ -9,12 +9,23 @@ LINKER=${COMP}
 DART_INC ?= 
 DART_FLIB ?= -L/ccs/proj/e2e/pnorbert/coupling/src -ldart2
 
-default:  coupling3D
+default:  coupling3Ddart
 all: coupling2D coupling3D coupling2Ddart
 
 coupling2D: coupling_writer_2D coupling_reader_2D
 coupling3D: coupling_writer_3D coupling_reader_3D
 coupling2Ddart: coupling_writer_2D_dart coupling_reader_2D_dart
+coupling3Ddart: coupling_writer_3D_dart coupling_reader_3D_dart
+
+# COUPLING3D DART 
+coupling_writer_3D_dart: coupling_writer_3D_dart.F90 
+	${COMP} -Mprof=func -g -c -o coupling_writer_3D_dart.o ${DART_INC} coupling_writer_3D_dart.F90
+	${LINKER} -Mprof=func -g -o coupling_writer_3D_dart coupling_writer_3D_dart.o ${DART_FLIB}
+
+coupling_reader_3D_dart: coupling_reader_3D_dart.F90 gwrite_reader3D.fh
+	${COMP} -Mprof=func -g -c -o coupling_reader_3D_dart.o ${ADIOS_INC} ${DART_INC} coupling_reader_3D_dart.F90
+	${LINKER} -Mprof=func -g -o coupling_reader_3D_dart coupling_reader_3D_dart.o ${ADIOS_FLIB} ${DART_FLIB} 
+
 
 # COUPLING2D DART 
 coupling_writer_2D_dart: coupling_writer_2D_dart.F90 
@@ -67,4 +78,5 @@ clean:
 	rm -f coupling_writer_2D coupling_reader_2D 
 	rm -f coupling_writer_3D coupling_reader_3D 
 	rm -f coupling_writer_2D_dart coupling_reader_2D_dart
+	rm -f coupling_writer_3D_dart coupling_reader_3D_dart
         
