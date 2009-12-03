@@ -376,7 +376,6 @@ adios_mpi_stripe2_get_striping_unit(MPI_File fh, char *filename)
 #endif
     // set the file striping size
     return striping_unit;
-#endif
 }
 
 static uint64_t
