@@ -336,9 +336,6 @@ adios_mpi_stripe2_get_striping_unit(MPI_File fh, char *filename)
     gettimeofday (&t1, NULL);
 #endif
 
-#ifdef ADIOS_LUSTRE
-    return 0;  // disable stripe-size I/O for non-Lustre file system
-#else
     // get striping_unit from MPI hint if it has
     MPI_File_get_info(fh, &info_used);
     MPI_Info_get(info_used, "striping_unit", 63, value, &flag);
