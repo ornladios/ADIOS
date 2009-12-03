@@ -54,3 +54,5 @@ thing to do. Abort is about the only thing that can really work consistently.
 
 16. Consider refiniements to the free-memory-percentage to better address
 very dynamic memory usage.
+
+17. Add explicit support for "no values present" like NetCDF has.
