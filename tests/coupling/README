@@ -1,5 +1,5 @@
 This directory is not automatically built. 
-Edit the Makefile for your env (mxml lib)
+Edit the Makefile for your env (adios, mxml and dart libs)
 
 
 Coupling scenarios
@@ -20,11 +20,18 @@ Coupling scenarios
         $ diff -s w r
         Files w and r are identical
 
+   Use job_2D.xt5 to run the demo. 
+   coupling2D.xml's method for writer2D group determines the way of coupling:
+   DART = memory to memory coupling
+   MPI  = file based coupling
+
 2. coupling_writer_2D_dart.F90 and coupling_reader_2D_dart.F90
-   Scenario 1 using DART for memory-to-memory coupling
+   Scenario 1 using DART directly for memory-to-memory coupling
    (no writer_*.bp anymore).
    Still needs adios and coupling2D.xml for the reader to write
    reader_*.bp
+
+   Note: coupling_writer_2D_dart can be used with coupling_reader_2D together
 
 
 
