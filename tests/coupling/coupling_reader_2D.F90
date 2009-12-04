@@ -12,7 +12,6 @@
 !  to/from a file or from/to another coupling code using DataSpaces/ADIOS
 !
 !  nx * ny          processes write a 2D array, where each process writes an
-!  ndx * ndy        piece with filling with its rank as real*8 value
 !  
 !  Data written
 !    xy         2D array with block,block decomp
@@ -26,8 +25,8 @@ module coupling_reader_2D_comm
     ! arguments
     character(len=256) :: filename 
     integer :: npx, npy, npz  ! # of processors in x-y-z direction
-    integer :: ndx, ndy, ndz  ! size of array per processor
     integer :: timesteps      ! number of times to read data
+    integer :: read_method    ! 0=bp, 1=dart
 
     integer :: nproc          ! number of processors
 
@@ -51,7 +50,7 @@ module coupling_reader_2D_comm
 
     ! actual timestep
     integer   :: ts
-    logical, parameter   :: dump_text = .false.
+    logical, parameter   :: dump_text = .true.
 
 end module coupling_reader_2D_comm
 
@@ -67,14 +66,11 @@ program coupling
     call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
     call MPI_Comm_size (group_comm, nproc , ierr)
 
-    call adios_init ("coupling2D.xml", ierr)
-    !call MPI_Barrier (group_comm, ierr)
-
     call processArgs()
     if (rank == 0) then
         print *, " Output file: "//trim(filename)
         print '(" Process number        : ",i0," x ",i0)',  npx,npy
-        print '(" Array size per process: ",i0," x ",i0)',  ndx,ndy
+        print '(" Method for reading: ",i0)',  read_method
 
         if (nproc .ne. npx*npy) then
             print '(" Error: Number of processors ",i0,"does not match N*M=",i0)', nproc, npx*npy
@@ -82,14 +78,18 @@ program coupling
         endif
     endif
 
+    call adios_set_read_method(read_method, ierr) ! 2 = dart, 0 = bp
+    call adios_read_init (group_comm, ierr)
+    call adios_init("coupling2D.xml", adios_err)
+    !call MPI_Barrier (group_comm, ierr)
+
     !write (*,*) 'rank ', rank, "init completed"
     !write (nprocstr,'(i0)') nproc
 
     call sleep(5)
     call MPI_Barrier (MPI_COMM_WORLD, ierr)
     do ts = 1, timesteps
-        !call readArraysWithMethod()
-        call readArraysWithReadAPI()
+        call readArrays()
         call printArrays()
         !print '("rank=",i0," goes to sleep after step ",i0)', rank, ts
         if (ts < timesteps) call sleep(30)
@@ -99,51 +99,15 @@ program coupling
 
     ! Terminate
     call MPI_Barrier (MPI_COMM_WORLD, ierr)
+    call adios_read_finalize 
     call adios_finalize (rank, adios_err)
     call MPI_Finalize (ierr)
 end program coupling
 
 
-!!***************************
-subroutine readArraysWithMethod()
-    use coupling_reader_2D_comm
-    implicit none
-    integer             :: i,j,k
-
-    ! Read in data using ADIOS
-
-    ! Read in dim_x_global into dim_x_local and dim_y_global into dim_y_local
-    call adios_open (adios_handle, "writer2D", filename, "r", group_comm, adios_err)
-    adios_groupsize = 0
-    adios_totalsize = 0
-    call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
-    adios_buf_size = 4
-    call adios_read (adios_handle, "dim_x_global", dim_x_local, adios_buf_size, adios_err)
-    call adios_read (adios_handle, "dim_y_global", dim_y_local, adios_buf_size, adios_err)
-    call adios_close (adios_handle, adios_err)
-
-    allocate( xy(1:dim_x_local, 1:dim_y_local) )
-    do j=1,dim_y_local
-        do i=1,dim_x_local
-            xy(i,j) = -1.0   ! should be overwritten at reading the array next
-        enddo
-    enddo
-
-    ! Read in the whole xy array
-    call adios_open (adios_handle, "writer2D", filename, "r", group_comm, adios_err)
-    adios_groupsize = 0
-    adios_totalsize = 0
-    call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
-    adios_buf_size = 8 * (dim_x_local) * (dim_y_local)
-    call adios_read (adios_handle, "xy", xy, adios_buf_size, adios_err)
-    ! start streaming from disk to buffer 
-    call adios_close (adios_handle, adios_err)
-
-end subroutine readArraysWithMethod
-
 
 !!***************************
-subroutine readArraysWithReadAPI()
+subroutine readArrays()
     use coupling_reader_2D_comm
     implicit none
     integer             :: i,j,k
@@ -174,7 +138,8 @@ subroutine readArraysWithReadAPI()
     ! read dim_x_global into dim_x_local
     offset = 0
     readsize = 1
-    call adios_read_var(gh, "aux/dim_x_global", offset, readsize, dim_x_local, read_bytes)
+    print '("rank=",i0,": Read in dim_x_global from ",a)', rank, trim(fn)
+    call adios_read_var(gh, "dim_x_global", offset, readsize, dim_x_local, read_bytes)
     if (read_bytes .lt. 0) then
         call exit(read_bytes)
     elseif (read_bytes .ne. 4) then
@@ -183,7 +148,8 @@ subroutine readArraysWithReadAPI()
     endif
 
     ! read dim_y_global into dim_y_local
-    call adios_read_var(gh, "aux/dim_y_global", offset, readsize, dim_y_local, read_bytes)
+    print '("rank=",i0,": Read in dim_y_global from ",a)', rank, trim(fn)
+    call adios_read_var(gh, "dim_y_global", offset, readsize, dim_y_local, read_bytes)
     if (read_bytes .lt. 0) then
         call exit(read_bytes)
     elseif (read_bytes .ne. 4) then
@@ -201,7 +167,7 @@ subroutine readArraysWithReadAPI()
     readsize(1) = dim_x_local
     readsize(2) = dim_y_local
     print '("rank=",i0,": Read in xy(1:",i0,",1:",i0,") from ",a)', rank, readsize(1), readsize(2),trim(fn)
-    call adios_read_var(gh, "var/xy", offset, readsize, xy, read_bytes)
+    call adios_read_var(gh, "xy", offset, readsize, xy, read_bytes)
     if (read_bytes .lt. 0) then
         call exit(read_bytes)
     elseif (read_bytes .ne. dim_x_local*dim_y_local*8) then
@@ -210,10 +176,11 @@ subroutine readArraysWithReadAPI()
     endif
 
 
+    call MPI_Barrier (group_comm, ierr)
     call adios_gclose (gh, adios_err)
     call adios_fclose (fh, adios_err)
 
-end subroutine readArraysWithReadAPI
+end subroutine readArrays
 
 !!***************************
 subroutine printArrays()
@@ -257,12 +224,11 @@ end subroutine printArrays
 
 !!***************************
 subroutine usage()
-    print *, "Usage: coupling_reader_2D file N M nx ny [timesteps]"
+    print *, "Usage: coupling_reader_2D file N M method [timesteps]"
     print *, "file:   name of file to write/read"
     print *, "N:      number of processes in X dimension"
     print *, "M:      number of processes in Y dimension"
-    print *, "nx:     local array size in X dimension per processor (NOT USED)"
-    print *, "ny:     local array size in Y dimension per processor (NOT USED)"
+    print *, "method: DART for memory-to-memory coupling, otherwise file-based"
     print *, "timesteps: how many times to write data"
 end subroutine usage
 
@@ -279,31 +245,31 @@ subroutine processArgs()
 #endif
 #endif
 
-    character(len=256) :: npx_str, npy_str, npz_str, ndx_str, ndy_str, ndz_str, ts_str
+    character(len=256) :: npx_str, npy_str, method_str, ts_str
     integer :: numargs
 
     !! process arguments
     numargs = iargc()
     !print *,"Number of arguments:",numargs
-    if ( numargs < 5 ) then
+    if ( numargs < 4 ) then
         call usage()
         call exit(1)
     endif
     call getarg(1, filename)
     call getarg(2, npx_str)
     call getarg(3, npy_str)
-    !call getarg(4, npz_str)
     read (npx_str,'(i5)') npx
     read (npy_str,'(i5)') npy
-    !read (npz_str,'(i5)') npz
-    call getarg(4, ndx_str)
-    call getarg(5, ndy_str)
-    !call getarg(7, ndz_str)
-    read (ndx_str,'(i6)') ndx
-    read (ndy_str,'(i6)') ndy
-    !read (ndz_str,'(i6)') ndz
-    if ( numargs == 6 ) then
-        call getarg(6, ts_str)
+
+    call getarg(4, method_str)
+    if (trim(method_str) .eq. "DART") then
+        read_method = 2
+    else
+        read_method = 0
+    endif
+
+    if ( numargs == 5 ) then
+        call getarg(5, ts_str)
         read (ts_str,'(i6)') timesteps
     else
         timesteps = 1

@@ -3,15 +3,15 @@
 #PBS -A stf006
 #PBS -j oe
 #PBS -q debug
-#PBS -l walltime=00:15:00,size=12
+#PBS -l walltime=00:15:00,size=80
 
-WNPX=2
-WNPY=2
-WNDX=7
-WNDY=9
+WNPX=8
+WNPY=8
+WNDX=70
+WNDY=90
 WSTEPS=3
 
-RNPX=3
+RNPX=8
 RNPY=1
 RSTEPS=3
 

@@ -154,6 +154,7 @@ subroutine writeArrays()
     use coupling_writer_2D_comm
     implicit none
     character(len=256) :: fn
+    integer :: var_type
     ! Write out data using DART
     ! ??? Why do we need this ???
     call dart_lock_on_write
@@ -167,12 +168,18 @@ subroutine writeArrays()
     !! call dart_put("m3d"//char(0), i-1, 8, 0, j-1, 0, n-1, k-1, n-1, m3d)    
     if (rank == 0 .and. ts == 1) then
         print '("Put dim_x_global = ",i0," and dim_y_global = ",i0," version 0")', dim_x_global, dim_y_global
+        var_type = 2 ! adios_integer
+        call dart_put("Tdim_x_global"//char(0), 0, 4, 0, 0, 0, 0, 0, 0, var_type)
         call dart_put("dim_x_global"//char(0), 0, 4, 0, 0, 0, 0, 0, 0, dim_x_global)
+        call dart_put("Tdim_y_global"//char(0), 0, 4, 0, 0, 0, 0, 0, 0, var_type)
         call dart_put("dim_y_global"//char(0), 0, 4, 0, 0, 0, 0, 0, 0, dim_y_global)
     endif
-    print '("Put rank=",i0," version=",i0,": xy(",i0,":",i0,",",i0,":",i0,")")', rank, ts-1, &
+    print '("Put rank=",i0," version=",i0,": xy(",i0,":",i0,",",i0,":",i0,")")', rank, 0, &
             offs_x, offs_x+dim_x_local, offs_y, offs_y+dim_y_local
-    call dart_put("xy"//char(0), ts-1, 8, &
+    var_type = 6 ! adios_double
+    !var_type = 5 ! adios_real
+    call dart_put("Txy"//char(0), 0, 4, 0, 0, 0, 0, 0, 0, var_type)
+    call dart_put("xy"//char(0), 0, 8, &
                   offs_y, offs_x, 0, &
                   offs_y+dim_y_local-1, offs_x+dim_x_local-1, 0, & 
                   xy)    

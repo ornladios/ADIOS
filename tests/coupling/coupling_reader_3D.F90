@@ -171,7 +171,7 @@ subroutine readArraysWithReadAPI()
     ! read dim_x_global into dim_x_local
     offset = 0
     readsize = 1
-    call adios_read_var(gh, "aux/dim_x_global", offset, readsize, dim_x_local, read_bytes)
+    call adios_read_var(gh, "info/dim_x_global", offset, readsize, dim_x_local, read_bytes)
     if (read_bytes .lt. 0) then
         call exit(read_bytes)
     elseif (read_bytes .ne. 4) then
@@ -180,7 +180,7 @@ subroutine readArraysWithReadAPI()
     endif
 
     ! read dim_y_global into dim_y_local
-    call adios_read_var(gh, "aux/dim_y_global", offset, readsize, dim_y_local, read_bytes)
+    call adios_read_var(gh, "info/dim_y_global", offset, readsize, dim_y_local, read_bytes)
     if (read_bytes .lt. 0) then
         call exit(read_bytes)
     elseif (read_bytes .ne. 4) then
@@ -189,7 +189,7 @@ subroutine readArraysWithReadAPI()
     endif
 
     ! read dim_z_global into dim_z_local
-    call adios_read_var(gh, "aux/dim_z_global", offset, readsize, dim_z_local, read_bytes)
+    call adios_read_var(gh, "info/dim_z_global", offset, readsize, dim_z_local, read_bytes)
     if (read_bytes .lt. 0) then
         call exit(read_bytes)
     elseif (read_bytes .ne. 4) then

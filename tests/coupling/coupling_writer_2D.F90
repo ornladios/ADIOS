@@ -152,7 +152,7 @@ subroutine writeArrays()
 
     ! start streaming from buffer to disk
     call adios_close (adios_handle, adios_err)
-    !print '("rank=",i0,": write completed")', rank
+    print '("rank=",i0,": ----------------------  write completed ----------------------")', rank
 end subroutine writeArrays
 
 

@@ -147,8 +147,8 @@ subroutine readArraysWithReadAPI()
 
 
     ! Read in the whole xy array
-    call dart_get("xy"//char(0), ts-1, 8, 0, 0, 0, dim_y_local-1, dim_x_local-1, 0, xy)
-    print '("Get rank=",i0," version=",i0,": xy(1:",i0,",1:",i0,")")', rank, ts-1, dim_x_local, dim_y_local
+    call dart_get("xy"//char(0), 0, 8, 0, 0, 0, dim_y_local-1, dim_x_local-1, 0, xy)
+    print '("Get rank=",i0," version=",i0,": xy(1:",i0,",1:",i0,")")', rank, 0, dim_x_local, dim_y_local
 
     call dart_unlock_on_read
 
