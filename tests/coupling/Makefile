@@ -9,25 +9,15 @@ LINKER=${COMP}
 DART_INC ?= 
 DART_FLIB ?= -L/ccs/proj/e2e/pnorbert/coupling/src -ldart2
 
-default: coupling_writer_2D coupling_reader_2D
-all: coupling2D coupling3D coupling2Ddart coupling2Dcombined
+default: all
+all: coupling2D coupling2Ddart 
 
 coupling2D: coupling_writer_2D coupling_reader_2D
 coupling3D: coupling_writer_3D coupling_reader_3D
 coupling2Ddart: coupling_writer_2D_dart coupling_reader_2D_dart
 coupling3Ddart: coupling_writer_3D_dart coupling_reader_3D_dart
-coupling2Dcombined: coupling_writer_2D_combined coupling_reader_2D_combined
 
-# COUPLING2D COMBINED 
-coupling_writer_2D_combined: coupling_writer_2D_combined.F90 
-	${COMP} -Mprof=func -g -c -o coupling_writer_2D_combined.o ${DART_INC} coupling_writer_2D_combined.F90
-	${LINKER} -Mprof=func -g -o coupling_writer_2D_combined coupling_writer_2D_combined.o ${DART_FLIB}
-
-coupling_reader_2D_combined: coupling_reader_2D_combined.F90 gwrite_reader2D.fh
-	${COMP} -Mprof=func -g -c -o coupling_reader_2D_combined.o ${ADIOS_INC} ${DART_INC} coupling_reader_2D_combined.F90
-	${LINKER} -Mprof=func -g -o coupling_reader_2D_combined coupling_reader_2D_combined.o ${ADIOS_FLIB} ${ADIOSREAD_FLIB} ${DART_FLIB} 
-
-# COUPLING3D DART 
+# COUPLING3D NATIVE DART
 coupling_writer_3D_dart: coupling_writer_3D_dart.F90 
 	${COMP} -Mprof=func -g -c -o coupling_writer_3D_dart.o ${DART_INC} coupling_writer_3D_dart.F90
 	${LINKER} -Mprof=func -g -o coupling_writer_3D_dart coupling_writer_3D_dart.o ${DART_FLIB}
@@ -37,7 +27,7 @@ coupling_reader_3D_dart: coupling_reader_3D_dart.F90 gwrite_reader3D.fh
 	${LINKER} -Mprof=func -g -o coupling_reader_3D_dart coupling_reader_3D_dart.o ${ADIOS_FLIB} ${DART_FLIB} 
 
 
-# COUPLING2D DART 
+# COUPLING2D NATIVE DART
 coupling_writer_2D_dart: coupling_writer_2D_dart.F90 
 	${COMP} -Mprof=func -g -c -o coupling_writer_2D_dart.o ${DART_INC} coupling_writer_2D_dart.F90
 	${LINKER} -Mprof=func -g -o coupling_writer_2D_dart coupling_writer_2D_dart.o ${DART_FLIB}
@@ -65,7 +55,7 @@ gread_writer3D.fh: coupling3D.xml
 gwrite_reader3D.fh: coupling3D.xml
 	${GPP}  coupling3D.xml
 
-# COUPLING2D ADIOS FILE-BASED 
+# COUPLING2D ADIOS BOTH FILE-BASED AND DART
 coupling_writer_2D: coupling_writer_2D.F90 gwrite_writer2D.fh
 	${COMP}  -Mprof=func -g -c -o coupling_writer_2D.o ${ADIOS_INC} coupling_writer_2D.F90
 	${LINKER}  -Mprof=func -g -o coupling_writer_2D coupling_writer_2D.o ${ADIOS_FLIB} ${DART_FLIB}
