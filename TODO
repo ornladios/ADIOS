@@ -25,6 +25,7 @@ to
 
 8. Abstract the read API so that we can use different implementations for
 applications like Code Coupling vs. reading from disk.
++ DONE in r985
 
 9. Fix it so that vars can be written multiple times within a single PG. This
 requires fixing the array dimensions as well as doing new instances of a var.
