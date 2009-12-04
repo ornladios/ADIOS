@@ -18,14 +18,25 @@ if HAVE_PHDF5
 genbp_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 genbp_LDFLAGS += $(PHDF5_LDFLAGS)
 endif
+if HAVE_DART
+genbp_CPPFLAGS = $(DART_CPPFLAGS)
+genbp_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+genbp_LDADD += $(DART_LIBS)
+endif
 
 if BUILD_FORTRAN
 bp_read_f_SOURCES = bp_read_f.F90
+bp_read_f_LDFLAGS = 
 bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf.a
 if HAVE_DMALLOC
 bp_read_f_CFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
-bp_read_f_LDFLAGS =  $(DMALLOC_LDFLAGS)
+bp_read_f_LDFLAGS +=  $(DMALLOC_LDFLAGS)
 bp_read_f_LDADD += -ldmalloc
+endif
+if HAVE_DART
+bp_read_f_CPPFLAGS = $(DART_CPPFLAGS)
+bp_read_f_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+bp_read_f_LDADD += $(DART_LIBS)
 endif
 endif
 
@@ -64,11 +75,17 @@ endif
 
 
 bp_read_c_SOURCES = bp_read_c.c
+bp_read_c_LDFLAGS = 
 bp_read_c_LDADD = $(top_builddir)/src/libadiosread.a
 if HAVE_DMALLOC
 bp_read_c_CFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
-bp_read_c_LDFLAGS =  $(DMALLOC_LDFLAGS)
+bp_read_c_LDFLAGS +=  $(DMALLOC_LDFLAGS)
 bp_read_c_LDADD += -ldmalloc
+endif
+if HAVE_DART
+bp_read_c_CPPFLAGS = $(DART_CPPFLAGS)
+bp_read_c_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+bp_read_c_LDADD += $(DART_LIBS)
 endif
 
 FC=$(MPIFC)

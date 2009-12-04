@@ -41,6 +41,10 @@ noinst_PROGRAMS = attributes_write$(EXEEXT) attributes_read$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 @HAVE_PHDF5_TRUE@am__append_3 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_4 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_DART_TRUE@am__append_5 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_6 = $(DART_LIBS)
+@HAVE_DART_TRUE@am__append_7 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_8 = $(DART_LIBS)
 subdir = examples/C/attributes
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -59,18 +63,23 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_attributes_read_OBJECTS = attributes_read.$(OBJEXT)
+am_attributes_read_OBJECTS =  \
+	attributes_read-attributes_read.$(OBJEXT)
 attributes_read_OBJECTS = $(am_attributes_read_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_DART_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 attributes_read_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
-am_attributes_write_OBJECTS = attributes_write.$(OBJEXT)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
+am_attributes_write_OBJECTS =  \
+	attributes_write-attributes_write.$(OBJEXT)
 attributes_write_OBJECTS = $(am_attributes_write_OBJECTS)
 attributes_write_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -244,12 +253,16 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 attributes_write_SOURCES = attributes_write.c
 attributes_write_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_2)
-attributes_write_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
+	$(am__append_2) $(am__append_6)
+attributes_write_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) \
+	$(am__append_5)
 attributes_read_SOURCES = attributes_read.c
 attributes_read_LDADD = $(top_builddir)/src/libadiosread.a \
-	$(MXML_LIBS) $(am__append_4)
-attributes_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
+	$(MXML_LIBS) $(am__append_4) $(am__append_8)
+attributes_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3) \
+	$(am__append_7)
+@HAVE_DART_TRUE@attributes_write_CPPFLAGS = $(DART_CPPFLAGS)
+@HAVE_DART_TRUE@attributes_read_CPPFLAGS = $(DART_CPPFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = attributes.xml gwrite_temperature.ch gread_temperature.ch
 all: all-am
@@ -313,6 +326,18 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
+
+attributes_read-attributes_read.o: attributes_read.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(attributes_read_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o attributes_read-attributes_read.o `test -f 'attributes_read.c' || echo '$(srcdir)/'`attributes_read.c
+
+attributes_read-attributes_read.obj: attributes_read.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(attributes_read_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o attributes_read-attributes_read.obj `if test -f 'attributes_read.c'; then $(CYGPATH_W) 'attributes_read.c'; else $(CYGPATH_W) '$(srcdir)/attributes_read.c'; fi`
+
+attributes_write-attributes_write.o: attributes_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(attributes_write_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o attributes_write-attributes_write.o `test -f 'attributes_write.c' || echo '$(srcdir)/'`attributes_write.c
+
+attributes_write-attributes_write.obj: attributes_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(attributes_write_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o attributes_write-attributes_write.obj `if test -f 'attributes_write.c'; then $(CYGPATH_W) 'attributes_write.c'; else $(CYGPATH_W) '$(srcdir)/attributes_write.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -21,6 +21,15 @@ arrays_write_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 arrays_read_LDFLAGS += $(PHDF5_LDFLAGS)
 arrays_read_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 endif
+if HAVE_DART
+arrays_write_CPPFLAGS = $(DART_CPPFLAGS)
+arrays_write_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+arrays_write_LDADD += $(DART_LIBS)
+arrays_read_CPPFLAGS = $(DART_CPPFLAGS)
+arrays_read_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+arrays_read_LDADD += $(DART_LIBS)
+endif
+
 CLEANFILES = *.bp
 CC=$(MPICC)
 EXTRA_DIST = arrays.xml gwrite_arrays.fh gread_arrays.fh job.pbs

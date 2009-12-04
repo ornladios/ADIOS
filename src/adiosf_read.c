@@ -35,6 +35,31 @@ void FC_FUNC_(adios_errmsg, adios_errmsg) (char *msg, int msg_len)
     futils_cstr_to_fstr( adios_get_last_errmsg(), (char *)msg, msg_len);
 }
 
+void FC_FUNC_(adios_read_init, ADIOS_READ_INIT) (int * fcomm, int * err)
+{
+    MPI_Comm comm = MPI_Comm_f2c (*((int *) fcomm));
+    futils_called_from_fortran_set();
+    *err = common_read_init(comm);
+    if (*err)
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+}
+
+void FC_FUNC_(adios_read_finalize, ADIOS_READ_FINALIZE) (int * err)
+{
+    *err = common_read_finalize ();
+    futils_called_from_fortran_unset();
+    if (*err)
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+}
+
+void FC_FUNC_(adios_set_read_method, ADIOS_SET_READ_METHOD) (int *fmethod, int *err)
+{
+    enum ADIOS_READ_METHOD method = (enum ADIOS_READ_METHOD) *fmethod;
+    *err = common_read_set_read_method (method);
+    if (*err)
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+}
+
 void FC_FUNC_(adios_fopen, ADIOS_FOPEN)
         (int64_t * fp,
          char    * fname,

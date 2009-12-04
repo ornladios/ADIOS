@@ -39,6 +39,8 @@ host_triplet = @host@
 noinst_PROGRAMS = adios_test_f$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_1 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 @HAVE_PHDF5_TRUE@am__append_2 = $(PHDF5_LDFLAGS)
+@HAVE_DART_TRUE@am__append_3 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_4 = $(DART_LIBS)
 subdir = tests/Fortran
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -57,14 +59,16 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_adios_test_f_OBJECTS = adios_test_f.$(OBJEXT)
+am_adios_test_f_OBJECTS = adios_test_f-adios_test_f.$(OBJEXT)
 adios_test_f_OBJECTS = $(am_adios_test_f_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_DART_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 adios_test_f_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -237,9 +241,10 @@ AUTOMAKE_OPTIONS = no-dependencies
 
 #adios_test_f_SOURCES = adios_test_f.F90 adios_module.F90
 adios_test_f_SOURCES = adios_test_f.F90
-adios_test_f_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2)
+adios_test_f_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2) $(am__append_3)
 adios_test_f_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
-	$(am__append_1)
+	$(am__append_1) $(am__append_4)
+@HAVE_DART_TRUE@adios_test_f_CPPFLAGS = $(DART_CPPFLAGS)
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
 	$(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
@@ -303,6 +308,12 @@ distclean-compile:
 
 .F90.lo:
 	$(LTPPFCCOMPILE) -c -o $@ $<
+
+adios_test_f-adios_test_f.o: adios_test_f.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_test_f_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o adios_test_f-adios_test_f.o `test -f 'adios_test_f.F90' || echo '$(srcdir)/'`adios_test_f.F90
+
+adios_test_f-adios_test_f.obj: adios_test_f.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_test_f_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o adios_test_f-adios_test_f.obj `if test -f 'adios_test_f.F90'; then $(CYGPATH_W) 'adios_test_f.F90'; else $(CYGPATH_W) '$(srcdir)/adios_test_f.F90'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -39,6 +39,8 @@ host_triplet = @host@
 noinst_PROGRAMS = adios_test_c$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_1 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_DART_TRUE@am__append_3 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_4 = $(DART_LIBS)
 subdir = tests/C
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -57,14 +59,16 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_adios_test_c_OBJECTS = adios_test_c.$(OBJEXT)
+am_adios_test_c_OBJECTS = adios_test_c-adios_test_c.$(OBJEXT)
 adios_test_c_OBJECTS = $(am_adios_test_c_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_DART_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 adios_test_c_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -238,8 +242,9 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 adios_test_c_SOURCES = adios_test_c.c
 adios_test_c_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_2)
-adios_test_c_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
+	$(am__append_2) $(am__append_4)
+adios_test_c_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) $(am__append_3)
+@HAVE_DART_TRUE@adios_test_c_CPPFLAGS = $(DART_CPPFLAGS)
 CLEANFILES = restart.bp
 EXTRA_DIST = config_c.xml
 all: all-am
@@ -300,6 +305,12 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
+
+adios_test_c-adios_test_c.o: adios_test_c.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_test_c_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_test_c-adios_test_c.o `test -f 'adios_test_c.c' || echo '$(srcdir)/'`adios_test_c.c
+
+adios_test_c-adios_test_c.obj: adios_test_c.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_test_c_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_test_c-adios_test_c.obj `if test -f 'adios_test_c.c'; then $(CYGPATH_W) 'adios_test_c.c'; else $(CYGPATH_W) '$(srcdir)/adios_test_c.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

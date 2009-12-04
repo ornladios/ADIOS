@@ -86,6 +86,7 @@ endif   # BUILD_WRITE
 include_HEADERS += adios.h \
                    adios_types.h \
                    adios_read.h \
+                   adios_read_hooks.h \
                    mpidummy.h
 
 lib_LIBRARIES += libadiosread.a
@@ -95,7 +96,13 @@ libadiosread_a_SOURCES = adios_bp_v1.c \
                       futils.c \
                       adios_error.c \
 		      adios_read.c \
-                      common_read.c 
+		      adios_read_hooks.c \
+                      common_read.c \
+		      read_bp.c  
+if HAVE_DART
+libadiosread_a_SOURCES += read_dart.c
+endif
+libadiosread_a_CPPFLAGS = $(DART_CPPFLAGS)
 
 if BUILD_FORTRAN
 lib_LIBRARIES += libadiosreadf.a
@@ -105,7 +112,15 @@ libadiosreadf_a_SOURCES = adios_bp_v1.c \
                       futils.c \
                       adios_error.c \
 		      adiosf_read.c \
-                      common_read.c 
+		      adios_read_hooks.c \
+                      common_read.c \
+		      read_bp.c 
+                      
+if HAVE_DART
+libadiosreadf_a_SOURCES += read_dart.c
+endif
+libadiosreadf_a_CPPFLAGS = $(DART_CPPFLAGS)
+
 # adiosf_read.mod is not really usable, 
 # so it is not used and installed right now
 #libadiosread_a_SOURCES += adiosf_read_mod.F90
@@ -120,11 +135,16 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
                       futils.c \
                       adios_error.c \
 		      adios_read.c \
+		      adios_read_hooks.c \
                       common_read.c \
+		      read_bp.c \
 		      adios_internals.c \
                       buffer.c \
                       adios_transport_hooks.c   
 
+if HAVE_DART
+libadiosread_nompi_a_SOURCES += read_dart.c
+endif
 # Note: utils/adios_lint needs to link with adios_internals_mxml.o which depends
 #       on adios_internals.c, buffer.c and adios_transport_hooks.c. 
 #       We put these objects in libadiosread_nompi
@@ -138,7 +158,12 @@ libadiosreadf_nompi_a_SOURCES = mpidummy.c\
                       futils.c \
                       adios_error.c \
 		      adiosf_read.c \
-                      common_read.c 
+		      adios_read_hooks.c \
+                      common_read.c \
+		      read_bp.c 
+if HAVE_DART
+libadiosreadf_nompi_a_SOURCES += read_dart.c
+endif
 endif
 
 noinst_LIBRARIES = libadios_internal_nompi.a
@@ -153,15 +178,15 @@ libadios_internal_nompi_a_SOURCES = mpidummy.c \
                       adios_internals_mxml.c
 
 
-libadiosread_nompi_a_CPPFLAGS = -D_NOMPI
-libadiosreadf_nompi_a_CPPFLAGS = -D_NOMPI
+libadiosread_nompi_a_CPPFLAGS = -D_NOMPI $(DART_CPPFLAGS)
+libadiosreadf_nompi_a_CPPFLAGS = -D_NOMPI $(DART_CPPFLAGS)
 libadios_internal_nompi_a_CPPFLAGS = -D_NOMPI $(MXML_CPPFLAGS)
 #Note: -DNOMPI chokes IBM's bgxlf compiler but it can pass -D_NOMPI. 
 
 CC=$(MPICC)
 
 if HAVE_DMALLOC
-libadiosread_a_CPPFLAGS = -DDMALLOC $(DMALLOC_CPPFLAGS)
+libadiosread_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
 libadiosread_nompi_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
 endif
 

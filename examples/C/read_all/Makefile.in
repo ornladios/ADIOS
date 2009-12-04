@@ -37,6 +37,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = read_all$(EXEEXT)
+@HAVE_DART_TRUE@am__append_1 = $(DART_CPPFLAGS)
+@HAVE_DART_TRUE@am__append_2 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_3 = $(DART_LIBS)
 subdir = examples/C/read_all
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -58,8 +61,9 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_read_all_OBJECTS = read_all-read_all.$(OBJEXT)
 read_all_OBJECTS = $(am_read_all_OBJECTS)
 am__DEPENDENCIES_1 =
+@HAVE_DART_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 read_all_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -232,9 +236,10 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 read_all_SOURCES = read_all.c
-read_all_CPPFLAGS = -D_NOMPI
-read_all_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(MXML_LIBS)
-read_all_LDFLAGS = $(MXML_LDFLAGS)
+read_all_CPPFLAGS = -D_NOMPI $(am__append_1)
+read_all_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(MXML_LIBS) \
+	$(am__append_3)
+read_all_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2)
 all: all-am
 
 .SUFFIXES:

@@ -38,6 +38,7 @@ typedef struct {
         uint64_t file_size;         /* Size of file in bytes                                              */
         int      endianness;        /* 0: little endian, 1: big endian (you do not need to care)          */
         char     ** group_namelist; /* Names of the adios groups in the file (cf. groups_count)           */
+        void     * internal_data;   /* Data for internal use                                              */
 } ADIOS_FILE;
 
 typedef struct {
@@ -64,6 +65,13 @@ typedef struct {
         void     * maxs;            /* maximum per each timestep (array of timestep elements)         */
 } ADIOS_VARINFO;
 
+// the list of the available read methods
+enum ADIOS_READ_METHOD {
+         ADIOS_READ_METHOD_BP     = 0    // Read from ADIOS BP file (written by POSIX, MPI etc methods)
+        ,ADIOS_READ_METHOD_HDF5   = 1    // Read from HDF5 file (written by PHDF5 method)
+        ,ADIOS_READ_METHOD_DART   = 2    // Read from memory written by DART method
+};
+
 #ifndef __INCLUDED_FROM_FORTRAN_API__
 
 /** Functions that return a pointer to some data structures (fopen, gopen), return NULL
@@ -74,6 +82,22 @@ typedef struct {
 */
 extern int adios_errno;
 const char *adios_errmsg();
+
+/** Set the reading method for the next adios_fopen.
+ *  IN:  method   read method to use
+ *  RETURN:       0 if accepted, <0 on error
+ *  It is optional to use it before calling adios_fopen. Default is ADIOS_READ_METHOD_BP.
+ */
+int adios_set_read_method (enum ADIOS_READ_METHOD method);
+
+/** Initialize and finalize the read method.
+ *  This is needed for the DART method only and only if multiple fopen()...fclose() cycles
+ *  are used. In such a case, init/finalize will perform the connection/disconnection to 
+ *  the DART server once. 
+ *  For other methods, these functions do nothing. 
+ */
+int adios_read_init(MPI_Comm comm);
+int adios_read_finalize();
 
 /** Open an adios file.
  *  IN:  fname    pathname of file to be opened

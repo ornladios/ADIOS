@@ -24,6 +24,17 @@ adios_global_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 adios_global_2files_LDFLAGS += $(PHDF5_LDFLAGS)
 adios_global_2files_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 endif
+if HAVE_DART
+adios_global_CPPFLAGS = $(DART_CPPFLAGS)
+adios_global_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+adios_global_LDADD += $(DART_LIBS)
+adios_global_2files_CPPFLAGS = $(DART_CPPFLAGS)
+adios_global_2files_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+adios_global_2files_LDADD += $(DART_LIBS)
+adios_read_global_CPPFLAGS = $(DART_CPPFLAGS)
+adios_read_global_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+adios_read_global_LDADD += $(DART_LIBS)
+endif
 CLEANFILES = *.bp
 CC=$(MPICC)
 EXTRA_DIST = adios_global.xml gread_temperature.ch gwrite_temperature.ch job.pbs

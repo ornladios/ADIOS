@@ -42,6 +42,12 @@ noinst_PROGRAMS = adios_global$(EXEEXT) adios_global_2files$(EXEEXT) \
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 @HAVE_PHDF5_TRUE@am__append_3 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_4 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_DART_TRUE@am__append_5 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_6 = $(DART_LIBS)
+@HAVE_DART_TRUE@am__append_7 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_8 = $(DART_LIBS)
+@HAVE_DART_TRUE@am__append_9 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_10 = $(DART_LIBS)
 subdir = examples/C/global-array
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -60,22 +66,27 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_adios_global_OBJECTS = adios_global.$(OBJEXT)
+am_adios_global_OBJECTS = adios_global-adios_global.$(OBJEXT)
 adios_global_OBJECTS = $(am_adios_global_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_DART_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 adios_global_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
-am_adios_global_2files_OBJECTS = adios_global_2files.$(OBJEXT)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
+am_adios_global_2files_OBJECTS =  \
+	adios_global_2files-adios_global_2files.$(OBJEXT)
 adios_global_2files_OBJECTS = $(am_adios_global_2files_OBJECTS)
 adios_global_2files_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
-am_adios_read_global_OBJECTS = adios_read_global.$(OBJEXT)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
+am_adios_read_global_OBJECTS =  \
+	adios_read_global-adios_read_global.$(OBJEXT)
 adios_read_global_OBJECTS = $(am_adios_read_global_OBJECTS)
 adios_read_global_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_3)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -251,16 +262,20 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 adios_global_SOURCES = adios_global.c
 adios_global_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_2)
-adios_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
+	$(am__append_2) $(am__append_6)
+adios_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) $(am__append_5)
 adios_global_2files_SOURCES = adios_global_2files.c
 adios_global_2files_LDADD = $(top_builddir)/src/libadios.a \
-	$(MXML_LIBS) $(am__append_4)
-adios_global_2files_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
+	$(MXML_LIBS) $(am__append_4) $(am__append_8)
+adios_global_2files_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3) \
+	$(am__append_7)
 adios_read_global_SOURCES = adios_read_global.c
 adios_read_global_LDADD = $(top_builddir)/src/libadiosread.a \
-	$(MXML_LIBS)
-adios_read_global_LDFLAGS = $(MXML_LDFLAGS)
+	$(MXML_LIBS) $(am__append_10)
+adios_read_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_9)
+@HAVE_DART_TRUE@adios_global_CPPFLAGS = $(DART_CPPFLAGS)
+@HAVE_DART_TRUE@adios_global_2files_CPPFLAGS = $(DART_CPPFLAGS)
+@HAVE_DART_TRUE@adios_read_global_CPPFLAGS = $(DART_CPPFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = adios_global.xml gread_temperature.ch gwrite_temperature.ch job.pbs
 all: all-am
@@ -327,6 +342,24 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
+
+adios_global-adios_global.o: adios_global.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_global_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_global-adios_global.o `test -f 'adios_global.c' || echo '$(srcdir)/'`adios_global.c
+
+adios_global-adios_global.obj: adios_global.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_global_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_global-adios_global.obj `if test -f 'adios_global.c'; then $(CYGPATH_W) 'adios_global.c'; else $(CYGPATH_W) '$(srcdir)/adios_global.c'; fi`
+
+adios_global_2files-adios_global_2files.o: adios_global_2files.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_global_2files_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_global_2files-adios_global_2files.o `test -f 'adios_global_2files.c' || echo '$(srcdir)/'`adios_global_2files.c
+
+adios_global_2files-adios_global_2files.obj: adios_global_2files.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_global_2files_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_global_2files-adios_global_2files.obj `if test -f 'adios_global_2files.c'; then $(CYGPATH_W) 'adios_global_2files.c'; else $(CYGPATH_W) '$(srcdir)/adios_global_2files.c'; fi`
+
+adios_read_global-adios_read_global.o: adios_read_global.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_global_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_global-adios_read_global.o `test -f 'adios_read_global.c' || echo '$(srcdir)/'`adios_read_global.c
+
+adios_read_global-adios_read_global.obj: adios_read_global.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_global_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_global-adios_read_global.obj `if test -f 'adios_read_global.c'; then $(CYGPATH_W) 'adios_read_global.c'; else $(CYGPATH_W) '$(srcdir)/adios_read_global.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

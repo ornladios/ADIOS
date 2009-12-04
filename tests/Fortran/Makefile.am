@@ -13,6 +13,11 @@ if HAVE_PHDF5
 adios_test_f_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 adios_test_f_LDFLAGS += $(PHDF5_LDFLAGS)
 endif
+if HAVE_DART
+adios_test_f_CPPFLAGS = $(DART_CPPFLAGS)
+adios_test_f_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+adios_test_f_LDADD += $(DART_LIBS)
+endif
 
 FC=$(MPIFC)
 

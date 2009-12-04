@@ -20,6 +20,14 @@ attributes_write_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 attributes_read_LDFLAGS += $(PHDF5_LDFLAGS)
 attributes_read_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 endif
+if HAVE_DART
+attributes_write_CPPFLAGS = $(DART_CPPFLAGS)
+attributes_write_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+attributes_write_LDADD += $(DART_LIBS)
+attributes_read_CPPFLAGS = $(DART_CPPFLAGS)
+attributes_read_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+attributes_read_LDADD += $(DART_LIBS)
+endif
 CLEANFILES = *.bp
 CC=$(MPICC)
 EXTRA_DIST = attributes.xml gwrite_temperature.ch gread_temperature.ch

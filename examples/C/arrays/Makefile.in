@@ -41,6 +41,10 @@ noinst_PROGRAMS = arrays_write$(EXEEXT) arrays_read$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 @HAVE_PHDF5_TRUE@am__append_3 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_4 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_DART_TRUE@am__append_5 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_6 = $(DART_LIBS)
+@HAVE_DART_TRUE@am__append_7 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_8 = $(DART_LIBS)
 subdir = examples/C/arrays
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -59,18 +63,21 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_arrays_read_OBJECTS = arrays_read.$(OBJEXT)
+am_arrays_read_OBJECTS = arrays_read-arrays_read.$(OBJEXT)
 arrays_read_OBJECTS = $(am_arrays_read_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_DART_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 arrays_read_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
-am_arrays_write_OBJECTS = arrays_write.$(OBJEXT)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
+am_arrays_write_OBJECTS = arrays_write-arrays_write.$(OBJEXT)
 arrays_write_OBJECTS = $(am_arrays_write_OBJECTS)
 arrays_write_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -244,12 +251,14 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 arrays_write_SOURCES = arrays_write.c
 arrays_write_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_2)
-arrays_write_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
+	$(am__append_2) $(am__append_6)
+arrays_write_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) $(am__append_5)
 arrays_read_SOURCES = arrays_read.c
 arrays_read_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_4)
-arrays_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
+	$(am__append_4) $(am__append_8)
+arrays_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3) $(am__append_7)
+@HAVE_DART_TRUE@arrays_write_CPPFLAGS = $(DART_CPPFLAGS)
+@HAVE_DART_TRUE@arrays_read_CPPFLAGS = $(DART_CPPFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = arrays.xml gwrite_arrays.ch gread_arrays.ch job.pbs
 all: all-am
@@ -313,6 +322,18 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
+
+arrays_read-arrays_read.o: arrays_read.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(arrays_read_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o arrays_read-arrays_read.o `test -f 'arrays_read.c' || echo '$(srcdir)/'`arrays_read.c
+
+arrays_read-arrays_read.obj: arrays_read.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(arrays_read_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o arrays_read-arrays_read.obj `if test -f 'arrays_read.c'; then $(CYGPATH_W) 'arrays_read.c'; else $(CYGPATH_W) '$(srcdir)/arrays_read.c'; fi`
+
+arrays_write-arrays_write.o: arrays_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(arrays_write_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o arrays_write-arrays_write.o `test -f 'arrays_write.c' || echo '$(srcdir)/'`arrays_write.c
+
+arrays_write-arrays_write.obj: arrays_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(arrays_write_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o arrays_write-arrays_write.obj `if test -f 'arrays_write.c'; then $(CYGPATH_W) 'arrays_write.c'; else $(CYGPATH_W) '$(srcdir)/arrays_write.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

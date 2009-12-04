@@ -32,6 +32,20 @@ if HAVE_PHDF5
 4_adios_nfiles_LDFLAGS += $(PHDF5_LDFLAGS)
 4_adios_nfiles_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 endif
+if HAVE_DART
+1_nonadios_example_CPPFLAGS = $(DART_CPPFLAGS)
+1_nonadios_example_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+1_nonadios_example_LDADD += $(DART_LIBS)
+2_adios_write_CPPFLAGS = $(DART_CPPFLAGS)
+2_adios_write_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+2_adios_write_LDADD += $(DART_LIBS)
+3_adios_read_CPPFLAGS = $(DART_CPPFLAGS)
+3_adios_read_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+3_adios_read_LDADD += $(DART_LIBS)
+4_adios_nfiles_CPPFLAGS = $(DART_CPPFLAGS)
+4_adios_nfiles_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+4_adios_nfiles_LDADD += $(DART_LIBS)
+endif
 
 CLEANFILES = *.bp
 CC=$(MPICC)

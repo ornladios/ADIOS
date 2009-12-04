@@ -39,6 +39,8 @@ host_triplet = @host@
 noinst_PROGRAMS = adios_global$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_1 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_DART_TRUE@am__append_3 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_4 = $(DART_LIBS)
 subdir = examples/Fortran/global-array
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -57,14 +59,16 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_adios_global_OBJECTS = adios_global.$(OBJEXT)
+am_adios_global_OBJECTS = adios_global-adios_global.$(OBJEXT)
 adios_global_OBJECTS = $(am_adios_global_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_DART_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 adios_global_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -236,8 +240,9 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 adios_global_SOURCES = adios_global.F90
 adios_global_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
-	$(am__append_2)
-adios_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
+	$(am__append_2) $(am__append_4)
+adios_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) $(am__append_3)
+@HAVE_DART_TRUE@adios_global_CPPFLAGS = $(DART_CPPFLAGS)
 CLEANFILES = *.bp
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
@@ -302,6 +307,12 @@ distclean-compile:
 
 .F90.lo:
 	$(LTPPFCCOMPILE) -c -o $@ $<
+
+adios_global-adios_global.o: adios_global.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_global_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o adios_global-adios_global.o `test -f 'adios_global.F90' || echo '$(srcdir)/'`adios_global.F90
+
+adios_global-adios_global.obj: adios_global.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_global_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o adios_global-adios_global.obj `if test -f 'adios_global.F90'; then $(CYGPATH_W) 'adios_global.F90'; else $(CYGPATH_W) '$(srcdir)/adios_global.F90'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

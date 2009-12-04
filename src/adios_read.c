@@ -25,6 +25,20 @@ const char *adios_errmsg ()
     return adios_get_last_errmsg();
 }
 
+int adios_set_read_method (enum ADIOS_READ_METHOD method)
+{
+    return common_read_set_read_method (method);
+} 
+
+int adios_read_init(MPI_Comm comm)
+{
+    return common_read_init (comm);
+}
+
+int adios_read_finalize()
+{
+    return common_read_finalize();
+}
 
 ADIOS_FILE * adios_fopen (const char * fname, MPI_Comm comm)
 {

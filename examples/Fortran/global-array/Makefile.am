@@ -13,6 +13,12 @@ if HAVE_PHDF5
 adios_global_LDFLAGS += $(PHDF5_LDFLAGS)
 adios_global_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 endif
+if HAVE_DART
+adios_global_CPPFLAGS = $(DART_CPPFLAGS)
+adios_global_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+adios_global_LDADD += $(DART_LIBS)
+endif
+
 CLEANFILES = *.bp
 CC=$(MPICC)
 

@@ -41,6 +41,10 @@ noinst_PROGRAMS = scalars_write$(EXEEXT) scalars_read$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 @HAVE_PHDF5_TRUE@am__append_3 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_4 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_DART_TRUE@am__append_5 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_6 = $(DART_LIBS)
+@HAVE_DART_TRUE@am__append_7 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_8 = $(DART_LIBS)
 subdir = examples/Fortran/scalars
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -59,18 +63,21 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_scalars_read_OBJECTS = scalars_read.$(OBJEXT)
+am_scalars_read_OBJECTS = scalars_read-scalars_read.$(OBJEXT)
 scalars_read_OBJECTS = $(am_scalars_read_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_DART_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 scalars_read_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
-am_scalars_write_OBJECTS = scalars_write.$(OBJEXT)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
+am_scalars_write_OBJECTS = scalars_write-scalars_write.$(OBJEXT)
 scalars_write_OBJECTS = $(am_scalars_write_OBJECTS)
 scalars_write_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -242,12 +249,15 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 scalars_write_SOURCES = scalars_write.F90
 scalars_write_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
-	$(am__append_2)
-scalars_write_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
+	$(am__append_2) $(am__append_6)
+scalars_write_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) \
+	$(am__append_5)
 scalars_read_SOURCES = scalars_read.F90
 scalars_read_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
-	$(am__append_4)
-scalars_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3)
+	$(am__append_4) $(am__append_8)
+scalars_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3) $(am__append_7)
+@HAVE_DART_TRUE@scalars_write_CPPFLAGS = $(DART_CPPFLAGS)
+@HAVE_DART_TRUE@scalars_read_CPPFLAGS = $(DART_CPPFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = scalars.xml gwrite_scalars.fh gread_scalars.fh job.pbs
 FCLINK = \
@@ -315,6 +325,18 @@ distclean-compile:
 
 .F90.lo:
 	$(LTPPFCCOMPILE) -c -o $@ $<
+
+scalars_read-scalars_read.o: scalars_read.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(scalars_read_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o scalars_read-scalars_read.o `test -f 'scalars_read.F90' || echo '$(srcdir)/'`scalars_read.F90
+
+scalars_read-scalars_read.obj: scalars_read.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(scalars_read_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o scalars_read-scalars_read.obj `if test -f 'scalars_read.F90'; then $(CYGPATH_W) 'scalars_read.F90'; else $(CYGPATH_W) '$(srcdir)/scalars_read.F90'; fi`
+
+scalars_write-scalars_write.o: scalars_write.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(scalars_write_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o scalars_write-scalars_write.o `test -f 'scalars_write.F90' || echo '$(srcdir)/'`scalars_write.F90
+
+scalars_write-scalars_write.obj: scalars_write.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(scalars_write_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o scalars_write-scalars_write.obj `if test -f 'scalars_write.F90'; then $(CYGPATH_W) 'scalars_write.F90'; else $(CYGPATH_W) '$(srcdir)/scalars_write.F90'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

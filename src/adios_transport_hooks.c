@@ -64,10 +64,8 @@ void adios_init_transports (struct adios_transport_struct ** t)
 
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)
 
-#ifndef NO_RESEARCH_TRANSPORTS
-#if USE_PORTALS
+#if HAVE_DART
     ASSIGN_FNS(dart,ADIOS_METHOD_DART)
-#endif
 #endif
 
 #if HAVE_PHDF5
@@ -110,10 +108,8 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
     MATCH_STRING_TO_METHOD("POSIX",ADIOS_METHOD_POSIX,0)
     MATCH_STRING_TO_METHOD("FB",ADIOS_METHOD_POSIX,0)
 
-#ifndef NO_RESEARCH_TRANSPORTS
-#if USE_PORTALS
+#if HAVE_DART
     MATCH_STRING_TO_METHOD("DART",ADIOS_METHOD_DART,0)
-#endif
 #endif
 
 #if HAVE_PHDF5

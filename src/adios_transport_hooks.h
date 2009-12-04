@@ -132,8 +132,9 @@ FORWARD_DECLARE(provenance)
 FORWARD_DECLARE(phdf5)
 FORWARD_DECLARE(adaptive)
 
-#if USE_PORTALS
+#if HAVE_DART
 FORWARD_DECLARE(dart)
 #endif
 
+#undef FORWARD_DECLARE
 #endif

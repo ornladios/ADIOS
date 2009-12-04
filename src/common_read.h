@@ -24,6 +24,7 @@
 
 #include <stdint.h>
 
+int common_read_set_read_method (enum ADIOS_READ_METHOD method);
 ADIOS_FILE * common_read_fopen (const char * fname, MPI_Comm comm);
 int common_read_fclose (ADIOS_FILE *fp);
 ADIOS_GROUP * common_read_gopen (ADIOS_FILE *fp, const char * grpname);

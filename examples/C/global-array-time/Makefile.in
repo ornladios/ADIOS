@@ -40,6 +40,10 @@ noinst_PROGRAMS = adios_globaltime$(EXEEXT) \
 	adios_read_globaltime$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_1 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_DART_TRUE@am__append_3 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_4 = $(DART_LIBS)
+@HAVE_DART_TRUE@am__append_5 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_6 = $(DART_LIBS)
 subdir = examples/C/global-array-time
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -58,18 +62,23 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_adios_globaltime_OBJECTS = adios_globaltime.$(OBJEXT)
+am_adios_globaltime_OBJECTS =  \
+	adios_globaltime-adios_globaltime.$(OBJEXT)
 adios_globaltime_OBJECTS = $(am_adios_globaltime_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_DART_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 adios_globaltime_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
-am_adios_read_globaltime_OBJECTS = adios_read_globaltime.$(OBJEXT)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3)
+am_adios_read_globaltime_OBJECTS =  \
+	adios_read_globaltime-adios_read_globaltime.$(OBJEXT)
 adios_read_globaltime_OBJECTS = $(am_adios_read_globaltime_OBJECTS)
 adios_read_globaltime_DEPENDENCIES =  \
-	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1)
+	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_3)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -244,12 +253,15 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 adios_globaltime_SOURCES = adios_globaltime.c
 adios_globaltime_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_2)
-adios_globaltime_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1)
+	$(am__append_2) $(am__append_4)
+adios_globaltime_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) \
+	$(am__append_3)
 adios_read_globaltime_SOURCES = adios_read_globaltime.c
 adios_read_globaltime_LDADD = $(top_builddir)/src/libadiosread.a \
-	$(MXML_LIBS)
-adios_read_globaltime_LDFLAGS = $(MXML_LDFLAGS)
+	$(MXML_LIBS) $(am__append_6)
+adios_read_globaltime_LDFLAGS = $(MXML_LDFLAGS) $(am__append_5)
+@HAVE_DART_TRUE@adios_globaltime_CPPFLAGS = $(DART_CPPFLAGS)
+@HAVE_DART_TRUE@adios_read_globaltime_CPPFLAGS = $(DART_CPPFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = adios_globaltime.xml gread_temperature.ch gwrite_temperature.ch job.pbs
 all: all-am
@@ -313,6 +325,18 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
+
+adios_globaltime-adios_globaltime.o: adios_globaltime.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_globaltime_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_globaltime-adios_globaltime.o `test -f 'adios_globaltime.c' || echo '$(srcdir)/'`adios_globaltime.c
+
+adios_globaltime-adios_globaltime.obj: adios_globaltime.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_globaltime_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_globaltime-adios_globaltime.obj `if test -f 'adios_globaltime.c'; then $(CYGPATH_W) 'adios_globaltime.c'; else $(CYGPATH_W) '$(srcdir)/adios_globaltime.c'; fi`
+
+adios_read_globaltime-adios_read_globaltime.o: adios_read_globaltime.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_globaltime_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_globaltime-adios_read_globaltime.o `test -f 'adios_read_globaltime.c' || echo '$(srcdir)/'`adios_read_globaltime.c
+
+adios_read_globaltime-adios_read_globaltime.obj: adios_read_globaltime.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_globaltime_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_globaltime-adios_read_globaltime.obj `if test -f 'adios_read_globaltime.c'; then $(CYGPATH_W) 'adios_read_globaltime.c'; else $(CYGPATH_W) '$(srcdir)/adios_read_globaltime.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

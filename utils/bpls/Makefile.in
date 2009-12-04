@@ -37,7 +37,10 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = bpls$(EXEEXT)
-@HAVE_DMALLOC_TRUE@am__append_1 = -ldmalloc
+@HAVE_DMALLOC_TRUE@am__append_1 = $(DMALLOC_LDFLAGS)
+@HAVE_DMALLOC_TRUE@am__append_2 = -ldmalloc
+@HAVE_DART_TRUE@am__append_3 = $(DART_CPPFLAGS) $(DART_LDFLAGS) 
+@HAVE_DART_TRUE@am__append_4 = $(DART_LIBS)
 subdir = utils/bpls
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -61,8 +64,9 @@ PROGRAMS = $(bin_PROGRAMS)
 am_bpls_OBJECTS = bpls-bpls.$(OBJEXT)
 bpls_OBJECTS = $(am_bpls_OBJECTS)
 am__DEPENDENCIES_1 =
+@HAVE_DART_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 bpls_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -236,9 +240,11 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 bpls_SOURCES = bpls.c 
 bpls_CFLAGS = -D_NOMPI -g 
-bpls_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(am__append_1)
+bpls_LDFLAGS = $(am__append_1) $(am__append_3)
+bpls_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(am__append_2) \
+	$(am__append_4)
+@HAVE_DART_TRUE@bpls_CPPFLAGS = $(DART_CPPFLAGS)
 @HAVE_DMALLOC_TRUE@bpls_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
-@HAVE_DMALLOC_TRUE@bpls_LDFLAGS = $(DMALLOC_LDFLAGS)
 EXTRA_DIST = bpls.h
 all: all-am
 
