@@ -44,6 +44,8 @@ struct adios_DART_data_struct
     int rank;
     int peers;
     int time_index;
+    int n_writes; // how many times adios_write has been called
+    int sync_at_close; // bool: whether to call a put_sync in adios_close
 };
 
 static struct adios_DART_data_struct* g_dart_data_struct = NULL;
@@ -169,9 +171,11 @@ void adios_dart_init (const char * parameters,
    {
         method->method_data = calloc (1, sizeof(struct adios_DART_data_struct));
         p = (struct adios_DART_data_struct*)method->method_data;
-           p->rank = g_dart_data_struct->rank;
+        p->rank = g_dart_data_struct->rank;
         p->peers = g_dart_data_struct->peers;
         p->time_index = 0;
+        p->n_writes = 0;
+        p->sync_at_close = 0;
    }
 
 }
@@ -261,6 +265,18 @@ void adios_dart_write (struct adios_file_struct * fd
               lb+1, lb+0, lb+2,
               ub+1, ub+0, ub+2, 
               data, strlen(var_name));
+
+    p->n_writes++;
+    /* have a sync after every 5th variable writing */
+    printf("%s: This was write %d, mod5 = %d\n", __func__, p->n_writes, p->n_writes%5);
+    if ( ! (p->n_writes % 5) ) {
+        printf("%s: call dart_put_sync()\n", __func__);
+        dart_put_sync_();
+        p->sync_at_close = 0;
+    } else {
+        // no sync after this write, should sync at adios_close if this was the last write
+        p->sync_at_close = 1;
+    }
 }
 
 void adios_dart_get_write_buffer (struct adios_file_struct * fd
@@ -364,8 +380,10 @@ void adios_dart_close (struct adios_file_struct * fd
 
     if( fd->mode == adios_mode_write )
     {
-        printf("%s: call dart_put_sync()\n", __func__);
-        dart_put_sync_();
+        if (p->sync_at_close) {
+            printf("%s: call dart_put_sync()\n", __func__);
+            dart_put_sync_();
+        }
         printf("%s: call dart_unlock_on_write()\n", __func__);
         dart_unlock_on_write_();        
     }
