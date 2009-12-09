@@ -32,7 +32,7 @@ ulimit -c unlimited
 
 ## Run the DARTServer on the staging nodes if we use DART method
 rm -f conf
-METHOD=`grep "<method group=\"writer2D.*method" coupling2D.xml | sed -e "s/^.*method=\"\([A-Z]*\)\".*$/\1/"`
+METHOD=`grep "<method group=\"writer2D.*method" coupling2D_writer.xml | sed -e "s/^.*method=\"\([A-Z]*\)\".*$/\1/"`
 echo "The demo is using the $METHOD method for coupling"
 if [ "$METHOD" == "DART" ]; then
     echo "start server on SPROC=$SPROC, -S$SPROC -c$PROCALL"
