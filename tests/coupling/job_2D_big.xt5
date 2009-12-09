@@ -13,6 +13,7 @@ WSTEPS=3
 
 RNPX=8
 RNPY=1
+RMODE=1
 RSTEPS=3
 
 SPROC=2
@@ -60,8 +61,8 @@ aprun -n $WPROC ./coupling_writer_2D writer $WNPX $WNPY $WNDX $WNDY $WSTEPS >& l
 #sleep 2s
 
 ## Run the "reader" application
-echo "start reader on RPROC=$RPROC ($RNPX x $RNPY)  method = $METHOD  steps = $RSTEPS" 
-aprun -n $RPROC ./coupling_reader_2D writer $RNPX $RNPY $METHOD $RSTEPS >& log.reader2D &
+echo "start reader on RPROC=$RPROC ($RNPX x $RNPY)  method = $METHOD  mode = $RMODE steps = $RSTEPS" 
+aprun -n $RPROC ./coupling_reader_2D writer $RNPX $RNPY $METHOD $RMODE $RSTEPS >& log.reader2D &
 
 wait
 
