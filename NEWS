@@ -1,6 +1,7 @@
 
-1.0.1
+1.0.1  Released on Dec 9, 2009
     - fix: builds read API on Mac (was broken at utils/bpdump)
     - fix: Fortran written BP files are correctly read by Fortran readers
+    - added adios_mpi_stripe2 method for improved performance on Lustre file system
 
 1.0  Released on Nov 18, 2009

@@ -6,12 +6,6 @@ Writing data
 will be silently corrupt. Work around: make the size bigger. An error
 message will be added in later releases.
 
-2. If attempting to write >= 2GB from a single process, only some of the
-methods correctly handle these large writes. 
-If it fails, change to open/write/close to the file multiple times using
-an append for the subsequent iterations to get all of the data written. 
-The corrected code will be incorporated in all transport methods shortly.
-
 Reading data
 ============
 
