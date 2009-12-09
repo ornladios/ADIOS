@@ -13,6 +13,7 @@ libadios_a_SOURCES = adios.c \
                      adios_transport_hooks.c \
                      adios_mpi.c \
                      adios_mpi_stripe.c \
+                     adios_mpi_stripe2.c \
                      adios_posix.c \
                      adios_internals.c \
                      adios_internals_mxml.c \
@@ -27,6 +28,7 @@ libadiosf_a_SOURCES = adiosf.c \
                      adios_transport_hooks.c \
                      adios_mpi.c \
                      adios_mpi_stripe.c \
+                     adios_mpi_stripe2.c \
                      adios_posix.c \
                      adios_internals.c \
                      adios_internals_mxml.c \
@@ -64,7 +66,6 @@ libadios_a_SOURCES += adios_mpi_stagger.c \
                       adios_mpi_aggregate.c \
                       adios_provenance.c \
                       adios_mpi_cio.c \
-                      adios_mpi_stripe2.c \
                       adios_adaptive.c \
                       adios_datatap.c
 if BUILD_FORTRAN
@@ -72,7 +73,6 @@ libadiosf_a_SOURCES += adios_mpi_stagger.c \
                        adios_mpi_aggregate.c \
                        adios_provenance.c \
                        adios_mpi_cio.c \
-                       adios_mpi_stripe2.c \
                        adios_adaptive.c \
                        adios_datatap.c
 endif
