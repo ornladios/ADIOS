@@ -32,17 +32,8 @@
   </adios-group>
 
 
-  <!-- Group to write the whole array from a single processor -->
-  <adios-group name="reader2D" coordination-communicator="group_comm">
-    <var name="rank" path="/info" type="integer"/>
-    <var name="dim_x_local" path="/aux" type="integer"/>
-    <var name="dim_y_local" path="/aux" type="integer"/>
-    <var name="xy" path="/var" type="double" dimensions="dim_x_local,dim_y_local"/>
-  </adios-group>
-
   <method group="writer2D" method="DART">1024,1</method>
   <!--method group="writer2D" method="MPI"/-->
-  <method group="reader2D" method="MPI"/>
 
   <buffer size-MB="400" allocate-time="now"/>
 

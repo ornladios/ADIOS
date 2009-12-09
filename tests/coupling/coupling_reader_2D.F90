@@ -14,7 +14,8 @@
 !  nx * ny          processes write a 2D array, where each process writes an
 !  
 !  Data written
-!    xy         2D array with block,block decomp
+!    xy          2D global array as received from the writers
+!    xy2         2D array with block,* decomp
 !
 !    All data are real*8 type
 !
@@ -27,10 +28,12 @@ module coupling_reader_2D_comm
     integer :: npx, npy, npz  ! # of processors in x-y-z direction
     integer :: timesteps      ! number of times to read data
     integer :: read_method    ! 0=bp, 1=dart
+    integer :: read_mode      ! 0=whole array on each process
+                              ! 1=1D decomposition on 1st dim
 
     integer :: nproc          ! number of processors
 
-    real*8, dimension(:,:),   allocatable :: xy
+    real*8, dimension(:,:),   allocatable :: xy, xy2
 
     ! Offsets and sizes
     integer :: offs_x, offs_y, offs_z
@@ -80,7 +83,7 @@ program coupling
 
     call adios_set_read_method(read_method, ierr) ! 2 = dart, 0 = bp
     call adios_read_init (group_comm, ierr)
-    call adios_init("coupling2D.xml", adios_err)
+    call adios_init("coupling2D_reader.xml", adios_err)
     !call MPI_Barrier (group_comm, ierr)
 
     !write (*,*) 'rank ', rank, "init completed"
@@ -139,7 +142,7 @@ subroutine readArrays()
     offset = 0
     readsize = 1
     print '("rank=",i0,": Read in dim_x_global from ",a)', rank, trim(fn)
-    call adios_read_var(gh, "dim_x_global", offset, readsize, dim_x_local, read_bytes)
+    call adios_read_var(gh, "dim_x_global", offset, readsize, dim_x_global, read_bytes)
     if (read_bytes .lt. 0) then
         call exit(read_bytes)
     elseif (read_bytes .ne. 4) then
@@ -149,7 +152,7 @@ subroutine readArrays()
 
     ! read dim_y_global into dim_y_local
     print '("rank=",i0,": Read in dim_y_global from ",a)', rank, trim(fn)
-    call adios_read_var(gh, "dim_y_global", offset, readsize, dim_y_local, read_bytes)
+    call adios_read_var(gh, "dim_y_global", offset, readsize, dim_y_global, read_bytes)
     if (read_bytes .lt. 0) then
         call exit(read_bytes)
     elseif (read_bytes .ne. 4) then
@@ -157,8 +160,28 @@ subroutine readArrays()
         call exit(read_bytes)
     endif
 
+    ! Calculate the local x,y offsets
+    if (read_mode == 0) then
+        ! each process reads the whole array
+        dim_x_local = dim_x_global
+        dim_y_local = dim_y_global
+        offs_x = 0
+        offs_y = 0
+    elseif (read_mode == 1) then
+        dim_x_local = dim_x_global / nproc 
+        dim_y_local = dim_y_global
+        offs_x = rank * dim_x_local
+        offs_y = 0
+        ! last process should read all the rest of columns
+        if (rank == nproc-1) then
+            dim_x_local = dim_x_global - dim_x_local*(nproc-1)
+        endif
+    endif
+
+
     if (.not. allocated(xy)) then
-        allocate( xy(1:dim_x_local, 1:dim_y_local) )
+        allocate( xy  (1:dim_x_local, 1:dim_y_local) )
+        allocate( xy2 (1:dim_x_local, 1:dim_y_local) )
     endif
     xy = -1.0 ! should be overwritten at reading the array next
 
@@ -166,7 +189,11 @@ subroutine readArrays()
     ! Read in the whole xy array
     readsize(1) = dim_x_local
     readsize(2) = dim_y_local
-    print '("rank=",i0,": Read in xy(1:",i0,",1:",i0,") from ",a)', rank, readsize(1), readsize(2),trim(fn)
+    offset(1)   = offs_x
+    offset(2)   = offs_y
+    print '("rank=",i0,": Read in xy(",i0,":",i0,",",i0,":",i0,") from ",a)', rank, &
+            offset(1)+1, offset(1)+readsize(1), &
+            offset(2)+1, offset(2)+readsize(2),trim(fn)
     call adios_read_var(gh, "xy", offset, readsize, xy, read_bytes)
     if (read_bytes .lt. 0) then
         call exit(read_bytes)
@@ -175,6 +202,12 @@ subroutine readArrays()
         call exit(read_bytes)
     endif
 
+    do j=1,dim_y_local
+        do i=1,dim_x_local
+            xy2(i,j) = rank*1.0 + xy(i,j)/100.0
+        enddo
+    enddo
+    
 
     call MPI_Barrier (group_comm, ierr)
     call adios_gclose (gh, adios_err)
@@ -190,45 +223,58 @@ subroutine printArrays()
     character(len=256)  :: fn
     integer             :: i,j,k,writer
 
-    writer = mod(ts,nproc)
-    if (writer == rank) then
+    if (read_mode == 0) then
 
-        write (fn, '("reader_",i0,".bp")') ts
-        call adios_open (adios_handle, "reader2D", fn, "w", self_comm, adios_err)
+        writer = mod(ts,nproc)
+        if (writer == rank) then
+    
+            write (fn, '("reader_",i0,".bp")') ts
+            call adios_open (adios_handle, "reader2D", fn, "w", self_comm, adios_err)
 #include "gwrite_reader2D.fh"
-        ! start streaming from buffer to disk
-        call adios_close (adios_handle, adios_err)
-        print '("rank=",i0,": Wrote xy to ",a)', rank, trim(fn)
-
-    endif
-
-    if (dump_text) then
-
-        write (fn, '("reader_",i0,"_",i0,".txt")') ts, rank
-        open (u, FILE=fn, STATUS='NEW', FORM="FORMATTED")
-
-        ! print xyz_bbb
-        write (u,'("xy(1:",i0,",1:",i0,") = ")') dim_x_local, dim_y_local
-        do j=1,dim_y_local
-            do i=1,dim_x_local
-                write (u, '(f6.2," ",$)') xy(i,j)
+            ! start streaming from buffer to disk
+            call adios_close (adios_handle, adios_err)
+            print '("rank=",i0,": Wrote xy to ",a)', rank, trim(fn)
+    
+        endif
+    
+        if (dump_text) then
+    
+            write (fn, '("reader_",i0,"_",i0,".txt")') ts, rank
+            open (u, FILE=fn, STATUS='NEW', FORM="FORMATTED")
+    
+            ! print xyz_bbb
+            write (u,'("xy(1:",i0,",1:",i0,") = ")') dim_x_local, dim_y_local
+            do j=1,dim_y_local
+                do i=1,dim_x_local
+                    write (u, '(f6.2," ",$)') xy(i,j)
+                enddo
+                write (u,*) " "  ! new line
             enddo
-            write (u,*) " "  ! new line
-        enddo
+    
+            close (u)
+    
+        endif
 
-        close (u)
-
+    elseif (read_mode ==1) then
+            write (fn, '("reader_",i0,".bp")') ts
+            call adios_open (adios_handle, "reader2D", fn, "w", group_comm, adios_err)
+#include "gwrite_reader2D.fh"
+            ! start streaming from buffer to disk
+            call adios_close (adios_handle, adios_err)
+            print '("rank=",i0,": Wrote xy to ",a)', rank, trim(fn)
     endif
 
 end subroutine printArrays
 
 !!***************************
 subroutine usage()
-    print *, "Usage: coupling_reader_2D file N M method [timesteps]"
+    print *, "Usage: coupling_reader_2D file N M method read-mode [timesteps]"
     print *, "file:   name of file to write/read"
     print *, "N:      number of processes in X dimension"
     print *, "M:      number of processes in Y dimension"
     print *, "method: DART for memory-to-memory coupling, otherwise file-based"
+    print *, "read-mode: 0: each process reads whole global array"
+    print *, "           1: 1D decomposition in 1st dimension"
     print *, "timesteps: how many times to write data"
 end subroutine usage
 
@@ -245,13 +291,13 @@ subroutine processArgs()
 #endif
 #endif
 
-    character(len=256) :: npx_str, npy_str, method_str, ts_str
+    character(len=256) :: npx_str, npy_str, method_str, mode_str, ts_str
     integer :: numargs
 
     !! process arguments
     numargs = iargc()
     !print *,"Number of arguments:",numargs
-    if ( numargs < 4 ) then
+    if ( numargs < 5 ) then
         call usage()
         call exit(1)
     endif
@@ -268,8 +314,16 @@ subroutine processArgs()
         read_method = 0
     endif
 
-    if ( numargs == 5 ) then
-        call getarg(5, ts_str)
+    call getarg(5, mode_str)
+    read (mode_str,'(i5)') read_mode
+    if (read_mode < 0 .or. read_mode > 1) then
+        print *, "Argument error: read_mode must be 0 or 1"
+        call usage()
+        call exit(2)
+    endif
+
+    if ( numargs == 6 ) then
+        call getarg(6, ts_str)
         read (ts_str,'(i6)') timesteps
     else
         timesteps = 1

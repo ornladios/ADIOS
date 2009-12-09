@@ -64,14 +64,11 @@ coupling_reader_2D: coupling_reader_2D.F90 gread_writer2D.fh gwrite_reader2D.fh
 	${COMP}  -Mprof=func -g -c -o coupling_reader_2D.o ${ADIOS_INC} coupling_reader_2D.F90
 	${LINKER}  -Mprof=func -g -o coupling_reader_2D coupling_reader_2D.o ${ADIOS_FLIB} ${ADIOSREAD_FLIB} ${DART_FLIB}
 
-gwrite_writer2D.fh: coupling2D.xml
-	${GPP} coupling2D.xml
+gwrite_writer2D.fh: coupling2D_writer.xml
+	${GPP} coupling2D_writer.xml
 
-gread_writer2D.fh: coupling2D.xml
-	${GPP} coupling2D.xml
-
-gwrite_reader2D.fh: coupling2D.xml
-	${GPP}  coupling2D.xml
+gwrite_reader2D.fh: coupling2D_reader.xml
+	${GPP}  coupling2D_reader.xml
 
 clean:
 	rm -f *.o *.mod *.fh core.*

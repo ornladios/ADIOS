@@ -66,7 +66,7 @@ program coupling
     call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
     call MPI_Comm_size (group_comm, nproc , ierr)
 
-    call adios_init ("coupling2D.xml", ierr)
+    call adios_init ("coupling2D_writer.xml", ierr)
     !call MPI_Barrier (group_comm, ierr)
 
     call processArgs()

@@ -31,7 +31,7 @@ module coupling_reader_2D_comm
 
     integer :: nproc          ! number of processors
 
-    real*8, dimension(:,:),   allocatable :: xy
+    real*8, dimension(:,:),   allocatable :: xy,xy2
 
     ! Offsets and sizes
     integer :: offs_x, offs_y, offs_z
@@ -75,7 +75,7 @@ program coupling
     print '("rank=",i0," call dart_init()...")', rank
     call dart_init (procall, 2)
     print '("rank=",i0," returned from dart_init()...")', rank
-    call adios_init("coupling2D.xml", adios_err)
+    call adios_init("coupling2D_reader.xml", adios_err)
     !call MPI_Barrier (group_comm, ierr)
 
     call processArgs()
