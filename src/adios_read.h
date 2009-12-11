@@ -107,6 +107,11 @@ int adios_read_finalize();
  */
 ADIOS_FILE * adios_fopen (const char * fname, MPI_Comm comm);
 
+/** This function can be called if user places
+ *  the wrong sequences of dims for a var
+ */
+void adios_reset_dimension_order (ADIOS_FILE *fp, int is_fortran);
+
 /** Close an adios file.
  *  It will free the content of the underlying data structures and the fp pointer itself.
  *  IN:   fp       pointer to an ADIOS_FILE struct 
