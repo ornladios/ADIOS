@@ -91,6 +91,14 @@ void FC_FUNC_(adios_fopen, ADIOS_FOPEN)
         fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
+void FC_FUNC_(adios_reset_host_language, ADIOS_RESET_HOST_LANGUAGE)
+        (int64_t * fp,
+         int * flag)
+{
+    ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
+    adios_reset_host_language(afp, *flag);
+}
+
 void FC_FUNC_(adios_fclose, ADIOS_FCLOSE) (int64_t * fp, int * err)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;

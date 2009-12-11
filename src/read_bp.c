@@ -133,6 +133,23 @@ ADIOS_FILE * adios_read_bp_fopen (const char * fname, MPI_Comm comm)
     return fp;
 }
 
+/* This function can be called if user places 
+   the wrong sequences of dims for a var 
+*/   
+void adios_reset_host_language (ADIOS_FILE *fp, int is_fortran)
+{
+    struct BP_FILE * fh = (struct BP_FILE *)(fp->fh);
+    struct bp_index_pg_struct_v1 ** root = &(fh->pgs_root);
+    struct bp_minifooter * mh = &(fh->mfooter);
+    uint64_t i;
+
+    for (i = 0; i < mh->pgs_count; i++) {
+        is_fortran ? ((*root)->adios_host_language_fortran = adios_flag_yes) 
+               : ((*root)->adios_host_language_fortran = adios_flag_no);
+        root = &(*root)->next;
+    }
+}
+
 int adios_read_bp_fclose (ADIOS_FILE *fp) 
 {
     struct BP_FILE * fh = (struct BP_FILE *) fp->fh;
