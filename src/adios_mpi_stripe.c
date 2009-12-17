@@ -323,7 +323,7 @@ adios_mpi_stripe_get_striping_unit(MPI_File fh, char *filename)
         return striping_unit;
     }
 
-    if (!err && fsbuf.f_type == LL_SUPER_MAGIC) {
+    if (!err && fsbuf.f_type == LUSTRE_SUPER_MAGIC) {
         int fd, old_mask, perm;
 
         old_mask = umask(022);
