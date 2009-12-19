@@ -8,10 +8,7 @@
 #ifndef ADIOS_BUFFER_H
 #define ADIOS_BUFFER_H
 
-enum ADIOS_BUFFER_ALLOC_WHEN {ADIOS_BUFFER_ALLOC_UNKNOWN
-                             ,ADIOS_BUFFER_ALLOC_NOW
-                             ,ADIOS_BUFFER_ALLOC_LATER
-                             };
+#include "adios_types.h"
 
 void      adios_buffer_size_requested_set (uint64_t v);
 uint64_t  adios_buffer_size_requested_get (void);

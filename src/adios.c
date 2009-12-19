@@ -45,9 +45,10 @@ int adios_finalize (int mype)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_allocate_buffer ()
+int adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
+                          ,uint64_t buffer_size)
 {
-    return common_adios_allocate_buffer ();
+    return common_adios_allocate_buffer (adios_buffer_alloc_when, buffer_size);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -247,13 +248,12 @@ int adios_close (int64_t fd_p)
 ///////////////////////////////////////////////////////////////////////////////
 // group a list of vars into a composite group
 int adios_declare_group (int64_t * id, const char * name
-                        ,const char * coordination_comm
                         ,const char * coordination_var
                         ,const char * time_index
                         )
 {
     return adios_common_declare_group (id, name, adios_flag_no
-                                      ,coordination_comm
+                                      ,0
                                       ,coordination_var
                                       ,time_index
                                       );
@@ -292,13 +292,12 @@ int adios_define_attribute (int64_t group, const char * name
 ///////////////////////////////////////////////////////////////////////////////
 
 // adios_common_select_method is in adios_internals_mxml.c
-
-int adios_select_method (int priority, const char * method
-                        ,const char * parameters, const char * group
+int adios_select_method (int64_t group, const char * method
+                        ,const char * parameters
                         ,const char * base_path, int iters
                         )
 {
-    return adios_common_select_method (priority, method, parameters, group
+    return adios_common_select_method (0, method, parameters, group
                                       ,base_path, iters
                                       );
 }

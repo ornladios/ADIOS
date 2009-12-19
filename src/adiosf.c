@@ -51,7 +51,8 @@ void FC_FUNC_(adios_finalize, adios_FINALIZE) (int * mype, int * err)
 ///////////////////////////////////////////////////////////////////////////////
 void FC_FUNC_(adios_allocate_buffer, adios_ALLOCATE_BUFFER) (int * err)
 {
-    *err = common_adios_allocate_buffer ();
+    //FIX
+    *err = common_adios_allocate_buffer (0, 100);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

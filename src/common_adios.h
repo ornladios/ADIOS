@@ -27,7 +27,8 @@ int common_adios_init_local (void);
 
 int common_adios_finalize (int mype);
 
-int common_adios_allocate_buffer (void);
+int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
+                                 ,uint64_t buffer_size);
 
 // end user calls for each I/O operation
 // modes = "r" = "read", "w" = "write", "a" = "append", "u" = "update"

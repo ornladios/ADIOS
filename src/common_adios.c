@@ -59,8 +59,12 @@ int common_adios_finalize (int mype)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int common_adios_allocate_buffer ()
+int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
+                                 ,uint64_t buffer_size)
 {
+    adios_buffer_size_requested_set (buffer_size * 1024 * 1024);
+    adios_buffer_alloc_when_set (adios_buffer_alloc_when);
+
     return adios_set_buffer_size ();
 }
 

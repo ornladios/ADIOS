@@ -23,7 +23,8 @@ int adios_init_local (void);
 
 int adios_finalize (int mype);
 
-int adios_allocate_buffer (void);
+int adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
+                          ,uint64_t buffer_size);
 
 // end user calls for each I/O operation
 // modes = "r" = "read", "w" = "write", "a" = "append", "u" = "update"
@@ -60,7 +61,6 @@ int adios_close (int64_t fd_p);
 
 // Generally internal use called when parsing the XML file
 int adios_declare_group (int64_t * id, const char * name
-                        ,const char * coordination_comm
                         ,const char * coordination_var
                         ,const char * time_index
                         );
@@ -77,13 +77,8 @@ int adios_define_attribute (int64_t group, const char * name
                            ,const char * value, const char * var
                            );
 
-int adios_select_method (int priority, const char * method
-                        ,const char * parameters, const char * type
-                        ,const char * base_path, int iters
-                        );
-
-int adios_select_method (int priority, const char * method
-                        ,const char * parameters, const char * type
+int adios_select_method (int64_t group, const char * method
+                        ,const char * parameters
                         ,const char * base_path, int iters
                         );
 
