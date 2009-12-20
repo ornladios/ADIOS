@@ -253,7 +253,7 @@ int adios_declare_group (int64_t * id, const char * name
                         )
 {
     return adios_common_declare_group (id, name, adios_flag_no
-                                      ,0
+                                      ,""
                                       ,coordination_var
                                       ,time_index
                                       );
@@ -297,7 +297,9 @@ int adios_select_method (int64_t group, const char * method
                         ,const char * base_path, int iters
                         )
 {
-    return adios_common_select_method (0, method, parameters, group
+    struct adios_group_struct * g = (struct adios_group_struct *) group;
+
+    return adios_common_select_method (0, method, parameters, g->name
                                       ,base_path, iters
                                       );
 }
