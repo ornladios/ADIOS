@@ -999,7 +999,7 @@ int64_t common_read_read_var_byid (ADIOS_GROUP    * gp,
     uint64_t datasize, nloop, dset_stride,var_stride, total_size=0, items_read;
     uint64_t count_notime[32], start_notime[32];
     MPI_Status status;
-    int timedim = -1;
+    int timedim = -1, temp_timedim;
     int rank;
     int is_global = 0;
     int size_of_type;
@@ -1070,7 +1070,12 @@ int64_t common_read_read_var_byid (ADIOS_GROUP    * gp,
         ndim_notime = ndim;
     } else {
         j = 0;
-        for (i = 0; i < timedim; i++) {
+        if (futils_is_called_from_fortran())
+            temp_timedim = ndim - 1;
+        else
+            temp_timedim = 0;
+
+        for (i = 0; i < temp_timedim; i++) {
              count_notime[j] = count[i];
              start_notime[j] = start[i];
              j++;
@@ -1087,8 +1092,8 @@ int64_t common_read_read_var_byid (ADIOS_GROUP    * gp,
     /* Fortran reader was reported of Fortran dimension order so it gives counts and starts in that order.
        We need to swap them here to read correctly in C order */
     if ( futils_is_called_from_fortran()) {
-        swap_order(ndim, count_notime, &timedim);
-        swap_order(ndim, start_notime, &timedim);
+        swap_order(ndim_notime, count_notime, &timedim);
+        swap_order(ndim_notime, start_notime, &timedim);
     }
     
     /* items_read = how many data elements are we going to read in total (per timestep) */
