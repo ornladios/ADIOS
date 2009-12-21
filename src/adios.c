@@ -248,13 +248,12 @@ int adios_close (int64_t fd_p)
 ///////////////////////////////////////////////////////////////////////////////
 // group a list of vars into a composite group
 int adios_declare_group (int64_t * id, const char * name
-                        ,const char * coordination_var
                         ,const char * time_index
                         )
 {
     return adios_common_declare_group (id, name, adios_flag_no
                                       ,""
-                                      ,coordination_var
+                                      ,""
                                       ,time_index
                                       );
 }
@@ -294,13 +293,13 @@ int adios_define_attribute (int64_t group, const char * name
 // adios_common_select_method is in adios_internals_mxml.c
 int adios_select_method (int64_t group, const char * method
                         ,const char * parameters
-                        ,const char * base_path, int iters
+                        ,const char * base_path
                         )
 {
     struct adios_group_struct * g = (struct adios_group_struct *) group;
 
     return adios_common_select_method (0, method, parameters, g->name
-                                      ,base_path, iters
+                                      ,base_path, 0
                                       );
 }
 
