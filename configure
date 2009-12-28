@@ -23181,7 +23181,7 @@ fi
 if test "${with_dart+set}" = set; then
   withval="$with_dart"
   DART_LDFLAGS="-L$withval/lib";
-         DART_CPPFLAGS="-Mprof=func -I$withval/include";
+         DART_CPPFLAGS="-I$withval/include";
 else
   with_dart=check
 fi;
@@ -23231,7 +23231,7 @@ fi;
     fi
 
         if test -n "${DART_INCDIR}"; then
-            DART_CPPFLAGS="-Mprof=func -I${DART_INCDIR}"
+            DART_CPPFLAGS="-I${DART_INCDIR}"
     else
             ac_dart_ok=no
     fi

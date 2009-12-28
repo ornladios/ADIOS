@@ -10,10 +10,20 @@
 // dart
 #include <sys/uio.h>
 
+// see if we have MPI or other tools
+#include "config.h"
+
+// mpi
+#if HAVE_MPI
+#include "mpi.h"
+#endif
+
 #include "adios.h"
+#include "adios_types.h"
 #include "adios_transport_hooks.h"
 #include "adios_internals.h"
 #include "adios_internals_mxml.h"
+
 
 
 #if HAVE_DART
@@ -38,17 +48,18 @@
 #endif
 
 static int adios_dart_initialized = 0;
+static int adios_dart_connected_to_dart = 0;
 
 struct adios_DART_data_struct
 {
     int rank;
-    int peers;
-    int time_index;
+    int peers;  // from xml parameter or group communicator
+    int appid;  // from xml parameter or 1
+    int time_index; // versioning in DataSpaces, start from 1
     int n_writes; // how many times adios_write has been called
     int sync_at_close; // bool: whether to call a put_sync in adios_close
 };
 
-static struct adios_DART_data_struct* g_dart_data_struct = NULL;
 
 #if HAVE_DART
 int get_dim_rank_value(struct adios_dimension_item_struct * dim_info, struct adios_group_struct *group)
@@ -102,25 +113,6 @@ int get_dim_rank_value(struct adios_dimension_item_struct * dim_info, struct adi
     }
 }
 
-//The following two functions are for temporary use
-int adios_dart_get_rank()
-{
-    if(adios_dart_initialized && g_dart_data_struct)
-    {
-        return g_dart_data_struct->rank;
-    }
-    else return -1;
-}
-
-int adios_dart_get_peers()
-{
-    if(adios_dart_initialized && g_dart_data_struct)
-    {
-        return g_dart_data_struct->peers;
-    }
-    else return -1;
-}
-
 void adios_dart_init (const char * parameters,
                      struct adios_method_struct * method
                      )
@@ -129,57 +121,109 @@ void adios_dart_init (const char * parameters,
     if (!adios_dart_initialized)
     {
         adios_dart_initialized = 1;
+    }
    
-        method->method_data = calloc (1, sizeof (struct adios_DART_data_struct));
-        p = (struct adios_DART_data_struct*)method->method_data;
-        
-        int index, i;
-        char temp[64];
-        
-        index=0;
-        for(i=0; *(parameters+index)!=','; index++,i++ )
-        {
-            temp[i] = *(parameters+index);
-        }
-        temp[i] = 0;
-        //Get peers num info from parameters
-        int num_peers = atoi(temp);
+    method->method_data = calloc (1, sizeof (struct adios_DART_data_struct));
+    p = (struct adios_DART_data_struct*)method->method_data;
+    
+    int index, i;
+    char temp[64];
+    
+    index=0;
+    for(i=0; *(parameters+index)!=','; index++,i++ )
+    {
+        temp[i] = *(parameters+index);
+    }
+    temp[i] = 0;
+    //Get peers num info from parameters
+    int num_peers = atoi(temp);
 
-        for( index++, i=0; *(parameters+index)!=0; index++,i++ )
-        {
-          temp[i] = *(parameters+index);
-        } 
-        temp[i] = 0;
-        //How to get app id?
-        int appid = atoi(temp);
+    for( index++, i=0; *(parameters+index)!=0; index++,i++ )
+    {
+      temp[i] = *(parameters+index);
+    } 
+    temp[i] = 0;
+    //How to get app id?
+    int appid = atoi(temp);
 
-        //Init the dart client
-        dart_init_(&num_peers, &appid);
-        
-        //Init the static data structure
-        g_dart_data_struct = calloc (1, sizeof(struct adios_DART_data_struct));
-        dart_rank_(&(p->rank));
-        dart_peers_(&(p->peers));
-        p->time_index = 0;
+    //Init the static data structure
+    p->peers = num_peers;
+    p->appid = appid;
+    p->time_index = 1;
+    p->n_writes = 0;
+    p->sync_at_close = 0;
 
-        g_dart_data_struct->rank = p->rank;
-        g_dart_data_struct->peers = p->peers;
+    fprintf(stderr, "adios_dart_init:  param peers=%d, param appid=%d\n", p->peers, p->appid);
    
-        fprintf(stderr, "adios_dart_init: num_peers=%d, appid=%d, p->rank=%d, p->peers=%d\n",
-                num_peers, appid, p->rank, p->peers);        
-   } else
-   {
-        method->method_data = calloc (1, sizeof(struct adios_DART_data_struct));
-        p = (struct adios_DART_data_struct*)method->method_data;
-        p->rank = g_dart_data_struct->rank;
-        p->peers = g_dart_data_struct->peers;
-        p->time_index = 0;
-        p->n_writes = 0;
-        p->sync_at_close = 0;
-   }
-
 }
 
+
+static void adios_dart_var_to_comm  (const char * comm_name
+                                    ,enum ADIOS_FLAG host_language_fortran
+                                    ,void * data
+                                    ,MPI_Comm * comm
+                                    )
+{
+    if (data)
+    {
+        int t = *(int *) data;
+
+        if (!comm_name && !strcmp (comm_name, ""))
+        {
+            if (!t)
+            {
+                fprintf (stderr, "communicator not provided and none "
+                                 "listed in XML.  Defaulting to "
+                                 "MPI_COMM_SELF\n"
+                        );
+
+                *comm = MPI_COMM_SELF;
+            }
+            else
+            {
+                if (host_language_fortran == adios_flag_yes)
+                {
+                    *comm = MPI_Comm_f2c (t);
+                }
+                else
+                {
+                    *comm = *(MPI_Comm *) data;
+                }
+            }
+        }
+        else
+        {
+            if (!t)
+            {
+                fprintf (stderr, "communicator not provided but one "
+                                 "listed in XML.  Defaulting to "
+                                 "MPI_COMM_WORLD\n"
+                        );
+
+                *comm = MPI_COMM_WORLD;
+            }
+            else
+            {
+                if (host_language_fortran == adios_flag_yes)
+                {
+                    *comm = MPI_Comm_f2c (t);
+                }
+                else
+                {
+                    *comm = *(MPI_Comm *) data;
+                }
+            }
+        }
+    }
+    else
+    {
+        fprintf (stderr, "coordination-communication not provided. "
+                         "Using MPI_COMM_WORLD instead\n"
+                );
+
+        *comm = MPI_COMM_WORLD;
+    }
+}
 int adios_dart_open (struct adios_file_struct * fd,
                     struct adios_method_struct * method,
                     void *comm
@@ -188,13 +232,43 @@ int adios_dart_open (struct adios_file_struct * fd,
     int ret = 0;
     struct adios_DART_data_struct *p = (struct adios_DART_data_struct *)
                                                 method->method_data;
+    int num_peers = p->peers;
   
     fprintf(stderr, "adios_dart_open: open %s, mode=%d, time_index=%d \n",
                         fd->name, fd->mode, p->time_index);
+
+    // connect to DART at the very first adios_open(), disconnect in adios_finalize()
+    if (!adios_dart_connected_to_dart) {
+
+#if HAVE_MPI
+    // if we have MPI and a communicator, we can get the exact size of this application
+    // that we need to tell DART
+    MPI_Comm group_comm;
+    if (comm) {
+        adios_dart_var_to_comm (fd->group->group_comm, fd->group->adios_host_language_fortran,
+                                comm, &group_comm);
+        MPI_Comm_size ( group_comm, &num_peers);
+    }
+#endif
+
+        fprintf(stderr, "adios_dart_open: connect to DART, peers=%d, appid=%d \n",
+                        num_peers, p->appid);
+
+        //Init the dart client
+        dart_init_(&num_peers, &(p->appid));
+        dart_rank_(&(p->rank));
+        dart_peers_(&(p->peers));
+
+        fprintf(stderr, "adios_dart_open: connected: peers=%d,  rank=%d\n", p->peers, p->rank);        
+
+        adios_dart_connected_to_dart = 1;
+    }
    
     if( fd->mode == adios_mode_write )
     {
+        fprintf(stderr, "adios_dart_open: rank=%d call write lock...\n", p->rank);        
         dart_lock_on_write_();        
+        fprintf(stderr, "adios_dart_open: rank=%d got write lock\n", p->rank);        
     }
     else if( fd->mode == adios_mode_read )
     {
@@ -249,7 +323,7 @@ void adios_dart_write (struct adios_file_struct * fd
     }
 
     /*version = p->time_index; */ /* Add new data as separate to DataSpaces */
-    version = 0;                  /* Update/overwrite data in DataSpaces */
+    version = 0;                  /* Update/overwrite data in DataSpaces  (we write time_index as a variable at close)*/
 
     snprintf(dart_type_var_name, 128, "T%s", var_name);
     
@@ -266,6 +340,7 @@ void adios_dart_write (struct adios_file_struct * fd
               ub+1, ub+0, ub+2, 
               data, strlen(var_name));
 
+#if 0
     p->n_writes++;
     /* have a sync after every 5th variable writing */
     printf("%s: This was write %d, mod5 = %d\n", __func__, p->n_writes, p->n_writes%5);
@@ -277,6 +352,10 @@ void adios_dart_write (struct adios_file_struct * fd
         // no sync after this write, should sync at adios_close if this was the last write
         p->sync_at_close = 1;
     }
+#else
+    p->sync_at_close = 1;
+#endif
+
 }
 
 void adios_dart_get_write_buffer (struct adios_file_struct * fd
@@ -340,6 +419,7 @@ void adios_dart_get_write_buffer (struct adios_file_struct * fd
     }
 }
 
+/* NOT IMPLEMENTED. Use the Read API to read variables */
 void adios_dart_read (struct adios_file_struct * fd
                      ,struct adios_var_struct * v, void * buffer
                      ,uint64_t buffer_size
@@ -376,10 +456,20 @@ void adios_dart_close (struct adios_file_struct * fd
     //TODO
     struct adios_DART_data_struct *p = (struct adios_DART_data_struct *)
                                                 method->method_data;
-    p->time_index++;
 
     if( fd->mode == adios_mode_write )
     {
+        /* Write two adios specific variables with the name of the file and name of the group into the space */
+        /* ADIOS Read API fopen() checks these variables to see if writing already happened */
+        unsigned int version = 0;
+        int i4 = 4, i0 = 0;
+        printf("%s: put %s = %d into space\n", __func__, fd->name, p->time_index);
+        dart_put_(fd->name, &version, &i4, &i0, &i0, &i0, &i0, &i0, &i0, 
+                  &(p->time_index), strlen(fd->name)); 
+        printf("%s: put %s = %d into space\n", __func__, fd->group->name, p->time_index);
+        dart_put_(fd->group->name, &version, &i4, &i0, &i0, &i0, &i0, &i0, &i0, 
+                  &(p->time_index), strlen(fd->group->name)); 
+
         if (p->sync_at_close) {
             printf("%s: call dart_put_sync()\n", __func__);
             dart_put_sync_();
@@ -392,6 +482,10 @@ void adios_dart_close (struct adios_file_struct * fd
         dart_unlock_on_read_();                    
     } 
 
+    /* Increment the time index */
+    p->time_index++;
+
+
     printf("%s: exit\n", __func__);
 }
 
@@ -399,7 +493,7 @@ void adios_dart_finalize (int mype, struct adios_method_struct * method)
 {
     struct adios_DART_data_struct *p = (struct adios_DART_data_struct *)
                                                 method->method_data;
-    if (adios_dart_initialized)
+    if (adios_dart_connected_to_dart)
     {
         //TODO
         printf("%s: call dart_barrier()\n", __func__);
@@ -407,13 +501,11 @@ void adios_dart_finalize (int mype, struct adios_method_struct * method)
         printf("%s: call dart_finalize()\n", __func__);
         dart_finalize_();
 
-        adios_dart_initialized = 0;
+        adios_dart_connected_to_dart = 0;
     }
 
-    if (g_dart_data_struct != NULL) {
-        free(g_dart_data_struct);
-        g_dart_data_struct = NULL;
-    }
+    adios_dart_initialized = 0;
+
     printf("%s: exit\n", __func__);
 }
 

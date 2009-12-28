@@ -22,7 +22,7 @@ AC_ARG_WITH(dart,
         [AS_HELP_STRING([--with-dart=DIR],
            [Build the DART transport method. Point to the DART installation.])],
         [DART_LDFLAGS="-L$withval/lib";
-         DART_CPPFLAGS="-Mprof=func -I$withval/include";],
+         DART_CPPFLAGS="-I$withval/include";],
         [with_dart=check])
 
 dnl If --without-dart was given set HAVE_DART to false and do nothing more
@@ -64,7 +64,7 @@ else
 
     dnl Add "-I" to DART_INCDIR.
     if test -n "${DART_INCDIR}"; then
-            DART_CPPFLAGS="-Mprof=func -I${DART_INCDIR}"
+            DART_CPPFLAGS="-I${DART_INCDIR}"
     else
             ac_dart_ok=no
     fi

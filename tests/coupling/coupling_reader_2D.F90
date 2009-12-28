@@ -51,8 +51,9 @@ module coupling_reader_2D_comm
     integer*8 :: adios_handle, adios_totalsize, adios_groupsize, adios_buf_size
     integer   :: adios_err
 
-    ! actual timestep
-    integer   :: ts
+    
+    integer   :: ts   ! actual timestep
+    integer   :: wts  ! writer's output timestep index (read from 1,2...)
     logical, parameter   :: dump_text = .true.
 
 end module coupling_reader_2D_comm
@@ -91,11 +92,13 @@ program coupling
 
     call sleep(5)
     call MPI_Barrier (MPI_COMM_WORLD, ierr)
+    wts = 1  ! start reading from writer's 1st step
     do ts = 1, timesteps
         call readArrays()
         call printArrays()
+        call advanceArrays()
         !print '("rank=",i0," goes to sleep after step ",i0)', rank, ts
-        if (ts < timesteps) call sleep(30)
+        if (ts < timesteps) call sleep(15)
         call MPI_Barrier (MPI_COMM_WORLD, ierr)
         !print '("rank=",i0," woke up")', rank
     enddo
@@ -114,33 +117,52 @@ subroutine readArrays()
     use coupling_reader_2D_comm
     implicit none
     integer             :: i,j,k
-    integer             :: gcnt, vcnt, acnt, tstart, ntsteps, tstop, vrank, vtype, timedim
+    integer             :: gcnt, vcnt, acnt, tstart, ntsteps, tstop, vrank, vtype, time_index
     integer*8           :: fh, gh, read_bytes
     integer*8, dimension(3) :: offset, readsize
     character(len=256)  :: fn
 
-    write (fn,'(a,"_",i0,".bp")') trim(filename), ts
+    write (fn,'(a,"_",i0,".bp")') trim(filename), wts
 
     ! Read in data using ADIOS Read API
     call adios_fopen (fh, fn, group_comm, gcnt, adios_err)
     if (adios_err .ne. 0) then
-        !call exit(adios_err)
-        do while (adios_err .ne. 0)
-            print '("Waiting on file ",a, ". Sleep for 5 seconds")', fn 
-            call sleep(5)
+        if (wts .eq. 1) then
+            do while (adios_err .ne. 0)
+                print '("Writer''s first data ",a," is missing. Wait until it becomes available")', trim(fn) 
+                call sleep(5)
+                call MPI_Barrier (group_comm, ierr)
+                call adios_fopen (fh, fn, group_comm, gcnt, adios_err)
+            enddo
+        else
+            print '("Writer data ",a," is missing. Progress without updating reader data")', trim(fn)
             call MPI_Barrier (group_comm, ierr)
-            call adios_fopen (fh, fn, group_comm, gcnt, adios_err)
-        enddo
+            return
+        endif
     endif
+
+    wts = wts + 1 ! next time read the next data set
 
     call adios_gopen (fh, gh, "writer2D", vcnt, acnt, adios_err)
     if (adios_err .ne. 0) then
         call exit(adios_err)
     endif
     
-    ! read dim_x_global into dim_x_local
     offset = 0
     readsize = 1
+
+    ! DEBUG read time_index
+    !print '("rank=",i0,": Read in __ADIOS_TIME_INDEX__ from ",a)', rank, trim(fn)
+    !call adios_read_var(gh, "__ADIOS_TIME_INDEX__", offset, readsize, time_index, read_bytes)
+    !if (read_bytes .lt. 0) then
+    !    call exit(read_bytes)
+    !elseif (read_bytes .ne. 4) then
+    !    print '("Wanted to read __ADIOS_TIME_INDEX__ but read ", i0, " bytes instead of 4")', read_bytes 
+    !    call exit(read_bytes)
+    !endif
+    !print '("rank=",i0,": time_index = ",i0)', rank, time_index
+
+    ! read dim_x_global into dim_x_local
     print '("rank=",i0,": Read in dim_x_global from ",a)', rank, trim(fn)
     call adios_read_var(gh, "dim_x_global", offset, readsize, dim_x_global, read_bytes)
     if (read_bytes .lt. 0) then
@@ -265,6 +287,17 @@ subroutine printArrays()
     endif
 
 end subroutine printArrays
+
+!!***************************
+subroutine advanceArrays()
+    use coupling_reader_2D_comm
+    implicit none
+
+    xy = 0.9 * xy
+    xy2 = 0.9 * xy2
+
+end subroutine advanceArrays
+
 
 !!***************************
 subroutine usage()

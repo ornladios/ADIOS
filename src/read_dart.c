@@ -30,9 +30,8 @@
 
 // DART needs an application ID. Suppose 1 is the writer, so we elect to be 2.
 static const int DART_APPLICATION_ID = 2; 
-// DART needs total number of all processes of all applications. We do not know it, so give an upper bound
-static const int DART_TOTAL_NUMBER_OF_CLIENTS = 2048; 
 static struct dcg_space *dcg = 0;
+static enum storage_type st = column_major;
 
 struct adios_read_dart_data_struct {
     int access_version;        // counting the access
@@ -51,11 +50,9 @@ int adios_read_dart_init (MPI_Comm comm)
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &nproc);
 
-    /* FIXME: DART version 2 needs total number of processes of all connecting apps.
-       We know only this app's size */
     /* Fortran call dart_init (nproc, 2): */
-    printf("-- %s, rank %d: connect to dart with app id %d\n", __func__, rank, DART_APPLICATION_ID);
-    dcg = dcg_alloc(DART_TOTAL_NUMBER_OF_CLIENTS, DART_APPLICATION_ID);
+    printf("-- %s, rank %d: connect to dart with nproc=%d and appid=%d\n", __func__, rank, nproc, DART_APPLICATION_ID);
+    dcg = dcg_alloc(nproc, DART_APPLICATION_ID);
     if (!dcg) {
         error(err_connection_failed, "Failed to connect with DART\n");
         return -err_connection_failed;
@@ -107,6 +104,26 @@ ADIOS_FILE * adios_read_dart_fopen (const char * fname, MPI_Comm comm)
         ds->disconnect_at_fclose = 1;
     } else {
         ds->disconnect_at_fclose = 0;
+    }
+
+    /* Try to get variable with fname. If it does not exists, we get an error, which means
+       the data does not exist. So we return an error just like with real files */
+    int offset[] = {0,0,0}, readsize[3] = {1,1,1};
+    int time_index;
+    int err;
+    enum ADIOS_DATATYPES time_index_type = adios_integer;
+    printf("-- %s, rank %d: Get variable %s\n", __func__, ds->mpi_rank, fname);
+    printf("   rank %d: call dcg_lock_on_read()\n", ds->mpi_rank);
+    dcg_lock_on_read();
+    printf("   rank %d: dart_get %s\n", ds->mpi_rank, fname);
+    err = adios_read_dart_get(fname, time_index_type, ds, offset, readsize, &time_index);
+    printf("   rank %d: call dcg_unlock_on_read()\n", ds->mpi_rank);
+    dcg_unlock_on_read();
+    if (err) {
+        error(err_file_not_found_error, "Data of '%s' does not exist in DataSpaces\n", fname);
+        return NULL;
+    } else {
+        printf("-- %s, rank %d: data of '%s' exists, time index = %d\n", __func__, ds->mpi_rank, fname, time_index);
     }
 
 
@@ -296,6 +313,7 @@ static int adios_read_dart_get (const char * varname, enum ADIOS_DATATYPES varty
         .version = ds->access_version, 
         .owner = -1,
         .size = elemsize,
+        .st = st, // column_major,
         .bb = {
             .num_dims = 3,
             .lb.c = {offset[1], offset[0], offset[2]}, // !! flip 1st and 2nd dim
@@ -304,7 +322,7 @@ static int adios_read_dart_get (const char * varname, enum ADIOS_DATATYPES varty
                      offset[2]+readsize[2]-1,}
         }
     };
-    strncpy(odsc.name, varname, 16);
+    strncpy(odsc.name, varname, sizeof(odsc.name));
 
     od = obj_data_alloc_no_data(&odsc, data);
     if (!od) {

@@ -70,8 +70,8 @@ program coupling
     call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
     call MPI_Comm_size (group_comm, nproc , ierr)
 
-    print '("rank=",i0," call dart_init()...")', rank
-    call dart_init (procall, 1)
+    print '("rank=",i0," call dart_init(",i0,",1)...")', rank, nproc
+    call dart_init (nproc, 1)
     print '("rank=",i0," returned from dart_init()")', rank
     !call MPI_Barrier (group_comm, ierr)
 

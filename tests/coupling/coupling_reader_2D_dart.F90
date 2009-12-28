@@ -72,8 +72,8 @@ program coupling
     call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
     call MPI_Comm_size (group_comm, nproc , ierr)
 
-    print '("rank=",i0," call dart_init()...")', rank
-    call dart_init (procall, 2)
+    print '("rank=",i0," call dart_init(",i0,",2)...")', rank, nproc
+    call dart_init (nproc, 2)
     print '("rank=",i0," returned from dart_init()...")', rank
     call adios_init("coupling2D_reader.xml", adios_err)
     !call MPI_Barrier (group_comm, ierr)

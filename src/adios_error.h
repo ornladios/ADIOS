@@ -12,6 +12,7 @@ enum ADIOS_ERRCODES {
      err_no_error = 0
     ,err_no_memory
     ,err_MPI_open_error
+    ,err_file_not_found_error
     ,err_invalid_file_pointer
     ,err_invalid_group
     ,err_invalid_group_struct
