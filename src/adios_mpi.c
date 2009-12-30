@@ -49,7 +49,6 @@ struct adios_MPI_data_struct
 
     uint64_t vars_start;
     uint64_t vars_header_size;
-    uint64_t biggest_size;     // largest writer's data size (round up)
     uint16_t storage_targets;  // number of storage targets being used
 };
 
@@ -278,7 +277,6 @@ void adios_mpi_init (const char * parameters
     md->old_attrs_root = 0;
     md->vars_start = 0;
     md->vars_header_size = 0;
-    md->biggest_size = 0;
     md->storage_targets = 0;
 
     adios_buffer_struct_init (&md->b);
@@ -342,7 +340,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
         {
             // make one space for offset and one for size
             MPI_Offset * offsets = malloc(sizeof (MPI_Offset)
-                                           * md->size * 2);
+                                           * md->size);
             int i;
 
             offsets [0] = fd->write_size_bytes;
@@ -352,7 +350,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
 
 // top section: make things a consistent stripe size
 // bottom section: just pack the file
-#if 1
+#if 0
             // find the largest and use that as a basis for stripe
             // size for each process writing
             uint64_t biggest_size = 0;
@@ -367,14 +365,14 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
 //#define STRIPE_INCREMENT (1024 * 1024)
             if (biggest_size % (STRIPE_INCREMENT))
             {
-                biggest_size = (  ((biggest_size / STRIPE_INCREMENT) + 1) 
+                biggest_size = (  ((biggest_size / STRIPE_INCREMENT) + 1)
                                 * STRIPE_INCREMENT
                                );
             }
             // also round up the base_offset, just in case
             if (fd->base_offset % (STRIPE_INCREMENT))
             {
-                fd->base_offset = (  ((fd->base_offset / STRIPE_INCREMENT) + 1) 
+                fd->base_offset = (  ((fd->base_offset / STRIPE_INCREMENT) + 1)
                                    * STRIPE_INCREMENT
                                   );
             }
@@ -402,31 +400,29 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
             md->b.pg_index_offset =   offsets [md->size - 1]
                                     + last_offset;
 #endif
-            MPI_Scatter (offsets, 2, MPI_LONG_LONG
-                        ,offsets, 2, MPI_LONG_LONG
+            MPI_Scatter (offsets, 1, MPI_LONG_LONG
+                        ,offsets, 1, MPI_LONG_LONG
                         ,0, md->group_comm
                         );
             fd->base_offset = offsets [0];
             fd->pg_start_in_file = fd->base_offset;
-            md->biggest_size = biggest_size;
             free (offsets);
         }
         else
         {
-            MPI_Offset offset [2];
-            offset [0] = fd->write_size_bytes;
+            MPI_Offset offset[1];
+            offset[0] = fd->write_size_bytes;
 
             MPI_Gather (offset, 1, MPI_LONG_LONG
                        ,offset, 1, MPI_LONG_LONG
                        ,0, md->group_comm
                        );
 
-            MPI_Scatter (offset, 2, MPI_LONG_LONG
-                        ,offset, 2, MPI_LONG_LONG
+            MPI_Scatter (offset, 1, MPI_LONG_LONG
+                        ,offset, 1, MPI_LONG_LONG
                         ,0, md->group_comm
                         );
             fd->base_offset = offset [0];
-            md->biggest_size = offset [1];
             fd->pg_start_in_file = fd->base_offset;
         }
     }
@@ -436,6 +432,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
     }
 }
 
+#if 0
 // LUSTRE Structure
 // from /usr/include/lustre/lustre_user.h
 #define LUSTRE_SUPER_MAGIC 0x0BD00BD0
@@ -500,6 +497,7 @@ static void set_stripe_size (struct adios_file_struct * fd
         }
     }
 }
+#endif
 
 enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                         ,struct adios_method_struct * method
@@ -716,7 +714,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
             // figure out the offsets and create the file with proper striping
             // before the MPI_File_open is called
             adios_mpi_build_file_offset (md, fd, name);
-            set_stripe_size (fd, md, name);
+            //set_stripe_size (fd, md, name);
 #if COLLECT_METRICS
             gettimeofday (&t17, NULL);
 #endif
@@ -922,7 +920,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
             // figure out the offsets and create the file with proper striping
             // before the MPI_File_open is called
             adios_mpi_build_file_offset (md, fd, name);
-            set_stripe_size (fd, md, name);
+            //set_stripe_size (fd, md, name);
 
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
@@ -1159,7 +1157,7 @@ void adios_mpi_write (struct adios_file_struct * fd
         // adios_write_var_payload_v1 (fd, v);
         uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
       
-        if (fd->base_offset + var_size > fd->pg_start_in_file + md->biggest_size)
+        if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes)
             fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
                              "Need to enlarge group size. \n");
 
@@ -1516,7 +1514,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                 while (a)
                 {
                     adios_write_attribute_v1 (fd, a);
-                    if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + md->biggest_size)
+                    if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
                         fprintf (stderr, "mpi_file_write exceeds PG bound. File is corrupted. "
                                          "Need to enlarge group size.\n");
 #if 0
@@ -1751,7 +1749,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                 {
                     // everyone writes their data
                     if (fd->base_offset + bytes_written + to_write > 
-                           fd->pg_start_in_file + md->biggest_size)
+                           fd->pg_start_in_file + fd->write_size_bytes)
                         fprintf (stderr, "mpi_file_write exceeds PG bound. File is corrupted. "
                                          "Need to enlarge group size.\n");
 
