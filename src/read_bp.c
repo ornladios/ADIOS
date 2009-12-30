@@ -1075,18 +1075,11 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
     if ( file_is_fortran ) 
         swap_order(ndim, dims, &timedim);
 
-    /* Get the timesteps we need to read */
-    if (timedim > -1) {
-        start_time = start[timedim] + fh->tidx_start;
-        stop_time = start_time + count[timedim] - 1;
-    } else {
-        // timeless variable
-        start_time = fh->tidx_start;
-        stop_time = fh->tidx_start;
-    }
-
     /* Take out the time dimension from start[] and count[] */
     if (timedim == -1) {
+        start_time = fh->tidx_start;
+        stop_time = fh->tidx_start;
+
         for (i = 0; i < ndim; i++) {
              count_notime[i] = count[i];
              start_notime[i] = start[i];
@@ -1098,6 +1091,9 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
             temp_timedim = ndim - 1;
         else
             temp_timedim = 0;
+
+        start_time = start[temp_timedim] + fh->tidx_start;
+        stop_time = start_time + count[temp_timedim] - 1;
 
         for (i = 0; i < temp_timedim; i++) {
              count_notime[j] = count[i];
