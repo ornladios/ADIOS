@@ -65,11 +65,11 @@ typedef struct {
         void     * maxs;            /* maximum per each timestep (array of timestep elements)         */
 } ADIOS_VARINFO;
 
-// the list of the available read methods
+/* The list of the available read methods */
 enum ADIOS_READ_METHOD {
-         ADIOS_READ_METHOD_BP     = 0    // Read from ADIOS BP file (written by POSIX, MPI etc methods)
-        ,ADIOS_READ_METHOD_HDF5   = 1    // Read from HDF5 file (written by PHDF5 method)
-        ,ADIOS_READ_METHOD_DART   = 2    // Read from memory written by DART method
+         ADIOS_READ_METHOD_BP     = 0    /* Read from ADIOS BP file (written by POSIX, MPI etc methods) */
+        ,ADIOS_READ_METHOD_HDF5   = 1    /* Read from HDF5 file (written by PHDF5 method)               */
+        ,ADIOS_READ_METHOD_DART   = 2    /* Read from memory written by DART method                     */
 };
 
 #ifndef __INCLUDED_FROM_FORTRAN_API__
