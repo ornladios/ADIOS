@@ -86,13 +86,13 @@ program coupling
 
     ! Calculate global size
     call allocateLocalArrays()
-    call sleep(60)
+    !call sleep(60)
     do ts=1,timesteps
         call generateLocalArrays()
         call writeArrays()
         call MPI_Barrier (MPI_COMM_WORLD, ierr)
         !print '("rank=",i0," goes to sleep after step ",i0)', rank, ts
-        if (ts < timesteps) call sleep(60)
+        if (ts < timesteps) call sleep(5)
         !print '("rank=",i0," woke up")', rank
     enddo
 

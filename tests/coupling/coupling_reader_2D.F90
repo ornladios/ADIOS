@@ -98,7 +98,7 @@ program coupling
         call printArrays()
         call advanceArrays()
         !print '("rank=",i0," goes to sleep after step ",i0)', rank, ts
-        if (ts < timesteps) call sleep(15)
+        if (ts < timesteps) call sleep(5)
         call MPI_Barrier (MPI_COMM_WORLD, ierr)
         !print '("rank=",i0," woke up")', rank
     enddo
@@ -130,7 +130,7 @@ subroutine readArrays()
         if (wts .eq. 1) then
             do while (adios_err .ne. 0)
                 print '("Writer''s first data ",a," is missing. Wait until it becomes available")', trim(fn) 
-                call sleep(5)
+                call sleep(15)
                 call MPI_Barrier (group_comm, ierr)
                 call adios_fopen (fh, fn, group_comm, gcnt, adios_err)
             enddo
