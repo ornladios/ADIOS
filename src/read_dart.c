@@ -39,6 +39,11 @@ struct adios_read_dart_data_struct {
     int mpi_rank;              // just for debug prints
 };
 
+// Declarations
+static int adios_read_dart_get (const char * varname, enum ADIOS_DATATYPES vartype, 
+                                struct adios_read_dart_data_struct * ds, 
+                                int * offset, int * readsize, void * data);
+
 /* If init is used, we connect to DART here, otherwise we connect in fopen.
    If multiple fopen..fclose cycles are used, init/finalize must be used too to
    avoid multiple connection/disconnection in fopen/fclose.
