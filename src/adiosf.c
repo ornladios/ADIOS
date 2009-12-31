@@ -139,6 +139,7 @@ void FC_FUNC_(adios_write, adios_WRITE)
     {
         fprintf (stderr, "Bad var name (ignored): '%s'\n", buf1);
         *err = 1;
+        free (buf1);
         return;
     }
 
@@ -150,6 +151,7 @@ void FC_FUNC_(adios_write, adios_WRITE)
         {
             fprintf (stderr, "write attempted on %s in %s.  This was opened for read\n" ,buf1 , fd->name);
             *err = 1;
+            free (buf1);
             return;
         }
     }
@@ -158,6 +160,7 @@ void FC_FUNC_(adios_write, adios_WRITE)
     {
         fprintf (stderr, "Invalid data: %s\n", buf1);
         *err = 1;
+        free (buf1);
         return;
     }
 
@@ -194,6 +197,7 @@ void FC_FUNC_(adios_write, adios_WRITE)
                             );
 
                     *err = 1;
+                    free (buf1);
                     return;
                 }
 
@@ -210,6 +214,7 @@ void FC_FUNC_(adios_write, adios_WRITE)
                             );
 
                     *err = 1;
+                    free (buf1);
                     return;
                 }
                 break;
