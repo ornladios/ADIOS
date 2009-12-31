@@ -276,8 +276,6 @@ void FC_FUNC_(adios_set_path, adios_SET_PATH)
     } else {
         *err = -adios_errno;
     }
-
-    free (buf1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
