@@ -115,6 +115,7 @@ struct adios_group_struct
     enum ADIOS_FLAG adios_host_language_fortran;
     enum ADIOS_FLAG all_unique_var_names;
     struct adios_var_struct * vars;
+    struct adios_var_struct * vars_written;
     struct adios_attribute_struct * attributes;
     char * group_comm;
     char * group_by;

@@ -1140,6 +1140,7 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->member_count = 0; // will be set in adios_append_group
     g->var_count = 0;
     g->vars = 0;
+    g->vars_written = 0;
     g->attributes = 0;
     g->group_by = (coordination_var ? strdup (coordination_var) : 0L);
     g->group_comm = (coordination_comm ? strdup (coordination_comm) : 0L);
@@ -2112,6 +2113,109 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd
     return dim;
 }
 
+void adios_copy_var_written (struct adios_var_struct ** root
+                            ,struct adios_var_struct * var
+                            ,struct adios_file_struct * fd
+                            )
+{
+    struct adios_var_struct * var_new;
+
+    while (root)
+    {
+        if (!*root)
+        {
+            var_new = (struct adios_var_struct *) malloc
+                                                  (sizeof (struct adios_var_struct));
+            var_new->id = ++fd->group->member_count;
+            var_new->name = strdup (var->name);
+            var_new->path = strdup (var->path);
+            var_new->type = var->type;
+            var_new->dimensions = 0;
+            var_new->got_buffer = var->got_buffer;
+            var_new->is_dim = var->is_dim;
+            var_new->write_offset = var->write_offset;
+            var_new->min = 0;
+            var_new->max = 0;
+            var_new->free_data = var->free_data;
+            var_new->data = 0;
+            var_new->data_size = var->data_size;
+            var_new->next = 0;
+
+            uint64_t size = adios_get_type_size (var->type, var->data);
+            switch (var->type)
+            {
+                case adios_byte:
+                case adios_unsigned_byte:
+                case adios_short:
+                case adios_unsigned_short:
+                case adios_integer:
+                case adios_unsigned_integer:
+                case adios_long:
+                case adios_unsigned_long:
+                case adios_real:
+                case adios_double:
+                case adios_long_double:
+                case adios_complex:
+                case adios_double_complex:
+                    if (var->dimensions)
+                    {
+                        uint8_t c;
+                        uint8_t j;
+                        struct adios_dimension_struct * d = var->dimensions;
+                        var_new->min = malloc (size);
+                        var_new->max = malloc (size);
+                        memcpy (var_new->min, var->min, size);
+                        memcpy (var_new->max, var->max, size);
+                        c = count_dimensions (var->dimensions);
+
+                        for (j = 0; j < c; j++)
+                        {
+                            struct adios_dimension_struct * d_new = (struct adios_dimension_struct *)
+                                                            malloc (sizeof (struct adios_dimension_struct));
+                            // de-reference dimension id
+                            d_new->dimension.id = 0;
+                            d_new->dimension.rank = get_value_for_dim (fd, &d->dimension);
+                            d_new->global_dimension.id = 0;
+                            d_new->global_dimension.rank = get_value_for_dim (fd, &d->global_dimension);
+                            d_new->local_offset.id = 0;
+                            d_new->local_offset.rank = get_value_for_dim (fd, &d->local_offset);
+                            d_new->next = 0;
+
+                            adios_append_dimension (&var_new->dimensions, d_new);
+
+                            d = d->next;
+                        }
+                    }
+                    else
+                    {
+                        var_new->min = 0;
+                        var_new->max = 0;
+                        var_new->data = malloc (size);
+                        memcpy (var_new->data, var->data, size);
+                    }
+
+                    break;
+
+                case adios_string:
+                {
+                    var_new->data = malloc (size + 1);
+                    memcpy (var_new->data, var->data, size);
+                    ((char *) (var_new->data)) [size] = 0;
+
+                    break;
+                }
+            }
+
+            *root = var_new;
+            root = 0;
+        }
+        else
+        {
+            root = &(*root)->next;
+        }
+    }
+}
+
 void adios_build_index_v1 (struct adios_file_struct * fd
                        ,struct adios_index_process_group_struct_v1 ** pg_root
                        ,struct adios_index_var_struct_v1 ** vars_root
@@ -2119,7 +2223,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                        )
 {
     struct adios_group_struct * g = fd->group;
-    struct adios_var_struct * v = g->vars;
+    struct adios_var_struct * v = g->vars_written;
     struct adios_attribute_struct * a = g->attributes;
     struct adios_index_process_group_struct_v1 * g_item;
 

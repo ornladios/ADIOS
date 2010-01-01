@@ -179,6 +179,11 @@ int adios_write (int64_t fd_p, const char * name, void * var)
     common_adios_write (fd, v, var);
     // v->data is set to NULL in the above call
 
+    if (fd->mode == adios_mode_write)
+    {
+        adios_copy_var_written (&fd->group->vars_written, v, fd);
+    }
+
     return 0;
 }
 
