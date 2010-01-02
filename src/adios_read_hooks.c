@@ -44,7 +44,7 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
 #endif
 
 #if HAVE_PHDF5
-        ASSIGN_FNS(hdf5,ADIOS_READ_METHOD_HDF5)
+        //ASSIGN_FNS(hdf5,ADIOS_READ_METHOD_HDF5)
 #endif
 
         did_init = 1;

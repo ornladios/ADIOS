@@ -41,7 +41,6 @@ int common_read_set_read_method(enum ADIOS_READ_METHOD method)
 
 int common_read_init(MPI_Comm comm)
 {
-    printf("..%s: method=%d\n", __func__, selected_method);
     adios_read_hooks_init (&adios_read_hooks); // init the adios_read_hooks_struct if not yet initialized    
     return adios_read_hooks[selected_method].adios_init_fn (comm);
 }
@@ -62,7 +61,6 @@ ADIOS_FILE * common_read_fopen (const char * fname, MPI_Comm comm)
 
     internals->method = selected_method;
 
-    printf("..%s: fname=%s, method=%d\n", __func__, fname, internals->method);
     fp = adios_read_hooks[internals->method].adios_fopen_fn (fname, comm);
 
     // save the method in fp->internal_data
@@ -96,7 +94,6 @@ ADIOS_GROUP * common_read_gopen (ADIOS_FILE *fp, const char * grpname)
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        printf("..%s: fp=%x method=%d\n", __func__, fp, internals->method);
         retval = adios_read_hooks[internals->method].adios_gopen_fn (fp, grpname);
     } else {
         error( err_invalid_file_pointer, "Invalid file pointer at adios_gopen()");
@@ -129,7 +126,6 @@ int common_read_gclose (ADIOS_GROUP *gp)
     adios_errno = 0;
     if (gp) {
         internals = (struct common_read_internals_struct *) gp->fp->internal_data;
-        printf("..%s: gp=%x fp=%x method=%d\n", __func__, gp, gp->fp, internals->method);
         retval = adios_read_hooks[internals->method].adios_gclose_fn (gp);
     } else {
         error(err_invalid_group_struct, "Null pointer passed as group to adios_gclose()");
@@ -228,7 +224,6 @@ int64_t common_read_read_var (ADIOS_GROUP * gp, const char * varname,
     adios_errno = 0;
     if (gp) {
         internals = (struct common_read_internals_struct *) gp->fp->internal_data;
-        printf("..%s: gp=%x fp=%x method=%d\n", __func__, gp, gp->fp, internals->method);
         retval = adios_read_hooks[internals->method].adios_read_var_fn (gp, varname, start, count, data);
     } else {
         error(err_invalid_group_struct, "Null pointer passed as group to adios_read_var()");

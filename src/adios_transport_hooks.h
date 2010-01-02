@@ -101,36 +101,38 @@ struct adios_var_struct;
 // the list of the methods that have been integrated
 // VTK and POSIX_ASCII are placeholders reserved for future use
 enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
-                     ,ADIOS_METHOD_NULL        = -1
-                     ,ADIOS_METHOD_MPI         = 0
-                     ,ADIOS_METHOD_DATATAP     = 1
-                     ,ADIOS_METHOD_POSIX       = 2
-                     ,ADIOS_METHOD_DART        = 3
-                     ,ADIOS_METHOD_VTK         = 4
-                     ,ADIOS_METHOD_POSIX_ASCII = 5
-                     ,ADIOS_METHOD_MPI_CIO     = 6
-                     ,ADIOS_METHOD_PHDF5       = 7
-                     ,ADIOS_METHOD_PROVENANCE  = 8
-                     ,ADIOS_METHOD_MPI_STRIPE  = 9
-                     ,ADIOS_METHOD_MPI_STRIPE2 = 10
-                     ,ADIOS_METHOD_MPI_STAGGER = 11
-                     ,ADIOS_METHOD_MPI_AGG     = 12
-                     ,ADIOS_METHOD_ADAPTIVE    = 13
-                     ,ADIOS_METHOD_COUNT       = 14
-                     };
+		      ,ADIOS_METHOD_NULL        = -1
+		      ,ADIOS_METHOD_MPI         = 0
+		      ,ADIOS_METHOD_DATATAP     = 1
+		      ,ADIOS_METHOD_POSIX       = 2
+		      ,ADIOS_METHOD_DART        = 3
+		      ,ADIOS_METHOD_VTK         = 4
+		      ,ADIOS_METHOD_POSIX_ASCII = 5
+		      ,ADIOS_METHOD_MPI_CIO     = 6
+		      ,ADIOS_METHOD_PHDF5       = 7
+		      ,ADIOS_METHOD_PROVENANCE  = 8
+		      ,ADIOS_METHOD_MPI_STRIPE  = 9
+		      ,ADIOS_METHOD_MPI_STRIPE2 = 10
+		      ,ADIOS_METHOD_MPI_STAGGER = 11
+		      ,ADIOS_METHOD_MPI_AGG     = 12
+		      ,ADIOS_METHOD_ADAPTIVE    = 13
+		      ,ADIOS_METHOD_POSIX1      = 14
+		      ,ADIOS_METHOD_COUNT       = 15
+};
 
 // forward declare the functions (or dummies for internals use)
 FORWARD_DECLARE(mpi)
-FORWARD_DECLARE(mpi_stripe2)
-FORWARD_DECLARE(mpi_cio)
-FORWARD_DECLARE(mpi_stripe)
-FORWARD_DECLARE(mpi_stagger)
-FORWARD_DECLARE(mpi_aggregate)
-FORWARD_DECLARE(datatap)
-FORWARD_DECLARE(posix)
-FORWARD_DECLARE(provenance)
-FORWARD_DECLARE(phdf5)
-FORWARD_DECLARE(adaptive)
+     FORWARD_DECLARE(mpi_stripe2)
+     FORWARD_DECLARE(mpi_cio)
+     FORWARD_DECLARE(mpi_stripe)
+     FORWARD_DECLARE(mpi_stagger)
+     FORWARD_DECLARE(mpi_aggregate)
+     FORWARD_DECLARE(datatap)
+     FORWARD_DECLARE(posix)
+     FORWARD_DECLARE(posix1)
+     FORWARD_DECLARE(provenance)
+     FORWARD_DECLARE(phdf5)
+     FORWARD_DECLARE(adaptive)
 
 #if HAVE_DART
 FORWARD_DECLARE(dart)

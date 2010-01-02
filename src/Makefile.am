@@ -15,6 +15,7 @@ libadios_a_SOURCES = adios.c \
                      adios_mpi_stripe.c \
                      adios_mpi_stripe2.c \
                      adios_posix.c \
+                     adios_posix1.c \
                      adios_internals.c \
                      adios_internals_mxml.c \
                      buffer.c \
@@ -30,6 +31,7 @@ libadiosf_a_SOURCES = adiosf.c \
                      adios_mpi_stripe.c \
                      adios_mpi_stripe2.c \
                      adios_posix.c \
+                     adios_posix1.c \
                      adios_internals.c \
                      adios_internals_mxml.c \
                      buffer.c \
