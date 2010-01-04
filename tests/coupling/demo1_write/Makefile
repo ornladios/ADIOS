@@ -1,7 +1,4 @@
-ADIOS_INC ?= -I/ccs/proj/e2e/sklasky/adios-svn/jaguar.pgi/include 
-ADIOS_FLIB ?= -L/ccs/proj/e2e/sklasky/adios-svn/jaguar.pgi/lib -ladiosf -lmxml -lhdf5
-ADIOSREAD_FLIB ?= -L/ccs/proj/e2e/sklasky/adios-svn/jaguar.pgi/lib -ladiosreadf
-GPP ?= /ccs/proj/e2e/sklasky/adios-svn/jaguar.pgi/bin/gpp.py
+GPP ?= gpp.py 
 COMP=ftn
 LINKER=${COMP}
 
