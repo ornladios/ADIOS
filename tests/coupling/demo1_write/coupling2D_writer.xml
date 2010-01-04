@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <adios-config host-language="Fortran">
-  <adios-group name="writer2D" >
+  <adios-group name="writer2D"  coordination-communicator="group_comm" >
     <var name="nx_global"  path="" type="integer"/>
     <var name="ny_global"  path="" type="integer"/>
 
