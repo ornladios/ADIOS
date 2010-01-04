@@ -1966,7 +1966,7 @@ static int parseGroup (mxml_node_t * node)
         mxml_attr_t * attr = &node->value.element.attrs [i];
 
         GET_ATTR("name",attr,datagroup_name,"adios-group")
-        GET_ATTR("coordination-communicator",attr,coordination_comm,"adios-group")
+        //GET_ATTR("coordination-communicator",attr,coordination_comm,"adios-group")
         GET_ATTR("coordination-var",attr,coordination_var,"adios-group")
         GET_ATTR("host-language",attr,host_language,"adios-group")
         GET_ATTR("time-index",attr,time_index_name,"adios-group")
@@ -2996,21 +2996,25 @@ int adios_common_select_method (int priority, const char * method
     }
     else
     {
-        if (requires_group_comm && !g->group_comm)
-        {
-            fprintf (stderr, "config.xml: method %s for group %s.  Group does "
-                             "not have the required coordination-communicator"
-                             ".\n"
-                    ,method, group
-                    );
+        // JL:
+        // we no longer require this since we moved the coordiantion
+        // communicator to the open call. Leaving code here, just in case.
+        // once this has been validated thoroughly, remove this block of code.
+        //if (requires_group_comm && !g->group_comm)
+        //{
+        //    fprintf (stderr, "config.xml: method %s for group %s.  Group does "
+        //                     "not have the required coordination-communicator"
+        //                     ".\n"
+        //            ,method, group
+        //            );
 
-            free (new_method->base_path);
-            free (new_method->method);
-            free (new_method->parameters);
-            free (new_method);
+        //    free (new_method->base_path);
+        //    free (new_method->method);
+        //    free (new_method->parameters);
+        //    free (new_method);
 
-            return 0;
-        }
+        //    return 0;
+        //}
         adios_add_method_to_group (&g->methods, new_method);
         new_method->group = g;
     }
