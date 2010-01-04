@@ -1,5 +1,5 @@
 GPP ?= gpp.py 
-COMP=ftn
+COMP=mpif90
 LINKER=${COMP}
 
 default: all

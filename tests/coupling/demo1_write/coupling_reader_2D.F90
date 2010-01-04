@@ -10,8 +10,7 @@ program coupling
 
     ! Offsets and sizes
     integer :: nx_global, ny_global
-
-
+    integer*8, dimension(2) :: offset=0, readsize=1
 
     ! MPI variables
     integer :: group_comm
@@ -26,7 +25,7 @@ program coupling
     ! This example can read from 1-260 readers
     integer             :: gcnt, vcnt, acnt
     integer*8           :: fh, gh, read_bytes
-    integer*8, dimension(2) :: offset=0, readsize=1
+
 
     call MPI_Init (ierr)
     call MPI_Comm_dup (MPI_COMM_WORLD, group_comm, ierr)

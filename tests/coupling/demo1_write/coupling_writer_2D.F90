@@ -54,8 +54,8 @@ program coupling_writer
   allocate( xy(1:ndx, 1:ndy) )
   
   do ts=0,timesteps-1
-     if (rank==0) write(6,*) 'ts=',ts
      write(filename,'(a4,i2.2,a3)') 'cpes',ts,'.bp'
+     if (rank==0) write(6,*) 'ts=',ts
      xy = 1.0*rank + 1.0*ts
      call adios_open (adios_handle, "writer2D", trim(filename), "w", group_comm, adios_err)     
 #include "gwrite_writer2D.fh"

@@ -25,6 +25,7 @@ program coupling
     ! This example only works if the number of readers = number of writers
     !ADIOS integer             :: gcnt, vcnt, acnt
     !ADIOS integer*8           :: fh, gh, read_bytes
+
     integer :: posx=4
 
     call MPI_Init (ierr)

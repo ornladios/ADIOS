@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <adios-config host-language="Fortran">
-  <adios-group name="writer2D" coordination-communicator="group_comm" >
+  <adios-group name="writer2D" >
     <var name="nx_global"  path="" type="integer"/>
     <var name="ny_global"  path="" type="integer"/>
 
@@ -12,7 +12,6 @@
     <global-bounds dimensions="nx_global,ny_global" offsets="offs_x,offs_y">
         <var name="xy" type="real*8" dimensions="nx_local,ny_local"/>
     </global-bounds>
-    <attribute name="description" path="/xy" value="2D array with 2D decomposition"/>
 
   </adios-group>
 
