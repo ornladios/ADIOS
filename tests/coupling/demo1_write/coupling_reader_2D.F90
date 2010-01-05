@@ -27,6 +27,7 @@ program coupling
     integer*8           :: fh, gh, read_bytes
 
 
+
     call MPI_Init (ierr)
     call MPI_Comm_dup (MPI_COMM_WORLD, group_comm, ierr)
     call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
