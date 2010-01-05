@@ -16,7 +16,7 @@ program coupling
     integer :: group_comm
     integer :: rank
     integer :: ierr
-    
+ 
     integer :: ts   ! actual timestep
     integer :: i,j
 
