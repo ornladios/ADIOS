@@ -1966,7 +1966,12 @@ static int parseGroup (mxml_node_t * node)
         mxml_attr_t * attr = &node->value.element.attrs [i];
 
         GET_ATTR("name",attr,datagroup_name,"adios-group")
-        //GET_ATTR("coordination-communicator",attr,coordination_comm,"adios-group")
+        // JL: 1-2010
+        // Although this is not used, we aer leaving in the retrevial
+        // of this to avoid messages from all of the existing XML files.
+        // In a few months, once everything has been updated, we can remove
+        // this code
+        GET_ATTR("coordination-communicator",attr,coordination_comm,"adios-group")
         GET_ATTR("coordination-var",attr,coordination_var,"adios-group")
         GET_ATTR("host-language",attr,host_language,"adios-group")
         GET_ATTR("time-index",attr,time_index_name,"adios-group")
@@ -2996,7 +3001,7 @@ int adios_common_select_method (int priority, const char * method
     }
     else
     {
-        // JL:
+        // JL: 1-2010
         // we no longer require this since we moved the coordiantion
         // communicator to the open call. Leaving code here, just in case.
         // once this has been validated thoroughly, remove this block of code.
