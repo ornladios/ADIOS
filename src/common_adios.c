@@ -641,6 +641,34 @@ int common_adios_close (int64_t fd_p)
         v = v->next;
     }
 
+    while (fd->group->vars_written)
+    {
+        if (fd->group->vars_written->name)
+            free (fd->group->vars_written->name);
+        if (fd->group->vars_written->path)
+            free (fd->group->vars_written->path);
+
+        while (fd->group->vars_written->dimensions)
+        {
+            struct adios_dimension_struct * dimensions
+                            = fd->group->vars_written->dimensions->next;
+
+            free (fd->group->vars_written->dimensions);
+            fd->group->vars_written->dimensions = dimensions;
+        }
+
+        if (fd->group->vars_written->min)
+            free (fd->group->vars_written->min);
+        if (fd->group->vars_written->max)
+            free (fd->group->vars_written->max);
+        if (fd->group->vars_written->data)
+            free (fd->group->vars_written->data);
+
+        v = fd->group->vars_written->next;
+        free (fd->group->vars_written);
+        fd->group->vars_written = v;
+    }
+
     if (fd->name)
         free (fd->name);
 

@@ -116,6 +116,23 @@ int adios_write (int64_t fd_p, const char * name, void * var)
         return 1;
     }
 
+    if (v->data)
+    {
+        free (v->data);
+        v->data = 0;
+    }
+
+    if (v->min)
+    {
+        free (v->min);
+        v->min = 0;
+    }
+    
+    if (v->max)
+    {
+        free (v->max);
+        v->max = 0;
+    }
     if (v->dimensions)
     {
         v->data = var;

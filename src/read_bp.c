@@ -1013,7 +1013,7 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
     struct adios_var_payload_struct_v1 var_payload;
     int    i,j,k, idx, timestep;
     int    start_time, stop_time;
-    int    pgoffset, pgcount, start_idx;
+    int    pgoffset, pgcount, start_idx, stop_idx;
     int    ndim, ndim_notime;  
     uint64_t size;
     uint64_t *dims;
@@ -1148,6 +1148,25 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
                 break;
             }
         }
+/*
+printf ("var_root->characteristics_count = %d\n", var_root->characteristics_count);
+printf ("pg offset 0 = %lld\n", fh->gvar_h->pg_offsets[pgoffset]);
+printf ("pg offset 1 = %lld\n", fh->gvar_h->pg_offsets[pgoffset + 1]);
+printf ("var offset 3 = %lld\n", var_root->characteristics[3].offset);
+printf ("var offset 2 = %lld\n", var_root->characteristics[2].offset);
+printf ("var offset 1 = %lld\n", var_root->characteristics[1].offset);
+printf ("pgcount = %lld\n", pgcount);
+*/
+        for (i=var_root->characteristics_count-1;i>-1;i--) {
+            if (   (  var_root->characteristics[i].offset > fh->gvar_h->pg_offsets[pgoffset])
+                && (  (pgoffset + pgcount == fh->mfooter.pgs_count)
+                    ||(  var_root->characteristics[i].offset < fh->gvar_h->pg_offsets[pgoffset + pgcount]))
+               )
+            {
+                stop_idx = i;
+                break;
+            }
+        }
 
         if (start_idx<0) {
             error(err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step",
@@ -1192,7 +1211,9 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
         }
 
          /* READ AN ARRAY VARIABLE */
-        int * idx_table = (int *) malloc (sizeof(int) * pgcount);
+        //int * idx_table = (int *) malloc (sizeof(int) * pgcount);
+        //int * idx_table = (int *) malloc (sizeof(int) * (var_root->characteristics_count - start_idx));
+        int * idx_table = (int *) malloc (sizeof(int) * (stop_idx - start_idx + 1));
 
         uint64_t write_offset = 0;
         int npg = 0;
@@ -1201,7 +1222,11 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
             pgcount = var_root->characteristics_count;
 
         // loop over the list of pgs to read from one-by-one
-        for (idx = 0; idx < pgcount; idx++) {
+//        for (idx = 0; idx < pgcount; idx++) {
+        // FIXME
+printf ("start_idx = %d, stop_idx = %d\n", start_idx, stop_idx);
+        //for (idx = 0; idx < var_root->characteristics_count - start_idx; idx++) {
+        for (idx = 0; idx < stop_idx - start_idx + 1; idx++) {
             int flag;
             datasize = 1;
             nloop = 1;
@@ -1293,7 +1318,7 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
             hole_break = i;
             slice_offset = 0;
             slice_size = 0;
-    
+
             if (hole_break == -1) {
                 /* The complete read happens to be exactly one pg, and the entire pg */
                 /* This means we enter this only once, and npg=1 at the end */
@@ -1320,6 +1345,7 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
                 int isize;
                 uint64_t size_in_dset = 0;
                 uint64_t offset_in_dset = 0;
+                uint64_t offset_in_var = 0;
     
                 isize = offsets[0] + ldims[0];
                 if (start_notime[0] >= offsets[0]) {
@@ -1330,6 +1356,7 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
                         else
                             size_in_dset = count_notime[0];
                         offset_in_dset = start_notime[0] - offsets[0];
+                        offset_in_var = 0;
                     }
                 }
                 else {
@@ -1340,10 +1367,12 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
                     // tail is in
                         size_in_dset = count_notime[0] + start_notime[0] - offsets[0];
                     offset_in_dset = 0;
+                    offset_in_var = offsets[0] - start_notime[0];
                 }
     
                 slice_size = size_in_dset * datasize * size_of_type;
-    
+                write_offset = offset_in_var * datasize * size_of_type;
+
                 if (var_root->characteristics[start_idx + idx].payload_offset > 0) {
                     slice_offset = var_root->characteristics[start_idx + idx].payload_offset 
                                  + offset_in_dset * datasize * size_of_type;
@@ -1358,7 +1387,7 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
                     change_endianness((char *)data + write_offset, slice_size, var_root->type);
                 }
     
-                write_offset +=  slice_size;
+                //write_offset +=  slice_size;
             }
             else 
             {
@@ -1445,7 +1474,7 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
                     var_offset = offset_in_var[i] + var_offset * count_notime[i];
                     dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
                 }
-    
+
                 copy_data (data
                           ,fh->b->buff + fh->b->offset
                           ,0
