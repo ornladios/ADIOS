@@ -60,7 +60,7 @@ program coupling
 
        do j=1,readsize(2)
           do i=1,readsize(1)
-             write (100+rank, '(3i5,f8.1)'), ts,i-1+offset(1),j-1+offset(2),xy(i,j)
+             write (100+rank, '(3i5,f8.1)') ts,i-1+offset(1),j-1+offset(2),xy(i,j)
           enddo
        enddo
        call adios_gclose (gh, ierr)
