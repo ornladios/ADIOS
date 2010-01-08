@@ -15,7 +15,7 @@
 
   </adios-group>
 
-  <method group="writer2D" method="MPI"/>
+  <transport group="writer2D" method="MPI"/>
   <buffer size-MB="4" allocate-time="now"/>
 
 </adios-config>
