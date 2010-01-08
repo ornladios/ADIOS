@@ -31,7 +31,7 @@ void copy_buffer(struct adios_bp_buffer_struct_v1 *dest
 
     memcpy (dest, src, sizeof(struct adios_bp_buffer_struct_v1));
 }
-static int verbose=1;
+static int verbose=0;
 int ncd_gen_name (char *fullname, char *path, char *name) {
     int i;
     char *new_path = strdup (path);
@@ -97,13 +97,13 @@ int ncd_attr_str_ds (int ncid
     }
     retval=nc_inq_attid(ncid,valid,fullname,&attid);
     //printf("\tretval:%d attid=%d\n",retval,attid);
-    printf(DIVIDER);
+    //printf(DIVIDER);
     if (retval == NC_NOERR ) {
-       printf("\tattribute (%s) existed\n", fullname);
+       //printf("\tattribute (%s) existed\n", fullname);
        return 0;
      }
     else
-       printf("\tattribute: %s \n", fullname);
+       //printf("\tattribute: %s \n", fullname);
 
     nc_redef(ncid);
 
@@ -127,7 +127,7 @@ int ncd_attr_str_ds (int ncid
                 type = vars_root->type;
                 if (!(vars_root->characteristics->dims.dims)) { 
                     value = vars_root->characteristics->value; 
-                    printf("\t      var: %s = ", vars_root->var_name);
+                    //printf("\t      var: %s = ", vars_root->var_name);
                 }
                 else {
                     offset = vars_root->characteristics->offset;
@@ -166,7 +166,7 @@ int ncd_attr_str_ds (int ncid
 #endif
     }
     else
-        printf("\t      XML: ");   
+        //printf("\t      XML: ");   
     switch (type) {
          case adios_unsigned_byte:
             retval=nc_put_att_uchar(ncid,valid,fullname,NC_BYTE,len,value);
@@ -175,7 +175,7 @@ int ncd_attr_str_ds (int ncid
             retval=nc_put_att_schar(ncid,valid,fullname,NC_BYTE,len,value);
             break;
          case adios_string:
-            printf("%s\n", (char *) value);    
+            //printf("%s\n", (char *) value);    
             retval=nc_put_att_text(ncid,valid,fullname, strlen(value),value);
             break;
          case adios_short:
@@ -184,7 +184,7 @@ int ncd_attr_str_ds (int ncid
             ERR(retval); 
             break;
          case adios_integer:
-            printf("%d\n", *((int *) value));    
+            //printf("%d\n", *((int *) value));    
             retval=nc_put_att_int(ncid,valid,fullname,NC_INT,len,value);
             break;
          case adios_long:
@@ -237,8 +237,8 @@ int ncd_dataset (int ncid
 	return 0;
     ncd_gen_name (fullname, path, name);
    
-    printf(DIVIDER);
-    printf("\t  dataset: %s\n", fullname);
+    //printf(DIVIDER);
+    //printf("\t  dataset: %s\n", fullname);
 
     val = ptr_var_payload->payload;
     nc_redef(ncid);
@@ -256,7 +256,7 @@ int ncd_dataset (int ncid
     if (dims) {
         for (j = 0; j < maxrank; j++) {
             if (time_flag==adios_flag_yes && time_dimrank >0 ) {
-//		  printf("%d %d\n",time_dimrank,j); 
+//		  //printf("%d %d\n",time_dimrank,j); 
                if (j < time_dimrank)
                    rank = j+1;
                else if(j==time_dimrank)
@@ -338,7 +338,7 @@ int ncd_dataset (int ncid
             * Process dataset which has global bounds with constant dimension value
             ***********************************************************************/
             else if (dims->global_dimension.rank !=0 ) {
-                printf(" \tconstant global_info: %s rank: %d\n",fullname, dimids[rank]);
+                //printf(" \tconstant global_info: %s rank: %d\n",fullname, dimids[rank]);
                 dimids[rank] = dims->global_dimension.rank;
                 if (dims->dimension.var_id!=0 ) {
                     for (i = 0; i < var_dims_count; i++){
@@ -388,12 +388,13 @@ int ncd_dataset (int ncid
                                     time_index = var_dims[i].rank;
          			    count_dims[rank] = 1;
                                     dimids[rank] = var_dims [i].nc_dimid; 
-                                    printf("\tdim[%d]: c(%d):s(%d): dimid=%d (time-index)\n"
+                                    /*printf("\tdim[%d]: c(%d):s(%d): dimid=%d (time-index)\n"
                                           ,rank
                                           ,count_dims[rank]
                                           ,start_dims[rank]
                                           ,dimids[rank]
                                           ); 
+*/
                                 }
                                 else {
                                     start_dims[rank] = 0;
@@ -442,8 +443,8 @@ int ncd_dataset (int ncid
                                                		,*(int *)atts_root->characteristics->value
                                                		,&dimids [rank]); 
 				}
-                                printf("\t local[%d]: c(%d) id(%d)\n"
-                                  ,rank,count_dims[rank], dimids[rank]);
+                                /*printf("\t local[%d]: c(%d) id(%d)\n"
+                                  ,rank,count_dims[rank], dimids[rank]); */
 				break; 
 			    } 
 			    atts_root = atts_root->next;
@@ -527,20 +528,20 @@ int ncd_dataset (int ncid
             retval=nc_put_vara_uchar(ncid,valid,start_dims,count_dims,val);
             break;
         case adios_byte:
-	    printf("write byte test %d %d\n",maxrank,dimids[0]);
+	    //printf("write byte test %d %d\n",maxrank,dimids[0]);
             if ( valid<0) 
                 retval=nc_def_var(ncid,fullname,NC_BYTE,maxrank,dimids,&valid);
             ERR (retval);
-            printf("\t vid=%d\n",valid);
+            //printf("\t vid=%d\n",valid);
             retval=nc_enddef(ncid);
             retval=nc_put_vara_schar(ncid,valid,start_dims,count_dims,val);
             ERR (retval);
-	    printf("write byte test\n");
+	    //printf("write byte test\n");
             break;
         case adios_integer:
             if (valid < 0) {
                retval = nc_def_var (ncid,fullname,NC_INT,maxrank,dimids,&valid);
-               printf("definition done!\n");
+               //printf("definition done!\n");
             } 
             retval = nc_enddef (ncid);
             ERR (retval);
@@ -586,7 +587,7 @@ int ncd_dataset (int ncid
     switch (type) {
         case adios_real:
             if (valid < 0 ) {
-               printf("\t ncd-scalar-real: %d %d %s\n",dimids[0],valid, fullname);
+               //printf("\t ncd-scalar-real: %d %d %s\n",dimids[0],valid, fullname);
                retval=nc_def_var(ncid,fullname,NC_FLOAT,rank,dimids,&valid);
                ERR(retval);
             }
@@ -596,7 +597,7 @@ int ncd_dataset (int ncid
             break;
         case adios_double:
             if (valid < 0 ) {
-               printf("\t ncd-scalar: %d %d %s\n",dimids[0],valid, fullname);
+               //printf("\t ncd-scalar: %d %d %s\n",dimids[0],valid, fullname);
                retval=nc_def_var(ncid,fullname,NC_DOUBLE,rank,dimids,&valid);
                ERR(retval);
                retval=nc_enddef(ncid);
@@ -607,7 +608,7 @@ int ncd_dataset (int ncid
             break;
         case adios_long:
             if (valid < 0 ) {
-               printf("\t ncd-scalar: %d %d %s\n",dimids[0],valid, fullname);
+               //printf("\t ncd-scalar: %d %d %s\n",dimids[0],valid, fullname);
                retval=nc_def_var(ncid,fullname,NC_LONG,rank,dimids,&valid);
                ERR(retval);
             }
@@ -624,7 +625,7 @@ int ncd_dataset (int ncid
             }
             retval=nc_enddef(ncid);
             ERR(retval);
-            printf("\t   scalar: %d\n", *(int *)val);
+            //printf("\t   scalar: %d\n", *(int *)val);
             retval=nc_put_var_int(ncid,valid,val);
             ERR(retval);
             break;
@@ -742,9 +743,9 @@ int main (int argc, char ** argv)
 
         adios_posix_read_process_group (b);
         adios_parse_process_group_header_v1 (b, &pg_header);
-        printf ("*************************************************\n"); 
-        printf ("\tTime Index Name: %s %d\n", pg_header.time_index_name, pg_header.time_index);
-        printf ("*************************************************\n"); 
+        //printf ("*************************************************\n"); 
+        //printf ("\tTime Index Name: %s %d\n", pg_header.time_index_name, pg_header.time_index);
+        //printf ("*************************************************\n"); 
 
         /****************************************
         * Create unlimited time index dimension 
@@ -836,8 +837,8 @@ int main (int argc, char ** argv)
             free (var_dims);
         pg = pg->next;
     }
-    printf (DIVIDER);
-    printf ("End of %s\n", argv[1]);
+    //printf (DIVIDER);
+    //printf ("End of %s\n", argv[1]);
 
     adios_posix_close_internal (b);
     free (b);
