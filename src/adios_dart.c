@@ -128,23 +128,37 @@ void adios_dart_init (const char * parameters,
     
     int index, i;
     char temp[64];
+    int num_peers;
+    int appid;
     
-    index=0;
-    for(i=0; *(parameters+index)!=','; index++,i++ )
-    {
-        temp[i] = *(parameters+index);
-    }
-    temp[i] = 0;
-    //Get peers num info from parameters
-    int num_peers = atoi(temp);
+    if (parameters) {
+        index=0;
+        for(i=0; *(parameters+index)!=',' && *(parameters+index)!=0; index++,i++ )
+        {
+            temp[i] = *(parameters+index);
+        }
+        temp[i] = 0;
 
-    for( index++, i=0; *(parameters+index)!=0; index++,i++ )
-    {
-      temp[i] = *(parameters+index);
-    } 
-    temp[i] = 0;
-    //How to get app id?
-    int appid = atoi(temp);
+        //Get peers num info from parameters
+        if (i > 0)
+            num_peers = atoi(temp);
+        else 
+            num_peers = 1;
+
+        for( index++, i=0; *(parameters+index)!=0; index++,i++ )
+        {
+            temp[i] = *(parameters+index);
+        } 
+        temp[i] = 0;
+        //get app id?
+        if (i > 0)
+            appid = atoi(temp);
+        else
+            appid = 1;
+    } else {
+        num_peers = 1;
+        appid = 1;
+    }
 
     //Init the static data structure
     p->peers = num_peers;
@@ -168,7 +182,7 @@ static void adios_dart_var_to_comm  (const char * comm_name
     {
         int t = *(int *) data;
 
-        if (!comm_name && !strcmp (comm_name, ""))
+        if (!comm_name || !strcmp (comm_name, ""))
         {
             if (!t)
             {
