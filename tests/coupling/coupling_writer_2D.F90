@@ -146,7 +146,7 @@ subroutine writeArrays()
     character(len=256) :: fn
     ! Write out data using ADIOS
 
-    write (fn,'(a,"_",i0,".bp")') trim(filename), ts
+    write (fn,'(a,"_",i3.3,".bp")') trim(filename), ts
     !print '("rank=",i0," file=",A )', rank,  trim(filename)
     call adios_open (adios_handle, "writer2D", fn, "w", group_comm, adios_err)
 

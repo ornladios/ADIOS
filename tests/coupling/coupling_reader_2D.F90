@@ -122,7 +122,7 @@ subroutine readArrays()
     integer*8, dimension(3) :: offset, readsize
     character(len=256)  :: fn
 
-    write (fn,'(a,"_",i0,".bp")') trim(filename), wts
+    write (fn,'(a,"_",i3.3,".bp")') trim(filename), wts
 
     ! Read in data using ADIOS Read API
     call adios_fopen (fh, fn, group_comm, gcnt, adios_err)
@@ -250,7 +250,7 @@ subroutine printArrays()
         writer = mod(ts,nproc)
         if (writer == rank) then
     
-            write (fn, '("reader_",i0,".bp")') ts
+            write (fn, '("reader_",i3.3,".bp")') ts
             call adios_open (adios_handle, "reader2D", fn, "w", self_comm, adios_err)
 #include "gwrite_reader2D.fh"
             ! start streaming from buffer to disk
@@ -261,7 +261,7 @@ subroutine printArrays()
     
         if (dump_text) then
     
-            write (fn, '("reader_",i0,"_",i0,".txt")') ts, rank
+            write (fn, '("reader_",i3.3,"_",i0,".txt")') ts, rank
             open (u, FILE=fn, STATUS='NEW', FORM="FORMATTED")
     
             ! print xyz_bbb
@@ -278,7 +278,7 @@ subroutine printArrays()
         endif
 
     elseif (read_mode ==1) then
-            write (fn, '("reader_",i0,".bp")') ts
+            write (fn, '("reader_",i3.3,".bp")') ts
             call adios_open (adios_handle, "reader2D", fn, "w", group_comm, adios_err)
 #include "gwrite_reader2D.fh"
             ! start streaming from buffer to disk
