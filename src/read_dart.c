@@ -28,11 +28,13 @@
 #include "dmalloc.h"
 #endif
 
-#if 0
+#if 1
 #   define DBG_PRINTF printf
 #else
 #   define DBG_PRINTF(a,...) 
 #endif
+
+#define MAXDARTNAMELEN 128
 
 // DART needs an application ID. Suppose 1 is the writer, so we elect to be 2.
 static const int DART_APPLICATION_ID = 2; 
@@ -123,18 +125,20 @@ ADIOS_FILE * adios_read_dart_fopen (const char * fname, MPI_Comm comm)
     int time_index;
     int err;
     enum ADIOS_DATATYPES time_index_type = adios_integer;
-    DBG_PRINTF("-- %s, rank %d: Get variable %s\n", __func__, ds->mpi_rank, fname);
+    char dart_fname[MAXDARTNAMELEN];
+    snprintf(dart_fname, MAXDARTNAMELEN, "FILE@%s",fname);
+    DBG_PRINTF("-- %s, rank %d: Get variable %s\n", __func__, ds->mpi_rank, dart_fname);
     DBG_PRINTF("   rank %d: call dcg_lock_on_read()\n", ds->mpi_rank);
     dcg_lock_on_read();
-    DBG_PRINTF("   rank %d: dart_get %s\n", ds->mpi_rank, fname);
-    err = adios_read_dart_get(fname, time_index_type, ds, offset, readsize, &time_index);
+    DBG_PRINTF("   rank %d: dart_get %s\n", ds->mpi_rank, dart_fname);
+    err = adios_read_dart_get(dart_fname, time_index_type, ds, offset, readsize, &time_index);
     DBG_PRINTF("   rank %d: call dcg_unlock_on_read()\n", ds->mpi_rank);
     dcg_unlock_on_read();
     if (err) {
-        error(err_file_not_found_error, "Data of '%s' does not exist in DataSpaces\n", fname);
+        error(err_file_not_found_error, "Data of '%s' does not exist in DataSpaces\n", dart_fname);
         return NULL;
     } else {
-        DBG_PRINTF("-- %s, rank %d: data of '%s' exists, time index = %d\n", __func__, ds->mpi_rank, fname, time_index);
+        DBG_PRINTF("-- %s, rank %d: data of '%s' exists, time index = %d\n", __func__, ds->mpi_rank, dart_fname, time_index);
     }
 
 
@@ -362,11 +366,11 @@ int64_t adios_read_dart_read_var (ADIOS_GROUP * gp, const char * varname,
     int64_t total_size;
     int offset[3], readsize[3], Toffset[3], Treadsize[3];
     struct adios_read_dart_data_struct * ds = (struct adios_read_dart_data_struct *) gp->fp->fh;
-    char dart_type_var_name[128]; 
     enum ADIOS_DATATYPES vartype;
     int elemsize;
     int err;
     int i;
+    char dart_name[MAXDARTNAMELEN];
 
     /* DART uses integers for boundaries */
     total_size = 1;
@@ -381,8 +385,8 @@ int64_t adios_read_dart_read_var (ADIOS_GROUP * gp, const char * varname,
     /* Get type information for the variable from DataSpaces:
        type variable name = T<varname>
     */
-    snprintf(dart_type_var_name, 128, "T%s", varname);
-    err = adios_read_dart_get(dart_type_var_name, adios_integer, ds, Toffset, Treadsize, &vartype);
+    snprintf(dart_name, MAXDARTNAMELEN, "TYPE@%s",varname);
+    err = adios_read_dart_get(dart_name, adios_integer, ds, Toffset, Treadsize, &vartype);
     if (err)
         return err;
 

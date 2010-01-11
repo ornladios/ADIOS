@@ -49,6 +49,9 @@
 
 static int adios_dart_initialized = 0;
 static int adios_dart_connected_to_dart = 0;
+#define MAXDARTNAMELEN 128
+static char dart_type_var_name[MAXDARTNAMELEN];
+static char dart_var_name[MAXDARTNAMELEN];
 
 struct adios_DART_data_struct
 {
@@ -317,42 +320,56 @@ void adios_dart_write (struct adios_file_struct * fd
     int var_type_size = (int) adios_get_type_size(v->type, v->data);
     //Get var name
     char * var_name = v->name;
-    char dart_type_var_name[128];
     int  i0 = 0, i4 = 4;
 
     //Get two offset coordinate values
     unsigned int version;
 
     int dims[3]={1,1,1}, lb[3]={0,0,0}, ub[3]={0,0,0}; /* lower and upper bounds for DataSpaces */
-    int index = 0;
+    int ndims = 0;
     struct adios_dimension_struct* var_dimensions = v->dimensions;
     // Calculate lower and upper bounds for each available dimension (up to 3 dims)
-    while( var_dimensions && index < 3)
+    while( var_dimensions && ndims < 3)
     {
-        dims[index] = get_dim_rank_value(&(var_dimensions->dimension), group);
-        lb[index] = get_dim_rank_value(&(var_dimensions->local_offset), group);
-        ub[index] = lb[index] + dims[index] - 1;
+        dims[ndims] = get_dim_rank_value(&(var_dimensions->dimension), group);
+        lb[ndims] = get_dim_rank_value(&(var_dimensions->local_offset), group);
+        ub[ndims] = lb[ndims] + dims[ndims] - 1;
         var_dimensions = var_dimensions->next;
-        index++;
+        ndims++;
     }
 
     /*version = p->time_index; */ /* Add new data as separate to DataSpaces */
     version = 0;                  /* Update/overwrite data in DataSpaces  (we write time_index as a variable at close)*/
-
-    snprintf(dart_type_var_name, 128, "T%s", var_name);
+    
+    if (v->path != NULL && v->path[0] != '\0' && strcmp(v->path,"/")) 
+        snprintf(dart_var_name, MAXDARTNAMELEN, "%s/%s", v->path, v->name);
+    else 
+        snprintf(dart_var_name, MAXDARTNAMELEN, "%s", v->name);
+    snprintf(dart_type_var_name, MAXDARTNAMELEN, "TYPE@%s", dart_var_name);
+    
     
     fprintf(stderr, "var_name=%s, type=%s(%d) elemsize=%d, version=%d, size_x=%d, size_y=%d, size_z=%d, (%d,%d,%d), (%d,%d,%d)\n",
-                         var_name, adios_type_to_string_int(v->type), v->type, var_type_size, version,
+                         dart_var_name, adios_type_to_string_int(v->type), v->type, var_type_size, version,
                          dims[0], dims[1], dims[2], lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
 
     /* Put type info as T<varname>, integer in 0,0,0,0,0,0 position */
     dart_put_(dart_type_var_name, &version, &i4, &i0, &i0, &i0, &i0, &i0, &i0, 
                 &(v->type), strlen(dart_type_var_name)); 
-    /* Flip 1st and 2nd dimension for DataSpaces representation */
-    dart_put_(var_name, &version, &var_type_size, 
-              lb+1, lb+0, lb+2,
-              ub+1, ub+0, ub+2, 
-              data, strlen(var_name));
+
+    if (group->adios_host_language_fortran == adios_flag_yes || ndims == 1) {
+        /* Flip 1st and 2nd dimension for DataSpaces representation
+           for any Fortran writings and for any 1D array*/
+        dart_put_(dart_var_name, &version, &var_type_size, 
+                  lb+1, lb+0, lb+2,
+                  ub+1, ub+0, ub+2, 
+                data, strlen(dart_var_name));
+    } else {
+        /* Keep dimension order in case of C writer of 2-3D arrays for DataSpaces representation */
+        dart_put_(dart_var_name, &version, &var_type_size, 
+                  lb+0, lb+1, lb+2,
+                  ub+0, ub+1, ub+2, 
+                data, strlen(dart_var_name));
+    }
 
 #if 0
     p->n_writes++;
@@ -477,12 +494,14 @@ void adios_dart_close (struct adios_file_struct * fd
         /* ADIOS Read API fopen() checks these variables to see if writing already happened */
         unsigned int version = 0;
         int i4 = 4, i0 = 0;
-        printf("%s: put %s = %d into space\n", __func__, fd->name, p->time_index);
-        dart_put_(fd->name, &version, &i4, &i0, &i0, &i0, &i0, &i0, &i0, 
-                  &(p->time_index), strlen(fd->name)); 
-        printf("%s: put %s = %d into space\n", __func__, fd->group->name, p->time_index);
-        dart_put_(fd->group->name, &version, &i4, &i0, &i0, &i0, &i0, &i0, &i0, 
-                  &(p->time_index), strlen(fd->group->name)); 
+        snprintf(dart_var_name, MAXDARTNAMELEN, "FILE@%s", fd->name);
+        printf("%s: put %s = %d into space\n", __func__, dart_var_name, p->time_index);
+        dart_put_(dart_var_name, &version, &i4, &i0, &i0, &i0, &i0, &i0, &i0, 
+                  &(p->time_index), strlen(dart_var_name)); 
+        snprintf(dart_var_name, MAXDARTNAMELEN, "GROUP@%s", fd->group->name);
+        printf("%s: put %s = %d into space\n", __func__, dart_var_name, p->time_index);
+        dart_put_(dart_var_name, &version, &i4, &i0, &i0, &i0, &i0, &i0, &i0, 
+                  &(p->time_index), strlen(dart_var_name)); 
 
         if (p->sync_at_close) {
             printf("%s: call dart_put_sync()\n", __func__);
