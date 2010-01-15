@@ -136,7 +136,7 @@ ADIOS_FILE * adios_read_bp_fopen (const char * fname, MPI_Comm comm)
 /* This function can be called if user places 
    the wrong sequences of dims for a var 
 */   
-void adios_reset_dimension_order (ADIOS_FILE *fp, int is_fortran)
+void adios_read_bp_reset_dimension_order (ADIOS_FILE *fp, int is_fortran)
 {
     struct BP_FILE * fh = (struct BP_FILE *)(fp->fh);
     struct bp_index_pg_struct_v1 ** root = &(fh->pgs_root);

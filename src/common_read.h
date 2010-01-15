@@ -27,6 +27,7 @@
 int common_read_set_read_method (enum ADIOS_READ_METHOD method);
 ADIOS_FILE * common_read_fopen (const char * fname, MPI_Comm comm);
 int common_read_fclose (ADIOS_FILE *fp);
+void common_read_reset_dimension_order (ADIOS_FILE *fp, int is_fortran);
 ADIOS_GROUP * common_read_gopen (ADIOS_FILE *fp, const char * grpname);
 ADIOS_GROUP * common_read_gopen_byid (ADIOS_FILE *fp, int grpid);
 int common_read_gclose (ADIOS_GROUP *gp);

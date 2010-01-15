@@ -192,6 +192,14 @@ int adios_read_dart_fclose (ADIOS_FILE *fp)
     return 0;
 }
 
+/* This function can be called if user places 
+   the wrong sequences of dims for a var 
+*/
+void adios_read_bp_reset_dimension_order (ADIOS_FILE *fp, int is_fortran)
+{
+    /* unimplemented */
+}
+
 
 ADIOS_GROUP * adios_read_dart_gopen (ADIOS_FILE *fp, const char * grpname)
 {

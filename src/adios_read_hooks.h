@@ -28,6 +28,7 @@ int64_t adios_read_##a##_read_var (ADIOS_GROUP * gp, const char * varname, const
 int64_t adios_read_##a##_read_var_byid (ADIOS_GROUP * gp, int varid, const uint64_t * start, const uint64_t * count, void * data); \
 int adios_read_##a##_get_attr (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type, int * size, void ** data); \
 int adios_read_##a##_get_attr_byid (ADIOS_GROUP * gp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data); \
+void adios_read_##a##_reset_dimension_order (ADIOS_FILE *fp, int is_fortran); \
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -60,6 +61,7 @@ typedef int64_t (* ADIOS_READ_VAR_FN) (ADIOS_GROUP * gp, const char * varname, c
 typedef int64_t (* ADIOS_READ_VAR_BYID_FN) (ADIOS_GROUP * gp, int varid, const uint64_t * start, const uint64_t * count, void * data); 
 typedef int (* ADIOS_GET_ATTR_FN) (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type, int * size, void ** data); 
 typedef int (* ADIOS_GET_ATTR_BYID_FN) (ADIOS_GROUP * gp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data); 
+typedef void (* ADIOS_RESET_DIMENSION_ORDER_FN) (); 
 
 struct adios_read_hooks_struct
 {   
@@ -76,6 +78,7 @@ struct adios_read_hooks_struct
     ADIOS_READ_VAR_BYID_FN  adios_read_var_byid_fn;
     ADIOS_GET_ATTR_FN       adios_get_attr_fn;
     ADIOS_GET_ATTR_BYID_FN  adios_get_attr_byid_fn;
+    ADIOS_RESET_DIMENSION_ORDER_FN adios_reset_dimension_order_fn;
 };
 
 #undef FORWARD_DECLARE

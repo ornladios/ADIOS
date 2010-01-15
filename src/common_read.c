@@ -39,6 +39,7 @@ int common_read_set_read_method(enum ADIOS_READ_METHOD method)
     return retval;
 }
 
+
 int common_read_init(MPI_Comm comm)
 {
     adios_read_hooks_init (&adios_read_hooks); // init the adios_read_hooks_struct if not yet initialized    
@@ -85,6 +86,18 @@ int common_read_fclose (ADIOS_FILE *fp)
     return retval;
 }
 
+void common_read_reset_dimension_order (ADIOS_FILE *fp, int is_fortran)
+{
+    struct common_read_internals_struct * internals;
+
+    adios_errno = 0;
+    if (fp) {
+        internals = (struct common_read_internals_struct *) fp->internal_data;
+        adios_read_hooks[internals->method].adios_reset_dimension_order_fn (fp);
+    } else {
+        error( err_invalid_file_pointer, "Invalid file pointer at adios_reset_dimension_order()");
+    }
+}
 
 ADIOS_GROUP * common_read_gopen (ADIOS_FILE *fp, const char * grpname)
 {

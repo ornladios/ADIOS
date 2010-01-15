@@ -96,7 +96,7 @@ void FC_FUNC_(adios_reset_dimension_order, ADIOS_RESET_DIMENSION_ORDER)
          int * flag)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
-    adios_reset_dimension_order(afp, *flag);
+    common_read_reset_dimension_order(afp, *flag);
 }
 
 void FC_FUNC_(adios_fclose, ADIOS_FCLOSE) (int64_t * fp, int * err)
