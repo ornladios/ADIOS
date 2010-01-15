@@ -529,9 +529,9 @@ void adios_dart_finalize (int mype, struct adios_method_struct * method)
     if (adios_dart_connected_to_dart)
     {
         //TODO
-        printf("%s: call dart_barrier()\n", __func__);
+        printf("%s: call dart_barrier(), rank=%d\n", __func__,mype);
         dart_barrier_();
-        printf("%s: call dart_finalize()\n", __func__);
+        printf("%s: call dart_finalize(), rank=%d\n", __func__,mype);
         dart_finalize_();
 
         adios_dart_connected_to_dart = 0;
