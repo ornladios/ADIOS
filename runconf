@@ -59,11 +59,11 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
     # use the two lines below for openmpi
     #export CC=mpicc
     #export FC=mpif90
-    CFLAGS="-fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/jaguar.$TARGET \
+    CFLAGS="-fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/jaguar.noxml \
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
-        --with-research-transports \
-        --with-dart=/ccs/proj/e2e/dart
+        --with-research-transports 
+        #--with-dart=/ccs/proj/e2e/dart
         #--with-hdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par \
         #--with-netcdf=/sw/xt/netcdf/3.6.2/sles9.2_pgi7.0.7
         #--with-hdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" 

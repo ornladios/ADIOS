@@ -37,9 +37,9 @@ void FC_FUNC_(adios_init, adios_INIT) (const char * config, int * err, int confi
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adios_init_local, adios_INIT_LOCAL) (int * err)
+void FC_FUNC_(adios_init_noxml, adios_INIT_LOCAL) (int * err)
 {
-    *err = common_adios_init_local ();
+    *err = common_adios_init_noxml ();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -49,10 +49,10 @@ void FC_FUNC_(adios_finalize, adios_FINALIZE) (int * mype, int * err)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adios_allocate_buffer, adios_ALLOCATE_BUFFER) (int * err)
+void FC_FUNC_(adios_allocate_buffer, adios_ALLOCATE_BUFFER) (int *sizeMB, int * err)
 {
     //FIX
-    *err = common_adios_allocate_buffer (0, 100);
+    *err = common_adios_allocate_buffer (1 /*NOW*/, *sizeMB);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -33,9 +33,9 @@ int adios_init (const char * config)
 
 ///////////////////////////////////////////////////////////////////////////////
 // all XML file pieces will be provided by another series of calls
-int adios_init_local ()
+int adios_init_noxml ()
 {
-    return common_adios_init_local ();
+    return common_adios_init_noxml ();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -23,7 +23,7 @@ int common_adios_init (const char * config);
 // setup, but all XML file pieces will be provided by another series of calls
 // yet to be worked out
 // TODO
-int common_adios_init_local (void);
+int common_adios_init_noxml (void);
 
 int common_adios_finalize (int mype);
 

@@ -38,7 +38,7 @@ int main (int argc, char ** argv)
 
 	strcpy (filename, "adios_global.bp");
 
-	adios_init_local ();
+	adios_init_noxml ();
         adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
 
         int64_t       m_adios_group;

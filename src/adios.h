@@ -52,7 +52,7 @@ int adios_stop_calculation (void);
 int adios_close (int64_t fd_p);
 
 // ADIOS No-XML API's
-int adios_init_local (void);
+int adios_init_noxml (void);
 
 // To allocate ADIOS buffer
 int adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
