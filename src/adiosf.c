@@ -412,7 +412,7 @@ void FC_FUNC_(adios_define_var, adios_DEFINE_VAR)
 // adios_common_define_attribute is in adios_internals.c
 void FC_FUNC_(adios_define_attribute, adios_DEFINE_ATTRIBUTE) 
     (int64_t * group, const char * name
-    ,const char * path, int type, const char * value
+    ,const char * path, int * type, const char * value
     ,const char * var, int * err
     ,int name_size, int path_size, int value_size
     ,int var_size
@@ -430,7 +430,7 @@ void FC_FUNC_(adios_define_attribute, adios_DEFINE_ATTRIBUTE)
 
     if (buf1 != 0 && buf2 != 0 && buf3 != 0 && buf4 != 0) {
         *err = adios_common_define_attribute (*group, buf1, buf2
-                                             ,(enum ADIOS_DATATYPES) type, buf3
+                                             ,(enum ADIOS_DATATYPES) *type, buf3
                                              ,buf4
                                              );
 
