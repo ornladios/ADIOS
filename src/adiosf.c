@@ -162,6 +162,24 @@ void FC_FUNC_(adios_write, adios_WRITE)
         return;
     }
 
+    if (v->data)
+    {
+        free (v->data);
+        v->data = 0;
+    }
+
+    if (v->min)
+    {
+        free (v->min);
+        v->min = 0;
+    }
+
+    if (v->max)
+    {
+        free (v->max);
+        v->max = 0;
+    }
+
     if (v->dimensions)
     {
         v->data = var;
@@ -222,6 +240,11 @@ void FC_FUNC_(adios_write, adios_WRITE)
     }
 
     *err = common_adios_write (fd, v, var);
+    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
+    {
+        adios_copy_var_written (&fd->group->vars_written, v, fd);
+    }
+
     free (buf1);
 }
 
@@ -337,29 +360,20 @@ void FC_FUNC_(adios_close, adios_CLOSE) (int64_t * fd_p, int * err)
 // group a list of vars into a composite group
 void FC_FUNC_(adios_declare_group, adios_DECLARE_GROUP) 
     (int64_t * id, const char * name
-    ,const char * coordination_comm
-    ,const char * coordination_var
     ,const char * time_index, int * err
-    ,int name_size, int coordination_comm_size
-    ,int coordination_var_size, int time_index_size
+    ,int name_size, int time_index_size
     )
 {
     char * buf1 = 0;
     char * buf2 = 0;
-    char * buf3 = 0;
-    char * buf4 = 0;
 
     buf1 = futils_fstr_to_cstr (name, name_size);
-    buf2 = futils_fstr_to_cstr (coordination_comm, coordination_comm_size);
-    buf3 = futils_fstr_to_cstr (coordination_var, coordination_var_size);
-    buf4 = futils_fstr_to_cstr (time_index, time_index_size);
+    buf2 = futils_fstr_to_cstr (time_index, time_index_size);
 
-    if (buf1 != 0 && buf2 != 0 && buf3 != 0 && buf4 != 0) {
-        *err = adios_common_declare_group (id, buf1, adios_flag_yes, buf2, buf3, buf4);
+    if (buf1 != 0 && buf2 != 0) {
+        *err = adios_common_declare_group (id, buf1, adios_flag_yes, "", "", buf2);
         free (buf1);
         free (buf2);
-        free (buf3);
-        free (buf4);
     } else {
         *err = -adios_errno;
     }
@@ -390,7 +404,7 @@ void FC_FUNC_(adios_define_var, adios_DEFINE_VAR)
     buf4 = futils_fstr_to_cstr (global_dimensions, global_dimensions_size);
     buf5 = futils_fstr_to_cstr (local_offsets, local_offsets_size);
 
-    if (buf1 != 0 && buf2 != 0 && buf3 != 0 && buf4 != 0 && buf5 != 0) {
+    if (buf1 != 0 && buf2 != 0) {
         *err = adios_common_define_var (*group_id, buf1, buf2
                                        ,(enum ADIOS_DATATYPES) *type
                                        ,buf3, buf4, buf5
@@ -444,30 +458,26 @@ void FC_FUNC_(adios_define_attribute, adios_DEFINE_ATTRIBUTE)
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_select_method is in adios_internals_mxml.c
 void FC_FUNC_(adios_select_method, adios_SELECT_METHOD) 
-    (int * priority, const char * method
-    ,const char * parameters, const char * group
-    ,const char * base_path, int * iters, int * err
-    ,int method_size, int parameters_size
-    ,int group_size, int base_path_size
+    (int64_t * group, const char * method
+    ,const char * parameters, const char * base_path
+    ,int * err, int method_size, int parameters_size
+    ,int base_path_size
     )
 {
     char * buf1 = 0;
     char * buf2 = 0;
     char * buf3 = 0;
-    char * buf4 = 0;
-
     buf1 = futils_fstr_to_cstr (method, method_size);
     buf2 = futils_fstr_to_cstr (parameters, parameters_size);
-    buf3 = futils_fstr_to_cstr (group, group_size);
-    buf4 = futils_fstr_to_cstr (base_path, base_path_size);
+    buf3 = futils_fstr_to_cstr (base_path, base_path_size);
 
-    if (buf1 != 0 && buf2 != 0 && buf3 != 0 && buf4 != 0) {
-        *err = adios_common_select_method (*priority, buf1, buf2, buf3, buf4,*iters);
+    if (buf1 != 0 && buf2 != 0 && buf3 != 0) {
+        struct adios_group_struct * g = (struct adios_group_struct *) (* group);
+        *err = adios_common_select_method (0, buf1, buf2, g->name, buf3, 0);
 
         free (buf1);
         free (buf2);
         free (buf3);
-        free (buf4);
     } else {
         *err = -adios_errno;
     }
