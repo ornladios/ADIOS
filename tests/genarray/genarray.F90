@@ -28,7 +28,7 @@ module genarray_comm
     integer :: gndx, gndy, gndz  ! size of the global array
     integer :: offx,offy,offz    ! offsets of local array in the global array
 
-    integer, dimension(:,:,:), allocatable :: int_xyz
+    real*8, dimension(:,:,:), allocatable :: double_xyz
 
     ! MPI variables
     integer :: group_comm
@@ -39,8 +39,11 @@ module genarray_comm
     character (len=200) :: group
     character (len=200) :: filename
     !character (len=6)   :: nprocstr
-    integer*8 :: handle, total_size, group_size
+    integer*8 :: handle, total_size, group_size, adios_totalsize
     integer   :: err
+
+    real*8 :: start_time, end_time, total_time,gbs,sz
+ 
 
 end module genarray_comm
 
@@ -55,7 +58,7 @@ program genarray
     call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
     call MPI_Comm_size (group_comm, nproc , ierr)
 
-    call adios_init ("genarray.xml", ierr)
+    call adios_init ("genarray3d.xml", ierr)
     !call MPI_Barrier (group_comm, ierr)
 
     call processArgs()
@@ -81,7 +84,18 @@ program genarray
     call determineGlobalSize()
     call determineOffsets()
     call generateLocalArray()
+
+    call MPI_BARRIER(MPI_COMM_WORLD,err) 
+    start_time = MPI_WTIME()
     call writeArray()
+    call MPI_BARRIER(MPI_COMM_WORLD,err) 
+    end_time = MPI_WTIME()
+    total_time = end_time - start_time
+    sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
+    gbs = sz/total_time
+
+    !if (rank==0) write(6,*) total_time
+    if (rank==0) write(6,'(a10,d12.2,2x,d12.2,2x,d12.3)') outputfile,sz,total_time,gbs
 
     ! Terminate
     call MPI_Barrier (MPI_COMM_WORLD, ierr)
@@ -130,8 +144,6 @@ subroutine determineOffsets()
         offx = posx * ndx
         offy = posy * ndy
         offz = posz * ndz
-        print '("rank=",i0," pos: ",i0,",",i0,",",i0," offset: ",i0,",",i0,","i0)',  &
-                rank, posx, posy, posz, offx, offy, offz
     else
        ! have to read from file
        print *, "To be implemented: read sizes from file 3"
@@ -145,11 +157,11 @@ subroutine generateLocalArray()
     use genarray_comm
     implicit none
     integer :: i,j,k
-    allocate( int_xyz(1:ndx, 1:ndy, 1:ndz) )
+    allocate( double_xyz(1:ndx, 1:ndy, 1:ndz) )
     do k=1,ndz
         do j=1,ndy
             do i=1,ndx
-                int_xyz(i,j,k) = rank 
+                double_xyz(i,j,k) = 1.0d0*rank 
             enddo
         enddo
     enddo
@@ -160,38 +172,13 @@ end subroutine generateLocalArray
 subroutine writeArray()
     use genarray_comm
     implicit none
-    ! Write out data using ADIOS
+    integer*8 adios_handle, adios_groupsize, adios_err
+
     group = "genarray"
-    !  calculate how much we write from this processor
-    group_size = 4 * 13              + &  ! X,Y,Z, nproc, all size_ and offs_ integers
-                 4 * ndx * ndy * ndz      ! int_xyz
+    call adios_open (adios_handle, group, outputfile, "w", group_comm, err)
+#include "gwrite_genarray.fh"
+    call adios_close (adios_handle, adios_err)
 
-    !print '("rank=",i0," group=",A," file=",A," group_size=",i0)', rank, trim(group), &
-    !    trim(outputfile), group_size
-    call adios_open (handle, group, outputfile, "w", group_comm, err)
-    call adios_group_size (handle, group_size, total_size, err)
-    !print '("rank=",i0," total_size=",i0," err=",i0)', rank, total_size, err
-
-    ! write dimensions and nproc 
-    call adios_write (handle, "X", gndx, err)
-    call adios_write (handle, "Y", gndy, err)
-    call adios_write (handle, "Z", gndz, err)
-    call adios_write (handle, "npx", npx, err)
-    call adios_write (handle, "npy", npy, err)
-    call adios_write (handle, "npz", npz, err)
-    call adios_write (handle, "nproc", nproc, err)
-
-    call adios_write (handle, "size_x", ndx, err)
-    call adios_write (handle, "size_y", ndy, err)
-    call adios_write (handle, "size_z", ndz, err)
-    call adios_write (handle, "offs_x", offx, err) 
-    call adios_write (handle, "offs_y", offy, err)
-    call adios_write (handle, "offs_z", offz, err)
-    call adios_write (handle, "int_xyz", int_xyz, err) 
-
-    ! start streaming from buffer to disk
-    call adios_close (handle, err)
-    print '("rank=",i0,": write completed")', rank
 end subroutine writeArray
 
 
