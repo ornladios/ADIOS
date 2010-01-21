@@ -8,6 +8,10 @@ noinst_PROGRAMS=genarray genarray2D
 genarray_SOURCES = genarray.F90
 genarray_LDFLAGS = $(MXML_LDFLAGS)
 genarray_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
+if HAVE_NETCDF
+genarray_LDADD += $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+genarray_LDFLAGS += $(NETCDF_LDFLAGS)
+endif
 if HAVE_PHDF5
 genarray_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 genarray_LDFLAGS += $(PHDF5_LDFLAGS)
@@ -21,6 +25,10 @@ endif
 genarray2D_SOURCES = genarray2D.F90
 genarray2D_LDFLAGS = $(MXML_LDFLAGS)
 genarray2D_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
+if HAVE_NETCDF
+genarray2D_LDADD += $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+genarray2D_LDFLAGS += $(NETCDF_LDFLAGS)
+endif
 if HAVE_PHDF5
 genarray2D_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 genarray2D_LDFLAGS += $(PHDF5_LDFLAGS)

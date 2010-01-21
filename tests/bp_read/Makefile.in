@@ -40,18 +40,20 @@ host_triplet = @host@
 @BUILD_FORTRAN_FALSE@	bp_read_c$(EXEEXT)
 @BUILD_FORTRAN_TRUE@noinst_PROGRAMS = genbp$(EXEEXT) \
 @BUILD_FORTRAN_TRUE@	bp_read_f$(EXEEXT) bp_read_c$(EXEEXT)
-@HAVE_PHDF5_TRUE@am__append_1 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_2 = $(PHDF5_LDFLAGS)
-@HAVE_DART_TRUE@am__append_3 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_4 = $(DART_LIBS)
-@BUILD_FORTRAN_TRUE@@HAVE_DMALLOC_TRUE@am__append_5 = $(DMALLOC_LDFLAGS)
-@BUILD_FORTRAN_TRUE@@HAVE_DMALLOC_TRUE@am__append_6 = -ldmalloc
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__append_7 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__append_8 = $(DART_LIBS)
-@HAVE_DMALLOC_TRUE@am__append_9 = $(DMALLOC_LDFLAGS)
-@HAVE_DMALLOC_TRUE@am__append_10 = -ldmalloc
-@HAVE_DART_TRUE@am__append_11 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_12 = $(DART_LIBS)
+@HAVE_NETCDF_TRUE@am__append_1 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_2 = $(NETCDF_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_3 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_4 = $(PHDF5_LDFLAGS)
+@HAVE_DART_TRUE@am__append_5 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_6 = $(DART_LIBS)
+@BUILD_FORTRAN_TRUE@@HAVE_DMALLOC_TRUE@am__append_7 = $(DMALLOC_LDFLAGS)
+@BUILD_FORTRAN_TRUE@@HAVE_DMALLOC_TRUE@am__append_8 = -ldmalloc
+@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__append_9 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__append_10 = $(DART_LIBS)
+@HAVE_DMALLOC_TRUE@am__append_11 = $(DMALLOC_LDFLAGS)
+@HAVE_DMALLOC_TRUE@am__append_12 = -ldmalloc
+@HAVE_DART_TRUE@am__append_13 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_14 = $(DART_LIBS)
 subdir = tests/bp_read
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -88,12 +90,16 @@ bp_read_f_OBJECTS = $(am_bp_read_f_OBJECTS)
 @BUILD_FORTRAN_TRUE@	$(am__DEPENDENCIES_3)
 am_genbp_OBJECTS = genbp-genbp.$(OBJEXT)
 genbp_OBJECTS = $(am_genbp_OBJECTS)
-@HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 =  \
+@HAVE_NETCDF_TRUE@am__DEPENDENCIES_4 =  \
+@HAVE_NETCDF_TRUE@	$(top_builddir)/src/libadios_nc4.a \
+@HAVE_NETCDF_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_PHDF5_TRUE@am__DEPENDENCIES_5 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
 genbp_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(top_builddir)/src/libadiosread.a \
-	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_2)
+	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_5) \
+	$(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -276,17 +282,18 @@ AUTOMAKE_OPTIONS = no-dependencies
 
 # read_coords read_phi read_parts_global read_gena read_gena_pncd read_pixie_all
 genbp_SOURCES = genbp.c
-genbp_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2) $(am__append_3)
+genbp_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2) $(am__append_4) \
+	$(am__append_5)
 genbp_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(top_builddir)/src/libadiosread.a $(am__append_1) \
-	$(am__append_4)
+	$(am__append_3) $(am__append_6)
 @HAVE_DART_TRUE@genbp_CPPFLAGS = $(DART_CPPFLAGS)
 @BUILD_FORTRAN_TRUE@bp_read_f_SOURCES = bp_read_f.F90
-@BUILD_FORTRAN_TRUE@bp_read_f_LDFLAGS = $(am__append_5) \
-@BUILD_FORTRAN_TRUE@	$(am__append_7)
+@BUILD_FORTRAN_TRUE@bp_read_f_LDFLAGS = $(am__append_7) \
+@BUILD_FORTRAN_TRUE@	$(am__append_9)
 @BUILD_FORTRAN_TRUE@bp_read_f_LDADD =  \
 @BUILD_FORTRAN_TRUE@	$(top_builddir)/src/libadiosreadf.a \
-@BUILD_FORTRAN_TRUE@	$(am__append_6) $(am__append_8)
+@BUILD_FORTRAN_TRUE@	$(am__append_8) $(am__append_10)
 @BUILD_FORTRAN_TRUE@@HAVE_DMALLOC_TRUE@bp_read_f_CFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
 @BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@bp_read_f_CPPFLAGS = $(DART_CPPFLAGS)
 
@@ -323,9 +330,9 @@ genbp_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 #read_gena_pncd_LDFLAGS += $(PHDF5_LDFLAGS)
 #endif
 bp_read_c_SOURCES = bp_read_c.c
-bp_read_c_LDFLAGS = $(am__append_9) $(am__append_11)
-bp_read_c_LDADD = $(top_builddir)/src/libadiosread.a $(am__append_10) \
-	$(am__append_12)
+bp_read_c_LDFLAGS = $(am__append_11) $(am__append_13)
+bp_read_c_LDADD = $(top_builddir)/src/libadiosread.a $(am__append_12) \
+	$(am__append_14)
 @HAVE_DMALLOC_TRUE@bp_read_c_CFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
 @HAVE_DART_TRUE@bp_read_c_CPPFLAGS = $(DART_CPPFLAGS)
 FCLINK = \

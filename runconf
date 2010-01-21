@@ -50,17 +50,23 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
     module unload PrgEnv-pgi
     module unload PrgEnv-intel
     module unload PrgEnv-cray
+    module unload xt-papi
     #module unload xtpe-quadcore
     TARGET=pgi
     module load PrgEnv-$TARGET
-    module load netcdf/3.6.2
-    module load hdf5/1.6.8
-    module load szip/2.1
+    module load netcdf-hdf5parallel
+    module load szip
+    module load xt-papi
+    ## the netcdf-hdf5parallel module only sets NETCDF_PARALLEL_VERSION.
+    ## /opt/cray/xt-asyncpe/3.2/bin/linux-f90 only checks NETCDF_VERSION.
+    ## set NETCDF_VERSION here so that configure can complete.
+    export NETCDF_VERSION=$NETCDF_PARALLEL_VERSION
     # use the two lines below for openmpi
     #export CC=mpicc
     #export FC=mpif90
     CFLAGS="-fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/jaguar.$TARGET \
         --enable-dependency-tracking \
+        --with-hdf5-libdir="/ -lsz -lz" \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
         --with-research-transports \
         --with-dart=/ccs/proj/e2e/dart
@@ -157,6 +163,20 @@ elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
         #--with-hdf5=/usr/local/hdf5-serial\
         #--with-phdf5=/usr/local \
         #--with-netcdf=/usr 
+
+elif [ `hostname | cut -c 1-6` == "tomato" ]; then
+
+    #########################
+    # Todd's ubuntu laptop #
+    #########################
+    echo "Configure on UBUNTU"
+    export CC=mpicc
+    ./configure --prefix=/home/thkorde/local \
+        --enable-dependency-tracking \
+        --with-mxml=/home/thkorde/local \
+        --with-phdf5=/home/thkorde/local \
+        --with-hdf5=/home/thkorde/local \
+        --with-netcdf=/home/thkorde/local
 
 else
     echo "Could not determine what machine is this"

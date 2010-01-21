@@ -37,14 +37,18 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = arrays_write$(EXEEXT) arrays_read$(EXEEXT)
-@HAVE_PHDF5_TRUE@am__append_1 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_3 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_4 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-@HAVE_DART_TRUE@am__append_5 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_6 = $(DART_LIBS)
-@HAVE_DART_TRUE@am__append_7 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_8 = $(DART_LIBS)
+@HAVE_NETCDF_TRUE@am__append_1 = $(NETCDF_LDFLAGS)
+@HAVE_NETCDF_TRUE@am__append_2 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_3 = $(NETCDF_LDFLAGS)
+@HAVE_NETCDF_TRUE@am__append_4 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_PHDF5_TRUE@am__append_5 = $(PHDF5_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_6 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_7 = $(PHDF5_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_8 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_DART_TRUE@am__append_9 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_10 = $(DART_LIBS)
+@HAVE_DART_TRUE@am__append_11 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_12 = $(DART_LIBS)
 subdir = examples/C/arrays
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -66,18 +70,21 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_arrays_read_OBJECTS = arrays_read-arrays_read.$(OBJEXT)
 arrays_read_OBJECTS = $(am_arrays_read_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
+@HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 =  \
+@HAVE_NETCDF_TRUE@	$(top_builddir)/src/libadios_nc4.a \
+@HAVE_NETCDF_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_PHDF5_TRUE@am__DEPENDENCIES_3 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
-@HAVE_DART_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
+@HAVE_DART_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
 arrays_read_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3)
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4)
 am_arrays_write_OBJECTS = arrays_write-arrays_write.$(OBJEXT)
 arrays_write_OBJECTS = $(am_arrays_write_OBJECTS)
 arrays_write_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3)
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -251,12 +258,14 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 arrays_write_SOURCES = arrays_write.c
 arrays_write_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_2) $(am__append_6)
-arrays_write_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) $(am__append_5)
+	$(am__append_2) $(am__append_6) $(am__append_10)
+arrays_write_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) $(am__append_5) \
+	$(am__append_9)
 arrays_read_SOURCES = arrays_read.c
 arrays_read_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_4) $(am__append_8)
-arrays_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3) $(am__append_7)
+	$(am__append_4) $(am__append_8) $(am__append_12)
+arrays_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3) $(am__append_7) \
+	$(am__append_11)
 @HAVE_DART_TRUE@arrays_write_CPPFLAGS = $(DART_CPPFLAGS)
 @HAVE_DART_TRUE@arrays_read_CPPFLAGS = $(DART_CPPFLAGS)
 CLEANFILES = *.bp

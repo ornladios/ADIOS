@@ -38,12 +38,14 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = adios_globaltime$(EXEEXT) \
 	adios_read_globaltime$(EXEEXT)
-@HAVE_PHDF5_TRUE@am__append_1 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_2 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-@HAVE_DART_TRUE@am__append_3 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_4 = $(DART_LIBS)
+@HAVE_NETCDF_TRUE@am__append_1 = $(NETCDF_LDFLAGS)
+@HAVE_NETCDF_TRUE@am__append_2 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_PHDF5_TRUE@am__append_3 = $(PHDF5_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_4 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 @HAVE_DART_TRUE@am__append_5 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
 @HAVE_DART_TRUE@am__append_6 = $(DART_LIBS)
+@HAVE_DART_TRUE@am__append_7 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_8 = $(DART_LIBS)
 subdir = examples/C/global-array-time
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -66,19 +68,22 @@ am_adios_globaltime_OBJECTS =  \
 	adios_globaltime-adios_globaltime.$(OBJEXT)
 adios_globaltime_OBJECTS = $(am_adios_globaltime_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
+@HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 =  \
+@HAVE_NETCDF_TRUE@	$(top_builddir)/src/libadios_nc4.a \
+@HAVE_NETCDF_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_PHDF5_TRUE@am__DEPENDENCIES_3 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
-@HAVE_DART_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
+@HAVE_DART_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
 adios_globaltime_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3)
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4)
 am_adios_read_globaltime_OBJECTS =  \
 	adios_read_globaltime-adios_read_globaltime.$(OBJEXT)
 adios_read_globaltime_OBJECTS = $(am_adios_read_globaltime_OBJECTS)
 adios_read_globaltime_DEPENDENCIES =  \
 	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_3)
+	$(am__DEPENDENCIES_4)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -253,13 +258,13 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 adios_globaltime_SOURCES = adios_globaltime.c
 adios_globaltime_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_2) $(am__append_4)
+	$(am__append_2) $(am__append_4) $(am__append_6)
 adios_globaltime_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) \
-	$(am__append_3)
+	$(am__append_3) $(am__append_5)
 adios_read_globaltime_SOURCES = adios_read_globaltime.c
 adios_read_globaltime_LDADD = $(top_builddir)/src/libadiosread.a \
-	$(MXML_LIBS) $(am__append_6)
-adios_read_globaltime_LDFLAGS = $(MXML_LDFLAGS) $(am__append_5)
+	$(MXML_LIBS) $(am__append_8)
+adios_read_globaltime_LDFLAGS = $(MXML_LDFLAGS) $(am__append_7)
 @HAVE_DART_TRUE@adios_globaltime_CPPFLAGS = $(DART_CPPFLAGS)
 @HAVE_DART_TRUE@adios_read_globaltime_CPPFLAGS = $(DART_CPPFLAGS)
 CLEANFILES = *.bp

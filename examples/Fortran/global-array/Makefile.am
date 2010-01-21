@@ -9,6 +9,10 @@ adios_global_SOURCES = adios_global.F90
 adios_global_LDADD = $(top_builddir)/src/libadiosf.a 
 adios_global_LDFLAGS = $(MXML_LDFLAGS)
 adios_global_LDADD += $(MXML_LIBS)
+if HAVE_NETCDF
+adios_global_LDFLAGS += $(NETCDF_LDFLAGS)
+adios_global_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+endif
 if HAVE_PHDF5
 adios_global_LDFLAGS += $(PHDF5_LDFLAGS)
 adios_global_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)

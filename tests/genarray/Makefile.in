@@ -37,14 +37,18 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = genarray$(EXEEXT) genarray2D$(EXEEXT)
-@HAVE_PHDF5_TRUE@am__append_1 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_2 = $(PHDF5_LDFLAGS)
-@HAVE_DART_TRUE@am__append_3 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_4 = $(DART_LIBS)
-@HAVE_PHDF5_TRUE@am__append_5 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_6 = $(PHDF5_LDFLAGS)
-@HAVE_DART_TRUE@am__append_7 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_8 = $(DART_LIBS)
+@HAVE_NETCDF_TRUE@am__append_1 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_2 = $(NETCDF_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_3 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_4 = $(PHDF5_LDFLAGS)
+@HAVE_DART_TRUE@am__append_5 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_6 = $(DART_LIBS)
+@HAVE_NETCDF_TRUE@am__append_7 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_8 = $(NETCDF_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_9 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_10 = $(PHDF5_LDFLAGS)
+@HAVE_DART_TRUE@am__append_11 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_12 = $(DART_LIBS)
 subdir = tests/genarray
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -66,18 +70,21 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_genarray_OBJECTS = genarray-genarray.$(OBJEXT)
 genarray_OBJECTS = $(am_genarray_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_PHDF5_TRUE@am__DEPENDENCIES_2 =  \
+@HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 =  \
+@HAVE_NETCDF_TRUE@	$(top_builddir)/src/libadios_nc4.a \
+@HAVE_NETCDF_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_PHDF5_TRUE@am__DEPENDENCIES_3 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
-@HAVE_DART_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
+@HAVE_DART_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
 genarray_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3)
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4)
 am_genarray2D_OBJECTS = genarray2D-genarray2D.$(OBJEXT)
 genarray2D_OBJECTS = $(am_genarray2D_OBJECTS)
 genarray2D_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3)
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -248,14 +255,16 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 genarray_SOURCES = genarray.F90
-genarray_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2) $(am__append_3)
+genarray_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2) $(am__append_4) \
+	$(am__append_5)
 genarray_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
-	$(am__append_1) $(am__append_4)
+	$(am__append_1) $(am__append_3) $(am__append_6)
 @HAVE_DART_TRUE@genarray_CPPFLAGS = $(DART_CPPFLAGS)
 genarray2D_SOURCES = genarray2D.F90
-genarray2D_LDFLAGS = $(MXML_LDFLAGS) $(am__append_6) $(am__append_7)
+genarray2D_LDFLAGS = $(MXML_LDFLAGS) $(am__append_8) $(am__append_10) \
+	$(am__append_11)
 genarray2D_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
-	$(am__append_5) $(am__append_8)
+	$(am__append_7) $(am__append_9) $(am__append_12)
 @HAVE_DART_TRUE@genarray2D_CPPFLAGS = $(DART_CPPFLAGS)
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \

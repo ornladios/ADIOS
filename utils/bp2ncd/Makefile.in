@@ -64,6 +64,7 @@ am_bp2ncd_OBJECTS = bp2ncd-bp2ncd.$(OBJEXT)
 bp2ncd_OBJECTS = $(am_bp2ncd_OBJECTS)
 am__DEPENDENCIES_1 =
 bp2ncd_DEPENDENCIES = $(top_builddir)/src/libadios_internal_nompi.a \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
@@ -240,9 +241,10 @@ bp2ncd_SOURCES = bp2ncd.c
 
 # change these to use proper autoconf settings
 bp2ncd_LDFLAGS = $(NETCDF_LDFLAGS) $(am__append_2)
-bp2ncd_CPPFLAGS = -D_NOMPI $(NETCDF_CPPFLAGS) $(am__append_1)
+bp2ncd_CPPFLAGS = -D_NOMPI $(NETCDF_CPPFLAGS) $(PHDF5_CPPFLAGS) \
+	$(am__append_1)
 bp2ncd_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
-	$(NETCDF_LIBS) $(am__append_3)
+	$(NETCDF_LIBS) $(PHDF5_LIBS) $(HDF5_LDFLAGS) $(am__append_3)
 EXTRA_DIST = bp2ncd.h
 all: all-am
 

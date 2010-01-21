@@ -15,6 +15,12 @@ arrays_read_LDADD = $(top_builddir)/src/libadiosf.a
 arrays_read_LDFLAGS = $(MXML_LDFLAGS)
 arrays_read_LDADD += $(MXML_LIBS)
 
+if HAVE_NETCDF
+arrays_write_LDFLAGS += $(NETCDF_LDFLAGS)
+arrays_write_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+arrays_read_LDFLAGS += $(NETCDF_LDFLAGS)
+arrays_read_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+endif
 if HAVE_PHDF5
 arrays_write_LDFLAGS += $(PHDF5_LDFLAGS)
 arrays_write_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)

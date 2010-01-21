@@ -60,8 +60,19 @@ libadiosf_a_SOURCES += adios_phdf5.c
 endif
 endif
 
-libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS) $(DART_CPPFLAGS)
-libadiosf_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS) $(DART_CPPFLAGS)
+if HAVE_NETCDF
+lib_LIBRARIES += libadios_nc4.a
+libadios_nc4_a_SOURCES = adios_nc4.c
+libadios_a_SOURCES += adios_nc4.c 
+NETCDF_CPPFLAGS += -DNC4
+libadios_nc4_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(NETCDF_CPPFLAGS)
+if BUILD_FORTRAN
+libadiosf_a_SOURCES += adios_nc4.c 
+endif
+endif
+
+libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)  $(NETCDF_CPPFLAGS) $(DART_CPPFLAGS)  # -DUSE_TIMERS
+libadiosf_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)  $(NETCDF_CPPFLAGS) $(DART_CPPFLAGS) # -DUSE_TIMERS
 
 if RESEARCH_TRANSPORTS
 libadios_a_SOURCES += adios_mpi_stagger.c \
@@ -89,7 +100,8 @@ include_HEADERS += adios.h \
                    adios_types.h \
                    adios_read.h \
                    adios_read_hooks.h \
-                   mpidummy.h
+                   mpidummy.h \
+                   io_timer.h
 
 lib_LIBRARIES += libadiosread.a
 libadiosread_a_SOURCES = adios_bp_v1.c \
