@@ -2127,6 +2127,7 @@ void adios_copy_var_written (struct adios_var_struct ** root
             var_new = (struct adios_var_struct *) malloc
                                                   (sizeof (struct adios_var_struct));
             var_new->id = ++fd->group->member_count;
+            var_new->parent_id = var->id;
             var_new->name = strdup (var->name);
             var_new->path = strdup (var->path);
             var_new->type = var->type;
@@ -2175,10 +2176,13 @@ void adios_copy_var_written (struct adios_var_struct ** root
                             // de-reference dimension id
                             d_new->dimension.id = 0;
                             d_new->dimension.rank = get_value_for_dim (fd, &d->dimension);
+                            d_new->dimension.time_index = d->dimension.time_index;
                             d_new->global_dimension.id = 0;
                             d_new->global_dimension.rank = get_value_for_dim (fd, &d->global_dimension);
+                            d_new->global_dimension.time_index = d->global_dimension.time_index;
                             d_new->local_offset.id = 0;
                             d_new->local_offset.rank = get_value_for_dim (fd, &d->local_offset);
+                            d_new->local_offset.time_index = d->local_offset.time_index;
                             d_new->next = 0;
 
                             adios_append_dimension (&var_new->dimensions, d_new);
@@ -2262,7 +2266,11 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             v_index->characteristics_count = 1;
             v_index->characteristics_allocated = 1;
             v_index->characteristics [0].offset = v->write_offset;
-            v_index->characteristics [0].payload_offset = v->write_offset + adios_calc_var_overhead_v1 (v);
+            // Find the old var in g->vars.
+            // We need this to calculate the correct payload_offset
+            struct adios_var_struct * old_var = adios_find_var_by_id (g->vars, v->parent_id);
+            v_index->characteristics [0].payload_offset = v->write_offset
+                                                    + adios_calc_var_overhead_v1 (old_var);
             v_index->characteristics [0].min = 0;
             v_index->characteristics [0].max = 0;
             v_index->characteristics [0].value = 0;

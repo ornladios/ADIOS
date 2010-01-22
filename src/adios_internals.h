@@ -27,6 +27,7 @@ struct adios_var_struct;
 struct adios_var_struct
 {
     uint16_t id;
+    uint16_t parent_id;
 
     char * name;
     char * path;

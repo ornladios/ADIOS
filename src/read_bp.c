@@ -1224,7 +1224,6 @@ printf ("pgcount = %lld\n", pgcount);
         // loop over the list of pgs to read from one-by-one
 //        for (idx = 0; idx < pgcount; idx++) {
         // FIXME
-printf ("start_idx = %d, stop_idx = %d\n", start_idx, stop_idx);
         //for (idx = 0; idx < var_root->characteristics_count - start_idx; idx++) {
         for (idx = 0; idx < stop_idx - start_idx + 1; idx++) {
             int flag;
@@ -1275,7 +1274,7 @@ printf ("start_idx = %d, stop_idx = %d\n", start_idx, stop_idx);
             printf("count_notime   = "); for (j = 0; j<ndim_notime; j++) printf("%d ",count_notime[j]); printf("\n");
             printf("start_notime   = "); for (j = 0; j<ndim_notime; j++) printf("%d ",start_notime[j]); printf("\n");
             */
-                
+
             for (j = 0; j < ndim_notime; j++) {
     
                 payload_size *= ldims [j];
@@ -1324,7 +1323,7 @@ printf ("start_idx = %d, stop_idx = %d\n", start_idx, stop_idx);
                 /* This means we enter this only once, and npg=1 at the end */
                 /* This is a rare case. FIXME: cannot eliminate this? */
                 slice_size = payload_size;
-    
+
                 if (var_root->characteristics[start_idx + idx].payload_offset > 0) {
                     slice_offset = var_root->characteristics[start_idx + idx].payload_offset;
                     MPI_FILE_READ_OPS
