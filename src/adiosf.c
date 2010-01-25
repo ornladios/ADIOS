@@ -374,6 +374,10 @@ void FC_FUNC_(adios_declare_group, adios_DECLARE_GROUP)
         *err = adios_common_declare_group (id, buf1, adios_flag_yes, "", "", buf2);
         free (buf1);
         free (buf2);
+        if (*err == 1) {
+            struct adios_group_struct * g = (struct adios_group_struct *) *id;
+            g->all_unique_var_names = adios_flag_no;
+        }
     } else {
         *err = -adios_errno;
     }

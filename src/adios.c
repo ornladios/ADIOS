@@ -273,11 +273,17 @@ int adios_declare_group (int64_t * id, const char * name
                         ,const char * time_index
                         )
 {
-    return adios_common_declare_group (id, name, adios_flag_no
+    int ret;
+    ret = adios_common_declare_group (id, name, adios_flag_no
                                       ,""
                                       ,""
                                       ,time_index
                                       );
+    if (ret == 1) {
+        struct adios_group_struct * g = (struct adios_group_struct *) *id;
+        g->all_unique_var_names = adios_flag_no;
+    }
+    return ret;
 }
 ///////////////////////////////////////////////////////////////////////////////
 
