@@ -58,4 +58,8 @@ very dynamic memory usage.
 
 17. Add explicit support for "no values present" like NetCDF has.
 
-18. bpls does not properly support the endian setting (move data file from big-endian to little-endian and it can't read it).
+18. bpls does not properly support the endian setting (move data file from
+big-endian to little-endian and it can't read it).
+
+19. Add a checksum data characteristic to the writing so that we can validate
+the data on reading.
