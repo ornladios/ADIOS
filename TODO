@@ -57,3 +57,5 @@ thing to do. Abort is about the only thing that can really work consistently.
 very dynamic memory usage.
 
 17. Add explicit support for "no values present" like NetCDF has.
+
+18. bpls does not properly support the endian setting (move data file from big-endian to little-endian and it can't read it).
