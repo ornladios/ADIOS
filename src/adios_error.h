@@ -24,6 +24,7 @@ enum ADIOS_ERRCODES {
     ,err_invalid_attribute_reference
     ,err_invalid_timestep
     ,err_no_data_at_timestep
+    ,err_time_at_wrong_dimension
     ,err_invalid_read_method
     ,err_connection_failed
     ,err_out_of_bound

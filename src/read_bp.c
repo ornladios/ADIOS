@@ -994,6 +994,7 @@ int64_t adios_read_bp_read_var (ADIOS_GROUP * gp, const char * varname,
                         void * data)
 {
     int varid = adios_read_bp_find_var(gp, varname);
+
     if (varid < 0)
         return -1;
     return adios_read_bp_read_var_byid(gp, varid, start, count, data);
@@ -1013,7 +1014,7 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
     struct adios_var_payload_struct_v1 var_payload;
     int    i,j,k, idx, timestep;
     int    start_time, stop_time;
-    int    pgoffset, pgcount, start_idx, stop_idx;
+    int    pgoffset, pgcount, next_pgoffset,start_idx, stop_idx;
     int    ndim, ndim_notime;  
     uint64_t size;
     uint64_t *dims;
@@ -1023,7 +1024,7 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
     uint64_t datasize, nloop, dset_stride,var_stride, total_size=0, items_read;
     uint64_t count_notime[32], start_notime[32];
     MPI_Status status;
-    int timedim = -1, temp_timedim;;
+    int timedim = -1, temp_timedim, timedim_c;
     int rank;
     int is_global = 0;
     int size_of_type;
@@ -1031,7 +1032,6 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
     uint64_t slice_size;
     uint64_t tmpcount = 0;
     uint64_t datatimeoffset = 0; // offset in data to write a given timestep
-
 
     adios_errno = 0;
     if (!gp) {
@@ -1053,7 +1053,6 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
         return -adios_errno;
     }
     
-
     file_is_fortran = (fh->pgs_root->adios_host_language_fortran == adios_flag_yes);
     
     var_root = gh->vars_root; /* first variable of this group. Need to traverse the list */
@@ -1070,47 +1069,167 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
     adios_read_bp_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
                           &ndim, &dims, &timedim);
 
-    /* In a Fortran written files, dimensions are in reversed order for C */
-    //if ( file_is_fortran != futils_is_called_from_fortran() ) 
-    if ( file_is_fortran ) 
+    /* Here the cases in which .bp written from Fortran and C are considered separately.
+       1) bp written from Fortran */
+    if (file_is_fortran)
+    {
+        /* Get the timesteps we need to read */
+        if (timedim > -1) 
+        {
+            if (timedim != ndim - 1)
+            {
+                error(err_no_data_at_timestep,"Variable (id=%d) has wrong time dimension index",
+                      varid);
+                return -adios_errno;
+            }
+            if (futils_is_called_from_fortran())
+            {
+                start_time = start[timedim] + fh->tidx_start;
+                stop_time = start_time + count[timedim] - 1;
+            }
+            else
+            {
+                start_time = start[0] + fh->tidx_start;
+                stop_time = start_time + count[0] - 1;
+            }
+        }
+        else 
+        {
+            /* timeless variable, but we still need to handle the case that
+               var is not written in the first few timesteps. 
+               This happens in Pixie3D.  */
+            for (i = 0; i < fh->mfooter.time_steps; i++)
+            {
+                pgoffset = fh->gvar_h->time_index[0][gh->group_id][i];
+                if (i < fh->mfooter.time_steps - 1)
+                    next_pgoffset = fh->gvar_h->time_index[0][gh->group_id][i + 1];
+                else
+                    next_pgoffset = -1;
+
+                if (fh->gvar_h->pg_offsets[pgoffset] < var_root->characteristics[0].offset
+                && (i == fh->mfooter.time_steps - 1 
+                   ||fh->gvar_h->pg_offsets[next_pgoffset] > var_root->characteristics[0].offset)
+                )
+                {
+                    start_time = fh->tidx_start + i;
+                    stop_time = start_time;
+                    break;
+                }
+            }
+        }
+
+        /* flip dims and timedim to C order */
         swap_order(ndim, dims, &timedim);
 
-    /* Get the timesteps we need to read */
-    if (timedim > -1) {
-        start_time = start[timedim] + fh->tidx_start;
-        stop_time = start_time + count[timedim] - 1;
-    } else {
-        // timeless variable
-        start_time = fh->tidx_start;
-        stop_time = fh->tidx_start;
-    }
+        /* Take out the time dimension from start[] and count[] */
+        /* if we have time dimension */
+        if (timedim > -1)
+        {
+            j = 0;
+            if (futils_is_called_from_fortran())
+                temp_timedim = ndim - 1;
+            else
+                temp_timedim = 0;
 
-    /* Take out the time dimension from start[] and count[] */
-    if (timedim == -1) {
-        for (i = 0; i < ndim; i++) {
-             count_notime[i] = count[i];
-             start_notime[i] = start[i];
+            for (i = 0; i < temp_timedim; i++)
+            {
+                count_notime[j] = count[i];
+                start_notime[j] = start[i];
+                j++;
+            }
+            i++; // skip timedim
+            for (; i < ndim; i++)
+            {
+                count_notime[j] = count[i];
+                start_notime[j] = start[i];
+                j++;
+            }
+            ndim_notime = ndim-1;
         }
-        ndim_notime = ndim;
-    } else {
-        j = 0;
-        if (futils_is_called_from_fortran())
-            temp_timedim = ndim - 1;
         else
-            temp_timedim = 0;
+        /* if we don't have time dimension */
+        {
+            for (i = 0; i < ndim; i++)
+            {
+                count_notime[i] = count[i];
+                start_notime[i] = start[i];
+            }
+            ndim_notime = ndim;
+        }
+    }
+    /* 2) .bp written by C */
+    else
+    {
+        /* Get the timesteps we need to read */
+        if (timedim > -1) 
+        {
+            /* timedim has to be the 1st dimension. To be extended to handle 
+               the cases timedim at any dimension */
+            if (timedim != 0)
+            {
+                error(err_no_data_at_timestep,"Variable (id=%d) has wrong time dimension",
+                      varid);
+                return -adios_errno;
+            }
 
-        for (i = 0; i < temp_timedim; i++) {
-             count_notime[j] = count[i];
-             start_notime[j] = start[i];
-             j++;
+            if (futils_is_called_from_fortran())
+            {
+                start_time = start[ndim - 1] + fh->tidx_start;
+                stop_time = start_time + count[ndim -1] - 1;
+            }
+            else
+            {
+                start_time = start[0] + fh->tidx_start;
+                stop_time = start_time + count[0] - 1;
+            }
+
+            start_time = start[timedim] + fh->tidx_start;
+            stop_time = start_time + count[timedim] - 1;
         }
-        i++; // skip timedim
-        for (; i < ndim; i++) {
-             count_notime[j] = count[i];
-             start_notime[j] = start[i];
-             j++;
+        else 
+        {
+            /* timeless variable */
+            start_time = fh->tidx_start;
+            stop_time = fh->tidx_start;
         }
-        ndim_notime = ndim-1;
+
+        /* No need to flip dims, timedim as they are already in C order. */
+        //swap_order(ndim, dims, &timedim);
+
+        /* Take out the time dimension from start[] and count[] */
+        if (timedim == -1) /* timeless variable */ 
+        {
+            for (i = 0; i < ndim; i++) 
+            {
+                count_notime[i] = count[i];
+                start_notime[i] = start[i];
+            }
+            ndim_notime = ndim;
+        }
+        /* if we have time dimension */
+        else
+        {
+            j = 0;
+            if (futils_is_called_from_fortran())
+                temp_timedim = ndim - 1;
+            else
+                temp_timedim = 0;
+
+            for (i = 0; i < temp_timedim; i++)
+            {
+                count_notime[j] = count[i];
+                start_notime[j] = start[i];
+                j++;
+            }
+            i++; // skip timedim
+            for (; i < ndim; i++)
+            {
+                count_notime[j] = count[i];
+                start_notime[j] = start[i];
+                j++;
+            }
+            ndim_notime = ndim - 1;
+        }
     }
 
     /* Fortran reader was reported of Fortran dimension order so it gives counts and starts in that order.
@@ -1125,7 +1244,6 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
     for (i = 0; i < ndim_notime; i++)
         items_read *= count_notime[i];
     
-    
     MPI_Comm_rank(gh->fh->comm, &rank);
 
     size_of_type = bp_get_type_size (var_root->type, var_root->characteristics [0].value);
@@ -1137,10 +1255,11 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
         // pgcount  = number of process groups of that time step
         pgoffset = fh->gvar_h->time_index[0][gh->group_id][timestep - fh->tidx_start];
         pgcount = fh->gvar_h->time_index[1][gh->group_id][timestep - fh->tidx_start];
+
         start_idx = -1;
         for (i=0;i<var_root->characteristics_count;i++) {
             if (   (  var_root->characteristics[i].offset > fh->gvar_h->pg_offsets[pgoffset])
-                && (  (i == var_root->characteristics_count-1) 
+                && (  (pgoffset + pgcount == fh->mfooter.pgs_count) 
                     ||(  var_root->characteristics[i].offset < fh->gvar_h->pg_offsets[pgoffset + 1]))
                ) 
             {
@@ -1210,7 +1329,7 @@ printf ("pgcount = %lld\n", pgcount);
             continue;
         }
 
-         /* READ AN ARRAY VARIABLE */
+        /* READ AN ARRAY VARIABLE */
         //int * idx_table = (int *) malloc (sizeof(int) * pgcount);
         //int * idx_table = (int *) malloc (sizeof(int) * (var_root->characteristics_count - start_idx));
         int * idx_table = (int *) malloc (sizeof(int) * (stop_idx - start_idx + 1));
@@ -1222,9 +1341,6 @@ printf ("pgcount = %lld\n", pgcount);
             pgcount = var_root->characteristics_count;
 
         // loop over the list of pgs to read from one-by-one
-//        for (idx = 0; idx < pgcount; idx++) {
-        // FIXME
-        //for (idx = 0; idx < var_root->characteristics_count - start_idx; idx++) {
         for (idx = 0; idx < stop_idx - start_idx + 1; idx++) {
             int flag;
             datasize = 1;
@@ -1266,7 +1382,6 @@ printf ("pgcount = %lld\n", pgcount);
                     }
                 }
             }
-
             /*
             printf("ldims   = "); for (j = 0; j<ndim; j++) printf("%d ",ldims[j]); printf("\n");
             printf("gdims   = "); for (j = 0; j<ndim; j++) printf("%d ",gdims[j]); printf("\n");
@@ -1274,7 +1389,6 @@ printf ("pgcount = %lld\n", pgcount);
             printf("count_notime   = "); for (j = 0; j<ndim_notime; j++) printf("%d ",count_notime[j]); printf("\n");
             printf("start_notime   = "); for (j = 0; j<ndim_notime; j++) printf("%d ",start_notime[j]); printf("\n");
             */
-
             for (j = 0; j < ndim_notime; j++) {
     
                 payload_size *= ldims [j];
@@ -1303,7 +1417,7 @@ printf ("pgcount = %lld\n", pgcount);
                 continue;
             }
             ++npg;
-    
+
             /* determined how many (fastest changing) dimensions can we read in in one read */
             int hole_break; 
             for (i = ndim_notime - 1; i > -1; i--) {
@@ -1462,7 +1576,7 @@ printf ("pgcount = %lld\n", pgcount);
                     slice_offset =  start_in_payload;
                     MPI_FILE_READ_OPS1
                 }
-    
+
                 uint64_t var_offset = 0;
                 uint64_t dset_offset = 0;
                 for ( i = 0; i < hole_break; i++) {
@@ -1488,11 +1602,12 @@ printf ("pgcount = %lld\n", pgcount);
                           ,datasize
                           ,size_of_type 
                           );
+
             }
         }  // end for (idx ... loop over pgs
     
         free (idx_table);
-    
+
         total_size += items_read * size_of_type;
         // shift target pointer for next read in
         data = (char *)data + (items_read * size_of_type);
