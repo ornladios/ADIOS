@@ -285,6 +285,13 @@ int adios_declare_group (int64_t * id, const char * name
     }
     return ret;
 }
+
+
+int adios_free_group (int64_t id)
+{
+    return adios_common_free_group (id);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 // adios_common_define_var is in adios_internals.c
@@ -324,10 +331,8 @@ int adios_select_method (int64_t group, const char * method
                         ,const char * base_path
                         )
 {
-    struct adios_group_struct * g = (struct adios_group_struct *) group;
-
-    return adios_common_select_method (0, method, parameters, g->name
-                                      ,base_path, 0
-                                      );
+    return adios_common_select_method_by_group_id (0, method, parameters, group
+                                                  ,base_path, 0
+                                                  );
 }
 

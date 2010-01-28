@@ -1157,6 +1157,47 @@ int adios_common_declare_group (int64_t * id, const char * name
     return 1;
 }
 
+int adios_common_free_group (int64_t id)
+{
+    return 0;
+    struct adios_group_struct * g = (struct adios_group_struct *) id;
+
+    if (g->name)
+        free (g->name);
+
+    while (g->vars)
+    {
+        struct adios_var_struct * vars = g->vars->next;
+
+        if (g->vars->name)
+            free (g->vars->name);
+        if (g->vars->path)
+            free (g->vars->path);
+
+        while (g->vars->dimensions)
+        {
+            struct adios_dimension_struct * dimensions
+                            = g->vars->dimensions->next;
+
+            free (g->vars->dimensions);
+            g->vars->dimensions = dimensions;
+        }
+
+        if (g->vars->min)
+            free (g->vars->min);
+        if (g->vars->max)
+            free (g->vars->max);
+        if (g->vars->data)
+            free (g->vars->data);
+
+        free (g->vars);
+        g->vars = vars;
+    }
+
+    return 0;
+}
+
+
 void trim_spaces (char * str)
 {
     char * t = str, * p = NULL;
