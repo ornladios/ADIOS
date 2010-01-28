@@ -1049,7 +1049,7 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 				}
 			}
 		}
-		rc = nc_var_par_access(grp_ids[level], nc4_varid, NC_COLLECTIVE);
+		Func_Timer("nc4_varid par_access", rc = nc_var_par_access(grp_ids[level], nc4_varid, NC_COLLECTIVE););
 		if (rc != NC_NOERR) {
 			fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", pvar->name, rc);
 			return_code=-2;
@@ -1150,7 +1150,7 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 					goto escape;
 				}
 			}
-			rc = nc_var_par_access(grp_ids[level], nc4_varid, NC_COLLECTIVE);
+			Func_Timer("nc4_varid par_access", rc = nc_var_par_access(grp_ids[level], nc4_varid, NC_COLLECTIVE););
 			if (rc != NC_NOERR) {
 				fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", pvar->name, rc);
 				return_code=-2;
@@ -1184,7 +1184,7 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 					return_code=-2;
 					goto escape;
 				}
-				rc = nc_var_par_access(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, NC_COLLECTIVE);
+				Func_Timer("gbdims_varid par_access", rc = nc_var_par_access(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, NC_COLLECTIVE););
 				if (rc != NC_NOERR) {
 					fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
 					return_code=-2;
@@ -1207,14 +1207,14 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 //			goto escape;
 //		}
 
-		Func_Timer("putvara", rc = nc_put_vara(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, deciphered_dims.nc4_gboffsets, deciphered_dims.nc4_gblocaldims, deciphered_dims.nc4_gbdims););
+//		Func_Timer("putvars", rc = nc_put_vars(grp_ids[level], nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data););
+		Func_Timer("putvars", rc = nc_put_vara(grp_ids[level], nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, pvar->data););
 		if (rc != NC_NOERR) {
 			fprintf(stderr, "NC4 ERROR putting to array variable(%s) in write_var, rc=%d\n", pvar->name, rc);
 			return_code=-2;
 			goto escape;
 		}
-//		Func_Timer("putvars", rc = nc_put_vars(grp_ids[level], nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data););
-		Func_Timer("putvars", rc = nc_put_vara(grp_ids[level], nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, pvar->data););
+		Func_Timer("putvara", rc = nc_put_vara(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, deciphered_dims.nc4_gboffsets, deciphered_dims.nc4_gblocaldims, deciphered_dims.nc4_gbdims););
 		if (rc != NC_NOERR) {
 			fprintf(stderr, "NC4 ERROR putting to array variable(%s) in write_var, rc=%d\n", pvar->name, rc);
 			return_code=-2;
@@ -1294,7 +1294,7 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 					return_code=-2;
 					goto escape;
 				}
-				rc = nc_var_par_access(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, NC_COLLECTIVE);
+				Func_Timer("gbdims_varid par_access", rc = nc_var_par_access(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, NC_COLLECTIVE););
 				if (rc != NC_NOERR) {
 					fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
 					return_code=-2;
@@ -1312,7 +1312,7 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 				return_code=-2;
 				goto escape;
 			}
-			rc = nc_var_par_access(grp_ids[level], nc4_varid, NC_COLLECTIVE);
+			Func_Timer("nc4_varid par_access", rc = nc_var_par_access(grp_ids[level], nc4_varid, NC_COLLECTIVE););
 			if (rc != NC_NOERR) {
 				fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", pvar->name, rc);
 				return_code=-2;
@@ -1336,7 +1336,7 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 				return_code=-2;
 				goto escape;
 			}
-			rc = nc_var_par_access(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, NC_COLLECTIVE);
+			Func_Timer("gbdims_varid par_access", rc = nc_var_par_access(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, NC_COLLECTIVE););
 			if (rc != NC_NOERR) {
 				fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
 				return_code=-2;
@@ -1363,7 +1363,7 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 		}
 
 		deciphered_dims.nc4_offsets[deciphered_dims.timedim_index]=current_timestep;
-		//rc = nc_put_vars(grp_ids[level], nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data);
+//		Func_Timer("putvars", rc = nc_put_vars(grp_ids[level], nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data););
 		Func_Timer("putvars", rc = nc_put_vara(grp_ids[level], nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, pvar->data););
 		if (rc != NC_NOERR) {
 			fprintf(stderr, "NC4 ERROR putting to array variable(%s) in write_var, rc=%d\n", pvar->name, rc);
