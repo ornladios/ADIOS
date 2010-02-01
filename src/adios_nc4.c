@@ -75,6 +75,54 @@ void adios_nc4_read (struct adios_file_struct * fd
 ){}
 #else
 
+typedef struct {
+	struct adios_dimension_struct *dims;
+
+	nc4_dimname_t  gbdims_dim0_name;
+	nc4_dimname_t  gbdims_dim1_name;
+	nc4_dimname_t  gbdims_name;
+	nc4_dimname_t *nc4_global_dimnames;
+	nc4_dimname_t *nc4_local_dimnames;
+	nc4_dimname_t *nc4_local_offset_names;
+
+	size_t    *nc4_gbdims;
+	size_t    *nc4_globaldims;
+	size_t    *nc4_localdims;
+	size_t    *nc4_offsets;
+	ptrdiff_t *nc4_strides;
+	int       *nc4_global_dimids;
+	int       *nc4_local_dimids;
+	int       *nc4_loffs_dimids;
+
+	ptrdiff_t nc4_gbstrides[2];
+	size_t    nc4_gbglobaldims[2];
+	size_t    nc4_gblocaldims[2];
+	size_t    nc4_gboffsets[2];
+	int       nc4_gbglobaldims_dimids[2];
+	int       nc4_gbglobaldims_varid;
+
+	enum ADIOS_FLAG has_globaldims;
+	enum ADIOS_FLAG has_localdims;
+	enum ADIOS_FLAG has_localoffsets;
+
+	enum ADIOS_FLAG has_timedim;
+	int             timedim_index;
+
+	int global_dim_count;
+	int local_dim_count;
+	int local_offset_count;
+} deciphered_dims_t;
+struct adios_nc4_data_struct
+{
+	int      ncid;
+	int      root_ncid;
+	MPI_Comm group_comm;
+	int      rank;
+	int      size;
+
+	void * comm; // temporary until moved from should_buffer to open
+};
+
 ///////////////////////////
 // Function Declarations
 ///////////////////////////
@@ -135,54 +183,17 @@ int write_attribute(int ncid,
 		enum ADIOS_FLAG fortran_flag,
 		int myrank,
 		int nproc);
+int write_header(int ncid,
+		int root_group,
+		struct adios_group_struct *group,
+		struct adios_var_struct *pvar_root,
+		struct adios_attribute_struct *patt_root,
+		struct adios_var_struct *pvar,
+		enum ADIOS_FLAG fortran_flag,
+		int myrank,
+		int nproc);
 
-typedef struct {
-	struct adios_dimension_struct *dims;
 
-	nc4_dimname_t  gbdims_dim0_name;
-	nc4_dimname_t  gbdims_dim1_name;
-	nc4_dimname_t  gbdims_name;
-	nc4_dimname_t *nc4_global_dimnames;
-	nc4_dimname_t *nc4_local_dimnames;
-	nc4_dimname_t *nc4_local_offset_names;
-
-	size_t    *nc4_gbdims;
-	size_t    *nc4_globaldims;
-	size_t    *nc4_localdims;
-	size_t    *nc4_offsets;
-	ptrdiff_t *nc4_strides;
-	int       *nc4_global_dimids;
-	int       *nc4_local_dimids;
-	int       *nc4_loffs_dimids;
-
-	ptrdiff_t nc4_gbstrides[2];
-	size_t    nc4_gbglobaldims[2];
-	size_t    nc4_gblocaldims[2];
-	size_t    nc4_gboffsets[2];
-	int       nc4_gbglobaldims_dimids[2];
-	int       nc4_gbglobaldims_varid;
-
-	enum ADIOS_FLAG has_globaldims;
-	enum ADIOS_FLAG has_localdims;
-	enum ADIOS_FLAG has_localoffsets;
-
-	enum ADIOS_FLAG has_timedim;
-	int             timedim_index;
-
-	int global_dim_count;
-	int local_dim_count;
-	int local_offset_count;
-} deciphered_dims_t;
-struct adios_nc4_data_struct
-{
-	int      ncid;
-	int      root_ncid;
-	MPI_Comm group_comm;
-	int      rank;
-	int      size;
-
-	void * comm; // temporary until moved from should_buffer to open
-};
 static int adios_nc4_initialized = 0;
 static void adios_var_to_comm_nc4 (enum ADIOS_FLAG host_language_fortran, void * data, MPI_Comm * comm)
 {
@@ -233,6 +244,8 @@ enum ADIOS_FLAG adios_nc4_should_buffer (struct adios_file_struct * fd, struct a
 	name = malloc(strlen(method->base_path) + strlen(fd->name) + 1);
 	sprintf(name, "%s%s", method->base_path, fd->name);
 
+	int myrank=md->rank;
+
 	// create a new file. If file exists its contents will be overwritten. //
 
 	MPI_Info_create(&info);
@@ -242,7 +255,7 @@ enum ADIOS_FLAG adios_nc4_should_buffer (struct adios_file_struct * fd, struct a
 	switch (fd->mode) {
 		case adios_mode_read:
 		{
-			rc = nc_open_par(name, NC_NOWRITE|NC_MPIIO, md->group_comm, info, &md->ncid);
+			Func_Timer("nc_open_par", rc = nc_open_par(name, NC_NOWRITE|NC_MPIIO, md->group_comm, info, &md->ncid););
 			if (rc != NC_NOERR) {
 				fprintf (stderr, "ADIOS NC4: could not open file(%s) for reading, rc=%d\n", name, rc);
 				free (name);
@@ -253,9 +266,9 @@ enum ADIOS_FLAG adios_nc4_should_buffer (struct adios_file_struct * fd, struct a
 		case adios_mode_write:
 		case adios_mode_append:
 		{
-			rc = nc_create_par(name, NC_NOCLOBBER|NC_MPIIO|NC_NETCDF4, md->group_comm, info, &md->ncid);
+			Func_Timer("nc_create_par", rc = nc_create_par(name, NC_NOCLOBBER|NC_MPIIO|NC_NETCDF4, md->group_comm, info, &md->ncid););
 			if (rc == NC_EEXIST) {
-				rc = nc_open_par(name, NC_WRITE|NC_MPIIO, md->group_comm, info, &md->ncid);
+				Func_Timer("nc_open_par", rc = nc_open_par(name, NC_WRITE|NC_MPIIO, md->group_comm, info, &md->ncid););
 				if (rc != NC_NOERR) {
 					fprintf (stderr, "ADIOS NC4: could not open file(%s) for writing, rc=%d\n", name, rc);
 					free (name);
@@ -296,7 +309,15 @@ int adios_nc4_open(struct adios_file_struct *fd, struct adios_method_struct * me
 void adios_nc4_write (struct adios_file_struct * fd, struct adios_var_struct * v, void * data, struct adios_method_struct * method)
 {
 	struct adios_nc4_data_struct * md = (struct adios_nc4_data_struct *)method->method_data;
+	static int first_write = 1;
+
 	if (fd->mode == adios_mode_write || fd->mode == adios_mode_append) {
+//		if (first_write == 1) {
+//			write_header(fd, md);
+//			first_write = 0;
+//		}
+
+
 		if (md->rank==0) {
 //			fprintf(stderr, "-------------------------\n");
 //			fprintf(stderr, "write var: %s start!\n", v->name);
@@ -321,8 +342,7 @@ void adios_nc4_write (struct adios_file_struct * fd, struct adios_var_struct * v
 
 void adios_nc4_read(struct adios_file_struct * fd, struct adios_var_struct * v, void * buffer, uint64_t buffersize, struct adios_method_struct * method)
 {
-	struct adios_nc4_data_struct * md = (struct adios_nc4_data_struct *)
-                                                    						   method->method_data;
+	struct adios_nc4_data_struct * md = (struct adios_nc4_data_struct *)method->method_data;
 	if(fd->mode == adios_mode_read) {
 		v->data = buffer;
 		v->data_size = buffersize;
@@ -360,6 +380,8 @@ void adios_nc4_close (struct adios_file_struct * fd, struct adios_method_struct 
 
 	struct adios_attribute_struct * a = fd->group->attributes;
 
+	int myrank=md->rank;
+
 	if (fd->mode == adios_mode_read) {
 		if (md->rank==0) {
 			fprintf(stderr, "-------------------------\n");
@@ -369,10 +391,10 @@ void adios_nc4_close (struct adios_file_struct * fd, struct adios_method_struct 
 	} else if (fd->mode == adios_mode_write || fd->mode == adios_mode_append) {
 		//fprintf(stderr, "entering nc4 write attribute mode!\n");
 		while(a) {
-			write_attribute(md->ncid, md->root_ncid, fd->group->vars, a,
+			Func_Timer("write_attribute", write_attribute(md->ncid, md->root_ncid, fd->group->vars, a,
 					fd->group->adios_host_language_fortran,
 					md->rank,
-					md->size);
+					md->size););
 			a = a->next;
 		}
 		if (md->rank==0) {
@@ -383,7 +405,7 @@ void adios_nc4_close (struct adios_file_struct * fd, struct adios_method_struct 
 	}
 
 	if (md) {
-		nc_close(md->ncid);
+		Func_Timer("nc_close", nc_close(md->ncid););
 	}
 	md->group_comm = MPI_COMM_NULL;
 	md->ncid = -1;
@@ -417,6 +439,7 @@ int write_attribute(int ncid,
 	int grp_ids[NUM_GP];
 	int nc4_type_id;
 	int varid;
+	int attid;
 
 	struct adios_dimension_struct * dims;
 	struct adios_var_struct * var_linked;
@@ -428,16 +451,29 @@ int write_attribute(int ncid,
 //	printf("looking for var(%s)\n", last);
 	rc = nc_inq_varid(grp_ids[level], last, &varid);
 	if (rc == NC_NOERR) {
+		if (myrank==0) fprintf (stderr, "NC4 ERROR variable(%s) exists in write_attribute, rc=%d\n", last, rc);
 	} else if (rc == NC_ENOTVAR) {
-//		fprintf (stderr, "NC4 ERROR variable(%s) does not exist in write_attribute, rc=%d\n", last, rc);
+		if (myrank==0) fprintf (stderr, "NC4 ERROR variable(%s) does not exist in write_attribute, rc=%d\n", last, rc);
 		err_code = -2;
 		goto escape;
 	} else {
-		fprintf (stderr, "NC4 ERROR inquiring about grp_id(%d) variable(%s) in write_attribute, rc=%d\n", grp_ids[level], last, rc);
+		if (myrank==0) fprintf (stderr, "NC4 ERROR inquiring about grp_id(%d) variable(%s) in write_attribute, rc=%d\n", grp_ids[level], last, rc);
 		err_code = -2;
 		goto escape;
 	}
 //	printf("got varid(%d) for grp_id(%d).variable(%s) in write_attribute\n", varid, grp_ids[level], last);
+	rc = nc_inq_attid(grp_ids[level], varid, patt->name, &attid);
+	if (rc == NC_NOERR) {
+		if (myrank==0) fprintf (stderr, "NC4 ERROR grp_id(%d) variable(%s) attribute(%s) already exists in write_attribute, rc=%d\n", grp_ids[level], last, patt->name, rc);
+		err_code = 0;
+		goto escape;
+	} else if (rc == NC_ENOTATT) {
+		if (myrank==0) fprintf (stderr, "NC4 ERROR grp_id(%d) variable(%s) attribute(%s) does not exist in write_attribute, rc=%d\n", grp_ids[level], last, patt->name, rc);
+	} else {
+		if (myrank==0) fprintf (stderr, "NC4 ERROR inquiring about grp_id(%d) variable(%s) attribute(%s) in write_attribute, rc=%d\n", grp_ids[level], last, patt->name, rc);
+		err_code = -2;
+		goto escape;
+	}
 
 //	printf("patt->type=%d patt->name : %s\n", patt->type, patt->name);
 	if (patt->type == -1) {
@@ -648,7 +684,7 @@ static int decipher_dims(int ncid,
 	int local_idx =0;
 	int loffs_idx =0;
 	dims = pvar->dimensions;
-//	printf("timedim_index=%d\n", timedim_index);
+//	if (myrank==0) printf("timedim_index=%d\n", timedim_index);
 	while (dims) {
 		/* get the global/local/offset arrays */
 		nc4_strides[local_idx] = 1;
@@ -705,9 +741,9 @@ static int decipher_dims(int ncid,
 		}
 	}
 //	for (i=0;i<local_dim_count;i++) {
-//		printf("nc4_global_dimnames[%d]   ==%s\n", i, nc4_global_dimnames[i]);
-//		printf("nc4_local_dimnames[%d]    ==%s\n", i, nc4_local_dimnames[i]);
-//		printf("nc4_local_offset_names[%d]==%s\n", i, nc4_local_offset_names[i]);
+//		printf("nc4_global_dimnames[%d]   ==%s, nc4_globaldims[%d]==%d\n", i, nc4_global_dimnames[i], i, nc4_globaldims[i]);
+//		printf("nc4_local_dimnames[%d]    ==%s, nc4_localdims[%d] ==%d\n", i, nc4_local_dimnames[i], i, nc4_localdims[i]);
+//		printf("nc4_local_offset_names[%d]==%s, nc4_offsets[%d]   ==%d\n", i, nc4_local_offset_names[i], i, nc4_offsets[i]);
 //	}
 
 	if ((has_timedim == adios_flag_yes) && (global_dim_count < local_dim_count)) {
@@ -843,6 +879,7 @@ int read_var (int ncid,
 		goto escape;
 	} // end scalar write
 
+//	if (myrank==0) printf("read_var deciphering dims\n");
 	decipher_dims(ncid,
 			root_group,
 			group,
@@ -1019,35 +1056,32 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 		Func_Timer("open_groups", open_groups(ncid, pvar->path, grp_ids, &level, &last, adios_flag_no, adios_flag_yes););
 	}
 
+	Func_Timer("inqvar", rc = nc_inq_varid(grp_ids[level], pvar->name, &nc4_varid););
+	if (rc == NC_ENOTVAR) {
+		write_header(ncid, root_group, group, pvar_root, patt_root, pvar, fortran_flag, myrank, nproc);
+//		return 0;
+	}
+
+	Func_Timer("enddef", rc = nc_enddef(grp_ids[level]););
+	if (rc != NC_NOERR) {
+		if (myrank==0) fprintf(stderr, "NC4 ERROR ending define mode for scalar variable(%s) in write_var, rc=%d\n", pvar->name, rc);
+//		return_code=-2;
+//		goto escape;
+	}
+
+
 	// printf("root_id=%d, grp_id=%d\n", root_id, grp_ids[level]);
 
 	if (!pvar->dimensions) { // begin scalar write
 		Func_Timer("inqvar", rc = nc_inq_varid(grp_ids[level], pvar->name, &nc4_varid););
 		if (rc == NC_ENOTVAR) {
-			if (pvar->type == adios_string) {
-				size_t str_var_dimid=0;
-				char str_var_dimname[40];
-				sprintf(str_var_dimname, "%s_dim", pvar->name);
-				Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], str_var_dimname, strlen((char *)pvar->data)+1, &str_var_dimid););
-				if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR defining string variable(%s) dim in write_var, rc=%d\n", pvar->name, rc);
-					return_code=-2;
-					goto escape;
-				}
-				Func_Timer("defvar", rc = nc_def_var(grp_ids[level], pvar->name, nc4_type_id, 1, &str_var_dimid, &nc4_varid););
-				if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR defining string variable(%s) in write_var, rc=%d\n", pvar->name, rc);
-					return_code=-2;
-					goto escape;
-				}
-			} else {
-				Func_Timer("defvar", rc = nc_def_var(grp_ids[level], pvar->name, nc4_type_id, 0, NULL, &nc4_varid););
-				if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR defining scalar variable(%s) in write_var, rc=%d\n", pvar->name, rc);
-					return_code=-2;
-					goto escape;
-				}
-			}
+			fprintf(stderr, "NC4 ERROR scalar variable(%s) does not exist in write_var, rc=%d\n", pvar->name, rc);
+			return_code=-2;
+			goto escape;
+		} else if (rc != NC_NOERR) {
+			fprintf(stderr, "NC4 ERROR checking existence of variable(%s) in write_var, rc=%d\n", pvar->name, rc);
+			return_code=-2;
+			goto escape;
 		}
 		Func_Timer("nc4_varid par_access", rc = nc_var_par_access(grp_ids[level], nc4_varid, NC_COLLECTIVE););
 		if (rc != NC_NOERR) {
@@ -1056,12 +1090,6 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 			goto escape;
 		}
 
-//		Func_Timer("enddef", rc = nc_enddef(grp_ids[level]););
-//		if (rc != NC_NOERR) {
-//			fprintf(stderr, "NC4 ERROR ending define mode for scalar variable(%s) in write_var, rc=%d\n", pvar->name, rc);
-//			return_code=-2;
-//			goto escape;
-//		}
 		Func_Timer("putvar", rc = nc_put_var(grp_ids[level], nc4_varid, pvar->data););
 		if (rc != NC_NOERR) {
 			fprintf(stderr, "NC4 ERROR putting scalar variable(%s) in write_var, rc=%d\n", pvar->name, rc);
@@ -1078,6 +1106,7 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 	} // end scalar write
 
 
+//	if (myrank==0) printf("write_var deciphering dims\n");
 	decipher_dims(ncid,
 			root_group,
 			group,
@@ -1091,9 +1120,21 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 	enum ADIOS_FLAG var_exists = adios_flag_yes;
 	Func_Timer("inqvar", rc = nc_inq_varid(grp_ids[level], pvar->name, &nc4_varid););
 	if (rc == NC_ENOTVAR) {
-		var_exists=adios_flag_no;
+		fprintf(stderr, "NC4 ERROR array variable(%s) does not exist in write_var, rc=%d\n", pvar->name, rc);
+		return_code=-2;
+		goto escape;
 	} else if (rc != NC_NOERR) {
 		fprintf(stderr, "NC4 ERROR checking existence of variable(%s) in write_var, rc=%d\n", pvar->name, rc);
+		return_code=-2;
+		goto escape;
+	}
+	Func_Timer("inqvar", rc = nc_inq_varid(grp_ids[level], deciphered_dims.gbdims_name, &deciphered_dims.nc4_gbglobaldims_varid););
+	if (rc == NC_ENOTVAR) {
+		fprintf(stderr, "NC4 ERROR array variable(%s) does not exist in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
+		return_code=-2;
+		goto escape;
+	} else if (rc != NC_NOERR) {
+		fprintf(stderr, "NC4 ERROR checking existence of variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
 		return_code=-2;
 		goto escape;
 	}
@@ -1104,108 +1145,21 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 
 //		if (myrank==0) printf("\twriting fixed dimension array var!\n");
 
-		if (var_exists == adios_flag_no) {
-			for (i=0;i<deciphered_dims.local_dim_count;i++) {
-				Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.nc4_local_dimnames[i], &deciphered_dims.nc4_local_dimids[i]););
-				if (rc == NC_EBADDIM) {
-					Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.nc4_local_dimnames[i], deciphered_dims.nc4_localdims[i], &deciphered_dims.nc4_local_dimids[i]););
-					if (rc != NC_NOERR) {
-						fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.nc4_local_dimnames[i], rc);
-						return_code=-2;
-						goto escape;
-					}
-				} else if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR inquiring about dimension(%s) for array variable(%s) in write_var, rc=%d\n", deciphered_dims.nc4_local_dimnames[i], pvar->name, rc);
-					return_code=-2;
-					goto escape;
-				}
-			}
-			for (i=0;i<deciphered_dims.global_dim_count;i++) {
-				Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.nc4_global_dimnames[i], &deciphered_dims.nc4_global_dimids[i]););
-				if (rc == NC_EBADDIM) {
-					Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.nc4_global_dimnames[i], deciphered_dims.nc4_globaldims[i], &deciphered_dims.nc4_global_dimids[i]););
-					if (rc != NC_NOERR) {
-						fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.nc4_global_dimnames[i], rc);
-						return_code=-2;
-						goto escape;
-					}
-				} else if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR inquiring about dimension(%s) for array variable(%s) in write_var, rc=%d\n", deciphered_dims.nc4_global_dimnames[i], pvar->name, rc);
-					return_code=-2;
-					goto escape;
-				}
-			}
-			if (deciphered_dims.has_globaldims == adios_flag_yes) {
-				Func_Timer("defvar", rc = nc_def_var(grp_ids[level], pvar->name, nc4_type_id, deciphered_dims.global_dim_count, deciphered_dims.nc4_global_dimids, &nc4_varid););
-				if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR defining array variable(%s) with global dims in write_var, rc=%d\n", pvar->name, rc);
-					return_code=-2;
-					goto escape;
-				}
-			} else {
-				Func_Timer("defvar", rc = nc_def_var(grp_ids[level], pvar->name, nc4_type_id, deciphered_dims.local_dim_count, deciphered_dims.nc4_local_dimids, &nc4_varid););
-				if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR defining array variable(%s) with local dims in write_var, rc=%d\n", pvar->name, rc);
-					return_code=-2;
-					goto escape;
-				}
-			}
-			Func_Timer("nc4_varid par_access", rc = nc_var_par_access(grp_ids[level], nc4_varid, NC_COLLECTIVE););
-			if (rc != NC_NOERR) {
-				fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", pvar->name, rc);
-				return_code=-2;
-				goto escape;
-			}
-
-
-			Func_Timer("inqvar", rc = nc_inq_varid(grp_ids[level], deciphered_dims.gbdims_name, &deciphered_dims.nc4_gbglobaldims_varid););
-			if (rc == NC_ENOTVAR) {
-				Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.gbdims_dim0_name, &deciphered_dims.nc4_gbglobaldims_dimids[0]););
-				if (rc == NC_EBADDIM) {
-					Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.gbdims_dim0_name, deciphered_dims.nc4_gbglobaldims[0], &deciphered_dims.nc4_gbglobaldims_dimids[0]););
-					if (rc != NC_NOERR) {
-						fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_dim0_name, rc);
-						return_code=-2;
-						goto escape;
-					}
-				}
-				Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.gbdims_dim1_name, &deciphered_dims.nc4_gbglobaldims_dimids[1]););
-				if (rc == NC_EBADDIM) {
-					Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.gbdims_dim1_name, deciphered_dims.nc4_gbglobaldims[1], &deciphered_dims.nc4_gbglobaldims_dimids[1]););
-					if (rc != NC_NOERR) {
-						fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_dim1_name, rc);
-						return_code=-2;
-						goto escape;
-					}
-				}
-				Func_Timer("defvar", rc = nc_def_var(grp_ids[level], deciphered_dims.gbdims_name, NC_UINT64, 2, deciphered_dims.nc4_gbglobaldims_dimids, &deciphered_dims.nc4_gbglobaldims_varid););
-				if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR defining array variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-					return_code=-2;
-					goto escape;
-				}
-				Func_Timer("gbdims_varid par_access", rc = nc_var_par_access(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, NC_COLLECTIVE););
-				if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-					return_code=-2;
-					goto escape;
-				}
-			} else if (rc != NC_NOERR) {
-				fprintf(stderr, "NC4 ERROR checking existence of variable(%s) in write_var, rc=%d\n", pvar->name, rc);
-				return_code=-2;
-				goto escape;
-			}
+		Func_Timer("nc4_varid par_access", rc = nc_var_par_access(grp_ids[level], nc4_varid, NC_COLLECTIVE););
+		if (rc != NC_NOERR) {
+			fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", pvar->name, rc);
+			return_code=-2;
+			goto escape;
+		}
+		Func_Timer("nc4_varid par_access", rc = nc_var_par_access(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, NC_COLLECTIVE););
+		if (rc != NC_NOERR) {
+			fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
+			return_code=-2;
+			goto escape;
 		}
 
 //		printf("got varid(%d) for grp_id(%d).variable(%s) in write_attribute, rc=%d\n", nc4_varid, grp_ids[level], pvar->name, rc);
 //		printf("sizeof(size_t)==%d\n", sizeof(size_t));
-
-//		Func_Timer("enddef", rc = nc_enddef(grp_ids[level]););
-//		if (rc != NC_NOERR) {
-//			fprintf(stderr, "NC4 ERROR ending define mode for array variable(%s) in write_var, rc=%d\n", pvar->name, rc);
-//			return_code=-2;
-//			goto escape;
-//		}
 
 //		Func_Timer("putvars", rc = nc_put_vars(grp_ids[level], nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data););
 		Func_Timer("putvars", rc = nc_put_vara(grp_ids[level], nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, pvar->data););
@@ -1216,7 +1170,7 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 		}
 		Func_Timer("putvara", rc = nc_put_vara(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, deciphered_dims.nc4_gboffsets, deciphered_dims.nc4_gblocaldims, deciphered_dims.nc4_gbdims););
 		if (rc != NC_NOERR) {
-			fprintf(stderr, "NC4 ERROR putting to array variable(%s) in write_var, rc=%d\n", pvar->name, rc);
+			fprintf(stderr, "NC4 ERROR putting to array variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
 			return_code=-2;
 			goto escape;
 		}
@@ -1231,136 +1185,37 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 
 //		if (myrank==0) printf("\twriting timestep array var!\n");
 
-		if (var_exists == adios_flag_no) {
-			/* define the dims and var */
-			for (i=0;i<deciphered_dims.global_dim_count;i++) {
-//				printf("inq dim name=%s, size=%d\n", deciphered_dims.nc4_global_dimnames[i], deciphered_dims.nc4_globaldims[i]);
-				Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.nc4_global_dimnames[i], &deciphered_dims.nc4_global_dimids[i]););
-				if (rc == NC_EBADDIM) {
-//					printf("def dim name=%s, size=%d\n", deciphered_dims.nc4_global_dimnames[i], deciphered_dims.nc4_globaldims[i]);
-					Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.nc4_global_dimnames[i], deciphered_dims.nc4_globaldims[i], &deciphered_dims.nc4_global_dimids[i]););
-					if (rc != NC_NOERR) {
-						fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.nc4_global_dimnames[i], rc);
-						return_code=-2;
-						goto escape;
-					}
-				} else if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR inquiring about dimension(%s) for array variable(%s) in write_var, rc=%d\n", deciphered_dims.nc4_global_dimnames[i], pvar->name, rc);
-					return_code=-2;
-					goto escape;
-				}
-			}
-			for (i=0;i<deciphered_dims.local_dim_count;i++) {
-//				printf("inq dim name=%s, size=%d\n", deciphered_dims.nc4_local_dimnames[i], deciphered_dims.nc4_localdims[i]);
-				Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.nc4_local_dimnames[i], &deciphered_dims.nc4_local_dimids[i]););
-				if (rc == NC_EBADDIM) {
-//					printf("def dim name=%s, size=%d\n", deciphered_dims.nc4_local_dimnames[i], deciphered_dims.nc4_localdims[i]);
-					Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.nc4_local_dimnames[i], deciphered_dims.nc4_localdims[i], &deciphered_dims.nc4_local_dimids[i]););
-					if (rc != NC_NOERR) {
-						fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.nc4_global_dimnames[i], rc);
-						return_code=-2;
-						goto escape;
-					}
-				} else if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR inquiring about dimension(%s) for array variable(%s) in write_var, rc=%d\n", deciphered_dims.nc4_global_dimnames[i], pvar->name, rc);
-					return_code=-2;
-					goto escape;
-				}
-			}
-
-			Func_Timer("inqvar", rc = nc_inq_varid(grp_ids[level], deciphered_dims.gbdims_name, &deciphered_dims.nc4_gbglobaldims_varid););
-			if (rc == NC_ENOTVAR) {
-				Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.gbdims_dim0_name, &deciphered_dims.nc4_gbglobaldims_dimids[0]););
-				if (rc == NC_EBADDIM) {
-					Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.gbdims_dim0_name, deciphered_dims.nc4_gbglobaldims[0], &deciphered_dims.nc4_gbglobaldims_dimids[0]););
-					if (rc != NC_NOERR) {
-						fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_dim0_name, rc);
-						return_code=-2;
-						goto escape;
-					}
-				}
-				Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.gbdims_dim1_name, &deciphered_dims.nc4_gbglobaldims_dimids[1]););
-				if (rc == NC_EBADDIM) {
-					Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.gbdims_dim1_name, deciphered_dims.nc4_gbglobaldims[1], &deciphered_dims.nc4_gbglobaldims_dimids[1]););
-					if (rc != NC_NOERR) {
-						fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_dim1_name, rc);
-						return_code=-2;
-						goto escape;
-					}
-				}
-				Func_Timer("defvar", rc = nc_def_var(grp_ids[level], deciphered_dims.gbdims_name, NC_UINT64, 2, deciphered_dims.nc4_gbglobaldims_dimids, &deciphered_dims.nc4_gbglobaldims_varid););
-				if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR defining array variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-					return_code=-2;
-					goto escape;
-				}
-				Func_Timer("gbdims_varid par_access", rc = nc_var_par_access(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, NC_COLLECTIVE););
-				if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-					return_code=-2;
-					goto escape;
-				}
-			} else if (rc != NC_NOERR) {
-				fprintf(stderr, "NC4 ERROR checking existence of variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-				return_code=-2;
-				goto escape;
-			}
-
-			Func_Timer("defvar", rc = nc_def_var(grp_ids[level], pvar->name, nc4_type_id, deciphered_dims.local_dim_count, deciphered_dims.nc4_global_dimids, &nc4_varid););
-			if (rc != NC_NOERR) {
-				fprintf(stderr, "NC4 ERROR defining array variable(%s) in write_var, rc=%d\n", pvar->name, rc);
-				return_code=-2;
-				goto escape;
-			}
-			Func_Timer("nc4_varid par_access", rc = nc_var_par_access(grp_ids[level], nc4_varid, NC_COLLECTIVE););
-			if (rc != NC_NOERR) {
-				fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", pvar->name, rc);
-				return_code=-2;
-				goto escape;
-			}
-
-//			Func_Timer("enddef", rc = nc_enddef(grp_ids[level]););
-//			if (rc != NC_NOERR) {
-//				fprintf(stderr, "NC4 ERROR ending define mode for array variable(%s) in write_var, rc=%d\n", pvar->name, rc);
-//				return_code=-2;
-//				goto escape;
-//			}
-		} else {
-			Func_Timer("inqvar", rc = nc_inq_varid(grp_ids[level], deciphered_dims.gbdims_name, &deciphered_dims.nc4_gbglobaldims_varid););
-			if (rc == NC_ENOTVAR) {
-				fprintf(stderr, "NC4 ERROR variable(%s) does not exist in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-				return_code=-2;
-				goto escape;
-			} else if (rc != NC_NOERR) {
-				fprintf(stderr, "NC4 ERROR checking existence of variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-				return_code=-2;
-				goto escape;
-			}
-			Func_Timer("gbdims_varid par_access", rc = nc_var_par_access(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, NC_COLLECTIVE););
-			if (rc != NC_NOERR) {
-				fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-				return_code=-2;
-				goto escape;
-			}
-
-			Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.nc4_local_dimnames[deciphered_dims.timedim_index], &deciphered_dims.nc4_global_dimids[deciphered_dims.timedim_index]););
-			if (rc != NC_NOERR) {
-				fprintf(stderr, "NC4 ERROR inquiring about dimension(%s) for array variable(%s) in write_var, rc=%d\n", deciphered_dims.nc4_local_dimnames[i], pvar->name, rc);
-				return_code=-2;
-				goto escape;
-			}
-			/* get the current timestep */
-			Func_Timer("inqdimlen", rc = nc_inq_dimlen(grp_ids[level], deciphered_dims.nc4_global_dimids[deciphered_dims.timedim_index], &current_timestep););
-			if (rc != NC_NOERR) {
-				fprintf(stderr, "NC4 ERROR error getting current timestep for array variable(%s) in write_var, rc=%d\n", pvar->name, rc);
-				return_code=-2;
-				goto escape;
-			}
-//			printf("current_timestep==%d\n", current_timestep);
-			/* the next timestep goes after the current.  increment timestep. */
-			/* THK: don't increment.  dims are 1-based, while offsets are 0-based. */
-			// current_timestep++;
+		Func_Timer("gbdims_varid par_access", rc = nc_var_par_access(grp_ids[level], deciphered_dims.nc4_gbglobaldims_varid, NC_COLLECTIVE););
+		if (rc != NC_NOERR) {
+			fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
+			return_code=-2;
+			goto escape;
 		}
+
+		Func_Timer("nc4_varid par_access", rc = nc_var_par_access(grp_ids[level], nc4_varid, NC_COLLECTIVE););
+		if (rc != NC_NOERR) {
+			fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", pvar->name, rc);
+			return_code=-2;
+			goto escape;
+		}
+
+		Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.nc4_local_dimnames[deciphered_dims.timedim_index], &deciphered_dims.nc4_global_dimids[deciphered_dims.timedim_index]););
+		if (rc != NC_NOERR) {
+			fprintf(stderr, "NC4 ERROR inquiring about dimension(%s) for array variable(%s) in write_var, rc=%d\n", deciphered_dims.nc4_local_dimnames[i], pvar->name, rc);
+			return_code=-2;
+			goto escape;
+		}
+		/* get the current timestep */
+		Func_Timer("inqdimlen", rc = nc_inq_dimlen(grp_ids[level], deciphered_dims.nc4_global_dimids[deciphered_dims.timedim_index], &current_timestep););
+		if (rc != NC_NOERR) {
+			fprintf(stderr, "NC4 ERROR error getting current timestep for array variable(%s) in write_var, rc=%d\n", pvar->name, rc);
+			return_code=-2;
+			goto escape;
+		}
+		//			printf("current_timestep==%d\n", current_timestep);
+		/* the next timestep goes after the current.  increment timestep. */
+		/* THK: don't increment.  dims are 1-based, while offsets are 0-based. */
+		// current_timestep++;
 
 		deciphered_dims.nc4_offsets[deciphered_dims.timedim_index]=current_timestep;
 //		Func_Timer("putvars", rc = nc_put_vars(grp_ids[level], nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data););
@@ -1381,6 +1236,309 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 		/* end writing array with unlimited dimension */
 
 	}
+
+escape:
+	Func_Timer("close_groups", close_groups(grp_ids, level, adios_flag_yes););
+
+	cleanup_deciphered_dims(&deciphered_dims);
+
+	return return_code;
+}
+
+int write_header(int ncid,
+		int root_group,
+		struct adios_group_struct *group,
+		struct adios_var_struct *pvar_root,
+		struct adios_attribute_struct *patt_root,
+		struct adios_var_struct *pvar,
+		enum ADIOS_FLAG fortran_flag,
+		int myrank,
+		int nproc)
+{
+	int i;
+	int rc;
+	int return_code=0;
+	int grp_ids[NUM_GP];
+	int level;
+	char *last;
+	int nc4_type_id;
+	int nc4_varid;
+	deciphered_dims_t deciphered_dims;
+
+//	int myrank=md->rank;
+//	int nproc=md->size;
+
+//	struct adios_var_struct *pvar=fd->group->vars;
+//	enum ADIOS_FLAG fortran_flag=fd->group->adios_host_language_fortran;
+
+//	while(pvar != NULL) {
+
+//		if (myrank==0) printf("pvar==%p\n", pvar);
+
+//		int ncid=md->ncid;
+//		int root_group=md->root_ncid;
+//		struct adios_group_struct *group=fd->group;
+//		struct adios_var_struct *pvar_root=fd->group->vars;
+//		struct adios_attribute_struct *patt_root=fd->group->attributes;
+
+		memset(&deciphered_dims, 0, sizeof(deciphered_dims_t));
+
+		getNC4TypeId(pvar->type, &nc4_type_id, fortran_flag);
+		if(nc4_type_id <= 0) {
+			fprintf(stderr, "NC4 ERROR in getH5TypeId in write_var\n");
+			return_code=-2;
+			goto escape;
+		}
+
+		if (pvar->path) {
+			Func_Timer("open_groups", open_groups(ncid, pvar->path, grp_ids, &level, &last, adios_flag_no, adios_flag_yes););
+		}
+
+		// printf("root_id=%d, grp_id=%d\n", root_id, grp_ids[level]);
+
+		if (!pvar->dimensions) { // begin scalar write
+			Func_Timer("inqvar", rc = nc_inq_varid(grp_ids[level], pvar->name, &nc4_varid););
+			if (rc == NC_ENOTVAR) {
+				if (pvar->type == adios_string) {
+					size_t str_var_dimid=0;
+					char str_var_dimname[40];
+					sprintf(str_var_dimname, "%s_dim", pvar->name);
+					Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], str_var_dimname, strlen((char *)pvar->data)+1, &str_var_dimid););
+					if (rc != NC_NOERR) {
+						fprintf(stderr, "NC4 ERROR defining string variable(%s) dim in write_var, rc=%d\n", pvar->name, rc);
+						return_code=-2;
+						goto escape;
+					}
+					Func_Timer("defvar", rc = nc_def_var(grp_ids[level], pvar->name, nc4_type_id, 1, &str_var_dimid, &nc4_varid););
+					if (rc != NC_NOERR) {
+						fprintf(stderr, "NC4 ERROR defining string variable(%s) in write_var, rc=%d\n", pvar->name, rc);
+						return_code=-2;
+						goto escape;
+					}
+				} else {
+					Func_Timer("defvar", rc = nc_def_var(grp_ids[level], pvar->name, nc4_type_id, 0, NULL, &nc4_varid););
+					if (rc != NC_NOERR) {
+						fprintf(stderr, "NC4 ERROR defining scalar variable(%s) in write_var, rc=%d\n", pvar->name, rc);
+						return_code=-2;
+						goto escape;
+					}
+				}
+			}
+
+//			pvar=pvar->next;
+//
+//			continue;
+
+			goto escape;
+		} // end scalar write
+
+//		if (myrank==0) printf("write_header deciphering dims\n");
+		decipher_dims(ncid,
+				root_group,
+				group,
+				pvar_root,
+				patt_root,
+				pvar,
+				myrank,
+				nproc,
+				&deciphered_dims);
+
+		enum ADIOS_FLAG var_exists = adios_flag_yes;
+		Func_Timer("inqvar", rc = nc_inq_varid(grp_ids[level], pvar->name, &nc4_varid););
+		if (rc == NC_ENOTVAR) {
+			var_exists=adios_flag_no;
+		} else if (rc != NC_NOERR) {
+			fprintf(stderr, "NC4 ERROR checking existence of variable(%s) in write_var, rc=%d\n", pvar->name, rc);
+			return_code=-2;
+			goto escape;
+		}
+
+		if (deciphered_dims.has_timedim == adios_flag_no) {
+
+			/* begin writing array with fixed dimensions */
+
+			//		if (myrank==0) printf("\twriting fixed dimension array var!\n");
+
+			if (var_exists == adios_flag_no) {
+				for (i=0;i<deciphered_dims.local_dim_count;i++) {
+					Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.nc4_local_dimnames[i], &deciphered_dims.nc4_local_dimids[i]););
+					if (rc == NC_EBADDIM) {
+						Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.nc4_local_dimnames[i], deciphered_dims.nc4_localdims[i], &deciphered_dims.nc4_local_dimids[i]););
+						if (rc != NC_NOERR) {
+							fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.nc4_local_dimnames[i], rc);
+							return_code=-2;
+							goto escape;
+						}
+					} else if (rc != NC_NOERR) {
+						fprintf(stderr, "NC4 ERROR inquiring about dimension(%s) for array variable(%s) in write_var, rc=%d\n", deciphered_dims.nc4_local_dimnames[i], pvar->name, rc);
+						return_code=-2;
+						goto escape;
+					}
+				}
+				for (i=0;i<deciphered_dims.global_dim_count;i++) {
+					Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.nc4_global_dimnames[i], &deciphered_dims.nc4_global_dimids[i]););
+					if (rc == NC_EBADDIM) {
+						Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.nc4_global_dimnames[i], deciphered_dims.nc4_globaldims[i], &deciphered_dims.nc4_global_dimids[i]););
+						if (rc != NC_NOERR) {
+							fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.nc4_global_dimnames[i], rc);
+							return_code=-2;
+							goto escape;
+						}
+					} else if (rc != NC_NOERR) {
+						fprintf(stderr, "NC4 ERROR inquiring about dimension(%s) for array variable(%s) in write_var, rc=%d\n", deciphered_dims.nc4_global_dimnames[i], pvar->name, rc);
+						return_code=-2;
+						goto escape;
+					}
+				}
+				if (deciphered_dims.has_globaldims == adios_flag_yes) {
+					Func_Timer("defvar", rc = nc_def_var(grp_ids[level], pvar->name, nc4_type_id, deciphered_dims.global_dim_count, deciphered_dims.nc4_global_dimids, &nc4_varid););
+					if (rc != NC_NOERR) {
+						fprintf(stderr, "NC4 ERROR defining array variable(%s) with global dims in write_var, rc=%d\n", pvar->name, rc);
+						return_code=-2;
+						goto escape;
+					}
+				} else {
+					Func_Timer("defvar", rc = nc_def_var(grp_ids[level], pvar->name, nc4_type_id, deciphered_dims.local_dim_count, deciphered_dims.nc4_local_dimids, &nc4_varid););
+					if (rc != NC_NOERR) {
+						fprintf(stderr, "NC4 ERROR defining array variable(%s) with local dims in write_var, rc=%d\n", pvar->name, rc);
+						return_code=-2;
+						goto escape;
+					}
+				}
+
+				Func_Timer("inqvar", rc = nc_inq_varid(grp_ids[level], deciphered_dims.gbdims_name, &deciphered_dims.nc4_gbglobaldims_varid););
+				if (rc == NC_ENOTVAR) {
+					Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.gbdims_dim0_name, &deciphered_dims.nc4_gbglobaldims_dimids[0]););
+					if (rc == NC_EBADDIM) {
+						Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.gbdims_dim0_name, deciphered_dims.nc4_gbglobaldims[0], &deciphered_dims.nc4_gbglobaldims_dimids[0]););
+						if (rc != NC_NOERR) {
+							fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_dim0_name, rc);
+							return_code=-2;
+							goto escape;
+						}
+					}
+					Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.gbdims_dim1_name, &deciphered_dims.nc4_gbglobaldims_dimids[1]););
+					if (rc == NC_EBADDIM) {
+						Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.gbdims_dim1_name, deciphered_dims.nc4_gbglobaldims[1], &deciphered_dims.nc4_gbglobaldims_dimids[1]););
+						if (rc != NC_NOERR) {
+							fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_dim1_name, rc);
+							return_code=-2;
+							goto escape;
+						}
+					}
+					Func_Timer("defvar", rc = nc_def_var(grp_ids[level], deciphered_dims.gbdims_name, NC_UINT64, 2, deciphered_dims.nc4_gbglobaldims_dimids, &deciphered_dims.nc4_gbglobaldims_varid););
+					if (rc != NC_NOERR) {
+						fprintf(stderr, "NC4 ERROR defining array variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
+						return_code=-2;
+						goto escape;
+					}
+				} else if (rc != NC_NOERR) {
+					fprintf(stderr, "NC4 ERROR checking existence of variable(%s) in write_var, rc=%d\n", pvar->name, rc);
+					return_code=-2;
+					goto escape;
+				}
+			}
+
+			//		printf("got varid(%d) for grp_id(%d).variable(%s) in write_attribute, rc=%d\n", nc4_varid, grp_ids[level], pvar->name, rc);
+			//		printf("sizeof(size_t)==%d\n", sizeof(size_t));
+
+			/* end writing array with fixed dimensions */
+
+		} else {
+
+			/* begin writing array with unlimited dimension */
+
+			size_t current_timestep=0;
+
+			//		if (myrank==0) printf("\twriting timestep array var!\n");
+
+			if (var_exists == adios_flag_no) {
+				/* define the dims and var */
+				for (i=0;i<deciphered_dims.global_dim_count;i++) {
+					//				printf("inq dim name=%s, size=%d\n", deciphered_dims.nc4_global_dimnames[i], deciphered_dims.nc4_globaldims[i]);
+					Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.nc4_global_dimnames[i], &deciphered_dims.nc4_global_dimids[i]););
+					if (rc == NC_EBADDIM) {
+						//					printf("def dim name=%s, size=%d\n", deciphered_dims.nc4_global_dimnames[i], deciphered_dims.nc4_globaldims[i]);
+						Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.nc4_global_dimnames[i], deciphered_dims.nc4_globaldims[i], &deciphered_dims.nc4_global_dimids[i]););
+						if (rc != NC_NOERR) {
+							fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.nc4_global_dimnames[i], rc);
+							return_code=-2;
+							goto escape;
+						}
+					} else if (rc != NC_NOERR) {
+						fprintf(stderr, "NC4 ERROR inquiring about dimension(%s) for array variable(%s) in write_var, rc=%d\n", deciphered_dims.nc4_global_dimnames[i], pvar->name, rc);
+						return_code=-2;
+						goto escape;
+					}
+				}
+				for (i=0;i<deciphered_dims.local_dim_count;i++) {
+					//				printf("inq dim name=%s, size=%d\n", deciphered_dims.nc4_local_dimnames[i], deciphered_dims.nc4_localdims[i]);
+					Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.nc4_local_dimnames[i], &deciphered_dims.nc4_local_dimids[i]););
+					if (rc == NC_EBADDIM) {
+						//					printf("def dim name=%s, size=%d\n", deciphered_dims.nc4_local_dimnames[i], deciphered_dims.nc4_localdims[i]);
+						Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.nc4_local_dimnames[i], deciphered_dims.nc4_localdims[i], &deciphered_dims.nc4_local_dimids[i]););
+						if (rc != NC_NOERR) {
+							fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.nc4_global_dimnames[i], rc);
+							return_code=-2;
+							goto escape;
+						}
+					} else if (rc != NC_NOERR) {
+						fprintf(stderr, "NC4 ERROR inquiring about dimension(%s) for array variable(%s) in write_var, rc=%d\n", deciphered_dims.nc4_global_dimnames[i], pvar->name, rc);
+						return_code=-2;
+						goto escape;
+					}
+				}
+
+				Func_Timer("inqvar", rc = nc_inq_varid(grp_ids[level], deciphered_dims.gbdims_name, &deciphered_dims.nc4_gbglobaldims_varid););
+				if (rc == NC_ENOTVAR) {
+					Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.gbdims_dim0_name, &deciphered_dims.nc4_gbglobaldims_dimids[0]););
+					if (rc == NC_EBADDIM) {
+						Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.gbdims_dim0_name, deciphered_dims.nc4_gbglobaldims[0], &deciphered_dims.nc4_gbglobaldims_dimids[0]););
+						if (rc != NC_NOERR) {
+							fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_dim0_name, rc);
+							return_code=-2;
+							goto escape;
+						}
+					}
+					Func_Timer("inqdim", rc = nc_inq_dimid(grp_ids[level], deciphered_dims.gbdims_dim1_name, &deciphered_dims.nc4_gbglobaldims_dimids[1]););
+					if (rc == NC_EBADDIM) {
+						Func_Timer("defdim", rc = nc_def_dim(grp_ids[level], deciphered_dims.gbdims_dim1_name, deciphered_dims.nc4_gbglobaldims[1], &deciphered_dims.nc4_gbglobaldims_dimids[1]););
+						if (rc != NC_NOERR) {
+							fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_dim1_name, rc);
+							return_code=-2;
+							goto escape;
+						}
+					}
+					Func_Timer("defvar", rc = nc_def_var(grp_ids[level], deciphered_dims.gbdims_name, NC_UINT64, 2, deciphered_dims.nc4_gbglobaldims_dimids, &deciphered_dims.nc4_gbglobaldims_varid););
+					if (rc != NC_NOERR) {
+						fprintf(stderr, "NC4 ERROR defining array variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
+						return_code=-2;
+						goto escape;
+					}
+				} else if (rc != NC_NOERR) {
+					fprintf(stderr, "NC4 ERROR checking existence of variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
+					return_code=-2;
+					goto escape;
+				}
+
+				Func_Timer("defvar", rc = nc_def_var(grp_ids[level], pvar->name, nc4_type_id, deciphered_dims.local_dim_count, deciphered_dims.nc4_global_dimids, &nc4_varid););
+				if (rc != NC_NOERR) {
+					fprintf(stderr, "NC4 ERROR defining array variable(%s) in write_var, rc=%d\n", pvar->name, rc);
+					return_code=-2;
+					goto escape;
+				}
+			}
+
+			/* end writing array with unlimited dimension */
+
+		}
+
+//		cleanup_deciphered_dims(&deciphered_dims);
+
+//		pvar=pvar->next;
+//
+//		continue;
+//	}
 
 escape:
 	Func_Timer("close_groups", close_groups(grp_ids, level, adios_flag_yes););
