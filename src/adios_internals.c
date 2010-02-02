@@ -1159,8 +1159,37 @@ int adios_common_declare_group (int64_t * id, const char * name
 
 int adios_common_free_group (int64_t id)
 {
-    return 0;
+    struct adios_group_list_struct * root = adios_groups;
+    struct adios_group_list_struct * old_root = adios_groups;
     struct adios_group_struct * g = (struct adios_group_struct *) id;
+
+    if (!root)
+    {
+        fprintf (stderr, "Err in adios_common_free_group()\n");
+        return -1;
+    }
+    while (root && root->group->id != g->id)
+    {
+        old_root = root;
+        root = root->next;
+    };
+
+    if (!root)
+    {
+        // Didn't find the group
+        fprintf (stderr, "Err in adios_common_free_group()\n");
+        return -1;
+    }
+
+    // old_root->root->root next
+    if (old_root == adios_groups)
+    {
+        adios_groups =  root->next;
+    }
+    else
+    {
+        old_root->next = root->next;
+    }
 
     if (g->name)
         free (g->name);
@@ -1193,6 +1222,8 @@ int adios_common_free_group (int64_t id)
         free (g->vars);
         g->vars = vars;
     }
+
+    free (root);
 
     return 0;
 }
