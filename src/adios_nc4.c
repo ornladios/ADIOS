@@ -285,13 +285,6 @@ enum ADIOS_FLAG adios_nc4_should_buffer (struct adios_file_struct * fd, struct a
 	}
 
 	md->root_ncid = md->ncid;
-//	rc = nc_inq_ncid(md->ncid, NULL, &md->root_ncid);
-//	if (rc != NC_NOERR)
-//	{
-//		fprintf (stderr, "ADIOS NC4: root group not found (THIS SHOULD NEVER HAPPEN): %s\n", fd->name);
-//		free (name);
-//		return adios_flag_no;
-//	}
 
 	free(name);
 
@@ -317,7 +310,6 @@ void adios_nc4_write (struct adios_file_struct * fd, struct adios_var_struct * v
 //			write_header(fd, md);
 //			first_write = 0;
 //		}
-
 
 		if (md->rank==0) {
 //			fprintf(stderr, "-------------------------\n");
@@ -431,12 +423,8 @@ int write_attribute(int ncid,
 		int nproc)
 {
 	int i, rank = 0;
-//	char *name;
-//	char *last;
 	int rc;
 
-//	int level;
-//	int grp_ids[NUM_GP];
 	int nc4_type_id;
 	int varid;
 	int attid;
@@ -450,7 +438,6 @@ int write_attribute(int ncid,
 	int err_code = 0;
 
 
-//    open_groups(root_group, patt->path, grp_ids, &level, &last, adios_flag_yes, adios_flag_yes);
 	ncd_gen_name(attname, patt->path, patt->name);
     varid = -1;
     if (strcmp(patt->path,"/")==0) {
@@ -571,7 +558,6 @@ int write_attribute(int ncid,
 		}
 	}
 escape:
-//	close_groups(grp_ids, level, adios_flag_yes);
 	return err_code;
 }
 
@@ -842,13 +828,10 @@ int read_var (int ncid,
 {
 	int return_code=0;
 	int i, rc;
-//	char *last;
 	struct adios_dimension_struct * dims = pvar->dimensions;
 	deciphered_dims_t deciphered_dims;
 	char fullname[255];
 
-//	int grp_ids[NUM_GP];
-//	int level;
 	int nc4_type_id;
 	int nc4_varid;
 
@@ -861,11 +844,7 @@ int read_var (int ncid,
 	}
 
 	ncd_gen_name(fullname, pvar->path, pvar->name);
-//	if (pvar->path) {
-//		open_groups(ncid, pvar->path, grp_ids, &level, &last, adios_flag_no, adios_flag_yes);
-//	}
 	//printf("root_id=%d, grd_ids[%d]=%d\n", root_id, level, ncid);
-	// variable is scalar only need to read by every processor
 
 	rc = nc_inq_varid(ncid, fullname, &nc4_varid);
 	if (rc == NC_ENOTVAR) {
@@ -897,7 +876,6 @@ int read_var (int ncid,
 		//printf("write dataset: name=%s/%s status=%d myrank=%d\n"
 		//         , pvar->path,fullname,status, myrank);
 
-//		close_groups(grp_ids,level, adios_flag_yes);
 		return_code=0;
 		goto escape;
 	} // end scalar write
@@ -1048,8 +1026,6 @@ int read_var (int ncid,
 	}
 
 escape:
-//	close_groups(grp_ids, level, adios_flag_yes);
-
 	cleanup_deciphered_dims(&deciphered_dims);
 
 	return return_code;
@@ -1059,9 +1035,6 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 	int i;
 	int rc;
 	int return_code=0;
-//	int grp_ids[NUM_GP];
-//	int level;
-//	char *last;
 	int nc4_type_id;
 	int nc4_varid;
 	deciphered_dims_t deciphered_dims;
@@ -1077,9 +1050,6 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 	}
 
 	ncd_gen_name(fullname, pvar->path, pvar->name);
-//	if (pvar->path) {
-//		Func_Timer("open_groups", open_groups(ncid, pvar->path, grp_ids, &level, &last, adios_flag_no, adios_flag_yes););
-//	}
 
 	Func_Timer("inqvar", rc = nc_inq_varid(ncid, fullname, &nc4_varid););
 	if (rc == NC_ENOTVAR) {
@@ -1125,8 +1095,6 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 		//printf("write dataset: name=%s/%s status=%d myrank=%d\n"
 		//         , pvar->path,fullname,status, myrank);
 
-//		close_groups(grp_ids,level, adios_flag_yes);
-
 		goto escape;
 	} // end scalar write
 
@@ -1153,16 +1121,6 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 		return_code=-2;
 		goto escape;
 	}
-	Func_Timer("inqvar", rc = nc_inq_varid(ncid, deciphered_dims.gbdims_name, &deciphered_dims.nc4_gbglobaldims_varid););
-	if (rc == NC_ENOTVAR) {
-		fprintf(stderr, "NC4 ERROR array variable(%s) does not exist in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-		return_code=-2;
-		goto escape;
-	} else if (rc != NC_NOERR) {
-		fprintf(stderr, "NC4 ERROR checking existence of variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-		return_code=-2;
-		goto escape;
-	}
 
 	if (deciphered_dims.has_timedim == adios_flag_no) {
 
@@ -1173,12 +1131,6 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 		Func_Timer("nc4_varid par_access", rc = nc_var_par_access(ncid, nc4_varid, NC_COLLECTIVE););
 		if (rc != NC_NOERR) {
 			fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", fullname, rc);
-			return_code=-2;
-			goto escape;
-		}
-		Func_Timer("nc4_varid par_access", rc = nc_var_par_access(ncid, deciphered_dims.nc4_gbglobaldims_varid, NC_COLLECTIVE););
-		if (rc != NC_NOERR) {
-			fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
 			return_code=-2;
 			goto escape;
 		}
@@ -1193,12 +1145,6 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 			return_code=-2;
 			goto escape;
 		}
-		Func_Timer("putvara", rc = nc_put_vara(ncid, deciphered_dims.nc4_gbglobaldims_varid, deciphered_dims.nc4_gboffsets, deciphered_dims.nc4_gblocaldims, deciphered_dims.nc4_gbdims););
-		if (rc != NC_NOERR) {
-			fprintf(stderr, "NC4 ERROR putting to array variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-			return_code=-2;
-			goto escape;
-		}
 
 		/* end writing array with fixed dimensions */
 
@@ -1209,13 +1155,6 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 		size_t current_timestep=0;
 
 //		if (myrank==0) printf("\twriting timestep array var!\n");
-
-		Func_Timer("gbdims_varid par_access", rc = nc_var_par_access(ncid, deciphered_dims.nc4_gbglobaldims_varid, NC_COLLECTIVE););
-		if (rc != NC_NOERR) {
-			fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-			return_code=-2;
-			goto escape;
-		}
 
 		Func_Timer("nc4_varid par_access", rc = nc_var_par_access(ncid, nc4_varid, NC_COLLECTIVE););
 		if (rc != NC_NOERR) {
@@ -1250,21 +1189,12 @@ int write_var(int ncid, int root_group, struct adios_group_struct *group, struct
 			return_code=-2;
 			goto escape;
 		}
-		deciphered_dims.nc4_globaldims[deciphered_dims.timedim_index]=current_timestep+1;
-		Func_Timer("putvara", rc = nc_put_vara(ncid, deciphered_dims.nc4_gbglobaldims_varid, deciphered_dims.nc4_gboffsets, deciphered_dims.nc4_gblocaldims, deciphered_dims.nc4_gbdims););
-		if (rc != NC_NOERR) {
-			fprintf(stderr, "NC4 ERROR putting to array variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-			return_code=-2;
-			goto escape;
-		}
 
 		/* end writing array with unlimited dimension */
 
 	}
 
 escape:
-//	Func_Timer("close_groups", close_groups(grp_ids, level, adios_flag_yes););
-
 	cleanup_deciphered_dims(&deciphered_dims);
 
 	return return_code;
@@ -1283,9 +1213,6 @@ int write_header(int ncid,
 	int i;
 	int rc;
 	int return_code=0;
-//	int grp_ids[NUM_GP];
-//	int level;
-//	char *last;
 	int nc4_type_id;
 	int nc4_varid;
 	deciphered_dims_t deciphered_dims;
@@ -1317,10 +1244,6 @@ int write_header(int ncid,
 		}
 
 		ncd_gen_name(fullname, pvar->path, pvar->name);
-//		if (pvar->path) {
-//			Func_Timer("open_groups", open_groups(ncid, pvar->path, grp_ids, &level, &last, adios_flag_no, adios_flag_yes););
-//		}
-
 		// printf("root_id=%d, grp_id=%d\n", root_id, ncid);
 
 		if (!pvar->dimensions) { // begin scalar write
@@ -1432,38 +1355,6 @@ int write_header(int ncid,
 						goto escape;
 					}
 				}
-
-				Func_Timer("inqvar", rc = nc_inq_varid(ncid, deciphered_dims.gbdims_name, &deciphered_dims.nc4_gbglobaldims_varid););
-				if (rc == NC_ENOTVAR) {
-					Func_Timer("inqdim", rc = nc_inq_dimid(ncid, deciphered_dims.gbdims_dim0_name, &deciphered_dims.nc4_gbglobaldims_dimids[0]););
-					if (rc == NC_EBADDIM) {
-						Func_Timer("defdim", rc = nc_def_dim(ncid, deciphered_dims.gbdims_dim0_name, deciphered_dims.nc4_gbglobaldims[0], &deciphered_dims.nc4_gbglobaldims_dimids[0]););
-						if (rc != NC_NOERR) {
-							fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_dim0_name, rc);
-							return_code=-2;
-							goto escape;
-						}
-					}
-					Func_Timer("inqdim", rc = nc_inq_dimid(ncid, deciphered_dims.gbdims_dim1_name, &deciphered_dims.nc4_gbglobaldims_dimids[1]););
-					if (rc == NC_EBADDIM) {
-						Func_Timer("defdim", rc = nc_def_dim(ncid, deciphered_dims.gbdims_dim1_name, deciphered_dims.nc4_gbglobaldims[1], &deciphered_dims.nc4_gbglobaldims_dimids[1]););
-						if (rc != NC_NOERR) {
-							fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_dim1_name, rc);
-							return_code=-2;
-							goto escape;
-						}
-					}
-					Func_Timer("defvar", rc = nc_def_var(ncid, deciphered_dims.gbdims_name, NC_UINT64, 2, deciphered_dims.nc4_gbglobaldims_dimids, &deciphered_dims.nc4_gbglobaldims_varid););
-					if (rc != NC_NOERR) {
-						fprintf(stderr, "NC4 ERROR defining array variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-						return_code=-2;
-						goto escape;
-					}
-				} else if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR checking existence of variable(%s) in write_var, rc=%d\n", fullname, rc);
-					return_code=-2;
-					goto escape;
-				}
 			}
 
 			//		printf("got varid(%d) for grp_id(%d).variable(%s) in write_attribute, rc=%d\n", nc4_varid, ncid, fullname, rc);
@@ -1516,38 +1407,6 @@ int write_header(int ncid,
 					}
 				}
 
-				Func_Timer("inqvar", rc = nc_inq_varid(ncid, deciphered_dims.gbdims_name, &deciphered_dims.nc4_gbglobaldims_varid););
-				if (rc == NC_ENOTVAR) {
-					Func_Timer("inqdim", rc = nc_inq_dimid(ncid, deciphered_dims.gbdims_dim0_name, &deciphered_dims.nc4_gbglobaldims_dimids[0]););
-					if (rc == NC_EBADDIM) {
-						Func_Timer("defdim", rc = nc_def_dim(ncid, deciphered_dims.gbdims_dim0_name, deciphered_dims.nc4_gbglobaldims[0], &deciphered_dims.nc4_gbglobaldims_dimids[0]););
-						if (rc != NC_NOERR) {
-							fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_dim0_name, rc);
-							return_code=-2;
-							goto escape;
-						}
-					}
-					Func_Timer("inqdim", rc = nc_inq_dimid(ncid, deciphered_dims.gbdims_dim1_name, &deciphered_dims.nc4_gbglobaldims_dimids[1]););
-					if (rc == NC_EBADDIM) {
-						Func_Timer("defdim", rc = nc_def_dim(ncid, deciphered_dims.gbdims_dim1_name, deciphered_dims.nc4_gbglobaldims[1], &deciphered_dims.nc4_gbglobaldims_dimids[1]););
-						if (rc != NC_NOERR) {
-							fprintf(stderr, "NC4 ERROR defining array dimension(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_dim1_name, rc);
-							return_code=-2;
-							goto escape;
-						}
-					}
-					Func_Timer("defvar", rc = nc_def_var(ncid, deciphered_dims.gbdims_name, NC_UINT64, 2, deciphered_dims.nc4_gbglobaldims_dimids, &deciphered_dims.nc4_gbglobaldims_varid););
-					if (rc != NC_NOERR) {
-						fprintf(stderr, "NC4 ERROR defining array variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-						return_code=-2;
-						goto escape;
-					}
-				} else if (rc != NC_NOERR) {
-					fprintf(stderr, "NC4 ERROR checking existence of variable(%s) in write_var, rc=%d\n", deciphered_dims.gbdims_name, rc);
-					return_code=-2;
-					goto escape;
-				}
-
 				Func_Timer("defvar", rc = nc_def_var(ncid, fullname, nc4_type_id, deciphered_dims.local_dim_count, deciphered_dims.nc4_global_dimids, &nc4_varid););
 				if (rc != NC_NOERR) {
 					fprintf(stderr, "NC4 ERROR defining array variable(%s) in write_var, rc=%d\n", fullname, rc);
@@ -1568,8 +1427,6 @@ int write_header(int ncid,
 //	}
 
 escape:
-//	Func_Timer("close_groups", close_groups(grp_ids, level, adios_flag_yes););
-
 	cleanup_deciphered_dims(&deciphered_dims);
 
 	return return_code;
@@ -1676,27 +1533,6 @@ int getTypeSize(enum ADIOS_DATATYPES type, void *val)
 	}
 }
 
-// close group/dataset
-// adios_flag_yes      group
-// adios_flag_no       dataset
-
-void close_groups(int *grp_id, int level, enum ADIOS_FLAG flag)
-{
-	//     int i;
-	//     if (flag == adios_flag_unknown) {
-	//         fprintf (stderr, "Unknown flag in hw_gclose!\n");
-	//         return;
-	//     }
-	//     for ( i = 1; i <= level; i++) {
-	//         if (i == level && flag == adios_flag_no)
-	//             H5Dclose(grp_id[i]);
-	//         else
-	//             H5Gclose(grp_id[i]);
-	//
-	//     }
-}
-
-
 int ncd_gen_name (char *fullname, char *path, char *name)
 {
     int i;
@@ -1732,80 +1568,6 @@ int ncd_gen_name (char *fullname, char *path, char *name)
     return 0;
 }
 
-
-// open group/dataset
-// adios_flag_yes      group
-// adios_flag_no       dataset
-// adios_flag_unknown 
-
-void open_groups(int root_group,
-		char *path,
-		int *grp_id,
-		int *level,
-		char **last,
-		enum ADIOS_FLAG open_for_attr,
-		enum ADIOS_FLAG flag)
-{
-	if (flag == adios_flag_unknown) {
-		fprintf (stderr, "Unknown flag in open_groups!\n");
-		return;
-	}
-	int rc=0;
-	int i, idx = 0, len = 0;
-	char * pch, ** grp_name, * tmpstr;
-
-//	printf("group_path==%s\n", path);
-
-	len=strlen(path);
-	if (path[len-1] == '/') {
-		path[len-1]='\0';
-	}
-	tmpstr= (char *)malloc(strlen(path)+1);
-	strcpy (tmpstr, path);
-	pch = strtok(tmpstr,"/");
-	grp_name = (char **) malloc(NUM_GP);
-	while ( pch!=NULL && *pch!=' ') {
-		len = strlen(pch);
-		grp_name[idx]  = (char *)malloc(len+1);
-		grp_name[idx][0]='\0';
-		strcat(grp_name[idx],pch);
-		*last = path+(pch-tmpstr);
-		pch=strtok(NULL,"/");
-		idx=idx+1;
-	}
-	*level = idx;
-	if (open_for_attr == adios_flag_yes) {
-		*level = idx-1;
-	} else {
-		*level = idx;
-	}
-	grp_id[0] = root_group;
-	for ( i = 0; i < *level; i++) {
-//		printf("idx==%d, level==%d\n", idx, *level);
-		rc = nc_inq_ncid(grp_id[i], grp_name[i], &(grp_id[i+1]));
-		if (rc == NC_ENOGRP) {
-//			printf("defining grp_name[%d]==%s\n", i, grp_name[i]);
-			rc = nc_def_grp(grp_id[i], grp_name[i], &(grp_id[i+1]));
-//			printf("defined grp_name[%d]==%s with grp_id==%d\n", i, grp_name[i], grp_id[i+1]);
-			if (rc != NC_NOERR) {
-				if (rc == NC_ENAMEINUSE) {
-					fprintf(stdout, "group exists.  how did this happen?  nc_inq_ncid failed. rc=%d\n", rc);
-				} else {
-					fprintf (stderr, "NC4 ERROR: create group %s failed! rc=%d\n", grp_name[i], rc);
-					return;
-				}
-			}
-		} else if (rc != NC_NOERR) {
-			fprintf (stderr, "NC4 ERROR: group lookup(%s) failed! rc=%d\n", grp_name[i], rc);
-		}
-//		printf("found grp_name[%d]==%s with grp_id==%d\n", i, grp_name[i], grp_id[i+1]);
-	}
-	for ( i = 0; i < idx; i++)
-		if ( grp_name[i])
-			free (grp_name[i]);
-	free (grp_name);
-	free (tmpstr);
-}
 void populate_dimension_size(struct adios_group_struct *group,
 		struct adios_var_struct *pvar_root,
 		struct adios_attribute_struct *patt_root,
