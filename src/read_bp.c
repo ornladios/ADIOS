@@ -683,6 +683,7 @@ static int adios_read_bp_find_var(ADIOS_GROUP *gp, const char *varname)
         vstartpos = 1;
     for (varid=0; varid<(gp->vars_count);varid++) {
         /* if (gp->var_namelist[varid][0] == '/') */
+        fstartpos = 0;
         if (gh->fh->gvar_h->var_namelist[varid+offset][0] == '/')
             fstartpos = 1;
         /*if (!strcmp(gp->var_namelist[varid]+fstartpos, varname+vstartpos))*/
