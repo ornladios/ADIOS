@@ -659,7 +659,7 @@ static int adios_read_bp_find_var(ADIOS_GROUP *gp, const char *varname)
     // Like in HDF5, we need to match names given with or without the starting /
     // startpos is 0 or 1 to indicate if the argument has starting / or not
     int varid;
-    int vstartpos = 0, fstartpos = 0; 
+    int vstartpos = 0, fstartpos; 
     struct BP_GROUP * gh = (struct BP_GROUP *)gp->gh;
     int offset;
 
@@ -682,6 +682,7 @@ static int adios_read_bp_find_var(ADIOS_GROUP *gp, const char *varname)
     if (varname[0] == '/') 
         vstartpos = 1;
     for (varid=0; varid<(gp->vars_count);varid++) {
+        fstartpos = 0;
         /* if (gp->var_namelist[varid][0] == '/') */
         if (gh->fh->gvar_h->var_namelist[varid+offset][0] == '/')
             fstartpos = 1;
