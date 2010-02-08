@@ -14,6 +14,7 @@ libadios_a_SOURCES = adios.c \
                      adios_mpi.c \
                      adios_mpi_stripe.c \
                      adios_mpi_stripe2.c \
+                     adios_mpi_amr.c \
                      adios_posix.c \
                      adios_posix1.c \
                      adios_internals.c \
@@ -30,6 +31,7 @@ libadiosf_a_SOURCES = adiosf.c \
                      adios_mpi.c \
                      adios_mpi_stripe.c \
                      adios_mpi_stripe2.c \
+                     adios_mpi_amr.c \
                      adios_posix.c \
                      adios_posix1.c \
                      adios_internals.c \
@@ -80,14 +82,16 @@ libadios_a_SOURCES += adios_mpi_stagger.c \
                       adios_provenance.c \
                       adios_mpi_cio.c \
                       adios_adaptive.c \
-                      adios_datatap.c
+                      adios_datatap.c \
+                      adios_mpi_amr.c
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_mpi_stagger.c \
                        adios_mpi_aggregate.c \
                        adios_provenance.c \
                        adios_mpi_cio.c \
                        adios_adaptive.c \
-                       adios_datatap.c
+                       adios_datatap.c \
+                       adios_mpi_amr.c
 endif
 else
 libadios_a_CPPFLAGS += -DNO_RESEARCH_TRANSPORTS

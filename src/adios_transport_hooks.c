@@ -53,6 +53,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)
     ASSIGN_FNS(mpi_stagger,ADIOS_METHOD_MPI_STAGGER)
     ASSIGN_FNS(mpi_aggregate,ADIOS_METHOD_MPI_AGG)
+    ASSIGN_FNS(mpi_amr,ADIOS_METHOD_MPI_AMR)
 #endif
 #endif
 
@@ -100,6 +101,7 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
     MATCH_STRING_TO_METHOD("MPI_CIO",ADIOS_METHOD_MPI_CIO,1)
     MATCH_STRING_TO_METHOD("MPI_STAGGER",ADIOS_METHOD_MPI_STAGGER,1)
     MATCH_STRING_TO_METHOD("MPI_AGGREGATE",ADIOS_METHOD_MPI_AGG,1)
+    MATCH_STRING_TO_METHOD("MPI_AMR",ADIOS_METHOD_MPI_AMR,1)
 #endif
 #endif
 
