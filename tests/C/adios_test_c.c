@@ -51,26 +51,46 @@ timeval_subtract (result, x, y)
 #define DO_READ 0
 #define DO_APPEND 0
 #define MEMORY_THIEF 0
+#define SPLIT_FILES 0
 
 int main (int argc, char ** argv)
 {
     char * type_name = "restart";
-    char * filename = "restart.bp";
+    char filename [100];
     int64_t io_handle;  // io handle
     MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm c1;
     int rank;
     int size;
     struct timeval time_start;
     struct timeval time_end;
     struct timeval time_diff;
+    struct timeval time_open;
+    struct timeval time_group_size;
+    struct timeval time_write1;
+    struct timeval time_write2;
+    struct timeval time_close;
     struct timeval * time_diff_all;
 
-    //uint64_t byte_test_length = 2LL * 1024 * 1024 * 1024;
-    uint64_t byte_test_length = 2LL * 1024 * 1024;
+    MPI_Init (&argc, &argv);
+    MPI_Comm_rank (comm, &rank);
+    MPI_Comm_size (comm, &size);
+#if SPLIT_FILES
+    MPI_Comm_split (MPI_COMM_WORLD, rank % 2, rank, &comm);
+    sprintf (filename, "restart%d.bp", rank % 2);
+printf ("rank %d filename: %s\n", rank, filename);
+#else
+    strcpy (filename, "restart.bp");
+#endif
+    if (!adios_init ("config_c.xml"))
+        return -1;
+
+    //uint64_t byte_test_length = 768LL * 1024 * 1024;
+    uint64_t byte_test_length = 512LL * 1024 * 1024;
     uint64_t memory_thief_length =  1024 * 1024 * 1024  // 1 GB
-                             + 128 * 1024 * 1024   // 128 MB
+                              + 128 * 1024 * 1024   // 128 MB
                              - byte_test_length;
-printf ("byte_test_length: %llu\n", byte_test_length);
+if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
 #if DO_WRITE
     char * byte_test = 0;
     byte_test = malloc (byte_test_length + 1);
@@ -148,23 +168,20 @@ printf ("byte_test_length: %llu\n", byte_test_length);
     char * memory_thief = malloc (1 * 1024 * 1024 * 1024);
 #endif
 
-    MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-    MPI_Comm_size (MPI_COMM_WORLD, &size);
-    if (!adios_init ("config_c.xml"))
-        return -1;
-
-    if (rank == 0)
+    //if (rank == 0)
     time_diff_all = (struct timeval *) malloc (size * sizeof (struct timeval));
-    else
-        time_diff_all = 0;
+//    else
+//        time_diff_all = 0;
 
 #if DO_WRITE
 //printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
     gettimeofday (&time_start, NULL);
     adios_open (&io_handle, type_name, filename, "w", &comm);
+    gettimeofday (&time_open, NULL);
+#if 1
     adios_group_size (io_handle, 4 + byte_test_length, &total);
-#if 0
+    gettimeofday (&time_group_size, NULL);
+#else
     adios_group_size (io_handle,  4 + 4
                                 + 4 * zionsize1
                                 + 4 + 4 * zionsize2 * zionsize2
@@ -173,6 +190,8 @@ printf ("byte_test_length: %llu\n", byte_test_length);
                                 + 4 + byte_test_length
                      ,&total, &comm
                      );
+    gettimeofday (&time_group_size, NULL);
+
     adios_write (io_handle, "/mype", &var_x1);
     adios_write (io_handle, "/test/mype", &var_x2);
 
@@ -188,18 +207,20 @@ printf ("byte_test_length: %llu\n", byte_test_length);
 
 #endif
     adios_write (io_handle, "byte_test_length", &byte_test_length);
+    gettimeofday (&time_write1, NULL);
     adios_write (io_handle, "byte_test", byte_test);
+    gettimeofday (&time_write2, NULL);
 
     adios_close (io_handle);
     gettimeofday (&time_end, NULL);
 
 
-    MPI_Barrier (MPI_COMM_WORLD);
+    MPI_Barrier (comm);
 
     timeval_subtract (&time_diff, &time_end, &time_start);
     MPI_Gather (&time_diff, sizeof (struct timeval), MPI_BYTE
                ,time_diff_all, sizeof (struct timeval), MPI_BYTE
-               ,0, MPI_COMM_WORLD
+               ,0, comm
                );
     if (rank == 0)
     {
@@ -209,10 +230,10 @@ printf ("byte_test_length: %llu\n", byte_test_length);
         int max_usec = 0;
         int min_sec = INT_MAX;
         int min_usec = INT_MAX;
-        printf ("proc\tsec\tusec\n");
+        printf ("Proc\tSec\n");
         for (i = 0; i < size; i++)
         {
-            printf ("%06d\t%02d\t%06d\n", i, time_diff_all [i].tv_sec
+            printf ("%06d\t%02d.%06d\n", i, time_diff_all [i].tv_sec
                    ,time_diff_all [i].tv_usec
                    );
 
@@ -239,13 +260,52 @@ printf ("byte_test_length: %llu\n", byte_test_length);
             }
         }
 
-        printf ("max time: %02d.%06d\n", max_sec, max_usec);
-        printf ("Aggregate GB/sec: %f\n", (1.0 * byte_test_length * size / (1024 * 1024 * 1024)) / (max_sec + (max_usec / 1000000.0)));
+        printf ("Max time:\t%02d.%06d\n", max_sec, max_usec);
+        printf ("Aggregate GB/sec:\t%f\n", (1.0 * total * size / (1024 * 1024 * 1024)) / (max_sec + (max_usec / 1000000.0)));
+    }
+    timeval_subtract (&time_diff, &time_end, &time_write2);
+    MPI_Gather (&time_diff, sizeof (struct timeval), MPI_BYTE
+               ,time_diff_all, sizeof (struct timeval), MPI_BYTE
+               ,0, comm
+               );
+    if (rank == 0)
+    {
+        memcpy (&(time_diff_all [0]), &time_diff, sizeof (struct timeval));
+        int i;
+        int max_sec = 0;
+        int max_usec = 0;
+        int min_sec = INT_MAX;
+        int min_usec = INT_MAX;
+        for (i = 0; i < size; i++)
+        {
+            if (time_diff_all [i].tv_sec >= max_sec)
+            {
+                if (   time_diff_all [i].tv_usec > max_usec
+                    || time_diff_all [i].tv_sec > max_sec
+                   )
+                {
+                    max_sec = time_diff_all [i].tv_sec;
+                    max_usec = time_diff_all [i].tv_usec;
+                }
+            }
 
-        printf ("\n\n");
+            if (time_diff_all [i].tv_sec <=  min_sec)
+            {
+                if (   time_diff_all [i].tv_usec < min_usec
+                    || time_diff_all [i].tv_sec < min_sec
+                   )
+                {
+                    min_sec = time_diff_all [i].tv_sec;
+                    min_usec = time_diff_all [i].tv_usec;
+                }
+            }
+        }
+
+        printf ("Max write only time:\t%02d.%06d\n", max_sec, max_usec);
+        printf ("Aggregate write only GB/sec:\t%f\n", (1.0 * total * size / (1024 * 1024 * 1024)) / (max_sec + (max_usec / 1000000.0)));
     }
 
-    MPI_Barrier (MPI_COMM_WORLD);
+    MPI_Barrier (comm);
 #endif
 
 #if DO_READ
@@ -260,7 +320,7 @@ printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
     adios_read (io_handle, "byte_test", r_byte_test, 26 * 100);
     adios_close (io_handle);
 
-    MPI_Barrier (MPI_COMM_WORLD);
+    MPI_Barrier (comm);
 
     for (i = 0; i < byte_test_length; i++)
             if (r_byte_test [i] != byte_test [i])
@@ -329,7 +389,7 @@ printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
 
 #endif
 
-    MPI_Barrier (MPI_COMM_WORLD);
+    MPI_Barrier (comm);
 
     adios_finalize (node);
     MPI_Finalize ();
