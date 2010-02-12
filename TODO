@@ -71,5 +71,5 @@ netcdf3 so it is an easy test
 21. fix the phdf5 method so that it uses the progressive assembly approach
 of the nc4 method.
 
-22. fix the tests/genarray and other progs that rely on the python code
-generation to properly work with the autoconf system
+22. fix the tests/genarray so that the 2d and 3d XML files don't collide on
+the group name internally (gpp.py will overwrite one with the other).
