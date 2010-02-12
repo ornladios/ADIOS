@@ -15,22 +15,23 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     module unload PE-pgi
     module unload PE-pathscale
     module unload pgi
-    TARGET=pgi
+    TARGET=gnu
     module load PE-$TARGET
-    module load hdf5/1.8.2
+    module load hdf5/1.8.2_par
     module load netcdf
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.$TARGET \
+    ./configure --prefix=/ccs/home/ge1/work/ewok \
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
-        --enable-research-transports 
+        --enable-research-transports  \
+        --with-phdf5=$HDF5_DIR \
+        --without-netcdf
+        #--with-hdf5=$HDF5_DIR  \
+        #--with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
         #--with-dart=/ccs/proj/e2e/dart
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--enable-shared --disable-static\
         #--enable-datatap=ib
-        #--with-hdf5=$HDF5_DIR 
-        #--with-phdf5=/apps/HDF5/1.6.5/ewok_par/pgi625v2 \
-        #--with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
 
 
 elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
