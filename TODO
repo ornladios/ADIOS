@@ -70,3 +70,6 @@ netcdf3 so it is an easy test
 
 21. fix the phdf5 method so that it uses the progressive assembly approach
 of the nc4 method.
+
+22. fix the tests/genarray and other progs that rely on the python code
+generation to properly work with the autoconf system
