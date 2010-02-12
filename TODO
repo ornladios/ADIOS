@@ -67,3 +67,6 @@ the data on reading.
 20. add config check for netcdf4 vs. netcdf3 so the adios_nc4.c can be
 conditionally compiled properly. NB: there is no netcdf4 on ewok, but there is
 netcdf3 so it is an easy test
+
+21. fix the phdf5 method so that it uses the progressive assembly approach
+of the nc4 method.
