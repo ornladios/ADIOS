@@ -41,10 +41,16 @@ endif
 
 FC=$(MPIFC)
 
+genarray.F90: gwrite_genarray.fh
+
+gwrite_genarray.fh: genarray3d.xml
+	rm -f gwrite_genarray.fh
+	$(top_builddir)/utils/gpp/gpp.py genarray3d.xml
+
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
 	$(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
 
-CLEANFILES = genarray_comm.mod genarray2d_comm.mod
+CLEANFILES = genarray_comm.mod genarray2d_comm.mod gwrite_genarray.fh gread_genarray.fh
 
 EXTRA_DIST = genarray.xml job.ewok job2D.ewok

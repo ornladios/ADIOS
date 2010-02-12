@@ -203,6 +203,7 @@ PTL_TRUE = @PTL_TRUE@
 RANLIB = @RANLIB@
 RESEARCH_TRANSPORTS_FALSE = @RESEARCH_TRANSPORTS_FALSE@
 RESEARCH_TRANSPORTS_TRUE = @RESEARCH_TRANSPORTS_TRUE@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -269,7 +270,7 @@ FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
 	$(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
 
-CLEANFILES = genarray_comm.mod genarray2d_comm.mod
+CLEANFILES = genarray_comm.mod genarray2d_comm.mod gwrite_genarray.fh gread_genarray.fh
 EXTRA_DIST = genarray.xml job.ewok job2D.ewok
 all: all-am
 
@@ -520,6 +521,12 @@ uninstall-am: uninstall-info-am
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-info-am
 
+
+genarray.F90: gwrite_genarray.fh
+
+gwrite_genarray.fh: genarray3d.xml
+	rm -f gwrite_genarray.fh
+	$(top_builddir)/utils/gpp/gpp.py genarray3d.xml
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
