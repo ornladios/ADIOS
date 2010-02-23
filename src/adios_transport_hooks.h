@@ -119,7 +119,8 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
 		      ,ADIOS_METHOD_POSIX1      = 14
 		      ,ADIOS_METHOD_NC4         = 15
 		      ,ADIOS_METHOD_MPI_AMR     = 16
-		      ,ADIOS_METHOD_COUNT       = 17
+		      ,ADIOS_METHOD_MPI_AMR1    = 17
+		      ,ADIOS_METHOD_COUNT       = 18
 };
 
 // forward declare the functions (or dummies for internals use)
@@ -130,6 +131,7 @@ FORWARD_DECLARE(mpi)
      FORWARD_DECLARE(mpi_stagger)
      FORWARD_DECLARE(mpi_aggregate)
      FORWARD_DECLARE(mpi_amr)
+     FORWARD_DECLARE(mpi_amr1)
      FORWARD_DECLARE(datatap)
      FORWARD_DECLARE(posix)
      FORWARD_DECLARE(posix1)
