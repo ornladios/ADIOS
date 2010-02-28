@@ -3,6 +3,38 @@ INCLUDES=-I$(top_srcdir)
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES=AUTO
 
+if HAVE_NSSI
+
+bin_PROGRAMS=nssi-staging-server
+
+nssi_staging_server_SOURCES = nssi_staging_server.cpp
+nssi_staging_server_LDADD = $(top_builddir)/src/libadios.a
+nssi_staging_server_LDFLAGS = $(MXML_LDFLAGS) 
+nssi_staging_server_LDADD += $(MXML_LIBS) 
+nssi_staging_server_CFLAGS=
+nssi_staging_server_CPPFLAGS=
+
+nssi_staging_server_CFLAGS += $(NSSI_CFLAGS)
+nssi_staging_server_CPPFLAGS += $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
+nssi_staging_server_LDFLAGS += $(NSSI_LDFLAGS)
+nssi_staging_server_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(NSSI_SERVER_LIBS)
+
+if HAVE_NETCDF
+nssi_staging_server_LDFLAGS += $(NETCDF_LDFLAGS)
+nssi_staging_server_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+endif
+if HAVE_PHDF5
+nssi_staging_server_LDFLAGS += $(PHDF5_LDFLAGS)
+nssi_staging_server_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+endif
+if HAVE_DART
+nssi_staging_server_CPPFLAGS += $(DART_CPPFLAGS)
+nssi_staging_server_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+nssi_staging_server_LDADD += $(DART_LIBS)
+endif
+
+endif
+
 include_HEADERS=
 lib_LIBRARIES=
 
@@ -58,7 +90,7 @@ lib_LIBRARIES += libadios_phdf5.a
 libadios_phdf5_a_SOURCES = adios_phdf5.c
 libadios_a_SOURCES += adios_phdf5.c 
 PHDF5_CPPFLAGS += -DPHDF5 -DH5_USE_16_API 
-libadios_phdf5_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)
+libadios_phdf5_a_CPPFLAGS = $(MXML_CPPFLAGS) $(PHDF5_CPPFLAGS)
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_phdf5.c 
 endif
@@ -68,15 +100,45 @@ if HAVE_NETCDF
 lib_LIBRARIES += libadios_nc4.a
 libadios_nc4_a_SOURCES = adios_nc4.c
 libadios_a_SOURCES += adios_nc4.c 
-NETCDF_CPPFLAGS += -DNC4
-libadios_nc4_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(NETCDF_CPPFLAGS)
+libadios_nc4_a_CPPFLAGS = $(MXML_CPPFLAGS) $(NETCDF_CPPFLAGS)
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_nc4.c 
 endif
 endif
 
-libadios_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)  $(NETCDF_CPPFLAGS) $(DART_CPPFLAGS)  # -DUSE_TIMERS
-libadiosf_a_CPPFLAGS = $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)  $(NETCDF_CPPFLAGS) $(DART_CPPFLAGS) # -DUSE_TIMERS
+libadios_a_CPPFLAGS=
+libadiosf_a_CPPFLAGS=
+
+if HAVE_NSSI
+lib_LIBRARIES += libadios_nssi.a
+libadios_nssi_a_SOURCES = adios_nssi_args.c adios_nssi_config.c adios_nssi.c
+libadios_a_SOURCES += adios_nssi_args.c adios_nssi_config.c adios_nssi.c
+libadios_nssi_a_CPPFLAGS = $(MXML_CPPFLAGS) $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
+libadios_a_CPPFLAGS += $(MXML_CPPFLAGS) $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
+if BUILD_FORTRAN
+libadiosf_a_SOURCES += adios_nssi_args.c adios_nssi_config.c adios_nssi.c
+libadiosf_a_CPPFLAGS += $(MXML_CPPFLAGS) $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
+endif
+
+adios_nssi_args.h:  $(srcdir)/adios_nssi_args.x Makefile.am
+	rm -f $@
+#	@echo "#include <lwfs/lwfs_config.h>" >> $@
+#	@echo "#ifndef LWFS_HAVE_STRUCT_SOCKADDR_IN" >> $@
+#	@echo "#define LWFS_HAVE_STRUCT_SOCKADDR_IN" >> $@
+#	@echo "struct sockaddr_in { " >> $@
+#	@echo '  int a;' >> $@
+#	@echo '};' >> $@
+#	@echo '#endif' >> $@;
+	rpcgen -h $(srcdir)/adios_nssi_args.x >> $@
+
+adios_nssi_args.c: adios_nssi_args.h
+	rm -f adios_nssi_args.c
+	rpcgen -c $(srcdir)/adios_nssi_args.x \
+		| grep -v "include \"\.\." > adios_nssi_args.c
+endif
+
+libadios_a_CPPFLAGS += $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)  $(NETCDF_CPPFLAGS) $(DART_CPPFLAGS)  # -DUSE_TIMERS
+libadiosf_a_CPPFLAGS += $(MXML_CPPFLAGS)  $(PHDF5_CPPFLAGS)  $(NETCDF_CPPFLAGS) $(DART_CPPFLAGS) # -DUSE_TIMERS
 
 if RESEARCH_TRANSPORTS
 libadios_a_SOURCES += adios_mpi_stagger.c \
@@ -174,15 +236,15 @@ endif
 if BUILD_FORTRAN
 lib_LIBRARIES += libadiosreadf_nompi.a
 libadiosreadf_nompi_a_SOURCES = mpidummy.c\
-                      adios_bp_v1.c \
-		      adios_endianness.c \
-		      bp_utils.c \
-                      futils.c \
-                      adios_error.c \
-		      adiosf_read.c \
-		      adios_read_hooks.c \
-                      common_read.c \
-		      read_bp.c 
+                      			adios_bp_v1.c \
+		      					adios_endianness.c \
+		      					bp_utils.c \
+                      			futils.c \
+                      			adios_error.c \
+		      					adiosf_read.c \
+		      					adios_read_hooks.c \
+                      			common_read.c \
+		      					read_bp.c 
 if HAVE_DART
 libadiosreadf_nompi_a_SOURCES += read_dart.c
 endif
@@ -190,14 +252,14 @@ endif
 
 noinst_LIBRARIES = libadios_internal_nompi.a
 libadios_internal_nompi_a_SOURCES = mpidummy.c \
-                      adios_bp_v1.c \
-		      adios_endianness.c \
-		      bp_utils.c \
-		      adios_internals.c \
-                      buffer.c \
-                      adios_transport_hooks.c \
-                      adios_error.c \
-                      adios_internals_mxml.c
+                      				adios_bp_v1.c \
+		      						adios_endianness.c \
+		      						bp_utils.c \
+		      						adios_internals.c \
+                      				buffer.c \
+                      				adios_transport_hooks.c \
+                      				adios_error.c \
+                      				adios_internals_mxml.c
 
 
 libadiosread_nompi_a_CPPFLAGS = -D_NOMPI $(DART_CPPFLAGS)
@@ -212,7 +274,7 @@ libadiosread_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
 libadiosread_nompi_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
 endif
 
+
 EXTRA_DIST = adios_bp_v1.h adios_endianness.h adios_error.h adios_internals.h \
              adios_internals_mxml.h adios_socket.h adios_transport_hooks.h bp_types.h \
              bp_utils.h buffer.h common_adios.h common_read.h futils.h
-
