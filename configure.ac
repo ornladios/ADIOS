@@ -12,10 +12,13 @@ dnl generates HAVE_STRINGIZE
 
 AC_PROG_CC
 AM_PROG_CC_C_O
-dnl AC_PROG_CXX
+AC_PROG_CXX
 
 AC_LANG(C)
 ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C])])
+
+AC_LANG(C++)
+ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C++])])
 
 AC_ARG_ENABLE(fortran, 
     [AS_HELP_STRING([--disable-fortran],[disable Fortran test programs in ADIOS.])])
@@ -38,6 +41,7 @@ AC_PROG_GENGETOPT
 AC_HDF5
 AC_PHDF5
 AC_NETCDF
+AC_NSSI
 AC_PROG_DART
 AC_DMALLOC
 
@@ -299,4 +303,38 @@ else
 	echo "  - No NETCDF"
 fi
 
+echo
 
+if test -z "${HAVE_PORTALS_TRUE}"; then
+        echo "  - PORTALS";
+        echo "      - PORTALS_CFLAGS = $PORTALS_CFLAGS";
+        echo "      - PORTALS_CPPFLAGS = $PORTALS_CPPFLAGS";
+        echo "      - PORTALS_LDFLAGS = $PORTALS_LDFLAGS";
+        echo "      - PORTALS_LIBS = $PORTALS_LIBS";
+else
+	echo "  - No Portals"
+fi
+
+echo
+
+if test -z "${HAVE_INFINIBAND_TRUE}"; then
+        echo "  - INFINIBAND";
+        echo "      - INFINIBAND_CFLAGS = $INFINIBAND_CFLAGS";
+        echo "      - INFINIBAND_CPPFLAGS = $INFINIBAND_CPPFLAGS";
+        echo "      - INFINIBAND_LDFLAGS = $INFINIBAND_LDFLAGS";
+        echo "      - INFINIBAND_LIBS = $INFINIBAND_LIBS";
+else
+	echo "  - No IB"
+fi
+
+echo
+
+if test -z "${HAVE_NSSI_TRUE}"; then
+        echo "  - nessie";
+        echo "      - NSSI_CFLAGS = $NSSI_CFLAGS";
+        echo "      - NSSI_CPPFLAGS = $NSSI_CPPFLAGS";
+        echo "      - NSSI_LDFLAGS = $NSSI_LDFLAGS";
+        echo "      - NSSI_LIBS = $NSSI_LIBS";
+else
+	echo "  - No NSSI"
+fi
