@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -79,6 +79,10 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(nc4,ADIOS_METHOD_NC4)
 #endif
 
+#if HAVE_NSSI
+    ASSIGN_FNS(nssi,ADIOS_METHOD_NSSI_STAGING)
+#endif
+
 #ifndef NO_RESEARCH_TRANSPORTS
     ASSIGN_FNS(provenance,ADIOS_METHOD_PROVENANCE)
 #endif
@@ -128,6 +132,10 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 
 #if HAVE_NETCDF
     MATCH_STRING_TO_METHOD("NC4",ADIOS_METHOD_NC4,1)
+#endif
+
+#if HAVE_NSSI
+    MATCH_STRING_TO_METHOD("NSSI",ADIOS_METHOD_NSSI_STAGING,1)
 #endif
 
 #ifndef NO_RESEARCH_TRANSPORTS

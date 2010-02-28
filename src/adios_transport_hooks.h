@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -120,7 +120,8 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
 		      ,ADIOS_METHOD_NC4         = 15
 		      ,ADIOS_METHOD_MPI_AMR     = 16
 		      ,ADIOS_METHOD_MPI_AMR1    = 17
-		      ,ADIOS_METHOD_COUNT       = 18
+		      ,ADIOS_METHOD_NSSI_STAGING = 18
+		      ,ADIOS_METHOD_COUNT       = 19
 };
 
 // forward declare the functions (or dummies for internals use)
@@ -138,6 +139,7 @@ FORWARD_DECLARE(mpi)
      FORWARD_DECLARE(provenance)
      FORWARD_DECLARE(phdf5)
      FORWARD_DECLARE(nc4)
+     FORWARD_DECLARE(nssi)
      FORWARD_DECLARE(adaptive)
 
 #if HAVE_DART
