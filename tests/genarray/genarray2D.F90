@@ -53,8 +53,10 @@ module genarray2D_comm
     character (len=200) :: group
     character (len=200) :: filename
     !character (len=6)   :: nprocstr
-    integer*8 :: handle, total_size, group_size
+    integer*8 :: handle, total_size, group_size, adios_totalsize
     integer   :: err
+
+    real*8 :: start_time, end_time, total_time,gbs,sz
 
 end module genarray2D_comm
 
@@ -95,7 +97,18 @@ program genarray
     call determineGlobalSize()
     call determineOffsets()
     call generateLocalArray()
+
+    call MPI_BARRIER(MPI_COMM_WORLD,err)
+    start_time = MPI_WTIME()
     call writeArray()
+    call MPI_BARRIER(MPI_COMM_WORLD,err)
+    end_time = MPI_WTIME()
+    total_time = end_time - start_time
+    sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
+    gbs = sz/total_time
+
+    !if (rank==0) write(6,*) total_time
+    if (rank==0) write(6,'(a10,d12.2,2x,d12.2,2x,d12.3)') outputfile,sz,total_time,gbs
 
     ! Terminate
     call MPI_Barrier (MPI_COMM_WORLD, ierr)
@@ -140,8 +153,8 @@ subroutine determineOffsets()
         posy = rank/npx           ! 2nd dim: npx processes belong into one dim
         offx = posx * ndx
         offy = posy * ndy
-        print '("rank=",i0," pos: ",i0,",",i0," offset: ",i0,",",i0)',  &
-                rank, posx, posy, offx, offy
+!        print '("rank=",i0," pos: ",i0,",",i0," offset: ",i0,",",i0)',  &
+!                rank, posx, posy, offx, offy
     else
        ! have to read from file
        print *, "To be implemented: read sizes from file 2"
@@ -181,6 +194,8 @@ subroutine writeArray()
                  4 * ndx * ndy       + &  ! int_xy 
                  4 * ndx * ndy            ! int_xyt
 
+    adios_totalsize = group_size
+
     do tstep=1,timesteps
         if (tstep > 1) mode = "a"
         !print '("rank=",i0," group=",A," file=",A," group_size=",i0)', rank, trim(group), &
@@ -208,7 +223,7 @@ subroutine writeArray()
 
         ! start streaming from buffer to disk
         call adios_close (handle, err)
-        print '("rank=",i0,": write completed")', rank
+!        print '("rank=",i0,": write completed")', rank
     enddo
 end subroutine writeArray
 
