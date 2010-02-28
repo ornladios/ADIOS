@@ -41,14 +41,18 @@ noinst_PROGRAMS = scalars_write$(EXEEXT) scalars_read$(EXEEXT)
 @HAVE_NETCDF_TRUE@am__append_2 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
 @HAVE_NETCDF_TRUE@am__append_3 = $(NETCDF_LDFLAGS)
 @HAVE_NETCDF_TRUE@am__append_4 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
-@HAVE_PHDF5_TRUE@am__append_5 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_6 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_7 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_8 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-@HAVE_DART_TRUE@am__append_9 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_10 = $(DART_LIBS)
-@HAVE_DART_TRUE@am__append_11 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_12 = $(DART_LIBS)
+@HAVE_NSSI_TRUE@am__append_5 = $(NSSI_LDFLAGS)
+@HAVE_NSSI_TRUE@am__append_6 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_NSSI_TRUE@am__append_7 = $(NSSI_LDFLAGS)
+@HAVE_NSSI_TRUE@am__append_8 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_PHDF5_TRUE@am__append_9 = $(PHDF5_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_10 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_11 = $(PHDF5_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_12 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_DART_TRUE@am__append_13 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_14 = $(DART_LIBS)
+@HAVE_DART_TRUE@am__append_15 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_16 = $(DART_LIBS)
 subdir = examples/Fortran/scalars
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -56,11 +60,16 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_dart.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
 	$(top_srcdir)/config/ac_gengetopt.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
+	$(top_srcdir)/config/ac_infiniband.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
+	$(top_srcdir)/config/ac_nssi.m4 \
+	$(top_srcdir)/config/ac_pablo.m4 \
 	$(top_srcdir)/config/ac_phdf5.m4 \
-	$(top_srcdir)/config/acx_mpi.m4 $(top_srcdir)/config/cercs.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/config/ac_portals.m4 \
+	$(top_srcdir)/config/acx_mpi.m4 \
+	$(top_srcdir)/config/acx_pthread.m4 \
+	$(top_srcdir)/config/cercs.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -73,18 +82,23 @@ am__DEPENDENCIES_1 =
 @HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_NETCDF_TRUE@	$(top_builddir)/src/libadios_nc4.a \
 @HAVE_NETCDF_TRUE@	$(am__DEPENDENCIES_1)
-@HAVE_PHDF5_TRUE@am__DEPENDENCIES_3 =  \
+@HAVE_NSSI_TRUE@am__DEPENDENCIES_3 =  \
+@HAVE_NSSI_TRUE@	$(top_builddir)/src/libadios_nssi.a \
+@HAVE_NSSI_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 =  \
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
-@HAVE_DART_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
+@HAVE_DART_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
 scalars_read_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4)
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
+	$(am__DEPENDENCIES_5)
 am_scalars_write_OBJECTS = scalars_write-scalars_write.$(OBJEXT)
 scalars_write_OBJECTS = $(am_scalars_write_OBJECTS)
 scalars_write_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4)
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
+	$(am__DEPENDENCIES_5)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -153,18 +167,31 @@ HAVE_GENGETOPT_FALSE = @HAVE_GENGETOPT_FALSE@
 HAVE_GENGETOPT_TRUE = @HAVE_GENGETOPT_TRUE@
 HAVE_HDF5_FALSE = @HAVE_HDF5_FALSE@
 HAVE_HDF5_TRUE = @HAVE_HDF5_TRUE@
+HAVE_INFINIBAND_FALSE = @HAVE_INFINIBAND_FALSE@
+HAVE_INFINIBAND_TRUE = @HAVE_INFINIBAND_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_MXML_FALSE = @HAVE_MXML_FALSE@
 HAVE_MXML_TRUE = @HAVE_MXML_TRUE@
 HAVE_NETCDF_FALSE = @HAVE_NETCDF_FALSE@
 HAVE_NETCDF_TRUE = @HAVE_NETCDF_TRUE@
+HAVE_NSSI_FALSE = @HAVE_NSSI_FALSE@
+HAVE_NSSI_TRUE = @HAVE_NSSI_TRUE@
+HAVE_PABLO_FALSE = @HAVE_PABLO_FALSE@
+HAVE_PABLO_TRUE = @HAVE_PABLO_TRUE@
 HAVE_PHDF5_FALSE = @HAVE_PHDF5_FALSE@
 HAVE_PHDF5_TRUE = @HAVE_PHDF5_TRUE@
+HAVE_PORTALS_FALSE = @HAVE_PORTALS_FALSE@
+HAVE_PORTALS_TRUE = @HAVE_PORTALS_TRUE@
 HDF5_CPPFLAGS = @HDF5_CPPFLAGS@
 HDF5_LDFLAGS = @HDF5_LDFLAGS@
 HDF5_LIBS = @HDF5_LIBS@
+INFINIBAND_CFLAGS = @INFINIBAND_CFLAGS@
+INFINIBAND_CPPFLAGS = @INFINIBAND_CPPFLAGS@
 INFINIBAND_FALSE = @INFINIBAND_FALSE@
+INFINIBAND_HEADER = @INFINIBAND_HEADER@
+INFINIBAND_LDFLAGS = @INFINIBAND_LDFLAGS@
+INFINIBAND_LIBS = @INFINIBAND_LIBS@
 INFINIBAND_TRUE = @INFINIBAND_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -178,15 +205,28 @@ LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
 MAKEINFO = @MAKEINFO@
 MPICC = @MPICC@
+MPICXX = @MPICXX@
 MPIFC = @MPIFC@
 MPILIBS = @MPILIBS@
 MXML_CPPFLAGS = @MXML_CPPFLAGS@
 MXML_LDFLAGS = @MXML_LDFLAGS@
 MXML_LIBS = @MXML_LIBS@
+NEED_DARWIN_SINGLE_MODULE_FALSE = @NEED_DARWIN_SINGLE_MODULE_FALSE@
+NEED_DARWIN_SINGLE_MODULE_TRUE = @NEED_DARWIN_SINGLE_MODULE_TRUE@
 NETCDF_CPPFLAGS = @NETCDF_CPPFLAGS@
 NETCDF_LDFLAGS = @NETCDF_LDFLAGS@
 NETCDF_LIBS = @NETCDF_LIBS@
+NSSI_BUILDDIR = @NSSI_BUILDDIR@
+NSSI_CFLAGS = @NSSI_CFLAGS@
+NSSI_CPPFLAGS = @NSSI_CPPFLAGS@
+NSSI_LDFLAGS = @NSSI_LDFLAGS@
+NSSI_LIBS = @NSSI_LIBS@
+NSSI_SERVER_LIBS = @NSSI_SERVER_LIBS@
+NSSI_SRCDIR = @NSSI_SRCDIR@
 OBJEXT = @OBJEXT@
+PABLO_CPPFLAGS = @PABLO_CPPFLAGS@
+PABLO_LDFLAGS = @PABLO_LDFLAGS@
+PABLO_LIBS = @PABLO_LIBS@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
@@ -198,6 +238,16 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PHDF5_CPPFLAGS = @PHDF5_CPPFLAGS@
 PHDF5_LDFLAGS = @PHDF5_LDFLAGS@
 PHDF5_LIBS = @PHDF5_LIBS@
+PORTALS_CFLAGS = @PORTALS_CFLAGS@
+PORTALS_CPPFLAGS = @PORTALS_CPPFLAGS@
+PORTALS_HEADER = @PORTALS_HEADER@
+PORTALS_LDFLAGS = @PORTALS_LDFLAGS@
+PORTALS_LIBS = @PORTALS_LIBS@
+PORTALS_NAL_HEADER = @PORTALS_NAL_HEADER@
+PORTALS_RT_HEADER = @PORTALS_RT_HEADER@
+PTHREAD_CC = @PTHREAD_CC@
+PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
+PTHREAD_LIBS = @PTHREAD_LIBS@
 PTL_FALSE = @PTL_FALSE@
 PTL_TRUE = @PTL_TRUE@
 RANLIB = @RANLIB@
@@ -256,14 +306,16 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 scalars_write_SOURCES = scalars_write.F90
 scalars_write_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
-	$(am__append_2) $(am__append_6) $(am__append_10)
+	$(am__append_2) $(am__append_6) $(am__append_10) \
+	$(am__append_14)
 scalars_write_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) \
-	$(am__append_5) $(am__append_9)
+	$(am__append_5) $(am__append_9) $(am__append_13)
 scalars_read_SOURCES = scalars_read.F90
 scalars_read_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
-	$(am__append_4) $(am__append_8) $(am__append_12)
+	$(am__append_4) $(am__append_8) $(am__append_12) \
+	$(am__append_16)
 scalars_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3) $(am__append_7) \
-	$(am__append_11)
+	$(am__append_11) $(am__append_15)
 @HAVE_DART_TRUE@scalars_write_CPPFLAGS = $(DART_CPPFLAGS)
 @HAVE_DART_TRUE@scalars_read_CPPFLAGS = $(DART_CPPFLAGS)
 CLEANFILES = *.bp
