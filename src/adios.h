@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -12,6 +12,10 @@
 #include <stdint.h>
 
 // ADIOS - Adaptable IO System
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // Global setup using the XML file
 int adios_init (const char * config);
@@ -90,7 +94,7 @@ int adios_select_method (int priority, const char * method
 /********************************************/
 /*           F O R T R A N  A P I           */
 /********************************************/
-/* In fortran, you do not need to include this header file. 
+/* In fortran, you do not need to include this header file.
    Just link the code with the adios library.
 */
 /*
@@ -162,4 +166,10 @@ void FC_FUNC_(adiosf_select_method, ADIOSF_SELECT_METHOD) (int * priority, const
                           ,int base_path_size
                           );
 */
+
+#ifdef __cplusplus
+}
+#endif
+
+
 #endif
