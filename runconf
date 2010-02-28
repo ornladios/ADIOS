@@ -55,22 +55,25 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
     #module unload xtpe-quadcore
     TARGET=pgi
     module load PrgEnv-$TARGET
-    module load netcdf-hdf5parallel
+#    module load netcdf-hdf5parallel
     module load szip
     module load xt-papi
-    module load hdf5-parallel
+#    module load hdf5-parallel
+    module load hdf5
+    module load netcdf
     ## the netcdf-hdf5parallel module only sets NETCDF_PARALLEL_VERSION.
     ## /opt/cray/xt-asyncpe/3.2/bin/linux-f90 only checks NETCDF_VERSION.
     ## set NETCDF_VERSION here so that configure can complete.
-    export NETCDF_VERSION=$NETCDF_PARALLEL_VERSION
+#    export NETCDF_VERSION=$NETCDF_PARALLEL_VERSION
     # use the two lines below for openmpi
     #export CC=mpicc
     #export FC=mpif90
+    CXX=CC \
     CFLAGS="-fPIC" ./configure --prefix=/ccs/home/ge1/work/jaguar \
         --enable-dependency-tracking \
-        --with-hdf5-libdir="/ -lsz -lz" \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
         --enable-research-transports
+#        --with-hdf5-libdir="/ -lsz -lz" \
         #--with-dart=/ccs/proj/e2e/dart
         #--with-hdf5=/sw/xt5/hdf5/1.6.7/cnl2.1_pgi7.2.3_par \
         #--with-netcdf=/sw/xt5/netcdf/3.6.2/sles9.2_pgi7.0.7
