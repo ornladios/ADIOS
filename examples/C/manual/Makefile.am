@@ -32,6 +32,16 @@ if HAVE_NETCDF
 4_adios_nfiles_LDFLAGS += $(NETCDF_LDFLAGS)
 4_adios_nfiles_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
 endif
+if HAVE_NSSI
+1_nonadios_example_LDFLAGS += $(NSSI_LDFLAGS)
+1_nonadios_example_LDADD +=  $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+2_adios_write_LDFLAGS += $(NSSI_LDFLAGS)
+2_adios_write_LDADD +=  $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+3_adios_read_LDFLAGS += $(NSSI_LDFLAGS)
+3_adios_read_LDADD +=  $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+4_adios_nfiles_LDFLAGS += $(NSSI_LDFLAGS)
+4_adios_nfiles_LDADD +=  $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+endif
 if HAVE_PHDF5
 1_nonadios_example_LDFLAGS += $(PHDF5_LDFLAGS)
 1_nonadios_example_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)

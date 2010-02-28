@@ -12,6 +12,10 @@ if HAVE_NETCDF
 genarray_LDADD += $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
 genarray_LDFLAGS += $(NETCDF_LDFLAGS)
 endif
+if HAVE_NSSI
+genarray_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+genarray_LDFLAGS += $(NSSI_LDFLAGS)
+endif
 if HAVE_PHDF5
 genarray_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 genarray_LDFLAGS += $(PHDF5_LDFLAGS)
@@ -28,6 +32,10 @@ genarray2D_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
 if HAVE_NETCDF
 genarray2D_LDADD += $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
 genarray2D_LDFLAGS += $(NETCDF_LDFLAGS)
+endif
+if HAVE_NSSI
+genarray2D_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+genarray2D_LDFLAGS += $(NSSI_LDFLAGS)
 endif
 if HAVE_PHDF5
 genarray2D_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)

@@ -21,6 +21,12 @@ scalars_write_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
 scalars_read_LDFLAGS += $(NETCDF_LDFLAGS)
 scalars_read_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
 endif
+if HAVE_NSSI
+scalars_write_LDFLAGS += $(NSSI_LDFLAGS)
+scalars_write_LDADD +=  $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+scalars_read_LDFLAGS += $(NSSI_LDFLAGS)
+scalars_read_LDADD +=  $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+endif
 if HAVE_PHDF5
 scalars_write_LDFLAGS += $(PHDF5_LDFLAGS)
 scalars_write_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)

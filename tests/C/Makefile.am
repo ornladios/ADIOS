@@ -13,6 +13,10 @@ if HAVE_NETCDF
 adios_test_c_LDFLAGS += $(NETCDF_LDFLAGS)
 adios_test_c_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(NETCDF_LIBS)
 endif
+if HAVE_NSSI
+adios_test_c_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+adios_test_c_LDFLAGS += $(NSSI_LDFLAGS)
+endif
 if HAVE_PHDF5
 adios_test_c_LDFLAGS += $(PHDF5_LDFLAGS)
 adios_test_c_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
