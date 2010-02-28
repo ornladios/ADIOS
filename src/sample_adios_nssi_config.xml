@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<nssi-config>
+  <staging-group write-type="WRITE_DIRECT">
+    <staging-service nid="0" pid="128" hostname="127.0.0.1" port="7128"/>
+    <staging-service nid="0" pid="228" hostname="127.0.0.1" port="7128"/>
+  </staging-group>
+</nssi-config>
