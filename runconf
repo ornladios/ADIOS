@@ -91,7 +91,7 @@ else
     export CC=cc
     #export CFLAGS="-Wall -g"
     export FC=ftn
-    export CXX=$HOME/local/bin/cnlCC
+    export CXX=/ccs/home/thkorde/local/bin/cnlCC
 #    export CXX=CC
     source /opt/modules/default/etc/modules.sh
     module unload szip
