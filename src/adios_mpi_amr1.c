@@ -32,12 +32,21 @@ static MPI_Offset * g_offsets= 0;
 
 
 #define is_aggregator(rank)  g_is_aggregator[rank]
+#define FREE(v) \
+  if (v)        \
+  {             \
+      free (v); \
+      v = 0;    \
+  }             \
 
-#define COLLECT_METRICS 0
+#define SHIM_FOOTER_SIZE 4
+#define ATTR_COUNT_SIZE  2
+#define ATTR_LEN_SIZE    8
 
 struct adios_MPI_data_struct
 {
     MPI_File fh;
+    char * subfile_name;
     MPI_Request req;
     MPI_Status status;
     MPI_Comm group_comm;
@@ -291,7 +300,7 @@ adios_mpi_amr1_set_striping_unit(MPI_File fh, char *filename, char *parameters)
         lum.lmm_pattern = 0;
         lum.lmm_stripe_size = striping_unit;
         lum.lmm_stripe_count = striping_count;
-        lum.lmm_stripe_offset = g_color1 % 672;
+        lum.lmm_stripe_offset = g_color1 % 600;
         ioctl (fd, LL_IOC_LOV_SETSTRIPE
               ,(void *) &lum
               );
@@ -335,7 +344,7 @@ static void
 adios_mpi_amr1_set_aggregation_parameters(char * parameters, int nproc, int rank)
 {
     int err = 0, flag, i, aggr_group_size;
-    char     value[64], *temp_string, *p_count,*p_size;
+    char value[64], *temp_string, *p_count,*p_size;
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
     strcpy (temp_string, parameters);
@@ -353,9 +362,8 @@ adios_mpi_amr1_set_aggregation_parameters(char * parameters, int nproc, int rank
 
     free (temp_string);
 
-    if (nproc < g_num_aggregators || g_num_aggregators <= 0)
+    if (g_num_aggregators > nproc || g_num_aggregators <= 0)
     {
-        fprintf (stderr, "Err: invalid number of aggregators\n");
         g_num_aggregators = nproc;  //no aggregation
     }
 
@@ -381,6 +389,32 @@ adios_mpi_amr1_set_aggregation_parameters(char * parameters, int nproc, int rank
 
     g_color1 = rank / aggr_group_size;
     g_color2 = rank % aggr_group_size;
+}
+
+static void buffer_write (char ** buffer, uint64_t * buffer_size
+                         ,uint64_t * buffer_offset
+                         ,const void * data, uint64_t size
+                         )
+{
+    if (*buffer_offset + size > *buffer_size || *buffer == 0)
+    {
+        char * b = realloc (*buffer, *buffer_offset + size + 1000);
+        if (b)
+        {
+            *buffer = b;
+            *buffer_size = (*buffer_offset + size + 1000);
+        }
+        else
+        {
+            fprintf (stderr, "Cannot allocate memory in buffer_write.  "
+                             "Requested: %llu\n", *buffer_offset + size + 1000);
+
+            return;
+        }
+    }
+
+    memcpy (*buffer + *buffer_offset, data, size);
+    *buffer_offset += size;
 }
 
 static int
@@ -439,36 +473,37 @@ adios_mpi_amr1_get_striping_unit(MPI_File fh, char *filename)
 }
 
 static uint64_t
-adios_mpi_amr1_striping_unit_write(MPI_File    fh,
-                              MPI_Offset  offset,
-                              void       *buf,
-                              uint64_t   len,
-                              uint64_t   block_unit)
+adios_mpi_amr1_striping_unit_write(MPI_File    fh
+                                  ,MPI_Offset  offset
+                                  ,void       *buf
+                                  ,uint64_t   len
+                                  ,uint64_t   block_unit
+                                  )
 {
     uint64_t err = -1;
     MPI_Status status;
 
-    if (len == 0) return 0;
+    if (len == 0)
+        return 0;
 
     if (offset == -1) // use current position
         MPI_File_get_position(fh, &offset);
     else
         MPI_File_seek (fh, offset, MPI_SEEK_SET);
 
-    if (block_unit > 0) {
+    if (block_unit > 0)
+    {
         MPI_Offset  rem_off = offset;
         uint64_t    rem_size = len;
         char       *buf_ptr = buf;
 
         err = 0;
-        while (rem_size > 0) {
+        while (rem_size > 0)
+        {
             uint64_t rem_unit  = block_unit - rem_off % block_unit;
             int write_len = (rem_unit < rem_size) ? rem_unit : rem_size;
             int ret_len;
 
-#ifdef _WKL_CHECK_STRIPE_IO
-printf("adios_mpi_amr1_striping_unit_write offset=%12lld len=%12d\n",offset,write_len);offset+=write_len;
-#endif
             MPI_File_write (fh, buf_ptr, write_len, MPI_BYTE, &status);
             MPI_Get_count(&status, MPI_BYTE, &ret_len);
             if (ret_len < 0) {err = ret_len; break;}
@@ -479,10 +514,8 @@ printf("adios_mpi_amr1_striping_unit_write offset=%12lld len=%12d\n",offset,writ
             rem_size -= write_len;
         }
     }
-    else {
-#ifdef _WKL_CHECK_STRIPE_IO
-printf("adios_mpi_amr1_striping_unit_write offset=%12lld len=%12d\n",offset,len);
-#endif
+    else
+    {
         uint64_t total_written = 0;
         uint64_t to_write = len;
         int write_len = 0;
@@ -504,6 +537,7 @@ printf("adios_mpi_amr1_striping_unit_write offset=%12lld len=%12d\n",offset,len)
             err = total_written;
         }
     }
+
     return err;
 }
 
@@ -552,33 +586,85 @@ void adios_mpi_amr1_append_var (struct adios_file_struct * fd, struct adios_var_
     root->next = v;
 }
 
-void adios_mpi_amr1_add_offset (uint64_t offset
-                              ,struct adios_index_process_group_struct_v1 * pg_root
-                              ,struct adios_index_var_struct_v1 * vars_root
-                              ,struct adios_index_attribute_struct_v1 * attrs_root
-                              )
+void adios_mpi_amr1_add_offset (uint64_t var_offset_to_add
+                               ,uint64_t attr_offset_to_add
+                               ,struct adios_index_var_struct_v1 * vars_root
+                               ,struct adios_index_attribute_struct_v1 * attrs_root
+                               )
 {
     while (vars_root)
     {
-        vars_root->characteristics [0].offset += offset;
-        vars_root->characteristics [0].payload_offset += offset;
+        vars_root->characteristics [0].offset += var_offset_to_add;
+        vars_root->characteristics [0].payload_offset += var_offset_to_add;
         vars_root = vars_root->next;
+    }
+
+    while (attrs_root)
+    {
+        attrs_root->characteristics [0].offset += attr_offset_to_add;
+        attrs_root->characteristics [0].payload_offset += attr_offset_to_add;
+        attrs_root = attrs_root->next;
     }
 }
 
-void adios_mpi_amr1_subtract_offset (uint64_t offset
-                                   ,struct adios_index_process_group_struct_v1 * pg_root
-                                   ,struct adios_index_var_struct_v1 * vars_root
-                                   ,struct adios_index_attribute_struct_v1 * attrs_root
-                                   )
+void adios_mpi_amr1_subtract_offset (uint64_t var_offset_to_subtract
+                                    ,uint64_t attr_offset_to_subtract
+                                    ,struct adios_index_var_struct_v1 * vars_root
+                                    ,struct adios_index_attribute_struct_v1 * attrs_root
+                                    )
 {
     while (vars_root)
     {
-        vars_root->characteristics [0].offset -= offset;
-        vars_root->characteristics [0].payload_offset -= offset;
+        vars_root->characteristics [0].offset -= var_offset_to_subtract;
+        vars_root->characteristics [0].payload_offset -= var_offset_to_subtract;
         vars_root = vars_root->next;
     }
+
+    while (attrs_root)
+    {
+        attrs_root->characteristics [0].offset -= attr_offset_to_subtract;
+        attrs_root->characteristics [0].payload_offset -= attr_offset_to_subtract;
+        attrs_root = attrs_root->next;
+    }
 }
+
+
+void adios_mpi_amr1_build_global_index_v1 (char * fname
+                                          ,struct adios_index_process_group_struct_v1 * pg_root
+                                          ,struct adios_index_var_struct_v1 * vars_root
+                                          ,struct adios_index_attribute_struct_v1 * attrs_root
+                                          )
+{
+    int len;
+    char * s;
+
+    while (vars_root)
+    {
+        // Add, e.g., "/restart.bp.0/" in the beginning
+        len = 1 + strlen (fname) + 1 + strlen (vars_root->var_path) + 1;
+        s = (char *)malloc (len);
+
+        sprintf (s, "%s%s%s%s", "/", fname, "/", vars_root->var_path);
+        FREE (vars_root->var_path);
+        vars_root->var_path = s;
+
+        vars_root = vars_root->next;
+    }
+
+    while (attrs_root)
+    {
+        len = 1 + strlen (fname) + 1 + strlen (attrs_root->attr_path) + 1;
+        s = (char *)malloc (len);
+
+        sprintf (s, "%s%s%s%s", "/", fname, "/", attrs_root->attr_path);
+        FREE (attrs_root->attr_path);
+        attrs_root->attr_path = s;
+
+        attrs_root = attrs_root->next;
+    }
+
+}
+
 
 int adios_mpi_amr1_calc_aggregator_index (int rank)
 {
@@ -691,8 +777,8 @@ static void adios_var_to_comm (const char * comm_name
 }
 
 void adios_mpi_amr1_init (const char * parameters
-                    ,struct adios_method_struct * method
-                    )
+                         ,struct adios_method_struct * method
+                         )
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
@@ -700,9 +786,11 @@ void adios_mpi_amr1_init (const char * parameters
     {
         adios_mpi_amr1_initialized = 1;
     }
+
     method->method_data = malloc (sizeof (struct adios_MPI_data_struct));
     md = (struct adios_MPI_data_struct *) method->method_data;
     md->fh = 0;
+    md->subfile_name = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
     md->rank = 0;
@@ -718,16 +806,12 @@ void adios_mpi_amr1_init (const char * parameters
 }
 
 int adios_mpi_amr1_open (struct adios_file_struct * fd
-                   ,struct adios_method_struct * method, void * comm
-                   )
+                        ,struct adios_method_struct * method, void * comm
+                        )
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
 
-#if COLLECT_METRICS
-    gettimeofday (&t0, NULL); // only used on rank == size - 1, but we don't
-                              // have the comm yet to get the rank/size
-#endif
     // we have to wait for the group_size (should_buffer) to get the comm
     // before we can do an open for any of the modes
     md->comm = comm;
@@ -766,8 +850,8 @@ void build_offsets (struct adios_bp_buffer_struct_v1 * b
 }
 
 enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
-                                            ,struct adios_method_struct * method
-                                            )
+                                             ,struct adios_method_struct * method
+                                             )
 {
     int i;
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
@@ -780,9 +864,6 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
     int current;
     int next;
 
-#if COLLECT_METRICS
-    gettimeofday (&t21, NULL);
-#endif
 
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf (name, "%s%s", method->base_path, fd->name);
@@ -973,38 +1054,33 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
 
         case adios_mode_write:
         {
-            int temp_rank;
-
             fd->base_offset = 0;
             fd->pg_start_in_file = 0;
 #if COLLECT_METRICS                     
             gettimeofday (&t16, NULL);
 #endif
-            if (method->parameters)
-            {
-                adios_mpi_amr1_set_aggregation_parameters (method->parameters
-                                                         ,md->size
-                                                         ,md->rank
-                                                         );
-                adios_mpi_amr1_set_block_unit (&md->block_unit, method->parameters);
-            }
+            adios_mpi_amr1_set_aggregation_parameters (method->parameters
+                                                      ,md->size
+                                                      ,md->rank
+                                                      );
+            adios_mpi_amr1_set_block_unit (&md->block_unit, method->parameters);
 
-            free (name);
-            // create subfile name, e.g. restart.bp.1
-            name = malloc (strlen (method->base_path) + strlen (fd->name) + 1 + 20 + 1);
+            name = realloc (name, strlen (method->base_path) + strlen (fd->name) + 1 + 10 + 1);
+            // create the subfile name, e.g. restart.bp.1
+            // 1 for '.' + 10 for subfile index + 1 for '\0'
             sprintf (name, "%s%s.%d", method->base_path, fd->name, g_color1);
+            md->subfile_name = strdup (name);
 
-            // cascade the opens to avoid trashing the metadata server
             if (is_aggregator(md->rank))
             {
-                unlink (name);  // make sure clean
+                unlink (name);
 
                 if (method->parameters)
                 {
                     adios_mpi_amr1_set_striping_unit (md->fh 
-                                                    ,name
-                                                    ,method->parameters
-                                                    );
+                                                     ,name
+                                                     ,method->parameters
+                                                     );
                 }
 
                 err = MPI_File_open (MPI_COMM_SELF, name
@@ -1029,9 +1105,7 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
 
                 md->striping_unit = adios_mpi_amr1_get_striping_unit (md->fh, name);
             }
-#if COLLECT_METRICS
-            gettimeofday (&t17, NULL);
-#endif
+
             if (md->group_comm != MPI_COMM_NULL)
             {
                 fd->base_offset = 0;
@@ -1041,10 +1115,6 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
             {
                 md->b.pg_index_offset = fd->write_size_bytes;
             }
-
-#if COLLECT_METRICS
-            gettimeofday (&t6, NULL);
-#endif
 
             break;
         }
@@ -1297,7 +1367,7 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
         // write the process group header
         adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
 
-        if (is_aggregator(md->rank))
+        if (is_aggregator (md->rank))
         {
             count = adios_mpi_amr1_striping_unit_write(
                                   md->fh
@@ -1331,9 +1401,6 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
         adios_shared_buffer_free (&md->b);
     }
 
-#if COLLECT_METRICS
-    gettimeofday (&t22, NULL);
-#endif
     return fd->shared_buffer;
 }
 
@@ -1416,8 +1483,8 @@ void adios_mpi_amr1_write (struct adios_file_struct * fd
             count = adios_mpi_amr1_striping_unit_write(
                            md->fh
                           ,-1
-                          ,aggr_buff//fd->buffer,
-                          ,total_size//fd->bytes_written,
+                          ,aggr_buff
+                          ,total_size
                           ,md->block_unit
                           );
             if (count != total_size)
@@ -1429,14 +1496,14 @@ void adios_mpi_amr1_write (struct adios_file_struct * fd
                         );
             }
 
-            free (aggr_buff);
+            FREE (aggr_buff);
         }
         else
         {
-            // Non-aggregators do thing
+            // Non-aggregators do nothing
         }
 
-        // Broadcast new offset to each processor
+        // Broadcast new offsets to all processors in the communicator.
         uint64_t new_offsets[new_group_size];
 
         if (is_aggregator (md->rank))
@@ -1635,12 +1702,11 @@ static void adios_mpi_amr1_do_read (struct adios_file_struct * fd
     adios_buffer_struct_clear (&md->b);
 }
 
-uint64_t adios_mpi_amr1_calculate_attributes_size (struct adios_file_struct * fd)
+static
+uint32_t adios_mpi_amr1_calculate_attributes_size (struct adios_file_struct * fd)
 {
-    uint64_t overhead = 0;
-    struct adios_var_struct * v = fd->group->vars;
+    uint32_t overhead = 0;
     struct adios_attribute_struct * a = fd->group->attributes;
-    struct adios_method_list_struct * m = fd->group->methods;
 
     overhead += 2; // attributes count
     overhead += 8; // attributes length
@@ -1666,10 +1732,6 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
     struct adios_index_process_group_struct_v1 * new_pg_root = 0;
     struct adios_index_var_struct_v1 * new_vars_root = 0;
     struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
-#if COLLECT_METRICS
-    gettimeofday (&t23, NULL);
-    static int iteration = 0;
-#endif
 
     switch (fd->mode)
     {
@@ -1693,8 +1755,17 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
             uint64_t index_start = md->b.pg_index_offset;
-            int * pg_sizes = 0, * disp = 0;
+            int * pg_sizes = 0, * disp = 0, * sendbuf = 0, * recvbuf = 0, * attr_sizes = 0;
+            int i, new_rank, new_group_size, new_rank2, new_group_size2;
+            MPI_Comm new_comm, new_comm2;
 
+            MPI_Comm_split (md->group_comm, g_color1, md->rank, &new_comm);
+            MPI_Comm_rank (new_comm, &new_rank);
+            MPI_Comm_size (new_comm, &new_group_size);
+
+            MPI_Comm_split (md->group_comm, g_color2, md->rank, &new_comm2);
+            MPI_Comm_rank (new_comm2, &new_rank2);
+            MPI_Comm_size (new_comm2, &new_group_size2);
 
             if (fd->shared_buffer == adios_flag_no)
             {
@@ -1733,9 +1804,11 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 adios_write_open_attributes_v1 (fd);
                 md->vars_start = new_off;
                 md->vars_header_size = fd->offset;
+
                 MPI_File_seek (md->fh, new_off + md->vars_header_size
                               ,MPI_SEEK_SET
                               ); // go back to end, but after attr header
+
                 fd->base_offset += fd->offset;  // add size of header
                 fd->offset = 0;
                 fd->bytes_written = 0;
@@ -1743,23 +1816,74 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 while (a)
                 {
                     adios_write_attribute_v1 (fd, a);
-                    if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
-                        fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
-                                         "Need to enlarge group size. \n");
-                    count = adios_mpi_amr1_striping_unit_write(
-                                      md->fh,
-                                      -1,
-                                      fd->buffer,
-                                      fd->bytes_written,
-                                      md->block_unit);
-                    if (count != fd->bytes_written)
+
+                    int bytes_written[new_group_size];
+                    int disp[new_group_size];
+                    int total_size = 0;
+                    void * aggr_buff;
+
+                    MPI_Gather (&fd->bytes_written, 1, MPI_INT
+                               ,bytes_written, 1, MPI_INT
+                               ,0, new_comm
+                               );
+
+                    disp[0] = 0;
+                    for (i = 1; i < new_group_size; i++)
                     {
-                        fprintf (stderr, "e:MPI method tried to write %llu, "
-                                         "only wrote %llu\n"
-                                ,fd->bytes_written
-                                ,count
-                                );
+                        disp[i] = disp[i - 1] + bytes_written[i - 1];
                     }
+                    total_size += disp[new_group_size - 1]
+                                + bytes_written[new_group_size - 1];
+
+                    if (is_aggregator(md->rank))
+                    {
+                        aggr_buff = malloc (total_size);
+                        if (aggr_buff == 0)
+                        {
+                            fprintf (stderr, "Can not alloc aggregation buffer.\n"
+                                             "Need to increase the number of aggregators.\n"
+                                    );
+                            return;
+                        }
+                    }
+
+                    MPI_Gatherv (fd->buffer, fd->bytes_written, MPI_BYTE
+                                ,aggr_buff, bytes_written, disp, MPI_BYTE
+                                ,0, new_comm);
+
+                    if (is_aggregator (md->rank))
+                    {
+                        count = adios_mpi_amr1_striping_unit_write(
+                                          md->fh,
+                                          -1,
+                                          aggr_buff, //fd->buffer,
+                                          total_size, //fd->bytes_written,
+                                          md->block_unit);
+                        if (count != total_size)
+                        {
+                            fprintf (stderr, "e:MPI method tried to write %llu, "
+                                             "only wrote %llu\n"
+                                     ,fd->bytes_written
+                                     ,count
+                                     );
+                        }
+                    }
+
+                    // Broadcast new offsets to all processors in the communicator.
+                    uint64_t new_offsets[new_group_size];
+
+                    if (is_aggregator (md->rank))
+                    {
+                        new_offsets[0] = a->write_offset;
+                        for (i = 1; i < new_group_size; i++)
+                        {
+                            new_offsets[i] = new_offsets[i - 1] + bytes_written[i - 1];
+                        }
+                    }
+
+                    MPI_Bcast (new_offsets, new_group_size, MPI_LONG_LONG, 0, new_comm);
+                    a->write_offset = new_offsets[new_rank];
+
                     fd->base_offset += count;
                     fd->offset = 0;
                     fd->bytes_written = 0;
@@ -1773,9 +1897,11 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 fd->vars_start = 0;
                 fd->buffer_size = 0;
                 adios_write_close_attributes_v1 (fd);
+
                 // fd->vars_start gets updated with the size written
                 if (is_aggregator(md->rank))
                 {
+                    *(uint16_t *)fd->buffer = *(uint16_t *)fd->buffer * new_group_size;
                     count = adios_mpi_amr1_striping_unit_write(
                                   md->fh,
                                   md->vars_start,
@@ -1791,84 +1917,92 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                                 );
                     }
                 }
+
                 fd->offset = 0;
                 fd->bytes_written = 0;
+
+                MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
             }
-
-#if COLLECT_METRICS
-            gettimeofday (&t19, NULL);
-#endif
-#if COLLECT_METRICS
-            gettimeofday (&t7, NULL);
-#endif
-#if COLLECT_METRICS
-            gettimeofday (&t12, NULL);
-#endif
-            int new_rank, new_group_size;
-            MPI_Comm new_comm;
-
-            MPI_Comm_split (md->group_comm, g_color1, md->rank, &new_comm);
-            MPI_Comm_rank (new_comm, &new_rank);
-            MPI_Comm_size (new_comm, &new_group_size);
 
             if (fd->shared_buffer == adios_flag_yes)
             {
-                // everyone writes their data
-                if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
-                    fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
-                             "Need to enlarge group size. \n");
-
-                struct adios_bp_buffer_struct_v1 b1;
+                struct adios_bp_buffer_struct_v1 b;
                 struct adios_process_group_header_struct_v1 pg_header;
                 struct adios_vars_header_struct_v1 vars_header;
-                int pg_size, total_data_size = 0, header_size, attr_size;
-                int i;
-                uint64_t temp_offset;
+                int pg_size, total_data_size = 0, header_size;
+                uint32_t attr_size;
+                uint64_t vars_count_offset;
                 void * aggr_buff = 0;
 
-                // Unfortunately, we need to walk through the buffer to get vars count
-                b1.buff = fd->buffer;
-                b1.change_endianness = adios_flag_no;
-                b1.offset = 0;
-                b1.length = fd->bytes_written;
+                if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+                    fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
+                             "Need to enlarge group size.\n"
+                            );
 
-                adios_parse_process_group_header_v1 (&b1, &pg_header);
-                temp_offset = b1.offset;
-                adios_parse_vars_header_v1 (&b1, &vars_header);
+                // Unfortunately, we need to walk through the buffer to get vars count
+                b.buff = fd->buffer;
+                b.change_endianness = md->b.change_endianness;
+                b.offset = 0;
+                b.length = fd->bytes_written;
+
+                adios_parse_process_group_header_v1 (&b, &pg_header);
+                vars_count_offset = b.offset;
+
+                adios_parse_vars_header_v1 (&b, &vars_header);
+                header_size = b.offset;
+                attr_size = adios_mpi_amr1_calculate_attributes_size (fd);
 
                 // reset vars count
-                *(uint16_t *) (b1.buff + temp_offset) = vars_header.count * new_group_size;
-
-                header_size = b1.offset;
-                attr_size = adios_mpi_amr1_calculate_attributes_size (fd);
-                //count: 2 bytes, length: 8 bytes
-                if (attr_size != 2 + 8)
+                if (vars_header.count * new_group_size > UINT16_MAX)
                 {
-                    fprintf (stderr, "Attributes are not supported\n");
+                    fprintf (stderr, "Vars count exceed UINT16_MAX");
+                    return;
                 }
+                *(uint16_t *) (b.buff + vars_count_offset) = 
+                                vars_header.count * new_group_size;
 
+                // attributes size is save in the end
+                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &attr_size, SHIM_FOOTER_SIZE);
+                fd->bytes_written += SHIM_FOOTER_SIZE;
+
+                // PG header, vars header, vars, attrs header, attrs, 4 bytes
                 if (is_aggregator(md->rank))
                 {
-                    pg_size = fd->bytes_written - attr_size;
+                    pg_size = fd->bytes_written;
                 }
                 else
                 {
-                    pg_size = fd->bytes_written - header_size - attr_size;
+                    // Non-aggregator process doesn't need to send pg header + vars header
+                    pg_size = fd->bytes_written - header_size;
                 }
-#if 0
-                int pg_sizes[new_group_size];
-                int disp[new_group_size];
 
-                MPI_Gather (&pg_size, 1, MPI_INT
-                           ,pg_sizes, 1, MPI_INT
-                           ,0, new_comm);
-#endif
                 pg_sizes = (int *) malloc (new_group_size * 4);
+                attr_sizes = (int *) malloc (new_group_size * 4);
                 disp = (int *) malloc (new_group_size * 4);
+                sendbuf = (int *) malloc (2 * 4);
+                recvbuf = (int *) malloc (new_group_size * 2 * 4);
+                if (pg_sizes == 0 || attr_sizes == 0 || disp == 0
+                 || sendbuf == 0 || recvbuf == 0)
+                {
+                    fprintf (stderr, "can not malloc\n");
+                    return;
+                }
+  
+                sendbuf[0] = pg_size;
+                sendbuf[1] = attr_size + SHIM_FOOTER_SIZE;
 
-                MPI_Allgather (&pg_size, 1, MPI_INT
-                              ,pg_sizes, 1, MPI_INT
+                MPI_Allgather (sendbuf, 2, MPI_INT
+                              ,recvbuf, 2, MPI_INT
                               ,new_comm);
+
+                for (i = 0; i < new_group_size; i++)
+                {
+                    pg_sizes[i] = recvbuf[i * 2];
+                    attr_sizes[i] = recvbuf[i * 2 + 1];
+                }
+   
+                free (sendbuf);
+                free (recvbuf);
 
                 disp[0] = 0;
                 for (i = 1; i < new_group_size; i++)
@@ -1876,31 +2010,101 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                     disp[i] = disp[i - 1] + pg_sizes[i - 1];
                 }
                 total_data_size = disp[new_group_size - 1]
-                                + pg_sizes[new_group_size - 1]
-                                + attr_size;
+                                + pg_sizes[new_group_size - 1];
 
-                if (is_aggregator(md->rank))
+                if (is_aggregator (md->rank))
                 {
                     aggr_buff = malloc (total_data_size);
                     if (aggr_buff == 0)
                     {
                         fprintf (stderr, "Can not alloc %d bytes for aggregation buffer.\n"
-                                "Need to increase the number of aggregators\n"
+                                         "Need to increase the number of aggregators.\n"
                                 ,total_data_size);
                         return;
                     }
                 }
+                else
+                {
+                }
 
-                if (is_aggregator(md->rank))
+                if (is_aggregator (md->rank))
                 { 
+                    uint32_t aggr_attr_size = 0;
+                    void * aggr_attr_buff, * temp_aggr_buff, * temp_aggr_attr_buff;
+                    uint16_t new_attr_count = 0, new_attr_len = 0;
+
                     MPI_Gatherv (fd->buffer, pg_size, MPI_BYTE
                                 ,aggr_buff, pg_sizes, disp, MPI_BYTE
                                 ,0, new_comm);
 
-                    //FIXME: Need to support attrs.
-                    //attr count: 2 bytes, attr lenght: 8 bytes
-                    *(uint16_t *)(aggr_buff + total_data_size - 10) = 0;  //attrs count
-                    *(uint64_t *)(aggr_buff + total_data_size - 8) = 10;  //attrs length
+                    for (i= 0; i < new_group_size; i++)
+                    {
+                        aggr_attr_size += *(uint32_t *)(aggr_buff
+                                                       + disp[i]
+                                                       + pg_sizes[i]
+                                                       - SHIM_FOOTER_SIZE
+                                                       );
+                    }
+
+                    aggr_attr_buff = malloc (aggr_attr_size);
+                    if (aggr_attr_buff == 0)
+                    {
+                        fprintf (stderr, "can not alloc %d bytes for aggregation buffer.\n"
+                                         "Need to increase the number of aggregators.\n"
+                                ,aggr_attr_size);
+                        return;
+                    }
+
+                    temp_aggr_buff = aggr_buff
+                                   + pg_sizes[0]
+                                   - SHIM_FOOTER_SIZE
+                                   - attr_size;
+                    temp_aggr_attr_buff = aggr_attr_buff;
+
+                    for (i= 0; i < new_group_size; i++)
+                    {
+                        uint32_t temp_attr_size = *(uint32_t *)(aggr_buff
+                                                               + disp[i]
+                                                               + pg_sizes[i]
+                                                               - SHIM_FOOTER_SIZE
+                                                               );
+                        void * temp_attr_ptr = aggr_buff + disp[i] + pg_sizes[i] 
+                                             - SHIM_FOOTER_SIZE - temp_attr_size;
+
+                        new_attr_count += *(uint16_t *)temp_attr_ptr;
+
+                        if (i == 0)
+                        {
+                            new_attr_len += *(uint64_t *)(temp_attr_ptr + ATTR_COUNT_SIZE);
+
+                            memcpy (temp_aggr_attr_buff, temp_attr_ptr, temp_attr_size);
+                            temp_aggr_attr_buff += temp_attr_size;
+                        }
+                        else
+                        {
+                            new_attr_len += *(uint64_t *)(temp_attr_ptr + ATTR_COUNT_SIZE)
+                                          - ATTR_COUNT_SIZE - ATTR_LEN_SIZE;
+
+                            memcpy (temp_aggr_attr_buff
+                                   ,temp_attr_ptr + ATTR_COUNT_SIZE + ATTR_LEN_SIZE
+                                   ,temp_attr_size - ATTR_COUNT_SIZE - ATTR_LEN_SIZE
+                                   );
+                            temp_aggr_attr_buff += temp_attr_size - ATTR_COUNT_SIZE - ATTR_LEN_SIZE;
+
+                            memmove (temp_aggr_buff
+                                    ,aggr_buff + disp[i]
+                                    ,pg_sizes[i] - temp_attr_size - SHIM_FOOTER_SIZE
+                                    );
+                            temp_aggr_buff += pg_sizes[i] - temp_attr_size - SHIM_FOOTER_SIZE;
+                        }
+                    }
+
+                    memcpy (temp_aggr_buff, aggr_attr_buff, aggr_attr_size);
+
+                    *(uint16_t *)temp_aggr_buff = new_attr_count;  //attrs count
+                    *(uint64_t *)(temp_aggr_buff + ATTR_COUNT_SIZE) = new_attr_len;  //attrs length
+
+                    free (aggr_attr_buff);
                 }
                 else
                 {
@@ -1915,8 +2119,8 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                     count = adios_mpi_amr1_striping_unit_write(
                                md->fh
                               ,fd->base_offset
-                              ,aggr_buff//fd->buffer,
-                              ,total_data_size//fd->bytes_written,
+                              ,aggr_buff
+                              ,total_data_size
                               ,md->block_unit);
 
                     if (count != total_data_size)
@@ -1924,6 +2128,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                         fprintf (stderr, "Err in adios_mpi_amr1_striping_unit_write()\n");
                         return;
                     }
+
                     free (aggr_buff);
                 }
                 else
@@ -1940,32 +2145,55 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
             {
                 if (!is_aggregator(md->rank))
                 {
+                    uint64_t var_offset_to_add = 0, attr_offset_to_add = 0;
+                    uint64_t var_base_offset = 0, attr_base_offset = 0; 
+
+                    // change to relative offset
                     if (md->old_vars_root)
                     {
-                        // change to relative offset
-                        uint64_t old_offset = md->old_vars_root->characteristics [0].offset; 
-                        adios_mpi_amr1_subtract_offset (old_offset
-                                                      ,md->old_pg_root
-                                                      ,md->old_vars_root
-                                                      ,md->old_attrs_root
-                                                      );
+                        var_base_offset = md->old_vars_root->characteristics [0].offset;
                     }
 
-                    adios_mpi_amr1_add_offset (disp[new_rank]
-                                             ,md->old_pg_root
-                                             ,md->old_vars_root
-                                             ,md->old_attrs_root
-                                             );
+                    if (md->old_attrs_root)
+                    { 
+                        attr_base_offset = md->old_attrs_root->characteristics [0].offset;
+                    }
+
+                    adios_mpi_amr1_subtract_offset (var_base_offset
+                                                   ,attr_base_offset
+                                                   ,md->old_vars_root
+                                                   ,md->old_attrs_root
+                                                   );
+
+                    for (i = 0; i < new_group_size; i++)
+                    {
+                        attr_offset_to_add += pg_sizes[i] - attr_sizes[i];  
+                    }
+
+                    for (i = 0; i < new_rank; i++)
+                    {
+                        attr_offset_to_add += attr_sizes[i] - SHIM_FOOTER_SIZE;  
+                        var_offset_to_add += pg_sizes[i] - attr_sizes[i]; 
+                    }
+
+                    adios_mpi_amr1_add_offset (var_offset_to_add
+                                              ,attr_offset_to_add
+                                              ,md->old_vars_root
+                                              ,md->old_attrs_root
+                                              );
                 }
 
+                // pg_sizes, attr_sizs, disp are no longer needed from this point on.
                 free (pg_sizes);
+                free (attr_sizes);
                 free (disp);
             }
+
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
             {
                 // Collect index from all MPI processors
-                if (is_aggregator(md->rank))
+                if (is_aggregator (md->rank))
                 {
                     int * index_sizes = malloc (4 * new_group_size);
                     int * index_offsets = malloc (4 * new_group_size);
@@ -2047,17 +2275,14 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 }
             }
 
-#if COLLECT_METRICS
-            gettimeofday (&t13, NULL);
-#endif
+            // write out indexes in each subfile
             if (is_aggregator (md->rank))
             {
-                MPI_Offset cur_offset;
-                MPI_File_get_position (md->fh, &cur_offset);
-                index_start = cur_offset;
+                MPI_File_get_position (md->fh, (MPI_Offset *)&index_start);
 
-                adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                     ,index_start, md->old_pg_root
+                adios_write_index_v1 (&buffer, &buffer_size
+                                     ,&buffer_offset, index_start
+                                     ,md->old_pg_root
                                      ,md->old_vars_root
                                      ,md->old_attrs_root
                                      );
@@ -2065,27 +2290,161 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
 
                 adios_mpi_amr1_striping_unit_write(
                                   md->fh,
-                                  -1,//md->b.pg_index_offset,
+                                  -1,
                                   buffer,
                                   buffer_offset,
                                   md->block_unit);
             }
-#if COLLECT_METRICS
-            gettimeofday (&t8, NULL);
-#endif
-#if COLLECT_METRICS
-            gettimeofday (&t20, NULL);
-#endif
-#if COLLECT_METRICS
-            gettimeofday (&t14, NULL);
-#endif
 
-            if (buffer)
+            FREE (buffer);
+            buffer_size = 0;
+            buffer_offset = 0;
+
+            // collect index among aggregators
+            if (is_aggregator (md->rank))
             {
-                free (buffer);
-                buffer = 0;
-                buffer_size = 0;
-                buffer_offset = 0;
+                // generate global indexes and write to metadata file
+                adios_mpi_amr1_build_global_index_v1 (md->subfile_name
+                                                     ,md->old_pg_root
+                                                     ,md->old_vars_root
+                                                     ,md->old_attrs_root
+                                                     );
+                if (md->rank == 0)
+                {
+                    int * index_sizes = malloc (4 * new_group_size2);
+                    int * index_offsets = malloc (4 * new_group_size2);
+                    char * recv_buffer = 0;
+                    uint32_t size = 0, total_size = 0;
+
+                    MPI_Gather (&size, 1, MPI_INT
+                               ,index_sizes, 1, MPI_INT
+                               ,0, new_comm2
+                               );
+
+                    for (i = 0; i < new_group_size2; i++)
+                    {
+                        index_offsets [i] = total_size;
+                        total_size += index_sizes [i];
+                    }
+
+                    recv_buffer = malloc (total_size);
+
+                    MPI_Gatherv (&size, 0, MPI_BYTE
+                                ,recv_buffer, index_sizes, index_offsets
+                                ,MPI_BYTE, 0, new_comm2
+                                );
+
+                    char * buffer_save = md->b.buff;
+                    uint64_t buffer_size_save = md->b.length;
+                    uint64_t offset_save = md->b.offset;
+
+                    for (i = 1; i < new_group_size2; i++)
+                    {
+                        md->b.buff = recv_buffer + index_offsets [i];
+                        md->b.length = index_sizes [i];
+                        md->b.offset = 0;
+
+                        adios_parse_process_group_index_v1 (&md->b
+                                                           ,&new_pg_root
+                                                           );
+                        adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_parse_attributes_index_v1 (&md->b
+                                                        ,&new_attrs_root
+                                                        );
+                        new_pg_root = 0;
+
+                        adios_merge_index_v1 (&md->old_pg_root
+                                             ,&md->old_vars_root
+                                             ,&md->old_attrs_root
+                                             ,new_pg_root, new_vars_root
+                                             ,new_attrs_root
+                                             );
+                        new_pg_root = 0;
+                        new_vars_root = 0;
+                        new_attrs_root = 0;
+                    }
+
+                    md->b.buff = buffer_save;
+                    md->b.length = buffer_size_save;
+                    md->b.offset = offset_save;
+
+                    free (recv_buffer);
+                    free (index_sizes);
+                    free (index_offsets);
+                }
+                else
+                {
+                    char * buffer2 = 0;
+                    uint64_t buffer_size2 = 0;
+                    uint64_t buffer_offset2 = 0;
+
+                    adios_write_index_v1 (&buffer2, &buffer_size2, &buffer_offset2
+                                         ,0, md->old_pg_root
+                                         ,md->old_vars_root
+                                         ,md->old_attrs_root
+                                         );
+
+                    MPI_Gather (&buffer_size2, 1, MPI_INT
+                               ,0, 0, MPI_INT
+                               ,0, new_comm2
+                               );
+                    MPI_Gatherv (buffer2, buffer_size2, MPI_BYTE
+                                ,0, 0, 0, MPI_BYTE
+                                ,0, new_comm2
+                                );
+
+                    if (buffer2)
+                    {
+                        free (buffer2);
+                        buffer2 = 0;
+                        buffer_size2 = 0;
+                        buffer_offset2 = 0;
+                    }
+                }
+            }
+
+            // write out the metadata file from rank 0
+            if (md->rank == 0)
+            {
+                MPI_File m_file;
+                char * global_index_buffer = 0;
+                uint64_t global_index_buffer_size = 0;
+                uint64_t global_index_buffer_offset = 0;
+                uint64_t global_index_start = 0;
+                        
+                adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
+                                     ,&global_index_buffer_offset, global_index_start
+                                     ,md->old_pg_root, md->old_vars_root, md->old_attrs_root
+                                     );
+
+                adios_write_version_v1 (&global_index_buffer
+                                       ,&global_index_buffer_size
+                                       ,&global_index_buffer_offset
+                                       );
+
+                unlink (fd->name);
+
+                MPI_File_open (MPI_COMM_SELF, fd->name
+                              ,MPI_MODE_RDWR | MPI_MODE_CREATE
+                              ,MPI_INFO_NULL, &m_file
+                              );
+
+                adios_mpi_amr1_striping_unit_write(
+                                  m_file,
+                                  -1,
+                                  global_index_buffer,
+                                  global_index_buffer_offset,
+                                  md->block_unit);
+
+                MPI_File_close (&m_file);
+
+                if (global_index_buffer)
+                {
+                    free (global_index_buffer);
+                    global_index_buffer = 0;
+                    global_index_buffer_size = 0;
+                    global_index_buffer_offset = 0;
+                }
             }
 
             adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
@@ -2098,22 +2457,14 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
             md->old_pg_root = 0;
             md->old_vars_root = 0;
             md->old_attrs_root = 0;
+
             g_num_aggregators = 0;
-
-            if (g_is_aggregator)
-            {
-                free (g_is_aggregator);
-                g_is_aggregator = 0;
-            }
-
-            if (g_offsets)
-            {
-                free (g_offsets);
-                g_offsets = 0;
-            }
-
             g_color1 = 0;
             g_color2 = 0;
+
+            FREE (md->subfile_name);
+            FREE (g_is_aggregator);
+            FREE (g_offsets);
 
             break;
         }
