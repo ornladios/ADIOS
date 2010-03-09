@@ -104,7 +104,9 @@ struct adios_read_res {
 /**
  * Marshalled argument structure for adios_write
  */
-struct adios_offset {
+struct adios_var {
+    uint64_t vdata;
+    uint64_t vdatasize;
     string   vpath<ADIOS_PATH_MAX>;
     string   vname<ADIOS_PATH_MAX>;
 };
@@ -113,11 +115,11 @@ struct adios_write_args {
     string   vpath<ADIOS_PATH_MAX>;
     string   vname<ADIOS_PATH_MAX>;
     uint64_t vsize;
+    uint64_t atype;
     uint16_t is_scalar;
-    /* if this is a var offset, save it (along with writer's rank) on the server for later use */
-    uint16_t is_offset;
     int64_t  writer_rank;
-    struct adios_offset offsets<ADIOS_DIM_MAX>;
+    struct adios_var offsets<ADIOS_DIM_MAX>;
+    struct adios_var dims<ADIOS_DIM_MAX>;
 };
 
 /**

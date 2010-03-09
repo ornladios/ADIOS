@@ -160,25 +160,173 @@ int getNC4TypeId(
         enum ADIOS_DATATYPES type,
         int *nc4_type_id,
         enum ADIOS_FLAG fortran_flag);
-void populate_dimension_size(
-        struct adios_group_struct *group,
-        struct adios_var_struct *pvar_root,
-        struct adios_attribute_struct *patt_root,
-        struct adios_dimension_item_struct *dim,
-        size_t dimsize);
-void parse_dimension_size(
-        struct adios_group_struct *group,
-        struct adios_var_struct *pvar_root,
-        struct adios_attribute_struct *patt_root,
-        struct adios_dimension_item_struct *dim,
-        size_t *dimsize);
-void parse_dimension_name(
-        struct adios_group_struct *group,
-        struct adios_var_struct *pvar_root,
-        struct adios_attribute_struct *patt_root,
-        struct adios_dimension_item_struct *dim,
-        nc4_dimname_t dimname);
 
+
+static void populate_dimension_size(
+        struct adios_group_struct *group,
+        struct adios_var_struct *pvar_root,
+        struct adios_attribute_struct *patt_root,
+        struct adios_dimension_item_struct *dim,
+        size_t dimsize)
+{
+    struct adios_var_struct *var_linked = NULL;
+    struct adios_attribute_struct *attr_linked;
+    if (dim->id) {
+        var_linked = adios_find_var_by_id (pvar_root , dim->id);
+        if (!var_linked) {
+            attr_linked = adios_find_attribute_by_id (patt_root, dim->id);
+            if (!attr_linked->var) {
+                switch (attr_linked->type) {
+                case adios_unsigned_byte:
+                    *(uint8_t *)attr_linked->value = dimsize;
+                    break;
+                case adios_byte:
+                    *(int8_t *)attr_linked->value = dimsize;
+                    break;
+                case adios_unsigned_short:
+                    *(uint16_t *)attr_linked->value = dimsize;
+                    break;
+                case adios_short:
+                    *(int16_t *)attr_linked->value = dimsize;
+                    break;
+                case adios_unsigned_integer:
+                    *(uint32_t *)attr_linked->value = dimsize;
+                    break;
+                case adios_integer:
+                    *(int32_t *)attr_linked->value = dimsize;
+                    break;
+                case adios_unsigned_long:
+                    *(uint64_t *)attr_linked->value = dimsize;
+                    break;
+                case adios_long:
+                    *(int64_t *)attr_linked->value = dimsize;
+                    break;
+                default:
+                    fprintf (stderr, "Invalid datatype for array dimension on "
+                            "var %s: %s\n"
+                            ,attr_linked->name
+                            ,adios_type_to_string_int(var_linked->type)
+                    );
+                    break;
+                }
+            } else {
+                var_linked = attr_linked->var;
+            }
+        }
+        if (var_linked && var_linked->data) {
+            *(int *)var_linked->data = dimsize;
+        }
+    } else {
+        if (dim->time_index == adios_flag_yes) {
+//			dimsize = NC_UNLIMITED;
+//			dimsize = 1;
+        } else {
+            dim->rank = dimsize;
+        }
+    }
+
+    return;
+}
+static void parse_dimension_size(
+        struct adios_group_struct *group,
+        struct adios_var_struct *pvar_root,
+        struct adios_attribute_struct *patt_root,
+        struct adios_dimension_item_struct *dim,
+        size_t *dimsize)
+{
+    struct adios_var_struct *var_linked = NULL;
+    struct adios_attribute_struct *attr_linked;
+    if (dim->id) {
+        var_linked = adios_find_var_by_id (pvar_root , dim->id);
+        if (!var_linked) {
+            attr_linked = adios_find_attribute_by_id (patt_root, dim->id);
+            if (!attr_linked->var) {
+                switch (attr_linked->type) {
+                case adios_unsigned_byte:
+                    *dimsize = *(uint8_t *)attr_linked->value;
+                    break;
+                case adios_byte:
+                    *dimsize = *(int8_t *)attr_linked->value;
+                    break;
+                case adios_unsigned_short:
+                    *dimsize = *(uint16_t *)attr_linked->value;
+                    break;
+                case adios_short:
+                    *dimsize = *(int16_t *)attr_linked->value;
+                    break;
+                case adios_unsigned_integer:
+                    *dimsize = *(uint32_t *)attr_linked->value;
+                    break;
+                case adios_integer:
+                    *dimsize = *(int32_t *)attr_linked->value;
+                    break;
+                case adios_unsigned_long:
+                    *dimsize = *(uint64_t *)attr_linked->value;
+                    break;
+                case adios_long:
+                    *dimsize = *(int64_t *)attr_linked->value;
+                    break;
+                default:
+                    fprintf (stderr, "Invalid datatype for array dimension on "
+                            "var %s: %s\n"
+                            ,attr_linked->name
+                            ,adios_type_to_string_int (var_linked->type)
+                    );
+                    break;
+                }
+            } else {
+                var_linked = attr_linked->var;
+            }
+        }
+        if (var_linked && var_linked->data) {
+            *dimsize = *(int *)var_linked->data;
+        }
+    } else {
+        if (dim->time_index == adios_flag_yes) {
+            *dimsize = NC_UNLIMITED;
+            *dimsize = 1;
+        } else {
+            *dimsize = dim->rank;
+        }
+    }
+
+    return;
+}
+static void parse_dimension_name(
+        struct adios_group_struct *group,
+        struct adios_var_struct *pvar_root,
+        struct adios_attribute_struct *patt_root,
+        struct adios_dimension_item_struct *dim,
+        nc4_dimname_t dimname)
+{
+    struct adios_var_struct *var_linked = NULL;
+    struct adios_attribute_struct *attr_linked;
+    if (dim->id) {
+        var_linked = adios_find_var_by_id (pvar_root , dim->id);
+        if (!var_linked) {
+            attr_linked = adios_find_attribute_by_id (patt_root, dim->id);
+            if (!attr_linked->var) {
+//				strcpy(dimname, attr_linked->name);
+                sprintf(dimname, "%s_dim", attr_linked->name);
+            } else {
+                var_linked = attr_linked->var;
+            }
+        }
+        if (var_linked && var_linked->name) {
+//			strcpy(dimname, var_linked->name);
+            sprintf(dimname, "%s_dim", var_linked->name);
+        }
+    } else {
+        if (dim->time_index == adios_flag_yes) {
+//			strcpy(dimname, group->time_index_name);
+            sprintf(dimname, "%s_dim", group->time_index_name);
+        } else {
+            dimname[0] = '\0';
+        }
+    }
+
+    return;
+}
 
 static int write_attribute(
         int ncid,
@@ -1607,169 +1755,4 @@ int ncd_gen_name(
     return 0;
 }
 
-static void populate_dimension_size(
-        struct adios_group_struct *group,
-        struct adios_var_struct *pvar_root,
-        struct adios_attribute_struct *patt_root,
-        struct adios_dimension_item_struct *dim,
-        size_t dimsize)
-{
-    struct adios_var_struct *var_linked = NULL;
-    struct adios_attribute_struct *attr_linked;
-    if (dim->id) {
-        var_linked = adios_find_var_by_id (pvar_root , dim->id);
-        if (!var_linked) {
-            attr_linked = adios_find_attribute_by_id (patt_root, dim->id);
-            if (!attr_linked->var) {
-                switch (attr_linked->type) {
-                case adios_unsigned_byte:
-                    *(uint8_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_byte:
-                    *(int8_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_unsigned_short:
-                    *(uint16_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_short:
-                    *(int16_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_unsigned_integer:
-                    *(uint32_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_integer:
-                    *(int32_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_unsigned_long:
-                    *(uint64_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_long:
-                    *(int64_t *)attr_linked->value = dimsize;
-                    break;
-                default:
-                    fprintf (stderr, "Invalid datatype for array dimension on "
-                            "var %s: %s\n"
-                            ,attr_linked->name
-                            ,adios_type_to_string_int(var_linked->type)
-                    );
-                    break;
-                }
-            } else {
-                var_linked = attr_linked->var;
-            }
-        }
-        if (var_linked && var_linked->data) {
-            *(int *)var_linked->data = dimsize;
-        }
-    } else {
-        if (dim->time_index == adios_flag_yes) {
-//			dimsize = NC_UNLIMITED;
-//			dimsize = 1;
-        } else {
-            dim->rank = dimsize;
-        }
-    }
-
-    return;
-}
-static void parse_dimension_size(
-        struct adios_group_struct *group,
-        struct adios_var_struct *pvar_root,
-        struct adios_attribute_struct *patt_root,
-        struct adios_dimension_item_struct *dim,
-        size_t *dimsize)
-{
-    struct adios_var_struct *var_linked = NULL;
-    struct adios_attribute_struct *attr_linked;
-    if (dim->id) {
-        var_linked = adios_find_var_by_id (pvar_root , dim->id);
-        if (!var_linked) {
-            attr_linked = adios_find_attribute_by_id (patt_root, dim->id);
-            if (!attr_linked->var) {
-                switch (attr_linked->type) {
-                case adios_unsigned_byte:
-                    *dimsize = *(uint8_t *)attr_linked->value;
-                    break;
-                case adios_byte:
-                    *dimsize = *(int8_t *)attr_linked->value;
-                    break;
-                case adios_unsigned_short:
-                    *dimsize = *(uint16_t *)attr_linked->value;
-                    break;
-                case adios_short:
-                    *dimsize = *(int16_t *)attr_linked->value;
-                    break;
-                case adios_unsigned_integer:
-                    *dimsize = *(uint32_t *)attr_linked->value;
-                    break;
-                case adios_integer:
-                    *dimsize = *(int32_t *)attr_linked->value;
-                    break;
-                case adios_unsigned_long:
-                    *dimsize = *(uint64_t *)attr_linked->value;
-                    break;
-                case adios_long:
-                    *dimsize = *(int64_t *)attr_linked->value;
-                    break;
-                default:
-                    fprintf (stderr, "Invalid datatype for array dimension on "
-                            "var %s: %s\n"
-                            ,attr_linked->name
-                            ,adios_type_to_string_int (var_linked->type)
-                    );
-                    break;
-                }
-            } else {
-                var_linked = attr_linked->var;
-            }
-        }
-        if (var_linked && var_linked->data) {
-            *dimsize = *(int *)var_linked->data;
-        }
-    } else {
-        if (dim->time_index == adios_flag_yes) {
-            *dimsize = NC_UNLIMITED;
-            *dimsize = 1;
-        } else {
-            *dimsize = dim->rank;
-        }
-    }
-
-    return;
-}
-static void parse_dimension_name(
-        struct adios_group_struct *group,
-        struct adios_var_struct *pvar_root,
-        struct adios_attribute_struct *patt_root,
-        struct adios_dimension_item_struct *dim,
-        nc4_dimname_t dimname)
-{
-    struct adios_var_struct *var_linked = NULL;
-    struct adios_attribute_struct *attr_linked;
-    if (dim->id) {
-        var_linked = adios_find_var_by_id (pvar_root , dim->id);
-        if (!var_linked) {
-            attr_linked = adios_find_attribute_by_id (patt_root, dim->id);
-            if (!attr_linked->var) {
-//				strcpy(dimname, attr_linked->name);
-                sprintf(dimname, "%s_dim", attr_linked->name);
-            } else {
-                var_linked = attr_linked->var;
-            }
-        }
-        if (var_linked && var_linked->name) {
-//			strcpy(dimname, var_linked->name);
-            sprintf(dimname, "%s_dim", var_linked->name);
-        }
-    } else {
-        if (dim->time_index == adios_flag_yes) {
-//			strcpy(dimname, group->time_index_name);
-            sprintf(dimname, "%s_dim", group->time_index_name);
-        } else {
-            dimname[0] = '\0';
-        }
-    }
-
-    return;
-}
 #endif

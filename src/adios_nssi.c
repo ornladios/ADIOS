@@ -34,10 +34,6 @@ void adios_nssi_end_iteration(
         struct adios_method_struct * method)
 {
 }
-void adios_nssi_start_calculation(
-        struct adios_method_struct * method)
-{
-}
 void adios_nssi_stop_calculation(
         struct adios_method_struct * method)
 {
@@ -124,6 +120,18 @@ struct var_offset {
 /* list of variable offsets */
 List var_offset_list;
 
+/* Need a struct to encapsulate var dim info.
+ */
+struct var_dim {
+    char      dpath[ADIOS_PATH_MAX];
+    char      dname[ADIOS_PATH_MAX];
+    void     *dvalue;
+    uint64_t  dsize;
+};
+
+/* list of variable offsets */
+List var_dim_list;
+
 ///////////////////////////
 // Global Variables
 ///////////////////////////
@@ -132,6 +140,7 @@ static int adios_nssi_initialized = 0;
 static int default_svc;
 static MPI_Comm ncmpi_collective_op_comm;
 static int global_rank=-1;
+static int collective_op_size=-1;
 static int collective_op_rank=-1;
 static nssi_service *svcs;
 struct adios_nssi_config nssi_cfg;
@@ -150,7 +159,7 @@ struct adios_nssi_config nssi_cfg;
 
 static struct var_offset *var_offset_create(const char *path, const char *name, void *value, uint64_t size)
 {
-    struct var_offset *vo=malloc(sizeof(struct var_offset));
+    struct var_offset *vo=calloc(1,sizeof(struct var_offset));
 
     strcpy(vo->opath, path);
     strcpy(vo->oname, name);
@@ -200,8 +209,60 @@ static void var_offset_printall(void)
         printf("opath(%s) oname(%s)\n", vo->opath, vo->oname);
         elmt = list_next(elmt);
     }
+}
+
+static struct var_dim *var_dim_create(const char *path, const char *name, void *value, uint64_t size)
+{
+    struct var_dim *vd=calloc(1,sizeof(struct var_dim));
+
+    strcpy(vd->dpath, path);
+    strcpy(vd->dname, name);
+    vd->dvalue = value;
+    vd->dsize  = size;
+
+    return(vd);
+}
+static void var_dim_free(void *vd)
+{
+    free(vd);
+}
+static int var_dim_equal(const struct var_dim *vd1, const struct var_dim *vd2)
+{
+    if ((strcmp(vd1->dpath, vd2->dpath) == 0) && (strcmp(vd1->dname, vd2->dname) == 0)) return TRUE;
+
+    return FALSE;
+}
+static struct var_dim *var_dim_find(const char *path, const char *name)
+{
+    ListElmt *elmt;
+    struct var_dim *vd;
+
+    //printf("looking for opath(%s) oname(%s)\n", path, name);
+
+    elmt = list_head(&var_dim_list);
+    while(elmt) {
+        vd = list_data(elmt);
+        //printf("comparing to opath(%s) oname(%s)\n", vd->dpath, vd->dname);
+        if ((strcmp(path, vd->dpath) == 0) && (strcmp(name, vd->dname) == 0)) {
+            //printf("opath(%s) oname(%s) matches search\n", vd->dpath, vd->dname);
+            return vd;
+        }
+        elmt = list_next(elmt);
+    }
 
     return NULL;
+}
+static void var_dim_printall(void)
+{
+    ListElmt *elmt;
+    struct var_dim *vd;
+
+    elmt = list_head(&var_dim_list);
+    while(elmt) {
+        vd = list_data(elmt);
+        printf("dpath(%s) dname(%s)\n", vd->dpath, vd->dname);
+        elmt = list_next(elmt);
+    }
 }
 
 static void parse_dimension_size(
@@ -312,9 +373,9 @@ static int gen_offset_list(
 {
     struct adios_var_struct *v;
     struct adios_dimension_struct *dims;
-    struct var_offset *vo;
+    struct var_info *vi;
     char offset_name[255];
-    uint64_t *offset;
+    uint64_t *value;
 
     v = pvar_root;
     while (v) {
@@ -325,15 +386,16 @@ static int gen_offset_list(
             if (offset_name[0] == '\0') {
                 sprintf(offset_name, "offset_%d", loffs_idx);
             }
-            //printf("gen: offset_name(%s)\n", offset_name);
-            offset=malloc(sizeof(uint64_t));
-            parse_dimension_size(group, pvar_root, patt_root, &dims->local_offset, offset);
-//			if (myrank==0) {
-//				printf(":o(%d)", nc4_offsets[loffs_idx]);
-//			}
+//            printf("gen: offset_name(%s)\n", offset_name);
+            value=calloc(1,sizeof(uint64_t));
+            parse_dimension_size(group, pvar_root, patt_root, &dims->local_offset, value);
+//            if (myrank==0) {
+//            	printf(":o(%d)", nc4_offsets[loffs_idx]);
+//            }
 
-            vo = var_offset_create("" /*v->path*/, offset_name, offset, sizeof(uint64_t));
-            list_ins_next(&var_offset_list, list_head(&var_offset_list), vo);
+            uint64_t vsize = 4; /* adios_get_var_size(v, group, value); */
+            vi = var_offset_create("" /*v->path*/, offset_name, value, vsize);
+            list_ins_next(&var_offset_list, list_head(&var_offset_list), vi);
 
             loffs_idx++;
             dims = dims->next;
@@ -350,9 +412,7 @@ static void create_offset_list_for_var(
         struct adios_attribute_struct *patt_root)
 {
     struct adios_dimension_struct *dims;
-    struct var_offset *vo;
     char offset_name[255];
-    uint64_t offset;
 
     args->offsets.offsets_len=0;
     args->offsets.offsets_val=NULL;
@@ -361,28 +421,143 @@ static void create_offset_list_for_var(
         int local_offset_count=0;
         dims=v->dimensions;
         while (dims) {
+            if (dims->dimension.time_index == adios_flag_yes) {
+                dims = dims->next;
+                continue;
+            }
+            parse_dimension_name(group, pvar_root, patt_root, &dims->local_offset, offset_name);
             local_offset_count++;
             dims = dims->next;
         }
 
         args->offsets.offsets_len=local_offset_count;
-        args->offsets.offsets_val=malloc(local_offset_count * sizeof(struct adios_offset));
+        args->offsets.offsets_val=calloc(local_offset_count, sizeof(struct adios_var));
 
         dims=v->dimensions;
         int loffs_idx=0;
         while (dims) {
+            if (dims->dimension.time_index == adios_flag_yes) {
+                dims = dims->next;
+                continue;
+            }
             parse_dimension_name(group, pvar_root, patt_root, &dims->local_offset, offset_name);
             if (offset_name[0] == '\0') {
                 sprintf(offset_name, "offset_%d", loffs_idx);
             }
-            //printf("create: offset_name(%s)\n", offset_name);
-            args->offsets.offsets_val[loffs_idx].vpath=strdup("" /*v->path*/);
-            args->offsets.offsets_val[loffs_idx].vname=strdup(offset_name);
-//			if (myrank==0) {
-//				printf(":o(%d)", nc4_offsets[loffs_idx]);
-//			}
+                args->offsets.offsets_val[loffs_idx].vpath=strdup("" /*v->path*/);
+                args->offsets.offsets_val[loffs_idx].vname=strdup(offset_name);
+                //            struct var_offset *vo=var_offset_find("", offset_name);
+                //            memcpy(&(args->offsets.offsets_val[loffs_idx].vdata), vo->ovalue, vo->osize);
+                //            args->offsets.offsets_val[loffs_idx].vdatasize=vo->osize;
+                //            printf("create: offset_name(%s) offset_value(%lu)\n", offset_name, vo->ovalue);
+                uint64_t value=0;
+                parse_dimension_size(group, pvar_root, patt_root, &dims->local_offset, &value);
+                memcpy(&(args->offsets.offsets_val[loffs_idx].vdata), &value, 4);
+                args->offsets.offsets_val[loffs_idx].vdatasize=4;
+//                printf("create: offset_name(%s) offset_value(%lu)\n", offset_name, value);
+//                if (myrank==0) {
+//                	printf(":o(%d)", nc4_offsets[loffs_idx]);
+//                }
 
             loffs_idx++;
+            dims = dims->next;
+        }
+    }
+}
+
+static int gen_dim_list(
+        struct adios_group_struct *group,
+        struct adios_var_struct *pvar_root,
+        struct adios_attribute_struct *patt_root)
+{
+    struct adios_var_struct *v;
+    struct adios_dimension_struct *dims;
+    struct var_info *vi;
+    char dim_name[255];
+    uint64_t *value;
+
+    v = pvar_root;
+    while (v) {
+        dims=v->dimensions;
+        int dim_idx=0;
+        while (dims) {
+            parse_dimension_name(group, pvar_root, patt_root, &dims->dimension, dim_name);
+            if (dim_name[0] == '\0') {
+                sprintf(dim_name, "dim_%d", dim_idx);
+            }
+//                printf("gen: dim_name(%s)\n", dim_name);
+                value=calloc(1,sizeof(uint64_t));
+                parse_dimension_size(group, pvar_root, patt_root, &dims->dimension, value);
+//                if (myrank==0) {
+//                	printf(":o(%d)", nc4_dims[dim_idx]);
+//                }
+
+                uint64_t vsize = 4; /* adios_get_var_size(v, group, value); */
+                vi = var_dim_create("" /*v->path*/, dim_name, value, vsize);
+                list_ins_next(&var_dim_list, list_head(&var_dim_list), vi);
+
+            dim_idx++;
+            dims = dims->next;
+        }
+        v = v->next;
+    }
+}
+
+static void create_dim_list_for_var(
+        struct adios_write_args *args,
+        struct adios_var_struct *v,
+        struct adios_group_struct *group,
+        struct adios_var_struct *pvar_root,
+        struct adios_attribute_struct *patt_root)
+{
+    struct adios_dimension_struct *dims;
+    char dim_name[255];
+
+    args->dims.dims_len=0;
+    args->dims.dims_val=NULL;
+
+    if ((v) && (v->dimensions)) {
+        int dim_count=0;
+        dims=v->dimensions;
+        while (dims) {
+            if (dims->dimension.time_index == adios_flag_yes) {
+                dims = dims->next;
+                continue;
+            }
+            parse_dimension_name(group, pvar_root, patt_root, &dims->dimension, dim_name);
+            dim_count++;
+            dims = dims->next;
+        }
+
+        args->dims.dims_len=dim_count;
+        args->dims.dims_val=calloc(dim_count, sizeof(struct adios_var));
+
+        dims=v->dimensions;
+        int dim_idx=0;
+        while (dims) {
+            if (dims->dimension.time_index == adios_flag_yes) {
+                dims = dims->next;
+                continue;
+            }
+            parse_dimension_name(group, pvar_root, patt_root, &dims->dimension, dim_name);
+            if (dim_name[0] == '\0') {
+                sprintf(dim_name, "dim_%d", dim_idx);
+            }
+            args->dims.dims_val[dim_idx].vpath=strdup("" /*v->path*/);
+            args->dims.dims_val[dim_idx].vname=strdup(dim_name);
+//            struct var_dim *vd=var_dim_find("", dim_name);
+//            memcpy(&(args->dims.dims_val[dim_idx].vdata), vd->dvalue, vd->dsize);
+//            args->dims.dims_val[dim_idx].vdatasize=vd->dsize;
+            uint64_t value=0;
+            parse_dimension_size(group, pvar_root, patt_root, &dims->dimension, &value);
+            memcpy(&(args->dims.dims_val[dim_idx].vdata), &value, 4);
+            args->dims.dims_val[dim_idx].vdatasize=4;
+//            printf("create: dim_name(%s) dvalue(%lu)\n", dim_name, value);
+//            if (myrank==0) {
+//            	printf(":o(%d)", nc4_dims[dim_idx]);
+//            }
+
+            dim_idx++;
             dims = dims->next;
         }
     }
@@ -441,29 +616,36 @@ static int write_var(
 
 //    var_offset_printall();
 
+    memset(&args, 0, sizeof(adios_write_args));
     args.fd    = fd;
-    args.vsize = var_size;
     args.vpath = strdup(pvar->path);
     args.vname = strdup(pvar->name);
-    args.is_scalar = FALSE;
-    if (var_offset_find("" /*pvar->path*/, pvar->name)) {
-        printf("var(%s) is an offset\n", pvar->name);
-        args.is_offset = TRUE;
+    args.vsize = var_size;
+    args.atype = pvar->type;
+    if (pvar->dimensions) {
+        args.is_scalar = FALSE;
     } else {
-        printf("var(%s) is NOT an offset\n", pvar->name);
-        args.is_offset = FALSE;
+        args.is_scalar = TRUE;
     }
     args.writer_rank=myrank;
     args.offsets.offsets_len=0;
     args.offsets.offsets_val=NULL;
+    args.dims.dims_len=0;
+    args.dims.dims_val=NULL;
     if (pvar->dimensions) {
         create_offset_list_for_var(
-                &args,
-                pvar,
-                group,
-                group->vars,
-                group->attributes);
-    }
+                 &args,
+                 pvar,
+                 group,
+                 group->vars,
+                 group->attributes);
+        create_dim_list_for_var(
+                 &args,
+                 pvar,
+                 group,
+                 group->vars,
+                 group->attributes);
+     }
 
     MPI_Barrier(MPI_COMM_WORLD);
     rc = nssi_call_rpc_sync(&svcs[default_svc],
@@ -566,7 +748,7 @@ enum ADIOS_FLAG adios_nssi_should_buffer(
     adios_group_size_args args;
 
     args.fd = md->fd;
-    args.data_size = f->write_size_bytes;
+    args.data_size = f->write_size_bytes*collective_op_size;
 
     rc = nssi_call_rpc_sync(&svcs[default_svc],
             ADIOS_GROUP_SIZE_OP,
@@ -591,6 +773,7 @@ int adios_nssi_open(
     adios_open_res  res;
 
     if (md->fd != -1) {
+        printf("open: %s is open.  skipping the rest.\n", f->name);
         // file already open
         return adios_flag_no;
     }
@@ -618,6 +801,7 @@ int adios_nssi_open(
     /* create a new communicator for just those clients, who share a default service. */
     MPI_Comm_split(MPI_COMM_WORLD, default_svc, md->rank, &ncmpi_collective_op_comm);
     /* find my rank in the new communicator */
+    MPI_Comm_size(ncmpi_collective_op_comm, &collective_op_size);
     MPI_Comm_rank(ncmpi_collective_op_comm, &collective_op_rank);
 
     //log_debug(adios_nssi_debug_level, "global_rank(%d) collective_op_rank(%d) default_service(%d)", md->rank, collective_op_rank, default_svc);
@@ -627,12 +811,12 @@ int adios_nssi_open(
      * connect to other servers on-demand.
      */
     double GetSvcTime=MPI_Wtime();
-    printf("get staging-service: default_svc(%d) nid(%lld) pid(%llu) hostname(%s) port(%d)\n",
-            default_svc,
-            nssi_cfg.nssi_server_ids[default_svc].nid,
-            nssi_cfg.nssi_server_ids[default_svc].pid,
-            nssi_cfg.nssi_server_ids[default_svc].hostname,
-            nssi_cfg.nssi_server_ids[default_svc].port);
+//    printf("get staging-service: default_svc(%d) nid(%lld) pid(%llu) hostname(%s) port(%d)\n",
+//            default_svc,
+//            nssi_cfg.nssi_server_ids[default_svc].nid,
+//            nssi_cfg.nssi_server_ids[default_svc].pid,
+//            nssi_cfg.nssi_server_ids[default_svc].hostname,
+//            nssi_cfg.nssi_server_ids[default_svc].port);
     rc = nssi_get_service(nssi_cfg.nssi_server_ids[default_svc], -1, &svcs[default_svc]);
     if (rc != NSSI_OK) {
         //log_error(adios_nssi_debug_level, "Couldn't connect to netcdf master: %s", nssi_err_str(rc));
@@ -641,6 +825,10 @@ int adios_nssi_open(
 
 
     gen_offset_list(
+            f->group,
+            f->group->vars,
+            f->group->attributes);
+    gen_dim_list(
             f->group,
             f->group->vars,
             f->group->attributes);
@@ -679,6 +867,33 @@ int adios_nssi_open(
     return 1;
 }
 
+void adios_nssi_start_calculation(
+        struct adios_method_struct * method)
+{
+    int rc=NSSI_OK;
+    struct adios_nssi_data_struct * md = (struct adios_nssi_data_struct*)method->method_data;
+    int myrank=md->rank;
+
+    adios_start_calc_args args;
+
+    MPI_Barrier(md->group_comm);
+    if (collective_op_rank == 0) {
+        args.fd = md->fd;
+        rc = nssi_call_rpc_sync(&svcs[default_svc],
+                ADIOS_START_CALC_OP,
+                &args,
+                NULL,
+                0,
+                NULL);
+        if (rc != NSSI_OK) {
+            //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
+        }
+    }
+    MPI_Barrier(md->group_comm);
+
+    return;
+}
+
 void adios_nssi_write(
         struct adios_file_struct *f,
         struct adios_var_struct *v,
@@ -699,7 +914,7 @@ void adios_nssi_write(
 //			fprintf(stderr, "write var: %s start!\n", v->name);
         }
         uint64_t var_size = adios_get_var_size (v, f->group, data);
-        printf("vname(%s) vsize(%ld)\n", v->name, var_size);
+        //printf("vname(%s) vsize(%ld)\n", v->name, var_size);
         write_var(md->fd,
                 f->group,
                 f->group->vars,
@@ -767,28 +982,28 @@ void adios_nssi_close(
     struct adios_attribute_struct * a = f->group->attributes;
     int myrank=md->rank;
 
-    adios_close_args args;
+    adios_start_calc_args args;
 
     if (f->mode == adios_mode_read) {
         if (md->rank==0) {
             fprintf(stderr, "-------------------------\n");
-            fprintf(stderr, "reading done, nc4 file is virtually closed;\n");
+            fprintf(stderr, "reading done, NSSI file is virtually closed;\n");
             fprintf(stderr, "-------------------------\n");
         }
     } else if (f->mode == adios_mode_write || f->mode == adios_mode_append) {
         //fprintf(stderr, "entering nc4 write attribute mode!\n");
         if (md->rank==0) {
             fprintf(stderr, "-------------------------\n");
-            fprintf(stderr, "writing done, nc4 file is virtually closed;\n");
+            fprintf(stderr, "writing done, NSSI file is virtually closed;\n");
             fprintf(stderr, "-------------------------\n");
         }
     }
 
     MPI_Barrier(md->group_comm);
-    if (md->rank == 0) {
+    if (collective_op_rank == 0) {
         args.fd = md->fd;
         rc = nssi_call_rpc_sync(&svcs[default_svc],
-                ADIOS_CLOSE_OP,
+                ADIOS_START_CALC_OP,
                 &args,
                 NULL,
                 0,
@@ -806,8 +1021,26 @@ void adios_nssi_finalize(
         int mype,
         struct adios_method_struct *method)
 {
+    int rc=NSSI_OK;
     struct adios_nssi_data_struct * md = (struct adios_nssi_data_struct*)method->method_data;
     int myrank=md->rank;
+
+    adios_close_args args;
+
+    MPI_Barrier(md->group_comm);
+    if (collective_op_rank == 0) {
+        args.fd = md->fd;
+        rc = nssi_call_rpc_sync(&svcs[default_svc],
+                ADIOS_CLOSE_OP,
+                &args,
+                NULL,
+                0,
+                NULL);
+        if (rc != NSSI_OK) {
+            //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
+        }
+    }
+    MPI_Barrier(md->group_comm);
 
     md->group_comm = MPI_COMM_NULL;
     md->fd = -1;

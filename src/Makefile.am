@@ -7,7 +7,7 @@ if HAVE_NSSI
 
 bin_PROGRAMS=nssi-staging-server
 
-nssi_staging_server_SOURCES = nssi_staging_server.cpp
+nssi_staging_server_SOURCES = nssi_staging_server.cpp aggregation.cpp
 nssi_staging_server_LDADD = $(top_builddir)/src/libadios.a
 nssi_staging_server_LDFLAGS = $(MXML_LDFLAGS) 
 nssi_staging_server_LDADD += $(MXML_LIBS) 

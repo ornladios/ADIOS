@@ -36,6 +36,7 @@
 #endif
 
 #include "io_timer.h"
+#include "aggregation.h"
 
 #include <mpi.h>
 #include <algorithm>
@@ -53,12 +54,16 @@ using namespace std;
 /* Need a struct to encapsulate open file info.
  */
 struct open_file {
-    char fname[ADIOS_PATH_MAX];
-//    open_file(const struct lwfs_ib_connection *c) {
-//        qp_num=c->msg_qp_num;
-//    }
+    char    ofname[ADIOS_PATH_MAX];
+    int64_t ofdesc;
+
     open_file(const char *name) {
-        strcpy(fname, name);
+        strcpy(ofname, name);
+        ofdesc=-1;
+    }
+    open_file(const char *name, const int64_t desc) {
+        strcpy(ofname, name);
+        ofdesc=desc;
     }
 };
 /* Need a comparison operator to pass into the open_file_map
@@ -70,7 +75,7 @@ struct open_file_lt
 //        log_debug(rpc_debug_level, "cqp1.qp_num == %u", cqp1.qp_num);
 //        log_debug(rpc_debug_level, "cqp2.qp_num == %u", cqp2.qp_num);
 
-        if (strcmp(of1.fname, of2.fname) <0) return TRUE;
+        if (strcmp(of1.ofname, of2.ofname) <0) return TRUE;
 
         return FALSE;
     }
@@ -83,41 +88,52 @@ typedef pair<struct open_file, int64_t> open_file_map_pair_t;
 static pthread_mutex_t open_file_map_mutex=PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 static pthread_cond_t  open_file_map_cond =PTHREAD_COND_INITIALIZER;
 
-/* Need a struct to encapsulate open file info.
- */
-struct offset {
-    int64_t orank;
-    char opath[ADIOS_PATH_MAX];
-    char oname[ADIOS_PATH_MAX];
-//    offset(const struct lwfs_ib_connection *c) {
-//        qp_num=c->msg_qp_num;
+///* Need a struct to encapsulate offset/dimension variable info.
+// */
+//struct var_info {
+//    int64_t virank;
+//    char    vipath[ADIOS_PATH_MAX];
+//    char    viname[ADIOS_PATH_MAX];
+//    void   *vidata;
+//    var_info(const int64_t rank, const char *path, const char *name) {
+//        virank=rank;
+//        strcpy(vipath, path);
+//        strcpy(viname, name);
+//        vidata=NULL;
 //    }
-    offset(const int64_t rank, const char *path, const char *name) {
-        orank=rank;
-        strcpy(opath, path);
-        strcpy(oname, name);
-    }
-};
-/* Need a comparison operator to pass into the offset_map
- */
-struct offset_lt
-{
-    bool operator()(const struct offset &o1, const struct offset &o2) const
-    {
-        if (o1.orank < o2.orank) return TRUE;
-        if ((o1.orank == o2.orank) && (strcmp(o1.opath, o2.opath) < 0)) return TRUE;
-        if ((o1.orank == o2.orank) && (strcmp(o1.opath, o2.opath) == 0) && (strcmp(o1.oname, o2.oname) < 0)) return TRUE;
-
-        return FALSE;
-    }
-};
-
-/* Map of open files */
-static map<struct offset, void *, offset_lt> offset_map;
-typedef map<struct offset, void *, offset_lt>::iterator offset_map_iterator_t;
-typedef pair<struct offset, void *> offset_map_pair_t;
-static pthread_mutex_t offset_map_mutex=PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-static pthread_cond_t  offset_map_cond =PTHREAD_COND_INITIALIZER;
+//    var_info(const int64_t rank, const char *path, const char *name, void *data) {
+//        virank=rank;
+//        strcpy(vipath, path);
+//        strcpy(viname, name);
+//        vidata=data;
+//    }
+//};
+///* Need a comparison operator to pass into the var_info_map
+// */
+//struct var_info_lt
+//{
+//    bool operator()(const struct var_info &vi1, const struct var_info &vi2) const
+//    {
+//        if (vi1.virank < vi2.virank) return TRUE;
+//        if ((vi1.virank == vi2.virank) && (strcmp(vi1.vipath, vi2.vipath) < 0)) return TRUE;
+//        if ((vi1.virank == vi2.virank) && (strcmp(vi1.vipath, vi2.vipath) == 0) && (strcmp(vi1.viname, vi2.viname) < 0)) return TRUE;
+//
+//        return FALSE;
+//    }
+//};
+//
+///* Map of dimension variables */
+//static map<struct var_info, void *, var_info_lt> dim_map;
+//typedef map<struct var_info, void *, var_info_lt>::iterator dim_map_iterator_t;
+//typedef pair<struct var_info, void *> dim_map_pair_t;
+//static pthread_mutex_t dim_map_mutex=PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+//static pthread_cond_t  dim_map_cond =PTHREAD_COND_INITIALIZER;
+///* Map of offset variables */
+//static map<struct var_info, void *, var_info_lt> offset_map;
+//typedef map<struct var_info, void *, var_info_lt>::iterator offset_map_iterator_t;
+//typedef pair<struct var_info, void *> offset_map_pair_t;
+//static pthread_mutex_t offset_map_mutex=PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
+//static pthread_cond_t  offset_map_cond =PTHREAD_COND_INITIALIZER;
 
 /* -------------------- PRIVATE FUNCTIONS ---------- */
 void open_file_add(char *fname, int64_t fd)
@@ -157,45 +173,90 @@ void open_file_del(char *fname)
 }
 
 
-void offset_add(int64_t rank, char *path, char *name, void *data)
-{
-    offset o(rank, path, name);
-    printf("adding offset rank(%ld) opath(%s) oname(%s)\n", rank, path, name);
-    offset_map[o]=data;
-}
-
-void *offset_get(int64_t rank, char *path, char *name)
-{
-    offset o(rank, path, name);
-    void *data=NULL;
-
-    printf("looking for offset rank(%ld) opath(%s) oname(%s)\n", rank, path, name);
-
-    offset_map_iterator_t iter=offset_map.find(o);
-    if (iter != offset_map.end()) {
-        data=iter->second;
-    }
-
-    return(data);
-}
-
-//void offset_del(lwfs_ib_connection *conn)
+//void dim_add(int64_t rank, char *path, char *name, void *data)
 //{
-//    conn_map_iterator_t iter;
-//    conn_qp cqp(conn->msg_qp_num);
-//
-//    log_debug(rpc_debug_level, "begin");
-//    log_debug(rpc_debug_level, "deleting connection with qp_num=%d", conn->msg_qp_num);
-//    conn_map.erase(cqp);
-//    log_debug(rpc_debug_level, "end");
+//    var_info vi(rank, path, name, data);
+//    printf("adding dim virank(%ld) vipath(%s) viname(%s)\n", rank, path, name);
+//    dim_map[vi]=data;
 //}
-void offset_del(int64_t rank, char *path, char *name)
-{
-    offset_map_iterator_t iter;
-    offset o(rank, path, name);
+//
+//void *dim_get(int64_t rank, char *path, char *name)
+//{
+//    var_info vi(rank, path, name);
+//    void *data=NULL;
+//
+//    printf("looking for dim virank(%ld) vipath(%s) viname(%s)\n", rank, path, name);
+//
+//    dim_map_iterator_t iter=dim_map.find(vi);
+//    if (iter != dim_map.end()) {
+//        data=iter->second;
+//    }
+//
+//    return(data);
+//}
+//
+////void dims_del(lwfs_ib_connection *conn)
+////{
+////    conn_map_iterator_t iter;
+////    conn_qp cqp(conn->msg_qp_num);
+////
+////    log_debug(rpc_debug_level, "begin");
+////    log_debug(rpc_debug_level, "deleting connection with qp_num=%d", conn->msg_qp_num);
+////    conn_map.erase(cqp);
+////    log_debug(rpc_debug_level, "end");
+////}
+//void dim_del(int64_t rank, char *path, char *name)
+//{
+//    dim_map_iterator_t iter;
+//    var_info vi(rank, path, name);
+//
+//    dim_map.erase(vi);
+//}
+//
+//
+//void offset_add(int64_t rank, char *path, char *name, void *data)
+//{
+//    var_info vi(rank, path, name, data);
+//    printf("adding offset virank(%ld) vipath(%s) viname(%s)\n", rank, path, name);
+//    offset_map[vi]=data;
+//}
+//
+//void *offset_get(int64_t rank, char *path, char *name)
+//{
+//    var_info vi(rank, path, name);
+//    void *data=NULL;
+//
+//    printf("looking for offset virank(%ld) vipath(%s) viname(%s)\n", rank, path, name);
+//
+//    offset_map_iterator_t iter=offset_map.find(vi);
+//    if (iter != offset_map.end()) {
+//        data=iter->second;
+//    }
+//
+//    return(data);
+//}
+//
+////void offset_del(lwfs_ib_connection *conn)
+////{
+////    conn_map_iterator_t iter;
+////    conn_qp cqp(conn->msg_qp_num);
+////
+////    log_debug(rpc_debug_level, "begin");
+////    log_debug(rpc_debug_level, "deleting connection with qp_num=%d", conn->msg_qp_num);
+////    conn_map.erase(cqp);
+////    log_debug(rpc_debug_level, "end");
+////}
+//void offset_del(int64_t rank, char *path, char *name)
+//{
+//    offset_map_iterator_t iter;
+//    var_info vi(rank, path, name);
+//
+//    offset_map.erase(vi);
+//}
 
-    offset_map.erase(o);
-}
+
+
+int grank, gsize;
 
 
 /**
@@ -331,7 +392,7 @@ int nssi_staging_open_stub(
 
     memset(&res, 0, sizeof(res));
 
-    printf("calling nssi_staging_open_stub(%s, %d)\n", args->fname, args->mode);
+    //printf("myrank(%d): calling nssi_staging_open_stub(%s, %d)\n", grank, args->fname, args->mode);
 
 //    SetHints(&mpiHints, "");
 //    ShowHints(&mpiHints);
@@ -359,16 +420,20 @@ int nssi_staging_open_stub(
 
         double callTime;
         Start_Timer(callTime);
-        printf("start adios_open\n");
+        //printf("start adios_open\n");
         if ((rc = adios_open(&fd, args->gname, args->fname, omode, NULL)) != 0) {
             printf("Error opening file \"%s\": %d\n", args->fname, rc);
             goto cleanup;
         }
-        printf("end adios_open\n");
+        //printf("end adios_open\n");
         Stop_Timer("adios_open", callTime);
 
         open_file_add(args->fname, fd);
+
+        add_file(fd, WRITE_CACHING_COLLECTIVE);
     }
+
+    printf("nssi_staging_open_stub: fd=%ld, fd=%p\n", fd, fd);
 
     res.fd=fd;
 
@@ -389,7 +454,7 @@ int nssi_staging_group_size_stub(
     int rc = 0;
     uint64_t total_size=0;
 
-    printf("calling nssi_staging_group_size_stub(%ld)\n", args->fd);
+    printf("myrank(%d): calling nssi_staging_group_size_stub(%ld)\n", grank, args->fd);
 
     double callTime;
     Start_Timer(callTime);
@@ -414,7 +479,8 @@ int nssi_staging_close_stub(
 {
     int rc = 0;
 
-    printf("calling nssi_staging_close_stub(%ld)\n", args->fd);
+    printf("myrank(%d): calling nssi_staging_close_stub(%ld)\n", grank, args->fd);
+
 
     double callTime;
     Start_Timer(callTime);
@@ -440,7 +506,7 @@ int nssi_staging_read_stub(
     int pathlen;
     char *v=NULL;
 
-    printf("calling nssi_staging_read_stub(%ld)\n", args->fd);
+    printf("myrank(%d): calling nssi_staging_read_stub(%ld)\n", grank, args->fd);
 
 //    pathlen=strlen(args->vpath);
 //    if (args->vpath[pathlen-1]=='/') {
@@ -484,8 +550,9 @@ int nssi_staging_write_stub(
     int pathlen;
     char *v=NULL;
     int i=0;
+    double callTime;
 
-    printf("calling nssi_staging_write_stub(fd=%ld, vsize=%ld)\n", args->fd, args->vsize);
+    printf("myrank(%d): calling nssi_staging_write_stub(fd=%ld, vsize=%ld)\n", grank, args->fd, args->vsize);
 
 //    pathlen=strlen(args->vpath);
 //    if (args->vpath[pathlen-1]=='/') {
@@ -496,44 +563,102 @@ int nssi_staging_write_stub(
 
     v=(char *)malloc(args->vsize);
 
+    Start_Timer(callTime);
     rc = nssi_get_data(caller, v, args->vsize, data_addr);
+    Stop_Timer("adios_write (nssi_get_data)", callTime);
     if (rc != NSSI_OK) {
         printf("Could not get var data on client\n");
         goto cleanup;
     }
 
-    printf("vname(%s) vsize(%ld) is_offset(%d) is_scalar(%d) rank(%ld)\n", args->vname, args->vsize, args->is_offset, args->is_scalar, args->writer_rank);
+    printf("vname(%s) vsize(%ld) is_scalar(%d) rank(%ld)\n", args->vname, args->vsize, args->is_scalar, args->writer_rank);
 
-    if (args->is_offset) {
-        // put offset in list
-        void *old_data=offset_get(args->writer_rank, "" /*args->vpath*/, args->vname);
-        if (old_data != NULL) {
-            offset_del(args->writer_rank, "" /*args->vpath*/, args->vname);
-            free(old_data);
-        }
-        offset_add(args->writer_rank, "" /*args->vpath*/, args->vname, v);
-    }
+
+    //    if (args->is_offset) {
+//        // put offset in list
+//        void *old_data=offset_get(args->writer_rank, "" /*args->vpath*/, args->vname);
+//        if (old_data != NULL) {
+//            offset_del(args->writer_rank, "" /*args->vpath*/, args->vname);
+//            free(old_data);
+//        }
+//        offset_add(args->writer_rank, "" /*args->vpath*/, args->vname, v);
+//    }
+//    if (args->is_dim) {
+//        // put dim in list
+//        void *old_data=dim_get(args->writer_rank, "" /*args->vpath*/, args->vname);
+//        if (old_data != NULL) {
+//            dim_del(args->writer_rank, "" /*args->vpath*/, args->vname);
+//            free(old_data);
+//        }
+//        dim_add(args->writer_rank, "" /*args->vpath*/, args->vname, v);
+//    }
 
     if (!args->is_scalar) {
-        // write all offsets for clients rank to update adios internals
-        for(i=0;i<args->offsets.offsets_len;i++) {
-            void *odata=offset_get(args->writer_rank, args->offsets.offsets_val[i].vpath, args->offsets.offsets_val[i].vname);
-            if (odata != NULL) {
-                printf("updating oname(%s)\n", args->offsets.offsets_val[i].vname);
-                adios_write(args->fd, args->offsets.offsets_val[i].vname, odata);
-            }
+        aggregation_chunk_details_t *chunk=NULL;
+        chunk = new aggregation_chunk_details_t;
+        chunk->fd = args->fd;
+        strcpy(chunk->var_path, args->vpath);
+        strcpy(chunk->var_name, args->vname);
+        chunk->ndims = args->offsets.offsets_len;
+        chunk->buf = v;
+        chunk->atype = (enum ADIOS_DATATYPES)args->atype;
+        chunk->len   = args->vsize;
+        chunk->num_elements = 1;
+        for (int i=0;i<args->dims.dims_len;i++) {
+            chunk->num_elements *= args->dims.dims_val[i].vdata;
         }
-    }
+        chunk->offset_name = (char **)calloc(args->offsets.offsets_len, sizeof(char *));
+        chunk->offset = (uint64_t *)calloc(args->offsets.offsets_len, sizeof(uint64_t));
+        for (int i=0;i<args->offsets.offsets_len;i++) {
+            chunk->offset_name[i] = strdup(args->offsets.offsets_val[i].vname);
+            chunk->offset[i] = args->offsets.offsets_val[i].vdata;
+        }
+        chunk->count_name = (char **)calloc(args->dims.dims_len, sizeof(char *));
+        chunk->count  = (uint64_t *)calloc(args->dims.dims_len, sizeof(uint64_t));;
+        for (int i=0;i<args->dims.dims_len;i++) {
+            chunk->count_name[i] = strdup(args->dims.dims_val[i].vname);
+            chunk->count[i] = args->dims.dims_val[i].vdata;
+        }
+        add_chunk(chunk);
 
-    double callTime;
-    Start_Timer(callTime);
-    adios_write(args->fd, args->vname, v);
-    Stop_Timer("adios_write", callTime);
+
+
+//        // write all offsets for clients rank to update adios internals
+//        for(i=0;i<chunk->ndims;i++) {
+//            uint64_t value=0;
+//            printf("received oname(%s) odata(%lu)\n", chunk->offset_name[i], chunk->offset[i]);
+//            Start_Timer(callTime);
+//            adios_write(chunk->fd, chunk->offset_name[i], &(chunk->offset[i]));
+//            Stop_Timer("adios_write (offset update)", callTime);
+////            void *odata=offset_get(args->writer_rank, args->offsets.offsets_val[i].vpath, args->offsets.offsets_val[i].vname);
+////            if (odata != NULL) {
+////                printf("updating oname(%s)\n", args->offsets.offsets_val[i].vname);
+////                Start_Timer(callTime);
+////                adios_write(args->fd, args->offsets.offsets_val[i].vname, args->offsets.offsets_val[i].vdata);
+////                Stop_Timer("adios_write (offset update)", callTime);
+////            }
+//        }
+//        for(i=0;i<args->dims.dims_len;i++) {
+//            printf("received dname(%s) ddata(%lu)\n", chunk->count_name[i], chunk->count[i]);
+//        }
+//
+//        Start_Timer(callTime);
+//        adios_write(chunk->fd, chunk->var_name, chunk->buf);
+//        Stop_Timer("adios_write", callTime);
+    } else {
+        Start_Timer(callTime);
+        adios_write(args->fd, args->vname, v);
+        Stop_Timer("adios_write", callTime);
+    }
 
     res.bytes_written=args->vsize;
 
-
 cleanup:
+
+//    if (!args->is_offset) {
+//        free(v);
+//    }
+
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, &res, res_addr);
 
@@ -549,7 +674,51 @@ int nssi_staging_start_calc_stub(
 {
     int rc = 0;
 
-    printf("calling nssi_staging_start_calc_stub(%ld)\n", args->fd);
+    printf("myrank(%d): calling nssi_staging_start_calc_stub(%ld)\n", grank, args->fd);
+
+    double callTime;
+    Start_Timer(callTime);
+    try_aggregation(args->fd);  // aggregate all varids in this file
+    Stop_Timer("try_aggregation", callTime);
+
+    int chunk_count=0;
+    aggregation_chunk_details_t **chunks = get_chunks(args->fd, &chunk_count);
+
+    for (int j=0;j<chunk_count;j++) {
+        aggregation_chunk_details_t *chunk = chunks[j];
+
+        // write all offsets for clients rank to update adios internals
+        for(int i=0;i<chunk->ndims;i++) {
+            uint64_t value=0;
+            printf("writing myrank(%d) chunk(%d) vname(%s) oname(%s) odata(%lu)\n", grank, j, chunk->var_name, chunk->offset_name[i], chunk->offset[i]);
+            Start_Timer(callTime);
+            adios_write(chunk->fd, chunk->offset_name[i], &(chunk->offset[i]));
+            Stop_Timer("adios_write (offset update)", callTime);
+//            void *odata=offset_get(args->writer_rank, args->offsets.offsets_val[i].vpath, args->offsets.offsets_val[i].vname);
+//            if (odata != NULL) {
+//                printf("updating oname(%s)\n", args->offsets.offsets_val[i].vname);
+//                Start_Timer(callTime);
+//                adios_write(args->fd, args->offsets.offsets_val[i].vname, args->offsets.offsets_val[i].vdata);
+//                Stop_Timer("adios_write (offset update)", callTime);
+//            }
+        }
+        for(int i=0;i<chunk->ndims;i++) {
+            uint64_t value=0;
+            printf("writing myrank(%d) chunk(%d) vname(%s) dname(%s) ddata(%lu)\n", grank, j, chunk->var_name, chunk->count_name[i], chunk->count[i]);
+            Start_Timer(callTime);
+            adios_write(chunk->fd, chunk->count_name[i], &(chunk->count[i]));
+            Stop_Timer("adios_write (dim update)", callTime);
+        }
+
+        printf("writing myrank(%d) vname(%s)\n", grank, chunk->var_name);
+        Start_Timer(callTime);
+        adios_write(chunk->fd, chunk->var_name, chunk->buf);
+        Stop_Timer("adios_write", callTime);
+
+//        cleanup_aggregation_chunks(args->fd, chunk->var_name);
+    }
+
+    cleanup_aggregation_chunks(args->fd);
 
 
     /* send result to client */
@@ -567,7 +736,7 @@ int nssi_staging_stop_calc_stub(
 {
     int rc = 0;
 
-    printf("calling nssi_staging_stop_calc_stub(%ld)\n", args->fd);
+    printf("myrank(%d): calling nssi_staging_stop_calc_stub(%ld)\n", grank, args->fd);
 
 
     /* send result to client */
@@ -585,7 +754,7 @@ int nssi_staging_end_iter_stub(
 {
     int rc = 0;
 
-    printf("calling nssi_staging_end_iter_stub(%ld)\n", args->fd);
+    printf("myrank(%d): calling nssi_staging_end_iter_stub(%ld)\n", grank, args->fd);
 
 
     /* send result to client */
@@ -630,7 +799,7 @@ static void generate_contact_info(nssi_remote_pid *myid)
     char contact_path[1024];
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    printf("rank (%d)\n", rank);
+    //printf("rank (%d)\n", rank);
 
     if (rank==0) {
         MPI_Comm_size(MPI_COMM_WORLD, &np);
@@ -647,7 +816,7 @@ static void generate_contact_info(nssi_remote_pid *myid)
             return;
         }
         sprintf(contact_path, "%s.%04d", contact_file, rank);
-        printf("creating contact file (%s)\n", contact_path);
+        //printf("creating contact file (%s)\n", contact_path);
         FILE *f=fopen(contact_path, "w");
         for (int i=0;i<np;i++) {
             fprintf(f, "%u@%u@%s@%u\n",
@@ -678,6 +847,8 @@ int main(int argc, char **argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
+    grank=rank;
+    gsize=np;
 
     /* options that can be overriden by the command-line */
     bool daemon_flag = false;
@@ -732,7 +903,7 @@ int main(int argc, char **argv)
     generate_contact_info(&nssi_svc.req_addr.match_id);
 #endif
 
-    printf("Initialize staging service\n");
+    //printf("Initialize staging service\n");
 
     /* initialize the lwfs service */
     rc = nssi_service_init(0, NSSI_SHORT_REQUEST_SIZE, &nssi_svc);
@@ -754,7 +925,7 @@ int main(int argc, char **argv)
     }
 
     /* shutdown the nssi_svc */
-    printf("shutting down service library\n");
+    //printf("shutting down service library\n");
     nssi_service_fini(&nssi_svc);
 
     nssi_rpc_fini();
