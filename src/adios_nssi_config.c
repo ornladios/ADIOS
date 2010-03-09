@@ -49,7 +49,7 @@ static int parseGroup(mxml_node_t * node, struct adios_nssi_config *config)
     int service_count=0;
     int service_num=0;
 
-    printf("enter parseGroup\n");
+//    printf("enter parseGroup\n");
 
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
         ;n
@@ -120,12 +120,12 @@ static int parseGroup(mxml_node_t * node, struct adios_nssi_config *config)
 //            log_debug(netcdf_config_debug_level, "service (nid=%lld, pid=%llu, hostname=%s, addr=%d, port=%d)",
 //            		(long long)id->nid, (long long)id->pid, id->hostname, id->addr, id->port);
 
-            printf("staging-service: service_num(%d) nid(%lld) pid(%llu) hostname(%s) port(%d)\n",
-                    service_num,
-                    config->nssi_server_ids[service_num].nid,
-                    config->nssi_server_ids[service_num].pid,
-                    config->nssi_server_ids[service_num].hostname,
-                    config->nssi_server_ids[service_num].port);
+//            printf("staging-service: service_num(%d) nid(%lld) pid(%llu) hostname(%s) port(%d)\n",
+//                    service_num,
+//                    config->nssi_server_ids[service_num].nid,
+//                    config->nssi_server_ids[service_num].pid,
+//                    config->nssi_server_ids[service_num].hostname,
+//                    config->nssi_server_ids[service_num].port);
 
             service_num++;
 
@@ -359,14 +359,14 @@ int parse_nssi_config(const char *config_file, struct adios_nssi_config *config)
         return 0;
     }
 
-    for (i=0;i<config->num_servers;i++) {
-        printf("staging-service: service_num(%d) nid(%lld) pid(%llu) hostname(%s) port(%d)\n",
-                i,
-                config->nssi_server_ids[i].nid,
-                config->nssi_server_ids[i].pid,
-                config->nssi_server_ids[i].hostname,
-                config->nssi_server_ids[i].port);
-    }
+//    for (i=0;i<config->num_servers;i++) {
+//        printf("staging-service: service_num(%d) nid(%lld) pid(%llu) hostname(%s) port(%d)\n",
+//                i,
+//                config->nssi_server_ids[i].nid,
+//                config->nssi_server_ids[i].pid,
+//                config->nssi_server_ids[i].hostname,
+//                config->nssi_server_ids[i].port);
+//    }
 
     return 1;
 }
