@@ -1,4 +1,4 @@
-!  
+!
 !  ADIOS is freely available under the terms of the BSD license described
 !  in the COPYING file in the top level directory of this source distribution.
 !
@@ -8,11 +8,11 @@
 !
 !  GENARRAY
 !
-!  Write an ADIOS BP file from many processor for test purposes. 
+!  Write an ADIOS BP file from many processor for test purposes.
 !
 !  nx * ny * nz     processes write a 3D array, where each process writes an
 !  ndx * ndy * ndz  piece with filling with its rank as integer (4 bytes) value
-!  
+!
 !
 ! (c) Oak Ridge National Laboratory, 2009
 ! Author: Norbert Podhorszki
@@ -43,7 +43,8 @@ module genarray_comm
     integer   :: err
 
     real*8 :: start_time, end_time, total_time,gbs,sz
- 
+    real*8 :: cache_start_time, cache_end_time, cache_total_time
+
 
 end module genarray_comm
 
@@ -85,12 +86,13 @@ program genarray
     call determineOffsets()
     call generateLocalArray()
 
-    call MPI_BARRIER(MPI_COMM_WORLD,err) 
+    call MPI_BARRIER(MPI_COMM_WORLD,err)
     start_time = MPI_WTIME()
     call writeArray()
-    call MPI_BARRIER(MPI_COMM_WORLD,err) 
+    call MPI_BARRIER(MPI_COMM_WORLD,err)
     end_time = MPI_WTIME()
     total_time = end_time - start_time
+
     sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
     gbs = sz/total_time
 
@@ -161,7 +163,7 @@ subroutine generateLocalArray()
     do k=1,ndz
         do j=1,ndy
             do i=1,ndx
-                double_xyz(i,j,k) = 1.0d0*rank 
+                double_xyz(i,j,k) = 1.0d0*rank
             enddo
         enddo
     enddo
@@ -173,11 +175,26 @@ subroutine writeArray()
     use genarray_comm
     implicit none
     integer*8 adios_handle, adios_groupsize, adios_err
+    include 'mpif.h'
+
+    call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
+    cache_start_time = MPI_WTIME()
 
     group = "genarray"
-    call adios_open (adios_handle, group, outputfile, "w", group_comm, err)
+    call adios_open (adios_handle, group, outputfile, "w", group_comm, adios_err)
 #include "gwrite_genarray.fh"
+    call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
+    cache_end_time = MPI_WTIME()
+    cache_total_time = cache_end_time - cache_start_time
+
+    sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
+    gbs = sz/cache_total_time
+
+    !if (rank==0) write(6,*) total_time
+    if (rank==0) print '("Writing to cache: ",a10,d12.2,2x,d12.2,2x,d12.3)', outputfile,sz,cache_total_time,gbs
+
     call adios_close (adios_handle, adios_err)
+
 
 end subroutine writeArray
 
@@ -208,7 +225,7 @@ subroutine processArgs()
 #endif
 #endif
 
-    character(len=256) :: npx_str, npy_str, npz_str, ndx_str, ndy_str, ndz_str 
+    character(len=256) :: npx_str, npy_str, npz_str, ndx_str, ndy_str, ndz_str
     integer :: numargs
 
     !! process arguments
