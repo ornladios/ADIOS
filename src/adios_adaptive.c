@@ -31,9 +31,6 @@
 
 static int adios_adaptive_initialized = 0;
 
-#define DO_INDEX_COLLECTION 1
-#define BLAST_OPENS 1
-
 #define PRINT_MESSAGES 1
 
 #define COLLECT_METRICS 1
@@ -85,21 +82,7 @@ struct adios_adaptive_data_struct
 
     struct adios_file_struct * fd; // link to what was passed in
     struct adios_method_struct * method; // link to main struct
-
-    // adaptive support stuff start
-    // messaging between threads ([0] is msg, others are parameters)
 #define PARAMETER_COUNT 6
-    Queue mpi_flag;
-    Queue writer_flag;
-    Queue sub_coordinator_flag;
-    Queue coordinator_flag;
-
-    // we need all three so that we only shutdown the messaging when the
-    // most significant process (coord vs. sub coord vs. writer) is finished
-    int coord_shutdown_flag;
-    int sub_coord_shutdown_flag;
-    int writer_shutdown_flag;
-    int probe_shutdown_flag; // tell the probe thread to die
 };
 
 #if COLLECT_METRICS
@@ -166,7 +149,6 @@ struct timing_metrics
     uint64_t mpi_queue_size;  // number allocated
     struct timeval_writer * t29;  // track in sub coord write_complete msgs
 
-    uint64_t iprobe_count; // number used (t25)
     uint64_t send_count;   // number used (t26)
     uint64_t recv_count;   // number used (t27)
 };
@@ -180,27 +162,27 @@ static int timeval_subtract (struct timeval * result
                             ,struct timeval * x, struct timeval * y
                             )
 {
-  // Perform the carry for the later subtraction by updating y.
-  if (x->tv_usec < y->tv_usec)
-  {
-    int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
-    y->tv_usec -= 1000000 * nsec;
-    y->tv_sec += nsec;
-  }
-  if (x->tv_usec - y->tv_usec > 1000000)
-  {
-    int nsec = (x->tv_usec - y->tv_usec) / 1000000;
-    y->tv_usec += 1000000 * nsec;
-    y->tv_sec -= nsec;
-  }
+    // Perform the carry for the later subtraction by updating y.
+    if (x->tv_usec < y->tv_usec)
+    {
+        int nsec = (y->tv_usec - x->tv_usec) / 1000000 + 1;
+        y->tv_usec -= 1000000 * nsec;
+        y->tv_sec += nsec;
+    }
+    if (x->tv_usec - y->tv_usec > 1000000)
+    {
+        int nsec = (x->tv_usec - y->tv_usec) / 1000000;
+        y->tv_usec += 1000000 * nsec;
+        y->tv_sec -= nsec;
+    }
 
-  // Compute the time remaining to wait.
-  // tv_usec is certainly positive.
-  result->tv_sec = x->tv_sec - y->tv_sec;
-  result->tv_usec = x->tv_usec - y->tv_usec;
+    // Compute the time remaining to wait.
+    // tv_usec is certainly positive.
+    result->tv_sec = x->tv_sec - y->tv_sec;
+    result->tv_usec = x->tv_usec - y->tv_usec;
 
-  // Return 1 if result is negative.
-  return x->tv_sec < y->tv_sec;
+    // Return 1 if result is negative.
+    return x->tv_sec < y->tv_sec;
 }
 
 static void timeval_add (struct timeval * result
@@ -349,7 +331,9 @@ void print_metrics (struct adios_adaptive_data_struct * md, int iteration)
         FILE * f = fopen ("adios_metrics", "a");
         for (i = 0; i < md->size; i++)
         {
-            print_metric (f, &t [i], iteration, i, md->size, sub_coord_ranks [i]);
+            print_metric (f, &t [i], iteration, i, md->size
+                         ,sub_coord_ranks [i]
+                         );
         }
         fclose (f);
 
@@ -424,7 +408,7 @@ void print_metrics (struct adios_adaptive_data_struct * md, int iteration)
 static void print_metric (FILE * f, struct timing_metrics * t, int iteration, int rank, int size, int sub_coord_rank)
 {
     struct timeval diff;
-    if (rank == 0)
+    if (rank == 0)  // file creation organizer
     {
         timeval_subtract (&diff, &t->t2, &t->t1);
         fprintf (f, "cc\t%2d\tFile create (stripe setup):\t%02d.%06d\n"
@@ -438,18 +422,15 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
         fprintf (f, "ee\t%2d\tBuild file offsets:\t%02d.%06d\n"
                ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
     }
-    if (rank == size - 1)
+    if (rank == 0) // coord rank
     {
-        //timeval_subtract (&diff, &t->t4, &t->t3);
-        //fprintf (f, "bb\t%2d\tCreate threads:\t%02d.%06d\n"
-        //       ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
-
         timeval_subtract (&diff, &t->t10, &t->t9);
         fprintf (f, "ff\t%2d\tGlobal index creation:\t%02d.%06d\n"
                ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
 
         timeval_subtract (&diff, &t->t10, &t->t7);
-        fprintf (f, "gg\t%2d\tAll writes complete (w/ local index):\t%02d.%06d\n"
+        fprintf (f
+               ,"gg\t%2d\tAll writes complete (w/ local index):\t%02d.%06d\n"
                ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
 
         timeval_subtract (&diff, &t->t11, &t->t0);
@@ -457,30 +438,22 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
                ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
 
         timeval_subtract (&diff, &t->t10, &t->t0);
-        fprintf (f, "xx\t%2d\tCoord total time:\t%02d.%06d\n"
-               ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
+        fprintf (f, "xx\t%2d\tCoord total time:\t%6d\t%02d.%06d\n"
+               ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
     }
     if (rank == sub_coord_rank)
     {
         timeval_subtract (&diff, &t->t13, &t->t0);
         fprintf (f, "yy\t%2d\tSub coord total time:\t%6d\t%02d.%06d\n"
                ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
+
+        timeval_subtract (&diff, &t->t13, &t->t12);
+        fprintf (f, "ii\t%2d\tLocal index creation:\t%6d\t%02d.%06d\n"
+               ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
     }
-
-    timeval_subtract (&diff, &t->t13, &t->t12);
-    fprintf (f, "ii\t%2d\tLocal index creation:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
-
-    //timeval_subtract (&diff, &t->t11, &t->t14);
-    //fprintf (f, "jj\t%2d\tThread shutdown:\t%6d\t%02d.%06d\n"
-    //       ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     timeval_subtract (&diff, &t->t22, &t->t21);
     fprintf (f, "kk\t%2d\tshould buffer time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
-
-    timeval_subtract (&diff, &t->t19, &t->t23);
-    fprintf (f, "ll\t%2d\tclose startup time:\t%6d\t%02d.%06d\n"
            ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     timeval_subtract (&diff, &t->t19, &t->t0);
@@ -515,12 +488,18 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
         {
             if (t->t15 [w].pid < t->t17 [c].pid)
             {
-                fprintf (f, "do_write < complete\n");
+                fprintf (f, "do_write (%d) < complete (%d)\n"
+                        ,t->do_write_count
+                        ,t->write_complete_count
+                        );
                 w++;
             }
             else
             {
-                fprintf (f, "do_write > complete\n");
+                fprintf (f, "do_write (%d) > complete (%d)\n"
+                        ,t->do_write_count
+                        ,t->write_complete_count
+                        );
                 c++;
             }
         }
@@ -528,7 +507,9 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
         {
             timeval_subtract (&diff, &t->t17 [c].t, &t->t15 [w].t);
             fprintf (f, "AAA\t%2d\twrite->complete %d time:\t%6d\t%02d.%06d\n"
-                   ,iteration, t->t15 [w].pid, rank, (int)diff.tv_sec, (int)diff.tv_usec);
+                   ,iteration, t->t15 [w].pid, rank, (int)diff.tv_sec
+                   ,(int)diff.tv_usec
+                   );
             w++;
             c++;
         }
@@ -542,20 +523,29 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
         {
             if (t->t15 [w].pid < t->t29 [c].pid)
             {
-                fprintf (f, "do_write (pid: %d) < mpi queue (pid: %d)\n", t->t15 [w].pid, t->t29 [c].pid);
+                fprintf (f
+                        ,"do_write (pid: %d) < mpi queue (pid: %d)\n"
+                        ,t->t15 [w].pid, t->t29 [c].pid
+                        );
                 w++;
             }
             else
             {
-                fprintf (f, "do_write (pid: %d) > mpi queue (pid: %d) \n", t->t15 [w].pid, t->t29 [c].pid);
+                fprintf (f
+                        ,"do_write (pid: %d) > mpi queue (pid: %d) \n"
+                        ,t->t15 [w].pid, t->t29 [c].pid
+                        );
                 c++;
             }
         }
         else
         {
             timeval_subtract (&diff, &t->t29 [c].t, &t->t15 [w].t);
-            fprintf (f, "BBB\t%2d\tMPI outbound queue %d time:\t%6d\t%02d.%06d\n"
-                   ,iteration, t->t15 [w].pid, rank, (int)diff.tv_sec, (int)diff.tv_usec);
+            fprintf (f
+                    ,"BBB\t%2d\tMPI outbound queue %d time:\t%6d\t%02d.%06d\n"
+                    ,iteration, t->t15 [w].pid, rank, (int)diff.tv_sec
+                    ,(int)diff.tv_usec
+                    );
             w++;
             c++;
         }
@@ -564,9 +554,6 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
     timeval_subtract (&diff, &t->t23, &t->t24 [t->write_count - 1]);
     fprintf (f, "rr\t%2d\twrite[n]->close start time:\t%6d\t%02d.%06d\n"
            ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
-
-    fprintf (f, "ss\t%2d\tMPI_Iprobe time:\t%6d\tcount: %d\t%02d.%06d\n"
-           ,iteration, rank, t->iprobe_count, t->t25.tv_sec, t->t25.tv_usec);
 
     fprintf (f, "tt\t%2d\tMPI_Send time:\t%6d\tcount: %d\t%02d.%06d\n"
            ,iteration, rank, t->send_count, t->t26.tv_sec, t->t26.tv_usec);
@@ -590,28 +577,6 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
            ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 }
 #endif
-
-struct thread_struct
-{
-    struct adios_method_struct * method; // link to main struct
-    struct adios_file_struct * fd;       // link to what was passed in
-    struct adios_adaptive_data_struct * md;
-};
-
-struct flag_struct
-{
-    int source;
-    int tag;
-    char * msg;
-};
-
-struct mpi_flag_struct
-{
-    int target;
-    int tag;
-    uint64_t size;
-    char * msg;
-};
 
 #define COPY_ALL_PARAMS(dst,src) \
 { \
@@ -931,8 +896,8 @@ static void adios_var_to_comm (const char * comm_name
 }
 
 void adios_adaptive_init (const char * parameters
-                    ,struct adios_method_struct * method
-                    )
+                         ,struct adios_method_struct * method
+                         )
 {
     struct adios_adaptive_data_struct * md =
                   (struct adios_adaptive_data_struct *) method->method_data;
@@ -971,16 +936,6 @@ void adios_adaptive_init (const char * parameters
     md->sub_coord_rank = -1;
     md->fd = 0;
     md->method = 0;
-
-    queue_init (&md->mpi_flag, free);
-    queue_init (&md->writer_flag, free);
-    queue_init (&md->sub_coordinator_flag, free);
-    queue_init (&md->coordinator_flag, free);
-
-    md->coord_shutdown_flag = NO_FLAG;
-    md->sub_coord_shutdown_flag = NO_FLAG;
-    md->writer_shutdown_flag = NO_FLAG;
-    md->probe_shutdown_flag = NO_FLAG;
 
     // parse the parameters into key=value segments for optional settings
     if (parameters)
@@ -1107,14 +1062,9 @@ void adios_adaptive_init (const char * parameters
     adios_buffer_struct_init (&md->b);
 }
 
-static void * sub_coordinator_main (void * param);
-static void * coordinator_main (void * param);
-static void * writer_main (void * param);
-static void * probe_main (void * param);
-
 int adios_adaptive_open (struct adios_file_struct * fd
-                   ,struct adios_method_struct * method, void * comm
-                   )
+                        ,struct adios_method_struct * method, void * comm
+                        )
 {
     struct adios_adaptive_data_struct * md =
                    (struct adios_adaptive_data_struct *) method->method_data;
@@ -1127,12 +1077,6 @@ int adios_adaptive_open (struct adios_file_struct * fd
     md->fd = fd;
     md->method = method;
     md->comm = comm;
-
-    // reset our shutdown state to not shut down yet
-    md->coord_shutdown_flag = NO_FLAG;
-    md->sub_coord_shutdown_flag = NO_FLAG;
-    md->writer_shutdown_flag = NO_FLAG;
-    md->probe_shutdown_flag = NO_FLAG;
 
 #if COLLECT_METRICS
     timing.write_count = 0;
@@ -1154,9 +1098,6 @@ int adios_adaptive_open (struct adios_file_struct * fd
     timing.mpi_queue_size = 0;
     if (timing.t29) free (timing.t29);
     timing.t29 = 0;
-
-    timing.iprobe_count = 0;
-    memset (&timing.t25, 0, sizeof (struct timeval));
 
     timing.send_count = 0;
     memset (&timing.t26, 0, sizeof (struct timeval));
@@ -1575,22 +1516,6 @@ static void set_stripe_size (struct adios_adaptive_data_struct * md
 #endif
 }
 
-static void setup_threads (struct thread_struct * t)
-{
-    struct adios_adaptive_data_struct * md = t->md;
-
-    uint64_t msg [PARAMETER_COUNT];
-    MPI_Request req;
-    MPI_Status status;
-#if COLLECT_METRICS
-    gettimeofday (&timing.t3, NULL);
-#endif
-
-#if COLLECT_METRICS
-    gettimeofday (&timing.t4, NULL);
-#endif
-}
-
 enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                                         ,struct adios_method_struct * method
                                         )
@@ -1835,9 +1760,6 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
 #if COLLECT_METRICS
             gettimeofday (&timing.t5, NULL);
 #endif
-#if BLAST_OPENS
-            md->f = open (name, O_WRONLY | O_LARGEFILE);
-#else
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
             {
@@ -1868,7 +1790,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             }
             if (next != -1)
                 MPI_Wait (&md->req, &md->status);
-#endif
+
             if (md->f == -1)
             {
                 printf ("File open error for %s: %s\n", name, strerror (errno));
@@ -2137,10 +2059,10 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
 }
 
 void adios_adaptive_write (struct adios_file_struct * fd
-                     ,struct adios_var_struct * v
-                     ,void * data
-                     ,struct adios_method_struct * method
-                     )
+                          ,struct adios_var_struct * v
+                          ,void * data
+                          ,struct adios_method_struct * method
+                          )
 {
     struct adios_adaptive_data_struct * md =
                      (struct adios_adaptive_data_struct *) method->method_data;
@@ -2384,7 +2306,7 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
         }
 
         default:
-            fprintf (stderr, "MPI read: file version unknown: %u\n"
+            fprintf (stderr, "adaptive read: file version unknown: %u\n"
                     ,md->b.version
                     );
             return;
@@ -2406,6 +2328,10 @@ void adios_adaptive_close (struct adios_file_struct * fd
     struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
 #if COLLECT_METRICS
     gettimeofday (&timing.t23, NULL);
+    timing.t7.tv_sec = timing.t23.tv_sec;
+    timing.t7.tv_usec = timing.t23.tv_usec;
+    timing.t19.tv_sec = timing.t23.tv_sec;
+    timing.t19.tv_usec = timing.t23.tv_usec;
     static int iteration = 0;
 #endif
 
@@ -2447,6 +2373,13 @@ void adios_adaptive_close (struct adios_file_struct * fd
             // if sub_coord && coord
             //     ....
             // return
+            int new_target;
+            int new_tag;
+            int new_size;
+            char * new_msg = 0;
+#if COLLECT_METRICS
+struct timeval a, b, c;
+#endif
 ///////////////////////////////////////////////////////////////////////////////
 /////// START OF WRITER ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -2461,17 +2394,35 @@ void adios_adaptive_close (struct adios_file_struct * fd
             {
                 int count = sizeof (uint64_t) * PARAMETER_COUNT;
                 // wait for START_WRITE
-//printf ("recv start A\n");
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
                 MPI_Recv (msg, count, MPI_BYTE, MPI_ANY_SOURCE, TAG_WRITER
                          ,md->group_comm, &status
                          );
-//printf ("recv end A\n");
-                // decode the message
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t27, &timing.t27, &c);
+timing.recv_count++;
+#endif
                 source = status.MPI_SOURCE;
                 tag = status.MPI_TAG;
             }
             else // start write immediately so make the msg
             {
+#if COLLECT_METRICS
+if (timing.do_write_count == timing.do_write_size)
+{
+    timing.do_write_size += 10;
+    timing.t15 = realloc (timing.t15 ,sizeof (struct timeval_writer)
+                                     * timing.do_write_size
+                         );
+    assert (timing.t15 != 0);
+}
+timing.t15 [timing.do_write_count].pid = md->sub_coord_rank;
+gettimeofday (&(timing.t15 [timing.do_write_count++].t), NULL);
+#endif
                 msg [0] = DO_WRITE_FLAG;
                 msg [1] = md->group;
                 msg [2] = md->sub_coord_rank;
@@ -2482,13 +2433,10 @@ void adios_adaptive_close (struct adios_file_struct * fd
                 tag = TAG_WRITER;
             }
 #if PRINT_MESSAGES
-//                printf ("w: source: %2d rank: %2d msg: %s B\n"
-//                       ,source, md->rank, message_to_string_full (msg, 'w')
-//                       );
+            printf ("w: source: %2d rank: %2d msg: %s B\n"
+                   ,source, md->rank, message_to_string_full (msg, 'w')
+                   );
 #endif
-//if (md->rank == 1) sleep (3);
-            struct flag_struct * f = 0;
-
             char * buffer = 0;
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
@@ -2500,690 +2448,710 @@ void adios_adaptive_close (struct adios_file_struct * fd
 
             int rc;
 
-            //case DO_WRITE_FLAG:
+            // set our base offset for building the index
+            fd->base_offset = msg [5] * md->stripe_size;
+            // build index appending to any existing index
+            adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
+                                 ,&md->old_attrs_root
+                                 );
+
+            // we need the size of the buffer for responding to the write
+            adios_write_index_v1 (&index_buffer, &index_buffer_size
+                                 ,&index_buffer_offset
+                                 ,0
+                                 ,md->old_pg_root
+                                 ,md->old_vars_root
+                                 ,md->old_attrs_root
+                                 );
+
+            if (msg [1] == msg [3]) // same file
             {
+                if (md->f == -1) printf ("we got a bad file handle\n");
+                lseek (md->f, md->stripe_size * msg [5], SEEK_SET);
 #if COLLECT_METRICS
-                struct timeval a, b;
-                gettimeofday (&a, NULL);
+struct timeval a, b;
+gettimeofday (&a, NULL);
 #endif
-                // set our base offset for building the index
-                fd->base_offset = msg [5] * md->stripe_size;
-                // build index appending to any existing index
-                adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
-                                     ,&md->old_attrs_root
-                                     );
+                ssize_t s = write (md->f, fd->buffer, fd->bytes_written);
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&timing.t8, &b, &a);
+#endif
 
-                // we need the size of the buffer for responding to the write
-                adios_write_index_v1 (&index_buffer, &index_buffer_size
-                                     ,&index_buffer_offset
-                                     ,0
-                                     ,md->old_pg_root
-                                     ,md->old_vars_root
-                                     ,md->old_attrs_root
-                                     );
-
-                if (msg [1] == msg [3]) // same file
+                if (s != fd->bytes_written)
                 {
-                    if (md->f == -1) printf ("we got a bad file handle\n");
-                    lseek (md->f, md->stripe_size * msg [5], SEEK_SET);
-                    ssize_t s = write (md->f, fd->buffer, fd->bytes_written);
+                    fprintf (stderr, "Need to do multi-write 1 (tried: "
+                                     "%llu wrote: %lld) errno %d\n"
+                            ,fd->bytes_written, s, errno
+                            );
+                }
+            }
+            else // we are adaptive writing and need to use the other file
+            {
+                char * new_name;
+
+                new_name = malloc (  strlen (method->base_path)
+                                   + strlen (fd->name) + 1 + 6
+                                  ); // 6 extra for '.XXXXX' file number
+                char split_format [10] = "%s%s.%d";
+                sprintf (new_name, split_format, method->base_path
+                        ,fd->name, msg [1]
+                        );
+
+                int af = open (new_name, O_WRONLY | O_LARGEFILE);
+                if (af != -1)
+                {
+                    lseek (af, md->stripe_size * msg [5], SEEK_SET);
+#if COLLECT_METRICS
+struct timeval a, b;
+gettimeofday (&a, NULL);
+#endif
+                    ssize_t s = write (af, fd->buffer, fd->bytes_written);
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&timing.t8, &b, &a);
+#endif
+
                     if (s != fd->bytes_written)
                     {
-                        fprintf (stderr, "Need to do multi-write 1 (tried: "
-                                         "%llu wrote: %lld) errno %d\n"
-                                ,fd->bytes_written, s, errno
-                                );
+                        fprintf (stderr, "Need to do multi-write 2\n");
                     }
+                    close (af);
                 }
-                else // we are adaptive writing and need to use the other file
+                else
                 {
-//printf ("rank: %d writing adaptive to file: %d at %lld\n", md->rank, msg [1], msg [5]);
-                    char * new_name;
-
-                    new_name = malloc (  strlen (method->base_path)
-                                       + strlen (fd->name) + 1 + 6
-                                      ); // 6 extra for '.XXXXX' file number
-                    char split_format [10] = "%s%s.%d";
-                    sprintf (new_name, split_format, method->base_path
-                            ,fd->name, msg [1]
+                    fprintf (stderr, "ADAPTIVE WRITE FAILURE. File: %s\n"
+                            ,new_name
                             );
-
-                    int af = open (new_name, O_WRONLY | O_LARGEFILE);
-                    if (af != -1)
-                    {
-                        lseek (af, md->stripe_size * msg [5], SEEK_SET);
-                        ssize_t s = write (af, fd->buffer, fd->bytes_written);
-                        if (s != fd->bytes_written)
-                        {
-                            fprintf (stderr, "Need to do multi-write 2\n");
-                        }
-                        close (af);
-                    }
-                    else
-                    {
-                        fprintf (stderr, "ADAPTIVE WRITE FAILURE. File: %s\n"
-                                ,new_name
-                                );
-                    }
                 }
-
-                // respond to sub coord(s) we are done
-                // cannot delay the outbound messages or we will end up in a
-                // condition where the adaptive write is completed causing
-                // the overall_write_complete to be sent before we send our
-                // message to the owner of the file we wrote to.
-                uint64_t new_offset = msg [5] + 1;
-                //f->source = msg [2]; // who to tell our index to
-                    struct mpi_flag_struct * f = malloc
-                                            (sizeof (struct mpi_flag_struct));
-                    f->target = msg [4];
-                    f->tag = TAG_SUB_COORDINATOR;
-                    f->size = 8 * PARAMETER_COUNT;
-                    f->msg = malloc (8 * PARAMETER_COUNT);
-                    ((uint64_t *) f->msg) [0] = WRITE_COMPLETE;
-                    ((uint64_t *) f->msg) [1] = msg [1];
-                    ((uint64_t *) f->msg) [2] = msg [3];
-                    assert (msg [3] == md->group);
-                    ((uint64_t *) f->msg) [3] = new_offset;
-                    ((uint64_t *) f->msg) [4] = index_buffer_offset;
-                    ((uint64_t *) f->msg) [5] = md->rank;
-                    // if it is local, but we are not the sub_coord, tell
-                    // the sub_coord.
-                    if (md->rank != msg [4])
-                    {
-//printf ("%3d sending %s\n", f->target, message_to_string_full ((uint64_t *) f->msg, 's'));
-//printf ("send start A\n");
-                        MPI_Send (f->msg, f->size, MPI_BYTE, f->target, f->tag
-                                 ,md->group_comm
-                                 );
-//printf ("send end A\n");
-                    }
-                    // if it is adaptive, we need to tell both the target
-                    // group's subcord and our subcoord (since our subcoord
-                    // asked us to write and the other needs to collect the
-                    // index).
-                    if (msg [2] != msg [4])
-                    {
-                        f->target = msg [2];
-//printf ("%3d sending (adaptive) %s\n", f->target, message_to_string_full ((uint64_t *) f->msg, 's'));
-                        MPI_Send (f->msg, f->size, MPI_BYTE, f->target, f->tag
-                                 ,md->group_comm
-                                 );
-                    }
-                    free (f->msg);
-                    free (f);
-                // since we are the sub_coord, no need to tell us
-
-#if COLLECT_METRICS
-                gettimeofday (&b, NULL);
-                timeval_subtract (&timing.t8, &b, &a);
-#endif
             }
 
-            //case SEND_INDEX:
+            // respond to sub coord(s) we are done
+            // cannot delay the outbound messages or we will end up in a
+            // condition where the adaptive write is completed causing
+            // the overall_write_complete to be sent before we send our
+            // message to the owner of the file we wrote to.
+            uint64_t new_offset = msg [5] + 1;
+            new_target = msg [4];
+            new_tag = TAG_SUB_COORDINATOR;
+            new_size = 8 * PARAMETER_COUNT;
+            new_msg = malloc (8 * PARAMETER_COUNT);
+            ((uint64_t *) new_msg) [0] = WRITE_COMPLETE;
+            ((uint64_t *) new_msg) [1] = msg [1];
+            ((uint64_t *) new_msg) [2] = msg [3];
+            assert (msg [3] == md->group);
+            ((uint64_t *) new_msg) [3] = new_offset;
+            ((uint64_t *) new_msg) [4] = index_buffer_offset;
+            ((uint64_t *) new_msg) [5] = md->rank;
+            // if it is local, but we are not the sub_coord, tell
+            // the sub_coord.
+            if (md->rank != msg [4])
             {
-//printf ("rank: %d start index\n", md->rank);
-                if (md->rank != msg [2]) // send the index to the target sub_coord
-                {
-                    struct mpi_flag_struct * f = malloc
-                                          (sizeof (struct mpi_flag_struct));
-                    f->target = msg [2];
-                    f->tag = TAG_SUB_COORDINATOR_INDEX_BODY;
-                    f->size = index_buffer_offset;
-                    f->msg = index_buffer;
-//printf ("rank: %d sending index to rank: %d\n", md->rank, f->target);
-//printf ("send start B\n");
-                    MPI_Send (f->msg, f->size, MPI_BYTE, f->target, f->tag
-                             ,md->group_comm
-                             );
-//printf ("send end B\n");
-                    free (f->msg);
-                    free (f);
-                }
-                // since we are the sub_coord, we n't need to send the index
-                // and no need to copy since we built it in the base location
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                MPI_Send (new_msg, new_size, MPI_BYTE, new_target, new_tag
+                         ,md->group_comm
+                         );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+            }
+            // if it is adaptive, we need to tell both the target
+            // group's subcord and our subcoord (since our subcoord
+            // asked us to write and the other needs to collect the
+            // index).
+            if (msg [2] != msg [4])
+            {
+                new_target = msg [2];
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                MPI_Send (new_msg, new_size, MPI_BYTE, new_target, new_tag
+                         ,md->group_comm
+                         );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+            }
+            free (new_msg);
+            new_msg = 0;
+            // since we are the sub_coord, no need to tell us
 
-                if (buffer)
-                {
-                    free (buffer);
-                    buffer = 0;
-                    buffer_size = 0;
-                    buffer_offset = 0;
-                }
+            if (md->rank != msg [2]) // send the index to the target sub_coord
+            {
+                new_target = msg [2];
+                new_tag = TAG_SUB_COORDINATOR_INDEX_BODY;
+                new_size = index_buffer_offset;
+                new_msg = index_buffer;
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                MPI_Send (new_msg, new_size, MPI_BYTE, new_target, new_tag
+                         ,md->group_comm
+                         );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                free (new_msg);
+                new_msg = 0;
+            }
+            // since we are the sub_coord, we n't need to send the index
+            // and no need to copy since we built it in the base location
 
-                adios_clear_index_v1 (new_pg_root, new_vars_root
-                                     ,new_attrs_root
+            if (buffer)
+            {
+                free (buffer);
+                buffer = 0;
+                buffer_size = 0;
+                buffer_offset = 0;
+            }
+
+            adios_clear_index_v1 (new_pg_root, new_vars_root
+                                 ,new_attrs_root
+                                 );
+            new_pg_root = 0;
+            new_vars_root = 0;
+            new_attrs_root = 0;
+
+            if (md->rank != msg [4]) // save as the base for the file
+            {
+                adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
+                                     ,md->old_attrs_root
                                      );
-                new_pg_root = 0;
-                new_vars_root = 0;
-                new_attrs_root = 0;
-
-                if (md->rank != msg [4]) // save as the base for the file
-                {
-                    adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
-                                         ,md->old_attrs_root
-                                         );
-                    md->old_pg_root = 0;
-                    md->old_vars_root = 0;
-                    md->old_attrs_root = 0;
-                }
+                md->old_pg_root = 0;
+                md->old_vars_root = 0;
+                md->old_attrs_root = 0;
+            }
 
 #if COLLECT_METRICS
-                gettimeofday (&timing.t18, NULL);
+gettimeofday (&timing.t18, NULL);
 #endif
-//printf ("rank: %d end index\n", md->rank);
-            }
 ///////////////////////////////////////////////////////////////////////////////
 /////// END OF WRITER /////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
-    // shared vars for sub_coord and coord
-    int completed_writing = 0;  // track when we have notified coordinator we
-                                // have completed (avoid multiple notifies)
-    int indices_size = (int) (md->group_size * 1.20); // add 20% for adaptation
-    int indices_received = 0;  // how many are stored in indices
-    struct index_struct * indices = (struct index_struct *) malloc (indices_size * sizeof (struct index_struct));
-    // start at first so that we can always write using next_writer
-    int current_writer = md->sub_coord_rank + 1;
-    int next_writer = current_writer + 1; // track the next one so the adaptive
-                                      // writer knows who to start next
-    int writers_served = 0;
-    int active_writers = 0; // track how many of our procs are writing
+            // shared vars for sub_coord and coord
+            int completed_writing = 0;  // track when we have notified
+                                        // coordinator we have completed
+                                        // (avoid multiple notifies)
+            int indices_size = (int) (md->group_size * 1.20); // add 20%
+                                                              // for adaptation
+            int indices_received = 0;  // how many are stored in indices
+            struct index_struct * indices = (struct index_struct *)
+                          malloc (indices_size * sizeof (struct index_struct));
+            // start at first so that we can always write using next_writer
+            int current_writer = md->sub_coord_rank + 1;
+            int next_writer = current_writer + 1; // track the next one so
+                                                  // the adaptive writer
+                                                  // knows who to start next
+            int writers_served = 0;
+            int active_writers = 0; // track how many of our procs are writing
 
-    int * adaptive_writers = 0;       // keep track of adaptive ranks pending
-    int adaptive_writers_size = 0;    // track size of array
-    int adaptive_writers_being_served = 0;  // how many pending
+            int * adaptive_writers = 0; // keep track of adaptive ranks pending
+            int adaptive_writers_size = 0; // track size of array
+            int adaptive_writers_being_served = 0;  // how many pending
 
-    int shutdown_flag = 0;
-    int currently_writing = 0;
-    int local_writer = 0;
+            int shutdown_flag = 0;
+            int currently_writing = 0;
+            int local_writer = 0;
 
-    uint64_t current_offset = 1; // we wrote already to the file.
+            uint64_t current_offset = 1; // we wrote already to the file.
 
-    int pending_index_pieces = 0;  // how many to wait for before doing index
-    int overall_complete_arrived = 0; // have we seen overall_write_complete yet
+            int pending_index_pieces = 0;  // how many to wait for
+                                           // before doing index
+            int overall_complete_arrived = 0; // have we seen
+                                              // overall_write_complete yet
 
 ///////////////////////////////////////////////////////////////////////////////
 /////// START OF SUB_COORD ONLY ///////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
             if (md->rank == md->sub_coord_rank && md->rank != md->coord_rank)
             {
-//printf ("sc: rank: %d\n", md->rank);
-    int flag;
-
-    ////////////////////////////////////////////////////////////////////////
-    // do writing
-    ////////////////////////////////////////////////////////////////////////
-    int xxx = 0;
-#if 0
-    char buf_x [10];
-    sprintf (buf_x, "%d.w", md->group);
-    FILE * fp_w = fopen (buf_x, "w");
-#endif
-    do
-    {
-//printf ("%d currently_writing: %d\n", md->group, currently_writing);
-        if (!currently_writing)
-        {
-            //if (current_writer < md->rank)  // old setup
-            if (current_writer < md->rank + md->group_size)
-            {
+                int flag;
 #if COLLECT_METRICS
-                if (timing.do_write_count == timing.do_write_size)
-                {
-                    timing.do_write_size += 10;
-                    timing.t15 = realloc (timing.t15
-                                         ,sizeof (struct timeval_writer)
-                                          * timing.do_write_size
-                                         );
-                    assert (timing.t15 != 0);
-                }
-                timing.t15 [timing.do_write_count].pid = current_writer;
-                gettimeofday (&(timing.t15 [timing.do_write_count++].t), NULL);
-#endif
-                local_writer++;
-                struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                f->target = current_writer;
-                f->tag = TAG_WRITER;
-                f->size = 8 * PARAMETER_COUNT;
-                f->msg = malloc (8 * PARAMETER_COUNT);
-                ((uint64_t *) f->msg) [0] = DO_WRITE_FLAG;
-                ((uint64_t *) f->msg) [1] = md->group;
-                ((uint64_t *) f->msg) [2] = md->rank;
-                ((uint64_t *) f->msg) [3] = md->group;
-                ((uint64_t *) f->msg) [4] = md->rank;
-                ((uint64_t *) f->msg) [5] = current_offset++;
-//printf ("%3d sending %s\n", f->target, message_to_string_full ((uint64_t *) f->msg, 's'));
-//printf ("group: %d new current_offset: %lld\n", md->group, current_offset);
-#if 0
-fprintf (fp_w, "%d\tsending %s\n", f->target, message_to_string_full ((uint64_t *) f->msg, 's'));
-fflush (fp_w);
-#endif
-//printf ("send start C\n");
-                MPI_Send (f->msg, f->size, MPI_BYTE, f->target, f->tag
-                         ,md->group_comm
+// we need to collect for sub coord rank
+if (timing.write_complete_count == timing.write_complete_size)
+{
+    timing.write_complete_size += 10;
+    timing.t17 = realloc (timing.t17 ,sizeof (struct timeval_writer)
+                                      * timing.write_complete_size
                          );
-//printf ("send end C\n");
-                active_writers++;
-                currently_writing = 1;
-            }
-            else
-            {
-                {
-                    if (!completed_writing) // && !active_writers)
-                    {
-                        completed_writing = 1;
-                        assert (md->rank != md->coord_rank);
-                        if (current_writer >= md->rank + md->group_size)
-                        {
-                            struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                            f->target = md->coord_rank;
-                            f->tag = TAG_COORDINATOR;
-                            f->size = 8 * PARAMETER_COUNT;
-                            f->msg = malloc (8 * PARAMETER_COUNT);
-                            ((uint64_t *) f->msg) [0] = WRITE_COMPLETE;
-                            ((uint64_t *) f->msg) [1] = md->group;
-                            ((uint64_t *) f->msg) [2] = md->group;
-                            ((uint64_t *) f->msg) [3] = current_offset;
-                            ((uint64_t *) f->msg) [4] = 0; // index size unused?
-                            ((uint64_t *) f->msg) [5] = md->rank;
-//printf ("%3d sending overall %s\n", f->target, message_to_string_full ((uint64_t *) f->msg, 's'));
-#if 0
-fprintf (fp_w, "%d\tsending %s\n", md->rank, message_to_string_full ((uint64_t *) f->msg, 's'));
-fflush (fp_w);
+    assert (timing.t17 != 0);
+}
+timing.t17 [timing.write_complete_count].pid = md->sub_coord_rank;
+gettimeofday (&(timing.t17 [timing.write_complete_count++].t), NULL);
 #endif
-//printf ("send start D\n");
-                            MPI_Send (f->msg, f->size, MPI_BYTE, f->target
-                                     ,f->tag, md->group_comm
+
+                int xxx = 0;
+                do
+                {
+                    if (!currently_writing)
+                    {
+                        //if (current_writer < md->rank)  // old setup
+                        if (current_writer < md->rank + md->group_size)
+                        {
+#if COLLECT_METRICS
+if (timing.do_write_count == timing.do_write_size)
+{
+    timing.do_write_size += 10;
+    timing.t15 = realloc (timing.t15 ,sizeof (struct timeval_writer)
+                                     * timing.do_write_size
+                         );
+    assert (timing.t15 != 0);
+}
+timing.t15 [timing.do_write_count].pid = current_writer;
+gettimeofday (&(timing.t15 [timing.do_write_count++].t) ,NULL);
+#endif
+                            local_writer++;
+                            new_target = current_writer;
+                            new_tag = TAG_WRITER;
+                            new_size = 8 * PARAMETER_COUNT;
+                            new_msg = malloc (8 * PARAMETER_COUNT);
+                            ((uint64_t *) new_msg) [0] = DO_WRITE_FLAG;
+                            ((uint64_t *) new_msg) [1] = md->group;
+                            ((uint64_t *) new_msg) [2] = md->rank;
+                            ((uint64_t *) new_msg) [3] = md->group;
+                            ((uint64_t *) new_msg) [4] = md->rank;
+                            ((uint64_t *) new_msg) [5] = current_offset++;
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                            MPI_Send (new_msg, new_size, MPI_BYTE, new_target
+                                     ,new_tag, md->group_comm
                                      );
-//printf ("send end D\n");
-                            free (f->msg);
-                            free (f);
-                        }
-                        // since we handle the coord/sub_coord proc special,
-                        // no need to do special send here
-                    }
-                }
-            }
-        }
-
-//printf ("s: %d probe start\n", md->group);
-        MPI_Probe (MPI_ANY_SOURCE, MPI_ANY_TAG, md->group_comm, &status);
-//printf ("s: %d probe end source: %d tag: %s\n", md->group, status.MPI_SOURCE, tag_to_string (status.MPI_TAG));
-static int msg_count = 0;
-//printf ("got a msg %d %d current_offset: %d A\n", md->group, msg_count++, current_offset);
-        source = status.MPI_SOURCE;
-        tag = status.MPI_TAG;
-        if (tag == TAG_SUB_COORDINATOR_INDEX_BODY)
-        {
-            int count;
-            MPI_Get_count (&status, MPI_BYTE, &count);
-            msg = (uint64_t *) malloc (sizeof (char) * count);
-            assert (msg);
-//printf ("recv start B\n");
-            MPI_Recv (msg, count, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG
-                     ,md->group_comm, &status
-                     );
-//printf ("got a msg %d %d current_offset: %d B\n", md->group, msg_count++, current_offset);
-//printf ("recv end B\n");
-        }
-        else
-        {
-            int count;
-            MPI_Get_count (&status, MPI_BYTE, &count);
-            assert (count == sizeof (uint64_t) * PARAMETER_COUNT);
-            msg = malloc (sizeof (uint64_t) * PARAMETER_COUNT);
-            assert (msg);
-//printf ("recv start C\n");
-            MPI_Recv (msg, sizeof (uint64_t) * PARAMETER_COUNT, MPI_BYTE
-                     ,status.MPI_SOURCE, status.MPI_TAG, md->group_comm
-                     ,&status
-                     );
-//printf ("recv end C\n");
-//printf ("got a msg %d %d current_offset: %d C\n", md->group, msg_count++, current_offset);
-//printf ("%3d received %s source: %d tag: %d\n", md->rank, message_to_string_full ((uint64_t *) msg, 's'), source, tag);
-        }
-
-        if (tag == TAG_SUB_COORDINATOR_INDEX_BODY)
-        {
-                //case INDEX_BODY:
-                {
-                    int i;
-//printf ("saving index for %d\n", source);
-                    for (i = indices_received - 1; i >= 0; i--)
-                    {
-//printf ("group: %d indices %llu indices_received: %d indices [i].rank %d source %d\n", md->group, indices, indices_received, indices [i].rank, source);
-                        if (indices [i].rank == source)
-                        {
-                            indices [i].index = (char *) msg;
-                            pending_index_pieces--;
-                            msg = 0;
-                            break;
-                        }
-                    }
-                    if (i == -1)
-                    {
-                        printf ("1 unexpected index from %d. Waiting for ", source);
-                        for (i = 0; i < indices_received; i++)
-                            printf ("%d ", indices [i].rank);
-                        printf ("\n");
-                        MPI_Abort (MPI_COMM_WORLD, -1);
-                    }
-
 #if COLLECT_METRICS
-                    //if (indices_collected == writers_served)
-                    {
-                        gettimeofday (&timing.t13, NULL);
-                    }
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
 #endif
-                }
-//printf ("%d TAG_SUB_COORDINATOR_INDEX_BODY end\n", md->group);
-            // free (msg); // don't do this since it is saved for later
-        }
-        else
-        {
-#if PRINT_MESSAGES
-//            printf ("sc: source: %2d msg: %s A\n"
-//                   ,source, message_to_string_full (msg, 's')
-//                   );
-#endif
-//printf ("%d TAG_SUB_COORDINATOR start\n", md->group);
-            switch (msg [0])
-            {
-                case WRITE_COMPLETE:
-                {
-#if 0
-fprintf (fp_w, "%d\treceived %s\n", f->source, message_to_string_full ((uint64_t *) f->msg, 's'));
-fflush (fp_w);
-#endif
-#if COLLECT_METRICS
-                    if (   timing.write_complete_count
-                        == timing.write_complete_size
-                       )
-                    {
-                        timing.write_complete_size += 10;
-                        timing.t17 = realloc (timing.t17
-                                             ,sizeof (struct timeval_writer)
-                                              * timing.write_complete_size
-                                             );
-                        assert (timing.t17 != 0);
-                    }
-                    timing.t17 [timing.write_complete_count].pid = msg [5];
-                    gettimeofday (&(timing.t17
-                                      [timing.write_complete_count++].t), NULL);
-#endif
-                    // if this group was writing it, we were tracking it
-                    // if (msg [2] == md->group) // this seems wrong
-                    if (msg [1] == md->group)
-                    {
-                        active_writers--;
-                    }
-
-                    // if it was a purely local write
-                    local_writer--;
-
-                    // if the target group is our group (we wrote to our file)
-                    if (msg [1] == md->group)
-                    {
-#if 0
-fprintf (fp_w, "%d\tsave for index %s\n", msg [5], message_to_string_full ((uint64_t *) f->msg, 's'));
-fflush (fp_w);
-#endif
-                        if (indices_size <= indices_received)
-                        {
-                            indices_size += ((indices_size * 0.20 > 0) ?
-                                               (int) (indices_size * 0.20)
-                                             : 1
-                                            );
-                            indices = (struct index_struct *) realloc
-                                        (indices
-                                        ,  indices_size
-                                         * sizeof (struct index_struct)
-                                        );
+                            active_writers++;
+                            currently_writing = 1;
+                            free (new_msg);
+                            new_msg = 0;
                         }
-
-                        indices [indices_received].rank = msg [5];
-                        indices [indices_received].offset = msg [3] - 1;
-                        indices [indices_received].size = msg [4];
-                        indices [indices_received].index = 0;
-                        indices_received++;
-                        pending_index_pieces++;
-//printf ("saving index information for rank: %lld\n", msg [5]);
-                    }
-
-                    // if it is adaptive, tell the coordinator it is done
-                    if (msg [2] == md->group && msg [1] != msg [2])
-                    {
-#if 0
-fprintf (fp_w, "%d\ttell coord adaptive done %s\n", md->rank, message_to_string_full ((uint64_t *) f->msg, 's'));
-fflush (fp_w);
-#endif
-                        // tell coordinator done with this one
-                        // and if we have more capacity
-                        // only if we were writing to our group
-                        //if (msg [1] != msg [2])
+                        else
                         {
-                            assert (md->rank != md->coord_rank);
                             {
-                                struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                                f->target = md->coord_rank;
-                                f->tag = TAG_COORDINATOR;
-                                f->size = 8 * PARAMETER_COUNT;
-                                f->msg = malloc (8 * PARAMETER_COUNT);
-                                ((uint64_t *) f->msg) [0] = WRITE_COMPLETE;
-                                ((uint64_t *) f->msg) [1] = msg [1];
-                                ((uint64_t *) f->msg) [2] = msg [2];
-                                ((uint64_t *) f->msg) [3] = msg [3];
-                                ((uint64_t *) f->msg) [4] = msg [4];
-                                ((uint64_t *) f->msg) [5] = msg [5];
-                                MPI_Send (f->msg, f->size, MPI_BYTE
-                                         ,md->coord_rank, TAG_COORDINATOR
-                                         ,md->group_comm
-                                         );
+                                if (!completed_writing)
+                                {
+                                    completed_writing = 1;
+                                    assert (md->rank != md->coord_rank);
+                                    if (current_writer >=  md->rank
+                                                         + md->group_size
+                                       )
+                                    {
+                                        new_target = md->coord_rank;
+                                        new_tag = TAG_COORDINATOR;
+                                        new_size = 8 * PARAMETER_COUNT;
+                                        new_msg = malloc (8 * PARAMETER_COUNT);
+                                        ((uint64_t *) new_msg) [0] =
+                                                                WRITE_COMPLETE;
+                                        ((uint64_t *) new_msg) [1] = md->group;
+                                        ((uint64_t *) new_msg) [2] = md->group;
+                                        ((uint64_t *) new_msg) [3] =
+                                                                current_offset;
+                                        ((uint64_t *) new_msg) [4] =
+                                                       0; // index size unused?
+                                        ((uint64_t *) new_msg) [5] = md->rank;
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                                        MPI_Send (new_msg, new_size, MPI_BYTE
+                                                 ,new_target, new_tag
+                                                 ,md->group_comm
+                                                 );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                                        free (new_msg);
+                                        new_msg = 0;
+                                    }
+                                    // since we handle the coord/sub_coord proc
+                                    // special, no need to do special send here
+                                }
                             }
                         }
                     }
 
-                    // if it was local, start the next write or send
-                    // the write complete for this group (at bottom).
-                    // if we finished others and we were adaptive and there
-                    // isn't a purely local writer currently in process,
-                    // fall through that code as well to end our write.
-                    if (   msg [1] == msg [2]
-                        || (   next_writer > md->rank
-                            && !local_writer
-                           )
-                       )
+                    MPI_Probe (MPI_ANY_SOURCE, MPI_ANY_TAG, md->group_comm
+                              ,&status
+                              );
+                    static int msg_count = 0;
+                    source = status.MPI_SOURCE;
+                    tag = status.MPI_TAG;
+                    if (tag == TAG_SUB_COORDINATOR_INDEX_BODY)
                     {
-                        currently_writing = 0;
-                        current_writer = next_writer++;
-                    }
-                    break;
-                }
-
-                case ADAPTIVE_WRITE_START:
-                {
-//printf ("group: %d next_writer: %d md->rank + md->group_size: %d\n", md->group, next_writer, md->rank + md->group_size);
-                    if (next_writer >= md->rank + md->group_size)
-                    {
-                        // tell coordinator we are done and can't do it
-                        //if (md->rank != md->coord_rank)
-                        {
-                            struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                            f->target = md->coord_rank;
-                            f->tag = TAG_COORDINATOR;
-                            f->size = 8 * PARAMETER_COUNT;
-                            f->msg = malloc (8 * PARAMETER_COUNT);
-                            ((uint64_t *) f->msg) [0] = WRITERS_BUSY;
-                            ((uint64_t *) f->msg) [1] = msg [1];
-                            ((uint64_t *) f->msg) [2] = md->group;
-//printf ("sc: sending to %d %s 1\n", f->target, message_to_string_full (((uint64_t *) f->msg), 's'));
-                            MPI_Send (f->msg, f->size, MPI_BYTE
-                                     ,f->target, TAG_COORDINATOR
-                                     ,md->group_comm
-                                     );
-                        }
-                        // since we are specifically not the coord,
-                        // we don't need to do anything special for that case
+                        int count;
+                        MPI_Get_count (&status, MPI_BYTE, &count);
+                        msg = (uint64_t *) malloc (sizeof (char) * count);
+                        assert (msg);
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                        MPI_Recv (msg, count, MPI_BYTE, source, tag
+                                 ,md->group_comm, &status
+                                 );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t27, &timing.t27, &c);
+timing.recv_count++;
+#endif
                     }
                     else
                     {
+                        int count;
+                        MPI_Get_count (&status, MPI_BYTE, &count);
+                        assert (count == sizeof (uint64_t) * PARAMETER_COUNT);
+                        msg = malloc (sizeof (uint64_t) * PARAMETER_COUNT);
+                        assert (msg);
 #if COLLECT_METRICS
-                            if (timing.do_write_count == timing.do_write_size)
+gettimeofday (&a, NULL);
+#endif
+                        MPI_Recv (msg, sizeof (uint64_t) * PARAMETER_COUNT
+                                 ,MPI_BYTE, source, tag, md->group_comm
+                                 ,&status
+                                 );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t27, &timing.t27, &c);
+timing.recv_count++;
+#endif
+                    }
+
+                    if (tag == TAG_SUB_COORDINATOR_INDEX_BODY)
+                    {
+                        int i;
+                        for (i = indices_received - 1; i >= 0; i--)
+                        {
+                            if (indices [i].rank == source)
                             {
-                                timing.do_write_size += 10;
-                                timing.t15 = realloc (timing.t15
-                                               ,sizeof (struct timeval_writer)
-                                                * timing.do_write_size
-                                               );
-                                assert (timing.t15 != 0);
+                                indices [i].index = (char *) msg;
+                                pending_index_pieces--;
+                                msg = 0;
+                                break;
                             }
-                            timing.t15 [timing.do_write_count].pid
-                                                                 = next_writer;
-                            gettimeofday (&(timing.t15
-                                           [timing.do_write_count++].t), NULL);
-#endif
-                            struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                            f->target = next_writer;
-                            f->tag = TAG_WRITER;
-                            f->size = 8 * PARAMETER_COUNT;
-                            f->msg = malloc (8 * PARAMETER_COUNT);
-                            ((uint64_t *) f->msg) [0] = DO_WRITE_FLAG;
-                            ((uint64_t *) f->msg) [1] = msg [1];
-                            ((uint64_t *) f->msg) [2] = msg [2];
-                            ((uint64_t *) f->msg) [3] = md->group;
-                            ((uint64_t *) f->msg) [4] = md->rank;
-                            ((uint64_t *) f->msg) [5] = msg [3];
-//printf ("sc: sending to %d %s 2 next_writer: %d md->rank + md->group_size: %d\n", f->target, message_to_string_full (((uint64_t *) f->msg), 's'), next_writer, md->rank + md->group_size);
-                            MPI_Send (f->msg, f->size, MPI_BYTE
-                                     ,f->target, f->tag
-                                     ,md->group_comm
-                                     );
-                            active_writers++;
-                            next_writer++;
-                        // our rank has already written so we should only
-                        // get here if we responded writers_busy or asked a
-                        // rank to write
+                        }
+                        if (i == -1)
+                        {
+                            printf ("1 unexpected index from %d. Waiting for "
+                                   ,source
+                                   );
+                            for (i = 0; i < indices_received; i++)
+                                printf ("%d ", indices [i].rank);
+                            printf ("\n");
+                            MPI_Abort (MPI_COMM_WORLD, -1);
+                        }
+
+                        // free (msg); // don't do this; it is saved for later
                     }
-                    break;
-                }
-
-                case OVERALL_WRITE_COMPLETE:
-                {
-//printf ("got a msg %d %d current_offset: %d D\n", md->group, msg_count, current_offset);
-                    overall_complete_arrived = 1;
-                    break;
-                }
-            }
-//printf ("%d TAG_SUB_COORDINATOR end\n", md->group);
-        }
-
-//printf ("%d overall_complete_arrived: %d pending_index_pieces: %d current_offset: %d\n", md->group, overall_complete_arrived, pending_index_pieces, current_offset);
-        if (overall_complete_arrived && !pending_index_pieces)
-        {
-#if COLLECT_METRICS
-                    gettimeofday (&timing.t12, NULL);
-#endif
-                    // tell writers to enter send index mode
-                    int i;
-                    uint64_t total_size = 0;
-#if 0
-char b1 [10];
-sprintf (b1, "%d", md->group);
-FILE * ff = fopen (b1, "w");
-#endif
-                    // sort the array (should be close already)
-//printf ("group: %d indices received: %d current_offset: %d A\n", md->group, indices_received, current_offset);
-                    qsort (indices, indices_received
-                          ,sizeof (struct index_struct)
-                          ,index_struct_compare
-                          );
-//printf ("group: %d indices received: %d current_offset: %d B\n", md->group, indices_received, current_offset);
-                    for (i = 0; i < indices_received; i++)
+                    else
                     {
-//printf ("%d rank %d at offset %d buffer: %llu\n", md->group, indices [i].rank, indices [i].offset, indices [i].index);
-                        // merge each one in
-                        struct adios_bp_buffer_struct_v1 b;
-                        b.buff = indices [i].index;
-                        b.length = indices [i].size;
-                        b.offset = 0;
-                        adios_parse_process_group_index_v1 (&b ,&new_pg_root);
-                        adios_parse_vars_index_v1 (&b, &new_vars_root);
-                        adios_parse_attributes_index_v1 (&b ,&new_attrs_root);
-                        adios_merge_index_v1 (&md->old_pg_root
-                                             ,&md->old_vars_root
-                                             ,&md->old_attrs_root
-                                             ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
-                                             );
-                        new_pg_root = 0;
-                        new_vars_root = 0;
-                        new_attrs_root = 0;
-                        free (b.buff); // == indices [i].index
-                        total_size += b.length;
-#if 0
-fprintf (ff, "%d\n", writers [i]);
-#endif
-                    }
-#if 0
-fclose (ff);
-#endif
-
-#if COLLECT_METRICS
-                    gettimeofday (&timing.t13, NULL);
-#endif
-                    // once we are done sending the index, shutdown the thread
-                    shutdown_flag = SHUTDOWN_FLAG;
-//printf ("group: %d saving index at offset: %lld\n", md->group, current_offset);
-                // we need the size of the buffer for responding to the write
-                adios_write_index_v1 (&index_buffer, &index_buffer_size
-                                     ,&index_buffer_offset
-                                     ,(md->stripe_size * (indices_received + 1))
-                                     ,md->old_pg_root
-                                     ,md->old_vars_root
-                                     ,md->old_attrs_root
-                                     );
-                adios_write_version_v1 (&index_buffer, &index_buffer_size, &index_buffer_offset);
-//printf ("group: %d writing index at offset: %lld\n", md->group, indices_received + 1);
-                    if (md->f == -1) printf ("we got a bad file handle\n");
-                    lseek (md->f, md->stripe_size * (indices_received + 1), SEEK_SET);
-                    ssize_t s = write (md->f, index_buffer, index_buffer_offset);
-                    if (s != index_buffer_offset)
-                    {
-                        fprintf (stderr, "Need to do multi-write 3 (tried: "
-                                         "%llu wrote: %lld) errno %d\n"
-                                ,fd->bytes_written, s, errno
-                                );
-                    }
-
-        }
-
-        xxx++;
 #if PRINT_MESSAGES
-        //if (!(xxx++ % 10000000))
-//            printf ("AAAA %d\n", md->group);
+                        printf ("sc: source: %2d msg: %s A\n"
+                               ,source, message_to_string_full (msg, 's')
+                               );
 #endif
+                        switch (msg [0])
+                        {
+                            case WRITE_COMPLETE:
+                            {
+#if COLLECT_METRICS
+if (timing.write_complete_count == timing.write_complete_size)
+{
+    timing.write_complete_size += 10;
+    timing.t17 = realloc (timing.t17 ,sizeof (struct timeval_writer)
+                                      * timing.write_complete_size
+                         );
+    assert (timing.t17 != 0);
+}
+timing.t17 [timing.write_complete_count].pid = msg [5];
+gettimeofday (&(timing.t17 [timing.write_complete_count++].t), NULL);
+#endif
+                                // if this group was writing it,
+                                // we were tracking it
+                                if (msg [1] == md->group)
+                                {
+                                    active_writers--;
+                                }
 
-        if (f)
-        {
-            free (f->msg);
-            free (f);
-            f = 0;
-            msg = 0;
-        }
-//printf ("%d end of sc loop\n", md->group);
-    } while (shutdown_flag != SHUTDOWN_FLAG);
-#if 0
-fclose (fp_w);
+                                // if it was a purely local write
+                                local_writer--;
+
+                                // if the target group is our group (we wrote
+                                // to our file)
+                                if (msg [1] == md->group)
+                                {
+                                    if (indices_size <= indices_received)
+                                    {
+                                        indices_size += (
+                                                  (indices_size * 0.20 > 0) ?
+                                                   (int) (indices_size * 0.20)
+                                                  : 1
+                                                        );
+                                        indices = (struct index_struct *)
+                                                     realloc
+                                               (indices
+                                               ,  indices_size
+                                                * sizeof (struct index_struct)
+                                               );
+                                    }
+
+                                    indices [indices_received].rank = msg [5];
+                                    indices [indices_received].offset
+                                                                 = msg [3] - 1;
+                                    indices [indices_received].size = msg [4];
+                                    indices [indices_received].index = 0;
+                                    indices_received++;
+                                    pending_index_pieces++;
+                                }
+
+                                // if it is adaptive, tell the coordinator
+                                // it is done
+                                if (msg [2] == md->group && msg [1] != msg [2])
+                                {
+                                    // tell coordinator done with this one
+                                    // and if we have more capacity
+                                    // only if we were writing to our group
+                                    assert (md->rank != md->coord_rank);
+                                    new_target = md->coord_rank;
+                                    new_tag = TAG_COORDINATOR;
+                                    new_size = 8 * PARAMETER_COUNT;
+                                    new_msg = malloc (8 * PARAMETER_COUNT);
+                                    ((uint64_t *) new_msg) [0] = WRITE_COMPLETE;
+                                    ((uint64_t *) new_msg) [1] = msg [1];
+                                    ((uint64_t *) new_msg) [2] = msg [2];
+                                    ((uint64_t *) new_msg) [3] = msg [3];
+                                    ((uint64_t *) new_msg) [4] = msg [4];
+                                    ((uint64_t *) new_msg) [5] = msg [5];
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
 #endif
-    //free (writers);
-    //free (index_sizes);
-            free (indices);
+                                    MPI_Send (new_msg, new_size
+                                             ,MPI_BYTE
+                                             ,md->coord_rank, new_tag
+                                             ,md->group_comm
+                                             );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                                    free (new_msg);
+                                    new_msg = 0;
+                                }
+
+                                // if it was local, start the next write or send
+                                // the write complete for this group
+                                // (at bottom). If we finished others and we
+                                // were adaptive and there isn't a purely local
+                                // writer currently in process, fall through
+                                // that code as well to end our write.
+                                if (   msg [1] == msg [2]
+                                    || (   next_writer > md->rank
+                                        && !local_writer
+                                       )
+                                   )
+                                {
+                                    currently_writing = 0;
+                                    current_writer = next_writer++;
+                                }
+                                break;
+                            }
+
+                            case ADAPTIVE_WRITE_START:
+                            {
+                                if (next_writer >= md->rank + md->group_size)
+                                {
+                                    // tell coordinator we are done and can't
+                                    // do it
+                                    new_target = md->coord_rank;
+                                    new_tag = TAG_COORDINATOR;
+                                    new_size = 8 * PARAMETER_COUNT;
+                                    new_msg = malloc (8 * PARAMETER_COUNT);
+                                    ((uint64_t *) new_msg) [0] = WRITERS_BUSY;
+                                    ((uint64_t *) new_msg) [1] = msg [1];
+                                    ((uint64_t *) new_msg) [2] = md->group;
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                                    MPI_Send (new_msg, new_size, MPI_BYTE
+                                             ,new_target, new_tag
+                                             ,md->group_comm
+                                             );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                                    free (new_msg);
+                                    new_msg = 0;
+                                    // since we are specifically not the coord,
+                                    // we don't need to do anything special
+                                    // for that case
+                                }
+                                else
+                                {
+#if COLLECT_METRICS
+if (timing.do_write_count == timing.do_write_size)
+{
+    timing.do_write_size += 10;
+    timing.t15 = realloc (timing.t15 ,sizeof (struct timeval_writer)
+                                      * timing.do_write_size
+                         );
+    assert (timing.t15 != 0);
+}
+timing.t15 [timing.do_write_count].pid = next_writer;
+gettimeofday (&(timing.t15 [timing.do_write_count++].t), NULL);
+#endif
+                                    new_target = next_writer;
+                                    new_tag = TAG_WRITER;
+                                    new_size = 8 * PARAMETER_COUNT;
+                                    new_msg = malloc (8 * PARAMETER_COUNT);
+                                    ((uint64_t *) new_msg) [0] = DO_WRITE_FLAG;
+                                    ((uint64_t *) new_msg) [1] = msg [1];
+                                    ((uint64_t *) new_msg) [2] = msg [2];
+                                    ((uint64_t *) new_msg) [3] = md->group;
+                                    ((uint64_t *) new_msg) [4] = md->rank;
+                                    ((uint64_t *) new_msg) [5] = msg [3];
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                                    MPI_Send (new_msg, new_size, MPI_BYTE
+                                             ,new_target, new_tag
+                                             ,md->group_comm
+                                             );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                                    free (new_msg);
+                                    new_msg = 0;
+                                    active_writers++;
+                                    next_writer++;
+                                    // our rank has already written so we should
+                                    // only get here if we responded
+                                    // WRITERS_BUSY or asked a rank to write
+                                }
+                                break;
+                            }
+
+                            case OVERALL_WRITE_COMPLETE:
+                            {
+                                overall_complete_arrived = 1;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (overall_complete_arrived && !pending_index_pieces)
+                    {
+#if COLLECT_METRICS
+gettimeofday (&timing.t12, NULL);
+#endif
+                        // tell writers to enter send index mode
+                        int i;
+                        uint64_t total_size = 0;
+                        // sort the array (should be close already)
+                        qsort (indices, indices_received
+                              ,sizeof (struct index_struct)
+                              ,index_struct_compare
+                              );
+                        for (i = 0; i < indices_received; i++)
+                        {
+                            // merge each one in
+                            struct adios_bp_buffer_struct_v1 b;
+                            b.buff = indices [i].index;
+                            b.length = indices [i].size;
+                            b.offset = 0;
+                            adios_parse_process_group_index_v1 (&b
+                                                               ,&new_pg_root
+                                                               );
+                            adios_parse_vars_index_v1 (&b, &new_vars_root);
+                            adios_parse_attributes_index_v1 (&b
+                                                            ,&new_attrs_root
+                                                            );
+                            adios_merge_index_v1 (&md->old_pg_root
+                                                 ,&md->old_vars_root
+                                                 ,&md->old_attrs_root
+                                                 ,new_pg_root, new_vars_root
+                                                 ,new_attrs_root
+                                                 );
+                            new_pg_root = 0;
+                            new_vars_root = 0;
+                            new_attrs_root = 0;
+                            free (b.buff); // == indices [i].index
+                            total_size += b.length;
+                        }
+#if COLLECT_METRICS
+gettimeofday (&timing.t13, NULL);
+#endif
+                        adios_write_index_v1 (&index_buffer, &index_buffer_size
+                                             ,&index_buffer_offset
+                                             ,(md->stripe_size *
+                                                        (indices_received + 1))
+                                             ,md->old_pg_root
+                                             ,md->old_vars_root
+                                             ,md->old_attrs_root
+                                             );
+                        adios_write_version_v1 (&index_buffer
+                                               ,&index_buffer_size
+                                               ,&index_buffer_offset
+                                               );
+                        if (md->f == -1)
+                            printf ("we got a bad file handle\n");
+                        lseek (md->f, md->stripe_size * (indices_received + 1)
+                              ,SEEK_SET
+                              );
+                        ssize_t s = write (md->f, index_buffer
+                                          ,index_buffer_offset
+                                          );
+                        if (s != index_buffer_offset)
+                        {
+                            fprintf (stderr, "Need to do multi-write 3 (tried: "
+                                             "%llu wrote: %lld) errno %d\n"
+                                    ,fd->bytes_written, s, errno
+                                    );
+                        }
+
+                        // insert the global index collection here
+
+                        // once we are done sending the index, shutdown
+                        shutdown_flag = SHUTDOWN_FLAG;
+                    }
+                    xxx++;
+
+                    if (new_msg)
+                    {
+                        free (new_msg);
+                        new_msg = 0;
+                    }
+                    if (msg)
+                    {
+                        free (msg);
+                        msg = 0;
+                    }
+                } while (shutdown_flag != SHUTDOWN_FLAG);
+                free (indices);
             }
 ///////////////////////////////////////////////////////////////////////////////
 /////// END OF SUB_COORD ONLY /////////////////////////////////////////////////
@@ -3192,1401 +3160,1135 @@ fclose (fp_w);
 ///////////////////////////////////////////////////////////////////////////////
             if (md->rank == md->sub_coord_rank && md->rank == md->coord_rank)
             {
-//printf ("c: rank: %d\n", md->rank);
-    struct flag_struct * f = 0;
-    int i;
-    enum group_state
-    {
-         STATE_WRITING = 0
-        ,STATE_COMPLETE = 1
-        ,STATE_WRITERS_ALL_OCCUPIED = 2
-    };
+                int i;
+                enum group_state
+                {
+                     STATE_WRITING = 0
+                    ,STATE_COMPLETE = 1
+                    ,STATE_WRITERS_ALL_OCCUPIED = 2
+                };
 
-    int sub_coord_ranks [md->groups];
+                int sub_coord_ranks [md->groups];
 
-    char group_state [md->groups];
-    int groups_complete = 0;
-    uint64_t group_offset [md->groups];
-
-    memset (group_offset, 0, md->groups * sizeof (uint64_t));
-    memset (group_state, STATE_WRITING, md->groups);
-
-    ////////////////////////////////////////////////////////////////////////
-    // sub_coordinator rank setup
-    ////////////////////////////////////////////////////////////////////////
-    i = 0;
-    int rank = 0;
-    while (rank < md->size)
-    {
-        int group;
-        int group_size;
-        int sub_coord_rank;
-        int coord_rank;
-
-        calc_groups (rank, md->size, md->groups
-                    ,&group, &group_size, &sub_coord_rank
-                    ,&coord_rank
-                    );
-        sub_coord_ranks [i++] = sub_coord_rank;
-        rank += group_size;
-//#if PRINT_MESSAGES
-#if 0
-        printf ("calc sc: %d rank: %d\n", i - 1, sub_coord_ranks [i - 1]);
+                char group_state [md->groups];
+                int groups_complete = 0;
+                uint64_t group_offset [md->groups];
+#if COLLECT_METRICS
+// we need to collect for sub coord rank
+if (timing.write_complete_count == timing.write_complete_size)
+{
+    timing.write_complete_size += 10;
+    timing.t17 = realloc (timing.t17 ,sizeof (struct timeval_writer)
+                                      * timing.write_complete_size
+                         );
+    assert (timing.t17 != 0);
+}
+timing.t17 [timing.write_complete_count].pid = md->sub_coord_rank;
+gettimeofday (&(timing.t17 [timing.write_complete_count++].t), NULL);
 #endif
-    }
 
-    ////////////////////////////////////////////////////////////////////////
-    // Main message loop
-    ////////////////////////////////////////////////////////////////////////
-    uint64_t largest_index_size = 0;
-    int index_sizes_received = 0;
-    char * index_buf = 0;     // for receiving from remote
-    ssize_t index_size = 0;
+                memset (group_offset, 0, md->groups * sizeof (uint64_t));
+                memset (group_state, STATE_WRITING, md->groups);
 
-    char * buffer = 0;          // for building overall
-    uint64_t buffer_size = 0;
-    uint64_t buffer_offset = 0;
+                //////////////////////////////////////////////////////////////
+                // sub_coordinator rank setup
+                //////////////////////////////////////////////////////////////
+                i = 0;
+                int rank = 0;
+                while (rank < md->size)
+                {
+                    int group;
+                    int group_size;
+                    int sub_coord_rank;
+                    int coord_rank;
 
-    struct adios_file_index_format_v2
-    {
-        uint32_t file_number;
-        uint16_t name_len;
-        char * name;
-        uint64_t offset;
-        uint64_t length;
-    };
+                    calc_groups (rank, md->size, md->groups
+                                ,&group, &group_size, &sub_coord_rank
+                                ,&coord_rank
+                                );
+                    sub_coord_ranks [i++] = sub_coord_rank;
+                    rank += group_size;
+                }
 
-    uint64_t file_index_count = 0;
-    char start_index_collection = 0;
-    char index_collection_started = 0;
-    uint64_t adaptive_writes_outstanding = 0;
+                //////////////////////////////////////////////////////////////
+                // Main message loop
+                //////////////////////////////////////////////////////////////
+                uint64_t largest_index_size = 0;
+                int index_sizes_received = 0;
+                char * index_buf = 0;     // for receiving from remote
+                ssize_t index_size = 0;
 
-    struct adios_file_index_format_v2 * file_index =
-       (struct adios_file_index_format_v2 *)
+                char * buffer = 0;          // for building overall
+                uint64_t buffer_size = 0;
+                uint64_t buffer_offset = 0;
+
+                struct adios_file_index_format_v2
+                {
+                    uint32_t file_number;
+                    uint16_t name_len;
+                    char * name;
+                    uint64_t offset;
+                    uint64_t length;
+                };
+
+                uint64_t file_index_count = 0;
+                char start_index_collection = 0;
+                char index_collection_started = 0;
+                uint64_t adaptive_writes_outstanding = 0;
+
+                struct adios_file_index_format_v2 * file_index =
+                   (struct adios_file_index_format_v2 *)
               malloc (sizeof (struct adios_file_index_format_v2) * md->groups);
 
-    struct timespec ts;
-    struct timeval tp;
-    struct timeval interval;
-    interval.tv_sec = 0;
-    interval.tv_usec = 500000; // half a second wait
-    int xxx = 0;
-#if 0
-FILE * fp_c = fopen ("c", "w");
-#endif
-    do
-    {
-#if PRINT_MESSAGES
-//        printf ("BBBB adaptive_writes_outstanding: %lld\n"
-//               ,adaptive_writes_outstanding
-//               );
-#endif
-//printf ("%d currently_writing: %d adaptive_writes_outstanding: %d\n", md->group, currently_writing, adaptive_writes_outstanding);
-        if (!currently_writing)
-        {
-            //if (current_writer < md->rank)  // old setup
-            if (current_writer < md->rank + md->group_size)
-            {
-#if COLLECT_METRICS
-                if (timing.do_write_count == timing.do_write_size)
+                struct timespec ts;
+                struct timeval tp;
+                struct timeval interval;
+                interval.tv_sec = 0;
+                interval.tv_usec = 500000; // half a second wait
+                int xxx = 0;
+
+                do
                 {
-                    timing.do_write_size += 10;
-                    timing.t15 = realloc (timing.t15
-                                         ,sizeof (struct timeval_writer)
-                                          * timing.do_write_size
-                                         );
-                    assert (timing.t15 != 0);
-                }
-                timing.t15 [timing.do_write_count].pid = current_writer;
-                gettimeofday (&(timing.t15 [timing.do_write_count++].t), NULL);
-#endif
-                local_writer++;
-                struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                f->target = current_writer;
-                f->tag = TAG_WRITER;
-                f->size = 8 * PARAMETER_COUNT;
-                f->msg = malloc (8 * PARAMETER_COUNT);
-                ((uint64_t *) f->msg) [0] = DO_WRITE_FLAG;
-                ((uint64_t *) f->msg) [1] = md->group;
-                ((uint64_t *) f->msg) [2] = md->rank;
-                ((uint64_t *) f->msg) [3] = md->group;
-                ((uint64_t *) f->msg) [4] = md->rank;
-                ((uint64_t *) f->msg) [5] = current_offset++;
-//printf ("%3d sending %s\n", f->target, message_to_string_full ((uint64_t *) f->msg, 's'));
-//printf ("group: %d new current_offset: %lld\n", md->group, current_offset);
-#if 0
-fprintf (fp_w, "%d\tsending %s\n", f->target, message_to_string_full ((uint64_t *) f->msg, 's'));
-fflush (fp_w);
-#endif
-//printf ("send start C\n");
-                MPI_Send (f->msg, f->size, MPI_BYTE, f->target, f->tag
-                         ,md->group_comm
+                    if (!currently_writing)
+                    {
+                        if (current_writer < md->rank + md->group_size)
+                        {
+#if COLLECT_METRICS
+if (timing.do_write_count == timing.do_write_size)
+{
+    timing.do_write_size += 10;
+    timing.t15 = realloc (timing.t15 ,sizeof (struct timeval_writer)
+                                      * timing.do_write_size
                          );
-//printf ("send end C\n");
-                active_writers++;
-                currently_writing = 1;
-            }
-            else
-            {
-                    if (!completed_writing) // && !active_writers)
-                    {
-                        completed_writing = 1;
-                        // no need to tell anyone since we are who to tell
-                    }
-            }
-        }
-
-        MPI_Probe (MPI_ANY_SOURCE, MPI_ANY_TAG, md->group_comm, &status);
-        source = status.MPI_SOURCE;
-        tag = status.MPI_TAG;
-        if (   tag == TAG_SUB_COORDINATOR_INDEX_BODY
-            || tag == TAG_COORDINATOR_INDEX_BODY
-           )
-        {
-            char * s;
-            if (tag == TAG_SUB_COORDINATOR_INDEX_BODY)
-                s = "SUB_COORD";
-            else
-                s = "COORD";
-
-            int count;
-            MPI_Get_count (&status, MPI_BYTE, &count);
-//printf ("HANDLE THE %s INDEX BODY %d\n", s, source);
-            msg = (uint64_t *) malloc (sizeof (char) * count);
-//printf ("recv start D\n");
-            MPI_Recv (msg, count, MPI_BYTE, source, tag
-                     ,md->group_comm, &status
-                     );
-//printf ("recv end D\n");
-        }
-        else
-        {
-            msg = malloc (sizeof (uint64_t) * PARAMETER_COUNT);
-//printf ("recv start E\n");
-            MPI_Recv (msg, sizeof (uint64_t) * PARAMETER_COUNT, MPI_BYTE
-                     ,source, tag, md->group_comm, &status
-                     );
-//printf ("recv end E\n");
-#if PRINT_MESSAGES
-//            printf ("sc: source: %2d msg: %s A\n"
-//                   ,source, message_to_string_full (msg, 'c')
-//                   );
+    assert (timing.t15 != 0);
+}
+timing.t15 [timing.do_write_count].pid = current_writer;
+gettimeofday (&(timing.t15 [timing.do_write_count++].t), NULL);
 #endif
-        }
-
-        switch (tag)
-        {
-            case TAG_SUB_COORDINATOR_INDEX_BODY:
-            {
-                int i;
-//printf ("saving index for %d\n", source);
-                for (i = indices_received - 1; i >= 0; i--)
-                {
-//printf ("group: %d indices %llu indices_received: %d indices [i].rank %d source %d\n", md->group, indices, indices_received, indices [i].rank, source);
-                    if (indices [i].rank == source)
-                    {
-                        indices [i].index = (char *) msg;
-                        pending_index_pieces--;
-                        msg = 0;
-                        break;
-                    }
-                }
-                if (i == -1)
-                {
-                    printf ("2 unexpected index from %d. Waiting for ", source);
-                    for (i = 0; i < indices_received; i++)
-                        printf ("%d ", indices [i].rank);
-                    printf ("\n");
-                    MPI_Abort (MPI_COMM_WORLD, -1);
-                }
+                            local_writer++;
+                            new_target = current_writer;
+                            new_tag = TAG_WRITER;
+                            new_size = 8 * PARAMETER_COUNT;
+                            new_msg = malloc (8 * PARAMETER_COUNT);
+                            ((uint64_t *) new_msg) [0] = DO_WRITE_FLAG;
+                            ((uint64_t *) new_msg) [1] = md->group;
+                            ((uint64_t *) new_msg) [2] = md->rank;
+                            ((uint64_t *) new_msg) [3] = md->group;
+                            ((uint64_t *) new_msg) [4] = md->rank;
+                            ((uint64_t *) new_msg) [5] = current_offset++;
 #if COLLECT_METRICS
-                gettimeofday (&timing.t13, NULL);
+gettimeofday (&a, NULL);
 #endif
-                break;
-            }
-
-            case TAG_COORDINATOR_INDEX_BODY:
-            {
-                printf ("TAG_COORDINATOR_INDEX_BODY\n");
-                break;
-            }
-
-            case TAG_SUB_COORDINATOR:
-            {
-            switch (msg [0])
-            {
-                case WRITE_COMPLETE:
-                {
-#if 0
-fprintf (fp_w, "%d\treceived %s\n", f->source, message_to_string_full ((uint64_t *) f->msg, 's'));
-fflush (fp_w);
-#endif
-#if COLLECT_METRICS
-                    if (   timing.write_complete_count
-                        == timing.write_complete_size
-                       )
-                    {
-                        timing.write_complete_size += 10;
-                        timing.t17 = realloc (timing.t17
-                                             ,sizeof (struct timeval_writer)
-                                              * timing.write_complete_size
-                                             );
-                        assert (timing.t17 != 0);
-                    }
-                    timing.t17 [timing.write_complete_count].pid = msg [5];
-                    gettimeofday (&(timing.t17
-                                      [timing.write_complete_count++].t), NULL);
-#endif
-                    // if this group was writing it, we were tracking it
-                    if (msg [2] == md->group)
-                    {
-                        active_writers--;
-                    }
-
-                    // if it was a purely local write
-                    local_writer--;
-
-                    // if the target group is our group (we wrote to our file)
-                    if (msg [1] == md->group)
-                    {
-#if 0
-fprintf (fp_w, "%d\tsave for index %s\n", msg [5], message_to_string_full ((uint64_t *) f->msg, 's'));
-fflush (fp_w);
-#endif
-                        if (indices_size <= indices_received)
-                        {
-                            indices_size = (int) (indices_size * 1.20);
-                            indices = (struct index_struct *) realloc
-                                        (indices
-                                        ,  indices_size
-                                         * sizeof (struct index_struct)
-                                        );
-                        }
-
-                        indices [indices_received].rank = msg [5];
-                        indices [indices_received].offset = msg [3] - 1;
-                        indices [indices_received].size = msg [4];
-                        indices [indices_received].index = 0;
-                        indices_received++;
-                        pending_index_pieces++;
-//printf ("saving index information for rank: %lld\n", msg [5]);
-                    }
-
-                    // if it is adaptive, tell the coordinator it is done
-                    if (msg [2] == md->group && msg [1] != msg [2])
-                    {
-// copied from coord WRITE_COMPLETE
-{
-#if 0
-fprintf (fp_c, "adaptive_writes_outstanding: %lld msg: %s\n"
-        ,adaptive_writes_outstanding, message_to_string_full (msg, 'c')
-        );
-fflush (fp_c);
-#endif
-                    // what part of the file finished writing last is unknown
-                    // so only save the largest final offset
-                    if (msg [3] > group_offset [msg [1]])
-                        group_offset [msg [1]] = msg [3];
-
-                    // we just finished this group, so
-                    // start an adaptive write for this file
-                    if (msg [1] == msg [2])
-                    {
-                        groups_complete++;
-                        group_state [msg [1]] = STATE_COMPLETE;
-                        if (groups_complete != md->groups)
-                        {
-                            int i = (msg [1] + 1) % md->groups;
-                            int groups_tried = 0;
-                            while (groups_tried != md->groups)
-                            {
-                                groups_tried++;
-                                if (group_state [i] == STATE_WRITING)
-                                {
-                                    // tell the subcoordinator to write
-                                    // to this file
-                                    adaptive_writes_outstanding++;
-#if 0
-fprintf (fp_c, "adding adaptive write 1 (%d)\n", adaptive_writes_outstanding);
-fflush (fp_c);
-#endif
-                                    if (sub_coord_ranks [i] != md->rank)
-                                    {
-                                        struct mpi_flag_struct * f = malloc
-                                             (sizeof (struct mpi_flag_struct));
-                                        f->target = sub_coord_ranks [i];
-                                        f->tag = TAG_SUB_COORDINATOR;
-                                        f->size = 8 * PARAMETER_COUNT;
-                                        f->msg = malloc (8 * PARAMETER_COUNT);
-                                        ((uint64_t *) f->msg) [0] =
-                                                    ADAPTIVE_WRITE_START;
-                                        ((uint64_t *) f->msg) [1] = msg [1];
-                                        ((uint64_t *) f->msg) [2] =
-                                                    sub_coord_ranks [msg [1]];
-                                        ((uint64_t *) f->msg) [3] =
-                                                    group_offset [msg [1]];
-                                        //queue_enqueue (&md->mpi_flag, f);
-                                        MPI_Send (f->msg, f->size, MPI_BYTE
-                                                 ,f->target, f->tag
-                                                 ,md->group_comm
-                                                 );
-                                        break;
-                                    }
-                                    else
-                                    {
-//printf ("group: %d next_writer: %d md->rank + md->group_size: %d\n", md->group, next_writer, md->rank + md->group_size);
-                    if (next_writer >= md->rank + md->group_size)
-                    {
-                        // tell coordinator we are done and can't do it
-                        group_state [i] = STATE_WRITERS_ALL_OCCUPIED;
-                        adaptive_writes_outstanding--;
-                    }
-                    else
-                    {
-#if COLLECT_METRICS
-                            if (timing.do_write_count == timing.do_write_size)
-                            {
-                                timing.do_write_size += 10;
-                                timing.t15 = realloc (timing.t15
-                                               ,sizeof (struct timeval_writer)
-                                                * timing.do_write_size
-                                               );
-                                assert (timing.t15 != 0);
-                            }
-                            timing.t15 [timing.do_write_count].pid
-                                                                 = next_writer;
-                            gettimeofday (&(timing.t15
-                                           [timing.do_write_count++].t), NULL);
-#endif
-                            struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                            f->target = next_writer;
-                            f->tag = TAG_WRITER;
-                            f->size = 8 * PARAMETER_COUNT;
-                            f->msg = malloc (8 * PARAMETER_COUNT);
-                            ((uint64_t *) f->msg) [0] = DO_WRITE_FLAG;
-                            ((uint64_t *) f->msg) [1] = msg [1];
-                            ((uint64_t *) f->msg) [2] = msg [2];
-                            ((uint64_t *) f->msg) [3] = md->group;
-                            ((uint64_t *) f->msg) [4] = md->rank;
-                            ((uint64_t *) f->msg) [5] = msg [3];
-//printf ("sc: sending to %d %s 3 next_writer: %d md->rank + md->group_size: %d\n", f->target, message_to_string_full (((uint64_t *) f->msg), 's'), next_writer, md->rank + md->group_size);
-                            MPI_Send (f->msg, f->size, MPI_BYTE
-                                     ,f->target, f->tag
-                                     ,md->group_comm
+                            MPI_Send (new_msg, new_size, MPI_BYTE, new_target
+                                     ,new_tag, md->group_comm
                                      );
-                            local_writer++; // added
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                            free (new_msg);
+                            new_msg = 0;
                             active_writers++;
-                            next_writer++;
-                        // our rank has already written so we should only
-                        // get here if we responded writers_busy or asked a
-                        // rank to write
-                                break;
-                    }
-                                    }
-                                }
-                                i = (i + 1) % md->groups;
-                            }
-                        }
-                        else // start index collection if no adaptive left
-                        {
-                            if (!adaptive_writes_outstanding)
-                            {
-#if 0
-fprintf (fp_c, "start_index_collection 1\n");
-fflush (fp_c);
-#endif
-                                start_index_collection = 1;
-                            }
-                        }
-                    }
-                    else  // move to the next adaptive writer
-                    {
-#if 0
-                        // this has been moved back to the writer
-                        // tell the target that we wrote to it and such
-                        if (md->group != msg [1])
-                        {
-                            struct mpi_flag_struct * f = malloc
-                                          (sizeof (struct mpi_flag_struct));
-                            f->target = sub_coord_ranks [msg [1]];
-                            f->tag = TAG_SUB_COORDINATOR;
-                            f->size = 8 * PARAMETER_COUNT;
-                            f->msg = malloc (8 * PARAMETER_COUNT);
-                            ((uint64_t *) f->msg) [0] = WRITE_COMPLETE;
-                            ((uint64_t *) f->msg) [1] = msg [1];
-                            ((uint64_t *) f->msg) [2] = msg [2];
-                            ((uint64_t *) f->msg) [3] = msg [3];
-                            ((uint64_t *) f->msg) [4] = msg [4];
-                            ((uint64_t *) f->msg) [5] = msg [5];
-                            //queue_enqueue (&md->mpi_flag, f);
-                            MPI_Send (f->msg, f->size, MPI_BYTE
-                                     ,f->target, f->tag
-                                     ,md->group_comm
-                                     );
+                            currently_writing = 1;
                         }
                         else
                         {
-                            struct flag_struct * f = malloc
-                                             (sizeof (struct flag_struct));
-                            f->source = msg [5];
-                            f->tag = TAG_SUB_COORDINATOR;
-                            f->msg = malloc (8 * PARAMETER_COUNT);
-                            ((uint64_t *) f->msg) [0] = WRITE_COMPLETE;
-                            ((uint64_t *) f->msg) [1] = msg [1];
-                            ((uint64_t *) f->msg) [2] = msg [2];
-                            ((uint64_t *) f->msg) [3] = msg [3];
-                            ((uint64_t *) f->msg) [4] = msg [4];
-                            ((uint64_t *) f->msg) [5] = msg [5];
-                            //queue_enqueue (&md->sub_coordinator_flag, f);
-                        }
-#endif
-                        adaptive_writes_outstanding--;
-#if 0
-fprintf (fp_c, "removing adaptive write 2 (%d)\n", adaptive_writes_outstanding);
-fflush (fp_c);
-#endif
-                        int i = (msg [2] + 1) % md->groups;
-                        int groups_tried = 0;
-                        // if we have completed, don't even try to adapt
-                        if (groups_complete == md->groups)
-                            groups_tried = md->groups;
-                        // make sure we can keep offloading
-                        // by allowing using the same group over and over
-                        while (groups_tried != md->groups)
-                        {
-                            groups_tried++;
-                            if (group_state [i] == STATE_WRITING)
-                            {
-                                // tell the subcoordinator to write
-                                // to this file
-                                adaptive_writes_outstanding++;
-#if 0
-fprintf (fp_c, "adding adaptive write 3 (%d)\n", adaptive_writes_outstanding);
-fflush (fp_c);
-#endif
-                                if (sub_coord_ranks [i] != md->rank)
+                                if (!completed_writing)
                                 {
-                                    struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                                    f->target = sub_coord_ranks [i];
-                                    f->tag = TAG_SUB_COORDINATOR;
-                                    f->size = 8 * PARAMETER_COUNT;
-                                    f->msg = malloc (8 * PARAMETER_COUNT);
-                                    ((uint64_t *) f->msg) [0] =
-                                                ADAPTIVE_WRITE_START;
-                                    ((uint64_t *) f->msg) [1] = msg [1];
-                                    ((uint64_t *) f->msg) [2] =
-                                                sub_coord_ranks [msg [1]];
-                                    ((uint64_t *) f->msg) [3] =
-                                                group_offset [msg [1]];
-                                    //queue_enqueue (&md->mpi_flag, f);
-                                    MPI_Send (f->msg, f->size, MPI_BYTE
-                                             ,f->target, f->tag
-                                             ,md->group_comm
-                                             );
-                                    break;
+                                    completed_writing = 1;
+                                    // no need to tell anyone since we are
+                                    // who to tell
                                 }
-                                else
-                                {
-//printf ("group: %d next_writer: %d md->rank + md->group_size: %d\n", md->group, next_writer, md->rank + md->group_size);
-                    if (next_writer >= md->rank + md->group_size)
-                    {
-                        // tell coordinator we are done and can't do it
-                        group_state [i] = STATE_WRITERS_ALL_OCCUPIED;
-                        adaptive_writes_outstanding--;
-                    }
-                    else
-                    {
-#if COLLECT_METRICS
-                            if (timing.do_write_count == timing.do_write_size)
-                            {
-                                timing.do_write_size += 10;
-                                timing.t15 = realloc (timing.t15
-                                               ,sizeof (struct timeval_writer)
-                                                * timing.do_write_size
-                                               );
-                                assert (timing.t15 != 0);
-                            }
-                            timing.t15 [timing.do_write_count].pid
-                                                                 = next_writer;
-                            gettimeofday (&(timing.t15
-                                           [timing.do_write_count++].t), NULL);
-#endif
-                            struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                            f->target = next_writer;
-                            f->tag = TAG_WRITER;
-                            f->size = 8 * PARAMETER_COUNT;
-                            f->msg = malloc (8 * PARAMETER_COUNT);
-                            ((uint64_t *) f->msg) [0] = DO_WRITE_FLAG;
-                            ((uint64_t *) f->msg) [1] = msg [1];
-                            ((uint64_t *) f->msg) [2] = sub_coord_ranks [msg [1]];
-                            ((uint64_t *) f->msg) [3] = md->group;
-                            ((uint64_t *) f->msg) [4] = md->rank;
-                            ((uint64_t *) f->msg) [5] = msg [3];
-//printf ("sc: sending to %d %s 4 next_writer: %d md->rank + md->group_size: %d\n", f->target, message_to_string_full (((uint64_t *) f->msg), 's'), next_writer, md->rank + md->group_size);
-                            MPI_Send (f->msg, f->size, MPI_BYTE
-                                     ,f->target, f->tag
-                                     ,md->group_comm
-                                     );
-                            local_writer++; // added
-                            active_writers++;
-                            next_writer++;
-                        // our rank has already written so we should only
-                        // get here if we responded writers_busy or asked a
-                        // rank to write
-                                break;
-                    }
-                                }
-
-                            }
-                            i = (i + 1) % md->groups;
-                        }
-                        if (   !adaptive_writes_outstanding
-                            && groups_complete == md->groups
-                           )
-                        {
-#if 0
-fprintf (fp_c, "start_index_collection 2\n");
-fflush (fp_c);
-#endif
-                            start_index_collection = 1;
                         }
                     }
-}
-#if 0
 
-#if 0
-fprintf (fp_w, "%d\ttell coord adaptive done %s\n", md->rank, message_to_string_full ((uint64_t *) f->msg, 's'));
-fflush (fp_w);
-#endif
-                        // tell coordinator done with this one
-                        // and if we have more capacity
-                        // only if we were writing to our group
-                        //if (msg [1] != msg [2])
-                        {
-                            assert (md->rank != md->coord_rank);
-                            {
-                                struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                                f->target = md->coord_rank;
-                                f->tag = TAG_COORDINATOR;
-                                f->size = 8 * PARAMETER_COUNT;
-                                f->msg = malloc (8 * PARAMETER_COUNT);
-                                ((uint64_t *) f->msg) [0] = WRITE_COMPLETE;
-                                ((uint64_t *) f->msg) [1] = msg [1];
-                                ((uint64_t *) f->msg) [2] = msg [2];
-                                ((uint64_t *) f->msg) [3] = msg [3];
-                                ((uint64_t *) f->msg) [4] = msg [4];
-                                ((uint64_t *) f->msg) [5] = msg [5];
-                                MPI_Send (f->msg, f->size, MPI_BYTE
-                                         ,md->coord_rank, TAG_COORDINATOR
-                                         ,md->group_comm
-                                         );
-                            }
-                        }
-#endif
-                    }
-
-                    // if it was local, start the next write or send
-                    // the write complete for this group (at bottom).
-                    // if we finished others and we were adaptive and there
-                    // isn't a purely local writer currently in process,
-                    // fall through that code as well to end our write.
-                    if (   msg [1] == msg [2]
-                        || (   next_writer > md->rank
-                            && !local_writer
-                           )
+                    MPI_Probe (MPI_ANY_SOURCE, MPI_ANY_TAG, md->group_comm
+                              ,&status
+                              );
+                    source = status.MPI_SOURCE;
+                    tag = status.MPI_TAG;
+                    if (   tag == TAG_SUB_COORDINATOR_INDEX_BODY
+                        || tag == TAG_COORDINATOR_INDEX_BODY
                        )
                     {
-                        currently_writing = 0;
-                        current_writer = next_writer++;
-                    }
-                    break;
-                }
-
-                case ADAPTIVE_WRITE_START:
-                {
-assert (0); // should never hit this
-#if 0
-fprintf (fp_w, "%d\treceived %s\n", f->source, message_to_string_full ((uint64_t *) f->msg, 's'));
-fflush (fp_w);
-#endif
-                    //if (next_writer > md->rank)
-                    if (next_writer > md->rank + md->group_size)
-                    {
-                        // tell coordinator we are done and can't do it
-                        //if (md->rank != md->coord_rank)
-                        {
-                            struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                            f->target = md->coord_rank;
-                            f->tag = TAG_COORDINATOR;
-                            f->size = 8 * PARAMETER_COUNT;
-                            f->msg = malloc (8 * PARAMETER_COUNT);
-                            ((uint64_t *) f->msg) [0] = WRITERS_BUSY;
-                            ((uint64_t *) f->msg) [1] = msg [1];
-                            ((uint64_t *) f->msg) [2] = md->group;
-                            //queue_enqueue (&md->mpi_flag, f);
-printf ("writers busy, move on\n");
-assert (0);
-                        }
-                    }
-                    else
-                    {
-                        //if (next_writer < md->rank)
-                        {
-#if COLLECT_METRICS
-                            if (timing.do_write_count == timing.do_write_size)
-                            {
-                                timing.do_write_size += 10;
-                                timing.t15 = realloc (timing.t15
-                                               ,sizeof (struct timeval_writer)
-                                                * timing.do_write_size
-                                               );
-                                assert (timing.t15 != 0);
-                            }
-                            timing.t15 [timing.do_write_count].pid
-                                                                 = next_writer;
-                            gettimeofday (&(timing.t15
-                                           [timing.do_write_count++].t), NULL);
-#endif
-                            struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                            f->target = next_writer;
-                            f->tag = TAG_WRITER;
-                            f->size = 8 * PARAMETER_COUNT;
-                            f->msg = malloc (8 * PARAMETER_COUNT);
-                            ((uint64_t *) f->msg) [0] = DO_WRITE_FLAG;
-                            ((uint64_t *) f->msg) [1] = msg [1];
-                            ((uint64_t *) f->msg) [2] = msg [2];
-                            ((uint64_t *) f->msg) [3] = md->group;
-                            ((uint64_t *) f->msg) [4] = md->rank;
-                            ((uint64_t *) f->msg) [5] = msg [3];
-#if 0
-fprintf (fp_w, "%d\tsending %s\n", f->target, message_to_string_full ((uint64_t *) f->msg, 's'));
-fflush (fp_w);
-#endif
-                            //queue_enqueue (&md->mpi_flag, f);
-printf ("do another adaptive write locally\n");
-assert (0);
-                            local_writer++; // added
-                            active_writers++;
-                            next_writer++;
-                        }
-#if 0
+                        char * s;
+                        if (tag == TAG_SUB_COORDINATOR_INDEX_BODY)
+                            s = "SUB_COORD";
                         else
-                        {
-                            if (next_writer == md->rank)
-                            {
+                            s = "COORD";
+
+                        int count;
+                        MPI_Get_count (&status, MPI_BYTE, &count);
+                        msg = (uint64_t *) malloc (sizeof (char) * count);
 #if COLLECT_METRICS
-                                if (timing.do_write_count
-                                                      == timing.do_write_size)
-                                {
-                                    timing.do_write_size += 10;
-                                    timing.t15 = realloc (timing.t15
-                                              ,sizeof (struct timeval_writer)
-                                                * timing.do_write_size
-                                              );
-                                    assert (timing.t15 != 0);
-                                }
-                                timing.t15 [timing.do_write_count].pid
-                                                                = next_writer;
-                                gettimeofday (&(timing.t15
-                                           [timing.do_write_count++].t), NULL);
+gettimeofday (&a, NULL);
 #endif
-                                active_writers++;
-                                struct flag_struct * f = malloc
-                                                (sizeof (struct flag_struct));
-                                f->source = md->rank;
-                                f->tag = TAG_WRITER;
-                                f->msg = malloc (8 * PARAMETER_COUNT);
-                                ((uint64_t *) f->msg) [0] = DO_WRITE_FLAG;
-                                ((uint64_t *) f->msg) [1] = msg [1];
-                                ((uint64_t *) f->msg) [2] = msg [2];
-                                ((uint64_t *) f->msg) [3] = md->group;
-                                ((uint64_t *) f->msg) [4] = md->rank;
-                                ((uint64_t *) f->msg) [5] = msg [3];
-#if 0
-fprintf (fp_w, "%d\tsending %s\n", md->rank, message_to_string_full ((uint64_t *) f->msg, 's'));
-fflush (fp_w);
+                        MPI_Recv (msg, count, MPI_BYTE, source, tag
+                                 ,md->group_comm, &status
+                                 );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t27, &timing.t27, &c);
+timing.recv_count++;
 #endif
-                                queue_enqueue (&md->writer_flag, f);
-                                next_writer++;
-                            }
-                        }
-#endif
-                    }
-                    break;
-                }
-
-            }
-//printf ("%d TAG_SUB_COORDINATOR end\n", md->group);
-                break;
-            }
-
-            case TAG_COORDINATOR:
-            {
-#if PRINT_MESSAGES
-//            printf ("c: source: %2d msg: %s A\n"
-//                   ,source, message_to_string_full (msg, 'c')
-//                   );
-#endif
-            switch (msg [0])
-            {
-                case WRITE_COMPLETE:
-                {
-#if 0
-fprintf (fp_c, "adaptive_writes_outstanding: %lld msg: %s\n"
-        ,adaptive_writes_outstanding, message_to_string_full (msg, 'c')
-        );
-fflush (fp_c);
-#endif
-                    // what part of the file finished writing last is unknown
-                    // so only save the largest final offset
-                    if (msg [3] > group_offset [msg [1]])
-                        group_offset [msg [1]] = msg [3];
-
-                    // we just finished this group, so
-                    // start an adaptive write for this file
-                    if (msg [1] == msg [2])
-                    {
-                        groups_complete++;
-                        group_state [msg [1]] = STATE_COMPLETE;
-                        if (groups_complete != md->groups)
-                        {
-                            int i = (msg [1] + 1) % md->groups;
-                            int groups_tried = 0;
-                            while (groups_tried != md->groups)
-                            {
-                                groups_tried++;
-                                if (group_state [i] == STATE_WRITING)
-                                {
-                                    // tell the subcoordinator to write
-                                    // to this file
-                                    adaptive_writes_outstanding++;
-#if 0
-fprintf (fp_c, "adding adaptive write 1 (%d)\n", adaptive_writes_outstanding);
-fflush (fp_c);
-#endif
-                                    if (sub_coord_ranks [i] != md->rank)
-                                    {
-                                        struct mpi_flag_struct * f = malloc
-                                             (sizeof (struct mpi_flag_struct));
-                                        f->target = sub_coord_ranks [i];
-                                        f->tag = TAG_SUB_COORDINATOR;
-                                        f->size = 8 * PARAMETER_COUNT;
-                                        f->msg = malloc (8 * PARAMETER_COUNT);
-                                        ((uint64_t *) f->msg) [0] =
-                                                    ADAPTIVE_WRITE_START;
-                                        ((uint64_t *) f->msg) [1] = msg [1];
-                                        ((uint64_t *) f->msg) [2] =
-                                                    sub_coord_ranks [msg [1]];
-                                        ((uint64_t *) f->msg) [3] =
-                                                    group_offset [msg [1]];
-                                        //queue_enqueue (&md->mpi_flag, f);
-                                        MPI_Send (f->msg, f->size, MPI_BYTE
-                                                 ,f->target, f->tag
-                                                 ,md->group_comm
-                                                 );
-                                        break;
-                                    }
-                                    else
-                                    {
-//printf ("group: %d next_writer: %d md->rank + md->group_size: %d\n", md->group, next_writer, md->rank + md->group_size);
-                    if (next_writer >= md->rank + md->group_size)
-                    {
-                        // tell coordinator we are done and can't do it
-                        group_state [i] = STATE_WRITERS_ALL_OCCUPIED;
-                        adaptive_writes_outstanding--;
                     }
                     else
                     {
+                        msg = malloc (sizeof (uint64_t) * PARAMETER_COUNT);
 #if COLLECT_METRICS
-                            if (timing.do_write_count == timing.do_write_size)
-                            {
-                                timing.do_write_size += 10;
-                                timing.t15 = realloc (timing.t15
-                                               ,sizeof (struct timeval_writer)
-                                                * timing.do_write_size
-                                               );
-                                assert (timing.t15 != 0);
-                            }
-                            timing.t15 [timing.do_write_count].pid
-                                                                 = next_writer;
-                            gettimeofday (&(timing.t15
-                                           [timing.do_write_count++].t), NULL);
+gettimeofday (&a, NULL);
 #endif
-                            struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                            f->target = next_writer;
-                            f->tag = TAG_WRITER;
-                            f->size = 8 * PARAMETER_COUNT;
-                            f->msg = malloc (8 * PARAMETER_COUNT);
-                            ((uint64_t *) f->msg) [0] = DO_WRITE_FLAG;
-                            ((uint64_t *) f->msg) [1] = msg [1];
-                            ((uint64_t *) f->msg) [2] = sub_coord_ranks [msg [1]];
-                            ((uint64_t *) f->msg) [3] = md->group;
-                            ((uint64_t *) f->msg) [4] = md->rank;
-                            ((uint64_t *) f->msg) [5] = msg [3];
-//printf ("sc: sending to %d %s 5 next_writer: %d md->rank + md->group_size: %d\n", f->target, message_to_string_full (((uint64_t *) f->msg), 's'), next_writer, md->rank + md->group_size);
-                            MPI_Send (f->msg, f->size, MPI_BYTE
-                                     ,f->target, f->tag
-                                     ,md->group_comm
-                                     );
-                            local_writer++; // added
-                            active_writers++;
-                            next_writer++;
-                        // our rank has already written so we should only
-                        // get here if we responded writers_busy or asked a
-                        // rank to write
-                                break;
-                    }
-                                    }
-                                }
-                                i = (i + 1) % md->groups;
-                            }
-                        }
-                        else // start index collection if no adaptive left
-                        {
-                            if (!adaptive_writes_outstanding)
-                            {
-#if 0
-fprintf (fp_c, "start_index_collection 1\n");
-fflush (fp_c);
+                        MPI_Recv (msg, sizeof (uint64_t) * PARAMETER_COUNT
+                                 ,MPI_BYTE, source, tag, md->group_comm, &status
+                                 );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t27, &timing.t27, &c);
+timing.recv_count++;
 #endif
-                                start_index_collection = 1;
-                            }
-                        }
+#if PRINT_MESSAGES
+                        printf ("sc: source: %2d msg: %s A\n"
+                               ,source, message_to_string_full (msg, 'c')
+                               );
+#endif
                     }
-                    else  // move to the next adaptive writer
+
+                    switch (tag)
                     {
-                        adaptive_writes_outstanding--;
-#if 0
-fprintf (fp_c, "removing adaptive write 2 (%d)\n", adaptive_writes_outstanding);
-fflush (fp_c);
-#endif
-                        int i = (msg [2] + 1) % md->groups;
-                        int groups_tried = 0;
-                        // if we have completed, don't even try to adapt
-                        if (groups_complete == md->groups)
-                            groups_tried = md->groups;
-                        // make sure we can keep offloading
-                        // by allowing using the same group over and over
-                        while (groups_tried != md->groups)
+                        case TAG_SUB_COORDINATOR_INDEX_BODY:
                         {
-                            groups_tried++;
-                            if (group_state [i] == STATE_WRITING)
+                            int i;
+                            for (i = indices_received - 1; i >= 0; i--)
                             {
-                                // tell the subcoordinator to write
-                                // to this file
-                                adaptive_writes_outstanding++;
-#if 0
-fprintf (fp_c, "adding adaptive write 3 (%d)\n", adaptive_writes_outstanding);
-fflush (fp_c);
-#endif
-                                if (sub_coord_ranks [i] != md->rank)
+                                if (indices [i].rank == source)
                                 {
-                                    struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                                    f->target = sub_coord_ranks [i];
-                                    f->tag = TAG_SUB_COORDINATOR;
-                                    f->size = 8 * PARAMETER_COUNT;
-                                    f->msg = malloc (8 * PARAMETER_COUNT);
-                                    ((uint64_t *) f->msg) [0] =
-                                                ADAPTIVE_WRITE_START;
-                                    ((uint64_t *) f->msg) [1] = msg [1];
-                                    ((uint64_t *) f->msg) [2] =
-                                                sub_coord_ranks [msg [1]];
-                                    ((uint64_t *) f->msg) [3] =
-                                                group_offset [msg [1]];
-                                    //queue_enqueue (&md->mpi_flag, f);
-                                    MPI_Send (f->msg, f->size, MPI_BYTE
-                                             ,f->target, f->tag
-                                             ,md->group_comm
-                                             );
+                                    indices [i].index = (char *) msg;
+                                    pending_index_pieces--;
+                                    msg = 0;
                                     break;
                                 }
-                                else
-                                {
-//printf ("group: %d next_writer: %d md->rank + md->group_size: %d\n", md->group, next_writer, md->rank + md->group_size);
-                    if (next_writer >= md->rank + md->group_size)
-                    {
-                        // tell coordinator we are done and can't do it
-                        group_state [i] = STATE_WRITERS_ALL_OCCUPIED;
-                        adaptive_writes_outstanding--;
-                    }
-                    else
-                    {
-#if COLLECT_METRICS
-                            if (timing.do_write_count == timing.do_write_size)
-                            {
-                                timing.do_write_size += 10;
-                                timing.t15 = realloc (timing.t15
-                                               ,sizeof (struct timeval_writer)
-                                                * timing.do_write_size
-                                               );
-                                assert (timing.t15 != 0);
                             }
-                            timing.t15 [timing.do_write_count].pid
-                                                                 = next_writer;
-                            gettimeofday (&(timing.t15
-                                           [timing.do_write_count++].t), NULL);
+                            if (i == -1)
+                            {
+                                printf ("2 unexpected index from %d. Waiting "
+                                        "for ", source
+                                       );
+                                for (i = 0; i < indices_received; i++)
+                                    printf ("%d ", indices [i].rank);
+                                printf ("\n");
+                                MPI_Abort (MPI_COMM_WORLD, -1);
+                            }
+                            break;
+                        }
+
+                        case TAG_COORDINATOR_INDEX_BODY:
+                        {
+                            printf ("TAG_COORDINATOR_INDEX_BODY\n");
+                            break;
+                        }
+
+                        case TAG_SUB_COORDINATOR:
+                        {
+                            switch (msg [0])
+                            {
+                                case WRITE_COMPLETE:
+                                {
+#if COLLECT_METRICS
+if (timing.write_complete_count == timing.write_complete_size)
+{
+    timing.write_complete_size += 10;
+    timing.t17 = realloc (timing.t17 ,sizeof (struct timeval_writer)
+                                      * timing.write_complete_size
+                         );
+    assert (timing.t17 != 0);
+}
+timing.t17 [timing.write_complete_count] .pid = msg [5];
+gettimeofday (&(timing.t17 [timing.write_complete_count++].t), NULL);
 #endif
-                            struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                            f->target = next_writer;
-                            f->tag = TAG_WRITER;
-                            f->size = 8 * PARAMETER_COUNT;
-                            f->msg = malloc (8 * PARAMETER_COUNT);
-                            ((uint64_t *) f->msg) [0] = DO_WRITE_FLAG;
-                            ((uint64_t *) f->msg) [1] = msg [1];
-                            ((uint64_t *) f->msg) [2] = msg [2];
-                            ((uint64_t *) f->msg) [3] = md->group;
-                            ((uint64_t *) f->msg) [4] = md->rank;
-                            ((uint64_t *) f->msg) [5] = msg [3];
-//printf ("sc: sending to %d %s 6 next_writer: %d md->rank + md->group_size: %d\n", f->target, message_to_string_full (((uint64_t *) f->msg), 's'), next_writer, md->rank + md->group_size);
-                            MPI_Send (f->msg, f->size, MPI_BYTE
-                                     ,f->target, f->tag
-                                     ,md->group_comm
-                                     );
-                            local_writer++; // added
-                            active_writers++;
-                            next_writer++;
-                        // our rank has already written so we should only
-                        // get here if we responded writers_busy or asked a
-                        // rank to write
-                                break;
-                    }
+                                    // if this group was writing it, we were
+                                    // tracking it
+                                    if (msg [2] == md->group)
+                                    {
+                                        active_writers--;
+                                    }
+
+                                    // if it was a purely local write
+                                    local_writer--;
+
+                                    // if the target group is our group (we
+                                    // wrote to our file)
+                                    if (msg [1] == md->group)
+                                    {
+                                        if (indices_size <= indices_received)
+                                        {
+                                            indices_size = (int) (indices_size
+                                                                        * 1.20);
+                                            indices = (struct index_struct *)
+                                              realloc
+                                                (indices
+                                                ,  indices_size
+                                                 * sizeof (struct index_struct)
+                                                );
+                                        }
+
+                                        indices [indices_received].rank
+                                                                     = msg [5];
+                                        indices [indices_received].offset
+                                                                 = msg [3] - 1;
+                                        indices [indices_received].size
+                                                                     = msg [4];
+                                        indices [indices_received].index = 0;
+                                        indices_received++;
+                                        pending_index_pieces++;
+                                    }
+
+                                    // if it is adaptive, tell the coordinator
+                                    // it is done
+                                    if (   msg [2] == md->group
+                                        && msg [1] != msg [2]
+                                       )
+                                    {
+                                        // copied from coord WRITE_COMPLETE
+
+                                        // what part of the file finished
+                                        // writing last is unknown
+                                        // so only save the largest final offset
+                                        if (msg [3] > group_offset [msg [1]])
+                                            group_offset [msg [1]] = msg [3];
+
+                                        // we just finished this group, so
+                                        // start an adaptive write for this file
+                                        if (msg [1] == msg [2])
+                                        {
+                                            groups_complete++;
+                                            group_state [msg [1]]
+                                                              = STATE_COMPLETE;
+                                            if (groups_complete != md->groups)
+                                            {
+                                                int i =
+                                                    (msg [1] + 1) % md->groups;
+                                                int groups_tried = 0;
+                                                while (groups_tried !=
+                                                                    md->groups)
+                                                {
+                                                    groups_tried++;
+                                                    if (group_state [i]
+                                                              == STATE_WRITING)
+                                                    {
+                                                        // tell the
+                                                        // subcoordinator to
+                                                        // write to this file
+                                                  adaptive_writes_outstanding++;
+
+                                                       if (sub_coord_ranks [i]
+                                                                    != md->rank)
+                                                        {
+                                                            new_target = sub_coord_ranks [i];
+                                                            new_tag = TAG_SUB_COORDINATOR;
+                                                            new_size = 8 * PARAMETER_COUNT;
+                                                            new_msg = malloc (8 * PARAMETER_COUNT);
+                                                            ((uint64_t *) new_msg) [0] =
+                                                                       ADAPTIVE_WRITE_START;
+                                                            ((uint64_t *) new_msg) [1] = msg [1];
+                                                            ((uint64_t *) new_msg) [2] =
+                                                                       sub_coord_ranks [msg [1]];
+                                                            ((uint64_t *) new_msg) [3] =
+                                                                       group_offset [msg [1]];
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                                                            MPI_Send (new_msg
+                                                                     ,new_size
+                                                                     ,MPI_BYTE
+                                                                     ,new_target
+                                                                     ,new_tag
+                                                                 ,md->group_comm
+                                                                     );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                                                            free (new_msg);
+                                                            new_msg = 0;
+                                                            break;
+                                                        }
+                                                        else
+                                                        {
+                                                            if (    next_writer
+                                                                >= md->rank
+                                                                + md->group_size
+                                                               )
+                                                            {
+                                                                // tell coord we
+                                                                // are done and
+                                                                // can't do it
+                                                                group_state [i] = STATE_WRITERS_ALL_OCCUPIED;
+                                                                adaptive_writes_outstanding--;
+                                                            }
+                                                            else
+                                                            {
+#if COLLECT_METRICS
+if (timing.do_write_count == timing.do_write_size)
+{
+    timing.do_write_size += 10;
+    timing.t15 = realloc (timing.t15 ,sizeof (struct timeval_writer)
+                                      * timing.do_write_size
+                         );
+    assert (timing.t15 != 0);
+}
+timing.t15 [timing.do_write_count].pid = next_writer;
+gettimeofday (&(timing.t15 [timing.do_write_count++].t), NULL);
+#endif
+                                                                new_target = next_writer;
+                                                                new_tag = TAG_WRITER;
+                                                                new_size = 8 * PARAMETER_COUNT;
+                                                                new_msg = malloc (8 * PARAMETER_COUNT);
+                                                                ((uint64_t *) new_msg) [0] = DO_WRITE_FLAG;
+                                                                ((uint64_t *) new_msg) [1] = msg [1];
+                                                                ((uint64_t *) new_msg) [2] = msg [2];
+                                                                ((uint64_t *) new_msg) [3] = md->group;
+                                                                ((uint64_t *) new_msg) [4] = md->rank;
+                                                                ((uint64_t *) new_msg) [5] = msg [3];
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                                                                MPI_Send (new_msg
+                                                                      ,new_size
+                                                                      ,MPI_BYTE
+                                                                      ,new_target
+                                                                      ,new_tag
+                                                                 ,md->group_comm
+                                                                      );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                                                                free (new_msg);
+                                                                new_msg = 0;
+                                                                local_writer++;
+                                                                active_writers++;
+                                                                next_writer++;
+                                                                // our rank has already written so we should only
+                                                                // get here if we responded writers_busy or asked a
+                                                                // rank to write
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                    i = (i + 1) % md->groups;
+                                                }
+                                            }
+                                            else // start index collection
+                                            {    // if no adaptive left
+                                                if (!adaptive_writes_outstanding)
+                                                {
+                                                    start_index_collection = 1;
+                                                }
+                                            }
+                                        }
+                                        else  // move to next adaptive writer
+                                        {
+                                            adaptive_writes_outstanding--;
+                                            int i = (msg [2] + 1) % md->groups;
+                                            int groups_tried = 0;
+                                            // if we have completed, don't even try to adapt
+                                            if (groups_complete == md->groups)
+                                                groups_tried = md->groups;
+                                            // make sure we can keep offloading
+                                            // by allowing using the same group over and over
+                                            while (groups_tried != md->groups)
+                                            {
+                                                groups_tried++;
+                                                if (group_state [i] == STATE_WRITING)
+                                                {
+                                                    // tell the subcoordinator to write
+                                                    // to this file
+                                                    adaptive_writes_outstanding++;
+                                                    if (sub_coord_ranks [i] != md->rank)
+                                                    {
+                                                        new_target = sub_coord_ranks [i];
+                                                        new_tag = TAG_SUB_COORDINATOR;
+                                                        new_size = 8 * PARAMETER_COUNT;
+                                                        new_msg = malloc (8 * PARAMETER_COUNT);
+                                                        ((uint64_t *) new_msg) [0] =
+                                                                    ADAPTIVE_WRITE_START;
+                                                        ((uint64_t *) new_msg) [1] = msg [1];
+                                                        ((uint64_t *) new_msg) [2] =
+                                                                    sub_coord_ranks [msg [1]];
+                                                        ((uint64_t *) new_msg) [3] =
+                                                                    group_offset [msg [1]];
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                                                        MPI_Send (new_msg, new_size, MPI_BYTE
+                                                                 ,new_target, new_tag
+                                                                 ,md->group_comm
+                                                                 );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                                                        free (new_msg);
+                                                        new_msg = 0;
+                                                        break;
+                                                    }
+                                                    else
+                                                    {
+                                                        if (next_writer >= md->rank + md->group_size)
+                                                        {
+                                                            // tell coordinator we are done and can't do it
+                                                            group_state [i] = STATE_WRITERS_ALL_OCCUPIED;
+                                                            adaptive_writes_outstanding--;
+                                                        }
+                                                        else
+                                                        {
+#if COLLECT_METRICS
+if (timing.do_write_count == timing.do_write_size)
+{
+    timing.do_write_size += 10;
+    timing.t15 = realloc (timing.t15 ,sizeof (struct timeval_writer)
+                                      * timing.do_write_size
+                         );
+    assert (timing.t15 != 0);
+}
+timing.t15 [timing.do_write_count].pid = next_writer;
+gettimeofday (&(timing.t15 [timing.do_write_count++].t), NULL);
+#endif
+                                                            new_target = next_writer;
+                                                            new_tag = TAG_WRITER;
+                                                            new_size = 8 * PARAMETER_COUNT;
+                                                            new_msg = malloc (8 * PARAMETER_COUNT);
+                                                            ((uint64_t *) new_msg) [0] = DO_WRITE_FLAG;
+                                                            ((uint64_t *) new_msg) [1] = msg [1];
+                                                            ((uint64_t *) new_msg) [2] = sub_coord_ranks [msg [1]];
+                                                            ((uint64_t *) new_msg) [3] = md->group;
+                                                            ((uint64_t *) new_msg) [4] = md->rank;
+                                                            ((uint64_t *) new_msg) [5] = msg [3];
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                                                            MPI_Send (new_msg, new_size, MPI_BYTE
+                                                                     ,new_target, new_tag
+                                                                     ,md->group_comm
+                                                                     );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                                                            free (new_msg);
+                                                            new_msg = 0;
+                                                            local_writer++;
+                                                            active_writers++;
+                                                            next_writer++;
+                                                            // our rank has already written so we should only
+                                                            // get here if we responded writers_busy or asked a
+                                                            // rank to write
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                                i = (i + 1) % md->groups;
+                                            }
+                                            if (   !adaptive_writes_outstanding
+                                                && groups_complete == md->groups
+                                               )
+                                            {
+                                                start_index_collection = 1;
+                                            }
+                                        }
+                                    }
+
+                                    // if it was local, start the next write
+                                    // or send the write complete for this
+                                    // group (at bottom). If we finished others
+                                    // and we were adaptive and there isn't a
+                                    // purely local writer currently in process,
+                                    // fall through that code as well to
+                                    // end our write.
+                                    if (   msg [1] == msg [2]
+                                        || (   next_writer > md->rank
+                                            && !local_writer
+                                           )
+                                       )
+                                    {
+                                        currently_writing = 0;
+                                        current_writer = next_writer++;
+                                    }
+                                    break;
                                 }
 
+                                case ADAPTIVE_WRITE_START:
+                                {
+                                    assert (0); // should never hit this
+                                    break;
+                                }
                             }
-                            i = (i + 1) % md->groups;
+
+                            break;
                         }
-                        if (   !adaptive_writes_outstanding
-                            && groups_complete == md->groups
-                           )
+
+                        case TAG_COORDINATOR:
                         {
-#if 0
-fprintf (fp_c, "start_index_collection 2\n");
-fflush (fp_c);
+#if PRINT_MESSAGES
+                            printf ("c: source: %2d msg: %s A\n"
+                                   ,source, message_to_string_full (msg, 'c')
+                                   );
 #endif
-                            start_index_collection = 1;
-                        }
-                    }
-                    break;
-                }
-
-                case WRITERS_BUSY: // we told it to adaptive write, but
-                                   // all are writing already for that group
-                {
-                    adaptive_writes_outstanding--;
-#if 0
-fprintf (fp_c, "removing adaptive write 4 (%d)\n", adaptive_writes_outstanding);
-fflush (fp_c);
-#endif
-                    // the writer that told us this can't take any more
-                    // adaptive requests so mark as occupied (only if still
-                    // marked as writing)
-                    if (group_state [msg [2]] == STATE_WRITING)
-                        group_state [msg [2]] = STATE_WRITERS_ALL_OCCUPIED;
-
-                    // look for the next group we can ask to write
-                    int i = (msg [2] + 1) % md->groups;
-                    while (i != msg [2])  // look at all
-                    {
-                        if (   i != msg [1]  // don't write to the source group
-                            && group_state [i] == STATE_WRITING
-                           )
-                        {
-                            // tell the subcoordinator to write
-                            // to this file
-                            adaptive_writes_outstanding++;
-#if 0
-fprintf (fp_c, "adding adaptive write 5 (%d)\n", adaptive_writes_outstanding);
-fflush (fp_c);
-#endif
-                            if (sub_coord_ranks [i] != md->rank)
+                            switch (msg [0])
                             {
-                                struct mpi_flag_struct * f = malloc
-                                            (sizeof (struct mpi_flag_struct));
-                                f->target = sub_coord_ranks [i];
-                                f->tag = TAG_SUB_COORDINATOR;
-                                f->size = 8 * PARAMETER_COUNT;
-                                f->msg = malloc (8 * PARAMETER_COUNT);
-                                ((uint64_t *) f->msg) [0] =
-                                            ADAPTIVE_WRITE_START;
-                                ((uint64_t *) f->msg) [1] = msg [1];
-                                ((uint64_t *) f->msg) [2] =
-                                            sub_coord_ranks [msg [1]];
-                                ((uint64_t *) f->msg) [3] =
-                                            group_offset [msg [1]];
-                                //queue_enqueue (&md->mpi_flag, f);
-                                MPI_Send (f->msg, f->size, MPI_BYTE
-                                         ,f->target, f->tag
-                                         ,md->group_comm
-                                         );
-
-                                break;
-                            }
-                            else // we have to use the sub_coord code here
-                            {
-//printf ("group: %d next_writer: %d md->rank + md->group_size: %d\n", md->group, next_writer, md->rank + md->group_size);
-                    if (next_writer >= md->rank + md->group_size)
-                    {
-                        // tell coordinator we are done and can't do it
-                        group_state [i] = STATE_WRITERS_ALL_OCCUPIED;
-                        adaptive_writes_outstanding--;
-                    }
-                    else
-                    {
+                                case WRITE_COMPLETE:
+                                {
+                                    // what part of the file finished writing last
+                                    // is unknown so only save the
+                                    // largest final offset
+                                    if (msg [3] > group_offset [msg [1]])
+                                        group_offset [msg [1]] = msg [3];
+    
+                                    // we just finished this group, so
+                                    // start an adaptive write for this file
+                                    if (msg [1] == msg [2])
+                                    {
+                                        groups_complete++;
+                                        group_state [msg [1]] = STATE_COMPLETE;
+                                        if (groups_complete != md->groups)
+                                        {
+                                            int i = (msg [1] + 1) % md->groups;
+                                            int groups_tried = 0;
+                                            while (groups_tried != md->groups)
+                                            {
+                                                groups_tried++;
+                                                if (group_state [i] == STATE_WRITING)
+                                                {
+                                                    // tell the subcoordinator to
+                                                    // write to this file
+                                                    adaptive_writes_outstanding++;
+                                                    if (sub_coord_ranks [i] != md->rank)
+                                                    {
+                                                        new_target = sub_coord_ranks [i];
+                                                        new_tag = TAG_SUB_COORDINATOR;
+                                                        new_size = 8 * PARAMETER_COUNT;
+                                                        new_msg = malloc (8 * PARAMETER_COUNT);
+                                                        ((uint64_t *) new_msg) [0] =
+                                                                    ADAPTIVE_WRITE_START;
+                                                        ((uint64_t *) new_msg) [1] = msg [1];
+                                                        ((uint64_t *) new_msg) [2] =
+                                                                    sub_coord_ranks [msg [1]];
+                                                        ((uint64_t *) new_msg) [3] =
+                                                                    group_offset [msg [1]];
 #if COLLECT_METRICS
-                            if (timing.do_write_count == timing.do_write_size)
-                            {
-                                timing.do_write_size += 10;
-                                timing.t15 = realloc (timing.t15
-                                               ,sizeof (struct timeval_writer)
-                                                * timing.do_write_size
-                                               );
-                                assert (timing.t15 != 0);
-                            }
-                            timing.t15 [timing.do_write_count].pid
-                                                                 = next_writer;
-                            gettimeofday (&(timing.t15
-                                           [timing.do_write_count++].t), NULL);
+gettimeofday (&a, NULL);
 #endif
-                            struct mpi_flag_struct * f = malloc
-                                           (sizeof (struct mpi_flag_struct));
-                            f->target = next_writer;
-                            f->tag = TAG_WRITER;
-                            f->size = 8 * PARAMETER_COUNT;
-                            f->msg = malloc (8 * PARAMETER_COUNT);
-                            ((uint64_t *) f->msg) [0] = DO_WRITE_FLAG;
-                            ((uint64_t *) f->msg) [1] = msg [1];
-                            ((uint64_t *) f->msg) [2] = sub_coord_ranks [msg [1]];
-                            ((uint64_t *) f->msg) [3] = md->group;
-                            ((uint64_t *) f->msg) [4] = md->rank;
-                            ((uint64_t *) f->msg) [5] = group_offset [msg [1]];
-//printf ("sc: sending to %d %s 7 next_writer: %d md->rank + md->group_size: %d\n", f->target, message_to_string_full (((uint64_t *) f->msg), 's'), next_writer, md->rank + md->group_size);
-                            MPI_Send (f->msg, f->size, MPI_BYTE
-                                     ,f->target, f->tag
-                                     ,md->group_comm
-                                     );
-                            local_writer++; // added
-                            active_writers++;
-                            next_writer++;
-                        // our rank has already written so we should only
-                        // get here if we responded writers_busy or asked a
-                        // rank to write
-                                break;
-                    }
+                                                        MPI_Send (new_msg, new_size
+                                                                 ,MPI_BYTE
+                                                                 ,new_target, new_tag
+                                                                 ,md->group_comm
+                                                                 );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                                                        free (new_msg);
+                                                        new_msg = 0;
+                                                        break;
+                                                    }
+                                                    else
+                                                    {
+                                                        if (next_writer >= md->rank + md->group_size)
+                                                        {
+                                                            // tell coordinator we are done and can't do it
+                                                            group_state [i] = STATE_WRITERS_ALL_OCCUPIED;
+                                                            adaptive_writes_outstanding--;
+                                                        }
+                                                        else
+                                                        {
+#if COLLECT_METRICS
+if (timing.do_write_count == timing.do_write_size)
+{
+    timing.do_write_size += 10;
+    timing.t15 = realloc (timing.t15 ,sizeof (struct timeval_writer)
+                                      * timing.do_write_size
+                         );
+    assert (timing.t15 != 0);
+}
+timing.t15 [timing.do_write_count].pid = next_writer;
+gettimeofday (&(timing.t15 [timing.do_write_count++].t), NULL);
+#endif
+                                                            new_target = next_writer;
+                                                            new_tag = TAG_WRITER;
+                                                            new_size = 8 * PARAMETER_COUNT;
+                                                            new_msg = malloc (8 * PARAMETER_COUNT);
+                                                            ((uint64_t *) new_msg) [0] = DO_WRITE_FLAG;
+                                                            ((uint64_t *) new_msg) [1] = msg [1];
+                                                            ((uint64_t *) new_msg) [2] = sub_coord_ranks [msg [1]];
+                                                            ((uint64_t *) new_msg) [3] = md->group;
+                                                            ((uint64_t *) new_msg) [4] = md->rank;
+                                                            ((uint64_t *) new_msg) [5] = msg [3];
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                                                            MPI_Send (new_msg
+                                                                     ,new_size
+                                                                     ,MPI_BYTE
+                                                                     ,new_target
+                                                                     ,new_tag
+                                                                     ,md->group_comm
+                                                                     );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                                                            free (new_msg);
+                                                            new_msg = 0;
+                                                            local_writer++;
+                                                            active_writers++;
+                                                            next_writer++;
+                                                            // our rank has already written so we should only
+                                                            // get here if we responded writers_busy or asked a
+                                                            // rank to write
+                                                            break;
+                                                        }
+                                                    }
+                                                }
+                                                i = (i + 1) % md->groups;
+                                            }
+                                        }
+                                        else // start index collection if
+                                        {    // no adaptive left
+                                            if (!adaptive_writes_outstanding)
+                                            {
+                                                start_index_collection = 1;
+                                            }
+                                        }
+                                    }
+                                    else  // move to the next adaptive writer
+                                    {
+                                        adaptive_writes_outstanding--;
+                                        int i = (msg [2] + 1) % md->groups;
+                                        int groups_tried = 0;
+                                        // if we have completed, don't try to adapt
+                                        if (groups_complete == md->groups)
+                                            groups_tried = md->groups;
+                                        // make sure we can keep offloading
+                                        // by allowing using the same group over
+                                        while (groups_tried != md->groups)
+                                        {
+                                            groups_tried++;
+                                            if (group_state [i] == STATE_WRITING)
+                                            {
+                                                // tell the subcoordinator to write
+                                                // to this file
+                                                adaptive_writes_outstanding++;
+                                                if (sub_coord_ranks [i] != md->rank)
+                                                {
+                                                    new_target = sub_coord_ranks [i];
+                                                    new_tag = TAG_SUB_COORDINATOR;
+                                                    new_size = 8 * PARAMETER_COUNT;
+                                                    new_msg = malloc (8 * PARAMETER_COUNT);
+                                                    ((uint64_t *) new_msg) [0] =
+                                                                ADAPTIVE_WRITE_START;
+                                                    ((uint64_t *) new_msg) [1] = msg [1];
+                                                    ((uint64_t *) new_msg) [2] =
+                                                                sub_coord_ranks [msg [1]];
+                                                    ((uint64_t *) new_msg) [3] =
+                                                                group_offset [msg [1]];
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                                                    MPI_Send (new_msg, new_size
+                                                             ,MPI_BYTE
+                                                             ,new_target
+                                                             ,new_tag
+                                                             ,md->group_comm
+                                                             );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                                                    free (new_msg);
+                                                    new_msg = 0;
+                                                    break;
+                                                }
+                                                else
+                                                {
+                                                    if (next_writer >= md->rank + md->group_size)
+                                                    {
+                                                        // tell coordinator we are
+                                                        // done and can't do it
+                                                        group_state [i] =
+                                                         STATE_WRITERS_ALL_OCCUPIED;
+                                                        adaptive_writes_outstanding--;
+                                                    }
+                                                    else
+                                                    {
+#if COLLECT_METRICS
+if (timing.do_write_count == timing.do_write_size)
+{
+    timing.do_write_size += 10;
+    timing.t15 = realloc (timing.t15 ,sizeof (struct timeval_writer)
+                                      * timing.do_write_size
+                         );
+    assert (timing.t15 != 0);
+}
+timing.t15 [timing.do_write_count].pid = next_writer;
+gettimeofday (&(timing.t15 [timing.do_write_count++].t), NULL);
+#endif
+                                                        new_target = next_writer;
+                                                        new_tag = TAG_WRITER;
+                                                        new_size = 8 * PARAMETER_COUNT;
+                                                        new_msg = malloc (8 * PARAMETER_COUNT);
+                                                        ((uint64_t *) new_msg) [0] = DO_WRITE_FLAG;
+                                                        ((uint64_t *) new_msg) [1] = msg [1];
+                                                        ((uint64_t *) new_msg) [2] = msg [2];
+                                                        ((uint64_t *) new_msg) [3] = md->group;
+                                                        ((uint64_t *) new_msg) [4] = md->rank;
+                                                        ((uint64_t *) new_msg) [5] = msg [3];
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                                                        MPI_Send (new_msg
+                                                                 ,new_size
+                                                                 ,MPI_BYTE
+                                                                 ,new_target
+                                                                 ,new_tag
+                                                                 ,md->group_comm
+                                                                 );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                                                        free (new_msg);
+                                                        new_msg = 0;
+                                                        local_writer++;
+                                                        active_writers++;
+                                                        next_writer++;
+                                                        // our rank has already
+                                                        // written so we should only
+                                                        // get here if we responded
+                                                        // WRITERS_BUSY or asked a
+                                                        // rank to write
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            i = (i + 1) % md->groups;
+                                        }
+                                        if (   !adaptive_writes_outstanding
+                                            && groups_complete == md->groups
+                                           )
+                                        {
+                                            start_index_collection = 1;
+                                        }
+                                    }
+                                    break;
+                                }
+                
+                                case WRITERS_BUSY: // we told it to adaptive
+                                                   // write, but all are writing
+                                                   // already for that group
+                                {
+                                    adaptive_writes_outstanding--;
+                                    // the writer that told us this can't take any
+                                    // more adaptive requests so mark as occupied
+                                    // (only if still marked as writing)
+                                    if (group_state [msg [2]] == STATE_WRITING)
+                                        group_state [msg [2]]
+                                                      = STATE_WRITERS_ALL_OCCUPIED;
+    
+                                    // look for the next group we can ask to write
+                                    int i = (msg [2] + 1) % md->groups;
+                                    while (i != msg [2])  // look at all
+                                    {
+                                        if (   i != msg [1]  // don't write to
+                                                             // the source group
+                                            && group_state [i] == STATE_WRITING
+                                           )
+                                        {
+                                            // tell the subcoordinator to write
+                                            // to this file
+                                            adaptive_writes_outstanding++;
+                                            if (sub_coord_ranks [i] != md->rank)
+                                            {
+                                                new_target = sub_coord_ranks [i];
+                                                new_tag = TAG_SUB_COORDINATOR;
+                                                new_size = 8 * PARAMETER_COUNT;
+                                                new_msg = malloc (8 * PARAMETER_COUNT);
+                                                ((uint64_t *) new_msg) [0] =
+                                                            ADAPTIVE_WRITE_START;
+                                                ((uint64_t *) new_msg) [1] = msg [1];
+                                                ((uint64_t *) new_msg) [2] =
+                                                            sub_coord_ranks [msg [1]];
+                                                ((uint64_t *) new_msg) [3] =
+                                                            group_offset [msg [1]];
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                                                MPI_Send (new_msg, new_size
+                                                         ,MPI_BYTE
+                                                         ,new_target, new_tag
+                                                         ,md->group_comm
+                                                         );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+    
+                                                free (new_msg);
+                                                new_msg = 0;
+                                                break;
+                                            }
+                                            else // we have to use the
+                                            {    // sub_coord code here
+                                                if (next_writer >= md->rank + md->group_size)
+                                                {
+                                                    // tell coordinator we are done and can't do it
+                                                    group_state [i] = STATE_WRITERS_ALL_OCCUPIED;
+                                                    adaptive_writes_outstanding--;
+                                                }
+                                                else
+                                                {
+#if COLLECT_METRICS
+if (timing.do_write_count == timing.do_write_size)
+{
+    timing.do_write_size += 10;
+    timing.t15 = realloc (timing.t15, sizeof (struct timeval_writer)
+                                      * timing.do_write_size
+                         );
+    assert (timing.t15 != 0);
+}
+timing.t15 [timing.do_write_count].pid = next_writer;
+gettimeofday (&(timing.t15 [timing.do_write_count++].t), NULL);
+#endif
+                                                    new_target = next_writer;
+                                                    new_tag = TAG_WRITER;
+                                                    new_size = 8 * PARAMETER_COUNT;
+                                                    new_msg = malloc (8 * PARAMETER_COUNT);
+                                                    ((uint64_t *) new_msg) [0] = DO_WRITE_FLAG;
+                                                    ((uint64_t *) new_msg) [1] = msg [1];
+                                                    ((uint64_t *) new_msg) [2] = sub_coord_ranks [msg [1]];
+                                                    ((uint64_t *) new_msg) [3] = md->group;
+                                                    ((uint64_t *) new_msg) [4] = md->rank;
+                                                    ((uint64_t *) new_msg) [5] = group_offset [msg [1]];
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
+                                                    MPI_Send (new_msg, new_size
+                                                             ,MPI_BYTE
+                                                             ,new_target
+                                                             ,new_tag
+                                                             ,md->group_comm
+                                                             );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t26, &timing.t26, &c);
+timing.send_count++;
+#endif
+                                                    free (new_msg);
+                                                    new_msg = 0;
+                                                    local_writer++;
+                                                    active_writers++;
+                                                    next_writer++;
+                                                    // our rank has already written
+                                                    // so we should only get here
+                                                    // if we responded WRITERS_BUSY
+                                                    // or asked a rank to write
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        i = (i + 1) % md->groups;
+                                    }
+                                    if (   !adaptive_writes_outstanding
+                                        && groups_complete == md->groups
+                                       )
+                                    {
+                                        start_index_collection = 1;
+                                    }
+                                    break;
+                                }
+                
+                                case INDEX_SIZE:
+                                case INDEX_BODY:
+                                {
+                                    assert (0);
+                                    break;
+                                }
+                
+                                case SHUTDOWN_FLAG:
+                                {
+                                    break;
+                                }
+                
+                                default:
+                                {
+                                    printf ("Unknown coordinator message: %lld\n"
+                                           ,msg [0]
+                                           );
+                                    break;
+                                }
                             }
+                            break;
                         }
-                        i = (i + 1) % md->groups;
+
+                        default:
+                            printf ("c: unknown tag: %d skipped\n", tag);
+                            break;
                     }
-                    if (   !adaptive_writes_outstanding
-                        && groups_complete == md->groups
+
+                    if (   groups_complete == md->groups - 1
+                        && completed_writing == 1
+                        && pending_index_pieces == 0
+                        && adaptive_writes_outstanding == 0
+                        && active_writers == 0
+                        && local_writer == 0
                        )
                     {
-#if 0
-fprintf (fp_c, "start_index_collection 3\n");
-fflush (fp_c);
-#endif
-                        start_index_collection = 1;
-                    }
-                    break;
-                }
-
-                case INDEX_SIZE:
-                case INDEX_BODY:
-                {
-assert (0);
-if (status.MPI_TAG == TAG_SUB_COORDINATOR_INDEX_BODY)
-{
-    printf ("handle the sub_coord_index_body for the coord case\n");
-    assert (0);
-}
-else
-{
-#if COLLECT_METRICS
-                    if (index_sizes_received == 0)
-                        gettimeofday (&timing.t9, NULL);
-#endif
-                    int source_group = msg [1];
-                    uint64_t proc_index_size = msg [2];
-
-                    index_sizes_received++;
-
-                    if (largest_index_size < proc_index_size)
-                        largest_index_size = proc_index_size;
-
-                    if (index_size < largest_index_size)
-                    {
-                        index_size = largest_index_size;
-                        if (index_buf)
-                            ;//free (index_buf);
-                        index_buf = malloc (largest_index_size + 1);
-                    }
-
-                    char * new_name;
-                    int new_name_len;
-
-                    new_name = malloc (  strlen (md->method->base_path)
-                                       + strlen (md->fd->name) + 1 + 6
-                                      );
-                    char split_format [10] = "%s%s.%lld";
-                    sprintf (new_name, split_format, md->method->base_path
-                            ,md->fd->name, source_group
-                            );
-                    new_name_len = strlen (new_name);
-                    uint64_t buffer_offset_tmp = buffer_offset;
-                    buffer_offset += 8 + 4 + 2 + new_name_len;
-
-                    if (source_group != md->group)
-                    {
-#if COLLECT_METRICS
-                        struct timeval a, b, diff;
-                        gettimeofday (&a, NULL);
-#endif
-                        //pthread_mutex_lock (&md->mpi_mutex);
-//printf ("recv start F\n");
-                        MPI_Recv (index_buf, proc_index_size
-                                  ,MPI_BYTE
-                                  ,sub_coord_ranks [source_group]
-                                  ,TAG_COORDINATOR
-                                  ,md->group_comm, &status
-                                  );
-//printf ("recv end F\n");
-                        //pthread_mutex_unlock (&md->mpi_mutex);
-#if COLLECT_METRICS
-                        gettimeofday (&b, NULL);
-                        timeval_subtract (&diff, &b, &a);
-                        timeval_add (&timing.t27, &timing.t27, &diff);
-                        timing.recv_count++;
-#endif
-                        buffer_write (&buffer, &buffer_size, &buffer_offset
-                                     ,index_buf, proc_index_size
-                                     );
-                    }
-                    else
-                    {
-                        buffer_write (&buffer, &buffer_size, &buffer_offset
-                                     ,(void *) msg [3]
-                                     ,proc_index_size
-                                     );
-                    }
-
-                    file_index [file_index_count].file_number =
-                                                       file_index_count + 1;
-                    file_index [file_index_count].name_len = new_name_len;
-                    file_index [file_index_count].name = new_name;
-                    file_index [file_index_count].offset = buffer_offset_tmp;
-                    file_index [file_index_count].length = proc_index_size
-                                                         + new_name_len
-                                                         + 2   // name len
-                                                         + 4   // number
-                                                         + 8;  // length
-                    buffer_write (&buffer, &buffer_size, &buffer_offset_tmp
-                                 ,&file_index [file_index_count].offset, 8
-                                 );
-                    buffer_write (&buffer, &buffer_size, &buffer_offset_tmp
-                                 ,&file_index [file_index_count].file_number, 4
-                                 );
-                    buffer_write (&buffer, &buffer_size, &buffer_offset_tmp
-                                 ,&file_index [file_index_count].name_len, 2
-                                 );
-                    buffer_write (&buffer, &buffer_size, &buffer_offset_tmp
-                                 ,&file_index [file_index_count].name
-                                 ,new_name_len
-                                 );
-                    file_index_count++;
-
-                    // if we have recieved all, write to the file
-                    if (index_sizes_received == md->groups)
-                    {
-                        adios_write_version_v2 (&buffer, &buffer_size
-                                               ,&buffer_offset
-                                               );
-
-                        char * new_name;
-                        int old_mask;
-                        int perm;
-
-                        old_mask = umask (0);
-                        umask (old_mask);
-                        perm = old_mask ^ 0666;
-
-                        new_name = malloc (  strlen (md->method->base_path)
-                                           + strlen (md->fd->name) + 1
-                                          );
-                        char split_format [10] = "%s%s";
-                        sprintf (new_name, split_format, md->method->base_path
-                                ,md->fd->name
-                                );
-                        int f = open (new_name, O_WRONLY
-                                              | O_LARGEFILE
-                                              | O_CREAT
-                                              | O_TRUNC
-                                     ,perm
-                                     );
-                        if (f == -1) printf ("oops! %s\n", new_name);
-                        ssize_t s = write (f, buffer, buffer_offset);
-                        if (s != buffer_offset)
-                        {
-                            fprintf (stderr, "Need to do multi-write 4\n");
-                        }
-                        close (f);
-                        //free (new_name);
-
-                        //for (i = 0; i < md->groups; i++)
-                        //    free (file_index [i].name);
-                        //free (file_index);
-
-                        // we are done so exit the thread
-                        shutdown_flag = SHUTDOWN_FLAG;
-#if COLLECT_METRICS
-                        gettimeofday (&timing.t10, NULL);
-#endif
-                    }
-}
-                    break;
-                }
-
-                case SHUTDOWN_FLAG:
-                {
-                    break;
-                }
-
-                default:
-                {
-                    printf ("Unknown coordinator message: %lld\n", msg [0]);
-                    break;
-                }
-            }
-            }
-            break;
-
-            default:
-                printf ("c: unknown tag: %d skipped\n", tag);
-                break;
-        }
-
-//printf ("if (completed_writing == 1 && adaptive_writes_outstanding == 0)\n");
-        if (groups_complete == md->groups - 1 && completed_writing == 1 && pending_index_pieces == 0 && adaptive_writes_outstanding == 0 && active_writers == 0 && local_writer == 0)
-        {
-//printf ("active_writers %d local_writer: %d\n", active_writers, local_writer);
 printf ("******* fix this to separate out the sending of complete from index to accommodate the index asynchony\n");
-            if (msg)
-                free (msg);
-            MPI_Request * reqs = malloc (sizeof (MPI_Request) * md->groups);
-            msg = (uint64_t *) malloc (sizeof (uint64_t) * PARAMETER_COUNT);
-            msg [0] = OVERALL_WRITE_COMPLETE;
-            msg [1] = 0; // do we need to put the ending offset here?
-            for (i = 1; i < md->groups; i++)
-            {
-//printf ("send OVERALL_WRITE_COMPLETE to %d\n", sub_coord_ranks [i]);
-                MPI_Isend (msg, sizeof (uint64_t) * PARAMETER_COUNT, MPI_BYTE, sub_coord_ranks [i], TAG_SUB_COORDINATOR, md->group_comm, &(reqs [i]));
-            }
-                {
-#if COLLECT_METRICS
-                    gettimeofday (&timing.t12, NULL);
-#endif
-                    int i;
-                    uint64_t total_size = 0;
-
-                    // sort the array (should be close already)
-                    qsort (indices, indices_received
-                          ,sizeof (struct index_struct)
-                          ,index_struct_compare
-                          );
-                    for (i = 0; i < indices_received; i++)
-                    {
-//printf ("%d rank %d at offset %d buffer: %llu\n", md->group, indices [i].rank, indices [i].offset, indices [i].index);
-                        // merge each one in
-                        struct adios_bp_buffer_struct_v1 b;
-                        b.buff = indices [i].index;
-                        b.length = indices [i].size;
-                        b.offset = 0;
-                        adios_parse_process_group_index_v1 (&b ,&new_pg_root);
-                        adios_parse_vars_index_v1 (&b, &new_vars_root);
-                        adios_parse_attributes_index_v1 (&b ,&new_attrs_root);
-                        adios_merge_index_v1 (&md->old_pg_root
-                                             ,&md->old_vars_root
-                                             ,&md->old_attrs_root
-                                             ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
-                                             );
-                        new_pg_root = 0;
-                        new_vars_root = 0;
-                        new_attrs_root = 0;
-                        free (b.buff); // == indices [i].index
-                        total_size += b.length;
-                    }
-
-#if COLLECT_METRICS
-                    gettimeofday (&timing.t13, NULL);
-#endif
-                    // once we are done sending the index, shutdown the thread
-                    shutdown_flag = SHUTDOWN_FLAG;
-#if 0
-fprintf (fp_w, "%d\tshutdown 2\n", md->rank);
-fflush (fp_w);
-#endif
-                }
-//printf ("group: %d saving index at offset: %lld\n", md->group, current_offset);
-                // we need the size of the buffer for responding to the write
-                adios_write_index_v1 (&index_buffer, &index_buffer_size
-                                     ,&index_buffer_offset
-                                     ,(md->stripe_size * (indices_received + 1))
-                                     ,md->old_pg_root
-                                     ,md->old_vars_root
-                                     ,md->old_attrs_root
+                        if (msg)
+                        {
+                            free (msg);
+                            msg = 0;
+                        }
+                        MPI_Request * reqs = malloc (sizeof (MPI_Request) *
+                                                                   md->groups);
+                        msg = (uint64_t *) malloc (sizeof (uint64_t) *
+                                                              PARAMETER_COUNT);
+                        msg [0] = OVERALL_WRITE_COMPLETE;
+                        msg [1] = 0; // do we need to put the ending offset?
+                        for (i = 1; i < md->groups; i++)
+                        {
+                            MPI_Isend (msg, sizeof (uint64_t) * PARAMETER_COUNT
+                                      ,MPI_BYTE, sub_coord_ranks [i]
+                                      ,TAG_SUB_COORDINATOR, md->group_comm
+                                      ,&(reqs [i])
                                      );
-                adios_write_version_v1 (&index_buffer, &index_buffer_size, &index_buffer_offset);
-//printf ("group: %d writing index at offset: %lld\n", md->group, indices_received + 1);
-                    if (md->f == -1) printf ("we got a bad file handle\n");
-                    lseek (md->f, md->stripe_size * (indices_received + 1), SEEK_SET);
-                    ssize_t s = write (md->f, index_buffer, index_buffer_offset);
-                    if (s != index_buffer_offset)
-                    {
-                        fprintf (stderr, "Need to do multi-write 5 (tried: "
-                                         "%llu wrote: %lld) errno %d\n"
-                                ,fd->bytes_written, s, errno
-                                );
-                    }
-            for (i = 1; i < md->groups; i++)
-            {
-                MPI_Wait (&(reqs [i]), &status);
-            }
-            free (reqs);
-        }
-
-        if (f)
-        {
-            free (f->msg);
-            free (f);
-            f = 0;
-            if (msg)
-                free (msg);
-            msg = 0;
-        }
-    } while (shutdown_flag != SHUTDOWN_FLAG);
-#if 0
-fclose (fp_c);
+                        }
+#if COLLECT_METRICS
+gettimeofday (&timing.t12, NULL);
 #endif
+                        int i;
+                        uint64_t total_size = 0;
 
-    //if (index_buf)
-    //    free (index_buf);
-    if (buffer)
-        ;//free (buffer);
+                        // sort the array (should be close already)
+                        qsort (indices, indices_received
+                              ,sizeof (struct index_struct)
+                              ,index_struct_compare
+                              );
+                        for (i = 0; i < indices_received; i++)
+                        {
+                            // merge each one in
+                            struct adios_bp_buffer_struct_v1 b;
+                            b.buff = indices [i].index;
+                            b.length = indices [i].size;
+                            b.offset = 0;
+                            adios_parse_process_group_index_v1 (&b
+                                                               ,&new_pg_root);
+                            adios_parse_vars_index_v1 (&b, &new_vars_root);
+                            adios_parse_attributes_index_v1 (&b
+                                                            ,&new_attrs_root);
+                            adios_merge_index_v1 (&md->old_pg_root
+                                                 ,&md->old_vars_root
+                                                 ,&md->old_attrs_root
+                                                 ,new_pg_root, new_vars_root
+                                                 ,new_attrs_root
+                                                 );
+                            new_pg_root = 0;
+                            new_vars_root = 0;
+                            new_attrs_root = 0;
+                            free (b.buff); // == indices [i].index
+                            total_size += b.length;
+                        }
 
+#if COLLECT_METRICS
+gettimeofday (&timing.t13, NULL);
+#endif
+                        adios_write_index_v1 (&index_buffer, &index_buffer_size
+                                             ,&index_buffer_offset
+                                             ,(md->stripe_size *
+                                                       (indices_received + 1)
+                                              )
+                                             ,md->old_pg_root
+                                             ,md->old_vars_root
+                                             ,md->old_attrs_root
+                                             );
+                        adios_write_version_v1 (&index_buffer
+                                               ,&index_buffer_size
+                                               ,&index_buffer_offset
+                                               );
+                        if (md->f == -1)
+                            printf ("we got a bad file handle\n");
+                        lseek (md->f, md->stripe_size * (indices_received + 1)
+                              ,SEEK_SET
+                              );
+                        ssize_t s = write (md->f, index_buffer
+                                          ,index_buffer_offset
+                                          );
+                        if (s != index_buffer_offset)
+                        {
+                            fprintf (stderr, "Need to do multi-write 5 (tried: "
+                                         "%llu wrote: %lld) errno %d\n"
+                                    ,fd->bytes_written, s, errno
+                                    );
+                        }
+                        for (i = 1; i < md->groups; i++)
+                        {
+                            MPI_Wait (&(reqs [i]), &status);
+                        }
+                        free (reqs);
+                        // need to make a new communicator for all of the
+                        // sub_coords to build the global index. That will
+                        // simplify the messaging to solicit and gather the
+                        // variable-sized index pieces. Look at what is done
+                        // in the normal MPI method for the bcast/gatherv setup
+#if COLLECT_METRICS
+gettimeofday (&timing.t9, NULL);
+timing.t10.tv_sec = timing.t9.tv_sec;
+timing.t10.tv_usec = timing.t9.tv_usec;
+#endif
+                        // once we are done sending the index, shutdown
+                        shutdown_flag = SHUTDOWN_FLAG;
+                    }
+
+                    if (new_msg)
+                    {
+                        free (new_msg);
+                        new_msg = 0;
+                    }
+                    if (msg)
+                    {
+                        free (msg);
+                        msg = 0;
+                    }
+                } while (shutdown_flag != SHUTDOWN_FLAG);
             }
 ///////////////////////////////////////////////////////////////////////////////
 /////// END OF SUB_COORD && CORD //////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
-//printf ("rank: %d done\n", md->rank);
+#if COLLECT_METRICS
+gettimeofday (&timing.t20, NULL);
+#endif
             break;
         }
 
@@ -4814,12 +4516,19 @@ fclose (fp_c);
         }
     }
 
+    // used for write
     if (md && md->f)
     {
         close (md->f);
         md->f = -1;
     }
+#if COLLECT_METRICS
+gettimeofday (&timing.t11, NULL);
+timing.t14.tv_sec = timing.t11.tv_sec;
+timing.t14.tv_usec = timing.t11.tv_usec;
+#endif
 
+    // used for read/append
     if (md && md->fh)
         MPI_File_close (&md->fh);
 
@@ -4831,8 +4540,8 @@ fclose (fp_c);
     md->old_attrs_root = 0;
 
 #if COLLECT_METRICS
-    gettimeofday (&timing.t28, NULL);
-    print_metrics (md, iteration++);
+gettimeofday (&timing.t28, NULL);
+print_metrics (md, iteration++);
 #endif
 
     if (   md->group_comm != MPI_COMM_WORLD
@@ -4857,11 +4566,6 @@ void adios_adaptive_finalize (int mype, struct adios_method_struct * method)
     if (adios_adaptive_initialized)
     {
         adios_adaptive_initialized = 0;
-
-        queue_destroy (&md->mpi_flag);
-        queue_destroy (&md->sub_coordinator_flag);
-        queue_destroy (&md->coordinator_flag);
-        queue_destroy (&md->writer_flag);
     }
 }
 
