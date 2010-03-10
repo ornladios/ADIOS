@@ -1,4 +1,4 @@
-!  
+!
 !  ADIOS is freely available under the terms of the BSD license described
 !  in the COPYING file in the top level directory of this source distribution.
 !
@@ -8,7 +8,7 @@
 !
 !  GENARRAY
 !
-!  Write an ADIOS BP file from many processor for test purposes. 
+!  Write an ADIOS BP file from many processor for test purposes.
 !
 !  nx * ny     processes write a 2D array, where each process writes an
 !  ndx * ndy   piece with filling with some values as integer (4 bytes) value
@@ -18,9 +18,9 @@
 !      R*ndx+1      ... R*ndx+1
 !      ...          ...
 !      R*ndx+ndy-1      R*ndx+ndy-1
-!  
+!
 ! E.g 2x2 processes writing 2x2 blocks:
-!     0 0 | 2 2        0 1 | 2 3 
+!     0 0 | 2 2        0 1 | 2 3
 !     1 1 | 3 3        4 5 | 6 7
 !     ----+----   or  -----+----
 !     4 4 | 6 6        8 9 | 10 11
@@ -39,7 +39,7 @@ module genarray2D_comm
                            ! .false. if we have to read sizes from a file
 
     integer :: gndx, gndy  ! size of the global array
-    integer :: posx, posy  ! position index in the array 
+    integer :: posx, posy  ! position index in the array
     integer :: offx, offy  ! offsets of local array in the global array
 
     integer, dimension(:,:), allocatable :: int_xy
@@ -57,6 +57,7 @@ module genarray2D_comm
     integer   :: err
 
     real*8 :: start_time, end_time, total_time,gbs,sz
+    real*8 :: cache_start_time, cache_end_time, cache_total_time
 
 end module genarray2D_comm
 
@@ -173,8 +174,8 @@ subroutine generateLocalArray()
         startv = (offy+j-1)*gndx + offx
         do i=1,ndx
             !int_xy(i,j) =  startv+i-1
-            !int_xy(i,j) = rank*ndx+j-1 
-            int_xy(i,j) = rank 
+            !int_xy(i,j) = rank*ndx+j-1
+            int_xy(i,j) = rank
         enddo
     enddo
 end subroutine generateLocalArray
@@ -186,12 +187,14 @@ subroutine writeArray()
     implicit none
     integer :: tstep
     character(2) :: mode = "w"
+    integer*8 adios_err
+    include 'mpif.h'
 
     ! Write out data using ADIOS
     group = "genarray"
     !  calculate how much we write from this processor
     group_size = 4 * 9               + &  ! X,Y, nproc, all size_ and offs_ integers
-                 4 * ndx * ndy       + &  ! int_xy 
+                 4 * ndx * ndy       + &  ! int_xy
                  4 * ndx * ndy            ! int_xyt
 
     adios_totalsize = group_size
@@ -200,11 +203,15 @@ subroutine writeArray()
         if (tstep > 1) mode = "a"
         !print '("rank=",i0," group=",A," file=",A," group_size=",i0)', rank, trim(group), &
         !    trim(outputfile), group_size
+
+    call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
+    cache_start_time = MPI_WTIME()
+
         call adios_open (handle, group, outputfile, mode, group_comm, err)
         call adios_group_size (handle, group_size, total_size, err)
         !print '("rank=",i0," total_size=",i0," err=",i0)', rank, total_size, err
 
-        ! write dimensions and nproc 
+        ! write dimensions and nproc
         call adios_write (handle, "X", gndx, err)
         call adios_write (handle, "Y", gndy, err)
         call adios_write (handle, "npx", npx, err)
@@ -213,13 +220,23 @@ subroutine writeArray()
 
         call adios_write (handle, "size_x", ndx, err)
         call adios_write (handle, "size_y", ndy, err)
-        call adios_write (handle, "offs_x", offx, err) 
+        call adios_write (handle, "offs_x", offx, err)
         call adios_write (handle, "offs_y", offy, err)
 
         if (tstep == 1) then
-            call adios_write (handle, "int_xy", int_xy, err) 
+            call adios_write (handle, "int_xy", int_xy, err)
         endif
-        call adios_write (handle, "int_xyt", int_xy, err) 
+        call adios_write (handle, "int_xyt", int_xy, err)
+
+    call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
+    cache_end_time = MPI_WTIME()
+    cache_total_time = cache_end_time - cache_start_time
+
+    sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
+    gbs = sz/cache_total_time
+
+    !if (rank==0) write(6,*) total_time
+    if (rank==0) print '("Writing to cache: ",a10,d12.2,2x,d12.2,2x,d12.3)', outputfile,sz,cache_total_time,gbs
 
         ! start streaming from buffer to disk
         call adios_close (handle, err)
