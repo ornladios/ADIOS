@@ -433,7 +433,7 @@ int nssi_staging_open_stub(
         add_file(fd, WRITE_CACHING_COLLECTIVE);
     }
 
-    printf("nssi_staging_open_stub: fd=%ld, fd=%p\n", fd, fd);
+//    printf("nssi_staging_open_stub: fd=%ld, fd=%p\n", fd, fd);
 
     res.fd=fd;
 
@@ -454,7 +454,7 @@ int nssi_staging_group_size_stub(
     int rc = 0;
     uint64_t total_size=0;
 
-    printf("myrank(%d): calling nssi_staging_group_size_stub(%ld)\n", grank, args->fd);
+//    printf("myrank(%d): calling nssi_staging_group_size_stub(%ld)\n", grank, args->fd);
 
     double callTime;
     Start_Timer(callTime);
@@ -479,7 +479,7 @@ int nssi_staging_close_stub(
 {
     int rc = 0;
 
-    printf("myrank(%d): calling nssi_staging_close_stub(%ld)\n", grank, args->fd);
+//    printf("myrank(%d): calling nssi_staging_close_stub(%ld)\n", grank, args->fd);
 
 
     double callTime;
@@ -506,7 +506,7 @@ int nssi_staging_read_stub(
     int pathlen;
     char *v=NULL;
 
-    printf("myrank(%d): calling nssi_staging_read_stub(%ld)\n", grank, args->fd);
+//    printf("myrank(%d): calling nssi_staging_read_stub(%ld)\n", grank, args->fd);
 
 //    pathlen=strlen(args->vpath);
 //    if (args->vpath[pathlen-1]=='/') {
@@ -552,7 +552,7 @@ int nssi_staging_write_stub(
     int i=0;
     double callTime;
 
-    printf("myrank(%d): calling nssi_staging_write_stub(fd=%ld, vsize=%ld)\n", grank, args->fd, args->vsize);
+//    printf("myrank(%d): calling nssi_staging_write_stub(fd=%ld, vsize=%ld)\n", grank, args->fd, args->vsize);
 
 //    pathlen=strlen(args->vpath);
 //    if (args->vpath[pathlen-1]=='/') {
@@ -571,7 +571,7 @@ int nssi_staging_write_stub(
         goto cleanup;
     }
 
-    printf("vname(%s) vsize(%ld) is_scalar(%d) rank(%ld)\n", args->vname, args->vsize, args->is_scalar, args->writer_rank);
+//    printf("vname(%s) vsize(%ld) is_scalar(%d) rank(%ld)\n", args->vname, args->vsize, args->is_scalar, args->writer_rank);
 
 
     //    if (args->is_offset) {
@@ -594,6 +594,8 @@ int nssi_staging_write_stub(
 //    }
 
     if (!args->is_scalar) {
+//        printf("allocated v(%p), len(%ld)\n",
+//                v, args->vsize);
         aggregation_chunk_details_t *chunk=NULL;
         chunk = new aggregation_chunk_details_t;
         chunk->fd = args->fd;
@@ -649,6 +651,8 @@ int nssi_staging_write_stub(
         Start_Timer(callTime);
         adios_write(args->fd, args->vname, v);
         Stop_Timer("adios_write", callTime);
+
+        free(v);
     }
 
     res.bytes_written=args->vsize;
@@ -674,7 +678,7 @@ int nssi_staging_start_calc_stub(
 {
     int rc = 0;
 
-    printf("myrank(%d): calling nssi_staging_start_calc_stub(%ld)\n", grank, args->fd);
+//    printf("myrank(%d): calling nssi_staging_start_calc_stub(%ld)\n", grank, args->fd);
 
     double callTime;
     Start_Timer(callTime);
@@ -690,7 +694,7 @@ int nssi_staging_start_calc_stub(
         // write all offsets for clients rank to update adios internals
         for(int i=0;i<chunk->ndims;i++) {
             uint64_t value=0;
-            printf("writing myrank(%d) chunk(%d) vname(%s) oname(%s) odata(%lu)\n", grank, j, chunk->var_name, chunk->offset_name[i], chunk->offset[i]);
+//            printf("writing myrank(%d) chunk(%d) vname(%s) oname(%s) odata(%lu)\n", grank, j, chunk->var_name, chunk->offset_name[i], chunk->offset[i]);
             Start_Timer(callTime);
             adios_write(chunk->fd, chunk->offset_name[i], &(chunk->offset[i]));
             Stop_Timer("adios_write (offset update)", callTime);
@@ -704,13 +708,13 @@ int nssi_staging_start_calc_stub(
         }
         for(int i=0;i<chunk->ndims;i++) {
             uint64_t value=0;
-            printf("writing myrank(%d) chunk(%d) vname(%s) dname(%s) ddata(%lu)\n", grank, j, chunk->var_name, chunk->count_name[i], chunk->count[i]);
+//            printf("writing myrank(%d) chunk(%d) vname(%s) dname(%s) ddata(%lu)\n", grank, j, chunk->var_name, chunk->count_name[i], chunk->count[i]);
             Start_Timer(callTime);
             adios_write(chunk->fd, chunk->count_name[i], &(chunk->count[i]));
             Stop_Timer("adios_write (dim update)", callTime);
         }
 
-        printf("writing myrank(%d) vname(%s)\n", grank, chunk->var_name);
+//        printf("writing myrank(%d) vname(%s)\n", grank, chunk->var_name);
         Start_Timer(callTime);
         adios_write(chunk->fd, chunk->var_name, chunk->buf);
         Stop_Timer("adios_write", callTime);
@@ -736,7 +740,7 @@ int nssi_staging_stop_calc_stub(
 {
     int rc = 0;
 
-    printf("myrank(%d): calling nssi_staging_stop_calc_stub(%ld)\n", grank, args->fd);
+//    printf("myrank(%d): calling nssi_staging_stop_calc_stub(%ld)\n", grank, args->fd);
 
 
     /* send result to client */
@@ -754,7 +758,7 @@ int nssi_staging_end_iter_stub(
 {
     int rc = 0;
 
-    printf("myrank(%d): calling nssi_staging_end_iter_stub(%ld)\n", grank, args->fd);
+//    printf("myrank(%d): calling nssi_staging_end_iter_stub(%ld)\n", grank, args->fd);
 
 
     /* send result to client */
@@ -769,13 +773,17 @@ int nssi_staging_server_init(const char *adios_config_file)
 {
     int rc=NSSI_OK;
 
-    printf("start adios_init(%s)\n", adios_config_file);
+//    printf("start adios_init(%s)\n", adios_config_file);
     rc = adios_init(adios_config_file);
     if (rc != 1) {
         printf("adios_init() failed: %d\n", rc);
         return(-1);
     }
-    printf("end adios_init(%s)\n", adios_config_file);
+//    printf("end adios_init(%s)\n", adios_config_file);
+
+
+    int verbose=3;
+    logger_init((log_level)verbose, NULL);
 
     /* register server stubs */
     NSSI_REGISTER_SERVER_STUB(ADIOS_OPEN_OP, nssi_staging_open_stub, adios_open_args, adios_open_res);
@@ -923,6 +931,8 @@ int main(int argc, char **argv)
         printf("exited nssi_svc: %s\n",
                 nssi_err_str(rc));
     }
+
+    adios_finalize(rank);
 
     /* shutdown the nssi_svc */
     //printf("shutting down service library\n");
