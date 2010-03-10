@@ -1,0 +1,25 @@
+#!/bin/bash
+
+export RUNTIME_PATH=/lustre/widow1/scratch/$USER/genarray
+export RUNTIME_PATH=/lustre/scr144/$USER
+export ADIOS_SRC_PATH=$HOME/projects/adios/src/adios
+
+export ADIOS_NSSI_CONTACT_INFO=$RUNTIME_PATH/nssi_contact.xml
+export ADIOS_NSSI_CONFIG_FILE=$RUNTIME_PATH/nssi_config.xml
+
+mkdir -p $RUNTIME_PATH
+cd $RUNTIME_PATH
+
+sed -e 's/MPI/NC4/' $ADIOS_SRC_PATH/tests/genarray/genarray3d.xml > $RUNTIME_PATH/genarray3d.server.xml
+sed -e 's/MPI/NSSI/' $ADIOS_SRC_PATH/tests/genarray/genarray3d.xml > $RUNTIME_PATH/genarray3d.xml
+
+lfs setstripe $RUNTIME_PATH -s 4M -c 128
+
+aprun -n 128 -N 1 $ADIOS_SRC_PATH/src/nssi-staging-server $RUNTIME_PATH/genarray3d.server.xml >server.log 2>&1 &
+sleep 3
+$ADIOS_SRC_PATH/scripts/create.nssi.config.sh $RUNTIME_PATH/nssi_config.xml $RUNTIME_PATH/nssi_contact.xml
+rm $RUNTIME_PATH/test.*
+rm $RUNTIME_PATH/*.bp
+time aprun -n 512 $ADIOS_SRC_PATH/tests/genarray/genarray $RUNTIME_PATH/test.output 8 8 8 256 256 256
+$ADIOS_SRC_PATH/scripts/kill.nssi.staging.sh $RUNTIME_PATH/nssi_contact.xml
+
