@@ -1224,6 +1224,7 @@ static int write_var(
 ////		goto escape;
 //	}
 
+//    printf("write_var: ncid(%lu) varid(%lu) pvar->data=%p\n", ncid, nc4_varid, pvar->data);
 
     // printf("root_id=%d, grp_id=%d\n", root_id, ncid);
 
@@ -1336,12 +1337,17 @@ static int write_var(
             return_code=-2;
             goto escape;
         }
-        //			printf("current_timestep==%d\n", current_timestep);
+//        printf("current_timestep==%d\n", current_timestep);
         /* the next timestep goes after the current.  increment timestep. */
         /* THK: don't increment.  dims are 1-based, while offsets are 0-based. */
         // current_timestep++;
 
         deciphered_dims.nc4_offsets[deciphered_dims.timedim_index]=current_timestep;
+//        for (i=0;i<deciphered_dims.local_dim_count;i++) {
+//            printf("write_var: deciphered_dims.nc4_offsets[%d]=%lu deciphered_dims.nc4_localdims[%d]=%lu\n",
+//                    i, deciphered_dims.nc4_offsets[i],
+//                    i, deciphered_dims.nc4_localdims[i]);
+//        }
 //		Func_Timer("putvars", rc = nc_put_vars(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data););
         Func_Timer("putvars", rc = nc_put_vara(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, pvar->data););
         if (rc != NC_NOERR) {
@@ -1496,10 +1502,10 @@ void adios_nc4_write(
 //			first_write = 0;
 //		}
 
-        if (md->rank==0) {
-//			fprintf(stderr, "-------------------------\n");
-//			fprintf(stderr, "write var: %s start!\n", v->name);
-        }
+//        if (md->rank==0) {
+//            fprintf(stderr, "-------------------------\n");
+//            fprintf(stderr, "write var: %s start!\n", v->name);
+//        }
         write_var(md->ncid,
                 md->root_ncid,
                 fd->group,
@@ -1511,10 +1517,10 @@ void adios_nc4_write(
     } else {
         //fprintf(stderr, "entering unknown nc4 mode %d!\n", fd->mode);
     }
-    if (md->rank==0) {
-//		fprintf(stderr, "write var: %s end!\n", v->name);
-        //fprintf(stderr, "-------------------------\n");
-    }
+//    if (md->rank==0) {
+//        fprintf(stderr, "write var: %s end!\n", v->name);
+//        fprintf(stderr, "-------------------------\n");
+//    }
 }
 
 

@@ -773,7 +773,7 @@ int adios_nssi_open(
     adios_open_res  res;
 
     if (md->fd != -1) {
-        printf("open: %s is open.  skipping the rest.\n", f->name);
+//        printf("open: %s is open.  skipping the rest.\n", f->name);
         // file already open
         return adios_flag_no;
     }
