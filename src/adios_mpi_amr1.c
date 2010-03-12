@@ -24,8 +24,6 @@
 #include "adios_internals.h"
 #include "buffer.h"
 
-#include "dmalloc.h"
-
 static int adios_mpi_amr1_initialized = 0;
 static int * g_is_aggregator = 0;
 static int g_num_aggregators = 0;
