@@ -28,7 +28,7 @@
 
 static int adios_mpi_initialized = 0;
 
-#define COLLECT_METRICS 1
+#define COLLECT_METRICS 0
 
 struct adios_MPI_data_struct
 {
@@ -209,49 +209,50 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
     if (rank == 0)
     {
         timeval_subtract (&diff, &t->t6, &t->t5);
-        printf ("dd\t%2d\tMass file open:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+        fprintf (f, "dd\t%2d\tMass file open:\t%02d.%06d\n"
+                ,iteration, diff.tv_sec, diff.tv_usec);
 
         timeval_subtract (&diff, &t->t5, &t->t16);
-        printf ("ee\t%2d\tBuild file offsets:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+        fprintf (f, "ee\t%2d\tBuild file offsets:\t%02d.%06d\n"
+                ,iteration, diff.tv_sec, diff.tv_usec);
 
         timeval_subtract (&diff, &t->t8, &t->t7);
-        printf ("gg\t%2d\tAll writes complete (w/ local index):\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+        fprintf (f, "gg\t%2d\tAll writes complete (w/ local index):\t"
+                    "%02d.%06d\n"
+                ,iteration, diff.tv_sec, diff.tv_usec);
         
         timeval_subtract (&diff, &t->t11, &t->t0);
-        printf ("hh\t%2d\tTotal time:\t%02d.%06d\n"
-               ,iteration, diff.tv_sec, diff.tv_usec);
+        fprintf (f, "hh\t%2d\tTotal time:\t%02d.%06d\n"
+                ,iteration, diff.tv_sec, diff.tv_usec);
     }
     
     timeval_subtract (&diff, &t->t13, &t->t12);
-    printf ("ii\t%2d\tLocal index creation:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+    fprintf (f, "ii\t%2d\tLocal index creation:\t%6d\t%02d.%06d\n"
+            ,iteration, rank, diff.tv_sec, diff.tv_usec);
     
     timeval_subtract (&diff, &t->t22, &t->t21);
-    printf ("kk\t%2d\tshould buffer time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+    fprintf (f, "kk\t%2d\tshould buffer time:\t%6d\t%02d.%06d\n"
+            ,iteration, rank, diff.tv_sec, diff.tv_usec);
     
     timeval_subtract (&diff, &t->t19, &t->t23);
-    printf ("ll\t%2d\tclose startup time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+    fprintf (f, "ll\t%2d\tclose startup time:\t%6d\t%02d.%06d\n"
+            ,iteration, rank, diff.tv_sec, diff.tv_usec);
     
     timeval_subtract (&diff, &t->t19, &t->t0);
-    printf ("mm\t%2d\tsetup time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+    fprintf (f, "mm\t%2d\tsetup time:\t%6d\t%02d.%06d\n"
+            ,iteration, rank, diff.tv_sec, diff.tv_usec);
     
     timeval_subtract (&diff, &t->t14, &t->t20);
-    printf ("nn\t%2d\tcleanup time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+    fprintf (f, "nn\t%2d\tcleanup time:\t%6d\t%02d.%06d\n"
+            ,iteration, rank, diff.tv_sec, diff.tv_usec);
     
     timeval_subtract (&diff, &t->t21, &t->t0);
-    printf ("oo\t%2d\topen->should_buffer time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+    fprintf (f, "oo\t%2d\topen->should_buffer time:\t%6d\t%02d.%06d\n"
+            ,iteration, rank, diff.tv_sec, diff.tv_usec);
     
     timeval_subtract (&diff, &(t->t24 [0]), &t->t21);
-    printf ("pp\t%2d\tshould_buffer->write1 time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, diff.tv_sec, diff.tv_usec);
+    fprintf (f, "pp\t%2d\tshould_buffer->write1 time:\t%6d\t%02d.%06d\n"
+            ,iteration, rank, diff.tv_sec, diff.tv_usec);
 }
 #endif
 
@@ -2380,6 +2381,9 @@ timeval_subtract (&timing.t8, &b, &a);
     if (md && md->fh)
         MPI_File_close (&md->fh);
 
+#if COLLECT_METRICS
+    print_metrics (md, iteration++);
+#endif
     if (   md->group_comm != MPI_COMM_WORLD
         && md->group_comm != MPI_COMM_SELF
         && md->group_comm != MPI_COMM_NULL
@@ -2399,9 +2403,6 @@ timeval_subtract (&timing.t8, &b, &a);
     md->old_pg_root = 0;
     md->old_vars_root = 0;
     md->old_attrs_root = 0;
-#if COLLECT_METRICS
-    print_metrics (md, iteration++);
-#endif
 }
 
 void adios_mpi_finalize (int mype, struct adios_method_struct * method)
