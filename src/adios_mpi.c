@@ -27,7 +27,7 @@
 
 static int adios_mpi_initialized = 0;
 
-#define COLLECT_METRICS 0
+#define COLLECT_METRICS 1
 
 struct adios_MPI_data_struct
 {
@@ -60,6 +60,7 @@ struct timeval_writer
     int pid;            // process id
 };
 
+static
 int timeval_writer_compare (const void * left, const void * right)
 {
     struct timeval_writer * l = (struct timeval_writer *) left;
