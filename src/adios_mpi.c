@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/vfs.h>
 #include <sys/ioctl.h>
+#include <assert.h>
 
 // mpi
 #include "mpi.h"
