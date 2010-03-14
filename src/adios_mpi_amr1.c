@@ -2023,6 +2023,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
 
                 adios_parse_process_group_header_v1 (&b, &pg_header);
                 vars_count_offset = b.offset;
+                adios_clear_process_group_header_v1 (&pg_header);
 
                 adios_parse_vars_header_v1 (&b, &vars_header);
                 header_size = b.offset;
@@ -2040,7 +2041,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 // attributes size is save in the end
                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &attr_size, SHIM_FOOTER_SIZE);
                 fd->bytes_written += SHIM_FOOTER_SIZE;
-
+            
                 // PG header, vars header, vars, attrs header, attrs, 4 bytes
                 if (is_aggregator(md->rank))
                 {
