@@ -19,1445 +19,13 @@
 
 #include "adios.h"
 #include "adios_internals.h"
-#include "adios_bp_v1.h"
+#include "adios_internals_v2.h"
+#include "adios_bp_v2.h"
 
 static struct adios_method_list_struct * adios_methods = 0;
 static struct adios_group_list_struct * adios_groups = 0;
 
-int adios_int_is_var (const char * temp) // 1 == yes, 0 == no
-{
-    if (!temp)
-        return 1;
-
-    if (*temp == '-' || isdigit (*temp))
-    {
-        while (*temp)
-        {
-            if (isdigit (*temp))
-                temp++;
-            else
-                return 1;
-        }
-    }
-    else
-        return 1;
-
-    return 0;
-}
-
-int adios_int_is_num (char * temp) // 1 == yes, 0 == no
-{
-    char * extra = 0;
-
-    strtod (temp, &extra);
-
-    if (extra)
-        return 0;
-    else
-        return 1;
-
-    return 0;
-}
-
-struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
-                                                 ,const char * name
-                                                 ,enum ADIOS_FLAG unique_names
-                                                 )
-{
-    int done = 0;
-    struct adios_var_struct * var = 0;
-
-    if (!name)
-    {
-        done = 1;
-        root = 0;
-    }
-
-    while (!done && root)
-    {
-        char * compare_name = root->name;
-        char * compare_name_path = root->name;
-        if (unique_names == adios_flag_no)
-        {
-            compare_name_path = malloc (  strlen (root->name)
-                                        + strlen (root->path)
-                                        + 2 // null term and '/'
-                                       );
-            if (!strcmp (root->path, "/"))
-                sprintf (compare_name_path, "/%s", root->name);
-            else
-                sprintf (compare_name_path, "%s/%s", root->path, root->name);
-        }
-
-        if (   !strcasecmp (name, compare_name)
-            || (   unique_names == adios_flag_no
-                && !strcasecmp (name, compare_name_path)
-               )
-           )
-        {
-            done = 1;
-            var = root;
-        }
-        else
-        {
-            root = root->next;
-        }
-
-        if (unique_names == adios_flag_no)
-        {
-            free (compare_name_path);
-        }
-    }
-
-    return var;
-}
-
-struct adios_attribute_struct * adios_find_attribute_by_name
-                                        (struct adios_attribute_struct * root
-                                        ,const char * name
-                                        ,enum ADIOS_FLAG unique_names
-                                        )
-{
-    int done = 0;
-    struct adios_attribute_struct * attr = 0;
-
-    if (!name)
-    {
-        done = 1;
-        root = 0;
-    }
-
-    while (!done && root)
-    {
-        char * compare_name = root->name;
-        char * compare_name_path = root->name;
-        if (unique_names == adios_flag_no)
-        {
-            compare_name_path = malloc (  strlen (root->name)
-                                        + strlen (root->path)
-                                        + 2 // null term and '/'
-                                       );
-            if (!strcmp (root->path, "/"))
-                sprintf (compare_name_path, "/%s", root->name);
-            else
-                sprintf (compare_name_path, "%s/%s", root->path, root->name);
-        }
-
-        if (   !strcasecmp (name, compare_name)
-            || (   unique_names == adios_flag_no
-                && !strcasecmp (name, compare_name_path)
-               )
-           )
-        {
-            done = 1;
-            attr = root;
-        }
-        else
-        {
-            root = root->next;
-        }
-
-        if (unique_names == adios_flag_no)
-        {
-            free (compare_name_path);
-        }
-    }
-
-    return attr;
-}
-
-struct adios_var_struct * adios_find_var_by_id (struct adios_var_struct * root
-                                               ,uint16_t id
-                                               )
-{
-    while (root)
-    {
-        if (root->id == id)
-            return root;
-        else
-            root = root->next;
-    }
-
-    return NULL;
-}
-
-struct adios_attribute_struct * adios_find_attribute_by_id
-                                         (struct adios_attribute_struct * root
-                                         ,uint16_t id
-                                         )
-{
-    while (root)
-    {
-        if (root->id == id)
-            return root;
-        else
-            root = root->next;
-    }
-
-    return NULL;
-}
-
-int adios_parse_dimension (const char * dimension
-                          ,const char * global_dimension
-                          ,const char * local_offset
-                          ,struct adios_group_struct * g
-                          ,struct adios_dimension_struct * dim
-                          )
-{
-    if (!dimension)
-    {
-        fprintf (stderr, "adios_parse_dimension: dimension not provided\n");
-
-        return 0;
-    }
-
-    dim->dimension.rank = 0;
-    dim->dimension.id = 0;
-    dim->dimension.time_index = adios_flag_no;
-    if (adios_int_is_var (dimension))
-    {
-        struct adios_var_struct * var = 0;
-        dim->dimension.rank = 0;
-        var = adios_find_var_by_name (g->vars, dimension
-                                     ,g->all_unique_var_names
-                                     );
-        if (!var)
-        {
-            struct adios_attribute_struct * attr = 0;
-            attr = adios_find_attribute_by_name (g->attributes, dimension
-                                                ,g->all_unique_var_names
-                                                );
-
-            if (!attr)
-            {
-                if (   g->time_index_name
-                    && !strcasecmp (g->time_index_name, dimension)
-                   )
-                {
-                    dim->dimension.time_index = adios_flag_yes;
-                }
-                else
-                {
-                    fprintf (stderr, "config.xml: invalid var dimension: %s\n"
-                            ,dimension
-                            );
-
-                    return 0;
-                }
-            }
-            else
-            {
-                if (attr->var)
-                {
-                    switch (attr->var->type)
-                    {
-                        case adios_string:
-                        case adios_real:
-                        case adios_double:
-                        case adios_long_double:
-                        case adios_complex:
-                        case adios_double_complex:
-                            fprintf (stderr, "config.xml: var dimension %s "
-                                             "has an invalid type: %s\n"
-                                    ,attr->name
-                                    ,adios_type_to_string_int (attr->var->type)
-                                    );
-                            return 0;
-
-                        default: // the integral numeric types are all fine
-                            break;
-                    }
-                    attr->var->is_dim = adios_flag_yes;
-                }
-                else
-                {
-                    switch (attr->type)
-                    {
-                        case adios_string:
-                        case adios_real:
-                        case adios_double:
-                        case adios_long_double:
-                        case adios_complex:
-                        case adios_double_complex:
-                            fprintf (stderr, "config.xml: var dimension %s "
-                                             "has an invalid type: %s\n"
-                                    ,attr->name
-                                    ,adios_type_to_string_int (attr->type)
-                                    );
-                            return 0;
-
-                        default: // the integral numeric types are all fine
-                            break;
-                    }
-                }
-                dim->dimension.id = attr->id;
-            }
-        }
-        else
-        {
-            switch (var->type)
-            {
-                case adios_string:
-                case adios_real:
-                case adios_double:
-                case adios_long_double:
-                case adios_complex:
-                case adios_double_complex:
-                    fprintf (stderr, "config.xml: var dimension %s "
-                                     "has an invalid type: %s\n"
-                            ,var->name
-                            ,adios_type_to_string_int (var->type)
-                            );
-                    return 0;
-
-                default: // the integral numeric types are all fine
-                    break;
-            }
-
-            dim->dimension.id = var->id;
-            var->is_dim = adios_flag_yes;
-        }
-    }
-    else
-    {
-        dim->dimension.id = 0;
-        dim->dimension.rank = atoi (dimension);
-    }
-
-    if (!global_dimension)
-    {
-        fprintf (stderr, "adios_parse_dimension: global_dimension not "
-                         "provided\n"
-                );
-
-        return 0;
-    }
-
-    if (adios_int_is_var (global_dimension))
-    {
-        struct adios_var_struct * var = 0;
-        dim->global_dimension.rank = 0;
-        var = adios_find_var_by_name (g->vars, global_dimension
-                                     ,g->all_unique_var_names
-                                     );
-        if (!var)
-        {
-            struct adios_attribute_struct * attr = 0;
-            attr = adios_find_attribute_by_name (g->attributes, global_dimension
-                                                ,g->all_unique_var_names
-                                                );
-
-            if (!attr)
-            {
-                if (   g->time_index_name
-                    && !strcasecmp (g->time_index_name, global_dimension)
-                   )
-                {
-                    dim->global_dimension.time_index = adios_flag_yes;
-                }
-                else
-                {
-                    fprintf (stderr, "config.xml: invalid global-bounds "
-                                     "dimension: %s\n"
-                            ,global_dimension
-                            );
-
-                    return 0;
-                }
-            }
-            else
-            {
-                if (attr->var)
-                {
-                    switch (attr->var->type)
-                    {
-                        case adios_string:
-                        case adios_real:
-                        case adios_double:
-                        case adios_long_double:
-                        case adios_complex:
-                        case adios_double_complex:
-                            fprintf (stderr, "config.xml: var dimension %s "
-                                             "has an invalid type: %s\n"
-                                    ,attr->name
-                                    ,adios_type_to_string_int (attr->var->type)
-                                    );
-                            return 0;
-
-                        default: // the integral numeric types are all fine
-                            break;
-                    }
-                    attr->var->is_dim = adios_flag_yes;
-                }
-                else
-                {
-                    switch (attr->type)
-                    {
-                        case adios_string:
-                        case adios_real:
-                        case adios_double:
-                        case adios_long_double:
-                        case adios_complex:
-                        case adios_double_complex:
-                            fprintf (stderr, "config.xml: var dimension %s "
-                                             "has an invalid type: %s\n"
-                                    ,attr->name
-                                    ,adios_type_to_string_int (attr->type)
-                                    );
-                            return 0;
-
-                        default: // the integral numeric types are all fine
-                            break;
-                    }
-                }
-                dim->global_dimension.id = attr->id;
-            }
-        }
-        else
-        {
-            switch (var->type)
-            {
-                case adios_string:
-                case adios_real:
-                case adios_double:
-                case adios_long_double:
-                case adios_complex:
-                case adios_double_complex:
-                    fprintf (stderr, "config.xml: var dimension %s "
-                                     "has an invalid type: %s\n"
-                            ,var->name
-                            ,adios_type_to_string_int (var->type)
-                            );
-                    return 0;
-
-                default: // the integral numeric types are all fine
-                    break;
-            }
-            var->is_dim = adios_flag_yes;
-            dim->global_dimension.id = var->id;
-        }
-    }
-    else
-    {
-        dim->global_dimension.id = 0;
-        dim->global_dimension.rank = strtol (global_dimension, NULL, 10);
-    }
-
-    if (!local_offset)
-    {
-        fprintf (stderr, "adios_parse_dimension: local-offset not provided\n");
-
-        return 0;
-    }
-
-    if (adios_int_is_var (local_offset))
-    {
-        struct adios_var_struct * var = 0;
-        dim->local_offset.rank = 0;
-        var = adios_find_var_by_name (g->vars, local_offset
-                                     ,g->all_unique_var_names
-                                     );
-        if (!var)
-        {
-            struct adios_attribute_struct * attr = 0;
-            attr = adios_find_attribute_by_name (g->attributes, local_offset
-                                                ,g->all_unique_var_names
-                                                );
-
-            if (!attr)
-            {
-                if (   g->time_index_name
-                    && !strcasecmp (g->time_index_name, local_offset)
-                   )
-                {
-                    dim->local_offset.time_index = adios_flag_yes;
-                }
-                else
-                {
-                    fprintf (stderr, "config.xml: invalid var local_offset: "
-                                     "%s\n"
-                            ,local_offset
-                            );
-
-                    return 0;
-                }
-            }
-            else
-            {
-                if (attr->var)
-                {
-                    switch (attr->var->type)
-                    {
-                        case adios_string:
-                        case adios_real:
-                        case adios_double:
-                        case adios_long_double:
-                        case adios_complex:
-                        case adios_double_complex:
-                            fprintf (stderr, "config.xml: var dimension %s "
-                                             "has an invalid type: %s\n"
-                                    ,attr->name
-                                    ,adios_type_to_string_int (attr->var->type)
-                                    );
-                            return 0;
-
-                        default: // the integral numeric types are all fine
-                            break;
-                    }
-                    attr->var->is_dim = adios_flag_yes;
-                }
-                else
-                {
-                    switch (attr->type)
-                    {
-                        case adios_string:
-                        case adios_real:
-                        case adios_double:
-                        case adios_long_double:
-                        case adios_complex:
-                        case adios_double_complex:
-                            fprintf (stderr, "config.xml: var dimension %s "
-                                             "has an invalid type: %s\n"
-                                    ,attr->name
-                                    ,adios_type_to_string_int (attr->type)
-                                    );
-                            return 0;
-
-                        default: // the integral numeric types are all fine
-                            break;
-                    }
-                }
-                dim->local_offset.id = attr->id;
-            }
-        }
-        else
-        {
-            switch (var->type)
-            {
-                case adios_string:
-                case adios_real:
-                case adios_double:
-                case adios_long_double:
-                case adios_complex:
-                case adios_double_complex:
-                    fprintf (stderr, "config.xml: var dimension %s "
-                                     "has an invalid type: %s\n"
-                            ,var->name
-                            ,adios_type_to_string_int (var->type)
-                            );
-                    return 0;
-
-                default: // the integral numeric types are all fine
-                    break;
-            }
-            var->is_dim = adios_flag_yes;
-            dim->local_offset.id = var->id;
-        }
-    }
-    else
-    {
-        dim->local_offset.id = 0;
-        dim->local_offset.rank = strtol (local_offset, NULL, 10);
-    }
-
-    return 1;
-}
-
-struct adios_method_list_struct * adios_get_methods ()
-{
-    return adios_methods;
-}
-
-struct adios_group_list_struct * adios_get_groups ()
-{
-    return adios_groups;
-}
-
-
-int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
-                              ,void ** out
-                              )
-{
-    char * end;
-
-    switch (type)
-    {
-        case adios_byte:
-        case adios_short:
-        case adios_integer:
-        {
-            int errno_save = errno;
-            long t = strtol (value, &end, 10);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
-            {
-                fprintf (stderr, "value: '%s' not valid integer\n"
-                        ,value
-                        );
-
-                return 0;
-            }
-            else
-            {
-                switch (type)
-                {
-                    case adios_byte:
-                        if (t < SCHAR_MIN || t > SCHAR_MAX)
-                        {
-                            fprintf (stderr, "type is %s, value "
-                                             "is out of range: '%s'\n"
-                                    ,adios_type_to_string_int (type), value
-                                    );
-
-                            return 0;
-                        }
-                        else
-                        {
-                            *out = malloc (1);
-                            *((int8_t *) *out) = t;
-
-                            return 1;
-                        }
-                    case adios_short:
-                        if (t < SHRT_MIN || t > SHRT_MAX)
-                        {
-                            fprintf (stderr, "type is %s, value "
-                                             "is out of range: '%s'\n"
-                                    ,adios_type_to_string_int (type), value
-                                    );
-
-                            return 0;
-                        }
-                        else
-                        {
-                            *out = malloc (2);
-                            *((int16_t *) *out) = t;
-
-                            return 1;
-                        }
-                    case adios_integer:
-                        if (t < INT_MIN || t > INT_MAX)
-                        {
-                            fprintf (stderr, "type is %s, value "
-                                             "is out of range: '%s'\n"
-                                    ,adios_type_to_string_int (type), value
-                                    );
-
-                            return 0;
-                        }
-                        else
-                        {
-                            *out = malloc (4);
-                            *((int32_t *) *out) = t;
-
-                            return 1;
-                        }
-                }
-            }
-        }
-        case adios_long:
-        {
-            int errno_save = errno;
-            int64_t t = strtoll (value, &end, 10);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
-            {
-                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string_int (type), value
-                        );
-
-                return 0;
-            }
-            else
-            {
-                *out = malloc (8);
-                *((int64_t *) *out) = t;
-
-                return 1;
-            }
-        }
-        case adios_unsigned_byte:
-        case adios_unsigned_short:
-        case adios_unsigned_integer:
-        {
-            int errno_save = errno;
-            unsigned long t = strtoul (value, &end, 10);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
-            {
-                fprintf (stderr, "value: '%s' not valid integer\n"
-                        ,value
-                        );
-
-                return 0;
-            }
-            else
-            {
-                switch (type)
-                {
-                    case adios_unsigned_byte:
-                        if (t > UCHAR_MAX)
-                        {
-                            fprintf (stderr, "type is %s, value "
-                                             "is out of range: '%s'\n"
-                                    ,adios_type_to_string_int (type), value
-                                    );
-
-                            return 0;
-                        }
-                        else
-                        {
-                            *out = malloc (1);
-                            *((uint8_t *) *out) = t;
-
-                            return 1;
-                        }
-                    case adios_unsigned_short:
-                        if (t > USHRT_MAX)
-                        {
-                            fprintf (stderr, "type is %s, value "
-                                             "is out of range: '%s'\n"
-                                    ,adios_type_to_string_int (type), value
-                                    );
-
-                            return 0;
-                        }
-                        else
-                        {
-                            *out = malloc (2);
-                            *((uint16_t *) *out) = t;
-
-                            return 1;
-                        }
-                    case adios_unsigned_integer:
-                        if (t > UINT_MAX)
-                        {
-                            fprintf (stderr, "type is %s, value "
-                                             "is out of range: '%s'\n"
-                                    ,adios_type_to_string_int (type), value
-                                    );
-
-                            return 0;
-                        }
-                        else
-                        {
-                            *out = malloc (4);
-                            *((uint32_t *) *out) = t;
-
-                            return 1;
-                        }
-                }
-            }
-        }
-        case adios_unsigned_long:
-        {
-            int errno_save = errno;
-            uint64_t t = strtoull (value, &end, 10);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
-            {
-                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string_int (type), value
-                        );
-
-                return 0;
-            }
-            else
-            {
-                *out = malloc (8);
-                *((uint64_t *) *out) = t;
-
-                return 1;
-            }
-        }
-        case adios_real:
-        {
-            int errno_save = errno;
-            float t = strtof (value, &end);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
-            {
-                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string_int (type), value
-                        );
-
-                return 0;
-            }
-            else
-            {
-                *out = malloc (4);
-                *((float *) *out) = t;
-
-                return 1;
-            }
-        }
-        case adios_double:
-        {
-            int errno_save = errno;
-            double t = strtod (value, &end);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
-            {
-                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string_int (type), value
-                        );
-
-                return 0;
-            }
-            else
-            {
-                *out = malloc (8);
-                *((double *) *out) = t;
-
-                return 1;
-            }
-        }
-        case adios_long_double:
-        {
-            int errno_save = errno;
-            long double t = strtold (value, &end);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
-            {
-                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string_int (type), value
-                        );
-
-                return 0;
-            }
-            else
-            {
-                *out = malloc (16);
-                *((long double *) *out) = t;
-            }
-        }
-        case adios_string:
-        {
-            *out = (void *) strdup (value);
-
-            return 1;
-        }
-        case adios_complex:
-        {
-            fprintf (stderr, "adios_complex type validation needs to be "
-                             "implemented\n");
-            return 1;
-        }
-        case adios_double_complex:
-        {
-            fprintf (stderr, "adios_double_complex type validation needs to "
-                             "be implemented\n");
-            return 1;
-        }
-
-        case adios_unknown:
-        default:
-            fprintf (stderr, "unknown type cannot be validated\n");
-
-            return 0;
-    }
-
-    return 1;
-}
-
-int adios_common_define_attribute (int64_t group, const char * name
-                                  ,const char * path
-                                  ,enum ADIOS_DATATYPES type
-                                  ,const char * value
-                                  ,const char * var
-                                  )
-{
-    struct adios_group_struct * g = (struct adios_group_struct *) group;
-    struct adios_attribute_struct * attr = (struct adios_attribute_struct *)
-                              malloc (sizeof (struct adios_attribute_struct));
-
-    attr->name = strdup (name);
-    attr->path = strdup (path);
-    if (value)
-    {
-        if (type == adios_unknown)
-        {
-            fprintf (stderr, "config.xml: attribute element %s has invalid "
-                             "type attribute\n"
-                    ,name
-                    );
-
-            free (attr->name);
-            free (attr->path);
-            free (attr);
-
-            return 0;
-        }
-        attr->type = type;
-        if (adios_parse_scalar_string (type, (void *) value, &attr->value))
-        {
-            attr->var = 0;
-        }
-        else
-        {
-            fprintf (stderr, "config.xml: attribute element %s has invalid "
-                             "value attribute: '%s'\n"
-                    ,name, value
-                    );
-
-            free (attr->value);
-            free (attr->name);
-            free (attr->path);
-            free (attr);
-
-            return 0;
-        }
-    }
-    else
-    {
-        attr->value = 0;
-        attr->type = adios_unknown;
-        attr->var = adios_find_var_by_name (g->vars, var
-                                           ,g->all_unique_var_names
-                                           );
-
-        if (attr->var == 0)
-        {
-            fprintf (stderr, "config.xml: attribute element %s references "
-                             "var %s that has not been defined.\n"
-                    ,name, var
-                    );
-
-            free (attr->name);
-            free (attr->path);
-            free (attr);
-
-            return 0;
-        }
-    }
-
-    attr->next = 0;
-
-    adios_append_attribute (&g->attributes, attr, ++g->member_count);
-
-    return 1;
-}
-
-/*void adios_extract_string (char ** out, const char * in, int size)
-{
-    if (in && out)
-    {
-        *out = malloc (strlen (in) + 1);
-        strcpy (*out, in);
-    }
-// for some Fortran implementations, we get a size for a string.
-// for others (like PGI), we don't and it isn't null terminated
-// unless we do it explicitly.  Assume that it is null terminated
-// for now.
-//
-#if 0
-    int i = 0;
-    memcpy (out, in, size);
-    while (i < size)
-    {
-        if (out [i] == ' ')
-        {
-            out [i] = 0;
-            return;
-        }
-        else
-            i++;
-    }
-    out [i] = 0;
-#endif
-}*/
-
-void adios_append_method (struct adios_method_struct * method)
-{
-    struct adios_method_list_struct ** root = &adios_methods;
-
-    while (root)
-    {
-        if (!*root)
-        {
-            struct adios_method_list_struct * new_node =
-                 (struct adios_method_list_struct *)
-                   malloc (sizeof (struct adios_method_list_struct));
-
-            if (!new_node)
-            {
-                fprintf (stderr, "out of memory in adios_append_method\n");
-            }
-            new_node->method = method;
-            new_node->next = 0;
-
-            *root = new_node;
-            root = 0;
-        }
-        else
-        {
-            root = &(*root)->next;
-        }
-    }
-}
-
-void adios_add_method_to_group (struct adios_method_list_struct ** root
-                               ,struct adios_method_struct * method
-                               )
-{
-    while (root)
-    {
-        if (!*root)
-        {
-            struct adios_method_list_struct * new_node =
-                 (struct adios_method_list_struct *)
-                   malloc (sizeof (struct adios_method_list_struct));
-
-            if (!new_node)
-            {
-                fprintf (stderr, "out of memory in adios_append_method\n");
-            }
-            new_node->method = method;
-            new_node->next = 0;
-
-            *root = new_node;
-            root = 0;
-        }
-        else
-        {
-            root = &(*root)->next;
-        }
-    }
-}
-
-void adios_append_group (struct adios_group_struct * group)
-{
-    struct adios_group_list_struct ** root = &adios_groups;
-    int id = 1;
-
-    while (root)
-    {
-        if (!*root)
-        {
-            struct adios_group_list_struct * new_node =
-                 (struct adios_group_list_struct *)
-                   malloc (sizeof (struct adios_group_list_struct));
-
-            if (!new_node)
-            {
-                fprintf (stderr, "out of memory in adios_append_group\n");
-            }
-            group->id = id;
-            new_node->group = group;
-            new_node->next = 0;
-
-            *root = new_node;
-            root = 0;
-        }
-        else
-        {
-            root = &(*root)->next;
-            id++;
-        }
-    }
-}
-
-// return is whether or not the name is unique
-enum ADIOS_FLAG adios_append_var (struct adios_var_struct ** root
-                                 ,struct adios_var_struct * var
-                                 ,uint16_t id
-                                 )
-{
-    enum ADIOS_FLAG unique_names = adios_flag_yes;
-
-    while (root)
-    {
-        if (   unique_names == adios_flag_yes
-            && *root
-            && !strcasecmp ((*root)->name, var->name)
-           )
-        {
-            unique_names = adios_flag_no;
-        }
-        if (!*root)
-        {
-            var->id = id;
-            *root = var;
-            root = 0;
-        }
-        else
-        {
-            root = &(*root)->next;
-        }
-    }
-
-    return unique_names;
-}
-
-void adios_append_dimension (struct adios_dimension_struct ** root
-                            ,struct adios_dimension_struct * dimension
-                            )
-{
-    while (root)
-    {
-        if (!*root)
-        {
-            *root = dimension;
-            root = 0;
-        }
-        else
-        {
-            root = &(*root)->next;
-        }
-    }
-}
-
-void adios_append_attribute (struct adios_attribute_struct ** root
-                            ,struct adios_attribute_struct * attribute
-                            ,uint16_t id
-                            )
-{
-    while (root)
-    {
-        if (!*root)
-        {
-            attribute->id = id;
-            *root = attribute;
-            root = 0;
-        }
-        else
-        {
-            root = &(*root)->next;
-        }
-    }
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// functions to support C & Fortran interface
-///////////////////////////////////////////////////////////////////////////////
-int adios_common_declare_group (int64_t * id, const char * name
-                               ,enum ADIOS_FLAG host_language_fortran
-                               ,const char * coordination_comm
-                               ,const char * coordination_var
-                               ,const char * time_index_name
-                               )
-{
-    struct adios_group_struct * g = (struct adios_group_struct *)
-                             malloc (sizeof (struct adios_group_struct));
-
-    g->name = strdup (name);
-    g->adios_host_language_fortran = host_language_fortran;
-    g->all_unique_var_names = adios_flag_yes;
-    g->id = 0; // will be set in adios_append_group
-    g->member_count = 0; // will be set in adios_append_group
-    g->var_count = 0;
-    g->vars = 0;
-    g->attributes = 0;
-    g->group_by = (coordination_var ? strdup (coordination_var) : 0L);
-    g->group_comm = (coordination_comm ? strdup (coordination_comm) : 0L);
-    g->time_index_name = (time_index_name ? strdup (time_index_name) : 0L);
-    g->time_index = 0;
-    g->process_id = 0;
-    g->methods = 0;
-    g->mesh = 0;
-
-    *id = (int64_t) g;
-
-    adios_append_group (g);
-
-    return 1;
-}
-
-void trim_spaces (char * str)
-{
-    char * t = str, * p = NULL;
-    while (*t != '\0')
-    {
-        if (*t == ' ')
-        {
-            p = t + 1;
-            strcpy (t, p);
-        }
-        else
-            t++;
-    }
-
-}
-
-static void tokenize_dimensions (char * str, char *** tokens, int * count)
-{
-    if (!str)
-    {
-        *tokens = 0;
-        *count = 0;
-
-        return;
-    }
-
-    trim_spaces (str);
-
-    char * t = str;
-    char * save_str = strdup (str);
-    int i;
-
-    if (strlen (str) > 0)
-        *count = 1;
-    else
-    {
-        *tokens = 0;
-        *count = 0;
-        free (save_str);
-
-        return;
-    }
-
-    while (*t)
-    {
-        if (*t == ',')
-            (*count)++;
-        t++;
-    }
-
-    *tokens = (char **) malloc (sizeof (char **) * *count);
-    (*tokens) [0] = strdup (strtok (save_str, ","));
-    for (i = 1; i < *count; i++)
-    {
-        (*tokens) [i] = strdup (strtok (NULL, ","));
-    }
-
-    free (save_str);
-}
-
-static void cleanup_dimensions (char *** tokens, int * count)
-{
-    int i;
-    for (i = 0; i < *count; i++)
-    {
-        free ((*tokens) [i]);
-    }
-    free (*tokens);
-    *tokens = 0;
-    *count = 0;
-}
-
-int adios_common_define_var (int64_t group_id, const char * name
-                            ,const char * path, enum ADIOS_DATATYPES type
-                            ,const char * dimensions
-                            ,const char * global_dimensions
-                            ,const char * local_offsets
-                            )
-{
-    struct adios_group_struct * t = (struct adios_group_struct *) group_id;
-    struct adios_var_struct * v = (struct adios_var_struct *)
-                               malloc (sizeof (struct adios_var_struct));
-    char * dim_temp;
-    char * g_dim_temp;
-    char * lo_dim_temp;
-    enum ADIOS_FLAG flag;
-    if (dimensions)
-        dim_temp = strdup (dimensions);
-    else
-        dim_temp = 0;
-    if (global_dimensions)
-        g_dim_temp = strdup (global_dimensions);
-    else
-        g_dim_temp = 0;
-    if (local_offsets)
-        lo_dim_temp = strdup (local_offsets);
-    else
-        lo_dim_temp = 0;
-
-    v->name = strdup (name);
-    v->path = strdup (path);
-    v->type = type;
-    v->dimensions = 0;
-    v->is_dim = adios_flag_no;
-    v->got_buffer = adios_flag_no;
-    v->free_data = adios_flag_no;
-
-    v->data = 0;
-
-    v->write_offset = 0;
-    v->min = 0;
-    v->max = 0;
-
-    v->data_size = 0;
-
-    v->next = 0;
-
-    if (dim_temp && strcmp (dim_temp, ""))
-    {
-        int dim_count;
-        char ** dim_tokens = 0;
-
-        int g_dim_count;
-        char ** g_dim_tokens = 0;
-
-        int lo_dim_count;
-        char ** lo_dim_tokens = 0;
-
-        int i = 0;
-
-        tokenize_dimensions (dim_temp, &dim_tokens, &dim_count);
-        tokenize_dimensions (g_dim_temp, &g_dim_tokens, &g_dim_count);
-        tokenize_dimensions (lo_dim_temp, &lo_dim_tokens, &lo_dim_count);
-
-        while (i < dim_count)
-        {
-            int ret;
-            struct adios_dimension_struct * d =
-                     (struct adios_dimension_struct *)
-                         calloc (1, sizeof (struct adios_dimension_struct));
-
-            if (!d)
-            {
-                fprintf (stderr, "config.xml: out of memory in "
-                                 "adios_common_define_var\n"
-                        );
-
-                return 0;
-            }
-            char * dim = 0;
-            char * g_dim = "0";
-            char * lo_dim = "0";
-
-            if (i < dim_count)
-                dim = dim_tokens [i];
-            if (i < g_dim_count)
-                g_dim = g_dim_tokens [i];
-            if (i < lo_dim_count)
-                lo_dim = lo_dim_tokens [i];
-            
-            if (!(ret = adios_parse_dimension (dim, g_dim, lo_dim, t, d)))
-            {
-                free (dim_temp);
-                free (g_dim_temp);
-                free (lo_dim_temp);
-                free (v->name);
-                free (v->path);
-                free (v);
-                cleanup_dimensions (&dim_tokens, &dim_count);
-                cleanup_dimensions (&g_dim_tokens, &g_dim_count);
-                cleanup_dimensions (&lo_dim_tokens, &lo_dim_count);
-
-                return ret;
-            }
-
-            adios_append_dimension (&v->dimensions, d);
-
-            i++;
-        }
-        cleanup_dimensions (&dim_tokens, &dim_count);
-        cleanup_dimensions (&g_dim_tokens, &g_dim_count);
-        cleanup_dimensions (&lo_dim_tokens, &lo_dim_count);
-    }
-
-    if (dim_temp)
-        free (dim_temp);
-    if (g_dim_temp)
-        free (g_dim_temp);
-    if (lo_dim_temp)
-        free (lo_dim_temp);
-
-    flag = adios_append_var (&t->vars, v, ++t->member_count);
-    if (flag == adios_flag_no)
-    {
-        t->all_unique_var_names = adios_flag_no;
-    }
-    t->var_count++;
-
-    return 1;
-}
-
-void adios_common_get_group (int64_t * group_id, const char * name)
-{
-    struct adios_group_list_struct * g = adios_get_groups ();
-
-    *group_id = 0;
-
-    while (g)
-    {
-        if (!strcasecmp (g->group->name, name))
-        {
-            *group_id = (int64_t) g->group;
-
-            return;
-        }
-
-        g = g->next;
-    }
-
-    fprintf (stderr, "adios-group '%s' not found in configuration file\n"
-            ,name
-            );
-}
-
-// *****************************************************************************
-void buffer_write (char ** buffer, uint64_t * buffer_size
-                  ,uint64_t * buffer_offset
-                  ,const void * data, uint64_t size
-                  )
-{
-    if (*buffer_offset + size > *buffer_size || *buffer == 0)
-    {
-        char * b = realloc (*buffer, *buffer_offset + size + 1000);
-        if (b)
-        {
-            *buffer = b;
-            *buffer_size = (*buffer_offset + size + 1000);
-        }
-        else
-        {
-            fprintf (stderr, "Cannot allocate memory in buffer_write.  "
-                             "Requested: %llu\n", *buffer_offset + size + 1000);
-
-            return;
-        }
-    }
-
-    memcpy (*buffer + *buffer_offset, data, size);
-    *buffer_offset += size;
-}
-
-static uint16_t adios_calc_var_characteristics_dims_overhead
-                                                  (struct adios_var_struct * v)
-{
-    uint16_t overhead = 0;
-    struct adios_dimension_struct * d = v->dimensions;
-
-    overhead += 1; // count
-    overhead += 2; // length
-
-    while (d)
-    {
-        overhead += 8 + 8 + 8; // the dims
-
-        d = d->next;
-    }
-
-    return overhead;
-}
-
-uint16_t adios_calc_var_characteristics_overhead
-                                                  (struct adios_var_struct * v)
-{
-    uint16_t overhead = 0;
-
-    overhead += 1 + 4; // count + length
-
-    switch (v->type)
-    {
-        case adios_string:   // nothing for strings
-            //overhead += 1; // id
-            //overhead += 2; // size
-            break;
-
-        default:   // the 12 numeric types
-            if (v->dimensions)
-            {
-                overhead += 1;  // id
-                overhead += adios_get_type_size (v->type, ""); // min
-
-                overhead += 1;  // id
-                overhead += adios_get_type_size (v->type, ""); // max
-
-                overhead += 1;  // id
-                overhead += adios_calc_var_characteristics_dims_overhead (v);
-            }
-    }
-
-    return overhead;
-}
-
-uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
+uint16_t adios_calc_var_overhead_v2 (struct adios_var_struct * v)
 {
     uint16_t overhead = 0;
 
@@ -1519,7 +87,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
     return overhead;
 }
 
-uint32_t adios_calc_attribute_overhead_v1 (struct adios_attribute_struct * a)
+uint32_t adios_calc_attribute_overhead_v2 (struct adios_attribute_struct * a)
 {
     uint32_t overhead = 0;
 
@@ -1542,7 +110,7 @@ uint32_t adios_calc_attribute_overhead_v1 (struct adios_attribute_struct * a)
     return overhead;
 }
 
-uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
+uint64_t adios_calc_overhead_v2 (struct adios_file_struct * fd)
 {
     uint64_t overhead = 0;
     struct adios_var_struct * v = fd->group->vars;
@@ -1577,7 +145,7 @@ uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
 
     while (v)
     {
-        overhead += adios_calc_var_overhead_v1 (v);
+        overhead += adios_calc_var_overhead_v2 (v);
 
         v = v->next;
     }
@@ -1587,7 +155,7 @@ uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
 
     while (a)
     {
-        overhead += adios_calc_attribute_overhead_v1 (a);
+        overhead += adios_calc_attribute_overhead_v2 (a);
 
         a = a->next;
     }
@@ -1595,7 +163,7 @@ uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
     return overhead;
 }
 
-int adios_write_process_group_header_v1 (struct adios_file_struct * fd
+int adios_write_process_group_header_v2 (struct adios_file_struct * fd
                                         ,uint64_t total_size
                                         )
 {
@@ -1682,9 +250,9 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
     return 0;
 }
 
-static void index_append_process_group_v1 (
-                          struct adios_index_process_group_struct_v1 ** root
-                         ,struct adios_index_process_group_struct_v1 * item
+static void index_append_process_group_v2 (
+                          struct adios_index_process_group_struct_v2 ** root
+                         ,struct adios_index_process_group_struct_v2 * item
                          )
 {
     while (root)
@@ -1701,8 +269,8 @@ static void index_append_process_group_v1 (
     }
 }
 
-static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
-                                ,struct adios_index_var_struct_v1 * item
+static void index_append_var_v2 (struct adios_index_var_struct_v2 ** root
+                                ,struct adios_index_var_struct_v2 * item
                                 )
 {
     while (root)
@@ -1732,7 +300,7 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
                     void * ptr;
                     ptr = realloc ((*root)->characteristics
                             ,  (*root)->characteristics_allocated
-                        * sizeof (struct adios_index_characteristic_struct_v1)
+                        * sizeof (struct adios_index_characteristic_struct_v2)
                             );
 
                     if (ptr)
@@ -1752,7 +320,7 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
                                              [(*root)->characteristics_count]
                        ,item->characteristics
                        ,  item->characteristics_count
-                        * sizeof (struct adios_index_characteristic_struct_v1)
+                        * sizeof (struct adios_index_characteristic_struct_v2)
                        );
 
                 (*root)->characteristics_count += item->characteristics_count;
@@ -1773,9 +341,9 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
     }
 }
 
-static void index_append_attribute_v1
-                                (struct adios_index_attribute_struct_v1 ** root
-                                ,struct adios_index_attribute_struct_v1 * item
+static void index_append_attribute_v2
+                                (struct adios_index_attribute_struct_v2 ** root
+                                ,struct adios_index_attribute_struct_v2 * item
                                 )
 {
     while (root)
@@ -1804,7 +372,7 @@ static void index_append_attribute_v1
                     void * ptr;
                     ptr = realloc ((*root)->characteristics
                             ,  (*root)->characteristics_allocated
-                       * sizeof (struct adios_index_characteristic_struct_v1)
+                       * sizeof (struct adios_index_characteristic_struct_v2)
                             );
 
                     if (ptr)
@@ -1824,7 +392,7 @@ static void index_append_attribute_v1
                                               [(*root)->characteristics_count]
                        ,item->characteristics
                        ,  item->characteristics_count
-                        * sizeof (struct adios_index_characteristic_struct_v1)
+                        * sizeof (struct adios_index_characteristic_struct_v2)
                        );
 
                 (*root)->characteristics_count += item->characteristics_count;
@@ -1846,26 +414,26 @@ static void index_append_attribute_v1
 }
 
 // p2 and v2 will be destroyed as part of the merge operation...
-void adios_merge_index_v1 (struct adios_index_process_group_struct_v1 ** p1
-                          ,struct adios_index_var_struct_v1 ** v1
-                          ,struct adios_index_attribute_struct_v1 ** a1
-                          ,struct adios_index_process_group_struct_v1 * p2
-                          ,struct adios_index_var_struct_v1 * v2
-                          ,struct adios_index_attribute_struct_v1 * a2
+void adios_merge_index_v2 (struct adios_index_process_group_struct_v2 ** p1
+                          ,struct adios_index_var_struct_v2 ** v1
+                          ,struct adios_index_attribute_struct_v2 ** a1
+                          ,struct adios_index_process_group_struct_v2 * p2
+                          ,struct adios_index_var_struct_v2 * v2
+                          ,struct adios_index_attribute_struct_v2 * a2
                           )
 {
     // this will just add it on to the end and all should work fine
-    index_append_process_group_v1 (p1, p2);
+    index_append_process_group_v2 (p1, p2);
 
     // need to do vars attrs one at a time to merge them properly
-    struct adios_index_var_struct_v1 * v_temp;
-    struct adios_index_attribute_struct_v1 * a_temp;
+    struct adios_index_var_struct_v2 * v_temp;
+    struct adios_index_attribute_struct_v2 * a_temp;
 
     while (v2)
     {
         v_temp = v2->next;
         v2->next = 0;
-        index_append_var_v1 (v1, v2);
+        index_append_var_v2 (v1, v2);
         v2 = v_temp;
     }
 
@@ -1873,18 +441,18 @@ void adios_merge_index_v1 (struct adios_index_process_group_struct_v1 ** p1
     {
         a_temp = a2->next;
         a2->next = 0;
-        index_append_attribute_v1 (a1, a2);
+        index_append_attribute_v2 (a1, a2);
         a2 = a_temp;
     }
 }
 
-static void adios_clear_process_groups_index_v1 (
-                            struct adios_index_process_group_struct_v1 * root
+static void adios_clear_process_groups_index_v2 (
+                            struct adios_index_process_group_struct_v2 * root
                            )
 {
     while (root)
     {
-        struct adios_index_process_group_struct_v1 * temp = root->next;
+        struct adios_index_process_group_struct_v2 * temp = root->next;
         if (root->group_name)
             free (root->group_name);
         if (root->time_index_name)
@@ -1894,12 +462,12 @@ static void adios_clear_process_groups_index_v1 (
     }
 }
 
-static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
+static void adios_clear_vars_index_v2 (struct adios_index_var_struct_v2 * root)
 {
     while (root)
     {
         int i;
-        struct adios_index_var_struct_v1 * temp = root->next;
+        struct adios_index_var_struct_v2 * temp = root->next;
 
         if (root->group_name)
             free (root->group_name);
@@ -1926,13 +494,13 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
     }
 }
 
-static void adios_clear_attributes_index_v1
-                                (struct adios_index_attribute_struct_v1 * root)
+static void adios_clear_attributes_index_v2
+                                (struct adios_index_attribute_struct_v2 * root)
 {
     while (root)
     {
         int i;
-        struct adios_index_attribute_struct_v1 * temp = root->next;
+        struct adios_index_attribute_struct_v2 * temp = root->next;
 
         if (root->group_name)
             free (root->group_name);
@@ -1959,14 +527,14 @@ static void adios_clear_attributes_index_v1
     }
 }
 
-void adios_clear_index_v1 (struct adios_index_process_group_struct_v1 * pg_root
-                          ,struct adios_index_var_struct_v1 * vars_root
-                          ,struct adios_index_attribute_struct_v1 * attrs_root
+void adios_clear_index_v2 (struct adios_index_process_group_struct_v2 * pg_root
+                          ,struct adios_index_var_struct_v2 * vars_root
+                          ,struct adios_index_attribute_struct_v2 * attrs_root
                           )
 {
-    adios_clear_process_groups_index_v1 (pg_root);
-    adios_clear_vars_index_v1 (vars_root);
-    adios_clear_attributes_index_v1 (attrs_root);
+    adios_clear_process_groups_index_v2 (pg_root);
+    adios_clear_vars_index_v2 (vars_root);
+    adios_clear_attributes_index_v2 (attrs_root);
 }
 
 static uint8_t count_dimensions (struct adios_dimension_struct * dimensions)
@@ -2112,22 +680,22 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd
     return dim;
 }
 
-void adios_build_index_v1 (struct adios_file_struct * fd
-                       ,struct adios_index_process_group_struct_v1 ** pg_root
-                       ,struct adios_index_var_struct_v1 ** vars_root
-                       ,struct adios_index_attribute_struct_v1 ** attrs_root
+void adios_build_index_v2 (struct adios_file_struct * fd
+                       ,struct adios_index_process_group_struct_v2 ** pg_root
+                       ,struct adios_index_var_struct_v2 ** vars_root
+                       ,struct adios_index_attribute_struct_v2 ** attrs_root
                        )
 {
     struct adios_group_struct * g = fd->group;
     struct adios_var_struct * v = g->vars;
     struct adios_attribute_struct * a = g->attributes;
-    struct adios_index_process_group_struct_v1 * g_item;
+    struct adios_index_process_group_struct_v2 * g_item;
 
     uint64_t process_group_count = 0;
     uint16_t var_count = 0;
 
-    g_item = (struct adios_index_process_group_struct_v1 *)
-                malloc (sizeof (struct adios_index_process_group_struct_v1));
+    g_item = (struct adios_index_process_group_struct_v2 *)
+                malloc (sizeof (struct adios_index_process_group_struct_v2));
     g_item->group_name = (g->name ? strdup (g->name) : 0L);
     g_item->adios_host_language_fortran = g->adios_host_language_fortran;
     g_item->process_id = g->process_id;
@@ -2137,17 +705,17 @@ void adios_build_index_v1 (struct adios_file_struct * fd
     g_item->next = 0;
 
     // build the groups and vars index
-    index_append_process_group_v1 (pg_root, g_item);
+    index_append_process_group_v2 (pg_root, g_item);
 
     while (v)
     {
         // only add items that were written to the index
         if (v->write_offset != 0)
         {
-            struct adios_index_var_struct_v1 * v_index;
-            v_index = malloc (sizeof (struct adios_index_var_struct_v1));
+            struct adios_index_var_struct_v2 * v_index;
+            v_index = malloc (sizeof (struct adios_index_var_struct_v2));
             v_index->characteristics = malloc (
-                           sizeof (struct adios_index_characteristic_struct_v1)
+                           sizeof (struct adios_index_characteristic_struct_v2)
                           );
 
             v_index->id = v->id;
@@ -2158,7 +726,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             v_index->characteristics_count = 1;
             v_index->characteristics_allocated = 1;
             v_index->characteristics [0].offset = v->write_offset;
-            v_index->characteristics [0].payload_offset = v->write_offset + adios_calc_var_overhead_v1 (v);
+            v_index->characteristics [0].payload_offset = v->write_offset + adios_calc_var_overhead_v2 (v);
             v_index->characteristics [0].min = 0;
             v_index->characteristics [0].max = 0;
             v_index->characteristics [0].value = 0;
@@ -2233,7 +801,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             v_index->next = 0;
 
             // this fn will either take ownership for free
-            index_append_var_v1 (vars_root, v_index);
+            index_append_var_v2 (vars_root, v_index);
         }
 
         v = v->next;
@@ -2244,10 +812,10 @@ void adios_build_index_v1 (struct adios_file_struct * fd
         // only add items that were written to the index
         if (a->write_offset != 0)
         {
-            struct adios_index_attribute_struct_v1 * a_index;
-            a_index = malloc (sizeof (struct adios_index_attribute_struct_v1));
+            struct adios_index_attribute_struct_v2 * a_index;
+            a_index = malloc (sizeof (struct adios_index_attribute_struct_v2));
             a_index->characteristics = malloc (
-                           sizeof (struct adios_index_characteristic_struct_v1)
+                           sizeof (struct adios_index_characteristic_struct_v2)
                           );
 
             a_index->id = a->id;
@@ -2260,7 +828,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             uint64_t size = adios_get_type_size (a->type, a->value);
 
             a_index->characteristics [0].offset = a->write_offset;
-            a_index->characteristics [0].payload_offset = a->write_offset + adios_calc_attribute_overhead_v1 (a);
+            a_index->characteristics [0].payload_offset = a->write_offset + adios_calc_attribute_overhead_v2 (a);
             a_index->characteristics [0].min = 0;
             a_index->characteristics [0].max = 0;
             if (a->value)
@@ -2283,20 +851,20 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             a_index->next = 0;
 
             // this fn will either take ownership for free
-            index_append_attribute_v1 (attrs_root, a_index);
+            index_append_attribute_v2 (attrs_root, a_index);
         }
 
         a = a->next;
     }
 }
 
-int adios_write_index_v1 (char ** buffer
+int adios_write_index_v2 (char ** buffer
                          ,uint64_t * buffer_size
                          ,uint64_t * buffer_offset
                          ,uint64_t index_start
-                         ,struct adios_index_process_group_struct_v1 * pg_root
-                         ,struct adios_index_var_struct_v1 * vars_root
-                         ,struct adios_index_attribute_struct_v1 * attrs_root
+                         ,struct adios_index_process_group_struct_v2 * pg_root
+                         ,struct adios_index_var_struct_v2 * vars_root
+                         ,struct adios_index_attribute_struct_v2 * attrs_root
                          )
 {
     uint64_t groups_count = 0;
@@ -2830,7 +1398,7 @@ int adios_write_index_v1 (char ** buffer
     return 0;
 }
 
-int adios_write_version_v1 (char ** buffer
+int adios_write_version_v2 (char ** buffer
                            ,uint64_t * buffer_size
                            ,uint64_t * buffer_offset
                            )
@@ -2842,7 +1410,7 @@ int adios_write_version_v1 (char ** buffer
     else
         test = 0;
 
-    test += 1;   // first data storage version
+    test += 2;   // master index file version
 
     test = htonl (test);
 
@@ -2850,7 +1418,6 @@ int adios_write_version_v1 (char ** buffer
 
     return 0;
 }
-
 
 static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 {
@@ -2913,7 +1480,7 @@ static uint16_t calc_dimensions_size (struct adios_dimension_struct * dimension)
 }
 
 static
-uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
+uint64_t adios_write_dimension_v2 (struct adios_file_struct * fd
                                   ,struct adios_dimension_struct * dimension
                                   )
 {
@@ -2993,7 +1560,7 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
 }
 
 static
-uint16_t adios_write_dimensions_v1 (struct adios_file_struct * fd
+uint16_t adios_write_dimensions_v2 (struct adios_file_struct * fd
                                    ,struct adios_dimension_struct * dimensions
                                    )
 {
@@ -3008,7 +1575,7 @@ uint16_t adios_write_dimensions_v1 (struct adios_file_struct * fd
 
     while (dimensions)
     {
-        size += adios_write_dimension_v1 (fd, dimensions);
+        size += adios_write_dimension_v2 (fd, dimensions);
 
         dimensions = dimensions->next;
     }
@@ -3016,7 +1583,7 @@ uint16_t adios_write_dimensions_v1 (struct adios_file_struct * fd
     return size;
 }
 
-uint16_t adios_write_var_characteristics_dims_v1 (struct adios_file_struct * fd
+uint16_t adios_write_var_characteristics_dims_v2 (struct adios_file_struct * fd
                                                  ,struct adios_var_struct * v
                                                  )
 {
@@ -3062,7 +1629,7 @@ uint16_t adios_write_var_characteristics_dims_v1 (struct adios_file_struct * fd
     return total_size;
 }
 
-uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
+uint16_t adios_write_var_characteristics_v2 (struct adios_file_struct * fd
                                             ,struct adios_var_struct * v
                                             )
 {
@@ -3107,7 +1674,7 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
                 index_size += 1;
                 characteristic_set_length += 1;
 
-                len = adios_write_var_characteristics_dims_v1 (fd, v);
+                len = adios_write_var_characteristics_dims_v2 (fd, v);
                 index_size += len;
                 characteristic_set_length += len;
 
@@ -3156,7 +1723,7 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
     return index_size;
 }
 
-int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
+int adios_generate_var_characteristics_v2 (struct adios_file_struct * fd
                                     ,struct adios_var_struct * var
                                     )
 {
@@ -3331,7 +1898,7 @@ return 0; \
 }
 
 // data is only there for sizing
-uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
+uint64_t adios_write_var_header_v2 (struct adios_file_struct * fd
                                    ,struct adios_var_struct * v
                                    )
 {
@@ -3369,10 +1936,10 @@ uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &flag, 1);
     total_size += 1;
 
-    total_size += adios_write_dimensions_v1 (fd, v->dimensions);
+    total_size += adios_write_dimensions_v2 (fd, v->dimensions);
 
-    adios_generate_var_characteristics_v1 (fd, v);
-    total_size += adios_write_var_characteristics_v1 (fd, v);
+    adios_generate_var_characteristics_v2 (fd, v);
+    total_size += adios_write_var_characteristics_v2 (fd, v);
 
     total_size += adios_get_var_size (v, fd->group, v->data); // payload
 
@@ -3386,7 +1953,7 @@ uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
     return total_size;
 }
 
-int adios_write_var_payload_v1 (struct adios_file_struct * fd
+int adios_write_var_payload_v2 (struct adios_file_struct * fd
                                ,struct adios_var_struct * var
                                )
 {
@@ -3402,7 +1969,7 @@ int adios_write_var_payload_v1 (struct adios_file_struct * fd
     return 0;
 }
 
-int adios_write_attribute_v1 (struct adios_file_struct * fd
+int adios_write_attribute_v2 (struct adios_file_struct * fd
                              ,struct adios_attribute_struct * a
                              )
 {
@@ -3471,7 +2038,7 @@ int adios_write_attribute_v1 (struct adios_file_struct * fd
     return 0;
 }
 
-int adios_write_open_vars_v1 (struct adios_file_struct * fd)
+int adios_write_open_vars_v2 (struct adios_file_struct * fd)
 {
     fd->vars_written = 0;
 
@@ -3486,7 +2053,7 @@ int adios_write_open_vars_v1 (struct adios_file_struct * fd)
     return 0;
 }
 
-int adios_write_close_vars_v1 (struct adios_file_struct * fd)
+int adios_write_close_vars_v2 (struct adios_file_struct * fd)
 {
     // close the var area (count and total size) and write the attributes
     uint64_t size = fd->offset - fd->vars_start;
@@ -3497,7 +2064,7 @@ int adios_write_close_vars_v1 (struct adios_file_struct * fd)
     return 0;
 }
 
-int adios_write_open_attributes_v1 (struct adios_file_struct * fd)
+int adios_write_open_attributes_v2 (struct adios_file_struct * fd)
 {
     fd->vars_start = fd->offset;   // save the start of attr area for size
     fd->offset += (2 + 8);         // space to write the count and size
@@ -3509,7 +2076,7 @@ int adios_write_open_attributes_v1 (struct adios_file_struct * fd)
     return 0;
 }
 
-int adios_write_close_attributes_v1 (struct adios_file_struct * fd)
+int adios_write_close_attributes_v2 (struct adios_file_struct * fd)
 {
     // write attribute count and total size
     uint64_t size = fd->offset - fd->vars_start;
@@ -3571,281 +2138,4 @@ static int adios_multiply_dimensions (uint64_t * size
 
             return 0;
     }
-}
-
-uint64_t adios_get_var_size (struct adios_var_struct * var
-                            ,struct adios_group_struct * group, void * data
-                            )
-{
-    uint64_t size = 0;
-
-    size = adios_get_type_size (var->type, data);
-
-    if (var->dimensions)
-    {
-        struct adios_dimension_struct * d = var->dimensions;
-
-        while (d)
-        {
-            // calculate the size for this dimension element
-            if (d->dimension.id != 0)
-            {
-                struct adios_var_struct * dim_var = 0;
-
-                dim_var = adios_find_var_by_id (group->vars, d->dimension.id);
-
-                // first check to make sure all vars are provided
-                if (!dim_var)
-                {
-                    struct adios_attribute_struct * attr = 0;
-                    attr = adios_find_attribute_by_id (group->attributes
-                                                      ,d->dimension.id
-                                                      );
-                    if (attr)
-                    {
-                        if (attr->var)
-                        {
-                            if (!attr->var->data)
-                            {
-                                fprintf (stderr, "adios_get_var_size: "
-                                                 "sizing of %s failed because "
-                                                 "dimension component %s was "
-                                                 "not provided\n"
-                                        ,var->name, attr->var->name
-                                        );
-
-                                return 0;
-                            }
-                            else
-                            {
-                                if (!adios_multiply_dimensions (&size, var
-                                                               ,attr->var->type
-                                                               ,attr->var->data
-                                                               )
-                                   )
-                                {
-                                    return 0;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (!adios_multiply_dimensions (&size, var
-                                                           ,attr->type
-                                                           ,attr->value
-                                                           )
-                               )
-                            {
-                                return 0;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        fprintf (stderr, "adios_get_var_size: "
-                                         "sizing of %s failed because "
-                                         "dimension component was not "
-                                         "provided\n"
-                                ,var->name
-                                );
-
-                        return 0;
-                    }
-                }
-                else
-                {
-                    if (!dim_var->data)
-                    {
-                        fprintf (stderr, "adios_get_var_size: "
-                                         "sizing of %s failed because "
-                                         "dimension component %s was not "
-                                         "provided\n"
-                                ,var->name, dim_var->name
-                                );
-
-                        return 0;
-                    }
-                    else
-                    {
-                        if (!adios_multiply_dimensions (&size, var
-                                                       ,dim_var->type
-                                                       ,dim_var->data
-                                                       )
-                           )
-                        {
-                            return 0;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                if (d->dimension.time_index == adios_flag_no)
-                {
-                    size *= d->dimension.rank;
-                }
-                // the time index doesn't take up space...
-            }
-
-            d = d->next;
-        }
-    }
-
-    return size;
-}
-
-const char * adios_type_to_string_int (int type)
-{
-    switch (type)
-    {
-        case adios_unsigned_byte:    return "unsigned byte";
-        case adios_unsigned_short:   return "unsigned short";
-        case adios_unsigned_integer: return "unsigned integer";
-        case adios_unsigned_long:    return "unsigned long long";
-
-        case adios_byte:             return "byte";
-        case adios_short:            return "short";
-        case adios_integer:          return "integer";
-        case adios_long:             return "long long";
-
-        case adios_real:             return "real";
-        case adios_double:           return "double";
-        case adios_long_double:      return "long double";
-
-        case adios_string:           return "string";
-        case adios_complex:          return "complex";
-        case adios_double_complex:   return "double complex";
-
-        default:
-        {
-            static char buf [50];
-            sprintf (buf, "(unknown: %d)", type);
-            return buf;
-        }
-    }
-}
-
-const char * adios_file_mode_to_string (int mode)
-{
-    static char buf [50];
-
-    switch (mode)
-    {
-        case adios_mode_write:  return "write";
-        case adios_mode_read:   return "read";
-        case adios_mode_update: return "update";
-        case adios_mode_append: return "append";
-
-        default:
-            sprintf (buf, "(unknown: %d)", mode);
-    }
-
-    return buf;
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// Queue management code intended for adaptive API use
-//////////////////////////////////////////////////////////////////////////////
-void list_init (List * list, void (* destroy) (void * data))
-{
-    list->size = 0;
-    list->destroy = destroy;
-    list->head = NULL;
-    list->tail = NULL;
-
-    return;
-}
-
-void list_destroy (List * list)
-{
-    void * data;
-
-    while (list_size (list) > 0)
-    {
-        if (list_rem_next (list, NULL, (void **) &data) == 0 && list->destroy != NULL)
-        {
-            list->destroy (data);
-        }
-    }
-
-    memset (list, 0, sizeof (List));
-
-    return;
-}
-
-int list_ins_next (List * list, ListElmt * element, const void * data)
-{
-    ListElmt * new_element;
-
-    if ((new_element = (ListElmt *) malloc (sizeof (ListElmt))) == NULL)
-        return -1;
-
-    new_element->data = (void *) data;
-
-    if (element == NULL)
-    {
-        if  (list_size (list) == 0)
-            list->tail = new_element;
-
-        new_element->next = list->head;
-        list->head = new_element;
-    }
-    else
-    {
-        if (element->next == NULL)
-            list->tail = new_element;
-
-        new_element->next = element->next;
-        element->next = new_element;
-    }
-
-    list->size++;
-
-    return 0;
-}
-
-int list_rem_next (List * list, ListElmt * element, void ** data)
-{
-    ListElmt * old_element;
-
-    if (list_size (list) == 0)
-        return -1;
-
-    if (element == NULL)
-    {
-        *data = list->head->data;
-        old_element = list->head;
-        list->head = list->head->next;
-
-        if (list_size (list) == 1)
-            list->tail = NULL;
-    }
-    else
-    {
-        if (element->next == NULL)
-            return -1;
-
-        *data = element->next->data;
-        old_element = element->next;
-        element->next = element->next->next;
-
-        if (element->next == NULL)
-            list->tail = element;
-    }
-
-    free (old_element);
-
-    list->size--;
-
-    return 0;
-}
-
-int queue_enqueue (Queue * queue, const void * data)
-{
-    return list_ins_next (queue, list_tail (queue), data);
-}
-
-int queue_dequeue (Queue * queue, void ** data)
-{
-    return list_rem_next (queue, NULL, data);
 }
