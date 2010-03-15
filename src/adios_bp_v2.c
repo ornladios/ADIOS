@@ -574,6 +574,23 @@ int adios_parse_vars_index_v2 (struct adios_bp_buffer_struct_v2 * b
                         break;
                     }
 
+                    case adios_characteristic_file_name:
+                    {
+                        uint64_t size = adios_get_type_size ((*root)->type, "");
+                        len = *(uint16_t *) (b->buff + b->offset);
+                        if(b->change_endianness == adios_flag_yes) {
+                            swap_64(len);
+                        }
+                        b->offset += 2;
+
+                        (*root)->characteristics [j].file_name = malloc (len + 1);
+                        (*root)->characteristics [j].file_name[len] = '\0';
+                        strncpy ((*root)->characteristics [j].file_name, b->buff + b->offset, len); 
+                        b->offset += len;
+
+                        break;
+                    }
+
                     case adios_characteristic_dimensions:
                     {
                         uint16_t dims_length;
@@ -868,6 +885,23 @@ int adios_parse_attributes_index_v2 (struct adios_bp_buffer_struct_v2 * b
                             swap_64((*root)->characteristics [j].payload_offset);
                         }
                         b->offset += 8;
+
+                        break;
+                    }
+
+                    case adios_characteristic_file_name:
+                    {
+                        uint64_t size = adios_get_type_size ((*root)->type, "");
+                        len = *(uint16_t *) (b->buff + b->offset);
+                        if(b->change_endianness == adios_flag_yes) {
+                            swap_64(len);
+                        }
+                        b->offset += 2;
+
+                        (*root)->characteristics [j].file_name = malloc (len + 1);
+                        (*root)->characteristics [j].file_name[len] = '\0';
+                        strncpy ((*root)->characteristics [j].file_name, b->buff + b->offset, len);
+                        b->offset += len;
 
                         break;
                     }

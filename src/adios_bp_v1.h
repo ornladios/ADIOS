@@ -21,6 +21,7 @@ enum ADIOS_CHARACTERISTICS
     ,adios_characteristic_dimensions     = 4
     ,adios_characteristic_var_id         = 5
     ,adios_characteristic_payload_offset = 6
+    ,adios_characteristic_file_name      = 7
 };
 
 struct adios_bp_buffer_struct_v1

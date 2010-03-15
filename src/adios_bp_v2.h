@@ -66,6 +66,7 @@ struct adios_index_characteristic_struct_v2
     void * value;
     uint16_t var_id;
     uint64_t payload_offset;   // beginning of the var or attr payload
+    char * file_name;
 };
 
 struct adios_index_var_struct_v2

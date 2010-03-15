@@ -727,6 +727,7 @@ void adios_build_index_v2 (struct adios_file_struct * fd
             v_index->characteristics_allocated = 1;
             v_index->characteristics [0].offset = v->write_offset;
             v_index->characteristics [0].payload_offset = v->write_offset + adios_calc_var_overhead_v2 (v);
+            v_index->characteristics [0].file_name = strdup (fd->name);
             v_index->characteristics [0].min = 0;
             v_index->characteristics [0].max = 0;
             v_index->characteristics [0].value = 0;
@@ -829,6 +830,7 @@ void adios_build_index_v2 (struct adios_file_struct * fd
 
             a_index->characteristics [0].offset = a->write_offset;
             a_index->characteristics [0].payload_offset = a->write_offset + adios_calc_attribute_overhead_v2 (a);
+            a_index->characteristics [0].file_name = strdup (fd->name);
             a_index->characteristics [0].min = 0;
             a_index->characteristics [0].max = 0;
             if (a->value)
@@ -1060,6 +1062,26 @@ int adios_write_index_v2 (char ** buffer
             index_size += 8;
             var_size += 8;
             characteristic_set_length += 8;
+
+            // add a file name characteristic for all vars
+            characteristic_set_count++;
+            flag = (uint8_t) adios_characteristic_file_name;
+            buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
+            index_size += 1;
+            var_size += 1;
+            characteristic_set_length += 1;
+
+            len = strlen (vars_root->characteristics [i].file_name);
+            buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
+            index_size += 2;
+            var_size += 2;
+
+            buffer_write (buffer, buffer_size, buffer_offset
+                         ,vars_root->characteristics [i].file_name, len
+                         );
+            index_size += len;
+            var_size += len;
+            characteristic_set_length += len;
 
             // depending on if it is an array or not, generate a different
             // additional set of characteristics
@@ -1320,6 +1342,26 @@ int adios_write_index_v2 (char ** buffer
             index_size += 8;
             attr_size += 8;
             characteristic_set_length += 8;
+
+            // add a file name characteristic for all vars
+            characteristic_set_count++;
+            flag = (uint8_t) adios_characteristic_file_name;
+            buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
+            index_size += 1;
+            attr_size += 1;
+            characteristic_set_length += 1;
+
+            len = strlen (attrs_root->characteristics [i].file_name);
+            buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
+            index_size += 2;
+            attr_size += 2;
+
+            buffer_write (buffer, buffer_size, buffer_offset
+                         ,attrs_root->characteristics [i].file_name, len
+                         );
+            index_size += len;
+            attr_size += len;
+            characteristic_set_length += len;
 
             size = adios_get_type_size (attrs_root->type
                                        ,attrs_root->characteristics [i].value
