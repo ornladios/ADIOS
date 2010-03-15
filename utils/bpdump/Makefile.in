@@ -36,9 +36,11 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = bpdump$(EXEEXT)
+bin_PROGRAMS = bpdump$(EXEEXT) bpdump_v2$(EXEEXT)
 @HAVE_DMALLOC_TRUE@am__append_1 = -DDMALLOC  $(DMALLOC_CPPFLAGS)
 @HAVE_DMALLOC_TRUE@am__append_2 = -ldmalloc
+@HAVE_DMALLOC_TRUE@am__append_3 = -DDMALLOC  $(DMALLOC_CPPFLAGS)
+@HAVE_DMALLOC_TRUE@am__append_4 = -ldmalloc
 subdir = utils/bpdump
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -69,6 +71,11 @@ bpdump_OBJECTS = $(am_bpdump_OBJECTS)
 am__DEPENDENCIES_1 =
 bpdump_DEPENDENCIES = $(top_builddir)/src/libadios_internal_nompi.a \
 	$(am__DEPENDENCIES_1)
+am_bpdump_v2_OBJECTS = bpdump_v2-bpdump_v2.$(OBJEXT)
+bpdump_v2_OBJECTS = $(am_bpdump_v2_OBJECTS)
+bpdump_v2_DEPENDENCIES =  \
+	$(top_builddir)/src/libadios_internal_nompi.a \
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -80,8 +87,8 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(bpdump_SOURCES)
-DIST_SOURCES = $(bpdump_SOURCES)
+SOURCES = $(bpdump_SOURCES) $(bpdump_v2_SOURCES)
+DIST_SOURCES = $(bpdump_SOURCES) $(bpdump_v2_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -225,7 +232,6 @@ PTL_TRUE = @PTL_TRUE@
 RANLIB = @RANLIB@
 RESEARCH_TRANSPORTS_FALSE = @RESEARCH_TRANSPORTS_FALSE@
 RESEARCH_TRANSPORTS_TRUE = @RESEARCH_TRANSPORTS_TRUE@
-SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -280,7 +286,12 @@ bpdump_SOURCES = bpdump.c
 bpdump_CPPFLAGS = -D_NOMPI $(am__append_1)
 bpdump_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
 	$(am__append_2)
+bpdump_v2_SOURCES = bpdump_v2.c
+bpdump_v2_CPPFLAGS = -D_NOMPI $(am__append_3)
+bpdump_v2_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
+	$(am__append_4)
 @HAVE_DMALLOC_TRUE@bpdump_LDFLAGS = $(DMALLOC_LDFLAGS)
+@HAVE_DMALLOC_TRUE@bpdump_v2_LDFLAGS = $(DMALLOC_LDFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -345,6 +356,9 @@ clean-binPROGRAMS:
 bpdump$(EXEEXT): $(bpdump_OBJECTS) $(bpdump_DEPENDENCIES) 
 	@rm -f bpdump$(EXEEXT)
 	$(LINK) $(bpdump_LDFLAGS) $(bpdump_OBJECTS) $(bpdump_LDADD) $(LIBS)
+bpdump_v2$(EXEEXT): $(bpdump_v2_OBJECTS) $(bpdump_v2_DEPENDENCIES) 
+	@rm -f bpdump_v2$(EXEEXT)
+	$(LINK) $(bpdump_v2_LDFLAGS) $(bpdump_v2_OBJECTS) $(bpdump_v2_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -366,6 +380,12 @@ bpdump-bpdump.o: bpdump.c
 
 bpdump-bpdump.obj: bpdump.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bpdump_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bpdump-bpdump.obj `if test -f 'bpdump.c'; then $(CYGPATH_W) 'bpdump.c'; else $(CYGPATH_W) '$(srcdir)/bpdump.c'; fi`
+
+bpdump_v2-bpdump_v2.o: bpdump_v2.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bpdump_v2_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bpdump_v2-bpdump_v2.o `test -f 'bpdump_v2.c' || echo '$(srcdir)/'`bpdump_v2.c
+
+bpdump_v2-bpdump_v2.obj: bpdump_v2.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bpdump_v2_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bpdump_v2-bpdump_v2.obj `if test -f 'bpdump_v2.c'; then $(CYGPATH_W) 'bpdump_v2.c'; else $(CYGPATH_W) '$(srcdir)/bpdump_v2.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
