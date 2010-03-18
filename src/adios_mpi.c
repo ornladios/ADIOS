@@ -28,7 +28,7 @@
 
 static int adios_mpi_initialized = 0;
 
-#define COLLECT_METRICS 0
+#define COLLECT_METRICS 1
 
 struct adios_MPI_data_struct
 {
@@ -253,6 +253,17 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
     timeval_subtract (&diff, &(t->t24 [0]), &t->t21);
     fprintf (f, "pp\t%2d\tshould_buffer->write1 time:\t%6d\t%02d.%06d\n"
             ,iteration, rank, diff.tv_sec, diff.tv_usec);
+
+    fprintf (f, "aa\t%2d\tprocess write time:\t%6d\t%02d.%06d\n"
+            ,iteration, rank, t->t8.tv_sec, t->t8.tv_usec);
+
+    timeval_subtract (&diff, &t->t11, &t->t23);
+    fprintf (f, "vv\t%2d\tclose start to shutdown time:\t%6d\t%02d.%06d\n"
+           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
+
+    timeval_subtract (&diff, &t->t28, &t->t23);
+    fprintf (f, "ww\t%2d\tclose total time:\t%6d\t%02d.%06d\n"
+            ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 }
 #endif
 
@@ -2382,6 +2393,7 @@ timeval_subtract (&timing.t8, &b, &a);
         MPI_File_close (&md->fh);
 
 #if COLLECT_METRICS
+    gettimeofday (&timing.t28, NULL);
     print_metrics (md, iteration++);
 #endif
     if (   md->group_comm != MPI_COMM_WORLD

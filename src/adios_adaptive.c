@@ -31,7 +31,7 @@
 
 static int adios_adaptive_initialized = 0;
 
-#define PRINT_MESSAGES 1
+#define PRINT_MESSAGES 0
 
 #define COLLECT_METRICS 1
 
@@ -554,28 +554,28 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
 
     timeval_subtract (&diff, &t->t23, &t->t24 [t->write_count - 1]);
     fprintf (f, "rr\t%2d\twrite[n]->close start time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
+            ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     fprintf (f, "tt\t%2d\tMPI_Send time:\t%6d\tcount: %d\t%02d.%06d\n"
-           ,iteration, rank, t->send_count, t->t26.tv_sec, t->t26.tv_usec);
+            ,iteration, rank, t->send_count, t->t26.tv_sec, t->t26.tv_usec);
 
     fprintf (f, "uu\t%2d\tMPI_Recv time:\t%6d\tcount: %d\t%02d.%06d\n"
-           ,iteration, rank, t->recv_count, t->t27.tv_sec, t->t27.tv_usec);
+            ,iteration, rank, t->recv_count, t->t27.tv_sec, t->t27.tv_usec);
 
     fprintf (f, "aa\t%2d\tprocess write time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, t->t8.tv_sec, t->t8.tv_usec);
+            ,iteration, rank, t->t8.tv_sec, t->t8.tv_usec);
 
     timeval_subtract (&diff, &t->t11, &t->t23);
     fprintf (f, "vv\t%2d\tclose start to shutdown time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
+            ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     timeval_subtract (&diff, &t->t28, &t->t23);
     fprintf (f, "ww\t%2d\tclose total time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
+            ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
     timeval_subtract (&diff, &t->t18, &t->t0);
     fprintf (f, "zz\t%2d\twriter total time:\t%6d\t%02d.%06d\n"
-           ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
+            ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 }
 #endif
 
