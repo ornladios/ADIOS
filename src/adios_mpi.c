@@ -216,11 +216,6 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
         fprintf (f, "ee\t%2d\tBuild file offsets:\t%02d.%06d\n"
                 ,iteration, diff.tv_sec, diff.tv_usec);
 
-        timeval_subtract (&diff, &t->t8, &t->t7);
-        fprintf (f, "gg\t%2d\tAll writes complete (w/ local index):\t"
-                    "%02d.%06d\n"
-                ,iteration, diff.tv_sec, diff.tv_usec);
-        
         timeval_subtract (&diff, &t->t11, &t->t0);
         fprintf (f, "hh\t%2d\tTotal time:\t%02d.%06d\n"
                 ,iteration, diff.tv_sec, diff.tv_usec);

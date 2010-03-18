@@ -150,6 +150,7 @@ struct timing_metrics
     uint64_t mpi_queue_size;  // number allocated
     struct timeval_writer * t29;  // track in sub coord write_complete msgs
 
+    uint64_t probe_count;  // number used (t25)
     uint64_t send_count;   // number used (t26)
     uint64_t recv_count;   // number used (t27)
 };
@@ -438,13 +439,13 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
         fprintf (f, "hh\t%2d\tTotal time:\t%02d.%06d\n"
                ,iteration, (int)diff.tv_sec, (int)diff.tv_usec);
 
-        timeval_subtract (&diff, &t->t10, &t->t0);
+        timeval_subtract (&diff, &t->t20, &t->t18);
         fprintf (f, "xx\t%2d\tCoord total time:\t%6d\t%02d.%06d\n"
                ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
     }
     if (rank == sub_coord_rank)
     {
-        timeval_subtract (&diff, &t->t13, &t->t0);
+        timeval_subtract (&diff, &t->t20, &t->t18);
         fprintf (f, "yy\t%2d\tSub coord total time:\t%6d\t%02d.%06d\n"
                ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
 
@@ -555,6 +556,9 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
     timeval_subtract (&diff, &t->t23, &t->t24 [t->write_count - 1]);
     fprintf (f, "rr\t%2d\twrite[n]->close start time:\t%6d\t%02d.%06d\n"
             ,iteration, rank, (int)diff.tv_sec, (int)diff.tv_usec);
+
+    fprintf (f, "ss\t%2d\tMPI_Probe time:\t%6d\tcount: %d\t%02d.%06d\n"
+            ,iteration, rank, t->probe_count, t->t25.tv_sec, t->t25.tv_usec);
 
     fprintf (f, "tt\t%2d\tMPI_Send time:\t%6d\tcount: %d\t%02d.%06d\n"
             ,iteration, rank, t->send_count, t->t26.tv_sec, t->t26.tv_usec);
@@ -1099,6 +1103,9 @@ int adios_adaptive_open (struct adios_file_struct * fd
     timing.mpi_queue_size = 0;
     if (timing.t29) free (timing.t29);
     timing.t29 = 0;
+
+    timing.probe_count = 0;
+    memset (&timing.t25, 0, sizeof (struct timeval));
 
     timing.send_count = 0;
     memset (&timing.t26, 0, sizeof (struct timeval));
@@ -2787,10 +2794,18 @@ timing.send_count++;
                             }
                         }
                     }
-
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
                     MPI_Probe (MPI_ANY_SOURCE, MPI_ANY_TAG, md->group_comm
                               ,&status
                               );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t25, &timing.t25, &c);
+timing.probe_count++;
+#endif
                     static int msg_count = 0;
                     source = status.MPI_SOURCE;
                     tag = status.MPI_TAG;
@@ -3305,9 +3320,18 @@ timing.send_count++;
                         }
                     }
 
+#if COLLECT_METRICS
+gettimeofday (&a, NULL);
+#endif
                     MPI_Probe (MPI_ANY_SOURCE, MPI_ANY_TAG, md->group_comm
                               ,&status
                               );
+#if COLLECT_METRICS
+gettimeofday (&b, NULL);
+timeval_subtract (&c, &b, &a);
+timeval_add (&timing.t25, &timing.t25, &c);
+timing.probe_count++;
+#endif
                     source = status.MPI_SOURCE;
                     tag = status.MPI_TAG;
                     if (   tag == TAG_SUB_COORDINATOR_INDEX_BODY
