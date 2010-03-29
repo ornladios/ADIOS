@@ -324,8 +324,8 @@ void print_metrics (struct adios_adaptive_data_struct * md, int iteration)
 
         // get the sub coordinator ranks
         sub_coord_ranks [0] = md->sub_coord_rank;
-        MPI_Gather (&md->sub_coord_rank, 1, MPI_INTEGER
-                   ,sub_coord_ranks, 1, MPI_INTEGER
+        MPI_Gather (&md->sub_coord_rank, 1, MPI_INT
+                   ,sub_coord_ranks, 1, MPI_INT
                    ,0, md->group_comm
                    );
 
@@ -339,14 +339,22 @@ void print_metrics (struct adios_adaptive_data_struct * md, int iteration)
         }
         fclose (f);
 
-        free (sub_coord_ranks);
-        free (t);
-        free (recv_buffer);
-        free (recv_buffer1);
-        free (recv_buffer2);
-        free (recv_buffer3);
-        free (index_sizes);
-        free (index_offsets);
+        if (sub_coord_ranks)
+            free (sub_coord_ranks);
+        if (t)
+            free (t);
+        if (recv_buffer)
+            free (recv_buffer);
+        if (recv_buffer1)
+            free (recv_buffer1);
+        if (recv_buffer2)
+            free (recv_buffer2);
+        if (recv_buffer3)
+            free (recv_buffer3);
+        if (index_sizes)
+            free (index_sizes);
+        if (index_offsets)
+            free (index_offsets);
     }
     else
     {
@@ -399,8 +407,8 @@ void print_metrics (struct adios_adaptive_data_struct * md, int iteration)
                     );
 
         // send the sub coordinator rank
-        MPI_Gather (&md->sub_coord_rank, 1, MPI_INTEGER
-                   ,NULL, 1, MPI_INTEGER
+        MPI_Gather (&md->sub_coord_rank, 1, MPI_INT
+                   ,NULL, 1, MPI_INT
                    ,0, md->group_comm
                    );
     }
@@ -1054,13 +1062,25 @@ void adios_adaptive_init (const char * parameters
                     }
                 }
 
-                free (key);
-                free (value);
+                if (key)
+                {
+                    free (key);
+                    key = 0;
+                }
+                if (value)
+                {
+                    free (value);
+                    value = 0;
+                }
 
                 token = strtok (NULL, ";");
             }
 
-            free (p);
+            if (p)
+            {
+                free (p);
+                p = 0;
+            }
         }
     }
 
@@ -1214,7 +1234,11 @@ adios_build_file_offset (struct adios_adaptive_data_struct *md
             assert (err == MPI_SUCCESS);
             fd->base_offset = offsets [0];
             fd->pg_start_in_file = fd->base_offset;
-            free (offsets);
+            if (offsets)
+            {
+                free (offsets);
+                offsets = 0;
+            }
         }
         else
         {
@@ -1515,7 +1539,11 @@ static void set_stripe_size (struct adios_adaptive_data_struct * md
                             );
                 close (f_split [i]);
             }
-            free (f_split);
+            if (f_split)
+            {
+                free (f_split);
+                f_split = 0;
+            }
             unlink (filename);
         }
     }
@@ -1584,7 +1612,11 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                     fprintf (stderr, "MPI open read failed for %s: '%s'\n"
                             ,name, e
                             );
-                    free (name);
+                    if (name)
+                    {
+                        free (name);
+                        name = 0;
+                    }
 
                     return adios_flag_no;
                 }
@@ -1661,7 +1693,11 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                                 );
                     md->b.read_pg_offset = offsets [0];
                     md->b.read_pg_size = offsets [1];
-                    free (offsets);
+                    if (offsets)
+                    {
+                        free (offsets);
+                        offsets = 0;
+                    }
                 }
                 else
                 {
@@ -1688,7 +1724,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 if (next != -1)
                 {
                     //pthread_mutex_lock (&md->mpi_mutex);
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                     //pthread_mutex_unlock (&md->mpi_mutex);
@@ -1696,13 +1732,13 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             }
             else
             {
-                MPI_Recv (&flag, 1, MPI_INTEGER, previous, previous
+                MPI_Recv (&flag, 1, MPI_INT, previous, previous
                          ,md->group_comm, &md->status
                          );
                 if (next != -1)
                 {
                     //pthread_mutex_lock (&md->mpi_mutex);
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                     //pthread_mutex_unlock (&md->mpi_mutex);
@@ -1725,7 +1761,11 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 fprintf (stderr, "MPI open write failed for %s: '%s'\n"
                         ,name, e
                         );
-                free (name);
+                if (name)
+                {
+                    free (name);
+                    name = 0;
+                }
 
                 return adios_flag_no;
             }
@@ -1775,7 +1815,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 if (next != -1)
                 {
                     //pthread_mutex_lock (&md->mpi_mutex);
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, TAG_FILE_OPEN
+                    MPI_Isend (&flag, 1, MPI_INT, next, TAG_FILE_OPEN
                               ,md->group_comm, &md->req
                               );
                     //pthread_mutex_unlock (&md->mpi_mutex);
@@ -1783,13 +1823,13 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             }
             else
             {
-                MPI_Recv (&flag, 1, MPI_INTEGER, previous, TAG_FILE_OPEN
+                MPI_Recv (&flag, 1, MPI_INT, previous, TAG_FILE_OPEN
                          ,md->group_comm, &md->status
                          );
                 if (next != -1)
                 {
                     //pthread_mutex_lock (&md->mpi_mutex);
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, TAG_FILE_OPEN
+                    MPI_Isend (&flag, 1, MPI_INT, next, TAG_FILE_OPEN
                               ,md->group_comm, &md->req
                               );
                     //pthread_mutex_unlock (&md->mpi_mutex);
@@ -1802,7 +1842,11 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             if (md->f == -1)
             {
                 printf ("File open error for %s: %s\n", name, strerror (errno));
-                free (name);
+                if (name)
+                {
+                    free (name);
+                    name = 0;
+                }
 
                 return adios_flag_no;
             }
@@ -1840,17 +1884,21 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                         fprintf (stderr, "MPI open write failed for %s: '%s'\n"
                                 ,name, e
                                 );
-                        free (name);
+                        if (name)
+                        {
+                            free (name);
+                            name = 0;
+                        }
 
                         return adios_flag_no;
                     }
                 }
-                MPI_Bcast (&old_file, 1, MPI_INTEGER, 0, md->group_comm);
+                MPI_Bcast (&old_file, 1, MPI_INT, 0, md->group_comm);
             }
             else
             {
                 if (md->group_comm != MPI_COMM_NULL)
-                    MPI_Bcast (&old_file, 1, MPI_INTEGER, 0, md->group_comm);
+                    MPI_Bcast (&old_file, 1, MPI_INT, 0, md->group_comm);
             }
 
             if (old_file)
@@ -1904,7 +1952,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                         p = p->next;
                     }
                     fd->group->time_index = ++max_time_index;
-                    MPI_Bcast (&fd->group->time_index, 1, MPI_INTEGER, 0
+                    MPI_Bcast (&fd->group->time_index, 1, MPI_INT, 0
                               ,md->group_comm
                               );
 
@@ -1935,7 +1983,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 {
                     fd->base_offset = 0;
                     fd->pg_start_in_file = 0;
-                    MPI_Bcast (&fd->group->time_index, 1, MPI_INTEGER, 0
+                    MPI_Bcast (&fd->group->time_index, 1, MPI_INT, 0
                               ,md->group_comm
                               );
 
@@ -1968,7 +2016,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 if (next != -1)
                 {
                     //pthread_mutex_lock (&md->mpi_mutex);
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                     //pthread_mutex_unlock (&md->mpi_mutex);
@@ -1976,13 +2024,13 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             }
             else
             {
-                MPI_Recv (&flag, 1, MPI_INTEGER, previous, previous
+                MPI_Recv (&flag, 1, MPI_INT, previous, previous
                          ,md->group_comm, &md->status
                          );
                 if (next != -1)
                 {
                     //pthread_mutex_lock (&md->mpi_mutex);
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                     //pthread_mutex_unlock (&md->mpi_mutex);
@@ -2005,7 +2053,11 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 fprintf (stderr, "MPI open write failed for %s: '%s'\n"
                         ,name, e
                         );
-                free (name);
+                if (name)
+                {
+                    free (name);
+                    name = 0;
+                }
 
                 return adios_flag_no;
             }
@@ -2017,13 +2069,21 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
         {
             fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
 
-            free (name);
+            if (name)
+            {
+                free (name);
+                name = 0;
+            }
 
             return adios_flag_no;
         }
     }
 
-    free (name);
+    if (name)
+    {
+        free (name);
+        name = 0;
+    }
 
     if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
     {
@@ -2081,7 +2141,11 @@ void adios_adaptive_write (struct adios_file_struct * fd
         {
             if (v->free_data == adios_flag_yes)
             {
-                free (v->data);
+                if (v->data)
+                {
+                    free (v->data);
+                    v->data = 0;
+                }
                 adios_method_buffer_free (v->data_size);
             }
         }
@@ -2165,7 +2229,11 @@ void adios_adaptive_get_write_buffer (struct adios_file_struct * fd
     if (v->data && v->free_data)
     {
         adios_method_buffer_free (v->data_size);
-        free (v->data);
+        if (v->data)
+        {
+            free (v->data);
+            v->data = 0;
+        }
     }
 
     mem_allowed = adios_method_buffer_alloc (*size);
@@ -2588,7 +2656,8 @@ timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
             }
-            free (new_msg);
+            if (new_msg)
+                free (new_msg);
             new_msg = 0;
             // since we are the sub_coord, no need to tell us
 
@@ -2610,7 +2679,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                free (new_msg);
+                if (new_msg)
+                    free (new_msg);
                 new_msg = 0;
             }
             // since we are the sub_coord, we n't need to send the index
@@ -2745,7 +2815,8 @@ timing.send_count++;
 #endif
                             active_writers++;
                             currently_writing = 1;
-                            free (new_msg);
+                            if (new_msg)
+                                free (new_msg);
                             new_msg = 0;
                         }
                         else
@@ -2785,7 +2856,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                                        free (new_msg);
+                                        if (new_msg)
+                                            free (new_msg);
                                         new_msg = 0;
                                     }
                                     // since we handle the coord/sub_coord proc
@@ -2969,7 +3041,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                                    free (new_msg);
+                                    if (new_msg)
+                                        free (new_msg);
                                     new_msg = 0;
                                 }
 
@@ -3017,7 +3090,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                                    free (new_msg);
+                                    if (new_msg)
+                                        free (new_msg);
                                     new_msg = 0;
                                     // since we are specifically not the coord,
                                     // we don't need to do anything special
@@ -3060,7 +3134,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                                    free (new_msg);
+                                    if (new_msg)
+                                        free (new_msg);
                                     new_msg = 0;
                                     active_writers++;
                                     next_writer++;
@@ -3115,7 +3190,9 @@ gettimeofday (&timing.t12, NULL);
                             new_pg_root = 0;
                             new_vars_root = 0;
                             new_attrs_root = 0;
-                            free (b.buff); // == indices [i].index
+                            if (b.buff)
+                                free (b.buff); // == indices [i].index
+                            b.buff = 0;
                             total_size += b.length;
                         }
 #if COLLECT_METRICS
@@ -3167,7 +3244,11 @@ gettimeofday (&timing.t13, NULL);
                         msg = 0;
                     }
                 } while (shutdown_flag != SHUTDOWN_FLAG);
-                free (indices);
+                if (indices)
+                {
+                    free (indices);
+                    indices = 0;
+                }
             }
 ///////////////////////////////////////////////////////////////////////////////
 /////// END OF SUB_COORD ONLY /////////////////////////////////////////////////
@@ -3304,7 +3385,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                            free (new_msg);
+                            if (new_msg)
+                                free (new_msg);
                             new_msg = 0;
                             active_writers++;
                             currently_writing = 1;
@@ -3539,7 +3621,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                                                            free (new_msg);
+                                                            if (new_msg)
+                                                                free (new_msg);
                                                             new_msg = 0;
                                                             break;
                                                         }
@@ -3596,7 +3679,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                                                                free (new_msg);
+                                                                if (new_msg)
+                                                                    free (new_msg);
                                                                 new_msg = 0;
                                                                 local_writer++;
                                                                 active_writers++;
@@ -3663,7 +3747,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                                                        free (new_msg);
+                                                        if (new_msg)
+                                                            free (new_msg);
                                                         new_msg = 0;
                                                         break;
                                                     }
@@ -3712,7 +3797,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                                                            free (new_msg);
+                                                            if (new_msg)
+                                                                free (new_msg);
                                                             new_msg = 0;
                                                             local_writer++;
                                                             active_writers++;
@@ -3826,7 +3912,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                                                        free (new_msg);
+                                                        if (new_msg)
+                                                            free (new_msg);
                                                         new_msg = 0;
                                                         break;
                                                     }
@@ -3878,7 +3965,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                                                            free (new_msg);
+                                                            if (new_msg)
+                                                                free (new_msg);
                                                             new_msg = 0;
                                                             local_writer++;
                                                             active_writers++;
@@ -3947,7 +4035,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                                                    free (new_msg);
+                                                    if (new_msg)
+                                                        free (new_msg);
                                                     new_msg = 0;
                                                     break;
                                                 }
@@ -4001,7 +4090,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                                                        free (new_msg);
+                                                        if (new_msg)
+                                                            free (new_msg);
                                                         new_msg = 0;
                                                         local_writer++;
                                                         active_writers++;
@@ -4079,7 +4169,8 @@ timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
     
-                                                free (new_msg);
+                                                if (new_msg)
+                                                    free (new_msg);
                                                 new_msg = 0;
                                                 break;
                                             }
@@ -4130,7 +4221,8 @@ timeval_subtract (&c, &b, &a);
 timeval_add (&timing.t26, &timing.t26, &c);
 timing.send_count++;
 #endif
-                                                    free (new_msg);
+                                                    if (new_msg)
+                                                        free (new_msg);
                                                     new_msg = 0;
                                                     local_writer++;
                                                     active_writers++;
@@ -4242,7 +4334,9 @@ gettimeofday (&timing.t12, NULL);
                             new_pg_root = 0;
                             new_vars_root = 0;
                             new_attrs_root = 0;
-                            free (b.buff); // == indices [i].index
+                            if (b.buff)
+                                free (b.buff); // == indices [i].index
+                            b.buff = 0;
                             total_size += b.length;
                         }
 
@@ -4281,7 +4375,9 @@ gettimeofday (&timing.t13, NULL);
                         {
                             MPI_Wait (&(reqs [i]), &status);
                         }
-                        free (reqs);
+                        if (reqs)
+                            free (reqs);
+                        reqs = 0;
                         // need to make a new communicator for all of the
                         // sub_coords to build the global index. That will
                         // simplify the messaging to solicit and gather the
@@ -4473,9 +4569,15 @@ gettimeofday (&timing.t20, NULL);
                     md->b.length = buffer_size_save;
                     md->b.offset = offset_save;
 
-                    free (recv_buffer);
-                    free (index_sizes);
-                    free (index_offsets);
+                    if (recv_buffer)
+                        free (recv_buffer);
+                    recv_buffer = 0;
+                    if (index_sizes)
+                        free (index_sizes);
+                    index_sizes = 0;
+                    if (index_offsets)
+                        free (index_offsets);
+                    index_offsets = 0;
                 }
                 else
                 {
@@ -4519,7 +4621,9 @@ gettimeofday (&timing.t20, NULL);
                                );
             }
 
-            free (buffer);
+            if (buffer)
+                free (buffer);
+            buffer = 0;
 
             adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
             adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
@@ -4544,6 +4648,9 @@ gettimeofday (&timing.t20, NULL);
     // used for write
     if (md && md->f)
     {
+#if COLLECT_METRICS
+        fsync (md->f);
+#endif
         close (md->f);
         md->f = -1;
     }

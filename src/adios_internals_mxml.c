@@ -2709,12 +2709,12 @@ int adios_parse_config (const char * config)
         fclose (fp);
 //#if HAVE_MPI
         buffer_size = s.st_size;
-        MPI_Bcast (&buffer_size, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
+        MPI_Bcast (&buffer_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
         MPI_Bcast (buffer, buffer_size, MPI_BYTE, 0, MPI_COMM_WORLD);
     }
     else
     {
-        MPI_Bcast (&buffer_size, 1, MPI_INTEGER, 0, MPI_COMM_WORLD);
+        MPI_Bcast (&buffer_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
         buffer = malloc (buffer_size + 1);
         if (!buffer)
         {

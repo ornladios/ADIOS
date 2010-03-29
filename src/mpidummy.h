@@ -37,7 +37,7 @@ typedef int MPI_Fint;
 
 #define MPI_COMM_WORLD              1
 
-#define MPI_INTEGER                 1
+#define MPI_INT                     1
 
 int MPI_Init(int *argc, char ***argv);
 

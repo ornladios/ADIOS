@@ -775,19 +775,19 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
                 if (next != -1)
                 {
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                 }
             }
             else
             {
-                MPI_Recv (&flag, 1, MPI_INTEGER, previous, previous
+                MPI_Recv (&flag, 1, MPI_INT, previous, previous
                          ,md->group_comm, &md->status
                          );
                 if (next != -1)
                 {
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                 }
@@ -843,19 +843,19 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                     );
                 if (next != -1)
                 {
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                 }
             }
             else
             {
-                MPI_Recv (&flag, 1, MPI_INTEGER, previous, previous
+                MPI_Recv (&flag, 1, MPI_INT, previous, previous
                          ,md->group_comm, &md->status
                          );
                 if (next != -1)
                 {
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                 }
@@ -919,12 +919,12 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                         return adios_flag_no;
                     }
                 }
-                MPI_Bcast (&old_file, 1, MPI_INTEGER, 0, md->group_comm);
+                MPI_Bcast (&old_file, 1, MPI_INT, 0, md->group_comm);
             }
             else
             {
                 if (md->group_comm != MPI_COMM_NULL)
-                    MPI_Bcast (&old_file, 1, MPI_INTEGER, 0, md->group_comm);
+                    MPI_Bcast (&old_file, 1, MPI_INT, 0, md->group_comm);
             }
 
             if (old_file)
@@ -978,7 +978,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                         p = p->next;
                     }
                     fd->group->time_index = ++max_time_index;
-                    MPI_Bcast (&fd->group->time_index, 1, MPI_INTEGER, 0
+                    MPI_Bcast (&fd->group->time_index, 1, MPI_INT, 0
                               ,md->group_comm
                               );
 
@@ -1009,7 +1009,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 {
                     fd->base_offset = 0;
                     fd->pg_start_in_file = 0;
-                    MPI_Bcast (&fd->group->time_index, 1, MPI_INTEGER, 0
+                    MPI_Bcast (&fd->group->time_index, 1, MPI_INT, 0
                               ,md->group_comm
                               );
                 }
@@ -1044,19 +1044,19 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                     );
                 if (next != -1)
                 {
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                 }
             }
             else
             {
-                MPI_Recv (&flag, 1, MPI_INTEGER, previous, previous
+                MPI_Recv (&flag, 1, MPI_INT, previous, previous
                          ,md->group_comm, &md->status
                          );
                 if (next != -1)
                 {
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                 }
@@ -2385,7 +2385,12 @@ timeval_subtract (&timing.t8, &b, &a);
     }
 
     if (md && md->fh)
+    {
+#if COLLECT_METRICS
+        MPI_File_sync (md->fh);
+#endif
         MPI_File_close (&md->fh);
+    }
 
 #if COLLECT_METRICS
     gettimeofday (&timing.t28, NULL);

@@ -753,19 +753,19 @@ enum ADIOS_FLAG adios_mpi_stripe_should_buffer (struct adios_file_struct * fd
 
                 if (next != -1)
                 {
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                 }
             }
             else
             {
-                MPI_Recv (&flag, 1, MPI_INTEGER, previous, previous
+                MPI_Recv (&flag, 1, MPI_INT, previous, previous
                          ,md->group_comm, &md->status
                          );
                 if (next != -1)
                 {
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                 }
@@ -881,19 +881,19 @@ enum ADIOS_FLAG adios_mpi_stripe_should_buffer (struct adios_file_struct * fd
 
                 if (next != -1)
                 {
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                 }
             }
             else
             {
-                MPI_Recv (&flag, 1, MPI_INTEGER, previous, previous
+                MPI_Recv (&flag, 1, MPI_INT, previous, previous
                          ,md->group_comm, &md->status
                          );
                 if (next != -1)
                 {
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                 }
@@ -1103,19 +1103,19 @@ enum ADIOS_FLAG adios_mpi_stripe_should_buffer (struct adios_file_struct * fd
                 md->striping_unit = adios_mpi_stripe_get_striping_unit(md->fh, name);
                 if (next != -1)
                 {
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                 }
             }
             else
             {
-                MPI_Recv (&flag, 1, MPI_INTEGER, previous, previous
+                MPI_Recv (&flag, 1, MPI_INT, previous, previous
                          ,md->group_comm, &md->status
                          );
                 if (next != -1)
                 {
-                    MPI_Isend (&flag, 1, MPI_INTEGER, next, current
+                    MPI_Isend (&flag, 1, MPI_INT, next, current
                               ,md->group_comm, &md->req
                               );
                 }
