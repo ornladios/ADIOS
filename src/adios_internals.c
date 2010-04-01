@@ -2339,10 +2339,14 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             v_index->characteristics_allocated = 1;
             v_index->characteristics [0].offset = v->write_offset;
             // Find the old var in g->vars.
-            // We need this to calculate the correct payload_offset
+            // We need this to calculate the correct payload_offset, because that
+            // holds the variable references in the dimensions, while v-> contains
+            // only numerical values
             struct adios_var_struct * old_var = adios_find_var_by_id (g->vars, v->parent_id);
-            v_index->characteristics [0].payload_offset = v->write_offset
-                                                    + adios_calc_var_overhead_v1 (old_var);
+            v_index->characteristics [0].payload_offset = v->write_offset 
+                            + adios_calc_var_overhead_v1 (old_var) 
+                            - strlen (old_var->path)  // take out the length of path defined in XML
+                            + strlen (v->path); // add length of the actual, current path of this var
             v_index->characteristics [0].min = 0;
             v_index->characteristics [0].max = 0;
             v_index->characteristics [0].value = 0;
