@@ -47,8 +47,6 @@ void adios_nssi_get_write_buffer(
 {
 }
 
-#define HAVE_NSSI
-
 #ifndef HAVE_NSSI
 void adios_nssi_init(
         const char *parameters,
