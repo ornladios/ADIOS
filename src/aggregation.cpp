@@ -283,10 +283,14 @@ void destroy_chunk(aggregation_chunk_details_t *details)
     free(details->offset);
     free(details->count);
     for (int i=0;i<details->ndims;i++) {
+        free(details->offset_path[i]);
         free(details->offset_name[i]);
+        free(details->count_path[i]);
         free(details->count_name[i]);
     }
+    free(details->offset_path);
     free(details->offset_name);
+    free(details->count_path);
     free(details->count_name);
 //    printf("freeing details->buf(%p)\n", details->buf);
     free(details->buf);
@@ -609,13 +613,17 @@ aggregation_chunk_t *aggregate_chunks(aggregation_chunk_t *c1,
     out->details->atype     = c1->details->atype;
     out->details->num_elements = c1->details->num_elements+c2->details->num_elements;
     out->details->atype_size   = c1->details->atype_size;
+    out->details->offset_path  = (char **)calloc(c1->details->ndims, sizeof(char *));
     out->details->offset_name  = (char **)calloc(c1->details->ndims, sizeof(char *));
     out->details->offset       = (uint64_t *)calloc(c1->details->ndims, sizeof(uint64_t));
+    out->details->count_path   = (char **)calloc(c1->details->ndims, sizeof(char *));
     out->details->count_name   = (char **)calloc(c1->details->ndims, sizeof(char *));
     out->details->count        = (uint64_t *)calloc(c1->details->ndims, sizeof(uint64_t));
 
     for (int i=0;i<c1->details->ndims;i++) {
+        out->details->offset_path[i]  = strdup(c1->details->offset_path[i]);
         out->details->offset_name[i]  = strdup(c1->details->offset_name[i]);
+        out->details->count_path[i]   = strdup(c1->details->count_path[i]);
         out->details->count_name[i]   = strdup(c1->details->count_name[i]);
     }
     memcpy(out->details->offset, c1->details->offset, c1->details->ndims*sizeof(uint64_t));
