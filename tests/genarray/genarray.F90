@@ -193,6 +193,10 @@ subroutine writeArray()
     !if (rank==0) write(6,*) total_time
     if (rank==0) print '("Writing to cache: ",a10,d12.2,2x,d12.2,2x,d12.3)', outputfile,sz,cache_total_time,gbs
 
+    call adios_start_calculation(adios_err)
+    call adios_end_iteration(adios_err)
+    call adios_stop_calculation(adios_err)
+
     call adios_close (adios_handle, adios_err)
 
 
