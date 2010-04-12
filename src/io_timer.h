@@ -10,8 +10,8 @@
 
 #if defined(USE_TIMERS)
 #define Start_Timer(timer) { timer = MPI_Wtime(); }
-#define Stop_Timer(name, timer)  { timer = MPI_Wtime() - timer; printf("%s Time = %10.8f\n", name, timer); }
-#define Func_Timer(name, f) { if (myrank==0) { double callTime; Start_Timer(callTime); f; Stop_Timer(name, callTime); } else { f; } }
+#define Stop_Timer(name, timer)  { timer = MPI_Wtime() - timer; printf("(%d) %s Time = %10.8f\n", __LINE__, name, timer); }
+#define Func_Timer(name, f) { if (global_rank==0) { double callTime; Start_Timer(callTime); f; Stop_Timer(name, callTime); } else { f; } }
 #else
 #define Start_Timer(timer)  {}
 #define Stop_Timer(name, timer)   {}
