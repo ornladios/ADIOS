@@ -154,5 +154,6 @@ struct adios_stop_calc_args {
  * Marshalled arguments for adios_close
  */
 struct adios_close_args {
-    int64_t  fd;
+    string  fname<ADIOS_PATH_MAX>;
+    int64_t fd;
 };
