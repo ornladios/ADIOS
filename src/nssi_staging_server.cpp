@@ -135,6 +135,11 @@ static pthread_cond_t  open_file_map_cond =PTHREAD_COND_INITIALIZER;
 //static pthread_mutex_t offset_map_mutex=PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 //static pthread_cond_t  offset_map_cond =PTHREAD_COND_INITIALIZER;
 
+
+static int global_rank=-1;
+static int DEBUG=3;
+
+
 /* -------------------- PRIVATE FUNCTIONS ---------- */
 void open_file_add(char *fname, int64_t fd)
 {
@@ -392,12 +397,13 @@ int nssi_staging_open_stub(
 
     memset(&res, 0, sizeof(res));
 
-    //printf("myrank(%d): calling nssi_staging_open_stub(%s, %d)\n", grank, args->fname, args->mode);
+    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_open_stub(%s, %d)\n", grank, args->fname, args->mode);
 
 //    SetHints(&mpiHints, "");
 //    ShowHints(&mpiHints);
 
     fd = open_file_get(args->fname);
+    if (DEBUG>3) printf("myrank(%d): nssi_staging_open_stub(%s, %d) open_file_get()==%d\n", grank, args->fname, args->mode, fd);
     if (fd == -1) {
         omode[0]='\0';
         omode[1]='\0';
@@ -418,22 +424,20 @@ int nssi_staging_open_stub(
             break;
         }
 
-        double callTime;
-        Start_Timer(callTime);
-        //printf("start adios_open\n");
-        if ((rc = adios_open(&fd, args->gname, args->fname, omode, NULL)) != 0) {
+        if (DEBUG>3) printf("start adios_open\n");
+        Func_Timer("adios_open", rc = adios_open(&fd, args->gname, args->fname, omode, NULL););
+        if (rc != 0) {
             printf("Error opening file \"%s\": %d\n", args->fname, rc);
             goto cleanup;
         }
-        //printf("end adios_open\n");
-        Stop_Timer("adios_open", callTime);
+        if (DEBUG>3) printf("end adios_open\n");
 
         open_file_add(args->fname, fd);
 
         add_file(fd, WRITE_CACHING_COLLECTIVE);
     }
 
-//    printf("nssi_staging_open_stub: fd=%ld, fd=%p\n", fd, fd);
+    if (DEBUG>3) printf("nssi_staging_open_stub: fd=%ld, fd=%p\n", fd, fd);
 
     res.fd=fd;
 
@@ -454,15 +458,12 @@ int nssi_staging_group_size_stub(
     int rc = 0;
     uint64_t total_size=0;
 
-//    printf("myrank(%d): calling nssi_staging_group_size_stub(%ld)\n", grank, args->fd);
+    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_group_size_stub(%ld)\n", grank, args->fd);
 
-    double callTime;
-    Start_Timer(callTime);
-    rc = adios_group_size(args->fd, args->data_size, &total_size);
+    Func_Timer("adios_group_size", rc = adios_group_size(args->fd, args->data_size, &total_size););
     if (rc != 0) {
         printf("adios_group_size failed: %d\n", rc);
     }
-    Stop_Timer("adios_group_size", callTime);
 
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
@@ -479,13 +480,12 @@ int nssi_staging_close_stub(
 {
     int rc = 0;
 
-//    printf("myrank(%d): calling nssi_staging_close_stub(%ld)\n", grank, args->fd);
+    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_close_stub(%ld, %s)\n", grank, args->fd, args->fname);
 
 
-    double callTime;
-    Start_Timer(callTime);
-    adios_close(args->fd);
-    Stop_Timer("adios_close", callTime);
+    Func_Timer("adios_close", adios_close(args->fd););
+
+    open_file_del(args->fname);
 
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
@@ -506,7 +506,7 @@ int nssi_staging_read_stub(
     int pathlen;
     char *v=NULL;
 
-//    printf("myrank(%d): calling nssi_staging_read_stub(%ld)\n", grank, args->fd);
+    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_read_stub(%ld)\n", grank, args->fd);
 
 //    pathlen=strlen(args->vpath);
 //    if (args->vpath[pathlen-1]=='/') {
@@ -517,14 +517,12 @@ int nssi_staging_read_stub(
 
     v=(char *)calloc(args->max_read, 1);
 
-    double callTime;
-    Start_Timer(callTime);
-    adios_read(args->fd, args->vname, v, args->max_read);
-    Stop_Timer("adios_read", callTime);
+    Func_Timer("adios_set_path_var", adios_set_path_var(args->fd, args->vpath, args->vname););
+    Func_Timer("adios_read", adios_read(args->fd, args->vname, v, args->max_read););
 
     res.bytes_read=args->max_read;
 
-    rc = nssi_put_data(caller, v, res.bytes_read, data_addr, -1);
+    Func_Timer("nssi_put_data", rc = nssi_put_data(caller, v, res.bytes_read, data_addr, -1););
     if (rc != NSSI_OK) {
         printf("Could not put var data on client\n");
         goto cleanup;
@@ -550,9 +548,8 @@ int nssi_staging_write_stub(
     int pathlen;
     char *v=NULL;
     int i=0;
-    double callTime;
 
-//    printf("myrank(%d): calling nssi_staging_write_stub(fd=%ld, vsize=%ld)\n", grank, args->fd, args->vsize);
+    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_write_stub(fd=%ld, vsize=%ld)\n", grank, args->fd, args->vsize);
 
 //    pathlen=strlen(args->vpath);
 //    if (args->vpath[pathlen-1]=='/') {
@@ -563,15 +560,13 @@ int nssi_staging_write_stub(
 
     v=(char *)malloc(args->vsize);
 
-    Start_Timer(callTime);
-    rc = nssi_get_data(caller, v, args->vsize, data_addr);
-    Stop_Timer("adios_write (nssi_get_data)", callTime);
+    Func_Timer("nssi_get_data", rc = nssi_get_data(caller, v, args->vsize, data_addr););
     if (rc != NSSI_OK) {
         printf("Could not get var data on client\n");
         goto cleanup;
     }
 
-//    printf("vname(%s) vsize(%ld) is_scalar(%d) rank(%ld)\n", args->vname, args->vsize, args->is_scalar, args->writer_rank);
+    if (DEBUG>3) printf("vname(%s) vsize(%ld) is_scalar(%d) rank(%ld)\n", args->vname, args->vsize, args->is_scalar, args->writer_rank);
 
 
     //    if (args->is_offset) {
@@ -594,8 +589,8 @@ int nssi_staging_write_stub(
 //    }
 
     if (!args->is_scalar) {
-//        printf("allocated v(%p), len(%ld)\n",
-//                v, args->vsize);
+        if (DEBUG>3) printf("allocated v(%p), len(%ld)\n",
+                v, args->vsize);
         aggregation_chunk_details_t *chunk=NULL;
         chunk = new aggregation_chunk_details_t;
         chunk->fd = args->fd;
@@ -609,48 +604,27 @@ int nssi_staging_write_stub(
         for (int i=0;i<args->dims.dims_len;i++) {
             chunk->num_elements *= args->dims.dims_val[i].vdata;
         }
+        chunk->offset_path = (char **)calloc(args->offsets.offsets_len, sizeof(char *));
         chunk->offset_name = (char **)calloc(args->offsets.offsets_len, sizeof(char *));
         chunk->offset = (uint64_t *)calloc(args->offsets.offsets_len, sizeof(uint64_t));
         for (int i=0;i<args->offsets.offsets_len;i++) {
+            chunk->offset_path[i] = strdup(args->offsets.offsets_val[i].vpath);
             chunk->offset_name[i] = strdup(args->offsets.offsets_val[i].vname);
             chunk->offset[i] = args->offsets.offsets_val[i].vdata;
         }
+        chunk->count_path = (char **)calloc(args->dims.dims_len, sizeof(char *));
         chunk->count_name = (char **)calloc(args->dims.dims_len, sizeof(char *));
         chunk->count  = (uint64_t *)calloc(args->dims.dims_len, sizeof(uint64_t));;
         for (int i=0;i<args->dims.dims_len;i++) {
+            chunk->count_path[i] = strdup(args->dims.dims_val[i].vpath);
             chunk->count_name[i] = strdup(args->dims.dims_val[i].vname);
             chunk->count[i] = args->dims.dims_val[i].vdata;
         }
         add_chunk(chunk);
 
-
-
-//        // write all offsets for clients rank to update adios internals
-//        for(i=0;i<chunk->ndims;i++) {
-//            uint64_t value=0;
-//            printf("received oname(%s) odata(%lu)\n", chunk->offset_name[i], chunk->offset[i]);
-//            Start_Timer(callTime);
-//            adios_write(chunk->fd, chunk->offset_name[i], &(chunk->offset[i]));
-//            Stop_Timer("adios_write (offset update)", callTime);
-////            void *odata=offset_get(args->writer_rank, args->offsets.offsets_val[i].vpath, args->offsets.offsets_val[i].vname);
-////            if (odata != NULL) {
-////                printf("updating oname(%s)\n", args->offsets.offsets_val[i].vname);
-////                Start_Timer(callTime);
-////                adios_write(args->fd, args->offsets.offsets_val[i].vname, args->offsets.offsets_val[i].vdata);
-////                Stop_Timer("adios_write (offset update)", callTime);
-////            }
-//        }
-//        for(i=0;i<args->dims.dims_len;i++) {
-//            printf("received dname(%s) ddata(%lu)\n", chunk->count_name[i], chunk->count[i]);
-//        }
-//
-//        Start_Timer(callTime);
-//        adios_write(chunk->fd, chunk->var_name, chunk->buf);
-//        Stop_Timer("adios_write", callTime);
     } else {
-        Start_Timer(callTime);
-        adios_write(args->fd, args->vname, v);
-        Stop_Timer("adios_write", callTime);
+        Func_Timer("adios_set_path_var", adios_set_path_var(args->fd, args->vpath, args->vname););
+        Func_Timer("adios_write", adios_write(args->fd, args->vname, v););
 
         free(v);
     }
@@ -678,12 +652,9 @@ int nssi_staging_start_calc_stub(
 {
     int rc = 0;
 
-//    printf("myrank(%d): calling nssi_staging_start_calc_stub(%ld)\n", grank, args->fd);
+    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_start_calc_stub(%ld)\n", grank, args->fd);
 
-    double callTime;
-    Start_Timer(callTime);
-    try_aggregation(args->fd);  // aggregate all varids in this file
-    Stop_Timer("try_aggregation", callTime);
+    Func_Timer("try_aggregation", try_aggregation(args->fd););  // aggregate all varids in this file
 
     int chunk_count=0;
     aggregation_chunk_details_t **chunks = get_chunks(args->fd, &chunk_count);
@@ -694,30 +665,27 @@ int nssi_staging_start_calc_stub(
         // write all offsets for clients rank to update adios internals
         for(int i=0;i<chunk->ndims;i++) {
             uint64_t value=0;
-//            printf("writing myrank(%d) chunk(%d) vname(%s) oname(%s) odata(%lu)\n", grank, j, chunk->var_name, chunk->offset_name[i], chunk->offset[i]);
-            Start_Timer(callTime);
-            adios_write(chunk->fd, chunk->offset_name[i], &(chunk->offset[i]));
-            Stop_Timer("adios_write (offset update)", callTime);
+            if (DEBUG>3) printf("writing myrank(%d) chunk(%d) vpath(%s) vname(%s) opath(%s) oname(%s) odata(%lu)\n",
+                    grank, j, chunk->var_path, chunk->var_name, chunk->offset_path[i], chunk->offset_name[i], chunk->offset[i]);
+            Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->offset_path[i], chunk->offset_name[i]););
+            Func_Timer("adios_write", adios_write(chunk->fd, chunk->offset_name[i], &(chunk->offset[i])););
 //            void *odata=offset_get(args->writer_rank, args->offsets.offsets_val[i].vpath, args->offsets.offsets_val[i].vname);
 //            if (odata != NULL) {
 //                printf("updating oname(%s)\n", args->offsets.offsets_val[i].vname);
-//                Start_Timer(callTime);
-//                adios_write(args->fd, args->offsets.offsets_val[i].vname, args->offsets.offsets_val[i].vdata);
-//                Stop_Timer("adios_write (offset update)", callTime);
+//                Func_Timer("adios_write", adios_write(args->fd, args->offsets.offsets_val[i].vname, args->offsets.offsets_val[i].vdata););
 //            }
         }
         for(int i=0;i<chunk->ndims;i++) {
             uint64_t value=0;
-//            printf("writing myrank(%d) chunk(%d) vname(%s) dname(%s) ddata(%lu)\n", grank, j, chunk->var_name, chunk->count_name[i], chunk->count[i]);
-            Start_Timer(callTime);
-            adios_write(chunk->fd, chunk->count_name[i], &(chunk->count[i]));
-            Stop_Timer("adios_write (dim update)", callTime);
+            if (DEBUG>3) printf("writing myrank(%d) chunk(%d) vpath(%s) vname(%s) dpath(%s) dname(%s) ddata(%lu)\n",
+                    grank, j, chunk->var_path, chunk->var_name, chunk->count_path[i], chunk->count_name[i], chunk->count[i]);
+            Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->count_path[i], chunk->count_name[i]););
+            Func_Timer("adios_write", adios_write(chunk->fd, chunk->count_name[i], &(chunk->count[i])););
         }
 
-//        printf("writing myrank(%d) vname(%s)\n", grank, chunk->var_name);
-        Start_Timer(callTime);
-        adios_write(chunk->fd, chunk->var_name, chunk->buf);
-        Stop_Timer("adios_write", callTime);
+        if (DEBUG>3) printf("writing myrank(%d) vname(%s)\n", grank, chunk->var_name);
+        Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->var_path, chunk->var_name););
+        Func_Timer("adios_write", adios_write(chunk->fd, chunk->var_name, chunk->buf););
 
 //        cleanup_aggregation_chunks(args->fd, chunk->var_name);
     }
@@ -740,7 +708,7 @@ int nssi_staging_stop_calc_stub(
 {
     int rc = 0;
 
-//    printf("myrank(%d): calling nssi_staging_stop_calc_stub(%ld)\n", grank, args->fd);
+    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_stop_calc_stub(%ld)\n", grank, args->fd);
 
 
     /* send result to client */
@@ -758,7 +726,7 @@ int nssi_staging_end_iter_stub(
 {
     int rc = 0;
 
-//    printf("myrank(%d): calling nssi_staging_end_iter_stub(%ld)\n", grank, args->fd);
+    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_end_iter_stub(%ld)\n", grank, args->fd);
 
 
     /* send result to client */
@@ -773,17 +741,14 @@ int nssi_staging_server_init(const char *adios_config_file)
 {
     int rc=NSSI_OK;
 
-//    printf("start adios_init(%s)\n", adios_config_file);
+    if (DEBUG>3) printf("start adios_init(%s)\n", adios_config_file);
     rc = adios_init(adios_config_file);
     if (rc != 1) {
         printf("adios_init() failed: %d\n", rc);
         return(-1);
     }
-//    printf("end adios_init(%s)\n", adios_config_file);
+    if (DEBUG>3) printf("end adios_init(%s)\n", adios_config_file);
 
-
-    int verbose=3;
-    logger_init((log_level)verbose, NULL);
 
     /* register server stubs */
     NSSI_REGISTER_SERVER_STUB(ADIOS_OPEN_OP, nssi_staging_open_stub, adios_open_args, adios_open_res);
@@ -824,7 +789,7 @@ static void generate_contact_info(nssi_remote_pid *myid)
             return;
         }
         sprintf(contact_path, "%s.%04d", contact_file, rank);
-        //printf("creating contact file (%s)\n", contact_path);
+        if (DEBUG>3) printf("creating contact file (%s)\n", contact_path);
         FILE *f=fopen(contact_path, "w");
         for (int i=0;i<np;i++) {
             fprintf(f, "%u@%u@%s@%u\n",
@@ -849,10 +814,11 @@ int main(int argc, char **argv)
 
     nssi_service nssi_svc;
 //    log_level debug_level;
-//    char logfile[1024];
+    char logfile[1024];
     int rank, np;
 
     MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
     grank=rank;
@@ -860,24 +826,24 @@ int main(int argc, char **argv)
 
     /* options that can be overriden by the command-line */
     bool daemon_flag = false;
-    int verbose = 3;  /* default debug_level */
+    int verbose = 5;  /* default debug_level */
     int num_threads = 0;
     int server_pid = 128;   /* process ID of the server */
     int server_port = 7728; /* TCP port of the server */
 
     memset(&nssi_svc, 0, sizeof(nssi_service));
 
-//    /* initialize and enable logging */
+    /* initialize and enable logging */
 //    if (args_info.logfile_arg != NULL) {
-//        sprintf(logfile, "%s.%04d", args_info.logfile_arg, rank);
-//        logger_init((log_level)args_info.verbose_arg, logfile);
+//        sprintf(logfile, "%s.%04d", "nssi_staging_server.log", rank);
+//        logger_init((log_level)verbose, logfile);
 //    } else {
-//        logger_init((log_level)args_info.verbose_arg, NULL);
+//        logger_init((log_level)verbose, NULL);
 //    }
 //    netcdf_debug_level=(log_level)(log_level)args_info.verbose_arg;
 //    debug_level = (log_level)args_info.verbose_arg;
 
-    logger_init((log_level)verbose, NULL);
+//    logger_init((log_level)verbose, NULL);
 
     if (daemon_flag) {
         nssi_daemonize();
@@ -911,7 +877,7 @@ int main(int argc, char **argv)
     generate_contact_info(&nssi_svc.req_addr.match_id);
 #endif
 
-    //printf("Initialize staging service\n");
+    if (DEBUG>3) printf("Initialize staging service\n");
 
     /* initialize the lwfs service */
     rc = nssi_service_init(0, NSSI_SHORT_REQUEST_SIZE, &nssi_svc);
@@ -935,7 +901,7 @@ int main(int argc, char **argv)
     adios_finalize(rank);
 
     /* shutdown the nssi_svc */
-    //printf("shutting down service library\n");
+    if (DEBUG>3) printf("shutting down service library\n");
     nssi_service_fini(&nssi_svc);
 
     nssi_rpc_fini();
