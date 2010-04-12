@@ -30,14 +30,6 @@
 
 
 #define NUM_GP 24
-void adios_nssi_end_iteration(
-        struct adios_method_struct * method)
-{
-}
-void adios_nssi_stop_calculation(
-        struct adios_method_struct * method)
-{
-}
 void adios_nssi_get_write_buffer(
         struct adios_file_struct *f,
         struct adios_var_struct *v,
@@ -130,6 +122,20 @@ struct var_dim {
 /* list of variable offsets */
 List var_dim_list;
 
+/* Need a struct to encapsulate open file info
+ */
+struct open_file {
+    char                           fpath[ADIOS_PATH_MAX];
+    char                           fname[ADIOS_PATH_MAX];
+    struct adios_nssi_data_struct *md;
+    struct adios_file_struct      *f;
+    nssi_request                   start_calc_req;
+//    List                           outstanding_reqs;
+};
+
+/* list of variable offsets */
+List open_file_list;
+
 ///////////////////////////
 // Global Variables
 ///////////////////////////
@@ -155,6 +161,61 @@ static int DEBUG=3;
 ///////////////////////////
 // Function Definitions
 ///////////////////////////
+
+static struct open_file *open_file_create(const char *path, const char *name, struct adios_nssi_data_struct *method_private_data)
+{
+    struct open_file *of=calloc(1,sizeof(struct open_file));
+
+    strcpy(of->fpath, path);
+    strcpy(of->fname, name);
+    of->md = method_private_data;
+//    list_init(&(of->outstanding_reqs), free);
+
+    return(of);
+}
+static void open_file_free(void *of)
+{
+//    list_destroy((List *)&(of->outstanding_reqs));
+    free(of);
+}
+static int open_file_equal(const struct open_file *of1, const struct open_file *of2)
+{
+    if ((strcmp(of1->fpath, of2->fpath) == 0) && (strcmp(of1->fname, of2->fname) == 0)) return TRUE;
+
+    return FALSE;
+}
+static struct open_file *open_file_find(const char *path, const char *name)
+{
+    ListElmt *elmt;
+    struct open_file *of;
+
+    if (DEBUG>3) printf("looking for fpath(%s) fname(%s)\n", path, name);
+
+    elmt = list_head(&open_file_list);
+    while(elmt) {
+        of = list_data(elmt);
+        if (DEBUG>3) printf("comparing to fpath(%s) fname(%s)\n", of->fpath, of->fname);
+        if ((strcmp(path, of->fpath) == 0) && (strcmp(name, of->fname) == 0)) {
+            if (DEBUG>3) printf("fpath(%s) fname(%s) matches search\n", of->fpath, of->fname);
+            return of;
+        }
+        elmt = list_next(elmt);
+    }
+
+    return NULL;
+}
+static void open_file_printall(void)
+{
+    ListElmt *elmt;
+    struct open_file *of;
+
+    elmt = list_head(&open_file_list);
+    while(elmt) {
+        of = list_data(elmt);
+        if (DEBUG>3) printf("fpath(%s) fname(%s)\n", of->fpath, of->fname);
+        elmt = list_next(elmt);
+    }
+}
 
 static struct var_offset *var_offset_create(const char *path, const char *name, void *value, uint64_t size)
 {
@@ -388,9 +449,6 @@ static int gen_offset_list(
             if (DEBUG>3) printf("gen: offset_name(%s)\n", offset_name);
             value=calloc(1,sizeof(uint64_t));
             parse_dimension_size(group, pvar_root, patt_root, &dims->local_offset, value);
-            if (global_rank==0) {
-                if (DEBUG>3) printf(":o(%d)", *value);
-            }
 
             uint64_t vsize = 4; /* adios_get_var_size(v, group, value); */
             vi = var_offset_create(v->path, offset_name, value, vsize);
@@ -443,20 +501,17 @@ static void create_offset_list_for_var(
             if (offset_name[0] == '\0') {
                 sprintf(offset_name, "offset_%d", loffs_idx);
             }
-                args->offsets.offsets_val[loffs_idx].vpath=strdup(v->path);
-                args->offsets.offsets_val[loffs_idx].vname=strdup(offset_name);
-                //            struct var_offset *vo=var_offset_find("", offset_name);
-                //            memcpy(&(args->offsets.offsets_val[loffs_idx].vdata), vo->ovalue, vo->osize);
-                //            args->offsets.offsets_val[loffs_idx].vdatasize=vo->osize;
-                //            printf("create: offset_name(%s) offset_value(%lu)\n", offset_name, vo->ovalue);
-                uint64_t value=0;
-                parse_dimension_size(group, pvar_root, patt_root, &dims->local_offset, &value);
-                memcpy(&(args->offsets.offsets_val[loffs_idx].vdata), &value, 4);
-                args->offsets.offsets_val[loffs_idx].vdatasize=4;
-                if (DEBUG>3) printf("create: offset_name(%s) offset_value(%lu)\n", offset_name, value);
-                if (global_rank==0) {
-                    if (DEBUG>3) printf(":o(%d)", value);
-                }
+            args->offsets.offsets_val[loffs_idx].vpath=strdup(v->path);
+            args->offsets.offsets_val[loffs_idx].vname=strdup(offset_name);
+//            struct var_offset *vo=var_offset_find("", offset_name);
+//            memcpy(&(args->offsets.offsets_val[loffs_idx].vdata), vo->ovalue, vo->osize);
+//            args->offsets.offsets_val[loffs_idx].vdatasize=vo->osize;
+//            printf("create: offset_name(%s) offset_value(%lu)\n", offset_name, vo->ovalue);
+            uint64_t value=0;
+            parse_dimension_size(group, pvar_root, patt_root, &dims->local_offset, &value);
+            memcpy(&(args->offsets.offsets_val[loffs_idx].vdata), &value, 4);
+            args->offsets.offsets_val[loffs_idx].vdatasize=4;
+            if (DEBUG>3) printf("create: offset_name(%s) offset_value(%lu)\n", offset_name, value);
 
             loffs_idx++;
             dims = dims->next;
@@ -697,7 +752,6 @@ void adios_nssi_init(
         struct adios_method_struct *method)
 {
     int rc=NSSI_OK;
-    struct adios_nssi_data_struct *md = (struct adios_nssi_data_struct *)method->method_data;
     int verbose=5;
     char logfile[1024];
     int log_rank;
@@ -705,14 +759,10 @@ void adios_nssi_init(
     if (!adios_nssi_initialized) {
         adios_nssi_initialized = 1;
     }
-    method->method_data = malloc(sizeof(struct adios_nssi_data_struct));
-    md = (struct adios_nssi_data_struct *)method->method_data;
-    md->fd         = -1;
-    md->rank       = -1;
-    md->size       = 0;
-    md->group_comm = MPI_COMM_NULL;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
+
+    if (DEBUG>3) printf("rank(%d) enter adios_nssi_init\n", global_rank);
 
 //    MPI_Comm_rank(md->group_comm, &log_rank);
 //    sprintf(logfile, "%s.%04d", "adios_nssi_client.log", log_rank);
@@ -739,7 +789,9 @@ void adios_nssi_init(
     NSSI_REGISTER_CLIENT_STUB(ADIOS_STOP_CALC_OP, adios_stop_calc_args, void, void);
     NSSI_REGISTER_CLIENT_STUB(ADIOS_CLOSE_OP, adios_close_args, void, void);
 
+    list_init(&open_file_list, open_file_free);
     list_init(&var_offset_list, var_offset_free);
+    list_init(&var_dim_list, var_dim_free);
 
     parse_nssi_config(getenv("ADIOS_NSSI_CONFIG_FILE"), &nssi_cfg);
 
@@ -753,9 +805,19 @@ enum ADIOS_FLAG adios_nssi_should_buffer(
 {
     int rc=NSSI_OK;
 
-    struct adios_nssi_data_struct *md = (struct adios_nssi_data_struct *)method->method_data;
-
     adios_group_size_args args;
+
+    struct open_file *of=NULL;
+    struct adios_nssi_data_struct *md=NULL;
+
+    of=open_file_find(method->base_path, f->name);
+    if (of == NULL) {
+        fprintf(stderr, "file is not open.  FAIL.");
+        return adios_flag_no;
+    }
+    md=of->md;
+
+    if (DEBUG>3) printf("rank(%d) enter adios_nssi_should_buffer\n", global_rank);
 
     args.fd = md->fd;
     args.data_size = f->write_size_bytes*collective_op_size;
@@ -780,19 +842,35 @@ int adios_nssi_open(
 {
     int rc=NSSI_OK;
 
-    struct adios_nssi_data_struct * md = (struct adios_nssi_data_struct *)method->method_data;
-
     adios_open_args args;
     adios_open_res  res;
 
+    struct open_file *of=NULL;
+    struct adios_nssi_data_struct *md=NULL;
+
+    if (DEBUG>3) printf("rank(%d) enter adios_nssi_open\n", global_rank);
+
+    of=open_file_find(method->base_path, f->name);
+    if (of == NULL) {
+        md             = malloc(sizeof(struct adios_nssi_data_struct));
+        md->fd         = -1;
+        md->rank       = -1;
+        md->size       = 0;
+        md->group_comm = MPI_COMM_NULL;
+
+        of=open_file_create(method->base_path, f->name, md);
+    } else {
+        // sanity check
+        if (md->fd == -1) {
+            if (DEBUG>3) printf("open: %s is open but fd==-1.  sanity check failed.  attempting reopen.\n", f->name);
+            list_rem_next(&open_file_list, of, &md);
+        } else {
+            // file already open
+            return adios_flag_no;
+        }
+    }
 
     if (DEBUG>3) printf("global_rank(%d): enter adios_nssi_open (%s)\n", global_rank, f->name);
-
-    if (md->fd != -1) {
-        if (DEBUG>3) printf("open: %s is open.  skipping the rest.\n", f->name);
-        // file already open
-        return adios_flag_no;
-    }
 
     md->comm = comm;
     if (DEBUG>3) printf("global_rank(%d): adios_nssi_open: setup group_comm\n", global_rank);
@@ -884,6 +962,8 @@ int adios_nssi_open(
 
     md->fd = res.fd;
 
+    list_ins_next(&open_file_list, list_head(&open_file_list), of);
+
     free(args.fname);
     free(args.gname);
 
@@ -894,26 +974,176 @@ void adios_nssi_start_calculation(
         struct adios_method_struct * method)
 {
     int rc=NSSI_OK;
-    struct adios_nssi_data_struct * md = (struct adios_nssi_data_struct*)method->method_data;
-    int myrank=md->rank;
+    int myrank;
 
     adios_start_calc_args args;
 
-    MPI_Barrier(md->group_comm);
-    if (collective_op_rank == 0) {
-        args.fd = md->fd;
-        Func_Timer("ADIOS_START_CALC_OP",
-                rc = nssi_call_rpc_sync(&svcs[default_svc],
-                ADIOS_START_CALC_OP,
-                &args,
-                NULL,
-                0,
-                NULL););
-        if (rc != NSSI_OK) {
-            //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
+    ListElmt *of_elmt;
+//    ListElmt *req_elmt;
+    struct open_file *of=NULL;
+    struct adios_nssi_data_struct *md=NULL;
+//    nssi_request *req;
+
+    if (DEBUG>3) printf("rank(%d) enter adios_nssi_start_calc\n", global_rank);
+
+
+    of_elmt = list_head(&open_file_list);
+    while(of_elmt) {
+        of = list_data(of_elmt);
+        if (of == NULL) {
+            fprintf(stderr, "file is not open.  FAIL.");
+            return;
         }
+        md=of->md;
+        myrank=md->rank;
+
+//        MPI_Barrier(md->group_comm);
+        if (collective_op_rank == 0) {
+//            nssi_request *req=calloc(1, nssi_request);
+            args.fd = md->fd;
+            Func_Timer("ADIOS_START_CALC_OP",
+                    rc = nssi_call_rpc(&svcs[default_svc],
+                    ADIOS_START_CALC_OP,
+                    &args,
+                    NULL,
+                    0,
+                    NULL,
+                    &of->start_calc_req););
+            if (rc != NSSI_OK) {
+                //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
+            }
+        }
+//        MPI_Barrier(md->group_comm);
+
+        of_elmt = list_next(of_elmt);
     }
-    MPI_Barrier(md->group_comm);
+
+
+    return;
+}
+
+void adios_nssi_end_iteration(
+        struct adios_method_struct * method)
+{
+    int rc=NSSI_OK;
+    int myrank;
+
+    if (DEBUG>3) printf("rank(%d) enter adios_nssi_end_iter\n", global_rank);
+
+
+//    adios_end_iter_args args;
+//
+//    struct open_file *of=NULL;
+//    struct adios_nssi_data_struct *md=NULL;
+//
+//    of=open_file_find(method->base_path, f->name);
+//    if (of == NULL) {
+//        fprintf(stderr, "file is not open.  FAIL.");
+//        return;
+//    }
+//    md=of->md;
+//
+//    myrank=md->rank;
+//
+//    MPI_Barrier(md->group_comm);
+//    if (collective_op_rank == 0) {
+//        args.fd = md->fd;
+//        Func_Timer("ADIOS_END_ITER_OP",
+//                rc = nssi_call_rpc_sync(&svcs[default_svc],
+//                ADIOS_END_ITER_OP,
+//                &args,
+//                NULL,
+//                0,
+//                NULL););
+//        if (rc != NSSI_OK) {
+//            //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
+//        }
+//    }
+//    MPI_Barrier(md->group_comm);
+
+    return;
+}
+
+void adios_nssi_stop_calculation(
+        struct adios_method_struct * method)
+{
+    int rc=NSSI_OK;
+    int remote_rc=NSSI_OK;
+    int myrank;
+
+    adios_stop_calc_args args;
+
+    ListElmt *of_elmt;
+//    ListElmt *req_elmt;
+    struct open_file *of=NULL;
+    struct adios_nssi_data_struct *md=NULL;
+//    nssi_request *req;
+
+    if (DEBUG>3) printf("rank(%d) enter adios_nssi_stop_calc\n", global_rank);
+
+
+    of_elmt = list_head(&open_file_list);
+    while(of_elmt) {
+        of = list_data(of_elmt);
+        if (of == NULL) {
+            fprintf(stderr, "file is not open.  FAIL.");
+            return;
+        }
+        md=of->md;
+        myrank=md->rank;
+
+        // wait for any async writes to finish
+//        req_elmt = list_head(&(of->outstanding_reqs));
+//        while(req_elmt) {
+//        	req = list_data(req_elmt);
+//        	if (req == NULL) {
+//        		fprintf(stderr, "file is not open.  FAIL.");
+//        		return;
+//        	}
+//
+//        	nssi_wait(req, &remote_rc);
+//
+//        	req_elmt = list_next(req_elmt);
+//        }
+
+        if (collective_op_rank == 0) {
+            nssi_wait(&of->start_calc_req, &remote_rc);
+        }
+
+        of_elmt = list_next(of_elmt);
+    }
+
+
+    of_elmt = list_head(&open_file_list);
+    while(of_elmt) {
+        of = list_data(of_elmt);
+        if (of == NULL) {
+            fprintf(stderr, "file is not open.  FAIL.");
+            return;
+        }
+        md=of->md;
+        myrank=md->rank;
+
+//        MPI_Barrier(md->group_comm);
+        if (collective_op_rank == 0) {
+            args.fd = md->fd;
+            Func_Timer("ADIOS_STOP_CALC_OP",
+                    rc = nssi_call_rpc_sync(&svcs[default_svc],
+                            ADIOS_STOP_CALC_OP,
+                            &args,
+                            NULL,
+                            0,
+                            NULL););
+            if (rc != NSSI_OK) {
+                //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
+            }
+        }
+//        MPI_Barrier(md->group_comm);
+
+        of_elmt = list_next(of_elmt);
+    }
+
+    if (DEBUG>3) printf("rank(%d) exit adios_nssi_stop_calc\n", global_rank);
 
     return;
 }
@@ -924,8 +1154,19 @@ void adios_nssi_write(
         void *data,
         struct adios_method_struct *method)
 {
-    struct adios_nssi_data_struct * md = (struct adios_nssi_data_struct *)method->method_data;
     static int first_write = 1;
+
+    struct open_file *of=NULL;
+    struct adios_nssi_data_struct *md=NULL;
+
+    if (DEBUG>3) printf("rank(%d) enter adios_nssi_write\n", global_rank);
+
+    of=open_file_find(method->base_path, f->name);
+    if (of == NULL) {
+        fprintf(stderr, "file is not open.  FAIL.");
+        return;
+    }
+    md=of->md;
 
     if (f->mode == adios_mode_write || f->mode == adios_mode_append) {
 
@@ -964,7 +1205,17 @@ void adios_nssi_read(
         uint64_t buffersize,
         struct adios_method_struct *method)
 {
-    struct adios_nssi_data_struct * md = (struct adios_nssi_data_struct *)method->method_data;
+    struct open_file *of=NULL;
+    struct adios_nssi_data_struct *md=NULL;
+
+    if (DEBUG>3) printf("rank(%d) enter adios_nssi_read\n", global_rank);
+
+    of=open_file_find(method->base_path, f->name);
+    if (of == NULL) {
+        fprintf(stderr, "file is not open.  FAIL.");
+        return;
+    }
+    md=of->md;
 
     if(f->mode == adios_mode_read) {
         v->data = buffer;
@@ -1000,12 +1251,26 @@ void adios_nssi_close(
         struct adios_method_struct *method)
 {
     int rc=NSSI_OK;
-    struct adios_nssi_data_struct * md = (struct adios_nssi_data_struct*)method->method_data;
     struct adios_attribute_struct * a = f->group->attributes;
-    int myrank=md->rank;
+    int myrank;
 
     adios_start_calc_args start_calc_args;
     adios_close_args close_args;
+
+    struct open_file *of=NULL;
+    struct adios_nssi_data_struct *md=NULL;
+
+    if (DEBUG>3) printf("global_rank(%d) enter adios_nssi_close\n", global_rank);
+
+    of=open_file_find(method->base_path, f->name);
+    if (of == NULL) {
+        fprintf(stderr, "file is not open.  FAIL.");
+        return;
+    }
+    md=of->md;
+    myrank=md->rank;
+
+    if (DEBUG>3) printf("myrank(%d) enter adios_nssi_close\n", myrank);
 
     if (f->mode == adios_mode_read) {
         if (md->rank==0) {
@@ -1022,27 +1287,28 @@ void adios_nssi_close(
         }
     }
 
-    MPI_Barrier(md->group_comm);
-    if (collective_op_rank == 0) {
-        start_calc_args.fd = md->fd;
-        Func_Timer("ADIOS_START_CALC_OP",
-                rc = nssi_call_rpc_sync(&svcs[default_svc],
-                ADIOS_START_CALC_OP,
-                &start_calc_args,
-                NULL,
-                0,
-                NULL););
-        if (rc != NSSI_OK) {
-            //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
-        }
-    }
-    MPI_Barrier(md->group_comm);
+//    MPI_Barrier(md->group_comm);
+//    if (collective_op_rank == 0) {
+//        start_calc_args.fd = md->fd;
+//        Func_Timer("ADIOS_START_CALC_OP",
+//                rc = nssi_call_rpc_sync(&svcs[default_svc],
+//                ADIOS_START_CALC_OP,
+//                &start_calc_args,
+//                NULL,
+//                0,
+//                NULL););
+//        if (rc != NSSI_OK) {
+//            //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
+//        }
+//    }
+//    MPI_Barrier(md->group_comm);
 
     MPI_Barrier(md->group_comm);
     if (collective_op_rank == 0) {
         close_args.fname = malloc(sizeof(char) * (strlen(method->base_path) + strlen(f->name) + 1));
         sprintf(close_args.fname, "%s%s", method->base_path, f->name);
         close_args.fd = md->fd;
+        if (DEBUG>3) printf("rank(%d) sending ADIOS_CLOSE_OP\n", myrank);
         Func_Timer("ADIOS_CLOSE_OP",
                 rc = nssi_call_rpc_sync(&svcs[default_svc],
                 ADIOS_CLOSE_OP,
@@ -1062,6 +1328,8 @@ void adios_nssi_close(
     md->rank = -1;
     md->size = 0;
 
+    if (DEBUG>3) printf("global_rank(%d) exit adios_nssi_close\n", global_rank);
+
     return;
 }
 
@@ -1070,31 +1338,66 @@ void adios_nssi_finalize(
         struct adios_method_struct *method)
 {
     int rc=NSSI_OK;
-    struct adios_nssi_data_struct * md = (struct adios_nssi_data_struct*)method->method_data;
-    int myrank=md->rank;
+    int myrank;
 
-    adios_close_args args;
+    if (DEBUG>3) printf("rank(%d) enter adios_nssi_finalize\n", global_rank);
 
-//    MPI_Barrier(md->group_comm);
-//    if (collective_op_rank == 0) {
-//        args.fd = md->fd;
-//        Func_Timer("ADIOS_CLOSE_OP",
-//        		rc = nssi_call_rpc_sync(&svcs[default_svc],
-//                ADIOS_CLOSE_OP,
-//                &args,
-//                NULL,
-//                0,
-//                NULL););
-//        if (rc != NSSI_OK) {
-//            //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
+//    adios_close_args close_args;
+//
+//    ListElmt *of_elmt;
+////    ListElmt *req_elmt;
+//    struct open_file *of=NULL;
+//    struct adios_nssi_data_struct *md=NULL;
+////    nssi_request *req;
+//
+//    of_elmt = list_head(&open_file_list);
+//    while(of_elmt) {
+//        of = list_data(of_elmt);
+//        if (of == NULL) {
+//            fprintf(stderr, "file is not open.  FAIL.");
+//            return;
 //        }
+//        md=of->md;
+//        myrank=md->rank;
+//
+////        req_elmt = list_head(&(of->outstanding_reqs));
+////        while(req_elmt) {
+////        	req = list_data(req_elmt);
+////        	if (req == NULL) {
+////        		fprintf(stderr, "file is not open.  FAIL.");
+////        		return;
+////        	}
+////
+////        	req_elmt = list_next(req_elmt);
+////        }
+//
+////        MPI_Barrier(md->group_comm);
+//        if (collective_op_rank == 0) {
+//            close_args.fname = malloc(sizeof(char) * (strlen(of->fpath) + strlen(of->fname) + 1));
+//            sprintf(close_args.fname, "%s%s", of->fpath, of->fname);
+//            close_args.fd = md->fd;
+//            Func_Timer("ADIOS_CLOSE_OP",
+//                    rc = nssi_call_rpc_sync(&svcs[default_svc],
+//                    ADIOS_CLOSE_OP,
+//                    &close_args,
+//                    NULL,
+//                    0,
+//                    NULL););
+//            if (rc != NSSI_OK) {
+//                //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
+//            }
+//            free(close_args.fname);
+//        }
+////        MPI_Barrier(md->group_comm);
+//
+//        md->group_comm = MPI_COMM_NULL;
+//        md->fd = -1;
+//        md->rank = -1;
+//        md->size = 0;
+//
+//        of_elmt = list_next(of_elmt);
 //    }
-//    MPI_Barrier(md->group_comm);
 
-    md->group_comm = MPI_COMM_NULL;
-    md->fd = -1;
-    md->rank = -1;
-    md->size = 0;
 
     free_nssi_config(&nssi_cfg);
 
