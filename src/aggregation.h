@@ -27,8 +27,10 @@ struct aggregation_chunk_details_t {
     enum ADIOS_DATATYPES atype; /* adios type of data in buf*/
     int                  atype_size;
 
+    char    **offset_path;
     char    **offset_name;
     uint64_t *offset;     /* starting corner (eg. 0,0,0 is the origin of a cube) */
+    char    **count_path;
     char    **count_name;
     uint64_t *count;      /* num elements in each dimension (eg. 3,3,3 is a cube of size 3) */
 };
