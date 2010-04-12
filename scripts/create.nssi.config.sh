@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 CONFIG_FILE=$1 ; shift
 SERVER_CONTACT_INFO=$1 ; shift
