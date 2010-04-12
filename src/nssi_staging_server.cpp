@@ -88,53 +88,6 @@ typedef pair<struct open_file, int64_t> open_file_map_pair_t;
 static pthread_mutex_t open_file_map_mutex=PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 static pthread_cond_t  open_file_map_cond =PTHREAD_COND_INITIALIZER;
 
-///* Need a struct to encapsulate offset/dimension variable info.
-// */
-//struct var_info {
-//    int64_t virank;
-//    char    vipath[ADIOS_PATH_MAX];
-//    char    viname[ADIOS_PATH_MAX];
-//    void   *vidata;
-//    var_info(const int64_t rank, const char *path, const char *name) {
-//        virank=rank;
-//        strcpy(vipath, path);
-//        strcpy(viname, name);
-//        vidata=NULL;
-//    }
-//    var_info(const int64_t rank, const char *path, const char *name, void *data) {
-//        virank=rank;
-//        strcpy(vipath, path);
-//        strcpy(viname, name);
-//        vidata=data;
-//    }
-//};
-///* Need a comparison operator to pass into the var_info_map
-// */
-//struct var_info_lt
-//{
-//    bool operator()(const struct var_info &vi1, const struct var_info &vi2) const
-//    {
-//        if (vi1.virank < vi2.virank) return TRUE;
-//        if ((vi1.virank == vi2.virank) && (strcmp(vi1.vipath, vi2.vipath) < 0)) return TRUE;
-//        if ((vi1.virank == vi2.virank) && (strcmp(vi1.vipath, vi2.vipath) == 0) && (strcmp(vi1.viname, vi2.viname) < 0)) return TRUE;
-//
-//        return FALSE;
-//    }
-//};
-//
-///* Map of dimension variables */
-//static map<struct var_info, void *, var_info_lt> dim_map;
-//typedef map<struct var_info, void *, var_info_lt>::iterator dim_map_iterator_t;
-//typedef pair<struct var_info, void *> dim_map_pair_t;
-//static pthread_mutex_t dim_map_mutex=PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-//static pthread_cond_t  dim_map_cond =PTHREAD_COND_INITIALIZER;
-///* Map of offset variables */
-//static map<struct var_info, void *, var_info_lt> offset_map;
-//typedef map<struct var_info, void *, var_info_lt>::iterator offset_map_iterator_t;
-//typedef pair<struct var_info, void *> offset_map_pair_t;
-//static pthread_mutex_t offset_map_mutex=PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
-//static pthread_cond_t  offset_map_cond =PTHREAD_COND_INITIALIZER;
-
 
 static int global_rank=-1;
 static int DEBUG=3;
@@ -158,17 +111,6 @@ int64_t open_file_get(char *fname)
 
     return(fd);
 }
-
-//void open_file_del(lwfs_ib_connection *conn)
-//{
-//    conn_map_iterator_t iter;
-//    conn_qp cqp(conn->msg_qp_num);
-//
-//    log_debug(rpc_debug_level, "begin");
-//    log_debug(rpc_debug_level, "deleting connection with qp_num=%d", conn->msg_qp_num);
-//    conn_map.erase(cqp);
-//    log_debug(rpc_debug_level, "end");
-//}
 void open_file_del(char *fname)
 {
     open_file_map_iterator_t iter;
@@ -176,88 +118,6 @@ void open_file_del(char *fname)
 
     open_file_map.erase(of);
 }
-
-
-//void dim_add(int64_t rank, char *path, char *name, void *data)
-//{
-//    var_info vi(rank, path, name, data);
-//    printf("adding dim virank(%ld) vipath(%s) viname(%s)\n", rank, path, name);
-//    dim_map[vi]=data;
-//}
-//
-//void *dim_get(int64_t rank, char *path, char *name)
-//{
-//    var_info vi(rank, path, name);
-//    void *data=NULL;
-//
-//    printf("looking for dim virank(%ld) vipath(%s) viname(%s)\n", rank, path, name);
-//
-//    dim_map_iterator_t iter=dim_map.find(vi);
-//    if (iter != dim_map.end()) {
-//        data=iter->second;
-//    }
-//
-//    return(data);
-//}
-//
-////void dims_del(lwfs_ib_connection *conn)
-////{
-////    conn_map_iterator_t iter;
-////    conn_qp cqp(conn->msg_qp_num);
-////
-////    log_debug(rpc_debug_level, "begin");
-////    log_debug(rpc_debug_level, "deleting connection with qp_num=%d", conn->msg_qp_num);
-////    conn_map.erase(cqp);
-////    log_debug(rpc_debug_level, "end");
-////}
-//void dim_del(int64_t rank, char *path, char *name)
-//{
-//    dim_map_iterator_t iter;
-//    var_info vi(rank, path, name);
-//
-//    dim_map.erase(vi);
-//}
-//
-//
-//void offset_add(int64_t rank, char *path, char *name, void *data)
-//{
-//    var_info vi(rank, path, name, data);
-//    printf("adding offset virank(%ld) vipath(%s) viname(%s)\n", rank, path, name);
-//    offset_map[vi]=data;
-//}
-//
-//void *offset_get(int64_t rank, char *path, char *name)
-//{
-//    var_info vi(rank, path, name);
-//    void *data=NULL;
-//
-//    printf("looking for offset virank(%ld) vipath(%s) viname(%s)\n", rank, path, name);
-//
-//    offset_map_iterator_t iter=offset_map.find(vi);
-//    if (iter != offset_map.end()) {
-//        data=iter->second;
-//    }
-//
-//    return(data);
-//}
-//
-////void offset_del(lwfs_ib_connection *conn)
-////{
-////    conn_map_iterator_t iter;
-////    conn_qp cqp(conn->msg_qp_num);
-////
-////    log_debug(rpc_debug_level, "begin");
-////    log_debug(rpc_debug_level, "deleting connection with qp_num=%d", conn->msg_qp_num);
-////    conn_map.erase(cqp);
-////    log_debug(rpc_debug_level, "end");
-////}
-//void offset_del(int64_t rank, char *path, char *name)
-//{
-//    offset_map_iterator_t iter;
-//    var_info vi(rank, path, name);
-//
-//    offset_map.erase(vi);
-//}
 
 
 
@@ -568,26 +428,6 @@ int nssi_staging_write_stub(
 
     if (DEBUG>3) printf("vname(%s) vsize(%ld) is_scalar(%d) rank(%ld)\n", args->vname, args->vsize, args->is_scalar, args->writer_rank);
 
-
-    //    if (args->is_offset) {
-//        // put offset in list
-//        void *old_data=offset_get(args->writer_rank, "" /*args->vpath*/, args->vname);
-//        if (old_data != NULL) {
-//            offset_del(args->writer_rank, "" /*args->vpath*/, args->vname);
-//            free(old_data);
-//        }
-//        offset_add(args->writer_rank, "" /*args->vpath*/, args->vname, v);
-//    }
-//    if (args->is_dim) {
-//        // put dim in list
-//        void *old_data=dim_get(args->writer_rank, "" /*args->vpath*/, args->vname);
-//        if (old_data != NULL) {
-//            dim_del(args->writer_rank, "" /*args->vpath*/, args->vname);
-//            free(old_data);
-//        }
-//        dim_add(args->writer_rank, "" /*args->vpath*/, args->vname, v);
-//    }
-
     if (!args->is_scalar) {
         if (DEBUG>3) printf("allocated v(%p), len(%ld)\n",
                 v, args->vsize);
@@ -633,10 +473,6 @@ int nssi_staging_write_stub(
 
 cleanup:
 
-//    if (!args->is_offset) {
-//        free(v);
-//    }
-
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, &res, res_addr);
 
@@ -669,11 +505,6 @@ int nssi_staging_start_calc_stub(
                     grank, j, chunk->var_path, chunk->var_name, chunk->offset_path[i], chunk->offset_name[i], chunk->offset[i]);
             Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->offset_path[i], chunk->offset_name[i]););
             Func_Timer("adios_write", adios_write(chunk->fd, chunk->offset_name[i], &(chunk->offset[i])););
-//            void *odata=offset_get(args->writer_rank, args->offsets.offsets_val[i].vpath, args->offsets.offsets_val[i].vname);
-//            if (odata != NULL) {
-//                printf("updating oname(%s)\n", args->offsets.offsets_val[i].vname);
-//                Func_Timer("adios_write", adios_write(args->fd, args->offsets.offsets_val[i].vname, args->offsets.offsets_val[i].vdata););
-//            }
         }
         for(int i=0;i<chunk->ndims;i++) {
             uint64_t value=0;
@@ -791,6 +622,9 @@ static void generate_contact_info(nssi_remote_pid *myid)
         sprintf(contact_path, "%s.%04d", contact_file, rank);
         if (DEBUG>3) printf("creating contact file (%s)\n", contact_path);
         FILE *f=fopen(contact_path, "w");
+        if (f==NULL) {
+            perror("fopen");
+        }
         for (int i=0;i<np;i++) {
             fprintf(f, "%u@%u@%s@%u\n",
                     all_pids[i].nid, all_pids[i].pid,
@@ -802,6 +636,7 @@ static void generate_contact_info(nssi_remote_pid *myid)
         fclose(f);
         free(all_pids);
     }
+    MPI_Barrier(MPI_COMM_WORLD);
 }
 
 
