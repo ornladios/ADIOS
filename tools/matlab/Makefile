@@ -1,20 +1,23 @@
-
+MEXOPTS="-g -DDEBUG"
 default:
 	@echo "ADIOS reader methods for MATLAB"
 	@echo "Have 'mex' compiler in the path and run"
 	@echo "> make matlab"
 
 
-matlab: adiosopenc adiosclosec adiosreadc 
+matlab: adiosopenc adiosclosec adiosreadc
 
 adiosopenc:  
-	mex adiosopenc.c -D_NOMPI  -I. -I../../src -L. -L../../src -ladiosread_nompi
+	mex adiosopenc.c ${MEXOPTS} -D_NOMPI  -I. -I../../src -L. -L../../src -ladiosread_nompi
 
 adiosreadc: 
-	mex adiosreadc.c -D_NOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
+	mex adiosreadc.c ${MEXOPTS} -D_NOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
 
 adiosclosec:
-	mex adiosclosec.c -D_NOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
+	mex adiosclosec.c ${MEXOPTS} -D_NOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
+
+#adiosdbgc:
+#	mex adiosdbgc.c ${MEXOPTS} -D_NOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
 
 clean:
 	rm -f *.mexa64 core* *.o 
