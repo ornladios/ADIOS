@@ -37,6 +37,7 @@ enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when_get (void)   { return adios
 // for the code for the vm_stat command.
 // http://www.opensource.apple.com/source/xnu/xnu-792.6.61/osfmk/man/host_statistics.html?txt
 // describes the host_statistics function
+// Added by  Dorian Krause <dorian.krause@usi.ch>
 static inline size_t adios_get_avphys_pages ()
 {
     // Since we are only interested in the number of free pages
