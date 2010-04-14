@@ -337,6 +337,7 @@ ADIOS_GROUP * adios_read_bp_gopen_byid (ADIOS_FILE *fp, int grpid)
     gp = (ADIOS_GROUP *) malloc(sizeof(ADIOS_GROUP));
     if (!gp) {
         error( err_no_memory, "Could not allocate memory for group info");
+        free(gh);
         return NULL;
     }
 
