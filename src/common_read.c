@@ -5,6 +5,7 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "adios.h"
@@ -20,12 +21,16 @@
 #endif
 
 
+/* Note: MATLAB reloads the mex64 files each time, so all static variables get the original value.
+   Therefore static variables cannot be used to pass info between two Matlab/ADIOS calls */
 static struct adios_read_hooks_struct * adios_read_hooks = 0;
 static enum ADIOS_READ_METHOD selected_method = ADIOS_READ_METHOD_BP;
 
 struct common_read_internals_struct {
     enum ADIOS_READ_METHOD method;
+    struct adios_read_hooks_struct * read_hooks; /* Save adios_read_hooks for each fopen for Matlab */
 };
+
 
 int common_read_set_read_method(enum ADIOS_READ_METHOD method)
 {
@@ -61,8 +66,10 @@ ADIOS_FILE * common_read_fopen (const char * fname, MPI_Comm comm)
     adios_read_hooks_init (&adios_read_hooks); // init the adios_read_hooks_struct if not yet initialized    
 
     internals->method = selected_method;
+    internals->read_hooks = adios_read_hooks;
 
     fp = adios_read_hooks[internals->method].adios_fopen_fn (fname, comm);
+
 
     // save the method in fp->internal_data
     if (fp)
@@ -78,7 +85,7 @@ int common_read_fclose (ADIOS_FILE *fp)
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = adios_read_hooks[internals->method].adios_fclose_fn (fp);
+        retval = internals->read_hooks[internals->method].adios_fclose_fn (fp);
     } else {
         error( err_invalid_file_pointer, "Invalid file pointer at adios_fclose()");
         retval = -err_invalid_file_pointer;
@@ -93,7 +100,7 @@ void common_read_reset_dimension_order (ADIOS_FILE *fp, int is_fortran)
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        adios_read_hooks[internals->method].adios_reset_dimension_order_fn (fp);
+        internals->read_hooks[internals->method].adios_reset_dimension_order_fn (fp);
     } else {
         error( err_invalid_file_pointer, "Invalid file pointer at adios_reset_dimension_order()");
     }
@@ -107,7 +114,7 @@ ADIOS_GROUP * common_read_gopen (ADIOS_FILE *fp, const char * grpname)
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = adios_read_hooks[internals->method].adios_gopen_fn (fp, grpname);
+        retval = internals->read_hooks[internals->method].adios_gopen_fn (fp, grpname);
     } else {
         error( err_invalid_file_pointer, "Invalid file pointer at adios_gopen()");
         retval = NULL;
@@ -123,11 +130,12 @@ ADIOS_GROUP * common_read_gopen_byid (ADIOS_FILE *fp, int grpid)
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = adios_read_hooks[internals->method].adios_gopen_byid_fn (fp, grpid);
+        retval = internals->read_hooks[internals->method].adios_gopen_byid_fn (fp, grpid);
     } else {
         error( err_invalid_file_pointer, "Invalid file pointer at adios_gopen()");
         retval = NULL;
     }
+    //printf("%s: gp=%x, gp->fp=%x, gp->gh=%x\n",__func__, retval, retval->fp, retval->gh);
     return retval;
 }
                    
@@ -138,8 +146,9 @@ int common_read_gclose (ADIOS_GROUP *gp)
     
     adios_errno = 0;
     if (gp) {
+        //printf("%s: gp=%x, gp->fp=%x, gp->gh=%x\n",__func__, gp, gp->fp, gp->gh);
         internals = (struct common_read_internals_struct *) gp->fp->internal_data;
-        retval = adios_read_hooks[internals->method].adios_gclose_fn (gp);
+        retval = internals->read_hooks[internals->method].adios_gclose_fn (gp);
     } else {
         error(err_invalid_group_struct, "Null pointer passed as group to adios_gclose()");
         retval = -err_invalid_group_struct;
@@ -156,7 +165,7 @@ int common_read_get_attr (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DA
     adios_errno = 0;
     if (gp) {
         internals = (struct common_read_internals_struct *) gp->fp->internal_data;
-        retval = adios_read_hooks[internals->method].adios_get_attr_fn (gp, attrname, type, size, data);
+        retval = internals->read_hooks[internals->method].adios_get_attr_fn (gp, attrname, type, size, data);
     } else {
         error(err_invalid_group_struct, "Null pointer passed as group to adios_get_attr()");
         retval = -err_invalid_group_struct;
@@ -173,7 +182,7 @@ int common_read_get_attr_byid (ADIOS_GROUP * gp, int attrid,
     adios_errno = 0;
     if (gp) {
         internals = (struct common_read_internals_struct *) gp->fp->internal_data;
-        retval = adios_read_hooks[internals->method].adios_get_attr_byid_fn (gp, attrid, type, size, data);
+        retval = internals->read_hooks[internals->method].adios_get_attr_byid_fn (gp, attrid, type, size, data);
     } else {
         error(err_invalid_group_struct, "Null pointer passed as group to adios_get_attr_byid()");
         retval = -err_invalid_group_struct;
@@ -189,7 +198,7 @@ ADIOS_VARINFO * common_read_inq_var (ADIOS_GROUP *gp, const char * varname)
     adios_errno = 0;
     if (gp) {
         internals = (struct common_read_internals_struct *) gp->fp->internal_data;
-        retval = adios_read_hooks[internals->method].adios_inq_var_fn (gp, varname);
+        retval = internals->read_hooks[internals->method].adios_inq_var_fn (gp, varname);
     } else {
         error(err_invalid_group_struct, "Null pointer passed as group to adios_inq_var_byid()");
         retval = NULL;
@@ -205,7 +214,7 @@ ADIOS_VARINFO * common_read_inq_var_byid (ADIOS_GROUP *gp, int varid)
     adios_errno = 0;
     if (gp) {
         internals = (struct common_read_internals_struct *) gp->fp->internal_data;
-        retval = adios_read_hooks[internals->method].adios_inq_var_byid_fn (gp, varid);
+        retval = internals->read_hooks[internals->method].adios_inq_var_byid_fn (gp, varid);
     } else {
         error(err_invalid_group_struct, "Null pointer passed as group to adios_inq_var_byid()");
         retval = NULL;
@@ -237,7 +246,7 @@ int64_t common_read_read_var (ADIOS_GROUP * gp, const char * varname,
     adios_errno = 0;
     if (gp) {
         internals = (struct common_read_internals_struct *) gp->fp->internal_data;
-        retval = adios_read_hooks[internals->method].adios_read_var_fn (gp, varname, start, count, data);
+        retval = internals->read_hooks[internals->method].adios_read_var_fn (gp, varname, start, count, data);
     } else {
         error(err_invalid_group_struct, "Null pointer passed as group to adios_read_var()");
         retval = -err_invalid_group_struct;
@@ -257,7 +266,7 @@ int64_t common_read_read_var_byid (ADIOS_GROUP    * gp,
     adios_errno = 0;
     if (gp) {
         internals = (struct common_read_internals_struct *) gp->fp->internal_data;
-        retval = adios_read_hooks[internals->method].adios_read_var_byid_fn (gp, varid, start, count, data);
+        retval = internals->read_hooks[internals->method].adios_read_var_byid_fn (gp, varid, start, count, data);
     } else {
         error(err_invalid_group_struct, "Null pointer passed as group to adios_read_var_byid()");
         retval = -err_invalid_group_struct;
