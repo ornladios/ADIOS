@@ -25,17 +25,17 @@
 
     <!-- 3D array written by genarray with 1 timesteps -->
     <global-bounds dimensions="gndx,gndy,gndz" offsets="offx,offy,offz">
-        <var name="var1" gwrite="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
-        <var name="var2" gwrite="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
-        <var name="var3" gwrite="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
-        <var name="var4" gwrite="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
-        <var name="var5" gwrite="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
-        <var name="var6" gwrite="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
-        <var name="var7" gwrite="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
-        <var name="var8" gwrite="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
-        <var name="var9" gwrite="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
+        <var name="var1" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
+        <var name="var2" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
+        <var name="var3" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
+        <var name="var4" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
+        <var name="var5" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
+        <var name="var6" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
+        <var name="var7" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
+        <var name="var8" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
+        <var name="var9" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/>
     </global-bounds>
-    <attribute name="description" path="/var/double_xyz" 
+    <attribute name="description" path="/var/double_xyz"
                value="3D array with 3D decomposition"/>
 
 
