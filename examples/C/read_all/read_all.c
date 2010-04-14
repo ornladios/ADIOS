@@ -101,7 +101,7 @@ int main (int argc, char ** argv)
                         for (j = 0; j < v->dims[0]; j++) {
                             printf ("      block %d: \n", j);
                             for (k = 0; k < v->dims[1]; k++) {
-                                printf ("        row %d: [", j);
+                                printf ("        row %d: [", k);
                                 for (l = 0; l < v->dims[2]; l++) {
                                     printf("%s ", value_to_string(v->type, data, j*v->dims[1]*v->dims[2] + k*v->dims[1] + l));
                                 }
