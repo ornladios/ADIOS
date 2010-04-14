@@ -10,7 +10,12 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-#include <sys/vfs.h>
+#if defined(__APPLE__)
+#	include <sys/param.h>
+#	include <sys/mount.h>
+#else
+#	include <sys/vfs.h>
+#endif
 #include <sys/ioctl.h>
 #include <assert.h>
 
@@ -28,7 +33,12 @@
 
 static int adios_mpi_initialized = 0;
 
-#define COLLECT_METRICS 1
+#if defined(__APPLE__)
+#   define COLLECT_METRICS 0
+#else
+#   define COLLECT_METRICS 1
+#endif
+
 
 struct adios_MPI_data_struct
 {

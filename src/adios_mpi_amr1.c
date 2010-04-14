@@ -194,7 +194,12 @@ void print_metrics (struct adios_MPI_data_struct * md, int iteration)
 }
 #endif
 
-#include <sys/statfs.h>
+#if defined(__APPLE__)
+#       include <sys/param.h>
+#       include <sys/mount.h>
+#else
+#       include <sys/statfs.h>
+#endif
 
 // this should be determined at configure time
 //#define ADIOS_LUSTRE

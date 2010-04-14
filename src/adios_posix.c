@@ -31,6 +31,10 @@
 #include "adios_internals.h"
 #include "buffer.h"
 
+#if defined(__APPLE__) 
+#    define O_LARGEFILE 0
+#endif
+
 static int adios_posix_initialized = 0;
 
 struct adios_POSIX_data_struct
