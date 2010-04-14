@@ -3,7 +3,7 @@ INCLUDES += -I$(top_builddir)/src
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-noinst_PROGRAMS=genarray genarray2D
+noinst_PROGRAMS=genarray genarray2D copyarray copyarray2D
 
 genarray_SOURCES = genarray.F90
 genarray_LDFLAGS = $(MXML_LDFLAGS)
@@ -47,12 +47,58 @@ genarray2D_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
 genarray2D_LDADD += $(DART_LIBS)
 endif
 
+copyarray_SOURCES = copyarray.F90
+copyarray_LDFLAGS = $(MXML_LDFLAGS)
+copyarray_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
+if HAVE_NETCDF
+copyarray_LDADD += $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+copyarray_LDFLAGS += $(NETCDF_LDFLAGS)
+endif
+if HAVE_NSSI
+copyarray_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+copyarray_LDFLAGS += $(NSSI_LDFLAGS)
+endif
+if HAVE_PHDF5
+copyarray_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+copyarray_LDFLAGS += $(PHDF5_LDFLAGS)
+endif
+if HAVE_DART
+copyarray_CPPFLAGS = $(DART_CPPFLAGS)
+copyarray_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+copyarray_LDADD += $(DART_LIBS)
+endif
+
+copyarray2D_SOURCES = copyarray2D.F90
+copyarray2D_LDFLAGS = $(MXML_LDFLAGS)
+copyarray2D_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
+if HAVE_NETCDF
+copyarray2D_LDADD += $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+copyarray2D_LDFLAGS += $(NETCDF_LDFLAGS)
+endif
+if HAVE_NSSI
+copyarray2D_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+copyarray2D_LDFLAGS += $(NSSI_LDFLAGS)
+endif
+if HAVE_PHDF5
+copyarray2D_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+copyarray2D_LDFLAGS += $(PHDF5_LDFLAGS)
+endif
+if HAVE_DART
+copyarray2D_CPPFLAGS = $(DART_CPPFLAGS)
+copyarray2D_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
+copyarray2D_LDADD += $(DART_LIBS)
+endif
+
 FC=$(MPIFC)
 
 genarray.F90: gwrite_genarray.fh
+copyarray.F90: gwrite_genarray.fh gread_genarray.fh
 
 gwrite_genarray.fh: genarray3d.xml
-	rm -f gwrite_genarray.fh
+	rm -f gwrite_genarray.fh gread_genarray.fh
+	$(top_builddir)/utils/gpp/gpp.py genarray3d.xml
+gread_genarray.fh: genarray3d.xml
+	rm -f gwrite_genarray.fh gread_genarray.fh
 	$(top_builddir)/utils/gpp/gpp.py genarray3d.xml
 
 FCLINK = \
