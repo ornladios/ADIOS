@@ -47,7 +47,6 @@ libadios_a_SOURCES = adios.c \
                      adios_mpi_stripe.c \
                      adios_mpi_stripe2.c \
                      adios_mpi_amr.c \
-                     adios_mpi_amr1.c \
                      adios_posix.c \
                      adios_posix1.c \
                      adios_internals.c \
@@ -57,7 +56,17 @@ libadios_a_SOURCES = adios.c \
                      adios_socket.c \
                      adios_bp_v1.c  \
                      adios_bp_v2.c  \
-                     adios_endianness.c
+                     adios_endianness.c \
+                     bp_utils.c \
+                     futils.c \
+                     adios_error.c \
+                     adios_read.c \
+                     adios_read_hooks.c \
+                     common_read.c \
+                     read_bp.c \
+                     globals.c
+                     
+#                     adios_mpi_amr1.c \
 if BUILD_FORTRAN
 lib_LIBRARIES += libadiosf.a
 libadiosf_a_SOURCES = adiosf.c \
@@ -67,7 +76,6 @@ libadiosf_a_SOURCES = adiosf.c \
                      adios_mpi_stripe.c \
                      adios_mpi_stripe2.c \
                      adios_mpi_amr.c \
-                     adios_mpi_amr1.c \
                      adios_posix.c \
                      adios_posix1.c \
                      adios_internals.c \
@@ -79,7 +87,17 @@ libadiosf_a_SOURCES = adiosf.c \
                      adios_bp_v2.c  \
                      adios_endianness.c\
                      futils.c \
-                     adios_error.c
+                     adios_error.c \
+                     bp_utils.c \
+                     futils.c \
+                     adios_error.c \
+                     adiosf_read.c \
+                     adios_read_hooks.c \
+                     common_read.c \
+                     read_bp.c \
+                     globals.c 
+                     
+#                    adios_mpi_amr1.c \
 endif
 
 if HAVE_DART
@@ -151,8 +169,9 @@ libadios_a_SOURCES += adios_mpi_stagger.c \
                       adios_mpi_cio.c \
                       adios_adaptive.c \
                       adios_datatap.c \
-                      adios_mpi_amr.c \
-                      adios_mpi_amr1.c
+                      adios_mpi_amr.c 
+                      
+#                     #adios_mpi_amr1.c
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_mpi_stagger.c \
                        adios_mpi_aggregate.c \
@@ -160,8 +179,9 @@ libadiosf_a_SOURCES += adios_mpi_stagger.c \
                        adios_mpi_cio.c \
                        adios_adaptive.c \
                        adios_datatap.c \
-                       adios_mpi_amr.c \
-                       adios_mpi_amr1.c
+                       adios_mpi_amr.c 
+
+#                      adios_mpi_amr1.c
 endif
 else
 libadios_a_CPPFLAGS += -DNO_RESEARCH_TRANSPORTS
@@ -187,7 +207,8 @@ libadiosread_a_SOURCES = adios_bp_v1.c \
 		      adios_read.c \
 		      adios_read_hooks.c \
                       common_read.c \
-		      read_bp.c  
+		      read_bp.c \
+                      globals.c
 if HAVE_DART
 libadiosread_a_SOURCES += read_dart.c
 endif
@@ -204,7 +225,8 @@ libadiosreadf_a_SOURCES = adios_bp_v1.c \
 		      adiosf_read.c \
 		      adios_read_hooks.c \
                       common_read.c \
-		      read_bp.c 
+		      read_bp.c \
+                      globals.c
                       
 if HAVE_DART
 libadiosreadf_a_SOURCES += read_dart.c
@@ -232,7 +254,8 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
 		      adios_internals.c \
 		      adios_internals_v2.c \
                       buffer.c \
-                      adios_transport_hooks.c   
+                      adios_transport_hooks.c \
+                      globals.c
 
 if HAVE_DART
 libadiosread_nompi_a_SOURCES += read_dart.c
