@@ -15,12 +15,20 @@
 #include "adios_internals_mxml.h"
 #include "adios_transport_hooks.h"
 #include "futils.h"
+#include "globals.h"
 
 #ifdef __cplusplus
 extern "C"  /* prevent C++ name mangling */
 #endif
 
 extern int adios_errno;
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_set_application_id, adios_SET_APPLICATION_ID) (int *id, int * err)
+{
+    globals_adios_set_application_id (*id);
+    if (err != 0) *err = 0;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 void FC_FUNC_(adios_init, adios_INIT) (const char * config, int * err, int config_size)

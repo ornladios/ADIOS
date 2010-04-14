@@ -21,8 +21,15 @@
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
 #include "adios_internals_mxml.h"
+#include "globals.h"
 
 extern struct adios_transport_struct * adios_transports;
+
+int adios_set_application_id (int id)
+{
+    globals_adios_set_application_id (id);
+    return 0;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 int adios_init (const char * config)
