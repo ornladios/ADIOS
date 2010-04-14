@@ -10,6 +10,10 @@
 #include <stdint.h>
 #include <unistd.h>   /* _SC_PAGE_SIZE, _SC_AVPHYS_PAGES */
 
+#if defined(__APPLE__)
+#	include <mach/mach.h>
+#endif
+
 #include "buffer.h"
 
 // buffer sizing may be problematic.  To get a more accurate picture, check:
@@ -28,6 +32,47 @@ void      adios_buffer_alloc_percentage_set (int v)     { adios_buffer_alloc_per
 void      adios_buffer_alloc_when_set (enum ADIOS_BUFFER_ALLOC_WHEN v)   { adios_buffer_alloc_when = v; }
 enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when_get (void)   { return adios_buffer_alloc_when; }
 
+#if defined (__APPLE__)
+// See e.g. http://www.opensource.apple.com/source/system_cmds/system_cmds-496/vm_stat.tproj/vm_stat.c
+// for the code for the vm_stat command.
+// http://www.opensource.apple.com/source/xnu/xnu-792.6.61/osfmk/man/host_statistics.html?txt
+// describes the host_statistics function
+static inline size_t adios_get_avphys_pages ()
+{
+    // Since we are only interested in the number of free pages
+    // it is fine to work with the "older" host_statistics()
+    // instead of host_statistics64(). The advantage is that the
+    // first function is also provided on older (e.g., Mac OS X 10.5)
+    // systems
+    vm_statistics_data_t   host_info;
+    mach_msg_type_number_t host_info_outCnt;
+
+    // See mach/host_info.h
+    host_info_outCnt = HOST_VM_INFO_COUNT;
+    if (host_statistics(mach_host_self(),
+                        HOST_VM_INFO,
+                        (host_info_t)&host_info,
+                        &host_info_outCnt) != KERN_SUCCESS ) {
+        fprintf (stderr, "adios_get_avphys_pages (): host_statistics failed.\n");
+        return 0;   // Best we can do
+    }
+
+    // on Mac OSX 10.4 (Tiger), there is no speculative page counting
+    // VM_PAGE_QUERY_PAGE_SPECULATIVE is defined in 10.5's mach/vm_statistics.h (included in mach.h)
+#   if defined (VM_PAGE_QUERY_PAGE_SPECULATIVE)
+    return host_info.free_count - host_info.speculative_count;
+#   else
+    return host_info.free_count;
+#   endif
+}
+#else
+// See e.g. http://chandrashekar.info/vault/linux-system-programs.html
+static inline size_t adios_get_avphys_pages ()
+{
+    return sysconf (_SC_AVPHYS_PAGES);
+}
+#endif
+
 int adios_set_buffer_size ()
 {
     if (!adios_buffer_size_max) // not called before
@@ -35,28 +80,8 @@ int adios_set_buffer_size ()
         long pagesize;
         long pages;
 
-#if defined (__APPLE__)
-# include <sys/sysctl.h>
-	int mib[2];
-	uint64_t memsize;
-	size_t len;
- 
-	mib[0] = CTL_HW;
-	mib[1] = HW_MEMSIZE; /*uint64_t: physical ram size */
-	len = sizeof(memsize);
-	sysctl(mib, 2, &memsize, &len, NULL, 0);
-	printf("- memsize  = %10i k\n", memsize/1024);
-	printf("- memsize  = %10i MB\n", memsize/1024/1024);
-	printf("- memsize  = %10i GB\n", memsize/1024/1024/1024);
-	
-	return memsize/1024;
-        //return (long)memsize/1024;   /*this type cast didn't work*/	
-	
-
-#else
         pagesize = sysconf (_SC_PAGE_SIZE);
-        pages = sysconf (_SC_AVPHYS_PAGES);
-#endif
+        pages =  adios_get_avphys_pages ();
 	
         if (adios_buffer_alloc_percentage)
         {
