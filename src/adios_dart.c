@@ -24,47 +24,27 @@
 #include "adios_internals.h"
 #include "adios_internals_mxml.h"
 
+#include "dart.h"
 
+/*#define DART_DO_VERSIONING  define it at configure as -DDART_DO_VERSIONING in CFLAGS */
 
-#if HAVE_DART
-    void dart_init_(int *num_peers, int *appid);
-    void dart_rank_(int *rank);
-    void dart_peers_(int *peers);
-    void dart_lock_on_write_();
-    void dart_unlock_on_write_();
-    void dart_lock_on_read_();
-    void dart_unlock_on_read_();
-    void dart_put_(char *var_name, unsigned int* ver, int *size,
-                    int *xl, int *yl, int *zl,
-                    int *xu, int *yu, int *zu,
-                    void *data, int len);
-    void dart_put_sync_();
-    void dart_get_(char *var_name, unsigned int *ver, int *size,
-                    int *xl, int *yl, int *zl,
-                    int *xu, int *yu, int *zu,
-                    void *data, int len);
-    void dart_barrier_();
-    void dart_finalize_();
-#endif
 
 static int adios_dart_initialized = 0;
-static int adios_dart_connected_to_dart = 0;
 #define MAXDARTNAMELEN 128
 static char dart_type_var_name[MAXDARTNAMELEN];
 static char dart_var_name[MAXDARTNAMELEN];
 
 struct adios_DART_data_struct
 {
-    int rank;
+    int rank;   // dart rank or MPI rank if MPI is available
     int peers;  // from xml parameter or group communicator
     int appid;  // from xml parameter or 1
-    int time_index; // versioning in DataSpaces, start from 1
+    int time_index; // versioning in DataSpaces, start from 0
     int n_writes; // how many times adios_write has been called
-    int sync_at_close; // bool: whether to call a put_sync in adios_close
 };
 
 
-#if HAVE_DART
+
 int get_dim_rank_value(struct adios_dimension_item_struct * dim_info, struct adios_group_struct *group)
 {
     if(!dim_info)
@@ -133,44 +113,21 @@ void adios_dart_init (const char * parameters,
     char temp[64];
     int num_peers;
     int appid;
+    int was_set;
     
-    if (parameters) {
-        index=0;
-        for(i=0; *(parameters+index)!=',' && *(parameters+index)!=0; index++,i++ )
-        {
-            temp[i] = *(parameters+index);
-        }
-        temp[i] = 0;
-
-        //Get peers num info from parameters
-        if (i > 0)
-            num_peers = atoi(temp);
-        else 
-            num_peers = 1;
-
-        for( index++, i=0; *(parameters+index)!=0; index++,i++ )
-        {
-            temp[i] = *(parameters+index);
-        } 
-        temp[i] = 0;
-        //get app id?
-        if (i > 0)
-            appid = atoi(temp);
-        else
-            appid = 1;
-    } else {
-        num_peers = 1;
+    num_peers = 1;
+    // Application ID should be set by the application calling adios_set_application_id()
+    appid = globals_adios_get_application_id (&was_set);
+    if (!was_set)
         appid = 1;
-    }
 
     //Init the static data structure
     p->peers = num_peers;
     p->appid = appid;
-    p->time_index = 1;
+    p->time_index = 0;
     p->n_writes = 0;
-    p->sync_at_close = 0;
 
-    fprintf(stderr, "adios_dart_init:  param peers=%d, param appid=%d\n", p->peers, p->appid);
+    fprintf(stderr, "adios_dart_init: appid=%d\n", p->appid);
    
 }
 
@@ -241,6 +198,7 @@ static void adios_dart_var_to_comm  (const char * comm_name
         *comm = MPI_COMM_WORLD;
     }
 }
+
 int adios_dart_open (struct adios_file_struct * fd,
                     struct adios_method_struct * method,
                     void *comm
@@ -255,43 +213,51 @@ int adios_dart_open (struct adios_file_struct * fd,
                         fd->name, fd->mode, p->time_index);
 
     // connect to DART at the very first adios_open(), disconnect in adios_finalize()
-    if (!adios_dart_connected_to_dart) {
+    // connect only if the READ API has not connected yet
+    if (!globals_adios_is_dart_connected()) {
 
 #if HAVE_MPI
     // if we have MPI and a communicator, we can get the exact size of this application
     // that we need to tell DART
-    MPI_Comm group_comm;
-    if (comm) {
-        adios_dart_var_to_comm (fd->group->group_comm, fd->group->adios_host_language_fortran,
-                                comm, &group_comm);
-        MPI_Comm_size ( group_comm, &num_peers);
-    }
+        MPI_Comm group_comm;
+        if (comm) {
+            adios_dart_var_to_comm (fd->group->group_comm, fd->group->adios_host_language_fortran,
+                                    comm, &group_comm);
+            MPI_Comm_rank ( group_comm, &(p->rank));
+            MPI_Comm_size ( group_comm, &num_peers);
+            p->peers = num_peers;
+        }
 #endif
 
-        fprintf(stderr, "adios_dart_open: connect to DART, peers=%d, appid=%d \n",
-                        num_peers, p->appid);
+        fprintf(stderr, "adios_dart_open: rank=%d connect to DART, peers=%d, appid=%d \n",
+                        p->rank, num_peers, p->appid);
 
         //Init the dart client
-        dart_init_(&num_peers, &(p->appid));
-        dart_rank_(&(p->rank));
-        dart_peers_(&(p->peers));
+        ret = dart_init (num_peers, p->appid);
+        if (ret) {
+            fprintf(stderr, "adios_dart_open: rank=%d Failed to connect to DART: err=%d,  rank=%d\n", p->rank, ret);        
+            return ret;
+        }
 
-        fprintf(stderr, "adios_dart_open: connected: peers=%d,  rank=%d\n", p->peers, p->rank);        
+#if ! HAVE_MPI
+        dart_rank (&(p->rank));
+        dart_peers (&(p->peers));
+#endif
 
-        adios_dart_connected_to_dart = 1;
+        fprintf(stderr, "adios_dart_open: rank=%d connected to DART: peers=%d\n", p->rank, p->peers);        
     }
+    globals_adios_set_dart_connected_from_writer();
    
     if( fd->mode == adios_mode_write )
     {
         fprintf(stderr, "adios_dart_open: rank=%d call write lock...\n", p->rank);        
-        dart_lock_on_write_();        
+        dart_lock_on_write (fd->name);  
         fprintf(stderr, "adios_dart_open: rank=%d got write lock\n", p->rank);        
     }
     else if( fd->mode == adios_mode_read )
     {
-        dart_lock_on_read_();                    
+        dart_lock_on_read (fd->name);
     } 
-
   
     return ret;
 }
@@ -320,7 +286,7 @@ void adios_dart_write (struct adios_file_struct * fd
     int var_type_size = (int) adios_get_type_size(v->type, v->data);
     //Get var name
     char * var_name = v->name;
-    int  i0 = 0, i4 = 4;
+    int err;
 
     //Get two offset coordinate values
     unsigned int version;
@@ -338,55 +304,38 @@ void adios_dart_write (struct adios_file_struct * fd
         ndims++;
     }
 
-    /*version = p->time_index; */ /* Add new data as separate to DataSpaces */
-    version = 0;                  /* Update/overwrite data in DataSpaces  (we write time_index as a variable at close)*/
+#ifdef DART_DO_VERSIONING
+    version = p->time_index;  /* Add new data as separate to DataSpaces */
+#else
+    version = 0;              /* Update/overwrite data in DataSpaces  (we write time_index as a variable at close)*/
+#endif
     
     if (v->path != NULL && v->path[0] != '\0' && strcmp(v->path,"/")) 
-        snprintf(dart_var_name, MAXDARTNAMELEN, "%s/%s", v->path, v->name);
+        snprintf(dart_var_name, MAXDARTNAMELEN, "%s/%s/%s", fd->name, v->path, v->name);
     else 
-        snprintf(dart_var_name, MAXDARTNAMELEN, "%s", v->name);
+        snprintf(dart_var_name, MAXDARTNAMELEN, "%s/%s", fd->name, v->name);
+
     snprintf(dart_type_var_name, MAXDARTNAMELEN, "TYPE@%s", dart_var_name);
     
+    /* Scalar variables are put in space ONLY by rank = 0 process */
+//    if (var_dimensions > 0 || p->rank == 0) {
     
-    fprintf(stderr, "var_name=%s, type=%s(%d) elemsize=%d, version=%d, size_x=%d, size_y=%d, size_z=%d, (%d,%d,%d), (%d,%d,%d)\n",
-                         dart_var_name, adios_type_to_string_int(v->type), v->type, var_type_size, version,
-                         dims[0], dims[1], dims[2], lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
+        fprintf(stderr, "var_name=%s, type=%s(%d) elemsize=%d, version=%d, size_x=%d, size_y=%d, size_z=%d, (%d,%d,%d), (%d,%d,%d)\n",
+                dart_var_name, adios_type_to_string_int(v->type), v->type, var_type_size, version,
+                dims[0], dims[1], dims[2], lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
 
-    /* Put type info as T<varname>, integer in 0,0,0,0,0,0 position */
-    dart_put_(dart_type_var_name, &version, &i4, &i0, &i0, &i0, &i0, &i0, &i0, 
-                &(v->type), strlen(dart_type_var_name)); 
+        /* Put type info as T<varname>, integer in 0,0,0,0,0,0 position */
+        err = dart_put(dart_type_var_name, version, 4, 0,0,0,0,0,0, &(v->type)); 
 
-    if (group->adios_host_language_fortran == adios_flag_yes || ndims == 1) {
-        /* Flip 1st and 2nd dimension for DataSpaces representation
-           for any Fortran writings and for any 1D array*/
-        dart_put_(dart_var_name, &version, &var_type_size, 
-                  lb+1, lb+0, lb+2,
-                  ub+1, ub+0, ub+2, 
-                data, strlen(dart_var_name));
-    } else {
-        /* Keep dimension order in case of C writer of 2-3D arrays for DataSpaces representation */
-        dart_put_(dart_var_name, &version, &var_type_size, 
-                  lb+0, lb+1, lb+2,
-                  ub+0, ub+1, ub+2, 
-                data, strlen(dart_var_name));
-    }
-
-#if 0
-    p->n_writes++;
-    /* have a sync after every 5th variable writing */
-    printf("%s: This was write %d, mod5 = %d\n", __func__, p->n_writes, p->n_writes%5);
-    if ( ! (p->n_writes % 5) ) {
-        printf("%s: call dart_put_sync()\n", __func__);
-        dart_put_sync_();
-        p->sync_at_close = 0;
-    } else {
-        // no sync after this write, should sync at adios_close if this was the last write
-        p->sync_at_close = 1;
-    }
-#else
-    p->sync_at_close = 1;
-#endif
-
+        if (group->adios_host_language_fortran == adios_flag_yes || ndims == 1) {
+            /* Flip 1st and 2nd dimension for DataSpaces representation
+               for any Fortran writings and for any 1D array*/
+            dart_put(dart_var_name, version, var_type_size, lb[1], lb[0], lb[2], ub[1], ub[0], ub[2], data);
+        } else {
+            /* Keep dimension order in case of C writer of 2-3D arrays for DataSpaces representation */
+            dart_put(dart_var_name, version, var_type_size, lb[0], lb[1], lb[2], ub[0], ub[1], ub[2], data);
+        }
+//    }
 }
 
 void adios_dart_get_write_buffer (struct adios_file_struct * fd
@@ -490,29 +439,32 @@ void adios_dart_close (struct adios_file_struct * fd
 
     if( fd->mode == adios_mode_write )
     {
-        /* Write two adios specific variables with the name of the file and name of the group into the space */
-        /* ADIOS Read API fopen() checks these variables to see if writing already happened */
-        unsigned int version = 0;
-        int i4 = 4, i0 = 0;
-        snprintf(dart_var_name, MAXDARTNAMELEN, "FILE@%s", fd->name);
-        printf("%s: put %s = %d into space\n", __func__, dart_var_name, p->time_index);
-        dart_put_(dart_var_name, &version, &i4, &i0, &i0, &i0, &i0, &i0, &i0, 
-                  &(p->time_index), strlen(dart_var_name)); 
-        snprintf(dart_var_name, MAXDARTNAMELEN, "GROUP@%s", fd->group->name);
-        printf("%s: put %s = %d into space\n", __func__, dart_var_name, p->time_index);
-        dart_put_(dart_var_name, &version, &i4, &i0, &i0, &i0, &i0, &i0, &i0, 
-                  &(p->time_index), strlen(dart_var_name)); 
+        if (p->rank == 0) {
+            /* Write two adios specific variables with the name of the file and name of the group into the space */
+            /* ADIOS Read API fopen() checks these variables to see if writing already happened */
+            unsigned int version;
+#ifdef DART_DO_VERSIONING
+            version = p->time_index;  /* Add new data as separate to DataSpaces */
+#else
+            version = 0;              /* Update/overwrite data in DataSpaces */
+#endif
+            snprintf(dart_var_name, MAXDARTNAMELEN, "FILE@%s", fd->name);
+            printf("%s: put %s = %d into space\n", __func__, dart_var_name, p->time_index);
+            dart_put(dart_var_name, version, 4, 0, 0, 0, 0, 0, 0, &(p->time_index)); 
 
-        if (p->sync_at_close) {
-            printf("%s: call dart_put_sync()\n", __func__);
-            dart_put_sync_();
+            snprintf(dart_var_name, MAXDARTNAMELEN, "GROUP@%s", fd->group->name);
+            printf("%s: put %s = %d into space\n", __func__, dart_var_name, p->time_index);
+            dart_put(dart_var_name, version, 4, 0, 0, 0, 0, 0, 0, &(p->time_index)); 
         }
-        printf("%s: call dart_unlock_on_write()\n", __func__);
-        dart_unlock_on_write_();        
+
+        printf("%s: call dart_put_sync()\n", __func__);
+        dart_put_sync();
+        printf("%s: call dart_unlock_on_write(%s)\n", __func__, fd->name);
+        dart_unlock_on_write(fd->name);
     }
     else if( fd->mode == adios_mode_read )
     {
-        dart_unlock_on_read_();                    
+        dart_unlock_on_read(fd->name);
     } 
 
     /* Increment the time index */
@@ -526,16 +478,18 @@ void adios_dart_finalize (int mype, struct adios_method_struct * method)
 {
     struct adios_DART_data_struct *p = (struct adios_DART_data_struct *)
                                                 method->method_data;
-    if (adios_dart_connected_to_dart)
-    {
-        //TODO
-        printf("%s: call dart_barrier(), rank=%d\n", __func__,mype);
-        dart_barrier_();
-        printf("%s: call dart_finalize(), rank=%d\n", __func__,mype);
-        dart_finalize_();
 
-        adios_dart_connected_to_dart = 0;
+    // disconnect from dart if we are connected from writer but not anymore from reader
+    if (globals_adios_is_dart_connected_from_writer() && 
+        !globals_adios_is_dart_connected_from_both())
+    {
+        printf("%s: call dart_barrier(), rank=%d\n", __func__,mype);
+        dart_barrier();
+        printf("%s: call dart_finalize(), rank=%d\n", __func__,mype);
+        dart_finalize();
+
     }
+    globals_adios_set_dart_disconnected_from_writer();
 
     adios_dart_initialized = 0;
 
@@ -554,4 +508,3 @@ void adios_dart_stop_calculation (struct adios_method_struct * method)
 {
 }
 
-#endif
