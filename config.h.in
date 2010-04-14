@@ -29,8 +29,8 @@
 /* Define if you have the DART. */
 #undef HAVE_DART
 
-/* Define to 1 if you have the <dc_gspace.h> header file. */
-#undef HAVE_DC_GSPACE_H
+/* Define to 1 if you have the <dart.h> header file. */
+#undef HAVE_DART_H
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
