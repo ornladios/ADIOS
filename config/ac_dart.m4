@@ -84,14 +84,14 @@ else
     CPPFLAGS="$CPPFLAGS $DART_CPPFLAGS"
     
     if test -z "${HAVE_DART_TRUE}"; then
-            AC_CHECK_HEADERS(dc_gspace.h,
+            AC_CHECK_HEADERS(dart.h,
                     ,
                     [AM_CONDITIONAL(HAVE_DART,false)])
     fi
     
     # Check for the Mini-XML library and headers
-    AC_TRY_COMPILE([#include "dc_gspace.h"],
-            [struct dcg_space *dcg; dcg = dcg_alloc(1,1);],
+    AC_TRY_COMPILE([#include "dart.h"],
+            [int err; err = dart_init(1,1);],
             [DART_LIBS="-ldart2"],
             [AM_CONDITIONAL(HAVE_DART,false)])
     
