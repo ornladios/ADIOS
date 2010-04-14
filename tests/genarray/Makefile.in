@@ -36,7 +36,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = genarray$(EXEEXT) genarray2D$(EXEEXT)
+noinst_PROGRAMS = genarray$(EXEEXT) genarray2D$(EXEEXT) \
+	copyarray$(EXEEXT) copyarray2D$(EXEEXT)
 @HAVE_NETCDF_TRUE@am__append_1 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
 @HAVE_NETCDF_TRUE@am__append_2 = $(NETCDF_LDFLAGS)
 @HAVE_NSSI_TRUE@am__append_3 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
@@ -53,6 +54,22 @@ noinst_PROGRAMS = genarray$(EXEEXT) genarray2D$(EXEEXT)
 @HAVE_PHDF5_TRUE@am__append_14 = $(PHDF5_LDFLAGS)
 @HAVE_DART_TRUE@am__append_15 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
 @HAVE_DART_TRUE@am__append_16 = $(DART_LIBS)
+@HAVE_NETCDF_TRUE@am__append_17 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_18 = $(NETCDF_LDFLAGS)
+@HAVE_NSSI_TRUE@am__append_19 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_NSSI_TRUE@am__append_20 = $(NSSI_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_21 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_22 = $(PHDF5_LDFLAGS)
+@HAVE_DART_TRUE@am__append_23 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_24 = $(DART_LIBS)
+@HAVE_NETCDF_TRUE@am__append_25 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_26 = $(NETCDF_LDFLAGS)
+@HAVE_NSSI_TRUE@am__append_27 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_NSSI_TRUE@am__append_28 = $(NSSI_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_29 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_30 = $(PHDF5_LDFLAGS)
+@HAVE_DART_TRUE@am__append_31 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_32 = $(DART_LIBS)
 subdir = tests/genarray
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -76,8 +93,8 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_genarray_OBJECTS = genarray-genarray.$(OBJEXT)
-genarray_OBJECTS = $(am_genarray_OBJECTS)
+am_copyarray_OBJECTS = copyarray-copyarray.$(OBJEXT)
+copyarray_OBJECTS = $(am_copyarray_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 =  \
 @HAVE_NETCDF_TRUE@	$(top_builddir)/src/libadios_nc4.a \
@@ -89,6 +106,18 @@ am__DEPENDENCIES_1 =
 @HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
 @HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
 @HAVE_DART_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
+copyarray_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
+	$(am__DEPENDENCIES_5)
+am_copyarray2D_OBJECTS = copyarray2D-copyarray2D.$(OBJEXT)
+copyarray2D_OBJECTS = $(am_copyarray2D_OBJECTS)
+copyarray2D_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
+	$(am__DEPENDENCIES_5)
+am_genarray_OBJECTS = genarray-genarray.$(OBJEXT)
+genarray_OBJECTS = $(am_genarray_OBJECTS)
 genarray_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
@@ -108,8 +137,10 @@ LTPPFCCOMPILE = $(LIBTOOL) --mode=compile $(FC) $(DEFS) \
 	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
 	$(AM_FCFLAGS) $(FCFLAGS)
 FCLD = $(FC)
-SOURCES = $(genarray_SOURCES) $(genarray2D_SOURCES)
-DIST_SOURCES = $(genarray_SOURCES) $(genarray2D_SOURCES)
+SOURCES = $(copyarray_SOURCES) $(copyarray2D_SOURCES) \
+	$(genarray_SOURCES) $(genarray2D_SOURCES)
+DIST_SOURCES = $(copyarray_SOURCES) $(copyarray2D_SOURCES) \
+	$(genarray_SOURCES) $(genarray2D_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -318,6 +349,20 @@ genarray2D_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
 	$(am__append_9) $(am__append_11) $(am__append_13) \
 	$(am__append_16)
 @HAVE_DART_TRUE@genarray2D_CPPFLAGS = $(DART_CPPFLAGS)
+copyarray_SOURCES = copyarray.F90
+copyarray_LDFLAGS = $(MXML_LDFLAGS) $(am__append_18) $(am__append_20) \
+	$(am__append_22) $(am__append_23)
+copyarray_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
+	$(am__append_17) $(am__append_19) $(am__append_21) \
+	$(am__append_24)
+@HAVE_DART_TRUE@copyarray_CPPFLAGS = $(DART_CPPFLAGS)
+copyarray2D_SOURCES = copyarray2D.F90
+copyarray2D_LDFLAGS = $(MXML_LDFLAGS) $(am__append_26) \
+	$(am__append_28) $(am__append_30) $(am__append_31)
+copyarray2D_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
+	$(am__append_25) $(am__append_27) $(am__append_29) \
+	$(am__append_32)
+@HAVE_DART_TRUE@copyarray2D_CPPFLAGS = $(DART_CPPFLAGS)
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
 	$(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
@@ -364,6 +409,12 @@ clean-noinstPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
+copyarray$(EXEEXT): $(copyarray_OBJECTS) $(copyarray_DEPENDENCIES) 
+	@rm -f copyarray$(EXEEXT)
+	$(FCLINK) $(copyarray_LDFLAGS) $(copyarray_OBJECTS) $(copyarray_LDADD) $(LIBS)
+copyarray2D$(EXEEXT): $(copyarray2D_OBJECTS) $(copyarray2D_DEPENDENCIES) 
+	@rm -f copyarray2D$(EXEEXT)
+	$(FCLINK) $(copyarray2D_LDFLAGS) $(copyarray2D_OBJECTS) $(copyarray2D_LDADD) $(LIBS)
 genarray$(EXEEXT): $(genarray_OBJECTS) $(genarray_DEPENDENCIES) 
 	@rm -f genarray$(EXEEXT)
 	$(FCLINK) $(genarray_LDFLAGS) $(genarray_OBJECTS) $(genarray_LDADD) $(LIBS)
@@ -385,6 +436,18 @@ distclean-compile:
 
 .F90.lo:
 	$(LTPPFCCOMPILE) -c -o $@ $<
+
+copyarray-copyarray.o: copyarray.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(copyarray_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o copyarray-copyarray.o `test -f 'copyarray.F90' || echo '$(srcdir)/'`copyarray.F90
+
+copyarray-copyarray.obj: copyarray.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(copyarray_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o copyarray-copyarray.obj `if test -f 'copyarray.F90'; then $(CYGPATH_W) 'copyarray.F90'; else $(CYGPATH_W) '$(srcdir)/copyarray.F90'; fi`
+
+copyarray2D-copyarray2D.o: copyarray2D.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(copyarray2D_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o copyarray2D-copyarray2D.o `test -f 'copyarray2D.F90' || echo '$(srcdir)/'`copyarray2D.F90
+
+copyarray2D-copyarray2D.obj: copyarray2D.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(copyarray2D_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o copyarray2D-copyarray2D.obj `if test -f 'copyarray2D.F90'; then $(CYGPATH_W) 'copyarray2D.F90'; else $(CYGPATH_W) '$(srcdir)/copyarray2D.F90'; fi`
 
 genarray-genarray.o: genarray.F90
 	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(genarray_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o genarray-genarray.o `test -f 'genarray.F90' || echo '$(srcdir)/'`genarray.F90
@@ -575,9 +638,13 @@ uninstall-am: uninstall-info-am
 
 
 genarray.F90: gwrite_genarray.fh
+copyarray.F90: gwrite_genarray.fh gread_genarray.fh
 
 gwrite_genarray.fh: genarray3d.xml
-	rm -f gwrite_genarray.fh
+	rm -f gwrite_genarray.fh gread_genarray.fh
+	$(top_builddir)/utils/gpp/gpp.py genarray3d.xml
+gread_genarray.fh: genarray3d.xml
+	rm -f gwrite_genarray.fh gread_genarray.fh
 	$(top_builddir)/utils/gpp/gpp.py genarray3d.xml
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

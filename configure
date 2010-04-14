@@ -26759,7 +26759,7 @@ fi;
 
     if test -z "${HAVE_DART_TRUE}"; then
 
-for ac_header in dc_gspace.h
+for ac_header in dart.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -26928,7 +26928,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include "dc_gspace.h"
+#include "dart.h"
 #ifdef FC_DUMMY_MAIN
 #ifndef FC_DUMMY_MAIN_EQ_F77
 #  ifdef __cplusplus
@@ -26940,7 +26940,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-struct dcg_space *dcg; dcg = dcg_alloc(1,1);
+int err; err = dart_init(1,1);
   ;
   return 0;
 }

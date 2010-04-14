@@ -8,9 +8,10 @@ GPP ?= ../../utils/gpp/gpp.py
 COMP=ftn
 LINKER=${COMP}
 DART_INC ?= 
-DART_FLIB ?= -L/ccs/proj/e2e/dart/lib -ldart2
+DART_FLIB ?= -LcompareMPI -ldart2
+#DART_FLIB ?= -L/ccs/proj/e2e/dart/lib -ldart2
 
-default: all
+default: coupling2D
 all: coupling2D coupling2Ddart 
 
 coupling2D: coupling_writer_2D coupling_reader_2D
