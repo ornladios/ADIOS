@@ -704,7 +704,6 @@ static int write_var(
                  group->attributes);
      }
 
-    MPI_Barrier(group_comm);
     Func_Timer("ADIOS_WRITE_OP",
             rc = nssi_call_rpc_sync(&svcs[default_svc],
             ADIOS_WRITE_OP,
@@ -716,7 +715,6 @@ static int write_var(
         //log_error(adios_nssi_debug_level, "unable to call remote adios_write");
         return_code=-2;
     }
-    MPI_Barrier(group_comm);
 
     free(args.vpath);
     free(args.vname);
@@ -831,6 +829,7 @@ enum ADIOS_FLAG adios_nssi_should_buffer(
                         0,
                         NULL););
     }
+    MPI_Barrier(md->group_comm);
 
     return adios_flag_no;
 }
@@ -979,13 +978,10 @@ void adios_nssi_start_calculation(
     adios_start_calc_args args;
 
     ListElmt *of_elmt;
-//    ListElmt *req_elmt;
     struct open_file *of=NULL;
     struct adios_nssi_data_struct *md=NULL;
-//    nssi_request *req;
 
     if (DEBUG>3) printf("rank(%d) enter adios_nssi_start_calc\n", global_rank);
-
 
     of_elmt = list_head(&open_file_list);
     while(of_elmt) {
@@ -997,9 +993,7 @@ void adios_nssi_start_calculation(
         md=of->md;
         myrank=md->rank;
 
-//        MPI_Barrier(md->group_comm);
         if (collective_op_rank == 0) {
-//            nssi_request *req=calloc(1, nssi_request);
             args.fd = md->fd;
             Func_Timer("ADIOS_START_CALC_OP",
                     rc = nssi_call_rpc(&svcs[default_svc],
@@ -1013,7 +1007,6 @@ void adios_nssi_start_calculation(
                 //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
             }
         }
-//        MPI_Barrier(md->group_comm);
 
         of_elmt = list_next(of_elmt);
     }
@@ -1045,7 +1038,6 @@ void adios_nssi_end_iteration(
 //
 //    myrank=md->rank;
 //
-//    MPI_Barrier(md->group_comm);
 //    if (collective_op_rank == 0) {
 //        args.fd = md->fd;
 //        Func_Timer("ADIOS_END_ITER_OP",
@@ -1059,7 +1051,6 @@ void adios_nssi_end_iteration(
 //            //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
 //        }
 //    }
-//    MPI_Barrier(md->group_comm);
 
     return;
 }
@@ -1074,10 +1065,8 @@ void adios_nssi_stop_calculation(
     adios_stop_calc_args args;
 
     ListElmt *of_elmt;
-//    ListElmt *req_elmt;
     struct open_file *of=NULL;
     struct adios_nssi_data_struct *md=NULL;
-//    nssi_request *req;
 
     if (DEBUG>3) printf("rank(%d) enter adios_nssi_stop_calc\n", global_rank);
 
@@ -1093,19 +1082,6 @@ void adios_nssi_stop_calculation(
         myrank=md->rank;
 
         // wait for any async writes to finish
-//        req_elmt = list_head(&(of->outstanding_reqs));
-//        while(req_elmt) {
-//        	req = list_data(req_elmt);
-//        	if (req == NULL) {
-//        		fprintf(stderr, "file is not open.  FAIL.");
-//        		return;
-//        	}
-//
-//        	nssi_wait(req, &remote_rc);
-//
-//        	req_elmt = list_next(req_elmt);
-//        }
-
         if (collective_op_rank == 0) {
             nssi_wait(&of->start_calc_req, &remote_rc);
         }
@@ -1124,7 +1100,6 @@ void adios_nssi_stop_calculation(
         md=of->md;
         myrank=md->rank;
 
-//        MPI_Barrier(md->group_comm);
         if (collective_op_rank == 0) {
             args.fd = md->fd;
             Func_Timer("ADIOS_STOP_CALC_OP",
@@ -1138,7 +1113,6 @@ void adios_nssi_stop_calculation(
                 //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
             }
         }
-//        MPI_Barrier(md->group_comm);
 
         of_elmt = list_next(of_elmt);
     }
@@ -1287,7 +1261,6 @@ void adios_nssi_close(
         }
     }
 
-//    MPI_Barrier(md->group_comm);
 //    if (collective_op_rank == 0) {
 //        start_calc_args.fd = md->fd;
 //        Func_Timer("ADIOS_START_CALC_OP",
@@ -1301,9 +1274,7 @@ void adios_nssi_close(
 //            //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
 //        }
 //    }
-//    MPI_Barrier(md->group_comm);
 
-    MPI_Barrier(md->group_comm);
     if (collective_op_rank == 0) {
         close_args.fname = malloc(sizeof(char) * (strlen(method->base_path) + strlen(f->name) + 1));
         sprintf(close_args.fname, "%s%s", method->base_path, f->name);
@@ -1321,7 +1292,6 @@ void adios_nssi_close(
         }
         free(close_args.fname);
     }
-    MPI_Barrier(md->group_comm);
 
     md->group_comm = MPI_COMM_NULL;
     md->fd = -1;
@@ -1371,7 +1341,6 @@ void adios_nssi_finalize(
 ////        	req_elmt = list_next(req_elmt);
 ////        }
 //
-////        MPI_Barrier(md->group_comm);
 //        if (collective_op_rank == 0) {
 //            close_args.fname = malloc(sizeof(char) * (strlen(of->fpath) + strlen(of->fname) + 1));
 //            sprintf(close_args.fname, "%s%s", of->fpath, of->fname);
@@ -1388,7 +1357,6 @@ void adios_nssi_finalize(
 //            }
 //            free(close_args.fname);
 //        }
-////        MPI_Barrier(md->group_comm);
 //
 //        md->group_comm = MPI_COMM_NULL;
 //        md->fd = -1;
@@ -1397,7 +1365,6 @@ void adios_nssi_finalize(
 //
 //        of_elmt = list_next(of_elmt);
 //    }
-
 
     free_nssi_config(&nssi_cfg);
 
