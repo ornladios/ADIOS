@@ -6,6 +6,7 @@
  */
 
 #include "config.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include "adios_read_hooks.h"
 
@@ -47,6 +48,7 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
         //ASSIGN_FNS(hdf5,ADIOS_READ_METHOD_HDF5)
 #endif
 
+        //printf("%s: adios_read_hooks = %x\n",__func__,*t);
         did_init = 1;
     }
 
