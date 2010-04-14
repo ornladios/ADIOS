@@ -7,6 +7,7 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     ########
     echo "Configure on EWOK"
     export CC=mpicc
+    export CXX=mpiCC
     #export FC=mpif90
     source /etc/profile.d/modules.sh
     module unload hdf5
@@ -20,7 +21,8 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     module load hdf5/1.8.2_par
     module load netcdf
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/home/ge1/work/ewok \
+    #./configure --prefix=/sw/ewok/adios/1.1.0/sl5.2_${TARGET}_binary \
+    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.$TARGET \
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
         --enable-research-transports  \
@@ -28,106 +30,109 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
         --without-netcdf
         #--with-hdf5=$HDF5_DIR  \
         #--with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
-        #--with-dart=/ccs/proj/e2e/dart
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
+        #--with-dart=/ccs/proj/e2e/dart
         #--enable-shared --disable-static\
         #--enable-datatap=ib
 
 
-elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
+elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "chester" ]; then
 
-BUILD_STAGING=false
-if [ $BUILD_STAGING == "false" ]; then
-
-    ##########
-    # Jaguar #
-    ##########
-    echo "Configure on JAGUAR"
-    export CC=cc
-    #export CFLAGS="-Wall -g" 
-    export FC=ftn
-    export CXX=CC
-    source /opt/modules/default/etc/modules.sh
-    module unload szip
-    module unload hdf5
-    module unload netcdf
-    module unload netcdf-hdf5parallel
-    module unload hdf5-parallel
-    module unload PrgEnv-gnu
-    module unload PrgEnv-pgi
-    module unload PrgEnv-intel
-    module unload PrgEnv-cray
-    module unload xt-papi
-    #module unload xtpe-quadcore
-    TARGET=pgi
-    module load PrgEnv-$TARGET
-    module load netcdf-hdf5parallel
-    module load szip
-    module load xt-papi
-    ## the netcdf-hdf5parallel module only sets NETCDF_PARALLEL_VERSION.
-    ## /opt/cray/xt-asyncpe/3.2/bin/linux-f90 only checks NETCDF_VERSION.
-    ## set NETCDF_VERSION here so that configure can complete.
-    export NETCDF_VERSION=$NETCDF_PARALLEL_VERSION
-    # use the two lines below for openmpi
-    #export CC=mpicc
-    #export FC=mpif90
-    CFLAGS="-fPIC" ./configure --prefix=/ccs/home/ge1/work/jaguar \
+    BUILD_STAGING=false
+    if [ $BUILD_STAGING == "false" ]; then
+    
+        ##########
+        # Jaguar #
+        ##########
+        echo "Configure on JAGUAR"
+        export CC=cc
+        #export CFLAGS="-Wall -g" 
+        export FC=ftn
+        export CXX=CC
+        source /opt/modules/default/etc/modules.sh
+        module unload szip
+        module unload hdf5
+        module unload netcdf
+        module unload netcdf-hdf5parallel
+        module unload hdf5-parallel
+        module unload PrgEnv-gnu
+        module unload PrgEnv-pgi
+        module unload PrgEnv-intel
+        module unload PrgEnv-cray
+        module unload xt-papi
+        #module unload xtpe-quadcore
+        TARGET=gnu
+        module load PrgEnv-$TARGET
+        module load netcdf-hdf5parallel
+        module load szip
+        module load xt-papi
+        ## the netcdf-hdf5parallel module only sets NETCDF_PARALLEL_VERSION.
+        ## /opt/cray/xt-asyncpe/3.2/bin/linux-f90 only checks NETCDF_VERSION.
+        ## set NETCDF_VERSION here so that configure can complete.
+        export NETCDF_VERSION=$NETCDF_PARALLEL_VERSION
+        # use the two lines below for openmpi
+        #export CC=mpicc
+        #export FC=mpif90
+        #CFLAGS="-fPIC" ./configure --prefix=/sw/xt5/adios/1.1.0/cnl2.2_${TARGET}_binary \
+        #CFLAGS="-fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/jaguar.$TARGET \
+        CFLAGS="-g -O0 -fPIC -DDART_DO_VERSIONING" ./configure --prefix=/ccs/proj/fus022/ADIOS/jaguar.$TARGET \
+            --enable-dependency-tracking \
+            --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
+            --without-portals \
+            --enable-research-transports \
+            --without-phdf5
+            #--with-dart=/ccs/proj/e2e/pnorbert/dart/current 
+            #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.xt5_$TARGET \
+            #--with-hdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par \
+            #--with-netcdf=/sw/xt/netcdf/3.6.2/sles9.2_pgi7.0.7
+            #--with-hdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" 
+    
+    else 
+    
+        ##########
+        # Jaguar #
+        ##########
+        echo "Configure on JAGUAR"
+        export CC=cc
+        #export CFLAGS="-Wall -g"
+        export FC=ftn
+        export CXX=/ccs/home/thkorde/local/bin/cnlCC
+    #    export CXX=CC
+        source /opt/modules/default/etc/modules.sh
+        module unload szip
+        module unload hdf5
+        module unload netcdf
+        module unload hdf5-parallel
+        module unload netcdf-hdf5parallel
+        module unload PrgEnv-gnu
+        module unload PrgEnv-pgi
+        module unload PrgEnv-intel
+        module unload PrgEnv-cray
+        module unload xt-papi
+        #module unload xtpe-quadcore
+        TARGET=pgi
+        module load PrgEnv-$TARGET
+        module load hdf5-parallel
+        module load netcdf-hdf5parallel
+        module load szip
+        module load xt-papi
+        ## the netcdf-hdf5parallel module only sets NETCDF_PARALLEL_VERSION.
+        ## /opt/cray/xt-asyncpe/3.2/bin/linux-f90 only checks NETCDF_VERSION.
+        ## set NETCDF_VERSION here so that configure can complete.
+        export NETCDF_VERSION=$NETCDF_PARALLEL_VERSION
+        # use the two lines below for openmpi
+        #export CC=mpicc
+        #export FC=mpif90
+        LDFLAGS="-pgcpplibs" \
+        CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" \
+        CFLAGS="-fPIC" \
+        ./configure --prefix=/ccs/home/ge1/work/jaguar \
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
-        --without-portals \
-        --enable-research-transports
-#        --with-hdf5-libdir="/ -lsz -lz" \
-        #--with-dart=/ccs/proj/e2e/dart
-        #--with-hdf5=/sw/xt5/hdf5/1.6.7/cnl2.1_pgi7.2.3_par \
-        #--with-netcdf=/sw/xt5/netcdf/3.6.2/sles9.2_pgi7.0.7
-        #--with-hdf5-libdir="/sw/xt5/hdf5/1.6.7/cnl2.1_pgi7.2.3_par/lib -L/sw/xt5/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" 
-
-else 
-
-    ##########
-    # Jaguar #
-    ##########
-    echo "Configure on JAGUAR"
-    export CC=cc
-    #export CFLAGS="-Wall -g"
-    export FC=ftn
-    export CXX=/ccs/home/thkorde/local/bin/cnlCC
-#    export CXX=CC
-    source /opt/modules/default/etc/modules.sh
-    module unload szip
-    module unload hdf5
-    module unload netcdf
-    module unload hdf5-parallel
-    module unload netcdf-hdf5parallel
-    module unload PrgEnv-gnu
-    module unload PrgEnv-pgi
-    module unload PrgEnv-intel
-    module unload PrgEnv-cray
-    module unload xt-papi
-    #module unload xtpe-quadcore
-    TARGET=pgi
-    module load PrgEnv-$TARGET
-    module load hdf5-parallel
-    module load netcdf-hdf5parallel
-    module load szip
-    module load xt-papi
-    ## the netcdf-hdf5parallel module only sets NETCDF_PARALLEL_VERSION.
-    ## /opt/cray/xt-asyncpe/3.2/bin/linux-f90 only checks NETCDF_VERSION.
-    ## set NETCDF_VERSION here so that configure can complete.
-    export NETCDF_VERSION=$NETCDF_PARALLEL_VERSION
-    # use the two lines below for openmpi
-    #export CC=mpicc
-    #export FC=mpif90
-    LDFLAGS="-pgcpplibs" \
-    CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" \
-    CFLAGS="-fPIC" \
-    ./configure --prefix=/ccs/home/ge1/work/jaguar \
-    --enable-dependency-tracking \
-    --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
-    --with-nssi=/ccs/home/thkorde/projects/nessie/install \
-    --with-portals
-
-fi
+        --with-nssi=/ccs/home/thkorde/projects/nessie/install \
+        --with-portals
+    
+    fi
     
 elif [ `hostname | cut -c 1-4` == "euge" ]; then
     ###################
@@ -202,7 +207,8 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-10` == "podhors
         --with-mxml=/opt/mxml \
         --with-netcdf=/opt/netcdf \
         --with-hdf5=/opt/hdf5 \
-        --disable-write
+        --without-netcdf
+        #--disable-write
         #--enable-dependency-tracking --enable-shared --disable-static
 
 elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
