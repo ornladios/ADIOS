@@ -11,7 +11,7 @@ adios_test_c_LDFLAGS = $(MXML_LDFLAGS)
 adios_test_c_LDADD += $(MXML_LIBS) 
 if HAVE_NETCDF
 adios_test_c_LDFLAGS += $(NETCDF_LDFLAGS)
-adios_test_c_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(NETCDF_LIBS)
+adios_test_c_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
 endif
 if HAVE_NSSI
 adios_test_c_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
