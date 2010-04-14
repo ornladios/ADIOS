@@ -168,71 +168,6 @@ int getNC4TypeId(
         enum ADIOS_FLAG fortran_flag);
 
 
-static void populate_dimension_size(
-        struct adios_group_struct *group,
-        struct adios_var_struct *pvar_root,
-        struct adios_attribute_struct *patt_root,
-        struct adios_dimension_item_struct *dim,
-        size_t dimsize)
-{
-    struct adios_var_struct *var_linked = NULL;
-    struct adios_attribute_struct *attr_linked;
-    if (dim->id) {
-        var_linked = adios_find_var_by_id (pvar_root , dim->id);
-        if (!var_linked) {
-            attr_linked = adios_find_attribute_by_id (patt_root, dim->id);
-            if (!attr_linked->var) {
-                switch (attr_linked->type) {
-                case adios_unsigned_byte:
-                    *(uint8_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_byte:
-                    *(int8_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_unsigned_short:
-                    *(uint16_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_short:
-                    *(int16_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_unsigned_integer:
-                    *(uint32_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_integer:
-                    *(int32_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_unsigned_long:
-                    *(uint64_t *)attr_linked->value = dimsize;
-                    break;
-                case adios_long:
-                    *(int64_t *)attr_linked->value = dimsize;
-                    break;
-                default:
-                    fprintf (stderr, "Invalid datatype for array dimension on "
-                            "var %s: %s\n"
-                            ,attr_linked->name
-                            ,adios_type_to_string_int(var_linked->type)
-                    );
-                    break;
-                }
-            } else {
-                var_linked = attr_linked->var;
-            }
-        }
-        if (var_linked && var_linked->data) {
-            *(int *)var_linked->data = dimsize;
-        }
-    } else {
-        if (dim->time_index == adios_flag_yes) {
-//			dimsize = NC_UNLIMITED;
-//			dimsize = 1;
-        } else {
-            dim->rank = dimsize;
-        }
-    }
-
-    return;
-}
 static void parse_dimension_size(
         struct adios_group_struct *group,
         struct adios_var_struct *pvar_root,
@@ -759,6 +694,8 @@ static int read_var(
     int nc4_type_id;
     int nc4_varid;
 
+    memset(&deciphered_dims, 0, sizeof(deciphered_dims_t));
+
     getNC4TypeId (pvar->type, &nc4_type_id, fortran_flag);
     if (nc4_type_id <=0 )
     {
@@ -768,7 +705,6 @@ static int read_var(
     }
 
     ncd_gen_name(fullname, pvar->path, pvar->name);
-    //printf("root_id=%d, grd_ids[%d]=%d\n", root_id, level, ncid);
 
     rc = nc_inq_varid(ncid, fullname, &nc4_varid);
     if (rc == NC_ENOTVAR) {
@@ -781,30 +717,21 @@ static int read_var(
         goto escape;
     }
 
-//	if(myrank==0)printf("\tenter global reading!\n");
+    if(myrank==0) if (DEBUG>3) printf("\tenter global reading!\n");
 
-    if (!pvar->dimensions) { // begin scalar write
-        rc = nc_inq_varid(ncid, fullname, &nc4_varid);
-        if (rc != NC_NOERR) {
-            fprintf(stderr, "NC4 ERROR reading scalar variable(%s) in read_var\n", fullname);
-            return_code=-2;
-            goto escape;
-        }
+    if (!pvar->dimensions) { // begin scalar read
         rc = nc_get_var(ncid, nc4_varid, pvar->data);
         if (rc != NC_NOERR) {
             fprintf(stderr, "NC4 ERROR getting scalar variable(%s) in read_var\n", fullname);
             return_code=-2;
             goto escape;
         }
-        //printf("groupid=%d level=%d datasetid=%d\n",ncid,level,h5_dataset_id);
-        //printf("write dataset: name=%s/%s status=%d myrank=%d\n"
-        //         , pvar->path,fullname,status, myrank);
 
         return_code=0;
         goto escape;
     } // end scalar write
 
-//	if (myrank==0) printf("read_var deciphering dims\n");
+    if (myrank==0) if (DEBUG>3) printf("read_var deciphering dims\n");
     decipher_dims(ncid,
             root_group,
             group,
@@ -821,61 +748,24 @@ static int read_var(
 
         /* begin reading array with fixed dimensions */
 
-//		if (myrank==0) printf("\treading fixed dimension array var!\n");
+        if (myrank==0) if (DEBUG>3) printf("\treading fixed dimension array var!\n");
 
-        sprintf(deciphered_dims.gbdims_name, "_%s_gbdims", fullname);
-        rc = nc_inq_varid(ncid, deciphered_dims.gbdims_name, &deciphered_dims.nc4_gbglobaldims_varid);
-        if (rc != NC_NOERR) {
-            fprintf(stderr, "NC4 ERROR looking up array variable(%s) in read_var\n", deciphered_dims.gbdims_name);
-            return_code=-2;
-            goto escape;
-        }
-        rc = nc_get_vars(ncid, deciphered_dims.nc4_gbglobaldims_varid, deciphered_dims.nc4_gboffsets, deciphered_dims.nc4_gblocaldims, deciphered_dims.nc4_gbstrides, deciphered_dims.nc4_gbdims);
-        if (rc != NC_NOERR) {
-            fprintf(stderr, "NC4 ERROR getting array variable(%s) in read_var\n", deciphered_dims.gbdims_name);
-            return_code=-2;
-            goto escape;
-        }
-
-        dims = pvar->dimensions;
-        for (i=0;i<deciphered_dims.global_dim_count;i++) {
-            populate_dimension_size(group, pvar_root, patt_root, &dims->global_dimension, deciphered_dims.nc4_globaldims[i]);
-//			if (myrank==0) {
-//				printf("\t%s[%d]: g(%d)", fullname, i, deciphered_dims.nc4_globaldims[i]);
-//			}
-            if (dims) {
-                dims = dims -> next;
-            }
-        }
-        dims = pvar->dimensions;
         for (i=0;i<deciphered_dims.local_dim_count;i++) {
-            populate_dimension_size(group, pvar_root, patt_root, &dims->dimension, deciphered_dims.nc4_localdims[i]);
-//			if (myrank==0) {
-//				printf("\t%s[%d]: l(%d)", fullname, i, deciphered_dims.nc4_localdims[i]);
-//			}
-            if (dims) {
-                dims = dims -> next;
-            }
-        }
-        dims = pvar->dimensions;
-        for (i=0;i<deciphered_dims.local_offset_count;i++) {
-            populate_dimension_size(group, pvar_root, patt_root, &dims->local_offset, deciphered_dims.nc4_offsets[i]);
-//			if (myrank==0) {
-//				printf("\t%s[%d]: o(%d)", fullname, i, deciphered_dims.nc4_offsets[i]);
-//			}
-            if (dims) {
-                dims = dims -> next;
-            }
+            if(myrank==0) {
+                if (DEBUG>3) printf("\tDIMS var:%s dim[%d]:  %d %d %d\n",fullname
+                        ,i, deciphered_dims.nc4_globaldims[i], deciphered_dims.nc4_localdims[i], deciphered_dims.nc4_offsets[i]);
+          }
         }
 
-//		for (i=0;i<deciphered_dims.local_dim_count;i++) {
-//			if(myrank==0) {
-//				printf("\tDIMS var:%s dim[%d]:  %d %d %d\n",fullname
-//						,i, deciphered_dims.nc4_globaldims[i], deciphered_dims.nc4_localdims[i], deciphered_dims.nc4_offsets[i]);
-//          }
-//		}
+        Func_Timer("nc4_varid par_access", rc = nc_var_par_access(ncid, nc4_varid, NC_COLLECTIVE););
+        if (rc != NC_NOERR) {
+            fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in read_var, rc=%d\n", fullname, rc);
+            return_code=-2;
+            goto escape;
+        }
 
-        rc = nc_get_vars(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data);
+//        rc = nc_get_vars(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data);
+        Func_Timer("getvars", rc = nc_get_vara(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, pvar->data););
         if (rc != NC_NOERR) {
             fprintf(stderr, "NC4 ERROR getting array variable(%s) in read_var\n", fullname);
             return_code=-2;
@@ -888,56 +778,46 @@ static int read_var(
 
         /* begin reading array with unlimited dimension */
 
-        sprintf(deciphered_dims.gbdims_name, "_%s_gbdims", fullname);
-        rc = nc_inq_varid(ncid, deciphered_dims.gbdims_name, &deciphered_dims.nc4_gbglobaldims_varid);
-        if (rc != NC_NOERR) {
-            fprintf(stderr, "NC4 ERROR looking up array variable(%s) in read_var\n", deciphered_dims.gbdims_name);
-            return_code=-2;
-            goto escape;
-        }
-        rc = nc_get_vars(ncid, deciphered_dims.nc4_gbglobaldims_varid, deciphered_dims.nc4_gboffsets, deciphered_dims.nc4_gblocaldims, deciphered_dims.nc4_gbstrides, deciphered_dims.nc4_gbdims);
-        if (rc != NC_NOERR) {
-            fprintf(stderr, "NC4 ERROR getting array variable(%s) in read_var\n", deciphered_dims.gbdims_name);
-            return_code=-2;
-            goto escape;
-        }
+        size_t current_timestep=0;
 
-        dims = pvar->dimensions;
-        for (i=0;i<deciphered_dims.global_dim_count;i++) {
-            populate_dimension_size(group, pvar_root, patt_root, &dims->global_dimension, deciphered_dims.nc4_globaldims[i]);
-            if (dims) {
-                dims = dims -> next;
-            }
-        }
-        dims = pvar->dimensions;
         for (i=0;i<deciphered_dims.local_dim_count;i++) {
-            populate_dimension_size(group, pvar_root, patt_root, &dims->dimension, deciphered_dims.nc4_localdims[i]);
-            if (dims) {
-                dims = dims -> next;
-            }
-        }
-        dims = pvar->dimensions;
-        for (i=0;i<deciphered_dims.local_offset_count;i++) {
-            populate_dimension_size(group, pvar_root, patt_root, &dims->local_offset, deciphered_dims.nc4_offsets[i]);
-            if (dims) {
-                dims = dims -> next;
-            }
+            if(myrank==0) {
+                if (DEBUG>3) printf("\tDIMS var:%s dim[%d]:  %d %d %d\n",fullname
+                        ,i, deciphered_dims.nc4_globaldims[i], deciphered_dims.nc4_localdims[i], deciphered_dims.nc4_offsets[i]);
+          }
         }
 
-//		for (i=0;i<deciphered_dims.local_dim_count;i++) {
-//			if(myrank==0) {
-//				printf("\tDIMS var:%s dim[%d]:  %d %d %d\n",fullname
-//						,i, deciphered_dims.nc4_globaldims[i], deciphered_dims.nc4_localdims[i], deciphered_dims.nc4_offsets[i]);
-//          }
-//		}
-
-        rc = nc_inq_varid(ncid, fullname, &nc4_varid);
+        Func_Timer("nc4_varid par_access", rc = nc_var_par_access(ncid, nc4_varid, NC_COLLECTIVE););
         if (rc != NC_NOERR) {
-            fprintf(stderr, "NC4 ERROR looking up array variable(%s) in read_var\n", fullname);
+            fprintf(stderr, "NC4 ERROR setting parallel access for scalar variable(%s) in write_var, rc=%d\n", fullname, rc);
             return_code=-2;
             goto escape;
         }
-        rc = nc_get_vars(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data);
+
+        Func_Timer("inqdim", rc = nc_inq_dimid(ncid, deciphered_dims.nc4_local_dimnames[deciphered_dims.timedim_index], &deciphered_dims.nc4_global_dimids[deciphered_dims.timedim_index]););
+        if (rc != NC_NOERR) {
+            fprintf(stderr, "NC4 ERROR inquiring about dimension(%s) for array variable(%s) in write_var, rc=%d\n", deciphered_dims.nc4_local_dimnames[i], fullname, rc);
+            return_code=-2;
+            goto escape;
+        }
+        /* get the current timestep */
+        Func_Timer("inqdimlen", rc = nc_inq_dimlen(ncid, deciphered_dims.nc4_global_dimids[deciphered_dims.timedim_index], &current_timestep););
+        if (rc != NC_NOERR) {
+            fprintf(stderr, "NC4 ERROR error getting current timestep for array variable(%s) in write_var, rc=%d\n", fullname, rc);
+            return_code=-2;
+            goto escape;
+        }
+        if (DEBUG>3) printf("current_timestep==%d\n", current_timestep);
+
+        /* decrement.  dims are 1-based, while offsets are 0-based. */
+        deciphered_dims.nc4_offsets[deciphered_dims.timedim_index]=current_timestep-1;
+        for (i=0;i<deciphered_dims.local_dim_count;i++) {
+            if (DEBUG>3) printf("write_var: deciphered_dims.nc4_offsets[%d]=%lu deciphered_dims.nc4_localdims[%d]=%lu\n",
+                    i, deciphered_dims.nc4_offsets[i],
+                    i, deciphered_dims.nc4_localdims[i]);
+        }
+//        rc = nc_get_vars(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data);
+        Func_Timer("getvars", rc = nc_get_vara(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, pvar->data););
         if (rc != NC_NOERR) {
             fprintf(stderr, "NC4 ERROR getting array variable(%s) in read_var\n", fullname);
             return_code=-2;
@@ -1320,9 +1200,8 @@ static int write_var(
             goto escape;
         }
         if (DEBUG>3) printf("current_timestep==%d\n", current_timestep);
-        /* the next timestep goes after the current.  increment timestep. */
+        /* the next timestep goes after the current.  */
         /* THK: don't increment.  dims are 1-based, while offsets are 0-based. */
-        // current_timestep++;
 
         deciphered_dims.nc4_offsets[deciphered_dims.timedim_index]=current_timestep;
         for (i=0;i<deciphered_dims.local_dim_count;i++) {
@@ -1524,6 +1403,15 @@ void adios_nc4_read(
         v->data = buffer;
         v->data_size = buffersize;
 
+        if (v->is_dim == adios_flag_yes) {
+            // this is a dimension variable.  values in the file are unreliable.
+            // assume the caller provided a valid value in 'buffer'.
+            if (DEBUG>3) fprintf(stderr, "------------------------------\n");
+            if (DEBUG>3) fprintf(stderr, "read var: %s! skipping dim var\n", v->name);
+            if (DEBUG>3) fprintf(stderr, "------------------------------\n");
+            return;
+        }
+
         if (md->rank==0) {
             if (DEBUG>3) fprintf(stderr, "-------------------------\n");
             if (DEBUG>3) fprintf(stderr, "read var: %s! start\n", v->name);
@@ -1537,10 +1425,9 @@ void adios_nc4_read(
                 fd->group->adios_host_language_fortran,
                 md->rank,
                 md->size);
-        v->data = 0;
         if (md->rank==0) {
-//			fprintf(stderr, "read var: %s! end\n", v->name);
-            //fprintf(stderr, "-------------------------\n");
+            if (DEBUG>3) fprintf(stderr, "read var: %s! end\n", v->name);
+            if (DEBUG>3) fprintf(stderr, "-------------------------\n");
         }
 
     }
@@ -1562,6 +1449,13 @@ void adios_nc4_close(
     int myrank=md->rank;
 
     if (fd->mode == adios_mode_read) {
+        struct adios_var_struct * v = fd->group->vars;
+        while (v)
+        {
+            v->data = 0;
+            v = v->next;
+        }
+
         if (md->rank==0) {
             fprintf(stderr, "-------------------------\n");
             fprintf(stderr, "reading done, nc4 file is virtually closed;\n");
@@ -1585,6 +1479,7 @@ void adios_nc4_close(
 
     Func_Timer("nc_sync", nc_sync(md->ncid););
     Func_Timer("nc_close", nc_close(md->ncid););
+
     md->group_comm = MPI_COMM_NULL;
     md->ncid = -1;
     md->root_ncid = -1;
