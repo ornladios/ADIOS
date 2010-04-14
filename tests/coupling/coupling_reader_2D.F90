@@ -98,7 +98,7 @@ program coupling
         call printArrays()
         call advanceArrays()
         !print '("rank=",i0," goes to sleep after step ",i0)', rank, ts
-        if (ts < timesteps) call sleep(5)
+        if (ts < timesteps) call sleep(10)
         call MPI_Barrier (MPI_COMM_WORLD, ierr)
         !print '("rank=",i0," woke up")', rank
     enddo
