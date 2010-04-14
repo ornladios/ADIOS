@@ -417,7 +417,7 @@ adios_mpi_amr1_set_aggregation_parameters(char * parameters, int nproc, int rank
     g_color2 = rank % aggr_group_size;
 }
 
-static void buffer_write (char ** buffer, uint64_t * buffer_size
+static void adios_mpi_amr1_buffer_write (char ** buffer, uint64_t * buffer_size
                          ,uint64_t * buffer_offset
                          ,const void * data, uint64_t size
                          )
@@ -432,7 +432,7 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
         }
         else
         {
-            fprintf (stderr, "Cannot allocate memory in buffer_write.  "
+            fprintf (stderr, "Cannot allocate memory in adios_mpi_amr1_buffer_write.  "
                              "Requested: %llu\n", *buffer_offset + size + 1000);
 
             return;
@@ -2046,7 +2046,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                                 vars_header.count * new_group_size;
 
                 // attributes size is save in the end
-                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &attr_size, SHIM_FOOTER_SIZE);
+                adios_mpi_amr1_buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &attr_size, SHIM_FOOTER_SIZE);
                 fd->bytes_written += SHIM_FOOTER_SIZE;
             
                 // PG header, vars header, vars, attrs header, attrs, 4 bytes
