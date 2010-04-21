@@ -33,7 +33,7 @@ static int adios_adaptive_initialized = 0;
 
 #define PRINT_MESSAGES 0
 
-#define COLLECT_METRICS 1
+#define COLLECT_METRICS 0
 
 struct adios_adaptive_data_struct
 {

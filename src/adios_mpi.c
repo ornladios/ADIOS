@@ -33,11 +33,7 @@
 
 static int adios_mpi_initialized = 0;
 
-#if defined(__APPLE__)
 #   define COLLECT_METRICS 0
-#else
-#   define COLLECT_METRICS 1
-#endif
 
 
 struct adios_MPI_data_struct
