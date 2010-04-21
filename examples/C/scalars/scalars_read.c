@@ -88,13 +88,13 @@ int main (int argc, char ** argv)
         printf("uns.int     v7  = %u\n", v7);
         printf("uns.long    v8  = %llu\n", v8);
 
-        printf("float       v9  = %f6.2\n", v9);
-        printf("double      v10 = %f6.2\n", v10);
+        printf("float       v9  = %g\n", v9);
+        printf("double      v10 = %g\n", v10);
 
         printf("string      v11 = %s\n", v11);
 
-        printf("complex     v12 = (%f6.2, %f6.2)\n", v12);
-        printf("dbl-complex v13 = (%f6.2, %f6.2)\n", v13);
+        printf("complex     v12 = (%g, i%g)\n", v12.r, v12.i);
+        printf("dbl-complex v13 = (%g, i%g)\n", v13.r, v13.i);
     }
 
     return 0;
