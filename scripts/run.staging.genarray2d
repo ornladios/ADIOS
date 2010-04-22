@@ -1,7 +1,10 @@
 #!/bin/bash
+#PBS -A CSC025ewk
+#PBS -l walltime=04:00:00,size=20480
 
-export RUNTIME_PATH=/lustre/widow1/scratch/$USER/genarray
-export RUNTIME_PATH=/lustre/scr144/$USER
+
+export RUNTIME_PATH=/lustre/widow1/scratch/$USER/genarray2d.mpi.staged.16384
+export RUNTIME_PATH=/lustre/scr144/$USER/genarray2d.mpi.staged.16384
 export ADIOS_SRC_PATH=$HOME/projects/adios/src/adios
 
 export ADIOS_NSSI_CONTACT_INFO=$RUNTIME_PATH/nssi_contact.xml
@@ -10,16 +13,20 @@ export ADIOS_NSSI_CONFIG_FILE=$RUNTIME_PATH/nssi_config.xml
 mkdir -p $RUNTIME_PATH
 cd $RUNTIME_PATH
 
-sed -e 's/MPI/NC4/' $ADIOS_SRC_PATH/tests/genarray/genarray.xml > $RUNTIME_PATH/genarray.server.xml
 sed -e 's/MPI/NSSI/' $ADIOS_SRC_PATH/tests/genarray/genarray.xml > $RUNTIME_PATH/genarray.xml
+sed -e 's@method="MPI"/>@method="NSSI_FILTER">submethod="MPI_STRIPE2"</method>@' $ADIOS_SRC_PATH/tests/genarray/genarray.xml > $RUNTIME_PATH/genarray.server.xml
 
 lfs setstripe $RUNTIME_PATH -s 1M -c 144
 
-aprun -n 22 -N 1 $ADIOS_SRC_PATH/src/nssi-staging-server $RUNTIME_PATH/genarray.server.xml >server.log 2>&1 &
+$ADIOS_SRC_PATH/scripts/start.nssi.staging.sh 512 $RUNTIME_PATH/genarray.server.xml >server.log 2>&1 &
 sleep 3
 $ADIOS_SRC_PATH/scripts/create.nssi.config.sh $RUNTIME_PATH/nssi_config.xml $RUNTIME_PATH/nssi_contact.xml
-rm $RUNTIME_PATH/test.*
-rm $RUNTIME_PATH/*.bp
-time aprun -n 484 $ADIOS_SRC_PATH/tests/genarray/genarray2D $RUNTIME_PATH/test.output 22 22 1024 1024 5
-$ADIOS_SRC_PATH/scripts/kill.nssi.staging.sh $RUNTIME_PATH/nssi_contact.xml
 
+rm test.output copy.output
+
+time aprun -n 16384 $ADIOS_SRC_PATH/tests/genarray/genarray2D $RUNTIME_PATH/test.output 128 128 2048 5120 5 >genarray.runlog
+time aprun -n 16384 $ADIOS_SRC_PATH/tests/genarray/copyarray2D $RUNTIME_PATH/test.output $RUNTIME_PATH/copy.output 128 128 2048 5120 5 >copyarray.runlog
+#time aprun -n 64 $ADIOS_SRC_PATH/tests/genarray/genarray2D $RUNTIME_PATH/test.output 8 8 2048 5120 5 >genarray.runlog
+#time aprun -n 64 $ADIOS_SRC_PATH/tests/genarray/copyarray2D $RUNTIME_PATH/test.output $RUNTIME_PATH/copy.output 8 8 2048 5120 5 >copyarray.runlog
+
+$ADIOS_SRC_PATH/scripts/kill.nssi.staging.sh $RUNTIME_PATH/nssi_contact.xml
