@@ -1088,7 +1088,7 @@ static int write_var(
 ////		goto escape;
 //	}
 
-    if (DEBUG>3) printf("write_var: ncid(%lu) varid(%lu) pvar->data=%p\n", ncid, nc4_varid, pvar->data);
+    if (DEBUG>3) printf("rank(%d) write_var: ncid(%lu) varid(%lu) pvar->data=%p\n", global_rank, ncid, nc4_varid, pvar->data);
 
     if (!pvar->dimensions) { // begin scalar write
         Func_Timer("inqvar", rc = nc_inq_varid(ncid, fullname, &nc4_varid););
@@ -1431,13 +1431,6 @@ void adios_nc4_read(
         }
 
     }
-}
-
-static void adios_nc4_do_read(
-        struct adios_file_struct *fd,
-        struct adios_method_struct *method)
-{
-    // This function is not useful for nc4 since adios_read/write do real read/write
 }
 
 void adios_nc4_close(
