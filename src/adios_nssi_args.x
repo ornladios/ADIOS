@@ -105,6 +105,7 @@ struct adios_read_res {
  * Marshalled argument structure for adios_write
  */
 struct adios_var {
+    uint8_t  is_anonymous;
     uint64_t vdata;
     uint64_t vdatasize;
     string   vpath<ADIOS_PATH_MAX>;
