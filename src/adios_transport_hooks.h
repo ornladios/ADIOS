@@ -101,27 +101,28 @@ struct adios_var_struct;
 // the list of the methods that have been integrated
 // VTK and POSIX_ASCII are placeholders reserved for future use
 enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
-		      ,ADIOS_METHOD_NULL        = -1
-		      ,ADIOS_METHOD_MPI         = 0
-		      ,ADIOS_METHOD_DATATAP     = 1
-		      ,ADIOS_METHOD_POSIX       = 2
-		      ,ADIOS_METHOD_DART        = 3
-		      ,ADIOS_METHOD_VTK         = 4
-		      ,ADIOS_METHOD_POSIX_ASCII = 5
-		      ,ADIOS_METHOD_MPI_CIO     = 6
-		      ,ADIOS_METHOD_PHDF5       = 7
-		      ,ADIOS_METHOD_PROVENANCE  = 8
-		      ,ADIOS_METHOD_MPI_STRIPE  = 9
-		      ,ADIOS_METHOD_MPI_STRIPE2 = 10
-		      ,ADIOS_METHOD_MPI_STAGGER = 11
-		      ,ADIOS_METHOD_MPI_AGG     = 12
-		      ,ADIOS_METHOD_ADAPTIVE    = 13
-		      ,ADIOS_METHOD_POSIX1      = 14
-		      ,ADIOS_METHOD_NC4         = 15
-		      ,ADIOS_METHOD_MPI_AMR     = 16
-		      ,ADIOS_METHOD_MPI_AMR1    = 17
-		      ,ADIOS_METHOD_NSSI_STAGING = 18
-		      ,ADIOS_METHOD_COUNT       = 19
+              ,ADIOS_METHOD_NULL        = -1
+              ,ADIOS_METHOD_MPI         = 0
+              ,ADIOS_METHOD_DATATAP     = 1
+              ,ADIOS_METHOD_POSIX       = 2
+              ,ADIOS_METHOD_DART        = 3
+              ,ADIOS_METHOD_VTK         = 4
+              ,ADIOS_METHOD_POSIX_ASCII = 5
+              ,ADIOS_METHOD_MPI_CIO     = 6
+              ,ADIOS_METHOD_PHDF5       = 7
+              ,ADIOS_METHOD_PROVENANCE  = 8
+              ,ADIOS_METHOD_MPI_STRIPE  = 9
+              ,ADIOS_METHOD_MPI_STRIPE2 = 10
+              ,ADIOS_METHOD_MPI_STAGGER = 11
+              ,ADIOS_METHOD_MPI_AGG     = 12
+              ,ADIOS_METHOD_ADAPTIVE    = 13
+              ,ADIOS_METHOD_POSIX1      = 14
+              ,ADIOS_METHOD_NC4         = 15
+              ,ADIOS_METHOD_MPI_AMR     = 16
+              ,ADIOS_METHOD_MPI_AMR1    = 17
+              ,ADIOS_METHOD_NSSI_STAGING = 18
+              ,ADIOS_METHOD_NSSI_FILTER  = 19
+              ,ADIOS_METHOD_COUNT       = 20
 };
 
 // forward declare the functions (or dummies for internals use)
@@ -140,6 +141,7 @@ FORWARD_DECLARE(mpi)
      FORWARD_DECLARE(phdf5)
      FORWARD_DECLARE(nc4)
      FORWARD_DECLARE(nssi)
+     FORWARD_DECLARE(nssi_filter)
      FORWARD_DECLARE(adaptive)
 
 #if HAVE_DART

@@ -81,6 +81,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
 
 #if HAVE_NSSI
     ASSIGN_FNS(nssi,ADIOS_METHOD_NSSI_STAGING)
+    ASSIGN_FNS(nssi_filter,ADIOS_METHOD_NSSI_FILTER)
 #endif
 
 #ifndef NO_RESEARCH_TRANSPORTS
@@ -136,6 +137,7 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 
 #if HAVE_NSSI
     MATCH_STRING_TO_METHOD("NSSI",ADIOS_METHOD_NSSI_STAGING,1)
+    MATCH_STRING_TO_METHOD("NSSI_FILTER",ADIOS_METHOD_NSSI_FILTER,1)
 #endif
 
 #ifndef NO_RESEARCH_TRANSPORTS
