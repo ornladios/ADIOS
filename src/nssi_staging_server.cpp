@@ -426,7 +426,7 @@ int nssi_staging_write_stub(
         goto cleanup;
     }
 
-    if (DEBUG>3) printf("vname(%s) vsize(%ld) is_scalar(%d) rank(%ld)\n", args->vname, args->vsize, args->is_scalar, args->writer_rank);
+    if (DEBUG>3) printf("server_rank(%d) vname(%s) vsize(%ld) is_scalar(%d) writer_rank(%ld)\n", global_rank, args->vname, args->vsize, args->is_scalar, args->writer_rank);
 
     if (!args->is_scalar) {
         if (DEBUG>3) printf("allocated v(%p), len(%ld)\n",
@@ -479,6 +479,22 @@ cleanup:
     return rc;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern int adios_nssi_filter_is_anon_dim(
+        int fd,
+        const char *dimname);
+extern void adios_nssi_filter_set_anon_dim(
+        int fd,
+        const char *dimname,
+        const uint64_t dimvalue);
+
+#ifdef __cplusplus
+}
+#endif
+
 int nssi_staging_start_calc_stub(
         const unsigned long request_id,
         const nssi_remote_pid *caller,
@@ -503,15 +519,23 @@ int nssi_staging_start_calc_stub(
             uint64_t value=0;
             if (DEBUG>3) printf("writing myrank(%d) chunk(%d) vpath(%s) vname(%s) opath(%s) oname(%s) odata(%lu)\n",
                     grank, j, chunk->var_path, chunk->var_name, chunk->offset_path[i], chunk->offset_name[i], chunk->offset[i]);
-            Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->offset_path[i], chunk->offset_name[i]););
-            Func_Timer("adios_write", adios_write(chunk->fd, chunk->offset_name[i], &(chunk->offset[i])););
+            if (adios_nssi_filter_is_anon_dim(chunk->fd, chunk->offset_name[i]) == TRUE) {
+                adios_nssi_filter_set_anon_dim(chunk->fd, chunk->offset_name[i], chunk->offset[i]);
+            } else {
+                Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->offset_path[i], chunk->offset_name[i]););
+                Func_Timer("adios_write", adios_write(chunk->fd, chunk->offset_name[i], &(chunk->offset[i])););
+            }
         }
         for(int i=0;i<chunk->ndims;i++) {
             uint64_t value=0;
             if (DEBUG>3) printf("writing myrank(%d) chunk(%d) vpath(%s) vname(%s) dpath(%s) dname(%s) ddata(%lu)\n",
                     grank, j, chunk->var_path, chunk->var_name, chunk->count_path[i], chunk->count_name[i], chunk->count[i]);
-            Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->count_path[i], chunk->count_name[i]););
-            Func_Timer("adios_write", adios_write(chunk->fd, chunk->count_name[i], &(chunk->count[i])););
+            if (adios_nssi_filter_is_anon_dim(chunk->fd, chunk->count_name[i]) == TRUE) {
+                adios_nssi_filter_set_anon_dim(chunk->fd, chunk->count_name[i], chunk->count[i]);
+            } else {
+                Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->count_path[i], chunk->count_name[i]););
+                Func_Timer("adios_write", adios_write(chunk->fd, chunk->count_name[i], &(chunk->count[i])););
+            }
         }
 
         if (DEBUG>3) printf("writing myrank(%d) vname(%s)\n", grank, chunk->var_name);
