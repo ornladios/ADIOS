@@ -1,4 +1,4 @@
-!  
+!
 !  ADIOS is freely available under the terms of the BSD license described
 !  in the COPYING file in the top level directory of this source distribution.
 !
@@ -13,7 +13,7 @@
 ! ADIOS config file: adios_globaltime.xml
 !
 
-program adios_global 
+program adios_global
     implicit none
     include 'mpif.h'
     character(len=256)      :: filename = "adios_globaltime.bp"
@@ -22,7 +22,7 @@ program adios_global
     real*8                  :: t(NX)
     integer                 :: comm
 
-    ! ADIOS variables declarations for matching gwrite_temperature.fh 
+    ! ADIOS variables declarations for matching gwrite_temperature.fh
     integer                 :: adios_err
     integer*8               :: adios_groupsize, adios_totalsize
     integer*8               :: adios_handle
@@ -30,24 +30,29 @@ program adios_global
     call MPI_Init (ierr)
     call MPI_Comm_dup (MPI_COMM_WORLD, comm, ierr)
     call MPI_Comm_rank (comm, rank, ierr)
-    call MPI_Comm_size (comm, size, ierr) 
+    call MPI_Comm_size (comm, size, ierr)
 
-    call adios_init ("adios_globaltime.xml", adios_err) 
+    call adios_init ("adios_globaltime.xml", adios_err)
 
     do it = 1, 13
         do i = 1, NX
             t(i)  = 100.0*it + NX*rank + i
         enddo
 
-        ! We need to create the file in the first round, 
-        ! then we need to append to it 
+        ! We need to create the file in the first round,
+        ! then we need to append to it
         if (it == 1) then
             call adios_open (adios_handle, "temperature", filename, "w", comm, adios_err)
-        else 
+        else
             call adios_open (adios_handle, "temperature", filename, "a", comm, adios_err)
         endif
 
 #include "gwrite_temperature.fh"
+
+        call adios_start_calculation(adios_err)
+        call adios_end_iteration(adios_err)
+        call adios_stop_calculation(adios_err)
+
         call adios_close (adios_handle, adios_err)
 
         call MPI_Barrier (comm, ierr)
