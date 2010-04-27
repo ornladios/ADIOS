@@ -28,12 +28,12 @@ int main (int argc, char ** argv)
 
 	adios_init ("adios_globaltime.xml");
     	strcpy (filename, "adios_globaltime.bp");
-    	for (it =0; it < 13; it++) {
+    	for (it =1; it <= 13; it++) {
 
         	for (i = 0; i < NX; i++)
             		t[i] = it*100.0 + rank*NX + i;
 		
-                if (it==0)
+                if (it==1)
 		    adios_open (&adios_handle, "temperature", filename, "w", &comm);
                 else
 		    adios_open (&adios_handle, "temperature", filename, "a", &comm);

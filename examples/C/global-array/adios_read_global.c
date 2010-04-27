@@ -53,6 +53,14 @@ int main (int argc, char ** argv)
 
     /* Using less readers to read the global array back, i.e., non-uniform */
     uint64_t slice_size = v->dims[0]/size;
+    start[0] = slice_size * rank;
+    if (rank == size-1) /* last rank may read more lines */
+        slice_size = slice_size + v->dims[0]%size;
+    count[0] = slice_size;
+
+    start[1] = 0;
+    count[1] = v->dims[1];
+       
 
     data = malloc (slice_size * v->dims[1] * sizeof (double));
     if (data == NULL)
@@ -61,19 +69,14 @@ int main (int argc, char ** argv)
         return -1;
     }
 
-    start[0] = slice_size * rank;
-    count[0] = slice_size;
-
-    start[1] = 0;
-    count[1] = v->dims[1];
-       
     bytes_read = adios_read_var (g, "temperature", start, count, data);
 
-    for (i = 0; i < slice_size; i++)
+    for (i = 0; i < slice_size; i++) {
+        printf ("rank %d: [%d,%d:%d]", rank, start[0]+i, 0, slice_size);
         for (j = 0; j < v->dims[1]; j++)
-            printf ("[%d,%d] %e\t", i, j, * (double *)data + i * v->dims[1] + j);
-
-    printf ("\n");
+            printf (" %6.2g", * (double *)data + i * v->dims[1] + j);
+        printf ("\n");
+    }
 
     free (data);
 
