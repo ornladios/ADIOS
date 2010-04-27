@@ -54,7 +54,7 @@ program scalars_read
 
     call adios_finalize (rank, adios_err);
 
-    call MPI_Finalize ();
+    call MPI_Finalize (ierr);
 
     if (rank == 0) then
         write (*, '("int*1      v1  = ",i3)') v1

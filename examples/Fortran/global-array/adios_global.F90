@@ -32,7 +32,7 @@ program adios_global
     call MPI_Comm_size (comm, size, ierr)
 
     do i = 1, NX
-        t(i)  = 10.0*rank+i
+        t(i)  = 10.0*rank+i-1
     enddo
 
     call adios_init ("adios_global.xml", adios_err)
@@ -45,5 +45,5 @@ program adios_global
 
     call adios_finalize (rank, adios_err)
 
-    call MPI_Finalize ()
+    call MPI_Finalize (ierr)
 end program

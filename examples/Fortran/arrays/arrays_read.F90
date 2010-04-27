@@ -84,7 +84,7 @@ program arrays
 
     call adios_finalize (rank, adios_err);
 
-    call MPI_Finalize ();
+    call MPI_Finalize (ierr);
 
 end program
 
