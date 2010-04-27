@@ -3029,6 +3029,90 @@ int adios_common_select_method (int priority, const char * method
     return 1;
 }
 
+int adios_common_select_method_by_group_id (int priority, const char * method
+                                           ,const char * parameters, int64_t group_id
+                                           ,const char * base_path, int iters
+                                           )
+{
+    struct adios_group_struct * g;
+    struct adios_method_struct * new_method;
+    int requires_group_comm = 0;
+
+    new_method = (struct adios_method_struct *)
+                           malloc (sizeof (struct adios_method_struct));
+
+    new_method->m = ADIOS_METHOD_UNKNOWN;
+    new_method->base_path = strdup (base_path);
+    new_method->method = strdup (method);
+    new_method->parameters = strdup (parameters);
+    new_method->iterations = iters;
+    new_method->priority = priority;
+    new_method->method_data = 0;
+    new_method->group = 0;
+
+    if (adios_parse_method (method, &new_method->m, &requires_group_comm))
+    {
+        if (   new_method->m != ADIOS_METHOD_UNKNOWN
+            && new_method->m != ADIOS_METHOD_NULL
+            && adios_transports [new_method->m].adios_init_fn
+           )
+        {
+            adios_transports [new_method->m].adios_init_fn
+                                       (parameters, new_method);
+        }
+    }
+    else
+    {
+        fprintf (stderr, "config.xml: invalid transport: %s\n", method);
+
+        free (new_method->base_path);
+        free (new_method->method);
+        free (new_method->parameters);
+        free (new_method);
+
+        return 0;
+    }
+
+    g = (struct adios_group_struct *) group_id;
+    if (!g)
+    {
+        fprintf (stderr, "config.xml: invalid group id: %llu for transport: %s\n"
+                ,group_id, method
+                );
+
+        free (new_method->base_path);
+        free (new_method->method);
+        free (new_method->parameters);
+        free (new_method);
+
+        return 0;
+    }
+    else
+    {
+        if (requires_group_comm && !g->group_comm)
+        {
+            fprintf (stderr, "config.xml: method %s for group %s.  Group does "
+                             "not have the required coordination-communicator"
+                             ".\n"
+                    ,method, g->name
+                    );
+
+            free (new_method->base_path);
+            free (new_method->method);
+            free (new_method->parameters);
+            free (new_method);
+
+            return 0;
+        }
+        adios_add_method_to_group (&g->methods, new_method);
+        new_method->group = g;
+    }
+
+    adios_append_method (new_method);
+
+    return 1;
+}
+
 void adios_cleanup ()
 {
     adios_transports_initialized = 0;

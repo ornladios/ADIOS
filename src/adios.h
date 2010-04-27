@@ -20,14 +20,7 @@ extern "C" {
 // Global setup using the XML file
 int adios_init (const char * config);
 
-// setup, but all XML file pieces will be provided by another series of calls
-// yet to be worked out
-// TODO
-int adios_init_local (void);
-
 int adios_finalize (int mype);
-
-int adios_allocate_buffer (void);
 
 // end user calls for each I/O operation
 // modes = "r" = "read", "w" = "write", "a" = "append", "u" = "update"
@@ -62,13 +55,27 @@ int adios_stop_calculation (void);
 
 int adios_close (int64_t fd_p);
 
-// Generally internal use called when parsing the XML file
+// ADIOS No-XML API's
+int adios_init_noxml (void);
+
+// To allocate ADIOS buffer
+int adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
+                          ,uint64_t buffer_size);
+
+// To declare a ADIOS group
 int adios_declare_group (int64_t * id, const char * name
-                        ,const char * coordination_comm
-                        ,const char * coordination_var
                         ,const char * time_index
                         );
+// To free a ADIOS group
+int adios_free_group (int64_t id);
 
+// To select a I/O method for a ADIOS group
+int adios_select_method (int64_t group, const char * method
+                        ,const char * parameters
+                        ,const char * base_path
+                        );
+
+// To define a ADIOS variable
 int adios_define_var (int64_t group_id, const char * name
                      ,const char * path, int type
                      ,const char * dimensions
@@ -80,16 +87,6 @@ int adios_define_attribute (int64_t group, const char * name
                            ,const char * path, enum ADIOS_DATATYPES type
                            ,const char * value, const char * var
                            );
-
-int adios_select_method (int priority, const char * method
-                        ,const char * parameters, const char * type
-                        ,const char * base_path, int iters
-                        );
-
-int adios_select_method (int priority, const char * method
-                        ,const char * parameters, const char * type
-                        ,const char * base_path, int iters
-                        );
 
 /********************************************/
 /*           F O R T R A N  A P I           */

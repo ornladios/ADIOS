@@ -37,6 +37,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = adios_globaltime$(EXEEXT) \
+	adios_globaltime_no_xml$(EXEEXT) \
 	adios_read_globaltime$(EXEEXT)
 @HAVE_NETCDF_TRUE@am__append_1 = $(NETCDF_LDFLAGS)
 @HAVE_NETCDF_TRUE@am__append_2 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
@@ -44,10 +45,14 @@ noinst_PROGRAMS = adios_globaltime$(EXEEXT) \
 @HAVE_NSSI_TRUE@am__append_4 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 @HAVE_PHDF5_TRUE@am__append_5 = $(PHDF5_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_6 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-@HAVE_DART_TRUE@am__append_7 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_8 = $(DART_LIBS)
+@HAVE_PHDF5_TRUE@am__append_7 = $(PHDF5_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_8 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 @HAVE_DART_TRUE@am__append_9 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
 @HAVE_DART_TRUE@am__append_10 = $(DART_LIBS)
+@HAVE_DART_TRUE@am__append_11 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_12 = $(DART_LIBS)
+@HAVE_DART_TRUE@am__append_13 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_14 = $(DART_LIBS)
 subdir = examples/C/global-array-time
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -89,6 +94,13 @@ adios_globaltime_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
 	$(am__DEPENDENCIES_5)
+am_adios_globaltime_no_xml_OBJECTS =  \
+	adios_globaltime_no_xml-adios_globaltime_no_xml.$(OBJEXT)
+adios_globaltime_no_xml_OBJECTS =  \
+	$(am_adios_globaltime_no_xml_OBJECTS)
+adios_globaltime_no_xml_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_4) \
+	$(am__DEPENDENCIES_5)
 am_adios_read_globaltime_OBJECTS =  \
 	adios_read_globaltime-adios_read_globaltime.$(OBJEXT)
 adios_read_globaltime_OBJECTS = $(am_adios_read_globaltime_OBJECTS)
@@ -106,8 +118,11 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(adios_globaltime_SOURCES) $(adios_read_globaltime_SOURCES)
+SOURCES = $(adios_globaltime_SOURCES) \
+	$(adios_globaltime_no_xml_SOURCES) \
+	$(adios_read_globaltime_SOURCES)
 DIST_SOURCES = $(adios_globaltime_SOURCES) \
+	$(adios_globaltime_no_xml_SOURCES) \
 	$(adios_read_globaltime_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -306,14 +321,20 @@ AUTOMAKE_OPTIONS = no-dependencies
 adios_globaltime_SOURCES = adios_globaltime.c
 adios_globaltime_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
 	$(am__append_2) $(am__append_4) $(am__append_6) \
-	$(am__append_8)
+	$(am__append_10)
 adios_globaltime_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) \
-	$(am__append_3) $(am__append_5) $(am__append_7)
+	$(am__append_3) $(am__append_5) $(am__append_9)
+adios_globaltime_no_xml_SOURCES = adios_globaltime_no_xml.c
+adios_globaltime_no_xml_LDADD = $(top_builddir)/src/libadios.a \
+	$(MXML_LIBS) $(am__append_8) $(am__append_12)
+adios_globaltime_no_xml_LDFLAGS = $(MXML_LDFLAGS) $(am__append_7) \
+	$(am__append_11)
 adios_read_globaltime_SOURCES = adios_read_globaltime.c
 adios_read_globaltime_LDADD = $(top_builddir)/src/libadiosread.a \
-	$(MXML_LIBS) $(am__append_10)
-adios_read_globaltime_LDFLAGS = $(MXML_LDFLAGS) $(am__append_9)
+	$(MXML_LIBS) $(am__append_14)
+adios_read_globaltime_LDFLAGS = $(MXML_LDFLAGS) $(am__append_13)
 @HAVE_DART_TRUE@adios_globaltime_CPPFLAGS = $(DART_CPPFLAGS)
+@HAVE_DART_TRUE@adios_globaltime_no_xml_CPPFLAGS = $(DART_CPPFLAGS)
 @HAVE_DART_TRUE@adios_read_globaltime_CPPFLAGS = $(DART_CPPFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = adios_globaltime.xml gread_temperature.ch gwrite_temperature.ch job.pbs
@@ -360,6 +381,9 @@ clean-noinstPROGRAMS:
 adios_globaltime$(EXEEXT): $(adios_globaltime_OBJECTS) $(adios_globaltime_DEPENDENCIES) 
 	@rm -f adios_globaltime$(EXEEXT)
 	$(LINK) $(adios_globaltime_LDFLAGS) $(adios_globaltime_OBJECTS) $(adios_globaltime_LDADD) $(LIBS)
+adios_globaltime_no_xml$(EXEEXT): $(adios_globaltime_no_xml_OBJECTS) $(adios_globaltime_no_xml_DEPENDENCIES) 
+	@rm -f adios_globaltime_no_xml$(EXEEXT)
+	$(LINK) $(adios_globaltime_no_xml_LDFLAGS) $(adios_globaltime_no_xml_OBJECTS) $(adios_globaltime_no_xml_LDADD) $(LIBS)
 adios_read_globaltime$(EXEEXT): $(adios_read_globaltime_OBJECTS) $(adios_read_globaltime_DEPENDENCIES) 
 	@rm -f adios_read_globaltime$(EXEEXT)
 	$(LINK) $(adios_read_globaltime_LDFLAGS) $(adios_read_globaltime_OBJECTS) $(adios_read_globaltime_LDADD) $(LIBS)
@@ -384,6 +408,12 @@ adios_globaltime-adios_globaltime.o: adios_globaltime.c
 
 adios_globaltime-adios_globaltime.obj: adios_globaltime.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_globaltime_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_globaltime-adios_globaltime.obj `if test -f 'adios_globaltime.c'; then $(CYGPATH_W) 'adios_globaltime.c'; else $(CYGPATH_W) '$(srcdir)/adios_globaltime.c'; fi`
+
+adios_globaltime_no_xml-adios_globaltime_no_xml.o: adios_globaltime_no_xml.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_globaltime_no_xml_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_globaltime_no_xml-adios_globaltime_no_xml.o `test -f 'adios_globaltime_no_xml.c' || echo '$(srcdir)/'`adios_globaltime_no_xml.c
+
+adios_globaltime_no_xml-adios_globaltime_no_xml.obj: adios_globaltime_no_xml.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_globaltime_no_xml_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_globaltime_no_xml-adios_globaltime_no_xml.obj `if test -f 'adios_globaltime_no_xml.c'; then $(CYGPATH_W) 'adios_globaltime_no_xml.c'; else $(CYGPATH_W) '$(srcdir)/adios_globaltime_no_xml.c'; fi`
 
 adios_read_globaltime-adios_read_globaltime.o: adios_read_globaltime.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_globaltime_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_globaltime-adios_read_globaltime.o `test -f 'adios_read_globaltime.c' || echo '$(srcdir)/'`adios_read_globaltime.c

@@ -32,7 +32,7 @@ int common_adios_init (const char * config)
 
 ///////////////////////////////////////////////////////////////////////////////
 // all XML file pieces will be provided by another series of calls
-int common_adios_init_local ()
+int common_adios_init_noxml ()
 {
     return adios_local_config ();
 }
@@ -59,8 +59,12 @@ int common_adios_finalize (int mype)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int common_adios_allocate_buffer ()
+int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
+                                 ,uint64_t buffer_size)
 {
+    adios_buffer_size_requested_set (buffer_size * 1024 * 1024);
+    adios_buffer_alloc_when_set (adios_buffer_alloc_when);
+
     return adios_set_buffer_size ();
 }
 
@@ -635,6 +639,34 @@ int common_adios_close (int64_t fd_p)
         }
 
         v = v->next;
+    }
+
+    while (fd->group->vars_written)
+    {
+        if (fd->group->vars_written->name)
+            free (fd->group->vars_written->name);
+        if (fd->group->vars_written->path)
+            free (fd->group->vars_written->path);
+
+        while (fd->group->vars_written->dimensions)
+        {
+            struct adios_dimension_struct * dimensions
+                            = fd->group->vars_written->dimensions->next;
+
+            free (fd->group->vars_written->dimensions);
+            fd->group->vars_written->dimensions = dimensions;
+        }
+
+        if (fd->group->vars_written->min)
+            free (fd->group->vars_written->min);
+        if (fd->group->vars_written->max)
+            free (fd->group->vars_written->max);
+        if (fd->group->vars_written->data)
+            free (fd->group->vars_written->data);
+
+        v = fd->group->vars_written->next;
+        free (fd->group->vars_written);
+        fd->group->vars_written = v;
     }
 
     if (fd->name)

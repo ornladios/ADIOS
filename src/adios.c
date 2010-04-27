@@ -40,9 +40,9 @@ int adios_init (const char * config)
 
 ///////////////////////////////////////////////////////////////////////////////
 // all XML file pieces will be provided by another series of calls
-int adios_init_local ()
+int adios_init_noxml ()
 {
-    return common_adios_init_local ();
+    return common_adios_init_noxml ();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -52,9 +52,10 @@ int adios_finalize (int mype)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_allocate_buffer ()
+int adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
+                          ,uint64_t buffer_size)
 {
-    return common_adios_allocate_buffer ();
+    return common_adios_allocate_buffer (adios_buffer_alloc_when, buffer_size);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -122,6 +123,23 @@ int adios_write (int64_t fd_p, const char * name, void * var)
         return 1;
     }
 
+    if (v->data)
+    {
+        free (v->data);
+        v->data = 0;
+    }
+
+    if (v->min)
+    {
+        free (v->min);
+        v->min = 0;
+    }
+    
+    if (v->max)
+    {
+        free (v->max);
+        v->max = 0;
+    }
     if (v->dimensions)
     {
         v->data = var;
@@ -184,6 +202,11 @@ int adios_write (int64_t fd_p, const char * name, void * var)
 
     common_adios_write (fd, v, var);
     // v->data is set to NULL in the above call
+
+    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append) 
+    {
+        adios_copy_var_written (&fd->group->vars_written, v, fd);
+    }
 
     return 0;
 }
@@ -254,17 +277,28 @@ int adios_close (int64_t fd_p)
 ///////////////////////////////////////////////////////////////////////////////
 // group a list of vars into a composite group
 int adios_declare_group (int64_t * id, const char * name
-                        ,const char * coordination_comm
-                        ,const char * coordination_var
                         ,const char * time_index
                         )
 {
-    return adios_common_declare_group (id, name, adios_flag_no
-                                      ,coordination_comm
-                                      ,coordination_var
+    int ret;
+    ret = adios_common_declare_group (id, name, adios_flag_no
+                                      ,""
+                                      ,""
                                       ,time_index
                                       );
+    if (ret == 1) {
+        struct adios_group_struct * g = (struct adios_group_struct *) *id;
+        g->all_unique_var_names = adios_flag_no;
+    }
+    return ret;
 }
+
+
+int adios_free_group (int64_t id)
+{
+    return adios_common_free_group (id);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 // adios_common_define_var is in adios_internals.c
@@ -299,14 +333,13 @@ int adios_define_attribute (int64_t group, const char * name
 ///////////////////////////////////////////////////////////////////////////////
 
 // adios_common_select_method is in adios_internals_mxml.c
-
-int adios_select_method (int priority, const char * method
-                        ,const char * parameters, const char * group
-                        ,const char * base_path, int iters
+int adios_select_method (int64_t group, const char * method
+                        ,const char * parameters
+                        ,const char * base_path
                         )
 {
-    return adios_common_select_method (priority, method, parameters, group
-                                      ,base_path, iters
-                                      );
+    return adios_common_select_method_by_group_id (0, method, parameters, group
+                                                  ,base_path, 0
+                                                  );
 }
 

@@ -23,11 +23,12 @@ int common_adios_init (const char * config);
 // setup, but all XML file pieces will be provided by another series of calls
 // yet to be worked out
 // TODO
-int common_adios_init_local (void);
+int common_adios_init_noxml (void);
 
 int common_adios_finalize (int mype);
 
-int common_adios_allocate_buffer (void);
+int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
+                                 ,uint64_t buffer_size);
 
 // end user calls for each I/O operation
 // modes = "r" = "read", "w" = "write", "a" = "append", "u" = "update"
