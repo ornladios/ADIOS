@@ -36,7 +36,7 @@ program adios_global
 
     do it = 1, 13
         do i = 1, NX
-            t(i)  = 100.0*it + NX*rank + i
+            t(i)  = 100.0*it + NX*rank + i-1
         enddo
 
         ! We need to create the file in the first round,
@@ -49,10 +49,6 @@ program adios_global
 
 #include "gwrite_temperature.fh"
 
-        call adios_start_calculation(adios_err)
-        call adios_end_iteration(adios_err)
-        call adios_stop_calculation(adios_err)
-
         call adios_close (adios_handle, adios_err)
 
         call MPI_Barrier (comm, ierr)
@@ -62,5 +58,5 @@ program adios_global
 
     call adios_finalize (rank, adios_err)
 
-    call MPI_Finalize ()
+    call MPI_Finalize (ierr)
 end program
