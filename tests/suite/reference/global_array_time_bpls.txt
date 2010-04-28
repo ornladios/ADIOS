@@ -1,0 +1,15 @@
+File info:
+  of groups:     1
+  of variables:  4
+  of attributes: 1
+  time steps:    13 starting from 1
+  file size:     96 KB
+  bp version:    1
+  endianness:    Little Endian
+
+Group temperature:
+  integer    /NX                       scalar = 10 
+  integer    /size                     scalar = 9 
+  integer    /rank                     scalar = 0 
+  double     /temperature              {13, 9, 10} = 100 / 1389 
+  string     /temperature/description  attr   = "Global array written from 'size' processes over several timesteps"

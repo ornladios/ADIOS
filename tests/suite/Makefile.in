@@ -19,7 +19,7 @@ VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ..
+top_builddir = ../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -35,7 +35,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = tests
+subdir = tests/suite
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_dart.m4 \
@@ -67,7 +67,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = C bp_read suite Fortran genarray
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -258,9 +258,8 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUITEDIR = suite
-@BUILD_FORTRAN_FALSE@@BUILD_WRITE_TRUE@SUBDIRS = C bp_read ${SUITEDIR}
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@SUBDIRS = C Fortran genarray bp_read ${SUITEDIR}
+SUBDIRS = programs
+EXTRA_DIST = HOWTO-Add-new-test  HOWTO-Run  cleanup.sh  oldtest.sh reference  test.sh  tests
 all: all-recursive
 
 .SUFFIXES:
@@ -273,9 +272,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  tests/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  tests/suite/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  tests/Makefile
+	  $(AUTOMAKE) --gnu  tests/suite/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
