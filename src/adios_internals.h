@@ -403,10 +403,7 @@ int adios_common_define_var (int64_t group_id, const char * name
 void adios_common_get_group (int64_t * group_id, const char * name);
 
 // ADIOS file format functions
-void buffer_write (char ** buffer, uint64_t * buffer_size
-                  ,uint64_t * buffer_offset
-                  ,const void * data, uint64_t size
-                  );
+
 uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v);
 uint32_t adios_calc_attribute_overhead_v1 (struct adios_attribute_struct * a);
 uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd);

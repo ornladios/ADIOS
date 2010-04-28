@@ -52,11 +52,9 @@ libadios_a_SOURCES = adios.c \
                      adios_posix1.c \
                      adios_internals.c \
                      adios_internals_mxml.c \
-                     adios_internals_v2.c \
                      buffer.c \
                      adios_socket.c \
                      adios_bp_v1.c  \
-                     adios_bp_v2.c  \
                      adios_endianness.c \
                      bp_utils.c \
                      futils.c \
@@ -80,11 +78,9 @@ libadiosf_a_SOURCES = adiosf.c \
                      adios_posix1.c \
                      adios_internals.c \
                      adios_internals_mxml.c \
-                     adios_internals_v2.c \
                      buffer.c \
                      adios_socket.c \
                      adios_bp_v1.c  \
-                     adios_bp_v2.c  \
                      adios_endianness.c\
                      futils.c \
                      adios_error.c \
@@ -190,7 +186,6 @@ include_HEADERS += adios.h \
 
 lib_LIBRARIES += libadiosread.a
 libadiosread_a_SOURCES = adios_bp_v1.c \
-                      adios_bp_v2.c \
 		      adios_endianness.c \
 		      bp_utils.c \
                       futils.c \
@@ -208,7 +203,6 @@ libadiosread_a_CPPFLAGS = $(DART_CPPFLAGS)
 if BUILD_FORTRAN
 lib_LIBRARIES += libadiosreadf.a
 libadiosreadf_a_SOURCES = adios_bp_v1.c \
-                      adios_bp_v2.c \
 		      adios_endianness.c \
 		      bp_utils.c \
                       futils.c \
@@ -233,7 +227,6 @@ endif
 lib_LIBRARIES += libadiosread_nompi.a
 libadiosread_nompi_a_SOURCES = mpidummy.c\
                       adios_bp_v1.c \
-                      adios_bp_v2.c \
 		      adios_endianness.c \
 		      bp_utils.c \
                       futils.c \
@@ -243,7 +236,6 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
                       common_read.c \
 		      read_bp.c \
 		      adios_internals.c \
-		      adios_internals_v2.c \
                       buffer.c \
                       adios_transport_hooks.c \
                       globals.c
@@ -259,7 +251,6 @@ if BUILD_FORTRAN
 lib_LIBRARIES += libadiosreadf_nompi.a
 libadiosreadf_nompi_a_SOURCES = mpidummy.c\
                       			adios_bp_v1.c \
-                      			adios_bp_v2.c \
 		      					adios_endianness.c \
 		      					bp_utils.c \
                       			futils.c \
@@ -276,11 +267,9 @@ endif
 noinst_LIBRARIES = libadios_internal_nompi.a
 libadios_internal_nompi_a_SOURCES = mpidummy.c \
                       				adios_bp_v1.c \
-                      				adios_bp_v2.c \
 		      						adios_endianness.c \
 		      						bp_utils.c \
 		      						adios_internals.c \
-		      						adios_internals_v2.c \
                       				buffer.c \
                       				adios_transport_hooks.c \
                       				adios_error.c \
@@ -304,6 +293,6 @@ libadiosread_nompi_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
 endif
 
 
-EXTRA_DIST = adios_bp_v1.h adios_bp_v2.h adios_endianness.h adios_error.h adios_internals.h adios_internals_v2.h\
+EXTRA_DIST = adios_bp_v1.h adios_endianness.h adios_error.h adios_internals.h \
              adios_internals_mxml.h adios_socket.h adios_transport_hooks.h bp_types.h \
              bp_utils.h buffer.h common_adios.h common_read.h futils.h

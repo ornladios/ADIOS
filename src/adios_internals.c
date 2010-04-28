@@ -1454,10 +1454,10 @@ void adios_common_get_group (int64_t * group_id, const char * name)
 }
 
 // *****************************************************************************
-void buffer_write (char ** buffer, uint64_t * buffer_size
-                  ,uint64_t * buffer_offset
-                  ,const void * data, uint64_t size
-                  )
+static void buffer_write (char ** buffer, uint64_t * buffer_size
+                         ,uint64_t * buffer_offset
+                         ,const void * data, uint64_t size
+                         )
 {
     if (*buffer_offset + size > *buffer_size || *buffer == 0)
     {

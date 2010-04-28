@@ -21,9 +21,7 @@
 #include "adios.h"
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
-#include "adios_bp_v2.h"
 #include "adios_internals.h"
-#include "adios_internals_v2.h"
 #include "buffer.h"
 
 static int adios_mpi_amr1_initialized = 0;
@@ -59,11 +57,11 @@ struct adios_MPI_data_struct
 
     void * comm; // temporary until moved from should_buffer to open
 
-    struct adios_bp_buffer_struct_v2 b;
+    struct adios_bp_buffer_struct_v1 b;
 
-    struct adios_index_process_group_struct_v2 * old_pg_root;
-    struct adios_index_var_struct_v2 * old_vars_root;
-    struct adios_index_attribute_struct_v2 * old_attrs_root;
+    struct adios_index_process_group_struct_v1 * old_pg_root;
+    struct adios_index_var_struct_v1 * old_vars_root;
+    struct adios_index_attribute_struct_v1 * old_attrs_root;
 
     uint64_t vars_start;
     uint64_t vars_header_size;
@@ -614,8 +612,8 @@ void adios_mpi_amr1_append_var (struct adios_file_struct * fd, struct adios_var_
 
 void adios_mpi_amr1_add_offset (uint64_t var_offset_to_add
                                ,uint64_t attr_offset_to_add
-                               ,struct adios_index_var_struct_v2 * vars_root
-                               ,struct adios_index_attribute_struct_v2 * attrs_root
+                               ,struct adios_index_var_struct_v1 * vars_root
+                               ,struct adios_index_attribute_struct_v1 * attrs_root
                                )
 {
     while (vars_root)
@@ -635,8 +633,8 @@ void adios_mpi_amr1_add_offset (uint64_t var_offset_to_add
 
 void adios_mpi_amr1_subtract_offset (uint64_t var_offset_to_subtract
                                     ,uint64_t attr_offset_to_subtract
-                                    ,struct adios_index_var_struct_v2 * vars_root
-                                    ,struct adios_index_attribute_struct_v2 * attrs_root
+                                    ,struct adios_index_var_struct_v1 * vars_root
+                                    ,struct adios_index_attribute_struct_v1 * attrs_root
                                     )
 {
     while (vars_root)
@@ -655,10 +653,10 @@ void adios_mpi_amr1_subtract_offset (uint64_t var_offset_to_subtract
 }
 
 
-void adios_mpi_amr1_build_global_index_v2 (char * fname
-                                          ,struct adios_index_process_group_struct_v2 * pg_root
-                                          ,struct adios_index_var_struct_v2 * vars_root
-                                          ,struct adios_index_attribute_struct_v2 * attrs_root
+void adios_mpi_amr1_build_global_index_v1 (char * fname
+                                          ,struct adios_index_process_group_struct_v1 * pg_root
+                                          ,struct adios_index_var_struct_v1 * vars_root
+                                          ,struct adios_index_attribute_struct_v1 * attrs_root
                                           )
 {
     int len;
@@ -875,7 +873,7 @@ void adios_mpi_amr1_init (const char * parameters
     md->vars_start = 0;
     md->vars_header_size = 0;
 
-    adios_buffer_struct_init_v2 (&md->b);
+    adios_buffer_struct_init (&md->b);
 }
 
 int adios_mpi_amr1_open (struct adios_file_struct * fd
@@ -893,9 +891,9 @@ int adios_mpi_amr1_open (struct adios_file_struct * fd
 }
 
 static
-void build_offsets (struct adios_bp_buffer_struct_v2 * b
+void build_offsets (struct adios_bp_buffer_struct_v1 * b
                    ,MPI_Offset * offsets, uint64_t size, char * group_name
-                   ,struct adios_index_process_group_struct_v2 * pg_root
+                   ,struct adios_index_process_group_struct_v1 * pg_root
                    )
 {
     while (pg_root)
@@ -991,48 +989,48 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
                 MPI_File_get_size (md->fh, &file_size);
                 md->b.file_size = file_size;
 
-                adios_init_buffer_read_version_v2 (&md->b);
+                adios_init_buffer_read_version (&md->b);
                 MPI_File_seek (md->fh, md->b.file_size - md->b.length
                               ,MPI_SEEK_SET
                               );
                 MPI_File_read (md->fh, md->b.buff, md->b.length, MPI_BYTE
                               ,&md->status
                               );
-                adios_parse_version_v2 (&md->b, &md->b.version);
+                adios_parse_version (&md->b, &md->b.version);
 
-                adios_init_buffer_read_index_offsets_v2 (&md->b);
+                adios_init_buffer_read_index_offsets (&md->b);
                 // already in the buffer
-                adios_parse_index_offsets_v2 (&md->b);
+                adios_parse_index_offsets_v1 (&md->b);
 
-                adios_init_buffer_read_process_group_index_v2 (&md->b);
+                adios_init_buffer_read_process_group_index (&md->b);
                 MPI_File_seek (md->fh, md->b.pg_index_offset
                               ,MPI_SEEK_SET
                               );
                 MPI_File_read (md->fh, md->b.buff, md->b.pg_size, MPI_BYTE
                               ,&md->status
                               );
-                adios_parse_process_group_index_v2 (&md->b
+                adios_parse_process_group_index_v1 (&md->b
                                                    ,&md->old_pg_root
                                                    );
 
 #if 1
-                adios_init_buffer_read_vars_index_v2 (&md->b);
+                adios_init_buffer_read_vars_index (&md->b);
                 MPI_File_seek (md->fh, md->b.vars_index_offset
                               ,MPI_SEEK_SET
                               );
                 MPI_File_read (md->fh, md->b.buff, md->b.vars_size, MPI_BYTE
                               ,&md->status
                               );
-                adios_parse_vars_index_v2 (&md->b, &md->old_vars_root);
+                adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
 
-                adios_init_buffer_read_attributes_index_v2 (&md->b);
+                adios_init_buffer_read_attributes_index (&md->b);
                 MPI_File_seek (md->fh, md->b.attrs_index_offset
                               ,MPI_SEEK_SET
                               );
                 MPI_File_read (md->fh, md->b.buff, md->b.attrs_size, MPI_BYTE
                               ,&md->status
                               );
-                adios_parse_attributes_index_v2 (&md->b, &md->old_attrs_root);
+                adios_parse_attributes_index_v1 (&md->b, &md->old_attrs_root);
 #endif
 
                 fd->base_offset = md->b.end_of_pgs;
@@ -1201,7 +1199,7 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
         case adios_mode_append:
         {
             int old_file = 1;
-            adios_buffer_struct_clear_v2 (&md->b);
+            adios_buffer_struct_clear (&md->b);
 
             err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
                                 ,MPI_INFO_NULL, &md->fh
@@ -1246,47 +1244,47 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
                         md->b.file_size = file_size;
                     }
 
-                    adios_init_buffer_read_version_v2 (&md->b);
+                    adios_init_buffer_read_version (&md->b);
                     MPI_File_seek (md->fh, md->b.file_size - md->b.length
                                   ,MPI_SEEK_SET
                                   );
                     MPI_File_read (md->fh, md->b.buff, md->b.length, MPI_BYTE
                                   ,&md->status
                                   );
-                    adios_parse_version_v2 (&md->b, &md->b.version);
+                    adios_parse_version (&md->b, &md->b.version);
 
-                    adios_init_buffer_read_index_offsets_v2 (&md->b);
+                    adios_init_buffer_read_index_offsets (&md->b);
                     // already in the buffer
-                    adios_parse_index_offsets_v2 (&md->b);
+                    adios_parse_index_offsets_v1 (&md->b);
 
-                    adios_init_buffer_read_process_group_index_v2 (&md->b);
+                    adios_init_buffer_read_process_group_index (&md->b);
                     MPI_File_seek (md->fh, md->b.pg_index_offset
                                   ,MPI_SEEK_SET
                                   );
                     MPI_File_read (md->fh, md->b.buff, md->b.pg_size, MPI_BYTE
                                   ,&md->status
                                   );
-                    adios_parse_process_group_index_v2 (&md->b
+                    adios_parse_process_group_index_v1 (&md->b
                                                        ,&md->old_pg_root
                                                        );
 
-                    adios_init_buffer_read_vars_index_v2 (&md->b);
+                    adios_init_buffer_read_vars_index (&md->b);
                     MPI_File_seek (md->fh, md->b.vars_index_offset
                                   ,MPI_SEEK_SET
                                   );
                     MPI_File_read (md->fh, md->b.buff, md->b.vars_size, MPI_BYTE
                                   ,&md->status
                                   );
-                    adios_parse_vars_index_v2 (&md->b, &md->old_vars_root);
+                    adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
 
-                    adios_init_buffer_read_attributes_index_v2 (&md->b);
+                    adios_init_buffer_read_attributes_index (&md->b);
                     MPI_File_seek (md->fh, md->b.attrs_index_offset
                                   ,MPI_SEEK_SET
                                   );
                     MPI_File_read (md->fh, md->b.buff, md->b.attrs_size
                                   ,MPI_BYTE, &md->status
                                   );
-                    adios_parse_attributes_index_v2 (&md->b
+                    adios_parse_attributes_index_v1 (&md->b
                                                     ,&md->old_attrs_root
                                                     );
 
@@ -1444,7 +1442,7 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
     {
         uint64_t count;
         // write the process group header
-        adios_write_process_group_header_v2 (fd, fd->write_size_bytes);
+        adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
 
         if (is_aggregator (md->rank))
         {
@@ -1467,17 +1465,17 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
         fd->base_offset += count;
         fd->offset = 0;
         fd->bytes_written = 0;
-        adios_shared_buffer_free_v2 (&md->b);
+        adios_shared_buffer_free (&md->b);
 
         // setup for writing vars
-        adios_write_open_vars_v2 (fd);
+        adios_write_open_vars_v1 (fd);
         md->vars_start = fd->base_offset;
         md->vars_header_size = fd->offset;
         fd->base_offset += fd->offset;
         MPI_File_seek (md->fh, md->vars_header_size, MPI_SEEK_CUR);
         fd->offset = 0;
         fd->bytes_written = 0;
-        adios_shared_buffer_free_v2 (&md->b);
+        adios_shared_buffer_free (&md->b);
     }
 
     return fd->shared_buffer;
@@ -1516,8 +1514,8 @@ void adios_mpi_amr1_write (struct adios_file_struct * fd
         void * aggr_buff = 0;
 
         // var payload sent for sizing information
-        adios_write_var_header_v2 (fd, v);
-        adios_write_var_payload_v2 (fd, v);
+        adios_write_var_header_v1 (fd, v);
+        adios_write_var_payload_v1 (fd, v);
 
         MPI_Comm_split (md->group_comm, g_color1, md->rank, &new_comm);
         MPI_Comm_rank (new_comm, &new_rank);
@@ -1600,7 +1598,7 @@ void adios_mpi_amr1_write (struct adios_file_struct * fd
         fd->base_offset += count;
         fd->offset = 0;
         fd->bytes_written = 0;
-        adios_shared_buffer_free_v2 (&md->b);
+        adios_shared_buffer_free (&md->b);
     }
 }
 
@@ -1693,33 +1691,33 @@ static void adios_mpi_amr1_do_read (struct adios_file_struct * fd
         case 1:
         {
             // the three section headers
-            struct adios_process_group_header_struct_v2 pg_header;
-            struct adios_vars_header_struct_v2 vars_header;
-            struct adios_attributes_header_struct_v2 attrs_header;
+            struct adios_process_group_header_struct_v1 pg_header;
+            struct adios_vars_header_struct_v1 vars_header;
+            struct adios_attributes_header_struct_v1 attrs_header;
 
-            struct adios_var_header_struct_v2 var_header;
-            struct adios_var_payload_struct_v2 var_payload;
-            struct adios_attribute_struct_v2 attribute;
+            struct adios_var_header_struct_v1 var_header;
+            struct adios_var_payload_struct_v1 var_payload;
+            struct adios_attribute_struct_v1 attribute;
 
             uint64_t i;
 
-            adios_init_buffer_read_process_group_v2 (&md->b);
+            adios_init_buffer_read_process_group (&md->b);
             MPI_File_seek (md->fh, md->b.read_pg_offset
                           ,MPI_SEEK_SET
                           );
             MPI_File_read (md->fh, md->b.buff, md->b.read_pg_size, MPI_BYTE
                           ,&md->status
                           );
-            adios_parse_process_group_header_v2 (&md->b, &pg_header);
+            adios_parse_process_group_header_v1 (&md->b, &pg_header);
 
-            adios_parse_vars_header_v2 (&md->b, &vars_header);
+            adios_parse_vars_header_v1 (&md->b, &vars_header);
 
             for (i = 0; i < vars_header.count; i++)
             {
                 memset (&var_payload, 0
-                       ,sizeof (struct adios_var_payload_struct_v2)
+                       ,sizeof (struct adios_var_payload_struct_v1)
                        );
-                adios_parse_var_data_header_v2 (&md->b, &var_header);
+                adios_parse_var_data_header_v1 (&md->b, &var_header);
 
                 struct adios_var_struct * v1 = v;
                 while (v1)
@@ -1739,7 +1737,7 @@ static void adios_mpi_amr1_do_read (struct adios_file_struct * fd
                 if (v1)
                 {
                     var_payload.payload = v1->data;
-                    adios_parse_var_data_payload_v2 (&md->b, &var_header
+                    adios_parse_var_data_payload_v1 (&md->b, &var_header
                                                     ,&var_payload
                                                     ,v1->data_size
                                                     );
@@ -1749,24 +1747,24 @@ static void adios_mpi_amr1_do_read (struct adios_file_struct * fd
                     printf ("MPI read: skipping name: %s path: %s\n"
                            ,var_header.name, var_header.path
                            );
-                    adios_parse_var_data_payload_v2 (&md->b, &var_header
+                    adios_parse_var_data_payload_v1 (&md->b, &var_header
                                                     ,NULL, 0
                                                     );
                 }
 
-                adios_clear_var_header_v2 (&var_header);
+                adios_clear_var_header_v1 (&var_header);
             }
 
 #if 1
-            adios_parse_attributes_header_v2 (&md->b, &attrs_header);
+            adios_parse_attributes_header_v1 (&md->b, &attrs_header);
 
             for (i = 0; i < attrs_header.count; i++)
             {
-                adios_parse_attribute_v2 (&md->b, &attribute);
-                adios_clear_attribute_v2 (&attribute);
+                adios_parse_attribute_v1 (&md->b, &attribute);
+                adios_clear_attribute_v1 (&attribute);
             }
 #endif
-            adios_clear_process_group_header_v2 (&pg_header);
+            adios_clear_process_group_header_v1 (&pg_header);
 
             break;
         }
@@ -1778,7 +1776,7 @@ static void adios_mpi_amr1_do_read (struct adios_file_struct * fd
             return;
     }
 
-    adios_buffer_struct_clear_v2 (&md->b);
+    adios_buffer_struct_clear (&md->b);
 }
 
 static
@@ -1792,7 +1790,7 @@ uint32_t adios_mpi_amr1_calculate_attributes_size (struct adios_file_struct * fd
 
     while (a)
     {
-        overhead += adios_calc_attribute_overhead_v2 (a);
+        overhead += adios_calc_attribute_overhead_v1 (a);
 
         a = a->next;
     }
@@ -1808,9 +1806,9 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                                                  method->method_data;
     struct adios_attribute_struct * a = fd->group->attributes;
 
-    struct adios_index_process_group_struct_v2 * new_pg_root = 0;
-    struct adios_index_var_struct_v2 * new_vars_root = 0;
-    struct adios_index_attribute_struct_v2 * new_attrs_root = 0;
+    struct adios_index_process_group_struct_v1 * new_pg_root = 0;
+    struct adios_index_var_struct_v1 * new_vars_root = 0;
+    struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
 
     switch (fd->mode)
     {
@@ -1859,7 +1857,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 fd->offset = fd->base_offset - md->vars_start;
                 fd->vars_start = 0;
                 fd->buffer_size = 0;
-                adios_write_close_vars_v2 (fd);
+                adios_write_close_vars_v1 (fd);
                 // fd->vars_start gets updated with the size written
 
                 uint64_t count;
@@ -1883,9 +1881,9 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 }
                 fd->offset = 0;
                 fd->bytes_written = 0;
-                adios_shared_buffer_free_v2 (&md->b);
+                adios_shared_buffer_free (&md->b);
 
-                adios_write_open_attributes_v2 (fd);
+                adios_write_open_attributes_v1 (fd);
                 md->vars_start = new_off;
                 md->vars_header_size = fd->offset;
 
@@ -1899,7 +1897,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
 
                 while (a)
                 {
-                    adios_write_attribute_v2 (fd, a);
+                    adios_write_attribute_v1 (fd, a);
 
                     int bytes_written[new_group_size];
                     int disp[new_group_size];
@@ -1971,7 +1969,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                     fd->base_offset += count;
                     fd->offset = 0;
                     fd->bytes_written = 0;
-                    adios_shared_buffer_free_v2 (&md->b);
+                    adios_shared_buffer_free (&md->b);
 
                     a = a->next;
                 }
@@ -1980,7 +1978,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 fd->offset = fd->base_offset - md->vars_start;
                 fd->vars_start = 0;
                 fd->buffer_size = 0;
-                adios_write_close_attributes_v2 (fd);
+                adios_write_close_attributes_v1 (fd);
 
                 // fd->vars_start gets updated with the size written
                 if (is_aggregator(md->rank))
@@ -2010,9 +2008,9 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
 
             if (fd->shared_buffer == adios_flag_yes)
             {
-                struct adios_bp_buffer_struct_v2 b;
-                struct adios_process_group_header_struct_v2 pg_header;
-                struct adios_vars_header_struct_v2 vars_header;
+                struct adios_bp_buffer_struct_v1 b;
+                struct adios_process_group_header_struct_v1 pg_header;
+                struct adios_vars_header_struct_v1 vars_header;
                 int pg_size, header_size;
                 uint32_t attr_size;
                 uint64_t vars_count_offset;
@@ -2028,11 +2026,11 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 b.offset = 0;
                 b.length = fd->bytes_written;
 
-                adios_parse_process_group_header_v2 (&b, &pg_header);
+                adios_parse_process_group_header_v1 (&b, &pg_header);
                 vars_count_offset = b.offset;
-                adios_clear_process_group_header_v2 (&pg_header);
+                adios_clear_process_group_header_v1 (&pg_header);
 
-                adios_parse_vars_header_v2 (&b, &vars_header);
+                adios_parse_vars_header_v1 (&b, &vars_header);
                 header_size = b.offset;
                 attr_size = adios_mpi_amr1_calculate_attributes_size (fd);
 
@@ -2264,7 +2262,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
             }
 
             // build index appending to any existing index
-            adios_build_index_v2 (fd, &md->old_pg_root, &md->old_vars_root
+            adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
                                  ,&md->old_attrs_root
                                  );
 
@@ -2356,16 +2354,16 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                         md->b.length = index_sizes [i];
                         md->b.offset = 0;
 
-                        adios_parse_process_group_index_v2 (&md->b
+                        adios_parse_process_group_index_v1 (&md->b
                                                            ,&new_pg_root
                                                            );
-                        adios_parse_vars_index_v2 (&md->b, &new_vars_root);
-                        adios_parse_attributes_index_v2 (&md->b
+                        adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
                                                         );
                         new_pg_root = 0;
 
-                        adios_merge_index_v2 (&md->old_pg_root
+                        adios_merge_index_v1 (&md->old_pg_root
                                              ,&md->old_vars_root
                                              ,&md->old_attrs_root
                                              ,new_pg_root, new_vars_root
@@ -2386,7 +2384,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 }
                 else
                 {
-                    adios_write_index_v2 (&buffer, &buffer_size, &buffer_offset
+                    adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                          ,0, md->old_pg_root
                                          ,md->old_vars_root
                                          ,md->old_attrs_root
@@ -2417,13 +2415,13 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
 #if 1
                 index_start = total_data_size;
 #endif
-                adios_write_index_v2 (&buffer, &buffer_size
+                adios_write_index_v1 (&buffer, &buffer_size
                                      ,&buffer_offset, index_start
                                      ,md->old_pg_root
                                      ,md->old_vars_root
                                      ,md->old_attrs_root
                                      );
-                adios_write_version_v2 (&buffer, &buffer_size, &buffer_offset);
+                adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
                 if (fd->shared_buffer == adios_flag_yes)
                 {
@@ -2470,7 +2468,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
             if (is_aggregator (md->rank))
             {
                 // generate global indexes and write to metadata file
-                adios_mpi_amr1_build_global_index_v2 (md->subfile_name
+                adios_mpi_amr1_build_global_index_v1 (md->subfile_name
                                                      ,md->old_pg_root
                                                      ,md->old_vars_root
                                                      ,md->old_attrs_root
@@ -2510,16 +2508,16 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                         md->b.length = index_sizes [i];
                         md->b.offset = 0;
 
-                        adios_parse_process_group_index_v2 (&md->b
+                        adios_parse_process_group_index_v1 (&md->b
                                                            ,&new_pg_root
                                                            );
-                        adios_parse_vars_index_v2 (&md->b, &new_vars_root);
-                        adios_parse_attributes_index_v2 (&md->b
+                        adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
                                                         );
                         new_pg_root = 0;
 
-                        adios_merge_index_v2 (&md->old_pg_root
+                        adios_merge_index_v1 (&md->old_pg_root
                                              ,&md->old_vars_root
                                              ,&md->old_attrs_root
                                              ,new_pg_root, new_vars_root
@@ -2544,7 +2542,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                     uint64_t buffer_size2 = 0;
                     uint64_t buffer_offset2 = 0;
 
-                    adios_write_index_v2 (&buffer2, &buffer_size2, &buffer_offset2
+                    adios_write_index_v1 (&buffer2, &buffer_size2, &buffer_offset2
                                          ,0, md->old_pg_root
                                          ,md->old_vars_root
                                          ,md->old_attrs_root
@@ -2578,12 +2576,12 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 uint64_t global_index_buffer_offset = 0;
                 uint64_t global_index_start = 0;
                         
-                adios_write_index_v2 (&global_index_buffer, &global_index_buffer_size
+                adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
                                      ,&global_index_buffer_offset, global_index_start
                                      ,md->old_pg_root, md->old_vars_root, md->old_attrs_root
                                      );
 
-                adios_write_version_v2 (&global_index_buffer
+                adios_write_version_v1 (&global_index_buffer
                                        ,&global_index_buffer_size
                                        ,&global_index_buffer_offset
                                        );
@@ -2631,8 +2629,8 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
             buffer_size = 0;
             buffer_offset = 0;
 
-            adios_clear_index_v2 (new_pg_root, new_vars_root, new_attrs_root);
-            adios_clear_index_v2 (md->old_pg_root, md->old_vars_root
+            adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
+            adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
                                  ,md->old_attrs_root
                                  );
             new_pg_root = 0;
@@ -2668,7 +2666,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 fd->offset = fd->base_offset - md->vars_start;
                 fd->vars_start = 0;
                 fd->buffer_size = 0;
-                adios_write_close_vars_v2 (fd);
+                adios_write_close_vars_v1 (fd);
                 // fd->vars_start gets updated with the size written
                 uint64_t count;
                 count = adios_mpi_amr1_striping_unit_write(
@@ -2687,9 +2685,9 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 }
                 fd->offset = 0;
                 fd->bytes_written = 0;
-                adios_shared_buffer_free_v2 (&md->b);
+                adios_shared_buffer_free (&md->b);
 
-                adios_write_open_attributes_v2 (fd);
+                adios_write_open_attributes_v1 (fd);
                 md->vars_start = new_off;
                 md->vars_header_size = fd->offset;
                 MPI_File_seek (md->fh, new_off + md->vars_header_size
@@ -2701,7 +2699,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
 
                 while (a)
                 {
-                    adios_write_attribute_v2 (fd, a);
+                    adios_write_attribute_v1 (fd, a);
                     count = adios_mpi_amr1_striping_unit_write(
                                   md->fh,
                                   -1,
@@ -2719,7 +2717,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                     fd->base_offset += count;
                     fd->offset = 0;
                     fd->bytes_written = 0;
-                    adios_shared_buffer_free_v2 (&md->b);
+                    adios_shared_buffer_free (&md->b);
 
                     a = a->next;
                 }
@@ -2728,7 +2726,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 fd->offset = fd->base_offset - md->vars_start;
                 fd->vars_start = 0;
                 fd->buffer_size = 0;
-                adios_write_close_attributes_v2 (fd);
+                adios_write_close_attributes_v1 (fd);
                 // fd->vars_start gets updated with the size written
                 count = adios_mpi_amr1_striping_unit_write(
                                   md->fh,
@@ -2749,7 +2747,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
             }
 
             // build index appending to any existing index
-            adios_build_index_v2 (fd, &md->old_pg_root, &md->old_vars_root
+            adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
                                  ,&md->old_attrs_root
                                  );
             // if collective, gather the indexes from the rest and call
@@ -2792,14 +2790,14 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                         md->b.length = index_sizes [i];
                         md->b.offset = 0;
 
-                        adios_parse_process_group_index_v2 (&md->b
+                        adios_parse_process_group_index_v1 (&md->b
                                                            ,&new_pg_root
                                                            );
-                        adios_parse_vars_index_v2 (&md->b, &new_vars_root);
-                        adios_parse_attributes_index_v2 (&md->b
+                        adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
                                                         );
-                        adios_merge_index_v2 (&md->old_pg_root
+                        adios_merge_index_v1 (&md->old_pg_root
                                              ,&md->old_vars_root
                                              ,&md->old_attrs_root
                                              ,new_pg_root, new_vars_root
@@ -2819,7 +2817,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 }
                 else
                 {
-                    adios_write_index_v2 (&buffer, &buffer_size, &buffer_offset
+                    adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                          ,0, md->old_pg_root
                                          ,md->old_vars_root
                                          ,md->old_attrs_root
@@ -2848,12 +2846,12 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
 
             if (md->rank == 0)
             {
-                adios_write_index_v2 (&buffer, &buffer_size, &buffer_offset
+                adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                      ,index_start, md->old_pg_root
                                      ,md->old_vars_root
                                      ,md->old_attrs_root
                                      );
-                adios_write_version_v2 (&buffer, &buffer_size, &buffer_offset);
+                adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
                 adios_mpi_amr1_striping_unit_write(
                                   md->fh,
@@ -2865,8 +2863,8 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
 
             free (buffer);
 
-            adios_clear_index_v2 (new_pg_root, new_vars_root, new_attrs_root);
-            adios_clear_index_v2 (md->old_pg_root, md->old_vars_root
+            adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
+            adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
                                  ,md->old_attrs_root
                                  );
             new_pg_root = 0;
@@ -2905,7 +2903,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
     memset (&md->status, 0, sizeof (MPI_Status));
     md->group_comm = MPI_COMM_NULL;
 
-    adios_clear_index_v2 (md->old_pg_root, md->old_vars_root
+    adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
                          ,md->old_attrs_root
                          );
     md->old_pg_root = 0;
