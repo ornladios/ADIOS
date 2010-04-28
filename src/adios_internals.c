@@ -2198,7 +2198,8 @@ void adios_copy_var_written (struct adios_var_struct ** root
         {
             var_new = (struct adios_var_struct *) malloc
                                                   (sizeof (struct adios_var_struct));
-            var_new->id = ++fd->group->member_count;
+            //var_new->id = ++fd->group->member_count;
+            var_new->id = var->id;
             var_new->parent_id = var->id;
             var_new->name = strdup (var->name);
             var_new->path = strdup (var->path);
