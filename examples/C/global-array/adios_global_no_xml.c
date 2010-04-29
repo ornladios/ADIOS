@@ -99,16 +99,21 @@ int main (int argc, char ** argv)
 
         O = rank * 2 * NX;
         adios_write(m_adios_file, "O", (void *) &O);
-        adios_write(m_adios_file, "temperature", t);
 
         for (i = 0; i < NX; i++)
-            t[i] = rank * 2 * NX + i + NX;
+            t[i] = O + i;
+
+        adios_write(m_adios_file, "temperature", t);
 
         adios_write(m_adios_file, "NX", (void *) &NX);
         adios_write(m_adios_file, "G", (void *) &G);
 
         O = rank * 2 * NX + NX;
         adios_write(m_adios_file, "O", (void *) &O);
+
+        for (i = 0; i < NX; i++)
+            t[i] = O + i;
+
         adios_write(m_adios_file, "temperature", t);
 
         adios_close (m_adios_file);

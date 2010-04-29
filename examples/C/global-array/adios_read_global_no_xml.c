@@ -29,7 +29,7 @@ int main (int argc, char ** argv)
     int         rank, size, i, j;
     MPI_Comm    comm = MPI_COMM_WORLD;
     void * data = NULL;
-    uint64_t start[2], count[2], bytes_read = 0;
+    uint64_t start[1], count[1], bytes_read = 0;
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
@@ -42,7 +42,7 @@ int main (int argc, char ** argv)
         return -1;
     }
 
-    ADIOS_GROUP * g = adios_gopen (f, "temperature");
+    ADIOS_GROUP * g = adios_gopen (f, "restart");
     if (g == NULL)
     {
         printf ("%s\n", adios_errmsg());
@@ -58,11 +58,7 @@ int main (int argc, char ** argv)
         slice_size = slice_size + v->dims[0]%size;
     count[0] = slice_size;
 
-    start[1] = 0;
-    count[1] = v->dims[1];
-       
-
-    data = malloc (slice_size * v->dims[1] * sizeof (double));
+    data = malloc (slice_size * sizeof (double));
     if (data == NULL)
     {
         fprintf (stderr, "malloc failed.\n");
@@ -72,11 +68,9 @@ int main (int argc, char ** argv)
     bytes_read = adios_read_var (g, "temperature", start, count, data);
 
     for (i = 0; i < slice_size; i++) {
-        printf ("rank %d: [%d,%d:%d]", rank, start[0]+i, 0, slice_size);
-        for (j = 0; j < v->dims[1]; j++)
-            printf (" %6.2g", * (double *)data + i * v->dims[1] + j);
-        printf ("\n");
+        printf (" %6.3g", * (double *)data + i);
     }
+    printf ("\n");
 
     free (data);
 
