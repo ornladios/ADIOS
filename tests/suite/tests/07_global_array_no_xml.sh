@@ -21,7 +21,7 @@ fi
 
 # copy codes and inputs to . 
 cp $TRUNKDIR/examples/C/global-array/adios_global_no_xml .
-cp $TRUNKDIR/examples/C/global-array/adios_read_global .
+cp $TRUNKDIR/examples/C/global-array/adios_read_global_no_xml .
 
 echo "Run C adios_global_no_xml"
 $MPIRUN $MPIRUN_NP $PROCS ./adios_global_no_xml
