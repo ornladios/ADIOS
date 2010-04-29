@@ -258,8 +258,14 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = programs
-EXTRA_DIST = HOWTO-Add-new-test  HOWTO-Run  cleanup.sh  oldtest.sh reference  test.sh  tests
+SUBDIRS = programs 
+EXTRA_DIST = HOWTO-Add-new-test \
+             HOWTO-Run          \
+             cleanup.sh         \
+             reference/*        \
+             test.sh            \
+             tests/*
+
 all: all-recursive
 
 .SUFFIXES:
@@ -436,6 +442,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/reference $(distdir)/tests
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

@@ -107,4 +107,4 @@ FCLINK = \
 
 CLEANFILES = genarray_comm.mod genarray2d_comm.mod gwrite_genarray.fh gread_genarray.fh
 
-EXTRA_DIST = genarray.xml job.ewok job2D.ewok
+EXTRA_DIST = genarray.xml genarray3d.xml job.ewok job2D.ewok

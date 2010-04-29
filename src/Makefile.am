@@ -126,12 +126,18 @@ libadiosf_a_CPPFLAGS=
 
 if HAVE_NSSI
 lib_LIBRARIES += libadios_nssi.a
-libadios_nssi_a_SOURCES = adios_nssi_args.c adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
-libadios_a_SOURCES += adios_nssi_args.c adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
+libadios_nssi_a_SOURCES = adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
+nodist_libadios_nssi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
+dist_libadios_nssi_a_SOURCES = adios_nssi_args.x
+libadios_a_SOURCES += adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
+nodist_libadios_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
+dist_libadios_a_SOURCES = adios_nssi_args.x
 libadios_nssi_a_CPPFLAGS = $(MXML_CPPFLAGS) $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 libadios_a_CPPFLAGS += $(MXML_CPPFLAGS) $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 if BUILD_FORTRAN
-libadiosf_a_SOURCES += adios_nssi_args.c adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
+libadiosf_a_SOURCES += adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
+dist_libadiosf_a_SOURCES = adios_nssi_args.x
+nodist_libadiosf_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 libadiosf_a_CPPFLAGS += $(MXML_CPPFLAGS) $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 endif
 
@@ -146,7 +152,7 @@ adios_nssi_args.h:  $(srcdir)/adios_nssi_args.x Makefile.am
 #	@echo '#endif' >> $@;
 	rpcgen -h $(srcdir)/adios_nssi_args.x >> $@
 
-adios_nssi_args.c: adios_nssi_args.h
+adios_nssi_args.c: adios_nssi_args.h 
 	rm -f adios_nssi_args.c
 	rpcgen -c $(srcdir)/adios_nssi_args.x \
 		| grep -v "include \"\.\." > adios_nssi_args.c
@@ -293,6 +299,8 @@ libadiosread_nompi_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
 endif
 
 
-EXTRA_DIST = adios_bp_v1.h adios_endianness.h adios_error.h adios_internals.h \
-             adios_internals_mxml.h adios_socket.h adios_transport_hooks.h bp_types.h \
-             bp_utils.h buffer.h common_adios.h common_read.h futils.h
+EXTRA_DIST = adios_bp_v1.h adios_bp_v2.h adios_endianness.h adios_error.h \
+             adios_internals.h adios_internals_v2.h adios_internals_mxml.h \
+             adios_nssi_config.h adios_socket.h adios_transport_hooks.h aggregation.h \
+             bp_types.h bp_utils.h buffer.h common_adios.h common_read.h futils.h globals.h 
+
