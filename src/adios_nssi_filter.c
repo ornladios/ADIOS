@@ -39,63 +39,22 @@ void adios_nssi_filter_get_write_buffer(
 {
 }
 
-#ifndef HAVE_NSSI
-void adios_nssi_filter_init(
-        const char *parameters,
-        struct adios_method_struct * method)
-{
-}
-void adios_nssi_filter_finalize(
-        int mype,
-        struct adios_method_struct * method)
-{
-}
-enum ADIOS_FLAG adios_nssi_filter_should_buffer(
-        struct adios_file_struct *f,
-        struct adios_method_struct *method)
-{
-    return adios_flag_unknown;
-}
-int adios_nssi_filter_open(
-        struct adios_file_struct *f,
-        struct adios_method_struct *method,
-        void * comm)
-{
-    return -1;
-}
-void adios_nssi_filter_close(
-        struct adios_file_struct *f,
-        struct adios_method_struct *method)
-{
-}
-void adios_nssi_filter_write(
-        struct adios_file_struct *f,
-        struct adios_var_struct *v,
-        void *data,
-        struct adios_method_struct *method)
-{
-}
-void adios_nssi_filter_read(
-        struct adios_file_struct *f,
-        struct adios_var_struct *v,
-        void *buffer,
-        uint64_t buffersize,
-        struct adios_method_struct *method)
-{
-}
-#else
-
 ///////////////////////////
 // Datatypes
 ///////////////////////////
 struct adios_nssi_filter_data_struct
 {
+    char *sm_method;
+    char *sm_parameters;
+
     int      fd;
     MPI_Comm group_comm;
     int      rank;
     int      size;
 
     void * comm; // temporary until moved from should_buffer to open
+
+    struct adios_method_struct *submethod;
 };
 
 ///* Need a struct to encapsulate var offset info.
@@ -147,7 +106,7 @@ struct open_file {
 };
 
 /* list of variable offsets */
-List open_file_list;
+static List open_file_list;
 
 ///////////////////////////
 // Global Variables
@@ -158,22 +117,111 @@ static int global_rank=-1;
 struct adios_nssi_config nssi_cfg;
 
 //static log_level adios_nssi_filter_debug_level;
-static int DEBUG=3;
+static int DEBUG=0;
 
 
 extern struct adios_transport_struct * adios_transports;
-struct adios_method_struct *submethod=NULL;
+//struct adios_method_struct *submethod=NULL;
 struct adios_method_struct *self=NULL;
-
-
-///////////////////////////
-// Function Declarations
-///////////////////////////
 
 
 ///////////////////////////
 // Function Definitions
 ///////////////////////////
+
+struct adios_var_struct *vars_deep_copy(struct adios_var_struct *orig)
+{
+    struct adios_var_struct *new = NULL;
+    struct adios_var_struct *current = NULL;
+
+    if (orig) {
+        new = current = (struct adios_var_struct *)malloc(sizeof(struct adios_var_struct));
+        current->next = NULL;
+        while(orig) {
+            memcpy(current, orig, sizeof(struct adios_var_struct));
+
+            current->name = strdup (orig->name);
+            current->path = strdup (orig->path);
+            current->type = orig->type;
+            current->got_buffer = adios_flag_no;
+
+            current->write_offset = 0;
+            current->min = 0;
+            current->max = 0;
+
+            current->free_data = adios_flag_no;
+            current->data = 0;
+            current->data_size = 0;
+
+            current->next = NULL;
+            orig = orig->next;
+            if (orig) {
+                current->next = (struct adios_var_struct *)malloc(sizeof(struct adios_var_struct));
+                current = current->next;
+            }
+        }
+    }
+
+    return(new);
+}
+
+struct adios_attribute_struct *attrs_deep_copy(
+        struct adios_attribute_struct *orig,
+        struct adios_group_struct *new_group)
+{
+    struct adios_attribute_struct *new = NULL;
+    struct adios_attribute_struct *current = NULL;
+
+    if (orig) {
+        new = current = (struct adios_attribute_struct *)malloc(sizeof(struct adios_attribute_struct));
+        current->next = NULL;
+        while(orig) {
+            memcpy(current, orig, sizeof(struct adios_attribute_struct));
+
+
+            current->name = strdup (orig->name);
+            current->path = strdup (orig->path);
+            current->type = orig->type;
+
+            if (orig->var == 0) {
+                uint64_t size = adios_get_type_size(orig->type, orig->value);
+                current->value=malloc(size);
+                memcpy(current->value, orig->value, size);
+            } else {
+                current->value = 0;
+                current->type = adios_unknown;
+                current->var = adios_find_var_by_id(new_group->vars,
+                                                    orig->var->id);
+            }
+
+            current->next = NULL;
+            orig = orig->next;
+            if (orig) {
+                current->next = (struct adios_attribute_struct *)malloc(sizeof(struct adios_attribute_struct));
+                current = current->next;
+            }
+        }
+    }
+
+    return(new);
+}
+
+struct adios_group_struct *group_deep_copy(struct adios_group_struct *orig)
+{
+    struct adios_group_struct *new = NULL;
+
+    if (orig) {
+        new = (struct adios_group_struct *)malloc(sizeof(struct adios_group_struct));
+        memcpy(new, orig, sizeof(struct adios_group_struct));
+
+        new->vars = vars_deep_copy(orig->vars);
+        new->attributes = attrs_deep_copy(orig->attributes, new);
+    }
+
+    return(new);
+}
+
+
 
 struct adios_method_struct *init_submethod(
         const char * method,
@@ -217,9 +265,6 @@ struct adios_method_struct *init_submethod(
 
         return NULL;
     }
-
-    new_method->group = self->group;
-
 
     return new_method;
 }
@@ -669,306 +714,6 @@ static int gen_anonymous_dim_list(
     }
 }
 
-//static int gen_offset_list(
-//        struct adios_group_struct *group,
-//        struct adios_var_struct *pvar_root,
-//        struct adios_attribute_struct *patt_root)
-//{
-//    struct adios_var_struct *v;
-//    struct adios_dimension_struct *dims;
-//    struct var_info *vi;
-//    char offset_name[255];
-//    uint64_t *value;
-//
-//    v = pvar_root;
-//    while (v) {
-//        dims=v->dimensions;
-//        int loffs_idx=0;
-//        while (dims) {
-//            parse_dimension_name(group, pvar_root, patt_root, &dims->local_offset, offset_name);
-//            if (offset_name[0] == '\0') {
-//                sprintf(offset_name, "offset_%d", loffs_idx);
-//            }
-//            if (DEBUG>3) printf("gen: offset_name(%s)\n", offset_name);
-//            value=calloc(1,sizeof(uint64_t));
-//            parse_dimension_size(group, pvar_root, patt_root, &dims->local_offset, value);
-//
-//            uint64_t vsize = 4; /* adios_get_var_size(v, group, value); */
-//            vi = var_offset_create(v->path, offset_name, value, vsize);
-//            list_ins_next(&var_offset_list, list_tail(&var_offset_list), vi);
-//
-//            loffs_idx++;
-//            dims = dims->next;
-//        }
-//        v = v->next;
-//    }
-//}
-//
-//static void create_offset_list_for_var(
-//        struct adios_write_args *args,
-//        struct adios_var_struct *v,
-//        struct adios_group_struct *group,
-//        struct adios_var_struct *pvar_root,
-//        struct adios_attribute_struct *patt_root)
-//{
-//    struct adios_dimension_struct *dims;
-//    char offset_name[255];
-//
-//    args->offsets.offsets_len=0;
-//    args->offsets.offsets_val=NULL;
-//
-//    if ((v) && (v->dimensions)) {
-//        int local_offset_count=0;
-//        dims=v->dimensions;
-//        while (dims) {
-//            if (dims->dimension.time_index == adios_flag_yes) {
-//                dims = dims->next;
-//                continue;
-//            }
-//            parse_dimension_name(group, pvar_root, patt_root, &dims->local_offset, offset_name);
-//            local_offset_count++;
-//            dims = dims->next;
-//        }
-//
-//        args->offsets.offsets_len=local_offset_count;
-//        args->offsets.offsets_val=calloc(local_offset_count, sizeof(struct adios_var));
-//
-//        dims=v->dimensions;
-//        int loffs_idx=0;
-//        while (dims) {
-//            if (dims->dimension.time_index == adios_flag_yes) {
-//                dims = dims->next;
-//                continue;
-//            }
-//            parse_dimension_name(group, pvar_root, patt_root, &dims->local_offset, offset_name);
-//            if (offset_name[0] == '\0') {
-//                sprintf(offset_name, "offset_%d", loffs_idx);
-//            }
-//            args->offsets.offsets_val[loffs_idx].vpath=strdup(v->path);
-//            args->offsets.offsets_val[loffs_idx].vname=strdup(offset_name);
-////            struct var_offset *vo=var_offset_find("", offset_name);
-////            memcpy(&(args->offsets.offsets_val[loffs_idx].vdata), vo->ovalue, vo->osize);
-////            args->offsets.offsets_val[loffs_idx].vdatasize=vo->osize;
-////            printf("create: offset_name(%s) offset_value(%lu)\n", offset_name, vo->ovalue);
-//            uint64_t value=0;
-//            parse_dimension_size(group, pvar_root, patt_root, &dims->local_offset, &value);
-//            memcpy(&(args->offsets.offsets_val[loffs_idx].vdata), &value, 4);
-//            args->offsets.offsets_val[loffs_idx].vdatasize=4;
-//            if (DEBUG>3) printf("create: offset_name(%s) offset_value(%lu)\n", offset_name, value);
-//
-//            loffs_idx++;
-//            dims = dims->next;
-//        }
-//    }
-//}
-//
-//static int gen_dim_list(
-//        struct adios_group_struct *group,
-//        struct adios_var_struct *pvar_root,
-//        struct adios_attribute_struct *patt_root)
-//{
-//    struct adios_var_struct *v;
-//    struct adios_dimension_struct *dims;
-//    struct var_info *vi;
-//    char dim_name[255];
-//    uint64_t *value;
-//
-//    v = pvar_root;
-//    while (v) {
-//        dims=v->dimensions;
-//        int dim_idx=0;
-//        while (dims) {
-//            parse_dimension_name(group, pvar_root, patt_root, &dims->dimension, dim_name);
-//            if (dim_name[0] == '\0') {
-//                sprintf(dim_name, "dim_%d", dim_idx);
-//            }
-//            if (DEBUG>3) printf("gen: dim_name(%s)\n", dim_name);
-//            value=calloc(1,sizeof(uint64_t));
-//            parse_dimension_size(group, pvar_root, patt_root, &dims->dimension, value);
-//            if (global_rank==0) {
-//                if (DEBUG>3) printf(":o(%d)", *value);
-//            }
-//
-//            uint64_t vsize = 4; /* adios_get_var_size(v, group, value); */
-//            vi = var_dim_create(v->path, dim_name, value, vsize);
-//            list_ins_next(&var_dim_list, list_tail(&var_dim_list), vi);
-//
-//            dim_idx++;
-//            dims = dims->next;
-//        }
-//        v = v->next;
-//    }
-//}
-//
-//static void create_dim_list_for_var(
-//        struct adios_write_args *args,
-//        struct adios_var_struct *v,
-//        struct adios_group_struct *group,
-//        struct adios_var_struct *pvar_root,
-//        struct adios_attribute_struct *patt_root)
-//{
-//    struct adios_dimension_struct *dims;
-//    char dim_name[255];
-//
-//    args->dims.dims_len=0;
-//    args->dims.dims_val=NULL;
-//
-//    if ((v) && (v->dimensions)) {
-//        int dim_count=0;
-//        dims=v->dimensions;
-//        while (dims) {
-//            if (dims->dimension.time_index == adios_flag_yes) {
-//                dims = dims->next;
-//                continue;
-//            }
-//            parse_dimension_name(group, pvar_root, patt_root, &dims->dimension, dim_name);
-//            dim_count++;
-//            dims = dims->next;
-//        }
-//
-//        args->dims.dims_len=dim_count;
-//        args->dims.dims_val=calloc(dim_count, sizeof(struct adios_var));
-//
-//        dims=v->dimensions;
-//        int dim_idx=0;
-//        while (dims) {
-//            if (dims->dimension.time_index == adios_flag_yes) {
-//                dims = dims->next;
-//                continue;
-//            }
-//            parse_dimension_name(group, pvar_root, patt_root, &dims->dimension, dim_name);
-//            if (dim_name[0] == '\0') {
-//                sprintf(dim_name, "dim_%d", dim_idx);
-//            }
-//            args->dims.dims_val[dim_idx].vpath=strdup(v->path);
-//            args->dims.dims_val[dim_idx].vname=strdup(dim_name);
-////            struct var_dim *vd=var_dim_find("", dim_name);
-////            memcpy(&(args->dims.dims_val[dim_idx].vdata), vd->dvalue, vd->dsize);
-////            args->dims.dims_val[dim_idx].vdatasize=vd->dsize;
-//            uint64_t value=0;
-//            parse_dimension_size(group, pvar_root, patt_root, &dims->dimension, &value);
-//            memcpy(&(args->dims.dims_val[dim_idx].vdata), &value, 4);
-//            args->dims.dims_val[dim_idx].vdatasize=4;
-//            if (DEBUG>3) printf("create: dim_name(%s) dvalue(%lu)\n", dim_name, value);
-//            if (global_rank==0) {
-//                if (DEBUG>3) printf(":o(%d)", value);
-//            }
-//
-//            dim_idx++;
-//            dims = dims->next;
-//        }
-//    }
-//}
-
-//static int read_var(
-//        int fd,
-//        struct adios_var_struct *pvar,
-//        int myrank,
-//        int nproc,
-//        MPI_Comm group_comm)
-//{
-//    int return_code=0;
-//    int i, rc;
-//
-//    adios_read_args args;
-//    adios_read_res  res;
-//
-//    args.fd       = fd;
-//    args.max_read = pvar->data_size;
-//    args.vpath = strdup(pvar->path);
-//    args.vname = strdup(pvar->name);
-//
-//    Func_Timer("ADIOS_READ_OP",
-//            rc = nssi_call_rpc_sync(&svcs[default_svc],
-//            ADIOS_READ_OP,
-//            &args,
-//            pvar->data,
-//            pvar->data_size,
-//            &res););
-//    if (rc != NSSI_OK) {
-//        //log_error(adios_nssi_filter_debug_level, "unable to call remote adios_read");
-//        return_code=-2;
-//    }
-//
-//    free(args.vpath);
-//    free(args.vname);
-//
-//    return return_code;
-//}
-//static int write_var(
-//        int fd,
-//        struct adios_group_struct *group,
-//        struct adios_var_struct *pvar_root,
-//        struct adios_attribute_struct *patt_root,
-//        struct adios_var_struct *pvar,
-//        uint64_t var_size,
-//        enum ADIOS_FLAG fortran_flag,
-//        int myrank,
-//        int nproc,
-//        MPI_Comm group_comm)
-//{
-//    int i;
-//    int rc;
-//    int return_code=0;
-//
-//    adios_write_args args;
-//    adios_write_res  res;
-//
-////    var_offset_printall();
-//
-//    memset(&args, 0, sizeof(adios_write_args));
-//    args.fd    = fd;
-//    args.vpath = strdup(pvar->path);
-//    args.vname = strdup(pvar->name);
-//    args.vsize = var_size;
-//    args.atype = pvar->type;
-//    if (pvar->dimensions) {
-//        args.is_scalar = FALSE;
-//    } else {
-//        args.is_scalar = TRUE;
-//    }
-//    args.writer_rank=myrank;
-//    args.offsets.offsets_len=0;
-//    args.offsets.offsets_val=NULL;
-//    args.dims.dims_len=0;
-//    args.dims.dims_val=NULL;
-//    if (pvar->dimensions) {
-//        create_offset_list_for_var(
-//                 &args,
-//                 pvar,
-//                 group,
-//                 group->vars,
-//                 group->attributes);
-//        create_dim_list_for_var(
-//                 &args,
-//                 pvar,
-//                 group,
-//                 group->vars,
-//                 group->attributes);
-//     }
-//
-////    MPI_Barrier(group_comm);
-//    Func_Timer("ADIOS_WRITE_OP",
-//            rc = nssi_call_rpc_sync(&svcs[default_svc],
-//            ADIOS_WRITE_OP,
-//            &args,
-//            pvar->data,
-//            var_size,
-//            &res););
-//    if (rc != NSSI_OK) {
-//        //log_error(adios_nssi_filter_debug_level, "unable to call remote adios_write");
-//        return_code=-2;
-//    }
-////    MPI_Barrier(group_comm);
-//
-//    free(args.vpath);
-//    free(args.vname);
-//    free(args.offsets.offsets_val);
-//
-//    return return_code;
-//}
-
-
 static void adios_var_to_comm_nssi(
         enum ADIOS_FLAG host_language_fortran,
         void *data,
@@ -983,7 +728,7 @@ static void adios_var_to_comm_nssi(
         }
     } else {
         fprintf (stderr, "coordination-communication not provided. "
-                "Using md->group_comm instead\n");
+                "Using MPI_COMM_WORLD instead\n");
         *comm = MPI_COMM_WORLD;
     }
 
@@ -999,6 +744,8 @@ void adios_nssi_filter_init(
     char logfile[1024];
     int log_rank;
 
+    struct adios_nssi_filter_data_struct *self_md=NULL;
+
     if (!adios_nssi_filter_initialized) {
         adios_nssi_filter_initialized = 1;
     }
@@ -1013,7 +760,13 @@ void adios_nssi_filter_init(
 
 //    logger_init((log_level)verbose, NULL);
 
-    self=method;
+    if (self == NULL) {
+        self=method;
+        self_md=calloc(1, sizeof(struct adios_nssi_filter_data_struct));
+        self->method_data=self_md;
+    } else {
+        self_md=(struct adios_nssi_filter_data_struct *)self->method_data;
+    }
 
     /*
      * initialize sub_method
@@ -1021,7 +774,7 @@ void adios_nssi_filter_init(
     char *sm_method=NULL;
     char *sm_parameters=NULL;
 
-    printf("parameters=%s\n", parameters);
+    if (DEBUG>3) printf("parameters=%s\n", parameters);
 
     char *pkey=NULL;
     char *pkey_str="submethod=\"";
@@ -1037,7 +790,7 @@ void adios_nssi_filter_init(
         sm_method[pvalue_len-1]='\0';
     }
 
-    printf("sm_method=%s\n", sm_method);
+    if (DEBUG>3) printf("sm_method=%s\n", sm_method);
 
     if (sm_method != NULL) {
         pkey=NULL;
@@ -1055,20 +808,14 @@ void adios_nssi_filter_init(
         }
     }
 
-    printf("sm_parameters=%s\n", sm_parameters);
+    if (DEBUG>3) printf("sm_parameters=%s\n", sm_parameters);
 
     if (sm_parameters == NULL) {
         sm_parameters="";
     }
 
-    submethod=init_submethod(sm_method, sm_parameters);
-    if (submethod == NULL) {
-        fprintf(stderr, "adios_nssi_filter: invalid submethod.  aborting.\n");
-        adios_nssi_filter_initialized = 0;
-        self=NULL;
-
-        return;
-    }
+    self_md->sm_method = strdup(sm_method);
+    self_md->sm_parameters = strdup(sm_parameters);
 
 
     list_init(&open_file_list, open_file_free);
@@ -1089,28 +836,38 @@ enum ADIOS_FLAG adios_nssi_filter_should_buffer(
     struct adios_nssi_filter_data_struct *md=NULL;
 
     enum ADIOS_FLAG sm_should_buffer=adios_flag_no;
+    enum ADIOS_FLAG old_shared_buffer=adios_flag_no;
+
+    if (DEBUG>3) printf("rank(%d) enter adios_nssi_filter_should_buffer\n", global_rank);
+
+    if (DEBUG>3) {
+        struct adios_var_struct *v=f->group->vars;
+        while(v) {
+            printf("adios_nssi_filter_should_buffer: fname(%s) vname(%s)\n", f->name, v->name);
+            v=v->next;
+        }
+    }
 
     of=open_file_find(method->base_path, f->name);
     if (of == NULL) {
-        fprintf(stderr, "file is not open.  FAIL.");
+        fprintf(stderr, "nssi_filter_should_buffer: file(%s, %s) is not open.  FAIL.", method->base_path, f->name);
         return adios_flag_no;
     }
     md=of->md;
 
-    if (DEBUG>3) printf("rank(%d) enter adios_nssi_filter_should_buffer\n", global_rank);
-
     /*
      * call sub_method
      */
-    if (   submethod->m != ADIOS_METHOD_UNKNOWN
-        && submethod->m != ADIOS_METHOD_NULL
-        && adios_transports[submethod->m].adios_should_buffer_fn
+    if (   md->submethod->m != ADIOS_METHOD_UNKNOWN
+        && md->submethod->m != ADIOS_METHOD_NULL
+        && adios_transports[md->submethod->m].adios_should_buffer_fn
        )
     {
-        sm_should_buffer = adios_transports[submethod->m].adios_should_buffer_fn
-                                                                (f, submethod);
+        sm_should_buffer = adios_transports[md->submethod->m].adios_should_buffer_fn
+                                                                (f, md->submethod);
     }
 
+    if (DEBUG>3) printf("sm_should_buffer==%d\n", sm_should_buffer);
     return sm_should_buffer;
 }
 
@@ -1124,15 +881,22 @@ int adios_nssi_filter_open(
     struct open_file *of=NULL;
     struct adios_nssi_filter_data_struct *md=NULL;
 
-    if (DEBUG>3) printf("rank(%d) enter adios_nssi_filter_open\n", global_rank);
+    if (DEBUG>3) printf("global_rank(%d): enter adios_nssi_filter_open (%s)\n", global_rank, f->name);
 
     of=open_file_find(method->base_path, f->name);
     if (of == NULL) {
+        struct adios_nssi_filter_data_struct *self_md=(struct adios_nssi_filter_data_struct *)self->method_data;;
+
         md             = malloc(sizeof(struct adios_nssi_filter_data_struct));
         md->fd         = -1;
         md->rank       = -1;
         md->size       = 0;
         md->group_comm = MPI_COMM_NULL;
+        md->comm       = comm;
+
+        md->submethod = init_submethod(self_md->sm_method, self_md->sm_parameters);
+        md->submethod->group = group_deep_copy(f->group);
+        f->group = md->submethod->group;
 
         of=open_file_create(method->base_path, f->name, md, f);
     } else {
@@ -1148,15 +912,13 @@ int adios_nssi_filter_open(
         }
     }
 
-    if (DEBUG>3) printf("global_rank(%d): enter adios_nssi_filter_open (%s)\n", global_rank, f->name);
-
-    md->comm = comm;
     if (DEBUG>3) printf("global_rank(%d): adios_nssi_filter_open: setup group_comm\n", global_rank);
     adios_var_to_comm_nssi(f->group->adios_host_language_fortran, md->comm, &md->group_comm);
     if (md->group_comm != MPI_COMM_NULL) {
-        if (DEBUG>3) printf("global_rank(%d): adios_nssi_filter_open: get rank and size\n", global_rank);
+        if (DEBUG>3) printf("global_rank(%d): adios_nssi_filter_open: get rank and size: comm(%p) group_comm(%p)\n", global_rank, md->comm, md->group_comm);
         MPI_Comm_rank(md->group_comm, &md->rank);
         MPI_Comm_size(md->group_comm, &md->size);
+        if (DEBUG>3) printf("global_rank(%d): adios_nssi_filter_open: size(%d) rank(%d)\n", global_rank, md->size, md->rank);
     } else {
         md->group_comm=MPI_COMM_SELF;
     }
@@ -1184,13 +946,13 @@ int adios_nssi_filter_open(
     /*
      * call sub_method
      */
-    if (   submethod->m != ADIOS_METHOD_UNKNOWN
-        && submethod->m != ADIOS_METHOD_NULL
-        && adios_transports[submethod->m].adios_open_fn
+    if (   md->submethod->m != ADIOS_METHOD_UNKNOWN
+        && md->submethod->m != ADIOS_METHOD_NULL
+        && adios_transports[md->submethod->m].adios_open_fn
        )
     {
-        adios_transports[submethod->m].adios_open_fn
-                                   (f, submethod, comm);
+        adios_transports[md->submethod->m].adios_open_fn
+                                   (f, md->submethod, comm);
     }
 
 
@@ -1205,21 +967,33 @@ void adios_nssi_filter_start_calculation(
     int rc=NSSI_OK;
     int myrank;
 
+    ListElmt *elmt;
+    struct open_file *of;
+    struct adios_nssi_filter_data_struct *md=NULL;
 
     if (DEBUG>3) printf("rank(%d) enter adios_nssi_filter_start_calc\n", global_rank);
 
-    /*
-     * call sub_method
-     */
-    if (   submethod->m != ADIOS_METHOD_UNKNOWN
-        && submethod->m != ADIOS_METHOD_NULL
-        && adios_transports[submethod->m].adios_start_calculation_fn
-       )
-    {
-        adios_transports[submethod->m].adios_start_calculation_fn
-                                   (submethod);
+    elmt = list_head(&open_file_list);
+    while(elmt) {
+        of = list_data(elmt);
+        md = of->md;
+
+        /*
+         * call sub_method
+         */
+        if (   md->submethod->m != ADIOS_METHOD_UNKNOWN
+            && md->submethod->m != ADIOS_METHOD_NULL
+            && adios_transports[md->submethod->m].adios_start_calculation_fn
+           )
+        {
+            adios_transports[md->submethod->m].adios_start_calculation_fn
+                                       (md->submethod);
+        }
+
+        elmt = list_next(elmt);
     }
 
+    if (DEBUG>3) printf("rank(%d) exit adios_nssi_filter_start_calc\n", global_rank);
 
     return;
 }
@@ -1230,20 +1004,33 @@ void adios_nssi_filter_end_iteration(
     int rc=NSSI_OK;
     int myrank;
 
-    if (DEBUG>3) printf("rank(%d) enter adios_nssi_filter_end_iter\n", global_rank);
+    ListElmt *elmt;
+    struct open_file *of;
+    struct adios_nssi_filter_data_struct *md=NULL;
 
+    if (DEBUG>3) printf("rank(%d) enter adios_nssi_filter_end_iteration\n", global_rank);
 
-    /*
-     * call sub_method
-     */
-    if (   submethod->m != ADIOS_METHOD_UNKNOWN
-        && submethod->m != ADIOS_METHOD_NULL
-        && adios_transports[submethod->m].adios_end_iteration_fn
-       )
-    {
-        adios_transports[submethod->m].adios_end_iteration_fn
-                                   (submethod);
+    elmt = list_head(&open_file_list);
+    while(elmt) {
+        of = list_data(elmt);
+        md = of->md;
+
+        /*
+         * call sub_method
+         */
+        if (   md->submethod->m != ADIOS_METHOD_UNKNOWN
+            && md->submethod->m != ADIOS_METHOD_NULL
+            && adios_transports[md->submethod->m].adios_end_iteration_fn
+        )
+        {
+            adios_transports[md->submethod->m].adios_end_iteration_fn
+                                        (md->submethod);
+        }
+
+        elmt = list_next(elmt);
     }
+
+    if (DEBUG>3) printf("rank(%d) exit adios_nssi_filter_end_iteration\n", global_rank);
 
     return;
 }
@@ -1255,18 +1042,30 @@ void adios_nssi_filter_stop_calculation(
     int remote_rc=NSSI_OK;
     int myrank;
 
+    ListElmt *elmt;
+    struct open_file *of;
+    struct adios_nssi_filter_data_struct *md=NULL;
+
     if (DEBUG>3) printf("rank(%d) enter adios_nssi_filter_stop_calc\n", global_rank);
 
-    /*
-     * call sub_method
-     */
-    if (   submethod->m != ADIOS_METHOD_UNKNOWN
-        && submethod->m != ADIOS_METHOD_NULL
-        && adios_transports[submethod->m].adios_stop_calculation_fn
-       )
-    {
-        adios_transports[submethod->m].adios_stop_calculation_fn
-                                   (submethod);
+    elmt = list_head(&open_file_list);
+    while(elmt) {
+        of = list_data(elmt);
+        md = of->md;
+
+        /*
+         * call sub_method
+         */
+        if (   md->submethod->m != ADIOS_METHOD_UNKNOWN
+            && md->submethod->m != ADIOS_METHOD_NULL
+            && adios_transports[md->submethod->m].adios_stop_calculation_fn
+        )
+        {
+            adios_transports[md->submethod->m].adios_stop_calculation_fn
+                                        (md->submethod);
+        }
+
+        elmt = list_next(elmt);
     }
 
     if (DEBUG>3) printf("rank(%d) exit adios_nssi_filter_stop_calc\n", global_rank);
@@ -1289,7 +1088,7 @@ void adios_nssi_filter_write(
 
     of=open_file_find(method->base_path, f->name);
     if (of == NULL) {
-        fprintf(stderr, "file is not open.  FAIL.");
+        fprintf(stderr, "nssi_filter_write: file(%s, %s) is not open.  FAIL.", method->base_path, f->name);
         return;
     }
     md=of->md;
@@ -1297,13 +1096,13 @@ void adios_nssi_filter_write(
     /*
      * call sub_method
      */
-    if (   submethod->m != ADIOS_METHOD_UNKNOWN
-        && submethod->m != ADIOS_METHOD_NULL
-        && adios_transports[submethod->m].adios_write_fn
+    if (   md->submethod->m != ADIOS_METHOD_UNKNOWN
+        && md->submethod->m != ADIOS_METHOD_NULL
+        && adios_transports[md->submethod->m].adios_write_fn
        )
     {
-        adios_transports[submethod->m].adios_write_fn
-                                   (f, v, data, submethod);
+        adios_transports[md->submethod->m].adios_write_fn
+                                   (f, v, data, md->submethod);
     }
 
 
@@ -1351,7 +1150,7 @@ void adios_nssi_filter_read(
 
     of=open_file_find(method->base_path, f->name);
     if (of == NULL) {
-        fprintf(stderr, "file is not open.  FAIL.");
+        fprintf(stderr, "nssi_filter_read: file(%s, %s) is not open.  FAIL.", method->base_path, f->name);
         return;
     }
     md=of->md;
@@ -1359,13 +1158,13 @@ void adios_nssi_filter_read(
     /*
      * call sub_method
      */
-    if (   submethod->m != ADIOS_METHOD_UNKNOWN
-        && submethod->m != ADIOS_METHOD_NULL
-        && adios_transports[submethod->m].adios_read_fn
+    if (   md->submethod->m != ADIOS_METHOD_UNKNOWN
+        && md->submethod->m != ADIOS_METHOD_NULL
+        && adios_transports[md->submethod->m].adios_read_fn
        )
     {
-        adios_transports[submethod->m].adios_read_fn
-                                   (f, v, buffer, buffersize, submethod);
+        adios_transports[md->submethod->m].adios_read_fn
+                                   (f, v, buffer, buffersize, md->submethod);
     }
 
 
@@ -1406,7 +1205,7 @@ void adios_nssi_filter_close(
 
     of=open_file_find(method->base_path, f->name);
     if (of == NULL) {
-        fprintf(stderr, "file is not open.  FAIL.");
+        fprintf(stderr, "nssi_filter_close: file(%s, %s) is not open.  FAIL.", method->base_path, f->name);
         return;
     }
     md=of->md;
@@ -1417,13 +1216,13 @@ void adios_nssi_filter_close(
     /*
      * call sub_method
      */
-    if (   submethod->m != ADIOS_METHOD_UNKNOWN
-        && submethod->m != ADIOS_METHOD_NULL
-        && adios_transports[submethod->m].adios_close_fn
+    if (   md->submethod->m != ADIOS_METHOD_UNKNOWN
+        && md->submethod->m != ADIOS_METHOD_NULL
+        && adios_transports[md->submethod->m].adios_close_fn
        )
     {
-        adios_transports[submethod->m].adios_close_fn
-                                   (f, submethod);
+        adios_transports[md->submethod->m].adios_close_fn
+                                   (f, md->submethod);
     }
 
     if (f->mode == adios_mode_read) {
@@ -1448,12 +1247,30 @@ void adios_nssi_filter_close(
         }
     }
 
-    open_file_delete(method->base_path, f->name);
+//    struct adios_group_struct *group_clone=f->group;
+//    if (group_clone) {
+//        while (group_clone->vars)
+//        {
+//            struct adios_var_struct *vars = group_clone->vars->next;
+//            free (group_clone->vars);
+//            group_clone->vars = vars;
+//        }
+//
+//        while (group_clone->attributes)
+//        {
+//            struct adios_attribute_struct * attributes = group_clone->attributes->next;
+//            free (group_clone->attributes);
+//            group_clone->attributes = attributes;
+//        }
+//
+//        free(group_clone);
+//        f->group=NULL;
+//    }
 
-    md->group_comm = MPI_COMM_NULL;
-    md->fd = -1;
-    md->rank = -1;
-    md->size = 0;
+    open_file_delete(method->base_path, f->name);
+    free(md);
+    of=NULL;
+    md=NULL;
 
     if (DEBUG>3) printf("global_rank(%d) exit adios_nssi_filter_close\n", global_rank);
 
@@ -1467,18 +1284,30 @@ void adios_nssi_filter_finalize(
     int rc=NSSI_OK;
     int myrank;
 
+    ListElmt *elmt;
+    struct open_file *of;
+    struct adios_nssi_filter_data_struct *md=NULL;
+
     if (DEBUG>3) printf("rank(%d) enter adios_nssi_filter_finalize\n", global_rank);
 
-    /*
-     * call sub_method
-     */
-    if (   submethod->m != ADIOS_METHOD_UNKNOWN
-        && submethod->m != ADIOS_METHOD_NULL
-        && adios_transports[submethod->m].adios_finalize_fn
-       )
-    {
-        adios_transports[submethod->m].adios_finalize_fn
-                                   (mype, submethod);
+    elmt = list_head(&open_file_list);
+    while(elmt) {
+        of = list_data(elmt);
+        md = of->md;
+
+        /*
+         * call sub_method
+         */
+        if (   md->submethod->m != ADIOS_METHOD_UNKNOWN
+            && md->submethod->m != ADIOS_METHOD_NULL
+            && adios_transports[md->submethod->m].adios_finalize_fn
+        )
+        {
+            adios_transports[md->submethod->m].adios_finalize_fn
+                                        (mype, md->submethod);
+        }
+
+        elmt = list_next(elmt);
     }
 
     free_nssi_config(&nssi_cfg);
@@ -1487,6 +1316,8 @@ void adios_nssi_filter_finalize(
         adios_nssi_filter_initialized = 0;
         self=NULL;
     }
+
+    if (DEBUG>3) printf("rank(%d) exit adios_nssi_filter_finalize\n", global_rank);
 }
 
 
@@ -1508,7 +1339,7 @@ int adios_nssi_filter_is_anon_dim(
 
     of=open_file_find(self->base_path, f->name);
     if (of == NULL) {
-        fprintf(stderr, "file is not open.  FAIL.\n");
+        fprintf(stderr, "nssi_filter_is_anon: file(%s, %s) is not open.  FAIL.", self->base_path, f->name);
         return FALSE;
     }
     md=of->md;
@@ -1538,7 +1369,7 @@ void adios_nssi_filter_set_anon_dim(
 
     of=open_file_find(self->base_path, f->name);
     if (of == NULL) {
-        fprintf(stderr, "file is not open.  FAIL.\n");
+        fprintf(stderr, "nssi_filter_set_anon: file(%s, %s) is not open.  FAIL.", self->base_path, f->name);
         return;
     }
     md=of->md;
@@ -1553,5 +1384,3 @@ void adios_nssi_filter_set_anon_dim(
 
     return;
 }
-
-#endif
