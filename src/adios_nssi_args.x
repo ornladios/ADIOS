@@ -64,9 +64,10 @@ const ADIOS_DIM_MAX = 16;
  * Argument structure for adios_open
  */
 struct adios_open_args {
-    string gname<ADIOS_PATH_MAX>;
-    string fname<ADIOS_PATH_MAX>;
+    string          gname<ADIOS_PATH_MAX>;
+    string          fname<ADIOS_PATH_MAX>;
     adios_open_mode mode;
+    int8_t          use_single_server;
 };
 
 /**
@@ -88,7 +89,7 @@ struct adios_group_size_args {
  * Marshaled arguments for adios_read
  */
 struct adios_read_args {
-    int64_t fd;
+    int64_t  fd;
     string   vpath<ADIOS_PATH_MAX>;
     string   vname<ADIOS_PATH_MAX>;
     uint64_t max_read;
@@ -112,7 +113,7 @@ struct adios_var {
     string   vname<ADIOS_PATH_MAX>;
 };
 struct adios_write_args {
-    int64_t fd;
+    int64_t  fd;
     string   vpath<ADIOS_PATH_MAX>;
     string   vname<ADIOS_PATH_MAX>;
     uint64_t vsize;
@@ -134,21 +135,21 @@ struct adios_write_res {
  * Marshalled arguments for adios_end_iteration
  */
 struct adios_end_iter_args {
-    int64_t  fd;
+    int64_t fd;
 };
 
 /**
  * Marshalled arguments for adios_start_calculation
  */
 struct adios_start_calc_args {
-    int64_t  fd;
+    int64_t fd;
 };
 
 /**
  * Marshalled arguments for adios_stop_calculation
  */
 struct adios_stop_calc_args {
-    int64_t  fd;
+    int64_t fd;
 };
 
 /**
