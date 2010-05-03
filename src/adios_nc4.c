@@ -21,6 +21,9 @@
 #ifdef HAVE_NETCDF
 #include "netcdf.h"
 #endif
+#ifdef HAVE_NSSI
+#include "adios_nssi_args.h"
+#endif
 
 #include "io_timer.h"
 
@@ -47,53 +50,6 @@ void adios_nc4_get_write_buffer(
         struct adios_method_struct *method)
 {
 }
-
-
-#ifndef HAVE_NETCDF
-void adios_nc4_init(
-        const char *parameters,
-        struct adios_method_struct * method)
-{
-}
-void adios_nc4_finalize(
-        int mype,
-        struct adios_method_struct * method)
-{
-}
-enum ADIOS_FLAG adios_nc4_should_buffer(
-        struct adios_file_struct *fd,
-        struct adios_method_struct *method)
-{
-    return adios_flag_unknown;
-}
-int adios_nc4_open(
-        struct adios_file_struct *fd,
-        struct adios_method_struct *method,
-        void * comm)
-{
-    return -1;
-}
-void adios_nc4_close(
-        struct adios_file_struct *fd,
-        struct adios_method_struct *method)
-{
-}
-void adios_nc4_write(
-        struct adios_file_struct *fd,
-        struct adios_var_struct *v,
-        void *data,
-        struct adios_method_struct *method)
-{
-}
-void adios_nc4_read(
-        struct adios_file_struct *fd,
-        struct adios_var_struct *v,
-        void *buffer,
-        uint64_t buffersize,
-        struct adios_method_struct *method)
-{
-}
-#else
 
 typedef struct {
     struct adios_dimension_struct *dims;
@@ -134,6 +90,7 @@ typedef struct {
 } deciphered_dims_t;
 struct adios_nc4_data_struct
 {
+    int      fd;
     int      ncid;
     int      root_ncid;
     MPI_Comm group_comm;
@@ -144,8 +101,21 @@ struct adios_nc4_data_struct
 };
 
 
+/* Need a struct to encapsulate open file info
+ */
+struct open_file {
+    char                           fpath[ADIOS_PATH_MAX];
+    char                           fname[ADIOS_PATH_MAX];
+    struct adios_nc4_data_struct *md;
+    struct adios_file_struct      *f;
+};
+
+/* list of variable offsets */
+static List open_file_list;
+
+
 static int global_rank=-1;
-static int DEBUG=3;
+static int DEBUG=0;
 
 
 
@@ -166,6 +136,96 @@ int getNC4TypeId(
         enum ADIOS_DATATYPES type,
         int *nc4_type_id,
         enum ADIOS_FLAG fortran_flag);
+
+
+
+
+static struct open_file *open_file_create(
+        const char *path,
+        const char *name,
+        struct adios_nc4_data_struct *method_private_data,
+        struct adios_file_struct *f)
+{
+    struct open_file *of=calloc(1,sizeof(struct open_file));
+
+    strcpy(of->fpath, path);
+    strcpy(of->fname, name);
+    of->md = method_private_data;
+    of->f = f;
+
+
+    return(of);
+}
+static void open_file_free(void *of)
+{
+    free(of);
+}
+static int open_file_equal(const struct open_file *of1, const struct open_file *of2)
+{
+    if ((strcmp(of1->fpath, of2->fpath) == 0) && (strcmp(of1->fname, of2->fname) == 0)) return TRUE;
+
+    return FALSE;
+}
+static struct open_file *open_file_find(const char *path, const char *name)
+{
+    ListElmt *elmt;
+    struct open_file *of;
+
+    if (DEBUG>3) printf("looking for fpath(%s) fname(%s)\n", path, name);
+
+    elmt = list_head(&open_file_list);
+    while(elmt) {
+        of = list_data(elmt);
+        if (DEBUG>3) printf("comparing to fpath(%s) fname(%s)\n", of->fpath, of->fname);
+        if ((strcmp(path, of->fpath) == 0) && (strcmp(name, of->fname) == 0)) {
+            if (DEBUG>3) printf("fpath(%s) fname(%s) ncid(%d) matches search\n", of->fpath, of->fname, of->md->ncid);
+            return of;
+        }
+        elmt = list_next(elmt);
+    }
+
+    return NULL;
+}
+static struct open_file *open_file_delete(const char *path, const char *name)
+{
+    ListElmt *elmt, *prev;
+    struct open_file *of;
+
+    if (DEBUG>3) printf("trying to delete fpath(%s) fname(%s)\n", path, name);
+
+    prev = elmt = list_head(&open_file_list);
+    while(elmt) {
+        of = list_data(elmt);
+        if (DEBUG>3) printf("comparing to fpath(%s) fname(%s)\n", of->fpath, of->fname);
+        if ((strcmp(path, of->fpath) == 0) && (strcmp(name, of->fname) == 0)) {
+            if (DEBUG>3) printf("fpath(%s) fname(%s) matches search\n", of->fpath, of->fname);
+            if (list_is_head(&open_file_list, elmt)) {
+                list_rem_next(&open_file_list, NULL, &of);
+            } else {
+                list_rem_next(&open_file_list, prev, &of);
+            }
+        }
+        prev = elmt;
+        elmt = list_next(elmt);
+    }
+
+    return NULL;
+}
+static void open_file_printall(void)
+{
+    ListElmt *elmt;
+    struct open_file *of;
+
+    elmt = list_head(&open_file_list);
+    while(elmt) {
+        of = list_data(elmt);
+        if (DEBUG>3) printf("fpath(%s) fname(%s) ncid(%d)\n", of->fpath, of->fname, of->md->ncid);
+        elmt = list_next(elmt);
+    }
+}
+
+
+
 
 
 static void parse_dimension_size(
@@ -1252,40 +1312,61 @@ void adios_nc4_init(
         const char *parameters,
         struct adios_method_struct *method)
 {
-    struct adios_nc4_data_struct *md = (struct adios_nc4_data_struct *)method->method_data;
+    struct adios_nc4_data_struct *md=NULL;
+//    struct adios_nc4_data_struct *md = (struct adios_nc4_data_struct *)method->method_data;
+
     if (!adios_nc4_initialized) {
         adios_nc4_initialized = 1;
+
+        MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
+
+        list_init(&open_file_list, open_file_free);
     }
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
 
-    method->method_data = malloc(sizeof(struct adios_nc4_data_struct));
-    md = (struct adios_nc4_data_struct *)method->method_data;
-    md->ncid       = -1;
-    md->root_ncid  = -1;
-    md->rank       = -1;
-    md->size       = 0;
-    md->group_comm = MPI_COMM_NULL;
+//    method->method_data = malloc(sizeof(struct adios_nc4_data_struct));
+//    md = (struct adios_nc4_data_struct *)method->method_data;
+//    md->ncid       = -1;
+//    md->root_ncid  = -1;
+//    md->rank       = -1;
+//    md->size       = 0;
+//    md->group_comm = MPI_COMM_NULL;
 }
+
 enum ADIOS_FLAG adios_nc4_should_buffer(
         struct adios_file_struct *fd,
         struct adios_method_struct *method)
 {
     int rc=NC_NOERR;
 
-    struct adios_nc4_data_struct *md = (struct adios_nc4_data_struct *)method->method_data;
+    struct open_file *of=NULL;
+    struct adios_nc4_data_struct *md=NULL;
+//    struct adios_nc4_data_struct *md = (struct adios_nc4_data_struct *)method->method_data;
     char *name;
     MPI_Info info = MPI_INFO_NULL;
 
+    if (DEBUG>3) printf("enter adios_nc4_should_buffer (%s)\n", fd->name);
+
+    of=open_file_find(method->base_path, fd->name);
+    if (of == NULL) {
+        fprintf(stderr, "file(%s, %s) is not open.  FAIL.\n", method->base_path, fd->name);
+        return adios_flag_no;
+    }
+    md=of->md;
+
+
     if (md->ncid != -1) {
         // file already open
+        if (DEBUG>3) printf("adios_nc4_should_buffer: file is already open (fname=%s, ncid=%d)\n", fd->name, md->ncid);
         return adios_flag_no;
     }
 
     adios_var_to_comm_nc4(fd->group->adios_host_language_fortran, md->comm, &md->group_comm);
     if (md->group_comm != MPI_COMM_NULL) {
+        if (DEBUG>3) printf("global_rank(%d): adios_nc4_should_buffer: get rank and size: comm(%p) group_comm(%p)\n", global_rank, md->comm, md->group_comm);
         MPI_Comm_rank(md->group_comm, &md->rank);
         MPI_Comm_size(md->group_comm, &md->size);
+        if (DEBUG>3) printf("global_rank(%d): adios_nc4_should_buffer: size(%d) rank(%d)\n", global_rank, md->size, md->rank);
     } else {
         md->group_comm=MPI_COMM_SELF;
     }
@@ -1345,11 +1426,44 @@ int adios_nc4_open(
         struct adios_method_struct *method,
         void *comm)
 {
-    struct adios_nc4_data_struct * md = (struct adios_nc4_data_struct *)method->method_data;
+    struct open_file *of=NULL;
+    struct adios_nc4_data_struct *md=NULL;
+//    struct adios_nc4_data_struct * md = (struct adios_nc4_data_struct *)method->method_data;
 
     if (DEBUG>3) printf("enter adios_nc4_open (%s)\n", fd->name);
 
-    md->comm = comm;
+    of=open_file_find(method->base_path, fd->name);
+    if (of == NULL) {
+        md             = malloc(sizeof(struct adios_nc4_data_struct));
+        md->fd         = -1;
+        md->ncid       = -1;
+        md->root_ncid  = -1;
+        md->rank       = -1;
+        md->size       = 0;
+        md->group_comm = MPI_COMM_NULL;
+        md->comm       = comm;
+
+        of=open_file_create(method->base_path, fd->name, md, fd);
+    } else {
+        md=of->md;
+
+        // sanity check
+        if (md->fd == -1) {
+            if (DEBUG>3) printf("open: %s is open but fd==-1.  sanity check failed.  attempting reopen.\n", fd->name);
+            open_file_delete(of->fpath, of->fname);
+        } else {
+            // file already open
+            return adios_flag_no;
+        }
+    }
+
+
+    if (DEBUG>3) printf("open: fname=%s; fd==%p; ncid=%d\n", fd->name, md->fd, md->ncid);
+
+    list_ins_next(&open_file_list, list_tail(&open_file_list), of);
+
+    open_file_printall();
+
 
     return 1;
 }
@@ -1360,8 +1474,17 @@ void adios_nc4_write(
         void *data,
         struct adios_method_struct *method)
 {
-    struct adios_nc4_data_struct * md = (struct adios_nc4_data_struct *)method->method_data;
+    struct open_file *of=NULL;
+    struct adios_nc4_data_struct *md=NULL;
+//    struct adios_nc4_data_struct * md = (struct adios_nc4_data_struct *)method->method_data;
     static int first_write = 1;
+
+    of=open_file_find(method->base_path, fd->name);
+    if (of == NULL) {
+        fprintf(stderr, "file(%s, %s) is not open.  FAIL.\n", method->base_path, fd->name);
+        return;
+    }
+    md=of->md;
 
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append) {
 //		if (first_write == 1) {
@@ -1398,7 +1521,17 @@ void adios_nc4_read(
         uint64_t buffersize,
         struct adios_method_struct *method)
 {
-    struct adios_nc4_data_struct * md = (struct adios_nc4_data_struct *)method->method_data;
+    struct open_file *of=NULL;
+    struct adios_nc4_data_struct *md=NULL;
+//    struct adios_nc4_data_struct * md = (struct adios_nc4_data_struct *)method->method_data;
+
+    of=open_file_find(method->base_path, fd->name);
+    if (of == NULL) {
+        fprintf(stderr, "file(%s, %s) is not open.  FAIL.\n", method->base_path, fd->name);
+        return;
+    }
+    md=of->md;
+
     if(fd->mode == adios_mode_read) {
         v->data = buffer;
         v->data_size = buffersize;
@@ -1437,9 +1570,19 @@ void adios_nc4_close(
         struct adios_file_struct *fd,
         struct adios_method_struct *method)
 {
-    struct adios_nc4_data_struct * md = (struct adios_nc4_data_struct*)method->method_data;
+    struct open_file *of=NULL;
+    struct adios_nc4_data_struct *md=NULL;
+//    struct adios_nc4_data_struct * md = (struct adios_nc4_data_struct*)method->method_data;
     struct adios_attribute_struct * a = fd->group->attributes;
-    int myrank=md->rank;
+    int myrank;
+
+    of=open_file_find(method->base_path, fd->name);
+    if (of == NULL) {
+        fprintf(stderr, "file(%s, %s) is not open.  FAIL.\n", method->base_path, fd->name);
+        return;
+    }
+    md=of->md;
+    myrank=md->rank;
 
     if (fd->mode == adios_mode_read) {
         struct adios_var_struct * v = fd->group->vars;
@@ -1450,9 +1593,9 @@ void adios_nc4_close(
         }
 
         if (md->rank==0) {
-            fprintf(stderr, "-------------------------\n");
-            fprintf(stderr, "reading done, nc4 file is virtually closed;\n");
-            fprintf(stderr, "-------------------------\n");
+            if (DEBUG>1) fprintf(stderr, "-------------------------\n");
+            if (DEBUG>1) fprintf(stderr, "reading done, nc4 file is virtually closed;\n");
+            if (DEBUG>1) fprintf(stderr, "-------------------------\n");
         }
     } else if (fd->mode == adios_mode_write || fd->mode == adios_mode_append) {
         if (DEBUG>3) fprintf(stderr, "entering nc4 write attribute mode!\n");
@@ -1464,28 +1607,25 @@ void adios_nc4_close(
             a = a->next;
         }
         if (md->rank==0) {
-            fprintf(stderr, "-------------------------\n");
-            fprintf(stderr, "writing done, nc4 file is virtually closed;\n");
-            fprintf(stderr, "-------------------------\n");
+            if (DEBUG>1) fprintf(stderr, "-------------------------\n");
+            if (DEBUG>1) fprintf(stderr, "writing done, nc4 file is virtually closed;\n");
+            if (DEBUG>1) fprintf(stderr, "-------------------------\n");
         }
     }
 
     Func_Timer("nc_sync", nc_sync(md->ncid););
     Func_Timer("nc_close", nc_close(md->ncid););
 
-    md->group_comm = MPI_COMM_NULL;
-    md->ncid = -1;
-    md->root_ncid = -1;
-    md->rank = -1;
-    md->size = 0;
+    free(of->md);
+    open_file_delete(method->base_path, fd->name);
 }
 
 void adios_nc4_finalize(
         int mype,
         struct adios_method_struct *method)
 {
-    struct adios_nc4_data_struct * md = (struct adios_nc4_data_struct*)method->method_data;
-    int myrank=md->rank;
+//    struct adios_nc4_data_struct * md = (struct adios_nc4_data_struct*)method->method_data;
+//    int myrank=md->rank;
 
 //    if (md) {
 //        Func_Timer("nc_close", nc_close(md->ncid););
@@ -1644,5 +1784,3 @@ int ncd_gen_name(
     if (DEBUG>3) printf("fullname==%s\n", fullname);
     return 0;
 }
-
-#endif
