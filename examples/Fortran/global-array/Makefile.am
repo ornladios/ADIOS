@@ -10,19 +10,23 @@ adios_global_LDADD = $(top_builddir)/src/libadiosf.a
 adios_global_LDFLAGS = $(MXML_LDFLAGS)
 adios_global_LDADD += $(MXML_LIBS)
 
-if HAVE_NETCDF
-adios_global_LDFLAGS += $(NETCDF_LDFLAGS)
-adios_global_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
-endif
-if HAVE_NSSI
-adios_global_LDFLAGS += $(NSSI_LDFLAGS)
-adios_global_LDADD +=  $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-endif
-
 adios_global_no_xml_SOURCES = adios_global_no_xml.F90
 adios_global_no_xml_LDADD = $(top_builddir)/src/libadiosf.a 
 adios_global_no_xml_LDFLAGS = $(MXML_LDFLAGS)
 adios_global_no_xml_LDADD += $(MXML_LIBS)
+
+if HAVE_NETCDF
+adios_global_LDFLAGS += $(NETCDF_LDFLAGS)
+adios_global_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+adios_global_no_xml_LDFLAGS += $(NETCDF_LDFLAGS)
+adios_global_no_xml_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+endif
+if HAVE_NSSI
+adios_global_LDFLAGS += $(NSSI_LDFLAGS)
+adios_global_LDADD +=  $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+adios_global_no_xml_LDFLAGS += $(NSSI_LDFLAGS)
+adios_global_no_xml_LDADD +=  $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+endif
 
 if HAVE_PHDF5
 adios_global_LDFLAGS += $(PHDF5_LDFLAGS)

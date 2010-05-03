@@ -21,10 +21,14 @@ adios_read_globaltime_LDADD += $(MXML_LIBS)
 if HAVE_NETCDF
 adios_globaltime_LDFLAGS += $(NETCDF_LDFLAGS)
 adios_globaltime_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+adios_globaltime_no_xml_LDFLAGS += $(NETCDF_LDFLAGS)
+adios_globaltime_no_xml_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
 endif
 if HAVE_NSSI
 adios_globaltime_LDFLAGS += $(NSSI_LDFLAGS)
 adios_globaltime_LDADD +=  $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+adios_globaltime_no_xml_LDFLAGS += $(NSSI_LDFLAGS)
+adios_globaltime_no_xml_LDADD +=  $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 endif
 if HAVE_PHDF5
 adios_globaltime_LDFLAGS += $(PHDF5_LDFLAGS)
