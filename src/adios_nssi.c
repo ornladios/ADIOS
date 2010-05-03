@@ -39,52 +39,6 @@ void adios_nssi_get_write_buffer(
 {
 }
 
-#ifndef HAVE_NSSI
-void adios_nssi_init(
-        const char *parameters,
-        struct adios_method_struct * method)
-{
-}
-void adios_nssi_finalize(
-        int mype,
-        struct adios_method_struct * method)
-{
-}
-enum ADIOS_FLAG adios_nssi_should_buffer(
-        struct adios_file_struct *f,
-        struct adios_method_struct *method)
-{
-    return adios_flag_unknown;
-}
-int adios_nssi_open(
-        struct adios_file_struct *f,
-        struct adios_method_struct *method,
-        void * comm)
-{
-    return -1;
-}
-void adios_nssi_close(
-        struct adios_file_struct *f,
-        struct adios_method_struct *method)
-{
-}
-void adios_nssi_write(
-        struct adios_file_struct *f,
-        struct adios_var_struct *v,
-        void *data,
-        struct adios_method_struct *method)
-{
-}
-void adios_nssi_read(
-        struct adios_file_struct *f,
-        struct adios_var_struct *v,
-        void *buffer,
-        uint64_t buffersize,
-        struct adios_method_struct *method)
-{
-}
-#else
-
 ///////////////////////////
 // Datatypes
 ///////////////////////////
@@ -92,10 +46,17 @@ struct adios_nssi_file_data_struct
 {
     int      fd;
     MPI_Comm group_comm;
-    int      rank;
     int      size;
+    int      rank;
 
     void * comm; // temporary until moved from should_buffer to open
+
+    int      svc_index;
+    MPI_Comm collective_op_comm;
+    int      collective_op_size;
+    int      collective_op_rank;
+
+    int8_t use_single_server;
 };
 
 struct adios_nssi_method_data_struct
@@ -115,7 +76,7 @@ struct var_offset {
 };
 
 /* list of variable offsets */
-List var_offset_list;
+static List var_offset_list;
 
 /* Need a struct to encapsulate var dim info.
  */
@@ -128,7 +89,7 @@ struct var_dim {
 };
 
 /* list of variable offsets */
-List var_dim_list;
+static List var_dim_list;
 
 /* Need a struct to encapsulate open file info
  */
@@ -143,23 +104,20 @@ struct open_file {
 };
 
 /* list of variable offsets */
-List open_file_list;
+static List open_file_list;
 
 ///////////////////////////
 // Global Variables
 ///////////////////////////
 static int adios_nssi_initialized = 0;
 
-static int default_svc;
-static MPI_Comm ncmpi_collective_op_comm;
 static int global_rank=-1;
-static int collective_op_size=-1;
-static int collective_op_rank=-1;
+static int global_size=-1;
 static nssi_service *svcs;
 struct adios_nssi_config nssi_cfg;
 
 //static log_level adios_nssi_debug_level;
-static int DEBUG=3;
+static int DEBUG=0;
 
 
 ///////////////////////////
@@ -655,11 +613,8 @@ static void create_dim_list_for_var(
 }
 
 static int read_var(
-        int fd,
-        struct adios_var_struct *pvar,
-        int myrank,
-        int nproc,
-        MPI_Comm group_comm)
+        struct adios_nssi_file_data_struct *file_data,
+        struct adios_var_struct *pvar)
 {
     int return_code=0;
     int i, rc;
@@ -667,13 +622,13 @@ static int read_var(
     adios_read_args args;
     adios_read_res  res;
 
-    args.fd       = fd;
+    args.fd       = file_data->fd;
     args.max_read = pvar->data_size;
     args.vpath = strdup(pvar->path);
     args.vname = strdup(pvar->name);
 
     Func_Timer("ADIOS_READ_OP",
-            rc = nssi_call_rpc_sync(&svcs[default_svc],
+            rc = nssi_call_rpc_sync(&svcs[file_data->svc_index],
             ADIOS_READ_OP,
             &args,
             pvar->data,
@@ -690,16 +645,13 @@ static int read_var(
     return return_code;
 }
 static int write_var(
-        int fd,
+        struct adios_nssi_file_data_struct *file_data,
         struct adios_group_struct *group,
         struct adios_var_struct *pvar_root,
         struct adios_attribute_struct *patt_root,
         struct adios_var_struct *pvar,
         uint64_t var_size,
-        enum ADIOS_FLAG fortran_flag,
-        int myrank,
-        int nproc,
-        MPI_Comm group_comm)
+        enum ADIOS_FLAG fortran_flag)
 {
     int i;
     int rc;
@@ -711,7 +663,7 @@ static int write_var(
 //    var_offset_printall();
 
     memset(&args, 0, sizeof(adios_write_args));
-    args.fd    = fd;
+    args.fd    = file_data->fd;
     args.vpath = strdup(pvar->path);
     args.vname = strdup(pvar->name);
     args.vsize = var_size;
@@ -721,7 +673,7 @@ static int write_var(
     } else {
         args.is_scalar = TRUE;
     }
-    args.writer_rank=myrank;
+    args.writer_rank=file_data->rank;
     args.offsets.offsets_len=0;
     args.offsets.offsets_val=NULL;
     args.dims.dims_len=0;
@@ -742,7 +694,7 @@ static int write_var(
      }
 
     Func_Timer("ADIOS_WRITE_OP",
-            rc = nssi_call_rpc_sync(&svcs[default_svc],
+            rc = nssi_call_rpc_sync(&svcs[file_data->svc_index],
             ADIOS_WRITE_OP,
             &args,
             pvar->data,
@@ -756,7 +708,7 @@ static int write_var(
     // looking for alternatives to this barrier.
     // if variable writes on the staging server are collective (NC4), then clients must stay in sync.
     // one solution is to cache scalar writes in addition to array writes.
-    MPI_Barrier(group_comm);
+    MPI_Barrier(file_data->group_comm);
 
     free(args.vpath);
     free(args.vname);
@@ -780,7 +732,7 @@ static void adios_var_to_comm_nssi(
         }
     } else {
         fprintf (stderr, "coordination-communication not provided. "
-                "Using file_data->group_comm instead\n");
+                "Using MPI_COMM_WORLD instead\n");
         *comm = MPI_COMM_WORLD;
     }
 
@@ -802,6 +754,7 @@ void adios_nssi_init(
     }
 
     MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &global_size);
 
     if (DEBUG>3) printf("rank(%d) enter adios_nssi_init\n", global_rank);
 
@@ -855,6 +808,8 @@ enum ADIOS_FLAG adios_nssi_should_buffer(
     struct open_file *of=NULL;
     struct adios_nssi_file_data_struct *file_data=NULL;
 
+    uint64_t max_data_size=0;
+
     of=open_file_find(method->base_path, f->name);
     if (of == NULL) {
         fprintf(stderr, "file is not open.  FAIL.");
@@ -862,14 +817,24 @@ enum ADIOS_FLAG adios_nssi_should_buffer(
     }
     file_data=of->file_data;
 
-    if (DEBUG>3) printf("rank(%d) enter adios_nssi_should_buffer\n", global_rank);
+    if (DEBUG>3) printf("rank(%d) enter adios_nssi_should_buffer (write_size_bytes=%lu)\n", global_rank, f->write_size_bytes);
 
     args.fd = file_data->fd;
-    args.data_size = f->write_size_bytes*collective_op_size;
+    MPI_Reduce(
+            &f->write_size_bytes,
+            &max_data_size,
+            1,
+            MPI_UNSIGNED_LONG,
+            MPI_MAX,
+            0,
+            file_data->collective_op_comm);
+    if (file_data->collective_op_rank == 0) {
+        if (DEBUG > 3) printf("max_data_size==%lu\n", max_data_size);
+        args.data_size = max_data_size*file_data->collective_op_size;
+        if (DEBUG > 3) printf("args.data_size==%lu\n", args.data_size);
 
-    if (collective_op_rank == 0) {
         Func_Timer("ADIOS_GROUP_SIZE_OP",
-                rc = nssi_call_rpc_sync(&svcs[default_svc],
+                rc = nssi_call_rpc_sync(&svcs[file_data->svc_index],
                         ADIOS_GROUP_SIZE_OP,
                         &args,
                         NULL,
@@ -905,9 +870,18 @@ int adios_nssi_open(
     if (of == NULL) {
         file_data             = malloc(sizeof(struct adios_nssi_file_data_struct));
         file_data->fd         = -1;
-        file_data->rank       = -1;
-        file_data->size       = 0;
         file_data->group_comm = MPI_COMM_NULL;
+        file_data->size       = 0;
+        file_data->rank       = -1;
+
+        file_data->comm = NULL;
+
+        file_data->svc_index=-1;
+        file_data->collective_op_comm=MPI_COMM_NULL;
+        file_data->collective_op_size=0;
+        file_data->collective_op_rank=-1;
+
+        file_data->use_single_server=FALSE;
 
         of=open_file_create(method->base_path, f->name, file_data);
     } else {
@@ -930,45 +904,55 @@ int adios_nssi_open(
         if (DEBUG>3) printf("global_rank(%d): adios_nssi_open: get rank and size\n", global_rank);
         MPI_Comm_rank(file_data->group_comm, &file_data->rank);
         MPI_Comm_size(file_data->group_comm, &file_data->size);
+        if (DEBUG>3) printf("global_rank(%d): adios_nssi_open: size(%d) rank(%d)\n", global_rank, file_data->size, file_data->rank);
     } else {
         file_data->group_comm=MPI_COMM_SELF;
     }
     f->group->process_id = file_data->rank;
 
     if (file_data->size <= nssi_cfg.num_servers) {
-        default_svc = file_data->rank;
-    } else {
-        if ((file_data->size%nssi_cfg.num_servers) > 0) {
-            default_svc = file_data->rank/((file_data->size/nssi_cfg.num_servers)+1);
+        // there are fewer clients than servers.
+        // assume file-per-process and use a single server for this file.
+        file_data->use_single_server=TRUE;
+        if (file_data->size < global_size) {
+            // a subset of all clients is writing
+            file_data->svc_index = ((global_rank/file_data->size)%nssi_cfg.num_servers);
         } else {
-            default_svc = file_data->rank/(file_data->size/nssi_cfg.num_servers);
+            file_data->svc_index = 0;
+        }
+    } else {
+        file_data->use_single_server=FALSE;
+        if ((file_data->size%nssi_cfg.num_servers) > 0) {
+            file_data->svc_index = file_data->rank/((file_data->size/nssi_cfg.num_servers)+1);
+        } else {
+            file_data->svc_index = file_data->rank/(file_data->size/nssi_cfg.num_servers);
         }
     }
 
     /* create a new communicator for just those clients, who share a default service. */
     if (DEBUG>3) printf("global_rank(%d): adios_nssi_open: before MPI_Comm_split\n", global_rank);
-    MPI_Comm_split(file_data->group_comm, default_svc, file_data->rank, &ncmpi_collective_op_comm);
+    MPI_Comm_split(file_data->group_comm, file_data->svc_index, file_data->rank, &file_data->collective_op_comm);
     if (DEBUG>3) printf("global_rank(%d): adios_nssi_open: after MPI_Comm_split\n", global_rank);
     /* find my rank in the new communicator */
     if (DEBUG>3) printf("global_rank(%d): adios_nssi_open: before MPI_Comm_size\n", global_rank);
-    MPI_Comm_size(ncmpi_collective_op_comm, &collective_op_size);
+    MPI_Comm_size(file_data->collective_op_comm, &file_data->collective_op_size);
     if (DEBUG>3) printf("global_rank(%d): adios_nssi_open: before MPI_Comm_rank\n", global_rank);
-    MPI_Comm_rank(ncmpi_collective_op_comm, &collective_op_rank);
+    MPI_Comm_rank(file_data->collective_op_comm, &file_data->collective_op_rank);
 
-    if (DEBUG>3) printf("global_rank(%d) collective_op_rank(%d) default_service(%d)\n", file_data->rank, collective_op_rank, default_svc);
+    if (DEBUG>3) printf("global_rank(%d) file_data->rank(%d) file_data->collective_op_rank(%d) default_service(%d)\n", global_rank, file_data->rank, file_data->collective_op_rank, file_data->svc_index);
 
     svcs=(nssi_service *)calloc(nssi_cfg.num_servers, sizeof(nssi_service));
     /* !global_rank0 has a preferred server for data transfers.  connect to preferred server.
      * connect to other servers on-demand.
      */
     double GetSvcTime=MPI_Wtime();
-    if (DEBUG>3) printf("get staging-service: default_svc(%d) nid(%lld) pid(%llu) hostname(%s) port(%d)\n",
-            default_svc,
-            nssi_cfg.nssi_server_ids[default_svc].nid,
-            nssi_cfg.nssi_server_ids[default_svc].pid,
-            nssi_cfg.nssi_server_ids[default_svc].hostname,
-            nssi_cfg.nssi_server_ids[default_svc].port);
-    rc = nssi_get_service(nssi_cfg.nssi_server_ids[default_svc], -1, &svcs[default_svc]);
+    if (DEBUG>3) printf("get staging-service: file_data->svc_index(%d) nid(%lld) pid(%llu) hostname(%s) port(%d)\n",
+            file_data->svc_index,
+            nssi_cfg.nssi_server_ids[file_data->svc_index].nid,
+            nssi_cfg.nssi_server_ids[file_data->svc_index].pid,
+            nssi_cfg.nssi_server_ids[file_data->svc_index].hostname,
+            nssi_cfg.nssi_server_ids[file_data->svc_index].port);
+    rc = nssi_get_service(nssi_cfg.nssi_server_ids[file_data->svc_index], -1, &svcs[file_data->svc_index]);
     if (rc != NSSI_OK) {
         fprintf(stderr, "NSSI ERROR: nssi_get_service failed\n");
         return;
@@ -1002,9 +986,10 @@ int adios_nssi_open(
             args.mode = ADIOS_MODE_UPDATE;
             break;
     }
+    args.use_single_server=file_data->use_single_server;
 
     Func_Timer("ADIOS_OPEN_OP",
-            rc = nssi_call_rpc_sync(&svcs[default_svc],
+            rc = nssi_call_rpc_sync(&svcs[file_data->svc_index],
             ADIOS_OPEN_OP,
             &args,
             NULL,
@@ -1049,10 +1034,10 @@ void adios_nssi_start_calculation(
         myrank=file_data->rank;
 
         if (of->has_outstanding_req == FALSE) {
-            if (collective_op_rank == 0) {
+            if (file_data->collective_op_rank == 0) {
                 args.fd = file_data->fd;
                 Func_Timer("ADIOS_START_CALC_OP",
-                        rc = nssi_call_rpc(&svcs[default_svc],
+                        rc = nssi_call_rpc(&svcs[file_data->svc_index],
                                 ADIOS_START_CALC_OP,
                                 &args,
                                 NULL,
@@ -1100,10 +1085,10 @@ void adios_nssi_end_iteration(
 //
 //    myrank=file_data->rank;
 //
-//    if (collective_op_rank == 0) {
+//    if (file_data->collective_op_rank == 0) {
 //        args.fd = file_data->fd;
 //        Func_Timer("ADIOS_END_ITER_OP",
-//                rc = nssi_call_rpc_sync(&svcs[default_svc],
+//                rc = nssi_call_rpc_sync(&svcs[file_data->svc_index],
 //                ADIOS_END_ITER_OP,
 //                &args,
 //                NULL,
@@ -1145,7 +1130,7 @@ void adios_nssi_stop_calculation(
 
         if (of->has_outstanding_req == TRUE) {
             // wait for any async writes to finish
-            if (collective_op_rank == 0) {
+            if (file_data->collective_op_rank == 0) {
                 Func_Timer("ADIOS_START_CALC_OP nssi_wait",
                         rc=nssi_wait(&of->start_calc_req, &remote_rc););
                 if (rc != NSSI_OK) {
@@ -1174,10 +1159,10 @@ void adios_nssi_stop_calculation(
         file_data=of->file_data;
         myrank=file_data->rank;
 
-        if (collective_op_rank == 0) {
+        if (file_data->collective_op_rank == 0) {
             args.fd = file_data->fd;
             Func_Timer("ADIOS_STOP_CALC_OP",
-                    rc = nssi_call_rpc_sync(&svcs[default_svc],
+                    rc = nssi_call_rpc_sync(&svcs[file_data->svc_index],
                             ADIOS_STOP_CALC_OP,
                             &args,
                             NULL,
@@ -1223,17 +1208,14 @@ void adios_nssi_write(
             if (DEBUG>3) fprintf(stderr, "write var: %s start!\n", v->name);
         }
         uint64_t var_size = adios_get_var_size (v, f->group, data);
-        if (DEBUG>3) printf("rank (%d) adios_nssi_write: vname(%s) vsize(%ld)\n", global_rank, v->name, var_size);
-        write_var(file_data->fd,
+        if (DEBUG>3) printf("rank (%d) adios_nssi_write: vpath(%s) vname(%s) vsize(%ld)\n", global_rank, v->path, v->name, var_size);
+        write_var(file_data,
                 f->group,
                 f->group->vars,
                 f->group->attributes,
                 v,
                 var_size,
-                f->group->adios_host_language_fortran,
-                file_data->rank,
-                file_data->size,
-                file_data->group_comm);
+                f->group->adios_host_language_fortran);
     } else {
         if (DEBUG>3) fprintf(stderr, "entering unknown nc4 mode %d!\n", f->mode);
     }
@@ -1283,11 +1265,8 @@ void adios_nssi_read(
             if (DEBUG>3) fprintf(stderr, "read var: %s! start\n", v->name);
         }
         if (DEBUG>3) printf("rank (%d) adios_nssi_read: vname(%s) vsize(%ld)\n", global_rank, v->name, v->data_size);
-        read_var(file_data->fd,
-                v,
-                file_data->rank,
-                file_data->size,
-                file_data->group_comm);
+        read_var(file_data,
+                v);
         if (file_data->rank==0) {
             if (DEBUG>3) fprintf(stderr, "read var: %s! end\n", v->name);
             if (DEBUG>3) fprintf(stderr, "-------------------------\n");
@@ -1345,10 +1324,10 @@ void adios_nssi_close(
         }
     }
 
-//    if (collective_op_rank == 0) {
+//    if (file_data->collective_op_rank == 0) {
 //        start_calc_args.fd = file_data->fd;
 //        Func_Timer("ADIOS_START_CALC_OP",
-//                rc = nssi_call_rpc_sync(&svcs[default_svc],
+//                rc = nssi_call_rpc_sync(&svcs[file_data->svc_index],
 //                ADIOS_START_CALC_OP,
 //                &start_calc_args,
 //                NULL,
@@ -1361,13 +1340,13 @@ void adios_nssi_close(
 
 //    // make sure all clients have finsihed I/O before closing
 //    MPI_Barrier(file_data->group_comm);
-    if (collective_op_rank == 0) {
+    if (file_data->collective_op_rank == 0) {
         close_args.fname = malloc(sizeof(char) * (strlen(method->base_path) + strlen(f->name) + 1));
         sprintf(close_args.fname, "%s%s", method->base_path, f->name);
         close_args.fd = file_data->fd;
         if (DEBUG>3) printf("rank(%d) sending ADIOS_CLOSE_OP\n", myrank);
         Func_Timer("ADIOS_CLOSE_OP",
-                rc = nssi_call_rpc_sync(&svcs[default_svc],
+                rc = nssi_call_rpc_sync(&svcs[file_data->svc_index],
                 ADIOS_CLOSE_OP,
                 &close_args,
                 NULL,
@@ -1429,12 +1408,12 @@ void adios_nssi_finalize(
 ////        	req_elmt = list_next(req_elmt);
 ////        }
 //
-//        if (collective_op_rank == 0) {
+//        if (file_data->collective_op_rank == 0) {
 //            close_args.fname = malloc(sizeof(char) * (strlen(of->fpath) + strlen(of->fname) + 1));
 //            sprintf(close_args.fname, "%s%s", of->fpath, of->fname);
 //            close_args.fd = file_data->fd;
 //            Func_Timer("ADIOS_CLOSE_OP",
-//                    rc = nssi_call_rpc_sync(&svcs[default_svc],
+//                    rc = nssi_call_rpc_sync(&svcs[file_data->svc_index],
 //                    ADIOS_CLOSE_OP,
 //                    &close_args,
 //                    NULL,
@@ -1459,5 +1438,3 @@ void adios_nssi_finalize(
     if (adios_nssi_initialized)
         adios_nssi_initialized = 0;
 }
-
-#endif
