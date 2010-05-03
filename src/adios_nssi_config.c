@@ -373,5 +373,8 @@ int parse_nssi_config(const char *config_file, struct adios_nssi_config *config)
 
 void free_nssi_config(struct adios_nssi_config *config)
 {
-    free(config->nssi_server_ids);
+    if (config->nssi_server_ids) {
+        free(config->nssi_server_ids);
+        config->nssi_server_ids=NULL;
+    }
 }
