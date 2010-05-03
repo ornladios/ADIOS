@@ -90,7 +90,7 @@ static pthread_cond_t  open_file_map_cond =PTHREAD_COND_INITIALIZER;
 
 
 static int global_rank=-1;
-static int DEBUG=3;
+static int DEBUG=0;
 
 
 /* -------------------- PRIVATE FUNCTIONS ---------- */
@@ -122,6 +122,9 @@ void open_file_del(char *fname)
 
 
 int grank, gsize;
+
+MPI_Comm comm_self=MPI_COMM_SELF;
+MPI_Comm comm_world=MPI_COMM_WORLD;
 
 
 /**
@@ -233,6 +236,75 @@ void ShowHints(MPI_Info * mpiHints)
     }
 } /* ShowHints() */
 
+
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern int adios_nssi_filter_is_anon_dim(
+        int fd,
+        const char *dimname);
+extern void adios_nssi_filter_set_anon_dim(
+        int fd,
+        const char *dimname,
+        const uint64_t dimvalue);
+
+#ifdef __cplusplus
+}
+#endif
+
+void agg_and_write(const int64_t fd)
+{
+    if (DEBUG>2) printf("myrank(%d): enter agg_and_write(fd=%ld)\n", grank, fd);
+
+    Func_Timer("try_aggregation", try_aggregation(fd););  // aggregate all varids in this file
+
+    int chunk_count=0;
+    aggregation_chunk_details_t **chunks = get_chunks(fd, &chunk_count);
+
+    for (int j=0;j<chunk_count;j++) {
+        aggregation_chunk_details_t *chunk = chunks[j];
+
+        // write all offsets for clients rank to update adios internals
+        for(int i=0;i<chunk->ndims;i++) {
+            uint64_t value=0;
+            if (DEBUG>3) printf("writing myrank(%d) chunk(%d) vpath(%s) vname(%s) opath(%s) oname(%s) odata(%lu)\n",
+                    grank, j, chunk->var_path, chunk->var_name, chunk->offset_path[i], chunk->offset_name[i], chunk->offset[i]);
+            if (adios_nssi_filter_is_anon_dim(chunk->fd, chunk->offset_name[i]) == TRUE) {
+                adios_nssi_filter_set_anon_dim(chunk->fd, chunk->offset_name[i], chunk->offset[i]);
+            } else {
+                Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->offset_path[i], chunk->offset_name[i]););
+                Func_Timer("adios_write", adios_write(chunk->fd, chunk->offset_name[i], &(chunk->offset[i])););
+            }
+        }
+        for(int i=0;i<chunk->ndims;i++) {
+            uint64_t value=0;
+            if (DEBUG>3) printf("writing myrank(%d) chunk(%d) vpath(%s) vname(%s) dpath(%s) dname(%s) ddata(%lu)\n",
+                    grank, j, chunk->var_path, chunk->var_name, chunk->count_path[i], chunk->count_name[i], chunk->count[i]);
+            if (adios_nssi_filter_is_anon_dim(chunk->fd, chunk->count_name[i]) == TRUE) {
+                adios_nssi_filter_set_anon_dim(chunk->fd, chunk->count_name[i], chunk->count[i]);
+            } else {
+                Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->count_path[i], chunk->count_name[i]););
+                Func_Timer("adios_write", adios_write(chunk->fd, chunk->count_name[i], &(chunk->count[i])););
+            }
+        }
+
+        if (DEBUG>3) printf("writing myrank(%d) vname(%s)\n", grank, chunk->var_name);
+        Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->var_path, chunk->var_name););
+        Func_Timer("adios_write", adios_write(chunk->fd, chunk->var_name, chunk->buf););
+
+//        cleanup_aggregation_chunks(fd, chunk->var_name);
+    }
+
+    cleanup_aggregation_chunks(fd);
+
+    if (DEBUG>2) printf("myrank(%d): exit agg_and_write(fd=%ld)\n", grank, fd);
+
+    return;
+}
+
 /* -------------------- SERVER-SIDE STUBS ---------- */
 
 
@@ -257,7 +329,7 @@ int nssi_staging_open_stub(
 
     memset(&res, 0, sizeof(res));
 
-    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_open_stub(%s, %d)\n", grank, args->fname, args->mode);
+    if (DEBUG>2) printf("myrank(%d): enter nssi_staging_open_stub(%s, %d)\n", grank, args->fname, args->mode);
 
 //    SetHints(&mpiHints, "");
 //    ShowHints(&mpiHints);
@@ -285,7 +357,13 @@ int nssi_staging_open_stub(
         }
 
         if (DEBUG>3) printf("start adios_open\n");
-        Func_Timer("adios_open", rc = adios_open(&fd, args->gname, args->fname, omode, NULL););
+        if (args->use_single_server==TRUE) {
+            if (DEBUG>3) printf("adios_open: using MPI_COMM_SELF\n");
+            Func_Timer("adios_open", rc = adios_open(&fd, args->gname, args->fname, omode, &comm_self););
+        } else {
+            if (DEBUG>3) printf("adios_open: using MPI_COMM_WORLD\n");
+            Func_Timer("adios_open", rc = adios_open(&fd, args->gname, args->fname, omode, &comm_world););
+        }
         if (rc != 0) {
             printf("Error opening file \"%s\": %d\n", args->fname, rc);
             goto cleanup;
@@ -297,7 +375,7 @@ int nssi_staging_open_stub(
         add_file(fd, WRITE_CACHING_COLLECTIVE);
     }
 
-    if (DEBUG>3) printf("nssi_staging_open_stub: fd=%ld, fd=%p\n", fd, fd);
+    if (DEBUG>2) printf("myrank(%d): exit nssi_staging_open_stub(%s, %d): fd=%ld, fd=%p\n", grank, args->fname, args->mode, fd, fd);
 
     res.fd=fd;
 
@@ -318,7 +396,7 @@ int nssi_staging_group_size_stub(
     int rc = 0;
     uint64_t total_size=0;
 
-    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_group_size_stub(%ld)\n", grank, args->fd);
+    if (DEBUG>2) printf("myrank(%d): enter nssi_staging_group_size_stub(fd=%ld, pg_size=%ld)\n", grank, args->fd, args->data_size);
 
     Func_Timer("adios_group_size", rc = adios_group_size(args->fd, args->data_size, &total_size););
     if (rc != 0) {
@@ -327,6 +405,8 @@ int nssi_staging_group_size_stub(
 
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
+
+    if (DEBUG>2) printf("myrank(%d): exit nssi_staging_group_size_stub(%ld)\n", grank, args->fd);
 
     return rc;
 }
@@ -340,8 +420,9 @@ int nssi_staging_close_stub(
 {
     int rc = 0;
 
-    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_close_stub(%ld, %s)\n", grank, args->fd, args->fname);
+    if (DEBUG>2) printf("myrank(%d): enter nssi_staging_close_stub(%ld, %s)\n", grank, args->fd, args->fname);
 
+    agg_and_write(args->fd);
 
     Func_Timer("adios_close", adios_close(args->fd););
 
@@ -349,6 +430,8 @@ int nssi_staging_close_stub(
 
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
+
+    if (DEBUG>2) printf("myrank(%d): exit nssi_staging_close_stub(%ld, %s)\n", grank, args->fd, args->fname);
 
     return rc;
 }
@@ -366,7 +449,7 @@ int nssi_staging_read_stub(
     int pathlen;
     char *v=NULL;
 
-    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_read_stub(%ld)\n", grank, args->fd);
+    if (DEBUG>2) printf("myrank(%d): enter nssi_staging_read_stub(%ld)\n", grank, args->fd);
 
 //    pathlen=strlen(args->vpath);
 //    if (args->vpath[pathlen-1]=='/') {
@@ -392,6 +475,8 @@ cleanup:
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, &res, res_addr);
 
+    if (DEBUG>2) printf("myrank(%d): exit nssi_staging_read_stub(%ld)\n", grank, args->fd);
+
     return rc;
 }
 
@@ -409,7 +494,7 @@ int nssi_staging_write_stub(
     char *v=NULL;
     int i=0;
 
-    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_write_stub(fd=%ld, vsize=%ld)\n", grank, args->fd, args->vsize);
+    if (DEBUG>2) printf("myrank(%d): enter nssi_staging_write_stub(fd=%ld, vsize=%ld)\n", grank, args->fd, args->vsize);
 
 //    pathlen=strlen(args->vpath);
 //    if (args->vpath[pathlen-1]=='/') {
@@ -476,24 +561,10 @@ cleanup:
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, &res, res_addr);
 
+    if (DEBUG>2) printf("myrank(%d): exit nssi_staging_write_stub(fd=%ld, vsize=%ld)\n", grank, args->fd, args->vsize);
+
     return rc;
 }
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern int adios_nssi_filter_is_anon_dim(
-        int fd,
-        const char *dimname);
-extern void adios_nssi_filter_set_anon_dim(
-        int fd,
-        const char *dimname,
-        const uint64_t dimvalue);
-
-#ifdef __cplusplus
-}
-#endif
 
 int nssi_staging_start_calc_stub(
         const unsigned long request_id,
@@ -504,52 +575,14 @@ int nssi_staging_start_calc_stub(
 {
     int rc = 0;
 
-    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_start_calc_stub(%ld)\n", grank, args->fd);
+    if (DEBUG>2) printf("myrank(%d): enter nssi_staging_start_calc_stub(%ld)\n", grank, args->fd);
 
-    Func_Timer("try_aggregation", try_aggregation(args->fd););  // aggregate all varids in this file
-
-    int chunk_count=0;
-    aggregation_chunk_details_t **chunks = get_chunks(args->fd, &chunk_count);
-
-    for (int j=0;j<chunk_count;j++) {
-        aggregation_chunk_details_t *chunk = chunks[j];
-
-        // write all offsets for clients rank to update adios internals
-        for(int i=0;i<chunk->ndims;i++) {
-            uint64_t value=0;
-            if (DEBUG>3) printf("writing myrank(%d) chunk(%d) vpath(%s) vname(%s) opath(%s) oname(%s) odata(%lu)\n",
-                    grank, j, chunk->var_path, chunk->var_name, chunk->offset_path[i], chunk->offset_name[i], chunk->offset[i]);
-            if (adios_nssi_filter_is_anon_dim(chunk->fd, chunk->offset_name[i]) == TRUE) {
-                adios_nssi_filter_set_anon_dim(chunk->fd, chunk->offset_name[i], chunk->offset[i]);
-            } else {
-                Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->offset_path[i], chunk->offset_name[i]););
-                Func_Timer("adios_write", adios_write(chunk->fd, chunk->offset_name[i], &(chunk->offset[i])););
-            }
-        }
-        for(int i=0;i<chunk->ndims;i++) {
-            uint64_t value=0;
-            if (DEBUG>3) printf("writing myrank(%d) chunk(%d) vpath(%s) vname(%s) dpath(%s) dname(%s) ddata(%lu)\n",
-                    grank, j, chunk->var_path, chunk->var_name, chunk->count_path[i], chunk->count_name[i], chunk->count[i]);
-            if (adios_nssi_filter_is_anon_dim(chunk->fd, chunk->count_name[i]) == TRUE) {
-                adios_nssi_filter_set_anon_dim(chunk->fd, chunk->count_name[i], chunk->count[i]);
-            } else {
-                Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->count_path[i], chunk->count_name[i]););
-                Func_Timer("adios_write", adios_write(chunk->fd, chunk->count_name[i], &(chunk->count[i])););
-            }
-        }
-
-        if (DEBUG>3) printf("writing myrank(%d) vname(%s)\n", grank, chunk->var_name);
-        Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->var_path, chunk->var_name););
-        Func_Timer("adios_write", adios_write(chunk->fd, chunk->var_name, chunk->buf););
-
-//        cleanup_aggregation_chunks(args->fd, chunk->var_name);
-    }
-
-    cleanup_aggregation_chunks(args->fd);
-
+    agg_and_write(args->fd);
 
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
+
+    if (DEBUG>2) printf("myrank(%d): exit nssi_staging_start_calc_stub(%ld)\n", grank, args->fd);
 
     return rc;
 }
@@ -563,11 +596,13 @@ int nssi_staging_stop_calc_stub(
 {
     int rc = 0;
 
-    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_stop_calc_stub(%ld)\n", grank, args->fd);
+    if (DEBUG>2) printf("myrank(%d): enter nssi_staging_stop_calc_stub(%ld)\n", grank, args->fd);
 
 
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
+
+    if (DEBUG>2) printf("myrank(%d): exit nssi_staging_stop_calc_stub(%ld)\n", grank, args->fd);
 
     return rc;
 }
@@ -581,11 +616,13 @@ int nssi_staging_end_iter_stub(
 {
     int rc = 0;
 
-    if (DEBUG>3) printf("myrank(%d): calling nssi_staging_end_iter_stub(%ld)\n", grank, args->fd);
+    if (DEBUG>2) printf("myrank(%d): enter nssi_staging_end_iter_stub(%ld)\n", grank, args->fd);
 
 
     /* send result to client */
     rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
+
+    if (DEBUG>2) printf("myrank(%d): exit nssi_staging_end_iter_stub(%ld)\n", grank, args->fd);
 
     return rc;
 }
