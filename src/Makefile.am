@@ -136,8 +136,8 @@ libadios_nssi_a_CPPFLAGS = $(MXML_CPPFLAGS) $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=
 libadios_a_CPPFLAGS += $(MXML_CPPFLAGS) $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
-dist_libadiosf_a_SOURCES = adios_nssi_args.x
 nodist_libadiosf_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
+dist_libadiosf_a_SOURCES = adios_nssi_args.x
 libadiosf_a_CPPFLAGS += $(MXML_CPPFLAGS) $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 endif
 
