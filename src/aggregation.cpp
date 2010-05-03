@@ -72,6 +72,13 @@ static map<int, file_details_t *> open_file_map;
 typedef map<int, file_details_t *>::iterator open_file_map_iterator_t;
 typedef pair<int, file_details_t *> open_file_map_pair_t;
 
+
+
+static int DEBUG=0;
+
+
+
+
 bool compare_chunks_for_aggregation(const aggregation_chunk_t* c1, const aggregation_chunk_t* c2)
 {
     aggregation_chunk_details_t *details1=c1->details;
@@ -245,12 +252,14 @@ void add_chunk(aggregation_chunk_details_t *chunk_details)
 
     file_details_t  *file_details=NULL;
 
-//    printf("adding chunk: fd(%d) var_name(%s)\n", chunk_details->fd, chunk_details->var_name);
+    if (DEBUG > 3) printf("adding chunk: fd(%d) var_name(%s)\n", chunk_details->fd, chunk_details->var_name);
 
     chunk_details->atype_size = getTypeSize(chunk_details->atype, chunk_details->buf);
-    if ((chunk_details->len/chunk_details->num_elements) != chunk_details->atype_size) {
-        printf("datatype size conflict: (%lu/%d)==%lu is not equal to %d\n",
-                 chunk_details->len, chunk_details->num_elements, chunk_details->len/chunk_details->num_elements, chunk_details->atype_size);
+    if ((chunk_details->len > 0) && (chunk_details->num_elements > 0)) {
+        if ((chunk_details->len/chunk_details->num_elements) != chunk_details->atype_size) {
+            printf("datatype size conflict: (%lu/%d)==%lu is not equal to %d\n",
+                    chunk_details->len, chunk_details->num_elements, chunk_details->len/chunk_details->num_elements, chunk_details->atype_size);
+        }
     }
 
     file_details = open_file_map[chunk_details->fd];
@@ -260,7 +269,7 @@ void add_chunk(aggregation_chunk_details_t *chunk_details)
     }
     per_var_details_t *var_details = file_details->vars[chunk_details->var_name];
     if (var_details == NULL) {
-//        printf("var_details don't exist for %s\n", chunk_details->var_name);
+//        if (DEBUG > 3) printf("var_details don't exist for %s\n", chunk_details->var_name);
         var_details=new per_var_details_t;
         strcpy(var_details->var_path, chunk_details->var_path);
         strcpy(var_details->var_name, chunk_details->var_name);
@@ -268,7 +277,7 @@ void add_chunk(aggregation_chunk_details_t *chunk_details)
         var_details->chunks_received=0;
         file_details->vars[chunk_details->var_name]=var_details;
     } else {
-//        printf("var_details already exist for %s\n", chunk_details->var_name);
+//        if (DEBUG > 3) printf("var_details already exist for %s\n", chunk_details->var_name);
     }
     aggregation_chunk_t *chunk=new aggregation_chunk_t;
     chunk->details = chunk_details;
@@ -292,7 +301,7 @@ void destroy_chunk(aggregation_chunk_details_t *details)
     free(details->offset_name);
     free(details->count_path);
     free(details->count_name);
-//    printf("freeing details->buf(%p)\n", details->buf);
+//    if (DEBUG > 3) printf("freeing details->buf(%p)\n", details->buf);
     free(details->buf);
     delete details;
 }
@@ -306,8 +315,8 @@ void cleanup_aggregation_chunks(const int fd)
     chunks_iterator_t chunks_iter;
     chunk_details_iterator_t component_iter;
 
-//    printf("entered cleanup_aggregation_chunks\n");
-//    printf("cleaning up - fd(%d)\n", fd);
+//    if (DEBUG > 3) printf("entered cleanup_aggregation_chunks\n");
+//    if (DEBUG > 3) printf("cleaning up - fd(%d)\n", fd);
 
     details = open_file_map[fd];
     if (details == NULL) {
@@ -317,9 +326,9 @@ void cleanup_aggregation_chunks(const int fd)
 //    for (; var_iter != details->vars.end(); ++var_iter) {
 //        var_details = var_iter->second;
 //        if (var_details != NULL) {
-//            printf("var_details first(%p) second(%s)\n", var_iter->first, var_details->var_name);
+//            if (DEBUG > 3) printf("var_details first(%p) second(%s)\n", var_iter->first, var_details->var_name);
 //        } else {
-//            printf("var_details is NULL\n");
+//            if (DEBUG > 3) printf("var_details is NULL\n");
 //        }
 //    }
     var_iter = details->vars.begin();
@@ -332,11 +341,11 @@ void cleanup_aggregation_chunks(const int fd)
                 chunk = *chunks_iter;
                 component_iter = chunk->component_chunks.begin();
                 for (;component_iter != chunk->component_chunks.end(); ++component_iter) {
-//                    printf("cleanup - destroying component\n");
+//                    if (DEBUG > 3) printf("cleanup - destroying component\n");
                     destroy_chunk(*component_iter);
                 }
                 chunk->component_chunks.clear();
-//                printf("cleanup - destroying details\n");
+//                if (DEBUG > 3) printf("cleanup - destroying details\n");
                 destroy_chunk(chunk->details);
                 delete chunk;
             }
@@ -344,7 +353,7 @@ void cleanup_aggregation_chunks(const int fd)
             var_details->chunks_received=0;
             delete var_details;
         } else {
-//            printf("cannot cleanup - var_details is NULL\n");
+//            if (DEBUG > 3) printf("cannot cleanup - var_details is NULL\n");
         }
         details->vars.erase(var_iter++);
     }
@@ -353,9 +362,9 @@ void cleanup_aggregation_chunks(const int fd)
     for(var_map_iterator_t vars_iter=details->vars.begin(); vars_iter!=details->vars.end(); ++vars_iter) {
         per_var_details_t *pvd=vars_iter->second;
         if (pvd != NULL) {
-            printf("var_details first(%p) second(%s)\n", vars_iter->first, vars_iter->second->var_name);
+            if (DEBUG > 3) printf("var_details first(%p) second(%s)\n", vars_iter->first, vars_iter->second->var_name);
         } else {
-            printf("var_details is NULL\n");
+            if (DEBUG > 3) printf("var_details is NULL\n");
         }
     }
 }
@@ -368,7 +377,7 @@ void cleanup_aggregation_chunks(const int fd, const char *var_name)
     chunk_details_iterator_t component_iter;
     var_map_iterator_t vars_iter;
 
-//    printf("cleaning up - fd(%d) var_name(%s)\n", fd, var_name);
+//    if (DEBUG > 3) printf("cleaning up - fd(%d) var_name(%s)\n", fd, var_name);
 
     // for each variable, iterate over the chunks and destroy them
 
@@ -381,11 +390,11 @@ void cleanup_aggregation_chunks(const int fd, const char *var_name)
             chunk = *chunks_iter;
             component_iter = chunk->component_chunks.begin();
             for (;component_iter != chunk->component_chunks.end(); ++component_iter) {
-//                printf("cleanup - destroying component\n");
+//                if (DEBUG > 3) printf("cleanup - destroying component\n");
                 destroy_chunk(*component_iter);
             }
             chunk->component_chunks.clear();
-//            printf("cleanup - destroying details\n");
+//            if (DEBUG > 3) printf("cleanup - destroying details\n");
             destroy_chunk(chunk->details);
             delete chunk;
         }
@@ -393,15 +402,15 @@ void cleanup_aggregation_chunks(const int fd, const char *var_name)
         var_details->chunks_received=0;
         delete var_details;
     } else {
-//        printf("cleanup failed - var_details is NULL (%s)\n", var_name);
+//        if (DEBUG > 3) printf("cleanup failed - var_details is NULL (%s)\n", var_name);
     }
 
     var_map_iterator_t iter=details->vars.find(var_name);
     if (iter != details->vars.end()) {
-//        printf("erasing var_details with iter\n");
+//        if (DEBUG > 3) printf("erasing var_details with iter\n");
         details->vars.erase(iter);
     } else {
-//        printf("cannot erase var_details with iter.  var_details not found.\n");
+//        if (DEBUG > 3) printf("cannot erase var_details with iter.  var_details not found.\n");
     }
 
 }
@@ -424,16 +433,16 @@ static void recursive_print_chunk(aggregation_chunk_details_t *details, int offs
             recursive_print_chunk(details, offset+my_offset, index, current_dim+1);
             index[current_dim] += details->atype_size;
         }
-        //printf("-----------------------------\n");
+        //if (DEBUG > 3) printf("-----------------------------\n");
     } else {
         if (details->buf == NULL) {
-            printf("details->buf == NULL\n");
+            if (DEBUG > 3) printf("details->buf == NULL\n");
         } else {
             out_str[0]='\0';
             for (int i=0;i<details->count[current_dim];i++) {
                 my_offset = offset+index[current_dim];
 
-//                if (i==0) printf("[%d][%d][%d] (my_offset==%d)\n", index[0], index[1], index[2], my_offset);
+//                if (i==0) if (DEBUG > 3) printf("[%d][%d][%d] (my_offset==%d)\n", index[0], index[1], index[2], my_offset);
                 if (details->atype == adios_byte) {
                     sprintf(tmp_str, "%c, ", *(char *)(((char *)details->buf) + my_offset));
                 }
@@ -455,8 +464,8 @@ static void recursive_print_chunk(aggregation_chunk_details_t *details, int offs
 
                 index[current_dim] += details->atype_size;
             }
-//            printf("[%d][%d][%d] (my_offset==%d)\n", index[0], index[1], index[2], my_offset);
-            printf("%s\n", out_str);
+//            if (DEBUG > 3) printf("[%d][%d][%d] (my_offset==%d)\n", index[0], index[1], index[2], my_offset);
+            if (DEBUG > 3) printf("%s\n", out_str);
         }
     }
 }
@@ -470,14 +479,14 @@ void print_chunk(aggregation_chunk_details_t *details)
     char out_str[1024];
     int remaining=1023;
 
-    printf("+++++++++++++++++++++++++++++\n");
+    if (DEBUG > 3) printf("+++++++++++++++++++++++++++++\n");
 
-    printf("fd==%d\n", details->fd);
-    printf("var_path==%s\n", details->var_path);
-    printf("var_name==%s\n", details->var_name);
-    printf("ndims==%d\n", details->ndims);
-    printf("len==%ld\n", details->len);
-    printf("num_elements==%d\n", details->num_elements);
+    if (DEBUG > 3) printf("fd==%d\n", details->fd);
+    if (DEBUG > 3) printf("var_path==%s\n", details->var_path);
+    if (DEBUG > 3) printf("var_name==%s\n", details->var_name);
+    if (DEBUG > 3) printf("ndims==%d\n", details->ndims);
+    if (DEBUG > 3) printf("len==%ld\n", details->len);
+    if (DEBUG > 3) printf("num_elements==%d\n", details->num_elements);
     out_str[0]='\0';
     remaining=1023;
     for (int i=0;(i<details->ndims) && (remaining>0);i++) {
@@ -485,7 +494,7 @@ void print_chunk(aggregation_chunk_details_t *details)
         strncat(out_str, tmp_str, remaining);
         remaining -= strlen(tmp_str);
     }
-    printf("offset[]==%s\n", out_str);
+    if (DEBUG > 3) printf("offset[]==%s\n", out_str);
     out_str[0]='\0';
     remaining=1023;
     for (int i=0;(i<details->ndims) && (remaining>0);i++) {
@@ -493,11 +502,11 @@ void print_chunk(aggregation_chunk_details_t *details)
         strncat(out_str, tmp_str, remaining);
         remaining -= strlen(tmp_str);
     }
-    printf("count[]==%s\n", out_str);
-    printf("buf==%p\n", details->buf);
+    if (DEBUG > 3) printf("count[]==%s\n", out_str);
+    if (DEBUG > 3) printf("buf==%p\n", details->buf);
 
 //    recursive_print_chunk(details, offset, index, current_dim);
-    printf("+++++++++++++++++++++++++++++\n");
+    if (DEBUG > 3) printf("+++++++++++++++++++++++++++++\n");
 
     free(index);
 }
@@ -505,7 +514,7 @@ void print_chunk(aggregation_chunk_details_t *details)
 void print_chunk(aggregation_chunk_t *c)
 {
     if (c->details == NULL) {
-        printf("chunk has no details.  perhaps it was aggregated into another chunk.\n");
+        if (DEBUG > 3) printf("chunk has no details.  perhaps it was aggregated into another chunk.\n");
         return;
     }
     print_chunk(c->details);
@@ -526,7 +535,7 @@ static void recursive_copy_chunk(aggregation_chunk_details_t *src,
         for (int i=0;i<src->count[current_dim];i++) {
             my_src_offset = src_index[current_dim];
             my_dst_offset = dst_index[current_dim];
-//            printf("join_offset(%d) offset_diff[%d](%d)\n",
+//            if (DEBUG > 3) printf("join_offset(%d) offset_diff[%d](%d)\n",
 //                    join_offset, current_dim, src->offset[current_dim] - dst->offset[current_dim]);
             my_dst_offset += ((src->offset[current_dim] - dst->offset[current_dim]) * src->atype_size);
             for (int j=current_dim+1;j<src->ndims;j++) {
@@ -595,7 +604,7 @@ aggregation_chunk_t *aggregate_chunks(aggregation_chunk_t *c1,
 
     int src_buf_size=0;
 
-    //printf("entered aggregate_chunks\n");
+    //if (DEBUG > 3) printf("entered aggregate_chunks\n");
 
     assert(c1->details->ndims == c2->details->ndims);
     assert(out != NULL);
@@ -651,7 +660,7 @@ aggregation_chunk_t *aggregate_chunks(aggregation_chunk_t *c1,
 
     assert(out != NULL);
 
-    //printf("finished\n");
+    //if (DEBUG > 3) printf("finished\n");
 
     return(out);
 }
@@ -686,51 +695,52 @@ int try_aggregation(const int fd, const char *var_name)
 
     file_details = open_file_map[fd];
     if (file_details == NULL) {
-//        printf("agg failed for %s: file_details==NULL\n", var_name);
+//        if (DEBUG > 3) printf("agg failed for %s: file_details==NULL\n", var_name);
         return(aggregation_success);
     }
     var_details = file_details->vars[var_name];
     if (var_details == NULL) {
-//        printf("agg failed for %s: var_details==NULL\n", var_name);
+//        if (DEBUG > 3) printf("agg failed for %s: var_details==NULL\n", var_name);
         return(aggregation_success);
     }
     if (var_details->chunks->size() < 2) {
-//        printf("returning with chunk count(%d)\n", var_details->chunks->size());
+//        if (DEBUG > 3) printf("returning with chunk count(%d)\n", var_details->chunks->size());
         return(aggregation_success);
     }
-//    printf("chunk count(%d)\n", var_details->chunks->size());
+    if (DEBUG > 3) printf("chunk count(%d)\n", var_details->chunks->size());
 
 
-//    printf("trying aggregation - fd(%d) var_name(%s)\n", fd, var_name);
+    if (DEBUG > 3) printf("trying aggregation - fd(%d) var_name(%s)\n", fd, var_name);
 
     var_details->chunks->sort(compare_chunks_for_aggregation);
 
-//    printf("*****************\n");
-//    printf("start aggregation (begin list)\n");
-//    printf("*****************\n");
-//    int chunk_count;
-//    aggregation_chunk_details_t **chunks = get_chunks(fd, var_name, &chunk_count);
-//    for (int i=0;i<chunk_count;i++) {
-//        print_chunk(chunks[i]);
-//    }
-//    free(chunks);
-//    printf("*****************\n");
-//    printf("start aggregation (end list)\n");
-//    printf("*****************\n");
-//    netcdf_debug_level=old;
+    if (DEBUG > 4) {
+        printf("*****************\n");
+        printf("start aggregation (begin list)\n");
+        printf("*****************\n");
+        int chunk_count;
+        aggregation_chunk_details_t **chunks = get_chunks(fd, var_name, &chunk_count);
+        for (int i=0;i<chunk_count;i++) {
+            print_chunk(chunks[i]);
+        }
+        free(chunks);
+        printf("*****************\n");
+        printf("start aggregation (end list)\n");
+        printf("*****************\n");
+    }
 
     int success_this_pass=TRUE;
     while (success_this_pass==TRUE) {
         success_this_pass=FALSE;
 
-//        printf("top: while loop\n");
+//        if (DEBUG > 3) printf("top: while loop\n");
 
 
         base_iter = var_details->chunks->begin();
         base_chunk = *base_iter;
         offset_diff=new int[base_chunk->details->ndims];
         for (;base_iter != var_details->chunks->end(); ++base_iter) {
-//            printf("top: base_iter loop\n");
+//            if (DEBUG > 3) printf("top: base_iter loop\n");
 
             base_chunk = *base_iter;
 
@@ -740,7 +750,7 @@ int try_aggregation(const int fd, const char *var_name)
             candidate_iter = base_iter;
             candidate_iter++;
             for (;candidate_iter != var_details->chunks->end(); ++candidate_iter) {
-//                printf("top: candidate_iter loop\n");
+//                if (DEBUG > 3) printf("top: candidate_iter loop\n");
 
                 candidate_chunk = *candidate_iter;
 
@@ -833,13 +843,13 @@ int try_aggregation(const int fd, const char *var_name)
                  * nothing is being logged.
                  */
 //                netcdf_debug_level=LOG_ALL;
-//                printf("*****************\n");
-//                printf("base chunk\n");
-//                printf("*****************\n");
+//                if (DEBUG > 3) printf("*****************\n");
+//                if (DEBUG > 3) printf("base chunk\n");
+//                if (DEBUG > 3) printf("*****************\n");
 //                if (base_chunk != NULL)      print_chunk(base_chunk);
-//                printf("*****************\n");
-//                printf("candidate chunk\n");
-//                printf("*****************\n");
+//                if (DEBUG > 3) printf("*****************\n");
+//                if (DEBUG > 3) printf("candidate chunk\n");
+//                if (DEBUG > 3) printf("*****************\n");
 //                if (candidate_chunk != NULL) print_chunk(candidate_chunk);
 //                netcdf_debug_level=old;
 
@@ -855,7 +865,7 @@ int try_aggregation(const int fd, const char *var_name)
                     new_chunk = aggregate_chunks(candidate_chunk, base_chunk, dim_with_movement);
                 } else {
                     // chunks aren't aligned
-                    //printf("**********\nchunks are not aligned\n**********\n");
+                    //if (DEBUG > 3) printf("**********\nchunks are not aligned\n**********\n");
                     continue;
                 }
 
@@ -867,9 +877,9 @@ int try_aggregation(const int fd, const char *var_name)
                  * nothing is being logged.
                  */
 //                netcdf_debug_level=LOG_ALL;
-//                printf("*****************\n");
-//                printf("new chunk\n");
-//                printf("*****************\n");
+//                if (DEBUG > 3) printf("*****************\n");
+//                if (DEBUG > 3) printf("new chunk\n");
+//                if (DEBUG > 3) printf("*****************\n");
 //                if (new_chunk != NULL)       print_chunk(new_chunk);
 //                netcdf_debug_level=old;
 
@@ -896,19 +906,20 @@ int try_aggregation(const int fd, const char *var_name)
         delete[] offset_diff;
     }
 
-//    netcdf_debug_level=LOG_ALL;
-//    printf("*****************\n");
-//    printf("end aggregation (begin list)\n");
-//    printf("*****************\n");
-//    chunks = get_chunks(fd, var_name, &chunk_count);
-//    for (int i=0;i<chunk_count;i++) {
-//        print_chunk(chunks[i]);
-//    }
-//    free(chunks);
-//    printf("*****************\n");
-//    printf("end aggregation (end list)\n");
-//    printf("*****************\n");
-//    netcdf_debug_level=old;
+    if (DEBUG > 4) {
+        printf("*****************\n");
+        printf("end aggregation (begin list)\n");
+        printf("*****************\n");
+        int chunk_count;
+        aggregation_chunk_details_t **chunks = get_chunks(fd, var_name, &chunk_count);
+        for (int i=0;i<chunk_count;i++) {
+            print_chunk(chunks[i]);
+        }
+        free(chunks);
+        printf("*****************\n");
+        printf("end aggregation (end list)\n");
+        printf("*****************\n");
+    }
 
 //    netcdf_debug_level=LOG_ALL;
     chunks_iterator_t dst_iter=var_details->chunks->begin();
@@ -916,16 +927,16 @@ int try_aggregation(const int fd, const char *var_name)
         chunk_details_iterator_t component_iter=(*dst_iter)->component_chunks.begin();
         if (((*dst_iter)->details->buf == NULL) && ((*dst_iter)->details->len > 0)) {
             (*dst_iter)->details->buf = (char *)malloc((*dst_iter)->details->len);
-//            printf("allocated dst_iter->details->buf(%p), len(%ld)\n",
+//            if (DEBUG > 3) printf("allocated dst_iter->details->buf(%p), len(%ld)\n",
 //                    (*dst_iter)->details->buf,
 //                    (*dst_iter)->details->len);
         } else {
-//            printf("did not allocate dst_iter->details->buf(%p)\n", (*dst_iter)->details->buf);
+//            if (DEBUG > 3) printf("did not allocate dst_iter->details->buf(%p)\n", (*dst_iter)->details->buf);
         }
         for(;component_iter != (*dst_iter)->component_chunks.end();component_iter++) {
-            //printf("copying component\n");
+            //if (DEBUG > 3) printf("copying component\n");
             copy_chunk(*component_iter, (*dst_iter)->details);
-            //printf("destroying component\n");
+            //if (DEBUG > 3) printf("destroying component\n");
             destroy_chunk(*component_iter);
         }
         (*dst_iter)->component_chunks.clear();
@@ -933,9 +944,9 @@ int try_aggregation(const int fd, const char *var_name)
 //    netcdf_debug_level=old;
 
 //    netcdf_debug_level=LOG_ALL;
-    //printf("*****************\n");
-    //printf("chunks after aggregation\n");
-    //printf("*****************\n");
+    //if (DEBUG > 3) printf("*****************\n");
+    //if (DEBUG > 3) printf("chunks after aggregation\n");
+    //if (DEBUG > 3) printf("*****************\n");
 //    base_iter = var_details->chunks->begin();
 //    for (;base_iter != var_details->chunks->end(); ++base_iter) {
 //        base_chunk = *base_iter;
@@ -959,7 +970,7 @@ int try_aggregation(const int fd)
     var_map_iterator_t var_iter;
     per_var_details_t *var_details=NULL;
 
-    //printf("entered try_aggregation - fd(%d)\n", fd);
+    if (DEBUG > 3) printf("entered try_aggregation - fd(%d)\n", fd);
 
     file_details = open_file_map[fd];
     if (file_details == NULL) {
@@ -969,10 +980,10 @@ int try_aggregation(const int fd)
     for (; var_iter != file_details->vars.end(); var_iter++) {
         var_details = var_iter->second;
         if (var_details == NULL) {
-//            printf("var_details==NULL.  continuing\n");
+//            if (DEBUG > 3) printf("var_details==NULL.  continuing\n");
             continue;
         } else {
-//            printf("aggregating var_name(%s)\n", var_details->var_name);
+//            if (DEBUG > 3) printf("aggregating var_name(%s)\n", var_details->var_name);
             while(try_aggregation(fd, var_details->var_name) == TRUE);
         }
     }
@@ -1025,7 +1036,7 @@ aggregation_chunk_details_t **get_chunks(const int fd, const char *var_name, int
     aggregation_chunk_details_t **chunks=NULL;
     chunks_iterator_t iter;
 
-    //printf("entered get_chunks - fd(%d) var_name(%s)\n", fd, var_name);
+    if (DEBUG > 3) printf("entered get_chunks - fd(%d) var_name(%s)\n", fd, var_name);
 
     *chunk_count=0;
 
@@ -1040,7 +1051,7 @@ aggregation_chunk_details_t **get_chunks(const int fd, const char *var_name, int
 
     *chunk_count = details->vars[var_name]->chunks->size();
 
-    //printf("found %d chunks to return\n", *chunk_count);
+    if (DEBUG > 3) printf("found %d chunks to return\n", *chunk_count);
 
     if (*chunk_count == 0) {
         return(NULL);
@@ -1055,7 +1066,7 @@ aggregation_chunk_details_t **get_chunks(const int fd, const char *var_name, int
 //        print_chunk(chunks[i]);
     }
 
-    //printf("finished\n");
+    //if (DEBUG > 3) printf("finished\n");
 
     return(chunks);
 }
@@ -1068,7 +1079,7 @@ aggregation_chunk_details_t **get_chunks(const int fd, int *chunk_count)
     aggregation_chunk_details_t **chunks=NULL;
     chunks_iterator_t chunks_iter;
 
-    //printf("entered get_chunks - fd(%d)\n", fd);
+    if (DEBUG > 3) printf("entered get_chunks - fd(%d)\n", fd);
 
     *chunk_count=0;
 
@@ -1082,7 +1093,7 @@ aggregation_chunk_details_t **get_chunks(const int fd, int *chunk_count)
         *chunk_count += var_details->chunks->size();
     }
 
-    //printf("found %d chunks to return\n", *chunk_count);
+    if (DEBUG > 3) printf("found %d chunks to return\n", *chunk_count);
 
     if (*chunk_count == 0) {
         return(NULL);
@@ -1101,7 +1112,7 @@ aggregation_chunk_details_t **get_chunks(const int fd, int *chunk_count)
         }
     }
 
-    //printf("finished\n");
+    //if (DEBUG > 3) printf("finished\n");
 
     return(chunks);
 }
