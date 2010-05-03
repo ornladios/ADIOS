@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -1388,7 +1388,7 @@ int adios_common_define_var (int64_t group_id, const char * name
                 g_dim = g_dim_tokens [i];
             if (i < lo_dim_count)
                 lo_dim = lo_dim_tokens [i];
-            
+
             if (!(ret = adios_parse_dimension (dim, g_dim, lo_dim, t, d)))
             {
                 free (dim_temp);
@@ -1800,7 +1800,7 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
                 {
                     int new_items = (item->characteristics_count == 1)
                                          ? 100 : item->characteristics_count;
-                    (*root)->characteristics_allocated = 
+                    (*root)->characteristics_allocated =
                             (*root)->characteristics_count + new_items;
                     void * ptr;
                     ptr = realloc ((*root)->characteristics
@@ -2236,10 +2236,23 @@ void adios_copy_var_written (struct adios_var_struct ** root
                         uint8_t c;
                         uint8_t j;
                         struct adios_dimension_struct * d = var->dimensions;
-                        var_new->min = malloc (size);
-                        var_new->max = malloc (size);
-                        memcpy (var_new->min, var->min, size);
-                        memcpy (var_new->max, var->max, size);
+                        /*
+                         *
+                         * NOT ALL METHODS TRACK MIN/MAX.  CHECK BEFORE TRYING TO COPY.
+                         *
+                         */
+                        if (var->min) {
+                            var_new->min = malloc (size);
+                            memcpy (var_new->min, var->min, size);
+                        } else {
+                            var_new->min=0;
+                        }
+                        if (var->max) {
+                            var_new->max = malloc (size);
+                            memcpy (var_new->max, var->max, size);
+                        } else {
+                            var_new->max=0;
+                        }
                         c = count_dimensions (var->dimensions);
 
                         for (j = 0; j < c; j++)
@@ -2344,8 +2357,8 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             // holds the variable references in the dimensions, while v-> contains
             // only numerical values
             struct adios_var_struct * old_var = adios_find_var_by_id (g->vars, v->parent_id);
-            v_index->characteristics [0].payload_offset = v->write_offset 
-                            + adios_calc_var_overhead_v1 (old_var) 
+            v_index->characteristics [0].payload_offset = v->write_offset
+                            + adios_calc_var_overhead_v1 (old_var)
                             - strlen (old_var->path)  // take out the length of path defined in XML
                             + strlen (v->path); // add length of the actual, current path of this var
             v_index->characteristics [0].min = 0;
@@ -2651,7 +2664,7 @@ int adios_write_index_v1 (char ** buffer
             *buffer_offset += 1 + 4; // save space for characteristic count/len
             index_size += 1 + 4;
             var_size += 1 + 4;
-            
+
             // add an offset characteristic for all vars
             characteristic_set_count++;
             flag = (uint8_t) adios_characteristic_offset;
@@ -2911,7 +2924,7 @@ int adios_write_index_v1 (char ** buffer
             *buffer_offset += 1 + 4; // save space for characteristic count/len
             index_size += 1 + 4;
             attr_size += 1 + 4;
-            
+
             // add an offset characteristic for all attrs
             characteristic_set_count++;
             flag = (uint8_t) adios_characteristic_offset;
@@ -3265,7 +3278,7 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
     uint64_t characteristic_set_start = fd->offset;
     fd->offset += 1 + 4; // save space for characteristic count/len
     index_size += 1 + 4;
-    
+
     // depending on if it is an array or not, generate a different
     // additional set of characteristics
     size = adios_get_type_size (v->type, v->data);
@@ -3423,11 +3436,11 @@ return 0; \
             MIN_MAX(long double,16)
 
         case adios_complex:
-	{
+    {
             // complex = (float, float) = double in size
-            float   minr, mini, maxr, maxi, ar, ai; 
+            float   minr, mini, maxr, maxi, ar, ai;
             double  min, max, a;
-            float    *data = (float *) var->data;   // view double array as float array 
+            float    *data = (float *) var->data;   // view double array as float array
             uint64_t step = 0, steps = total_size / 4;  // steps in float steps over double array!
             var->min = malloc ( 2*sizeof(float));
             var->max = malloc ( 2*sizeof(float));
@@ -3437,37 +3450,37 @@ return 0; \
             max  = (double)maxr*maxr+maxi*maxi;
             maxr = minr;
             maxi = maxi;
-            step += 2; 
+            step += 2;
             // loop over the elements of the complex array (step is wrt float size!)
             while (step  < steps) {
                 ar = data[step];
                 ai = data[step+1];
                 a  = (double)ar*ar+ai*ai;
-                 
+
                 if ( a < min) {
                     minr = ar; mini = ai; min  = a;
                 }
                 if ( a > max) {
                     maxr = ar; maxi = ai; max  = a;
                 }
-                step += 2; 
-            } 
+                step += 2;
+            }
             ((float *) var->min)[0] = minr;
             ((float *) var->min)[1] = mini;
             ((float *) var->max)[0] = maxr;
             ((float *) var->max)[1] = maxi;
             return 0;
-	}
+    }
 
         case adios_double_complex:
-	{
+    {
             // complex = (double, double) = 16 bytes in size
-            float   minr, mini, maxr, maxi, ar, ai; 
-            long double  min, max, a; 
-            /* FIXME: long double may not prevent overflow 
+            float   minr, mini, maxr, maxi, ar, ai;
+            long double  min, max, a;
+            /* FIXME: long double may not prevent overflow
                PGI compiler: long double is 8 bytes like double
             */
-            double   *data = (double *) var->data;   // view 16-byte array as double array 
+            double   *data = (double *) var->data;   // view 16-byte array as double array
             uint64_t step = 0, steps = total_size / 8;  // steps in double steps over 16-byte array!
             var->min = malloc ( 2*sizeof(double));
             var->max = malloc ( 2*sizeof(double));
@@ -3477,21 +3490,21 @@ return 0; \
             max  = (long double)maxr*maxr+maxi*maxi;
             maxr = minr;
             maxi = maxi;
-            step += 2; 
+            step += 2;
             // loop over the elements of the double complex array (step is wrt double size!)
             while (step  < steps) {
                 ar = data[step];
                 ai = data[step+1];
                 a  = (long double)ar*ar+ai*ai;
-                 
+
                 if ( a < min) {
                     minr = ar; mini = ai; min  = a;
                 }
                 if ( a > max) {
                     maxr = ar; maxi = ai; max  = a;
                 }
-                step += 2; 
-            } 
+                step += 2;
+            }
             ((double *) var->min)[0] = minr;
             ((double *) var->min)[1] = mini;
             ((double *) var->max)[0] = maxr;
@@ -3499,7 +3512,7 @@ return 0; \
             return 0;
 
             return 0;
-	}
+    }
 
         case adios_string:
         {
@@ -3510,12 +3523,12 @@ return 0; \
         }
 
         default:
-	{
+    {
             uint64_t data = adios_unknown;
             var->min = 0;
             var->max = 0;
             return 0;
-	}
+    }
     }
 }
 
