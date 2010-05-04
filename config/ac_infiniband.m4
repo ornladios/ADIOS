@@ -28,7 +28,6 @@ ac_infiniband_hdr_ok=no
 ac_infiniband_lib_ok=no
 ac_with_infiniband=no
 
-AM_CONDITIONAL(HAVE_INFINIBAND,true)
 
 INFINIBAND_CFLAGS=""
 INFINIBAND_CPPFLAGS=""
@@ -43,7 +42,6 @@ AC_ARG_WITH(infiniband,
 
 if test x"$withval" = xno; then
 
-        AM_CONDITIONAL(HAVE_INFINIBAND,false)
         ac_with_infiniband=no;
 
 elif test x"$withval" = xyes -o x"$withval" = x; then
@@ -59,6 +57,9 @@ else
         ac_with_infiniband=yes;
 
 fi
+
+AM_CONDITIONAL(HAVE_INFINIBAND,test x$ac_with_infiniband = xyes)
+
 
 dnl Check for command-line disable
 if test x"$ac_with_infiniband" = xyes; then

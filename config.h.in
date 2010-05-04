@@ -59,7 +59,7 @@
 /* Define to 1 if you have <infiniband/verbs.h>. */
 #undef HAVE_IBVERBS_H
 
-/* Infiniband is enabled in the datatap */
+/* Define if you have the Infiniband. */
 #undef HAVE_INFINIBAND
 
 /* Define to 1 if you have the <inttypes.h> header file. */
@@ -115,9 +115,6 @@
 
 /* Define to 1 if you have the `pthread_yield' function. */
 #undef HAVE_PTHREAD_YIELD
-
-/* Portals is enabled in the datatap */
-#undef HAVE_PTL
 
 /* Define to 1 if you have the `PtlACEntry' function. */
 #undef HAVE_PTLACENTRY

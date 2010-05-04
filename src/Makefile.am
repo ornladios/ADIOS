@@ -90,7 +90,6 @@ libadiosf_a_SOURCES = adiosf.c \
                      common_read.c \
 		     read_bp.c \
                      globals.c
-                     
 endif
 
 if HAVE_DART
@@ -99,6 +98,15 @@ if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_dart.c read_dart.c
 endif
 endif
+
+
+if HAVE_DATATAP
+libadios_a_SOURCES += adios_datatap.c
+if BUILD_FORTRAN
+libadiosf_a_SOURCES += adios_datatap.c
+endif
+endif 
+
 
 if HAVE_PHDF5
 lib_LIBRARIES += libadios_phdf5.a
