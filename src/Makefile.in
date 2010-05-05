@@ -41,10 +41,8 @@ host_triplet = @host@
 bin_PROGRAMS = $(am__EXEEXT_1)
 @HAVE_NSSI_TRUE@am__append_1 = nssi-staging-server
 @HAVE_NETCDF_TRUE@@HAVE_NSSI_TRUE@am__append_2 = $(NETCDF_LDFLAGS)
-#nssi_staging_server_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
 @HAVE_NETCDF_TRUE@@HAVE_NSSI_TRUE@am__append_3 = $(NETCDF_LIBS)
 @HAVE_NSSI_TRUE@@HAVE_PHDF5_TRUE@am__append_4 = $(PHDF5_LDFLAGS)
-#nssi_staging_server_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 @HAVE_NSSI_TRUE@@HAVE_PHDF5_TRUE@am__append_5 = $(PHDF5_LIBS)
 @HAVE_DART_TRUE@@HAVE_NSSI_TRUE@am__append_6 = $(DART_CPPFLAGS)
 @HAVE_DART_TRUE@@HAVE_NSSI_TRUE@am__append_7 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
@@ -596,7 +594,6 @@ INCLUDES = -I$(top_srcdir)
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES = AUTO
 @HAVE_NSSI_TRUE@nssi_staging_server_SOURCES = nssi_staging_server.cpp aggregation.cpp
-#nssi_staging_server_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(NSSI_SERVER_LIBS)
 @HAVE_NSSI_TRUE@nssi_staging_server_LDADD =  \
 @HAVE_NSSI_TRUE@	$(top_builddir)/src/libadios.a $(MXML_LIBS) \
 @HAVE_NSSI_TRUE@	$(NSSI_LIBS) $(NSSI_SERVER_LIBS) \

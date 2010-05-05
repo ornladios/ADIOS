@@ -17,17 +17,14 @@ nssi_staging_server_CPPFLAGS=
 nssi_staging_server_CFLAGS += $(NSSI_CFLAGS)
 nssi_staging_server_CPPFLAGS += $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 nssi_staging_server_LDFLAGS += $(NSSI_LDFLAGS)
-#nssi_staging_server_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(NSSI_SERVER_LIBS)
 nssi_staging_server_LDADD += $(NSSI_LIBS) $(NSSI_SERVER_LIBS)
 
 if HAVE_NETCDF
 nssi_staging_server_LDFLAGS += $(NETCDF_LDFLAGS)
-#nssi_staging_server_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
 nssi_staging_server_LDADD +=  $(NETCDF_LIBS)
 endif
 if HAVE_PHDF5
 nssi_staging_server_LDFLAGS += $(PHDF5_LDFLAGS)
-#nssi_staging_server_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
 nssi_staging_server_LDADD +=  $(PHDF5_LIBS)
 endif
 if HAVE_DART
