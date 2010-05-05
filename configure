@@ -27308,16 +27308,16 @@ if test "${with_datatap+set}" = set; then
    ac_with_datatap=$widthval
 fi;
 
-if test "x$withval"	= "xno"; then
+if test "x$withval" = x"no"; then
 
 cat >>confdefs.h <<\_ACEOF
 #define NO_DATATAP 1
 _ACEOF
 
 	datatap=disable
-	temptest = disable
+	temptest=disable
 
-elif test x"$withval"=xyes -o x"$withval" = x; then
+elif test x"$withval" = xyes -o x"$withval" = x; then
 
 
 cat >>confdefs.h <<\_ACEOF

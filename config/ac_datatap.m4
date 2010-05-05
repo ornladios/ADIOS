@@ -20,12 +20,12 @@ AC_ARG_WITH(datatap,
 	[  --with-datatap=DIR 	Location of DataTap], 
 	[ ac_with_datatap=$widthval])
 
-if test "x$withval"	= "xno"; then
+if test "x$withval" = x"no"; then
 	AC_DEFINE(NO_DATATAP, 1, [Datatap is disabled])
 	datatap=disable
-	temptest = disable
+	temptest=disable
 
-elif test x"$withval"=xyes -o x"$withval" = x; then
+elif test x"$withval" = xyes -o x"$withval" = x; then
 		
 	AC_DEFINE(NO_DATATAP, 0, [Datatap is disabled])
 
