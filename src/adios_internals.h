@@ -139,6 +139,7 @@ struct adios_group_list_struct
 struct adios_file_struct
 {
     char * name;
+    char * subfile_name;
     struct adios_group_struct * group;
     enum ADIOS_METHOD_MODE mode;
     uint64_t data_size;

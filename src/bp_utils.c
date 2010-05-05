@@ -539,6 +539,13 @@ int bp_parse_attrs (struct BP_FILE * fh)
                         BUFREAD64(b, (*root)->characteristics [j].payload_offset)
                         break;
 
+                    case adios_characteristic_file_name:
+                        (*root)->characteristics [j].file_name = bp_read_data_from_buffer(b, adios_string);
+                        break;
+
+                    case adios_characteristic_time_index:
+                        BUFREAD32(b, (*root)->characteristics [j].time_index)
+                        break;
                     case adios_characteristic_var_id:
                         BUFREAD16(b, (*root)->characteristics [j].var_id)
                         break;
@@ -796,6 +803,14 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 
         case adios_characteristic_payload_offset: 
             BUFREAD64(b, (*root)->characteristics [j].payload_offset)
+            break;
+
+        case adios_characteristic_file_name:
+            (*root)->characteristics [j].file_name = bp_read_data_from_buffer(b, adios_string);
+            break;
+
+        case adios_characteristic_time_index:
+            BUFREAD32(b, (*root)->characteristics [j].time_index)
             break;
 
         case adios_characteristic_dimensions:

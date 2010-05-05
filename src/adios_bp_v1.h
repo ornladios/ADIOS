@@ -12,6 +12,8 @@
 #include "adios_types.h"
 #include "adios_transport_hooks.h"
 
+#define ADIOS_VERSION_HAVE_SUBFILE                   0x00000100
+#define ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC 0x00000200
 enum ADIOS_CHARACTERISTICS
 {
      adios_characteristic_value          = 0
@@ -22,6 +24,7 @@ enum ADIOS_CHARACTERISTICS
     ,adios_characteristic_var_id         = 5
     ,adios_characteristic_payload_offset = 6
     ,adios_characteristic_file_name      = 7
+    ,adios_characteristic_time_index     = 8
 };
 
 struct adios_bp_buffer_struct_v1
@@ -78,6 +81,8 @@ struct adios_index_characteristic_struct_v1
     void * value;
     uint16_t var_id;
     uint64_t payload_offset;   // beginning of the var or attr payload
+    char * file_name;
+    uint32_t time_index;
 };
 
 struct adios_index_var_struct_v1
