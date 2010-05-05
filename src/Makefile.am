@@ -174,15 +174,13 @@ libadios_a_SOURCES += adios_mpi_stagger.c \
                       adios_mpi_aggregate.c \
                       adios_provenance.c \
                       adios_mpi_cio.c \
-                      adios_adaptive.c \
-                      adios_datatap.c 
+                      adios_adaptive.c 
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_mpi_stagger.c \
                        adios_mpi_aggregate.c \
                        adios_provenance.c \
                        adios_mpi_cio.c \
-                       adios_adaptive.c \
-                       adios_datatap.c 
+                       adios_adaptive.c 
 endif
 else
 libadios_a_CPPFLAGS += -DNO_RESEARCH_TRANSPORTS
