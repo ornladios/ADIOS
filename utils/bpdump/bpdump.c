@@ -115,6 +115,7 @@ int main (int argc, char ** argv)
 
     struct adios_bp_buffer_struct_v1 * b = 0;
     uint32_t version = 0;
+    uint16_t flag = 0;
 
     b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     adios_buffer_struct_init (b);
@@ -165,6 +166,12 @@ int main (int argc, char ** argv)
     adios_posix_read_attributes_index (b);
     adios_parse_attributes_index_v1 (b, &attrs_root);
     print_attributes_index (attrs_root);
+
+    if (version & ADIOS_VERSION_HAVE_SUBFILE)
+    {
+        printf (DIVIDER);
+        return;
+    }
 
     uint64_t element_num = 1;
     pg = pg_root;
@@ -958,18 +965,24 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
         uint64_t i;
         for (i = 0; i < vars_root->characteristics_count; i++)
         {
-            printf ("\t\tOffset(%llu)", vars_root->characteristics [i].offset);
-            printf ("\t\tPayload Offset(%llu)", vars_root->characteristics [i].payload_offset);
+            printf ("\tOffset(%llu)", vars_root->characteristics [i].offset);
+            printf ("\tPayload Offset(%llu)", vars_root->characteristics [i].payload_offset);
+            if (vars_root->characteristics [i].file_name)
+            {
+                printf ("\tFile Name(%s)", vars_root->characteristics [i].file_name);
+            }
+            printf ("\tTime Index(%d)", vars_root->characteristics [i].time_index);
+
             if (vars_root->characteristics [i].min)
             {
-                printf ("\t\tMin(%s)", bp_value_to_string (vars_root->type
+                printf ("\tMin(%s)", bp_value_to_string (vars_root->type
                                            ,vars_root->characteristics [i].min
                                            )
                        );
             }
             if (vars_root->characteristics [i].max)
             {
-                printf ("\t\tMax(%s)", bp_value_to_string (vars_root->type
+                printf ("\tMax(%s)", bp_value_to_string (vars_root->type
                                            ,vars_root->characteristics [i].max
                                            )
                        );
@@ -977,17 +990,17 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
             if (vars_root->characteristics [i].value)
             {
                 if (vars_root->type != adios_string)
-                    printf ("\t\tValue(%s)", bp_value_to_string (vars_root->type,
+                    printf ("\tValue(%s)", bp_value_to_string (vars_root->type,
                             vars_root->characteristics [i].value));
                 else
-                    printf ("\t\tValue(\"%s\")", bp_value_to_string (vars_root->type,
+                    printf ("\tValue(\"%s\")", bp_value_to_string (vars_root->type,
                             vars_root->characteristics [i].value));
             }
             if (vars_root->characteristics [i].dims.count != 0)
             {
                 int j;
 
-                printf ("\t\tDims (l:g:o): (");
+                printf ("\tDims (l:g:o): (");
                 for (j = 0; j < vars_root->characteristics [i].dims.count; j++)
                 {
                     if (j != 0)
@@ -1047,6 +1060,12 @@ void print_attributes_index
         {
             printf ("\t\tOffset(%llu)", attrs_root->characteristics [i].offset);
             printf ("\t\tPayload Offset(%llu)", attrs_root->characteristics [i].payload_offset);
+            if (attrs_root->characteristics [i].file_name)
+            {
+                printf ("\t\tFile Name(%s)", attrs_root->characteristics [i].file_name);
+            }
+            printf ("\t\tTime Index(%d)", attrs_root->characteristics [i].time_index);
+
             if (attrs_root->characteristics [i].min)
             {
                 printf ("\t\tMin(%s)", bp_value_to_string (attrs_root->type
