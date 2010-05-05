@@ -16,21 +16,21 @@ attributes_read_LDADD += $(MXML_LIBS)
 
 if HAVE_NETCDF
 attributes_write_LDFLAGS += $(NETCDF_LDFLAGS)
-attributes_write_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+attributes_write_LDADD +=   $(NETCDF_LIBS)
 attributes_read_LDFLAGS += $(NETCDF_LDFLAGS)
-attributes_read_LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+attributes_read_LDADD +=   $(NETCDF_LIBS)
 endif
 if HAVE_NSSI
-attributes_write_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+attributes_write_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 attributes_write_LDFLAGS += $(NSSI_LDFLAGS)
-attributes_read_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+attributes_read_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 attributes_read_LDFLAGS += $(NSSI_LDFLAGS)
 endif
 if HAVE_PHDF5
 attributes_write_LDFLAGS += $(PHDF5_LDFLAGS)
-attributes_write_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+attributes_write_LDADD +=   $(PHDF5_LIBS)
 attributes_read_LDFLAGS += $(PHDF5_LDFLAGS)
-attributes_read_LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+attributes_read_LDADD +=   $(PHDF5_LIBS)
 endif
 if HAVE_DART
 attributes_write_CPPFLAGS = $(DART_CPPFLAGS)

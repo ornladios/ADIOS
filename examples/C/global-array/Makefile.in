@@ -40,29 +40,33 @@ noinst_PROGRAMS = adios_global$(EXEEXT) adios_global_2files$(EXEEXT) \
 	adios_read_global$(EXEEXT) adios_global_no_xml$(EXEEXT) \
 	adios_read_global_no_xml$(EXEEXT)
 @HAVE_NETCDF_TRUE@am__append_1 = $(NETCDF_LDFLAGS)
-@HAVE_NETCDF_TRUE@am__append_2 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_2 = $(NETCDF_LIBS)
 @HAVE_NETCDF_TRUE@am__append_3 = $(NETCDF_LDFLAGS)
-@HAVE_NETCDF_TRUE@am__append_4 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
-@HAVE_NSSI_TRUE@am__append_5 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_6 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_NETCDF_TRUE@am__append_4 = $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_5 = $(NETCDF_LDFLAGS)
+@HAVE_NETCDF_TRUE@am__append_6 = $(NETCDF_LIBS)
 @HAVE_NSSI_TRUE@am__append_7 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_8 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-@HAVE_PHDF5_TRUE@am__append_9 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_10 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_11 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_12 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_NSSI_TRUE@am__append_8 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_NSSI_TRUE@am__append_9 = $(NSSI_LDFLAGS)
+@HAVE_NSSI_TRUE@am__append_10 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_NSSI_TRUE@am__append_11 = $(NSSI_LDFLAGS)
+@HAVE_NSSI_TRUE@am__append_12 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 @HAVE_PHDF5_TRUE@am__append_13 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_14 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
-@HAVE_DART_TRUE@am__append_15 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_16 = $(DART_LIBS)
-@HAVE_DART_TRUE@am__append_17 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_18 = $(DART_LIBS)
+@HAVE_PHDF5_TRUE@am__append_14 = $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_15 = $(PHDF5_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_16 = $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_17 = $(PHDF5_LDFLAGS)
+@HAVE_PHDF5_TRUE@am__append_18 = $(PHDF5_LIBS)
 @HAVE_DART_TRUE@am__append_19 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
 @HAVE_DART_TRUE@am__append_20 = $(DART_LIBS)
 @HAVE_DART_TRUE@am__append_21 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
 @HAVE_DART_TRUE@am__append_22 = $(DART_LIBS)
 @HAVE_DART_TRUE@am__append_23 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
 @HAVE_DART_TRUE@am__append_24 = $(DART_LIBS)
+@HAVE_DART_TRUE@am__append_25 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_26 = $(DART_LIBS)
+@HAVE_DART_TRUE@am__append_27 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
+@HAVE_DART_TRUE@am__append_28 = $(DART_LIBS)
 subdir = examples/C/global-array
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -90,15 +94,9 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_adios_global_OBJECTS = adios_global-adios_global.$(OBJEXT)
 adios_global_OBJECTS = $(am_adios_global_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 =  \
-@HAVE_NETCDF_TRUE@	$(top_builddir)/src/libadios_nc4.a \
-@HAVE_NETCDF_TRUE@	$(am__DEPENDENCIES_1)
-@HAVE_NSSI_TRUE@am__DEPENDENCIES_3 =  \
-@HAVE_NSSI_TRUE@	$(top_builddir)/src/libadios_nssi.a \
-@HAVE_NSSI_TRUE@	$(am__DEPENDENCIES_1)
-@HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 =  \
-@HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
-@HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
+@HAVE_NSSI_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
+@HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
 @HAVE_DART_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
 adios_global_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
@@ -115,7 +113,8 @@ am_adios_global_no_xml_OBJECTS =  \
 	adios_global_no_xml-adios_global_no_xml.$(OBJEXT)
 adios_global_no_xml_OBJECTS = $(am_adios_global_no_xml_OBJECTS)
 adios_global_no_xml_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_4) \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
 	$(am__DEPENDENCIES_5)
 am_adios_read_global_OBJECTS =  \
 	adios_read_global-adios_read_global.$(OBJEXT)
@@ -338,29 +337,30 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 adios_global_SOURCES = adios_global.c
 adios_global_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_2) $(am__append_6) $(am__append_10) \
-	$(am__append_16)
-adios_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) $(am__append_5) \
-	$(am__append_9) $(am__append_15)
+	$(am__append_2) $(am__append_8) $(am__append_14) \
+	$(am__append_20)
+adios_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) $(am__append_7) \
+	$(am__append_13) $(am__append_19)
 adios_global_2files_SOURCES = adios_global_2files.c
 adios_global_2files_LDADD = $(top_builddir)/src/libadios.a \
-	$(MXML_LIBS) $(am__append_4) $(am__append_8) $(am__append_12) \
-	$(am__append_18)
+	$(MXML_LIBS) $(am__append_4) $(am__append_10) $(am__append_16) \
+	$(am__append_22)
 adios_global_2files_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3) \
-	$(am__append_7) $(am__append_11) $(am__append_17)
+	$(am__append_9) $(am__append_15) $(am__append_21)
 adios_read_global_SOURCES = adios_read_global.c
 adios_read_global_LDADD = $(top_builddir)/src/libadiosread.a \
-	$(MXML_LIBS) $(am__append_20)
-adios_read_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_19)
+	$(MXML_LIBS) $(am__append_24)
+adios_read_global_LDFLAGS = $(MXML_LDFLAGS) $(am__append_23)
 adios_global_no_xml_SOURCES = adios_global_no_xml.c
 adios_global_no_xml_LDADD = $(top_builddir)/src/libadios.a \
-	$(MXML_LIBS) $(am__append_14) $(am__append_22)
-adios_global_no_xml_LDFLAGS = $(MXML_LDFLAGS) $(am__append_13) \
-	$(am__append_21)
+	$(MXML_LIBS) $(am__append_6) $(am__append_12) $(am__append_18) \
+	$(am__append_26)
+adios_global_no_xml_LDFLAGS = $(MXML_LDFLAGS) $(am__append_5) \
+	$(am__append_11) $(am__append_17) $(am__append_25)
 adios_read_global_no_xml_SOURCES = adios_read_global_no_xml.c
 adios_read_global_no_xml_LDADD = $(top_builddir)/src/libadiosread.a \
-	$(MXML_LIBS) $(am__append_24)
-adios_read_global_no_xml_LDFLAGS = $(MXML_LDFLAGS) $(am__append_23)
+	$(MXML_LIBS) $(am__append_28)
+adios_read_global_no_xml_LDFLAGS = $(MXML_LDFLAGS) $(am__append_27)
 @HAVE_DART_TRUE@adios_global_CPPFLAGS = $(DART_CPPFLAGS)
 @HAVE_DART_TRUE@adios_global_2files_CPPFLAGS = $(DART_CPPFLAGS)
 @HAVE_DART_TRUE@adios_read_global_CPPFLAGS = $(DART_CPPFLAGS)

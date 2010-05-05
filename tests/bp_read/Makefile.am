@@ -15,15 +15,15 @@ genbp_SOURCES = genbp.c
 genbp_LDFLAGS = $(MXML_LDFLAGS)
 genbp_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) $(top_builddir)/src/libadiosread.a
 if HAVE_NETCDF
-genbp_LDADD += $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+genbp_LDADD +=  $(NETCDF_LIBS)
 genbp_LDFLAGS += $(NETCDF_LDFLAGS)
 endif
 if HAVE_NSSI
-genbp_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+genbp_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 genbp_LDFLAGS += $(NSSI_LDFLAGS)
 endif
 if HAVE_PHDF5
-genbp_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+genbp_LDADD +=  $(PHDF5_LIBS)
 genbp_LDFLAGS += $(PHDF5_LDFLAGS)
 endif
 if HAVE_DART
@@ -61,7 +61,7 @@ endif
 #read_parts_global_LDFLAGS = $(MXML_LDFLAGS)
 #read_parts_global_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) $(top_builddir)/src/libadiosread.a
 #if HAVE_PHDF5
-#read_parts_global_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+#read_parts_global_LDADD +=  $(PHDF5_LIBS)
 #read_parts_global_LDFLAGS += $(PHDF5_LDFLAGS)
 #endif
 #
@@ -69,7 +69,7 @@ endif
 #read_gena_LDFLAGS = $(MXML_LDFLAGS)
 #read_gena_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) $(top_builddir)/src/libadiosread.a
 #if HAVE_PHDF5
-#read_gena_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+#read_gena_LDADD +=  $(PHDF5_LIBS)
 #read_gena_LDFLAGS += $(PHDF5_LDFLAGS)
 #endif
 
@@ -77,7 +77,7 @@ endif
 #read_gena_pncd_LDFLAGS = $(MXML_LDFLAGS)
 #read_gena_pncd_LDADD = /ccs/home/sklasky/parallel-netcdf/jaguar/lib/libpnetcdf.a 
 #if HAVE_PHDF5
-#read_gena_pncd_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+#read_gena_pncd_LDADD +=  $(PHDF5_LIBS)
 #read_gena_pncd_LDFLAGS += $(PHDF5_LDFLAGS)
 #endif
 

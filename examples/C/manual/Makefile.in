@@ -39,29 +39,29 @@ host_triplet = @host@
 noinst_PROGRAMS = 1_nonadios_example$(EXEEXT) 2_adios_write$(EXEEXT) \
 	3_adios_read$(EXEEXT) 4_adios_nfiles$(EXEEXT)
 @HAVE_NETCDF_TRUE@am__append_1 = $(NETCDF_LDFLAGS)
-@HAVE_NETCDF_TRUE@am__append_2 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_2 = $(NETCDF_LIBS)
 @HAVE_NETCDF_TRUE@am__append_3 = $(NETCDF_LDFLAGS)
-@HAVE_NETCDF_TRUE@am__append_4 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_4 = $(NETCDF_LIBS)
 @HAVE_NETCDF_TRUE@am__append_5 = $(NETCDF_LDFLAGS)
-@HAVE_NETCDF_TRUE@am__append_6 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_6 = $(NETCDF_LIBS)
 @HAVE_NETCDF_TRUE@am__append_7 = $(NETCDF_LDFLAGS)
-@HAVE_NETCDF_TRUE@am__append_8 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_8 = $(NETCDF_LIBS)
 @HAVE_NSSI_TRUE@am__append_9 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_10 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_NSSI_TRUE@am__append_10 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 @HAVE_NSSI_TRUE@am__append_11 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_12 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_NSSI_TRUE@am__append_12 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 @HAVE_NSSI_TRUE@am__append_13 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_14 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_NSSI_TRUE@am__append_14 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 @HAVE_NSSI_TRUE@am__append_15 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_16 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_NSSI_TRUE@am__append_16 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 @HAVE_PHDF5_TRUE@am__append_17 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_18 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_18 = $(PHDF5_LIBS)
 @HAVE_PHDF5_TRUE@am__append_19 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_20 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_20 = $(PHDF5_LIBS)
 @HAVE_PHDF5_TRUE@am__append_21 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_22 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_22 = $(PHDF5_LIBS)
 @HAVE_PHDF5_TRUE@am__append_23 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_24 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_24 = $(PHDF5_LIBS)
 @HAVE_DART_TRUE@am__append_25 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
 @HAVE_DART_TRUE@am__append_26 = $(DART_LIBS)
 @HAVE_DART_TRUE@am__append_27 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
@@ -98,15 +98,9 @@ am_1_nonadios_example_OBJECTS =  \
 	1_nonadios_example-1_nonadios_example.$(OBJEXT)
 1_nonadios_example_OBJECTS = $(am_1_nonadios_example_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 =  \
-@HAVE_NETCDF_TRUE@	$(top_builddir)/src/libadios_nc4.a \
-@HAVE_NETCDF_TRUE@	$(am__DEPENDENCIES_1)
-@HAVE_NSSI_TRUE@am__DEPENDENCIES_3 =  \
-@HAVE_NSSI_TRUE@	$(top_builddir)/src/libadios_nssi.a \
-@HAVE_NSSI_TRUE@	$(am__DEPENDENCIES_1)
-@HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 =  \
-@HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
-@HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
+@HAVE_NSSI_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
+@HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
 @HAVE_DART_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
 1_nonadios_example_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \

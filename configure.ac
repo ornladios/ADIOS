@@ -138,10 +138,9 @@ fi
 echo
 
 if test "x${datatap}" != "xdisable"; then
-   echo "      - DataTap";
-   echo "          - Interconnect: $datatap";
+        echo "  - DataTap with interconnect: $datatap";
 else	
-   echo "		    No DataTap transport";
+        echo "  - No DataTap transport";
 fi
 
 if test -z "${HAVE_DART_TRUE}"; then

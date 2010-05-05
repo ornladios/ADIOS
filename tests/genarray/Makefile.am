@@ -9,15 +9,15 @@ genarray_SOURCES = genarray.F90
 genarray_LDFLAGS = $(MXML_LDFLAGS)
 genarray_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
 if HAVE_NETCDF
-genarray_LDADD += $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+genarray_LDADD +=  $(NETCDF_LIBS)
 genarray_LDFLAGS += $(NETCDF_LDFLAGS)
 endif
 if HAVE_NSSI
-genarray_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+genarray_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 genarray_LDFLAGS += $(NSSI_LDFLAGS)
 endif
 if HAVE_PHDF5
-genarray_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+genarray_LDADD +=  $(PHDF5_LIBS)
 genarray_LDFLAGS += $(PHDF5_LDFLAGS)
 endif
 if HAVE_DART
@@ -30,15 +30,15 @@ genarray2D_SOURCES = genarray2D.F90
 genarray2D_LDFLAGS = $(MXML_LDFLAGS)
 genarray2D_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
 if HAVE_NETCDF
-genarray2D_LDADD += $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+genarray2D_LDADD +=  $(NETCDF_LIBS)
 genarray2D_LDFLAGS += $(NETCDF_LDFLAGS)
 endif
 if HAVE_NSSI
-genarray2D_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+genarray2D_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 genarray2D_LDFLAGS += $(NSSI_LDFLAGS)
 endif
 if HAVE_PHDF5
-genarray2D_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+genarray2D_LDADD +=  $(PHDF5_LIBS)
 genarray2D_LDFLAGS += $(PHDF5_LDFLAGS)
 endif
 if HAVE_DART
@@ -51,15 +51,15 @@ copyarray_SOURCES = copyarray.F90
 copyarray_LDFLAGS = $(MXML_LDFLAGS)
 copyarray_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
 if HAVE_NETCDF
-copyarray_LDADD += $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+copyarray_LDADD +=  $(NETCDF_LIBS)
 copyarray_LDFLAGS += $(NETCDF_LDFLAGS)
 endif
 if HAVE_NSSI
-copyarray_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+copyarray_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 copyarray_LDFLAGS += $(NSSI_LDFLAGS)
 endif
 if HAVE_PHDF5
-copyarray_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+copyarray_LDADD +=  $(PHDF5_LIBS)
 copyarray_LDFLAGS += $(PHDF5_LDFLAGS)
 endif
 if HAVE_DART
@@ -72,15 +72,15 @@ copyarray2D_SOURCES = copyarray2D.F90
 copyarray2D_LDFLAGS = $(MXML_LDFLAGS)
 copyarray2D_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
 if HAVE_NETCDF
-copyarray2D_LDADD += $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+copyarray2D_LDADD +=  $(NETCDF_LIBS)
 copyarray2D_LDFLAGS += $(NETCDF_LDFLAGS)
 endif
 if HAVE_NSSI
-copyarray2D_LDADD += $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+copyarray2D_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 copyarray2D_LDFLAGS += $(NSSI_LDFLAGS)
 endif
 if HAVE_PHDF5
-copyarray2D_LDADD += $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+copyarray2D_LDADD +=  $(PHDF5_LIBS)
 copyarray2D_LDFLAGS += $(PHDF5_LDFLAGS)
 endif
 if HAVE_DART

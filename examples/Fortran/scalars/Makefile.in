@@ -38,17 +38,17 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = scalars_write$(EXEEXT) scalars_read$(EXEEXT)
 @HAVE_NETCDF_TRUE@am__append_1 = $(NETCDF_LDFLAGS)
-@HAVE_NETCDF_TRUE@am__append_2 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_2 = $(NETCDF_LIBS)
 @HAVE_NETCDF_TRUE@am__append_3 = $(NETCDF_LDFLAGS)
-@HAVE_NETCDF_TRUE@am__append_4 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_4 = $(NETCDF_LIBS)
 @HAVE_NSSI_TRUE@am__append_5 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_6 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_NSSI_TRUE@am__append_6 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 @HAVE_NSSI_TRUE@am__append_7 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_8 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_NSSI_TRUE@am__append_8 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 @HAVE_PHDF5_TRUE@am__append_9 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_10 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_10 = $(PHDF5_LIBS)
 @HAVE_PHDF5_TRUE@am__append_11 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_12 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_12 = $(PHDF5_LIBS)
 @HAVE_DART_TRUE@am__append_13 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
 @HAVE_DART_TRUE@am__append_14 = $(DART_LIBS)
 @HAVE_DART_TRUE@am__append_15 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
@@ -80,15 +80,9 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_scalars_read_OBJECTS = scalars_read-scalars_read.$(OBJEXT)
 scalars_read_OBJECTS = $(am_scalars_read_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 =  \
-@HAVE_NETCDF_TRUE@	$(top_builddir)/src/libadios_nc4.a \
-@HAVE_NETCDF_TRUE@	$(am__DEPENDENCIES_1)
-@HAVE_NSSI_TRUE@am__DEPENDENCIES_3 =  \
-@HAVE_NSSI_TRUE@	$(top_builddir)/src/libadios_nssi.a \
-@HAVE_NSSI_TRUE@	$(am__DEPENDENCIES_1)
-@HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 =  \
-@HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
-@HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
+@HAVE_NSSI_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
+@HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
 @HAVE_DART_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
 scalars_read_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
