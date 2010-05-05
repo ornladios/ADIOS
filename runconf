@@ -27,7 +27,8 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
         --enable-research-transports  \
         --with-phdf5=$HDF5_DIR \
-        --without-netcdf
+        --without-netcdf \
+        --with-datatap=ib
         #--with-hdf5=$HDF5_DIR  \
         #--with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 

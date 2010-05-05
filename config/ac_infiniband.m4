@@ -104,6 +104,7 @@ if test x"$ac_with_infiniband" = xyes; then
             INFINIBAND_CPPFLAGS=""
             INFINIBAND_LDFLAGS=""
             INFINIBAND_LIBS=""
+            ac_with_infiniband=no
         else
             AM_CONDITIONAL(HAVE_INFINIBAND,true)
         fi

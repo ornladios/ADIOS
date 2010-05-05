@@ -591,7 +591,7 @@ adios_datatap_open(struct adios_file_struct *fd,
 
 #if HAVE_PORTALS == 1
 //defined(__CRAYXT_COMPUTE_LINUX_TARGET)
-	current_fm->s = InitIOFromFile("param");
+	current_fm->s = InitIOFromFile("param", rank);
 	current_fm->s->rank = rank;
 	current_fm->ioformat = register_data(current_fm->s, current_fm->format);
 #elif HAVE_INFINIBAND == 1
