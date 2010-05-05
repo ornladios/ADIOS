@@ -76,9 +76,10 @@ am__DEPENDENCIES_1 =
 @HAVE_NSSI_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
 @HAVE_DART_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
-adios_test_f_DEPENDENCIES = $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3) \
-	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_5)
+adios_test_f_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
+	$(am__DEPENDENCIES_5)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -285,8 +286,9 @@ AUTOMAKE_OPTIONS = no-dependencies
 adios_test_f_SOURCES = adios_test_f.F90
 adios_test_f_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2) $(am__append_4) \
 	$(am__append_6) $(am__append_7)
-adios_test_f_LDADD = $(MXML_LIBS) $(am__append_1) $(am__append_3) \
-	$(am__append_5) $(am__append_8)
+adios_test_f_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
+	$(am__append_1) $(am__append_3) $(am__append_5) \
+	$(am__append_8)
 @HAVE_DART_TRUE@adios_test_f_CPPFLAGS = $(DART_CPPFLAGS)
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
