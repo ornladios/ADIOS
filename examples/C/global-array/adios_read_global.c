@@ -72,7 +72,7 @@ int main (int argc, char ** argv)
     bytes_read = adios_read_var (g, "temperature", start, count, data);
 
     for (i = 0; i < slice_size; i++) {
-        printf ("rank %d: [%d,%d:%d]", rank, start[0]+i, 0, slice_size);
+        printf ("rank %d: [%lld,%d:%d]", rank, start[0]+i, 0, slice_size);
         for (j = 0; j < v->dims[1]; j++)
             printf (" %6.2g", * (double *)data + i * v->dims[1] + j);
         printf ("\n");
