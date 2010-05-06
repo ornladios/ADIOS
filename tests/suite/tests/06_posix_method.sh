@@ -18,6 +18,11 @@ if [ $MAXPROCS -lt $PROCS ]; then
     exit 77  # not failure, just skip
 fi
 
+if [ "$HAVE_FORTRAN" != "yes" ]; then
+    echo "Fortran is not available for this ADIOS build. This tests wants to use a Fortran90 code." 
+    exit 77 
+fi
+
 # copy codes and inputs to . 
 cp $SRCDIR/programs/posix_method .
 cp $SRCDIR/programs/posix_method.xml .
