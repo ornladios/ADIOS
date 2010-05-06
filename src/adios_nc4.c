@@ -21,11 +21,20 @@
 #ifdef HAVE_NETCDF
 #include "netcdf.h"
 #endif
-#ifdef HAVE_NSSI
-#include "adios_nssi_args.h"
-#endif
 
 #include "io_timer.h"
+
+
+#ifndef FALSE
+#      define  FALSE   (0)
+#endif
+#ifndef TRUE
+#      define  TRUE    (1)
+#endif
+#ifndef NULL
+#      define  NULL 0
+#endif
+
 
 typedef char nc4_dimname_t[256];
 
@@ -100,12 +109,12 @@ struct adios_nc4_data_struct
     void * comm; // temporary until moved from should_buffer to open
 };
 
-
+#define NC4_PATH_MAX 1024
 /* Need a struct to encapsulate open file info
  */
 struct open_file {
-    char                           fpath[ADIOS_PATH_MAX];
-    char                           fname[ADIOS_PATH_MAX];
+    char                           fpath[NC4_PATH_MAX];
+    char                           fname[NC4_PATH_MAX];
     struct adios_nc4_data_struct *md;
     struct adios_file_struct      *f;
 };
@@ -1209,7 +1218,7 @@ static int write_var(
 
         /* begin writing array with fixed dimensions */
 
-        if (myrank==0) printf("\twriting fixed dimension array var!\n");
+        if (myrank==0) if (DEBUG>3) printf("\twriting fixed dimension array var!\n");
 
         Func_Timer("nc4_varid par_access", rc = nc_var_par_access(ncid, nc4_varid, NC_COLLECTIVE););
         if (rc != NC_NOERR) {
@@ -1237,7 +1246,7 @@ static int write_var(
 
         size_t current_timestep=0;
 
-        if (myrank==0) printf("\twriting timestep array var!\n");
+        if (myrank==0) if (DEBUG>3) printf("\twriting timestep array var!\n");
 
         Func_Timer("nc4_varid par_access", rc = nc_var_par_access(ncid, nc4_varid, NC_COLLECTIVE););
         if (rc != NC_NOERR) {
