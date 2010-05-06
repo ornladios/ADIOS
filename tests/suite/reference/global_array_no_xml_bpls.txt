@@ -3,8 +3,8 @@ File info:
   of variables:  4
   of attributes: 0
   time steps:    1 starting from 1
-  file size:     6 KB
-  bp version:    1
+  file size:     7 KB
+  bp version:    513
   endianness:    Little Endian
 
   integer    /NX           scalar = 10 

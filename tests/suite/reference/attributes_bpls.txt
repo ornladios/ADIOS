@@ -4,7 +4,7 @@ File info:
   of attributes: 4
   time steps:    1 starting from 1
   file size:     6 KB
-  bp version:    1
+  bp version:    513
   endianness:    Little Endian
 
 Group temperature:

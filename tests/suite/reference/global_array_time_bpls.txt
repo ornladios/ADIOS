@@ -3,8 +3,8 @@ File info:
   of variables:  4
   of attributes: 1
   time steps:    13 starting from 1
-  file size:     96 KB
-  bp version:    1
+  file size:     98 KB
+  bp version:    513
   endianness:    Little Endian
 
 Group temperature:

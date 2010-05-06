@@ -3,8 +3,8 @@ File info:
   of variables:  13
   of attributes: 0
   time steps:    1 starting from 1
-  file size:     3 KB
-  bp version:    1
+  file size:     4 KB
+  bp version:    513
   endianness:    Little Endian
 
 Group scalars:
