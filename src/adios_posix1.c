@@ -159,7 +159,7 @@ int adios_posix1_open (struct adios_file_struct * fd
                 adios_posix_read_version (&p->b);
                 adios_parse_version (&p->b, &version);
 
-                switch (version)
+                switch (version & ADIOS_VERSION_NUM_MASK)
                 {
                     case 1:
                         // read the old stuff and set the base offset
@@ -504,7 +504,7 @@ static void adios_posix1_do_read (struct adios_file_struct * fd
     adios_posix_read_version (&p->b);
     adios_parse_version (&p->b, &version);
 
-    switch (version)
+    switch (version & ADIOS_VERSION_NUM_MASK)
     {
         case 1:
         {

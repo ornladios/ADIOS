@@ -12,6 +12,7 @@
 #include "adios_types.h"
 #include "adios_transport_hooks.h"
 
+#define ADIOS_VERSION_NUM_MASK                       0x00000011
 #define ADIOS_VERSION_HAVE_SUBFILE                   0x00000100
 #define ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC 0x00000200
 enum ADIOS_CHARACTERISTICS

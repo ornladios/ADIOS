@@ -1421,7 +1421,7 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
     data.buffer = 0;
     data.buffer_len = 0;
 
-    switch (md->b.version)
+    switch (md->b.version & ADIOS_VERSION_NUM_MASK)
     {
         case 1:
         {
