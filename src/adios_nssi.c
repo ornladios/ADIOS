@@ -68,6 +68,7 @@ struct adios_nssi_method_data_struct
 /* Need a struct to encapsulate var offset info.
  */
 struct var_offset {
+    uint16_t  oid;
     char      opath[ADIOS_PATH_MAX];
     char      oname[ADIOS_PATH_MAX];
     void     *ovalue;
@@ -81,6 +82,7 @@ static List var_offset_list;
 /* Need a struct to encapsulate var dim info.
  */
 struct var_dim {
+    uint16_t  did;
     char      dpath[ADIOS_PATH_MAX];
     char      dname[ADIOS_PATH_MAX];
     void     *dvalue;
@@ -210,10 +212,11 @@ static void open_file_printall(void)
     }
 }
 
-static struct var_offset *var_offset_create(const char *path, const char *name, void *value, uint64_t size)
+static struct var_offset *var_offset_create(const char *path, const char *name, void *value, uint64_t size, uint16_t id)
 {
     struct var_offset *vo=calloc(1,sizeof(struct var_offset));
 
+    vo->oid = id;
     strcpy(vo->opath, path);
     strcpy(vo->oname, name);
     vo->ovalue = value;
@@ -236,14 +239,34 @@ static struct var_offset *var_offset_find(const char *path, const char *name)
     ListElmt *elmt;
     struct var_offset *vo;
 
-    if (DEBUG>3) printf("looking for opath(%s) oname(%s)\n", path, name);
+    if (DEBUG>2) printf("looking for opath(%s) oname(%s)\n", path, name);
 
     elmt = list_head(&var_offset_list);
     while(elmt) {
         vo = list_data(elmt);
-        if (DEBUG>3) printf("comparing to opath(%s) oname(%s)\n", vo->opath, vo->oname);
+        if (DEBUG>2) printf("comparing to opath(%s) oname(%s)\n", vo->opath, vo->oname);
         if ((strcmp(path, vo->opath) == 0) && (strcmp(name, vo->oname) == 0)) {
-            if (DEBUG>3) printf("opath(%s) oname(%s) matches search\n", vo->opath, vo->oname);
+            if (DEBUG>2) printf("opath(%s) oname(%s) matches search\n", vo->opath, vo->oname);
+            return vo;
+        }
+        elmt = list_next(elmt);
+    }
+
+    return NULL;
+}
+static struct var_offset *var_offset_find_by_id(const uint16_t id)
+{
+    ListElmt *elmt;
+    struct var_offset *vo;
+
+    if (DEBUG>2) printf("looking for oid(%d)\n", id);
+
+    elmt = list_head(&var_offset_list);
+    while(elmt) {
+        vo = list_data(elmt);
+        if (DEBUG>2) printf("comparing to oid(%d)\n", vo->oid);
+        if (vo->oid == id) {
+            if (DEBUG>2) printf("oid(%d) opath(%s) oname(%s) matches search\n", vo->oid, vo->opath, vo->oname);
             return vo;
         }
         elmt = list_next(elmt);
@@ -264,10 +287,11 @@ static void var_offset_printall(void)
     }
 }
 
-static struct var_dim *var_dim_create(const char *path, const char *name, void *value, uint64_t size)
+static struct var_dim *var_dim_create(const char *path, const char *name, void *value, uint64_t size, uint16_t id)
 {
     struct var_dim *vd=calloc(1,sizeof(struct var_dim));
 
+    vd->did = id;
     strcpy(vd->dpath, path);
     strcpy(vd->dname, name);
     vd->dvalue = value;
@@ -290,14 +314,34 @@ static struct var_dim *var_dim_find(const char *path, const char *name)
     ListElmt *elmt;
     struct var_dim *vd;
 
-    if (DEBUG>3) printf("looking for opath(%s) oname(%s)\n", path, name);
+    if (DEBUG>2) printf("looking for dpath(%s) dname(%s)\n", path, name);
 
     elmt = list_head(&var_dim_list);
     while(elmt) {
         vd = list_data(elmt);
-        if (DEBUG>3) printf("comparing to opath(%s) oname(%s)\n", vd->dpath, vd->dname);
+        if (DEBUG>2) printf("comparing to dpath(%s) dname(%s)\n", vd->dpath, vd->dname);
         if ((strcmp(path, vd->dpath) == 0) && (strcmp(name, vd->dname) == 0)) {
-            if (DEBUG>3) printf("opath(%s) oname(%s) matches search\n", vd->dpath, vd->dname);
+            if (DEBUG>2) printf("dpath(%s) dname(%s) matches search\n", vd->dpath, vd->dname);
+            return vd;
+        }
+        elmt = list_next(elmt);
+    }
+
+    return NULL;
+}
+static struct var_dim *var_dim_find_by_id(const uint16_t id)
+{
+    ListElmt *elmt;
+    struct var_dim *vd;
+
+    if (DEBUG>2) printf("looking for did(%d)\n", id);
+
+    elmt = list_head(&var_dim_list);
+    while(elmt) {
+        vd = list_data(elmt);
+        if (DEBUG>2) printf("comparing to did(%d)\n", vd->did);
+        if (vd->did == id) {
+            if (DEBUG>2) printf("did(%d) dpath(%s) dname(%s) matches search\n", vd->did, vd->dpath, vd->dname);
             return vd;
         }
         elmt = list_next(elmt);
@@ -444,7 +488,7 @@ static int gen_offset_list(
             parse_dimension_size(group, pvar_root, patt_root, &dims->local_offset, value);
 
             uint64_t vsize = 4; /* adios_get_var_size(v, group, value); */
-            vi = var_offset_create(v->path, offset_name, value, vsize);
+            vi = var_offset_create(v->path, offset_name, value, vsize, dims->local_offset.id);
             list_ins_next(&var_offset_list, list_tail(&var_offset_list), vi);
 
             loffs_idx++;
@@ -541,7 +585,7 @@ static int gen_dim_list(
             }
 
             uint64_t vsize = 4; /* adios_get_var_size(v, group, value); */
-            vi = var_dim_create(v->path, dim_name, value, vsize);
+            vi = var_dim_create(v->path, dim_name, value, vsize, dims->dimension.id);
             list_ins_next(&var_dim_list, list_tail(&var_dim_list), vi);
 
             dim_idx++;
@@ -825,12 +869,13 @@ enum ADIOS_FLAG adios_nssi_should_buffer(
             &max_data_size,
             1,
             MPI_UNSIGNED_LONG,
-            MPI_MAX,
+            MPI_SUM,
             0,
             file_data->collective_op_comm);
     if (file_data->collective_op_rank == 0) {
         if (DEBUG > 3) printf("max_data_size==%lu\n", max_data_size);
         args.data_size = max_data_size*file_data->collective_op_size;
+        args.data_size = max_data_size;
         if (DEBUG > 3) printf("args.data_size==%lu\n", args.data_size);
 
         Func_Timer("ADIOS_GROUP_SIZE_OP",
@@ -1194,6 +1239,19 @@ void adios_nssi_write(
 
     if (DEBUG>3) printf("rank(%d) enter adios_nssi_write\n", global_rank);
 
+//    struct var_offset *vo = var_offset_find_by_id(v->id);
+    struct var_offset *vo = var_offset_find("/", v->name);
+    if (vo != NULL) {
+        if (DEBUG>2) printf("rank(%d) var(%s, %s) is an offset.  skip write.\n", global_rank, v->path, v->name);
+        return;
+    }
+//    struct var_dim *vd = var_dim_find_by_id(v->id);
+    struct var_dim *vd = var_dim_find("/", v->name);
+    if (vd != NULL) {
+        if (DEBUG>2) printf("rank(%d) var(%s, %s) is a dimension.  skip write.\n", global_rank, v->path, v->name);
+        return;
+    }
+
     of=open_file_find(method->base_path, f->name);
     if (of == NULL) {
         fprintf(stderr, "file is not open.  FAIL.");
@@ -1208,7 +1266,7 @@ void adios_nssi_write(
             if (DEBUG>3) fprintf(stderr, "write var: %s start!\n", v->name);
         }
         uint64_t var_size = adios_get_var_size (v, f->group, data);
-        if (DEBUG>3) printf("rank (%d) adios_nssi_write: vpath(%s) vname(%s) vsize(%ld)\n", global_rank, v->path, v->name, var_size);
+        if (DEBUG>2) printf("rank (%d) adios_nssi_write: vpath(%s) vname(%s) vsize(%ld)\n", global_rank, v->path, v->name, var_size);
         write_var(file_data,
                 f->group,
                 f->group->vars,
