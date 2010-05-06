@@ -25389,7 +25389,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (exit $ac_status); }; }; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
-	     PHDF5_LIBS="-lhdf5_hl -lhdf5"
+	     PHDF5_LIBS="-lhdf5_hl -lhdf5 -lz"
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
