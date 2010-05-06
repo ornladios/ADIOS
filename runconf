@@ -28,7 +28,7 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
         --enable-research-transports  \
         --with-phdf5=$HDF5_DIR \
         --without-netcdf \
-        --with-datatap=ib
+        --with-datatap=/ccs/home/habbasi/work/ewok/
         #--with-hdf5=$HDF5_DIR  \
         #--with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
@@ -131,8 +131,7 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
         --with-nssi=/ccs/home/thkorde/projects/nessie/install \
-        --with-portals --with-datatap=yes \
-	--with-ptlpbio=/ccs/home/habbasi/work/jaguar/
+        --with-portals --with-datatap=/ccs/home/habbasi/work/jaguar/
     
     fi
     
