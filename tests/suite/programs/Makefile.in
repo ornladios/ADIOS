@@ -38,11 +38,11 @@ host_triplet = @host@
 check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_1) \
 	$(am__EXEEXT_1)
 @HAVE_NETCDF_TRUE@am__append_1 = $(NETCDF_LDFLAGS)
-@HAVE_NETCDF_TRUE@am__append_2 = $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+@HAVE_NETCDF_TRUE@am__append_2 = $(NETCDF_LIBS)
 @HAVE_NSSI_TRUE@am__append_3 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_4 = $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+@HAVE_NSSI_TRUE@am__append_4 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 @HAVE_PHDF5_TRUE@am__append_5 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_6 = $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+@HAVE_PHDF5_TRUE@am__append_6 = $(PHDF5_LIBS)
 @HAVE_DART_TRUE@am__append_7 = $(DART_CPPFLAGS)
 @HAVE_DART_TRUE@am__append_8 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
 @HAVE_DART_TRUE@am__append_9 = $(DART_LIBS)
@@ -75,15 +75,9 @@ am__EXEEXT_1 =
 am_posix_method_OBJECTS = posix_method.$(OBJEXT)
 posix_method_OBJECTS = $(am_posix_method_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 =  \
-@HAVE_NETCDF_TRUE@	$(top_builddir)/src/libadios_nc4.a \
-@HAVE_NETCDF_TRUE@	$(am__DEPENDENCIES_1)
-@HAVE_NSSI_TRUE@am__DEPENDENCIES_3 =  \
-@HAVE_NSSI_TRUE@	$(top_builddir)/src/libadios_nssi.a \
-@HAVE_NSSI_TRUE@	$(am__DEPENDENCIES_1)
-@HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 =  \
-@HAVE_PHDF5_TRUE@	$(top_builddir)/src/libadios_phdf5.a \
-@HAVE_PHDF5_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
+@HAVE_NSSI_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
+@HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
 @HAVE_DART_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
 am__DEPENDENCIES_6 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
 	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
@@ -238,6 +232,7 @@ PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
 RESEARCH_TRANSPORTS_FALSE = @RESEARCH_TRANSPORTS_FALSE@
 RESEARCH_TRANSPORTS_TRUE = @RESEARCH_TRANSPORTS_TRUE@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@

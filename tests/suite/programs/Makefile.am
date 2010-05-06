@@ -32,15 +32,15 @@ LDADD = $(MXML_LIBS)
 AM_CPPFLAGS=
 if HAVE_NETCDF
 AM_LDFLAGS += $(NETCDF_LDFLAGS)
-LDADD +=  $(top_builddir)/src/libadios_nc4.a $(NETCDF_LIBS)
+LDADD +=  $(NETCDF_LIBS)
 endif
 if HAVE_NSSI
 AM_LDFLAGS += $(NSSI_LDFLAGS)
-LDADD +=  $(top_builddir)/src/libadios_nssi.a $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
+LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 endif
 if HAVE_PHDF5
 AM_LDFLAGS += $(PHDF5_LDFLAGS)
-LDADD +=  $(top_builddir)/src/libadios_phdf5.a $(PHDF5_LIBS)
+LDADD +=  $(PHDF5_LIBS)
 endif
 if HAVE_DART
 AM_CPPFLAGS += $(DART_CPPFLAGS)
