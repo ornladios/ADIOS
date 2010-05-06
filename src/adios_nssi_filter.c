@@ -1084,7 +1084,7 @@ void adios_nssi_filter_write(
     struct open_file *of=NULL;
     struct adios_nssi_filter_data_struct *md=NULL;
 
-    if (DEBUG>3) printf("rank(%d) enter adios_nssi_filter_write\n", global_rank);
+    if (DEBUG>3) printf("rank(%d) enter adios_nssi_filter_write - var(%s, %s)\n", global_rank, v->path, v->name);
 
     of=open_file_find(method->base_path, f->name);
     if (of == NULL) {
