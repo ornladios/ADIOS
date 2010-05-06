@@ -106,7 +106,7 @@ else
 #endif
             ],
             [AC_MSG_RESULT(yes)
-	     PHDF5_LIBS="-lhdf5_hl -lhdf5"],
+	     PHDF5_LIBS="-lhdf5_hl -lhdf5 -lz"],
             [AC_MSG_RESULT(no)
 	     if test "x$with_phdf5" != xcheck; then
                AC_MSG_FAILURE( [--with-phdf5 was given, but compile test failed])
