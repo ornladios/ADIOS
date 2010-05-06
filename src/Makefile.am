@@ -133,7 +133,7 @@ endif
 endif
 
 if HAVE_NSSI
-libadios_a_SOURCES += adios_nssi_filter.c
+libadios_a_SOURCES += adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
 dist_libadios_a_SOURCES = adios_nssi_args.x
 nodist_libadios_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 libadios_a_CPPFLAGS += $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
