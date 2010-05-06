@@ -275,6 +275,7 @@ void agg_and_write(const int64_t fd)
             if (adios_nssi_filter_is_anon_dim(chunk->fd, chunk->offset_name[i]) == TRUE) {
                 adios_nssi_filter_set_anon_dim(chunk->fd, chunk->offset_name[i], chunk->offset[i]);
             } else {
+                if (DEBUG>2) printf("server_rank(%d) writing aggregated offset vname(%s)\n", global_rank, chunk->offset_name[i]);
                 Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->offset_path[i], chunk->offset_name[i]););
                 Func_Timer("adios_write", adios_write(chunk->fd, chunk->offset_name[i], &(chunk->offset[i])););
             }
@@ -286,12 +287,14 @@ void agg_and_write(const int64_t fd)
             if (adios_nssi_filter_is_anon_dim(chunk->fd, chunk->count_name[i]) == TRUE) {
                 adios_nssi_filter_set_anon_dim(chunk->fd, chunk->count_name[i], chunk->count[i]);
             } else {
+                if (DEBUG>2) printf("server_rank(%d) writing aggregated dim vname(%s)\n", global_rank, chunk->count_name[i]);
                 Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->count_path[i], chunk->count_name[i]););
                 Func_Timer("adios_write", adios_write(chunk->fd, chunk->count_name[i], &(chunk->count[i])););
             }
         }
 
         if (DEBUG>3) printf("writing myrank(%d) vname(%s)\n", grank, chunk->var_name);
+        if (DEBUG>2) printf("server_rank(%d) writing aggregated array vname(%s)\n", global_rank, chunk->var_name);
         Func_Timer("adios_set_path_var", adios_set_path_var(chunk->fd, chunk->var_path, chunk->var_name););
         Func_Timer("adios_write", adios_write(chunk->fd, chunk->var_name, chunk->buf););
 
@@ -514,8 +517,8 @@ int nssi_staging_write_stub(
     if (DEBUG>3) printf("server_rank(%d) vname(%s) vsize(%ld) is_scalar(%d) writer_rank(%ld)\n", global_rank, args->vname, args->vsize, args->is_scalar, args->writer_rank);
 
     if (!args->is_scalar) {
-        if (DEBUG>3) printf("allocated v(%p), len(%ld)\n",
-                v, args->vsize);
+        if (DEBUG>2) printf("server_rank(%d) caching non-scalar vname(%s) vsize(%ld)\n", global_rank, args->vname, args->vsize);
+        if (DEBUG>3) printf("allocated v(%p), len(%ld)\n", v, args->vsize);
         aggregation_chunk_details_t *chunk=NULL;
         chunk = new aggregation_chunk_details_t;
         chunk->fd = args->fd;
@@ -548,6 +551,7 @@ int nssi_staging_write_stub(
         add_chunk(chunk);
 
     } else {
+        if (DEBUG>2) printf("server_rank(%d) writing scalar vname(%s) vsize(%ld)\n", global_rank, args->vname, args->vsize);
         Func_Timer("adios_set_path_var", adios_set_path_var(args->fd, args->vpath, args->vname););
         Func_Timer("adios_write", adios_write(args->fd, args->vname, v););
 
