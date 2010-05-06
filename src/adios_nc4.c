@@ -18,9 +18,7 @@
 #include "adios_bp_v1.h"
 #include "adios_transport_hooks.h"
 #include "adios_internals.h"
-#ifdef HAVE_NETCDF
 #include "netcdf.h"
-#endif
 
 #include "io_timer.h"
 
