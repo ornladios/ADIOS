@@ -103,6 +103,7 @@ int timeval_writer_compare (const void * left, const void * right)
     if (l->pid == r->pid) return 0;
     if (l->pid > r->pid) return 1;
 }
+#endif
 
 // we'll use an array of these to keep track of the index pieces that the
 // sub_coordinator gets. This will be sorted into offset order before
@@ -128,6 +129,7 @@ int index_struct_compare (const void * left, const void * right)
     if (l->offset > r->offset) return 1;
 }
 
+#if COLLECT_METRICS
 struct timing_metrics
 {
     struct timeval t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13;
