@@ -33,7 +33,7 @@
 
 static int adios_mpi_initialized = 0;
 
-#   define COLLECT_METRICS 0
+#define COLLECT_METRICS 0
 
 
 struct adios_MPI_data_struct
@@ -391,6 +391,10 @@ void adios_mpi_init (const char * parameters
     md->storage_targets = 0;
 
     adios_buffer_struct_init (&md->b);
+#if COLLECT_METRICS
+    // init the pointer for the first go around avoiding the bad free in open
+    timing.t24 = 0;
+#endif
 }
 
 int adios_mpi_open (struct adios_file_struct * fd

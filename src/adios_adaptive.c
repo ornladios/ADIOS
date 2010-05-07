@@ -33,7 +33,7 @@ static int adios_adaptive_initialized = 0;
 
 #define PRINT_MESSAGES 0
 
-#define COLLECT_METRICS 1
+#define COLLECT_METRICS 0
 
 struct adios_adaptive_data_struct
 {
@@ -213,7 +213,9 @@ void print_metrics (struct adios_adaptive_data_struct * md, int iteration)
         int * sub_coord_ranks;
 
         t = malloc (sizeof (struct timing_metrics) * md->size);
+        assert (t);
         sub_coord_ranks = malloc (sizeof (int) * md->size);
+        assert (sub_coord_ranks);
 
         memcpy (&t [0], &timing, sizeof (struct timing_metrics));
 
@@ -225,7 +227,9 @@ void print_metrics (struct adios_adaptive_data_struct * md, int iteration)
 
         // get the write timing
         int * index_sizes = malloc (4 * md->size);
+        assert (index_sizes);
         int * index_offsets = malloc (4 * md->size);
+        assert (index_offsets);
         uint32_t total_size = 0;
         char * recv_buffer = 0;
         char * recv_buffer1 = 0;
@@ -239,6 +243,7 @@ void print_metrics (struct adios_adaptive_data_struct * md, int iteration)
         }
 
         recv_buffer = malloc (total_size + 1);
+        assert (recv_buffer);
 
         MPI_Gatherv (t [0].t24, 0, MPI_BYTE
                     ,recv_buffer, index_sizes, index_offsets, MPI_BYTE
@@ -262,6 +267,7 @@ void print_metrics (struct adios_adaptive_data_struct * md, int iteration)
         }
 
         recv_buffer1 = malloc (total_size + 1);
+        assert (recv_buffer1);
 
         MPI_Gatherv (t [0].t15, 0, MPI_BYTE
                     ,recv_buffer1, index_sizes, index_offsets, MPI_BYTE
@@ -286,6 +292,7 @@ void print_metrics (struct adios_adaptive_data_struct * md, int iteration)
         }
 
         recv_buffer2 = malloc (total_size + 1);
+        assert (recv_buffer2);
 
         MPI_Gatherv (t [0].t17, 0, MPI_BYTE
                     ,recv_buffer2, index_sizes, index_offsets, MPI_BYTE
@@ -310,6 +317,7 @@ void print_metrics (struct adios_adaptive_data_struct * md, int iteration)
         }
 
         recv_buffer3 = malloc (total_size + 1);
+        assert (recv_buffer3);
 
         MPI_Gatherv (t [0].t29, 0, MPI_BYTE
                     ,recv_buffer3, index_sizes, index_offsets, MPI_BYTE
@@ -1085,6 +1093,14 @@ void adios_adaptive_init (const char * parameters
     }
 
     adios_buffer_struct_init (&md->b);
+#if COLLECT_METRICS
+    // initialize the pointers in the timing struct so that open will work
+    // properly (doesn't attempt to free the garbage initial value)
+    timing.t24 = 0;
+    timing.t15 = 0;
+    timing.t17 = 0;
+    timing.t29 = 0;
+#endif
 }
 
 int adios_adaptive_open (struct adios_file_struct * fd
@@ -4282,7 +4298,7 @@ timing.send_count++;
                         && local_writer == 0
                        )
                     {
-printf ("******* fix this to separate out the sending of complete from index to accommodate the index asynchony\n");
+//printf ("******* fix this to separate out the sending of complete from index to accommodate the index asynchony\n");
                         if (msg)
                         {
                             free (msg);
@@ -4335,7 +4351,9 @@ gettimeofday (&timing.t12, NULL);
                             new_vars_root = 0;
                             new_attrs_root = 0;
                             if (b.buff)
+                            {
                                 free (b.buff); // == indices [i].index
+                            }
                             b.buff = 0;
                             total_size += b.length;
                         }
@@ -4376,7 +4394,9 @@ gettimeofday (&timing.t13, NULL);
                             MPI_Wait (&(reqs [i]), &status);
                         }
                         if (reqs)
+                        {
                             free (reqs);
+                        }
                         reqs = 0;
                         // need to make a new communicator for all of the
                         // sub_coords to build the global index. That will
@@ -4646,7 +4666,7 @@ gettimeofday (&timing.t20, NULL);
     }
 
     // used for write
-    if (md && md->f)
+    if (md && md->f != -1)
     {
 #if COLLECT_METRICS
         fsync (md->f);
@@ -4684,6 +4704,7 @@ print_metrics (md, iteration++);
         md->group_comm = MPI_COMM_NULL;
     }
 
+    md->f = -1;
     md->fh = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
