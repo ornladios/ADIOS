@@ -21,7 +21,7 @@ datatap_dir=""
 
 AC_ARG_WITH(datatap, 
 	[  --with-datatap=DIR 	Location of DataTap], 
-	[ ac_with_datatap=$widthval])
+	[ ac_with_datatap=$withval])
 
 if test "x$withval" = x"no"; then
 	AC_DEFINE(NO_DATATAP, 1, [Datatap is disabled])
