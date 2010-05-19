@@ -35,7 +35,23 @@ if test "x$enable_fortran" != "xno"; then
 fi
 
 AC_LANG(C)
+
+dnl Generate libtool script and then do a nasty thing.
+dnl PGI compiler (behind MPICC) does not like --rpath.
+dnl The only way I found to avoid the problem is to remove the chance of using it
+dnl inside the libtool script. Similar to what HDF5 configure does.
+dnl see: http://www.hdfgroup.org/ftp/HDF5/current/src/unpacked/configure.in
+dnl look the snippet after LT_INIT there.
 AC_PROG_LIBTOOL
+#LT_INIT([disable-shared])
+echo 'fixing hardcode_libdir_flag_spec in' $ofile
+ed - $ofile <<EOF 2> /dev/null
+g/^hardcode_libdir_flag_spec=".*"/s//hardcode_libdir_flag_spec=""/
+g/^hardcode_libdir_flag_spec_ld=".*"/s//hardcode_libdir_flag_spec_ld=""/
+w
+q
+EOF
+
 AC_PROG_MXML
 AC_PROG_GENGETOPT
 AC_INFINIBAND

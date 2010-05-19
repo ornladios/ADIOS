@@ -279,7 +279,7 @@ bp2h5_CPPFLAGS = -DH5_USE_16_API $(HDF5_CPPFLAGS) $(am__append_1)
 # change these to use proper autoconf settings
 bp2h5_LDFLAGS = -D_NOMPI $(HDF5_LDFLAGS) -static-libtool-libs \
 	$(am__append_2)
-bp2h5_LDADD = $(top_builddir)/src/libadios_internal_nompi.a -lhdf5 -lz \
+bp2h5_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
 	$(am__append_3)
 EXTRA_DIST = hw-utils.h
 all: all-am
