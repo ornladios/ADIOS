@@ -6,9 +6,6 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     # Ewok #
     ########
     echo "Configure on EWOK"
-    export CC=mpicc
-    export CXX=mpiCC
-    #export FC=mpif90
     source /etc/profile.d/modules.sh
     module unload hdf5
     module unload netcdf
@@ -16,10 +13,27 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     module unload PE-pgi
     module unload PE-pathscale
     module unload pgi
-    TARGET=gnu
+    TARGET=pgi
     module load PE-$TARGET
     module load hdf5/1.8.2_par
+    #module load hdf5/1.6.7-ompi1.2.8
     module load netcdf
+    #export MPICC=mpicc
+    #export MPICXX=mpiCC
+    #export MPIFC=mpif90
+    if [ "$TARGET" == "pgi" ]; then
+        export CC=pgcc
+        export CXX=pgCC
+        export FC=pgf90
+    elif [ "$TARGET" == "gnu" ]; then
+        export CC=gcc
+        export CXX=g++
+        export FC=gfortran
+    else
+        echo "TARGET must be pgi or gnu"
+        exit 1
+    fi
+        
     export CFLAGS="-g -fPIC" 
     #./configure --prefix=/sw/ewok/adios/1.1.0/sl5.2_${TARGET}_binary \
     ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.$TARGET \
@@ -27,9 +41,8 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
         --enable-research-transports  \
         --with-phdf5=$HDF5_DIR \
-        --without-netcdf \
-        --with-datatap=/ccs/home/habbasi/work/ewok/
-        #--with-hdf5=$HDF5_DIR  \
+        --without-netcdf 
+        #--with-datatap=/ccs/home/habbasi/work/ewok/
         #--with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--with-dart=/ccs/proj/e2e/dart
@@ -62,9 +75,11 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         module unload PrgEnv-cray
         module unload xt-papi
         #module unload xtpe-quadcore
-        TARGET=gnu
+        TARGET=pgi
         module load PrgEnv-$TARGET
-        module load netcdf-hdf5parallel
+        #module load netcdf-hdf5parallel
+        module load hdf5-parallel
+        #module load hdf5/1.8.2_par
         module load szip
         module load xt-papi
         ## the netcdf-hdf5parallel module only sets NETCDF_PARALLEL_VERSION.
@@ -76,13 +91,16 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         #export FC=mpif90
         #CFLAGS="-fPIC" ./configure --prefix=/sw/xt5/adios/1.1.0/cnl2.2_${TARGET}_binary \
         #CFLAGS="-fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/jaguar.$TARGET \
-        CFLAGS="-g -O0 -fPIC -DDART_DO_VERSIONING" ./configure --prefix=/ccs/proj/fus022/ADIOS/jaguar.$TARGET \
+        #CFLAGS="-g -O0 -fPIC -DDART_DO_VERSIONING" ./configure --prefix=/ccs/proj/fus022/ADIOS/jaguar.$TARGET \
+        CFLAGS="-g -O0 -fPIC -DDART_DO_VERSIONING" ./configure --prefix=/ccs/proj/fus022/ADIOS/jaguar.dart \
             --enable-dependency-tracking \
             --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
             --without-portals \
             --enable-research-transports \
-            --without-phdf5
+            --without-netcdf \
+            --without-datatap 
             #--with-dart=/ccs/proj/e2e/pnorbert/dart/current 
+            #--without-phdf5 \
             #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.xt5_$TARGET \
             #--with-hdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par \
             #--with-netcdf=/sw/xt/netcdf/3.6.2/sles9.2_pgi7.0.7
@@ -164,12 +182,14 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
     ########
     echo "Configure on LENS"
     export CC=mpicc
+    export CXX=mpiCC
     source /etc/profile.d/modules.sh
     module load hdf5
-    module load netcdf
+    #module load netcdf
     CFLAGS="-fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/adios/lens \
         --enable-dependency-tracking \
-        --with-mxml=/ccs/proj/e2e/pnorbert/mxml
+        --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
+        --without-netcdf
         #--with-hdf5=/sw/analysis-x64/hdf5/1.6.7/sl5.0_pgi7.1.5_ompi1.2.6 \
         #--with-netcdf=/sw/analysis-x64/netcdf/3.6.2/sl5.0_pgi7.1.5
     

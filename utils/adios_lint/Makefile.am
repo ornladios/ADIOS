@@ -16,3 +16,5 @@ adios_lint_CPPFLAGS += -DDMALLOC  $(DMALLOC_CPPFLAGS)
 adios_lint_LDFLAGS +=  $(DMALLOC_LDFLAGS)
 adios_lint_LDADD += -ldmalloc
 endif
+
+CC=$(MPICC)

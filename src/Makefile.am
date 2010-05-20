@@ -287,6 +287,7 @@ libadios_internal_nompi_a_CPPFLAGS = -D_NOMPI $(MXML_CPPFLAGS)
 #Note: -DNOMPI chokes IBM's bgxlf compiler but it can pass -D_NOMPI. 
 
 CC=$(MPICC)
+CXX=$(MPICXX)
 
 if HAVE_DMALLOC
 libadiosread_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)

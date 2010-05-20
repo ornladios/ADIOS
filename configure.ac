@@ -28,6 +28,7 @@ if test "x$enable_fortran" != "xno"; then
     AC_PROG_FC
     AC_PROG_FC_C_O
     AC_FC_WRAPPERS
+    F77=$FC
     dnl AC_PROG_F77
     dnl AC_PROG_F77_C_O
     AC_LANG(Fortran)
@@ -44,13 +45,14 @@ dnl see: http://www.hdfgroup.org/ftp/HDF5/current/src/unpacked/configure.in
 dnl look the snippet after LT_INIT there.
 AC_PROG_LIBTOOL
 #LT_INIT([disable-shared])
-echo 'fixing hardcode_libdir_flag_spec in' $ofile
-ed - $ofile <<EOF 2> /dev/null
-g/^hardcode_libdir_flag_spec=".*"/s//hardcode_libdir_flag_spec=""/
-g/^hardcode_libdir_flag_spec_ld=".*"/s//hardcode_libdir_flag_spec_ld=""/
-w
-q
-EOF
+dnl echo 'fixing hardcode_libdir_flag_spec in' $ofile
+dnl ed - $ofile <<EOF 2> /dev/null
+dnl g/^wl=".*"/s//wl="-Wl,"/
+dnl w
+dnl q
+dnl EOF
+dnl g/^hardcode_libdir_flag_spec=".*"/s//hardcode_libdir_flag_spec=""/
+dnl g/^hardcode_libdir_flag_spec_ld=".*"/s//hardcode_libdir_flag_spec_ld=""/
 
 AC_PROG_MXML
 AC_PROG_GENGETOPT
@@ -81,8 +83,8 @@ AC_ARG_ENABLE(write,
 AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
 
 dnl CC="$MPICC"
-CXX="$MPICXX"
-FC="$MPIFC"
+dnl CXX="$MPICXX"
+dnl FC="$MPIFC"
 CPPFLAGS="$CPPFLAGS -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE"
 
 LIBS="$MPILIBS $LIBS"
@@ -131,18 +133,20 @@ echo
 
 echo
 echo "  - General Compile FLAGS";
-echo "      - FC = $FC";
-echo "      - FCFLAGS = $FCFLAGS";
-echo
-echo "      - CC = $CC";
+echo "      - CC  = $CC";
+echo "      - CXX = $CXX";
+echo "      - FC  = $FC";
 echo "      - CPPFLAGS = $CPPFLAGS";
-echo "      - CFLAGS = $CFLAGS";
-echo "      - LDLAGS = $LDFLAGS";
-echo "      - LIBS = $LIBS";
+echo "      - CFLAGS   = $CFLAGS";
+echo "      - CXXFLAGS = $CXXFLAGS";
+echo "      - FCFLAGS  = $FCFLAGS";
+echo "      - LDLAGS   = $LDFLAGS";
+echo "      - LIBS     = $LIBS";
 echo
-echo "      - MPICC = $MPICC";
+echo "      - MPICC   = $MPICC";
+echo "      - MPICXX  = $MPICXX";
+echo "      - MPIFC   = $MPIFC";
 echo "      - MPILIBS = $MPILIBS";
-echo "      - MPIFC = $MPIFC";
 echo
 
 if test "x$enable_research_transports" == "xyes"; then 

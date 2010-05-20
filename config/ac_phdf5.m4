@@ -75,12 +75,14 @@ else
             ac_phdf5_ok=no
     fi
     
+    save_CC="$CC"
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
     LIBS="$LIBS -lhdf5"
     LDFLAGS="$LDFLAGS $PHDF5_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $PHDF5_CPPFLAGS"
+    CC="$MPICC"
     
     if test -z "${HAVE_PHDF5_TRUE}"; then
         AC_CHECK_HEADERS(hdf5.h,
@@ -122,6 +124,7 @@ else
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"
     CPPFLAGS="$save_CPPFLAGS"
+    CC="$save_CC"
     
     # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
     if test -z "${HAVE_PHDF5_TRUE}"; then
