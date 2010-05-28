@@ -51,6 +51,7 @@ typedef struct {
         ADIOS_FILE * fp;            /* pointer to the parent ADIOS_FILE struct                 */
 } ADIOS_GROUP;
 
+// NCSU - Added more statistics to be returned to the end user
 typedef struct {
         int        grpid;           /* group index (0..ADIOS_FILE.groups_count-1)                     */
         int        varid;           /* variable index (0..ADIOS_GROUP.var_count-1)                    */
@@ -61,8 +62,21 @@ typedef struct {
         void     * value;           /* value of a scalar variable, NULL for array.                    */
         void     * gmin;            /* minimum value in an array variable, = value for a scalar       */
         void     * gmax;            /* maximum value of an array variable (over all timesteps)        */
-        void     * mins;            /* minimum per each timestep (array of timestep elements)         */
-        void     * maxs;            /* maximum per each timestep (array of timestep elements)         */
+        double   * gavg;            /* average value of an array variable (over all timesteps)        */
+        double   * gstd_dev;        /* standard deviation value of an array variable (over all timesteps)        */
+        void     ** mins;           /* minimum per each timestep (array of timestep elements)         */
+        void     ** maxs;           /* maximum per each timestep (array of timestep elements)         */
+        double   ** avgs;           /* average per each timestep (array of timestep elements)         */
+        double   ** std_devs;       /* standard deviation per each timestep (array of timestep elements)         */
+		struct ADIOS_HIST			/* Histogram */
+		{
+			uint32_t num_breaks;
+			double max;
+			double min;
+			double *breaks;
+			uint32_t **frequenciess;
+			uint32_t *gfrequencies;
+		} *hist;
 } ADIOS_VARINFO;
 
 /* The list of the available read methods */
@@ -154,6 +168,9 @@ int adios_gclose (ADIOS_GROUP *gp);
  */
 ADIOS_VARINFO * adios_inq_var (ADIOS_GROUP *gp, const char * varname);
 
+// NCSU - Timeseries analysis functions
+double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characteristic, uint32_t time_start, uint32_t time_end, uint32_t lag);
+double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characteristic, uint32_t time_start, uint32_t time_end, uint32_t lag);
 /** Inquiry a variable by index
  *       varid    index of variable (0..gp->vars_count-1)
  *                in gp->vars_namelist of ADIOS_GROUP struct

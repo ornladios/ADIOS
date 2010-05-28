@@ -23,4 +23,6 @@ endif
 CC=$(MPICC)
 
 EXTRA_DIST = hw-utils.h
+CC=$(MPICC)
+
 

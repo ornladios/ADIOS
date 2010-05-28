@@ -411,6 +411,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
             uint32_t characteristic_set_length;
             uint8_t item = 0;
 
+			(*root)->characteristics [j].stats = 0;
             characteristic_set_count = (uint8_t) *(b->buff + b->offset);
             b->offset += 1;
 
@@ -430,9 +431,9 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                 switch (c)
                 {
-                    case adios_characteristic_value:
                     case adios_characteristic_min:
                     case adios_characteristic_max:
+                    case adios_characteristic_value:
                     {
                         uint16_t data_size;
                         void * data = 0;
@@ -537,14 +538,134 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                                 (*root)->characteristics [j].value = data;
                                 break;
 
+							// NCSU - reading older bp files
+							// adios_characteristic_min, max are not used anymore. If this is encountered it is an older bp file format
+							// Code below reads min and min, and sets the bitmap for those 2 alone
                             case adios_characteristic_min:
-                                (*root)->characteristics [j].min = data;
+								if (!(*root)->characteristics [j].stats)
+								{
+									(*root)->characteristics [j].stats = malloc (sizeof(struct adios_index_characteristics_stat_struct *));
+									(*root)->characteristics [j].stats[0] = malloc (2 * sizeof(struct adios_index_characteristics_stat_struct));
+                                	(*root)->characteristics [j].bitmap = 0;
+								}
+                                (*root)->characteristics [j].stats[0][adios_statistic_min].data = data;
+                                (*root)->characteristics [j].bitmap |= (1 << adios_statistic_min);
                                 break;
 
                             case adios_characteristic_max:
-                                (*root)->characteristics [j].max = data;
+								if (!(*root)->characteristics [j].stats)
+								{
+									(*root)->characteristics [j].stats = malloc (sizeof(struct adios_index_characteristics_stat_struct *));
+									(*root)->characteristics [j].stats[0] = malloc (2 * sizeof(struct adios_index_characteristics_stat_struct));
+                                	(*root)->characteristics [j].bitmap = 0;
+								}
+                                (*root)->characteristics [j].stats[0][adios_statistic_max].data = data;
+                                (*root)->characteristics [j].bitmap |= (1 << adios_statistic_max);
                                 break;
                         }
+                        break;
+                    }
+
+					// NCSU - Statistics - Parsing stat related info from bp file based on the bitmap
+					case adios_characteristic_stat:
+					{
+						uint8_t k, c, idx;
+            			uint64_t count = adios_get_stat_set_count((*root)->type);
+            			uint16_t characteristic_size;
+
+						(*root)->characteristics [j].stats = malloc (count * sizeof(struct adios_index_characteristics_stat_struct *));
+
+            			for (c = 0; c < count; c ++)
+            			{
+							(*root)->characteristics [j].stats[c] = malloc(ADIOS_STAT_LENGTH * sizeof(struct adios_index_characteristics_stat_struct));
+
+            			    k = idx = 0;
+            			    while ((*root)->characteristics[j].bitmap >> k)
+            			    {
+								(*root)->characteristics [j].stats[c][k].data = 0;
+
+            			        if (((*root)->characteristics[j].bitmap >> k) & 1)
+            			        {
+									if (k == adios_statistic_hist)
+									{
+										struct adios_index_characteristics_hist_struct * hist = malloc(sizeof(struct adios_index_characteristics_hist_struct));
+										uint32_t bi, num_breaks;
+
+										(*root)->characteristics [j].stats[c][idx].data = hist;
+																							
+										// Getting the number of breaks of histogram
+                        				hist->num_breaks = * (uint32_t *) (b->buff + b->offset);
+                        				if(b->change_endianness == adios_flag_yes) {
+                            				swap_32(hist->num_breaks);
+                        				}
+                        				b->offset += 4;
+
+										num_breaks = hist->num_breaks;
+
+										// Getting the min of histogram
+                        				hist->max = *(double *) (b->buff + b->offset);
+                        				if(b->change_endianness == adios_flag_yes) {
+                            				swap_64(hist->min);
+                        				}
+                        				b->offset += 8;
+
+										// Getting the max of histogram
+                        				hist->max = *(double *) (b->buff + b->offset);
+                        				if(b->change_endianness == adios_flag_yes) {
+                            				swap_64(hist->max);
+                        				}
+                        				b->offset += 8;
+
+                        				// Getting the frequencies of the histogram
+                        				hist->frequencies = malloc ((num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+                        				memcpy(hist->frequencies, (b->buff + b->offset), (num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+
+                        				if(b->change_endianness == adios_flag_yes) {
+                        				    for(bi = 0; bi <= num_breaks; bi ++) {
+                        				        swap_32(hist->frequencies[bi]);
+											}
+                        				}
+                        				b->offset += 4 * (num_breaks + 1);
+
+										// Getting the breaks of the histogram
+                        				hist->breaks = malloc (num_breaks * adios_get_type_size(adios_double, ""));
+                        				memcpy(hist->breaks, (b->buff + b->offset), num_breaks * adios_get_type_size(adios_double, ""));
+                        				if(b->change_endianness == adios_flag_yes) {
+                        				    for(bi = 0; bi < num_breaks; bi ++)
+                        				        swap_64(hist->breaks[bi]);
+                        				}
+                        				b->offset += 8 * num_breaks;
+            			            }
+									else
+									{
+										// NCSU - Generic for non-histogram data
+										characteristic_size = adios_get_stat_size((*root)->characteristics [j].stats[c][idx].data, (*root)->type, k);
+										(*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);	
+
+            			            	void * data = (*root)->characteristics [j].stats[c][idx].data;
+            			            	memcpy (data, (b->buff + b->offset), characteristic_size);
+            			            	b->offset += characteristic_size;
+
+            			            	if(b->change_endianness == adios_flag_yes)
+            			            	    swap_ptr(data, characteristic_size * 8);
+									}
+            			            idx ++;
+            			        }
+								k ++;
+            			    }
+            			}
+            			break;	
+					}
+
+					// NCSU - Reading bitmap value
+					case adios_characteristic_bitmap:
+                    {
+                        (*root)->characteristics [j].bitmap =
+                                            *(uint32_t *) (b->buff + b->offset);
+                        if(b->change_endianness == adios_flag_yes) {
+                            swap_32((*root)->characteristics [j].bitmap);
+                        }
+                        b->offset += 4;
                         break;
                     }
 
@@ -883,6 +1004,19 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                             swap_64((*root)->characteristics [j].offset);
                         }
                         b->offset += 8;
+
+                        break;
+                    }
+
+                    case adios_characteristic_bitmap:
+                    {
+                        uint32_t size = adios_get_type_size ((*root)->type, "");
+                        (*root)->characteristics [j].offset =
+                                            *(uint32_t *) (b->buff + b->offset);
+                        if(b->change_endianness == adios_flag_yes) {
+                            swap_32((*root)->characteristics [j].offset);
+                        }
+                        b->offset += 4;
 
                         break;
                     }
@@ -1280,8 +1414,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
 
     var_header->characteristics.offset = 0;
     var_header->characteristics.payload_offset = 0;
-    var_header->characteristics.min = 0;
-    var_header->characteristics.max = 0;
+    var_header->characteristics.stats = 0;
     var_header->characteristics.value = 0;
     var_header->characteristics.dims.count = 0;
     var_header->characteristics.dims.dims = 0;
@@ -1314,28 +1447,111 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
                 b->offset += 8;
                 break;
 
-            case adios_characteristic_min:
-                var_header->characteristics.min = malloc (size);
-                memcpy (var_header->characteristics.min, (b->buff + b->offset)
-                       ,size
-                       );
-
-                if(b->change_endianness == adios_flag_yes) { 
-                    swap_adios_type(var_header->characteristics.min, var_header->type);
+			//NCSU - Read in bitmap
+			case adios_characteristic_bitmap:
+                var_header->characteristics.bitmap = *(uint32_t *)
+                                                        (b->buff + b->offset);
+                if(b->change_endianness == adios_flag_yes) {
+                    swap_32(var_header->characteristics.bitmap);
                 }
-                b->offset += size;
+                b->offset += 4;
                 break;
 
-            case adios_characteristic_max:
-                var_header->characteristics.max = malloc (size);
-                memcpy (var_header->characteristics.max, (b->buff + b->offset)
-                       ,size
-                       );
-                if(b->change_endianness == adios_flag_yes) { 
-                    swap_adios_type(var_header->characteristics.max, var_header->type);
-                }
-                b->offset += size;
+			//NCSU - Read in the statistics
+			case adios_characteristic_stat:
+			{
+				uint8_t j = 0, idx = 0;
+				uint8_t c = 0, count = adios_get_stat_set_count (var_header->type);
+				uint64_t characteristic_size;
+
+				var_header->characteristics.stats = malloc(count * sizeof(struct adios_index_characteristics_stat_struct *));	
+
+				for (c = 0; c < count; c ++)
+				{
+					idx = j = 0;
+					var_header->characteristics.stats[c] = malloc(ADIOS_STAT_LENGTH * sizeof(struct adios_index_characteristics_stat_struct));	
+
+					while (var_header->characteristics.bitmap >> j)
+					{
+						if ((var_header->characteristics.bitmap >> j) & 1)
+						{
+							if (j == adios_statistic_hist)
+							{
+								struct adios_index_characteristics_hist_struct * hist = malloc (sizeof(struct adios_index_characteristics_hist_struct));
+								uint32_t bi, num_breaks;
+
+								var_header->characteristics.stats[c][idx].data = hist;
+
+								// Getting the number of bins
+                				hist->num_breaks = * (uint32_t *) (b->buff + b->offset);
+
+                				if(b->change_endianness == adios_flag_yes) {
+                				    swap_32(hist->num_breaks);
+                				}
+                				b->offset += 4;
+
+								num_breaks = hist->num_breaks;
+
+                				// Getting the min hist value
+                				hist->min = * (double *) (b->buff + b->offset);
+                				if(b->change_endianness == adios_flag_yes) {
+                				    swap_64(hist->min);
+                				}
+                				b->offset += 8;
+
+                				// Getting the max hist value
+                				hist->max = * (double *) (b->buff + b->offset);
+
+                				if(b->change_endianness == adios_flag_yes) {
+                				    swap_64(hist->max);
+                				}
+                				b->offset += 8;
+
+                				// Getting the frequencies
+                				hist->frequencies = malloc((num_breaks + 1)  * adios_get_type_size(adios_unsigned_integer, ""));
+                				memcpy (hist->frequencies
+                				       ,(b->buff + b->offset), (num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, "") 
+                				       );
+
+                				if(b->change_endianness == adios_flag_yes) {
+                				    for(bi = 0; bi <= num_breaks; bi++)
+                				        swap_32(hist->frequencies[bi]);
+                				}
+                				b->offset += 4 * (num_breaks + 1);
+
+								// Getting the break points
+                				hist->breaks = malloc(num_breaks * adios_get_type_size(adios_double, ""));
+                				memcpy (hist->breaks, (b->buff + b->offset), num_breaks * 8);
+
+                				if(b->change_endianness == adios_flag_yes) {
+                				    for(bi = 0; bi < num_breaks; bi++)
+                				        swap_64(hist->breaks[bi]);
+                				}
+                				b->offset += 8 * num_breaks;
+							}
+							else
+							{
+								characteristic_size = adios_get_stat_size(var_header->characteristics.stats[c][idx].data, var_header->type, j);
+
+								var_header->characteristics.stats[c][idx].data = malloc(characteristic_size);	
+                				memcpy (var_header->characteristics.stats[c][idx].data, (b->buff + b->offset)
+                	    		   ,characteristic_size
+                	    		   );
+
+								if(b->change_endianness == adios_flag_yes) {
+                	    			swap_adios_type(var_header->characteristics.stats[c][idx].data, var_header->type);
+                				}
+
+                				b->offset += characteristic_size;
+							}
+
+							idx ++;
+						}
+						j ++;
+					}
+				}
                 break;
+			}
 
             case adios_characteristic_dimensions:
             {
@@ -1364,6 +1580,46 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
                 b->offset += dim_length;
                 break;
             }
+
+			// NCSU - Adding backward compatibility
+			// Reading min and max here implies older bp file 
+            case adios_characteristic_min:
+				if (!var_header->characteristics.stats)
+				{
+					var_header->characteristics.stats = malloc(sizeof(struct adios_index_characteristics_stat_struct *));
+					var_header->characteristics.stats[0] = malloc(2 * sizeof(struct adios_index_characteristics_stat_struct));
+					var_header->characteristics.bitmap = 0;
+				}
+                var_header->characteristics.stats[0][adios_statistic_min].data = malloc (size);
+				var_header->characteristics.bitmap |= (1 << adios_statistic_min);
+                memcpy (var_header->characteristics.stats[0][adios_statistic_min].data, (b->buff + b->offset)
+                       ,size
+                       );
+
+                if(b->change_endianness == adios_flag_yes) {
+                    swap_adios_type(var_header->characteristics.stats[0][adios_statistic_min].data, var_header->type);
+                }
+                b->offset += size;
+                break;
+
+            case adios_characteristic_max:
+                if (!var_header->characteristics.stats)
+                {
+                    var_header->characteristics.stats = malloc(sizeof(struct adios_index_characteristics_stat_struct *));
+                    var_header->characteristics.stats[0] = malloc(2 * sizeof(struct adios_index_characteristics_stat_struct));
+                    var_header->characteristics.bitmap = 0;
+                }
+                var_header->characteristics.stats[0][adios_statistic_max].data = malloc (size);
+				var_header->characteristics.bitmap |= (1 << adios_statistic_max);
+                memcpy (var_header->characteristics.stats[0][adios_statistic_max].data, (b->buff + b->offset)
+                       ,size
+                       );
+
+                if(b->change_endianness == adios_flag_yes) {
+                    swap_adios_type(var_header->characteristics.stats[0][adios_statistic_max].data, var_header->type);
+                }
+                b->offset += size;
+                break;
 
             case adios_characteristic_value:
             {
@@ -1446,15 +1702,29 @@ int adios_clear_var_header_v1 (struct adios_var_header_struct_v1 * var_header)
                                                 = &var_header->characteristics;
 
     c->offset = 0;
-    if (c->min)
+
+	// NCSU - Clear stat
+    if (c->stats)
     {
-        free (c->min);
-        c->min = 0;
-    }
-    if (c->max)
-    {
-        free (c->max);
-        c->max = 0;
+    	uint8_t j = 0, idx = 0;
+    	uint8_t i = 0, count = adios_get_stat_set_count(var_header->type);
+
+    	while (c->bitmap >> j)
+    	{
+    	    if ((c->bitmap >> j) & 1)
+    	    {
+    	        for (i = 0; i < count; i ++)
+    	            free (c->stats[i][idx].data);
+    	        idx ++;
+    	    }
+    	    j ++;
+    	}
+
+    	for (i = 0; i < count; i ++)
+    	    free (c->stats [i]);
+		
+        free (c->stats);
+        c->stats = 0;
     }
     if (c->dims.dims)
     {
@@ -1957,5 +2227,87 @@ uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var)
         default:
             return -1;
     }
+}
+
+//NCSU - Get the size of the statistic id
+uint64_t adios_get_stat_size (void * data, enum ADIOS_DATATYPES type, enum ADIOS_STAT stat_id)
+{
+    uint64_t size = 0;
+
+    switch (type)
+    {
+        case adios_complex:
+            switch (stat_id)
+            {
+                case adios_statistic_min:
+                case adios_statistic_max:
+                case adios_statistic_sum:
+                case adios_statistic_sum_square:
+            		return adios_get_type_size(adios_double, "");
+
+    		    case adios_statistic_finite:
+					return adios_get_type_size(adios_byte, "");
+
+                case adios_statistic_cnt:
+                    return adios_get_type_size(adios_unsigned_integer, "");
+			}
+        case adios_double_complex:
+            switch (stat_id)
+            {
+                case adios_statistic_min:
+                case adios_statistic_max:
+                case adios_statistic_sum:
+                case adios_statistic_sum_square:
+            		return adios_get_type_size(adios_long_double, "");
+
+    		    case adios_statistic_finite:
+					return adios_get_type_size(adios_byte, "");
+
+                case adios_statistic_cnt:
+                    return adios_get_type_size(adios_unsigned_integer, "");
+			}
+        default:
+        {
+            switch (stat_id)
+            {
+                case adios_statistic_min:
+                case adios_statistic_max:
+                    return adios_get_type_size(type, "");
+
+                case adios_statistic_sum:
+                case adios_statistic_sum_square:
+                    return adios_get_type_size(adios_double, "");
+
+    		    case adios_statistic_finite:
+					return adios_get_type_size(adios_byte, "");
+
+                case adios_statistic_cnt:
+                    return adios_get_type_size(adios_unsigned_integer, "");
+
+                case adios_statistic_hist:
+				{
+					struct adios_hist_struct * hist = (struct adios_hist_struct *) data;
+                    size += adios_get_type_size(adios_unsigned_integer, ""); // Number of breaks
+                    size += adios_get_type_size(adios_double, ""); // Min
+                    size += adios_get_type_size(adios_double, ""); // Max
+                    size += ((hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+                    size += (hist->num_breaks * adios_get_type_size(adios_double, ""));
+                    return size;
+				}
+                default:
+                    return -1;
+            }
+        }
+	}
+}
+
+//NCSU - Returns count of the set of characteristcs for a variable
+uint8_t adios_get_stat_set_count (enum ADIOS_DATATYPES type)
+{
+    // NCSU - Complex numbers have the statistic related values repeated.
+    // NCSU - Holds values for real, imaginary, complex parts
+    if (type == adios_complex || type == adios_double_complex)
+        return 3;
+    return 1;
 }
 

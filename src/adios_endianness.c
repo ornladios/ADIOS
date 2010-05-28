@@ -119,3 +119,21 @@ void swap_adios_type_array(void *data, enum ADIOS_DATATYPES type, uint64_t paylo
 	}    
 }
 
+void swap_ptr(void * data, int size)
+{
+	switch (size)
+	{
+		case 16:
+			swap_16_ptr(data);
+			break;
+		case 32:
+			swap_32_ptr(data);
+			break;
+		case 64:
+			swap_64_ptr(data);
+			break;
+		case 128:
+			swap_128_ptr(data);
+			break;
+	}
+}

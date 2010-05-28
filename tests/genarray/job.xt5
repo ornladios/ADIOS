@@ -1,12 +1,12 @@
 #PBS -N genarray
-#PBS -A STF006
+#PBS -A CSC025EWK
 #PBS -V
-#PBS -l size=64
+#PBS -l size=12
 #PBS -l walltime=0:15:00
 #PBS -j eo
 
-NPX=8
-NPY=8
+NPX=2
+NPY=2
 NPZ=1
 NDX=100
 NDY=100

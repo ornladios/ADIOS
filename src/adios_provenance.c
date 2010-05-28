@@ -1217,14 +1217,14 @@ static void _debug_print_index(char *ext
 	for (i = 0; i < vars_root->characteristics_count; i++)
 	{
 	    fprintf (f, "\t\tOffset(%llu)", vars_root->characteristics[i].offset);
-	    if (vars_root->characteristics[i].min)
-	    {
-		fprintf (f, "\t\tMin(%s)", value_to_string (vars_root->type ,vars_root->characteristics[i].min));
-	    }
-	    if (vars_root->characteristics[i].max)
-	    {
-		fprintf (f, "\t\tMax(%s)", value_to_string (vars_root->type ,vars_root->characteristics[i].max));
-	    }
+        if ((vars_root->characteristics[i].stats) && (vars_root->characteristics[i].stats[0][adios_statistic_min].data))
+        {
+        fprintf (f, "\t\tMin(%s)", value_to_string (vars_root->type ,vars_root->characteristics[i].stats[0][adios_statistic_min].data));
+        }
+        if ((vars_root->characteristics[i].stats) && (vars_root->characteristics[i].stats[0][adios_statistic_max].data))
+        {
+        fprintf (f, "\t\tMin(%s)", value_to_string (vars_root->type ,vars_root->characteristics[i].stats[0][adios_statistic_max].data));
+        }
 	    if (vars_root->characteristics[i].value)
 	    {
 		fprintf (f, "\t\tValue(%s)", value_to_string (vars_root->type ,vars_root->characteristics[i].value));

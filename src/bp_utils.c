@@ -789,13 +789,98 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
             (*root)->characteristics [j].value = bp_read_data_from_buffer(b, (*root)->type);
             break;
 
-        case adios_characteristic_min:
-            (*root)->characteristics [j].min = bp_read_data_from_buffer(b, (*root)->type);
-            break;
+		// NCSU - Adding in backward compatibility
+		case adios_characteristic_max:
+		{
+			if (!((*root)->characteristics [j].stats))
+			{
+				(*root)->characteristics [j].stats = malloc (sizeof(struct adios_index_characteristics_stat_struct *));
+				(*root)->characteristics [j].stats[0] = malloc (2 * sizeof(struct adios_index_characteristics_stat_struct));
+				(*root)->characteristics [j].bitmap = 0;
+			}
+			(*root)->characteristics [j].bitmap |= (1 << adios_statistic_max);
+			(*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, (*root)->type);
+			break;
+		}
 
-        case adios_characteristic_max:
-            (*root)->characteristics [j].max = bp_read_data_from_buffer(b, (*root)->type);
-            break;
+        // NCSU - Adding in backward compatibility
+        case adios_characteristic_min:
+        {
+            if (!((*root)->characteristics [j].stats))
+            {
+                (*root)->characteristics [j].stats = malloc (sizeof(struct adios_index_characteristics_stat_struct *));
+                (*root)->characteristics [j].stats[0] = malloc (2 * sizeof(struct adios_index_characteristics_stat_struct));
+                (*root)->characteristics [j].bitmap = 0;
+            }
+            (*root)->characteristics [j].bitmap |= (1 << adios_statistic_min);
+            (*root)->characteristics [j].stats[0][adios_statistic_min].data = bp_read_data_from_buffer(b, (*root)->type);
+			break;
+        }
+
+		// NCSU - Parse the statistical information based in the bitmap
+        case adios_characteristic_stat:
+		{
+			uint8_t i, c, idx; 
+			uint64_t count = adios_get_stat_set_count ((*root)->type);
+			uint16_t characteristic_size;
+
+			(*root)->characteristics [j].stats = malloc (count * sizeof(struct adios_index_characteristics_stat_struct *));
+
+			for (c = 0; c < count; c ++)
+			{
+				i = idx = 0;
+				(*root)->characteristics [j].stats[c] = malloc (ADIOS_STAT_LENGTH * sizeof(struct adios_index_characteristics_stat_struct));
+
+				while ((*root)->characteristics[j].bitmap >> i)
+				{
+					(*root)->characteristics [j].stats[c][i].data = 0;
+					if (((*root)->characteristics[j].bitmap >> i) & 1)
+					{
+						if (i == adios_statistic_hist)
+						{
+							uint32_t bi;
+							
+							(*root)->characteristics [j].stats[c][idx].data = malloc (sizeof(struct adios_index_characteristics_hist_struct));
+							struct adios_index_characteristics_hist_struct * hist = (*root)->characteristics [j].stats[c][idx].data; 
+
+            				BUFREAD32(b, hist->num_breaks)
+            				hist->min = * (double *) bp_read_data_from_buffer(b, adios_double);
+            				hist->max = * (double *) bp_read_data_from_buffer(b, adios_double);
+
+            				hist->frequencies = malloc((hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+            				for (bi = 0; bi <= hist->num_breaks; bi ++) {
+            				    BUFREAD32(b, hist->frequencies[bi])
+            				}
+
+            				hist->breaks = malloc(hist->num_breaks * adios_get_type_size(adios_double, ""));
+            				for (bi = 0; bi < hist->num_breaks; bi ++) {
+            				    hist->breaks[bi] = * (double *) bp_read_data_from_buffer(b, adios_double);
+            				}
+						}
+						else
+						{
+							characteristic_size = adios_get_stat_size((*root)->characteristics [j].stats[c][idx].data, (*root)->type, i);
+							(*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);
+
+							void * data = (*root)->characteristics [j].stats[c][idx].data;
+			            	memcpy (data, (b->buff + b->offset), characteristic_size);
+            				b->offset += characteristic_size;
+
+            				if(b->change_endianness == adios_flag_yes) 
+                        		swap_ptr(data, characteristic_size * 8);
+						}
+						idx ++;
+					}
+					i ++;
+				}	
+			}	
+			break;
+		}
+
+		// NCSU - Statistics. Read the bitmap
+		case adios_characteristic_bitmap:
+			BUFREAD32(b, (*root)->characteristics [j].bitmap);
+			break;
 
         case adios_characteristic_offset: 
             BUFREAD64(b, (*root)->characteristics [j].offset)
@@ -1518,6 +1603,54 @@ int bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
 
         default:
             return -1;
+    }
+}
+
+double bp_value_to_double (enum ADIOS_DATATYPES type, void * data)
+{
+	switch (type)
+    {
+        case adios_string:
+            return 0;
+
+        case adios_complex:
+			return * ((float *) data);
+		
+        case adios_double_complex:
+			return * ((double *) data);
+
+        case adios_double:
+			return * ((double *) data);
+
+        case adios_long_double:
+			return * ((long double *) data);
+
+		case adios_unsigned_byte:
+            return * ((uint8_t *) data);
+
+        case adios_byte:
+            return * ((int8_t *) data);
+
+        case adios_short:
+            return * ((int16_t *) data);
+
+        case adios_unsigned_short:
+            return * ((uint16_t *) data);
+
+        case adios_integer:
+            return * ((int32_t *) data);
+
+        case adios_unsigned_integer:
+            return * ((uint32_t *) data);
+
+        case adios_long:
+            return * ((int64_t *) data);
+
+        case adios_unsigned_long:
+            return * ((uint64_t *) data);
+
+        case adios_real:
+            return * ((float *) data);
     }
 }
 

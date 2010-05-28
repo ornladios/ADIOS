@@ -24,6 +24,13 @@ enum ADIOS_METHOD_MODE {adios_mode_write  = 1
 struct adios_dimension_struct;
 struct adios_var_struct;
 
+// NCSU - Generic data for statistics
+struct adios_stat_struct 
+{
+	void * data;
+};
+
+
 struct adios_var_struct
 {
     uint16_t id;
@@ -36,16 +43,27 @@ struct adios_var_struct
     enum ADIOS_FLAG got_buffer;
     enum ADIOS_FLAG is_dim;   // if it is a dimension, we need to
                               // track for netCDF usage
-
     uint64_t write_offset;  // offset this var was written at  [for writes]
-    void * min;             // minimum value                   [for writes]
-    void * max;             // maximum value                   [for writes]
 
     enum ADIOS_FLAG free_data;    // primarily used for writing
     void * data;                  // primarily used for reading
     uint64_t data_size;           // primarily used for reading
 
+	// NCSU - Adding stat related variables
+	struct adios_stat_struct ** stats; // 2D array. Complex numbers can contain upto 3 parts
+	uint32_t bitmap;
+
     struct adios_var_struct * next;
+};
+
+// NCSU - structure for histogram
+struct adios_hist_struct
+{   
+    double min; //minimum value of histogram ** for when we use complex variables
+    double max; //maximum value of histogram
+    uint32_t num_breaks; //number of break points for the histogram
+    uint32_t * frequencies; //array of frequencies for the histogram
+    double * breaks; //breaks array for the histogram, output this to gnuplot
 };
 
 struct adios_attribute_struct
@@ -401,6 +419,13 @@ int adios_common_define_var (int64_t group_id, const char * name
                             ,const char * local_offsets
                             );
 
+int adios_common_define_var_characteristcs  (struct adios_group_struct * g, const char * var_name
+                            				,const char * bin_interval 
+                            				,const char * bin_min
+                            				,const char * bin_max
+                            				,const char * bin_count
+                            				);
+
 void adios_common_get_group (int64_t * group_id, const char * name);
 
 // ADIOS file format functions
@@ -468,6 +493,9 @@ uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var);
 uint64_t adios_get_var_size (struct adios_var_struct * var
                             ,struct adios_group_struct * group, void * data
                             );
+
+uint64_t adios_get_stat_size (void * data, enum ADIOS_DATATYPES type, enum ADIOS_STAT stat_id);
+uint8_t adios_get_stat_set_count (enum ADIOS_DATATYPES type);
 
 const char * adios_type_to_string_int (int type);
 const char * adios_file_mode_to_string (int mode);

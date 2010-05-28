@@ -18,15 +18,33 @@
 enum ADIOS_CHARACTERISTICS
 {
      adios_characteristic_value          = 0
-    ,adios_characteristic_min            = 1
-    ,adios_characteristic_max            = 2
+    ,adios_characteristic_min            = 1 // This is no longer used. Used to read in older bp file format
+    ,adios_characteristic_max            = 2 // This is no longer used. Used to read in older bp file format
     ,adios_characteristic_offset         = 3
     ,adios_characteristic_dimensions     = 4
     ,adios_characteristic_var_id         = 5
     ,adios_characteristic_payload_offset = 6
     ,adios_characteristic_file_name      = 7
     ,adios_characteristic_time_index     = 8
+    ,adios_characteristic_bitmap         = 9
+    ,adios_characteristic_stat           = 10
 };
+
+#ifndef ADIOS_STAT_LENGTH
+	#define ADIOS_STAT_LENGTH 7 
+#endif
+
+// NCSU - Adding statistics
+enum ADIOS_STAT
+{
+     adios_statistic_min             = 0
+    ,adios_statistic_max             = 1
+    ,adios_statistic_cnt			 = 2 
+    ,adios_statistic_sum			 = 3 
+    ,adios_statistic_sum_square 	 = 4 
+    ,adios_statistic_hist		 	 = 5 
+	,adios_statistic_finite		     = 6 
+} adios_stat;
 
 struct adios_bp_buffer_struct_v1
 {
@@ -73,17 +91,35 @@ struct adios_index_characteristic_dims_struct_v1
     uint64_t * dims;  // each 3 uint64_t represents one dimension (l, g, o)
 };
 
+// NCSU - Generic data for all statistics
+struct adios_index_characteristics_stat_struct
+{
+	void * data;
+};
+
+// NCSU - Structure for histogram
+struct adios_index_characteristics_hist_struct
+{
+    double min; //minimum value of histogram ** for when we use complex variables
+    double max; //maximum value of histogram
+    uint32_t num_breaks; //number of break points for the histogram
+    uint32_t * frequencies; //array of frequencies for the histogram
+    double * breaks; //breaks array for the histogram, output this to gnuplot
+};
+
 struct adios_index_characteristic_struct_v1
 {
     uint64_t offset;  // beginning of the var or attr entry
-    void * min;
-    void * max;
     struct adios_index_characteristic_dims_struct_v1 dims;
-    void * value;
     uint16_t var_id;
+	void * value;
     uint64_t payload_offset;   // beginning of the var or attr payload
     char * file_name;
     uint32_t time_index;
+
+	uint32_t bitmap;
+
+	struct adios_index_characteristics_stat_struct ** stats;
 };
 
 struct adios_index_var_struct_v1

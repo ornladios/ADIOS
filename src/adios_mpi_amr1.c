@@ -598,8 +598,7 @@ struct adios_var_struct * adios_mpi_amr1_copy_var (struct adios_var_struct * v)
     v_new->got_buffer = v->got_buffer;
     v_new->is_dim = v->is_dim;
     v_new->write_offset = v->write_offset;
-    v_new->min = 0;
-    v_new->max = 0;
+    v_new->stats = 0;
     v_new->free_data = v->free_data;
     v_new->data = 0;
     v_new->data_size = v->data_size;

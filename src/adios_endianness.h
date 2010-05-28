@@ -12,6 +12,8 @@
 
 void show_bytes(unsigned char * start, int len);
 
+void swap_ptr(void * data, int size);
+
 void swap_16_ptr(void *data);
 
 void swap_32_ptr(void *data);

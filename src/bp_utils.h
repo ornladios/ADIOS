@@ -61,7 +61,7 @@ void copy_data (void *dst, void *src,
 
 /* Return 1 if a < b wrt. the given type, otherwise 0 */
 int adios_lt(int type, void *a, void *b);
-
+double bp_value_to_double(enum ADIOS_DATATYPES type, void * data);
 void alloc_namelist (char ***namelist, int length);
 void free_namelist (char **namelist, int length);
 #endif

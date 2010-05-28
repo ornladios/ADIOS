@@ -2463,6 +2463,64 @@ static int parseGroup (mxml_node_t * node)
     return 1;
 }
 
+static int parseAnalysis (mxml_node_t * node)
+{
+    mxml_node_t * n;
+
+    const char * group = 0;
+    const char * var = 0;
+    const char * bin_intervals = 0;
+    const char * bin_count = 0;
+    const char * bin_min = 0;
+    const char * bin_max = 0;
+
+    int i;
+    int64_t group_id;
+    struct adios_group_struct * g;
+
+    for (i = 0; i < node->value.element.num_attrs; i++)
+    {
+        mxml_attr_t * attr = &node->value.element.attrs [i];
+
+        GET_ATTR("adios-group",attr,group,"analysis")
+        GET_ATTR("var",attr,var,"analysis")
+        GET_ATTR("break-points",attr,bin_intervals,"analysis")
+        GET_ATTR("min",attr,bin_min,"analysis")
+        GET_ATTR("max",attr,bin_max,"analysis")
+        GET_ATTR("count",attr,bin_count,"analysis")
+        fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+                         "(ignored)\n"
+                ,attr->name
+                ,"method"
+                );
+    }
+
+    if (!var)
+    {
+        fprintf (stderr, "config.xml: variable name must be given\n");
+        return 0;
+    }
+
+    if (!group)
+    {
+        fprintf (stderr, "config.xml: adios-group name must be given\n");
+        return 0;
+    }
+
+    adios_common_get_group (&group_id, group);
+    g = (struct adios_group_struct *) group_id;
+
+    if (!g)
+    {
+        fprintf (stderr, "config.xml: Didn't find group %s for analysis\n", group);
+        return 0;
+    }
+    if(!adios_common_define_var_characteristics(g, var, bin_intervals, bin_min, bin_max, bin_count))
+        return 0;
+
+    return 1;
+}
+
 static int parseMethod (mxml_node_t * node)
 {
     mxml_node_t * n;
@@ -2879,20 +2937,28 @@ int adios_parse_config (const char * config)
                         break;
                     saw_buffer = 1;
                 }
-                else
-                {
-                    if (!strncmp (node->value.element.name, "!--", 3))
+				else
+				{
+                    if (!strcasecmp (node->value.element.name, "analysis"))
                     {
-                        continue;
+                        if (!parseAnalysis(node))
+                            break;
                     }
-                    else
-                    {
-                        fprintf (stderr, "config.xml: invalid element: %s\n"
-                                ,node->value.element.name
-                                );
+                	else
+                	{
+                	    if (!strncmp (node->value.element.name, "!--", 3))
+                	    {
+                	        continue;
+                	    }
+                	    else
+                	    {
+                	        fprintf (stderr, "config.xml: invalid element: %s\n"
+                	                ,node->value.element.name
+                	                );
 
-                        break;
-                    }
+                	        break;
+                	    }
+					}
                 }
             }
         }
@@ -3161,10 +3227,31 @@ void adios_cleanup ()
                 adios_groups->group->vars->dimensions = dimensions;
             }
 
-            if (adios_groups->group->vars->min)
-                free (adios_groups->group->vars->min);
-            if (adios_groups->group->vars->max)
-                free (adios_groups->group->vars->max);
+			// NCSU - Clean up stat
+            if (adios_groups->group->vars->stats)
+			{
+				int j, idx;
+				int c, count = 1;
+
+				if (adios_groups->group->vars->type == adios_complex || adios_groups->group->vars->type == adios_double_complex)
+					count = 3;
+
+				for (c = 0; c < count; c ++)
+				{
+					j = idx = 0;
+					while (adios_groups->group->vars->bitmap >> j)
+					{
+						if (adios_groups->group->vars->bitmap >> j & 1)
+						{
+							free (adios_groups->group->vars->stats[c][idx].data);
+							idx ++;
+						}
+						j ++;
+					}
+				}
+
+                free (adios_groups->group->vars->stats);
+			}
             if (adios_groups->group->vars->data)
                 free (adios_groups->group->vars->data);
 

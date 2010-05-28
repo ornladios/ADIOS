@@ -1212,10 +1212,9 @@ int adios_common_free_group (int64_t id)
             g->vars->dimensions = dimensions;
         }
 
-        if (g->vars->min)
-            free (g->vars->min);
-        if (g->vars->max)
-            free (g->vars->max);
+		// NCSU - Clear Stat
+        if (g->vars->stats)
+            free (g->vars->stats);
         if (g->vars->data)
             free (g->vars->data);
 
@@ -1300,6 +1299,129 @@ static void cleanup_dimensions (char *** tokens, int * count)
     *count = 0;
 }
 
+int adios_common_define_var_characteristics (struct adios_group_struct * g
+											, const char * var_name
+											, const char * bin_intervals
+											, const char * bin_min
+											, const char * bin_max
+											, const char * bin_count
+											)
+{
+	struct adios_var_struct * root = g->vars, * var;
+
+    var = adios_find_var_by_name (root, var_name, adios_flag_no);	
+
+	struct adios_hist_struct * hist;
+
+	if (var->type == adios_complex || var->type == adios_double_complex)
+		return 0;
+
+	int i = 0, j = 0;
+	while ((var->bitmap >> j) && (j < adios_statistic_hist))
+	{
+		if ((var->bitmap >> j) & 1)
+			i ++;
+		j ++;
+	}
+
+	hist = var->stats[0][i].data = (struct adios_hist_struct *) malloc (sizeof(struct adios_hist_struct));
+
+	if (!var)
+	{
+   		fprintf (stderr, "config.xml: Didn't find the variable %s for analysis\n", var_name);
+		return 0;
+	}
+	else
+	{
+		int i;
+		if (bin_intervals)
+		{
+			int count;
+        	char ** bin_tokens = 0;
+
+        	tokenize_dimensions (bin_intervals, &bin_tokens, &count);
+
+			if (!count)
+			{
+            	fprintf (stderr, "config.xml: unable to tokenize break points\n");
+				return 0;
+			}
+
+			hist->breaks = calloc(count, sizeof(double)); 
+
+			if(!hist || !hist->breaks)
+			{
+                fprintf (stderr, "config.xml: unable to allocate memory for histogram break points in "
+                        "adios_common_define_var_characteristics\n");
+                return 0;
+			}
+
+			for(i = 0; i < count; i++)
+			{
+				hist->breaks[i] = atof(bin_tokens[i]);
+				if(i > 0 && (hist->breaks[i] <= hist->breaks[i-1]))
+				{
+					fprintf (stderr, "config.xml: break points should be in increasing order "
+                        "adios_common_define_var_characteristics\n");
+                	return 0;
+				}
+			}
+
+			hist->num_breaks = count;
+			hist->min = hist->breaks[0];
+
+			if(count > 0)
+				hist->max = hist->breaks[count - 1];
+			else
+				hist->max = hist->min;
+
+			var->bitmap = var->bitmap | (1 << adios_statistic_hist);
+		}
+		else
+		{
+			if(!bin_max || !bin_min || !bin_count)
+			{
+            	fprintf (stderr, "config.xml: unable to generate break points\n");
+				return 0;
+			}
+
+			int count = atoi(bin_count);
+
+			if (!count)
+			{
+                fprintf (stderr, "config.xml: bin count is undefined\n"); 
+                return 0;
+            }
+
+			hist->num_breaks = count + 1;
+			hist->min = atof(bin_min);
+			hist->max = atof(bin_max);
+			hist->breaks = calloc(hist->num_breaks, sizeof(double));
+
+			if(!hist || !hist->breaks)
+            {
+                fprintf (stderr, "config.xml: unable to allocate memory for histogram break points in "
+                        "adios_common_define_var_characteristics\n");
+                return 0;
+            }
+
+			if (hist->min >= hist->max)
+			{
+				fprintf (stderr, "config.xml: minimum boundary value greater than maximum\n");
+                return 0;
+			}
+
+			for(i = 0; i < hist->num_breaks; i ++)
+				hist->breaks[i] = hist->min + i * (hist->max - hist->min) / count;
+			
+			var->bitmap = var->bitmap | (1 << adios_statistic_hist);
+		}
+	}
+
+		
+	return 1;	
+}	
+
 int adios_common_define_var (int64_t group_id, const char * name
                             ,const char * path, enum ADIOS_DATATYPES type
                             ,const char * dimensions
@@ -1314,6 +1436,7 @@ int adios_common_define_var (int64_t group_id, const char * name
     char * g_dim_temp;
     char * lo_dim_temp;
     enum ADIOS_FLAG flag;
+	uint8_t i;
     if (dimensions)
         dim_temp = strdup (dimensions);
     else
@@ -1336,14 +1459,39 @@ int adios_common_define_var (int64_t group_id, const char * name
     v->free_data = adios_flag_no;
 
     v->data = 0;
-
     v->write_offset = 0;
-    v->min = 0;
-    v->max = 0;
 
     v->data_size = 0;
 
     v->next = 0;
+
+	// NCSU - Initializing stat related info
+	v->stats = 0;
+	v->bitmap = 0;
+
+	// '1' at the bit location of stat id in adios_bp_v1.h, enables calculation of statistic.
+	for (i = 0; i < ADIOS_STAT_LENGTH; i++)
+		v->bitmap |= (1 << i);
+
+	// Default values for histogram not yet implemented. Disabling it.
+	v->bitmap ^= (1 << adios_statistic_hist);
+
+	// For complex numbers, the set of statistics occur thrice: stat[0] - real, stat[1] - imaginary, stat[3] - magnitude
+	if (v->type == adios_complex || v->type == adios_double_complex)
+	{
+		uint8_t c;
+		v->stats = malloc (3 * sizeof(struct adios_stat_struct *));
+
+		for (c = 0; c < 3; c ++)
+			v->stats[c] = malloc (ADIOS_STAT_LENGTH * sizeof(struct adios_stat_struct));
+	}
+	else 
+	{
+		v->stats = malloc (sizeof(struct adios_stat_struct *));
+		v->stats[0] = malloc (ADIOS_STAT_LENGTH * sizeof(struct adios_stat_struct));
+	}
+
+	// NCSU - End of initializing stat related info
 
     if (dim_temp && strcmp (dim_temp, ""))
     {
@@ -1498,7 +1646,25 @@ static uint16_t adios_calc_var_characteristics_dims_overhead
     return overhead;
 }
 
-uint16_t adios_calc_var_characteristics_overhead
+// NCSU -This function precomputes the amount of overhead consumed by statistics
+uint16_t adios_calc_var_characteristics_stat_overhead (struct adios_var_struct * var)
+{
+	uint16_t i, j, overhead;
+	overhead = j = i = 0;
+
+	while (var->bitmap >> j)
+	{
+		// NCSU - This characteristic is present. It adds to the overhead
+		if ((var->bitmap >> j) & 1)
+			overhead += adios_get_stat_size(var->stats[0][i ++].data, var->type, j);
+		j ++;
+	}
+
+	return overhead;
+}
+
+
+static uint16_t adios_calc_var_characteristics_overhead
                                                   (struct adios_var_struct * v)
 {
     uint16_t overhead = 0;
@@ -1515,11 +1681,12 @@ uint16_t adios_calc_var_characteristics_overhead
         default:   // the 12 numeric types
             if (v->dimensions)
             {
-                overhead += 1;  // id
-                overhead += adios_get_type_size (v->type, ""); // min
+				overhead += 1; // id for bitmap
+				overhead += 4; // value for bitmap
 
-                overhead += 1;  // id
-                overhead += adios_get_type_size (v->type, ""); // max
+                overhead += 1;  // id for statistics
+				// For complex numbers - min, max, avg repeated thrice
+				overhead += adios_get_stat_set_count(v->type) * adios_calc_var_characteristics_stat_overhead (v); 
 
                 overhead += 1;  // id
                 overhead += adios_calc_var_characteristics_dims_overhead (v);
@@ -1966,6 +2133,7 @@ static void adios_clear_process_groups_index_v1 (
     }
 }
 
+// LS-Clears up the statistical data from variable index table
 static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
 {
     while (root)
@@ -1979,16 +2147,34 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
             free (root->var_name);
         if (root->var_path)
             free (root->var_path);
+
         for (i = 0; i < root->characteristics_count; i++)
         {
             if (root->characteristics [i].dims.count != 0)
                 free (root->characteristics [i].dims.dims);
-            if (root->characteristics [i].min)
-                free (root->characteristics [i].min);
-            if (root->characteristics [i].max)
-                free (root->characteristics [i].max);
             if (root->characteristics [i].value)
                 free (root->characteristics [i].value);
+
+            // LS-Clears up the statistical data, based on bitmap
+            if (root->characteristics [i].stats != 0)
+            {
+                uint8_t j = 0, idx = 0;
+                uint8_t c = 0, count = adios_get_stat_set_count(root->type);
+
+                for (c = 0; c < count; c ++)
+                {
+                    while (root->characteristics [i].bitmap >> j)
+                    {
+                        if ((root->characteristics [i].bitmap >> j) & 1)
+                        {
+                            free (root->characteristics [i].stats[c][idx].data);
+                            idx ++;
+                        }
+                        j ++;
+                    }
+                    free (root->characteristics [i].stats [c]);
+                }
+            }
         }
         if (root->characteristics)
             free (root->characteristics);
@@ -2016,12 +2202,28 @@ static void adios_clear_attributes_index_v1
         {
             if (root->characteristics [i].dims.count != 0)
                 free (root->characteristics [i].dims.dims);
-            if (root->characteristics [i].min)
-                free (root->characteristics [i].min);
-            if (root->characteristics [i].max)
-                free (root->characteristics [i].max);
-            if (root->characteristics [i].value)
-                free (root->characteristics [i].value);
+
+            // LS-Clears up the statistical data, based on bitmap
+            if (root->characteristics [i].stats != 0)
+            {
+                uint8_t j = 0, idx = 0;
+                uint8_t c = 0, count = adios_get_stat_set_count(root->type);
+
+                for (c = 0; c < count; c ++)
+                {
+                    while (root->characteristics [i].bitmap >> j)
+                    {
+                        if ((root->characteristics [i].bitmap >> j) & 1)
+                        {
+                            free (root->characteristics [i].stats[c][idx].data);
+                            idx ++;
+                        }
+                        j ++;
+                    }
+                    free (root->characteristics [i].stats [c]);
+                }
+            }
+
         }
         if (root->characteristics)
             free (root->characteristics);
@@ -2030,6 +2232,7 @@ static void adios_clear_attributes_index_v1
         root = temp;
     }
 }
+
 
 void adios_clear_index_v1 (struct adios_index_process_group_struct_v1 * pg_root
                           ,struct adios_index_var_struct_v1 * vars_root
@@ -2207,8 +2410,7 @@ void adios_copy_var_written (struct adios_var_struct ** root
             var_new->got_buffer = var->got_buffer;
             var_new->is_dim = var->is_dim;
             var_new->write_offset = var->write_offset;
-            var_new->min = 0;
-            var_new->max = 0;
+            var_new->stats = 0;
             var_new->free_data = var->free_data;
             var_new->data = 0;
             var_new->data_size = var->data_size;
@@ -2240,18 +2442,53 @@ void adios_copy_var_written (struct adios_var_struct ** root
                          * NOT ALL METHODS TRACK MIN/MAX.  CHECK BEFORE TRYING TO COPY.
                          *
                          */
-                        if (var->min) {
-                            var_new->min = malloc (size);
-                            memcpy (var_new->min, var->min, size);
-                        } else {
-                            var_new->min=0;
-                        }
-                        if (var->max) {
-                            var_new->max = malloc (size);
-                            memcpy (var_new->max, var->max, size);
-                        } else {
-                            var_new->max=0;
-                        }
+                       // NCSU Statistics - copy stat to new var struct
+                        uint8_t count = adios_get_stat_set_count(var->type);
+                        uint8_t idx = 0;
+                        uint64_t characteristic_size;
+
+                        var_new->bitmap = var->bitmap;
+                        var_new->stats = malloc (count * sizeof(struct adios_stat_struct *));
+
+                        // Set of characteristics will be repeated thrice for complex numbers
+                        for (c = 0; c < count; c ++)
+                        {
+                            var_new->stats[c] = malloc(ADIOS_STAT_LENGTH * sizeof (struct adios_stat_struct *));
+
+                            j = idx = 0;
+                            while (var->bitmap >> j)
+                         	{
+                                if ((var->bitmap >> j) & 1)
+                                {
+                                    if (j == adios_statistic_hist)
+                                    {
+                                        var_new->stats[c][idx].data = (struct adios_hist_struct *) malloc (sizeof(struct adios_hist_struct));
+
+                                        struct adios_hist_struct * var_hist = var->stats[c][idx].data;
+                                        struct adios_hist_struct * var_new_hist = var_new->stats[c][idx].data;
+
+                                        var_new_hist->min = var_hist->min;
+                                        var_new_hist->max = var_hist->max;
+                                        var_new_hist->num_breaks = var_hist->num_breaks;
+
+                                        var_new_hist->frequencies = malloc ((var_hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+                                        memcpy (var_new_hist->frequencies, var_hist->frequencies, (var_hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+                                        var_new_hist->breaks = malloc ((var_hist->num_breaks) * adios_get_type_size(adios_double, ""));
+                                        memcpy (var_new_hist->breaks, var_hist->breaks, (var_hist->num_breaks) * adios_get_type_size(adios_double, ""));
+                                    }
+                                    else
+                                    {
+                                        characteristic_size = adios_get_stat_size(var->stats[c][idx].data, var->type, j);
+                                        var_new->stats[c][idx].data = malloc (characteristic_size);
+                                        memcpy (var_new->stats[c][idx].data, var->stats[c][idx].data, characteristic_size);
+                                    }
+
+                                    idx ++;
+                                }
+                                j ++;
+                            }
+						}
+
                         c = count_dimensions (var->dimensions);
 
                         for (j = 0; j < c; j++)
@@ -2277,8 +2514,7 @@ void adios_copy_var_written (struct adios_var_struct ** root
                     }
                     else
                     {
-                        var_new->min = 0;
-                        var_new->max = 0;
+                        var_new->stats = 0;
                         var_new->data = malloc (size);
                         memcpy (var_new->data, var->data, size);
                     }
@@ -2362,10 +2598,13 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                             + strlen (v->path); // add length of the actual, current path of this var
             v_index->characteristics [0].file_name = (fd->subfile_name ? strdup (fd->subfile_name) : 0L);
             v_index->characteristics [0].time_index = g_item->time_index;
-            v_index->characteristics [0].min = 0;
-            v_index->characteristics [0].max = 0;
+
             v_index->characteristics [0].value = 0;
             v_index->characteristics [0].dims.count = 0;
+
+			// NCSU - Initializing stat related info in index
+			v_index->characteristics [0].bitmap = 0;
+            v_index->characteristics [0].stats = 0;
 
             uint64_t size = adios_get_type_size (v->type, v->data);
             switch (v->type)
@@ -2388,10 +2627,55 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                         uint8_t c;
                         uint8_t j;
                         struct adios_dimension_struct * d = v->dimensions;
-                        v_index->characteristics [0].min = malloc (size);
-                        v_index->characteristics [0].max = malloc (size);
-                        memcpy (v_index->characteristics [0].min, v->min, size);
-                        memcpy (v_index->characteristics [0].max, v->max, size);
+
+                        // NCSU - Copy statistics from var struct to index
+                        uint8_t count = adios_get_stat_set_count(v->type);
+						uint8_t idx = 0;
+						uint64_t characteristic_size;
+							
+						v_index->characteristics [0].bitmap = v->bitmap;
+                        v_index->characteristics [0].stats = malloc (count * sizeof(struct adios_index_characteristics_stat_struct *));
+
+						// Set of characteristics will be repeated thrice for complex numbers
+						for (c = 0; c < count; c ++)
+						{
+							v_index->characteristics [0].stats[c] = malloc(ADIOS_STAT_LENGTH * sizeof (struct adios_index_characteristics_stat_struct *));
+
+							j = idx = 0;
+							while (v_index->characteristics [0].bitmap >> j)
+							{
+								if ((v_index->characteristics [0].bitmap >> j) & 1)
+								{
+									if (j == adios_statistic_hist)
+									{
+										v_index->characteristics [0].stats[c][idx].data = (struct adios_index_characteristics_hist_struct *) malloc (sizeof(struct adios_index_characteristics_hist_struct));
+
+										struct adios_hist_struct * v_hist = v->stats[c][idx].data;
+										struct adios_hist_struct * v_index_hist = v_index->characteristics [0].stats[c][idx].data;
+
+										v_index_hist->min = v_hist->min;
+										v_index_hist->max = v_hist->max;
+										v_index_hist->num_breaks = v_hist->num_breaks;
+
+										v_index_hist->frequencies = malloc ((v_hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+										memcpy (v_index_hist->frequencies, v_hist->frequencies, (v_hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+										v_index_hist->breaks = malloc ((v_hist->num_breaks) * adios_get_type_size(adios_double, ""));
+										memcpy (v_index_hist->breaks, v_hist->breaks, (v_hist->num_breaks) * adios_get_type_size(adios_double, ""));
+									}
+									else 
+									{
+										characteristic_size = adios_get_stat_size(v->stats[c][idx].data, v->type, j);
+										v_index->characteristics [0].stats[c][idx].data = malloc (characteristic_size);
+                        				memcpy (v_index->characteristics [0].stats[c][idx].data, v->stats[c][idx].data, characteristic_size);
+									}
+
+									idx ++;
+								}
+								j ++;
+							}
+						}
+						// NCSU - End of copy, for statistics
+						
                         c = count_dimensions (v->dimensions);
                         v_index->characteristics [0].dims.count = c;
                         // (local, global, local offset)
@@ -2412,8 +2696,9 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                     }
                     else
                     {
-                        v_index->characteristics [0].min = 0;
-                        v_index->characteristics [0].max = 0;
+                        v_index->characteristics [0].bitmap = 0; 
+                        v_index->characteristics [0].stats = 0; 
+
                         v_index->characteristics [0].value = malloc (size);
                         memcpy (v_index->characteristics [0].value, v->data
                                ,size
@@ -2466,8 +2751,11 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             a_index->characteristics [0].payload_offset = a->write_offset + adios_calc_attribute_overhead_v1 (a);
             a_index->characteristics [0].file_name = (fd->subfile_name ? strdup (fd->subfile_name) : 0L);
             a_index->characteristics [0].time_index = 0;
-            a_index->characteristics [0].min = 0;
-            a_index->characteristics [0].max = 0;
+
+            // NCSU -,Initializing stat related info in attribute index
+            a_index->characteristics [0].bitmap = 0;
+            a_index->characteristics [0].stats = 0;
+
             if (a->value)
             {
                 a_index->characteristics [0].value = malloc (size + 1);
@@ -2792,37 +3080,94 @@ int adios_write_index_v1 (char ** buffer
                         var_size += len;
                         characteristic_set_length += len;
 
-                        // add a min value characteristic
-                        characteristic_set_count++;
-                        flag = (uint8_t) adios_characteristic_min;
+						// NCSU - Adding bitmap
+						characteristic_set_count++;
+                        flag = (uint8_t) adios_characteristic_bitmap;
                         buffer_write (buffer, buffer_size, buffer_offset
                                      ,&flag, 1
                                      );
                         index_size += 1;
                         var_size += 1;
                         characteristic_set_length += 1;
-                        buffer_write (buffer, buffer_size, buffer_offset
-                                     ,vars_root->characteristics [i].min, size
-                                     );
-                        index_size += size;
-                        var_size += size;
-                        characteristic_set_length += size;
 
-                        // add a max value characteristic
-                        characteristic_set_count++;
-                        flag = (uint8_t) adios_characteristic_max;
+						buffer_write (buffer, buffer_size, buffer_offset
+                                     ,&vars_root->characteristics [i].bitmap, 4
+                                     );
+                        index_size += 4;
+                        var_size += 4;
+                        characteristic_set_length += 4;
+
+                        // NCSU - Adding statistics
+                       	characteristic_set_count++;
+                        flag = (uint8_t) adios_characteristic_stat;
                         buffer_write (buffer, buffer_size, buffer_offset
                                      ,&flag, 1
                                      );
                         index_size += 1;
                         var_size += 1;
                         characteristic_set_length += 1;
-                        buffer_write (buffer, buffer_size, buffer_offset
-                                     ,vars_root->characteristics [i].max, size
-                                     );
-                        index_size += size;
-                        var_size += size;
-                        characteristic_set_length += size;
+
+						uint8_t count = adios_get_stat_set_count(vars_root->type);
+                        uint8_t idx = 0, c, j;
+                        uint64_t characteristic_size;
+
+                        for (c = 0; c < count; c ++)
+                        {
+                            j = idx = 0;
+
+                            while (vars_root->characteristics [i].bitmap >> j)
+                            {
+                                if ((vars_root->characteristics [i].bitmap >> j) & 1)
+                                {
+									if (j == adios_statistic_hist)
+									{
+										struct adios_hist_struct * hist = vars_root->characteristics [i].stats[c][idx].data;
+
+										buffer_write (  buffer, buffer_size, buffer_offset
+                                                        , &hist->num_breaks, 4 
+                                                     );
+										characteristic_size = 4; 
+
+										buffer_write (  buffer, buffer_size, buffer_offset
+                                                        , &hist->min, 8
+                                                     );
+										characteristic_size += 8;
+
+										buffer_write (  buffer, buffer_size, buffer_offset
+                                                        , &hist->max, 8
+                                                     );
+										characteristic_size += 8;
+
+										buffer_write (  buffer, buffer_size, buffer_offset
+                                                        , hist->frequencies, (hist->num_breaks + 1) * 4
+                                                     );
+										characteristic_size += (hist->num_breaks + 1) * 4; 
+
+										buffer_write (  buffer, buffer_size, buffer_offset
+                                                        , hist->breaks, hist->num_breaks * 8 
+                                                     );
+										characteristic_size += (hist->num_breaks) * 8;
+									}
+									else
+									{
+                                    	characteristic_size = adios_get_stat_size(vars_root->characteristics [i].stats[c][idx].data, vars_root->type, j);
+
+                        				buffer_write ( 	buffer, buffer_size, buffer_offset
+                                     					,vars_root->characteristics [i].stats[c][idx].data, characteristic_size
+                                     				 );
+
+									}
+
+                        			index_size += characteristic_size;
+                        			var_size += characteristic_size;
+                        			characteristic_set_length += characteristic_size;
+
+                                    idx ++;
+                                }
+								j ++;
+                            }
+                        }
+						// NCSU - End of addition statistic to buffer
                     }
                     else
                     {
@@ -3421,33 +3766,92 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
                 index_size += len;
                 characteristic_set_length += len;
 
-                // add a min value characteristic
+				// add the bitmap of characteristics
                 characteristic_set_count++;
-                flag = (uint8_t) adios_characteristic_min;
+                flag = (uint8_t) adios_characteristic_bitmap;
                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
                              ,&flag, 1
                              );
                 index_size += 1;
                 characteristic_set_length += 1;
-                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,v->min, size
-                             );
-                index_size += size;
-                characteristic_set_length += size;
 
-                // add a max value characteristic
+				buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
+                             ,&v->bitmap, 4
+                             );
+                index_size += 4;
+                characteristic_set_length += 4;
+
+                // add a stat value characteristic
                 characteristic_set_count++;
-                flag = (uint8_t) adios_characteristic_max;
+                flag = (uint8_t) adios_characteristic_stat;
                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
                              ,&flag, 1
                              );
                 index_size += 1;
                 characteristic_set_length += 1;
-                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,v->max, size
-                             );
-                index_size += size;
-                characteristic_set_length += size;
+
+				uint8_t j, c;
+				uint8_t count = adios_get_stat_set_count(v->type);
+                uint8_t idx = 0;
+                uint64_t characteristic_size;
+
+				for (c = 0; c < count; c ++)
+				{
+				    j = idx = 0;
+				    while (v->bitmap >> j)
+				    {
+				        if ((v->bitmap >> j) & 1)
+				        {
+							if (j == adios_statistic_hist)
+							{
+								struct adios_hist_struct * hist = v->stats[c][idx].data;
+								int32_t num_breaks = hist->num_breaks;
+                    			// Adding number of bins
+                    			buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
+                    			             ,&hist->num_breaks, 4
+                    			             );
+                    			characteristic_size = 4;
+
+                    			 // Adding min bin
+                    			buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset	
+											,&hist->min, 8
+                    			             );
+                    			characteristic_size += 8;
+
+                    			 // Adding max bin
+                    			buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
+                    			             ,&hist->max, 8
+                    			             );
+                    			characteristic_size += 8;
+
+                    			// add a frequencies value characteristic
+                    			buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
+                    			             ,hist->frequencies, 4 * (num_breaks + 1)
+                    			             );
+                    			characteristic_size += 4 * (num_breaks + 1);
+
+                    			// add the breaks value characteristic
+                    			buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
+                    			             ,hist->breaks, 8 * num_breaks
+                    			             );
+                    			characteristic_size += 8 * num_breaks;
+							}
+							else
+							{
+				            	characteristic_size = adios_get_stat_size(v->stats[c][idx].data, v->type, j);
+
+                				buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
+                			             ,v->stats[c][idx].data, characteristic_size
+                			             );
+							}
+
+                			index_size += characteristic_size;
+                			characteristic_set_length += characteristic_size;
+				            idx ++;
+				        }
+						j ++;
+				    }
+				}
             }
             break;
 
@@ -3473,25 +3877,106 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
     uint64_t total_size = adios_get_var_size (var, fd->group, var->data);
     uint64_t size = 0;
 
+	if (var->bitmap == 0) 
+		return ; 
+
+	int32_t map[32];
+	memset (map, -1, sizeof(map)); 
+
 #if 1
-#define MIN_MAX(a,b) \
+#define HIST(a) \
+{ \
+int j = 0, low, high, mid; \
+low=0; \
+high=hist->num_breaks - 1; \
+if (hist->breaks[low] > a) \
+    hist->frequencies[0] += 1; \
+else if (a >= hist->breaks[high]) \
+    hist->frequencies[high + 1] += 1; \
+else if (hist->breaks[low] <= a && a < hist->breaks[high]) \
+{ \
+    while(high-low>=2) \
+    { \
+        mid=(high+low)/2; \
+        if(a >= hist->breaks[mid]) \
+        { \
+            low=mid; \
+        } \
+        else \
+        { \
+            high=mid; \
+        } \
+    } \
+    hist->frequencies[low + 1] += 1; \
+} \
+}
+#endif
+
+#if 1
+#define ADIOS_STATISTICS(a,b) \
 {\
 a * data = (a *) var->data; \
-var->min = malloc (b); \
-var->max = malloc (b); \
-a * min = (a *) var->min; \
-a * max = (a *) var->max; \
-*min = data [0]; \
-*max = data [0]; \
-size++; \
+int i, j; \
+struct adios_stat_struct * stats = var->stats[0]; \
+a * min, * max; \
+double * sum, * sum_square; \
+uint32_t * cnt; \
+struct adios_hist_struct * hist = 0; \
+i = j = 0; \
+while (var->bitmap >> j) { \
+	if ((var->bitmap >> j) & 1)	{\
+		map [j] = i; \
+		if (j == adios_statistic_hist) \
+			;\
+		else \
+			stats[i].data = malloc(adios_get_stat_size(NULL, var->type, j)); \
+		i ++; \
+	} \
+	j ++; \
+} \
+min = (a *) stats[map[adios_statistic_min]].data; \
+max = (a *) stats[map[adios_statistic_max]].data; \
+sum = (double *) stats[map[adios_statistic_sum]].data; \
+sum_square = (double *) stats[map[adios_statistic_sum_square]].data; \
+cnt = (uint32_t *) stats[map[adios_statistic_cnt]].data; \
+*cnt = 0;\
+if (map[adios_statistic_hist] != -1) {\
+	hist = (struct adios_hist_struct *) stats[map[adios_statistic_hist]].data; \
+	hist->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, "")); \
+} \
+int finite = 0; \
+size = 0; \
 while ((size * b) < total_size) \
 { \
+	if (isnan (data [size]) || !isfinite (data [size])) {\
+		size ++; \
+		continue; \
+	}\
+	if (!finite) { \
+    	*min = data [size]; \
+    	*max = data [size]; \
+		*sum = data [size]; \
+		*sum_square = (data [size] * data [size]) ; \
+		*cnt = *cnt + 1; \
+    	if (map[adios_statistic_hist] != -1) \
+			HIST(data [size]); \
+		finite = 1; \
+		size ++; \
+		continue; \
+	} \
     if (data [size] < *min) \
         *min = data [size]; \
     if (data [size] > *max) \
         *max = data [size]; \
-    size++; \
+	*sum += data [size]; \
+	*sum_square += (data [size] * data [size]) ; \
+	*cnt = *cnt + 1; \
+    if (map[adios_statistic_hist] != -1) \
+		HIST(data [size]); \
+   	size++; \
 } \
+if (map[adios_statistic_finite] != -1) \
+	* ((uint8_t * ) stats[map[adios_statistic_finite]].data) = finite; \
 return 0; \
 }
 #else
@@ -3511,132 +3996,311 @@ return 0; \
     switch (var->type)
     {
         case adios_byte:
-            MIN_MAX(int8_t,1)
+            ADIOS_STATISTICS(int8_t,1)
 
         case adios_unsigned_byte:
-            MIN_MAX(uint8_t,1)
+            ADIOS_STATISTICS(uint8_t,1)
 
         case adios_short:
-            MIN_MAX(int16_t,2)
+            ADIOS_STATISTICS(int16_t,2)
 
         case adios_unsigned_short:
-            MIN_MAX(uint16_t,2)
+            ADIOS_STATISTICS(uint16_t,2)
 
         case adios_integer:
-            MIN_MAX(int32_t,4)
+            ADIOS_STATISTICS(int32_t,4)
 
         case adios_unsigned_integer:
-            MIN_MAX(uint32_t,4)
+            ADIOS_STATISTICS(uint32_t,4)
 
         case adios_long:
-            MIN_MAX(int64_t,8)
+            ADIOS_STATISTICS(int64_t,8)
 
         case adios_unsigned_long:
-            MIN_MAX(uint64_t,8)
+            ADIOS_STATISTICS(uint64_t,8)
 
         case adios_real:
-            MIN_MAX(float,4)
+            ADIOS_STATISTICS(float,4)
 
         case adios_double:
-            MIN_MAX(double,8)
+            ADIOS_STATISTICS(double,8)
 
         case adios_long_double:
-            MIN_MAX(long double,16)
+            ADIOS_STATISTICS(long double,16)
 
-        case adios_complex:
-	{
-            // complex = (float, float) = double in size
-            float   minr, mini, maxr, maxi, ar, ai; 
-            double  min, max, a;
-            float    *data = (float *) var->data;   // view double array as float array 
-            uint64_t step = 0, steps = total_size / 4;  // steps in float steps over double array!
-            var->min = malloc ( 2*sizeof(float));
-            var->max = malloc ( 2*sizeof(float));
-            minr = data[0];
-            mini = data[1];
-            min  = (double)minr*minr+mini*mini;
-            max  = (double)maxr*maxr+maxi*maxi;
-            maxr = minr;
-            maxi = maxi;
-            step += 2; 
-            // loop over the elements of the complex array (step is wrt float size!)
-            while (step  < steps) {
-                ar = data[step];
-                ai = data[step+1];
-                a  = (double)ar*ar+ai*ai;
-                 
-                if ( a < min) {
-                    minr = ar; mini = ai; min  = a;
-                }
-                if ( a > max) {
-                    maxr = ar; maxi = ai; max  = a;
-                }
-                step += 2; 
-            } 
-            ((float *) var->min)[0] = minr;
-            ((float *) var->min)[1] = mini;
-            ((float *) var->max)[0] = maxr;
-            ((float *) var->max)[1] = maxi;
-            return 0;
-	}
+		case adios_complex:
+		{
+			int i, j, c, count = 3;
+			struct adios_stat_struct ** stats = var->stats;
+			float * data = var->data;		
+			i = j = 0;	
 
-        case adios_double_complex:
-	{
-            // complex = (double, double) = 16 bytes in size
-            float   minr, mini, maxr, maxi, ar, ai; 
-            long double  min, max, a; 
-            /* FIXME: long double may not prevent overflow 
-               PGI compiler: long double is 8 bytes like double
-            */
-            double   *data = (double *) var->data;   // view 16-byte array as double array 
-            uint64_t step = 0, steps = total_size / 8;  // steps in double steps over 16-byte array!
-            var->min = malloc ( 2*sizeof(double));
-            var->max = malloc ( 2*sizeof(double));
-            minr = data[0];
-            mini = data[1];
-            min  = (long double)minr*minr+mini*mini;
-            max  = (long double)maxr*maxr+maxi*maxi;
-            maxr = minr;
-            maxi = maxi;
-            step += 2; 
-            // loop over the elements of the double complex array (step is wrt double size!)
-            while (step  < steps) {
-                ar = data[step];
-                ai = data[step+1];
-                a  = (long double)ar*ar+ai*ai;
-                 
-                if ( a < min) {
-                    minr = ar; mini = ai; min  = a;
-                }
-                if ( a > max) {
-                    maxr = ar; maxi = ai; max  = a;
-                }
-                step += 2; 
-            } 
-            ((double *) var->min)[0] = minr;
-            ((double *) var->min)[1] = mini;
-            ((double *) var->max)[0] = maxr;
-            ((double *) var->max)[1] = maxi;
-            return 0;
+			while (var->bitmap >> j) { 
+				if ((var->bitmap >> j) & 1)	{
+					map [j] = i; 
+					for (c = 0; c < count; c ++)	
+						if (j != adios_statistic_hist)
+							stats[c][i].data = malloc(adios_get_stat_size(NULL, var->type, j)); 
+					i ++; 
+				} 
+				j ++; 
+			} 
 
-            return 0;
-	}
+			double *min_i, *min_r, *min_m;
+			double *max_i, *max_r, *max_m;
+			double *sum_i, *sum_r, *sum_m;
+			double *sum_square_i, *sum_square_r, *sum_square_m;
+			//struct adios_hist_struct *hist, *hist_i, *hist_r, *hist_m;
+			uint32_t *cnt_i, *cnt_r, *cnt_m;
+			double magnitude;
+			uint8_t finite = 0;
+
+			min_r = (double *) stats[0][map[adios_statistic_min]].data; 
+			min_i = (double *) stats[1][map[adios_statistic_min]].data; 
+			min_m = (double *) stats[2][map[adios_statistic_min]].data; 
+
+			max_r = (double *) stats[0][map[adios_statistic_max]].data; 
+			max_i = (double *) stats[1][map[adios_statistic_max]].data; 
+			max_m = (double *) stats[2][map[adios_statistic_max]].data; 
+
+			sum_r = (double *) stats[0][map[adios_statistic_sum]].data;
+            sum_i = (double *) stats[1][map[adios_statistic_sum]].data;
+            sum_m = (double *) stats[2][map[adios_statistic_sum]].data;
+
+            sum_square_r = (double *) stats[0][map[adios_statistic_sum_square]].data;
+            sum_square_i = (double *) stats[1][map[adios_statistic_sum_square]].data;
+            sum_square_m = (double *) stats[2][map[adios_statistic_sum_square]].data;
+
+			cnt_r = (uint32_t *) stats[0][map[adios_statistic_cnt]].data; 
+			cnt_i = (uint32_t *) stats[1][map[adios_statistic_cnt]].data; 
+			cnt_m = (uint32_t *) stats[2][map[adios_statistic_cnt]].data; 
+
+			// Histogram is not available for complex numbers, yet.
+			/*
+			if (map[adios_statistic_hist] != -1) {
+			    hist_r = (struct adios_hist_struct *) stat[0][map[adios_statistic_hist]].data;
+			    hist_i = (struct adios_hist_struct *) stat[1][map[adios_statistic_hist]].data;
+			    hist_m = (struct adios_hist_struct *) stat[2][map[adios_statistic_hist]].data;
+
+			    hist_r->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+			    hist_i->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+			    hist_m->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+			}
+			*/
+
+			*cnt_r = *cnt_i = *cnt_m = 0;
+			*min_r = *min_i = *min_m = INFINITY;
+			*max_r = *max_i = *max_m = -INFINITY;
+			*sum_r = *sum_i = *sum_m = 0;
+			*sum_square_r = *sum_square_i = *sum_square_m = 0;
+
+			while ((size * sizeof(float)) < total_size) {
+ 
+				magnitude = sqrt((double) data [size] * data [size] + (double) data[size + 1] * data[size + 1]);
+
+				// Both real and imaginary parts have to be finite, else skip calculating the characteristic 
+				if ( isnan(data [size]) || !isfinite(data [size]) || isnan(data[size + 1]) || !isfinite(data[size + 1]) ) {
+					size += 2;
+					continue;
+				}
+
+				finite = 1;
+
+				// Updating the characteristic values
+				if (data [size] < *min_r) 
+			    	*min_r = data [size]; 
+				if (data [size + 1] < *min_i) 
+			    	*min_i = data [size + 1]; 
+				if (magnitude < *min_m) 
+			    	*min_m = magnitude; 
+
+                if (data [size] > *max_r)
+                    *max_r = data [size];
+                if (data [size + 1] > *max_i)
+                    *max_i = data [size + 1];
+                if (magnitude > *max_m)
+                    *max_m = magnitude;
+
+				*sum_r += data [size]; 
+				*sum_i += data [size + 1]; 
+				*sum_m += magnitude; 
+
+				*sum_square_r += (double) data [size] * data [size];
+				*sum_square_i += (double) data [size + 1] * data [size + 1];
+				*sum_square_m += magnitude * magnitude;
+
+				*cnt_r = *cnt_r + 1;
+				*cnt_i = *cnt_i + 1;
+				*cnt_m = *cnt_m + 1;
+				// Histogram not available yet
+				/*
+				if (map[adios_statistic_hist] != -1)
+				{
+					hist = hist_r;
+                	HIST (data[size]);
+
+                	hist = hist_i;
+                	HIST (data[size + 1]);
+
+                	hist = hist_m;
+                	HIST (magnitude);
+				}
+				*/
+
+			   	size += 2; 
+			} 
+
+			if (map[adios_statistic_finite] != -1) 
+				for (c = 0; c < count; c ++)
+    				* ((uint8_t * ) stats[c][map[adios_statistic_finite]].data) = finite; 
+
+			return 0; 
+		}
+
+		case adios_double_complex:
+		{
+			int i, j, c, count = 3;
+			struct adios_stat_struct ** stats = var->stats;
+			double * data = var->data;		
+			i = j = 0;	
+
+			while (var->bitmap >> j) { 
+				if ((var->bitmap >> j) & 1)	{
+					map [j] = i; 
+					for (c = 0; c < count; c ++)	
+						if (j != adios_statistic_hist)
+							stats[c][i].data = malloc(adios_get_stat_size(NULL, var->type, j)); 
+					i ++; 
+				} 
+				j ++; 
+			} 
+
+			long double *min_i, *min_r, *min_m;
+			long double *max_i, *max_r, *max_m;
+			long double *sum_i, *sum_r, *sum_m;
+			long double *sum_square_i, *sum_square_r, *sum_square_m;
+			//struct adios_hist_struct *hist, *hist_i, *hist_r, *hist_m;
+			uint32_t *cnt_i, *cnt_r, *cnt_m;
+			long double magnitude;
+			uint8_t finite = 0;
+
+			min_r = (long double *) stats[0][map[adios_statistic_min]].data; 
+			min_i = (long double *) stats[1][map[adios_statistic_min]].data; 
+			min_m = (long double *) stats[2][map[adios_statistic_min]].data; 
+
+			max_r = (long double *) stats[0][map[adios_statistic_max]].data; 
+			max_i = (long double *) stats[1][map[adios_statistic_max]].data; 
+			max_m = (long double *) stats[2][map[adios_statistic_max]].data; 
+
+			sum_r = (long double *) stats[0][map[adios_statistic_sum]].data;
+            sum_i = (long double *) stats[1][map[adios_statistic_sum]].data;
+            sum_m = (long double *) stats[2][map[adios_statistic_sum]].data;
+
+            sum_square_r = (long double *) stats[0][map[adios_statistic_sum_square]].data;
+            sum_square_i = (long double *) stats[1][map[adios_statistic_sum_square]].data;
+            sum_square_m = (long double *) stats[2][map[adios_statistic_sum_square]].data;
+
+			
+			// Histogram not available for complex numbers yet
+			/*
+			if (map[adios_statistic_hist] != -1) {
+			    hist_r = (struct adios_hist_struct *) stat[0][map[adios_statistic_hist]].data;
+			    hist_i = (struct adios_hist_struct *) stat[1][map[adios_statistic_hist]].data;
+			    hist_m = (struct adios_hist_struct *) stat[2][map[adios_statistic_hist]].data;
+
+			    hist_r->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+			    hist_i->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+			    hist_m->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+			}
+			*/
+
+			cnt_r = (uint32_t *) stats[0][map[adios_statistic_cnt]].data; 
+			cnt_i = (uint32_t *) stats[1][map[adios_statistic_cnt]].data; 
+			cnt_m = (uint32_t *) stats[2][map[adios_statistic_cnt]].data; 
+
+			*cnt_r = *cnt_i = *cnt_m = 0;
+			*min_r = *min_i = *min_m = INFINITY;
+			*max_r = *max_i = *max_m = -INFINITY;
+			*sum_r = *sum_i = *sum_m = 0;
+			*sum_square_r = *sum_square_i = *sum_square_m = 0;
+
+			while ((size * sizeof(double)) < total_size) 
+			{ 
+				long double magnitude = sqrt((long double) data [size] * data [size] + (long double) data[size + 1] * data[size + 1]);
+
+				// Both real and imaginary parts have to be finite, else skip calculating the characteristic 
+				if ( isnan(data [size]) || !isfinite(data [size]) || isnan(data[size + 1]) || !isfinite(data[size + 1]) ) {
+					size += 2;
+					continue;
+				}
+
+				finite = 1;
+
+				if (data [size] < *min_r) 
+			    	*min_r = data [size]; 
+				if (data [size + 1] < *min_i) 
+			    	*min_i = data [size + 1]; 
+				if (magnitude < *min_m) 
+			    	*min_m = magnitude; 
+
+                if (data [size] > *max_r)
+                    *max_r = data [size];
+                if (data [size + 1] > *max_i)
+                    *max_i = data [size + 1];
+                if (magnitude > *max_m)
+                    *max_m = magnitude;
+
+				*sum_r += data [size]; 
+				*sum_i += data [size + 1]; 
+				*sum_m += magnitude; 
+
+				*sum_square_r += (long double) data [size] * data [size];
+				*sum_square_i += (long double) data [size + 1] * data [size + 1];
+				*sum_square_m += magnitude * magnitude;
+
+				// Histgram has not available for complex yet
+				/*
+				if (map[adios_statistic_hist] != -1)
+				{
+					hist = hist_r;
+                	HIST (data[size]);
+
+                	hist = hist_i;
+                	HIST (data[size + 1]);
+
+                	hist = hist_m;
+                	HIST (magnitude);
+				}
+				*/
+
+				*cnt_r = *cnt_r + 1;
+				*cnt_i = *cnt_i + 1;
+				*cnt_m = *cnt_m + 1;
+
+			   	size += 2; 
+			} 
+
+			if (map[adios_statistic_finite] != -1) 
+				for (c = 0; c < count; c ++)
+    				* ((uint8_t * ) stats[c][map[adios_statistic_finite]].data) = finite; 
+			
+			return 0; 
+		}
 
         case adios_string:
         {
-            var->min = 0;
-            var->max = 0;
+            var->stats = 0;
 
             return 0;
         }
 
         default:
-	{
+		{
             uint64_t data = adios_unknown;
-            var->min = 0;
-            var->max = 0;
+            var->stats = 0;
+
             return 0;
-	}
+		}
     }
 }
 

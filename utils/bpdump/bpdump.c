@@ -582,20 +582,54 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
     }
     printf ("\t\tCharacteristics:\n");
     printf ("\t\t\tOffset(%llu)", var_header->characteristics.offset);
-    if (var_header->characteristics.min)
-    {
-        printf ("\t\t\tMin(%s)", bp_value_to_string (var_header->type
-                                          ,var_header->characteristics.min
-                                          )
-               );
-    }
-    if (var_header->characteristics.max)
-    {
-        printf ("\t\t\tMax(%s)", bp_value_to_string (var_header->type
-                                          ,var_header->characteristics.max
-                                          )
-               );
-    }
+
+    /* NCSU - Print min, max */
+
+	if (var_header->type == adios_complex || var_header->type == adios_double_complex)
+	{
+		uint8_t type;
+
+		if (var_header->type == adios_complex)
+			type = adios_double;
+		else
+			type = adios_long_double;
+
+        if (var_header->characteristics.stats && var_header->characteristics.stats[0][adios_statistic_min].data)
+        {
+            printf ("\tMin(%s)", bp_value_to_string (type
+                                       ,var_header->characteristics.stats[0][adios_statistic_min].data
+                                       )
+                   );
+        }
+        if (var_header->characteristics.stats && var_header->characteristics.stats[0][adios_statistic_max].data)
+        {
+            printf ("\tMax(%s)", bp_value_to_string (type
+                                       ,var_header->characteristics.stats[0][adios_statistic_max].data
+                                       )
+                   );
+        }
+
+	}
+	else
+	{
+    	if (var_header->characteristics.stats && var_header->characteristics.stats[0][adios_statistic_min].data)
+    	{
+    	    printf ("\tMin(%s)", bp_value_to_string (var_header->type
+    	                               ,var_header->characteristics.stats[0][adios_statistic_min].data
+    	                               )
+    	           );
+    	}
+    	if (var_header->characteristics.stats && var_header->characteristics.stats[0][adios_statistic_max].data)
+    	{
+    	    printf ("\tMax(%s)", bp_value_to_string (var_header->type
+    	                               ,var_header->characteristics.stats[0][adios_statistic_max].data
+    	                               )
+    	           );
+    	}
+	}
+	
+    
+
     if (var_header->characteristics.value)
     {
         printf ("\t\t\tValue(%s)", bp_value_to_string (var_header->type
@@ -973,20 +1007,51 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
             }
             printf ("\tTime Index(%d)", vars_root->characteristics [i].time_index);
 
-            if (vars_root->characteristics [i].min)
-            {
-                printf ("\tMin(%s)", bp_value_to_string (vars_root->type
-                                           ,vars_root->characteristics [i].min
-                                           )
-                       );
-            }
-            if (vars_root->characteristics [i].max)
-            {
-                printf ("\tMax(%s)", bp_value_to_string (vars_root->type
-                                           ,vars_root->characteristics [i].max
-                                           )
-                       );
-            }
+    		/* NCSU - Print min, max */
+			if (vars_root->type == adios_complex || vars_root->type == adios_double_complex)
+			{
+        		uint8_t type;
+
+        		if (vars_root->type == adios_complex)
+        		    type = adios_double;
+        		else
+        		    type = adios_long_double;
+
+
+    			if (vars_root->characteristics [i].stats && vars_root->characteristics [i].stats[0][adios_statistic_min].data)
+    			{
+    			    printf ("\tMin(%s)", bp_value_to_string (type
+    			                               ,vars_root->characteristics [i].stats[0][adios_statistic_min].data
+    			                               )
+    			           );
+    			}
+    			if (vars_root->characteristics [i].stats && vars_root->characteristics [i].stats[0][adios_statistic_max].data)
+    			{
+    			    printf ("\tMax(%s)", bp_value_to_string (type
+    			                               ,vars_root->characteristics [i].stats[0][adios_statistic_max].data
+    			                               )
+    			           );
+    			}
+			}
+			else
+			{
+    			if (vars_root->characteristics [i].stats && vars_root->characteristics [i].stats[0][adios_statistic_min].data)
+    			{
+    			    printf ("\tMin(%s)", bp_value_to_string (vars_root->type
+    			                               ,vars_root->characteristics [i].stats[0][adios_statistic_min].data
+    			                               )
+    			           );
+    			}
+    			if (vars_root->characteristics [i].stats && vars_root->characteristics [i].stats[0][adios_statistic_max].data)
+    			{
+    			    printf ("\tMax(%s)", bp_value_to_string (vars_root->type
+    			                               ,vars_root->characteristics [i].stats[0][adios_statistic_max].data
+    			                               )
+    			           );
+    			}
+			}
+    		//*/
+
             if (vars_root->characteristics [i].value)
             {
                 if (vars_root->type != adios_string)
@@ -1066,20 +1131,48 @@ void print_attributes_index
             }
             printf ("\t\tTime Index(%d)", attrs_root->characteristics [i].time_index);
 
-            if (attrs_root->characteristics [i].min)
-            {
-                printf ("\t\tMin(%s)", bp_value_to_string (attrs_root->type
-                                          ,attrs_root->characteristics [i].min
-                                          )
-                       );
-            }
-            if (attrs_root->characteristics [i].max)
-            {
-                printf ("\t\tMax(%s)", bp_value_to_string (attrs_root->type
-                                          ,attrs_root->characteristics [i].max
-                                          )
-                       );
-            }
+    		/* NCSU - Print min, max  */
+			if (attrs_root->type == adios_complex || attrs_root->type == adios_double_complex)
+			{
+				uint8_t type;
+				if (attrs_root->type == adios_complex)
+					type = adios_double;
+				else
+					type = adios_long_double;
+
+                if (attrs_root->characteristics [i].stats && attrs_root->characteristics [i].stats[0][adios_statistic_min].data)
+                {
+                    printf ("\tMin(%s)", bp_value_to_string (type
+                                               ,attrs_root->characteristics [i].stats[0][adios_statistic_min].data
+                                               )
+                           );
+                }
+                if (attrs_root->characteristics [i].stats && attrs_root->characteristics [i].stats[0][adios_statistic_max].data)
+                {
+                    printf ("\tMax(%s)", bp_value_to_string (type
+                                               ,attrs_root->characteristics [i].stats[0][adios_statistic_max].data
+                                               )
+                           );
+                }
+			}
+			else
+			{
+    			if (attrs_root->characteristics [i].stats && attrs_root->characteristics [i].stats[0][adios_statistic_min].data)
+    			{
+    			    printf ("\tMin(%s)", bp_value_to_string (attrs_root->type
+    			                               ,attrs_root->characteristics [i].stats[0][adios_statistic_min].data
+    			                               )
+    			           );
+    			}
+    			if (attrs_root->characteristics [i].stats && attrs_root->characteristics [i].stats[0][adios_statistic_max].data)
+    			{
+    			    printf ("\tMax(%s)", bp_value_to_string (attrs_root->type
+    			                               ,attrs_root->characteristics [i].stats[0][adios_statistic_max].data
+    			                               )
+    			           );
+    			}
+			}
+
             if (attrs_root->characteristics [i].value)
             {
                 printf ("\t\tValue(%s)", bp_value_to_string (attrs_root->type

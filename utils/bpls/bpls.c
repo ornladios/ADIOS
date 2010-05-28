@@ -60,8 +60,10 @@ bool sortnames;            // sort names before listing
 bool listattrs;            // do list attributes too
 bool readattrs;            // also read all attributes and print
 bool longopt;              // -l is turned on
+bool timestep;
 bool noindex;              // do no print array indices with data
 bool printByteAsChar;      // print 8 bit integer arrays as string
+bool plot;      		   // dump histogram related information
 
 // other global variables
 char *prgname; /* argv[0] */
@@ -80,12 +82,14 @@ struct option options[] = {
     {"dump",                 no_argument,          NULL,    'd'},
     {"group",                no_argument,          NULL,    'g'},
     {"regexp",               no_argument,          NULL,    'e'},
+    {"plot",               	 no_argument,          NULL,    'p'},
     {"output",               required_argument,    NULL,    'o'},
     {"xml",                  no_argument,          NULL,    'x'},
     {"start",                required_argument,    NULL,    's'}, 
     {"count",                required_argument,    NULL,    'c'}, 
     {"noindex",              no_argument,          NULL,    'y'},
-    {"sort",                 no_argument,          NULL,    't'},
+    {"sort",                 no_argument,          NULL,    'k'},
+    {"timestep",             no_argument,          NULL,    't'},
     {"attrs",                no_argument,          NULL,    'a'},
     {"long",                 no_argument,          NULL,    'l'},
     {"string",               no_argument,          NULL,    'S'},
@@ -96,7 +100,7 @@ struct option options[] = {
 };
 
 
-static const char *optstring = "hveytaldSg:o:x:s:c:n:f:";
+static const char *optstring = "hvepytaldkSg:o:x:s:c:n:f:";
 
 // help function
 void display_help() {
@@ -111,10 +115,12 @@ void display_help() {
         "                           min/max values of arrays (no overhead to get them!)\n"
         "  --attrs   | -a           List/match attributes too\n"
         "  --sort    | -t           Sort names before listing\n"
+        "  --timestep| -k           Print values of timestep elements\n"
         "  --group   | -g <mask>    List/dump groups matching the mask only\n"
         "  --dump    | -d           Dump matched variables/attributes\n"
         "                             To match attributes too, add option -a\n"
         "  --regexp  | -e           Treat masks as extended regular expressions\n"
+        "  --plot    | -p           Dumps the histogram information that can be read by gnuplot\n"
         "  --output  | -o <path>    Print to a file instead of stdout\n"
 /*
         "  --xml    | -x            # print as xml instead of ascii text\n"
@@ -144,7 +150,7 @@ void display_help() {
         "  --help    | -h               Print this help.\n"
         "  --verbose | -v               Print log about what this program is doing.\n"
         "                                 Use multiple -v to increase logging level.\n"
-        "Typical use: bpls -lat <file>\n"
+        "Typical use: bpls -lak <file>\n"
         );
 }
 
@@ -186,12 +192,14 @@ int main( int argc, char *argv[] ) {
                 case 'h':
                     display_help();
                     return 0;
+                case 't':
+                    sortnames = true;
+                    break;
                 case 'l':
                     longopt = true;
                     readattrs = true;
                     break;
                 case 'n':
-                    errno=0;
                     tmp = strtol(optarg, (char **)NULL, 0);
                     if (errno) {
                         fprintf(stderr, "Error: could not convert --columns value: %s\n", optarg);
@@ -202,14 +210,17 @@ int main( int argc, char *argv[] ) {
                 case 'o':
                     outpath = strndup(optarg,256);
                     break;
+                case 'p':
+                   	plot = true; 
+                    break;
                 case 's':
                     start = strndup(optarg,256);
                     break;
                 case 'S':
                     printByteAsChar = true;
                     break;
-                case 't':
-                    sortnames = true;
+				case 'k':
+                    timestep = true;
                     break;
                 case 'x':
                     output_xml = true;
@@ -222,7 +233,6 @@ int main( int argc, char *argv[] ) {
                     break;
                 /*
                 case 't':
-                    errno=0;
                     tmp = strtol(optarg, (char **)NULL, 0);
                     if (errno) {
                         fprintf(stderr, "Error: could not convert --time value: %s\n", optarg);
@@ -324,6 +334,7 @@ void init_globals(void) {
     dump                 = false;
     output_xml           = false;
     noindex              = false;
+    timestep		     = false;
     sortnames            = false;
     listattrs            = false;
     readattrs            = false;
@@ -331,6 +342,7 @@ void init_globals(void) {
     //timefrom             = 1;
     //timeto               = -1;
     use_regexp           = false;
+    plot                 = false;
     formatgiven          = false;
     printByteAsChar      = false;
     for (i=0; i<MAX_DIMS; i++) {
@@ -365,7 +377,7 @@ void printSettings(void) {
     }
 
     if (longopt)
-        printf("      -l : show scalar values and min/max of arrays\n");
+        printf("      -l : show scalar values and min/max/avg of arrays\n");
     if (sortnames)
         printf("      -t : sort names before listing\n");
     if (listattrs)
@@ -533,11 +545,126 @@ int doList(const char *path) {
                        fprintf(outf,", %lld", vi->dims[j]);
                     }
                     fprintf(outf,"}");
-                    if (longopt && vi->gmin && vi->gmax) {
-                       fprintf(outf," = ");
-                       print_data(vi->gmin, 0, vartype, false); 
-                       fprintf(outf,"/ ");
-                       print_data(vi->gmax, 0, vartype, false); 
+
+					if (vi->hist && plot) {
+						print_data_hist(vi, &names[n][1], 0);
+					}
+
+                    if (longopt && vi->gmin && vi->gmax && vi->gavg && vi->gstd_dev) {
+				
+						if(timestep == false || (vi->timedim < 0)) {	
+
+                       		fprintf(outf," = ");
+                       		print_data(vi->gmin, 0, vartype, false); 
+
+                       		fprintf(outf,"/ ");
+                       		print_data(vi->gmax, 0, vartype, false); 
+
+							if(vartype == adios_complex || vartype == adios_double_complex) {
+
+                        		fprintf(outf,"/ ");
+                        		print_data(vi->gavg, 0, adios_double_complex, false);
+							} else {
+
+                        		fprintf(outf,"/ ");
+                        	    print_data(vi->gavg, 0, adios_double, false);
+							}
+
+							if(vartype == adios_complex || vartype == adios_double_complex) {
+
+                                fprintf(outf,"/ ");
+                                print_data(vi->gstd_dev, 0, adios_double_complex, false);
+                            } else {
+
+                                fprintf(outf,"/ ");
+                                print_data(vi->gstd_dev, 0, adios_double, false);
+                            }
+
+                            fprintf(outf," {MIN / MAX / AVG / STD_DEV} ");
+						} else {
+							int time_start = 0, time_end = vi->dims[0];
+							char *indent_characteristics;
+							indent_characteristics = malloc(maxlen + strlen(names[n]) + 1);
+
+							for(i = 0; i < (maxlen + strlen(names[n])); i++)
+								indent_characteristics[i] = ' ';
+							indent_characteristics[i] = '\0';
+
+							if (start != NULL) {
+								if (istart[0] >= 0)
+									time_start = istart[0];
+								else
+									time_start = vi->dims[0] - 1 + istart[0];
+    						}
+
+    						if (count != NULL) {
+								if(icount[0] > 0)
+									time_end = time_start + icount[0];
+								else
+									time_end = vi->dims[0] + icount[0] + 1;
+    						}
+							
+							if (time_start < 0 || time_start >= vi->dims[0]) {
+								fprintf (stderr, "Error when reading variable %s. errno=%d : Variable (id=%d) has no data at %d time step\n", names[n], 15, vi->varid, time_start);
+								return 15;
+							}
+
+                            if (time_end < 0 || time_end > vi->dims[0]) {
+                                fprintf (stderr, "Error when reading variable %s. errno=%d : Variable (id=%d) has no data at %d time step\n", names[n], 15, vi->varid, time_end);
+                                return 15;
+                            }
+							
+							if (vi->type == adios_complex || vi->type == adios_double_complex) {
+								fprintf(outf, "\n");
+								fprintf(outf, "%s", indent_characteristics);
+								fprintf(outf, "%8s  %8s  %10s  %10s", "MIN", "MAX", "AVG", "STD DEV");
+
+								fprintf(outf, "\n");
+								fprintf(outf, "%s", indent_characteristics);
+								print_data_characteristics(vi->gmin, vi->gmax, vi->gavg, vi->gstd_dev, adios_double, false);
+								fprintf(outf, "  <-- Global values");
+
+								fprintf(outf, "\n");
+
+								if (vi->mins && vi->maxs && vi->avgs && vi->std_devs) {
+									for(i = time_start; i < time_end; i++) {
+										fprintf(outf, "\n");
+										
+										// Align the output, previous lines has atleast (maxlen + strlen(names[n])) characters
+										// Better way to printf N spaces?
+										fprintf(outf, "%s", indent_characteristics);
+
+										print_data_characteristics(vi->mins[i], vi->maxs[i], vi->avgs[i], vi->std_devs[i], adios_double, false);
+										fprintf(outf, "  <-- Timestep %d", i);
+									}
+								}
+							}
+							else {
+                                fprintf(outf, "\n");
+                                fprintf(outf, "%s", indent_characteristics);
+                                fprintf(outf, "%8s  %8s  %10s  %10s", "MIN", "MAX", "AVG", "STD DEV");
+
+                                fprintf(outf, "\n");
+                                fprintf(outf, "%s", indent_characteristics);
+                                print_data_characteristics(vi->gmin, vi->gmax, vi->gavg, vi->gstd_dev, vartype, false);
+                                fprintf(outf, "  <-- Global values");
+
+                                fprintf(outf, "\n");
+
+								if (vi->mins && vi->maxs && vi->avgs && vi->std_devs) {
+									for(i = time_start; i < time_end; i++) {
+										fprintf(outf, "\n");
+										
+										// Align the output, previous lines has atleast (maxlen + strlen(names[n])) characters
+										// Better way to printf N spaces?
+										fprintf(outf, "%s", indent_characteristics);
+
+										print_data_characteristics(vi->mins[i], vi->maxs[i], vi->avgs[i], vi->std_devs[i], vartype, false);
+										fprintf(outf, "  <-- Timestep %d", i);
+									}
+								}
+							}
+						}
                     }
                     fprintf(outf,"\n");
                 } else {
@@ -583,6 +710,59 @@ int doList(const char *path) {
     return 0;
 }                
 
+int print_data_hist(ADIOS_VARINFO * vi, char * varname)
+{
+	char hist_file[256], gnuplot_file[256];
+	int i;
+	char xtics[512], str[512];
+	FILE * out_hist, * out_plot;
+
+	memcpy(hist_file,  varname, strlen(varname) + 1);	
+	strcat(hist_file, ".hist");
+
+	if ((out_hist = fopen(hist_file,"w")) == NULL) {
+            fprintf(stderr, "Error at opening for writing file %s: %s\n",
+                    hist_file, strerror(errno));
+            return 30;
+        }
+
+	memcpy(gnuplot_file,  varname, strlen(varname) + 1);	
+	strcat(gnuplot_file, ".gpl");
+
+	if ((out_plot = fopen(gnuplot_file,"w")) == NULL) {
+            fprintf(stderr, "Error at opening for writing file %s: %s\n",
+                    gnuplot_file, strerror(errno));
+            return 30;
+        }
+
+	xtics[0] = '\0';
+	strcat(xtics, "set xtics offset start axis (");
+	for (i = 0; i <= vi->hist->num_breaks; i++)
+	{
+		if (i == 0)
+		{
+			fprintf(out_hist, "-Inf %.2lf %u\n", vi->hist->breaks[i], vi->hist->gfrequencies[i]);
+			sprintf(str, "\"-Inf\" pos(%d)", i); 
+		}
+		else if (i < vi->hist->num_breaks)
+		{
+			fprintf(out_hist, "%.2lf %.2lf %u\n", vi->hist->breaks[i - 1], vi->hist->breaks[i], vi->hist->gfrequencies[i]);
+			sprintf(str, ", \"%.2lf\" pos(%d)", vi->hist->breaks[i - 1], i); 
+		}
+		else 	
+		{
+			fprintf(out_hist, "%.2lf Inf %u\n", vi->hist->breaks[i], vi->hist->gfrequencies[i]);
+			sprintf(str, ", \"Inf\" pos(%d)", i); 
+		}
+		strcat(xtics, str);
+	}
+	strcat(xtics, ")\n");
+
+	fprintf(out_plot, "start = -0.5\npos(x) = start + x * 1\nset boxwidth 1\nset style fill solid border 5#5lt6#6\n");
+	fprintf(out_plot, xtics);
+	fprintf(out_plot, "plot '%s' using 3 smooth frequency w boxes\n", hist_file);
+	fprintf(out_plot, "pause -1 'Press Enter to quit'\n");
+}
 
 int cmpstringp(const void *p1, const void *p2)
 {
@@ -680,7 +860,7 @@ int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize)
             break;
 
         case adios_long_double: // do not know how to print
-            // *elemsize = 16;
+             //*elemsize = 16;
         default:
 	    return 1;
     }
@@ -984,6 +1164,99 @@ int print_data_as_string(void * data, int maxlen, enum ADIOS_DATATYPES adiosvart
             return -1;
             break;
     }
+    return 0;
+}
+
+int print_data_characteristics(void * min, void * max, double * avg, double * std_dev, enum ADIOS_DATATYPES adiosvartype, bool allowformat)
+{
+    bool f = formatgiven && allowformat;
+
+    switch(adiosvartype) {
+        case adios_unsigned_byte:
+            fprintf(outf,(f ? format : "%8hhu  "), ((unsigned char *) min));
+            fprintf(outf,(f ? format : "%8hhu  "), ((unsigned char *) max));
+			fprintf(outf, "%10.2f  ", * avg);
+			fprintf(outf, "%10.2f  ", * std_dev);
+            break;
+        case adios_byte:
+            fprintf(outf,(f ? format : "%8hhd  "), ((char *) min));
+            fprintf(outf,(f ? format : "%8hhd  "), ((char *) max));
+			fprintf(outf, "%10.2f  ", * avg);
+			fprintf(outf, "%10.2f  ", * std_dev);
+            break;
+        case adios_string:
+            break;
+
+        case adios_unsigned_short:
+            fprintf(outf,(f ? format : "%8hu  "), (* (unsigned short *) min));
+            fprintf(outf,(f ? format : "%8hu  "), (* (unsigned short *) max));
+			fprintf(outf, "%10.2f  ", * avg);
+			fprintf(outf, "%10.2f  ", * std_dev);
+            break;
+        case adios_short:
+            fprintf(outf,(f ? format : "%8hd  "), (* (short *) min));
+            fprintf(outf,(f ? format : "%8hd  "), (* (short *) max));
+			fprintf(outf, "%10.2f  ", * avg);
+			fprintf(outf, "%10.2f  ", * std_dev);
+            break;
+
+        case adios_unsigned_integer:
+            fprintf(outf,(f ? format : "%8u  "), (* (unsigned int *) min));
+            fprintf(outf,(f ? format : "%8u  "), (* (unsigned int *) max));
+			fprintf(outf, "%10.2f  ", * avg);
+			fprintf(outf, "%10.2f  ", * std_dev);
+            break;
+		case adios_integer:
+            fprintf(outf,(f ? format : "%8d  "), (* (int *) min));
+            fprintf(outf,(f ? format : "%8d  "), (* (int *) max));
+			fprintf(outf, "%10.2f  ", * avg);
+			fprintf(outf, "%10.2f  ", * std_dev);
+            break;
+
+        case adios_unsigned_long:
+            fprintf(outf,(f ? format : "%8llu  "), (* (unsigned long long *) min));
+            fprintf(outf,(f ? format : "%8llu  "), (* (unsigned long long *) max));
+			fprintf(outf, "%10.2f  ", * avg);
+			fprintf(outf, "%10.2f  ", * std_dev);
+            break;
+        case adios_long:
+            fprintf(outf,(f ? format : "%8lld  "), (* (long long *) min));
+            fprintf(outf,(f ? format : "%8lld  "), (* (long long *) max));
+			fprintf(outf, "%10.2f  ", * avg);
+			fprintf(outf, "%10.2f  ", * std_dev);
+            break;
+
+        case adios_real:
+            fprintf(outf,(f ? format : "%8g  "), (* (float *) min));
+            fprintf(outf,(f ? format : "%8g  "), (* (float *) max));
+			fprintf(outf, "%10.2f  ", * avg);
+			fprintf(outf, "%10.2f  ", * std_dev);
+            break;
+
+        case adios_double:
+            fprintf(outf,(f ? format : "%8g  "), (* (double *) min));
+            fprintf(outf,(f ? format : "%8g  "), (* (double *) max));
+			fprintf(outf, "%10.2f  ", * avg);
+			fprintf(outf, "%10.2f  ", * std_dev);
+            break;
+
+
+        case adios_long_double:
+            //fprintf(outf,(f ? format : "%g "), ((double *) data)[item]);
+            fprintf(outf,(f ? format : "????????"));
+            break;
+
+		// TO DO
+		/*
+        case adios_complex:
+            fprintf(outf,(f ? format : "(%g,i%g) "), ((float *) data)[2*item], ((float *) data)[2*item+1]);
+            break;
+
+        case adios_double_complex:
+            fprintf(outf,(f ? format : "(%g,i%g)" ), ((double *) data)[2*item], ((double *) data)[2*item+1]);
+            break;
+		*/
+    } // end switch
     return 0;
 }
 

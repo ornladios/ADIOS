@@ -628,16 +628,6 @@ int common_adios_close (int64_t fd_p)
             free (v->data);
             v->data = 0;
         }
-        if (v->min)
-        {
-            free (v->min);
-            v->min = 0;
-        }
-        if (v->max)
-        {
-            free (v->max);
-            v->max = 0;
-        }
 
         v = v->next;
     }
@@ -658,10 +648,8 @@ int common_adios_close (int64_t fd_p)
             fd->group->vars_written->dimensions = dimensions;
         }
 
-        if (fd->group->vars_written->min)
-            free (fd->group->vars_written->min);
-        if (fd->group->vars_written->max)
-            free (fd->group->vars_written->max);
+        if (fd->group->vars_written->stats)
+            free (fd->group->vars_written->stats);
         if (fd->group->vars_written->data)
             free (fd->group->vars_written->data);
 

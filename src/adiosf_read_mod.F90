@@ -246,178 +246,230 @@ module adiosf_read
     end interface
 
     !
-    ! ADIOSF_GET_VARMINMAX generic interface 
+    ! ADIOSF_GET_STATISTICS generic interface 
     !
-    ! Usage: call adiosf_get_varminmax (gp, varname, value, gmin, gmax, mins, maxs, err)
+    ! Usage: call adiosf_get_statistics (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
     !
-    interface adiosf_get_varminmax
+    interface adiosf_get_statistics
 
         ! INTEGER*1 arrays
-        subroutine adiosf_get_varminmax_int1 (gp, varname, value, gmin, gmax, mins, maxs, err)
+        subroutine adiosf_get_statistics_int1 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*1,      intent(out) :: value
             integer*1,      intent(out) :: gmin
             integer*1,      intent(out) :: gmax
+            real*8,         intent(out) :: gavg
+            real*8,         intent(out) :: gstd_dev
             integer*1, dimension(*), intent(inout) :: mins
             integer*1, dimension(*), intent(inout) :: maxs
-            integer,        intent(out) :: err 
+            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: std_devs
+            integer,dimension(*), intent(out) :: err 
         end subroutine
 
         ! INTEGER*2 arrays
-        subroutine adiosf_get_varminmax_int2 (gp, varname, value, gmin, gmax, mins, maxs, err)
+        subroutine adiosf_get_statistics_int2 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*2,      intent(out) :: value
             integer*2,      intent(out) :: gmin
             integer*2,      intent(out) :: gmax
+            real*8,         intent(out) :: gavg
+            real*8,         intent(out) :: gstd_dev
             integer*2, dimension(*), intent(inout) :: mins
             integer*2, dimension(*), intent(inout) :: maxs
+            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! INTEGER*4 arrays
-        subroutine adiosf_get_varminmax_int4 (gp, varname, value, gmin, gmax, mins, maxs, err)
+        subroutine adiosf_get_statistics_int4 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*4,      intent(out) :: value
             integer*4,      intent(out) :: gmin
             integer*4,      intent(out) :: gmax
+            real*8,         intent(out) :: gavg
+            real*8,         intent(out) :: gstd_dev
             integer*4, dimension(*), intent(inout) :: mins
             integer*1, dimension(*), intent(inout) :: maxs
+            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! INTEGER*8 arrays
-        subroutine adiosf_get_varminmax_int8 (gp, varname, value, gmin, gmax, mins, maxs, err)
+        subroutine adiosf_get_statistics_int8 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             integer*8,      intent(out) :: value
             integer*8,      intent(out) :: gmin
             integer*8,      intent(out) :: gmax
+            real*8,         intent(out) :: gavg
+            real*8,         intent(out) :: gstd_dev
             integer*8, dimension(*), intent(inout) :: mins
             integer*8, dimension(*), intent(inout) :: maxs
+            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! REAL*4 arrays
-        subroutine adiosf_get_varminmax_real4 (gp, varname, value, gmin, gmax, mins, maxs, err)
+        subroutine adiosf_get_statistics_real4 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             real*4,         intent(out) :: value
             real*4,         intent(out) :: gmin
             real*4,         intent(out) :: gmax
+            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: std_devs
             real*4, dimension(*), intent(inout) :: mins
             real*4, dimension(*), intent(inout) :: maxs
+            real*8,         intent(out) :: gavg
+            real*8,         intent(out) :: gstd_dev
             integer,        intent(out) :: err 
         end subroutine
 
         ! REAL*8 arrays
-        subroutine adiosf_get_varminmax_real8 (gp, varname, value, gmin, gmax, mins, maxs, err)
+        subroutine adiosf_get_statistics_real8 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             real*8,         intent(out) :: value
             real*8,         intent(out) :: gmin
             real*8,         intent(out) :: gmax
+            real*8,         intent(out) :: gavg
+            real*8,         intent(out) :: gstd_dev
             real*8, dimension(*), intent(inout) :: mins
             real*8, dimension(*), intent(inout) :: maxs
+            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! COMPLEX*8 arrays
-        subroutine adiosf_get_varminmax_complex8 (gp, varname, value, gmin, gmax, mins, maxs, err)
+        subroutine adiosf_get_statistics_complex8 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             complex,        intent(out) :: value
             complex,        intent(out) :: gmin
             complex,        intent(out) :: gmax
+            real*8,         intent(out) :: gavg
+            real*8,         intent(out) :: gstd_dev
             complex, dimension(*), intent(inout) :: mins
             complex, dimension(*), intent(inout) :: maxs
+            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! COMPLEX*16 arrays
-        subroutine adiosf_get_varminmax_complex16 (gp, varname, value, gmin, gmax, mins, maxs, err)
+        subroutine adiosf_get_statistics_complex16 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             complex*16,     intent(out) :: value
             complex*16,     intent(out) :: gmin
             complex*16,     intent(out) :: gmax
+            real*8,         intent(out) :: gavg
+            real*8,         intent(out) :: gstd_dev
             complex*16, dimension(*), intent(inout) :: mins
             complex*16, dimension(*), intent(inout) :: maxs
+            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! CHARACTER(*) arrays
-        subroutine adiosf_get_varminmax_char (gp, varname, value, gmin, gmax, mins, maxs, err)
+        subroutine adiosf_get_statistics_char (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             character(*),   intent(out) :: value
             character(*),   intent(out) :: gmin
             character(*),   intent(out) :: gmax
+            real*8,         intent(out) :: gavg
+            real*8,         intent(out) :: gstd_dev
             character(*), dimension(*), intent(inout) :: mins
             character(*), dimension(*), intent(inout) :: maxs
+            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! LOFICAL*1 arrays
-        subroutine adiosf_get_varminmax_logical1 (gp, varname, value, gmin, gmax, mins, maxs, err)
+        subroutine adiosf_get_statistics_logical1 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             logical*1,      intent(out) :: value
             logical*1,      intent(out) :: gmin
             logical*1,      intent(out) :: gmax
+            real*8,         intent(out) :: gavg
+            real*8,         intent(out) :: gstd_dev
             logical*1, dimension(*), intent(inout) :: mins
             logical*1, dimension(*), intent(inout) :: maxs
+            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! LOGICAL*2 arrays
-        subroutine adiosf_get_varminmax_logical2 (gp, varname, value, gmin, gmax, mins, maxs, err)
+        subroutine adiosf_get_statistics_logical2 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             logical*2,      intent(out) :: value
             logical*2,      intent(out) :: gmin
             logical*2,      intent(out) :: gmax
+            real*8,         intent(out) :: gavg
+            real*8,         intent(out) :: gstd_dev
             logical*2, dimension(*), intent(inout) :: mins
             logical*2, dimension(*), intent(inout) :: maxs
+            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! LOGICAL*4 arrays
-        subroutine adiosf_get_varminmax_logical4 (gp, varname, value, gmin, gmax, mins, maxs, err)
+        subroutine adiosf_get_statistics_logical4 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             logical*4,      intent(out) :: value
             logical*4,      intent(out) :: gmin
             logical*4,      intent(out) :: gmax
+            real*8,         intent(out) :: gavg
+            real*8,         intent(out) :: gstd_dev
             logical*4, dimension(*), intent(inout) :: mins
             logical*4, dimension(*), intent(inout) :: maxs
+            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! LOGICAL*8 arrays
-        subroutine adiosf_get_varminmax_logical8 (gp, varname, value, gmin, gmax, mins, maxs, err)
+        subroutine adiosf_get_statistics_logical8 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
             integer*8,      intent(in)  :: gp
             character(*),   intent(in)  :: varname
             logical*8,      intent(out) :: value
             logical*8,      intent(out) :: gmin
             logical*8,      intent(out) :: gmax
+            real*8,         intent(out) :: gavg
+            real*8,         intent(out) :: gstd_dev
             logical*8, dimension(*), intent(inout) :: mins
             logical*8, dimension(*), intent(inout) :: maxs
+            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
