@@ -20,8 +20,6 @@ bp2h5_LDFLAGS +=  $(DMALLOC_LDFLAGS)
 bp2h5_LDADD += -ldmalloc
 endif
 
-CC=$(MPICC)
-
 EXTRA_DIST = hw-utils.h
 CC=$(MPICC)
 
