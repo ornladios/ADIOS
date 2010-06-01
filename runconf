@@ -40,7 +40,8 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
         --enable-research-transports  \
-        --with-phdf5=$HDF5_DIR \
+        --without-phdf5 \
+        --without-datatap \
         --without-netcdf 
         #--with-datatap=/ccs/home/habbasi/work/ewok/
         #--with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
@@ -52,7 +53,7 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
 
 elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "chester" ]; then
 
-    BUILD_STAGING=true
+    BUILD_STAGING=false
     if [ $BUILD_STAGING == "false" ]; then
     
         ##########
@@ -98,6 +99,7 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
             --without-portals \
             --enable-research-transports \
             --without-netcdf \
+            --without-phdf5 \
             --without-datatap 
             #--with-dart=/ccs/proj/e2e/pnorbert/dart/current 
             #--without-phdf5 \
