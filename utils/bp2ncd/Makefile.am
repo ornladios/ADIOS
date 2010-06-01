@@ -21,4 +21,5 @@ bp2ncd_LDADD += -ldmalloc
 endif
 
 EXTRA_DIST = bp2ncd.h
-
+CC=$(MPICC)
+CXX=$(MPICXX)

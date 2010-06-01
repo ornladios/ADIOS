@@ -22,5 +22,5 @@ endif
 
 EXTRA_DIST = hw-utils.h
 CC=$(MPICC)
-
+CXX=$(MPICXX)
 

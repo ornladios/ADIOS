@@ -18,3 +18,4 @@ adios_lint_LDADD += -ldmalloc
 endif
 
 CC=$(MPICC)
+CXX=$(MPICXX)

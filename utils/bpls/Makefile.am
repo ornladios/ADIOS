@@ -23,4 +23,6 @@ bpls_LDADD += $(DART_LIBS)
 endif
 
 EXTRA_DIST = bpls.h
+CC=$(MPICC)
+CXX=$(MPICXX)
 

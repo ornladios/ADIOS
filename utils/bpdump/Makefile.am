@@ -14,3 +14,6 @@ bpdump_CPPFLAGS += -DDMALLOC  $(DMALLOC_CPPFLAGS)
 bpdump_LDFLAGS =  $(DMALLOC_LDFLAGS)
 bpdump_LDADD += -ldmalloc
 endif
+
+CC=$(MPICC)
+CXX=$(MPICXX)

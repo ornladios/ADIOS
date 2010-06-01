@@ -28,3 +28,7 @@ bpsplit_LDADD += -ldmalloc
 bpappend_LDADD += -ldmalloc
 bpgettime_LDADD += -ldmalloc
 endif
+
+CC=$(MPICC)
+CXX=$(MPICXX)
+

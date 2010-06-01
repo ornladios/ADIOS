@@ -18,9 +18,9 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     module load hdf5/1.8.2_par
     #module load hdf5/1.6.7-ompi1.2.8
     module load netcdf
-    #export MPICC=mpicc
-    #export MPICXX=mpiCC
-    #export MPIFC=mpif90
+    export MPICC=mpicc
+    export MPICXX=mpiCC
+    export MPIFC=mpif90
     if [ "$TARGET" == "pgi" ]; then
         export CC=pgcc
         export CXX=pgCC

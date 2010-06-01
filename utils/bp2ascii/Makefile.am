@@ -15,4 +15,5 @@ bp2ascii_LDFLAGS =  $(DMALLOC_LDFLAGS)
 bp2ascii_LDADD += -ldmalloc
 endif
 
-
+CC=$(MPICC)
+CXX=$(MPICXX)
