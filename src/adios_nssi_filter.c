@@ -146,8 +146,68 @@ struct adios_var_struct *vars_deep_copy(struct adios_var_struct *orig)
             current->got_buffer = adios_flag_no;
 
             current->write_offset = 0;
-            current->min = 0;
-            current->max = 0;
+
+            current->stats=0;
+            current->bitmap=0;
+
+            if (orig->dimensions) {
+
+                // NCSU Statistics - copy stat to new var struct
+                uint8_t count = adios_get_stat_set_count(orig->type);
+                uint8_t idx = 0;
+                uint64_t characteristic_size;
+                uint8_t c;
+                uint8_t j;
+
+//                printf("vars_deep_copy(): copying %d stat sets\n", count);
+
+                current->bitmap = orig->bitmap;
+                current->stats = malloc (count * sizeof(struct adios_stat_struct *));
+
+                // Set of characteristics will be repeated thrice for complex numbers
+                for (c = 0; c < count; c ++)
+                {
+                    current->stats[c] = calloc(ADIOS_STAT_LENGTH, sizeof (struct adios_stat_struct *));
+
+                    j = idx = 0;
+                    while (orig->bitmap >> j)
+                    {
+//                        printf("name(%s) j(%d) ((orig->bitmap >> j) & 1)(%d) orig->stats[%d][%d].data(%p)\n", orig->name, j, ((orig->bitmap >> j) & 1), c, idx, orig->stats[c][idx].data);
+
+                        if ((orig->bitmap >> j) & 1)
+                        {
+                            if (orig->stats[c][idx].data != NULL) {
+                                if (j == adios_statistic_hist)
+                                {
+                                    current->stats[c][idx].data = (struct adios_hist_struct *) malloc (sizeof(struct adios_hist_struct));
+
+                                    struct adios_hist_struct * orig_hist = orig->stats[c][idx].data;
+                                    struct adios_hist_struct * current_hist = current->stats[c][idx].data;
+
+                                    current_hist->min = orig_hist->min;
+                                    current_hist->max = orig_hist->max;
+                                    current_hist->num_breaks = orig_hist->num_breaks;
+
+                                    current_hist->frequencies = malloc ((orig_hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+                                    memcpy (current_hist->frequencies, orig_hist->frequencies, (orig_hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+                                    current_hist->breaks = malloc ((orig_hist->num_breaks) * adios_get_type_size(adios_double, ""));
+                                    memcpy (current_hist->breaks, orig_hist->breaks, (orig_hist->num_breaks) * adios_get_type_size(adios_double, ""));
+                                }
+                                else
+                                {
+                                    characteristic_size = adios_get_stat_size(orig->stats[c][idx].data, orig->type, j);
+                                    current->stats[c][idx].data = malloc (characteristic_size);
+                                    memcpy (current->stats[c][idx].data, orig->stats[c][idx].data, characteristic_size);
+                                }
+
+                                idx++;
+                            }
+                        }
+                        j++;
+                    }
+                }
+                // NCSU - End of copy, for statistics
+            }
 
             current->free_data = adios_flag_no;
             current->data = 0;
