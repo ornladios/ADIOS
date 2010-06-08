@@ -197,6 +197,7 @@ int getTypeSize(
     switch (type)
     {
     case adios_byte:
+    case adios_unsigned_byte:
         return 1;
 
     case adios_string:
@@ -208,12 +209,14 @@ int getTypeSize(
 
     case adios_integer:
     case adios_unsigned_integer:
-    case adios_long:
-    case adios_unsigned_long:
         return 4;
 
     case adios_real:
         return 4;
+
+    case adios_long:
+    case adios_unsigned_long:
+        return 8;
 
     case adios_double:
         return 8;
@@ -248,8 +251,6 @@ void add_file(const int fd,
 
 void add_chunk(aggregation_chunk_details_t *chunk_details)
 {
-    int rc=NSSI_OK;
-
     file_details_t  *file_details=NULL;
 
     if (DEBUG > 3) printf("adding chunk: fd(%d) var_name(%s)\n", chunk_details->fd, chunk_details->var_name);
@@ -259,6 +260,7 @@ void add_chunk(aggregation_chunk_details_t *chunk_details)
         if ((chunk_details->len/chunk_details->num_elements) != chunk_details->atype_size) {
             printf("datatype size conflict: (%lu/%d)==%lu is not equal to %d\n",
                     chunk_details->len, chunk_details->num_elements, chunk_details->len/chunk_details->num_elements, chunk_details->atype_size);
+            print_chunk(chunk_details);
         }
     }
 
@@ -443,15 +445,17 @@ static void recursive_print_chunk(aggregation_chunk_details_t *details, int offs
                 my_offset = offset+index[current_dim];
 
 //                if (i==0) if (DEBUG > 3) printf("[%d][%d][%d] (my_offset==%d)\n", index[0], index[1], index[2], my_offset);
-                if (details->atype == adios_byte) {
+                if ((details->atype == adios_byte) || (details->atype == adios_unsigned_byte)) {
                     sprintf(tmp_str, "%c, ", *(char *)(((char *)details->buf) + my_offset));
                 }
                 else if (details->atype == adios_short || details->atype == adios_unsigned_short) {
                     sprintf(tmp_str, "%hx, ", *(short *)(((char *)details->buf) + my_offset));
                 }
-                else if (details->atype == adios_integer || details->atype == adios_unsigned_integer ||
-                         details->atype == adios_long || details->atype == adios_unsigned_long) {
+                else if (details->atype == adios_integer || details->atype == adios_unsigned_integer) {
                     sprintf(tmp_str, "%x, ", *(int *)(((char *)details->buf) + my_offset));
+                }
+                else if (details->atype == adios_long || details->atype == adios_unsigned_long) {
+                    sprintf(tmp_str, "%lx, ", *(int *)(((char *)details->buf) + my_offset));
                 }
                 else if (details->atype == adios_real) {
                     sprintf(tmp_str, "%f, ", *(float *)(((char *)details->buf) + my_offset));
@@ -473,8 +477,6 @@ static void recursive_print_chunk(aggregation_chunk_details_t *details, int offs
 void print_chunk(aggregation_chunk_details_t *details)
 {
     int *index=(int *)calloc(details->ndims, sizeof(int));
-    int offset=0;
-    int current_dim=0;
     char tmp_str[20];
     char out_str[1024];
     int remaining=1023;
@@ -505,6 +507,8 @@ void print_chunk(aggregation_chunk_details_t *details)
     if (DEBUG > 3) printf("count[]==%s\n", out_str);
     if (DEBUG > 3) printf("buf==%p\n", details->buf);
 
+//    int offset=0;
+//    int current_dim=0;
 //    recursive_print_chunk(details, offset, index, current_dim);
     if (DEBUG > 3) printf("+++++++++++++++++++++++++++++\n");
 
@@ -601,8 +605,6 @@ aggregation_chunk_t *aggregate_chunks(aggregation_chunk_t *c1,
                                       int join_dim)
 {
     aggregation_chunk_t *out=new aggregation_chunk_t;
-
-    int src_buf_size=0;
 
     //if (DEBUG > 3) printf("entered aggregate_chunks\n");
 

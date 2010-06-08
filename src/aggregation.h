@@ -8,9 +8,9 @@
 #ifndef AGGREGATION_H_
 #define AGGREGATION_H_
 
-#include "adios.h"
+//#include "adios.h"
 #include "adios_types.h"
-#include "adios_internals.h"
+//#include "adios_internals.h"
 
 #include "adios_nssi_args.h"
 
