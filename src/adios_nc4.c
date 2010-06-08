@@ -1717,6 +1717,7 @@ int getTypeSize(
     switch (type)
     {
     case adios_byte:
+    case adios_unsigned_byte:
         return 1;
 
     case adios_string:
@@ -1728,12 +1729,14 @@ int getTypeSize(
 
     case adios_integer:
     case adios_unsigned_integer:
-    case adios_long:
-    case adios_unsigned_long:
         return 4;
 
     case adios_real:
         return 4;
+
+    case adios_long:
+    case adios_unsigned_long:
+        return 8;
 
     case adios_double:
         return 8;
