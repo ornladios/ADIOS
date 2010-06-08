@@ -47,6 +47,7 @@ static struct adios_MPI_thread_data_open open_thread_data2;
 #define SHIM_FOOTER_SIZE 4
 #define ATTR_COUNT_SIZE  2
 #define ATTR_LEN_SIZE    8
+#define MAX_AGG_BUF      704643072
 
 struct adios_MPI_data_struct
 {
@@ -726,8 +727,13 @@ int adios_mpi_amr1_calc_aggregator_index (int rank)
 void * adios_mpi_amr1_do_mkdir (void * param)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) param;
-
-    mkdir (fd->group->name, S_IRWXU | S_IRWXG);
+    // 4 bytes for ".dir" 
+    char * dir_name = malloc (strlen (fd->name) + 4 + 1);
+    sprintf (dir_name, "%s%s", fd->name, ".dir");
+    
+    mkdir (dir_name, S_IRWXU | S_IRWXG);
+  
+    free (dir_name);
 
     return NULL;
 }
@@ -1165,10 +1171,10 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
                                                       );
             adios_mpi_amr1_set_block_unit (&md->block_unit, method->parameters);
 
-            name = realloc (name, strlen (fd->group->name) + 1 + strlen (method->base_path) + strlen (fd->name) + 1 + 10 + 1);
+            name = realloc (name, strlen (fd->name) + 5 + strlen (method->base_path) + strlen (fd->name) + 1 + 10 + 1);
             // create the subfile name, e.g. restart.bp.1
             // 1 for '.' + 10 for subfile index + 1 for '\0'
-            sprintf (name, "%s%s%s%s.%d", fd->group->name, "/", method->base_path, fd->name, g_color1);
+            sprintf (name, "%s%s%s%s.%d", fd->name, ".dir/", method->base_path, fd->name, g_color1);
             md->subfile_name = strdup (name);
             fd->subfile_name = strdup (name);
 
@@ -2129,6 +2135,13 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
 
                 if (is_aggregator (md->rank))
                 {
+                    if (total_data_size > MAX_AGG_BUF)
+                    {
+                        fprintf (stderr, "The max allowed aggregation buffer is %llu.\n"
+                                         "Need to increase the number of aggregators.\n"
+                                ,MAX_AGG_BUF);
+                        return;
+                    }
                     aggr_buff = malloc (total_data_size);
                     if (aggr_buff == 0)
                     {
