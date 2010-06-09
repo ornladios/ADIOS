@@ -174,7 +174,8 @@ end subroutine generateLocalArray
 subroutine writeArray()
     use genarray_comm
     implicit none
-    integer*8 adios_handle, adios_groupsize, adios_err
+    integer*8 adios_handle, adios_groupsize
+    integer adios_err
     include 'mpif.h'
 
     call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
