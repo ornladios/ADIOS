@@ -372,7 +372,7 @@ adios_mpi_amr1_set_block_unit(uint64_t *block_unit, char *parameters)
 static void
 adios_mpi_amr1_set_aggregation_parameters(char * parameters, int nproc, int rank)
 {
-    int err = 0, flag, i, aggr_group_size;
+    int err = 0, flag, i, aggr_group_size, remain, index;
     char value[64], *temp_string, *p_count,*p_size;
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
@@ -417,20 +417,42 @@ adios_mpi_amr1_set_aggregation_parameters(char * parameters, int nproc, int rank
     }
     memset (g_is_aggregator, 0, nproc * sizeof(int));
 
-    if (nproc % g_num_aggregators)
+    aggr_group_size = nproc / g_num_aggregators;
+    remain = nproc - (int) aggr_group_size * g_num_aggregators;
+
+    index = 0;
+    for (i = 0; i < g_num_aggregators; i++)
     {
-        aggr_group_size = nproc / g_num_aggregators + 1;
+        g_is_aggregator[index] = 1;
+
+        if (i < remain)
+        {
+            index += aggr_group_size + 1;
+        }
+        else
+        {
+            index += aggr_group_size;
+        }
+    }
+
+    if (remain == 0)
+    {
+        g_color1 = rank / aggr_group_size;
+        g_color2 = rank % aggr_group_size;
     }
     else
     {
-        aggr_group_size = nproc / g_num_aggregators;
+        if (rank < (aggr_group_size + 1) * remain)
+        {
+            g_color1 = rank / (aggr_group_size + 1);
+            g_color2 = rank % (aggr_group_size + 1);
+        }
+        else
+        {
+            g_color1 = remain + (rank - (aggr_group_size + 1) * remain) / aggr_group_size;
+            g_color2 = (rank - (aggr_group_size + 1) * remain)% aggr_group_size;
+        }
     }
-
-    for (i = 0; i < g_num_aggregators; i++)
-        g_is_aggregator[i * aggr_group_size] = 1;
-
-    g_color1 = rank / aggr_group_size;
-    g_color2 = rank % aggr_group_size;
 }
 
 static void adios_mpi_amr1_buffer_write (char ** buffer, uint64_t * buffer_size
