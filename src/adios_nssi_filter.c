@@ -167,7 +167,7 @@ struct adios_var_struct *vars_deep_copy(struct adios_var_struct *orig)
                 // Set of characteristics will be repeated thrice for complex numbers
                 for (c = 0; c < count; c ++)
                 {
-                    current->stats[c] = calloc(ADIOS_STAT_LENGTH, sizeof (struct adios_stat_struct *));
+                    current->stats[c] = calloc(ADIOS_STAT_LENGTH, sizeof (struct adios_stat_struct));
 
                     j = idx = 0;
                     while (orig->bitmap >> j)
