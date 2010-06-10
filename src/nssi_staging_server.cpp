@@ -461,6 +461,20 @@ int nssi_staging_read_stub(
 //        sprintf(vpathname, "%s/%s", args->vpath, args->vname);
 //    }
 
+
+    for (int i=0;i<args->offsets.offsets_len;i++) {
+        uint64_t *odata=(uint64_t *)malloc(sizeof(uint8_t));
+        *odata = args->offsets.offsets_val[i].vdata;
+        Func_Timer("adios_set_path_var", adios_set_path_var(args->fd, args->offsets.offsets_val[i].vpath, args->offsets.offsets_val[i].vname););
+        Func_Timer("adios_read", adios_read(args->fd, args->offsets.offsets_val[i].vname, odata, 8););
+    }
+    for (int i=0;i<args->dims.dims_len;i++) {
+        uint64_t *ddata=(uint64_t *)malloc(sizeof(uint8_t));
+        *ddata = args->dims.dims_val[i].vdata;
+        Func_Timer("adios_set_path_var", adios_set_path_var(args->fd, args->dims.dims_val[i].vpath, args->dims.dims_val[i].vname););
+        Func_Timer("adios_read", adios_read(args->fd, args->dims.dims_val[i].vname, ddata, 8););
+    }
+
     v=(char *)calloc(args->max_read, 1);
 
     Func_Timer("adios_set_path_var", adios_set_path_var(args->fd, args->vpath, args->vname););
