@@ -503,17 +503,18 @@ static int gen_offset_list(
 }
 
 static void create_offset_list_for_var(
-        struct adios_write_args *args,
         struct adios_var_struct *v,
         struct adios_group_struct *group,
         struct adios_var_struct *pvar_root,
-        struct adios_attribute_struct *patt_root)
+        struct adios_attribute_struct *patt_root,
+        u_int *offset_count,
+        struct adios_var **offset_values)
 {
     struct adios_dimension_struct *dims;
     char offset_name[255];
 
-    args->offsets.offsets_len=0;
-    args->offsets.offsets_val=NULL;
+    *offset_count=0;
+    *offset_values=NULL;
 
     if ((v) && (v->dimensions)) {
         int local_offset_count=0;
@@ -528,8 +529,8 @@ static void create_offset_list_for_var(
             dims = dims->next;
         }
 
-        args->offsets.offsets_len=local_offset_count;
-        args->offsets.offsets_val=calloc(local_offset_count, sizeof(struct adios_var));
+        *offset_count=local_offset_count;
+        *offset_values=calloc(local_offset_count, sizeof(struct adios_var));
 
         dims=v->dimensions;
         int loffs_idx=0;
@@ -541,18 +542,18 @@ static void create_offset_list_for_var(
             parse_dimension_name(group, pvar_root, patt_root, &dims->local_offset, offset_name);
             if (offset_name[0] == '\0') {
                 sprintf(offset_name, "%s_%s_offset_%d", /*v->path*/"", v->name, loffs_idx);
-                args->offsets.offsets_val[loffs_idx].is_anonymous=TRUE;
+                (*offset_values)[loffs_idx].is_anonymous=TRUE;
             }
-            args->offsets.offsets_val[loffs_idx].vpath=strdup(v->path);
-            args->offsets.offsets_val[loffs_idx].vname=strdup(offset_name);
+            (*offset_values)[loffs_idx].vpath=strdup(v->path);
+            (*offset_values)[loffs_idx].vname=strdup(offset_name);
 //            struct var_offset *vo=var_offset_find("", offset_name);
 //            memcpy(&(args->offsets.offsets_val[loffs_idx].vdata), vo->ovalue, vo->osize);
 //            args->offsets.offsets_val[loffs_idx].vdatasize=vo->osize;
 //            printf("create: offset_name(%s) offset_value(%lu)\n", offset_name, vo->ovalue);
             uint64_t value=0;
             parse_dimension_size(group, pvar_root, patt_root, &dims->local_offset, &value);
-            memcpy(&(args->offsets.offsets_val[loffs_idx].vdata), &value, 4);
-            args->offsets.offsets_val[loffs_idx].vdatasize=4;
+            memcpy(&((*offset_values)[loffs_idx].vdata), &value, 4);
+            (*offset_values)[loffs_idx].vdatasize=4;
             if (DEBUG>3) printf("create: offset_name(%s) offset_value(%lu)\n", offset_name, value);
 
             loffs_idx++;
@@ -600,20 +601,21 @@ static int gen_dim_list(
 }
 
 static void create_dim_list_for_var(
-        struct adios_write_args *args,
         struct adios_var_struct *v,
         struct adios_group_struct *group,
         struct adios_var_struct *pvar_root,
-        struct adios_attribute_struct *patt_root)
+        struct adios_attribute_struct *patt_root,
+        u_int *dim_count,
+        struct adios_var **dim_values)
 {
     struct adios_dimension_struct *dims;
     char dim_name[255];
 
-    args->dims.dims_len=0;
-    args->dims.dims_val=NULL;
+    *dim_count=0;
+    *dim_values=NULL;
 
     if ((v) && (v->dimensions)) {
-        int dim_count=0;
+        int local_dim_count=0;
         dims=v->dimensions;
         while (dims) {
             if (dims->dimension.time_index == adios_flag_yes) {
@@ -621,12 +623,12 @@ static void create_dim_list_for_var(
                 continue;
             }
             parse_dimension_name(group, pvar_root, patt_root, &dims->dimension, dim_name);
-            dim_count++;
+            local_dim_count++;
             dims = dims->next;
         }
 
-        args->dims.dims_len=dim_count;
-        args->dims.dims_val=calloc(dim_count, sizeof(struct adios_var));
+        *dim_count=local_dim_count;
+        *dim_values=calloc(local_dim_count, sizeof(struct adios_var));
 
         dims=v->dimensions;
         int dim_idx=0;
@@ -638,17 +640,17 @@ static void create_dim_list_for_var(
             parse_dimension_name(group, pvar_root, patt_root, &dims->dimension, dim_name);
             if (dim_name[0] == '\0') {
                 sprintf(dim_name, "%s_%s_dim_%d", /*v->path*/"", v->name, dim_idx);
-                args->dims.dims_val[dim_idx].is_anonymous=TRUE;
+                (*dim_values)[dim_idx].is_anonymous=TRUE;
             }
-            args->dims.dims_val[dim_idx].vpath=strdup(v->path);
-            args->dims.dims_val[dim_idx].vname=strdup(dim_name);
+            (*dim_values)[dim_idx].vpath=strdup(v->path);
+            (*dim_values)[dim_idx].vname=strdup(dim_name);
 //            struct var_dim *vd=var_dim_find("", dim_name);
 //            memcpy(&(args->dims.dims_val[dim_idx].vdata), vd->dvalue, vd->dsize);
 //            args->dims.dims_val[dim_idx].vdatasize=vd->dsize;
             uint64_t value=0;
             parse_dimension_size(group, pvar_root, patt_root, &dims->dimension, &value);
-            memcpy(&(args->dims.dims_val[dim_idx].vdata), &value, 4);
-            args->dims.dims_val[dim_idx].vdatasize=4;
+            memcpy(&((*dim_values)[dim_idx].vdata), &value, 4);
+            (*dim_values)[dim_idx].vdatasize=4;
             if (DEBUG>3) printf("create: dim_name(%s) dvalue(%lu)\n", dim_name, value);
             if (global_rank==0) {
                 if (DEBUG>3) printf(":o(%d)", value);
@@ -662,6 +664,9 @@ static void create_dim_list_for_var(
 
 static int read_var(
         struct adios_nssi_file_data_struct *file_data,
+        struct adios_group_struct *group,
+        struct adios_var_struct *pvar_root,
+        struct adios_attribute_struct *patt_root,
         struct adios_var_struct *pvar)
 {
     int return_code=0;
@@ -670,10 +675,39 @@ static int read_var(
     adios_read_args args;
     adios_read_res  res;
 
-    args.fd       = file_data->fd;
+    memset(&args, 0, sizeof(adios_read_args));
+    args.fd    = file_data->fd;
     args.max_read = pvar->data_size;
     args.vpath = strdup(pvar->path);
     args.vname = strdup(pvar->name);
+
+
+    if (pvar->dimensions) {
+        args.is_scalar = FALSE;
+    } else {
+        args.is_scalar = TRUE;
+    }
+
+    args.offsets.offsets_len=0;
+    args.offsets.offsets_val=NULL;
+    args.dims.dims_len=0;
+    args.dims.dims_val=NULL;
+    if (pvar->dimensions) {
+        create_offset_list_for_var(
+                 pvar,
+                 group,
+                 group->vars,
+                 group->attributes,
+                 &args.offsets.offsets_len,
+                 &args.offsets.offsets_val);
+        create_dim_list_for_var(
+                 pvar,
+                 group,
+                 group->vars,
+                 group->attributes,
+                 &args.dims.dims_len,
+                 &args.dims.dims_val);
+     }
 
     Func_Timer("ADIOS_READ_OP",
             rc = nssi_call_rpc_sync(&svcs[file_data->svc_index],
@@ -689,6 +723,18 @@ static int read_var(
 
     free(args.vpath);
     free(args.vname);
+    if (pvar->dimensions) {
+        for (i=0;i<args.offsets.offsets_len;i++) {
+            free(args.offsets.offsets_val[i].vpath);
+            free(args.offsets.offsets_val[i].vname);
+        }
+        free(args.offsets.offsets_val);
+        for (i=0;i<args.dims.dims_len;i++) {
+            free(args.dims.dims_val[i].vpath);
+            free(args.dims.dims_val[i].vname);
+        }
+        free(args.dims.dims_val);
+    }
 
     return return_code;
 }
@@ -728,17 +774,19 @@ static int write_var(
     args.dims.dims_val=NULL;
     if (pvar->dimensions) {
         create_offset_list_for_var(
-                 &args,
                  pvar,
                  group,
                  group->vars,
-                 group->attributes);
+                 group->attributes,
+                 &args.offsets.offsets_len,
+                 &args.offsets.offsets_val);
         create_dim_list_for_var(
-                 &args,
                  pvar,
                  group,
                  group->vars,
-                 group->attributes);
+                 group->attributes,
+                 &args.dims.dims_len,
+                 &args.dims.dims_val);
      }
 
     Func_Timer("ADIOS_WRITE_OP",
@@ -760,7 +808,18 @@ static int write_var(
 
     free(args.vpath);
     free(args.vname);
-    free(args.offsets.offsets_val);
+    if (pvar->dimensions) {
+        for (i=0;i<args.offsets.offsets_len;i++) {
+            free(args.offsets.offsets_val[i].vpath);
+            free(args.offsets.offsets_val[i].vname);
+        }
+        free(args.offsets.offsets_val);
+        for (i=0;i<args.dims.dims_len;i++) {
+            free(args.dims.dims_val[i].vpath);
+            free(args.dims.dims_val[i].vname);
+        }
+        free(args.dims.dims_val);
+    }
 
     return return_code;
 }
@@ -1328,6 +1387,9 @@ void adios_nssi_read(
         }
         if (DEBUG>3) printf("rank (%d) adios_nssi_read: vname(%s) vsize(%ld)\n", global_rank, v->name, v->data_size);
         read_var(file_data,
+                f->group,
+                f->group->vars,
+                f->group->attributes,
                 v);
         if (file_data->rank==0) {
             if (DEBUG>3) fprintf(stderr, "read var: %s! end\n", v->name);
