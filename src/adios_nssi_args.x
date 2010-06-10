@@ -85,6 +85,14 @@ struct adios_group_size_args {
     uint64_t data_size;
 };
 
+struct adios_var {
+    uint8_t  is_anonymous;
+    uint64_t vdata;
+    uint64_t vdatasize;
+    string   vpath<ADIOS_PATH_MAX>;
+    string   vname<ADIOS_PATH_MAX>;
+};
+
 /**
  * Marshaled arguments for adios_read
  */
@@ -93,6 +101,9 @@ struct adios_read_args {
     string   vpath<ADIOS_PATH_MAX>;
     string   vname<ADIOS_PATH_MAX>;
     uint64_t max_read;
+    uint16_t is_scalar;
+    struct adios_var offsets<ADIOS_DIM_MAX>;
+    struct adios_var dims<ADIOS_DIM_MAX>;
 };
 
 /**
@@ -105,13 +116,6 @@ struct adios_read_res {
 /**
  * Marshalled argument structure for adios_write
  */
-struct adios_var {
-    uint8_t  is_anonymous;
-    uint64_t vdata;
-    uint64_t vdatasize;
-    string   vpath<ADIOS_PATH_MAX>;
-    string   vname<ADIOS_PATH_MAX>;
-};
 struct adios_write_args {
     int64_t  fd;
     string   vpath<ADIOS_PATH_MAX>;
