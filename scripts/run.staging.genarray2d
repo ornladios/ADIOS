@@ -1,10 +1,11 @@
 #!/bin/bash
 #PBS -A CSC025ewk
-#PBS -l walltime=04:00:00,size=20480
+#PBS -l walltime=04:00:00,size=20484
 
 
-export RUNTIME_PATH=/lustre/widow1/scratch/$USER/genarray2d.mpi.staged.16384
-export RUNTIME_PATH=/lustre/scr144/$USER/genarray2d.mpi.staged.16384
+export RUNTIME_PATH=/lustre/widow1/scratch/$USER/genarray2d.staged.stripe2.16384
+export RUNTIME_PATH=/lustre/scr144/$USER/genarray2d.staged.stripe2.16384.$PBS_JOBID
+export RUNTIME_PATH=/tmp/work/$USER/genarray2d.staged.stripe2.16384.$PBS_JOBID
 export ADIOS_SRC_PATH=$HOME/projects/adios/src/adios
 
 export ADIOS_NSSI_CONTACT_INFO=$RUNTIME_PATH/nssi_contact.xml
@@ -16,7 +17,7 @@ cd $RUNTIME_PATH
 sed -e 's/MPI/NSSI/' $ADIOS_SRC_PATH/tests/genarray/genarray.xml > $RUNTIME_PATH/genarray.xml
 sed -e 's@method="MPI"/>@method="NSSI_FILTER">submethod="MPI_STRIPE2"</method>@' $ADIOS_SRC_PATH/tests/genarray/genarray.xml > $RUNTIME_PATH/genarray.server.xml
 
-lfs setstripe $RUNTIME_PATH -s 1M -c 144
+lfs setstripe $RUNTIME_PATH -s 4M -c 144
 
 $ADIOS_SRC_PATH/scripts/start.nssi.staging.sh 512 $RUNTIME_PATH/genarray.server.xml >server.log 2>&1 &
 sleep 3
