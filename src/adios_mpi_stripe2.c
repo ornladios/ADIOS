@@ -218,6 +218,7 @@ adios_mpi_stripe2_set_striping_unit(MPI_File fh, char *filename, char *parameter
     uint64_t striping_unit = 0;
     uint64_t block_unit = 0;
     uint16_t striping_count = 0;
+    uint16_t stripe_offset = -1;
     char     value[64], *temp_string, *p_count,*p_size;
     MPI_Info info_used;
 
@@ -260,6 +261,22 @@ adios_mpi_stripe2_set_striping_unit(MPI_File fh, char *filename, char *parameter
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
+    if (p_size = strstr (temp_string, "stripe_offset"))
+    {
+        char * p = strchr (p_size, '=');
+        char * q = strtok (p, ",");
+        if (!q)
+            stripe_offset = atoi (q + 1);
+        else
+            stripe_offset = atoi (p + 1);
+    }
+
+    if (stripe_offset < -1)
+        stripe_offset = -1;
+
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
     if (p_size = strstr (temp_string, "block_size"))
     {
         char * p = strchr (p_size, '=');
@@ -288,7 +305,7 @@ adios_mpi_stripe2_set_striping_unit(MPI_File fh, char *filename, char *parameter
         lum.lmm_pattern = 0;
         lum.lmm_stripe_size = striping_unit;
         lum.lmm_stripe_count = striping_count;
-        lum.lmm_stripe_offset = -1;
+        lum.lmm_stripe_offset = stripe_offset;
         ioctl (fd, LL_IOC_LOV_SETSTRIPE
               ,(void *) &lum
               );
