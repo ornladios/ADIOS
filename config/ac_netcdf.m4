@@ -6,6 +6,8 @@ dnl ######################################################################
 
 AC_DEFUN([AC_NETCDF],
 [
+AC_MSG_NOTICE([=== checking for NetCDF ===])
+
 AM_CONDITIONAL(HAVE_NETCDF,true)
 
 AC_ARG_WITH(netcdf,
@@ -19,6 +21,8 @@ if test "x$with_netcdf" == "xno"; then
 
 else
 
+    ac_use_cray_netcdf=no
+
     dnl allow args --with-netcdf incdir and --with-netcdf-libdir
     AC_ARG_WITH(netcdf-incdir,
                 [  --with-netcdf-incdir=<location of NetCDF includes>],
@@ -30,23 +34,39 @@ else
                 [NETCDF_LIBDIR=$withval
                  with_netcdf=detailed])
     
+    AC_ARG_WITH(netcdf-libs,
+                [  --with-netcdf-libs=<linker flags besides -L<netcdf_libdir>, e.g. -lnetcdf>],
+                [NETCDF_LIBS=$withval
+                 with_netcdf=detailed])
     
     dnl If we know NETCDF_DIR, then we can know NETCDF_INCDIR.
-    dnl We don't overwrite NETCDF_INCDIR.
-    if test -n "${NETCDF_DIR}" -a -z "${NETCDF_INCDIR}"; then
-            NETCDF_INCDIR="${NETCDF_DIR}/include";
+    dnl If we know CRAY_NETCDF_DIR, then we leave NETCDF_INCDIR empty.
     dnl We may have NETCDF denoting the dir (e.g. on ewok BUT on franklin it contains all flags)
-    elif test -n "${NETCDF}" -a -d "${NETCDF}"; then
+    dnl We don't overwrite NETCDF_INCDIR.
+    if test -z "${NETCDF_INCDIR}"; then
+        if test -n "${NETCDF_DIR}"; then
+            NETCDF_INCDIR="${NETCDF_DIR}/include";
+        elif test -n "${CRAY_NETCDF_DIR}"; then
+            NETCDF_INCDIR="";
+            ac_use_cray_netcdf=yes
+        elif test -n "${NETCDF}" -a -d "${NETCDF}"; then
             NETCDF_INCDIR="${NETCDF}/include"
+        fi
     fi
     
     dnl If we know NETCDF_DIR, then we can know NETCDF_LIBDIR.
-    dnl We don't overwrite NETCDF_LIBDIR.
-    if test -n "${NETCDF_DIR}" -a -z "${NETCDF_LIBDIR}"; then
-            NETCDF_LIBDIR="${NETCDF_DIR}/lib";
+    dnl If we know CRAY_NETCDF_DIR, then we leave NETCDF_LIBDIR empty.
     dnl We may have NETCDF denoting the dir (e.g. on ewok BUT on franklin it contains all flags)
-    elif test -n "${NETCDF}" -a -d "${NETCDF}"; then
+    dnl We don't overwrite NETCDF_LIBDIR.
+    if test -z "${NETCDF_LIBDIR}"; then
+        if test -n "${NETCDF_DIR}"; then
+            NETCDF_LIBDIR="${NETCDF_DIR}/lib";
+        elif test -n "${CRAY_NETCDF_DIR}"; then
+            NETCDF_LIBDIR="";
+            ac_use_cray_netcdf=yes
+        elif test -n "${NETCDF}" -a -d "${NETCDF}"; then
             NETCDF_LIBDIR="${NETCDF}/lib"
+        fi
     fi
     
     dnl Add "-I" to NETCDF_INCDIR.
@@ -55,18 +75,25 @@ else
     else
             ac_netcdf_ok=no
     fi
-    
+
     dnl Add "-L" to NETCDF_LIBDIR.
     if test -n "${NETCDF_LIBDIR}"; then
             NETCDF_LDFLAGS="-L${NETCDF_LIBDIR}"
     else
             ac_netcdf_ok=no
     fi
+
+    dnl if netcdf libs are not defined (and not Cray netcdf lib), then guess and define it
+    if test -z "${NETCDF_LIBS}"; then
+        if test "${ac_use_cray_netcdf}" != "yes"; then
+            NETCDF_LIBS="-lnetcdf"
+        fi
+    fi
     
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -lnetcdf"
+    LIBS="$LIBS $NETCDF_LDFLAGS"
     LDFLAGS="$LDFLAGS $NETCDF_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $NETCDF_CPPFLAGS"
     
@@ -86,8 +113,7 @@ else
              nc_create("a.nc", NC_CLOBBER, &ncid);
              nc_close(ncid);
             ],
-            [AC_MSG_RESULT(yes)
-             NETCDF_LIBS="-lnetcdf"],
+            [AC_MSG_RESULT(yes)],
             [AC_MSG_RESULT(no)
              if test "x$with_netcdf" != xcheck; then
                  AC_MSG_FAILURE( [--with-netcdf was given, but compile test failed])

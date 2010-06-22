@@ -44,7 +44,7 @@ enum ADIOS_STAT
     ,adios_statistic_sum_square 	 = 4 
     ,adios_statistic_hist		 	 = 5 
 	,adios_statistic_finite		     = 6 
-} adios_stat;
+};
 
 struct adios_bp_buffer_struct_v1
 {

@@ -22,15 +22,15 @@ noinst_PROGRAMS = 1_nonadios_example 2_adios_write 3_adios_read 4_adios_nfiles
 4_adios_nfiles_LDFLAGS = $(MXML_LDFLAGS)
 4_adios_nfiles_LDADD += $(MXML_LIBS)
 
-if HAVE_NETCDF
-1_nonadios_example_LDFLAGS += $(NETCDF_LDFLAGS)
-1_nonadios_example_LDADD +=   $(NETCDF_LIBS)
-2_adios_write_LDFLAGS += $(NETCDF_LDFLAGS)
-2_adios_write_LDADD +=   $(NETCDF_LIBS)
-3_adios_read_LDFLAGS += $(NETCDF_LDFLAGS)
-3_adios_read_LDADD +=   $(NETCDF_LIBS)
-4_adios_nfiles_LDFLAGS += $(NETCDF_LDFLAGS)
-4_adios_nfiles_LDADD +=   $(NETCDF_LIBS)
+if HAVE_NC4PAR
+1_nonadios_example_LDFLAGS += $(NC4PAR_LDFLAGS)
+1_nonadios_example_LDADD +=   $(NC4PAR_LIBS)
+2_adios_write_LDFLAGS += $(NC4PAR_LDFLAGS)
+2_adios_write_LDADD +=   $(NC4PAR_LIBS)
+3_adios_read_LDFLAGS += $(NC4PAR_LDFLAGS)
+3_adios_read_LDADD +=   $(NC4PAR_LIBS)
+4_adios_nfiles_LDFLAGS += $(NC4PAR_LDFLAGS)
+4_adios_nfiles_LDADD +=   $(NC4PAR_LIBS)
 endif
 if HAVE_NSSI
 1_nonadios_example_LDFLAGS += $(NSSI_LDFLAGS)

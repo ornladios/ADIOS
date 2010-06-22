@@ -17,7 +17,7 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     module load PE-$TARGET
     module load hdf5/1.8.2_par
     #module load hdf5/1.6.7-ompi1.2.8
-    module load netcdf
+    module load netcdf/3.6.2
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
@@ -40,15 +40,12 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
         --enable-research-transports  \
-        --without-phdf5 \
-        --without-datatap \
-        --without-netcdf 
+        --without-datatap 
+        #--without-phdf5 
+        #--without-netcdf 
         #--with-datatap=/ccs/home/habbasi/work/ewok/
-        #--with-netcdf=/apps/netcdf/3.6.1/ewok_x86_64_pgi625
-        #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
-        #--with-dart=/ccs/proj/e2e/dart
-        #--enable-shared --disable-static\
         #--enable-datatap=ib
+        #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
 
 
 elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "chester" ]; then
@@ -75,34 +72,34 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         module unload PrgEnv-intel
         module unload PrgEnv-cray
         module unload xt-papi
-        #module unload xtpe-quadcore
-        TARGET=pgi
+        TARGET=gnu
         module load PrgEnv-$TARGET
-        #module load netcdf-hdf5parallel
+        module load netcdf-hdf5parallel
         module load hdf5-parallel
-        #module load hdf5/1.8.2_par
         module load szip
         module load xt-papi
-        ## the netcdf-hdf5parallel module only sets NETCDF_PARALLEL_VERSION.
-        ## /opt/cray/xt-asyncpe/3.2/bin/linux-f90 only checks NETCDF_VERSION.
-        ## set NETCDF_VERSION here so that configure can complete.
-        export NETCDF_VERSION=$NETCDF_PARALLEL_VERSION
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
         #CFLAGS="-fPIC" ./configure --prefix=/sw/xt5/adios/1.1.0/cnl2.2_${TARGET}_binary \
         #CFLAGS="-fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/jaguar.$TARGET \
         #CFLAGS="-g -O0 -fPIC -DDART_DO_VERSIONING" ./configure --prefix=/ccs/proj/fus022/ADIOS/jaguar.$TARGET \
-        CFLAGS="-g -O0 -fPIC -DDART_DO_VERSIONING" ./configure --prefix=/ccs/proj/fus022/ADIOS/jaguar.dart \
+        #CFLAGS="-g -O0 -fPIC -DDART_DO_VERSIONING" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/jaguar.noxml \
+        CFLAGS="-fPIC" ./configure --prefix=/sw/xt5/adios/1.2_rc1/cnl2.2_gnu4.4.3 \
             --enable-dependency-tracking \
             --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
             --without-portals \
             --enable-research-transports \
-            --without-netcdf \
+            --without-datatap \
+            --with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
+            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
             --without-phdf5 \
-            --without-datatap 
+            --without-nc4par
+            
+            #--with-hdf5=/sw/xt5/hdf5/1.8.1/cnl2.1_pgi7.2.3 \
+            #--with-phdf5=${CRAY_HDF5_DIR}/hdf5-parallel-${TARGET} \
+            #--with-nc4par=${CRAY_NETCDF_DIR}/netcdf-hdf5parallel-${TARGET} \
             #--with-dart=/ccs/proj/e2e/pnorbert/dart/current 
-            #--without-phdf5 \
             #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.xt5_$TARGET \
             #--with-hdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par \
             #--with-netcdf=/sw/xt/netcdf/3.6.2/sles9.2_pgi7.0.7
@@ -137,10 +134,6 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         module load netcdf-hdf5parallel
         module load szip
         module load xt-papi
-        ## the netcdf-hdf5parallel module only sets NETCDF_PARALLEL_VERSION.
-        ## /opt/cray/xt-asyncpe/3.2/bin/linux-f90 only checks NETCDF_VERSION.
-        ## set NETCDF_VERSION here so that configure can complete.
-        export NETCDF_VERSION=$NETCDF_PARALLEL_VERSION
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
@@ -151,7 +144,9 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
         --with-nssi=/ccs/home/thkorde/projects/nessie/install \
-        --with-portals --with-datatap=/ccs/home/habbasi/work/jaguar/
+        --with-portals \
+        --without-datatap
+        #--with-datatap=/ccs/home/habbasi/work/jaguar/
     
     fi
     
@@ -159,6 +154,7 @@ elif [ `hostname | cut -c 1-4` == "euge" ]; then
     ###################
     # Eugene BlueGene #
     ###################
+    echo "Configure on Eugene (BlueGene)"
     export MPICC=mpixlc_r
     export MPIFC=mpixlf90
     export CFLAGS="-g -O0"

@@ -9,9 +9,9 @@ adios_test_c_SOURCES = adios_test_c.c
 adios_test_c_LDADD = $(top_builddir)/src/libadios.a
 adios_test_c_LDFLAGS = $(MXML_LDFLAGS) 
 adios_test_c_LDADD += $(MXML_LIBS) 
-if HAVE_NETCDF
-adios_test_c_LDFLAGS += $(NETCDF_LDFLAGS)
-adios_test_c_LDADD +=  $(NETCDF_LIBS)
+if HAVE_NC4PAR
+adios_test_c_LDFLAGS += $(NC4PAR_LDFLAGS)
+adios_test_c_LDADD +=  $(NC4PAR_LIBS)
 endif
 if HAVE_NSSI
 adios_test_c_LDADD += $(NSSI_LIBS) $(EXTRA_CXX_LIBS)

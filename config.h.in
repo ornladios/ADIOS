@@ -80,6 +80,9 @@
 /* Define to 1 if you have the <mxml.h> header file. */
 #undef HAVE_MXML_H
 
+/* Define if you have NC4PAR. */
+#undef HAVE_NC4PAR
+
 /* Define if you have NETCDF. */
 #undef HAVE_NETCDF
 

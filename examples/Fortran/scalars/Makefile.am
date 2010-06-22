@@ -15,11 +15,11 @@ scalars_read_LDADD = $(top_builddir)/src/libadiosf.a
 scalars_read_LDFLAGS = $(MXML_LDFLAGS)
 scalars_read_LDADD += $(MXML_LIBS)
 
-if HAVE_NETCDF
-scalars_write_LDFLAGS += $(NETCDF_LDFLAGS)
-scalars_write_LDADD +=   $(NETCDF_LIBS)
-scalars_read_LDFLAGS += $(NETCDF_LDFLAGS)
-scalars_read_LDADD +=   $(NETCDF_LIBS)
+if HAVE_NC4PAR
+scalars_write_LDFLAGS += $(NC4PAR_LDFLAGS)
+scalars_write_LDADD +=   $(NC4PAR_LIBS)
+scalars_read_LDFLAGS += $(NC4PAR_LDFLAGS)
+scalars_read_LDADD +=   $(NC4PAR_LIBS)
 endif
 if HAVE_NSSI
 scalars_write_LDFLAGS += $(NSSI_LDFLAGS)

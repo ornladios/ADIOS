@@ -75,7 +75,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(phdf5,ADIOS_METHOD_PHDF5)
 #endif
 
-#if HAVE_NETCDF
+#if HAVE_NC4PAR
     ASSIGN_FNS(nc4,ADIOS_METHOD_NC4)
 #endif
 
@@ -131,7 +131,7 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
     MATCH_STRING_TO_METHOD("PHDF5",ADIOS_METHOD_PHDF5,1)
 #endif
 
-#if HAVE_NETCDF
+#if HAVE_NC4PAR
     MATCH_STRING_TO_METHOD("NC4",ADIOS_METHOD_NC4,1)
 #endif
 

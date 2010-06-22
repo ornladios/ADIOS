@@ -14,11 +14,11 @@ attributes_read_LDADD = $(top_builddir)/src/libadiosread.a
 attributes_read_LDFLAGS = $(MXML_LDFLAGS)
 attributes_read_LDADD += $(MXML_LIBS)
 
-if HAVE_NETCDF
-attributes_write_LDFLAGS += $(NETCDF_LDFLAGS)
-attributes_write_LDADD +=   $(NETCDF_LIBS)
-attributes_read_LDFLAGS += $(NETCDF_LDFLAGS)
-attributes_read_LDADD +=   $(NETCDF_LIBS)
+if HAVE_NC4PAR
+attributes_write_LDFLAGS += $(NC4PAR_LDFLAGS)
+attributes_write_LDADD +=   $(NC4PAR_LIBS)
+attributes_read_LDFLAGS += $(NC4PAR_LDFLAGS)
+attributes_read_LDADD +=   $(NC4PAR_LIBS)
 endif
 if HAVE_NSSI
 attributes_write_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)

@@ -18,11 +18,11 @@ adios_read_globaltime_LDADD = $(top_builddir)/src/libadiosread.a
 adios_read_globaltime_LDFLAGS = $(MXML_LDFLAGS)
 adios_read_globaltime_LDADD += $(MXML_LIBS)
 
-if HAVE_NETCDF
-adios_globaltime_LDFLAGS += $(NETCDF_LDFLAGS)
-adios_globaltime_LDADD +=   $(NETCDF_LIBS)
-adios_globaltime_no_xml_LDFLAGS += $(NETCDF_LDFLAGS)
-adios_globaltime_no_xml_LDADD +=   $(NETCDF_LIBS)
+if HAVE_NC4PAR
+adios_globaltime_LDFLAGS += $(NC4PAR_LDFLAGS)
+adios_globaltime_LDADD +=   $(NC4PAR_LIBS)
+adios_globaltime_no_xml_LDFLAGS += $(NC4PAR_LDFLAGS)
+adios_globaltime_no_xml_LDADD +=   $(NC4PAR_LIBS)
 endif
 if HAVE_NSSI
 adios_globaltime_LDFLAGS += $(NSSI_LDFLAGS)

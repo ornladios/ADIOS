@@ -37,8 +37,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = adios_test_f$(EXEEXT)
-@HAVE_NETCDF_TRUE@am__append_1 = $(NETCDF_LIBS)
-@HAVE_NETCDF_TRUE@am__append_2 = $(NETCDF_LDFLAGS)
+@HAVE_NC4PAR_TRUE@am__append_1 = $(NC4PAR_LIBS)
+@HAVE_NC4PAR_TRUE@am__append_2 = $(NC4PAR_LDFLAGS)
 @HAVE_NSSI_TRUE@am__append_3 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
 @HAVE_NSSI_TRUE@am__append_4 = $(NSSI_LDFLAGS)
 @HAVE_PHDF5_TRUE@am__append_5 = $(PHDF5_LIBS)
@@ -55,6 +55,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_dart.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
+	$(top_srcdir)/config/ac_nc4par.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
 	$(top_srcdir)/config/ac_nssi.m4 \
 	$(top_srcdir)/config/ac_pablo.m4 \
@@ -72,7 +73,7 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_adios_test_f_OBJECTS = adios_test_f-adios_test_f.$(OBJEXT)
 adios_test_f_OBJECTS = $(am_adios_test_f_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_NETCDF_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
+@HAVE_NC4PAR_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 @HAVE_NSSI_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
 @HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
 @HAVE_DART_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
@@ -154,6 +155,8 @@ HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_MXML_FALSE = @HAVE_MXML_FALSE@
 HAVE_MXML_TRUE = @HAVE_MXML_TRUE@
+HAVE_NC4PAR_FALSE = @HAVE_NC4PAR_FALSE@
+HAVE_NC4PAR_TRUE = @HAVE_NC4PAR_TRUE@
 HAVE_NETCDF_FALSE = @HAVE_NETCDF_FALSE@
 HAVE_NETCDF_TRUE = @HAVE_NETCDF_TRUE@
 HAVE_NSSI_FALSE = @HAVE_NSSI_FALSE@
@@ -190,6 +193,9 @@ MPILIBS = @MPILIBS@
 MXML_CPPFLAGS = @MXML_CPPFLAGS@
 MXML_LDFLAGS = @MXML_LDFLAGS@
 MXML_LIBS = @MXML_LIBS@
+NC4PAR_CPPFLAGS = @NC4PAR_CPPFLAGS@
+NC4PAR_LDFLAGS = @NC4PAR_LDFLAGS@
+NC4PAR_LIBS = @NC4PAR_LIBS@
 NEED_DARWIN_SINGLE_MODULE_FALSE = @NEED_DARWIN_SINGLE_MODULE_FALSE@
 NEED_DARWIN_SINGLE_MODULE_TRUE = @NEED_DARWIN_SINGLE_MODULE_TRUE@
 NETCDF_CPPFLAGS = @NETCDF_CPPFLAGS@

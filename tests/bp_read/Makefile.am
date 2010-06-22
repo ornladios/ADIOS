@@ -14,9 +14,9 @@ endif
 genbp_SOURCES = genbp.c
 genbp_LDFLAGS = $(MXML_LDFLAGS)
 genbp_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) $(top_builddir)/src/libadiosread.a
-if HAVE_NETCDF
-genbp_LDADD +=  $(NETCDF_LIBS)
-genbp_LDFLAGS += $(NETCDF_LDFLAGS)
+if HAVE_NC4PAR
+genbp_LDADD +=  $(NC4PAR_LIBS)
+genbp_LDFLAGS += $(NC4PAR_LDFLAGS)
 endif
 if HAVE_NSSI
 genbp_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)

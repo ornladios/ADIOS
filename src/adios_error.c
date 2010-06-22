@@ -38,3 +38,11 @@ void error (enum ADIOS_ERRCODES errno, char *fmt, ...)
     va_end(ap);
 }
 
+void error_at_line (enum ADIOS_ERRCODES errno, const char* filename, unsigned int linenum, char *fmt, ...)
+{
+    va_list ap;
+    adios_errno = (int)errno;
+    va_start(ap, fmt);
+    (void) vsnprintf(aerr, ERRMSG_MAXLEN, fmt, ap);
+    va_end(ap);
+}

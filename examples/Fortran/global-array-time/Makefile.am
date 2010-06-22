@@ -9,9 +9,9 @@ adios_globaltime_SOURCES = adios_globaltime.F90
 adios_globaltime_LDADD = $(top_builddir)/src/libadiosf.a 
 adios_globaltime_LDFLAGS = $(MXML_LDFLAGS)
 adios_globaltime_LDADD += $(MXML_LIBS)
-if HAVE_NETCDF
-adios_globaltime_LDFLAGS += $(NETCDF_LDFLAGS)
-adios_globaltime_LDADD +=   $(NETCDF_LIBS)
+if HAVE_NC4PAR
+adios_globaltime_LDFLAGS += $(NC4PAR_LDFLAGS)
+adios_globaltime_LDADD +=   $(NC4PAR_LIBS)
 endif
 if HAVE_NSSI
 adios_globaltime_LDFLAGS += $(NSSI_LDFLAGS)

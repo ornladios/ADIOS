@@ -61,6 +61,7 @@ AC_PORTALS
 AC_HDF5
 AC_PHDF5
 AC_NETCDF
+AC_NC4PAR
 AC_NSSI
 AC_PROG_DART
 AC_DMALLOC
@@ -243,6 +244,18 @@ if test -z "${HAVE_HDF5_TRUE}"; then
         echo "      - HDF5_LIBS = $HDF5_LIBS";
 else
 	echo "  - No HDF5"
+fi
+
+echo
+
+if test -z "${HAVE_NC4PAR_TRUE}"; then
+        echo "  - NetCDF 4 Parallel";
+        echo "      - NC4PAR_CFLAGS = $NC4PAR_CFLAGS";
+        echo "      - NC4PAR_CPPFLAGS = $NC4PAR_CPPFLAGS";
+        echo "      - NC4PAR_LDFLAGS = $NC4PAR_LDFLAGS";
+        echo "      - NC4PAR_LIBS = $NC4PAR_LIBS";
+else
+	echo "  - No NETCDF 4 Parallel"
 fi
 
 echo

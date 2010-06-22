@@ -14,11 +14,11 @@ stat_read_LDADD = $(top_builddir)/src/libadios.a
 stat_read_LDFLAGS = $(MXML_LDFLAGS)
 stat_read_LDADD += $(MXML_LIBS)
 
-if HAVE_NETCDF
-stat_write_LDFLAGS += $(NETCDF_LDFLAGS)
-stat_write_LDADD +=  $(NETCDF_LIBS)
-stat_read_LDFLAGS += $(NETCDF_LDFLAGS)
-stat_read_LDADD +=  $(NETCDF_LIBS)
+if HAVE_NC4PAR
+stat_write_LDFLAGS += $(NC4PAR_LDFLAGS)
+stat_write_LDADD +=  $(NC4PAR_LIBS)
+stat_read_LDFLAGS += $(NC4PAR_LDFLAGS)
+stat_read_LDADD +=  $(NC4PAR_LIBS)
 endif
 if HAVE_NSSI
 stat_write_LDFLAGS += $(NSSI_LDFLAGS)

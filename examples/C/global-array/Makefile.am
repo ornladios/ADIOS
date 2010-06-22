@@ -26,13 +26,13 @@ adios_read_global_no_xml_LDADD = $(top_builddir)/src/libadiosread.a
 adios_read_global_no_xml_LDFLAGS = $(MXML_LDFLAGS)
 adios_read_global_no_xml_LDADD += $(MXML_LIBS)
 
-if HAVE_NETCDF
-adios_global_LDFLAGS += $(NETCDF_LDFLAGS)
-adios_global_LDADD +=   $(NETCDF_LIBS)
-adios_global_2files_LDFLAGS += $(NETCDF_LDFLAGS)
-adios_global_2files_LDADD +=   $(NETCDF_LIBS)
-adios_global_no_xml_LDFLAGS += $(NETCDF_LDFLAGS)
-adios_global_no_xml_LDADD +=   $(NETCDF_LIBS)
+if HAVE_NC4PAR
+adios_global_LDFLAGS += $(NC4PAR_LDFLAGS)
+adios_global_LDADD +=   $(NC4PAR_LIBS)
+adios_global_2files_LDFLAGS += $(NC4PAR_LDFLAGS)
+adios_global_2files_LDADD +=   $(NC4PAR_LIBS)
+adios_global_no_xml_LDFLAGS += $(NC4PAR_LDFLAGS)
+adios_global_no_xml_LDADD +=   $(NC4PAR_LIBS)
 endif
 if HAVE_NSSI
 adios_global_LDFLAGS += $(NSSI_LDFLAGS)

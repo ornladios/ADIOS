@@ -19,9 +19,9 @@ nssi_staging_server_CPPFLAGS += $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NA
 nssi_staging_server_LDFLAGS += $(NSSI_LDFLAGS)
 nssi_staging_server_LDADD += $(NSSI_LIBS) $(NSSI_SERVER_LIBS)
 
-if HAVE_NETCDF
-nssi_staging_server_LDFLAGS += $(NETCDF_LDFLAGS)
-nssi_staging_server_LDADD +=  $(NETCDF_LIBS)
+if HAVE_NC4PAR
+nssi_staging_server_LDFLAGS += $(NC4PAR_LDFLAGS)
+nssi_staging_server_LDADD +=  $(NC4PAR_LIBS)
 endif
 if HAVE_PHDF5
 nssi_staging_server_LDFLAGS += $(PHDF5_LDFLAGS)
@@ -123,12 +123,12 @@ libadiosf_a_CPPFLAGS += $(PHDF5_CPPFLAGS)
 endif
 endif
 
-if HAVE_NETCDF
+if HAVE_NC4PAR
 libadios_a_SOURCES += adios_nc4.c 
-libadios_a_CPPFLAGS += $(NETCDF_CPPFLAGS)
+libadios_a_CPPFLAGS += $(NC4PAR_CPPFLAGS)
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_nc4.c 
-libadiosf_a_CPPFLAGS += $(NETCDF_CPPFLAGS)
+libadiosf_a_CPPFLAGS += $(NC4PAR_CPPFLAGS)
 endif
 endif
 

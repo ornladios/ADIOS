@@ -9,9 +9,9 @@ noinst_PROGRAMS=adios_test_f
 adios_test_f_SOURCES = adios_test_f.F90
 adios_test_f_LDFLAGS = $(MXML_LDFLAGS)
 adios_test_f_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
-if HAVE_NETCDF
-adios_test_f_LDADD += $(NETCDF_LIBS)
-adios_test_f_LDFLAGS += $(NETCDF_LDFLAGS)
+if HAVE_NC4PAR
+adios_test_f_LDADD += $(NC4PAR_LIBS)
+adios_test_f_LDFLAGS += $(NC4PAR_LDFLAGS)
 endif
 if HAVE_NSSI
 adios_test_f_LDADD += $(NSSI_LIBS) $(EXTRA_CXX_LIBS)

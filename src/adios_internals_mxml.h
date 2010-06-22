@@ -14,6 +14,10 @@ int adios_common_select_method (int priority, const char * method
                                ,const char * parameters, const char * group 
                                ,const char * base_path, int iters
                                );
+int adios_common_select_method_by_group_id (int priority, const char * method
+                                           ,const char * parameters, int64_t group_id
+                                           ,const char * base_path, int iters
+                                           );
 void adios_cleanup ();
 
 int adios_set_buffer_size (void);

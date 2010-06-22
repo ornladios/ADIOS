@@ -21,14 +21,14 @@ datatap_dir=""
 
 AC_ARG_WITH(datatap, 
 	[  --with-datatap=DIR 	Location of DataTap], 
-	[ ac_with_datatap=$withval])
+	[ ac_with_datatap=$withval], [with_datatap=no])
 
-if test "x$withval" = x"no"; then
+if test "x$with_datatap" = "xno"; then
 	AC_DEFINE(NO_DATATAP, 1, [Datatap is disabled])
 	datatap=disable
 	temptest=disable
 
-elif test x"$withval" = xyes -o x"$withval" = x; then
+elif test x"$with_datatap" = xyes -o x"$with_datatap" = xcheck; then
 		
 	AC_DEFINE(NO_DATATAP, 0, [Datatap is disabled])
 
@@ -44,7 +44,7 @@ elif test x"$withval" = xyes -o x"$withval" = x; then
 			temptest=disable
 		fi
 		if test -n "$cercs_cv_ffs_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ffs_link_dir"
+                LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ffs_link_dir"
 			LIBS="$DT_LIBS -lgen_thread"
 			datatap=ibverbs
 		else
@@ -77,7 +77,7 @@ elif test x"$withval" = xyes -o x"$withval" = x; then
 	fi
 else
 dnl directory given .. add it to search path with CERCS_REQUIRE_PACKAGE
-	echo "Datatap with custom library path"	
+	AC_MSG_NOTICE([Datatap with custom library path: $withval])
 	
 	datatap_dir=$withval
 

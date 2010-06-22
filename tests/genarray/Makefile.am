@@ -8,9 +8,9 @@ noinst_PROGRAMS=genarray genarray2D copyarray copyarray2D
 genarray_SOURCES = genarray.F90
 genarray_LDFLAGS = $(MXML_LDFLAGS)
 genarray_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
-if HAVE_NETCDF
-genarray_LDADD +=  $(NETCDF_LIBS)
-genarray_LDFLAGS += $(NETCDF_LDFLAGS)
+if HAVE_NC4PAR
+genarray_LDADD +=  $(NC4PAR_LIBS)
+genarray_LDFLAGS += $(NC4PAR_LDFLAGS)
 endif
 if HAVE_NSSI
 genarray_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
@@ -29,9 +29,9 @@ endif
 genarray2D_SOURCES = genarray2D.F90
 genarray2D_LDFLAGS = $(MXML_LDFLAGS)
 genarray2D_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
-if HAVE_NETCDF
-genarray2D_LDADD +=  $(NETCDF_LIBS)
-genarray2D_LDFLAGS += $(NETCDF_LDFLAGS)
+if HAVE_NC4PAR
+genarray2D_LDADD +=  $(NC4PAR_LIBS)
+genarray2D_LDFLAGS += $(NC4PAR_LDFLAGS)
 endif
 if HAVE_NSSI
 genarray2D_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
@@ -50,9 +50,9 @@ endif
 copyarray_SOURCES = copyarray.F90
 copyarray_LDFLAGS = $(MXML_LDFLAGS)
 copyarray_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
-if HAVE_NETCDF
-copyarray_LDADD +=  $(NETCDF_LIBS)
-copyarray_LDFLAGS += $(NETCDF_LDFLAGS)
+if HAVE_NC4PAR
+copyarray_LDADD +=  $(NC4PAR_LIBS)
+copyarray_LDFLAGS += $(NC4PAR_LDFLAGS)
 endif
 if HAVE_NSSI
 copyarray_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
@@ -71,9 +71,9 @@ endif
 copyarray2D_SOURCES = copyarray2D.F90
 copyarray2D_LDFLAGS = $(MXML_LDFLAGS)
 copyarray2D_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS)
-if HAVE_NETCDF
-copyarray2D_LDADD +=  $(NETCDF_LIBS)
-copyarray2D_LDFLAGS += $(NETCDF_LDFLAGS)
+if HAVE_NC4PAR
+copyarray2D_LDADD +=  $(NC4PAR_LIBS)
+copyarray2D_LDFLAGS += $(NC4PAR_LDFLAGS)
 endif
 if HAVE_NSSI
 copyarray2D_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)

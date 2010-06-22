@@ -1243,7 +1243,7 @@ void trim_spaces (char * str)
 
 }
 
-static void tokenize_dimensions (char * str, char *** tokens, int * count)
+static void tokenize_dimensions (const char * str, char *** tokens, int * count)
 {
     if (!str)
     {
@@ -1253,13 +1253,13 @@ static void tokenize_dimensions (char * str, char *** tokens, int * count)
         return;
     }
 
-    trim_spaces (str);
-
-    char * t = str;
     char * save_str = strdup (str);
+    char * t = save_str;
     int i;
 
-    if (strlen (str) > 0)
+    trim_spaces (save_str);
+
+    if (strlen (save_str) > 0)
         *count = 1;
     else
     {

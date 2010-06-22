@@ -51,7 +51,7 @@ typedef struct {
         ADIOS_FILE * fp;            /* pointer to the parent ADIOS_FILE struct                 */
 } ADIOS_GROUP;
 
-// NCSU - Added more statistics to be returned to the end user
+/* NCSU - Added more statistics to be returned to the end user */
 typedef struct {
         int        grpid;           /* group index (0..ADIOS_FILE.groups_count-1)                     */
         int        varid;           /* variable index (0..ADIOS_GROUP.var_count-1)                    */
@@ -168,7 +168,7 @@ int adios_gclose (ADIOS_GROUP *gp);
  */
 ADIOS_VARINFO * adios_inq_var (ADIOS_GROUP *gp, const char * varname);
 
-// NCSU - Timeseries analysis functions
+/* NCSU - Timeseries analysis functions */
 double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characteristic, uint32_t time_start, uint32_t time_end, uint32_t lag);
 double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characteristic, uint32_t time_start, uint32_t time_end, uint32_t lag);
 /** Inquiry a variable by index
