@@ -27,7 +27,7 @@ else
                 [  --with-hdf5-incdir=<location of HDF5 includes>],
                 [HDF5_INCDIR=$withval
                  with_hdf5=detailed])
-    
+
    AC_ARG_WITH(hdf5-libdir,
                 [  --with-hdf5-libdir=<location of HDF5 library>],
                 [HDF5_LIBDIR=$withval
@@ -37,8 +37,8 @@ else
                 [  --with-hdf5-libs=<linker flags besides -L<hdf5_libdir>, e.g. -lhdf5 -lhdf5_hl -lz>],
                 [HDF5_LIBS=$withval
                  with_hdf5=detailed])
-    
-    
+
+
     ac_use_cray_hdf5=no  dnl will set to yes if we will use CRAY_HDF5_DIR below
 
     dnl If we know HDF5_DIR, then we can know HDF5_INCDIR.
@@ -52,7 +52,7 @@ else
             ac_use_cray_hdf5=yes
         fi
     fi
-    
+
     dnl If we know HDF5_DIR, then we can know HDF5_LIBDIR.
     dnl If we know CRAY_HDF5_DIR, then we leave HDF5_LIBDIR empty.
     dnl We don't overwrite HDF5_LIBDIR.
@@ -64,7 +64,7 @@ else
             ac_use_cray_hdf5=yes
         fi
     fi
-    
+
     if test -n "${HDF5_CLIB}"; then
         HDF5_CPPFLAGS="${HDF5_CLIB}"
         dnl echo " --- HDF5_CLIB was defined. HDF5_CPPFLAGS=${HDF5_CPPFLAGS}"
@@ -84,15 +84,15 @@ else
     else
         ac_hdf5_ok=no
     fi
-    
+
     dnl if hdf5 libs are not defined (and not Cray hdf5 lib), then guess and define it
     if test -z "${HDF5_LIBS}"; then
         if test "${ac_use_cray_hdf5}" != "yes"; then
             dnl default HDF5 lib is usually just -lhdf5
-            HDF5_LIBS="-lhdf5"
+            HDF5_LIBS="-lhdf5 -lz"
         fi
     fi
-    
+
     save_CC="$CC"
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
@@ -101,7 +101,7 @@ else
     LDFLAGS="$LDFLAGS $HDF5_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $HDF5_CPPFLAGS"
     CC="$MPICC"
-    
+
     if test -z "${HAVE_HDF5_TRUE}"; then
         AC_CHECK_HEADERS(hdf5.h,
             ,
@@ -110,7 +110,7 @@ else
              fi
              AM_CONDITIONAL(HAVE_HDF5,false)])
     fi
-    
+
     if test -z "${HAVE_HDF5_TRUE}"; then
         AC_MSG_CHECKING([if hdf5 code can be compiled])
         AC_TRY_COMPILE([#include "hdf5.h"],
@@ -126,17 +126,17 @@ else
              fi
              AM_CONDITIONAL(HAVE_HDF5,false)
             ])
-    
+
         AC_SUBST(HDF5_LIBS)
         AC_SUBST(HDF5_LDFLAGS)
         AC_SUBST(HDF5_CPPFLAGS)
     fi
-    
+
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"
     CPPFLAGS="$save_CPPFLAGS"
     CC="$save_CC"
-    
+
     # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
     if test -z "${HAVE_HDF5_TRUE}"; then
             ifelse([$1],,[AC_DEFINE(HAVE_HDF5,1,[Define if you have HDF5.])],[$1])
