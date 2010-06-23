@@ -27,17 +27,17 @@ else
                 [  --with-phdf5-incdir=<location of PHDF5 includes>],
                 [PHDF5_INCDIR=$withval
                  with_phdf5=detailed])
-    
+
     AC_ARG_WITH(phdf5-libdir,
                 [  --with-phdf5-libdir=<location of PHDF5 library>],
                 [PHDF5_LIBDIR=$withval
                  with_phdf5=detailed])
-    
+
     AC_ARG_WITH(phdf5-libs,
                 [  --with-phdf5-libs=<linker flags besides -L<phdf5_libdir>, e.g. -lhdf5 -lhdf5_hl -lz>],
                 [PHDF5_LIBS=$withval
                  with_phdf5=detailed])
-    
+
     ac_use_cray_hdf5=no  dnl will set to yes if we will use CRAY_HDF5_DIR below
 
     dnl If we know PHDF5_DIR, then we can know PHDF5_INCDIR.
@@ -56,7 +56,7 @@ else
             ac_phdf5_ok=no
         fi
     fi
-    
+
     dnl If we know PHDF5_DIR, then we can know PHDF5_LIBDIR.
     dnl If we know CRAY_HDF5_DIR, then we leave PHDF5_LIBDIR empty.
     dnl If we know HDF5_DIR, then we can know PHDF5_LIBDIR.
@@ -73,9 +73,9 @@ else
             ac_phdf5_ok=no
         fi
     fi
-    
+
     if test -n "${HDF5_CLIB}"; then
-    dnl dnl 
+    dnl dnl
     dnl dnl Add this elif case if you want phdf5 be discovered automatically
     dnl dnl if HDF5_CLIB is set. It breaks building utils/bp2h5 with --rpath magic!!!
     dnl dnl
@@ -90,7 +90,7 @@ else
 
 
     if test -n "${HDF5_CLIB}"; then
-    dnl dnl 
+    dnl dnl
     dnl dnl Add this elif case if you want phdf5 be discovered automatically
     dnl dnl if HDF5_CLIB is set. It breaks building utils/bp2h5 with --rpath magic!!!
     dnl dnl
@@ -102,16 +102,16 @@ else
     else
             ac_phdf5_ok=no
     fi
-    
+
 
     dnl if hdf5 libs are not defined (and not Cray hdf5 lib), then guess and define it
     if test -z "${PHDF5_LIBS}"; then
         if test "${ac_use_cray_hdf5}" != "yes"; then
-            dnl default PHDF5 lib is usually just -lhdf5 -lhdf_hl -lz
-            PHDF5_LIBS="-lhdf5 -lhdf5_hl -lz"
+            dnl default PHDF5 lib is usually just -lhdf5_hl -lhdf -lz
+            PHDF5_LIBS="-lhdf5_hl -lhdf5 -lz"
         fi
     fi
-    
+
     save_CC="$CC"
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
@@ -120,7 +120,7 @@ else
     LDFLAGS="$LDFLAGS $PHDF5_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $PHDF5_CPPFLAGS"
     CC="$MPICC"
-    
+
     if test -z "${HAVE_PHDF5_TRUE}"; then
         AC_CHECK_HEADERS(hdf5.h,
         ,
@@ -130,7 +130,7 @@ else
          AM_CONDITIONAL(HAVE_PHDF5,false)
         ])
     fi
-    
+
     if test -z "${HAVE_PHDF5_TRUE}"; then
         AC_MSG_CHECKING([if phdf5 code can be compiled])
         AC_TRY_COMPILE([#include "hdf5.h"],
@@ -141,27 +141,27 @@ else
              status = H5Fclose(file_id);
 #else
              /* This must deliberately fail */
-             file_id = THE_HDF5_INSTALLATION_FOUND_IS_NOT_PARALLEL_HDF5 
+             file_id = THE_HDF5_INSTALLATION_FOUND_IS_NOT_PARALLEL_HDF5
 #endif
             ],
             [AC_MSG_RESULT(yes)],
             [AC_MSG_RESULT(no)
-	     if test "x$with_phdf5" != xcheck; then
+         if test "x$with_phdf5" != xcheck; then
                AC_MSG_FAILURE( [--with-phdf5 was given, but compile test failed])
              fi
              AM_CONDITIONAL(HAVE_PHDF5,false)
             ])
-        
+
         AC_SUBST(PHDF5_LIBS)
         AC_SUBST(PHDF5_LDFLAGS)
         AC_SUBST(PHDF5_CPPFLAGS)
     fi
-    
+
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"
     CPPFLAGS="$save_CPPFLAGS"
     CC="$save_CC"
-    
+
     # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
     if test -z "${HAVE_PHDF5_TRUE}"; then
             ifelse([$1],,[AC_DEFINE(HAVE_PHDF5,1,[Define if you have PHDF5.])],[$1])
@@ -170,7 +170,7 @@ else
             $2
             :
     fi
-    
+
 fi
 
 ])
