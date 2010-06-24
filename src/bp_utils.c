@@ -211,6 +211,8 @@ int bp_parse_pgs (struct BP_FILE * fh)
     namelist = (char **) malloc(sizeof(char *)*mh->pgs_count);
     uint16_t * grpidlist = (uint16_t *) malloc(sizeof(uint16_t)*mh->pgs_count);
 
+    uint32_t tidx_start, tidx_stop; /* Determine first and last timestep in file */
+
     for (i = 0; i < mh->pgs_count; i++) {
         uint16_t length_of_group;
         namelist[i] = 0;    
@@ -272,8 +274,12 @@ int bp_parse_pgs (struct BP_FILE * fh)
 
         BUFREAD64(b, (*root)->offset_in_file)
 
-        if (i == mh->pgs_count-1)
-            mh->time_steps = (*root)->time_index;
+        if (i == 0)
+            tidx_start = (*root)->time_index;
+        if (i == mh->pgs_count-1) {
+            tidx_stop = (*root)->time_index;
+            mh->time_steps = tidx_stop - tidx_start + 1;
+        }
 
         root = &(*root)->next;
     }
@@ -316,11 +322,9 @@ int bp_parse_pgs (struct BP_FILE * fh)
     }
 
     root = &(fh->pgs_root);
-    uint32_t time_id, tidx_start, tidx_stop;
     uint64_t grpid = grpidlist[0];
     uint32_t pg_time_count = 0, first_pg;
-    tidx_start = (*root)->time_index;
-    time_id = tidx_start;
+    uint32_t time_id = tidx_start;
     first_pg = 0; /* The first pg for a given timestep and group */
     for (i = 0; i < mh->pgs_count; i++) {
         pg_pids [i] = (*root)->process_id;
@@ -375,7 +379,6 @@ int bp_parse_pgs (struct BP_FILE * fh)
     time_index [1][grpid][time_id-tidx_start] = pg_time_count;
     //printf ("#   time_index[0][%d][%d]=%d\n", grpid, time_id-tidx_start, first_pg);
     //printf ("    time_index[1][%d][%d]=%d\n", grpid, time_id-tidx_start, pg_time_count);
-    tidx_stop = time_id;
 
 
     /* Copy group_count strings from namelist and then free up namelist */

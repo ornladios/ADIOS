@@ -27,7 +27,7 @@ struct bp_index_pg_struct_v1
 };
 
 struct bp_minifooter {
-	uint64_t time_steps;  /* = the time_index field of the last pg in the file */
+	uint64_t time_steps;  /* = fh->tidx_stop - fh->tidx_start + 1 */
 	uint64_t pgs_count;
 	uint64_t pgs_length;
 	uint16_t vars_count;
