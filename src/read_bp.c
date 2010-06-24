@@ -2239,8 +2239,11 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
 
     /* Take out the time dimension from start[] and count[] */
     if (timedim == -1) {
+        /* For timeless var, we still search from fh->tidx_start to fh->tidx_stop
+           to handle the situation that some variables are dumped out in selected timesteps
+        */
         start_time = fh->tidx_start;
-        stop_time = fh->tidx_start;
+        stop_time = fh->tidx_stop;
 
         for (i = 0; i < ndim; i++) {
              count_notime[i] = count[i];
@@ -2293,7 +2296,8 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
         if (start_idx < 0 || stop_idx < 0) {
             error(err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step",
                 varid, t);
-            return -adios_errno;
+//            return -adios_errno;
+            continue;
         }
 
         if (ndim_notime == 0) {
