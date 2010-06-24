@@ -552,6 +552,16 @@ int bp_parse_attrs (struct BP_FILE * fh)
                 }
                 item++;
             }
+            /* Old BP files do not have time_index characteristics, so we
+               set it here automatically: j div # of pgs per timestep
+               Assumed that in old BP files, all pgs write each variable in each timestep.*/
+            if ((*root)->characteristics [j].time_index == 0) {
+                (*root)->characteristics [j].time_index = 
+                     j / (mh->pgs_count / (fh->tidx_stop - fh->tidx_start + 1)) + 1;
+                /*printf("OldBP: attr %s time_index set to %d\n", 
+                        (*root)->attr_name,
+                        (*root)->characteristics [j].time_index);*/
+            }
         }
 
         root = &(*root)->next;
@@ -709,6 +719,17 @@ int bp_parse_vars (struct BP_FILE * fh)
             while (item < characteristic_set_count) {
                 bp_parse_characteristics (b, root, j);
                 item++;
+            }
+
+            /* Old BP files do not have time_index characteristics, so we
+               set it here automatically: j div # of pgs per timestep
+               Assumed that in old BP files, all pgs write each variable in each timestep.*/
+            if ((*root)->characteristics [j].time_index == 0) {
+                (*root)->characteristics [j].time_index = 
+                     j / (mh->pgs_count / (fh->tidx_stop - fh->tidx_start + 1)) + 1;
+                /*printf("OldBP: var %s time_index set to %d\n",
+                        (*root)->var_name, 
+                        (*root)->characteristics [j].time_index);*/
             }
         }
         root = &(*root)->next;
