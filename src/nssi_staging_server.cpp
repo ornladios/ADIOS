@@ -698,7 +698,8 @@ static void generate_contact_info(nssi_remote_pid *myid)
             free(all_pids);
             return;
         }
-        sprintf(contact_path, "%s.%04d", contact_file, rank);
+//        sprintf(contact_path, "%s.%04d", contact_file, rank);
+        sprintf(contact_path, "%s", contact_file);
         if (DEBUG>3) printf("creating contact file (%s)\n", contact_path);
         FILE *f=fopen(contact_path, "w");
         if (f==NULL) {
