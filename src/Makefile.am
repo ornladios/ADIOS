@@ -133,12 +133,12 @@ endif
 endif
 
 if HAVE_NSSI
-libadios_a_SOURCES += adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
+libadios_a_SOURCES += adios_nssi_args.c adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
 dist_libadios_a_SOURCES = adios_nssi_args.x
 nodist_libadios_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 libadios_a_CPPFLAGS += $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 if BUILD_FORTRAN
-libadiosf_a_SOURCES += adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
+libadiosf_a_SOURCES += adios_nssi_args.c adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
 nodist_libadiosf_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 dist_libadiosf_a_SOURCES = adios_nssi_args.x
 libadiosf_a_CPPFLAGS += $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
@@ -159,6 +159,9 @@ adios_nssi_args.c: adios_nssi_args.h
 	rm -f adios_nssi_args.c
 	rpcgen -c $(srcdir)/adios_nssi_args.x \
 		| grep -v "include \"\.\." > adios_nssi_args.c
+
+CLEANFILES = adios_nssi_args.c adios_nssi_args.h
+
 endif # HAVE_NSSI
 
 
