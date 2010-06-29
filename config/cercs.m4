@@ -146,7 +146,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/$2 $EXPANDED/$5/$2 $EXPANDED/share/$2 $EXPANDED/$cercs_cv_archive/$2 $EXPANDED/$cercs_cv_archive/$5/$2 $EXPANDED/$1/$2 $EXPANDED/$1/$cercs_cv_archive/$2 $EXPANDED/$1/$5/$2 $EXPANDED/$1/$5/$cercs_cv_archive/$2"
+search_list="$datatap_dir/$2 $datatap_dir/lib/$2 $datatap_dir/include/$2 $search_list $EXPANDED/$2 $EXPANDED/$5/$2 $EXPANDED/share/$2 $EXPANDED/$cercs_cv_archive/$2 $EXPANDED/$cercs_cv_archive/$5/$2 $EXPANDED/$1/$2 $EXPANDED/$1/$cercs_cv_archive/$2 $EXPANDED/$1/$5/$2 $EXPANDED/$1/$5/$cercs_cv_archive/$2"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../$1/$2 `pwd`/../$5/$2 `pwd`/../share/$2"
@@ -179,7 +179,7 @@ if test "$5" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/$5/$2 /usr/local/$5/$2 /opt/$1/$5/$2 /opt/misc/$5/$2 /opt/misc/$5/$cercs_cv_archive/$2"
+search_list="$datatap_dir/$2 $datatap_dir/lib/$2 $datatap_dir/include/$2 $search_list /usr/$5/$2 /usr/local/$5/$2 /opt/$1/$5/$2 /opt/misc/$5/$2 /opt/misc/$5/$cercs_cv_archive/$2"
 CERCS_SEARCH($search_list)
 if test -n "$tmp_search_results"; then
 $3=$tmp_search_results
