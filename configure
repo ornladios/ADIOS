@@ -24821,7 +24821,7 @@ fi;
 
         if test -z "${HDF5_LIBS}"; then
         if test "${ac_use_cray_hdf5}" != "yes"; then
-                        HDF5_LIBS="-lhdf5"
+                        HDF5_LIBS="-lhdf5 -lz"
         fi
     fi
 
@@ -25223,7 +25223,7 @@ fi;
 
         if test -z "${PHDF5_LIBS}"; then
         if test "${ac_use_cray_hdf5}" != "yes"; then
-                        PHDF5_LIBS="-lhdf5 -lhdf5_hl -lz"
+                        PHDF5_LIBS="-lhdf5_hl -lhdf5 -lz"
         fi
     fi
 
@@ -25473,7 +25473,7 @@ sed 's/^/| /' conftest.$ac_ext >&5
 
 echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
-	     if test "x$with_phdf5" != xcheck; then
+         if test "x$with_phdf5" != xcheck; then
                { { echo "$as_me:$LINENO: error: --with-phdf5 was given, but compile test failed
 See \`config.log' for more details." >&5
 echo "$as_me: error: --with-phdf5 was given, but compile test failed
@@ -27973,7 +27973,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/thin_ib.h $EXPANDED/include/thin_ib.h $EXPANDED/share/thin_ib.h $EXPANDED/$cercs_cv_archive/thin_ib.h $EXPANDED/$cercs_cv_archive/include/thin_ib.h $EXPANDED/ibpbio/thin_ib.h $EXPANDED/ibpbio/$cercs_cv_archive/thin_ib.h $EXPANDED/ibpbio/include/thin_ib.h $EXPANDED/ibpbio/include/$cercs_cv_archive/thin_ib.h"
+search_list="$datatap_dir/thin_ib.h $datatap_dir/lib/thin_ib.h $datatap_dir/include/thin_ib.h $search_list $EXPANDED/thin_ib.h $EXPANDED/include/thin_ib.h $EXPANDED/share/thin_ib.h $EXPANDED/$cercs_cv_archive/thin_ib.h $EXPANDED/$cercs_cv_archive/include/thin_ib.h $EXPANDED/ibpbio/thin_ib.h $EXPANDED/ibpbio/$cercs_cv_archive/thin_ib.h $EXPANDED/ibpbio/include/thin_ib.h $EXPANDED/ibpbio/include/$cercs_cv_archive/thin_ib.h"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../ibpbio/thin_ib.h `pwd`/../include/thin_ib.h `pwd`/../share/thin_ib.h"
@@ -28006,7 +28006,7 @@ if test "include" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/include/thin_ib.h /usr/local/include/thin_ib.h /opt/ibpbio/include/thin_ib.h /opt/misc/include/thin_ib.h /opt/misc/include/$cercs_cv_archive/thin_ib.h"
+search_list="$datatap_dir/thin_ib.h $datatap_dir/lib/thin_ib.h $datatap_dir/include/thin_ib.h $search_list /usr/include/thin_ib.h /usr/local/include/thin_ib.h /opt/ibpbio/include/thin_ib.h /opt/misc/include/thin_ib.h /opt/misc/include/$cercs_cv_archive/thin_ib.h"
 tmp_search_results=""
 echo "configure:28011: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -28065,7 +28065,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/libibclient.la $EXPANDED/lib/libibclient.la $EXPANDED/share/libibclient.la $EXPANDED/$cercs_cv_archive/libibclient.la $EXPANDED/$cercs_cv_archive/lib/libibclient.la $EXPANDED/ibpbio/libibclient.la $EXPANDED/ibpbio/$cercs_cv_archive/libibclient.la $EXPANDED/ibpbio/lib/libibclient.la $EXPANDED/ibpbio/lib/$cercs_cv_archive/libibclient.la"
+search_list="$datatap_dir/libibclient.la $datatap_dir/lib/libibclient.la $datatap_dir/include/libibclient.la $search_list $EXPANDED/libibclient.la $EXPANDED/lib/libibclient.la $EXPANDED/share/libibclient.la $EXPANDED/$cercs_cv_archive/libibclient.la $EXPANDED/$cercs_cv_archive/lib/libibclient.la $EXPANDED/ibpbio/libibclient.la $EXPANDED/ibpbio/$cercs_cv_archive/libibclient.la $EXPANDED/ibpbio/lib/libibclient.la $EXPANDED/ibpbio/lib/$cercs_cv_archive/libibclient.la"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../ibpbio/libibclient.la `pwd`/../lib/libibclient.la `pwd`/../share/libibclient.la"
@@ -28098,7 +28098,7 @@ if test "lib" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/lib/libibclient.la /usr/local/lib/libibclient.la /opt/ibpbio/lib/libibclient.la /opt/misc/lib/libibclient.la /opt/misc/lib/$cercs_cv_archive/libibclient.la"
+search_list="$datatap_dir/libibclient.la $datatap_dir/lib/libibclient.la $datatap_dir/include/libibclient.la $search_list /usr/lib/libibclient.la /usr/local/lib/libibclient.la /opt/ibpbio/lib/libibclient.la /opt/misc/lib/libibclient.la /opt/misc/lib/$cercs_cv_archive/libibclient.la"
 tmp_search_results=""
 echo "configure:28103: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -28308,7 +28308,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/ffs.h $EXPANDED/include/ffs.h $EXPANDED/share/ffs.h $EXPANDED/$cercs_cv_archive/ffs.h $EXPANDED/$cercs_cv_archive/include/ffs.h $EXPANDED/ffs/ffs.h $EXPANDED/ffs/$cercs_cv_archive/ffs.h $EXPANDED/ffs/include/ffs.h $EXPANDED/ffs/include/$cercs_cv_archive/ffs.h"
+search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list $EXPANDED/ffs.h $EXPANDED/include/ffs.h $EXPANDED/share/ffs.h $EXPANDED/$cercs_cv_archive/ffs.h $EXPANDED/$cercs_cv_archive/include/ffs.h $EXPANDED/ffs/ffs.h $EXPANDED/ffs/$cercs_cv_archive/ffs.h $EXPANDED/ffs/include/ffs.h $EXPANDED/ffs/include/$cercs_cv_archive/ffs.h"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../ffs/ffs.h `pwd`/../include/ffs.h `pwd`/../share/ffs.h"
@@ -28341,7 +28341,7 @@ if test "include" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
+search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
 tmp_search_results=""
 echo "configure:28346: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -28400,7 +28400,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/libffs.la $EXPANDED/lib/libffs.la $EXPANDED/share/libffs.la $EXPANDED/$cercs_cv_archive/libffs.la $EXPANDED/$cercs_cv_archive/lib/libffs.la $EXPANDED/ffs/libffs.la $EXPANDED/ffs/$cercs_cv_archive/libffs.la $EXPANDED/ffs/lib/libffs.la $EXPANDED/ffs/lib/$cercs_cv_archive/libffs.la"
+search_list="$datatap_dir/libffs.la $datatap_dir/lib/libffs.la $datatap_dir/include/libffs.la $search_list $EXPANDED/libffs.la $EXPANDED/lib/libffs.la $EXPANDED/share/libffs.la $EXPANDED/$cercs_cv_archive/libffs.la $EXPANDED/$cercs_cv_archive/lib/libffs.la $EXPANDED/ffs/libffs.la $EXPANDED/ffs/$cercs_cv_archive/libffs.la $EXPANDED/ffs/lib/libffs.la $EXPANDED/ffs/lib/$cercs_cv_archive/libffs.la"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../ffs/libffs.la `pwd`/../lib/libffs.la `pwd`/../share/libffs.la"
@@ -28433,7 +28433,7 @@ if test "lib" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/lib/libffs.la /usr/local/lib/libffs.la /opt/ffs/lib/libffs.la /opt/misc/lib/libffs.la /opt/misc/lib/$cercs_cv_archive/libffs.la"
+search_list="$datatap_dir/libffs.la $datatap_dir/lib/libffs.la $datatap_dir/include/libffs.la $search_list /usr/lib/libffs.la /usr/local/lib/libffs.la /opt/ffs/lib/libffs.la /opt/misc/lib/libffs.la /opt/misc/lib/$cercs_cv_archive/libffs.la"
 tmp_search_results=""
 echo "configure:28438: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -28643,7 +28643,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/gen_thread.h $EXPANDED/include/gen_thread.h $EXPANDED/share/gen_thread.h $EXPANDED/$cercs_cv_archive/gen_thread.h $EXPANDED/$cercs_cv_archive/include/gen_thread.h $EXPANDED/gen_thread/gen_thread.h $EXPANDED/gen_thread/$cercs_cv_archive/gen_thread.h $EXPANDED/gen_thread/include/gen_thread.h $EXPANDED/gen_thread/include/$cercs_cv_archive/gen_thread.h"
+search_list="$datatap_dir/gen_thread.h $datatap_dir/lib/gen_thread.h $datatap_dir/include/gen_thread.h $search_list $EXPANDED/gen_thread.h $EXPANDED/include/gen_thread.h $EXPANDED/share/gen_thread.h $EXPANDED/$cercs_cv_archive/gen_thread.h $EXPANDED/$cercs_cv_archive/include/gen_thread.h $EXPANDED/gen_thread/gen_thread.h $EXPANDED/gen_thread/$cercs_cv_archive/gen_thread.h $EXPANDED/gen_thread/include/gen_thread.h $EXPANDED/gen_thread/include/$cercs_cv_archive/gen_thread.h"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../gen_thread/gen_thread.h `pwd`/../include/gen_thread.h `pwd`/../share/gen_thread.h"
@@ -28676,7 +28676,7 @@ if test "include" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/include/gen_thread.h /usr/local/include/gen_thread.h /opt/gen_thread/include/gen_thread.h /opt/misc/include/gen_thread.h /opt/misc/include/$cercs_cv_archive/gen_thread.h"
+search_list="$datatap_dir/gen_thread.h $datatap_dir/lib/gen_thread.h $datatap_dir/include/gen_thread.h $search_list /usr/include/gen_thread.h /usr/local/include/gen_thread.h /opt/gen_thread/include/gen_thread.h /opt/misc/include/gen_thread.h /opt/misc/include/$cercs_cv_archive/gen_thread.h"
 tmp_search_results=""
 echo "configure:28681: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -28735,7 +28735,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/libgen_thread.la $EXPANDED/lib/libgen_thread.la $EXPANDED/share/libgen_thread.la $EXPANDED/$cercs_cv_archive/libgen_thread.la $EXPANDED/$cercs_cv_archive/lib/libgen_thread.la $EXPANDED/gen_thread/libgen_thread.la $EXPANDED/gen_thread/$cercs_cv_archive/libgen_thread.la $EXPANDED/gen_thread/lib/libgen_thread.la $EXPANDED/gen_thread/lib/$cercs_cv_archive/libgen_thread.la"
+search_list="$datatap_dir/libgen_thread.la $datatap_dir/lib/libgen_thread.la $datatap_dir/include/libgen_thread.la $search_list $EXPANDED/libgen_thread.la $EXPANDED/lib/libgen_thread.la $EXPANDED/share/libgen_thread.la $EXPANDED/$cercs_cv_archive/libgen_thread.la $EXPANDED/$cercs_cv_archive/lib/libgen_thread.la $EXPANDED/gen_thread/libgen_thread.la $EXPANDED/gen_thread/$cercs_cv_archive/libgen_thread.la $EXPANDED/gen_thread/lib/libgen_thread.la $EXPANDED/gen_thread/lib/$cercs_cv_archive/libgen_thread.la"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../gen_thread/libgen_thread.la `pwd`/../lib/libgen_thread.la `pwd`/../share/libgen_thread.la"
@@ -28768,7 +28768,7 @@ if test "lib" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/lib/libgen_thread.la /usr/local/lib/libgen_thread.la /opt/gen_thread/lib/libgen_thread.la /opt/misc/lib/libgen_thread.la /opt/misc/lib/$cercs_cv_archive/libgen_thread.la"
+search_list="$datatap_dir/libgen_thread.la $datatap_dir/lib/libgen_thread.la $datatap_dir/include/libgen_thread.la $search_list /usr/lib/libgen_thread.la /usr/local/lib/libgen_thread.la /opt/gen_thread/lib/libgen_thread.la /opt/misc/lib/libgen_thread.la /opt/misc/lib/$cercs_cv_archive/libgen_thread.la"
 tmp_search_results=""
 echo "configure:28773: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -29001,7 +29001,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/thin_portal.h $EXPANDED/include/thin_portal.h $EXPANDED/share/thin_portal.h $EXPANDED/$cercs_cv_archive/thin_portal.h $EXPANDED/$cercs_cv_archive/include/thin_portal.h $EXPANDED/ptlpbio/thin_portal.h $EXPANDED/ptlpbio/$cercs_cv_archive/thin_portal.h $EXPANDED/ptlpbio/include/thin_portal.h $EXPANDED/ptlpbio/include/$cercs_cv_archive/thin_portal.h"
+search_list="$datatap_dir/thin_portal.h $datatap_dir/lib/thin_portal.h $datatap_dir/include/thin_portal.h $search_list $EXPANDED/thin_portal.h $EXPANDED/include/thin_portal.h $EXPANDED/share/thin_portal.h $EXPANDED/$cercs_cv_archive/thin_portal.h $EXPANDED/$cercs_cv_archive/include/thin_portal.h $EXPANDED/ptlpbio/thin_portal.h $EXPANDED/ptlpbio/$cercs_cv_archive/thin_portal.h $EXPANDED/ptlpbio/include/thin_portal.h $EXPANDED/ptlpbio/include/$cercs_cv_archive/thin_portal.h"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../ptlpbio/thin_portal.h `pwd`/../include/thin_portal.h `pwd`/../share/thin_portal.h"
@@ -29034,7 +29034,7 @@ if test "include" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/include/thin_portal.h /usr/local/include/thin_portal.h /opt/ptlpbio/include/thin_portal.h /opt/misc/include/thin_portal.h /opt/misc/include/$cercs_cv_archive/thin_portal.h"
+search_list="$datatap_dir/thin_portal.h $datatap_dir/lib/thin_portal.h $datatap_dir/include/thin_portal.h $search_list /usr/include/thin_portal.h /usr/local/include/thin_portal.h /opt/ptlpbio/include/thin_portal.h /opt/misc/include/thin_portal.h /opt/misc/include/$cercs_cv_archive/thin_portal.h"
 tmp_search_results=""
 echo "configure:29039: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -29093,7 +29093,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/libptlclient.a $EXPANDED/lib/libptlclient.a $EXPANDED/share/libptlclient.a $EXPANDED/$cercs_cv_archive/libptlclient.a $EXPANDED/$cercs_cv_archive/lib/libptlclient.a $EXPANDED/ptlpbio/libptlclient.a $EXPANDED/ptlpbio/$cercs_cv_archive/libptlclient.a $EXPANDED/ptlpbio/lib/libptlclient.a $EXPANDED/ptlpbio/lib/$cercs_cv_archive/libptlclient.a"
+search_list="$datatap_dir/libptlclient.a $datatap_dir/lib/libptlclient.a $datatap_dir/include/libptlclient.a $search_list $EXPANDED/libptlclient.a $EXPANDED/lib/libptlclient.a $EXPANDED/share/libptlclient.a $EXPANDED/$cercs_cv_archive/libptlclient.a $EXPANDED/$cercs_cv_archive/lib/libptlclient.a $EXPANDED/ptlpbio/libptlclient.a $EXPANDED/ptlpbio/$cercs_cv_archive/libptlclient.a $EXPANDED/ptlpbio/lib/libptlclient.a $EXPANDED/ptlpbio/lib/$cercs_cv_archive/libptlclient.a"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../ptlpbio/libptlclient.a `pwd`/../lib/libptlclient.a `pwd`/../share/libptlclient.a"
@@ -29126,7 +29126,7 @@ if test "lib" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/lib/libptlclient.a /usr/local/lib/libptlclient.a /opt/ptlpbio/lib/libptlclient.a /opt/misc/lib/libptlclient.a /opt/misc/lib/$cercs_cv_archive/libptlclient.a"
+search_list="$datatap_dir/libptlclient.a $datatap_dir/lib/libptlclient.a $datatap_dir/include/libptlclient.a $search_list /usr/lib/libptlclient.a /usr/local/lib/libptlclient.a /opt/ptlpbio/lib/libptlclient.a /opt/misc/lib/libptlclient.a /opt/misc/lib/$cercs_cv_archive/libptlclient.a"
 tmp_search_results=""
 echo "configure:29131: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -29368,7 +29368,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/thin_ib.h $EXPANDED/include/thin_ib.h $EXPANDED/share/thin_ib.h $EXPANDED/$cercs_cv_archive/thin_ib.h $EXPANDED/$cercs_cv_archive/include/thin_ib.h $EXPANDED/ibpbio/thin_ib.h $EXPANDED/ibpbio/$cercs_cv_archive/thin_ib.h $EXPANDED/ibpbio/include/thin_ib.h $EXPANDED/ibpbio/include/$cercs_cv_archive/thin_ib.h"
+search_list="$datatap_dir/thin_ib.h $datatap_dir/lib/thin_ib.h $datatap_dir/include/thin_ib.h $search_list $EXPANDED/thin_ib.h $EXPANDED/include/thin_ib.h $EXPANDED/share/thin_ib.h $EXPANDED/$cercs_cv_archive/thin_ib.h $EXPANDED/$cercs_cv_archive/include/thin_ib.h $EXPANDED/ibpbio/thin_ib.h $EXPANDED/ibpbio/$cercs_cv_archive/thin_ib.h $EXPANDED/ibpbio/include/thin_ib.h $EXPANDED/ibpbio/include/$cercs_cv_archive/thin_ib.h"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../ibpbio/thin_ib.h `pwd`/../include/thin_ib.h `pwd`/../share/thin_ib.h"
@@ -29401,7 +29401,7 @@ if test "include" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/include/thin_ib.h /usr/local/include/thin_ib.h /opt/ibpbio/include/thin_ib.h /opt/misc/include/thin_ib.h /opt/misc/include/$cercs_cv_archive/thin_ib.h"
+search_list="$datatap_dir/thin_ib.h $datatap_dir/lib/thin_ib.h $datatap_dir/include/thin_ib.h $search_list /usr/include/thin_ib.h /usr/local/include/thin_ib.h /opt/ibpbio/include/thin_ib.h /opt/misc/include/thin_ib.h /opt/misc/include/$cercs_cv_archive/thin_ib.h"
 tmp_search_results=""
 echo "configure:29406: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -29460,7 +29460,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/libibclient.la $EXPANDED/lib/libibclient.la $EXPANDED/share/libibclient.la $EXPANDED/$cercs_cv_archive/libibclient.la $EXPANDED/$cercs_cv_archive/lib/libibclient.la $EXPANDED/ibpbio/libibclient.la $EXPANDED/ibpbio/$cercs_cv_archive/libibclient.la $EXPANDED/ibpbio/lib/libibclient.la $EXPANDED/ibpbio/lib/$cercs_cv_archive/libibclient.la"
+search_list="$datatap_dir/libibclient.la $datatap_dir/lib/libibclient.la $datatap_dir/include/libibclient.la $search_list $EXPANDED/libibclient.la $EXPANDED/lib/libibclient.la $EXPANDED/share/libibclient.la $EXPANDED/$cercs_cv_archive/libibclient.la $EXPANDED/$cercs_cv_archive/lib/libibclient.la $EXPANDED/ibpbio/libibclient.la $EXPANDED/ibpbio/$cercs_cv_archive/libibclient.la $EXPANDED/ibpbio/lib/libibclient.la $EXPANDED/ibpbio/lib/$cercs_cv_archive/libibclient.la"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../ibpbio/libibclient.la `pwd`/../lib/libibclient.la `pwd`/../share/libibclient.la"
@@ -29493,7 +29493,7 @@ if test "lib" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/lib/libibclient.la /usr/local/lib/libibclient.la /opt/ibpbio/lib/libibclient.la /opt/misc/lib/libibclient.la /opt/misc/lib/$cercs_cv_archive/libibclient.la"
+search_list="$datatap_dir/libibclient.la $datatap_dir/lib/libibclient.la $datatap_dir/include/libibclient.la $search_list /usr/lib/libibclient.la /usr/local/lib/libibclient.la /opt/ibpbio/lib/libibclient.la /opt/misc/lib/libibclient.la /opt/misc/lib/$cercs_cv_archive/libibclient.la"
 tmp_search_results=""
 echo "configure:29498: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -29703,7 +29703,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/ffs.h $EXPANDED/include/ffs.h $EXPANDED/share/ffs.h $EXPANDED/$cercs_cv_archive/ffs.h $EXPANDED/$cercs_cv_archive/include/ffs.h $EXPANDED/ffs/ffs.h $EXPANDED/ffs/$cercs_cv_archive/ffs.h $EXPANDED/ffs/include/ffs.h $EXPANDED/ffs/include/$cercs_cv_archive/ffs.h"
+search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list $EXPANDED/ffs.h $EXPANDED/include/ffs.h $EXPANDED/share/ffs.h $EXPANDED/$cercs_cv_archive/ffs.h $EXPANDED/$cercs_cv_archive/include/ffs.h $EXPANDED/ffs/ffs.h $EXPANDED/ffs/$cercs_cv_archive/ffs.h $EXPANDED/ffs/include/ffs.h $EXPANDED/ffs/include/$cercs_cv_archive/ffs.h"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../ffs/ffs.h `pwd`/../include/ffs.h `pwd`/../share/ffs.h"
@@ -29736,7 +29736,7 @@ if test "include" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
+search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
 tmp_search_results=""
 echo "configure:29741: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -29795,7 +29795,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/libffs.la $EXPANDED/lib/libffs.la $EXPANDED/share/libffs.la $EXPANDED/$cercs_cv_archive/libffs.la $EXPANDED/$cercs_cv_archive/lib/libffs.la $EXPANDED/ffs/libffs.la $EXPANDED/ffs/$cercs_cv_archive/libffs.la $EXPANDED/ffs/lib/libffs.la $EXPANDED/ffs/lib/$cercs_cv_archive/libffs.la"
+search_list="$datatap_dir/libffs.la $datatap_dir/lib/libffs.la $datatap_dir/include/libffs.la $search_list $EXPANDED/libffs.la $EXPANDED/lib/libffs.la $EXPANDED/share/libffs.la $EXPANDED/$cercs_cv_archive/libffs.la $EXPANDED/$cercs_cv_archive/lib/libffs.la $EXPANDED/ffs/libffs.la $EXPANDED/ffs/$cercs_cv_archive/libffs.la $EXPANDED/ffs/lib/libffs.la $EXPANDED/ffs/lib/$cercs_cv_archive/libffs.la"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../ffs/libffs.la `pwd`/../lib/libffs.la `pwd`/../share/libffs.la"
@@ -29828,7 +29828,7 @@ if test "lib" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/lib/libffs.la /usr/local/lib/libffs.la /opt/ffs/lib/libffs.la /opt/misc/lib/libffs.la /opt/misc/lib/$cercs_cv_archive/libffs.la"
+search_list="$datatap_dir/libffs.la $datatap_dir/lib/libffs.la $datatap_dir/include/libffs.la $search_list /usr/lib/libffs.la /usr/local/lib/libffs.la /opt/ffs/lib/libffs.la /opt/misc/lib/libffs.la /opt/misc/lib/$cercs_cv_archive/libffs.la"
 tmp_search_results=""
 echo "configure:29833: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -30038,7 +30038,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/gen_thread.h $EXPANDED/include/gen_thread.h $EXPANDED/share/gen_thread.h $EXPANDED/$cercs_cv_archive/gen_thread.h $EXPANDED/$cercs_cv_archive/include/gen_thread.h $EXPANDED/gen_thread/gen_thread.h $EXPANDED/gen_thread/$cercs_cv_archive/gen_thread.h $EXPANDED/gen_thread/include/gen_thread.h $EXPANDED/gen_thread/include/$cercs_cv_archive/gen_thread.h"
+search_list="$datatap_dir/gen_thread.h $datatap_dir/lib/gen_thread.h $datatap_dir/include/gen_thread.h $search_list $EXPANDED/gen_thread.h $EXPANDED/include/gen_thread.h $EXPANDED/share/gen_thread.h $EXPANDED/$cercs_cv_archive/gen_thread.h $EXPANDED/$cercs_cv_archive/include/gen_thread.h $EXPANDED/gen_thread/gen_thread.h $EXPANDED/gen_thread/$cercs_cv_archive/gen_thread.h $EXPANDED/gen_thread/include/gen_thread.h $EXPANDED/gen_thread/include/$cercs_cv_archive/gen_thread.h"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../gen_thread/gen_thread.h `pwd`/../include/gen_thread.h `pwd`/../share/gen_thread.h"
@@ -30071,7 +30071,7 @@ if test "include" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/include/gen_thread.h /usr/local/include/gen_thread.h /opt/gen_thread/include/gen_thread.h /opt/misc/include/gen_thread.h /opt/misc/include/$cercs_cv_archive/gen_thread.h"
+search_list="$datatap_dir/gen_thread.h $datatap_dir/lib/gen_thread.h $datatap_dir/include/gen_thread.h $search_list /usr/include/gen_thread.h /usr/local/include/gen_thread.h /opt/gen_thread/include/gen_thread.h /opt/misc/include/gen_thread.h /opt/misc/include/$cercs_cv_archive/gen_thread.h"
 tmp_search_results=""
 echo "configure:30076: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -30130,7 +30130,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/libgen_thread.la $EXPANDED/lib/libgen_thread.la $EXPANDED/share/libgen_thread.la $EXPANDED/$cercs_cv_archive/libgen_thread.la $EXPANDED/$cercs_cv_archive/lib/libgen_thread.la $EXPANDED/gen_thread/libgen_thread.la $EXPANDED/gen_thread/$cercs_cv_archive/libgen_thread.la $EXPANDED/gen_thread/lib/libgen_thread.la $EXPANDED/gen_thread/lib/$cercs_cv_archive/libgen_thread.la"
+search_list="$datatap_dir/libgen_thread.la $datatap_dir/lib/libgen_thread.la $datatap_dir/include/libgen_thread.la $search_list $EXPANDED/libgen_thread.la $EXPANDED/lib/libgen_thread.la $EXPANDED/share/libgen_thread.la $EXPANDED/$cercs_cv_archive/libgen_thread.la $EXPANDED/$cercs_cv_archive/lib/libgen_thread.la $EXPANDED/gen_thread/libgen_thread.la $EXPANDED/gen_thread/$cercs_cv_archive/libgen_thread.la $EXPANDED/gen_thread/lib/libgen_thread.la $EXPANDED/gen_thread/lib/$cercs_cv_archive/libgen_thread.la"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../gen_thread/libgen_thread.la `pwd`/../lib/libgen_thread.la `pwd`/../share/libgen_thread.la"
@@ -30163,7 +30163,7 @@ if test "lib" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/lib/libgen_thread.la /usr/local/lib/libgen_thread.la /opt/gen_thread/lib/libgen_thread.la /opt/misc/lib/libgen_thread.la /opt/misc/lib/$cercs_cv_archive/libgen_thread.la"
+search_list="$datatap_dir/libgen_thread.la $datatap_dir/lib/libgen_thread.la $datatap_dir/include/libgen_thread.la $search_list /usr/lib/libgen_thread.la /usr/local/lib/libgen_thread.la /opt/gen_thread/lib/libgen_thread.la /opt/misc/lib/libgen_thread.la /opt/misc/lib/$cercs_cv_archive/libgen_thread.la"
 tmp_search_results=""
 echo "configure:30168: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -30396,7 +30396,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/thin_portal.h $EXPANDED/include/thin_portal.h $EXPANDED/share/thin_portal.h $EXPANDED/$cercs_cv_archive/thin_portal.h $EXPANDED/$cercs_cv_archive/include/thin_portal.h $EXPANDED/ptlpbio/thin_portal.h $EXPANDED/ptlpbio/$cercs_cv_archive/thin_portal.h $EXPANDED/ptlpbio/include/thin_portal.h $EXPANDED/ptlpbio/include/$cercs_cv_archive/thin_portal.h"
+search_list="$datatap_dir/thin_portal.h $datatap_dir/lib/thin_portal.h $datatap_dir/include/thin_portal.h $search_list $EXPANDED/thin_portal.h $EXPANDED/include/thin_portal.h $EXPANDED/share/thin_portal.h $EXPANDED/$cercs_cv_archive/thin_portal.h $EXPANDED/$cercs_cv_archive/include/thin_portal.h $EXPANDED/ptlpbio/thin_portal.h $EXPANDED/ptlpbio/$cercs_cv_archive/thin_portal.h $EXPANDED/ptlpbio/include/thin_portal.h $EXPANDED/ptlpbio/include/$cercs_cv_archive/thin_portal.h"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../ptlpbio/thin_portal.h `pwd`/../include/thin_portal.h `pwd`/../share/thin_portal.h"
@@ -30429,7 +30429,7 @@ if test "include" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/include/thin_portal.h /usr/local/include/thin_portal.h /opt/ptlpbio/include/thin_portal.h /opt/misc/include/thin_portal.h /opt/misc/include/$cercs_cv_archive/thin_portal.h"
+search_list="$datatap_dir/thin_portal.h $datatap_dir/lib/thin_portal.h $datatap_dir/include/thin_portal.h $search_list /usr/include/thin_portal.h /usr/local/include/thin_portal.h /opt/ptlpbio/include/thin_portal.h /opt/misc/include/thin_portal.h /opt/misc/include/$cercs_cv_archive/thin_portal.h"
 tmp_search_results=""
 echo "configure:30434: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
@@ -30488,7 +30488,7 @@ fi
 
 echo "Datatap = $datatap_dir"
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list $EXPANDED/libptlclient.a $EXPANDED/lib/libptlclient.a $EXPANDED/share/libptlclient.a $EXPANDED/$cercs_cv_archive/libptlclient.a $EXPANDED/$cercs_cv_archive/lib/libptlclient.a $EXPANDED/ptlpbio/libptlclient.a $EXPANDED/ptlpbio/$cercs_cv_archive/libptlclient.a $EXPANDED/ptlpbio/lib/libptlclient.a $EXPANDED/ptlpbio/lib/$cercs_cv_archive/libptlclient.a"
+search_list="$datatap_dir/libptlclient.a $datatap_dir/lib/libptlclient.a $datatap_dir/include/libptlclient.a $search_list $EXPANDED/libptlclient.a $EXPANDED/lib/libptlclient.a $EXPANDED/share/libptlclient.a $EXPANDED/$cercs_cv_archive/libptlclient.a $EXPANDED/$cercs_cv_archive/lib/libptlclient.a $EXPANDED/ptlpbio/libptlclient.a $EXPANDED/ptlpbio/$cercs_cv_archive/libptlclient.a $EXPANDED/ptlpbio/lib/libptlclient.a $EXPANDED/ptlpbio/lib/$cercs_cv_archive/libptlclient.a"
 fi
 if test -z "$with_installed_specified"; then
 search_list="$search_list `pwd`/../ptlpbio/libptlclient.a `pwd`/../lib/libptlclient.a `pwd`/../share/libptlclient.a"
@@ -30521,7 +30521,7 @@ if test "lib" == "lib"; then
   done
 fi
 
-search_list="$datatap_dir $datatap_dir/lib $datatap_dir/include $search_list /usr/lib/libptlclient.a /usr/local/lib/libptlclient.a /opt/ptlpbio/lib/libptlclient.a /opt/misc/lib/libptlclient.a /opt/misc/lib/$cercs_cv_archive/libptlclient.a"
+search_list="$datatap_dir/libptlclient.a $datatap_dir/lib/libptlclient.a $datatap_dir/include/libptlclient.a $search_list /usr/lib/libptlclient.a /usr/local/lib/libptlclient.a /opt/ptlpbio/lib/libptlclient.a /opt/misc/lib/libptlclient.a /opt/misc/lib/$cercs_cv_archive/libptlclient.a"
 tmp_search_results=""
 echo "configure:30526: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
