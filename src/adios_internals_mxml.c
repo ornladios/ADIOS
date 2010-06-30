@@ -3243,7 +3243,15 @@ void adios_cleanup ()
 					{
 						if (adios_groups->group->vars->bitmap >> j & 1)
 						{
-							free (adios_groups->group->vars->stats[c][idx].data);
+                            if (j == adios_statistic_hist)
+                            {
+								struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct *) adios_groups->group->vars->stats[c][idx].data;
+								free (hist->breaks);
+								free (hist->frequencies);
+								free (hist);
+							}
+						    else
+								free (adios_groups->group->vars->stats[c][idx].data);
 							idx ++;
 						}
 						j ++;

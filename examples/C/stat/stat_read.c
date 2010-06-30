@@ -81,14 +81,14 @@ int main (int argc, char ** argv)
 	printf("\n\n");
 	v = adios_inq_var (g, "complex");
     double *C = v->gmin;
-    printf("Global Minimum of variable complex - Real part: %lf\n", C[0]);
-    printf("Global Minimum of variable complex - Imaginary part: %lfi\n", C[1]);
-    printf("Global Minimum of variable complex - Magnitude: %lf\n", C[2]);
+    printf("Global Minimum of variable complex - Magnitude: %lf\n", C[0]);
+    printf("Global Minimum of variable complex - Real part: %lf\n", C[1]);
+    printf("Global Minimum of variable complex - Imaginary part: %lfi\n", C[2]);
 
 	double ** Cmin;
 	Cmin = (double **) v->mins;
 
-	printf("Real\t\t\tImaginary\t\tMagnitude\n");
+	printf("\nMagnitude\t\tReal\t\t\tImaginary\n");
 	for (j = 0; v->ndim >= 0 &&  (j < v->dims[0]); j ++)
 	{
 		printf ("%lf\t\t%lf\t\t%lf\n", Cmin[j][0], Cmin[j][1], Cmin[j][2]);

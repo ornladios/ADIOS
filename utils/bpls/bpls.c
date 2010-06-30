@@ -550,7 +550,7 @@ int doList(const char *path) {
 						print_data_hist(vi, &names[n][1], 0);
 					}
 
-                    if (longopt && vi->gmin && vi->gmax && vi->gavg && vi->gstd_dev) {
+                    if (longopt && vi->gmin && vi->gmax) {
 				
 						if(timestep == false || (vi->timedim < 0)) {	
 
@@ -583,12 +583,6 @@ int doList(const char *path) {
                             fprintf(outf," {MIN / MAX / AVG / STD_DEV} ");
 						} else {
 							int time_start = 0, time_end = vi->dims[0];
-							char *indent_characteristics;
-							indent_characteristics = malloc(maxlen + strlen(names[n]) + 1);
-
-							for(i = 0; i < (maxlen + strlen(names[n])); i++)
-								indent_characteristics[i] = ' ';
-							indent_characteristics[i] = '\0';
 
 							if (start != NULL) {
 								if (istart[0] >= 0)
@@ -614,54 +608,63 @@ int doList(const char *path) {
                                 return 15;
                             }
 							
-							if (vi->type == adios_complex || vi->type == adios_double_complex) {
-								fprintf(outf, "\n");
-								fprintf(outf, "%s", indent_characteristics);
-								fprintf(outf, "%8s  %8s  %10s  %10s", "MIN", "MAX", "AVG", "STD DEV");
+							char *indent_characteristics;
+							indent_characteristics = malloc(25);
 
-								fprintf(outf, "\n");
-								fprintf(outf, "%s", indent_characteristics);
+							for(i = 0; i < 24; i++)
+								indent_characteristics[i] = ' ';
+							indent_characteristics[i] = '\0';
+
+							/* Start - Print the headers of statistics first */
+							fprintf(outf, "\n");
+							fprintf(outf, "%s", indent_characteristics);
+
+							fprintf(outf, "%10s  ", "MIN");
+							fprintf(outf, "%10s  ", "MAX");
+							fprintf(outf, "%10s  ", "AVG");
+							fprintf(outf, "%10s  ", "STD DEV");
+
+							fprintf(outf, "\n");
+							fprintf(outf, "%s", indent_characteristics);
+							/* End - Print the headers of statistics first */
+
+							void *min, *max, *avg, *std_dev;
+							if (vi->type == adios_complex || vi->type == adios_double_complex) { 
 								print_data_characteristics(vi->gmin, vi->gmax, vi->gavg, vi->gstd_dev, adios_double, false);
-								fprintf(outf, "  <-- Global values");
+								fprintf(outf, "  <-- Global values\n");
 
-								fprintf(outf, "\n");
+								for(i = time_start; i < time_end; i++) {
+									min = max = avg = std_dev = 0;
+									if (vi->maxs && vi->maxs[i]) max = vi->maxs[i];
+									if (vi->mins && vi->mins[i]) min = vi->mins[i];
+									if (vi->avgs && vi->avgs[i]) avg = vi->avgs[i];
+									if (vi->std_devs && vi->std_devs[i]) std_dev = vi->std_devs[i];
 
-								if (vi->mins && vi->maxs && vi->avgs && vi->std_devs) {
-									for(i = time_start; i < time_end; i++) {
-										fprintf(outf, "\n");
-										
-										// Align the output, previous lines has atleast (maxlen + strlen(names[n])) characters
-										// Better way to printf N spaces?
-										fprintf(outf, "%s", indent_characteristics);
-
-										print_data_characteristics(vi->mins[i], vi->maxs[i], vi->avgs[i], vi->std_devs[i], adios_double, false);
-										fprintf(outf, "  <-- Timestep %d", i);
-									}
+									fprintf(outf, "\n");
+									// Align the output, previous lines has atleast (maxlen + strlen(names[n])) characters
+									// Better way to printf N spaces?
+									fprintf(outf, "%s", indent_characteristics);
+									print_data_characteristics(vi->mins[i], vi->maxs[i], vi->avgs[i], vi->std_devs[i], adios_double, false);
+									fprintf(outf, "  <-- Timestep %d", i);
 								}
 							}
 							else {
-                                fprintf(outf, "\n");
-                                fprintf(outf, "%s", indent_characteristics);
-                                fprintf(outf, "%8s  %8s  %10s  %10s", "MIN", "MAX", "AVG", "STD DEV");
-
-                                fprintf(outf, "\n");
-                                fprintf(outf, "%s", indent_characteristics);
                                 print_data_characteristics(vi->gmin, vi->gmax, vi->gavg, vi->gstd_dev, vartype, false);
-                                fprintf(outf, "  <-- Global values");
+                                fprintf(outf, "  <-- Global values\n");
 
-                                fprintf(outf, "\n");
+								for(i = time_start; i < time_end; i++) {
+									min = max = avg = std_dev = 0;
+									if (vi->maxs && vi->maxs[i]) max = vi->maxs[i];
+									if (vi->mins && vi->mins[i]) min = vi->mins[i];
+									if (vi->avgs && vi->avgs[i]) avg = vi->avgs[i];
+									if (vi->std_devs && vi->std_devs[i]) std_dev = vi->std_devs[i];
 
-								if (vi->mins && vi->maxs && vi->avgs && vi->std_devs) {
-									for(i = time_start; i < time_end; i++) {
-										fprintf(outf, "\n");
-										
-										// Align the output, previous lines has atleast (maxlen + strlen(names[n])) characters
-										// Better way to printf N spaces?
-										fprintf(outf, "%s", indent_characteristics);
-
-										print_data_characteristics(vi->mins[i], vi->maxs[i], vi->avgs[i], vi->std_devs[i], vartype, false);
-										fprintf(outf, "  <-- Timestep %d", i);
-									}
+									fprintf(outf, "\n");
+									// Align the output, previous lines has atleast (maxlen + strlen(names[n])) characters
+									// Better way to printf N spaces?
+									fprintf(outf, "%s", indent_characteristics);
+									print_data_characteristics(min, max, avg, std_dev, vartype, false);
+									fprintf(outf, "  <-- Timestep %d", i);
 								}
 							}
 						}
@@ -1173,71 +1176,111 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
 
     switch(adiosvartype) {
         case adios_unsigned_byte:
-            fprintf(outf,(f ? format : "%8hhu  "), ((unsigned char *) min));
-            fprintf(outf,(f ? format : "%8hhu  "), ((unsigned char *) max));
-			fprintf(outf, "%10.2f  ", * avg);
-			fprintf(outf, "%10.2f  ", * std_dev);
+            if (min) fprintf(outf,(f ? format : "%10hhu  "), ((unsigned char *) min));
+        	else fprintf(outf, "      null  ");
+            if (max) fprintf(outf,(f ? format : "%10hhu  "), ((unsigned char *) max));
+        	else fprintf(outf, "      null  ");
+			if (avg) fprintf(outf, "%10.2f  ", * avg);
+        	else fprintf(outf, "      null  ");
+			if (std_dev) fprintf(outf, "%10.2f  ", * std_dev);
+        	else fprintf(outf, "      null  ");
             break;
         case adios_byte:
-            fprintf(outf,(f ? format : "%8hhd  "), ((char *) min));
-            fprintf(outf,(f ? format : "%8hhd  "), ((char *) max));
-			fprintf(outf, "%10.2f  ", * avg);
-			fprintf(outf, "%10.2f  ", * std_dev);
+            if (min) fprintf(outf,(f ? format : "%10hhd  "), ((char *) min));
+        	else fprintf(outf, "      null  ");
+            if (max) fprintf(outf,(f ? format : "%10hhd  "), ((char *) max));
+        	else fprintf(outf, "      null  ");
+			if (avg) fprintf(outf, "%10.2f  ", * avg);
+        	else fprintf(outf, "      null  ");
+			if (std_dev) fprintf(outf, "%10.2f  ", * std_dev);
+        	else fprintf(outf, "      null  ");
             break;
         case adios_string:
             break;
 
         case adios_unsigned_short:
-            fprintf(outf,(f ? format : "%8hu  "), (* (unsigned short *) min));
-            fprintf(outf,(f ? format : "%8hu  "), (* (unsigned short *) max));
-			fprintf(outf, "%10.2f  ", * avg);
-			fprintf(outf, "%10.2f  ", * std_dev);
+            if (min) fprintf(outf,(f ? format : "%10hu  "), (* (unsigned short *) min));
+        	else fprintf(outf, "      null  ");
+            if (max) fprintf(outf,(f ? format : "%10hu  "), (* (unsigned short *) max));
+        	else fprintf(outf, "      null  ");
+			if (avg) fprintf(outf, "%10.2f  ", * avg);
+        	else fprintf(outf, "      null  ");
+			if (std_dev) fprintf(outf, "%10.2f  ", * std_dev);
+        	else fprintf(outf, "      null  ");
             break;
         case adios_short:
-            fprintf(outf,(f ? format : "%8hd  "), (* (short *) min));
-            fprintf(outf,(f ? format : "%8hd  "), (* (short *) max));
-			fprintf(outf, "%10.2f  ", * avg);
-			fprintf(outf, "%10.2f  ", * std_dev);
+            if (min) fprintf(outf,(f ? format : "%10hd  "), (* (short *) min));
+        	else fprintf(outf, "      null  ");
+            if (max) fprintf(outf,(f ? format : "%10hd  "), (* (short *) max));
+        	else fprintf(outf, "      null  ");
+			if (avg) fprintf(outf, "%10.2f  ", * avg);
+        	else fprintf(outf, "      null  ");
+			if (std_dev) fprintf(outf, "%10.2f  ", * std_dev);
+        	else fprintf(outf, "      null  ");
             break;
 
         case adios_unsigned_integer:
-            fprintf(outf,(f ? format : "%8u  "), (* (unsigned int *) min));
-            fprintf(outf,(f ? format : "%8u  "), (* (unsigned int *) max));
-			fprintf(outf, "%10.2f  ", * avg);
-			fprintf(outf, "%10.2f  ", * std_dev);
+            if (min) fprintf(outf,(f ? format : "%10u  "), (* (unsigned int *) min));
+        	else fprintf(outf, "      null  ");
+            if (max) fprintf(outf,(f ? format : "%10u  "), (* (unsigned int *) max));
+        	else fprintf(outf, "      null  ");
+			if (avg) fprintf(outf, "%10.2f  ", * avg);
+        	else fprintf(outf, "      null  ");
+			if (std_dev) fprintf(outf, "%10.2f  ", * std_dev);
+        	else fprintf(outf, "      null  ");
             break;
 		case adios_integer:
-            fprintf(outf,(f ? format : "%8d  "), (* (int *) min));
-            fprintf(outf,(f ? format : "%8d  "), (* (int *) max));
-			fprintf(outf, "%10.2f  ", * avg);
-			fprintf(outf, "%10.2f  ", * std_dev);
+            if (min) fprintf(outf,(f ? format : "%10d  "), (* (int *) min));
+        	else fprintf(outf, "      null  ");
+            if (max) fprintf(outf,(f ? format : "%10d  "), (* (int *) max));
+        	else fprintf(outf, "      null  ");
+			if (avg) fprintf(outf, "%10.2f  ", * avg);
+        	else fprintf(outf, "      null  ");
+			if (std_dev) fprintf(outf, "%10.2f  ", * std_dev);
+        	else fprintf(outf, "      null  ");
             break;
 
         case adios_unsigned_long:
-            fprintf(outf,(f ? format : "%8llu  "), (* (unsigned long long *) min));
-            fprintf(outf,(f ? format : "%8llu  "), (* (unsigned long long *) max));
-			fprintf(outf, "%10.2f  ", * avg);
-			fprintf(outf, "%10.2f  ", * std_dev);
+            if (min) fprintf(outf,(f ? format : "%10llu  "), (* (unsigned long long *) min));
+        	else fprintf(outf, "      null  ");
+            if (max) fprintf(outf,(f ? format : "%10llu  "), (* (unsigned long long *) max));
+        	else fprintf(outf, "      null  ");
+			if (avg) fprintf(outf, "%10.2f  ", * avg);
+        	else fprintf(outf, "      null  ");
+			if (std_dev) fprintf(outf, "%10.2f  ", * std_dev);
+        	else fprintf(outf, "      null  ");
             break;
         case adios_long:
-            fprintf(outf,(f ? format : "%8lld  "), (* (long long *) min));
-            fprintf(outf,(f ? format : "%8lld  "), (* (long long *) max));
-			fprintf(outf, "%10.2f  ", * avg);
-			fprintf(outf, "%10.2f  ", * std_dev);
+            if (min) fprintf(outf,(f ? format : "%10lld  "), (* (long long *) min));
+        	else fprintf(outf, "      null  ");
+            if (max) fprintf(outf,(f ? format : "%10lld  "), (* (long long *) max));
+        	else fprintf(outf, "      null  ");
+			if (avg) fprintf(outf, "%10.2f  ", * avg);
+        	else fprintf(outf, "      null  ");
+			if (std_dev) fprintf(outf, "%10.2f  ", * std_dev);
+        	else fprintf(outf, "      null  ");
             break;
 
         case adios_real:
-            fprintf(outf,(f ? format : "%8g  "), (* (float *) min));
-            fprintf(outf,(f ? format : "%8g  "), (* (float *) max));
-			fprintf(outf, "%10.2f  ", * avg);
-			fprintf(outf, "%10.2f  ", * std_dev);
+            if (min) fprintf(outf,(f ? format : "%10.2e  "), (* (float *) min));
+        	else fprintf(outf, "      null  ");
+            if (max) fprintf(outf,(f ? format : "%10.2e  "), (* (float *) max));
+        	else fprintf(outf, "      null  ");
+			if (avg) fprintf(outf, "%10.2f  ", * avg);
+        	else fprintf(outf, "      null  ");
+			if (std_dev) fprintf(outf, "%10.2f  ", * std_dev);
+        	else fprintf(outf, "      null  ");
             break;
 
         case adios_double:
-            fprintf(outf,(f ? format : "%8g  "), (* (double *) min));
-            fprintf(outf,(f ? format : "%8g  "), (* (double *) max));
-			fprintf(outf, "%10.2f  ", * avg);
-			fprintf(outf, "%10.2f  ", * std_dev);
+            if (min) fprintf(outf,(f ? format : "%10.2le  "), (* (double *) min));
+        	else fprintf(outf, "      null  ");
+            if (max) fprintf(outf,(f ? format : "%10.2le  "), (* (double *) max));
+        	else fprintf(outf, "      null  ");
+			if (avg) fprintf(outf, "%10.2f  ", * avg);
+        	else fprintf(outf, "      null  ");
+			if (std_dev) fprintf(outf, "%10.2f  ", * std_dev);
+        	else fprintf(outf, "      null  ");
             break;
 
 

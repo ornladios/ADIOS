@@ -648,8 +648,36 @@ int common_adios_close (int64_t fd_p)
             fd->group->vars_written->dimensions = dimensions;
         }
 
+		// NCSU - Clear stat
         if (fd->group->vars_written->stats)
+		{
+            uint8_t j = 0, idx = 0;
+            uint8_t c = 0, count = adios_get_stat_set_count(fd->group->vars_written->type);
+
+            for (c = 0; c < count; c ++)
+            {
+                while (fd->group->vars_written->bitmap >> j)
+                {
+                    if ((fd->group->vars_written->bitmap >> j) & 1)
+                    {
+                        if (j == adios_statistic_hist)
+                        {
+                            struct adios_hist_struct * hist = (struct adios_hist_struct *) (fd->group->vars_written->stats[c][idx].data);
+                            free (hist->breaks);
+                            free (hist->frequencies);
+                            free (hist);
+                        }
+                        else
+                            free (fd->group->vars_written->stats[c][idx].data);
+
+                        idx ++;
+                    }
+                    j ++;
+                }
+                free (fd->group->vars_written->stats[c]);
+            }
             free (fd->group->vars_written->stats);
+		}
         if (fd->group->vars_written->data)
             free (fd->group->vars_written->data);
 

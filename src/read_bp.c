@@ -192,7 +192,17 @@ int adios_read_bp_fclose (ADIOS_FILE *fp)
             		if ((vr->characteristics[j].bitmap >> k) & 1)
             		{
                 		for (i = 0; i < count; i ++)
+						{
+							if (k == adios_statistic_hist)
+                    		{
+                    		    struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct *) (vr->characteristics [j].stats[i][idx].data);
+                    		    free (hist->breaks);
+                    		    free (hist->frequencies);
+                    		    free (hist);
+                    		}
+                    		else
                     		free (vr->characteristics[j].stats [i][idx].data);
+						}
                 		idx ++;
             		}
             		k ++;
@@ -1209,9 +1219,6 @@ static void adios_read_bp_get_characteristics (struct adios_index_var_struct_v1 
 	}
 	if(!vi->gmax) {
         vi->gmax = vi->value; // scalars have value but not max
-    }
-	if(!vi->gavg) {
-        vi->gavg = vi->value; // scalars have value but not avg
     }
 
 	if (sums && gsum) {

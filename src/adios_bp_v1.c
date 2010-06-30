@@ -1714,7 +1714,17 @@ int adios_clear_var_header_v1 (struct adios_var_header_struct_v1 * var_header)
             if ((c->bitmap >> j) & 1)
             {
                 for (i = 0; i < count; i ++)
-                    free (c->stats[i][idx].data);
+				{
+					if (j == adios_statistic_hist)
+					{
+						struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct *) (c->stats[i][idx].data);
+						free (hist->breaks);
+						free (hist->frequencies);
+						free (hist);
+					}
+					else
+                    	free (c->stats[i][idx].data);
+				}
                 idx ++;
             }
             j ++;

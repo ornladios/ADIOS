@@ -40,9 +40,9 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
         --enable-research-transports  \
-        --without-datatap
-#        --without-phdf5
-#        --without-netcdf
+        --without-datatap \
+        --without-phdf5 \
+        --without-netcdf
         #--with-datatap=/ccs/home/habbasi/work/ewok/
         #--enable-datatap=ib
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET
