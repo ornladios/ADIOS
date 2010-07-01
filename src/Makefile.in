@@ -54,46 +54,48 @@ bin_PROGRAMS = $(am__EXEEXT_1)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@am__append_13 = adios_dart.c read_dart.c
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@am__append_14 = $(DART_CPPFLAGS)
 @BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__append_15 = adios_datatap.c
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__append_16 = adios_datatap.c
-@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_17 = adios_phdf5.c 
-@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_18 = -DPHDF5 -DH5_USE_16_API 
-@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_19 = $(PHDF5_CPPFLAGS)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_20 = adios_phdf5.c 
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_21 = $(PHDF5_CPPFLAGS)
-@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_22 = adios_nc4.c 
-@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_23 = $(NC4PAR_CPPFLAGS)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_24 = adios_nc4.c 
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_25 = $(NC4PAR_CPPFLAGS)
-@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_26 = adios_nssi_args.c adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
-@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_27 = $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_28 = adios_nssi_args.c adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_29 = $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
-@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__append_30 = adios_mpi_stagger.c \
+@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__append_16 = $(DT_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__append_17 = adios_datatap.c
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__append_18 = $(DT_CPPFLAGS)
+@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_19 = adios_phdf5.c 
+@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_20 = -DPHDF5 -DH5_USE_16_API 
+@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_21 = $(PHDF5_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_22 = adios_phdf5.c 
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_23 = $(PHDF5_CPPFLAGS)
+@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_24 = adios_nc4.c 
+@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_25 = $(NC4PAR_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_26 = adios_nc4.c 
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_27 = $(NC4PAR_CPPFLAGS)
+@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_28 = adios_nssi_args.c adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
+@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_29 = $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_30 = adios_nssi_args.c adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_31 = $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__append_32 = adios_mpi_stagger.c \
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      adios_mpi_aggregate.c \
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      adios_provenance.c \
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      adios_mpi_cio.c \
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      adios_adaptive.c 
 
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__append_31 = adios_mpi_stagger.c \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__append_33 = adios_mpi_stagger.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                       adios_mpi_aggregate.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                       adios_provenance.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                       adios_mpi_cio.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                       adios_adaptive.c 
 
-@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_32 = -DNO_RESEARCH_TRANSPORTS
-@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_33 = -DNO_RESEARCH_TRANSPORTS
-@HAVE_DART_TRUE@am__append_34 = read_dart.c
-@BUILD_FORTRAN_TRUE@am__append_35 = libadiosreadf.a
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__append_36 = read_dart.c
-@HAVE_DART_TRUE@am__append_37 = read_dart.c
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_34 = -DNO_RESEARCH_TRANSPORTS
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_35 = -DNO_RESEARCH_TRANSPORTS
+@HAVE_DART_TRUE@am__append_36 = read_dart.c
+@BUILD_FORTRAN_TRUE@am__append_37 = libadiosreadf.a
+@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__append_38 = read_dart.c
+@HAVE_DART_TRUE@am__append_39 = read_dart.c
 # Note: utils/adios_lint needs to link with adios_internals_mxml.o which depends
 #       on adios_internals.c, buffer.c and adios_transport_hooks.c. 
 #       We put these objects in libadiosread_nompi
 #       so we do not need to make another _nompi lib just for adios_lint
-@BUILD_FORTRAN_TRUE@am__append_38 = libadiosreadf_nompi.a
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__append_39 = read_dart.c
-@HAVE_DMALLOC_TRUE@am__append_40 = -DDMALLOC $(DMALLOC_CPPFLAGS)
-@HAVE_DMALLOC_TRUE@am__append_41 = -DDMALLOC $(DMALLOC_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@am__append_40 = libadiosreadf_nompi.a
+@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__append_41 = read_dart.c
+@HAVE_DMALLOC_TRUE@am__append_42 = -DDMALLOC $(DMALLOC_CPPFLAGS)
+@HAVE_DMALLOC_TRUE@am__append_43 = -DDMALLOC $(DMALLOC_CPPFLAGS)
 subdir = src
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -444,6 +446,9 @@ DEPDIR = @DEPDIR@
 DMALLOC_CPPFLAGS = @DMALLOC_CPPFLAGS@
 DMALLOC_LDFLAGS = @DMALLOC_LDFLAGS@
 DMALLOC_LIBS = @DMALLOC_LIBS@
+DT_CPPFLAGS = @DT_CPPFLAGS@
+DT_LDFLAGS = @DT_LDFLAGS@
+DT_LIBS = @DT_LIBS@
 ECHO = @ECHO@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
@@ -537,7 +542,7 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATHPROG = @PATHPROG@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PHDF5_CPPFLAGS = @PHDF5_CPPFLAGS@ $(am__append_18)
+PHDF5_CPPFLAGS = @PHDF5_CPPFLAGS@ $(am__append_20)
 PHDF5_LDFLAGS = @PHDF5_LDFLAGS@
 PHDF5_LIBS = @PHDF5_LIBS@
 PORTALS_CFLAGS = @PORTALS_CFLAGS@
@@ -553,7 +558,6 @@ PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
 RESEARCH_TRANSPORTS_FALSE = @RESEARCH_TRANSPORTS_FALSE@
 RESEARCH_TRANSPORTS_TRUE = @RESEARCH_TRANSPORTS_TRUE@
-SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -627,7 +631,7 @@ include_HEADERS = adios.h adios_types.h adios_read.h \
 #libadiosread_a_SOURCES += adiosf_read_mod.F90
 #include_HEADERS += adiosf_read.mod 
 lib_LIBRARIES = $(am__append_9) $(am__append_10) libadiosread.a \
-	$(am__append_35) libadiosread_nompi.a $(am__append_38)
+	$(am__append_37) libadiosread_nompi.a $(am__append_40)
 @BUILD_WRITE_TRUE@libadios_a_SOURCES = adios.c common_adios.c \
 @BUILD_WRITE_TRUE@	adios_transport_hooks.c adios_mpi.c \
 @BUILD_WRITE_TRUE@	adios_mpi_stripe.c adios_mpi_stripe2.c \
@@ -639,8 +643,8 @@ lib_LIBRARIES = $(am__append_9) $(am__append_10) libadiosread.a \
 @BUILD_WRITE_TRUE@	adios_error.c adios_read.c \
 @BUILD_WRITE_TRUE@	adios_read_hooks.c common_read.c read_bp.c \
 @BUILD_WRITE_TRUE@	globals.c $(am__append_11) $(am__append_15) \
-@BUILD_WRITE_TRUE@	$(am__append_17) $(am__append_22) \
-@BUILD_WRITE_TRUE@	$(am__append_26) $(am__append_30)
+@BUILD_WRITE_TRUE@	$(am__append_19) $(am__append_24) \
+@BUILD_WRITE_TRUE@	$(am__append_28) $(am__append_32)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@libadiosf_a_SOURCES = adiosf.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	common_adios.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adios_transport_hooks.c \
@@ -662,19 +666,23 @@ lib_LIBRARIES = $(am__append_9) $(am__append_10) libadiosread.a \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	common_read.c read_bp.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	globals.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_13) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_16) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_20) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_24) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_28) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_31)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_17) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_22) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_26) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_30) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_33)
 @BUILD_WRITE_TRUE@libadios_a_CPPFLAGS = $(MXML_CPPFLAGS) \
-@BUILD_WRITE_TRUE@	$(am__append_12) $(am__append_19) \
-@BUILD_WRITE_TRUE@	$(am__append_23) $(am__append_27) \
-@BUILD_WRITE_TRUE@	$(am__append_32)
+@BUILD_WRITE_TRUE@	$(am__append_12) $(am__append_16) \
+@BUILD_WRITE_TRUE@	$(am__append_21) $(am__append_25) \
+@BUILD_WRITE_TRUE@	$(am__append_29) $(am__append_34)
 @BUILD_WRITE_TRUE@libadiosf_a_CPPFLAGS = $(MXML_CPPFLAGS) \
-@BUILD_WRITE_TRUE@	$(am__append_14) $(am__append_21) \
-@BUILD_WRITE_TRUE@	$(am__append_25) $(am__append_29) \
-@BUILD_WRITE_TRUE@	$(am__append_33)
+@BUILD_WRITE_TRUE@	$(am__append_14) $(am__append_18) \
+@BUILD_WRITE_TRUE@	$(am__append_23) $(am__append_27) \
+@BUILD_WRITE_TRUE@	$(am__append_31) $(am__append_35)
+#libadios_a_LDFLAGS = $(libadios_a_LIBS) $(DT_LDFLAGS)
+@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@libadios_a_LIBS = $(libadios_a_LIBS) $(DT_LIBS)
+#libadiosf_a_LDFLAGS = $(libadiosf_a_LIBS) $(DT_LDFLAGS)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@libadiosf_a_LIBS = $(libadiosf_a_LIBS) $(DT_LIBS)
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@dist_libadios_a_SOURCES = adios_nssi_args.x
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@nodist_libadios_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@nodist_libadiosf_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
@@ -682,24 +690,24 @@ lib_LIBRARIES = $(am__append_9) $(am__append_10) libadiosread.a \
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@CLEANFILES = adios_nssi_args.c adios_nssi_args.h
 libadiosread_a_SOURCES = adios_bp_v1.c adios_endianness.c bp_utils.c \
 	futils.c adios_error.c adios_read.c adios_read_hooks.c \
-	common_read.c read_bp.c globals.c $(am__append_34)
-libadiosread_a_CPPFLAGS = $(DART_CPPFLAGS) $(am__append_40)
+	common_read.c read_bp.c globals.c $(am__append_36)
+libadiosread_a_CPPFLAGS = $(DART_CPPFLAGS) $(am__append_42)
 @BUILD_FORTRAN_TRUE@libadiosreadf_a_SOURCES = adios_bp_v1.c \
 @BUILD_FORTRAN_TRUE@	adios_endianness.c bp_utils.c futils.c \
 @BUILD_FORTRAN_TRUE@	adios_error.c adiosf_read.c \
 @BUILD_FORTRAN_TRUE@	adios_read_hooks.c common_read.c read_bp.c \
-@BUILD_FORTRAN_TRUE@	globals.c $(am__append_36)
+@BUILD_FORTRAN_TRUE@	globals.c $(am__append_38)
 @BUILD_FORTRAN_TRUE@libadiosreadf_a_CPPFLAGS = $(DART_CPPFLAGS)
 libadiosread_nompi_a_SOURCES = mpidummy.c adios_bp_v1.c \
 	adios_endianness.c bp_utils.c futils.c adios_error.c \
 	adios_read.c adios_read_hooks.c common_read.c read_bp.c \
 	adios_internals.c buffer.c adios_transport_hooks.c globals.c \
-	$(am__append_37)
+	$(am__append_39)
 @BUILD_FORTRAN_TRUE@libadiosreadf_nompi_a_SOURCES = mpidummy.c \
 @BUILD_FORTRAN_TRUE@	adios_bp_v1.c adios_endianness.c \
 @BUILD_FORTRAN_TRUE@	bp_utils.c futils.c adios_error.c \
 @BUILD_FORTRAN_TRUE@	adiosf_read.c adios_read_hooks.c \
-@BUILD_FORTRAN_TRUE@	common_read.c read_bp.c $(am__append_39)
+@BUILD_FORTRAN_TRUE@	common_read.c read_bp.c $(am__append_41)
 noinst_LIBRARIES = libadios_internal_nompi.a
 libadios_internal_nompi_a_SOURCES = mpidummy.c \
                                     adios_bp_v1.c \
@@ -712,7 +720,7 @@ libadios_internal_nompi_a_SOURCES = mpidummy.c \
                                     adios_internals_mxml.c
 
 libadiosread_nompi_a_CPPFLAGS = -D_NOMPI $(DART_CPPFLAGS) \
-	$(am__append_41)
+	$(am__append_43)
 libadiosreadf_nompi_a_CPPFLAGS = -D_NOMPI $(DART_CPPFLAGS)
 libadios_internal_nompi_a_CPPFLAGS = -D_NOMPI $(MXML_CPPFLAGS)
 #if BUILD_FORTRAN

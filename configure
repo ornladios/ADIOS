@@ -464,7 +464,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CPP EGREP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE HAVE_MPI_TRUE HAVE_MPI_FALSE MPICC MPILIBS MPICXX BUILD_FORTRAN_TRUE BUILD_FORTRAN_FALSE FC FCFLAGS ac_ct_FC FCLIBS MPIFC build build_cpu build_vendor build_os host host_cpu host_vendor host_os SED LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL HAVE_MXML_TRUE HAVE_MXML_FALSE MXML_LIBS MXML_LDFLAGS MXML_CPPFLAGS GENGETOPT HAVE_GENGETOPT_TRUE HAVE_GENGETOPT_FALSE PTHREAD_CC PTHREAD_LIBS PTHREAD_CFLAGS HAVE_INFINIBAND_TRUE HAVE_INFINIBAND_FALSE INFINIBAND_CPPFLAGS INFINIBAND_CFLAGS INFINIBAND_LDFLAGS INFINIBAND_LIBS INFINIBAND_HEADER HAVE_PORTALS_TRUE HAVE_PORTALS_FALSE NEED_DARWIN_SINGLE_MODULE_TRUE NEED_DARWIN_SINGLE_MODULE_FALSE PORTALS_CPPFLAGS PORTALS_CFLAGS PORTALS_LDFLAGS PORTALS_LIBS PORTALS_HEADER PORTALS_NAL_HEADER PORTALS_RT_HEADER HAVE_HDF5_TRUE HAVE_HDF5_FALSE HDF5_LIBS HDF5_LDFLAGS HDF5_CPPFLAGS HAVE_PHDF5_TRUE HAVE_PHDF5_FALSE PHDF5_LIBS PHDF5_LDFLAGS PHDF5_CPPFLAGS HAVE_NETCDF_TRUE HAVE_NETCDF_FALSE NETCDF_LIBS NETCDF_LDFLAGS NETCDF_CPPFLAGS HAVE_NC4PAR_TRUE HAVE_NC4PAR_FALSE NC4PAR_LIBS NC4PAR_LDFLAGS NC4PAR_CPPFLAGS HAVE_PABLO_TRUE HAVE_PABLO_FALSE PABLO_LIBS PABLO_LDFLAGS PABLO_CPPFLAGS HAVE_NSSI_TRUE HAVE_NSSI_FALSE NSSI_LIBS NSSI_SERVER_LIBS NSSI_CFLAGS NSSI_CPPFLAGS NSSI_LDFLAGS NSSI_SRCDIR NSSI_BUILDDIR HAVE_DART_TRUE HAVE_DART_FALSE DART_LIBS DART_LDFLAGS DART_CPPFLAGS HAVE_DMALLOC_TRUE HAVE_DMALLOC_FALSE DMALLOC_LIBS DMALLOC_LDFLAGS DMALLOC_CPPFLAGS CSH PATHPROG RESEARCH_TRANSPORTS_TRUE RESEARCH_TRANSPORTS_FALSE HAVE_DATATAP_TRUE HAVE_DATATAP_FALSE BUILD_WRITE_TRUE BUILD_WRITE_FALSE LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CPP EGREP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE HAVE_MPI_TRUE HAVE_MPI_FALSE MPICC MPILIBS MPICXX BUILD_FORTRAN_TRUE BUILD_FORTRAN_FALSE FC FCFLAGS ac_ct_FC FCLIBS MPIFC build build_cpu build_vendor build_os host host_cpu host_vendor host_os LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL HAVE_MXML_TRUE HAVE_MXML_FALSE MXML_LIBS MXML_LDFLAGS MXML_CPPFLAGS GENGETOPT HAVE_GENGETOPT_TRUE HAVE_GENGETOPT_FALSE PTHREAD_CC PTHREAD_LIBS PTHREAD_CFLAGS HAVE_INFINIBAND_TRUE HAVE_INFINIBAND_FALSE INFINIBAND_CPPFLAGS INFINIBAND_CFLAGS INFINIBAND_LDFLAGS INFINIBAND_LIBS INFINIBAND_HEADER HAVE_PORTALS_TRUE HAVE_PORTALS_FALSE NEED_DARWIN_SINGLE_MODULE_TRUE NEED_DARWIN_SINGLE_MODULE_FALSE PORTALS_CPPFLAGS PORTALS_CFLAGS PORTALS_LDFLAGS PORTALS_LIBS PORTALS_HEADER PORTALS_NAL_HEADER PORTALS_RT_HEADER HAVE_HDF5_TRUE HAVE_HDF5_FALSE HDF5_LIBS HDF5_LDFLAGS HDF5_CPPFLAGS HAVE_PHDF5_TRUE HAVE_PHDF5_FALSE PHDF5_LIBS PHDF5_LDFLAGS PHDF5_CPPFLAGS HAVE_NETCDF_TRUE HAVE_NETCDF_FALSE NETCDF_LIBS NETCDF_LDFLAGS NETCDF_CPPFLAGS HAVE_NC4PAR_TRUE HAVE_NC4PAR_FALSE NC4PAR_LIBS NC4PAR_LDFLAGS NC4PAR_CPPFLAGS HAVE_PABLO_TRUE HAVE_PABLO_FALSE PABLO_LIBS PABLO_LDFLAGS PABLO_CPPFLAGS HAVE_NSSI_TRUE HAVE_NSSI_FALSE NSSI_LIBS NSSI_SERVER_LIBS NSSI_CFLAGS NSSI_CPPFLAGS NSSI_LDFLAGS NSSI_SRCDIR NSSI_BUILDDIR HAVE_DART_TRUE HAVE_DART_FALSE DART_LIBS DART_LDFLAGS DART_CPPFLAGS HAVE_DMALLOC_TRUE HAVE_DMALLOC_FALSE DMALLOC_LIBS DMALLOC_LDFLAGS DMALLOC_CPPFLAGS CSH PATHPROG DT_LIBS DT_CPPFLAGS DT_LDFLAGS RESEARCH_TRANSPORTS_TRUE RESEARCH_TRANSPORTS_FALSE HAVE_DATATAP_TRUE HAVE_DATATAP_FALSE BUILD_WRITE_TRUE BUILD_WRITE_FALSE LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -7247,7 +7247,6 @@ do
     done
   done
 done
-IFS=$as_save_IFS
 lt_ac_max=0
 lt_ac_count=0
 # Add /usr/xpg4/bin/sed as it is typically found on Solaris
@@ -7282,7 +7281,6 @@ done
 fi
 
 SED=$lt_cv_path_SED
-
 echo "$as_me:$LINENO: result: $SED" >&5
 echo "${ECHO_T}$SED" >&6
 
@@ -7707,7 +7705,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 7710 "configure"' > conftest.$ac_ext
+  echo '#line 7708 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8622,7 +8620,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:8625:" \
+echo "$as_me:8623:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -9685,11 +9683,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9688: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9686: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9692: \$? = $ac_status" >&5
+   echo "$as_me:9690: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -9953,11 +9951,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9956: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:9954: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9960: \$? = $ac_status" >&5
+   echo "$as_me:9958: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -10057,11 +10055,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:10060: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:10058: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:10064: \$? = $ac_status" >&5
+   echo "$as_me:10062: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11538,31 +11536,10 @@ linux*)
   # before this can be enabled.
   hardcode_into_libs=yes
 
-  # find out which ABI we are using
-  libsuff=
-  case "$host_cpu" in
-  x86_64*|s390x*|powerpc64*)
-    echo '#line 11545 "configure"' > conftest.$ac_ext
-    if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; then
-      case `/usr/bin/file conftest.$ac_objext` in
-      *64-bit*)
-        libsuff=64
-        sys_lib_search_path_spec="/lib${libsuff} /usr/lib${libsuff} /usr/local/lib${libsuff}"
-        ;;
-      esac
-    fi
-    rm -rf conftest*
-    ;;
-  esac
-
   # Append ld.so.conf contents to the search path
   if test -f /etc/ld.so.conf; then
-    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib${libsuff} /usr/lib${libsuff} $lt_ld_extra"
+    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;/^$/d' | tr '\n' ' '`
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -12495,7 +12472,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12498 "configure"
+#line 12475 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12595,7 +12572,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12598 "configure"
+#line 12575 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12926,9 +12903,6 @@ CC=$lt_compiler
 # Is the compiler the GNU C compiler?
 with_gcc=$GCC
 
-gcc_dir=\`gcc -print-file-name=. | $SED 's,/\.$,,'\`
-gcc_ver=\`gcc -dumpversion\`
-
 # An ERE matcher.
 EGREP=$lt_EGREP
 
@@ -13062,11 +13036,11 @@ striplib=$lt_striplib
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
-predep_objects=\`echo $lt_predep_objects | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+predep_objects=$lt_predep_objects
 
 # Dependencies to place after the objects being linked to create a
 # shared library.
-postdep_objects=\`echo $lt_postdep_objects | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+postdep_objects=$lt_postdep_objects
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
@@ -13078,7 +13052,7 @@ postdeps=$lt_postdeps
 
 # The library search path used internally by the compiler when linking
 # a shared library.
-compiler_lib_search_path=\`echo $lt_compiler_lib_search_path | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+compiler_lib_search_path=$lt_compiler_lib_search_path
 
 # Method to check whether dependent libraries are shared objects.
 deplibs_check_method=$lt_deplibs_check_method
@@ -13158,7 +13132,7 @@ variables_saved_for_relink="$variables_saved_for_relink"
 link_all_deplibs=$link_all_deplibs
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=\`echo $lt_sys_lib_search_path_spec | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+sys_lib_search_path_spec=$lt_sys_lib_search_path_spec
 
 # Run-time system search path for libraries
 sys_lib_dlsearch_path_spec=$lt_sys_lib_dlsearch_path_spec
@@ -14954,11 +14928,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14957: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14931: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:14961: \$? = $ac_status" >&5
+   echo "$as_me:14935: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -15058,11 +15032,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15061: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15035: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:15065: \$? = $ac_status" >&5
+   echo "$as_me:15039: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15590,31 +15564,10 @@ linux*)
   # before this can be enabled.
   hardcode_into_libs=yes
 
-  # find out which ABI we are using
-  libsuff=
-  case "$host_cpu" in
-  x86_64*|s390x*|powerpc64*)
-    echo '#line 15597 "configure"' > conftest.$ac_ext
-    if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; then
-      case `/usr/bin/file conftest.$ac_objext` in
-      *64-bit*)
-        libsuff=64
-        sys_lib_search_path_spec="/lib${libsuff} /usr/lib${libsuff} /usr/local/lib${libsuff}"
-        ;;
-      esac
-    fi
-    rm -rf conftest*
-    ;;
-  esac
-
   # Append ld.so.conf contents to the search path
   if test -f /etc/ld.so.conf; then
-    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib${libsuff} /usr/lib${libsuff} $lt_ld_extra"
+    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;/^$/d' | tr '\n' ' '`
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -15998,9 +15951,6 @@ CC=$lt_compiler_CXX
 # Is the compiler the GNU C compiler?
 with_gcc=$GCC_CXX
 
-gcc_dir=\`gcc -print-file-name=. | $SED 's,/\.$,,'\`
-gcc_ver=\`gcc -dumpversion\`
-
 # An ERE matcher.
 EGREP=$lt_EGREP
 
@@ -16134,11 +16084,11 @@ striplib=$lt_striplib
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
-predep_objects=\`echo $lt_predep_objects_CXX | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+predep_objects=$lt_predep_objects_CXX
 
 # Dependencies to place after the objects being linked to create a
 # shared library.
-postdep_objects=\`echo $lt_postdep_objects_CXX | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+postdep_objects=$lt_postdep_objects_CXX
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
@@ -16150,7 +16100,7 @@ postdeps=$lt_postdeps_CXX
 
 # The library search path used internally by the compiler when linking
 # a shared library.
-compiler_lib_search_path=\`echo $lt_compiler_lib_search_path_CXX | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+compiler_lib_search_path=$lt_compiler_lib_search_path_CXX
 
 # Method to check whether dependent libraries are shared objects.
 deplibs_check_method=$lt_deplibs_check_method
@@ -16230,7 +16180,7 @@ variables_saved_for_relink="$variables_saved_for_relink"
 link_all_deplibs=$link_all_deplibs_CXX
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=\`echo $lt_sys_lib_search_path_spec | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+sys_lib_search_path_spec=$lt_sys_lib_search_path_spec
 
 # Run-time system search path for libraries
 sys_lib_dlsearch_path_spec=$lt_sys_lib_dlsearch_path_spec
@@ -16652,11 +16602,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16655: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16605: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16659: \$? = $ac_status" >&5
+   echo "$as_me:16609: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16756,11 +16706,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16759: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16709: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16763: \$? = $ac_status" >&5
+   echo "$as_me:16713: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18201,31 +18151,10 @@ linux*)
   # before this can be enabled.
   hardcode_into_libs=yes
 
-  # find out which ABI we are using
-  libsuff=
-  case "$host_cpu" in
-  x86_64*|s390x*|powerpc64*)
-    echo '#line 18208 "configure"' > conftest.$ac_ext
-    if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; then
-      case `/usr/bin/file conftest.$ac_objext` in
-      *64-bit*)
-        libsuff=64
-        sys_lib_search_path_spec="/lib${libsuff} /usr/lib${libsuff} /usr/local/lib${libsuff}"
-        ;;
-      esac
-    fi
-    rm -rf conftest*
-    ;;
-  esac
-
   # Append ld.so.conf contents to the search path
   if test -f /etc/ld.so.conf; then
-    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib${libsuff} /usr/lib${libsuff} $lt_ld_extra"
+    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;/^$/d' | tr '\n' ' '`
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -18609,9 +18538,6 @@ CC=$lt_compiler_F77
 # Is the compiler the GNU C compiler?
 with_gcc=$GCC_F77
 
-gcc_dir=\`gcc -print-file-name=. | $SED 's,/\.$,,'\`
-gcc_ver=\`gcc -dumpversion\`
-
 # An ERE matcher.
 EGREP=$lt_EGREP
 
@@ -18745,11 +18671,11 @@ striplib=$lt_striplib
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
-predep_objects=\`echo $lt_predep_objects_F77 | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+predep_objects=$lt_predep_objects_F77
 
 # Dependencies to place after the objects being linked to create a
 # shared library.
-postdep_objects=\`echo $lt_postdep_objects_F77 | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+postdep_objects=$lt_postdep_objects_F77
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
@@ -18761,7 +18687,7 @@ postdeps=$lt_postdeps_F77
 
 # The library search path used internally by the compiler when linking
 # a shared library.
-compiler_lib_search_path=\`echo $lt_compiler_lib_search_path_F77 | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+compiler_lib_search_path=$lt_compiler_lib_search_path_F77
 
 # Method to check whether dependent libraries are shared objects.
 deplibs_check_method=$lt_deplibs_check_method
@@ -18841,7 +18767,7 @@ variables_saved_for_relink="$variables_saved_for_relink"
 link_all_deplibs=$link_all_deplibs_F77
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=\`echo $lt_sys_lib_search_path_spec | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+sys_lib_search_path_spec=$lt_sys_lib_search_path_spec
 
 # Run-time system search path for libraries
 sys_lib_dlsearch_path_spec=$lt_sys_lib_dlsearch_path_spec
@@ -18983,11 +18909,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18986: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18912: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:18990: \$? = $ac_status" >&5
+   echo "$as_me:18916: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -19251,11 +19177,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:19254: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:19180: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:19258: \$? = $ac_status" >&5
+   echo "$as_me:19184: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -19355,11 +19281,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:19358: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:19284: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:19362: \$? = $ac_status" >&5
+   echo "$as_me:19288: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -20836,31 +20762,10 @@ linux*)
   # before this can be enabled.
   hardcode_into_libs=yes
 
-  # find out which ABI we are using
-  libsuff=
-  case "$host_cpu" in
-  x86_64*|s390x*|powerpc64*)
-    echo '#line 20843 "configure"' > conftest.$ac_ext
-    if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; then
-      case `/usr/bin/file conftest.$ac_objext` in
-      *64-bit*)
-        libsuff=64
-        sys_lib_search_path_spec="/lib${libsuff} /usr/lib${libsuff} /usr/local/lib${libsuff}"
-        ;;
-      esac
-    fi
-    rm -rf conftest*
-    ;;
-  esac
-
   # Append ld.so.conf contents to the search path
   if test -f /etc/ld.so.conf; then
-    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s 2>/dev/null", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;/^$/d' | tr '\n' ' '`
-    sys_lib_dlsearch_path_spec="/lib${libsuff} /usr/lib${libsuff} $lt_ld_extra"
+    lt_ld_extra=`awk '/^include / { system(sprintf("cd /etc; cat %s", \$2)); skip = 1; } { if (!skip) print \$0; skip = 0; }' < /etc/ld.so.conf | $SED -e 's/#.*//;s/[:,	]/ /g;s/=[^=]*$//;s/=[^= ]* / /g;/^$/d' | tr '\n' ' '`
+    sys_lib_dlsearch_path_spec="/lib /usr/lib $lt_ld_extra"
   fi
 
   # We used to test for /lib/ld.so.1 and disable shared libraries on
@@ -21244,9 +21149,6 @@ CC=$lt_compiler_GCJ
 # Is the compiler the GNU C compiler?
 with_gcc=$GCC_GCJ
 
-gcc_dir=\`gcc -print-file-name=. | $SED 's,/\.$,,'\`
-gcc_ver=\`gcc -dumpversion\`
-
 # An ERE matcher.
 EGREP=$lt_EGREP
 
@@ -21380,11 +21282,11 @@ striplib=$lt_striplib
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
-predep_objects=\`echo $lt_predep_objects_GCJ | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+predep_objects=$lt_predep_objects_GCJ
 
 # Dependencies to place after the objects being linked to create a
 # shared library.
-postdep_objects=\`echo $lt_postdep_objects_GCJ | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+postdep_objects=$lt_postdep_objects_GCJ
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
@@ -21396,7 +21298,7 @@ postdeps=$lt_postdeps_GCJ
 
 # The library search path used internally by the compiler when linking
 # a shared library.
-compiler_lib_search_path=\`echo $lt_compiler_lib_search_path_GCJ | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+compiler_lib_search_path=$lt_compiler_lib_search_path_GCJ
 
 # Method to check whether dependent libraries are shared objects.
 deplibs_check_method=$lt_deplibs_check_method
@@ -21476,7 +21378,7 @@ variables_saved_for_relink="$variables_saved_for_relink"
 link_all_deplibs=$link_all_deplibs_GCJ
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=\`echo $lt_sys_lib_search_path_spec | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+sys_lib_search_path_spec=$lt_sys_lib_search_path_spec
 
 # Run-time system search path for libraries
 sys_lib_dlsearch_path_spec=$lt_sys_lib_dlsearch_path_spec
@@ -21728,9 +21630,6 @@ CC=$lt_compiler_RC
 # Is the compiler the GNU C compiler?
 with_gcc=$GCC_RC
 
-gcc_dir=\`gcc -print-file-name=. | $SED 's,/\.$,,'\`
-gcc_ver=\`gcc -dumpversion\`
-
 # An ERE matcher.
 EGREP=$lt_EGREP
 
@@ -21864,11 +21763,11 @@ striplib=$lt_striplib
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
-predep_objects=\`echo $lt_predep_objects_RC | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+predep_objects=$lt_predep_objects_RC
 
 # Dependencies to place after the objects being linked to create a
 # shared library.
-postdep_objects=\`echo $lt_postdep_objects_RC | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+postdep_objects=$lt_postdep_objects_RC
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
@@ -21880,7 +21779,7 @@ postdeps=$lt_postdeps_RC
 
 # The library search path used internally by the compiler when linking
 # a shared library.
-compiler_lib_search_path=\`echo $lt_compiler_lib_search_path_RC | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+compiler_lib_search_path=$lt_compiler_lib_search_path_RC
 
 # Method to check whether dependent libraries are shared objects.
 deplibs_check_method=$lt_deplibs_check_method
@@ -21960,7 +21859,7 @@ variables_saved_for_relink="$variables_saved_for_relink"
 link_all_deplibs=$link_all_deplibs_RC
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=\`echo $lt_sys_lib_search_path_spec | \$SED -e "s@\${gcc_dir}@\\\${gcc_dir}@g;s@\${gcc_ver}@\\\${gcc_ver}@g"\`
+sys_lib_search_path_spec=$lt_sys_lib_search_path_spec
 
 # Run-time system search path for libraries
 sys_lib_dlsearch_path_spec=$lt_sys_lib_dlsearch_path_spec
@@ -28008,11 +27907,11 @@ fi
 
 search_list="$datatap_dir/thin_ib.h $datatap_dir/lib/thin_ib.h $datatap_dir/include/thin_ib.h $search_list /usr/include/thin_ib.h /usr/local/include/thin_ib.h /opt/ibpbio/include/thin_ib.h /opt/misc/include/thin_ib.h /opt/misc/include/$cercs_cv_archive/thin_ib.h"
 tmp_search_results=""
-echo "configure:28011: searching for $search_list " >&5
+echo "configure:27910: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28015: first found $tmp_search_results " >&5
+	echo "configure:27914: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28032,11 +27931,11 @@ echo "${ECHO_T}$cercs_cv_ibpbio_include_arg" >&6
 if test -n "$cercs_cv_ibpbio_include_arg"; then
 arg="$cercs_cv_ibpbio_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "ibpbio"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -28100,11 +27999,11 @@ fi
 
 search_list="$datatap_dir/libibclient.la $datatap_dir/lib/libibclient.la $datatap_dir/include/libibclient.la $search_list /usr/lib/libibclient.la /usr/local/lib/libibclient.la /opt/ibpbio/lib/libibclient.la /opt/misc/lib/libibclient.la /opt/misc/lib/$cercs_cv_archive/libibclient.la"
 tmp_search_results=""
-echo "configure:28103: searching for $search_list " >&5
+echo "configure:28002: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28107: first found $tmp_search_results " >&5
+	echo "configure:28006: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28142,7 +28041,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -28173,11 +28072,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:28176: searching for $search_list " >&5
+echo "configure:28075: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28180: first found $tmp_search_results " >&5
+	echo "configure:28079: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28197,11 +28096,11 @@ echo "${ECHO_T}$cercs_cv_ibpbio_include_arg" >&6
 if test -n "$cercs_cv_ibpbio_include_arg"; then
 arg="$cercs_cv_ibpbio_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "ibpbio"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -28215,11 +28114,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:28218: searching for $search_list " >&5
+echo "configure:28117: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28222: first found $tmp_search_results " >&5
+	echo "configure:28121: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28257,7 +28156,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -28343,11 +28242,11 @@ fi
 
 search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
 tmp_search_results=""
-echo "configure:28346: searching for $search_list " >&5
+echo "configure:28245: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28350: first found $tmp_search_results " >&5
+	echo "configure:28249: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28367,11 +28266,11 @@ echo "${ECHO_T}$cercs_cv_ffs_include_arg" >&6
 if test -n "$cercs_cv_ffs_include_arg"; then
 arg="$cercs_cv_ffs_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "ffs"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -28435,11 +28334,11 @@ fi
 
 search_list="$datatap_dir/libffs.la $datatap_dir/lib/libffs.la $datatap_dir/include/libffs.la $search_list /usr/lib/libffs.la /usr/local/lib/libffs.la /opt/ffs/lib/libffs.la /opt/misc/lib/libffs.la /opt/misc/lib/$cercs_cv_archive/libffs.la"
 tmp_search_results=""
-echo "configure:28438: searching for $search_list " >&5
+echo "configure:28337: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28442: first found $tmp_search_results " >&5
+	echo "configure:28341: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28477,7 +28376,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -28508,11 +28407,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:28511: searching for $search_list " >&5
+echo "configure:28410: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28515: first found $tmp_search_results " >&5
+	echo "configure:28414: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28532,11 +28431,11 @@ echo "${ECHO_T}$cercs_cv_ffs_include_arg" >&6
 if test -n "$cercs_cv_ffs_include_arg"; then
 arg="$cercs_cv_ffs_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "ffs"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -28550,11 +28449,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:28553: searching for $search_list " >&5
+echo "configure:28452: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28557: first found $tmp_search_results " >&5
+	echo "configure:28456: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28592,7 +28491,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -28678,11 +28577,11 @@ fi
 
 search_list="$datatap_dir/gen_thread.h $datatap_dir/lib/gen_thread.h $datatap_dir/include/gen_thread.h $search_list /usr/include/gen_thread.h /usr/local/include/gen_thread.h /opt/gen_thread/include/gen_thread.h /opt/misc/include/gen_thread.h /opt/misc/include/$cercs_cv_archive/gen_thread.h"
 tmp_search_results=""
-echo "configure:28681: searching for $search_list " >&5
+echo "configure:28580: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28685: first found $tmp_search_results " >&5
+	echo "configure:28584: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28702,11 +28601,11 @@ echo "${ECHO_T}$cercs_cv_gen_thread_include_arg" >&6
 if test -n "$cercs_cv_gen_thread_include_arg"; then
 arg="$cercs_cv_gen_thread_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "gen_thread"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -28770,11 +28669,11 @@ fi
 
 search_list="$datatap_dir/libgen_thread.la $datatap_dir/lib/libgen_thread.la $datatap_dir/include/libgen_thread.la $search_list /usr/lib/libgen_thread.la /usr/local/lib/libgen_thread.la /opt/gen_thread/lib/libgen_thread.la /opt/misc/lib/libgen_thread.la /opt/misc/lib/$cercs_cv_archive/libgen_thread.la"
 tmp_search_results=""
-echo "configure:28773: searching for $search_list " >&5
+echo "configure:28672: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28777: first found $tmp_search_results " >&5
+	echo "configure:28676: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28812,7 +28711,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -28843,11 +28742,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:28846: searching for $search_list " >&5
+echo "configure:28745: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28850: first found $tmp_search_results " >&5
+	echo "configure:28749: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28867,11 +28766,11 @@ echo "${ECHO_T}$cercs_cv_gen_thread_include_arg" >&6
 if test -n "$cercs_cv_gen_thread_include_arg"; then
 arg="$cercs_cv_gen_thread_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "gen_thread"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -28885,11 +28784,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:28888: searching for $search_list " >&5
+echo "configure:28787: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28892: first found $tmp_search_results " >&5
+	echo "configure:28791: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28927,29 +28826,29 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
 fi
 
 		if test -n "$cercs_cv_ibpbio_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ibpbio_link_dir"
-			LIBS="$DT_LIBS -libclient"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ibpbio_link_dir"
+			DT_LIBS="$DT_LIBS -libclient"
 			datatap=ibverbs
 		else
 			temptest=disable
 		fi
 		if test -n "$cercs_cv_ffs_link_dir";then
-                LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ffs_link_dir"
-			LIBS="$DT_LIBS -lgen_thread"
+                   	DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ffs_link_dir"
+			DT_LIBS="$DT_LIBS -lgen_thread"
 			datatap=ibverbs
 		else
 			temptest=disable
 		fi
 		if test -n "$cercs_cv_gen_thread_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_gen_thread_link_dir"
-			LIBS="$DT_LIBS -lgen_thread"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_gen_thread_link_dir"
+			DT_LIBS="$DT_LIBS -lgen_thread"
 			datatap=ibverbs
 		else
 			temptest=disable
@@ -29036,11 +28935,11 @@ fi
 
 search_list="$datatap_dir/thin_portal.h $datatap_dir/lib/thin_portal.h $datatap_dir/include/thin_portal.h $search_list /usr/include/thin_portal.h /usr/local/include/thin_portal.h /opt/ptlpbio/include/thin_portal.h /opt/misc/include/thin_portal.h /opt/misc/include/$cercs_cv_archive/thin_portal.h"
 tmp_search_results=""
-echo "configure:29039: searching for $search_list " >&5
+echo "configure:28938: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29043: first found $tmp_search_results " >&5
+	echo "configure:28942: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29060,11 +28959,11 @@ echo "${ECHO_T}$cercs_cv_ptlpbio_include_arg" >&6
 if test -n "$cercs_cv_ptlpbio_include_arg"; then
 arg="$cercs_cv_ptlpbio_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "ptlpbio"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -29128,11 +29027,11 @@ fi
 
 search_list="$datatap_dir/libptlclient.a $datatap_dir/lib/libptlclient.a $datatap_dir/include/libptlclient.a $search_list /usr/lib/libptlclient.a /usr/local/lib/libptlclient.a /opt/ptlpbio/lib/libptlclient.a /opt/misc/lib/libptlclient.a /opt/misc/lib/$cercs_cv_archive/libptlclient.a"
 tmp_search_results=""
-echo "configure:29131: searching for $search_list " >&5
+echo "configure:29030: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29135: first found $tmp_search_results " >&5
+	echo "configure:29034: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29170,7 +29069,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -29201,11 +29100,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:29204: searching for $search_list " >&5
+echo "configure:29103: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29208: first found $tmp_search_results " >&5
+	echo "configure:29107: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29225,11 +29124,11 @@ echo "${ECHO_T}$cercs_cv_ptlpbio_include_arg" >&6
 if test -n "$cercs_cv_ptlpbio_include_arg"; then
 arg="$cercs_cv_ptlpbio_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "ptlpbio"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -29243,11 +29142,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:29246: searching for $search_list " >&5
+echo "configure:29145: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29250: first found $tmp_search_results " >&5
+	echo "configure:29149: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29285,7 +29184,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -29293,8 +29192,8 @@ fi
 
 
 		if test -n "$cercs_cv_ptlpbio_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ptlpbio_link_dir"
-			LIBS="$DT_LIBS -lptlclient"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ptlpbio_link_dir"
+			DT_LIBS="$DT_LIBS -lptlclient"
 			datatap=portals
 		else
 			temptest=disable
@@ -29403,11 +29302,11 @@ fi
 
 search_list="$datatap_dir/thin_ib.h $datatap_dir/lib/thin_ib.h $datatap_dir/include/thin_ib.h $search_list /usr/include/thin_ib.h /usr/local/include/thin_ib.h /opt/ibpbio/include/thin_ib.h /opt/misc/include/thin_ib.h /opt/misc/include/$cercs_cv_archive/thin_ib.h"
 tmp_search_results=""
-echo "configure:29406: searching for $search_list " >&5
+echo "configure:29305: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29410: first found $tmp_search_results " >&5
+	echo "configure:29309: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29427,11 +29326,11 @@ echo "${ECHO_T}$cercs_cv_ibpbio_include_arg" >&6
 if test -n "$cercs_cv_ibpbio_include_arg"; then
 arg="$cercs_cv_ibpbio_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "ibpbio"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -29495,11 +29394,11 @@ fi
 
 search_list="$datatap_dir/libibclient.la $datatap_dir/lib/libibclient.la $datatap_dir/include/libibclient.la $search_list /usr/lib/libibclient.la /usr/local/lib/libibclient.la /opt/ibpbio/lib/libibclient.la /opt/misc/lib/libibclient.la /opt/misc/lib/$cercs_cv_archive/libibclient.la"
 tmp_search_results=""
-echo "configure:29498: searching for $search_list " >&5
+echo "configure:29397: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29502: first found $tmp_search_results " >&5
+	echo "configure:29401: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29537,7 +29436,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -29568,11 +29467,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:29571: searching for $search_list " >&5
+echo "configure:29470: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29575: first found $tmp_search_results " >&5
+	echo "configure:29474: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29592,11 +29491,11 @@ echo "${ECHO_T}$cercs_cv_ibpbio_include_arg" >&6
 if test -n "$cercs_cv_ibpbio_include_arg"; then
 arg="$cercs_cv_ibpbio_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "ibpbio"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -29610,11 +29509,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:29613: searching for $search_list " >&5
+echo "configure:29512: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29617: first found $tmp_search_results " >&5
+	echo "configure:29516: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29652,7 +29551,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -29738,11 +29637,11 @@ fi
 
 search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
 tmp_search_results=""
-echo "configure:29741: searching for $search_list " >&5
+echo "configure:29640: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29745: first found $tmp_search_results " >&5
+	echo "configure:29644: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29762,11 +29661,11 @@ echo "${ECHO_T}$cercs_cv_ffs_include_arg" >&6
 if test -n "$cercs_cv_ffs_include_arg"; then
 arg="$cercs_cv_ffs_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "ffs"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -29830,11 +29729,11 @@ fi
 
 search_list="$datatap_dir/libffs.la $datatap_dir/lib/libffs.la $datatap_dir/include/libffs.la $search_list /usr/lib/libffs.la /usr/local/lib/libffs.la /opt/ffs/lib/libffs.la /opt/misc/lib/libffs.la /opt/misc/lib/$cercs_cv_archive/libffs.la"
 tmp_search_results=""
-echo "configure:29833: searching for $search_list " >&5
+echo "configure:29732: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29837: first found $tmp_search_results " >&5
+	echo "configure:29736: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29872,7 +29771,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -29903,11 +29802,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:29906: searching for $search_list " >&5
+echo "configure:29805: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29910: first found $tmp_search_results " >&5
+	echo "configure:29809: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29927,11 +29826,11 @@ echo "${ECHO_T}$cercs_cv_ffs_include_arg" >&6
 if test -n "$cercs_cv_ffs_include_arg"; then
 arg="$cercs_cv_ffs_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "ffs"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -29945,11 +29844,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:29948: searching for $search_list " >&5
+echo "configure:29847: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29952: first found $tmp_search_results " >&5
+	echo "configure:29851: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29987,7 +29886,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -30073,11 +29972,11 @@ fi
 
 search_list="$datatap_dir/gen_thread.h $datatap_dir/lib/gen_thread.h $datatap_dir/include/gen_thread.h $search_list /usr/include/gen_thread.h /usr/local/include/gen_thread.h /opt/gen_thread/include/gen_thread.h /opt/misc/include/gen_thread.h /opt/misc/include/$cercs_cv_archive/gen_thread.h"
 tmp_search_results=""
-echo "configure:30076: searching for $search_list " >&5
+echo "configure:29975: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30080: first found $tmp_search_results " >&5
+	echo "configure:29979: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30097,11 +29996,11 @@ echo "${ECHO_T}$cercs_cv_gen_thread_include_arg" >&6
 if test -n "$cercs_cv_gen_thread_include_arg"; then
 arg="$cercs_cv_gen_thread_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "gen_thread"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -30165,11 +30064,11 @@ fi
 
 search_list="$datatap_dir/libgen_thread.la $datatap_dir/lib/libgen_thread.la $datatap_dir/include/libgen_thread.la $search_list /usr/lib/libgen_thread.la /usr/local/lib/libgen_thread.la /opt/gen_thread/lib/libgen_thread.la /opt/misc/lib/libgen_thread.la /opt/misc/lib/$cercs_cv_archive/libgen_thread.la"
 tmp_search_results=""
-echo "configure:30168: searching for $search_list " >&5
+echo "configure:30067: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30172: first found $tmp_search_results " >&5
+	echo "configure:30071: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30207,7 +30106,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -30238,11 +30137,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:30241: searching for $search_list " >&5
+echo "configure:30140: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30245: first found $tmp_search_results " >&5
+	echo "configure:30144: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30262,11 +30161,11 @@ echo "${ECHO_T}$cercs_cv_gen_thread_include_arg" >&6
 if test -n "$cercs_cv_gen_thread_include_arg"; then
 arg="$cercs_cv_gen_thread_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "gen_thread"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -30280,11 +30179,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:30283: searching for $search_list " >&5
+echo "configure:30182: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30287: first found $tmp_search_results " >&5
+	echo "configure:30186: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30322,29 +30221,29 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
 fi
 
 		if test -n "$cercs_cv_ibpbio_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ibpbio_link_dir"
-			LIBS="$DT_LIBS -libclient"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ibpbio_link_dir"
+			DT_LIBS="$DT_LIBS -libclient"
 			datatap=ibverbs
 		else
 			temptest=disable
 		fi
 		if test -n "$cercs_cv_ffs_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ffs_link_dir"
-			LIBS="$DT_LIBS -lgen_thread"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ffs_link_dir"
+			DT_LIBS="$DT_LIBS -lgen_thread"
 			datatap=ibverbs
 		else
 			temptest=disable
 		fi
 		if test -n "$cercs_cv_gen_thread_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_gen_thread_link_dir"
-			LIBS="$DT_LIBS -lgen_thread"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_gen_thread_link_dir"
+			DT_LIBS="$DT_LIBS -lgen_thread"
 			datatap=ibverbs
 		else
 			temptest=disable
@@ -30431,11 +30330,11 @@ fi
 
 search_list="$datatap_dir/thin_portal.h $datatap_dir/lib/thin_portal.h $datatap_dir/include/thin_portal.h $search_list /usr/include/thin_portal.h /usr/local/include/thin_portal.h /opt/ptlpbio/include/thin_portal.h /opt/misc/include/thin_portal.h /opt/misc/include/$cercs_cv_archive/thin_portal.h"
 tmp_search_results=""
-echo "configure:30434: searching for $search_list " >&5
+echo "configure:30333: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30438: first found $tmp_search_results " >&5
+	echo "configure:30337: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30455,11 +30354,11 @@ echo "${ECHO_T}$cercs_cv_ptlpbio_include_arg" >&6
 if test -n "$cercs_cv_ptlpbio_include_arg"; then
 arg="$cercs_cv_ptlpbio_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "ptlpbio"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -30523,11 +30422,11 @@ fi
 
 search_list="$datatap_dir/libptlclient.a $datatap_dir/lib/libptlclient.a $datatap_dir/include/libptlclient.a $search_list /usr/lib/libptlclient.a /usr/local/lib/libptlclient.a /opt/ptlpbio/lib/libptlclient.a /opt/misc/lib/libptlclient.a /opt/misc/lib/$cercs_cv_archive/libptlclient.a"
 tmp_search_results=""
-echo "configure:30526: searching for $search_list " >&5
+echo "configure:30425: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30530: first found $tmp_search_results " >&5
+	echo "configure:30429: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30565,7 +30464,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -30596,11 +30495,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:30599: searching for $search_list " >&5
+echo "configure:30498: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30603: first found $tmp_search_results " >&5
+	echo "configure:30502: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30620,11 +30519,11 @@ echo "${ECHO_T}$cercs_cv_ptlpbio_include_arg" >&6
 if test -n "$cercs_cv_ptlpbio_include_arg"; then
 arg="$cercs_cv_ptlpbio_include_arg"
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "ptlpbio"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi
 fi
@@ -30638,11 +30537,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:30641: searching for $search_list " >&5
+echo "configure:30540: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30645: first found $tmp_search_results " >&5
+	echo "configure:30544: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30680,7 +30579,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 
 
@@ -30688,8 +30587,8 @@ fi
 
 
 		if test -n "$cercs_cv_ptlpbio_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ptlpbio_link_dir"
-			LIBS="$DT_LIBS -lptlclient"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ptlpbio_link_dir"
+			DT_LIBS="$DT_LIBS -lptlclient"
 			datatap=portals
 		else
 			temptest=disable
@@ -30716,6 +30615,11 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
+
+
+
+
+
 
 
 
@@ -31876,7 +31780,6 @@ s,@host@,$host,;t t
 s,@host_cpu@,$host_cpu,;t t
 s,@host_vendor@,$host_vendor,;t t
 s,@host_os@,$host_os,;t t
-s,@SED@,$SED,;t t
 s,@LN_S@,$LN_S,;t t
 s,@ECHO@,$ECHO,;t t
 s,@AR@,$AR,;t t
@@ -31963,6 +31866,9 @@ s,@DMALLOC_LDFLAGS@,$DMALLOC_LDFLAGS,;t t
 s,@DMALLOC_CPPFLAGS@,$DMALLOC_CPPFLAGS,;t t
 s,@CSH@,$CSH,;t t
 s,@PATHPROG@,$PATHPROG,;t t
+s,@DT_LIBS@,$DT_LIBS,;t t
+s,@DT_CPPFLAGS@,$DT_CPPFLAGS,;t t
+s,@DT_LDFLAGS@,$DT_LDFLAGS,;t t
 s,@RESEARCH_TRANSPORTS_TRUE@,$RESEARCH_TRANSPORTS_TRUE,;t t
 s,@RESEARCH_TRANSPORTS_FALSE@,$RESEARCH_TRANSPORTS_FALSE,;t t
 s,@HAVE_DATATAP_TRUE@,$HAVE_DATATAP_TRUE,;t t
@@ -32721,6 +32627,11 @@ echo
 
 if test "x${datatap}" != "xdisable"; then
         echo "  - DataTap with interconnect: $datatap";
+	echo "	   - DT_CFLAGS     = $DT_CFLAGS";
+	echo "	   - DT_CPPFLAGS   = $DT_CPPFLAGS";
+	echo "	   - DT_LDFLAGS    = $DT_LDFLAGS";
+	echo "	   - DT_LIBS       = $DT_LIBS";
+
 else
         echo "  - No DataTap transport";
 fi

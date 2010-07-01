@@ -60,11 +60,11 @@ dnl
 translit(if test -n "$cercs_cv_$1_include_arg"; then, `/',`_')
 translit(arg="$cercs_cv_$1_include_arg", `/',`_')
 no_dash_arg=`echo $arg | sed 's/^-//g'`
-[if test `echo $CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+[if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
 if test `echo $arg | grep -c "$1"` -eq 0; then
-CPPFLAGS="$CPPFLAGS $arg";
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
 else
-CPPFLAGS="$arg $CPPFLAGS"
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
 fi
 fi]
 fi
@@ -114,7 +114,7 @@ else
 new_flags="$arg $new_flags"
 fi
 fi]
-LDFLAGS=$new_flags
+DT_LDFLAGS=$new_flags
 fi
 )
 ])dnl

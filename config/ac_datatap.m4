@@ -37,22 +37,22 @@ elif test x"$with_datatap" = xyes -o x"$with_datatap" = xcheck; then
 		CERCS_REQUIRE_PACKAGE(ffs, ffs.h, libffs.la)
 		CERCS_REQUIRE_PACKAGE(gen_thread, gen_thread.h, libgen_thread.la)
 		if test -n "$cercs_cv_ibpbio_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ibpbio_link_dir"
-			LIBS="$DT_LIBS -libclient"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ibpbio_link_dir"
+			DT_LIBS="$DT_LIBS -libclient"
 			datatap=ibverbs
 		else
 			temptest=disable
 		fi
 		if test -n "$cercs_cv_ffs_link_dir";then
-                LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ffs_link_dir"
-			LIBS="$DT_LIBS -lgen_thread"
+                   	DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ffs_link_dir"
+			DT_LIBS="$DT_LIBS -lgen_thread"
 			datatap=ibverbs
 		else
 			temptest=disable
 		fi
 		if test -n "$cercs_cv_gen_thread_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_gen_thread_link_dir"
-			LIBS="$DT_LIBS -lgen_thread"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_gen_thread_link_dir"
+			DT_LIBS="$DT_LIBS -lgen_thread"
 			datatap=ibverbs
 		else
 			temptest=disable
@@ -62,8 +62,8 @@ elif test x"$with_datatap" = xyes -o x"$with_datatap" = xcheck; then
 		CERCS_REQUIRE_PACKAGE(ptlpbio, thin_portal.h, libptlclient.a)
 
 		if test -n "$cercs_cv_ptlpbio_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ptlpbio_link_dir"
-			LIBS="$DT_LIBS -lptlclient"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ptlpbio_link_dir"
+			DT_LIBS="$DT_LIBS -lptlclient"
 			datatap=portals
 		else
 			temptest=disable
@@ -88,22 +88,22 @@ dnl directory given .. add it to search path with CERCS_REQUIRE_PACKAGE
 		CERCS_REQUIRE_PACKAGE(ffs, ffs.h, libffs.la)
 		CERCS_REQUIRE_PACKAGE(gen_thread, gen_thread.h, libgen_thread.la)
 		if test -n "$cercs_cv_ibpbio_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ibpbio_link_dir"
-			LIBS="$DT_LIBS -libclient"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ibpbio_link_dir"
+			DT_LIBS="$DT_LIBS -libclient"
 			datatap=ibverbs
 		else
 			temptest=disable
 		fi
 		if test -n "$cercs_cv_ffs_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ffs_link_dir"
-			LIBS="$DT_LIBS -lgen_thread"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ffs_link_dir"
+			DT_LIBS="$DT_LIBS -lgen_thread"
 			datatap=ibverbs
 		else
 			temptest=disable
 		fi
 		if test -n "$cercs_cv_gen_thread_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_gen_thread_link_dir"
-			LIBS="$DT_LIBS -lgen_thread"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_gen_thread_link_dir"
+			DT_LIBS="$DT_LIBS -lgen_thread"
 			datatap=ibverbs
 		else
 			temptest=disable
@@ -113,8 +113,8 @@ dnl directory given .. add it to search path with CERCS_REQUIRE_PACKAGE
 		CERCS_REQUIRE_PACKAGE(ptlpbio, thin_portal.h, libptlclient.a)
 
 		if test -n "$cercs_cv_ptlpbio_link_dir";then
-			LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ptlpbio_link_dir"
-			LIBS="$DT_LIBS -lptlclient"
+			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ptlpbio_link_dir"
+			DT_LIBS="$DT_LIBS -lptlclient"
 			datatap=portals
 		else
 			temptest=disable
@@ -133,5 +133,10 @@ if test x"$temptest" = xdisable; then
 	echo "Datatap dependency check failed"
 	AC_DEFINE(NO_DATATAP, 1, [Datatap is disabled])
 fi
+
+AC_SUBST(DT_LIBS)
+AC_SUBST(DT_CPPFLAGS)
+AC_SUBST(DT_LDFLAGS)
+
 
 ]) dnl AC_DATATAP

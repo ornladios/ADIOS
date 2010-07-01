@@ -161,6 +161,11 @@ echo
 
 if test "x${datatap}" != "xdisable"; then
         echo "  - DataTap with interconnect: $datatap";
+	echo "	   - DT_CFLAGS     = $DT_CFLAGS";
+	echo "	   - DT_CPPFLAGS   = $DT_CPPFLAGS";
+	echo "	   - DT_LDFLAGS    = $DT_LDFLAGS";
+	echo "	   - DT_LIBS       = $DT_LIBS";
+	
 else	
         echo "  - No DataTap transport";
 fi

@@ -107,8 +107,14 @@ endif
 
 if HAVE_DATATAP
 libadios_a_SOURCES += adios_datatap.c
+libadios_a_CPPFLAGS += $(DT_CPPFLAGS)
+#libadios_a_LDFLAGS = $(libadios_a_LIBS) $(DT_LDFLAGS)
+libadios_a_LIBS = $(libadios_a_LIBS) $(DT_LIBS)
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_datatap.c
+libadiosf_a_CPPFLAGS += $(DT_CPPFLAGS)
+#libadiosf_a_LDFLAGS = $(libadiosf_a_LIBS) $(DT_LDFLAGS)
+libadiosf_a_LIBS = $(libadiosf_a_LIBS) $(DT_LIBS)
 endif
 endif 
 
