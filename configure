@@ -32735,7 +32735,6 @@ if test "x$enable_research_transports" == "xyes"; then
 else
         echo "  - No research transport methods";
 fi
-echo
 
 if test "x${datatap}" != "xdisable"; then
         echo "  - DataTap with interconnect: $datatap";
@@ -32743,7 +32742,7 @@ if test "x${datatap}" != "xdisable"; then
 	echo "	   - DT_CPPFLAGS   = $DT_CPPFLAGS";
 	echo "	   - DT_LDFLAGS    = $DT_LDFLAGS";
 	echo "	   - DT_LIBS       = $DT_LIBS";
-
+        echo
 else
         echo "  - No DataTap transport";
 fi
@@ -32754,11 +32753,10 @@ if test -z "${HAVE_DART_TRUE}"; then
         echo "      - DART_CPPFLAGS = $DART_CPPFLAGS";
         echo "      - DART_LDFLAGS = $DART_LDFLAGS";
         echo "      - DART_LIBS = $DART_LIBS";
+        echo
 else
 	echo "  - No DART to build DART transport method"
 fi
-echo
-
 
 if test -z "${HAVE_MXML_TRUE}"; then
         echo "  - MXML";
@@ -32766,11 +32764,10 @@ if test -z "${HAVE_MXML_TRUE}"; then
         echo "      - MXML_CPPFLAGS = $MXML_CPPFLAGS";
         echo "      - MXML_LDFLAGS = $MXML_LDFLAGS";
         echo "      - MXML_LIBS = $MXML_LIBS";
+        echo
 else
         echo "  - No MXML"
 fi
-
-echo
 
 if test -z "${HAVE_GENGETOPT_TRUE}"; then
         echo "  - GENGETOPT";
@@ -32778,11 +32775,10 @@ if test -z "${HAVE_GENGETOPT_TRUE}"; then
         echo "      - GENGETOPT_CPPFLAGS = $GENGETOPT_CPPFLAGS";
         echo "      - GENGETOPT_LDFLAGS = $GENGETOPT_LDFLAGS";
         echo "      - GENGETOPT_LIBS = $GENGETOPT_LIBS";
+        echo
 else
         echo "  - No Gengetopt"
 fi
-
-echo
 
 if test -z "${HAVE_MPI_TRUE}"; then
         echo "  - MPI";
@@ -32790,11 +32786,10 @@ if test -z "${HAVE_MPI_TRUE}"; then
         echo "      - MPI_CPPFLAGS = $MPI_CPPFLAGS";
         echo "      - MPI_LDFLAGS = $MPI_LDFLAGS";
         echo "      - MPI_LIBS = $MPI_LIBS";
+        echo
 else
         echo "  - No MPI"
 fi
-
-echo
 
 if test -z "${HAVE_PHDF5_TRUE}"; then
         echo "  - PHDF5";
@@ -32802,11 +32797,10 @@ if test -z "${HAVE_PHDF5_TRUE}"; then
         echo "      - PHDF5_CPPFLAGS = $PHDF5_CPPFLAGS";
         echo "      - PHDF5_LDFLAGS = $PHDF5_LDFLAGS";
         echo "      - PHDF5_LIBS = $PHDF5_LIBS";
+        echo
 else
 	echo "  - No PHDF5"
 fi
-
-echo
 
 if test -z "${HAVE_HDF5_TRUE}"; then
         echo "  - HDF5";
@@ -32814,23 +32808,22 @@ if test -z "${HAVE_HDF5_TRUE}"; then
         echo "      - HDF5_CPPFLAGS = $HDF5_CPPFLAGS";
         echo "      - HDF5_LDFLAGS = $HDF5_LDFLAGS";
         echo "      - HDF5_LIBS = $HDF5_LIBS";
+        echo
 else
 	echo "  - No HDF5"
 fi
 
-echo
-
 if test -z "${HAVE_NC4PAR_TRUE}"; then
+        echo
         echo "  - NetCDF 4 Parallel";
         echo "      - NC4PAR_CFLAGS = $NC4PAR_CFLAGS";
         echo "      - NC4PAR_CPPFLAGS = $NC4PAR_CPPFLAGS";
         echo "      - NC4PAR_LDFLAGS = $NC4PAR_LDFLAGS";
         echo "      - NC4PAR_LIBS = $NC4PAR_LIBS";
+        echo
 else
 	echo "  - No NETCDF 4 Parallel"
 fi
-
-echo
 
 if test -z "${HAVE_NETCDF_TRUE}"; then
         echo "  - NetCDF";
@@ -32838,11 +32831,10 @@ if test -z "${HAVE_NETCDF_TRUE}"; then
         echo "      - NETCDF_CPPFLAGS = $NETCDF_CPPFLAGS";
         echo "      - NETCDF_LDFLAGS = $NETCDF_LDFLAGS";
         echo "      - NETCDF_LIBS = $NETCDF_LIBS";
+        echo
 else
 	echo "  - No NETCDF"
 fi
-
-echo
 
 if test -z "${HAVE_PORTALS_TRUE}"; then
         echo "  - PORTALS";
@@ -32850,11 +32842,10 @@ if test -z "${HAVE_PORTALS_TRUE}"; then
         echo "      - PORTALS_CPPFLAGS = $PORTALS_CPPFLAGS";
         echo "      - PORTALS_LDFLAGS = $PORTALS_LDFLAGS";
         echo "      - PORTALS_LIBS = $PORTALS_LIBS";
+        echo
 else
 	echo "  - No Portals"
 fi
-
-echo
 
 if test -z "${HAVE_INFINIBAND_TRUE}"; then
         echo "  - INFINIBAND";
@@ -32862,19 +32853,18 @@ if test -z "${HAVE_INFINIBAND_TRUE}"; then
         echo "      - INFINIBAND_CPPFLAGS = $INFINIBAND_CPPFLAGS";
         echo "      - INFINIBAND_LDFLAGS = $INFINIBAND_LDFLAGS";
         echo "      - INFINIBAND_LIBS = $INFINIBAND_LIBS";
+        echo
 else
-	echo "  - No IB"
+	echo "  - No InfiniBand"
 fi
 
-echo
-
 if test -z "${HAVE_NSSI_TRUE}"; then
-        echo "  - nessie";
+        echo "  - NSSI";
         echo "      - NSSI_CFLAGS = $NSSI_CFLAGS";
         echo "      - NSSI_CPPFLAGS = $NSSI_CPPFLAGS";
         echo "      - NSSI_LDFLAGS = $NSSI_LDFLAGS";
         echo "      - NSSI_LIBS = $NSSI_LIBS";
+        echo
 else
 	echo "  - No NSSI"
-
 fi
