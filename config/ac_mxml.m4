@@ -27,8 +27,18 @@ save_CPPFLAGS="$CPPFLAGS"
 save_LIBS="$LIBS"
 save_LDFLAGS="$LDFLAGS"
 LIBS="$LIBS -lmxml"
-LDFLAGS="$LDFLAGS $MXML_LDFLAGS"
-CPPFLAGS="$CPPFLAGS $MXML_CPPFLAGS"
+if test -n "$MXML_LDFLAGS"; then
+    LDFLAGS="$LDFLAGS $MXML_LDFLAGS"
+elif test -n "$MXML_LIB"; then
+    LDFLAGS="$LDFLAGS $MXML_LIB"
+    MXML_LDFLAGS="$MXML_LIB"
+fi
+if test -n "$MXML_CPPFLAGS"; then
+    CPPFLAGS="$CPPFLAGS $MXML_CPPFLAGS"
+elif test -n "$MXML_INC"; then
+    CPPFLAGS="$CPPFLAGS $MXML_INC"
+    MXML_CPPFLAGS="$MXML_INC"
+fi 
 
 if test -z "${HAVE_MXML_TRUE}"; then
         AC_CHECK_HEADERS(mxml.h,
