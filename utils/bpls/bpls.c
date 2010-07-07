@@ -417,6 +417,10 @@ void print_file_size(uint64_t size)
 
 }
 
+// prototypes
+int print_data_hist(ADIOS_VARINFO * vi, char * varname);
+int print_data_characteristics(void * min, void * max, double * avg, double * std_dev, enum ADIOS_DATATYPES adiosvartype, bool allowformat);
+
 int doList(const char *path) {
     //int     ntsteps;
 
@@ -547,7 +551,7 @@ int doList(const char *path) {
                     fprintf(outf,"}");
 
 					if (vi->hist && plot) {
-						print_data_hist(vi, &names[n][1], 0);
+						print_data_hist(vi, &names[n][1]);
 					}
 
                     if (longopt && vi->gmin && vi->gmax) {
