@@ -1320,7 +1320,7 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
             fprintf(outf,(f ? format : "%hhu "), ((unsigned char *) data)[item]);
             break;
         case adios_byte:
-            fprintf(outf,(f ? format : "%hhd "), ((char *) data)[item]);
+            fprintf(outf,(f ? format : "%hhd "), ((signed char *) data)[item]);
             break;
         case adios_string:
             fprintf(outf,(f ? format : "\"%s\""), ((char *) data)+item);
@@ -1330,21 +1330,21 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
             fprintf(outf,(f ? format : "%hu "), ((unsigned short *) data)[item]);
             break;
         case adios_short:
-            fprintf(outf,(f ? format : "%hd "), ((short *) data)[item]);
+            fprintf(outf,(f ? format : "%hd "), ((signed short *) data)[item]);
             break;
     
         case adios_unsigned_integer:
             fprintf(outf,(f ? format : "%u "), ((unsigned int *) data)[item]);
             break;
         case adios_integer:    
-            fprintf(outf,(f ? format : "%d "), ((int *) data)[item]);
+            fprintf(outf,(f ? format : "%d "), ((signed int *) data)[item]);
             break;
 
         case adios_unsigned_long:
             fprintf(outf,(f ? format : "%llu "), ((unsigned long long *) data)[item]);
             break;
         case adios_long:        
-            fprintf(outf,(f ? format : "%lld "), ((long long *) data)[item]);
+            fprintf(outf,(f ? format : "%lld "), ((signed long long *) data)[item]);
             break;
 
         case adios_real:
