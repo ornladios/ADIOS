@@ -64,11 +64,11 @@ program posix_method
     call adios_close (adios_handle, adios_err)
 
     if (NX /= NXin) then
-        write (0,'("Error: NX=",i0," read from file != NX=",i0," written to file.")'), NXin, NX
+        write (0, '("Error: NX=",i0," read from file != NX=",i0," written to file.")') NXin, NX
         call exit(1)
     endif
     if (NY /= NYin) then
-        write (0,'("Error: NY=",i0," read from file != NY=",i0," written to file.")'), NYin, NY
+        write (0, '("Error: NY=",i0," read from file != NY=",i0," written to file.")') NYin, NY
         call exit(1)
     endif
 
