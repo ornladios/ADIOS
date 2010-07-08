@@ -101,7 +101,7 @@ int main( int argc, char *argv[] ) {
     prgname = strdup(argv[0]);
 
     /* other variables */
-    char c, last_c='_';
+    int c, last_c='_';
     int idx = 1;
     /* Process the arguments */
     while ((c = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
@@ -123,7 +123,7 @@ int main( int argc, char *argv[] ) {
             fprintf(stderr, "Unrecognized argument: %s\n", optarg);
             return 1;
         default:
-            printf ("\nError: Unknown command line option: %s\n\n", argv[optind-1]);
+            printf ("\nError: Unknown command line option: %s\n\n", argv[optind]);
             display_help();
             exit (1);
             break;
