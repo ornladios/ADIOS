@@ -6,14 +6,12 @@ AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = bpdump
 
 bpdump_SOURCES = bpdump.c
-bpdump_CPPFLAGS = -D_NOMPI
+bpdump_CPPFLAGS = $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS)
+bpdump_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS)
 bpdump_LDADD = $(top_builddir)/src/libadios_internal_nompi.a
+bpdump_LDADD += $(ADIOSLIB_SEQ_LDADD)
 
-if HAVE_DMALLOC
-bpdump_CPPFLAGS += -DDMALLOC  $(DMALLOC_CPPFLAGS)
-bpdump_LDFLAGS =  $(DMALLOC_LDFLAGS)
-bpdump_LDADD += -ldmalloc
+if USE_PARALLEL_COMPILER
+    CC=$(MPICC)
+    CXX=$(MPICXX)
 endif
-
-CC=$(MPICC)
-CXX=$(MPICXX)

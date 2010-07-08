@@ -27,26 +27,6 @@ TESTS=
 
 INCLUDES = $(all_includes)
 INCLUDES += -I$(top_builddir)/src
-AM_LDFLAGS = $(MXML_LDFLAGS)
-LDADD = $(MXML_LIBS)
-AM_CPPFLAGS=
-if HAVE_NETCDF
-AM_LDFLAGS += $(NETCDF_LDFLAGS)
-LDADD +=  $(NETCDF_LIBS)
-endif
-if HAVE_NSSI
-AM_LDFLAGS += $(NSSI_LDFLAGS)
-LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-endif
-if HAVE_PHDF5
-AM_LDFLAGS += $(PHDF5_LDFLAGS)
-LDADD +=  $(PHDF5_LIBS)
-endif
-if HAVE_DART
-AM_CPPFLAGS += $(DART_CPPFLAGS)
-AM_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
-LDADD += $(DART_LIBS)
-endif
 
 #############################
 # Build rules for each test #
@@ -54,8 +34,8 @@ endif
 
 # posix_method
 posix_method_SOURCES=posix_method.F90
-posix_method_LDADD = $(top_builddir)/src/libadiosf.a $(LDADD)
-posix_method_LDFLAGS = $(AM_LDFLAGS) $(LDFLAGS)
+posix_method_LDADD = $(top_builddir)/src/libadiosf.a $(ADIOSLIB_LDADD)
+posix_method_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 posix_method.o: gwrite_posix_method.fh 
 gwrite_posix_method.fh: posix_method.xml
 	$(top_srcdir)/utils/gpp/gpp.py posix_method.xml

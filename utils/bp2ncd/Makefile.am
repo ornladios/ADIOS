@@ -7,19 +7,13 @@ bin_PROGRAMS = bp2ncd
 
 bp2ncd_SOURCES = bp2ncd.c
 
-# change these to use proper autoconf settings
-bp2ncd_LDFLAGS = $(NETCDF_LDFLAGS) $(PHDF5_LDFLAGS)
-bp2ncd_CPPFLAGS = -D_NOMPI $(NETCDF_CPPFLAGS) $(PHDF5_CPPFLAGS)
-
+bp2ncd_CPPFLAGS = $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS)
+bp2ncd_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS) -static-libtool-libs
 bp2ncd_LDADD = $(top_builddir)/src/libadios_internal_nompi.a
-bp2ncd_LDADD += $(NETCDF_LIBS) $(PHDF5_LIBS) 
-
-if HAVE_DMALLOC
-bp2ncd_CPPFLAGS += -DDMALLOC  $(DMALLOC_CPPFLAGS)
-bp2ncd_LDFLAGS +=  $(DMALLOC_LDFLAGS)
-bp2ncd_LDADD += -ldmalloc
-endif
+bp2ncd_LDADD += $(ADIOSLIB_SEQ_LDADD)
 
 EXTRA_DIST = bp2ncd.h
-CC=$(MPICC)
-CXX=$(MPICXX)
+if USE_PARALLEL_COMPILER
+    CC=$(MPICC)
+    CXX=$(MPICXX)
+endif

@@ -37,29 +37,12 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = arrays_write$(EXEEXT) arrays_read$(EXEEXT)
-@HAVE_NC4PAR_TRUE@am__append_1 = $(NC4PAR_LDFLAGS)
-@HAVE_NC4PAR_TRUE@am__append_2 = $(NC4PAR_LIBS)
-@HAVE_NC4PAR_TRUE@am__append_3 = $(NC4PAR_LDFLAGS)
-@HAVE_NC4PAR_TRUE@am__append_4 = $(NC4PAR_LIBS)
-@HAVE_NSSI_TRUE@am__append_5 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-@HAVE_NSSI_TRUE@am__append_6 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_7 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-@HAVE_NSSI_TRUE@am__append_8 = $(NSSI_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_9 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_10 = $(PHDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_11 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_12 = $(PHDF5_LIBS)
-@HAVE_DART_TRUE@am__append_13 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_14 = $(DART_LIBS)
-@HAVE_DART_TRUE@am__append_15 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_16 = $(DART_LIBS)
 subdir = examples/C/arrays
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_dart.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
-	$(top_srcdir)/config/ac_gengetopt.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
@@ -78,23 +61,15 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_arrays_read_OBJECTS = arrays_read-arrays_read.$(OBJEXT)
+am_arrays_read_OBJECTS = arrays_read.$(OBJEXT)
 arrays_read_OBJECTS = $(am_arrays_read_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_NC4PAR_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
-@HAVE_NSSI_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
-@HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
-@HAVE_DART_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
 arrays_read_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
-	$(am__DEPENDENCIES_5)
-am_arrays_write_OBJECTS = arrays_write-arrays_write.$(OBJEXT)
+	$(am__DEPENDENCIES_1)
+am_arrays_write_OBJECTS = arrays_write.$(OBJEXT)
 arrays_write_OBJECTS = $(am_arrays_write_OBJECTS)
 arrays_write_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
-	$(am__DEPENDENCIES_5)
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -112,6 +87,23 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ADIOSLIB_CFLAGS = @ADIOSLIB_CFLAGS@
+ADIOSLIB_CPPFLAGS = @ADIOSLIB_CPPFLAGS@
+ADIOSLIB_EXTRA_CPPFLAGS = @ADIOSLIB_EXTRA_CPPFLAGS@
+ADIOSLIB_LDADD = @ADIOSLIB_LDADD@
+ADIOSLIB_LDFLAGS = @ADIOSLIB_LDFLAGS@
+ADIOSLIB_SEQ_CFLAGS = @ADIOSLIB_SEQ_CFLAGS@
+ADIOSLIB_SEQ_CPPFLAGS = @ADIOSLIB_SEQ_CPPFLAGS@
+ADIOSLIB_SEQ_LDADD = @ADIOSLIB_SEQ_LDADD@
+ADIOSLIB_SEQ_LDFLAGS = @ADIOSLIB_SEQ_LDFLAGS@
+ADIOSREADLIB_CFLAGS = @ADIOSREADLIB_CFLAGS@
+ADIOSREADLIB_CPPFLAGS = @ADIOSREADLIB_CPPFLAGS@
+ADIOSREADLIB_LDADD = @ADIOSREADLIB_LDADD@
+ADIOSREADLIB_LDFLAGS = @ADIOSREADLIB_LDFLAGS@
+ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
+ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
+ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
+ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -157,15 +149,12 @@ FC = @FC@
 FCFLAGS = @FCFLAGS@
 FCLIBS = @FCLIBS@
 FFLAGS = @FFLAGS@
-GENGETOPT = @GENGETOPT@
 HAVE_DART_FALSE = @HAVE_DART_FALSE@
 HAVE_DART_TRUE = @HAVE_DART_TRUE@
 HAVE_DATATAP_FALSE = @HAVE_DATATAP_FALSE@
 HAVE_DATATAP_TRUE = @HAVE_DATATAP_TRUE@
 HAVE_DMALLOC_FALSE = @HAVE_DMALLOC_FALSE@
 HAVE_DMALLOC_TRUE = @HAVE_DMALLOC_TRUE@
-HAVE_GENGETOPT_FALSE = @HAVE_GENGETOPT_FALSE@
-HAVE_GENGETOPT_TRUE = @HAVE_GENGETOPT_TRUE@
 HAVE_HDF5_FALSE = @HAVE_HDF5_FALSE@
 HAVE_HDF5_TRUE = @HAVE_HDF5_TRUE@
 HAVE_INFINIBAND_FALSE = @HAVE_INFINIBAND_FALSE@
@@ -259,6 +248,8 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+USE_PARALLEL_COMPILER_FALSE = @USE_PARALLEL_COMPILER_FALSE@
+USE_PARALLEL_COMPILER_TRUE = @USE_PARALLEL_COMPILER_TRUE@
 VERSION = @VERSION@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
@@ -307,19 +298,11 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 arrays_write_SOURCES = arrays_write.c
-arrays_write_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_2) $(am__append_5) $(am__append_10) \
-	$(am__append_14)
-arrays_write_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) $(am__append_6) \
-	$(am__append_9) $(am__append_13)
+arrays_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+arrays_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 arrays_read_SOURCES = arrays_read.c
-arrays_read_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_4) $(am__append_7) $(am__append_12) \
-	$(am__append_16)
-arrays_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3) $(am__append_8) \
-	$(am__append_11) $(am__append_15)
-@HAVE_DART_TRUE@arrays_write_CPPFLAGS = $(DART_CPPFLAGS)
-@HAVE_DART_TRUE@arrays_read_CPPFLAGS = $(DART_CPPFLAGS)
+arrays_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+arrays_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = arrays.xml gwrite_arrays.ch gread_arrays.ch job.pbs
 all: all-am
@@ -383,18 +366,6 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
-
-arrays_read-arrays_read.o: arrays_read.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(arrays_read_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o arrays_read-arrays_read.o `test -f 'arrays_read.c' || echo '$(srcdir)/'`arrays_read.c
-
-arrays_read-arrays_read.obj: arrays_read.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(arrays_read_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o arrays_read-arrays_read.obj `if test -f 'arrays_read.c'; then $(CYGPATH_W) 'arrays_read.c'; else $(CYGPATH_W) '$(srcdir)/arrays_read.c'; fi`
-
-arrays_write-arrays_write.o: arrays_write.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(arrays_write_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o arrays_write-arrays_write.o `test -f 'arrays_write.c' || echo '$(srcdir)/'`arrays_write.c
-
-arrays_write-arrays_write.obj: arrays_write.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(arrays_write_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o arrays_write-arrays_write.obj `if test -f 'arrays_write.c'; then $(CYGPATH_W) 'arrays_write.c'; else $(CYGPATH_W) '$(srcdir)/arrays_write.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

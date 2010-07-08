@@ -6,23 +6,12 @@ AUTOMAKE_OPTIONS = no-dependencies
 bin_PROGRAMS = bpls
 
 bpls_SOURCES = bpls.c 
-bpls_CFLAGS = -D_NOMPI -g 
-bpls_LDFLAGS = 
+bpls_CPPFLAGS = $(ADIOSREADLIB_SEQ_CPPFLAGS) $(ADIOSREADLIB_SEQ_CFLAGS)
+bpls_LDFLAGS = $(ADIOSREADLIB_SEQ_LDFLAGS) 
 bpls_LDADD = $(top_builddir)/src/libadiosread_nompi.a 
-
-if HAVE_DMALLOC
-bpls_CPPFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
-bpls_LDFLAGS +=  $(DMALLOC_LDFLAGS)
-bpls_LDADD += -ldmalloc
-endif
-
-if HAVE_DART
-bpls_CPPFLAGS = $(DART_CPPFLAGS)
-bpls_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS) 
-bpls_LDADD += $(DART_LIBS)
-endif
+bpls_LDADD += $(ADIOSREADLIB_SEQ_LDADD)
 
 EXTRA_DIST = bpls.h
-CC=$(MPICC)
-CXX=$(MPICXX)
+#CC=$(MPICC)
+#CXX=$(MPICXX)
 

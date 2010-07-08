@@ -38,45 +38,12 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = 1_nonadios_example$(EXEEXT) 2_adios_write$(EXEEXT) \
 	3_adios_read$(EXEEXT) 4_adios_nfiles$(EXEEXT)
-@HAVE_NC4PAR_TRUE@am__append_1 = $(NC4PAR_LDFLAGS)
-@HAVE_NC4PAR_TRUE@am__append_2 = $(NC4PAR_LIBS)
-@HAVE_NC4PAR_TRUE@am__append_3 = $(NC4PAR_LDFLAGS)
-@HAVE_NC4PAR_TRUE@am__append_4 = $(NC4PAR_LIBS)
-@HAVE_NC4PAR_TRUE@am__append_5 = $(NC4PAR_LDFLAGS)
-@HAVE_NC4PAR_TRUE@am__append_6 = $(NC4PAR_LIBS)
-@HAVE_NC4PAR_TRUE@am__append_7 = $(NC4PAR_LDFLAGS)
-@HAVE_NC4PAR_TRUE@am__append_8 = $(NC4PAR_LIBS)
-@HAVE_NSSI_TRUE@am__append_9 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_10 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-@HAVE_NSSI_TRUE@am__append_11 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_12 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-@HAVE_NSSI_TRUE@am__append_13 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_14 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-@HAVE_NSSI_TRUE@am__append_15 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_16 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-@HAVE_PHDF5_TRUE@am__append_17 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_18 = $(PHDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_19 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_20 = $(PHDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_21 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_22 = $(PHDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_23 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_24 = $(PHDF5_LIBS)
-@HAVE_DART_TRUE@am__append_25 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_26 = $(DART_LIBS)
-@HAVE_DART_TRUE@am__append_27 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_28 = $(DART_LIBS)
-@HAVE_DART_TRUE@am__append_29 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_30 = $(DART_LIBS)
-@HAVE_DART_TRUE@am__append_31 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_32 = $(DART_LIBS)
 subdir = examples/C/manual
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_dart.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
-	$(top_srcdir)/config/ac_gengetopt.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
@@ -95,36 +62,23 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_1_nonadios_example_OBJECTS =  \
-	1_nonadios_example-1_nonadios_example.$(OBJEXT)
+am_1_nonadios_example_OBJECTS = 1_nonadios_example.$(OBJEXT)
 1_nonadios_example_OBJECTS = $(am_1_nonadios_example_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_NC4PAR_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
-@HAVE_NSSI_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
-@HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
-@HAVE_DART_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
 1_nonadios_example_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
-	$(am__DEPENDENCIES_5)
-am_2_adios_write_OBJECTS = 2_adios_write-2_adios_write.$(OBJEXT)
+	$(am__DEPENDENCIES_1)
+am_2_adios_write_OBJECTS = 2_adios_write.$(OBJEXT)
 2_adios_write_OBJECTS = $(am_2_adios_write_OBJECTS)
 2_adios_write_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
-	$(am__DEPENDENCIES_5)
-am_3_adios_read_OBJECTS = 3_adios_read-3_adios_read.$(OBJEXT)
+	$(am__DEPENDENCIES_1)
+am_3_adios_read_OBJECTS = 3_adios_read.$(OBJEXT)
 3_adios_read_OBJECTS = $(am_3_adios_read_OBJECTS)
 3_adios_read_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
-	$(am__DEPENDENCIES_5)
-am_4_adios_nfiles_OBJECTS = 4_adios_nfiles-4_adios_nfiles.$(OBJEXT)
+	$(am__DEPENDENCIES_1)
+am_4_adios_nfiles_OBJECTS = 4_adios_nfiles.$(OBJEXT)
 4_adios_nfiles_OBJECTS = $(am_4_adios_nfiles_OBJECTS)
 4_adios_nfiles_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
-	$(am__DEPENDENCIES_5)
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -144,6 +98,23 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ADIOSLIB_CFLAGS = @ADIOSLIB_CFLAGS@
+ADIOSLIB_CPPFLAGS = @ADIOSLIB_CPPFLAGS@
+ADIOSLIB_EXTRA_CPPFLAGS = @ADIOSLIB_EXTRA_CPPFLAGS@
+ADIOSLIB_LDADD = @ADIOSLIB_LDADD@
+ADIOSLIB_LDFLAGS = @ADIOSLIB_LDFLAGS@
+ADIOSLIB_SEQ_CFLAGS = @ADIOSLIB_SEQ_CFLAGS@
+ADIOSLIB_SEQ_CPPFLAGS = @ADIOSLIB_SEQ_CPPFLAGS@
+ADIOSLIB_SEQ_LDADD = @ADIOSLIB_SEQ_LDADD@
+ADIOSLIB_SEQ_LDFLAGS = @ADIOSLIB_SEQ_LDFLAGS@
+ADIOSREADLIB_CFLAGS = @ADIOSREADLIB_CFLAGS@
+ADIOSREADLIB_CPPFLAGS = @ADIOSREADLIB_CPPFLAGS@
+ADIOSREADLIB_LDADD = @ADIOSREADLIB_LDADD@
+ADIOSREADLIB_LDFLAGS = @ADIOSREADLIB_LDFLAGS@
+ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
+ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
+ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
+ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -189,15 +160,12 @@ FC = @FC@
 FCFLAGS = @FCFLAGS@
 FCLIBS = @FCLIBS@
 FFLAGS = @FFLAGS@
-GENGETOPT = @GENGETOPT@
 HAVE_DART_FALSE = @HAVE_DART_FALSE@
 HAVE_DART_TRUE = @HAVE_DART_TRUE@
 HAVE_DATATAP_FALSE = @HAVE_DATATAP_FALSE@
 HAVE_DATATAP_TRUE = @HAVE_DATATAP_TRUE@
 HAVE_DMALLOC_FALSE = @HAVE_DMALLOC_FALSE@
 HAVE_DMALLOC_TRUE = @HAVE_DMALLOC_TRUE@
-HAVE_GENGETOPT_FALSE = @HAVE_GENGETOPT_FALSE@
-HAVE_GENGETOPT_TRUE = @HAVE_GENGETOPT_TRUE@
 HAVE_HDF5_FALSE = @HAVE_HDF5_FALSE@
 HAVE_HDF5_TRUE = @HAVE_HDF5_TRUE@
 HAVE_INFINIBAND_FALSE = @HAVE_INFINIBAND_FALSE@
@@ -291,6 +259,8 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+USE_PARALLEL_COMPILER_FALSE = @USE_PARALLEL_COMPILER_FALSE@
+USE_PARALLEL_COMPILER_TRUE = @USE_PARALLEL_COMPILER_TRUE@
 VERSION = @VERSION@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
@@ -339,33 +309,19 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 1_nonadios_example_SOURCES = 1_nonadios_example.c
-1_nonadios_example_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_2) $(am__append_10) $(am__append_18) \
-	$(am__append_26)
-1_nonadios_example_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) \
-	$(am__append_9) $(am__append_17) $(am__append_25)
+1_nonadios_example_LDADD = $(top_builddir)/src/libadios.a \
+	$(ADIOSLIB_LDADD)
+1_nonadios_example_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 2_adios_write_SOURCES = 2_adios_write.c
-2_adios_write_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_4) $(am__append_12) $(am__append_20) \
-	$(am__append_28)
-2_adios_write_LDFLAGS = $(MXML_LDFLAGS) $(am__append_3) \
-	$(am__append_11) $(am__append_19) $(am__append_27)
+2_adios_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+2_adios_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 3_adios_read_SOURCES = 3_adios_read.c
-3_adios_read_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_6) $(am__append_14) $(am__append_22) \
-	$(am__append_30)
-3_adios_read_LDFLAGS = $(MXML_LDFLAGS) $(am__append_5) \
-	$(am__append_13) $(am__append_21) $(am__append_29)
+3_adios_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+3_adios_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 4_adios_nfiles_SOURCES = 4_adios_nfiles.c
-4_adios_nfiles_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(am__append_8) $(am__append_16) $(am__append_24) \
-	$(am__append_32)
-4_adios_nfiles_LDFLAGS = $(MXML_LDFLAGS) $(am__append_7) \
-	$(am__append_15) $(am__append_23) $(am__append_31)
-@HAVE_DART_TRUE@1_nonadios_example_CPPFLAGS = $(DART_CPPFLAGS)
-@HAVE_DART_TRUE@2_adios_write_CPPFLAGS = $(DART_CPPFLAGS)
-@HAVE_DART_TRUE@3_adios_read_CPPFLAGS = $(DART_CPPFLAGS)
-@HAVE_DART_TRUE@4_adios_nfiles_CPPFLAGS = $(DART_CPPFLAGS)
+4_adios_nfiles_LDADD = $(top_builddir)/src/libadios.a \
+	$(ADIOSLIB_LDADD)
+4_adios_nfiles_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = config.xml gread_temperature.ch gwrite_temperature.ch
 all: all-am
@@ -435,30 +391,6 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
-
-1_nonadios_example-1_nonadios_example.o: 1_nonadios_example.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(1_nonadios_example_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o 1_nonadios_example-1_nonadios_example.o `test -f '1_nonadios_example.c' || echo '$(srcdir)/'`1_nonadios_example.c
-
-1_nonadios_example-1_nonadios_example.obj: 1_nonadios_example.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(1_nonadios_example_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o 1_nonadios_example-1_nonadios_example.obj `if test -f '1_nonadios_example.c'; then $(CYGPATH_W) '1_nonadios_example.c'; else $(CYGPATH_W) '$(srcdir)/1_nonadios_example.c'; fi`
-
-2_adios_write-2_adios_write.o: 2_adios_write.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(2_adios_write_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o 2_adios_write-2_adios_write.o `test -f '2_adios_write.c' || echo '$(srcdir)/'`2_adios_write.c
-
-2_adios_write-2_adios_write.obj: 2_adios_write.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(2_adios_write_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o 2_adios_write-2_adios_write.obj `if test -f '2_adios_write.c'; then $(CYGPATH_W) '2_adios_write.c'; else $(CYGPATH_W) '$(srcdir)/2_adios_write.c'; fi`
-
-3_adios_read-3_adios_read.o: 3_adios_read.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(3_adios_read_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o 3_adios_read-3_adios_read.o `test -f '3_adios_read.c' || echo '$(srcdir)/'`3_adios_read.c
-
-3_adios_read-3_adios_read.obj: 3_adios_read.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(3_adios_read_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o 3_adios_read-3_adios_read.obj `if test -f '3_adios_read.c'; then $(CYGPATH_W) '3_adios_read.c'; else $(CYGPATH_W) '$(srcdir)/3_adios_read.c'; fi`
-
-4_adios_nfiles-4_adios_nfiles.o: 4_adios_nfiles.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(4_adios_nfiles_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o 4_adios_nfiles-4_adios_nfiles.o `test -f '4_adios_nfiles.c' || echo '$(srcdir)/'`4_adios_nfiles.c
-
-4_adios_nfiles-4_adios_nfiles.obj: 4_adios_nfiles.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(4_adios_nfiles_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o 4_adios_nfiles-4_adios_nfiles.obj `if test -f '4_adios_nfiles.c'; then $(CYGPATH_W) '4_adios_nfiles.c'; else $(CYGPATH_W) '$(srcdir)/4_adios_nfiles.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

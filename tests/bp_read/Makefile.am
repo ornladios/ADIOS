@@ -12,89 +12,24 @@ endif
 # read_coords read_phi read_parts_global read_gena read_gena_pncd read_pixie_all
 
 genbp_SOURCES = genbp.c
-genbp_LDFLAGS = $(MXML_LDFLAGS)
-genbp_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) $(top_builddir)/src/libadiosread.a
-if HAVE_NC4PAR
-genbp_LDADD +=  $(NC4PAR_LIBS)
-genbp_LDFLAGS += $(NC4PAR_LDFLAGS)
-endif
-if HAVE_NSSI
-genbp_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-genbp_LDFLAGS += $(NSSI_LDFLAGS)
-endif
-if HAVE_PHDF5
-genbp_LDADD +=  $(PHDF5_LIBS)
-genbp_LDFLAGS += $(PHDF5_LDFLAGS)
-endif
-if HAVE_DART
-genbp_CPPFLAGS = $(DART_CPPFLAGS)
-genbp_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
-genbp_LDADD += $(DART_LIBS)
-endif
+genbp_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+genbp_CFLAGS = $(ADIOSLIB_CFLAGS)
+genbp_LDADD = $(top_builddir)/src/libadios.a $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+genbp_LDFLAGS = $(ADIOSLIB_LDFLAGS) 
 
 if BUILD_FORTRAN
 bp_read_f_SOURCES = bp_read_f.F90
-bp_read_f_LDFLAGS = 
-bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf.a
-if HAVE_DMALLOC
-bp_read_f_CFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
-bp_read_f_LDFLAGS +=  $(DMALLOC_LDFLAGS)
-bp_read_f_LDADD += -ldmalloc
+bp_read_f_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+bp_read_f_CFLAGS = $(ADIOSLIB_CFLAGS)
+bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf.a $(ADIOSREADLIB_LDADD)
+bp_read_f_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
 endif
-if HAVE_DART
-bp_read_f_CPPFLAGS = $(DART_CPPFLAGS)
-bp_read_f_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
-bp_read_f_LDADD += $(DART_LIBS)
-endif
-endif
-
-#read_coords_SOURCES = read_coords.F90
-#read_coords_LDADD =  $(top_builddir)/src/libadiosread.a
-#
-#read_phi_SOURCES = read_phi.F90
-#read_phi_LDADD = $(top_builddir)/src/libadiosread.a
-#
-#read_pixie_all_SOURCES = read_pixie_all.F90
-#read_pixie_all_LDADD = $(top_builddir)/src/libadiosread.a
-
-#read_parts_global_SOURCES = read_parts_global.F90
-#read_parts_global_LDFLAGS = $(MXML_LDFLAGS)
-#read_parts_global_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) $(top_builddir)/src/libadiosread.a
-#if HAVE_PHDF5
-#read_parts_global_LDADD +=  $(PHDF5_LIBS)
-#read_parts_global_LDFLAGS += $(PHDF5_LDFLAGS)
-#endif
-#
-#read_gena_SOURCES = read_gena.F90
-#read_gena_LDFLAGS = $(MXML_LDFLAGS)
-#read_gena_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) $(top_builddir)/src/libadiosread.a
-#if HAVE_PHDF5
-#read_gena_LDADD +=  $(PHDF5_LIBS)
-#read_gena_LDFLAGS += $(PHDF5_LDFLAGS)
-#endif
-
-#read_gena_pncd_SOURCES = read_gena_pncd.c
-#read_gena_pncd_LDFLAGS = $(MXML_LDFLAGS)
-#read_gena_pncd_LDADD = /ccs/home/sklasky/parallel-netcdf/jaguar/lib/libpnetcdf.a 
-#if HAVE_PHDF5
-#read_gena_pncd_LDADD +=  $(PHDF5_LIBS)
-#read_gena_pncd_LDFLAGS += $(PHDF5_LDFLAGS)
-#endif
-
 
 bp_read_c_SOURCES = bp_read_c.c
-bp_read_c_LDFLAGS = 
-bp_read_c_LDADD = $(top_builddir)/src/libadiosread.a
-if HAVE_DMALLOC
-bp_read_c_CFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
-bp_read_c_LDFLAGS +=  $(DMALLOC_LDFLAGS)
-bp_read_c_LDADD += -ldmalloc
-endif
-if HAVE_DART
-bp_read_c_CPPFLAGS = $(DART_CPPFLAGS)
-bp_read_c_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
-bp_read_c_LDADD += $(DART_LIBS)
-endif
+bp_read_c_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+bp_read_c_CFLAGS = $(ADIOSLIB_CFLAGS)
+bp_read_c_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
+bp_read_c_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
 
 FC=$(MPIFC)
 CC=$(MPICC)

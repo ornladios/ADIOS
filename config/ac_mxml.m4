@@ -46,11 +46,52 @@ if test -z "${HAVE_MXML_TRUE}"; then
                 [AM_CONDITIONAL(HAVE_MXML,false)])
 fi
 
-# Check for the Mini-XML library and headers
-AC_TRY_COMPILE([#include "mxml.h"],
-        [mxml_node_t * n; mxmlWalkNext (n, n, MXML_DESCEND);],
-        [MXML_LIBS="-lmxml"],
-        [AM_CONDITIONAL(HAVE_MXML,false)])
+if test -z "${HAVE_MXML_TRUE}"; then
+    # Check for the Mini-XML library and headers
+    AC_MSG_CHECKING([if mxml code can be linked])
+    AC_TRY_LINK([#include "mxml.h"],
+        [mxml_node_t * n; 
+         char *buffer;
+         char *value;
+         n = mxmlLoadString (0, buffer, MXML_TEXT_CALLBACK);
+         mxmlWalkNext (n, n, MXML_DESCEND);
+         value = mxmlElementGetAttr (n, "value");
+         mxmlRelease (n);
+        ],
+        [MXML_LIBS="-lmxml"
+         AC_MSG_RESULT(yes)
+        ],
+        [AM_CONDITIONAL(HAVE_MXML,false)
+         AC_MSG_RESULT(no)
+        ])
+
+    dnl If Linking above failed, one reason might be that mxml uses pthreads and
+    dnl the compiler does not use it by default. Try getting phtreads
+    if test -z "${HAVE_MXML_FALSE}"; then
+        # Check for the Mini-XML library and headers
+        AC_REQUIRE([ACX_PTHREAD])
+        LDFLAGS="$LDFLAGS $PTHREAD_LDFLAGS $PTHREAD_LIBS"
+        AC_MSG_CHECKING([if mxml code can be linked using pthreads])
+        AC_TRY_LINK([#include "mxml.h"],
+            [mxml_node_t * n; 
+             char *buffer;
+             char *value;
+             n = mxmlLoadString (0, buffer, MXML_TEXT_CALLBACK);
+             mxmlWalkNext (n, n, MXML_DESCEND);
+             value = mxmlElementGetAttr (n, "value");
+             mxmlRelease (n);
+            ],
+            [MXML_LDFLAGS="$MXML_LDFLAGS $PTHREAD_LDFLAGS"
+             MXML_LIBS="-lmxml $PTHREAD_LIBS"
+             AM_CONDITIONAL(HAVE_MXML,true)
+             AC_MSG_RESULT(yes)
+            ],
+            [AM_CONDITIONAL(HAVE_MXML,false)
+             AC_MSG_RESULT(no)
+            ])
+    fi
+fi
+
 
 LIBS="$save_LIBS"
 LDFLAGS="$save_LDFLAGS"

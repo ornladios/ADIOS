@@ -40,29 +40,12 @@ host_triplet = @host@
 @BUILD_FORTRAN_FALSE@	bp_read_c$(EXEEXT)
 @BUILD_FORTRAN_TRUE@noinst_PROGRAMS = genbp$(EXEEXT) \
 @BUILD_FORTRAN_TRUE@	bp_read_f$(EXEEXT) bp_read_c$(EXEEXT)
-@HAVE_NC4PAR_TRUE@am__append_1 = $(NC4PAR_LIBS)
-@HAVE_NC4PAR_TRUE@am__append_2 = $(NC4PAR_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_3 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-@HAVE_NSSI_TRUE@am__append_4 = $(NSSI_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_5 = $(PHDF5_LIBS)
-@HAVE_PHDF5_TRUE@am__append_6 = $(PHDF5_LDFLAGS)
-@HAVE_DART_TRUE@am__append_7 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_8 = $(DART_LIBS)
-@BUILD_FORTRAN_TRUE@@HAVE_DMALLOC_TRUE@am__append_9 = $(DMALLOC_LDFLAGS)
-@BUILD_FORTRAN_TRUE@@HAVE_DMALLOC_TRUE@am__append_10 = -ldmalloc
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__append_11 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__append_12 = $(DART_LIBS)
-@HAVE_DMALLOC_TRUE@am__append_13 = $(DMALLOC_LDFLAGS)
-@HAVE_DMALLOC_TRUE@am__append_14 = -ldmalloc
-@HAVE_DART_TRUE@am__append_15 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_16 = $(DART_LIBS)
 subdir = tests/bp_read
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_dart.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
-	$(top_srcdir)/config/ac_gengetopt.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
@@ -84,28 +67,19 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_bp_read_c_OBJECTS = bp_read_c-bp_read_c.$(OBJEXT)
 bp_read_c_OBJECTS = $(am_bp_read_c_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_DART_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 bp_read_c_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2)
+	$(am__DEPENDENCIES_1)
 am__bp_read_f_SOURCES_DIST = bp_read_f.F90
 @BUILD_FORTRAN_TRUE@am_bp_read_f_OBJECTS =  \
 @BUILD_FORTRAN_TRUE@	bp_read_f-bp_read_f.$(OBJEXT)
 bp_read_f_OBJECTS = $(am_bp_read_f_OBJECTS)
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__DEPENDENCIES_3 =  \
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@	$(am__DEPENDENCIES_1)
 @BUILD_FORTRAN_TRUE@bp_read_f_DEPENDENCIES =  \
 @BUILD_FORTRAN_TRUE@	$(top_builddir)/src/libadiosreadf.a \
-@BUILD_FORTRAN_TRUE@	$(am__DEPENDENCIES_1) \
-@BUILD_FORTRAN_TRUE@	$(am__DEPENDENCIES_3)
+@BUILD_FORTRAN_TRUE@	$(am__DEPENDENCIES_1)
 am_genbp_OBJECTS = genbp-genbp.$(OBJEXT)
 genbp_OBJECTS = $(am_genbp_OBJECTS)
-@HAVE_NC4PAR_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
-@HAVE_NSSI_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
-@HAVE_PHDF5_TRUE@am__DEPENDENCIES_6 = $(am__DEPENDENCIES_1)
 genbp_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1) $(top_builddir)/src/libadiosread.a \
-	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_5) \
-	$(am__DEPENDENCIES_6) $(am__DEPENDENCIES_2)
+	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -130,6 +104,23 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ADIOSLIB_CFLAGS = @ADIOSLIB_CFLAGS@
+ADIOSLIB_CPPFLAGS = @ADIOSLIB_CPPFLAGS@
+ADIOSLIB_EXTRA_CPPFLAGS = @ADIOSLIB_EXTRA_CPPFLAGS@
+ADIOSLIB_LDADD = @ADIOSLIB_LDADD@
+ADIOSLIB_LDFLAGS = @ADIOSLIB_LDFLAGS@
+ADIOSLIB_SEQ_CFLAGS = @ADIOSLIB_SEQ_CFLAGS@
+ADIOSLIB_SEQ_CPPFLAGS = @ADIOSLIB_SEQ_CPPFLAGS@
+ADIOSLIB_SEQ_LDADD = @ADIOSLIB_SEQ_LDADD@
+ADIOSLIB_SEQ_LDFLAGS = @ADIOSLIB_SEQ_LDFLAGS@
+ADIOSREADLIB_CFLAGS = @ADIOSREADLIB_CFLAGS@
+ADIOSREADLIB_CPPFLAGS = @ADIOSREADLIB_CPPFLAGS@
+ADIOSREADLIB_LDADD = @ADIOSREADLIB_LDADD@
+ADIOSREADLIB_LDFLAGS = @ADIOSREADLIB_LDFLAGS@
+ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
+ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
+ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
+ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -175,15 +166,12 @@ FC = $(MPIFC)
 FCFLAGS = @FCFLAGS@
 FCLIBS = @FCLIBS@
 FFLAGS = @FFLAGS@
-GENGETOPT = @GENGETOPT@
 HAVE_DART_FALSE = @HAVE_DART_FALSE@
 HAVE_DART_TRUE = @HAVE_DART_TRUE@
 HAVE_DATATAP_FALSE = @HAVE_DATATAP_FALSE@
 HAVE_DATATAP_TRUE = @HAVE_DATATAP_TRUE@
 HAVE_DMALLOC_FALSE = @HAVE_DMALLOC_FALSE@
 HAVE_DMALLOC_TRUE = @HAVE_DMALLOC_TRUE@
-HAVE_GENGETOPT_FALSE = @HAVE_GENGETOPT_FALSE@
-HAVE_GENGETOPT_TRUE = @HAVE_GENGETOPT_TRUE@
 HAVE_HDF5_FALSE = @HAVE_HDF5_FALSE@
 HAVE_HDF5_TRUE = @HAVE_HDF5_TRUE@
 HAVE_INFINIBAND_FALSE = @HAVE_INFINIBAND_FALSE@
@@ -277,6 +265,8 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+USE_PARALLEL_COMPILER_FALSE = @USE_PARALLEL_COMPILER_FALSE@
+USE_PARALLEL_COMPILER_TRUE = @USE_PARALLEL_COMPILER_TRUE@
 VERSION = @VERSION@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
@@ -328,59 +318,20 @@ AUTOMAKE_OPTIONS = no-dependencies
 
 # read_coords read_phi read_parts_global read_gena read_gena_pncd read_pixie_all
 genbp_SOURCES = genbp.c
-genbp_LDFLAGS = $(MXML_LDFLAGS) $(am__append_2) $(am__append_4) \
-	$(am__append_6) $(am__append_7)
-genbp_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) \
-	$(top_builddir)/src/libadiosread.a $(am__append_1) \
-	$(am__append_3) $(am__append_5) $(am__append_8)
-@HAVE_DART_TRUE@genbp_CPPFLAGS = $(DART_CPPFLAGS)
+genbp_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+genbp_CFLAGS = $(ADIOSLIB_CFLAGS)
+genbp_LDADD = $(top_builddir)/src/libadios.a $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+genbp_LDFLAGS = $(ADIOSLIB_LDFLAGS) 
 @BUILD_FORTRAN_TRUE@bp_read_f_SOURCES = bp_read_f.F90
-@BUILD_FORTRAN_TRUE@bp_read_f_LDFLAGS = $(am__append_9) \
-@BUILD_FORTRAN_TRUE@	$(am__append_11)
-@BUILD_FORTRAN_TRUE@bp_read_f_LDADD =  \
-@BUILD_FORTRAN_TRUE@	$(top_builddir)/src/libadiosreadf.a \
-@BUILD_FORTRAN_TRUE@	$(am__append_10) $(am__append_12)
-@BUILD_FORTRAN_TRUE@@HAVE_DMALLOC_TRUE@bp_read_f_CFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@bp_read_f_CPPFLAGS = $(DART_CPPFLAGS)
-
-#read_coords_SOURCES = read_coords.F90
-#read_coords_LDADD =  $(top_builddir)/src/libadiosread.a
-#
-#read_phi_SOURCES = read_phi.F90
-#read_phi_LDADD = $(top_builddir)/src/libadiosread.a
-#
-#read_pixie_all_SOURCES = read_pixie_all.F90
-#read_pixie_all_LDADD = $(top_builddir)/src/libadiosread.a
-
-#read_parts_global_SOURCES = read_parts_global.F90
-#read_parts_global_LDFLAGS = $(MXML_LDFLAGS)
-#read_parts_global_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) $(top_builddir)/src/libadiosread.a
-#if HAVE_PHDF5
-#read_parts_global_LDADD +=  $(PHDF5_LIBS)
-#read_parts_global_LDFLAGS += $(PHDF5_LDFLAGS)
-#endif
-#
-#read_gena_SOURCES = read_gena.F90
-#read_gena_LDFLAGS = $(MXML_LDFLAGS)
-#read_gena_LDADD = $(top_builddir)/src/libadios.a $(MXML_LIBS) $(top_builddir)/src/libadiosread.a
-#if HAVE_PHDF5
-#read_gena_LDADD +=  $(PHDF5_LIBS)
-#read_gena_LDFLAGS += $(PHDF5_LDFLAGS)
-#endif
-
-#read_gena_pncd_SOURCES = read_gena_pncd.c
-#read_gena_pncd_LDFLAGS = $(MXML_LDFLAGS)
-#read_gena_pncd_LDADD = /ccs/home/sklasky/parallel-netcdf/jaguar/lib/libpnetcdf.a 
-#if HAVE_PHDF5
-#read_gena_pncd_LDADD +=  $(PHDF5_LIBS)
-#read_gena_pncd_LDFLAGS += $(PHDF5_LDFLAGS)
-#endif
+@BUILD_FORTRAN_TRUE@bp_read_f_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@bp_read_f_CFLAGS = $(ADIOSLIB_CFLAGS)
+@BUILD_FORTRAN_TRUE@bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf.a $(ADIOSREADLIB_LDADD)
+@BUILD_FORTRAN_TRUE@bp_read_f_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
 bp_read_c_SOURCES = bp_read_c.c
-bp_read_c_LDFLAGS = $(am__append_13) $(am__append_15)
-bp_read_c_LDADD = $(top_builddir)/src/libadiosread.a $(am__append_14) \
-	$(am__append_16)
-@HAVE_DMALLOC_TRUE@bp_read_c_CFLAGS = -DDMALLOC  $(DMALLOC_CPPFLAGS)
-@HAVE_DART_TRUE@bp_read_c_CPPFLAGS = $(DART_CPPFLAGS)
+bp_read_c_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+bp_read_c_CFLAGS = $(ADIOSLIB_CFLAGS)
+bp_read_c_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
+bp_read_c_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
 FCLINK = \
         $(LIBTOOL) --mode=link --tag F77 $(FC) \
         $(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
@@ -474,10 +425,10 @@ bp_read_c-bp_read_c.obj: bp_read_c.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp_read_c_CPPFLAGS) $(CPPFLAGS) $(bp_read_c_CFLAGS) $(CFLAGS) -c -o bp_read_c-bp_read_c.obj `if test -f 'bp_read_c.c'; then $(CYGPATH_W) 'bp_read_c.c'; else $(CYGPATH_W) '$(srcdir)/bp_read_c.c'; fi`
 
 genbp-genbp.o: genbp.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(genbp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o genbp-genbp.o `test -f 'genbp.c' || echo '$(srcdir)/'`genbp.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(genbp_CPPFLAGS) $(CPPFLAGS) $(genbp_CFLAGS) $(CFLAGS) -c -o genbp-genbp.o `test -f 'genbp.c' || echo '$(srcdir)/'`genbp.c
 
 genbp-genbp.obj: genbp.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(genbp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o genbp-genbp.obj `if test -f 'genbp.c'; then $(CYGPATH_W) 'genbp.c'; else $(CYGPATH_W) '$(srcdir)/genbp.c'; fi`
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(genbp_CPPFLAGS) $(CPPFLAGS) $(genbp_CFLAGS) $(CFLAGS) -c -o genbp-genbp.obj `if test -f 'genbp.c'; then $(CYGPATH_W) 'genbp.c'; else $(CYGPATH_W) '$(srcdir)/genbp.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

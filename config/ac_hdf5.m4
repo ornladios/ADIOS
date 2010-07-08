@@ -10,87 +10,61 @@ AC_MSG_NOTICE([=== checking for HDF5 ===])
 
 AM_CONDITIONAL(HAVE_HDF5,true)
 
+dnl Automatic checking for HDF5 is disabled now.
 AC_ARG_WITH(hdf5,
             [  --with-hdf5=<location of HDF5 installation>],
-            [HDF5_DIR=$withval], [with_hdf5=check])
+            [HDF5_DIR=$withval], [with_hdf5=no])
+
+AC_ARG_WITH(hdf5-incdir,
+            [  --with-hdf5-incdir=<location of HDF5 includes>],
+            [HDF5_INCDIR=$withval
+             with_hdf5=detailed])
+
+AC_ARG_WITH(hdf5-libdir,
+             [  --with-hdf5-libdir=<location of HDF5 library>],
+             [HDF5_LIBDIR=$withval
+              with_hdf5=detailed])
+
+AC_ARG_WITH(hdf5-libs,
+             [  --with-hdf5-libs=<linker flags besides -L<hdf5_libdir>, e.g. -lhdf5 -lhdf5_hl -lz>],
+             [HDF5_LIBS=$withval
+              with_hdf5=detailed])
+
 
 dnl If --without-hdf5 was given set HAVE_HDF5 to false and do nothing more
+dnl If nothing was given, then too, do nothing 
 if test "x$with_hdf5" == "xno"; then
 
    AM_CONDITIONAL(HAVE_HDF5,false)
 
 else
 
-   dnl allow args --with-hdf5 incdir and --with-hdf5-libdir
-
-   AC_ARG_WITH(hdf5-incdir,
-                [  --with-hdf5-incdir=<location of HDF5 includes>],
-                [HDF5_INCDIR=$withval
-                 with_hdf5=detailed])
-
-   AC_ARG_WITH(hdf5-libdir,
-                [  --with-hdf5-libdir=<location of HDF5 library>],
-                [HDF5_LIBDIR=$withval
-                 with_hdf5=detailed])
-
-   AC_ARG_WITH(hdf5-libs,
-                [  --with-hdf5-libs=<linker flags besides -L<hdf5_libdir>, e.g. -lhdf5 -lhdf5_hl -lz>],
-                [HDF5_LIBS=$withval
-                 with_hdf5=detailed])
-
-
-    ac_use_cray_hdf5=no  dnl will set to yes if we will use CRAY_HDF5_DIR below
-
     dnl If we know HDF5_DIR, then we can know HDF5_INCDIR.
-    dnl If we know CRAY_HDF5_DIR, then we leave HDF5_INCDIR empty.
     dnl We don't overwrite HDF5_INCDIR.
     if test -z "${HDF5_INCDIR}"; then
         if test -n "${HDF5_DIR}"; then
             HDF5_INCDIR="${HDF5_DIR}/include";
-        elif test -n "${CRAY_HDF5_DIR}"; then
-            HDF5_INCDIR="";
-            ac_use_cray_hdf5=yes
         fi
     fi
 
     dnl If we know HDF5_DIR, then we can know HDF5_LIBDIR.
-    dnl If we know CRAY_HDF5_DIR, then we leave HDF5_LIBDIR empty.
     dnl We don't overwrite HDF5_LIBDIR.
     if test -z "${HDF5_LIBDIR}"; then
         if test -n "${HDF5_DIR}"; then
             HDF5_LIBDIR="${HDF5_DIR}/lib";
-        elif test -n "${CRAY_HDF5_DIR}"; then
-            HDF5_LIBDIR="";
-            ac_use_cray_hdf5=yes
         fi
     fi
 
-    if test -n "${HDF5_CLIB}"; then
-        HDF5_CPPFLAGS="${HDF5_CLIB}"
-        dnl echo " --- HDF5_CLIB was defined. HDF5_CPPFLAGS=${HDF5_CPPFLAGS}"
-    elif test -n "${HDF5_INCDIR}"; then
-        dnl Add "-I" to HDF5_INCDIR.
-        HDF5_CPPFLAGS="-I${HDF5_INCDIR}"
-    else
-        ac_hdf5_ok=no
-    fi
+    dnl Add "-I" to HDF5_INCDIR.
+    HDF5_CPPFLAGS="-I${HDF5_INCDIR}"
 
-    if test -n "${HDF5_CLIB}"; then
-        HDF5_LDFLAGS="${HDF5_CLIB}"
-        dnl echo " --- HDF5_CLIB was defined. HDF5_LDFLAGS=${HDF5_CPPFLAGS}"
-    elif test -n "${HDF5_LIBDIR}"; then
-        dnl Add "-L" to HDF5_LIBDIR.
-        HDF5_LDFLAGS="-L${HDF5_LIBDIR} ${HDF5_LIBS}"
-    else
-        ac_hdf5_ok=no
-    fi
+    dnl Add "-L" to HDF5_LIBDIR.
+    HDF5_LDFLAGS="-L${HDF5_LIBDIR}"
 
-    dnl if hdf5 libs are not defined (and not Cray hdf5 lib), then guess and define it
+    dnl if hdf5 libs are not defined then guess and define it
     if test -z "${HDF5_LIBS}"; then
-        if test "${ac_use_cray_hdf5}" != "yes"; then
-            dnl default HDF5 lib is usually just -lhdf5
-            HDF5_LIBS="-lhdf5 -lz"
-        fi
+        dnl default HDF5 lib is usually just -lhdf5 -lz
+        HDF5_LIBS="-lhdf5 -lz"
     fi
 
     save_CC="$CC"
@@ -103,12 +77,20 @@ else
     CC="$MPICC"
 
     if test -z "${HAVE_HDF5_TRUE}"; then
-        AC_CHECK_HEADERS(hdf5.h,
-            ,
-            [if test "x$with_hdf5" != xcheck; then
-                AC_MSG_FAILURE( [--with-hdf5 was given, but test for hdf5.h failed])
-             fi
-             AM_CONDITIONAL(HAVE_HDF5,false)])
+        dnl  AC_CHECK_HEADERS(hdf5.h,
+        dnl      ,
+        dnl      [if test "x$with_hdf5" != xcheck; then
+        dnl          AC_MSG_FAILURE( [--with-hdf5 was given, but test for hdf5.h failed])
+        dnl       fi
+        dnl       AM_CONDITIONAL(HAVE_HDF5,false)])
+        AC_MSG_CHECKING([for hdf5.h])
+        if test -f ${HDF5_INCDIR}/hdf5.h; then
+            AC_MSG_RESULT(yes)
+        else
+            AM_CONDITIONAL(HAVE_HDF5,false)
+            AC_MSG_RESULT(no)
+            AC_MSG_FAILURE( [--with-hdf5 was given, but test for ${HDF5_INCDIR}/hdf5.h failed])
+        fi
     fi
 
     if test -z "${HAVE_HDF5_TRUE}"; then

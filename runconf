@@ -15,8 +15,17 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     module unload pgi
     TARGET=pgi
     module load PE-$TARGET
+    # Use both seq hdf5 (for utils) and 
+    #   parallel hdf5 (for PHDF5 method)
+    module load hdf5/1.8.2
+    SEQ_HDF5_DIR=$HDF5_DIR
+    SEQ_HDF5_CLIB=$HDF5_CLIB
+    module unload hdf5
     module load hdf5/1.8.2_par
-    #module load hdf5/1.6.7-ompi1.2.8
+    PAR_HDF5_DIR=$HDF5_DIR
+    PAR_HDF5_CLIB=$HDF5_CLIB
+    module unload hdf5
+    # Seq NetCDF 3 for bp2ncd
     module load netcdf/3.6.2
     export MPICC=mpicc
     export MPICXX=mpiCC
@@ -40,12 +49,14 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
         --enable-research-transports  \
-        --without-datatap 
-        #--without-phdf5 
-        #--without-netcdf 
+        --without-datatap \
+        --with-hdf5=${SEQ_HDF5_DIR} \
+        --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
+        --with-phdf5=${PAR_HDF5_DIR} \
+        --with-phdf5-libs="${PAR_HDF5_CLIB}"
+        #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--with-datatap=/ccs/home/habbasi/work/ewok/
         #--enable-datatap=ib
-        #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
 
 
 elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "chester" ]; then
@@ -126,7 +137,7 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         module unload PrgEnv-cray
         module unload xt-papi
         #module unload xtpe-quadcore
-        TARGET=pgi
+        TARGET=gnu
         module load PrgEnv-$TARGET
         # NOTE hdf5-parallel module does not work with C++ compiler
         #module load hdf5-parallel
@@ -140,7 +151,8 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         export LDFLAGS="-pgcpplibs" 
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
         export CFLAGS="-fPIC" 
-        ./configure --prefix=/sw/xt5/adios/1.2_rc1/cnl2.2_pgi10.3.0_staging \
+        #./configure --prefix=/sw/xt5/adios/1.2_rc1/cnl2.2_pgi10.3.0_staging \
+        ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xt5.$TARGET \
         --enable-dependency-tracking \
         --with-portals \
         --with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
@@ -149,10 +161,9 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         --with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
         --with-datatap=/ccs/proj/e2e/pnorbert/datatap/xt5/$TARGET \
         --with-nssi=/ccs/proj/e2e/pnorbert/nssi/xt5/$TARGET \
-        --with-dart=/ccs/proj/e2e/pnorbert/dart/current 
+        --with-dart=/ccs/proj/e2e/pnorbert/dart/current/$TARGET
         #--with-nssi=/ccs/home/thkorde/projects/nessie/install/cnl \
         #--with-datatap=/ccs/home/habbasi/work/jaguar
-        #--with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
     
     fi
     
@@ -169,15 +180,21 @@ elif [ `hostname | cut -c 1-4` == "euge" ]; then
     export CC=xlc_r
 
     source /etc/profile.d/modules.sh
+    # NetCDF 3 for bp2ncd
     module load netcdf/3.6.2-linux
+    # Seq HDF5 for bp2h5 
     module load hdf5/1.8.1-linux
+    # HDF5_DIR is not defined by this hdf5 module so we do it here
+    HDF5_DIR=/sw/bgp/hdf5/1.8.1/sles10.1_xlc9.0xlf11.1
 
     ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eugene \
             --enable-dependency-tracking \
-            --with-mxml=/ccs/proj/e2e/adios/bgp  
-        #--with-hdf5=/sw/bgp/hdf5/1.8.0/sles10.1_xlc9.0xlf11.1 \
-        #--with-hdf5-libdir="/sw/bgp/hdf5/1.8.0/sles10.1_xlc9.0xlf11.1/lib -lhdf5 -L/sw/bgp/szip/2.1/sles10.1_xlc9.0/lib -lsz /usr/lib/libz.a" \
-        #--with-netcdf=/sw/bgp/netcdf/3.6.2/sles10.1_xlc9.0xlf11.1
+            --with-mxml=/ccs/proj/e2e/adios/bgp \
+            --with-hdf5=$HDF5_DIR \
+            --with-hdf5-libs="$HDF5_CLIB" \
+            --with-phdf5=/sw/bgp/hdf5/1.8.0/cnk1.2_mpixlc9.0mpixlf11.1 \
+            --with-phdf5-libs="-L/sw/bgp/hdf5/1.8.0/cnk1.2_mpixlc9.0mpixlf11.1/lib -lhdf5 -L/sw/bgp/szip/2.1/cnk1.2_bgxlc9.0/lib -lsz -L/sw/bgp/zlib/1.2.3/cnk1.2_bgxlc9.0 -lz"
+
 
 elif [ `hostname | cut -c 1-4` == "lens" ]; then
 

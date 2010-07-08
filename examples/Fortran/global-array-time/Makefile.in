@@ -37,21 +37,12 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = adios_globaltime$(EXEEXT)
-@HAVE_NC4PAR_TRUE@am__append_1 = $(NC4PAR_LDFLAGS)
-@HAVE_NC4PAR_TRUE@am__append_2 = $(NC4PAR_LIBS)
-@HAVE_NSSI_TRUE@am__append_3 = $(NSSI_LDFLAGS)
-@HAVE_NSSI_TRUE@am__append_4 = $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-@HAVE_PHDF5_TRUE@am__append_5 = $(PHDF5_LDFLAGS)
-@HAVE_PHDF5_TRUE@am__append_6 = $(PHDF5_LIBS)
-@HAVE_DART_TRUE@am__append_7 = $(DART_CPPFLAGS) $(DART_LDFLAGS)
-@HAVE_DART_TRUE@am__append_8 = $(DART_LIBS)
 subdir = examples/Fortran/global-array-time
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_dart.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
-	$(top_srcdir)/config/ac_gengetopt.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
@@ -70,18 +61,11 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_adios_globaltime_OBJECTS =  \
-	adios_globaltime-adios_globaltime.$(OBJEXT)
+am_adios_globaltime_OBJECTS = adios_globaltime.$(OBJEXT)
 adios_globaltime_OBJECTS = $(am_adios_globaltime_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_NC4PAR_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
-@HAVE_NSSI_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1)
-@HAVE_PHDF5_TRUE@am__DEPENDENCIES_4 = $(am__DEPENDENCIES_1)
-@HAVE_DART_TRUE@am__DEPENDENCIES_5 = $(am__DEPENDENCIES_1)
 adios_globaltime_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
-	$(am__DEPENDENCIES_5)
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -97,6 +81,23 @@ ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
+ADIOSLIB_CFLAGS = @ADIOSLIB_CFLAGS@
+ADIOSLIB_CPPFLAGS = @ADIOSLIB_CPPFLAGS@
+ADIOSLIB_EXTRA_CPPFLAGS = @ADIOSLIB_EXTRA_CPPFLAGS@
+ADIOSLIB_LDADD = @ADIOSLIB_LDADD@
+ADIOSLIB_LDFLAGS = @ADIOSLIB_LDFLAGS@
+ADIOSLIB_SEQ_CFLAGS = @ADIOSLIB_SEQ_CFLAGS@
+ADIOSLIB_SEQ_CPPFLAGS = @ADIOSLIB_SEQ_CPPFLAGS@
+ADIOSLIB_SEQ_LDADD = @ADIOSLIB_SEQ_LDADD@
+ADIOSLIB_SEQ_LDFLAGS = @ADIOSLIB_SEQ_LDFLAGS@
+ADIOSREADLIB_CFLAGS = @ADIOSREADLIB_CFLAGS@
+ADIOSREADLIB_CPPFLAGS = @ADIOSREADLIB_CPPFLAGS@
+ADIOSREADLIB_LDADD = @ADIOSREADLIB_LDADD@
+ADIOSREADLIB_LDFLAGS = @ADIOSREADLIB_LDFLAGS@
+ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
+ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
+ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
+ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -142,15 +143,12 @@ FC = $(MPIFC)
 FCFLAGS = @FCFLAGS@
 FCLIBS = @FCLIBS@
 FFLAGS = @FFLAGS@
-GENGETOPT = @GENGETOPT@
 HAVE_DART_FALSE = @HAVE_DART_FALSE@
 HAVE_DART_TRUE = @HAVE_DART_TRUE@
 HAVE_DATATAP_FALSE = @HAVE_DATATAP_FALSE@
 HAVE_DATATAP_TRUE = @HAVE_DATATAP_TRUE@
 HAVE_DMALLOC_FALSE = @HAVE_DMALLOC_FALSE@
 HAVE_DMALLOC_TRUE = @HAVE_DMALLOC_TRUE@
-HAVE_GENGETOPT_FALSE = @HAVE_GENGETOPT_FALSE@
-HAVE_GENGETOPT_TRUE = @HAVE_GENGETOPT_TRUE@
 HAVE_HDF5_FALSE = @HAVE_HDF5_FALSE@
 HAVE_HDF5_TRUE = @HAVE_HDF5_TRUE@
 HAVE_INFINIBAND_FALSE = @HAVE_INFINIBAND_FALSE@
@@ -244,6 +242,8 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+USE_PARALLEL_COMPILER_FALSE = @USE_PARALLEL_COMPILER_FALSE@
+USE_PARALLEL_COMPILER_TRUE = @USE_PARALLEL_COMPILER_TRUE@
 VERSION = @VERSION@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
@@ -292,12 +292,9 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 adios_globaltime_SOURCES = adios_globaltime.F90
-adios_globaltime_LDADD = $(top_builddir)/src/libadiosf.a $(MXML_LIBS) \
-	$(am__append_2) $(am__append_4) $(am__append_6) \
-	$(am__append_8)
-adios_globaltime_LDFLAGS = $(MXML_LDFLAGS) $(am__append_1) \
-	$(am__append_3) $(am__append_5) $(am__append_7)
-@HAVE_DART_TRUE@adios_globaltime_CPPFLAGS = $(DART_CPPFLAGS)
+adios_globaltime_LDADD = $(top_builddir)/src/libadiosf.a \
+	$(ADIOSLIB_LDADD)
+adios_globaltime_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
@@ -362,12 +359,6 @@ distclean-compile:
 
 .F90.lo:
 	$(LTPPFCCOMPILE) -c -o $@ $<
-
-adios_globaltime-adios_globaltime.o: adios_globaltime.F90
-	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_globaltime_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o adios_globaltime-adios_globaltime.o `test -f 'adios_globaltime.F90' || echo '$(srcdir)/'`adios_globaltime.F90
-
-adios_globaltime-adios_globaltime.obj: adios_globaltime.F90
-	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_globaltime_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o adios_globaltime-adios_globaltime.obj `if test -f 'adios_globaltime.F90'; then $(CYGPATH_W) 'adios_globaltime.F90'; else $(CYGPATH_W) '$(srcdir)/adios_globaltime.F90'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

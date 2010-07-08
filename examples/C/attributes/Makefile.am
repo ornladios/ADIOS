@@ -7,39 +7,13 @@ noinst_PROGRAMS = attributes_write attributes_read
 
 attributes_write_SOURCES = attributes_write.c
 attributes_write_LDADD = $(top_builddir)/src/libadios.a 
-attributes_write_LDFLAGS = $(MXML_LDFLAGS)
-attributes_write_LDADD += $(MXML_LIBS)
+attributes_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+attributes_write_LDADD += $(ADIOSLIB_LDADD)
 attributes_read_SOURCES = attributes_read.c
 attributes_read_LDADD = $(top_builddir)/src/libadiosread.a
-attributes_read_LDFLAGS = $(MXML_LDFLAGS)
-attributes_read_LDADD += $(MXML_LIBS)
+attributes_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+attributes_read_LDADD += $(ADIOSLIB_LDADD)
 
-if HAVE_NC4PAR
-attributes_write_LDFLAGS += $(NC4PAR_LDFLAGS)
-attributes_write_LDADD +=   $(NC4PAR_LIBS)
-attributes_read_LDFLAGS += $(NC4PAR_LDFLAGS)
-attributes_read_LDADD +=   $(NC4PAR_LIBS)
-endif
-if HAVE_NSSI
-attributes_write_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-attributes_write_LDFLAGS += $(NSSI_LDFLAGS)
-attributes_read_LDADD +=  $(NSSI_LIBS) $(EXTRA_CXX_LIBS)
-attributes_read_LDFLAGS += $(NSSI_LDFLAGS)
-endif
-if HAVE_PHDF5
-attributes_write_LDFLAGS += $(PHDF5_LDFLAGS)
-attributes_write_LDADD +=   $(PHDF5_LIBS)
-attributes_read_LDFLAGS += $(PHDF5_LDFLAGS)
-attributes_read_LDADD +=   $(PHDF5_LIBS)
-endif
-if HAVE_DART
-attributes_write_CPPFLAGS = $(DART_CPPFLAGS)
-attributes_write_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
-attributes_write_LDADD += $(DART_LIBS)
-attributes_read_CPPFLAGS = $(DART_CPPFLAGS)
-attributes_read_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
-attributes_read_LDADD += $(DART_LIBS)
-endif
 CLEANFILES = *.bp
 CC=$(MPICC)
 EXTRA_DIST = attributes.xml gwrite_temperature.ch gread_temperature.ch
