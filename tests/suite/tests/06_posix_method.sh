@@ -5,7 +5,7 @@
 #
 # Environment variables set by caller:
 # MPIRUN        Run command
-# MPIRUN_NP     Run commands option to set number of processes
+# NP_MPIRUN     Run commands option to set number of processes
 # MAXPROCS      Max number of processes allowed
 # HAVE_FORTRAN  yes or no
 # SRCDIR        Test source dir (.. of this script)
@@ -28,7 +28,7 @@ cp $SRCDIR/programs/posix_method .
 cp $SRCDIR/programs/posix_method.xml .
 
 echo "Run posix_method"
-$MPIRUN $MPIRUN_NP $PROCS ./posix_method
+$MPIRUN $NP_MPIRUN $PROCS ./posix_method
 EX=$?
 if [ $EX != 0 ]; then
     echo "ERROR: posix method failed with exit code=$EX"

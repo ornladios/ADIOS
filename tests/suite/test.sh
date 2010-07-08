@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Run this script in an interactive-job environment, with 16 cores at least.
-# Define MPIRUN and MPIRUN_NP environment variables for running parallel programs
+# Define MPIRUN and NP_MPIRUN environment variables for running parallel programs
 #   like mpirun and -np  or  aprun and -n
 #
 # Run the script in the job directory with full path.
@@ -13,10 +13,10 @@
 XXX=`which aprun &>/dev/null`
 if [ $? == 0 ]; then
     MPIRUN="aprun -q"
-    MPIRUN_NP=-n
+    NP_MPIRUN=-n
 else
     MPIRUN=mpirun
-    MPIRUN_NP=-np
+    NP_MPIRUN=-np
 fi
 KEEPOUTPUT=no
 MAXPROCS=128
@@ -34,7 +34,7 @@ Usage:  <path>/`basename $0` [-m runcmd] [-n "-np"] [-p procs] [-h] [-k]
             (and end with .sh)
   OPTIONS
      -m runcmd  command to start an MPI program. Default: $MPIRUN
-     -n runopt  option to runcmd to specify number of cores. Default: $MPIRUN_NP
+     -n runopt  option to runcmd to specify number of cores. Default: $NP_MPIRUN
      -p procs   Run only those tests that use less up to 'procs' processes. 
                 Default: $MAXPROCS
      -k         Do not remove logs and work dir of successful tests.
@@ -51,7 +51,7 @@ while getopts ":m:n:p:kh" Option
 do  
   case $Option in
         m) MPIRUN=$OPTARG;;
-        n) MPIRUN_NP=$OPTARG;;
+        n) NP_MPIRUN=$OPTARG;;
         p) MAXPROCS=$OPTARG;;
         k) KEEPOUTPUT=yes;;
         h) Usage; exit 0;;
@@ -85,7 +85,7 @@ fi
 echo "Settings:"
 echo "  Test source directory:  $SRCDIR"
 echo "  Run command:            $MPIRUN"
-echo "  Run command np option:  $MPIRUN_NP"
+echo "  Run command np option:  $NP_MPIRUN"
 echo "  Max. processes to use:  $MAXPROCS"
 echo "  Keep test output:       $KEEPOUTPUT"
 
@@ -134,7 +134,7 @@ for TESTSCRIPT in $TESTS; do
         TESTSCRIPT=../$TESTSCRIPT
     fi
     # Run the test script with setting the environment for it
-    MPIRUN="$MPIRUN" MPIRUN_NP="$MPIRUN_NP" HAVE_FORTRAN="$HAVE_FORTRAN" SRCDIR="$TESTSRCDIR" \
+    MPIRUN="$MPIRUN" NP_MPIRUN="$NP_MPIRUN" HAVE_FORTRAN="$HAVE_FORTRAN" SRCDIR="$TESTSRCDIR" \
         TRUNKDIR="$TRUNKDIR" MAXPROCS="$MAXPROCS" \
         $TESTSCRIPT &> ../log.$TEST
     EX=$?

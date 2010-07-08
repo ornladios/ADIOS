@@ -5,7 +5,7 @@
 #
 # Environment variables set by caller:
 # MPIRUN        Run command
-# MPIRUN_NP     Run commands option to set number of processes
+# NP_MPIRUN     Run commands option to set number of processes
 # MAXPROCS      Max number of processes allowed
 # HAVE_FORTRAN  yes or no
 # SRCDIR        Test source dir (.. of this script)
@@ -25,7 +25,7 @@ cp $TRUNKDIR/examples/C/attributes/attributes_write .
 cp $TRUNKDIR/examples/C/attributes/attributes.xml .
 
 echo "Run C attributes_write"
-$MPIRUN $MPIRUN_NP $PROCS ./attributes_write
+$MPIRUN $NP_MPIRUN $PROCS ./attributes_write
 EX=$?
 if [ ! -f attributes.bp ]; then
     echo "ERROR: C version of attributes_write failed. No BP file is created. Exit code=$EX"
@@ -42,7 +42,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C attributes_read"
-$MPIRUN $MPIRUN_NP $READPROCS ./attributes_read | sort > c_read.txt
+$MPIRUN $NP_MPIRUN $READPROCS ./attributes_read | sort > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of attributes_read failed with exit code $EX"

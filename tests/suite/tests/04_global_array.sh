@@ -5,7 +5,7 @@
 #
 # Environment variables set by caller:
 # MPIRUN        Run command
-# MPIRUN_NP     Run commands option to set number of processes
+# NP_MPIRUN     Run commands option to set number of processes
 # MAXPROCS      Max number of processes allowed
 # HAVE_FORTRAN  yes or no
 # SRCDIR        Test source dir (.. of this script)
@@ -25,7 +25,7 @@ cp $TRUNKDIR/examples/C/global-array/adios_read_global .
 cp $TRUNKDIR/examples/C/global-array/adios_global.xml .
 
 echo "Run C adios_global"
-$MPIRUN $MPIRUN_NP $PROCS ./adios_global
+$MPIRUN $NP_MPIRUN $PROCS ./adios_global
 EX=$?
 if [ ! -f adios_global.bp ]; then
     echo "ERROR: C version of adios_global failed. No BP file is created. Exit code=$EX"
@@ -42,7 +42,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C adios_read_global"
-$MPIRUN $MPIRUN_NP $READPROCS ./adios_read_global | sort > c_read.txt
+$MPIRUN $NP_MPIRUN $READPROCS ./adios_read_global | sort > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of adios_read_global exited with $EX"
@@ -70,7 +70,7 @@ cp $TRUNKDIR/examples/Fortran/global-array/adios_global adios_global_f
 cp $TRUNKDIR/examples/Fortran/global-array/adios_global.xml .
 
 echo "Run Fortran adios_global_f"
-$MPIRUN $MPIRUN_NP $PROCS ./adios_global_f
+$MPIRUN $NP_MPIRUN $PROCS ./adios_global_f
 EX=$?
 if [ ! -f adios_global.bp ]; then
     echo "ERROR: Fortran version of adios_global failed. No BP file is created. Exit code=$EX"

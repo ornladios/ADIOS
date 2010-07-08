@@ -5,7 +5,7 @@
 #
 # Environment variables set by caller:
 # MPIRUN        Run command
-# MPIRUN_NP     Run commands option to set number of processes
+# NP_MPIRUN     Run command's option to set number of processes
 # MAXPROCS      Max number of processes allowed
 # HAVE_FORTRAN  yes or no
 # SRCDIR        Test source dir (.. of this script)
@@ -24,7 +24,8 @@ cp $TRUNKDIR/examples/C/scalars/scalars_write .
 cp $TRUNKDIR/examples/C/scalars/scalars.xml .
 
 echo "Run C scalars_write"
-$MPIRUN $MPIRUN_NP $PROCS ./scalars_write
+echo $MPIRUN $NP_MPIRUN $PROCS ./scalars_write
+$MPIRUN $NP_MPIRUN $PROCS ./scalars_write
 EX=$?
 if [ ! -f scalars.bp ]; then
     echo "ERROR: C version of scalars_write failed. No BP file is created. Exit code=$EX"
@@ -41,7 +42,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C scalars_read"
-$MPIRUN $MPIRUN_NP $PROCS ./scalars_read > c_read.txt
+$MPIRUN $NP_MPIRUN $PROCS ./scalars_read > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of scalars_read failed with exit code $EX"
@@ -67,7 +68,7 @@ cp $TRUNKDIR/examples/Fortran/scalars/scalars_write fortran_write
 cp $TRUNKDIR/examples/Fortran/scalars/scalars.xml .
 
 echo "Run Fortran scalar_write"
-$MPIRUN $MPIRUN_NP $PROCS ./fortran_write
+$MPIRUN $NP_MPIRUN $PROCS ./fortran_write
 EX=$?
 if [ ! -f scalars.bp ]; then
     echo "ERROR: Fortran version of scalars_write failed. No BP file is created. Exit code=$EX"
@@ -84,7 +85,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run Fortran scalars_read"
-$MPIRUN $MPIRUN_NP $PROCS ./fortran_read > f_read.txt
+$MPIRUN $NP_MPIRUN $PROCS ./fortran_read > f_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: Fortran version of scalars_read failed with exit code $EX"

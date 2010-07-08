@@ -5,7 +5,7 @@
 #
 # Environment variables set by caller:
 # MPIRUN        Run command
-# MPIRUN_NP     Run commands option to set number of processes
+# NP_MPIRUN     Run commands option to set number of processes
 # MAXPROCS      Max number of processes allowed
 # HAVE_FORTRAN  yes or no
 # SRCDIR        Test source dir (.. of this script)
@@ -24,7 +24,7 @@ cp $TRUNKDIR/examples/C/arrays/arrays_write .
 cp $TRUNKDIR/examples/C/arrays/arrays.xml .
 
 echo "Run C arrays_write"
-$MPIRUN $MPIRUN_NP $PROCS ./arrays_write
+$MPIRUN $NP_MPIRUN $PROCS ./arrays_write
 EX=$?
 if [ ! -f arrays.bp ]; then
     echo "ERROR: C version of arrays_write failed. No BP file is created. Exit code=$EX"
@@ -41,7 +41,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C arrays_read"
-$MPIRUN $MPIRUN_NP $PROCS ./arrays_read | sort > c_read.txt
+$MPIRUN $NP_MPIRUN $PROCS ./arrays_read | sort > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of arrays_read failed with exit code $EX"

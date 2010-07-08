@@ -5,7 +5,7 @@
 #
 # Environment variables set by caller:
 # MPIRUN        Run command
-# MPIRUN_NP     Run commands option to set number of processes
+# NP_MPIRUN     Run commands option to set number of processes
 # MAXPROCS      Max number of processes allowed
 # HAVE_FORTRAN  yes or no
 # SRCDIR        Test source dir (.. of this script)
@@ -24,7 +24,7 @@ cp $TRUNKDIR/examples/C/global-array-time/adios_read_globaltime .
 cp $TRUNKDIR/examples/C/global-array-time/adios_globaltime.xml .
 
 echo "Run C adios_globaltime"
-$MPIRUN $MPIRUN_NP $PROCS ./adios_globaltime
+$MPIRUN $NP_MPIRUN $PROCS ./adios_globaltime
 EX=$?
 if [ ! -f adios_globaltime.bp ]; then
     echo "ERROR: C version of adios_globaltime failed. No BP file is created. Exit code=$EX"
@@ -41,7 +41,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C adios_read_globaltime"
-$MPIRUN $MPIRUN_NP $PROCS ./adios_read_globaltime | sort > c_read.txt
+$MPIRUN $NP_MPIRUN $PROCS ./adios_read_globaltime | sort > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of adios_read_globaltime exited with $EX"
@@ -69,7 +69,7 @@ cp $TRUNKDIR/examples/Fortran/global-array-time/adios_globaltime adios_globaltim
 cp $TRUNKDIR/examples/Fortran/global-array-time/adios_globaltime.xml .
 
 echo "Run Fortran adios_globaltime_f"
-$MPIRUN $MPIRUN_NP $PROCS ./adios_globaltime_f
+$MPIRUN $NP_MPIRUN $PROCS ./adios_globaltime_f
 EX=$?
 if [ ! -f adios_globaltime.bp ]; then
     echo "ERROR: Fortran version of adios_globaltime failed. No BP file is created. Exit code=$EX"
