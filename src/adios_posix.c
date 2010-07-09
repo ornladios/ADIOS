@@ -49,7 +49,109 @@ struct adios_POSIX_data_struct
 
     uint64_t vars_start;
     uint64_t vars_header_size;
+#ifdef HAVE_MPI
+    // Metadata file handle
+    int mf;
+    MPI_Comm group_comm;
+    int rank;
+    int size;
+#endif
 };
+
+#ifdef HAVE_MPI
+static void adios_var_to_comm (const char * comm_name
+                              ,enum ADIOS_FLAG host_language_fortran
+                              ,void * data
+                              ,MPI_Comm * comm
+                              )
+{
+    if (data)
+    {
+        int t = *(int *) data;
+
+        if (!comm_name)
+        {
+            if (!t)
+            {
+                fprintf (stderr, "communicator not provided and none "
+                                 "listed in XML.  Defaulting to "
+                                 "MPI_COMM_SELF\n"
+                        );
+
+                *comm = MPI_COMM_SELF;
+            }
+            else
+            {
+                if (host_language_fortran == adios_flag_yes)
+                {
+                    *comm = MPI_Comm_f2c (t);
+                }
+                else
+                {
+                    *comm = *(MPI_Comm *) data;
+                }
+            }
+        }
+        else
+        {
+            if (!strcmp (comm_name, ""))
+            {
+                if (!t)
+                {
+                    fprintf (stderr, "communicator not provided and none "
+                                     "listed in XML.  Defaulting to "
+                                     "MPI_COMM_SELF\n"
+                            );
+
+                    *comm = MPI_COMM_SELF;
+                }
+                else
+                {
+                    if (host_language_fortran == adios_flag_yes)
+                    {
+                        *comm = MPI_Comm_f2c (t);
+                    }
+                    else
+                    {
+                        *comm = *(MPI_Comm *) data;
+                    }
+                }
+            }
+            else
+            {
+                if (!t)
+                {
+                    fprintf (stderr, "communicator not provided but one "
+                                     "listed in XML.  Defaulting to "
+                                     "MPI_COMM_WORLD\n"
+                            );
+
+                    *comm = MPI_COMM_WORLD;
+                }
+                else
+                {
+                    if (host_language_fortran == adios_flag_yes)
+                    {
+                        *comm = MPI_Comm_f2c (t);
+                    }
+                    else
+                    {
+                        *comm = *(MPI_Comm *) data;
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        fprintf (stderr, "coordination-communication not provided. "
+                         "Using MPI_COMM_SELF instead\n"
+                );
+
+        *comm = MPI_COMM_SELF;
+    }
+}
+#endif
 
 void adios_posix_init (const char * parameters
                       ,struct adios_method_struct * method
@@ -70,51 +172,99 @@ void adios_posix_init (const char * parameters
     p->old_attrs_root = 0;
     p->vars_start = 0;
     p->vars_header_size = 0;
+#ifdef HAVE_MPI
+    p->mf = 0;
+    p->group_comm = MPI_COMM_NULL;
+    p->rank = 0;
+    p->size = 0;
+#endif
 }
 
 int adios_posix_open (struct adios_file_struct * fd
                      ,struct adios_method_struct * method, void * comm
                      )
 {
+    char * subfile_name;
+    char * mdfile_name;
     int rank;
-    char * name, * name_with_rank, rank_string[16];
+    char * name_with_rank, rank_string[16];
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
+#ifdef HAVE_MPI
+    // Need to figure out new the new fd->name, such as restart.bp.0, restart.bp.1....
+    adios_var_to_comm (fd->group->group_comm
+                      ,fd->group->adios_host_language_fortran
+                      ,comm
+                      ,&p->group_comm
+                      );
 
-    // Need to figure out new the new fd->name, such as restart.0.bp, restart.1.bp....
-    // Here we use MPI_COMM_WORLD as communicator, so in the case of comm being splitted,
-    // we have files generated such as restart.0.bp, restart.2.bp, restart.4.bp....
-// NEED TO FIX BY REMOVING THIS CODE. THERE SHOULD NOT BE ANY MPI IN THIS METHOD
-// using this should be a separate method that reuses a base set of code
-#if HAVE_MPI
-    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+    if (p->group_comm == MPI_COMM_NULL)
+    {
+        p->group_comm = MPI_COMM_SELF;
+    }
 
-    sprintf (rank_string, "%d", rank);
-    name_with_rank = malloc (strlen (fd->name) + strlen (rank_string) + 2);
-    sprintf (name_with_rank, "%s.%s",  fd->name, rank_string);
+    // if communicator is not MPI_COMM_NULL/MPI_COMM_SELF, subfiles will be generated in a dir.
+    if (p->group_comm != MPI_COMM_SELF)
+    {
+        MPI_Comm_rank (p->group_comm, &p->rank);
+        MPI_Comm_size (p->group_comm, &p->size);
+
+        sprintf (rank_string, "%d", p->rank);
+        // fd->name + '.' + MPI rank + '\0'
+        name_with_rank = malloc (strlen (fd->name) + strlen (rank_string) + 2);
+        sprintf (name_with_rank, "%s.%s",  fd->name, rank_string);
+
+        // e.g., subfile_name is restart.bp.dir/restart.bp.0
+        subfile_name = malloc (strlen (fd->name)
+                              + 5
+                              + strlen (method->base_path)
+                              + strlen (name_with_rank)
+                              + 1
+                              );
+        sprintf (subfile_name, "%s%s%s%s"
+                             , fd->name
+                             , ".dir/"
+                             , method->base_path
+                             , name_with_rank
+                             );
+
+        mdfile_name = malloc (strlen (method->base_path)
+                             + strlen (fd->name)
+                             + 1
+                             );
+        sprintf (mdfile_name, "%s%s"
+                            , method->base_path
+                            , fd->name
+                            );
+
+        free (name_with_rank);
+    }
+    else
 #endif
+    {
+        // if the communicator is MPI_COMM_SELF, there won't be metadata file generated.
+        // The actually subfile name is the one supplied by the user
+        subfile_name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
+        sprintf (subfile_name, "%s%s", method->base_path, fd->name);
+        mdfile_name = 0;
+    }
 
-    free (fd->name);
-    fd->name = strdup (name_with_rank);
-    free (name_with_rank); 
+    fd->subfile_name = strdup (subfile_name);
 
-    // figure out the actual name of the file.
-    name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
-    sprintf (name, "%s%s", method->base_path, fd->name);
     struct stat s;
-    if (stat (name, &s) == 0)
+    if (stat (subfile_name, &s) == 0)
         p->b.file_size = s.st_size;
 
     switch (fd->mode)
     {
         case adios_mode_read:
         {
-            p->b.f = open (name, O_RDONLY | O_LARGEFILE);
+            p->b.f = open (subfile_name, O_RDONLY | O_LARGEFILE);
             if (p->b.f == -1)
             {
                 fprintf (stderr, "ADIOS POSIX: file not found: %s\n", fd->name);
 
-                free (name);
+                free (subfile_name);
 
                 return 0;
             }
@@ -126,10 +276,29 @@ int adios_posix_open (struct adios_file_struct * fd
 
         case adios_mode_write:
         {
-            p->b.f = open (name, O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE
-                            ,  S_IRUSR | S_IWUSR
-                             | S_IRGRP | S_IWGRP
-                             | S_IROTH | S_IWOTH
+#ifdef HAVE_MPI
+            // create dir to keep all the subfiles
+            if (p->group_comm != MPI_COMM_SELF)
+            {
+                if (p->rank == 0)
+                {
+                    char * dir_name = malloc (strlen (fd->name) + 4 + 1);
+                    sprintf (dir_name, "%s%s"
+                                     , fd->name
+                                     , ".dir"
+                                     ) ;
+
+                    mkdir (dir_name, S_IRWXU | S_IRWXG);
+                    free (dir_name);
+                }
+
+                MPI_Barrier (p->group_comm);
+            }
+#endif
+            p->b.f = open (subfile_name, O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE
+                                       ,  S_IRUSR | S_IWUSR
+                                        | S_IRGRP | S_IWGRP
+                                        | S_IROTH | S_IWOTH
                             );
             if (p->b.f == -1)
             {
@@ -138,10 +307,38 @@ int adios_posix_open (struct adios_file_struct * fd
                         ,method->base_path, fd->name
                         );
 
-                free (name);
+                free (subfile_name);
+                free (mdfile_name);
 
                 return 0;
             }
+
+#ifdef HAVE_MPI
+            // open metadata file
+            if (p->group_comm != MPI_COMM_SELF)
+            {
+                if (p->rank == 0)
+                {
+                    p->mf = open (mdfile_name, O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE
+                                  ,  S_IRUSR | S_IWUSR
+                                   | S_IRGRP | S_IWGRP
+                                   | S_IROTH | S_IWOTH
+                             );
+                    if (p->mf == -1)
+                    {
+                        fprintf (stderr, "adios_posix_open failed for "
+                                         "base_path %s, name %s\n"
+                                ,method->base_path, fd->name
+                                );
+
+                        free (subfile_name);
+                        free (mdfile_name);
+
+                        return 0;
+                    }
+                }
+            }
+#endif
             fd->base_offset = 0;
             fd->pg_start_in_file = 0;
 
@@ -151,11 +348,29 @@ int adios_posix_open (struct adios_file_struct * fd
         case adios_mode_append:
         {
             int old_file = 1;
-            p->b.f = open (name, O_RDWR | O_LARGEFILE);
+#ifdef HAVE_MPI
+            if (p->group_comm != MPI_COMM_SELF)
+            {
+                if (p->rank == 0)
+                {
+                    char * dir_name = malloc (strlen (fd->name) + 4 + 1);
+                    sprintf (dir_name, "%s%s"
+                                     , fd->name
+                                     , ".dir"
+                                     ) ;
+
+                    mkdir (dir_name, S_IRWXU | S_IRWXG);
+                    free (dir_name);
+                }
+
+                MPI_Barrier (p->group_comm);
+            }
+#endif
+            p->b.f = open (subfile_name, O_RDWR | O_LARGEFILE);
             if (p->b.f == -1)
             {
                 old_file = 0;
-                p->b.f = open (name,  O_WRONLY | O_CREAT | O_LARGEFILE
+                p->b.f = open (subfile_name,  O_WRONLY | O_CREAT | O_LARGEFILE
                                 ,  S_IRUSR | S_IWUSR
                                  | S_IRGRP | S_IWGRP
                                  | S_IROTH | S_IWOTH
@@ -167,12 +382,46 @@ int adios_posix_open (struct adios_file_struct * fd
                             ,method->base_path, fd->name
                             );
 
-                    free (name);
+                    free (subfile_name);
+                    free (mdfile_name);
 
                     return 0;
                 }
             }
+#ifdef HAVE_MPI
+            // open metadata file
+            if (p->group_comm != MPI_COMM_SELF)
+            {
+                if (p->rank == 0)
+                {
+                    p->mf = open (mdfile_name, O_WRONLY | O_TRUNC | O_LARGEFILE
+                                              , S_IRUSR | S_IWUSR
+                                              | S_IRGRP | S_IWGRP
+                                              | S_IROTH | S_IWOTH
+                                 );
+                    if (p->mf == -1)
+                    {
+                        p->mf = open (mdfile_name, O_WRONLY| O_CREAT | O_LARGEFILE
+                                                 , S_IRUSR | S_IWUSR
+                                                 | S_IRGRP | S_IWGRP
+                                             | S_IROTH | S_IWOTH
+                                     );
+                        if (p->mf == -1)
+                        {
+                            fprintf (stderr, "adios_posix_open failed for "
+                                             "base_path %s, name %s\n"
+                                    ,method->base_path, fd->name
+                                    );
 
+                            free (subfile_name);
+                            free (mdfile_name);
+
+                            return 0;
+                        }
+                    }
+                }
+            }
+#endif
             if (old_file)
             {
                 // now we have to read the old stuff so we can merge it
@@ -224,7 +473,8 @@ int adios_posix_open (struct adios_file_struct * fd
                                 ,version
                                 );
 
-                        free (name);
+                        free (subfile_name);
+                        free (mdfile_name);
 
                         return 0;
                 }
@@ -237,13 +487,15 @@ int adios_posix_open (struct adios_file_struct * fd
         {
             fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
 
-            free (name);
+            free (subfile_name);
+            free (mdfile_name);
 
             return 0;
         }
     }
 
-    free (name);
+    free (subfile_name);
+    free (mdfile_name);
 
     return 1;
 }
@@ -742,18 +994,126 @@ void adios_posix_close (struct adios_file_struct * fd
             uint64_t index_start = fd->base_offset + fd->offset;
 
             // build index
-            adios_build_index_v1 (fd, &new_pg_root, &new_vars_root
-                                 ,&new_attrs_root
+            adios_build_index_v1 (fd, &p->old_pg_root, &p->old_vars_root
+                                 ,&p->old_attrs_root
                                  );
             // if collective, gather the indexes from the rest and call
             // adios_merge_index_v1 (&new_pg_root, &new_vars_root, pg, vars);
             adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                 ,index_start, new_pg_root, new_vars_root
-                                 ,new_attrs_root
+                                 ,index_start, p->old_pg_root, p->old_vars_root
+                                 ,p->old_attrs_root
                                  );
             adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
             adios_posix_do_write (fd, method, buffer, buffer_offset);
+#ifdef HAVE_MPI
+            if (p->group_comm != MPI_COMM_SELF)
+            {
+                if (p->rank == 0)
+                {
+                    int * index_sizes = malloc (4 * p->size);
+                    int * index_offsets = malloc (4 * p->size);
+                    char * recv_buffer = 0;
+                    int i;
+                    uint32_t size = 0, total_size = 0;
 
+                    MPI_Gather (&size, 1, MPI_INT
+                               ,index_sizes, 1, MPI_INT
+                               ,0, p->group_comm
+                               );
+
+                    for (i = 0; i < p->size; i++)
+                    {
+                        index_offsets [i] = total_size;
+                        total_size += index_sizes [i];
+                    }
+
+                    recv_buffer = malloc (total_size);
+                    MPI_Gatherv (&size, 0, MPI_BYTE
+                                ,recv_buffer, index_sizes, index_offsets
+                                ,MPI_BYTE, 0, p->group_comm
+                                );
+
+                    char * buffer_save = p->b.buff;
+                    uint64_t buffer_size_save = p->b.length;
+                    uint64_t offset_save = p->b.offset;
+
+                    for (i = 1; i < p->size; i++)
+                    {
+                        p->b.buff = recv_buffer + index_offsets [i];
+                        p->b.length = index_sizes [i];
+                        p->b.offset = 0;
+
+                        adios_parse_process_group_index_v1 (&p->b
+                                                           ,&new_pg_root
+                                                           );
+                        adios_parse_vars_index_v1 (&p->b, &new_vars_root);
+                        adios_parse_attributes_index_v1 (&p->b
+                                                        ,&new_attrs_root
+                                                        );
+
+                        adios_merge_index_v1 (&p->old_pg_root
+                                             ,&p->old_vars_root
+                                             ,&p->old_attrs_root
+                                             ,new_pg_root, new_vars_root
+                                             ,new_attrs_root
+                                             );
+                        new_pg_root = 0;
+                        new_vars_root = 0;
+                        new_attrs_root = 0;
+                    }
+
+                    p->b.buff = buffer_save;
+                    p->b.length = buffer_size_save;
+                    p->b.offset = offset_save;
+
+                    free (recv_buffer);
+                    free (index_sizes);
+                    free (index_offsets);
+
+                    char * global_index_buffer = 0;
+                    uint64_t global_index_buffer_size = 0;
+                    uint64_t global_index_buffer_offset = 0;
+                    uint64_t global_index_start = 0;
+                    uint16_t flag = 0;
+
+                    adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
+                                         ,&global_index_buffer_offset, global_index_start
+                                         ,p->old_pg_root, p->old_vars_root, p->old_attrs_root
+                                         );
+
+                    flag |= ADIOS_VERSION_HAVE_SUBFILE;
+
+                    adios_write_version_flag_v1 (&global_index_buffer
+                                                ,&global_index_buffer_size
+                                                ,&global_index_buffer_offset
+                                                ,flag
+                                                );
+                    ssize_t s = write (p->mf, global_index_buffer, global_index_buffer_offset);
+                    if (s != global_index_buffer_offset)
+                    {
+                        fprintf (stderr, "POSIX method tried to write %llu, "
+                                         "only wrote %llu\n"
+                                         ,fd->bytes_written
+                                         ,s
+                                );
+                    }
+
+                    close (p->mf);
+                }
+                else
+                {
+                    MPI_Gather (&buffer_size, 1, MPI_INT
+                               ,0, 0, MPI_INT
+                               ,0, p->group_comm
+                               );
+
+                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
+                                ,0, 0, 0, MPI_BYTE
+                                ,0, p->group_comm
+                                );
+                }
+            }
+#endif
             free (buffer);
 
             adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
@@ -842,18 +1202,131 @@ void adios_posix_close (struct adios_file_struct * fd
             uint64_t index_start = fd->base_offset + fd->offset;
 
             // build index
-            adios_build_index_v1 (fd, &new_pg_root, &new_vars_root
-                                 ,&new_attrs_root
-                                 );
-            // merge in old indicies
-            adios_merge_index_v1 (&p->old_pg_root, &p->old_vars_root
+            adios_build_index_v1 (fd, &p->old_pg_root, &p->old_vars_root
                                  ,&p->old_attrs_root
-                                 ,new_pg_root, new_vars_root, new_attrs_root
                                  );
             adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                  ,index_start, p->old_pg_root, p->old_vars_root
                                  ,p->old_attrs_root
                                  );
+#ifdef HAVE_MPI
+            if (p->group_comm != MPI_COMM_SELF)
+            {
+                if (p->rank == 0)
+                {
+                    int * index_sizes = malloc (4 * p->size);
+                    int * index_offsets = malloc (4 * p->size);
+                    char * recv_buffer = 0;
+                    int i;
+                    uint32_t size = 0, total_size = 0;
+
+                    MPI_Gather (&size, 1, MPI_INT
+                               ,index_sizes, 1, MPI_INT
+                               ,0, p->group_comm
+                               );
+
+                    for (i = 0; i < p->size; i++)
+                    {
+                        index_offsets [i] = total_size;
+                        total_size += index_sizes [i];
+                    }
+
+                    recv_buffer = malloc (total_size);
+                    MPI_Gatherv (&size, 0, MPI_BYTE
+                                ,recv_buffer, index_sizes, index_offsets
+                                ,MPI_BYTE, 0, p->group_comm
+                                );
+
+                    char * buffer_save = p->b.buff;
+                    uint64_t buffer_size_save = p->b.length;
+                    uint64_t offset_save = p->b.offset;
+
+                    for (i = 1; i < p->size; i++)
+                    {
+                        p->b.buff = recv_buffer + index_offsets [i];
+                        p->b.length = index_sizes [i];
+                        p->b.offset = 0;
+
+                        adios_parse_process_group_index_v1 (&p->b
+                                                           ,&new_pg_root
+                                                           );
+                        adios_parse_vars_index_v1 (&p->b, &new_vars_root);
+                        adios_parse_attributes_index_v1 (&p->b
+                                                        ,&new_attrs_root
+                                                        );
+
+                        adios_merge_index_v1 (&p->old_pg_root
+                                             ,&p->old_vars_root
+                                             ,&p->old_attrs_root
+                                             ,new_pg_root, new_vars_root
+                                             ,new_attrs_root
+                                             );
+                    
+                        new_pg_root = 0;
+                        new_vars_root = 0;
+                        new_attrs_root = 0;
+                    }
+
+                    adios_sort_index_v1 (&p->old_pg_root
+                                        ,&p->old_vars_root
+                                        ,&p->old_attrs_root
+                                        );
+
+                    p->b.buff = buffer_save;
+                    p->b.length = buffer_size_save;
+                    p->b.offset = offset_save;
+
+                    free (recv_buffer);
+                    free (index_sizes);
+                    free (index_offsets);
+
+                    char * global_index_buffer = 0;
+                    uint64_t global_index_buffer_size = 0;
+                    uint64_t global_index_buffer_offset = 0;
+                    uint64_t global_index_start = 0;
+                    uint16_t flag = 0;
+
+                    adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
+                                         ,&global_index_buffer_offset, global_index_start
+                                         ,p->old_pg_root, p->old_vars_root, p->old_attrs_root
+                                         );
+
+                    flag |= ADIOS_VERSION_HAVE_SUBFILE;
+
+                    adios_write_version_flag_v1 (&global_index_buffer
+                                                ,&global_index_buffer_size
+                                                ,&global_index_buffer_offset
+                                                ,flag
+                                                );
+
+                    ssize_t s = write (p->mf, global_index_buffer, global_index_buffer_offset);
+                    if (s != global_index_buffer_offset)
+                    {
+                        fprintf (stderr, "POSIX method tried to write %llu, "
+                                         "only wrote %llu, Mode: a\n"
+                                         ,global_index_buffer_offset
+                                         ,s
+                                );
+                    }
+
+                    close (p->mf);
+
+                    free (global_index_buffer);
+                }
+                else
+                {
+                    MPI_Gather (&buffer_size, 1, MPI_INT
+                               ,0, 0, MPI_INT
+                               ,0, p->group_comm
+                               );
+
+                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
+                                ,0, 0, 0, MPI_BYTE
+                                ,0, p->group_comm
+                                );
+                }
+            }
+#endif
             adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
             adios_posix_do_write (fd, method, buffer, buffer_offset);
 

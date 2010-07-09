@@ -1214,35 +1214,7 @@ int adios_common_free_group (int64_t id)
 
         // NCSU - Clear Stat
         if (g->vars->stats)
-		{
-            uint8_t j = 0, idx = 0;
-            uint8_t c = 0, count = adios_get_stat_set_count(g->vars->type);
-
-            for (c = 0; c < count; c ++)
-            {
-                while (g->vars->bitmap >> j)
-                {
-                    if ((g->vars->bitmap >> j) & 1)
-                    {
-                        if (j == adios_statistic_hist)
-                        {
-                            struct adios_hist_struct * hist = (struct adios_hist_struct *) (g->vars->stats[c][idx].data);
-                            free (hist->breaks);
-                            free (hist->frequencies);
-                            free (hist);
-                        }
-                        else
-                            free (g->vars->stats[c][idx].data);
-
-                        idx ++;
-                    }
-                    j ++;
-                }
-                free (g->vars->stats[c]);
-            }
-            free (g->vars->stats);		
-		}
-
+            free (g->vars->stats);
         if (g->vars->data)
             free (g->vars->data);
 
@@ -1504,7 +1476,7 @@ int adios_common_define_var (int64_t group_id, const char * name
     // Default values for histogram not yet implemented. Disabling it.
     v->bitmap ^= (1 << adios_statistic_hist);
 
-    // For complex numbers, the set of statistics occur thrice: stat[0] - magnitude, stat[1] - real, stat[2] - imaginary
+    // For complex numbers, the set of statistics occur thrice: stat[0] - real, stat[1] - imaginary, stat[3] - magnitude
     if (v->type == adios_complex || v->type == adios_double_complex)
     {
         uint8_t c;
@@ -2145,6 +2117,121 @@ void adios_merge_index_v1 (struct adios_index_process_group_struct_v1 ** p1
     }
 }
 
+// sort pg/var indexes by time index
+void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
+                         ,struct adios_index_var_struct_v1 ** v1
+                         ,struct adios_index_attribute_struct_v1 ** a1
+                         )
+{
+    struct adios_index_process_group_struct_v1 * p2 = 0, * p1_temp, * p2_temp, * p2_temp_prev;
+    struct adios_index_var_struct_v1 * v2 = 0, * v1_temp, * v2_temp, * v2_temp_prev;
+    struct adios_index_attribute_struct_v1 * a2 = 0, * a1_temp, * a2_temp, * a2_temp_prev;
+    int i, j;
+
+    while (*p1)
+    {
+        // if new index list is empty
+        if (!p2)
+        {
+            p2 = *p1;
+            *p1 = (*p1)->next;
+            p2->next = 0;
+        }
+        else
+        {
+            p2_temp = p2;
+            p2_temp_prev = p2;
+
+            while (p2_temp && (*p1)->time_index >= p2_temp->time_index)
+            {
+                p2_temp_prev = p2_temp;
+                p2_temp = p2_temp->next;
+            }
+
+            if (!p2_temp)
+            {
+                p2_temp_prev->next = *p1;
+                *p1 = (*p1)->next;
+                p2_temp_prev->next->next = 0;
+            }
+            else
+            {
+                p1_temp = (*p1)->next;
+                (*p1)->next = p2_temp;
+                p2_temp_prev->next = *p1;
+
+                *p1 = p1_temp;
+            }
+
+        }
+    }
+
+    *p1 = p2;
+
+    v1_temp = *v1;
+
+    while (v1_temp)
+    {
+        for (i = 0; i < v1_temp->characteristics_count; i++)
+        {
+            for (j = 0; j < v1_temp->characteristics_count - i - 1; j++)
+            {
+                if (v1_temp->characteristics[j].time_index > v1_temp->characteristics[j + 1].time_index)
+                {
+                    uint64_t t_offset;  // beginning of the var or attr entry
+                    struct adios_index_characteristic_dims_struct_v1 t_dims;
+                    uint16_t t_var_id;
+                    void * t_value;
+                    uint64_t t_payload_offset;   // beginning of the var or attr payload
+                    char * t_file_name;
+                    uint32_t t_time_index;
+
+                    uint32_t t_bitmap;
+
+                    struct adios_index_characteristics_stat_struct ** t_stats;
+
+                    t_offset = v1_temp->characteristics[j].offset;
+                    t_dims.count = v1_temp->characteristics[j].dims.count;
+                    t_dims.dims = v1_temp->characteristics[j].dims.dims;
+                    t_var_id = v1_temp->characteristics[j].var_id;
+                    t_value = v1_temp->characteristics[j].value;
+                    t_payload_offset = v1_temp->characteristics[j].payload_offset;
+                    t_file_name = v1_temp->characteristics[j].file_name;
+                    t_time_index = v1_temp->characteristics[j].time_index;
+                    t_bitmap = v1_temp->characteristics[j].bitmap;
+                    t_stats = v1_temp->characteristics[j].stats;
+                    
+                    v1_temp->characteristics[j].offset = v1_temp->characteristics[j + 1].offset;
+                    v1_temp->characteristics[j].dims.count = v1_temp->characteristics[j + 1].dims.count;
+                    v1_temp->characteristics[j].dims.dims = v1_temp->characteristics[j + 1].dims.dims;
+                    v1_temp->characteristics[j].var_id = v1_temp->characteristics[j + 1].var_id;
+                    v1_temp->characteristics[j].value = v1_temp->characteristics[j + 1].value;
+                    v1_temp->characteristics[j].payload_offset = v1_temp->characteristics[j + 1].payload_offset;
+                    v1_temp->characteristics[j].file_name = v1_temp->characteristics[j + 1].file_name;
+                    v1_temp->characteristics[j].time_index = v1_temp->characteristics[j + 1].time_index;
+                    v1_temp->characteristics[j].bitmap = v1_temp->characteristics[j + 1].bitmap;
+                    v1_temp->characteristics[j].stats = v1_temp->characteristics[j + 1].stats;
+
+                    v1_temp->characteristics[j + 1].offset = t_offset;
+                    v1_temp->characteristics[j + 1].dims.count = t_dims.count;
+                    v1_temp->characteristics[j + 1].dims.dims = t_dims.dims;
+                    v1_temp->characteristics[j + 1].var_id = t_var_id;
+                    v1_temp->characteristics[j + 1].value = t_value;
+                    v1_temp->characteristics[j + 1].payload_offset = t_payload_offset;
+                    v1_temp->characteristics[j + 1].file_name = t_file_name;
+                    v1_temp->characteristics[j + 1].time_index = t_time_index;
+                    v1_temp->characteristics[j + 1].bitmap = t_bitmap;
+                    v1_temp->characteristics[j + 1].stats = t_stats;
+                }
+            }
+        }
+
+        v1_temp = v1_temp->next;
+    }
+
+    // no need to sort attributes
+}
+
 static void adios_clear_process_groups_index_v1 (
                             struct adios_index_process_group_struct_v1 * root
                            )
@@ -2161,7 +2248,7 @@ static void adios_clear_process_groups_index_v1 (
     }
 }
 
-// NCSU - Clears up the statistical data from variable index table
+// LS-Clears up the statistical data from variable index table
 static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
 {
     while (root)
@@ -2183,7 +2270,7 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
             if (root->characteristics [i].value)
                 free (root->characteristics [i].value);
 
-            // NCSU - Clears up the statistical data, based on bitmap
+            // LS-Clears up the statistical data, based on bitmap
             if (root->characteristics [i].stats != 0)
             {
                 uint8_t j = 0, idx = 0;
@@ -2195,22 +2282,13 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
                     {
                         if ((root->characteristics [i].bitmap >> j) & 1)
                         {
-							if (j == adios_statistic_hist)
-							{
-								struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct	*) root->characteristics [i].stats[c][idx].data;
-								free (hist->breaks);
-								free (hist->frequencies);
-							}	
-							else
-                           		free (root->characteristics [i].stats[c][idx].data);
+                            free (root->characteristics [i].stats[c][idx].data);
                             idx ++;
                         }
                         j ++;
                     }
                     free (root->characteristics [i].stats [c]);
                 }
-
-				free (root->characteristics [i].stats);
             }
         }
         if (root->characteristics)
@@ -2221,7 +2299,6 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
     }
 }
 
-// NCSU - Clears up the statistical data, based on bitmap
 static void adios_clear_attributes_index_v1
                                 (struct adios_index_attribute_struct_v1 * root)
 {
@@ -2241,34 +2318,25 @@ static void adios_clear_attributes_index_v1
             if (root->characteristics [i].dims.count != 0)
                 free (root->characteristics [i].dims.dims);
 
-            // NCSU - Clears up the statistical data, based on bitmap
+            // LS-Clears up the statistical data, based on bitmap
             if (root->characteristics [i].stats != 0)
             {
                 uint8_t j = 0, idx = 0;
                 uint8_t c = 0, count = adios_get_stat_set_count(root->type);
+
                 for (c = 0; c < count; c ++)
                 {
                     while (root->characteristics [i].bitmap >> j)
                     {
                         if ((root->characteristics [i].bitmap >> j) & 1)
                         {
-							if (j == adios_statistic_hist)
-	                    	{
-								struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct *) root->characteristics [i].stats[c][idx].data;
-								free (hist->breaks);
-								free (hist->frequencies);
-								free (hist);
-	                     	}
-							else
-								free (root->characteristics [i].stats[c][idx].data);
-
+                            free (root->characteristics [i].stats[c][idx].data);
                             idx ++;
                         }
                         j ++;
                     }
                     free (root->characteristics [i].stats [c]);
                 }
-                free (root->characteristics [i].stats);
             }
 
         }
@@ -4108,25 +4176,25 @@ return 0; \
             double magnitude;
             uint8_t finite = 0;
 
-            min_m = (double *) stats[0][map[adios_statistic_min]].data;
-            min_r = (double *) stats[1][map[adios_statistic_min]].data;
-            min_i = (double *) stats[2][map[adios_statistic_min]].data;
+            min_r = (double *) stats[0][map[adios_statistic_min]].data;
+            min_i = (double *) stats[1][map[adios_statistic_min]].data;
+            min_m = (double *) stats[2][map[adios_statistic_min]].data;
 
-            max_m = (double *) stats[0][map[adios_statistic_max]].data;
-            max_r = (double *) stats[1][map[adios_statistic_max]].data;
-            max_i = (double *) stats[2][map[adios_statistic_max]].data;
+            max_r = (double *) stats[0][map[adios_statistic_max]].data;
+            max_i = (double *) stats[1][map[adios_statistic_max]].data;
+            max_m = (double *) stats[2][map[adios_statistic_max]].data;
 
-            sum_m = (double *) stats[0][map[adios_statistic_sum]].data;
-            sum_r = (double *) stats[1][map[adios_statistic_sum]].data;
-            sum_i = (double *) stats[2][map[adios_statistic_sum]].data;
+            sum_r = (double *) stats[0][map[adios_statistic_sum]].data;
+            sum_i = (double *) stats[1][map[adios_statistic_sum]].data;
+            sum_m = (double *) stats[2][map[adios_statistic_sum]].data;
 
-            sum_square_m = (double *) stats[0][map[adios_statistic_sum_square]].data;
-            sum_square_r = (double *) stats[1][map[adios_statistic_sum_square]].data;
-            sum_square_i = (double *) stats[2][map[adios_statistic_sum_square]].data;
+            sum_square_r = (double *) stats[0][map[adios_statistic_sum_square]].data;
+            sum_square_i = (double *) stats[1][map[adios_statistic_sum_square]].data;
+            sum_square_m = (double *) stats[2][map[adios_statistic_sum_square]].data;
 
-            cnt_m = (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
-            cnt_r = (uint32_t *) stats[1][map[adios_statistic_cnt]].data;
-            cnt_i = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
+            cnt_r = (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
+            cnt_i = (uint32_t *) stats[1][map[adios_statistic_cnt]].data;
+            cnt_m = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
 
             // Histogram is not available for complex numbers, yet.
             /*
@@ -4237,21 +4305,21 @@ return 0; \
             long double magnitude;
             uint8_t finite = 0;
 
-            min_m = (long double *) stats[0][map[adios_statistic_min]].data;
-            min_r = (long double *) stats[1][map[adios_statistic_min]].data;
-            min_i = (long double *) stats[2][map[adios_statistic_min]].data;
+            min_r = (long double *) stats[0][map[adios_statistic_min]].data;
+            min_i = (long double *) stats[1][map[adios_statistic_min]].data;
+            min_m = (long double *) stats[2][map[adios_statistic_min]].data;
 
-            max_m = (long double *) stats[0][map[adios_statistic_max]].data;
-            max_r = (long double *) stats[1][map[adios_statistic_max]].data;
-            max_i = (long double *) stats[2][map[adios_statistic_max]].data;
+            max_r = (long double *) stats[0][map[adios_statistic_max]].data;
+            max_i = (long double *) stats[1][map[adios_statistic_max]].data;
+            max_m = (long double *) stats[2][map[adios_statistic_max]].data;
 
-            sum_m = (long double *) stats[0][map[adios_statistic_sum]].data;
-            sum_r = (long double *) stats[1][map[adios_statistic_sum]].data;
-            sum_i = (long double *) stats[2][map[adios_statistic_sum]].data;
+            sum_r = (long double *) stats[0][map[adios_statistic_sum]].data;
+            sum_i = (long double *) stats[1][map[adios_statistic_sum]].data;
+            sum_m = (long double *) stats[2][map[adios_statistic_sum]].data;
 
-            sum_square_m = (long double *) stats[0][map[adios_statistic_sum_square]].data;
-            sum_square_r = (long double *) stats[1][map[adios_statistic_sum_square]].data;
-            sum_square_i = (long double *) stats[2][map[adios_statistic_sum_square]].data;
+            sum_square_r = (long double *) stats[0][map[adios_statistic_sum_square]].data;
+            sum_square_i = (long double *) stats[1][map[adios_statistic_sum_square]].data;
+            sum_square_m = (long double *) stats[2][map[adios_statistic_sum_square]].data;
 
 
             // Histogram not available for complex numbers yet
@@ -4267,9 +4335,9 @@ return 0; \
             }
             */
 
-            cnt_m = (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
-            cnt_r = (uint32_t *) stats[1][map[adios_statistic_cnt]].data;
-            cnt_i = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
+            cnt_r = (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
+            cnt_i = (uint32_t *) stats[1][map[adios_statistic_cnt]].data;
+            cnt_m = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
 
             *cnt_r = *cnt_i = *cnt_m = 0;
             *min_r = *min_i = *min_m = INFINITY;
