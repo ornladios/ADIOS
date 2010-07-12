@@ -78,7 +78,7 @@ typedef struct datatap_method_data
 	struct fm_structure *fm;
 } dmd;
 
-extern MPI_Comm adios_mpi_comm_world;
+MPI_Comm adios_mpi_comm_world = MPI_COMM_WORLD;
 int initialized = 0;
 
 
