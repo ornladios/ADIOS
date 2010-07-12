@@ -86,7 +86,6 @@ AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
 dnl CC="$MPICC"
 dnl CXX="$MPICXX"
 dnl FC="$MPIFC"
-ADIOSLIB_EXTRA_CPPFLAGS="-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE"
 
 LIBS="$MPILIBS"
 
@@ -119,6 +118,9 @@ dnl Generate flags for adios lib creation which depends on the packages we found
 dnl ADIOSLIB_* for compiling libadios.a and libadiosf.a, and linking codes with those
 dnl ADIOSLIB_SEQ_* for codes using libadios_internal_nompi.a (like bp2ncd, bp2h5, bpdump etc)
 dnl ADIOSREADLIB_* for codes using libadiosread.a, libadiosreadf.a, libadiosread_nompi.a 
+dnl adios_config will contain flags for users' code linking based on these flags
+dnl EXTRA flags are used for compiling adios stuff, which need not go into adios_config for user codes
+ADIOSLIB_EXTRA_CPPFLAGS="-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE"
 ADIOSLIB_CPPFLAGS="${MXML_CPPFLAGS}"
 ADIOSLIB_CFLAGS=
 ADIOSLIB_LDFLAGS="${MXML_LDFLAGS}"
@@ -127,7 +129,7 @@ ADIOSLIB_SEQ_CPPFLAGS="-D_NOMPI ${MXML_CPPFLAGS}"
 ADIOSLIB_SEQ_CFLAGS=
 ADIOSLIB_SEQ_LDFLAGS="${MXML_LDFLAGS}"
 ADIOSLIB_SEQ_LDADD="${MXML_LIBS}"
-ADIOSREADLIB_CPPFLAGS=
+ADIOSREADLIB_CPPFLAGS=""
 ADIOSREADLIB_CFLAGS=
 ADIOSREADLIB_LDFLAGS=
 ADIOSREADLIB_LDADD=

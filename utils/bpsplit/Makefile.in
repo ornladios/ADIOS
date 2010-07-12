@@ -308,17 +308,17 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 bpsplit_SOURCES = bpsplit.c
-bpsplit_CPPFLAGS = $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS)
+bpsplit_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS)
 bpsplit_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS)
 bpsplit_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
 	$(ADIOSLIB_SEQ_LDADD)
 bpappend_SOURCES = bpappend.c
-bpappend_CPPFLAGS = $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS)
+bpappend_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS)
 bpappend_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS)
 bpappend_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
 	$(ADIOSLIB_SEQ_LDADD)
 bpgettime_SOURCES = bpgettime.c
-bpgettime_CPPFLAGS = $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS)
+bpgettime_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS)
 bpgettime_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS)
 bpgettime_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
 	$(ADIOSLIB_SEQ_LDADD)

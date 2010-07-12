@@ -299,7 +299,7 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 adios_lint_SOURCES = adios_lint.c
-adios_lint_CPPFLAGS = $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS)
+adios_lint_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS)
 adios_lint_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS)
 adios_lint_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
 	$(ADIOSLIB_SEQ_LDADD)
