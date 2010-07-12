@@ -110,11 +110,9 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 #endif
 #endif
 
-#ifndef NO_RESEARCH_TRANSPORTS
 #if NO_DATATAP == 0
     MATCH_STRING_TO_METHOD("DATATAP",ADIOS_METHOD_DATATAP,0)
     MATCH_STRING_TO_METHOD("PBIO",ADIOS_METHOD_DATATAP,0)
-#endif
 #endif
 
     MATCH_STRING_TO_METHOD("POSIX",ADIOS_METHOD_POSIX,0)
