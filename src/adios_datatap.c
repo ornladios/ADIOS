@@ -663,7 +663,11 @@ internal_find_field(char *name, FMFieldList flist)
 
 	return f;
 }
-
+ 
+extern enum ADIOS_FLAG adios_datatap_should_buffer (struct adios_file_struct * fd
+                                                   ,struct adios_method_struct * method)
+{
+}
 
 extern void
 adios_datatap_write(struct adios_file_struct *fd,
@@ -1061,6 +1065,10 @@ adios_datatap_init(const char *params, struct adios_method_struct *method)
 {
 }
 
+enum ADIOS_FLAG adios_datatap_should_buffer (struct adios_file_struct * fd
+                                            ,struct adios_method_struct * method)
+{
+}
 #endif
 
 /*	FILE *formatfile = fopen("/tmp/formatfile","a+");
