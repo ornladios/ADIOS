@@ -58,10 +58,8 @@ void adios_init_transports (struct adios_transport_struct ** t)
 #endif
 #endif
 
-#ifndef NO_RESEARCH_TRANSPORTS
 #if NO_DATATAP == 0
     ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP)
-#endif
 #endif
 
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)
