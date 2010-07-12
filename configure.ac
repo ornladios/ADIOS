@@ -274,7 +274,7 @@ AC_CONFIG_FILES([Makefile
                  examples/Fortran/arrays/Makefile
                  examples/Fortran/global-array/Makefile
                  examples/Fortran/global-array-time/Makefile
-                 adios_config
+                 adios_config.flags
                 ])
 
 AC_OUTPUT

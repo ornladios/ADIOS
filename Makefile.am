@@ -10,3 +10,9 @@ EXTRA_DIST = runconf \
              tools/matlab/adiosclosec.c \
              tools/matlab/adiosopenc.c \
              tools/matlab/adiosreadc.c 
+
+bin_SCRIPTS = adios_config 
+
+install-data-hook:
+	cp adios_config.flags $(DESTDIR)$(bindir)
+        
