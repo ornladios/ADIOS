@@ -45,12 +45,12 @@ tar zxf adios-$VERSION.tar.gz
 
 echo "Remove research transport methods"
 rm -f adios-$VERSION/src/adios_adaptive.c
-rm -f adios-$VERSION/src/adios_datatap.c
-rm -f adios-$VERSION/src/adios_dart.c
-rm -f adios-$VERSION/src/adios_provenance.c
-rm -f adios-$VERSION/src/adios_mpi_stagger.c
+rm -f adios-$VERSION/src/adios_mpi_stripe.c
 rm -f adios-$VERSION/src/adios_mpi_cio.c
+rm -f adios-$VERSION/src/adios_mpi_stagger.c
 rm -f adios-$VERSION/src/adios_mpi_aggregate.c
+rm -f adios-$VERSION/src/adios_mpi_amr1.c
+rm -f adios-$VERSION/src/adios_provenance.c
 
 echo "Repack adios-$VERSION.tar.gz"
 rm -rf adios-$VERSION.tar.gz
