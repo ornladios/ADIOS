@@ -845,7 +845,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
         case adios_characteristic_stat:
 		{
 			uint8_t i, c, idx; 
-			uint64_t count = adios_get_stat_set_count ((*root)->type);
+			uint8_t count = adios_get_stat_set_count ((*root)->type);
 			uint16_t characteristic_size;
 
 			(*root)->characteristics [j].stats = malloc (count * sizeof(struct adios_index_characteristics_stat_struct *));
@@ -883,7 +883,10 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 						}
 						else
 						{
-							characteristic_size = adios_get_stat_size((*root)->characteristics [j].stats[c][idx].data, (*root)->type, i);
+							characteristic_size = adios_get_stat_size((*root)->characteristics [j].stats[c][idx].data
+                                                                                                 ,(*root)->type
+                                                                                                 ,(enum ADIOS_STAT)i
+                                                                                                 );
 							(*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);
 
 							void * data = (*root)->characteristics [j].stats[c][idx].data;

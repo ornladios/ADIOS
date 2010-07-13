@@ -466,7 +466,9 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
             int i;
 
             offsets [0] = fd->write_size_bytes;
-            MPI_Gather (offsets, 1, MPI_LONG_LONG
+// mpixlc_r on Eugene doesn't support 64 bit mode. Therefore the following may have problem
+// on Eugene for large data size since MPI_LONG_LONG is 32bit 
+            MPI_Gather (&(fd->write_size_bytes), 1, MPI_LONG_LONG
                        ,offsets, 1, MPI_LONG_LONG
                        ,0, md->group_comm);
 

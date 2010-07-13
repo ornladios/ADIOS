@@ -316,4 +316,7 @@ int adios_posix_open_read_internal (const char * filename
                                    );
 void adios_posix_close_internal (struct adios_bp_buffer_struct_v1 * b);
 
+// ADIOS statistics related functions
+uint64_t adios_get_stat_size (void * data, enum ADIOS_DATATYPES type, enum ADIOS_STAT stat_id);
+uint8_t adios_get_stat_set_count (enum ADIOS_DATATYPES type);
 #endif
