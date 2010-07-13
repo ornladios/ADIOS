@@ -35,9 +35,19 @@ if [ $EX != 0 ]; then
     exit $EX
 fi
 
+if [ ! -f posix_method.bp ]; then
+    echo "ERROR: posix_method failed. No BP file posix_method.bp was created."
+    exit 1
+fi
+
+if [ ! -d posix_method.bp.dir ]; then
+    echo "ERROR: posix_method failed. No BP subfile directory posix_method.bp.dir was created."
+    exit 1
+fi
+
 for ((i=0; i<$PROCS; i++)); do
-    if [ ! -f posix_method.bp.$i ]; then
-        echo "ERROR: posix_method failed. No BP file posix_method.bp.$i is created."
+    if [ ! -f posix_method.bp.dir/posix_method.bp.$i ]; then
+        echo "ERROR: posix_method failed. No BP subfile posix_method.bp.dir/posix_method.bp.$i was created."
         exit 1
     fi
 done
