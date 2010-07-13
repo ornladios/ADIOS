@@ -1,3 +1,5 @@
+include ../../adios_config.flags
+
 MEXOPTS="-g -DDEBUG"
 default:
 	@echo "ADIOS reader methods for MATLAB"
@@ -8,16 +10,16 @@ default:
 matlab: adiosopenc adiosclosec adiosreadc
 
 adiosopenc:  
-	mex adiosopenc.c ${MEXOPTS} -D_NOMPI  -I. -I../../src -L. -L../../src -ladiosread_nompi
+	mex adiosopenc.c ${MEXOPTS} -D_NOMPI  -I. -I../../src -L. -L../../src ${ADIOSREAD_SEQ_INC} ${ADIOSREAD_SEQ_CLIB}
 
 adiosreadc: 
-	mex adiosreadc.c ${MEXOPTS} -D_NOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
+	mex adiosreadc.c ${MEXOPTS} -D_NOMPI -I. -I../../src -L. -L../../src ${ADIOSREAD_SEQ_INC} ${ADIOSREAD_SEQ_CLIB}
 
 adiosclosec:
-	mex adiosclosec.c ${MEXOPTS} -D_NOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
+	mex adiosclosec.c ${MEXOPTS} -D_NOMPI -I. -I../../src -L. -L../../src ${ADIOSREAD_SEQ_INC} ${ADIOSREAD_SEQ_CLIB}
 
 #adiosdbgc:
-#	mex adiosdbgc.c ${MEXOPTS} -D_NOMPI -I. -I../../src -L. -L../../src -ladiosread_nompi
+#	mex adiosdbgc.c ${MEXOPTS} -D_NOMPI -I. -I../../src -L. -L../../src ${ADIOSREAD_SEQ_INC} ${ADIOSREAD_SEQ_CLIB}
 
 clean:
 	rm -f *.mexa64 core* *.o 
