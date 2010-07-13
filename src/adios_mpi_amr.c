@@ -24,7 +24,7 @@
 #include "adios_internals.h"
 #include "buffer.h"
 
-static int adios_mpi_amr1_initialized = 0;
+static int adios_mpi_amr_initialized = 0;
 static int * g_is_aggregator = 0;
 static int g_num_aggregators = 0;
 static int g_merging_pgs = 0;
@@ -252,7 +252,7 @@ static void trim_spaces (char * str)
 }
 
 static void
-adios_mpi_amr1_set_striping_unit(MPI_File fh, char *filename, char *parameters)
+adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
 {
     struct statfs fsbuf;
     int err = 0, flag;
@@ -345,7 +345,7 @@ adios_mpi_amr1_set_striping_unit(MPI_File fh, char *filename, char *parameters)
 }
 
 static void
-adios_mpi_amr1_set_block_unit(uint64_t *block_unit, char *parameters)
+adios_mpi_amr_set_block_unit(uint64_t *block_unit, char *parameters)
 {
     char *temp_string, *p_count,*p_size;
 
@@ -370,7 +370,7 @@ adios_mpi_amr1_set_block_unit(uint64_t *block_unit, char *parameters)
 }
 
 static void
-adios_mpi_amr1_set_aggregation_parameters(char * parameters, int nproc, int rank)
+adios_mpi_amr_set_aggregation_parameters(char * parameters, int nproc, int rank)
 {
     int err = 0, flag, i, aggr_group_size, remain, index;
     char value[64], *temp_string, *p_count,*p_size;
@@ -455,7 +455,7 @@ adios_mpi_amr1_set_aggregation_parameters(char * parameters, int nproc, int rank
     }
 }
 
-static void adios_mpi_amr1_buffer_write (char ** buffer, uint64_t * buffer_size
+static void adios_mpi_amr_buffer_write (char ** buffer, uint64_t * buffer_size
                          ,uint64_t * buffer_offset
                          ,const void * data, uint64_t size
                          )
@@ -470,7 +470,7 @@ static void adios_mpi_amr1_buffer_write (char ** buffer, uint64_t * buffer_size
         }
         else
         {
-            fprintf (stderr, "Cannot allocate memory in adios_mpi_amr1_buffer_write.  "
+            fprintf (stderr, "Cannot allocate memory in adios_mpi_amr_buffer_write.  "
                              "Requested: %llu\n", *buffer_offset + size + 1000);
 
             return;
@@ -482,7 +482,7 @@ static void adios_mpi_amr1_buffer_write (char ** buffer, uint64_t * buffer_size
 }
 
 static int
-adios_mpi_amr1_get_striping_unit(MPI_File fh, char *filename)
+adios_mpi_amr_get_striping_unit(MPI_File fh, char *filename)
 {
     struct statfs fsbuf;
     int err, flag;
@@ -537,7 +537,7 @@ adios_mpi_amr1_get_striping_unit(MPI_File fh, char *filename)
 }
 
 static uint64_t
-adios_mpi_amr1_striping_unit_write(MPI_File    fh
+adios_mpi_amr_striping_unit_write(MPI_File    fh
                                   ,MPI_Offset  offset
                                   ,void       *buf
                                   ,uint64_t   len
@@ -605,7 +605,7 @@ adios_mpi_amr1_striping_unit_write(MPI_File    fh
     return err;
 }
 
-struct adios_var_struct * adios_mpi_amr1_copy_var (struct adios_var_struct * v)
+struct adios_var_struct * adios_mpi_amr_copy_var (struct adios_var_struct * v)
 {
     struct adios_var_struct * v_new = (struct adios_var_struct *) 
                             malloc (sizeof (struct adios_var_struct));
@@ -632,7 +632,7 @@ struct adios_var_struct * adios_mpi_amr1_copy_var (struct adios_var_struct * v)
     return v_new;
 }
 
-void adios_mpi_amr1_append_var (struct adios_file_struct * fd, struct adios_var_struct * v)
+void adios_mpi_amr_append_var (struct adios_file_struct * fd, struct adios_var_struct * v)
 {
     struct adios_var_struct * root = fd->group->vars;
     if (!root)
@@ -649,7 +649,7 @@ void adios_mpi_amr1_append_var (struct adios_file_struct * fd, struct adios_var_
     root->next = v;
 }
 
-void adios_mpi_amr1_add_offset (uint64_t var_offset_to_add
+void adios_mpi_amr_add_offset (uint64_t var_offset_to_add
                                ,uint64_t attr_offset_to_add
                                ,struct adios_index_var_struct_v1 * vars_root
                                ,struct adios_index_attribute_struct_v1 * attrs_root
@@ -670,7 +670,7 @@ void adios_mpi_amr1_add_offset (uint64_t var_offset_to_add
     }
 }
 
-void adios_mpi_amr1_subtract_offset (uint64_t var_offset_to_subtract
+void adios_mpi_amr_subtract_offset (uint64_t var_offset_to_subtract
                                     ,uint64_t attr_offset_to_subtract
                                     ,struct adios_index_var_struct_v1 * vars_root
                                     ,struct adios_index_attribute_struct_v1 * attrs_root
@@ -692,7 +692,7 @@ void adios_mpi_amr1_subtract_offset (uint64_t var_offset_to_subtract
 }
 
 
-void adios_mpi_amr1_build_global_index_v1 (char * fname
+void adios_mpi_amr_build_global_index_v1 (char * fname
                                           ,struct adios_index_process_group_struct_v1 * pg_root
                                           ,struct adios_index_var_struct_v1 * vars_root
                                           ,struct adios_index_attribute_struct_v1 * attrs_root
@@ -729,7 +729,7 @@ void adios_mpi_amr1_build_global_index_v1 (char * fname
 }
 
 
-int adios_mpi_amr1_calc_aggregator_index (int rank)
+int adios_mpi_amr_calc_aggregator_index (int rank)
 {
     int j = rank - 1;
 
@@ -746,7 +746,7 @@ int adios_mpi_amr1_calc_aggregator_index (int rank)
     return j;
 }
 
-void * adios_mpi_amr1_do_mkdir (void * param)
+void * adios_mpi_amr_do_mkdir (void * param)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) param;
     // 4 bytes for ".dir" 
@@ -760,14 +760,14 @@ void * adios_mpi_amr1_do_mkdir (void * param)
     return NULL;
 }
 
-void * adios_mpi_amr1_do_open_thread (void * param)
+void * adios_mpi_amr_do_open_thread (void * param)
 {
     struct adios_MPI_thread_data_open * td = (struct adios_MPI_thread_data_open *) param;
 
     unlink (td->name);
     if (td->parameters)
     {
-        adios_mpi_amr1_set_striping_unit (*td->fh
+        adios_mpi_amr_set_striping_unit (*td->fh
                                          ,td->name
                                          ,td->parameters
                                          );
@@ -779,17 +779,17 @@ void * adios_mpi_amr1_do_open_thread (void * param)
                   ,td->fh
                   );
 
-    *td->striping_unit = adios_mpi_amr1_get_striping_unit (*td->fh, td->name);
+    *td->striping_unit = adios_mpi_amr_get_striping_unit (*td->fh, td->name);
  
     return NULL;
 }
 
 
-void * adios_mpi_amr1_do_write_thread (void * param)
+void * adios_mpi_amr_do_write_thread (void * param)
 {
     struct adios_MPI_thread_data_write * td = (struct adios_MPI_thread_data_write *) param;
 
-    uint64_t count = adios_mpi_amr1_striping_unit_write(
+    uint64_t count = adios_mpi_amr_striping_unit_write(
                                *(td->fh)
                               ,*(td->base_offset)
                               ,td->aggr_buff
@@ -798,7 +798,7 @@ void * adios_mpi_amr1_do_write_thread (void * param)
 
     if (count != *(td->total_data_size))
     {
-        fprintf (stderr, "Err in adios_mpi_amr1_striping_unit_write()\n");
+        fprintf (stderr, "Err in adios_mpi_amr_striping_unit_write()\n");
     }
 
     return NULL;
@@ -897,15 +897,15 @@ static void adios_var_to_comm (const char * comm_name
     }
 }
 
-void adios_mpi_amr1_init (const char * parameters
+void adios_mpi_amr_init (const char * parameters
                          ,struct adios_method_struct * method
                          )
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
-    if (!adios_mpi_amr1_initialized)
+    if (!adios_mpi_amr_initialized)
     {
-        adios_mpi_amr1_initialized = 1;
+        adios_mpi_amr_initialized = 1;
     }
 
     method->method_data = malloc (sizeof (struct adios_MPI_data_struct));
@@ -927,7 +927,7 @@ void adios_mpi_amr1_init (const char * parameters
     adios_buffer_struct_init (&md->b);
 }
 
-int adios_mpi_amr1_open (struct adios_file_struct * fd
+int adios_mpi_amr_open (struct adios_file_struct * fd
                         ,struct adios_method_struct * method, void * comm
                         )
 {
@@ -971,7 +971,7 @@ void build_offsets (struct adios_bp_buffer_struct_v1 * b
     }
 }
 
-enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
+enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                                              ,struct adios_method_struct * method
                                              )
 {
@@ -1180,18 +1180,18 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
         {
             if (md->rank == 0)
             {
-                adios_mpi_amr1_do_mkdir (fd);
+                adios_mpi_amr_do_mkdir (fd);
             }
 
             MPI_Barrier (md->group_comm);
 
             fd->base_offset = 0;
             fd->pg_start_in_file = 0;
-            adios_mpi_amr1_set_aggregation_parameters (method->parameters
+            adios_mpi_amr_set_aggregation_parameters (method->parameters
                                                       ,md->size
                                                       ,md->rank
                                                       );
-            adios_mpi_amr1_set_block_unit (&md->block_unit, method->parameters);
+            adios_mpi_amr_set_block_unit (&md->block_unit, method->parameters);
 
             name = realloc (name, strlen (fd->name) + 5 + strlen (method->base_path) + strlen (fd->name) + 1 + 10 + 1);
             // create the subfile name, e.g. restart.bp.1
@@ -1213,7 +1213,7 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
                         open_thread_data1.parameters = method->parameters;
 
                         pthread_create (&g_t, NULL
-                                       ,adios_mpi_amr1_do_open_thread
+                                       ,adios_mpi_amr_do_open_thread
                                        ,(void *) &open_thread_data1
                                        );
 
@@ -1226,7 +1226,7 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
                             open_thread_data2.parameters = method->parameters;
 
                             pthread_create (&g_t1, NULL
-                                           ,adios_mpi_amr1_do_open_thread
+                                           ,adios_mpi_amr_do_open_thread
                                            ,(void *) &open_thread_data2
                                            );
                         }
@@ -1243,7 +1243,7 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
 
                     if (method->parameters)
                     {
-                        adios_mpi_amr1_set_striping_unit (md->fh
+                        adios_mpi_amr_set_striping_unit (md->fh
                                                          ,name
                                                          ,method->parameters
                                                          );
@@ -1254,7 +1254,7 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
                                         ,MPI_INFO_NULL
                                         ,&md->fh
                                         );
-                    md->striping_unit = adios_mpi_amr1_get_striping_unit (md->fh, name);
+                    md->striping_unit = adios_mpi_amr_get_striping_unit (md->fh, name);
 
                     if (err != MPI_SUCCESS)
                     {
@@ -1315,7 +1315,7 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
 
                     return adios_flag_no;
                 }
-                md->striping_unit = adios_mpi_amr1_get_striping_unit(md->fh, name);
+                md->striping_unit = adios_mpi_amr_get_striping_unit(md->fh, name);
             }
 
             if (old_file)
@@ -1406,7 +1406,7 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
                                     ,MPI_INFO_NULL
                                     ,&md->fh
                                     );
-                md->striping_unit = adios_mpi_amr1_get_striping_unit(md->fh, name);
+                md->striping_unit = adios_mpi_amr_get_striping_unit(md->fh, name);
                 if (next != -1)
                 {
                     MPI_Isend (&sig, 1, MPI_INTEGER, next, current
@@ -1430,7 +1430,7 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
                                     ,MPI_INFO_NULL
                                     ,&md->fh
                                     );
-                md->striping_unit = adios_mpi_amr1_get_striping_unit(md->fh, name);
+                md->striping_unit = adios_mpi_amr_get_striping_unit(md->fh, name);
             }
 
             if (err != MPI_SUCCESS)
@@ -1535,7 +1535,7 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
 
         if (is_aggregator (md->rank))
         {
-            count = adios_mpi_amr1_striping_unit_write(
+            count = adios_mpi_amr_striping_unit_write(
                                   md->fh
                                  ,fd->base_offset
                                  ,fd->buffer
@@ -1570,7 +1570,7 @@ enum ADIOS_FLAG adios_mpi_amr1_should_buffer (struct adios_file_struct * fd
     return fd->shared_buffer;
 }
 
-void adios_mpi_amr1_write (struct adios_file_struct * fd
+void adios_mpi_amr_write (struct adios_file_struct * fd
                          ,struct adios_var_struct * v
                          ,void * data
                          ,struct adios_method_struct * method
@@ -1646,7 +1646,7 @@ void adios_mpi_amr1_write (struct adios_file_struct * fd
         uint64_t count = 0;
         if (is_aggregator(md->rank))
         {
-            count = adios_mpi_amr1_striping_unit_write(
+            count = adios_mpi_amr_striping_unit_write(
                            md->fh
                           ,-1
                           ,aggr_buff
@@ -1691,7 +1691,7 @@ void adios_mpi_amr1_write (struct adios_file_struct * fd
     }
 }
 
-void adios_mpi_amr1_get_write_buffer (struct adios_file_struct * fd
+void adios_mpi_amr_get_write_buffer (struct adios_file_struct * fd
                                 ,struct adios_var_struct * v
                                 ,uint64_t * size
                                 ,void ** buffer
@@ -1751,7 +1751,7 @@ void adios_mpi_amr1_get_write_buffer (struct adios_file_struct * fd
     }
 }
 
-void adios_mpi_amr1_read (struct adios_file_struct * fd
+void adios_mpi_amr_read (struct adios_file_struct * fd
                     ,struct adios_var_struct * v, void * buffer
                     ,uint64_t buffer_size
                     ,struct adios_method_struct * method
@@ -1761,7 +1761,7 @@ void adios_mpi_amr1_read (struct adios_file_struct * fd
     v->data_size = buffer_size;
 }
 
-static void adios_mpi_amr1_do_read (struct adios_file_struct * fd
+static void adios_mpi_amr_do_read (struct adios_file_struct * fd
                               ,struct adios_method_struct * method
                               )
 {
@@ -1869,7 +1869,7 @@ static void adios_mpi_amr1_do_read (struct adios_file_struct * fd
 }
 
 static
-uint32_t adios_mpi_amr1_calculate_attributes_size (struct adios_file_struct * fd)
+uint32_t adios_mpi_amr_calculate_attributes_size (struct adios_file_struct * fd)
 {
     uint32_t overhead = 0;
     struct adios_attribute_struct * a = fd->group->attributes;
@@ -1887,7 +1887,7 @@ uint32_t adios_mpi_amr1_calculate_attributes_size (struct adios_file_struct * fd
     return overhead;
 }
 
-void adios_mpi_amr1_close (struct adios_file_struct * fd
+void adios_mpi_amr_close (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
@@ -1904,7 +1904,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
         case adios_mode_read:
         {
             // read the index to find the place to start reading
-            adios_mpi_amr1_do_read (fd, method);
+            adios_mpi_amr_do_read (fd, method);
             struct adios_var_struct * v = fd->group->vars;
             while (v)
             {
@@ -1952,7 +1952,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 uint64_t count;
                 if (is_aggregator(md->rank))
                 {
-                    count = adios_mpi_amr1_striping_unit_write(
+                    count = adios_mpi_amr_striping_unit_write(
                                    md->fh
                                   ,md->vars_start
                                   ,fd->buffer
@@ -2024,7 +2024,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
 
                     if (is_aggregator (md->rank))
                     {
-                        count = adios_mpi_amr1_striping_unit_write(
+                        count = adios_mpi_amr_striping_unit_write(
                                           md->fh,
                                           -1,
                                           aggr_buff, //fd->buffer,
@@ -2073,7 +2073,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 if (is_aggregator(md->rank))
                 {
                     *(uint16_t *)fd->buffer = *(uint16_t *)fd->buffer * new_group_size;
-                    count = adios_mpi_amr1_striping_unit_write(
+                    count = adios_mpi_amr_striping_unit_write(
                                   md->fh,
                                   md->vars_start,
                                   fd->buffer,
@@ -2124,7 +2124,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                     open_thread_data1.parameters = method->parameters;
 
                     pthread_create (&t, NULL
-                                   ,adios_mpi_amr1_do_open_thread
+                                   ,adios_mpi_amr_do_open_thread
                                    ,(void *) &open_thread_data1
                                    );
 
@@ -2137,7 +2137,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                         open_thread_data2.parameters = method->parameters;
 
                         pthread_create (&t1, NULL
-                                       ,adios_mpi_amr1_do_open_thread
+                                       ,adios_mpi_amr_do_open_thread
                                        ,(void *) &open_thread_data2
                                        );
                     }
@@ -2206,7 +2206,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
 
                 adios_parse_vars_header_v1 (&b, &vars_header);
                 header_size = b.offset;
-                attr_size = adios_mpi_amr1_calculate_attributes_size (fd);
+                attr_size = adios_mpi_amr_calculate_attributes_size (fd);
 
                 // reset vars count
                 if (vars_header.count * new_group_size > UINT16_MAX)
@@ -2218,7 +2218,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                                 vars_header.count * new_group_size;
 
                 // attributes size is save in the end
-                adios_mpi_amr1_buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &attr_size, SHIM_FOOTER_SIZE);
+                adios_mpi_amr_buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &attr_size, SHIM_FOOTER_SIZE);
                 fd->bytes_written += SHIM_FOOTER_SIZE;
             
                 // PG header, vars header, vars, attrs header, attrs, 4 bytes
@@ -2257,7 +2257,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                     open_thread_data1.parameters = method->parameters;
 
                     pthread_create (&t, NULL
-                                   ,adios_mpi_amr1_do_open_thread
+                                   ,adios_mpi_amr_do_open_thread
                                    ,(void *) &open_thread_data1
                                    );
 
@@ -2269,7 +2269,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                         open_thread_data2.parameters = method->parameters;
 
                         pthread_create (&t1, NULL
-                                       ,adios_mpi_amr1_do_open_thread
+                                       ,adios_mpi_amr_do_open_thread
                                        ,(void *) &open_thread_data2
                                        );
                     }
@@ -2410,13 +2410,13 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                     write_thread_data.block_unit = &md->block_unit;
  
                     pthread_create (&t, NULL
-                                   ,adios_mpi_amr1_do_write_thread
+                                   ,adios_mpi_amr_do_write_thread
                                    ,(void *) &write_thread_data
                                    );
 #endif
 
 #if 0 
-                    count = adios_mpi_amr1_striping_unit_write(
+                    count = adios_mpi_amr_striping_unit_write(
                                md->fh
                               ,fd->base_offset
                               ,aggr_buff
@@ -2425,7 +2425,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
 
                     if (count != total_data_size)
                     {
-                        fprintf (stderr, "Err in adios_mpi_amr1_striping_unit_write()\n");
+                        fprintf (stderr, "Err in adios_mpi_amr_striping_unit_write()\n");
                         return;
                     }
 
@@ -2460,7 +2460,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                         attr_base_offset = md->old_attrs_root->characteristics [0].offset;
                     }
 /*
-                    adios_mpi_amr1_subtract_offset (var_base_offset
+                    adios_mpi_amr_subtract_offset (var_base_offset
                                                    ,var_base_offset
                                                    ,md->old_vars_root
                                                    ,md->old_attrs_root
@@ -2473,7 +2473,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                         var_offset_to_add += pg_sizes[i];
                     }
 
-                    adios_mpi_amr1_add_offset (var_offset_to_add
+                    adios_mpi_amr_add_offset (var_offset_to_add
                                               ,attr_offset_to_add
                                               ,md->old_vars_root
                                               ,md->old_attrs_root
@@ -2503,7 +2503,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                         attr_base_offset = md->old_attrs_root->characteristics [0].offset;
                     }
 
-                    adios_mpi_amr1_subtract_offset (var_base_offset
+                    adios_mpi_amr_subtract_offset (var_base_offset
                                                    ,attr_base_offset
                                                    ,md->old_vars_root
                                                    ,md->old_attrs_root
@@ -2520,7 +2520,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                         var_offset_to_add += pg_sizes[i] - attr_sizes[i]; 
                     }
 
-                    adios_mpi_amr1_add_offset (var_offset_to_add
+                    adios_mpi_amr_add_offset (var_offset_to_add
                                               ,attr_offset_to_add
                                               ,md->old_vars_root
                                               ,md->old_attrs_root
@@ -2673,12 +2673,12 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                     write_thread_data.block_unit = &md->block_unit;
 #endif
                     pthread_create (&g_t, NULL
-                                   ,adios_mpi_amr1_do_write_thread
+                                   ,adios_mpi_amr_do_write_thread
                                    ,(void *) &write_thread_data
                                    );
                 }
 #if 0
-                adios_mpi_amr1_striping_unit_write(
+                adios_mpi_amr_striping_unit_write(
                                   md->fh,
                                   -1,
                                   buffer,
@@ -2820,7 +2820,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                               );
 #endif
                 pthread_join (g_t1, NULL);
-                adios_mpi_amr1_striping_unit_write(
+                adios_mpi_amr_striping_unit_write(
                                   md->mfh,
                                   -1,
                                   global_index_buffer,
@@ -2828,7 +2828,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                                   md->block_unit);
 
 #if 0
-                adios_mpi_amr1_striping_unit_write(
+                adios_mpi_amr_striping_unit_write(
                                   m_file,
                                   -1,
                                   global_index_buffer,
@@ -2895,7 +2895,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 adios_write_close_vars_v1 (fd);
                 // fd->vars_start gets updated with the size written
                 uint64_t count;
-                count = adios_mpi_amr1_striping_unit_write(
+                count = adios_mpi_amr_striping_unit_write(
                                   md->fh,
                                   md->vars_start,
                                   fd->buffer,
@@ -2926,7 +2926,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 while (a)
                 {
                     adios_write_attribute_v1 (fd, a);
-                    count = adios_mpi_amr1_striping_unit_write(
+                    count = adios_mpi_amr_striping_unit_write(
                                   md->fh,
                                   -1,
                                   fd->buffer,
@@ -2954,7 +2954,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 fd->buffer_size = 0;
                 adios_write_close_attributes_v1 (fd);
                 // fd->vars_start gets updated with the size written
-                count = adios_mpi_amr1_striping_unit_write(
+                count = adios_mpi_amr_striping_unit_write(
                                   md->fh,
                                   md->vars_start,
                                   fd->buffer,
@@ -3062,7 +3062,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
             if (fd->shared_buffer == adios_flag_yes)
             {
                 // everyone writes their data
-                adios_mpi_amr1_striping_unit_write(
+                adios_mpi_amr_striping_unit_write(
                                   md->fh,
                                   fd->base_offset,
                                   fd->buffer,
@@ -3086,7 +3086,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 */
 
-                adios_mpi_amr1_striping_unit_write(
+                adios_mpi_amr_striping_unit_write(
                                   md->fh,
                                   md->b.pg_index_offset,
                                   buffer,
@@ -3147,21 +3147,21 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
 #endif
 }
 
-void adios_mpi_amr1_finalize (int mype, struct adios_method_struct * method)
+void adios_mpi_amr_finalize (int mype, struct adios_method_struct * method)
 {
 // nothing to do here
-    if (adios_mpi_amr1_initialized)
-        adios_mpi_amr1_initialized = 0;
+    if (adios_mpi_amr_initialized)
+        adios_mpi_amr_initialized = 0;
 }
 
-void adios_mpi_amr1_end_iteration (struct adios_method_struct * method)
+void adios_mpi_amr_end_iteration (struct adios_method_struct * method)
 {
 }
 
-void adios_mpi_amr1_start_calculation (struct adios_method_struct * method)
+void adios_mpi_amr_start_calculation (struct adios_method_struct * method)
 {
 }
 
-void adios_mpi_amr1_stop_calculation (struct adios_method_struct * method)
+void adios_mpi_amr_stop_calculation (struct adios_method_struct * method)
 {
 }
