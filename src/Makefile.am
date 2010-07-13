@@ -50,8 +50,7 @@ libadios_a_SOURCES = adios.c \
                      common_adios.c \
                      adios_transport_hooks.c \
                      adios_mpi.c \
-                     adios_mpi_stripe.c \
-                     adios_mpi_stripe2.c \
+                     adios_mpi_lustre.c \
                      adios_mpi_amr.c \
                      adios_mpi_amr1.c \
                      adios_posix.c \
@@ -76,8 +75,7 @@ libadiosf_a_SOURCES = adiosf.c \
                      common_adios.c \
                      adios_transport_hooks.c \
                      adios_mpi.c \
-                     adios_mpi_stripe.c \
-                     adios_mpi_stripe2.c \
+                     adios_mpi_lustre.c \
                      adios_mpi_amr.c \
                      adios_mpi_amr1.c \
                      adios_posix.c \
@@ -180,12 +178,14 @@ libadios_a_SOURCES += adios_mpi_stagger.c \
                       adios_mpi_aggregate.c \
                       adios_provenance.c \
                       adios_mpi_cio.c \
+                      adios_mpi_stripe.c \
                       adios_adaptive.c 
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_mpi_stagger.c \
                        adios_mpi_aggregate.c \
                        adios_provenance.c \
                        adios_mpi_cio.c \
+                       adios_mpi_stripe.c \
                        adios_adaptive.c 
 endif
 else
@@ -332,8 +332,8 @@ CXX=$(MPICXX)
 #adios_flags.c: adios_flags.h
 
 
-EXTRA_DIST = adios_bp_v1.h adios_bp_v2.h adios_endianness.h adios_error.h \
-             adios_internals.h adios_internals_v2.h adios_internals_mxml.h \
+EXTRA_DIST = adios_bp_v1.h adios_endianness.h adios_error.h \
+             adios_internals.h adios_internals_mxml.h \
              adios_nssi_config.h adios_socket.h adios_transport_hooks.h aggregation.h \
              bp_types.h bp_utils.h buffer.h common_adios.h common_read.h futils.h globals.h 
 

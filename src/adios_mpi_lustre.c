@@ -23,7 +23,7 @@
 #include "adios_internals.h"
 #include "buffer.h"
 
-static int adios_mpi_stripe2_initialized = 0;
+static int adios_mpi_lustre_initialized = 0;
 
 #define COLLECT_METRICS 0
 
@@ -211,7 +211,7 @@ static void trim_spaces (char * str)
 }
 
 static void
-adios_mpi_stripe2_set_striping_unit(MPI_File fh, char *filename, char *parameters)
+adios_mpi_lustre_set_striping_unit(MPI_File fh, char *filename, char *parameters)
 {
     struct statfs fsbuf;
     int err = 0, flag;
@@ -321,7 +321,7 @@ adios_mpi_stripe2_set_striping_unit(MPI_File fh, char *filename, char *parameter
 }
 
 static void
-adios_mpi_stripe2_set_block_unit(uint64_t *block_unit, char *parameters)
+adios_mpi_lustre_set_block_unit(uint64_t *block_unit, char *parameters)
 {
     char *temp_string, *p_count,*p_size;
 
@@ -346,7 +346,7 @@ adios_mpi_stripe2_set_block_unit(uint64_t *block_unit, char *parameters)
 }
 
 static int
-adios_mpi_stripe2_get_striping_unit(MPI_File fh, char *filename)
+adios_mpi_lustre_get_striping_unit(MPI_File fh, char *filename)
 {
     struct statfs fsbuf;
     int err, flag;
@@ -401,7 +401,7 @@ adios_mpi_stripe2_get_striping_unit(MPI_File fh, char *filename)
 }
 
 static uint64_t
-adios_mpi_stripe2_striping_unit_write(MPI_File    fh,
+adios_mpi_lustre_striping_unit_write(MPI_File    fh,
                               MPI_Offset  offset,
                               void       *buf,
                               uint64_t   len,
@@ -429,7 +429,7 @@ adios_mpi_stripe2_striping_unit_write(MPI_File    fh,
             int ret_len;
 
 #ifdef _WKL_CHECK_STRIPE_IO
-printf("adios_mpi_stripe2_striping_unit_write offset=%12lld len=%12d\n",offset,write_len);offset+=write_len;
+printf("adios_mpi_lustre_striping_unit_write offset=%12lld len=%12d\n",offset,write_len);offset+=write_len;
 #endif
             MPI_File_write (fh, buf_ptr, write_len, MPI_BYTE, &status);
             MPI_Get_count(&status, MPI_BYTE, &ret_len);
@@ -443,7 +443,7 @@ printf("adios_mpi_stripe2_striping_unit_write offset=%12lld len=%12d\n",offset,w
     }
     else {
 #ifdef _WKL_CHECK_STRIPE_IO
-printf("adios_mpi_stripe2_striping_unit_write offset=%12lld len=%12d\n",offset,len);
+printf("adios_mpi_lustre_striping_unit_write offset=%12lld len=%12d\n",offset,len);
 #endif
         uint64_t total_written = 0;
         uint64_t to_write = len;
@@ -562,15 +562,15 @@ static void adios_var_to_comm (const char * comm_name
     }
 }
 
-void adios_mpi_stripe2_init (const char * parameters
+void adios_mpi_lustre_init (const char * parameters
                     ,struct adios_method_struct * method
                     )
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
-    if (!adios_mpi_stripe2_initialized)
+    if (!adios_mpi_lustre_initialized)
     {
-        adios_mpi_stripe2_initialized = 1;
+        adios_mpi_lustre_initialized = 1;
     }
     method->method_data = malloc (sizeof (struct adios_MPI_data_struct));
     md = (struct adios_MPI_data_struct *) method->method_data;
@@ -589,7 +589,7 @@ void adios_mpi_stripe2_init (const char * parameters
     adios_buffer_struct_init (&md->b);
 }
 
-int adios_mpi_stripe2_open (struct adios_file_struct * fd
+int adios_mpi_lustre_open (struct adios_file_struct * fd
                    ,struct adios_method_struct * method, void * comm
                    )
 {
@@ -637,7 +637,7 @@ void build_offsets (struct adios_bp_buffer_struct_v1 * b
     }
 }
 
-enum ADIOS_FLAG adios_mpi_stripe2_should_buffer (struct adios_file_struct * fd
+enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                                         ,struct adios_method_struct * method
                                         )
 {
@@ -854,10 +854,10 @@ enum ADIOS_FLAG adios_mpi_stripe2_should_buffer (struct adios_file_struct * fd
                 unlink (name);  // make sure clean
 
                 if (method->parameters)
-                    adios_mpi_stripe2_set_striping_unit (md->fh 
+                    adios_mpi_lustre_set_striping_unit (md->fh 
                                                         ,name
                                                         ,method->parameters);
-                adios_mpi_stripe2_set_block_unit (&md->block_unit, method->parameters);
+                adios_mpi_lustre_set_block_unit (&md->block_unit, method->parameters);
 
                 err = MPI_File_open (MPI_COMM_SELF, name
                                     ,MPI_MODE_WRONLY | MPI_MODE_CREATE
@@ -865,7 +865,7 @@ enum ADIOS_FLAG adios_mpi_stripe2_should_buffer (struct adios_file_struct * fd
                                     ,&md->fh
                                     );
 
-                md->striping_unit = adios_mpi_stripe2_get_striping_unit(md->fh, name);
+                md->striping_unit = adios_mpi_lustre_get_striping_unit(md->fh, name);
 
                 if (next != -1)
                 {
@@ -886,13 +886,13 @@ enum ADIOS_FLAG adios_mpi_stripe2_should_buffer (struct adios_file_struct * fd
                               );
                 }
 
-                adios_mpi_stripe2_set_block_unit (&md->block_unit, method->parameters);
+                adios_mpi_lustre_set_block_unit (&md->block_unit, method->parameters);
                 err = MPI_File_open (MPI_COMM_SELF, name
                                     ,MPI_MODE_WRONLY
                                     ,MPI_INFO_NULL
                                     ,&md->fh
                                     );
-                md->striping_unit = adios_mpi_stripe2_get_striping_unit(md->fh, name);
+                md->striping_unit = adios_mpi_lustre_get_striping_unit(md->fh, name);
             }
 
             if (err != MPI_SUCCESS)
@@ -1013,7 +1013,7 @@ enum ADIOS_FLAG adios_mpi_stripe2_should_buffer (struct adios_file_struct * fd
 
                     return adios_flag_no;
                 }
-                md->striping_unit = adios_mpi_stripe2_get_striping_unit(md->fh, name);
+                md->striping_unit = adios_mpi_lustre_get_striping_unit(md->fh, name);
             }
 
             if (old_file)
@@ -1104,7 +1104,7 @@ enum ADIOS_FLAG adios_mpi_stripe2_should_buffer (struct adios_file_struct * fd
                                     ,MPI_INFO_NULL
                                     ,&md->fh
                                     );
-                md->striping_unit = adios_mpi_stripe2_get_striping_unit(md->fh, name);
+                md->striping_unit = adios_mpi_lustre_get_striping_unit(md->fh, name);
                 if (next != -1)
                 {
                     MPI_Isend (&flag, 1, MPI_INT, next, current
@@ -1128,7 +1128,7 @@ enum ADIOS_FLAG adios_mpi_stripe2_should_buffer (struct adios_file_struct * fd
                                     ,MPI_INFO_NULL
                                     ,&md->fh
                                     );
-                md->striping_unit = adios_mpi_stripe2_get_striping_unit(md->fh, name);
+                md->striping_unit = adios_mpi_lustre_get_striping_unit(md->fh, name);
             }
 
             if (err != MPI_SUCCESS)
@@ -1231,7 +1231,7 @@ enum ADIOS_FLAG adios_mpi_stripe2_should_buffer (struct adios_file_struct * fd
         adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
 
         uint64_t count;
-        count = adios_mpi_stripe2_striping_unit_write(
+        count = adios_mpi_lustre_striping_unit_write(
                           md->fh,
                           fd->base_offset,
                           fd->buffer,
@@ -1267,7 +1267,7 @@ enum ADIOS_FLAG adios_mpi_stripe2_should_buffer (struct adios_file_struct * fd
     return fd->shared_buffer;
 }
 
-void adios_mpi_stripe2_write (struct adios_file_struct * fd
+void adios_mpi_lustre_write (struct adios_file_struct * fd
                      ,struct adios_var_struct * v
                      ,void * data
                      ,struct adios_method_struct * method
@@ -1299,7 +1299,7 @@ void adios_mpi_stripe2_write (struct adios_file_struct * fd
         adios_write_var_header_v1 (fd, v);
 
         uint64_t count;
-        count = adios_mpi_stripe2_striping_unit_write(
+        count = adios_mpi_lustre_striping_unit_write(
                           md->fh,
                           -1,
                           fd->buffer,
@@ -1324,7 +1324,7 @@ void adios_mpi_stripe2_write (struct adios_file_struct * fd
         if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes) 
             fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
                              "Need to enlarge group size. \n");
-        count = adios_mpi_stripe2_striping_unit_write(
+        count = adios_mpi_lustre_striping_unit_write(
                           md->fh,
                           -1,
                           v->data,
@@ -1352,7 +1352,7 @@ void adios_mpi_stripe2_write (struct adios_file_struct * fd
 #endif
 }
 
-void adios_mpi_stripe2_get_write_buffer (struct adios_file_struct * fd
+void adios_mpi_lustre_get_write_buffer (struct adios_file_struct * fd
                                 ,struct adios_var_struct * v
                                 ,uint64_t * size
                                 ,void ** buffer
@@ -1412,7 +1412,7 @@ void adios_mpi_stripe2_get_write_buffer (struct adios_file_struct * fd
     }
 }
 
-void adios_mpi_stripe2_read (struct adios_file_struct * fd
+void adios_mpi_lustre_read (struct adios_file_struct * fd
                     ,struct adios_var_struct * v, void * buffer
                     ,uint64_t buffer_size
                     ,struct adios_method_struct * method
@@ -1422,7 +1422,7 @@ void adios_mpi_stripe2_read (struct adios_file_struct * fd
     v->data_size = buffer_size;
 }
 
-static void adios_mpi_stripe2_do_read (struct adios_file_struct * fd
+static void adios_mpi_lustre_do_read (struct adios_file_struct * fd
                               ,struct adios_method_struct * method
                               )
 {
@@ -1529,7 +1529,7 @@ static void adios_mpi_stripe2_do_read (struct adios_file_struct * fd
     adios_buffer_struct_clear (&md->b);
 }
 
-void adios_mpi_stripe2_close (struct adios_file_struct * fd
+void adios_mpi_lustre_close (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
@@ -1550,7 +1550,7 @@ void adios_mpi_stripe2_close (struct adios_file_struct * fd
         case adios_mode_read:
         {
             // read the index to find the place to start reading
-            adios_mpi_stripe2_do_read (fd, method);
+            adios_mpi_lustre_do_read (fd, method);
             struct adios_var_struct * v = fd->group->vars;
             while (v)
             {
@@ -1580,7 +1580,7 @@ void adios_mpi_stripe2_close (struct adios_file_struct * fd
                 // fd->vars_start gets updated with the size written
                 uint64_t count;
                 int retlen;
-                count = adios_mpi_stripe2_striping_unit_write(
+                count = adios_mpi_lustre_striping_unit_write(
                                   md->fh,
                                   md->vars_start,
                                   fd->buffer,
@@ -1614,7 +1614,7 @@ void adios_mpi_stripe2_close (struct adios_file_struct * fd
                     if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
                         fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
                                          "Need to enlarge group size. \n");
-                    count = adios_mpi_stripe2_striping_unit_write(
+                    count = adios_mpi_lustre_striping_unit_write(
                                       md->fh,
                                       -1,
                                       fd->buffer,
@@ -1642,7 +1642,7 @@ void adios_mpi_stripe2_close (struct adios_file_struct * fd
                 fd->buffer_size = 0;
                 adios_write_close_attributes_v1 (fd);
                 // fd->vars_start gets updated with the size written
-                count = adios_mpi_stripe2_striping_unit_write(
+                count = adios_mpi_lustre_striping_unit_write(
                                   md->fh,
                                   md->vars_start,
                                   fd->buffer,
@@ -1766,7 +1766,7 @@ void adios_mpi_stripe2_close (struct adios_file_struct * fd
                     fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
                              "Need to enlarge group size. \n");
 
-                adios_mpi_stripe2_striping_unit_write(
+                adios_mpi_lustre_striping_unit_write(
                                   md->fh,
                                   fd->base_offset,
                                   fd->buffer,
@@ -1783,7 +1783,7 @@ void adios_mpi_stripe2_close (struct adios_file_struct * fd
                                      );
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
-                adios_mpi_stripe2_striping_unit_write(
+                adios_mpi_lustre_striping_unit_write(
                                   md->fh,
                                   md->b.pg_index_offset,
                                   buffer,
@@ -1845,7 +1845,7 @@ void adios_mpi_stripe2_close (struct adios_file_struct * fd
                 adios_write_close_vars_v1 (fd);
                 // fd->vars_start gets updated with the size written
                 uint64_t count;
-                count = adios_mpi_stripe2_striping_unit_write(
+                count = adios_mpi_lustre_striping_unit_write(
                                   md->fh,
                                   md->vars_start,
                                   fd->buffer,
@@ -1876,7 +1876,7 @@ void adios_mpi_stripe2_close (struct adios_file_struct * fd
                 while (a)
                 {
                     adios_write_attribute_v1 (fd, a);
-                    count = adios_mpi_stripe2_striping_unit_write(
+                    count = adios_mpi_lustre_striping_unit_write(
                                   md->fh,
                                   -1,
                                   fd->buffer,
@@ -1904,7 +1904,7 @@ void adios_mpi_stripe2_close (struct adios_file_struct * fd
                 fd->buffer_size = 0;
                 adios_write_close_attributes_v1 (fd);
                 // fd->vars_start gets updated with the size written
-                count = adios_mpi_stripe2_striping_unit_write(
+                count = adios_mpi_lustre_striping_unit_write(
                                   md->fh,
                                   md->vars_start,
                                   fd->buffer,
@@ -2012,7 +2012,7 @@ void adios_mpi_stripe2_close (struct adios_file_struct * fd
             if (fd->shared_buffer == adios_flag_yes)
             {
                 // everyone writes their data
-                adios_mpi_stripe2_striping_unit_write(
+                adios_mpi_lustre_striping_unit_write(
                                   md->fh,
                                   fd->base_offset,
                                   fd->buffer,
@@ -2029,7 +2029,7 @@ void adios_mpi_stripe2_close (struct adios_file_struct * fd
                                      );
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
-                adios_mpi_stripe2_striping_unit_write(
+                adios_mpi_lustre_striping_unit_write(
                                   md->fh,
                                   md->b.pg_index_offset,
                                   buffer,
@@ -2086,21 +2086,21 @@ void adios_mpi_stripe2_close (struct adios_file_struct * fd
 #endif
 }
 
-void adios_mpi_stripe2_finalize (int mype, struct adios_method_struct * method)
+void adios_mpi_lustre_finalize (int mype, struct adios_method_struct * method)
 {
 // nothing to do here
-    if (adios_mpi_stripe2_initialized)
-        adios_mpi_stripe2_initialized = 0;
+    if (adios_mpi_lustre_initialized)
+        adios_mpi_lustre_initialized = 0;
 }
 
-void adios_mpi_stripe2_end_iteration (struct adios_method_struct * method)
+void adios_mpi_lustre_end_iteration (struct adios_method_struct * method)
 {
 }
 
-void adios_mpi_stripe2_start_calculation (struct adios_method_struct * method)
+void adios_mpi_lustre_start_calculation (struct adios_method_struct * method)
 {
 }
 
-void adios_mpi_stripe2_stop_calculation (struct adios_method_struct * method)
+void adios_mpi_lustre_stop_calculation (struct adios_method_struct * method)
 {
 }
