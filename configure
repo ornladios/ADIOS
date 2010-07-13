@@ -30625,6 +30625,17 @@ fi
 
 LIBS="$MPILIBS"
 
+
+
+if false; then
+  USE_PARALLEL_COMPILER_TRUE=
+  USE_PARALLEL_COMPILER_FALSE='#'
+else
+  USE_PARALLEL_COMPILER_TRUE='#'
+  USE_PARALLEL_COMPILER_FALSE=
+fi
+
+
 if test -z "${HAVE_PHDF5_TRUE}" -a -z "${HAVE_HDF5_FALSE}"; then
     HDF5_CPPFLAGS="${PHDF5_CPPFLAGS}"
     HDF5_CFLAGS="${PHDF5_CFLAGS}"
@@ -30711,16 +30722,6 @@ ADIOSREADLIB_SEQ_CPPFLAGS="-D_NOMPI"
 ADIOSREADLIB_SEQ_CFLAGS=
 ADIOSREADLIB_SEQ_LDFLAGS=
 ADIOSREADLIB_SEQ_LDADD="-lm"
-
-
-if false; then
-  USE_PARALLEL_COMPILER_TRUE=
-  USE_PARALLEL_COMPILER_FALSE='#'
-else
-  USE_PARALLEL_COMPILER_TRUE='#'
-  USE_PARALLEL_COMPILER_FALSE=
-fi
-
 if test "x${datatap}" != "xdisable"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${DT_CPPFLAGS}"
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${DT_CFLAGS}"
@@ -31293,6 +31294,13 @@ echo "$as_me: error: conditional \"BUILD_WRITE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${USE_PARALLEL_COMPILER_TRUE}" && test -z "${USE_PARALLEL_COMPILER_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"USE_PARALLEL_COMPILER\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"USE_PARALLEL_COMPILER\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_HDF5_TRUE}" && test -z "${HAVE_HDF5_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_HDF5\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -31311,13 +31319,6 @@ if test -z "${HAVE_NETCDF_TRUE}" && test -z "${HAVE_NETCDF_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_NETCDF\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_NETCDF\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${USE_PARALLEL_COMPILER_TRUE}" && test -z "${USE_PARALLEL_COMPILER_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"USE_PARALLEL_COMPILER\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"USE_PARALLEL_COMPILER\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
