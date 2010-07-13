@@ -17,16 +17,19 @@ function Usage () {
     echo "`basename $0` [-d | -c | -l] [-f] [-r] [-s]
 Arguments
    -d   Print base directory for ADIOS install
-   -c   Print compiler flags
+   -c   Print compiler flags for C/C++, using ADIOS write/read methods
    -l   Print linker flags for C/C++, using ADIOS write/read methods
    -f   Print above flags for Fortran90
    -r   Print above flags for using ADIOS read library only.
    -s   Print above flags for using ADIOS read library only and
           in a sequential code (no MPI). 
-          -r is required for -s, because the write API is parallel-only. 
+          -r is implicit for -s, because the write API is parallel-only. 
 Notes
-   Multiple options of d,c,l are enabled. In such a case, the output is
-   a list of FLAG=flags, where FLAG is one of (DIR, CFLAGS, LDFLAGS)
+   - Multiple options of d,c,l are enabled. In such a case, the output is
+     a list of FLAG=flags, where FLAG is one of (DIR, CFLAGS, LDFLAGS)
+   - If none of d,c,l are given, all of them is printed
+   - If none of f,r,s are given, flags for C/C++, using ADIOS write/read 
+     methods are printed
 "
 }
 
