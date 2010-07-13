@@ -36,6 +36,10 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@HAVE_NSSI_TRUE@am__append_1 = scripts/create.nssi.config.sh \
+@HAVE_NSSI_TRUE@                   scripts/kill.nssi.staging.sh  \
+@HAVE_NSSI_TRUE@                   scripts/start.nssi.staging.sh
+
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/adios_config.flags.in \
 	$(srcdir)/config.h.in $(top_srcdir)/configure AUTHORS COPYING \
@@ -303,6 +307,7 @@ target_alias = @target_alias@
 SUBDIRS = src utils tests examples
 EXTRA_DIST = runconf \
              KNOWN_BUGS \
+             adios_config \
              tools/matlab/Makefile \
              tools/matlab/adios.m \
              tools/matlab/adiosclose.m \
@@ -310,9 +315,12 @@ EXTRA_DIST = runconf \
              tools/matlab/adiosread.m \
              tools/matlab/adiosclosec.c \
              tools/matlab/adiosopenc.c \
-             tools/matlab/adiosreadc.c 
+             tools/matlab/adiosreadc.c \
+             scripts/create.nssi.config.sh \
+             scripts/kill.nssi.staging.sh \
+             scripts/start.nssi.staging.sh
 
-bin_SCRIPTS = adios_config 
+bin_SCRIPTS = adios_config $(am__append_1)
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -534,7 +542,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/tools/matlab
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/scripts $(distdir)/tools/matlab
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
