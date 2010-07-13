@@ -32,11 +32,11 @@ if [ ! -f adios_globaltime.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav adios_globaltime.bp > c_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav adios_globaltime.bp | grep -v endianness > c_bpls.txt
 diff -q c_bpls.txt $SRCDIR/reference/global_array_time_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: C version of adios_globaltime produced a file different from the reference."
-    echo "Compare bpls -lav $PWD/adios_globaltime.bp to reference $SRCDIR/reference/global_array_time_bpls.txt"
+    echo "Compare \"bpls -lav $PWD/adios_globaltime.bp | grep -v endianness\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
     exit 1
 fi
 
@@ -77,11 +77,11 @@ if [ ! -f adios_globaltime.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav adios_globaltime.bp > f_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav adios_globaltime.bp | grep -v endianness > f_bpls.txt
 diff -q f_bpls.txt $SRCDIR/reference/global_array_time_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: Fortran version of adios_globaltime produced a file different from the reference."
-    echo "Compare bpls -lav $PWD/adios_globaltime.bp to reference $SRCDIR/reference/global_array_time_bpls.txt"
+    echo "Compare \"bpls -lav $PWD/adios_globaltime.bp | grep -v endianness\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
     exit 1
 fi
 

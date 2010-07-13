@@ -5,7 +5,6 @@ File info:
   time steps:    13 starting from 1
   file size:     104 KB
   bp version:    513
-  endianness:    Little Endian
 
 Group temperature:
   integer    /NX                       scalar = 10 

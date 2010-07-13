@@ -5,7 +5,6 @@ File info:
   time steps:    1 starting from 1
   file size:     7 KB
   bp version:    513
-  endianness:    Little Endian
 
   integer    /NX           scalar = 10 
   integer    /G            scalar = 140 

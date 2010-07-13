@@ -5,7 +5,6 @@ File info:
   time steps:    1 starting from 1
   file size:     4 KB
   bp version:    513
-  endianness:    Little Endian
 
 Group scalars:
   byte       /var_byte            scalar = -4 
