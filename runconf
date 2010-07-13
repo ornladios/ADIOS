@@ -175,7 +175,6 @@ elif [ `hostname | cut -c 1-4` == "euge" ]; then
     export MPICC=mpixlc_r
     export MPIFC=mpixlf90
     export CFLAGS="-g -O0"
-    #export FCFLAGS="-qextname"
     export FC=xlf90
     export CC=xlc_r
 
@@ -192,8 +191,7 @@ elif [ `hostname | cut -c 1-4` == "euge" ]; then
             --with-mxml=/ccs/proj/e2e/adios/bgp \
             --with-hdf5=$HDF5_DIR \
             --with-hdf5-libs="$HDF5_CLIB" \
-            --with-phdf5=/sw/bgp/hdf5/1.8.0/cnk1.2_mpixlc9.0mpixlf11.1 \
-            --with-phdf5-libs="-L/sw/bgp/hdf5/1.8.0/cnk1.2_mpixlc9.0mpixlf11.1/lib -lhdf5 -L/sw/bgp/szip/2.1/cnk1.2_bgxlc9.0/lib -lsz -L/sw/bgp/zlib/1.2.3/cnk1.2_bgxlc9.0 -lz"
+            --without-phdf5
 
 
 elif [ `hostname | cut -c 1-4` == "lens" ]; then

@@ -81,7 +81,7 @@ int main (int argc, char ** argv)
         printf("byte        v1  = %d\n", v1);
         printf("short       v2  = %d\n", v2);
         printf("integer     v3  = %d\n", v3);
-        printf("long        v4  = %d\n", v4);
+        printf("long        v4  = %lld\n", v4);
 
         printf("uns.byte    v5  = %u\n", v5);
         printf("uns.short   v6  = %u\n", v6);
