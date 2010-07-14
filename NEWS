@@ -1,3 +1,19 @@
+1.2 Released July 15, 2010
+    - XML and non-XML write APIs are available
+    - More statistics (min/max/avg/std.dev) available without
+      overhead in write performance
+    - Added MPI_AMR method for advanced mesh refinement codes and
+      for aggregated writing (N procs to P writers to M disks)
+    - Added support for subfiles
+      - POSIX method many-file output can be read as one file
+      - MPI_AMR method uses subfiles to improve write performance
+    - Added NetCDF-4 transport method
+    - Asynchronous, staging methods on Jaguar XT5 at ORNL
+      - DataTap from Georgia Tech
+      - DataSpaces from Rutgers
+      - NSSI from Sandia
+    - MPI_LUSTRE method for best performance on Lustre file system
+
 
 1.0.1  Released on Dec 9, 2009
     - fix: builds read API on Mac (was broken at utils/bpdump)
