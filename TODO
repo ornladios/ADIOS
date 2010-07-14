@@ -1,75 +1,50 @@
-1. fix so that can write on BSD/MacOS:
+-  Make a utility for HPSS that will make an index only file
 
-http://www.opensource.apple.com/darwinsource/WWDC2004/gccfast-1614/libiberty/physmem.c
+-  fsck utility to fix files that were not fully completely created correctly.
 
-The short of it is that the system call doesn't work on bsd (and therefore
-MacOS).  We'll have to have an alternative memory check that is nicely
-demonstrated in the above source code.  Since it is open source, we may just
-want to use it directly...
+-  Is the Fortran module interface complete?
 
-2. Make a utility for HPSS that will make an index only file
-
-3. fsck utility to fix files that were not fully completely created correctly.
-
-4. Is the Fortran module interface complete?
-
-5. Do we need the ADIOS_WRITE macros anymore? If so, we need to do this:
+-  Do we need the ADIOS_WRITE macros anymore? If so, we need to do this:
 
 #define ADIOS_WRITE(a,b) call adios_write(a,'b'//char(0),b)
 to
 #define ADIOS_WRITE(a,b) call adios_write(a,#b//char(0),b)
 
-6. Auto generate the index file intended for the auto-split output (POSIX).
+-  Auto generate the index file intended for the auto-split output (POSIX).
 
-7. No-XML required APIs
+-  Formalize the resilience features of BP and add any features necessary.
 
-8. Abstract the read API so that we can use different implementations for
-applications like Code Coupling vs. reading from disk.
-+ DONE in r985
-
-9. Fix it so that vars can be written multiple times within a single PG. This
-requires fixing the array dimensions as well as doing new instances of a var.
-
-10. Formalize the resilience features of BP and add any features necessary.
-
-11. fix MPI_STRIPE method to not require the conditional compilation to work
+-  fix MPI_STRIPE method to not require the conditional compilation to work
 properly.
 
-12. Figure out why and fix append mode slowdown.
+-  Figure out why and fix append mode slowdown.
 
-13. Add write="no" back in. This will force any array dimensions that use this
+-  Add write="no" back in. This will force any array dimensions that use this
 to be stored as absolute numbers rather than references to vars.
 
-14. Figure out how to use the same XML file for the app and staging. We need
+-  Figure out how to use the same XML file for the app and staging. We need
 some flag to recognize and parse differently. The idea is that we will specify
 the transport for a group is the staging method, but add a parameter, for
 example, that states which method to actually use in the staging area to write
 the data to disk. There might be more changes necessary to make this work.
 
-15. Make the group_size optional. This would require making the buffer a
+-  Make the group_size optional. This would require making the buffer a
 maximum size and delaying the offset calculation until the close operation.
 There is also the issue of what to do if the buffer is exceeded. It probably
 only makes sense to abort. Otherwise, we'd have to do a big synch point that
 some processes might not be expecting. I don't think this is really a reasonable
 thing to do. Abort is about the only thing that can really work consistently.
 
-16. Consider refiniements to the free-memory-percentage to better address
+-  Consider refiniements to the free-memory-percentage to better address
 very dynamic memory usage.
 
-17. Add explicit support for "no values present" like NetCDF has.
+-  Add explicit support for "no values present" like NetCDF has.
 
-18. bpls does not properly support the endian setting (move data file from
-big-endian to little-endian and it can't read it).
-
-19. Add a checksum data characteristic to the writing so that we can validate
+-  Add a checksum data characteristic to the writing so that we can validate
 the data on reading.
 
-20. add config check for netcdf4 vs. netcdf3 so the adios_nc4.c can be
-conditionally compiled properly. NB: there is no netcdf4 on ewok, but there is
-netcdf3 so it is an easy test
-
-21. fix the phdf5 method so that it uses the progressive assembly approach
+-  fix the phdf5 method so that it uses the progressive assembly approach
 of the nc4 method.
 
-22. fix the tests/genarray so that the 2d and 3d XML files don't collide on
+-  fix the tests/genarray so that the 2d and 3d XML files don't collide on
 the group name internally (gpp.py will overwrite one with the other).

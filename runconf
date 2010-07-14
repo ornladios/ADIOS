@@ -136,7 +136,15 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         #module unload xtpe-quadcore
         TARGET=pgi
         module load PrgEnv-$TARGET
-        module swap pgi pgi/10.4.0
+        if [ "$TARGET" == "pgi" ]; then
+            module swap pgi pgi/10.4.0
+            # NSSI needs -pgcpplibs flag 
+            export LDFLAGS="-pgcpplibs" 
+        elif [ "$TARGET" == "gnu" ]; then
+            # NSSI needs libstdc++
+            export EXTRA_LIBS="/opt/gcc/4.4.4/snos/lib64/libstdc++.a"
+        fi
+     
         # NOTE hdf5-parallel module does not work with C++ compiler
         #module load hdf5-parallel
         #module load netcdf-hdf5parallel
@@ -146,7 +154,6 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
-        export LDFLAGS="-pgcpplibs" 
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
         export CFLAGS="-fPIC" 
         #./configure --prefix=/sw/xt5/adios/1.2_rc1/cnl2.2_pgi10.3.0_staging \
@@ -160,8 +167,6 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         --with-datatap=/ccs/proj/e2e/pnorbert/datatap/xt5/$TARGET \
         --with-nssi=/ccs/proj/e2e/pnorbert/nssi/xt5/$TARGET \
         --with-dart=/ccs/proj/e2e/pnorbert/dart/current/$TARGET
-        #--with-nssi=/ccs/home/thkorde/projects/nessie/install/cnl \
-        #--with-datatap=/ccs/home/habbasi/work/jaguar
     
     fi
     

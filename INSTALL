@@ -37,20 +37,33 @@ Requirements and optional features
    The bp2h5 converter utility to HDF5 format is built only if a HDF5 
    library is available. Currently ADIOS uses the 1.6 version of the HDF5 
    API but it can be built and used with the 1.8.x version of the HDF5 
-   library too. Use the option --with hdf5=<path> or ensure that the HDF5_DIR 
-   environment variable is set before configuring ADIOS.
+   library too. Use the option --with hdf5=<path> to configure ADIOS.
 
  - Parallel HDF5 is optional.
-   The transport method writing files in the Parallel HDF5 format is built
-   only if a parallel version of the HDF5 library is (also) available. 
-   If the HDF5_DIR environment variable points to a parallel HDF5 
-   installation configure will use it, otherwise you need to use the option
-   --with phdf5=<path> to build this transport method. 
-   Note that if you build this transport method, ADIOS will depend on
-   PHDF5 when you link any application with ADIOS even if the 
-   application does not intend to use this method.
+   The transport method writing files in the Parallel HDF5 format is built 
+   only if a parallel version of the HDF5 library is (also) available. You
+   need to use the option   with phdf5=<path> to build this transport method.
 
- - Matlab is optional
+   If you define Parallel HDF5 and do not define serial HDF5, then bp2h5 will
+   be built with the parallel library. 
+   
+   Note that if you build this transport method, ADIOS will depend on PHDF5 
+   when you link any application with ADIOS even if you the application does 
+   not intend to use this method. 
+
+   If you have problems compiling ADIOS with PHDF5 due to missing flags or 
+   libraries, you can define them using 
+   --with-phdf5-incdir=<path>,
+   --with-phdf5-libdir=<path> and 
+   --with-phdf5-libs=<link time flags and libraries>
+
+ - NetCDF-4 Parallel is optional.
+   The NC4 transport method writes files using the NetCDF-4 library which in 
+   turn is based on the parallel HDF5 library. You need to use the option 
+   -- with nc4par=<path> to build this transport method. Also, you need the
+   parallel HDF5 library. 
+
+ - Matlab is optional.
    If you have Matlab, you can build the ADIOS reader for Matlab separatly
    after building ADIOS. See details below in the Matlab section but before
    configuring ADIOS.
@@ -81,8 +94,8 @@ Architectures and compilers
 
    Cray XT machines
    ----------------
-   Use "CC=cc FC=ftn" for the configure command. 
-   These wrappers should be using the actual C and Fortran compilers on 
+   Use "CC=cc CXX=CC FC=ftn" for the configure command. 
+   These wrappers should be using the actual C, C++ and Fortran compilers on 
    such machines. ADIOS can be compiled with GNU, PGI and Intel compilers
    but it does not compile with the Cray compiler. If you are using the
    Cray compilers to build your application build the ADIOS library with 
@@ -95,9 +108,16 @@ Architectures and compilers
 
    Mac OSX
    -------
-   On Mac OSX, only the Read API and the utilities can be built. 
-   Use the --disable-write option for the configure command. 
+   Use separate MPICC/MPIFC and CC/FC compilers
+   Add 
+     export CFLAGS="-DO_LARGEFILE=0 -fno-common"
+   before configuring adios. 
+   If you do not want to install a fortran compiler on Mac, use
+   --disable-fortran at configure.
 
+   We have built ADIOS on OS X 10.6 using MacPorts and GCC4.4 
+   and OpenMPI 1.4.2 ports. GCC4.4 contains the gfortran compiler too. 
+   
    Linux
    -----
    ADIOS should configure and build fine on Linux. One possible issue
@@ -105,7 +125,7 @@ Architectures and compilers
    test with mpif90. If you have set FC=mpif90 before configure, try to 
    configure without setting it. Then configure will test the default
    f90 compiler (gfortran most likely) and pass but still will use mpif90 to 
-   build ADIOS.
+   build ADIOS. Or try MPIFC=mpif90 and FC=<whatever fortran compiler you have>
 
 Configuring
 -----------
@@ -137,13 +157,12 @@ Matlab
     
 HDF5
 ----
-   If you have parallel HDF5 installed and HDF5_DIR is set to this library,
-   configure will find it and use it for both HDF5 and PHDF5. This may or 
-   may not work to build utils/bp2h5. If not, you need to use a non-parallel
+   If you have parallel HDF5 installed and use it with --with-phdf5 and you
+   do not specify a serial HDF5 library with --with-hdf5, then configure
+   will use the parallel library for both HDF5 and PHDF5. This may or 
+   may not work to build utils/bp2h5. If not, you need to use a serial
    version of HDF5 to build bp2h5. Use the --with-hdf5 option to tell 
-   configure where to look for the non-parallel HDF5 library. Or you can
-   skip building it with --without-hdf5 option. The PHDF5 method for ADIOS 
-   will still be built.
+   configure where to look for the serial HDF5 library.
 
 
 
