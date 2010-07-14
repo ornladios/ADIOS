@@ -1,4 +1,8 @@
 #!/bin/bash
+#
+# This script is for configuring adios on the authors' machines
+# You can study it to figure out how to configure adios on your system
+#
 
 if [ `hostname | cut -c 1-4` == "ewok" ]; then
 
@@ -90,10 +94,6 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
-        #CFLAGS="-fPIC" ./configure --prefix=/sw/xt5/adios/1.1.0/cnl2.2_${TARGET}_binary \
-        #CFLAGS="-fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/jaguar.$TARGET \
-        #CFLAGS="-g -O0 -fPIC -DDART_DO_VERSIONING" ./configure --prefix=/ccs/proj/fus022/ADIOS/jaguar.$TARGET \
-        #CFLAGS="-g -O0 -fPIC -DDART_DO_VERSIONING" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/jaguar.noxml \
         CFLAGS="-fPIC" ./configure --prefix=/sw/xt5/adios/1.2_rc1/cnl2.2_gnu4.4.3 \
             --enable-dependency-tracking \
             --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
@@ -104,15 +104,6 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
             --with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-$TARGET \
             --with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
             
-            #--with-hdf5=/sw/xt5/hdf5/1.8.1/cnl2.1_pgi7.2.3 \
-            #--with-phdf5=${CRAY_HDF5_DIR}/hdf5-parallel-${TARGET} \
-            #--with-nc4par=${CRAY_NETCDF_DIR}/netcdf-hdf5parallel-${TARGET} \
-            #--with-dart=/ccs/proj/e2e/pnorbert/dart/current 
-            #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.xt5_$TARGET \
-            #--with-hdf5=/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par \
-            #--with-netcdf=/sw/xt/netcdf/3.6.2/sles9.2_pgi7.0.7
-            #--with-hdf5-libdir="/sw/xt/hdf5/1.6.7/cnl2.0_pgi7.1.6_par/lib -L/sw/xt/szip/2.1/sles9.2_pgi7.0.7/lib -lsz -lz" 
-    
     else 
     
         ##########
@@ -156,7 +147,6 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         #export FC=mpif90
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
         export CFLAGS="-fPIC" 
-        #./configure --prefix=/sw/xt5/adios/1.2_rc1/cnl2.2_pgi10.3.0_staging \
         ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xt5.$TARGET \
         --enable-dependency-tracking \
         --with-portals \
@@ -249,22 +239,15 @@ elif [ `hostname | cut -c 1-4` == "nid0" ]; then
         --with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-${TARGET} \
         --with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-${TARGET} \
         --with-dart=/global/homes/p/pnorbert/dataspaces
-
-        #--with-phdf5=/usr/common/usg/hdf5/1.6.5/parallel/lib \
-        #--with-phdf5-libdir="/usr/common/usg/hdf5/1.6.5/parallel/lib -lhdf5_fortran -lhdf5_hl -lhdf5 -L/usr/common/usg/zlib/default/lib -lz -L/usr/common/usg/szip/default/lib -lsz -I/usr/common/usg/hdf5/1.6.5/parallel/include -I/usr/common/usg/zlib/default/include -I/usr/common/usg/szip/default/include" \
-        #--with-netcdf=/usr/common/usg/netcdf/3.6.2
-
-    
     
 elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; then
 
     #######
     # Mac #
     #######
-    #
-    # NOTE: disable-write is required to build on Mac
-    #
     echo "Configure on Mac"
+    # Installed MacPorts and GCC4.4 and OpenMPI 1.4.2 ports 
+    # But should work with default openmpi and gcc, using --disable-fortran
     export CC=/opt/local/bin/gcc-mp-4.4
     export FC=/opt/local/bin/gfortran-mp-4.4
     export CXX=/opt/local/bin/g++-mp-4.4
@@ -275,10 +258,6 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
         --with-mxml=/opt/mxml \
         --with-netcdf=/opt/netcdf \
         --with-phdf5=/opt/hdf5
-        #--without-netcdf
-        #--with-hdf5=/opt/hdf5  
-        #--disable-write
-        #--enable-dependency-tracking --enable-shared --disable-static
 
 elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
 
@@ -310,7 +289,7 @@ elif [ `hostname | cut -c 1-6` == "tomato" ]; then
 
 else
     echo "Could not determine what machine is this"
-    echo "This script is just for configuring adios on the authors' machines"
+    echo "This script is for configuring adios on the authors' machines"
     echo "You can study it to figure out how to configure adios on your system"
 fi
     
