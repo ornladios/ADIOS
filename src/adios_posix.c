@@ -206,13 +206,23 @@ int adios_posix_open (struct adios_file_struct * fd
     // if communicator is not MPI_COMM_NULL/MPI_COMM_SELF, subfiles will be generated in a dir.
     if (p->group_comm != MPI_COMM_SELF)
     {
+        char * n = strrchr (fd->name, '/');
+        if (!n)
+        {
+            n = fd->name;
+        }
+        else
+        {
+            n++;
+        }
+
         MPI_Comm_rank (p->group_comm, &p->rank);
         MPI_Comm_size (p->group_comm, &p->size);
 
         sprintf (rank_string, "%d", p->rank);
         // fd->name + '.' + MPI rank + '\0'
-        name_with_rank = malloc (strlen (fd->name) + strlen (rank_string) + 2);
-        sprintf (name_with_rank, "%s.%s",  fd->name, rank_string);
+        name_with_rank = malloc (strlen (n) + strlen (rank_string) + 2);
+        sprintf (name_with_rank, "%s.%s",  n, rank_string);
 
         // e.g., subfile_name is restart.bp.dir/restart.bp.0
         subfile_name = malloc (strlen (fd->name)
@@ -303,8 +313,8 @@ int adios_posix_open (struct adios_file_struct * fd
             if (p->b.f == -1)
             {
                 fprintf (stderr, "adios_posix_open failed for "
-                                 "base_path %s, name %s\n"
-                        ,method->base_path, fd->name
+                                 "base_path %s, subfile name %s\n"
+                        ,method->base_path, subfile_name
                         );
 
                 free (subfile_name);
@@ -327,8 +337,8 @@ int adios_posix_open (struct adios_file_struct * fd
                     if (p->mf == -1)
                     {
                         fprintf (stderr, "adios_posix_open failed for "
-                                         "base_path %s, name %s\n"
-                                ,method->base_path, fd->name
+                                         "base_path %s, metadata file name %s\n"
+                                ,method->base_path, mdfile_name
                                 );
 
                         free (subfile_name);
