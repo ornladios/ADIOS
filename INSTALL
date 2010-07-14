@@ -31,13 +31,19 @@ Requirements and optional features
    The bp2ncd converter utility to NetCDF format is built only if NetCDF
    is available. Currently ADIOS uses the NetCDF-3 library. Use the option
    --with netcdf=<path> or ensure that the NETCDF_DIR environment variable 
-   is set before configuring ADIOS.
+   is set before configuring ADIOS. 
+   
+   NetCDF version 3.6.2 can be downloaded from
+       http://www.unidata.ucar.edu/downloads/netcdf
 
  - HDF5 is optional.
    The bp2h5 converter utility to HDF5 format is built only if a HDF5 
    library is available. Currently ADIOS uses the 1.6 version of the HDF5 
    API but it can be built and used with the 1.8.x version of the HDF5 
    library too. Use the option --with hdf5=<path> to configure ADIOS.
+
+   HDF5 can be downloaded from
+       http://www.hdfgroup.org/downloads
 
  - Parallel HDF5 is optional.
    The transport method writing files in the Parallel HDF5 format is built 
@@ -62,6 +68,12 @@ Requirements and optional features
    turn is based on the parallel HDF5 library. You need to use the option 
    -- with nc4par=<path> to build this transport method. Also, you need the
    parallel HDF5 library. 
+
+   NetCDF version 4.0.1 can be downloaded from
+       http://www.unidata.ucar.edu/downloads/netcdf
+
+   You need to build NetCDF-4 with a parallel HDF5 library as described at
+   http://www.unidata.ucar.edu/software/netcdf/docs/netcdf-install/parallel.html
 
  - Matlab is optional.
    If you have Matlab, you can build the ADIOS reader for Matlab separatly
