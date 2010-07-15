@@ -38,6 +38,7 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
         export CC=pgcc
         export CXX=pgCC
         export FC=pgf90
+        module swap pgi pgi/10.5
     elif [ "$TARGET" == "gnu" ]; then
         export CC=gcc
         export CXX=g++
