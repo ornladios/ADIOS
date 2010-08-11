@@ -978,7 +978,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
     int i;
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data;
-    char * name;
+    char * name, * name_no_path, * ch;
     char * d_name;
     int err;
     int sig;    // used for coordinating the MPI_File_open
@@ -1193,12 +1193,26 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                                                       );
             adios_mpi_amr_set_block_unit (&md->block_unit, method->parameters);
 
-            name = realloc (name, strlen (fd->name) + 5 + strlen (method->base_path) + strlen (fd->name) + 1 + 10 + 1);
+            // Check if fd->name contains path
+            if (ch = strrchr (fd->name, '/'))
+            {
+                name_no_path = malloc (strlen (ch + 1) + 1); 
+                strcpy (name_no_path, ch + 1); 
+            }
+            else
+            {
+                name_no_path = malloc (strlen (fd->name) + 1);
+                strcpy (name_no_path, fd->name);
+            }
+
+            name = realloc (name, strlen (fd->name) + 5 + strlen (method->base_path) + strlen (name_no_path) + 1 + 10 + 1);
             // create the subfile name, e.g. restart.bp.1
             // 1 for '.' + 10 for subfile index + 1 for '\0'
-            sprintf (name, "%s%s%s%s.%d", fd->name, ".dir/", method->base_path, fd->name, g_color1);
+            sprintf (name, "%s%s%s%s.%d", fd->name, ".dir/", method->base_path, name_no_path, g_color1);
             md->subfile_name = strdup (name);
             fd->subfile_name = strdup (name);
+
+            free (name_no_path);
 
             if (is_aggregator(md->rank))
             {
