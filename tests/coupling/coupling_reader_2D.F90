@@ -105,7 +105,7 @@ program coupling
 
     ! Terminate
     call MPI_Barrier (MPI_COMM_WORLD, ierr)
-    call adios_read_finalize 
+    call adios_read_finalize (adios_err)
     call adios_finalize (rank, adios_err)
     call MPI_Finalize (ierr)
 end program coupling
