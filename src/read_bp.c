@@ -2309,7 +2309,6 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
 
         if (ndim_notime == 0) {
             /* READ A SCALAR VARIABLE */
-
             slice_size = size_of_type;
             idx = 0; // macros below need it
 
@@ -2344,7 +2343,11 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
             }
 
             total_size += size_of_type;
-            continue;
+            
+            if (timedim == -1)
+                break;
+            else
+                continue;
         }
 
          /* READ AN ARRAY VARIABLE */
@@ -2446,7 +2449,7 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
             hole_break = i;
             slice_offset = 0;
             slice_size = 0;
-    
+
             if (hole_break == -1) {
                 /* The complete read happens to be exactly one pg, and the entire pg */
                 /* This means we enter this only once, and npg=1 at the end */
@@ -2635,6 +2638,8 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
         // shift target pointer for next read in
         data = (char *)data + (items_read * size_of_type);
 
+        if (timedim == -1)
+            break;
     } // end for (timestep ... loop over timesteps
 
     free (dims);
