@@ -1381,7 +1381,6 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
     uint64_t ids[MAX_DIMS];  // current indices
     bool roll;
 
-
     // init current indices
     steps = 1;
     for (i=0; i<ndim; i++) {
@@ -1409,9 +1408,15 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
         // print item
         fprintf(outf, "%s", idxstr);
         if (printByteAsChar && (adiosvartype == adios_byte || adiosvartype == adios_unsigned_byte)) {
-            print_data_as_string(data, steps, adiosvartype);
-            nextcol = ncols;
-            break; // break the while loop;
+            /* special case: k-D byte array printed as (k-1)D array of strings */
+            if (ndim == 0) {
+                print_data_as_string(data, steps, adiosvartype);
+            } else {
+                print_data_as_string(data+item, c[ndim-1], adiosvartype); // print data of last dim as string
+                item += c[ndim-1]-1; // will be ++-ed once below
+                ids[ndim-1] = s[ndim-1]+c[ndim-1]-1; // will be rolled below
+            }
+            nextcol = ncols-1; // force new line, will be ++-ed once below
         } else {
             print_data(data, item, adiosvartype, true);
         }
