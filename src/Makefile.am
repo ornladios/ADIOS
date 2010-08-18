@@ -14,31 +14,6 @@ nssi_staging_server_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 nssi_staging_server_LDADD = $(top_builddir)/src/libadios.a
 nssi_staging_server_LDADD += $(ADIOSLIB_LDADD) $(NSSI_SERVER_LIBS)
 
-#nssi_staging_server_LDFLAGS = $(MXML_LDFLAGS)
-#nssi_staging_server_LDADD += $(MXML_LIBS)
-#nssi_staging_server_CFLAGS=nssi_staging_server_CPPFLAGS=
-#nssi_staging_server_CPPFLAGS=
-
-
-#nssi_staging_server_CFLAGS += $(NSSI_CFLAGS)
-#nssi_staging_server_CPPFLAGS += $(NSSI_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
-#nssi_staging_server_LDFLAGS += $(NSSI_LDFLAGS)
-#nssi_staging_server_LDADD += $(NSSI_LIBS) $(NSSI_SERVER_LIBS)
-
-#if HAVE_NC4PAR
-#nssi_staging_server_LDFLAGS += $(NC4PAR_LDFLAGS)
-#nssi_staging_server_LDADD +=  $(NC4PAR_LIBS)
-#endif
-#if HAVE_PHDF5
-#nssi_staging_server_LDFLAGS += $(PHDF5_LDFLAGS)
-#nssi_staging_server_LDADD +=  $(PHDF5_LIBS)
-#endif
-#if HAVE_DART
-#nssi_staging_server_CPPFLAGS += $(DART_CPPFLAGS)
-#nssi_staging_server_LDFLAGS += $(DART_CPPFLAGS) $(DART_LDFLAGS)
-#nssi_staging_server_LDADD += $(DART_LIBS)
-#endif
-
 endif # HAVE_NSSI
 
 include_HEADERS=
@@ -106,15 +81,17 @@ libadiosf_a_SOURCES += adios_dart.c read_dart.c
 endif
 endif
 
+if HAVE_DIMES
+libadios_a_SOURCES += adios_dimes.c read_dimes.c
+if BUILD_FORTRAN
+libadiosf_a_SOURCES += adios_dimes.c read_dimes.c
+endif
+endif
 
 if HAVE_DATATAP
 libadios_a_SOURCES += adios_datatap.c
-#libadios_a_LIBS = $(libadios_a_LIBS) $(DT_LIBS)
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_datatap.c
-#libadiosf_a_CPPFLAGS += $(DT_CPPFLAGS)
-#libadiosf_a_LDFLAGS = $(libadiosf_a_LIBS) $(DT_LDFLAGS)
-#libadiosf_a_LIBS = $(libadiosf_a_LIBS) $(DT_LIBS)
 endif
 endif 
 
@@ -131,10 +108,8 @@ endif
 
 if HAVE_NC4PAR
 libadios_a_SOURCES += adios_nc4.c 
-#libadios_a_CPPFLAGS += $(NC4PAR_CPPFLAGS)
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_nc4.c 
-#libadiosf_a_CPPFLAGS += $(NC4PAR_CPPFLAGS)
 endif
 endif
 
@@ -216,6 +191,9 @@ libadiosread_a_SOURCES = adios_bp_v1.c \
 if HAVE_DART
 libadiosread_a_SOURCES += read_dart.c
 endif
+if HAVE_DIMES
+libadiosread_a_SOURCES += read_dimes.c
+endif
 libadiosread_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 
 if BUILD_FORTRAN
@@ -234,6 +212,10 @@ libadiosreadf_a_SOURCES = adios_bp_v1.c \
 if HAVE_DART
 libadiosreadf_a_SOURCES += read_dart.c
 endif
+if HAVE_DIMES
+libadiosreadf_a_SOURCES += read_dimes.c
+endif
+
 libadiosreadf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 
 # adiosf_read.mod is not really usable, 
@@ -261,6 +243,9 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
 if HAVE_DART
 libadiosread_nompi_a_SOURCES += read_dart.c
 endif
+if HAVE_DIMES
+libadiosread_nompi_a_SOURCES += read_dimes.c
+endif
 # Note: utils/adios_lint needs to link with adios_internals_mxml.o which depends
 #       on adios_internals.c, buffer.c and adios_transport_hooks.c. 
 #       We put these objects in libadiosread_nompi
@@ -279,6 +264,9 @@ libadiosreadf_nompi_a_SOURCES = mpidummy.c\
                                 read_bp.c 
 if HAVE_DART
 libadiosreadf_nompi_a_SOURCES += read_dart.c
+endif
+if HAVE_DIMES
+libadiosreadf_nompi_a_SOURCES += read_dimes.c
 endif
 endif
 

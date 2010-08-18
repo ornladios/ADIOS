@@ -79,7 +79,7 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -ldart2"
+    LIBS="$LIBS -ldart2 -lspaces"
     LDFLAGS="$LDFLAGS $DART_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $DART_CPPFLAGS"
     
@@ -92,7 +92,7 @@ else
     # Check for the Mini-XML library and headers
     AC_TRY_COMPILE([#include "dart.h"],
             [int err; err = dart_init(1,1);],
-            [DART_LIBS="-ldart2"],
+            [DART_LIBS="-ldart2 -lspaces"],
             [AM_CONDITIONAL(HAVE_DART,false)])
     
     LIBS="$save_LIBS"

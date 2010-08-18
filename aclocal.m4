@@ -7277,6 +7277,7 @@ AC_SUBST([am__untar])
 
 m4_include([config/ac_dart.m4])
 m4_include([config/ac_datatap.m4])
+m4_include([config/ac_dimes.m4])
 m4_include([config/ac_dmalloc.m4])
 m4_include([config/ac_hdf5.m4])
 m4_include([config/ac_infiniband.m4])

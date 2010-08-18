@@ -42,6 +42,7 @@ DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_dart.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
+	$(top_srcdir)/config/ac_dimes.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
@@ -132,6 +133,9 @@ DART_LDFLAGS = @DART_LDFLAGS@
 DART_LIBS = @DART_LIBS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
+DIMES_CPPFLAGS = @DIMES_CPPFLAGS@
+DIMES_LDFLAGS = @DIMES_LDFLAGS@
+DIMES_LIBS = @DIMES_LIBS@
 DMALLOC_CPPFLAGS = @DMALLOC_CPPFLAGS@
 DMALLOC_LDFLAGS = @DMALLOC_LDFLAGS@
 DMALLOC_LIBS = @DMALLOC_LIBS@
@@ -153,6 +157,8 @@ HAVE_DART_FALSE = @HAVE_DART_FALSE@
 HAVE_DART_TRUE = @HAVE_DART_TRUE@
 HAVE_DATATAP_FALSE = @HAVE_DATATAP_FALSE@
 HAVE_DATATAP_TRUE = @HAVE_DATATAP_TRUE@
+HAVE_DIMES_FALSE = @HAVE_DIMES_FALSE@
+HAVE_DIMES_TRUE = @HAVE_DIMES_TRUE@
 HAVE_DMALLOC_FALSE = @HAVE_DMALLOC_FALSE@
 HAVE_DMALLOC_TRUE = @HAVE_DMALLOC_TRUE@
 HAVE_HDF5_FALSE = @HAVE_HDF5_FALSE@

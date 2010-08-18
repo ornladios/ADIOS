@@ -39,7 +39,7 @@ void adios_read_##a##_reset_dimension_order (ADIOS_FILE *fp, int is_fortran); \
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-#define ADIOS_READ_METHOD_COUNT 3
+#define ADIOS_READ_METHOD_COUNT 4
 
 // forward declare the functions (or dummies for internals use)
 FORWARD_DECLARE(bp)
@@ -47,6 +47,10 @@ FORWARD_DECLARE(hdf5)
 #if HAVE_DART
 FORWARD_DECLARE(dart)
 #endif
+#if HAVE_DIMES
+FORWARD_DECLARE(dimes)
+#endif
+
 
 typedef int (* ADIOS_INIT_FN) (MPI_Comm comm); 
 typedef int (* ADIOS_FINALIZE_FN) (); 

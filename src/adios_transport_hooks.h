@@ -122,7 +122,8 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
               ,ADIOS_METHOD_MPI_AMR1    = 17
               ,ADIOS_METHOD_NSSI_STAGING = 18
               ,ADIOS_METHOD_NSSI_FILTER  = 19
-              ,ADIOS_METHOD_COUNT       = 20
+              ,ADIOS_METHOD_DIMES        = 20
+              ,ADIOS_METHOD_COUNT        = 21
 };
 
 // forward declare the functions (or dummies for internals use)
@@ -147,6 +148,11 @@ FORWARD_DECLARE(mpi)
 #if HAVE_DART
 FORWARD_DECLARE(dart)
 #endif
+
+#if HAVE_DIMES
+FORWARD_DECLARE(dimes)
+#endif
+
 
 #undef FORWARD_DECLARE
 #endif

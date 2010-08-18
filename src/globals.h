@@ -41,4 +41,15 @@ int  globals_adios_is_dart_connected_from_writer();
 int  globals_adios_is_dart_connected_from_both();
 #endif /* HAVE_DART */
 
+#ifdef HAVE_DIMES
+void globals_adios_set_dimes_connected_from_reader();
+void globals_adios_set_dimes_disconnected_from_reader();
+void globals_adios_set_dimes_connected_from_writer();
+void globals_adios_set_dimes_disconnected_from_writer();
+int  globals_adios_is_dimes_connected(); // from any
+int  globals_adios_is_dimes_connected_from_reader();
+int  globals_adios_is_dimes_connected_from_writer();
+int  globals_adios_is_dimes_connected_from_both();
+#endif
+
 #endif  /*__GLOBALS_H__*/

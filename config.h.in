@@ -32,6 +32,12 @@
 /* Define to 1 if you have the <dart.h> header file. */
 #undef HAVE_DART_H
 
+/* Define if you have the DIMES. */
+#undef HAVE_DIMES
+
+/* Define to 1 if you have the <dimes.h> header file. */
+#undef HAVE_DIMES_H
+
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 

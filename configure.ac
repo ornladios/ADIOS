@@ -64,6 +64,7 @@ AC_NETCDF
 AC_NC4PAR
 AC_NSSI
 AC_PROG_DART
+AC_PROG_DIMES
 AC_DMALLOC
 AC_DATATAP
 
@@ -158,6 +159,20 @@ if test -z "${HAVE_DART_TRUE}"; then
     ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${DART_CFLAGS}"
     ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${DART_LDFLAGS}"
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${DART_LIBS}"
+fi
+if test -z "${HAVE_DIMES_TRUE}"; then
+    ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${DIMES_CPPFLAGS}"
+    ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS}"
+    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${DIMES_LDFLAGS}"
+    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${DIMES_LIBS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${DIMES_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${DIMES_CFLAGS}"
+    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${DIMES_LDFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${DIMES_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${DIMES_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${DIMES_CFLAGS}"
+    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${DIMES_LDFLAGS}"
+    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${DIMES_LIBS}"
 fi
 if test -z "${HAVE_NSSI_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${NSSI_CPPFLAGS}"
@@ -311,6 +326,50 @@ else
         echo "  - No research transport methods";
 fi
 
+if test -z "${HAVE_MXML_TRUE}"; then
+        echo "  - MXML";
+        echo "      - MXML_CFLAGS = $MXML_CFLAGS";
+        echo "      - MXML_CPPFLAGS = $MXML_CPPFLAGS";
+        echo "      - MXML_LDFLAGS = $MXML_LDFLAGS";
+        echo "      - MXML_LIBS = $MXML_LIBS";
+        echo
+else
+        echo "  - No MXML"
+fi
+
+if test -z "${HAVE_PORTALS_TRUE}"; then
+        echo "  - PORTALS";
+        echo "      - PORTALS_CFLAGS = $PORTALS_CFLAGS";
+        echo "      - PORTALS_CPPFLAGS = $PORTALS_CPPFLAGS";
+        echo "      - PORTALS_LDFLAGS = $PORTALS_LDFLAGS";
+        echo "      - PORTALS_LIBS = $PORTALS_LIBS";
+        echo
+else
+	echo "  - No Portals"
+fi
+
+if test -z "${HAVE_INFINIBAND_TRUE}"; then
+        echo "  - INFINIBAND";
+        echo "      - INFINIBAND_CFLAGS = $INFINIBAND_CFLAGS";
+        echo "      - INFINIBAND_CPPFLAGS = $INFINIBAND_CPPFLAGS";
+        echo "      - INFINIBAND_LDFLAGS = $INFINIBAND_LDFLAGS";
+        echo "      - INFINIBAND_LIBS = $INFINIBAND_LIBS";
+        echo
+else
+	echo "  - No InfiniBand"
+fi
+
+dnl if test -z "${HAVE_GENGETOPT_TRUE}"; then
+dnl         echo "  - GENGETOPT";
+dnl         echo "      - GENGETOPT_CFLAGS = $GENGETOPT_CFLAGS";
+dnl         echo "      - GENGETOPT_CPPFLAGS = $GENGETOPT_CPPFLAGS";
+dnl         echo "      - GENGETOPT_LDFLAGS = $GENGETOPT_LDFLAGS";
+dnl         echo "      - GENGETOPT_LIBS = $GENGETOPT_LIBS";
+dnl         echo
+dnl else
+dnl         echo "  - No Gengetopt"
+dnl fi
+
 if test "x${datatap}" != "xdisable"; then
         echo "  - DataTap with interconnect: $datatap";
 	echo "	   - DT_CFLAGS     = $DT_CFLAGS";
@@ -333,27 +392,16 @@ else
 	echo "  - No DART to build DART transport method"
 fi
 
-if test -z "${HAVE_MXML_TRUE}"; then
-        echo "  - MXML";
-        echo "      - MXML_CFLAGS = $MXML_CFLAGS";
-        echo "      - MXML_CPPFLAGS = $MXML_CPPFLAGS";
-        echo "      - MXML_LDFLAGS = $MXML_LDFLAGS";
-        echo "      - MXML_LIBS = $MXML_LIBS";
+if test -z "${HAVE_DIMES_TRUE}"; then
+        echo "  - DIMES transport method";
+        echo "      - DIMES_CFLAGS = $DIMES_CFLAGS";
+        echo "      - DIMES_CPPFLAGS = $DIMES_CPPFLAGS";
+        echo "      - DIMES_LDFLAGS = $DIMES_LDFLAGS";
+        echo "      - DIMES_LIBS = $DIMES_LIBS";
         echo
 else
-        echo "  - No MXML"
-fi
-
-dnl if test -z "${HAVE_GENGETOPT_TRUE}"; then
-dnl         echo "  - GENGETOPT";
-dnl         echo "      - GENGETOPT_CFLAGS = $GENGETOPT_CFLAGS";
-dnl         echo "      - GENGETOPT_CPPFLAGS = $GENGETOPT_CPPFLAGS";
-dnl         echo "      - GENGETOPT_LDFLAGS = $GENGETOPT_LDFLAGS";
-dnl         echo "      - GENGETOPT_LIBS = $GENGETOPT_LIBS";
-dnl         echo
-dnl else
-dnl         echo "  - No Gengetopt"
-dnl fi
+        echo "  - No DIMES to build DIMES transport method"
+fi  
 
 if test -z "${HAVE_PHDF5_TRUE}"; then
         echo "  - PHDF5";
@@ -378,7 +426,6 @@ else
 fi
 
 if test -z "${HAVE_NC4PAR_TRUE}"; then
-        echo
         echo "  - NetCDF 4 Parallel";
         echo "      - NC4PAR_CFLAGS = $NC4PAR_CFLAGS";
         echo "      - NC4PAR_CPPFLAGS = $NC4PAR_CPPFLAGS";
@@ -398,28 +445,6 @@ if test -z "${HAVE_NETCDF_TRUE}"; then
         echo
 else
 	echo "  - No NETCDF"
-fi
-
-if test -z "${HAVE_PORTALS_TRUE}"; then
-        echo "  - PORTALS";
-        echo "      - PORTALS_CFLAGS = $PORTALS_CFLAGS";
-        echo "      - PORTALS_CPPFLAGS = $PORTALS_CPPFLAGS";
-        echo "      - PORTALS_LDFLAGS = $PORTALS_LDFLAGS";
-        echo "      - PORTALS_LIBS = $PORTALS_LIBS";
-        echo
-else
-	echo "  - No Portals"
-fi
-
-if test -z "${HAVE_INFINIBAND_TRUE}"; then
-        echo "  - INFINIBAND";
-        echo "      - INFINIBAND_CFLAGS = $INFINIBAND_CFLAGS";
-        echo "      - INFINIBAND_CPPFLAGS = $INFINIBAND_CPPFLAGS";
-        echo "      - INFINIBAND_LDFLAGS = $INFINIBAND_LDFLAGS";
-        echo "      - INFINIBAND_LIBS = $INFINIBAND_LIBS";
-        echo
-else
-	echo "  - No InfiniBand"
 fi
 
 if test -z "${HAVE_NSSI_TRUE}"; then

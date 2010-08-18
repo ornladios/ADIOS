@@ -80,3 +80,60 @@ int  globals_adios_is_dart_connected_from_both()
     return (globals_adios_connected_to_dart == dart_connected_from_both);
 }
 #endif
+
+#ifdef HAVE_DIMES
+enum DIMES_CONNECTION { dimes_disconnected = 0,
+                        dimes_connected_from_reader = 1,
+                        dimes_connected_from_writer = 2,
+                        dimes_connected_from_both = 3
+                     };
+static enum DIMES_CONNECTION globals_adios_connected_to_dimes = dimes_disconnected;
+
+void globals_adios_set_dimes_connected_from_reader()
+{
+    if (globals_adios_connected_to_dimes == dimes_disconnected)
+        globals_adios_connected_to_dimes = dimes_connected_from_reader;
+    else if (globals_adios_connected_to_dimes == dimes_connected_from_writer)
+        globals_adios_connected_to_dimes = dimes_connected_from_both;
+}
+void globals_adios_set_dimes_disconnected_from_reader()
+{
+    if (globals_adios_connected_to_dimes == dimes_connected_from_reader)
+        globals_adios_connected_to_dimes = dimes_disconnected;
+    else if (globals_adios_connected_to_dimes == dimes_connected_from_both)
+        globals_adios_connected_to_dimes = dimes_connected_from_writer;
+}
+void globals_adios_set_dimes_connected_from_writer()
+{
+    if (globals_adios_connected_to_dimes == dimes_disconnected)
+        globals_adios_connected_to_dimes = dimes_connected_from_writer;
+    else if (globals_adios_connected_to_dimes == dimes_connected_from_reader)
+        globals_adios_connected_to_dimes = dimes_connected_from_both;
+}
+void globals_adios_set_dimes_disconnected_from_writer()
+{
+    if (globals_adios_connected_to_dimes == dimes_connected_from_writer)
+        globals_adios_connected_to_dimes = dimes_disconnected;
+    else if (globals_adios_connected_to_dimes == dimes_connected_from_both)
+        globals_adios_connected_to_dimes = dimes_connected_from_reader;
+}
+int  globals_adios_is_dimes_connected()
+{
+    return (globals_adios_connected_to_dimes != dimes_disconnected);
+}
+int  globals_adios_is_dimes_connected_from_reader()
+{
+    return (globals_adios_connected_to_dimes == dimes_connected_from_reader ||
+            globals_adios_connected_to_dimes == dimes_connected_from_both);
+}
+int  globals_adios_is_dimes_connected_from_writer()
+{
+    return (globals_adios_connected_to_dimes == dimes_connected_from_writer ||
+            globals_adios_connected_to_dimes == dimes_connected_from_both);
+}
+int  globals_adios_is_dimes_connected_from_both()
+{
+    return (globals_adios_connected_to_dimes == dimes_connected_from_both);
+}
+#endif
+

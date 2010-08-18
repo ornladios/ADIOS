@@ -69,6 +69,10 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(dart,ADIOS_METHOD_DART)
 #endif
 
+#if HAVE_DIMES
+ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES)
+#endif
+
 #if HAVE_PHDF5
     ASSIGN_FNS(phdf5,ADIOS_METHOD_PHDF5)
 #endif
@@ -121,6 +125,10 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 
 #if HAVE_DART
     MATCH_STRING_TO_METHOD("DART",ADIOS_METHOD_DART,1)
+#endif
+
+#if HAVE_DIMES
+    MATCH_STRING_TO_METHOD("DIMES",ADIOS_METHOD_DIMES,1)
 #endif
 
 #if HAVE_PHDF5

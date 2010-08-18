@@ -27,7 +27,7 @@ module coupling_reader_2D_comm
     character(len=256) :: filename 
     integer :: npx, npy, npz  ! # of processors in x-y-z direction
     integer :: timesteps      ! number of times to read data
-    integer :: read_method    ! 0=bp, 1=dart
+    integer :: read_method    ! 0=bp, 1=hdf5, 2=dart, 3=dimes
     integer :: read_mode      ! 0=whole array on each process
                               ! 1=1D decomposition on 1st dim
 
@@ -82,7 +82,7 @@ program coupling
         endif
     endif
 
-    call adios_set_read_method(read_method, ierr) ! 2 = dart, 0 = bp
+    call adios_set_read_method(read_method, ierr) ! 3 = dimes, 2 = dart, 0 = bp
     call adios_read_init (group_comm, ierr)
     call adios_init("coupling2D_reader.xml", adios_err)
     !call MPI_Barrier (group_comm, ierr)
@@ -305,7 +305,7 @@ subroutine usage()
     print *, "file:   name of file to write/read"
     print *, "N:      number of processes in X dimension"
     print *, "M:      number of processes in Y dimension"
-    print *, "method: DART for memory-to-memory coupling, otherwise file-based"
+    print *, "method: DART or DIMES for memory-to-memory coupling, otherwise file-based"
     print *, "read-mode: 0: each process reads whole global array"
     print *, "           1: 1D decomposition in 1st dimension"
     print *, "timesteps: how many times to write data"
@@ -343,6 +343,8 @@ subroutine processArgs()
     call getarg(4, method_str)
     if (trim(method_str) .eq. "DART") then
         read_method = 2
+    elseif (trim(method_str) .eq. "DIMES") then
+        read_method = 3
     else
         read_method = 0
     endif

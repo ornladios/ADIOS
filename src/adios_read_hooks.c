@@ -44,6 +44,10 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
         ASSIGN_FNS(dart,ADIOS_READ_METHOD_DART)
 #endif
 
+#if HAVE_DIMES
+        ASSIGN_FNS(dimes,ADIOS_READ_METHOD_DIMES)
+#endif
+
 #if HAVE_PHDF5
         //ASSIGN_FNS(hdf5,ADIOS_READ_METHOD_HDF5)
 #endif
