@@ -123,7 +123,7 @@ void adios_dimes_init(const char *parameters,
 	p->time_index = 0;
 	p->n_writes = 0;
 	
-	//fprintf(stderr, "adios_dimes_init: appid=%d\n", p->appid);
+	fprintf(stderr, "adios_dimes_init: appid=%d, peers=%d\n", p->appid, p->peers);
    
 }
 
@@ -199,15 +199,12 @@ int adios_dimes_open(struct adios_file_struct *fd,
 {
 	int ret = 0;
 	struct adios_DIMES_data_struct *p = (struct adios_DIMES_data_struct*)
-											method->method_data;
+									method->method_data;
 	int num_peers = p->peers;
 	
         fprintf(stderr, "adios_dimes_open: open %s, mode=%d, time_index=%d \n",
                         fd->name, fd->mode, p->time_index);	
 	
-	//connect to DIMES index srv at the very first adios_open(),disconnect in adios_finalize()
-	if(!globals_adios_is_dimes_connected()){
-
 #if HAVE_MPI
 		//Get applicaitons size / process rank info from MPI communicator,
 		//which is necessary for dimes
@@ -219,9 +216,10 @@ int adios_dimes_open(struct adios_file_struct *fd,
 			MPI_Comm_size(group_comm, &num_peers);
 			p->peers = num_peers;
 		}
-#endif	
-
-						
+#endif
+	
+	//connect to DIMES index srv at the very first adios_open(),disconnect in adios_finalize()
+	if(!globals_adios_is_dimes_connected()){
 		//Init dimes client
 		//int num_total_peers = 64+16+1;
 		ret = dimes_init(num_peers,num_peers,p->appid);
@@ -239,29 +237,6 @@ int adios_dimes_open(struct adios_file_struct *fd,
 			p->rank, p->peers, p->appid);
 	}
 	globals_adios_set_dimes_connected_from_writer();
-	
-	if(fd->mode == adios_mode_write)
-	{
-	    //put file name & group name scalar info
-       	    if (p->rank == 0) {
-            /* Write two adios specific variables with the name of the file and name of the group into the space */
-            /* ADIOS Read API fopen() checks these variables to see if writing already happened */
-            unsigned int version;
-#ifdef DIMES_DO_VERSIONING
-            version = p->time_index;  /* Add new data as separate to DataSpaces */
-#else
-            version = 0;              /* Update/overwrite data in DataSpaces */
-#endif
-            snprintf(dimes_var_name, MAX_DIMES_NAMELEN, "FILE@%s", fd->name);
-            printf("%s: put %s = %d into space\n", __func__, dimes_var_name, p->time_index);
-            dimes_put_scalar(dimes_var_name, version, 4, 0, 0, 0, 0, 0, 0, p->time_index);
-
-	    }
-	}
-	else if(fd->mode == adios_mode_read)
-	{
-		fprintf(stderr,"adios_dimes_open: should not happens when fd->mode==adios_mode_read\n");
-	}
 	
 	return ret;
 }
@@ -440,6 +415,25 @@ void adios_dimes_close(struct adios_file_struct *fd,
 	dimes_sync_id++;
 #endif
 
+
+	if(fd->mode == adios_mode_write)
+	{
+	    //put file name & group name scalar info
+       	    if (p->rank == 0) {
+            /* Write two adios specific variables with the name of the file and name of the group into the space */
+            /* ADIOS Read API fopen() checks these variables to see if writing already happened */
+            snprintf(dimes_var_name, MAX_DIMES_NAMELEN, "FILE@%s", fd->name);
+            printf("%s: put %s = %d into space\n", __func__, dimes_var_name, p->time_index);
+            dimes_put_scalar(dimes_var_name, version, 4, 0, 0, 0, 0, 0, 0, p->time_index);
+
+	    }
+	}
+	else if(fd->mode == adios_mode_read)
+	{
+		fprintf(stderr,"adios_dimes_open: should not happens when fd->mode==adios_mode_read\n");
+	}
+
+	//Synchronization
 	if( fd->mode == adios_mode_write )
 	{
 		//printf("%s: call dimes_sync()\n",__func__);

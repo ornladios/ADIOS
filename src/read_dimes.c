@@ -68,22 +68,22 @@ int adios_read_dimes_init(MPI_Comm comm)
     MPI_Comm_size(comm, &nproc);
 	
     /* Connect to DIMES index srv, but only if we are not yet connected (from Write API) */
-	if(!globals_adios_is_dimes_connected()) {
-		appid = globals_adios_get_application_id(&was_set);
-		if(!was_set)
-			appid = 2;
-		DBG_PRINTF("-- %s, rank %d: connect to dimes with nproc=%d and appid=%d\n",
-			__func__,rank,nproc,appid);
+    if(!globals_adios_is_dimes_connected()) {
+	appid = globals_adios_get_application_id(&was_set);
+	if(!was_set)
+		appid = 2;
+	DBG_PRINTF("-- %s, rank %d: connect to dimes with nproc=%d and appid=%d\n",
+		__func__,rank,nproc,appid);
 
-		//int num_total_peers = 64+16+1;
-		err = dimes_init(nproc,nproc,appid);
-		if(err < 0){
-			error(err_connection_failed, "Failed to connect with DIMES index srv\n");
-			return -err_connection_failed;
-		}
+	//int num_total_peers = 64+16+1;
+	err = dimes_init(nproc,nproc,appid);
+	if(err < 0){
+		error(err_connection_failed, "Failed to connect with DIMES index srv\n");
+		return -err_connection_failed;
 	}
-	globals_adios_set_dimes_connected_from_reader();
-	return 0;
+   }
+   globals_adios_set_dimes_connected_from_reader();
+   return 0;
 }
 
 int adios_read_dimes_finalize()
@@ -144,7 +144,6 @@ ADIOS_FILE *adios_read_dimes_fopen(const char *fname, MPI_Comm comm)
     	snprintf(dimes_fname, MAX_DIMES_NAMELEN, "FILE@%s",fname);
    	DBG_PRINTF("-- %s, rank %d: Get variable %s\n", __func__, ds->mpi_rank, dimes_fname);
 	
-    	DBG_PRINTF("   rank %d: dimes_get_scalar %s\n", ds->mpi_rank, dimes_fname);
     	err = adios_read_dimes_get(dimes_fname, time_index_type, ds, offset, readsize, &time_index);
     	if (err) {
         	error(err_file_not_found_error, "Data of '%s' does not exist in DIMES\n", dimes_fname);
