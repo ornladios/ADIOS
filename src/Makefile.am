@@ -265,7 +265,8 @@ libadiosreadf_nompi_a_SOURCES = mpidummy.c\
                                 adiosf_read.c \
                                 adios_read_hooks.c \
                                 common_read.c \
-                                read_bp.c 
+                                read_bp.c \
+                                globals.c 
 if HAVE_DART
 libadiosreadf_nompi_a_SOURCES += read_dart.c
 endif
