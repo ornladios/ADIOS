@@ -114,16 +114,20 @@ endif
 endif
 
 if HAVE_NSSI
-libadios_a_SOURCES += adios_nssi_args.c adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
 dist_libadios_a_SOURCES = adios_nssi_args.x
 nodist_libadios_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
+libadios_a_SOURCES += adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
 libadios_a_CPPFLAGS += -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 if BUILD_FORTRAN
-libadiosf_a_SOURCES += adios_nssi_args.c adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
 nodist_libadiosf_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 dist_libadiosf_a_SOURCES = adios_nssi_args.x
+libadiosf_a_SOURCES += adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
 libadiosf_a_CPPFLAGS += -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 endif
+
+# The next line forces automake to build adios_nssi_args.[ch] before compiling adios_nssi_config.c
+# Note, the order of dist_*SOURCES and nodist_*SOURCES above should but does not solve this alone.
+adios_nssi_config.c: adios_nssi_args.c
 
 adios_nssi_args.h:  $(srcdir)/adios_nssi_args.x Makefile.am
 	rm -f $@

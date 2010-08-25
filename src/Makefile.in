@@ -55,9 +55,9 @@ bin_PROGRAMS = $(am__EXEEXT_1)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_14 = $(PHDF5_CPPFLAGS)
 @BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_15 = adios_nc4.c 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_16 = adios_nc4.c 
-@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_17 = adios_nssi_args.c adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
+@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_17 = adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_18 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_19 = adios_nssi_args.c adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_19 = adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_20 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__append_21 = adios_mpi_stagger.c \
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      adios_mpi_aggregate.c \
@@ -139,11 +139,10 @@ am__libadios_a_SOURCES_DIST = adios.c common_adios.c \
 	adios_endianness.c bp_utils.c futils.c adios_error.c \
 	adios_read.c adios_read_hooks.c common_read.c read_bp.c \
 	globals.c adios_dart.c read_dart.c adios_dimes.c read_dimes.c \
-	adios_datatap.c adios_phdf5.c adios_nc4.c adios_nssi_args.c \
-	adios_nssi_config.c adios_nssi.c adios_nssi_filter.c \
-	adios_mpi_stagger.c adios_mpi_aggregate.c adios_provenance.c \
-	adios_mpi_cio.c adios_mpi_stripe.c adios_mpi_amr1.c \
-	adios_adaptive.c
+	adios_datatap.c adios_phdf5.c adios_nc4.c adios_nssi_config.c \
+	adios_nssi.c adios_nssi_filter.c adios_mpi_stagger.c \
+	adios_mpi_aggregate.c adios_provenance.c adios_mpi_cio.c \
+	adios_mpi_stripe.c adios_mpi_amr1.c adios_adaptive.c
 @BUILD_WRITE_TRUE@@HAVE_DART_TRUE@am__objects_1 = libadios_a-adios_dart.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_DART_TRUE@	libadios_a-read_dart.$(OBJEXT)
 @BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_2 = libadios_a-adios_dimes.$(OBJEXT) \
@@ -151,8 +150,7 @@ am__libadios_a_SOURCES_DIST = adios.c common_adios.c \
 @BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_3 = libadios_a-adios_datatap.$(OBJEXT)
 @BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__objects_4 = libadios_a-adios_phdf5.$(OBJEXT)
 @BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__objects_5 = libadios_a-adios_nc4.$(OBJEXT)
-@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_6 = libadios_a-adios_nssi_args.$(OBJEXT) \
-@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadios_a-adios_nssi_config.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_6 = libadios_a-adios_nssi_config.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadios_a-adios_nssi.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadios_a-adios_nssi_filter.$(OBJEXT)
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__objects_7 = libadios_a-adios_mpi_stagger.$(OBJEXT) \
@@ -216,11 +214,10 @@ am__libadiosf_a_SOURCES_DIST = adiosf.c common_adios.c \
 	adios_endianness.c futils.c adios_error.c bp_utils.c \
 	adiosf_read.c adios_read_hooks.c common_read.c read_bp.c \
 	globals.c adios_dart.c read_dart.c adios_dimes.c read_dimes.c \
-	adios_datatap.c adios_phdf5.c adios_nc4.c adios_nssi_args.c \
-	adios_nssi_config.c adios_nssi.c adios_nssi_filter.c \
-	adios_mpi_stagger.c adios_mpi_aggregate.c adios_provenance.c \
-	adios_mpi_cio.c adios_mpi_stripe.c adios_mpi_amr1.c \
-	adios_adaptive.c
+	adios_datatap.c adios_phdf5.c adios_nc4.c adios_nssi_config.c \
+	adios_nssi.c adios_nssi_filter.c adios_mpi_stagger.c \
+	adios_mpi_aggregate.c adios_provenance.c adios_mpi_cio.c \
+	adios_mpi_stripe.c adios_mpi_amr1.c adios_adaptive.c
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@am__objects_8 = libadiosf_a-adios_dart.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@	libadiosf_a-read_dart.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_9 = libadiosf_a-adios_dimes.$(OBJEXT) \
@@ -228,8 +225,7 @@ am__libadiosf_a_SOURCES_DIST = adiosf.c common_adios.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_10 = libadiosf_a-adios_datatap.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__objects_11 = libadiosf_a-adios_phdf5.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__objects_12 = libadiosf_a-adios_nc4.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_13 = libadiosf_a-adios_nssi_args.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_a-adios_nssi_config.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_13 = libadiosf_a-adios_nssi_config.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_a-adios_nssi.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_a-adios_nssi_filter.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__objects_14 = libadiosf_a-adios_mpi_stagger.$(OBJEXT) \
@@ -1081,12 +1077,6 @@ libadios_a-adios_nc4.o: adios_nc4.c
 libadios_a-adios_nc4.obj: adios_nc4.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_nc4.obj `if test -f 'adios_nc4.c'; then $(CYGPATH_W) 'adios_nc4.c'; else $(CYGPATH_W) '$(srcdir)/adios_nc4.c'; fi`
 
-libadios_a-adios_nssi_args.o: adios_nssi_args.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_nssi_args.o `test -f 'adios_nssi_args.c' || echo '$(srcdir)/'`adios_nssi_args.c
-
-libadios_a-adios_nssi_args.obj: adios_nssi_args.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_nssi_args.obj `if test -f 'adios_nssi_args.c'; then $(CYGPATH_W) 'adios_nssi_args.c'; else $(CYGPATH_W) '$(srcdir)/adios_nssi_args.c'; fi`
-
 libadios_a-adios_nssi_config.o: adios_nssi_config.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_nssi_config.o `test -f 'adios_nssi_config.c' || echo '$(srcdir)/'`adios_nssi_config.c
 
@@ -1146,6 +1136,12 @@ libadios_a-adios_adaptive.o: adios_adaptive.c
 
 libadios_a-adios_adaptive.obj: adios_adaptive.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_adaptive.obj `if test -f 'adios_adaptive.c'; then $(CYGPATH_W) 'adios_adaptive.c'; else $(CYGPATH_W) '$(srcdir)/adios_adaptive.c'; fi`
+
+libadios_a-adios_nssi_args.o: adios_nssi_args.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_nssi_args.o `test -f 'adios_nssi_args.c' || echo '$(srcdir)/'`adios_nssi_args.c
+
+libadios_a-adios_nssi_args.obj: adios_nssi_args.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_nssi_args.obj `if test -f 'adios_nssi_args.c'; then $(CYGPATH_W) 'adios_nssi_args.c'; else $(CYGPATH_W) '$(srcdir)/adios_nssi_args.c'; fi`
 
 libadios_internal_nompi_a-mpidummy.o: mpidummy.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-mpidummy.o `test -f 'mpidummy.c' || echo '$(srcdir)/'`mpidummy.c
@@ -1375,12 +1371,6 @@ libadiosf_a-adios_nc4.o: adios_nc4.c
 libadiosf_a-adios_nc4.obj: adios_nc4.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_nc4.obj `if test -f 'adios_nc4.c'; then $(CYGPATH_W) 'adios_nc4.c'; else $(CYGPATH_W) '$(srcdir)/adios_nc4.c'; fi`
 
-libadiosf_a-adios_nssi_args.o: adios_nssi_args.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_nssi_args.o `test -f 'adios_nssi_args.c' || echo '$(srcdir)/'`adios_nssi_args.c
-
-libadiosf_a-adios_nssi_args.obj: adios_nssi_args.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_nssi_args.obj `if test -f 'adios_nssi_args.c'; then $(CYGPATH_W) 'adios_nssi_args.c'; else $(CYGPATH_W) '$(srcdir)/adios_nssi_args.c'; fi`
-
 libadiosf_a-adios_nssi_config.o: adios_nssi_config.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_nssi_config.o `test -f 'adios_nssi_config.c' || echo '$(srcdir)/'`adios_nssi_config.c
 
@@ -1440,6 +1430,12 @@ libadiosf_a-adios_adaptive.o: adios_adaptive.c
 
 libadiosf_a-adios_adaptive.obj: adios_adaptive.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_adaptive.obj `if test -f 'adios_adaptive.c'; then $(CYGPATH_W) 'adios_adaptive.c'; else $(CYGPATH_W) '$(srcdir)/adios_adaptive.c'; fi`
+
+libadiosf_a-adios_nssi_args.o: adios_nssi_args.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_nssi_args.o `test -f 'adios_nssi_args.c' || echo '$(srcdir)/'`adios_nssi_args.c
+
+libadiosf_a-adios_nssi_args.obj: adios_nssi_args.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_nssi_args.obj `if test -f 'adios_nssi_args.c'; then $(CYGPATH_W) 'adios_nssi_args.c'; else $(CYGPATH_W) '$(srcdir)/adios_nssi_args.c'; fi`
 
 libadiosread_a-adios_bp_v1.o: adios_bp_v1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_bp_v1.o `test -f 'adios_bp_v1.c' || echo '$(srcdir)/'`adios_bp_v1.c
@@ -1973,6 +1969,10 @@ uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
 	uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES
 
+
+# The next line forces automake to build adios_nssi_args.[ch] before compiling adios_nssi_config.c
+# Note, the order of dist_*SOURCES and nodist_*SOURCES above should but does not solve this alone.
+@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@adios_nssi_config.c: adios_nssi_args.c
 
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@adios_nssi_args.h:  $(srcdir)/adios_nssi_args.x Makefile.am
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	rm -f $@
