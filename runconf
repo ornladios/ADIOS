@@ -95,18 +95,16 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
-        CFLAGS="-g -fPIC" ./configure --prefix=/sw/xt5/adios/1.2_rc1/cnl2.2_gnu4.4.3 \
+        CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xt5.gnu \
             --enable-dependency-tracking \
             --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
-            --with-portals
-#            --with-dart=/ccs/proj/e2e/pnorbert/dart/current/$TARGET \
-#            --with-dimes=/ccs/proj/e2e/pnorbert/dimes/$TARGET \
-#            --without-portals \
+            --without-portals 
 #            --enable-research-transports \
 #            --with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
-#            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
 #            --with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-$TARGET \
 #            --with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
+#            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu7.2.3 \
+#            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
             
     else 
     

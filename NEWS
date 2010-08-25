@@ -1,3 +1,7 @@
+1.2.1 Released Aug 25, 2010
+    - Bug fix in read API (arrays written every timestep but without time dimension caused aborts)
+    - DIMES method from Rutgers
+
 1.2 Released July 15, 2010
     - XML and non-XML write APIs are available
     - More statistics (min/max/avg/std.dev) available without
