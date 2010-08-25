@@ -5,6 +5,7 @@ File info:
   time steps:    1 starting from 1
   file size:     4 KB
   bp version:    513
+  statistics:    Min / Max / Avg / Std_dev
 
 Group scalars:
   byte       /var_byte            scalar = -4 

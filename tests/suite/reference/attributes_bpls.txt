@@ -5,6 +5,7 @@ File info:
   time steps:    1 starting from 1
   file size:     6 KB
   bp version:    513
+  statistics:    Min / Max / Avg / Std_dev
 
 Group temperature:
   integer    /NX                            scalar = 10 
@@ -12,7 +13,7 @@ Group temperature:
   integer    /rank                          scalar = 0 
   double     /mean                          scalar = 4.5 
   string     /date                          scalar = "Nov, 2009"
-  double     /temperature                   {5, 10} = 0 / 49 / 24.5 / 14.4309  {MIN / MAX / AVG / STD_DEV} 
+  double     /temperature                   {5, 10} = 0 / 49 / 24.5 / 14.4309 
   integer    /temperature/number of levels  attr   = 1 
   string     /temperature/description       attr   = "Global array written from 'size' processes"
   double     /temperature/mean value        attr   = 4.5 

@@ -5,10 +5,11 @@ File info:
   time steps:    13 starting from 1
   file size:     104 KB
   bp version:    513
+  statistics:    Min / Max / Avg / Std_dev
 
 Group temperature:
   integer    /NX                       scalar = 10 
   integer    /size                     scalar = 9 
   integer    /rank                     scalar = 0 
-  double     /temperature              {13, 9, 10} = 100 / 1389 / 744.5 / 375.067  {MIN / MAX / AVG / STD_DEV} 
+  double     /temperature              {13, 9, 10} = 100 / 1389 / 744.5 / 375.067 
   string     /temperature/description  attr   = "Global array written from 'size' processes over several timesteps"
