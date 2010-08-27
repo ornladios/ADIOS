@@ -255,7 +255,7 @@ static void
 adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
 {
     struct statfs fsbuf;
-    int err = 0, flag;
+    int err = 0, flag, num_ost;
     uint64_t striping_unit = 0;
     uint64_t block_unit = 0;
     uint16_t striping_count = 0;
@@ -281,6 +281,23 @@ adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
 
     if (striping_count <= 0)
         striping_count = 4;
+
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    if (p_size = strstr (temp_string, "num_ost"))
+    {
+        char * p = strchr (p_size, '=');
+        char * q = strtok (p, ",");
+        if (!q)
+            num_ost = atoi(q + 1);
+        else
+            num_ost = atoi(p + 1);
+    }
+
+    // number of ost's is, by default, 672 (jaguar configuration).
+    if (num_ost <= 0)
+        num_ost = 672;
 
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
@@ -329,7 +346,7 @@ adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
         lum.lmm_pattern = 0;
         lum.lmm_stripe_size = striping_unit;
         lum.lmm_stripe_count = striping_count;
-        lum.lmm_stripe_offset = g_color1 % 672;
+        lum.lmm_stripe_offset = g_color1 % num_ost;
         ioctl (fd, LL_IOC_LOV_SETSTRIPE
               ,(void *) &lum
               );

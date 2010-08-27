@@ -26,6 +26,48 @@
 #include "dmalloc.h"
 #endif
 
+MPI_File * get_BP_file_handle(struct BP_file_handle * l, char * file_name)
+{
+    if (!l)
+        return 0;
+
+    while (l)
+    {
+        if (!strcmp (l->file_name, file_name))
+            return &l->fh;
+
+        l = l->next;
+    }
+
+    return 0;
+}
+
+void add_BP_file_handle (struct BP_file_handle ** l, struct BP_file_handle * n)
+{
+    if (!n)
+        return;
+
+    n->next = *l;
+    *l = n;
+}
+
+
+void close_all_BP_files (struct BP_file_handle * l)
+{
+    struct BP_file_handle * n;
+
+    while (l)
+    {
+        n = l->next;
+
+        free (l->file_name);
+        MPI_File_close (&l->fh);
+        free (l);
+
+        l = n;
+    }
+}
+
 /* Return 0: if file is little endian, 1 if file is big endian 
  * We know if it is different from the current system, so here
  * we determine the current endianness and report accordingly.
@@ -63,7 +105,9 @@ ADIOS_FILE * adios_read_bp_fopen (const char * fname, MPI_Comm comm)
         error( err_no_memory, "Cannot allocate memory for file info.");
         return NULL;
     }
-    fh->comm =  comm;
+
+    fh->sfh = 0;
+    fh->comm = comm;
     fh->gvar_h = 0;
     fh->pgs_root = 0;
     fh->vars_root = 0;
@@ -165,6 +209,10 @@ int adios_read_bp_fclose (ADIOS_FILE *fp)
     adios_errno = 0;
     if (fh->mpi_fh) 
         MPI_File_close (&mpi_fh);
+
+    if (fh->sfh)
+        close_all_BP_files (fh->sfh);
+
     if (fh->b) {
         adios_posix_close_internal (fh->b);
         free(fh->b);
@@ -1473,36 +1521,52 @@ void adios_read_bp_free_varinfo (ADIOS_VARINFO *vp)
 
 
 // To read subfiles
-#define MPI_FILE_READ_OPS2                                                                 \
-        bp_realloc_aligned(fh->b, slice_size);                                             \
-        fh->b->offset = 0;                                                                 \
-                                                                                           \
-        MPI_File sfh;                                                                      \
-        int err;                                                                           \
-        err = MPI_File_open (fh->comm                                                      \
-                      ,var_root->characteristics[start_idx + idx].file_name                \
-                      ,MPI_MODE_RDONLY                                                     \
-                      ,(MPI_Info)MPI_INFO_NULL                                             \
-                      ,&sfh                                                                \
-                      );                                                                   \
-       if (err != MPI_SUCCESS)                                                             \
-       {                                                                                   \
-           fprintf (stderr, "can not open file\n");                                        \
-           return -1;                                                                      \
-       }                                                                                   \
-                                                                                           \
-        MPI_File_seek (sfh                                                                 \
-                      ,(MPI_Offset)slice_offset                                            \
-                      ,MPI_SEEK_SET                                                        \
-                      );                                                                   \
-        MPI_File_read (sfh                                                                 \
-                      ,fh->b->buff                                                         \
-                      ,slice_size                                                          \
-                      ,MPI_BYTE                                                            \
-                      ,&status                                                             \
-                      );                                                                   \
-        MPI_File_close (&sfh);                                                             \
-        fh->b->offset = 0;                                                                 \
+#define MPI_FILE_READ_OPS2                                                                  \
+        bp_realloc_aligned(fh->b, slice_size);                                              \
+        fh->b->offset = 0;                                                                  \
+                                                                                            \
+        MPI_File * sfh;                                                                     \
+        sfh = get_BP_file_handle (fh->sfh                                                   \
+                                 ,var_root->characteristics[start_idx + idx].file_name      \
+                                 );                                                         \
+        if (!sfh)                                                                           \
+        {                                                                                   \
+            int err;                                                                        \
+            struct BP_file_handle * new_h =                                                 \
+                  (struct BP_file_handle *) malloc (sizeof (struct BP_file_handle));        \
+            new_h->file_name = (char *) malloc (                                            \
+                       strlen (var_root->characteristics[start_idx + idx].file_name) + 1);  \
+            new_h->next = 0;                                                                \
+            strcpy (new_h->file_name, var_root->characteristics[start_idx + idx].file_name);\
+            err = MPI_File_open (fh->comm                                                   \
+                                ,var_root->characteristics[start_idx + idx].file_name       \
+                                ,MPI_MODE_RDONLY                                            \
+                                ,(MPI_Info)MPI_INFO_NULL                                    \
+                                ,&new_h->fh                                                 \
+                                );                                                          \
+           if (err != MPI_SUCCESS)                                                          \
+           {                                                                                \
+               fprintf (stderr, "can not open file\n");                                     \
+               return -1;                                                                   \
+           }                                                                                \
+                                                                                            \
+           add_BP_file_handle (&fh->sfh                                                     \
+                              ,new_h                                                        \
+                              );                                                            \
+           sfh = &new_h->fh;                                                                \
+        }                                                                                   \
+                                                                                            \
+        MPI_File_seek (*sfh                                                                 \
+                      ,(MPI_Offset)slice_offset                                             \
+                      ,MPI_SEEK_SET                                                         \
+                      );                                                                    \
+        MPI_File_read (*sfh                                                                 \
+                      ,fh->b->buff                                                          \
+                      ,slice_size                                                           \
+                      ,MPI_BYTE                                                             \
+                      ,&status                                                              \
+                      );                                                                    \
+        fh->b->offset = 0;                                                                  \
 
 
 int64_t adios_read_bp_read_var (ADIOS_GROUP * gp, const char * varname,

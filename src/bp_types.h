@@ -42,8 +42,18 @@ struct bp_minifooter {
 	uint64_t file_size;
 } __attribute__((__packed__));
 
+struct BP_file_handle
+{
+    char * file_name;
+    MPI_File fh;
+    struct BP_file_handle * next;
+};
+
+typedef struct BP_file_handle BP_file_handle_list;
+
 struct BP_FILE {
     MPI_File mpi_fh;
+    BP_file_handle_list * sfh; // This list links all the subfiles handle together    
     MPI_Comm comm;
     struct adios_bp_buffer_struct_v1 * b;
     struct bp_index_pg_struct_v1 * pgs_root;

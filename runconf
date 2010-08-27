@@ -49,7 +49,7 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     fi
         
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ewok.$TARGET \
+    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/ewok.$TARGET \
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
         --enable-research-transports  \
