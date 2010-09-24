@@ -359,8 +359,8 @@ void FC_FUNC_(adios_close, adios_CLOSE) (int64_t * fd_p, int * err)
 // group a list of vars into a composite group
 void FC_FUNC_(adios_declare_group, adios_DECLARE_GROUP) 
     (int64_t * id, const char * name
-    ,const char * time_index, int * err
-    ,int name_size, int time_index_size
+    ,const char * time_index, enum ADIOS_FLAG stats
+    ,int * err, int name_size, int time_index_size
     )
 {
     char * buf1 = 0;
@@ -370,7 +370,7 @@ void FC_FUNC_(adios_declare_group, adios_DECLARE_GROUP)
     buf2 = futils_fstr_to_cstr (time_index, time_index_size);
 
     if (buf1 != 0 && buf2 != 0) {
-        *err = adios_common_declare_group (id, buf1, adios_flag_yes, "", "", buf2);
+        *err = adios_common_declare_group (id, buf1, adios_flag_yes, "", "", buf2, stats);
         free (buf1);
         free (buf2);
         if (*err == 1) {

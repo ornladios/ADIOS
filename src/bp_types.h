@@ -44,7 +44,7 @@ struct bp_minifooter {
 
 struct BP_file_handle
 {
-    char * file_name;
+    uint32_t file_index;
     MPI_File fh;
     struct BP_file_handle * next;
 };
@@ -53,6 +53,7 @@ typedef struct BP_file_handle BP_file_handle_list;
 
 struct BP_FILE {
     MPI_File mpi_fh;
+    char * fname; // Main file name is needed to calculate subfile names
     BP_file_handle_list * sfh; // This list links all the subfiles handle together    
     MPI_Comm comm;
     struct adios_bp_buffer_struct_v1 * b;

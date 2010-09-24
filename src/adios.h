@@ -65,6 +65,7 @@ int adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
 // To declare a ADIOS group
 int adios_declare_group (int64_t * id, const char * name
                         ,const char * time_index
+                        ,enum ADIOS_FLAG stats
                         );
 // To free a ADIOS group
 int adios_free_group (int64_t id);

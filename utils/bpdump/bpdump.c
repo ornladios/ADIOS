@@ -1002,10 +1002,7 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
         {
             printf ("\tOffset(%llu)", vars_root->characteristics [i].offset);
             printf ("\tPayload Offset(%llu)", vars_root->characteristics [i].payload_offset);
-            if (vars_root->characteristics [i].file_name)
-            {
-                printf ("\tFile Name(%s)", vars_root->characteristics [i].file_name);
-            }
+            printf ("\tFile Index(%d)", vars_root->characteristics [i].file_index);
             printf ("\tTime Index(%d)", vars_root->characteristics [i].time_index);
 
     		/* NCSU - Print min, max */
@@ -1126,10 +1123,7 @@ void print_attributes_index
         {
             printf ("\t\tOffset(%llu)", attrs_root->characteristics [i].offset);
             printf ("\t\tPayload Offset(%llu)", attrs_root->characteristics [i].payload_offset);
-            if (attrs_root->characteristics [i].file_name)
-            {
-                printf ("\t\tFile Name(%s)", attrs_root->characteristics [i].file_name);
-            }
+            printf ("\t\tFile Index(%d)", attrs_root->characteristics [i].file_index);
             printf ("\t\tTime Index(%d)", attrs_root->characteristics [i].time_index);
 
     		/* NCSU - Print min, max  */

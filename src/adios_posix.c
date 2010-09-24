@@ -259,7 +259,7 @@ int adios_posix_open (struct adios_file_struct * fd
         mdfile_name = 0;
     }
 
-    fd->subfile_name = strdup (subfile_name);
+    fd->subfile_index = p->rank;
 
     struct stat s;
     if (stat (subfile_name, &s) == 0)

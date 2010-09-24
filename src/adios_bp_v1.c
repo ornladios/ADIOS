@@ -695,18 +695,14 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                         break;
                     }
 
-                    case adios_characteristic_file_name:
+                    case adios_characteristic_file_index:
                     {
-                        len = *(uint16_t *) (b->buff + b->offset);
+                        (*root)->characteristics [j].file_index =
+                                            *(uint32_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
-                            swap_64(len);
+                            swap_32((*root)->characteristics [j].file_index);
                         }
-                        b->offset += 2;
-
-                        (*root)->characteristics [j].file_name = malloc (len + 1);
-                        (*root)->characteristics [j].file_name[len] = '\0';
-                        strncpy ((*root)->characteristics [j].file_name, b->buff + b->offset, len);
-                        b->offset += len;
+                        b->offset += 4;
 
                         break;
                     }
@@ -1034,18 +1030,14 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                         break;
                     }
 
-                    case adios_characteristic_file_name:
+                    case adios_characteristic_file_index:
                     {
-                        len = *(uint16_t *) (b->buff + b->offset);
+                        (*root)->characteristics [j].file_index =
+                                            *(uint32_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
-                            swap_64(len);
+                            swap_32((*root)->characteristics [j].file_index);
                         }
-                        b->offset += 2;
-
-                        (*root)->characteristics [j].file_name = malloc (len + 1);
-                        (*root)->characteristics [j].file_name[len] = '\0';
-                        strncpy ((*root)->characteristics [j].file_name, b->buff + b->offset, len);
-                        b->offset += len;
+                        b->offset += 4;
 
                         break;
                     }

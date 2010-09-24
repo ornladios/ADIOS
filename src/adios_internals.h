@@ -140,6 +140,7 @@ struct adios_group_struct
     char * group_by;
     char * time_index_name;
     uint32_t time_index;
+    enum ADIOS_FLAG stats_on;
     uint32_t process_id;
 
     struct adios_method_list_struct * methods;
@@ -157,7 +158,7 @@ struct adios_group_list_struct
 struct adios_file_struct
 {
     char * name;
-    char * subfile_name;
+    uint32_t subfile_index; // needs to be set in ADIOS method if generates subfiles
     struct adios_group_struct * group;
     enum ADIOS_METHOD_MODE mode;
     uint64_t data_size;
@@ -410,6 +411,7 @@ int adios_common_declare_group (int64_t * id, const char * name
                                ,const char * coordination_comm
                                ,const char * coordination_var
                                ,const char * time_index
+                               ,enum ADIOS_FLAG stats
                                );
 
 int adios_common_define_var (int64_t group_id, const char * name

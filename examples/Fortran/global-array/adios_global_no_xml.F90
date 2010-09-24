@@ -35,7 +35,7 @@ program adios_global
     call adios_init_noxml (adios_err)
     call adios_allocate_buffer (10, adios_err)
 
-    call adios_declare_group (m_adios_group, "restart", "iter", adios_err)
+    call adios_declare_group (m_adios_group, "restart", "iter", 1, adios_err)
     call adios_select_method (m_adios_group, "MPI", "", "", adios_err)
 
     ! define a integer

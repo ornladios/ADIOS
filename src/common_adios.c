@@ -107,7 +107,7 @@ int common_adios_open (int64_t * fd, const char * group_name
                 }
 
     fd_p->name = strdup (name);
-    fd_p->subfile_name = 0;
+    fd_p->subfile_index = -1; // subfile index is by default -1
     fd_p->group = g;
     fd_p->mode = mode;
     fd_p->data_size = 0;
@@ -690,11 +690,6 @@ int common_adios_close (int64_t fd_p)
     {
         free (fd->name);
         fd->name = 0;
-    }
-    if (fd->subfile_name)
-    {
-        free (fd->subfile_name);
-        fd->subfile_name = 0;
     }
 
     free ((void *) fd_p);

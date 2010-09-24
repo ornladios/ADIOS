@@ -1955,10 +1955,11 @@ static int parseGroup (mxml_node_t * node)
     const char * coordination_var = 0;
     const char * host_language = 0;
     const char * time_index_name = 0;
+    const char * stats = 0;
 
     int64_t      ptr_new_group;
     struct adios_group_struct * new_group;
-    enum ADIOS_FLAG host_language_fortran = adios_flag_yes;
+    enum ADIOS_FLAG host_language_fortran = adios_flag_yes, enable_stats = adios_flag_yes;
     int i;
 
     for (i = 0; i < node->value.element.num_attrs; i++)
@@ -1975,6 +1976,7 @@ static int parseGroup (mxml_node_t * node)
         GET_ATTR("coordination-var",attr,coordination_var,"adios-group")
         GET_ATTR("host-language",attr,host_language,"adios-group")
         GET_ATTR("time-index",attr,time_index_name,"adios-group")
+        GET_ATTR("stats",attr,stats,"adios-group")
         fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
                          "(ignored)\n"
                 ,attr->name
@@ -2016,6 +2018,29 @@ static int parseGroup (mxml_node_t * node)
         }
     }
 
+    if (!stats)
+    {
+        enable_stats = adios_flag_yes;
+    }
+    else
+    {
+        if (!strcasecmp (stats, "On"))
+        {
+            enable_stats = adios_flag_yes;
+        }
+        else if (!strcasecmp (stats, "Off"))
+        {
+            enable_stats = adios_flag_no;
+        }
+        else
+        {
+            fprintf (stderr, "config.xml, invalid stats %s"
+                    ,stats
+                    );
+            return 0;
+        }
+    }
+
 // fix the bgp bugs 
 /*
     adios_common_declare_group ((int64_t *) &new_group, datagroup_name
@@ -2026,6 +2051,7 @@ static int parseGroup (mxml_node_t * node)
     adios_common_declare_group (&ptr_new_group, datagroup_name
                                ,host_language_fortran, coordination_comm
                                ,coordination_var, time_index_name
+                               ,enable_stats
                                );
      new_group = (struct adios_group_struct *)ptr_new_group;
 

@@ -1227,7 +1227,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
             // 1 for '.' + 10 for subfile index + 1 for '\0'
             sprintf (name, "%s%s%s%s.%d", fd->name, ".dir/", method->base_path, name_no_path, g_color1);
             md->subfile_name = strdup (name);
-            fd->subfile_name = strdup (name);
+            fd->subfile_index = (uint32_t)g_color1;
 
             free (name_no_path);
 

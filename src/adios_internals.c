@@ -1128,6 +1128,7 @@ int adios_common_declare_group (int64_t * id, const char * name
                                ,const char * coordination_comm
                                ,const char * coordination_var
                                ,const char * time_index_name
+                               ,enum ADIOS_FLAG stats
                                )
 {
     struct adios_group_struct * g = (struct adios_group_struct *)
@@ -1146,6 +1147,7 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->group_comm = (coordination_comm ? strdup (coordination_comm) : 0L);
     g->time_index_name = (time_index_name ? strdup (time_index_name) : 0L);
     g->time_index = 0;
+    g->stats_on = stats;
     g->process_id = 0;
     g->methods = 0;
     g->mesh = 0;
@@ -1497,26 +1499,30 @@ int adios_common_define_var (int64_t group_id, const char * name
     v->stats = 0;
     v->bitmap = 0;
 
-    // '1' at the bit location of stat id in adios_bp_v1.h, enables calculation of statistic.
-    for (i = 0; i < ADIOS_STAT_LENGTH; i++)
-        v->bitmap |= (1 << i);
-
-    // Default values for histogram not yet implemented. Disabling it.
-    v->bitmap ^= (1 << adios_statistic_hist);
-
-    // For complex numbers, the set of statistics occur thrice: stat[0] - magnitude, stat[1] - real, stat[2] - imaginary
-    if (v->type == adios_complex || v->type == adios_double_complex)
+    // Q.L. - Check whether stats are disabled or not
+    if (t->stats_on == adios_flag_yes)
     {
-        uint8_t c;
-        v->stats = malloc (3 * sizeof(struct adios_stat_struct *));
+        // '1' at the bit location of stat id in adios_bp_v1.h, enables calculation of statistic.
+        for (i = 0; i < ADIOS_STAT_LENGTH; i++)
+            v->bitmap |= (1 << i);
 
-        for (c = 0; c < 3; c ++)
-            v->stats[c] = calloc (ADIOS_STAT_LENGTH, sizeof(struct adios_stat_struct));
-    }
-    else
-    {
-        v->stats = malloc (sizeof(struct adios_stat_struct *));
-        v->stats[0] = calloc (ADIOS_STAT_LENGTH, sizeof(struct adios_stat_struct));
+        // Default values for histogram not yet implemented. Disabling it.
+        v->bitmap ^= (1 << adios_statistic_hist);
+
+        // For complex numbers, the set of statistics occur thrice: stat[0] - magnitude, stat[1] - real, stat[2] - imaginary
+        if (v->type == adios_complex || v->type == adios_double_complex)
+        {
+            uint8_t c;
+            v->stats = malloc (3 * sizeof(struct adios_stat_struct *));
+
+            for (c = 0; c < 3; c ++)
+                v->stats[c] = calloc (ADIOS_STAT_LENGTH, sizeof(struct adios_stat_struct));
+        }
+        else
+        {
+            v->stats = malloc (sizeof(struct adios_stat_struct *));
+            v->stats[0] = calloc (ADIOS_STAT_LENGTH, sizeof(struct adios_stat_struct));
+        }
     }
 
     // NCSU - End of initializing stat related info
@@ -2211,7 +2217,7 @@ void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
                     uint16_t t_var_id;
                     void * t_value;
                     uint64_t t_payload_offset;   // beginning of the var or attr payload
-                    char * t_file_name;
+                    uint32_t t_file_index;
                     uint32_t t_time_index;
 
                     uint32_t t_bitmap;
@@ -2224,7 +2230,7 @@ void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
                     t_var_id = v1_temp->characteristics[j].var_id;
                     t_value = v1_temp->characteristics[j].value;
                     t_payload_offset = v1_temp->characteristics[j].payload_offset;
-                    t_file_name = v1_temp->characteristics[j].file_name;
+                    t_file_index = v1_temp->characteristics[j].file_index;
                     t_time_index = v1_temp->characteristics[j].time_index;
                     t_bitmap = v1_temp->characteristics[j].bitmap;
                     t_stats = v1_temp->characteristics[j].stats;
@@ -2235,7 +2241,7 @@ void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
                     v1_temp->characteristics[j].var_id = v1_temp->characteristics[j + 1].var_id;
                     v1_temp->characteristics[j].value = v1_temp->characteristics[j + 1].value;
                     v1_temp->characteristics[j].payload_offset = v1_temp->characteristics[j + 1].payload_offset;
-                    v1_temp->characteristics[j].file_name = v1_temp->characteristics[j + 1].file_name;
+                    v1_temp->characteristics[j].file_index = v1_temp->characteristics[j + 1].file_index;
                     v1_temp->characteristics[j].time_index = v1_temp->characteristics[j + 1].time_index;
                     v1_temp->characteristics[j].bitmap = v1_temp->characteristics[j + 1].bitmap;
                     v1_temp->characteristics[j].stats = v1_temp->characteristics[j + 1].stats;
@@ -2246,7 +2252,7 @@ void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
                     v1_temp->characteristics[j + 1].var_id = t_var_id;
                     v1_temp->characteristics[j + 1].value = t_value;
                     v1_temp->characteristics[j + 1].payload_offset = t_payload_offset;
-                    v1_temp->characteristics[j + 1].file_name = t_file_name;
+                    v1_temp->characteristics[j + 1].file_index = t_file_index;
                     v1_temp->characteristics[j + 1].time_index = t_time_index;
                     v1_temp->characteristics[j + 1].bitmap = t_bitmap;
                     v1_temp->characteristics[j + 1].stats = t_stats;
@@ -2761,7 +2767,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                             + adios_calc_var_overhead_v1 (old_var)
                             - strlen (old_var->path)  // take out the length of path defined in XML
                             + strlen (v->path); // add length of the actual, current path of this var
-            v_index->characteristics [0].file_name = (fd->subfile_name ? strdup (fd->subfile_name) : 0L);
+            v_index->characteristics [0].file_index = fd->subfile_index;
             v_index->characteristics [0].time_index = g_item->time_index;
 
             v_index->characteristics [0].value = 0;
@@ -2917,7 +2923,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
 
             a_index->characteristics [0].offset = a->write_offset;
             a_index->characteristics [0].payload_offset = a->write_offset + adios_calc_attribute_overhead_v1 (a);
-            a_index->characteristics [0].file_name = (fd->subfile_name ? strdup (fd->subfile_name) : 0L);
+            a_index->characteristics [0].file_index = fd->subfile_index;
             a_index->characteristics [0].time_index = 0;
 
             // NCSU -,Initializing stat related info in attribute index
@@ -3154,28 +3160,20 @@ int adios_write_index_v1 (char ** buffer
             var_size += 8;
             characteristic_set_length += 8;
 
-            // add a file name characteristic for all vars
-            if (vars_root->characteristics [i].file_name)
-            {
-                characteristic_set_count++;
-                flag = (uint8_t) adios_characteristic_file_name;
-                buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
-                index_size += 1;
-                var_size += 1;
-                characteristic_set_length += 1;
+            // add a file index characteristic for all vars
+            characteristic_set_count++;
+            flag = (uint8_t) adios_characteristic_file_index;
+            buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
+            index_size += 1;
+            var_size += 1;
+            characteristic_set_length += 1;
 
-                len = strlen (vars_root->characteristics [i].file_name);
-                buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
-                index_size += 2;
-                var_size += 2;
-
-                buffer_write (buffer, buffer_size, buffer_offset
-                             ,vars_root->characteristics [i].file_name, len
-                             );
-                index_size += len;
-                var_size += len;
-                characteristic_set_length += len;
-            }
+            buffer_write (buffer, buffer_size, buffer_offset
+                         ,&vars_root->characteristics [i].file_index, 4
+                         );
+            index_size += 4;
+            var_size += 4;
+            characteristic_set_length += 4;
 
             // add a time index characteristic for all vars
             characteristic_set_count++;
@@ -3509,28 +3507,20 @@ int adios_write_index_v1 (char ** buffer
             attr_size += 8;
             characteristic_set_length += 8;
 
-            // add a file name characteristic for all attrs
-            if (attrs_root->characteristics [i].file_name)
-            {
-                characteristic_set_count++;
-                flag = (uint8_t) adios_characteristic_file_name;
-                buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
-                index_size += 1;
-                attr_size += 1;
-                characteristic_set_length += 1;
+            // add a file index characteristic for all attrs
+            characteristic_set_count++;
+            flag = (uint8_t) adios_characteristic_file_index;
+            buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
+            index_size += 1;
+            attr_size += 1;
+            characteristic_set_length += 1;
 
-                len = strlen (attrs_root->characteristics [i].file_name);
-                buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
-                index_size += 2;
-                attr_size += 2;
-
-                buffer_write (buffer, buffer_size, buffer_offset
-                             ,attrs_root->characteristics [i].file_name, len
-                             );
-                index_size += len;
-                attr_size += len;
-                characteristic_set_length += len;
-            }
+            buffer_write (buffer, buffer_size, buffer_offset
+                         ,&attrs_root->characteristics [i].file_index, 4
+                         );
+            index_size += 4;
+            attr_size += 4;
+            characteristic_set_length += 4;
 
             // add a time index characteristic for all attrs
             characteristic_set_count++;

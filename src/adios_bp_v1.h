@@ -24,7 +24,7 @@ enum ADIOS_CHARACTERISTICS
     ,adios_characteristic_dimensions     = 4
     ,adios_characteristic_var_id         = 5
     ,adios_characteristic_payload_offset = 6
-    ,adios_characteristic_file_name      = 7
+    ,adios_characteristic_file_index     = 7
     ,adios_characteristic_time_index     = 8
     ,adios_characteristic_bitmap         = 9
     ,adios_characteristic_stat           = 10
@@ -112,14 +112,14 @@ struct adios_index_characteristic_struct_v1
     uint64_t offset;  // beginning of the var or attr entry
     struct adios_index_characteristic_dims_struct_v1 dims;
     uint16_t var_id;
-	void * value;
+    void * value;
     uint64_t payload_offset;   // beginning of the var or attr payload
-    char * file_name;
+    uint32_t file_index;  // subfile index
     uint32_t time_index;
 
-	uint32_t bitmap;
+    uint32_t bitmap;
 
-	struct adios_index_characteristics_stat_struct ** stats;
+    struct adios_index_characteristics_stat_struct ** stats;
 };
 
 struct adios_index_var_struct_v1

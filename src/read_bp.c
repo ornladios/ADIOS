@@ -26,14 +26,14 @@
 #include "dmalloc.h"
 #endif
 
-MPI_File * get_BP_file_handle(struct BP_file_handle * l, char * file_name)
+MPI_File * get_BP_file_handle(struct BP_file_handle * l, uint32_t file_index)
 {
     if (!l)
         return 0;
 
     while (l)
     {
-        if (!strcmp (l->file_name, file_name))
+        if (l->file_index == file_index)
             return &l->fh;
 
         l = l->next;
@@ -60,7 +60,6 @@ void close_all_BP_files (struct BP_file_handle * l)
     {
         n = l->next;
 
-        free (l->file_name);
         MPI_File_close (&l->fh);
         free (l);
 
@@ -106,6 +105,7 @@ ADIOS_FILE * adios_read_bp_fopen (const char * fname, MPI_Comm comm)
         return NULL;
     }
 
+    fh->fname = (fname ? strdup (fname) : 0L);
     fh->sfh = 0;
     fh->comm = comm;
     fh->gvar_h = 0;
@@ -366,6 +366,9 @@ int adios_read_bp_fclose (ADIOS_FILE *fp)
 
         free(ah);
     }
+
+    if (fh->fname)
+        free (fh->fname);
         
     if (fh)
         free (fh);    
@@ -1527,26 +1530,39 @@ void adios_read_bp_free_varinfo (ADIOS_VARINFO *vp)
                                                                                             \
         MPI_File * sfh;                                                                     \
         sfh = get_BP_file_handle (fh->sfh                                                   \
-                                 ,var_root->characteristics[start_idx + idx].file_name      \
+                                 ,var_root->characteristics[start_idx + idx].file_index     \
                                  );                                                         \
         if (!sfh)                                                                           \
         {                                                                                   \
             int err;                                                                        \
+            char * ch, * name_no_path, * name;                                              \
             struct BP_file_handle * new_h =                                                 \
                   (struct BP_file_handle *) malloc (sizeof (struct BP_file_handle));        \
-            new_h->file_name = (char *) malloc (                                            \
-                       strlen (var_root->characteristics[start_idx + idx].file_name) + 1);  \
+            new_h->file_index = var_root->characteristics[start_idx + idx].file_index;      \
             new_h->next = 0;                                                                \
-            strcpy (new_h->file_name, var_root->characteristics[start_idx + idx].file_name);\
+            if (ch = strrchr (fh->fname, '/'))                                              \
+            {                                                                               \
+                name_no_path = malloc (strlen (ch + 1) + 1);                                \
+                strcpy (name_no_path, ch + 1);                                              \
+            }                                                                               \
+            else                                                                            \
+            {                                                                               \
+                name_no_path = malloc (strlen (fh->fname) + 1);                             \
+                strcpy (name_no_path, fh->fname);                                           \
+            }                                                                               \
+                                                                                            \
+            name = malloc (strlen (fh->fname) + 5 + strlen (name_no_path) + 1 + 10 + 1);    \
+            sprintf (name, "%s.dir/%s.%d", fh->fname, name_no_path, new_h->file_index);     \
+                                                                                            \
             err = MPI_File_open (fh->comm                                                   \
-                                ,var_root->characteristics[start_idx + idx].file_name       \
+                                ,name                                                       \
                                 ,MPI_MODE_RDONLY                                            \
                                 ,(MPI_Info)MPI_INFO_NULL                                    \
                                 ,&new_h->fh                                                 \
                                 );                                                          \
            if (err != MPI_SUCCESS)                                                          \
            {                                                                                \
-               fprintf (stderr, "can not open file\n");                                     \
+               fprintf (stderr, "can not open file %S\n", name);                            \
                return -1;                                                                   \
            }                                                                                \
                                                                                             \
@@ -1554,6 +1570,9 @@ void adios_read_bp_free_varinfo (ADIOS_VARINFO *vp)
                               ,new_h                                                        \
                               );                                                            \
            sfh = &new_h->fh;                                                                \
+                                                                                            \
+           free (name_no_path);                                                             \
+           free (name);                                                                     \
         }                                                                                   \
                                                                                             \
         MPI_File_seek (*sfh                                                                 \

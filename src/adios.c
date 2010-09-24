@@ -267,6 +267,7 @@ int adios_close (int64_t fd_p)
 // group a list of vars into a composite group
 int adios_declare_group (int64_t * id, const char * name
                         ,const char * time_index
+                        ,enum ADIOS_FLAG stats
                         )
 {
     int ret;
@@ -274,6 +275,7 @@ int adios_declare_group (int64_t * id, const char * name
                                       ,""
                                       ,""
                                       ,time_index
+                                      ,stats
                                       );
     if (ret == 1) {
         struct adios_group_struct * g = (struct adios_group_struct *) *id;
