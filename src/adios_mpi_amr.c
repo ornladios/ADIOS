@@ -1242,12 +1242,14 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                         open_thread_data1.name = md->subfile_name;
                         open_thread_data1.striping_unit = &md->striping_unit;
                         open_thread_data1.parameters = method->parameters;
-
+/*
                         pthread_create (&g_t, NULL
                                        ,adios_mpi_amr_do_open_thread
                                        ,(void *) &open_thread_data1
                                        );
+*/
 
+                        adios_mpi_amr_do_open_thread ((void *) &open_thread_data1);
                         // open metadata file
                         if (md->rank == 0)
                         {
@@ -1255,11 +1257,13 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                             open_thread_data2.name = fd->name;
                             open_thread_data2.striping_unit = &md->striping_unit;
                             open_thread_data2.parameters = method->parameters;
-
+/*
                             pthread_create (&g_t1, NULL
                                            ,adios_mpi_amr_do_open_thread
                                            ,(void *) &open_thread_data2
                                            );
+*/
+                             adios_mpi_amr_do_open_thread ((void *) &open_thread_data2);
                         }
                     }
                 }
@@ -2683,7 +2687,7 @@ void adios_mpi_amr_close (struct adios_file_struct * fd
                     aggr_buff = realloc (aggr_buff, total_data_size + buffer_offset);
                     memcpy (aggr_buff + total_data_size, buffer, buffer_offset); 
 
-                    pthread_join (g_t, NULL);
+//                    pthread_join (g_t, NULL);
 
                     index_start1 = 0;
                     total_data_size1 = total_data_size + buffer_offset;
@@ -2850,7 +2854,7 @@ void adios_mpi_amr_close (struct adios_file_struct * fd
                               ,MPI_INFO_NULL, &m_file
                               );
 #endif
-                pthread_join (g_t1, NULL);
+//                pthread_join (g_t1, NULL);
                 adios_mpi_amr_striping_unit_write(
                                   md->mfh,
                                   -1,
