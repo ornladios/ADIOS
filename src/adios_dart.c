@@ -248,13 +248,13 @@ int adios_dart_open (struct adios_file_struct * fd,
     }
     globals_adios_set_dart_connected_from_writer();
    
-    if( fd->mode == adios_mode_write )
+    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
         fprintf(stderr, "adios_dart_open: rank=%d call write lock...\n", p->rank);        
         dart_lock_on_write (fd->name);  
         fprintf(stderr, "adios_dart_open: rank=%d got write lock\n", p->rank);        
     }
-    else if( fd->mode == adios_mode_read )
+    else if (fd->mode == adios_mode_read)
     {
         dart_lock_on_read (fd->name);
     } 
@@ -291,15 +291,19 @@ void adios_dart_write (struct adios_file_struct * fd
     //Get two offset coordinate values
     unsigned int version;
 
-    int dims[3]={1,1,1}, lb[3]={0,0,0}, ub[3]={0,0,0}; /* lower and upper bounds for DataSpaces */
+    int dims[3]={1,1,1}, gdims[3]={0,0,0}, lb[3]={0,0,0}, ub[3]={0,0,0}; /* lower and upper bounds for DataSpaces */
     int ndims = 0;
     struct adios_dimension_struct* var_dimensions = v->dimensions;
     // Calculate lower and upper bounds for each available dimension (up to 3 dims)
     while( var_dimensions && ndims < 3)
     {
         dims[ndims] = get_dim_rank_value(&(var_dimensions->dimension), group);
+        gdims[ndims] = get_dim_rank_value(&(var_dimensions->global_dimension), group);
         lb[ndims] = get_dim_rank_value(&(var_dimensions->local_offset), group);
-        ub[ndims] = lb[ndims] + dims[ndims] - 1;
+        if (dims[ndims] > 0) 
+            ub[ndims] = lb[ndims] + dims[ndims] - 1;
+        else 
+            ub[ndims] = lb[ndims]; // a time dimension is 0, so we need to handle this
         var_dimensions = var_dimensions->next;
         ndims++;
     }
@@ -317,12 +321,17 @@ void adios_dart_write (struct adios_file_struct * fd
 
     snprintf(dart_type_var_name, MAXDARTNAMELEN, "TYPE@%s", dart_var_name);
     
-    /* Scalar variables are put in space ONLY by rank = 0 process */
+    /* non-glboal variables are put in space ONLY by rank = 0 process */
+    if (gdims[0] == 0 && p->rank != 0) {
+        //fprintf(stderr, "rank=%d var_name=%s is not global. Skip\n", p->rank, dart_var_name);
+        return;
+    }
+
 //    if (var_dimensions > 0 || p->rank == 0) {
     
-        fprintf(stderr, "var_name=%s, type=%s(%d) elemsize=%d, version=%d, size_x=%d, size_y=%d, size_z=%d, (%d,%d,%d), (%d,%d,%d)\n",
+        fprintf(stderr, "var_name=%s, type=%s(%d) elemsize=%d, version=%d, size=(%d,%d,%d), gdim=(%d,%d,%d), lb=(%d,%d,%d), ub=(%d,%d,%d)\n",
                 dart_var_name, adios_type_to_string_int(v->type), v->type, var_type_size, version,
-                dims[0], dims[1], dims[2], lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
+                dims[0], dims[1], dims[2], gdims[0], gdims[1], gdims[2], lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
 
         /* Put type info as T<varname>, integer in 0,0,0,0,0,0 position */
         err = dart_put(dart_type_var_name, version, 4, 0,0,0,0,0,0, &(v->type)); 
@@ -437,7 +446,7 @@ void adios_dart_close (struct adios_file_struct * fd
     struct adios_DART_data_struct *p = (struct adios_DART_data_struct *)
                                                 method->method_data;
 
-    if( fd->mode == adios_mode_write )
+    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
         if (p->rank == 0) {
             /* Write two adios specific variables with the name of the file and name of the group into the space */
