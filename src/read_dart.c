@@ -72,7 +72,7 @@ int adios_read_dart_init (MPI_Comm comm)
         DBG_PRINTF("-- %s, rank %d: connect to dart with nproc=%d and appid=%d\n", __func__, rank, nproc, appid);
         err = dart_init(nproc, appid);
         if (err < 0) {
-            error(err_connection_failed, "Failed to connect with DART\n");
+            adios_error (err_connection_failed, "Failed to connect with DART\n");
             return -err_connection_failed;
         }
 
@@ -105,7 +105,7 @@ ADIOS_FILE * adios_read_dart_fopen (const char * fname, MPI_Comm comm)
 
     ds = (struct adios_read_dart_data_struct *) malloc (sizeof(struct adios_read_dart_data_struct));
     if (!ds) {
-        error( err_no_memory, "Cannot allocate memory for file info.");
+        adios_error (err_no_memory, "Cannot allocate memory for file info.");
         return NULL;
     }
 
@@ -144,7 +144,7 @@ ADIOS_FILE * adios_read_dart_fopen (const char * fname, MPI_Comm comm)
     DBG_PRINTF("   rank %d: dart_get %s\n", ds->mpi_rank, dart_fname);
     err = adios_read_dart_get(dart_fname, time_index_type, ds, offset, readsize, &time_index);
     if (err) {
-        error(err_file_not_found_error, "Data of '%s' does not exist in DataSpaces\n", dart_fname);
+        adios_error (err_file_not_found_error, "Data of '%s' does not exist in DataSpaces\n", dart_fname);
         DBG_PRINTF("   rank %d: call dcg_unlock_on_read(%s)\n", ds->mpi_rank, fname);
         dart_unlock_on_read(fname);
         free(ds);
@@ -156,7 +156,7 @@ ADIOS_FILE * adios_read_dart_fopen (const char * fname, MPI_Comm comm)
 
     fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
     if (!fp) {
-        error( err_no_memory, "Cannot allocate memory for file info.");
+        adios_error (err_no_memory, "Cannot allocate memory for file info.");
         return NULL;
     }
 
@@ -173,7 +173,7 @@ ADIOS_FILE * adios_read_dart_fopen (const char * fname, MPI_Comm comm)
     alloc_namelist (&fp->group_namelist,fp->groups_count); 
     for (i=0;i<fp->groups_count;i++) {
         if (!fp->group_namelist[i]) {
-            error(err_no_memory, "Could not allocate buffer for %d strings in adios_fopen()", fp->groups_count);
+            adios_error (err_no_memory, "Could not allocate buffer for %d strings in adios_fopen()", fp->groups_count);
             adios_read_dart_fclose(fp);
             return NULL;
         }
@@ -237,7 +237,7 @@ ADIOS_GROUP * adios_read_dart_gopen_byid (ADIOS_FILE *fp, int grpid)
     adios_errno = 0;
     gp = (ADIOS_GROUP *) malloc(sizeof(ADIOS_GROUP));
     if (!gp) {
-        error( err_no_memory, "Could not allocate memory for group info");
+        adios_error (err_no_memory, "Could not allocate memory for group info");
         return NULL;
     }
 
@@ -271,7 +271,7 @@ int adios_read_dart_get_attr (ADIOS_GROUP * gp, const char * attrname, enum ADIO
                     int * size, void ** data)
 {
     /* DART does not support attributes */
-    error(err_invalid_attrname, "DART read method does not support attributes!");
+    adios_error (err_invalid_attrname, "DART read method does not support attributes!");
     *size = 0;
     *type = adios_unknown;
     *data = 0;
@@ -282,7 +282,7 @@ int adios_read_dart_get_attr_byid (ADIOS_GROUP * gp, int attrid,
                     enum ADIOS_DATATYPES * type, int * size, void ** data)
 {
     /* DART does not support attributes */
-    error(err_invalid_attrid, "DART read method does not support attributes!");
+    adios_error (err_invalid_attrid, "DART read method does not support attributes!");
     *size = 0;
     *type = adios_unknown;
     *data = 0;
@@ -305,7 +305,7 @@ ADIOS_VARINFO * adios_read_dart_inq_var_byid (ADIOS_GROUP *gp, int varid)
     adios_errno = 0;
     vi = (ADIOS_VARINFO *) malloc(sizeof(ADIOS_VARINFO));
     if (!vi) {
-        error( err_no_memory, "Could not allocate memory for variable info.");
+        adios_error (err_no_memory, "Could not allocate memory for variable info.");
         return NULL;
     }
 
@@ -358,11 +358,11 @@ static int adios_read_dart_get (const char * varname, enum ADIOS_DATATYPES varty
                      data
                     );
     /*if (err == -ENOMEM) {
-        error(err_no_memory, "Not enough memory for DART to perform dart_get()");  
+        adios_error (err_no_memory, "Not enough memory for DART to perform dart_get()");  
         return -err_no_memory;
     } 
     else*/ if (err) {
-        error(err_corrupted_variable, "DART failed to read variable %s.", varname);  
+        adios_error (err_corrupted_variable, "DART failed to read variable %s.", varname);  
         return -err_corrupted_variable;
     }
 
@@ -427,7 +427,7 @@ int64_t adios_read_dart_read_var_byid (ADIOS_GROUP    * gp,
                              const uint64_t  * count,
                              void           * data)
 {
-    error( err_invalid_varid, "DART does not know variable indicies, only variable names can be used.");
+    adios_error (err_invalid_varid, "DART does not know variable indicies, only variable names can be used.");
     return -err_invalid_varid;
 }
 
