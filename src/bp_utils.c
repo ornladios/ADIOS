@@ -53,7 +53,7 @@ void bp_alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
     b->allocated_buff_ptr =  malloc (size + BYTE_ALIGN - 1);
     if (!b->allocated_buff_ptr)
     {
-        error( err_no_memory, "Cannot allocate %llu bytes\n", size);
+        adios_error ( err_no_memory, "Cannot allocate %llu bytes\n", size);
 
         b->buff = NULL;
         b->length = 0;
@@ -74,7 +74,7 @@ void bp_realloc_aligned (struct adios_bp_buffer_struct_v1 * b
                                     );
     if (!b->allocated_buff_ptr)
     {
-        error( err_no_memory, "Cannot allocate %llu bytes\n", size);
+        adios_error ( err_no_memory, "Cannot allocate %llu bytes\n", size);
 
         b->buff = NULL;
         b->length = 0;
@@ -107,7 +107,7 @@ int bp_read_open (const char * filename,
         int len = 0;
         memset (e, 0, MPI_MAX_ERROR_STRING);
         MPI_Error_string (err, e, &len);
-        error(err_MPI_open_error, "MPI open failed for %s: '%s'\n", filename, e);
+        adios_error (err_MPI_open_error, "MPI open failed for %s: '%s'\n", filename, e);
         return adios_flag_no;
     }
 
@@ -131,7 +131,7 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     if (!b->buff) {
         bp_alloc_aligned (b, MINIFOOTER_SIZE);
         if (!b->buff) {
-            error (err_no_memory, "could not allocate %d bytes\n", MINIFOOTER_SIZE);
+            adios_error (err_no_memory, "could not allocate %d bytes\n", MINIFOOTER_SIZE);
             return 1;
         }
         memset (b->buff, 0, MINIFOOTER_SIZE);

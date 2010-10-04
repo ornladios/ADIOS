@@ -101,7 +101,7 @@ ADIOS_FILE * adios_read_bp_fopen (const char * fname, MPI_Comm comm)
     adios_errno = 0;
     fh = (struct BP_FILE *) malloc (sizeof (struct BP_FILE));
     if (!fh) {
-        error( err_no_memory, "Cannot allocate memory for file info.");
+        adios_error ( err_no_memory, "Cannot allocate memory for file info.");
         return NULL;
     }
 
@@ -114,12 +114,12 @@ ADIOS_FILE * adios_read_bp_fopen (const char * fname, MPI_Comm comm)
     fh->attrs_root = 0;
     fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     if (!fh->b) {
-        error( err_no_memory, "Cannot allocate memory for file info.");
+        adios_error ( err_no_memory, "Cannot allocate memory for file info.");
         return NULL;
     }
     fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
     if (!fp) {
-        error( err_no_memory, "Cannot allocate memory for file info.");
+        adios_error ( err_no_memory, "Cannot allocate memory for file info.");
         return NULL;
     }
 
@@ -167,7 +167,7 @@ ADIOS_FILE * adios_read_bp_fopen (const char * fname, MPI_Comm comm)
     alloc_namelist (&fp->group_namelist,fp->groups_count); 
     for (i=0;i<fp->groups_count;i++) {
         if (!fp->group_namelist[i]) {
-            error(err_no_memory, "Could not allocate buffer for %d strings in adios_fopen()", fp->groups_count);
+            adios_error (err_no_memory, "Could not allocate buffer for %d strings in adios_fopen()", fp->groups_count);
             adios_read_bp_fclose(fp);
             return NULL;
         }
@@ -390,7 +390,7 @@ ADIOS_GROUP * adios_read_bp_gopen (ADIOS_FILE *fp, const char * grpname)
             break; 
     }
     if (grpid >= fh->gvar_h->group_count) {
-        error( err_invalid_group, "Invalid group name %s", grpname);
+        adios_error ( err_invalid_group, "Invalid group name %s", grpname);
         return NULL;
     }
     return adios_read_bp_gopen_byid(fp, grpid);
@@ -405,19 +405,19 @@ ADIOS_GROUP * adios_read_bp_gopen_byid (ADIOS_FILE *fp, int grpid)
 
     adios_errno = 0;
     if (grpid < 0 || grpid >= fh->gvar_h->group_count) {
-        error( err_invalid_group, "Invalid group index %d", grpid);
+        adios_error ( err_invalid_group, "Invalid group index %d", grpid);
         return NULL;
     }
 
     gh = (struct BP_GROUP *) malloc(sizeof(struct BP_GROUP));
     if (!gh) {
-        error( err_no_memory, "Could not allocate memory for group info");
+        adios_error ( err_no_memory, "Could not allocate memory for group info");
         return NULL;
     }
 
     gp = (ADIOS_GROUP *) malloc(sizeof(ADIOS_GROUP));
     if (!gp) {
-        error( err_no_memory, "Could not allocate memory for group info");
+        adios_error ( err_no_memory, "Could not allocate memory for group info");
         free(gh);
         return NULL;
     }
@@ -462,7 +462,7 @@ ADIOS_GROUP * adios_read_bp_gopen_byid (ADIOS_FILE *fp, int grpid)
     alloc_namelist (&(gp->var_namelist), gp->vars_count);
     for (i=0;i<gp->vars_count;i++) {
         if (!gp->var_namelist[i]) { 
-            error(err_no_memory, "Could not allocate buffer for %d strings in adios_gopen()", gp->vars_count);
+            adios_error (err_no_memory, "Could not allocate buffer for %d strings in adios_gopen()", gp->vars_count);
             adios_read_bp_gclose(gp);
             return NULL;
         }
@@ -474,7 +474,7 @@ ADIOS_GROUP * adios_read_bp_gopen_byid (ADIOS_FILE *fp, int grpid)
     alloc_namelist (&(gp->attr_namelist), gp->attrs_count);
     for (i=0;i<gp->attrs_count;i++) {
         if (!gp->attr_namelist[i]) {
-            error(err_no_memory, "Could not allocate buffer for %d strings in adios_gopen()", gp->vars_count);
+            adios_error (err_no_memory, "Could not allocate buffer for %d strings in adios_gopen()", gp->vars_count);
             adios_read_bp_gclose(gp);
             return NULL;
         }
@@ -492,7 +492,7 @@ int adios_read_bp_gclose (ADIOS_GROUP *gp)
 
     adios_errno = 0;
     if (!gh) {
-        error (err_invalid_group_struct, "group handle is NULL!");
+        adios_error (err_invalid_group_struct, "group handle is NULL!");
         return  err_invalid_group_struct;
     }
     else
@@ -519,11 +519,11 @@ int adios_read_bp_get_attr (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_
 
     adios_errno = 0;
     if (!gp) {
-        error(err_invalid_group_struct, "Null pointer passed as group to adios_get_attr()");
+        adios_error (err_invalid_group_struct, "Null pointer passed as group to adios_get_attr()");
         return adios_errno;
     }
     if (!attrname) {
-        error(err_invalid_attrname, "Null pointer passed as attribute name to adios_get_attr()!");
+        adios_error (err_invalid_attrname, "Null pointer passed as attribute name to adios_get_attr()!");
         return adios_errno;
     }
 
@@ -540,7 +540,7 @@ int adios_read_bp_get_attr (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_
             break; 
     }
     if (attrid >= gp->attrs_count) {
-        error( err_invalid_attrname, "Invalid attribute name %s", attrname);
+        adios_error ( err_invalid_attrname, "Invalid attribute name %s", attrname);
         return adios_errno;
     }
 
@@ -559,21 +559,21 @@ int adios_read_bp_get_attr_byid (ADIOS_GROUP * gp, int attrid,
 
     adios_errno = 0;
     if (!gp) {
-        error(err_invalid_group_struct, "Null pointer passed as group to adios_get_attr()");
+        adios_error (err_invalid_group_struct, "Null pointer passed as group to adios_get_attr()");
         return adios_errno;
     }
     gh = (struct BP_GROUP *) gp->gh;
     if (!gh) {
-        error(err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh group handle is NULL!");
+        adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh group handle is NULL!");
         return adios_errno;
     }
     fh = gh->fh;
     if (!fh) {
-        error(err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh->fh file handle is NULL!");
+        adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh->fh file handle is NULL!");
         return adios_errno;
     }
     if (attrid < 0 || attrid >= gh->attrs_count) {
-        error(err_invalid_attrid, "Invalid attribute id %d (allowed 0..%d)", attrid, gh->attrs_count);
+        adios_error (err_invalid_attrid, "Invalid attribute id %d (allowed 0..%d)", attrid, gh->attrs_count);
         return adios_errno;
     }
 
@@ -581,7 +581,7 @@ int adios_read_bp_get_attr_byid (ADIOS_GROUP * gp, int attrid,
     for (i = 0; i < attrid && attr_root; i++)
         attr_root = attr_root->next;
     if (i != attrid) {
-        error (err_corrupted_attribute, "Attribute id=%d is valid but was not found in internal data structures!",attrid);
+        adios_error (err_corrupted_attribute, "Attribute id=%d is valid but was not found in internal data structures!",attrid);
         return adios_errno; 
     }
 
@@ -619,7 +619,7 @@ int adios_read_bp_get_attr_byid (ADIOS_GROUP * gp, int attrid,
         }
 
         if (!var_root) {
-            error (err_invalid_attribute_reference, 
+            adios_error (err_invalid_attribute_reference, 
                    "Attribute %s/%s in group %s is a reference to variable ID %d, which is not found", 
                    attr_root->attr_path, attr_root->attr_name, attr_root->group_name,
                    attr_root->characteristics[0].var_id);
@@ -646,7 +646,7 @@ int adios_read_bp_get_attr_byid (ADIOS_GROUP * gp, int attrid,
                  (var_root->characteristics[0].dims.count == 1)) {
                  ; // this conversions are allowed
             } else {
-                error(err_invalid_attribute_reference, 
+                adios_error (err_invalid_attribute_reference, 
                     "Attribute %s/%s in group %s, typeid=%d is a reference to an %d-dimensional array variable "
                     "%s/%s of type %s, which is not supported in ADIOS",
                     attr_root->attr_path, attr_root->attr_name, attr_root->group_name, attr_root->type,
@@ -670,7 +670,7 @@ int adios_read_bp_get_attr_byid (ADIOS_GROUP * gp, int attrid,
             snprintf(varname, 512, "%s/%s", var_root->var_path, var_root->var_name);
             tmpdata = (char *) malloc (count+1);
             if (tmpdata == NULL) {
-                error(err_no_memory, 
+                adios_error (err_no_memory, 
                       "Cannot allocate memory of %lld bytes for reading in data for attribute %s/%s of group %s.",
                       count, attr_root->attr_path, attr_root->attr_name, attr_root->group_name);
                 return adios_errno;
@@ -680,7 +680,7 @@ int adios_read_bp_get_attr_byid (ADIOS_GROUP * gp, int attrid,
             
             if (status < 0) {
                 char *msg = strdup(adios_get_last_errmsg());
-                error((enum ADIOS_ERRCODES) status, 
+                adios_error ((enum ADIOS_ERRCODES) status, 
                       "Cannot read data of variable %s/%s for attribute %s/%s of group %s: %s",
                       var_root->var_path, var_root->var_name, 
                       attr_root->attr_path, attr_root->attr_name, attr_root->group_name,
@@ -747,11 +747,11 @@ static int adios_read_bp_find_var(ADIOS_GROUP *gp, const char *varname)
 
     adios_errno = 0;
     if (!gp) {
-        error(err_invalid_group_struct, "Null pointer passed as group");
+        adios_error (err_invalid_group_struct, "Null pointer passed as group");
         return -1;
     }
     if (!varname) {
-        error(err_invalid_varname, "Null pointer passed as variable name!");
+        adios_error (err_invalid_varname, "Null pointer passed as variable name!");
         return -1;
     }
 
@@ -774,7 +774,7 @@ static int adios_read_bp_find_var(ADIOS_GROUP *gp, const char *varname)
             break; 
     }
     if (varid >= gp->vars_count) {
-        error(err_invalid_varname, "Invalid variable name %s", varname);
+        adios_error (err_invalid_varname, "Invalid variable name %s", varname);
         return -1;
     }
     return varid;
@@ -785,7 +785,7 @@ static int adios_read_bp_find_var(ADIOS_GROUP *gp, const char *varname)
 {\
     var = calloc (num, sz); \
     if (!var)    {\
-        error_at_line ( err_no_memory, __FILE__, __LINE__, "Could not allocate memory for ", comment, " in common_read_get_characteristics"); \
+        adios_error_at_line (err_no_memory, __FILE__, __LINE__, "Could not allocate memory for ", comment, " in common_read_get_characteristics"); \
         return; \
     }\
 }
@@ -794,7 +794,7 @@ static int adios_read_bp_find_var(ADIOS_GROUP *gp, const char *varname)
 {\
     var = malloc (sz); \
     if (!var)    {\
-        error_at_line ( err_no_memory, __FILE__, __LINE__, "Could not allocate memory for ", comment, " in common_read_get_characteristics"); \
+        adios_error_at_line (err_no_memory, __FILE__, __LINE__, "Could not allocate memory for ", comment, " in common_read_get_characteristics"); \
         return; \
     }\
 }\
@@ -824,7 +824,7 @@ static void adios_read_bp_get_characteristics (struct adios_index_var_struct_v1 
         if (vi->value)
            memcpy(vi->value, var_root->characteristics [0].value, size);
         else {
-            error_at_line( err_no_memory, __FILE__, __LINE__, "Could not allocate memory for value in common_read_get_characteristics");
+            adios_error_at_line (err_no_memory, __FILE__, __LINE__, "Could not allocate memory for value in common_read_get_characteristics");
             return;
         }
     } else {
@@ -1408,26 +1408,26 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (ADIOS_GROUP *gp, int varid)
 
     adios_errno = 0;
     if (!gp) {
-        error(err_invalid_group_struct, "Null pointer passed as group to adios_inq_var()");
+        adios_error (err_invalid_group_struct, "Null pointer passed as group to adios_inq_var()");
         return NULL;
     }
     gh = (struct BP_GROUP *) gp->gh;
     if (!gh) {
-        error(err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh group handle is NULL!");
+        adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh group handle is NULL!");
         return NULL;
     }
     fh = gh->fh;
     if (!fh) {
-        error(err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh->fh file handle is NULL!");
+        adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh->fh file handle is NULL!");
         return NULL;
     }
     if (varid < 0 || varid >= gh->vars_count) {
-        error(err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
+        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
         return NULL;
     }
     vi = (ADIOS_VARINFO *) malloc(sizeof(ADIOS_VARINFO));
     if (!vi) {
-        error( err_no_memory, "Could not allocate memory for variable info");
+        adios_error ( err_no_memory, "Could not allocate memory for variable info");
         return NULL;
     }
 
@@ -1440,7 +1440,7 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (ADIOS_GROUP *gp, int varid)
     }
 
     if (i!=varid) {
-        error (err_corrupted_variable, "Variable id=%d is valid but was not found in internal data structures!",varid);
+        adios_error (err_corrupted_variable, "Variable id=%d is valid but was not found in internal data structures!",varid);
         return NULL; 
     }
 
@@ -1449,7 +1449,7 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (ADIOS_GROUP *gp, int varid)
 
     vi->type = var_root->type;
     if (!var_root->characteristics_count) {
-        error(err_corrupted_variable, "Variable %s does not have information on dimensions", 
+        adios_error (err_corrupted_variable, "Variable %s does not have information on dimensions", 
               gp->var_namelist[varid]);
         free(vi);
         return NULL;
@@ -1598,25 +1598,25 @@ int64_t adios_read_bp_read_var (ADIOS_GROUP * gp, const char * varname,
 
     adios_errno = 0;
     if (!gp) {
-        error(err_invalid_group_struct, "Null pointer passed as group to adios_read_var()");
+        adios_error (err_invalid_group_struct, "Null pointer passed as group to adios_read_var()");
         return -adios_errno;
     }
 
     gh = (struct BP_GROUP *) gp->gh;
     if (!gh) {
-        error(err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh group handle is NULL!");
+        adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh group handle is NULL!");
         return -adios_errno;
     }
 
     fh = gh->fh;
     if (!fh) {
-        error(err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh->fh file handle is NULL!");
+        adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh->fh file handle is NULL!");
         return -adios_errno;
     }
 
     varid = adios_read_bp_find_var(gp, varname);
     if (varid < 0 || varid >= gh->vars_count) {
-        error(err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
+        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
         return -adios_errno;
     }
 
@@ -1660,21 +1660,21 @@ int64_t adios_read_bp_read_var_byid1 (ADIOS_GROUP    * gp,
 
     adios_errno = 0;
     if (!gp) {
-        error(err_invalid_group_struct, "Null pointer passed as group to adios_read_var()");
+        adios_error (err_invalid_group_struct, "Null pointer passed as group to adios_read_var()");
         return -adios_errno;
     }
     gh = (struct BP_GROUP *) gp->gh;
     if (!gh) {
-        error(err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh group handle is NULL!");
+        adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh group handle is NULL!");
         return -adios_errno;
     }
     fh = gh->fh;
     if (!fh) {
-        error(err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh->fh file handle is NULL!");
+        adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh->fh file handle is NULL!");
         return -adios_errno;
     }
     if (varid < 0 || varid >= gh->vars_count) {
-        error(err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
+        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
         return -adios_errno;
     }
     
@@ -1686,7 +1686,7 @@ int64_t adios_read_bp_read_var_byid1 (ADIOS_GROUP    * gp,
     }
 
     if (i!=varid) {
-        error (err_corrupted_variable, "Variable id=%d is valid but was not found in internal data structures!",varid);
+        adios_error (err_corrupted_variable, "Variable id=%d is valid but was not found in internal data structures!",varid);
         return -adios_errno; 
     }
 
@@ -1703,7 +1703,7 @@ int64_t adios_read_bp_read_var_byid1 (ADIOS_GROUP    * gp,
         {
             if (timedim != ndim - 1)
             {
-                error(err_no_data_at_timestep,"Variable (id=%d) has wrong time dimension index",
+                adios_error (err_no_data_at_timestep,"Variable (id=%d) has wrong time dimension index",
                       varid);
                 return -adios_errno;
             }
@@ -1792,7 +1792,7 @@ int64_t adios_read_bp_read_var_byid1 (ADIOS_GROUP    * gp,
                the cases timedim at any dimension */
             if (timedim != 0)
             {
-                error(err_no_data_at_timestep,"Variable (id=%d) has wrong time dimension",
+                adios_error (err_no_data_at_timestep,"Variable (id=%d) has wrong time dimension",
                       varid);
                 return -adios_errno;
             }
@@ -1913,7 +1913,7 @@ printf ("pgcount = %lld\n", pgcount);
         }
 
         if (start_idx<0) {
-            error(err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step",
+            adios_error (err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step",
                 varid, timestep);
             return -adios_errno;
         }
@@ -2021,7 +2021,7 @@ printf ("pgcount = %lld\n", pgcount);
                 if ( (count_notime[j] > gdims[j]) 
                   || (start_notime[j] > gdims[j]) 
                   || (start_notime[j] + count_notime[j] > gdims[j])){
-                    error( err_out_of_bound, "Error: Variable (id=%d) out of bound ("
+                    adios_error ( err_out_of_bound, "Error: Variable (id=%d) out of bound ("
                         "the data in dimension %d to read is %llu elements from index %llu"
                         " but the actual data is [0,%llu])",
                         varid, j+1, count_notime[j], start_notime[j], gdims[j] - 1);
@@ -2312,7 +2312,7 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
     }
 
     if (i!=varid) {
-        error (err_corrupted_variable, 
+        adios_error (err_corrupted_variable, 
                "Variable id=%d is valid but was not found in internal data structures!",
                varid);
         return -adios_errno; 
@@ -2384,7 +2384,7 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
         stop_idx = get_var_stop_index(var_root, t);
 
         if (start_idx < 0 || stop_idx < 0) {
-            error(err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step",
+            adios_error (err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step",
                 varid, t);
 //            return -adios_errno;
             continue;
@@ -2497,7 +2497,7 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
                 if ( (count_notime[j] > gdims[j]) 
                   || (start_notime[j] > gdims[j]) 
                   || (start_notime[j] + count_notime[j] > gdims[j])){
-                    error( err_out_of_bound, "Error: Variable (id=%d) out of bound ("
+                    adios_error ( err_out_of_bound, "Error: Variable (id=%d) out of bound ("
                         "the data in dimension %d to read is %llu elements from index %llu"
                         " but the actual data is [0,%llu])",
                         varid, j+1, count_notime[j], start_notime[j], gdims[j] - 1);
@@ -2742,19 +2742,19 @@ int64_t adios_read_bp_read_var_byid (ADIOS_GROUP    * gp,
 
     adios_errno = 0;
     if (!gp) {
-        error(err_invalid_group_struct, "Null pointer passed as group to adios_read_var()");
+        adios_error (err_invalid_group_struct, "Null pointer passed as group to adios_read_var()");
         return -adios_errno;
     }
 
     gh = (struct BP_GROUP *) gp->gh;
     if (!gh) {
-        error(err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh group handle is NULL!");
+        adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh group handle is NULL!");
         return -adios_errno;
     }
 
     fh = gh->fh;
     if (!fh) {
-        error(err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh->fh file handle is NULL!");
+        adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh->fh file handle is NULL!");
         return -adios_errno;
     }
 

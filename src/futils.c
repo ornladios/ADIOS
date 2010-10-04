@@ -41,7 +41,7 @@ char * futils_fstr_to_cstr(const char * fs, int flen)
         clen--;
     cs = (char*) malloc ((size_t) (clen + 1));
     if (cs == NULL) {
-        error( err_no_memory, "ERROR: Cannot allocate %d bytes for a C string in ADIOS API", clen+1);
+        adios_error (err_no_memory, "ERROR: Cannot allocate %d bytes for a C string in ADIOS API", clen+1);
         return NULL;
     }
     strncpy (cs, fs, clen);

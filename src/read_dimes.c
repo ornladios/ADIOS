@@ -78,7 +78,7 @@ int adios_read_dimes_init(MPI_Comm comm)
 	//int num_total_peers = 64+16+1;
 	err = dimes_init(nproc,nproc,appid);
 	if(err < 0){
-		error(err_connection_failed, "Failed to connect with DIMES index srv\n");
+		adios_error (err_connection_failed, "Failed to connect with DIMES index srv\n");
 		return -err_connection_failed;
 	}
    }
@@ -111,7 +111,7 @@ ADIOS_FILE *adios_read_dimes_fopen(const char *fname, MPI_Comm comm)
 	
 	ds = (struct adios_read_DIMES_data_struct *)malloc(sizeof(struct adios_read_DIMES_data_struct));
 	if(!ds){
-		error(err_no_memory, "Cannot allocate memory for file info.");
+		adios_error (err_no_memory, "Cannot allocate memory for file info.");
 		return NULL;
 	}
 	
@@ -146,7 +146,7 @@ ADIOS_FILE *adios_read_dimes_fopen(const char *fname, MPI_Comm comm)
 	
     	err = adios_read_dimes_get(dimes_fname, time_index_type, ds, offset, readsize, &time_index);
     	if (err) {
-        	error(err_file_not_found_error, "Data of '%s' does not exist in DIMES\n", dimes_fname);
+        	adios_error (err_file_not_found_error, "Data of '%s' does not exist in DIMES\n", dimes_fname);
         	free(ds);
         	return NULL;
         } else {
@@ -155,7 +155,7 @@ ADIOS_FILE *adios_read_dimes_fopen(const char *fname, MPI_Comm comm)
 
     	fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
     	if (!fp) {
-        	error( err_no_memory, "Cannot allocate memory for file info.");
+        	adios_error (err_no_memory, "Cannot allocate memory for file info.");
         	return NULL;
     	}
 
@@ -172,7 +172,7 @@ ADIOS_FILE *adios_read_dimes_fopen(const char *fname, MPI_Comm comm)
     	alloc_namelist (&fp->group_namelist,fp->groups_count); 
     	for (i=0;i<fp->groups_count;i++) {
         	if (!fp->group_namelist[i]) {
-            		error(err_no_memory, "Could not allocate buffer for %d strings in adios_fopen()", fp->groups_count);
+            		adios_error (err_no_memory, "Could not allocate buffer for %d strings in adios_fopen()", fp->groups_count);
             		adios_read_dimes_fclose(fp);
             		return NULL;
         	}
@@ -243,7 +243,7 @@ ADIOS_GROUP * adios_read_dimes_gopen_byid (ADIOS_FILE *fp, int grpid)
     adios_errno = 0;
     gp = (ADIOS_GROUP *) malloc(sizeof(ADIOS_GROUP));
     if (!gp) {
-        error( err_no_memory, "Could not allocate memory for group info");
+        adios_error (err_no_memory, "Could not allocate memory for group info");
         return NULL;
     }
 
@@ -275,7 +275,7 @@ int adios_read_dimes_get_attr (ADIOS_GROUP * gp, const char * attrname, enum ADI
                     int * size, void ** data)
 {
     /* DIMES does not support attributes */
-    error(err_invalid_attrname, "DIMES read method does not support attributes!");
+    adios_error (err_invalid_attrname, "DIMES read method does not support attributes!");
     *size = 0;
     *type = adios_unknown;
     *data = 0;
@@ -286,7 +286,7 @@ int adios_read_dimes_get_attr_byid (ADIOS_GROUP * gp, int attrid,
                     enum ADIOS_DATATYPES * type, int * size, void ** data)
 {
     /* DIMES does not support attributes */
-    error(err_invalid_attrid, "DIMES read method does not support attributes!");
+    adios_error (err_invalid_attrid, "DIMES read method does not support attributes!");
     *size = 0;
     *type = adios_unknown;
     *data = 0;
@@ -309,7 +309,7 @@ ADIOS_VARINFO * adios_read_dimes_inq_var_byid (ADIOS_GROUP *gp, int varid)
     adios_errno = 0;
     vi = (ADIOS_VARINFO *) malloc(sizeof(ADIOS_VARINFO));
     if (!vi) {
-        error( err_no_memory, "Could not allocate memory for variable info.");
+        adios_error (err_no_memory, "Could not allocate memory for variable info.");
         return NULL;
     }
 
@@ -376,7 +376,7 @@ static int adios_read_dimes_get(const char *varname, enum ADIOS_DATATYPES vartyp
 	}
 	
 	if(err) {
-		error(err_corrupted_variable,"DIMES failed to read variable %s.", varname);
+		adios_error (err_corrupted_variable,"DIMES failed to read variable %s.", varname);
 		return -err_corrupted_variable;
 	}
 	
@@ -443,6 +443,6 @@ int64_t adios_read_dimes_read_var_byid (ADIOS_GROUP    * gp,
                              const uint64_t  * count,
                              void           * data)
 {
-    error( err_invalid_varid, "DIMES does not know variable indicies, only variable names can be used.");
+    adios_error (err_invalid_varid, "DIMES does not know variable indicies, only variable names can be used.");
     return -err_invalid_varid;
 }							
