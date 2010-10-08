@@ -64,11 +64,11 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
-am_bp2h5_OBJECTS = bp2h5-bp2h5.$(OBJEXT) bp2h5-hw-utils.$(OBJEXT)
+am_bp2h5_OBJECTS = bp2h5-bp2h5.$(OBJEXT)
 bp2h5_OBJECTS = $(am_bp2h5_OBJECTS)
 am__DEPENDENCIES_1 =
-bp2h5_DEPENDENCIES = $(top_builddir)/src/libadios_internal_nompi.a \
-	$(am__DEPENDENCIES_1)
+bp2h5_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -116,14 +116,12 @@ BUILD_FORTRAN_TRUE = @BUILD_FORTRAN_TRUE@
 BUILD_WRITE_FALSE = @BUILD_WRITE_FALSE@
 BUILD_WRITE_TRUE = @BUILD_WRITE_TRUE@
 CC = @CC@
-@USE_PARALLEL_COMPILER_TRUE@CC = $(MPICC)
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CSH = @CSH@
 CXX = @CXX@
-@USE_PARALLEL_COMPILER_TRUE@CXX = $(MPICXX)
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
@@ -250,7 +248,6 @@ PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
 RESEARCH_TRANSPORTS_FALSE = @RESEARCH_TRANSPORTS_FALSE@
 RESEARCH_TRANSPORTS_TRUE = @RESEARCH_TRANSPORTS_TRUE@
-SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -303,12 +300,11 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
-bp2h5_SOURCES = bp2h5.c hw-utils.c
-bp2h5_CPPFLAGS = -DH5_USE_16_API $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS)
-bp2h5_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS) -static-libtool-libs
-bp2h5_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
-	$(ADIOSLIB_SEQ_LDADD)
-EXTRA_DIST = hw-utils.h
+bp2h5_SOURCES = bp2h5.c
+bp2h5_CPPFLAGS = -DH5_USE_16API $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_SEQ_CPPFLAGS) $(ADIOSREADLIB_SEQ_CFLAGS ) $(HDF5_CPPFLAGS)
+bp2h5_LDFLAGS = $(ADIOSREADLIB_SEQ_LDFLAGS)  $(HDF5_LDFLAGS)
+bp2h5_LDADD = $(top_builddir)/src/libadiosread_nompi.a \
+	$(ADIOSREADLIB_SEQ_LDADD) $(HDF5_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -394,12 +390,6 @@ bp2h5-bp2h5.o: bp2h5.c
 
 bp2h5-bp2h5.obj: bp2h5.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp2h5_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bp2h5-bp2h5.obj `if test -f 'bp2h5.c'; then $(CYGPATH_W) 'bp2h5.c'; else $(CYGPATH_W) '$(srcdir)/bp2h5.c'; fi`
-
-bp2h5-hw-utils.o: hw-utils.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp2h5_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bp2h5-hw-utils.o `test -f 'hw-utils.c' || echo '$(srcdir)/'`hw-utils.c
-
-bp2h5-hw-utils.obj: hw-utils.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp2h5_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bp2h5-hw-utils.obj `if test -f 'hw-utils.c'; then $(CYGPATH_W) 'hw-utils.c'; else $(CYGPATH_W) '$(srcdir)/hw-utils.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -577,6 +567,9 @@ uninstall-am: uninstall-binPROGRAMS uninstall-info-am
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-binPROGRAMS uninstall-info-am
 
+
+#CC=$(MPICC)
+#CXX=$(MPICXX)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
