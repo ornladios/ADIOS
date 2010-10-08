@@ -57,6 +57,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence);
 
 int MPI_Get_count(MPI_Status *status, MPI_Datatype datatype, int *count);
 int MPI_Error_string(int errorcode, char *string, int *resultlen);
+int MPI_Comm_split ( MPI_Comm comm, int color, int key, MPI_Comm *comm_out );
 
 
 #endif

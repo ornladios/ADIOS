@@ -30,6 +30,7 @@ int MPI_Init(int *argc, char ***argv)
     mpierrmsg[0] = '\0'; 
     return MPI_SUCCESS; 
 }
+int MPI_Comm_split ( MPI_Comm comm, int color, int key, MPI_Comm *comm_out ) {return MPI_SUCCESS;}
 
 int MPI_Barrier(MPI_Comm comm) { return MPI_SUCCESS; }
 int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm) { return MPI_SUCCESS; }
