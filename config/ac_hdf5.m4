@@ -64,7 +64,7 @@ else
     dnl if hdf5 libs are not defined then guess and define it
     if test -z "${HDF5_LIBS}"; then
         dnl default HDF5 lib is usually just -lhdf5 -lz
-        HDF5_LIBS="-lhdf5 -lz"
+        HDF5_LIBS="-lhdf5_hl -lhdf5 -lz"
     fi
 
     save_CC="$CC"
