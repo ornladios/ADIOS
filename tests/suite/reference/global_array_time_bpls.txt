@@ -1,15 +1,17 @@
 File info:
   of groups:     1
-  of variables:  4
+  of variables:  6
   of attributes: 1
   time steps:    13 starting from 1
-  file size:     107 KB
+  file size:     153 KB
   bp version:    513
   statistics:    Min / Max / Avg / Std_dev
 
-Group temperature:
+Group restart:
   integer    /NX                       scalar = 10 
+  integer    /NY                       scalar = 1 
   integer    /size                     scalar = 9 
   integer    /rank                     scalar = 0 
   double     /temperature              {13, 9, 10} = 100 / 1389 / 744.5 / 375.067 
+  double     /pressure                 {13, 9, 1} = 1000 / 13008 / 7004 / 3741.66 
   string     /temperature/description  attr   = "Global array written from 'size' processes over several timesteps"

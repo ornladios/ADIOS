@@ -19,7 +19,10 @@ program adios_global
     character(len=256)      :: filename = "adios_globaltime.bp"
     integer                 :: rank, size, i, it, ierr
     integer, parameter      :: NX = 10
+    ! NY = 1 for testing purpose
+    integer, parameter      :: NY = 1
     real*8                  :: t(NX)
+    real*8                  :: p(NY)
     integer                 :: comm
 
     ! ADIOS variables declarations for matching gwrite_temperature.fh
@@ -36,18 +39,22 @@ program adios_global
 
     do it = 1, 13
         do i = 1, NX
-            t(i)  = 100.0*it + NX*rank + i-1
+            t(i)  = 100.0*it + NX*rank + i - 1
+        enddo
+
+        do i = 1, NY
+            p(i)  = 1000.0*it + NY*rank + i - 1
         enddo
 
         ! We need to create the file in the first round,
         ! then we need to append to it
         if (it == 1) then
-            call adios_open (adios_handle, "temperature", filename, "w", comm, adios_err)
+            call adios_open (adios_handle, "restart", filename, "w", comm, adios_err)
         else
-            call adios_open (adios_handle, "temperature", filename, "a", comm, adios_err)
+            call adios_open (adios_handle, "restart", filename, "a", comm, adios_err)
         endif
 
-#include "gwrite_temperature.fh"
+#include "gwrite_restart.fh"
 
         call adios_close (adios_handle, adios_err)
 

@@ -13,8 +13,11 @@ int main (int argc, char ** argv)
 {
 	char        filename [256];
 	int         rank, size, i, it;
-	int         NX = 10; 
+	int         NX = 10;
+        // NY = 1 for testing purpose
+	int         NY = 1; 
 	double      t[NX];
+	double      p[NY];
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
 	int         adios_err;
@@ -32,13 +35,16 @@ int main (int argc, char ** argv)
 
         	for (i = 0; i < NX; i++)
             		t[i] = it*100.0 + rank*NX + i;
+
+        	for (i = 0; i < NY; i++)
+            		p[i] = it*1000.0 + rank*NY + i;
 		
                 if (it==1)
-		    adios_open (&adios_handle, "temperature", filename, "w", &comm);
+		    adios_open (&adios_handle, "restart", filename, "w", &comm);
                 else
-		    adios_open (&adios_handle, "temperature", filename, "a", &comm);
+		    adios_open (&adios_handle, "restart", filename, "a", &comm);
 
-        	#include "gwrite_temperature.ch"
+        	#include "gwrite_restart.ch"
         	adios_close (adios_handle);
 		MPI_Barrier (comm);
                 //if (rank==0) printf("Timestep %d written\n", it+1);

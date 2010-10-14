@@ -33,7 +33,7 @@ int main (int argc, char ** argv)
         return -1;
     }
 
-    ADIOS_GROUP * g = adios_gopen (f, "temperature");
+    ADIOS_GROUP * g = adios_gopen (f, "restart");
     if (g == NULL)
     {
         printf ("%s\n", adios_errmsg());
