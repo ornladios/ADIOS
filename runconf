@@ -65,7 +65,7 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
 
 elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "chester" ]; then
 
-    BUILD_STAGING=true
+    BUILD_STAGING=false
     if [ $BUILD_STAGING == "false" ]; then
     
         ##########
@@ -95,7 +95,7 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
-        CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xt5.gnu \
+        CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
             --enable-dependency-tracking \
             --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
             --without-portals 
