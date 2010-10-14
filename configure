@@ -24830,7 +24830,7 @@ else
         HDF5_LDFLAGS="-L${HDF5_LIBDIR}"
 
         if test -z "${HDF5_LIBS}"; then
-                HDF5_LIBS="-lhdf5 -lz"
+                HDF5_LIBS="-lhdf5_hl -lhdf5 -lz"
     fi
 
     save_CC="$CC"
