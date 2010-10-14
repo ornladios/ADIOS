@@ -17,7 +17,7 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     module unload PE-pgi
     module unload PE-pathscale
     module unload pgi
-    TARGET=pgi
+    TARGET=gnu
     module load PE-$TARGET
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
@@ -49,23 +49,78 @@ if [ `hostname | cut -c 1-4` == "ewok" ]; then
     fi
         
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/ewok.$TARGET \
+    ./configure --prefix=/ccs/proj/e2e/demo/adios_ewok_readonly.$TARGET \
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
-        --enable-research-transports  \
         --without-datatap \
-        --with-hdf5=${SEQ_HDF5_DIR} \
-        --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
-        --with-phdf5=${PAR_HDF5_DIR} \
-        --with-phdf5-libs="${PAR_HDF5_CLIB}"
-        #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
+        --disable-write
+        #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET \
+        #--enable-research-transports  \
+        #--with-hdf5=${SEQ_HDF5_DIR} \
+        #--with-hdf5-libs="${SEQ_HDF5_CLIB}" \
+        #--with-phdf5=${PAR_HDF5_DIR} \
+        #--with-phdf5-libs="${PAR_HDF5_CLIB}" \
         #--with-datatap=/ccs/home/habbasi/work/ewok/
         #--enable-datatap=ib
 
 
 elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "chester" ]; then
+    DEMO=true
 
-    BUILD_STAGING=false
+    if [ $DEMO = "true" ]; then
+        ##########
+        # Jaguar #
+        ##########
+        echo "Configure on JAGUAR for DEMO"
+        export CC=cc
+        export FC=ftn
+        export CXX=CC
+        source /opt/modules/default/etc/modules.sh
+        module unload szip
+        module unload hdf5
+        module unload netcdf
+        module unload hdf5-parallel
+        module unload netcdf-hdf5parallel
+        module unload PrgEnv-gnu
+        module unload PrgEnv-pgi
+        module unload PrgEnv-intel
+        module unload PrgEnv-cray
+        module unload PrgEnv-pathscale
+        module unload xt-papi
+        module unload xtpe-quadcore
+        TARGET=gnu
+        module load PrgEnv-$TARGET
+        if [ "$TARGET" == "pgi" ]; then
+            module swap pgi pgi/10.4.0
+            # NSSI needs -pgcpplibs flag 
+            export LDFLAGS="-pgcpplibs" 
+            DARTDIR=/sw/xt5/adios/1.2.1/cnl2.2_pgi10.4/spaces
+        elif [ "$TARGET" == "gnu" ]; then
+            # NSSI needs libstdc++
+            #export EXTRA_LIBS="/opt/gcc/4.4.4/snos/lib64/libstdc++.a"
+            module swap gcc gcc/4.4.4
+            DARTDIR=/sw/xt5/adios/1.2.1/cnl2.2_gnu4.4.4/spaces
+        fi
+        
+        # NOTE hdf5-parallel module does not work with C++ compiler
+        #module load hdf5-parallel
+        #module load netcdf-hdf5parallel
+        module load szip
+        module load xt-papi
+        module load mxml
+        # use the two lines below for openmpi
+        #export CC=mpicc
+        #export FC=mpif90
+        export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
+        export CFLAGS="-fPIC -g" 
+        ./configure --prefix=/ccs/proj/e2e/demo/adios_xt5.$TARGET \
+        --enable-dependency-tracking \
+        --with-portals \
+        --with-dart=$DARTDIR
+
+    else
+
+    BUILD_STAGING=true
     if [ $BUILD_STAGING == "false" ]; then
     
         ##########
@@ -95,7 +150,7 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
-        CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
+        CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xt5.gnu \
             --enable-dependency-tracking \
             --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
             --without-portals 
@@ -147,7 +202,7 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
-        export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
+        export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
         export CFLAGS="-fPIC" 
         ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xt5.$TARGET \
         --enable-dependency-tracking \
@@ -162,6 +217,7 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         --with-dimes=/ccs/proj/e2e/pnorbert/spaces/$TARGET
     
     fi
+    fi # DEMO
     
 elif [ `hostname | cut -c 1-4` == "euge" ]; then
     ###################

@@ -183,6 +183,8 @@ void FC_FUNC_(adios_inq_group, ADIOS_INQ_GROUP)
         (int64_t * gp, 
          void    * vnamelist, 
          void    * anamelist,
+         int     * timestep,
+         int     * lasttimestep,
          int     * err, 
          int       vnamelist_len, 
          int       anamelist_len) 
@@ -196,6 +198,8 @@ void FC_FUNC_(adios_inq_group, ADIOS_INQ_GROUP)
         for (i=0;i<agp->attrs_count;i++) {
             futils_cstr_to_fstr( agp->attr_namelist[i], (char *)anamelist+i*anamelist_len, anamelist_len);
         } 
+        *timestep = agp->timestep;
+        *lasttimestep = agp->lasttimestep;
         *err = 0;
     } else {
         *err = 1;

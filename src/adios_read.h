@@ -49,6 +49,9 @@ typedef struct {
         int      attrs_count;       /* Number of attributes in this adios group                */
         char     ** attr_namelist;  /* Attribute names in a char* array                        */
         ADIOS_FILE * fp;            /* pointer to the parent ADIOS_FILE struct                 */
+        /* streaming API: */
+        int      timestep;          /* The current (only) timestep */
+        int      lasttimestep;      /* The currently available latest timestep in the stream   */
 } ADIOS_GROUP;
 
 /* NCSU - Added more statistics to be returned to the end user */
