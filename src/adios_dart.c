@@ -25,7 +25,6 @@
 #include "adios_internals_mxml.h"
 
 #include "dart.h"
-#include "ds_metadata.h"
 
 /*#define DART_DO_VERSIONING  define it at configure as -DDART_DO_VERSIONING in CFLAGS */
 

@@ -30,9 +30,9 @@ void ds_pack_group_info (struct adios_file_struct *fd
         ,struct adios_index_var_struct_v1 *vars_root
         ,struct adios_index_attribute_struct_v1 * attrs_root
         ,char ** buffer, int *buffer_size, int *nvars, int *nattrs
-        )
+        );
 
-ADIOS_GROUP * ds_unpack_group_info (char * buf, struct adios_read_dart_group_struct * group)
+ADIOS_GROUP * ds_unpack_group_info (char * buf, struct adios_read_dart_group_struct * group);
 
 
 /***********************

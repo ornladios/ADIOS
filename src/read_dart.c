@@ -446,8 +446,8 @@ ADIOS_GROUP * ds_unpack_group_info (char * buf, struct adios_read_dart_group_str
             vars[i].value = (void *) malloc (datasize+extrabyte);
             if (vars[i].value) {
                 memcpy (vars[i].value, b, datasize);
-                if (attrs[i].type == adios_string) 
-                    ((char *)attrs[i].value)[datasize] = '\0';
+                if (vars[i].type == adios_string) 
+                    ((char *)vars[i].value)[datasize] = '\0';
             } else {
                 DBG_PRINTF("ERROR: cannot allocate %d bytes to store the value of variable %s\n",
                         datasize, vars[i].name);
