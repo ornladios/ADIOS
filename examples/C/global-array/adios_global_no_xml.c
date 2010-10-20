@@ -12,10 +12,18 @@
  * ADIOS config file: None
  *
 */
+
+/* This example will write out 2 sub blocks of the variable temperature
+   and place these in the global array.
+   This example illustrates both the use of sub blocks in writing, and
+   the usage of the ADIOS non-xml API's
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include "mpi.h"
 #include "adios.h"
+#include "adios_types.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -24,9 +32,10 @@
 int main (int argc, char ** argv) 
 {
 	char        filename [256];
-	int         rank, size, i;
-	int         NX = 10, G, O; 
+	int         rank, size, i, block;
+	int         NX = 100, Global_bounds, Offsets; 
 	double      t[NX];
+        int         sub_blocks = 3;
 	MPI_Comm    comm = MPI_COMM_WORLD;
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
@@ -38,10 +47,7 @@ int main (int argc, char ** argv)
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &size);
 
-        G = 2 * NX * size;
-
-	for (i = 0; i < NX; i++)
-	    t[i] = rank * NX + i;
+        Global_bounds = sub_blocks * NX * size;
 
 	strcpy (filename, "adios_global_no_xml.bp");
 
@@ -54,67 +60,44 @@ int main (int argc, char ** argv)
         adios_declare_group (&m_adios_group, "restart", "iter", adios_flag_yes);
         adios_select_method (m_adios_group, "MPI", "", "");
 
-        adios_define_var (m_adios_group, "NX"
-                     ,"", 2
-                     ,0, 0, 0);
-
-        adios_define_var (m_adios_group, "G"
-                     ,"", 2
-                     ,0, 0, 0);
-
-        adios_define_var (m_adios_group, "O"
-                     ,"", 2
-                     ,0, 0, 0);
-
-        adios_define_var (m_adios_group, "temperature"
-                     ,"", 6
-                     ,"NX", "G", "O");
 
         adios_define_var (m_adios_group, "NX"
-                     ,"", 2
-                     ,0, 0, 0);
+			,"", adios_integer
+			,0, 0, 0);
+   
+	adios_define_var (m_adios_group, "Global_bounds"
+			,"", adios_integer
+			,0, 0, 0);
 
-        adios_define_var (m_adios_group, "G"
-                     ,"", 2
-                     ,0, 0, 0);
-
-        adios_define_var (m_adios_group, "O"
-                     ,"", 2
-                     ,0, 0, 0);
-
-        adios_define_var (m_adios_group, "temperature"
-                     ,"", 6
-                     ,"NX", "G", "O");
-
-
+        for (i=0;i<sub_blocks;i++) {
+   
+           adios_define_var (m_adios_group, "Offsets"
+                        ,"", adios_integer
+                        ,0, 0, 0);
+   
+           adios_define_var (m_adios_group, "temperature"
+                        ,"", adios_double
+                        ,"NX", "Global_bounds", "Offsets");
+        }
+   
         adios_open (&m_adios_file, "restart", filename, "w", &comm);
 
-        adios_groupsize = 4 + 4 + 4 + NX * 8
-                        + 4 + 4 + 4 + NX * 8;
+        adios_groupsize = sub_blocks * (4 + 4 + 4 + NX * 8);
 
         adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
+	adios_write(m_adios_file, "NX", (void *) &NX);
+	adios_write(m_adios_file, "Global_bounds", (void *) &Global_bounds);
+/* now we will write the data for each sub block */
+        for (block=0;block<sub_blocks;block++) {
 
-        adios_write(m_adios_file, "NX", (void *) &NX);
-        adios_write(m_adios_file, "G", (void *) &G);
+           Offsets = rank * sub_blocks * NX + block*NX;
+           adios_write(m_adios_file, "Offsets", (void *) &Offsets);
 
-        O = rank * 2 * NX;
-        adios_write(m_adios_file, "O", (void *) &O);
+           for (i = 0; i < NX; i++)
+               t[i] = Offsets + i;
 
-        for (i = 0; i < NX; i++)
-            t[i] = O + i;
-
-        adios_write(m_adios_file, "temperature", t);
-
-        adios_write(m_adios_file, "NX", (void *) &NX);
-        adios_write(m_adios_file, "G", (void *) &G);
-
-        O = rank * 2 * NX + NX;
-        adios_write(m_adios_file, "O", (void *) &O);
-
-        for (i = 0; i < NX; i++)
-            t[i] = O + i;
-
-        adios_write(m_adios_file, "temperature", t);
+           adios_write(m_adios_file, "temperature", t);
+        }
 
         adios_close (m_adios_file);
 
