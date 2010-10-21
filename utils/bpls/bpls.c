@@ -1173,9 +1173,9 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
 
     switch(adiosvartype) {
         case adios_unsigned_byte:
-            if (min) fprintf(outf,(f ? format : "%10hhu  "), ((unsigned char *) min));
+            if (min) fprintf(outf,(f ? format : "%10hhu  "), * ((unsigned char *) min));
             else fprintf(outf, "      null  ");
-            if (max) fprintf(outf,(f ? format : "%10hhu  "), ((unsigned char *) max));
+            if (max) fprintf(outf,(f ? format : "%10hhu  "), * ((unsigned char *) max));
             else fprintf(outf, "      null  ");
             if (avg) fprintf(outf, "%10.2f  ", * avg);
             else fprintf(outf, "      null  ");
@@ -1183,9 +1183,9 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
             else fprintf(outf, "      null  ");
             break;
         case adios_byte:
-            if (min) fprintf(outf,(f ? format : "%10hhd  "), ((char *) min));
+            if (min) fprintf(outf,(f ? format : "%10hhd  "), * ((char *) min));
             else fprintf(outf, "      null  ");
-            if (max) fprintf(outf,(f ? format : "%10hhd  "), ((char *) max));
+            if (max) fprintf(outf,(f ? format : "%10hhd  "), * ((char *) max));
             else fprintf(outf, "      null  ");
             if (avg) fprintf(outf, "%10.2f  ", * avg);
             else fprintf(outf, "      null  ");
@@ -1259,10 +1259,19 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
             break;
 
         case adios_real:
-        case adios_double:
             if (min) fprintf(outf,(f ? format : "%10.2g  "), (* (float *) min));
             else fprintf(outf, "      null  ");
             if (max) fprintf(outf,(f ? format : "%10.2g  "), (* (float *) max));
+            else fprintf(outf, "      null  ");
+            if (avg) fprintf(outf, "%10.2g  ", * avg);
+            else fprintf(outf, "      null  ");
+            if (std_dev) fprintf(outf, "%10.2g  ", * std_dev);
+            else fprintf(outf, "      null  ");
+            break;
+        case adios_double:
+            if (min) fprintf(outf,(f ? format : "%10.2g  "), (* (double *) min));
+            else fprintf(outf, "      null  ");
+            if (max) fprintf(outf,(f ? format : "%10.2g  "), (* (double *) max));
             else fprintf(outf, "      null  ");
             if (avg) fprintf(outf, "%10.2g  ", * avg);
             else fprintf(outf, "      null  ");
