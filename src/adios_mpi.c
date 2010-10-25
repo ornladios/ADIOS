@@ -30,6 +30,9 @@
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
 #include "buffer.h"
+#ifdef DMALLOC
+#include "dmalloc.h"
+#endif
 
 static int adios_mpi_initialized = 0;
 

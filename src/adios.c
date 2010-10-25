@@ -23,6 +23,10 @@
 #include "adios_internals_mxml.h"
 #include "globals.h"
 
+#ifdef DMALLOC
+#include "dmalloc.h"
+#endif
+
 extern struct adios_transport_struct * adios_transports;
 
 int adios_set_application_id (int id)
@@ -127,6 +131,49 @@ int adios_write (int64_t fd_p, const char * name, void * var)
     {
         free (v->data);
         v->data = 0;
+    }
+
+    // Q.L. 10-2010. To fix a memory leak problem.
+    if (v->stats)
+    {   
+        int j, idx;
+        int c, count = 1;
+
+        if (v->type == adios_complex || v->type == adios_double_complex)
+            count = 3;
+
+        for (c = 0; c < count; c ++)
+        {   
+            j = idx = 0;
+            while (v->bitmap >> j)
+            {   
+                if (v->bitmap >> j & 1)
+                {   
+                    if (j == adios_statistic_hist)
+                    {   
+                        struct adios_index_characteristics_hist_struct * hist =
+                            (struct adios_index_characteristics_hist_struct *) v->stats[c][idx].data;
+                        if (hist)
+                        {   
+                            free (hist->breaks);
+                            free (hist->frequencies);
+                            free (hist);
+                            v->stats[c][idx].data = 0;
+                        }
+                    }
+                    else
+                    {
+                        if (v->stats[c][idx].data)
+                        {
+                            free (v->stats[c][idx].data);
+                            v->stats[c][idx].data = 0;
+                        }
+                    }
+                    idx ++;
+                }
+                j ++;
+            }
+        }
     }
 
     if (v->dimensions)

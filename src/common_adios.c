@@ -21,6 +21,10 @@
 #include "adios_internals_mxml.h"
 #include "buffer.h"
 
+#ifdef DMALLOC
+#include "dmalloc.h"
+#endif
+
 extern struct adios_transport_struct * adios_transports;
 
 ///////////////////////////////////////////////////////////////////////////////

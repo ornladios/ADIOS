@@ -179,6 +179,43 @@ void FC_FUNC_(adios_write, adios_WRITE)
         v->data = 0;
     }
 
+    // Q.L. 10-2010. To fix a memory leak problem.
+    if (v->stats)
+    {   
+        int j, idx;
+        int c, count = 1;
+
+        if (v->type == adios_complex || v->type == adios_double_complex)
+            count = 3;
+
+        for (c = 0; c < count; c ++)
+        {   
+            j = idx = 0;
+            while (v->bitmap >> j)
+            {   
+                if (v->bitmap >> j & 1)
+                {   
+                    if (j == adios_statistic_hist)
+                    {   
+                        struct adios_index_characteristics_hist_struct * hist =
+                            (struct adios_index_characteristics_hist_struct *) v->stats[c][idx].data;
+                        free (hist->breaks);
+                        free (hist->frequencies);
+                        free (hist);
+                        v->stats[c][idx].data = 0;
+                    }
+                    else
+                    {   
+                        free (v->stats[c][idx].data);
+                        v->stats[c][idx].data = 0;
+                    }
+                    idx ++;
+                }
+                j ++;
+            }
+        }
+    }
+
     if (v->dimensions)
     {
         v->data = var;

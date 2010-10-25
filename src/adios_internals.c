@@ -21,8 +21,12 @@
 #include "adios_internals.h"
 #include "adios_bp_v1.h"
 
-static struct adios_method_list_struct * adios_methods = 0;
-static struct adios_group_list_struct * adios_groups = 0;
+#ifdef DMALLOC
+#include "dmalloc.h"
+#endif
+
+extern struct adios_method_list_struct * adios_methods;
+extern struct adios_group_list_struct * adios_groups;
 
 int adios_int_is_var (const char * temp) // 1 == yes, 0 == no
 {
@@ -2392,7 +2396,10 @@ static void adios_clear_attributes_index_v1
                 free (root->characteristics [i].stats);
             }
 
+            if (root->characteristics [i].value)
+                free (root->characteristics [i].value);
         }
+    
         if (root->characteristics)
             free (root->characteristics);
 

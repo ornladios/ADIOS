@@ -28,10 +28,17 @@
 #include "adios_internals_mxml.h"
 #include "buffer.h"
 
+#ifdef DMALLOC
+#include "dmalloc.h"
+#endif
+
 static enum ADIOS_FLAG adios_host_language_fortran = adios_flag_yes;
 
-static struct adios_method_list_struct * adios_methods = 0;
-static struct adios_group_list_struct * adios_groups = 0;
+struct adios_method_list_struct * adios_methods = 0;
+struct adios_group_list_struct * adios_groups = 0;
+
+//extern struct adios_method_list_struct * adios_methods;
+//extern struct adios_group_list_struct * adios_groups;
 
 struct adios_transport_struct * adios_transports = 0;
 static int adios_transports_initialized = 0;
@@ -3282,6 +3289,7 @@ void adios_cleanup ()
 						}
 						j ++;
 					}
+					free (adios_groups->group->vars->stats[c]);
 				}
 
                 free (adios_groups->group->vars->stats);

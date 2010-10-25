@@ -25,6 +25,11 @@
 #endif
 
 #define BYTE_ALIGN 8
+
+#ifdef DMALLOC
+#include "dmalloc.h"
+#endif
+
 static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
 {
     b->allocated_buff_ptr = malloc (size + BYTE_ALIGN - 1);
