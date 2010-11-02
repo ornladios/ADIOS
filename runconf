@@ -290,6 +290,27 @@ elif [ `hostname | cut -c 1-6` == "tomato" ]; then
         --with-hdf5=/home/thkorde/local \
         --with-netcdf=/home/thkorde/local
 
+elif [ `hostname | cut -c 1-5` == "smoky" ]; then
+
+    #########
+    # Smoky #
+    #########
+    echo "Configure on SMOKY"
+export CC=mpicc
+export FC=mpif90
+# use the two lines below for openmpi
+#export CC=mpicc
+#export FC=mpif90
+# use for both MPI implementations
+./configure --prefix=/ccs/home/ge1/work/smoky \
+            --enable-dependency-tracking \
+            --with-mxml=/ccs/home/ge1/work/smoky \
+            --with-hdf5=/sw/xt5/hdf5/1.6.7/cnl2.1_gnu4.2.4 \
+            --with-hdf5-libdir="/sw/xt5/hdf5/1.6.7/cnl2.1_gnu4.2.4/lib -L/sw/xt5/szip/2.1/sles10.1_gnu4.2.4/lib -lsz -lz" \
+            --with-phdf5=/sw/xt5/hdf5/1.6.7/cnl2.1_gnu4.2.4_par \
+            --with-phdf5-libdir="/sw/xt5/hdf5/1.6.7/cnl2.1_gnu4.2.4_par/lib -L/sw/xt5/szip/2.1/sles10.1_gnu4.2.4/lib -lsz -lz" \
+            --with-netcdf=/sw/xt5/netcdf/3.6.2/sles10.1_gnu4.2.0
+
 else
     echo "Could not determine what machine is this"
     echo "This script is for configuring adios on the authors' machines"
