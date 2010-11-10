@@ -1,4 +1,4 @@
-!  
+!
 !  ADIOS is freely available under the terms of the BSD license described
 !  in the COPYING file in the top level directory of this source distribution.
 !
@@ -8,11 +8,11 @@
 !
 !  Coupling writer/reader
 !
-!  Read a 2D array 
+!  Read a 2D array
 !  to/from a file or from/to another coupling code using DataSpaces/ADIOS
 !
 !  nx * ny          processes write a 2D array, where each process writes an
-!  
+!
 !  Data written
 !    xy          2D global array as received from the writers
 !    xy2         2D array with block,* decomp
@@ -24,7 +24,7 @@
 !
 module coupling_reader_2D_comm
     ! arguments
-    character(len=256) :: filename 
+    character(len=256) :: filename
     integer :: npx, npy, npz  ! # of processors in x-y-z direction
     integer :: timesteps      ! number of times to read data
     integer :: read_method    ! 0=bp, 1=hdf5, 2=dart, 3=dimes
@@ -51,7 +51,7 @@ module coupling_reader_2D_comm
     integer*8 :: adios_handle, adios_totalsize, adios_groupsize, adios_buf_size
     integer   :: adios_err
 
-    
+
     integer   :: ts   ! actual timestep
     integer   :: wts  ! writer's output timestep index (read from 1,2...)
     logical, parameter   :: dump_text = .true.
@@ -82,7 +82,7 @@ program coupling
         endif
     endif
 
-    call adios_set_read_method(read_method, ierr) ! 3 = dimes, 2 = dart, 0 = bp
+    call adios_set_read_method(read_method, ierr) ! 4 = NSSI, 3 = dimes, 2 = dart, 0 = bp
     call adios_read_init (group_comm, ierr)
     call adios_init("coupling2D_reader.xml", adios_err)
     !call MPI_Barrier (group_comm, ierr)
@@ -129,7 +129,7 @@ subroutine readArrays()
     if (adios_err .ne. 0) then
         if (wts .eq. 1) then
             do while (adios_err .ne. 0)
-                print '("Writer''s first data ",a," is missing. Wait until it becomes available")', trim(fn) 
+                print '("Writer''s first data ",a," is missing. Wait until it becomes available")', trim(fn)
                 call sleep(15)
                 call MPI_Barrier (group_comm, ierr)
                 call adios_fopen (fh, fn, group_comm, gcnt, adios_err)
@@ -147,7 +147,7 @@ subroutine readArrays()
     if (adios_err .ne. 0) then
         call exit(adios_err)
     endif
-    
+
     offset = 0
     readsize = 1
 
@@ -157,7 +157,7 @@ subroutine readArrays()
     !if (read_bytes .lt. 0) then
     !    call exit(read_bytes)
     !elseif (read_bytes .ne. 4) then
-    !    print '("Wanted to read __ADIOS_TIME_INDEX__ but read ", i0, " bytes instead of 4")', read_bytes 
+    !    print '("Wanted to read __ADIOS_TIME_INDEX__ but read ", i0, " bytes instead of 4")', read_bytes
     !    call exit(read_bytes)
     !endif
     !print '("rank=",i0,": time_index = ",i0)', rank, time_index
@@ -168,7 +168,7 @@ subroutine readArrays()
     if (read_bytes .lt. 0) then
         call exit(read_bytes)
     elseif (read_bytes .ne. 4) then
-        print '("Wanted to read dim_x_global but read ", i0, " bytes instead of 4")', read_bytes 
+        print '("Wanted to read dim_x_global but read ", i0, " bytes instead of 4")', read_bytes
         call exit(read_bytes)
     endif
 
@@ -178,7 +178,7 @@ subroutine readArrays()
     if (read_bytes .lt. 0) then
         call exit(read_bytes)
     elseif (read_bytes .ne. 4) then
-        print '("Wanted to read dim_y_global but read ", i0, " bytes instead of 4")', read_bytes 
+        print '("Wanted to read dim_y_global but read ", i0, " bytes instead of 4")', read_bytes
         call exit(read_bytes)
     endif
 
@@ -190,7 +190,7 @@ subroutine readArrays()
         offs_x = 0
         offs_y = 0
     elseif (read_mode == 1) then
-        dim_x_local = dim_x_global / nproc 
+        dim_x_local = dim_x_global / nproc
         dim_y_local = dim_y_global
         offs_x = rank * dim_x_local
         offs_y = 0
@@ -229,7 +229,7 @@ subroutine readArrays()
             xy2(i,j) = rank*1.0 + xy(i,j)/100.0
         enddo
     enddo
-    
+
 
     call MPI_Barrier (group_comm, ierr)
     call adios_gclose (gh, adios_err)
@@ -249,21 +249,21 @@ subroutine printArrays()
 
         writer = mod(ts,nproc)
         if (writer == rank) then
-    
+
             write (fn, '("reader_",i3.3,".bp")') ts
             call adios_open (adios_handle, "reader2D", fn, "w", self_comm, adios_err)
 #include "gwrite_reader2D.fh"
             ! start streaming from buffer to disk
             call adios_close (adios_handle, adios_err)
             print '("rank=",i0,": Wrote xy to ",a)', rank, trim(fn)
-    
+
         endif
-    
+
         if (dump_text) then
-    
+
             write (fn, '("reader_",i3.3,"_",i0,".txt")') ts, rank
             open (u, FILE=fn, STATUS='NEW', FORM="FORMATTED")
-    
+
             ! print xyz_bbb
             write (u,'("xy(1:",i0,",1:",i0,") = ")') dim_x_local, dim_y_local
             do j=1,dim_y_local
@@ -272,9 +272,9 @@ subroutine printArrays()
                 enddo
                 write (u,*) " "  ! new line
             enddo
-    
+
             close (u)
-    
+
         endif
 
     elseif (read_mode ==1) then
@@ -345,6 +345,8 @@ subroutine processArgs()
         read_method = 2
     elseif (trim(method_str) .eq. "DIMES") then
         read_method = 3
+    elseif (trim(method_str) .eq. "NSSI") then
+        read_method = 4
     else
         read_method = 0
     endif
