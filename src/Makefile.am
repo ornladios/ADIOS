@@ -89,9 +89,9 @@ endif
 endif
 
 if HAVE_DATATAP
-libadios_a_SOURCES += adios_datatap.c
+libadios_a_SOURCES += adios_datatap.c read_datatap.c 
 if BUILD_FORTRAN
-libadiosf_a_SOURCES += adios_datatap.c
+libadiosf_a_SOURCES += adios_datatap.c read_datatap.c 
 endif
 endif 
 
@@ -192,13 +192,19 @@ libadiosread_a_SOURCES = adios_bp_v1.c \
                       common_read.c \
                       read_bp.c \
                       globals.c
+
+libadiosread_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 if HAVE_DART
 libadiosread_a_SOURCES += read_dart.c
 endif
 if HAVE_DIMES
 libadiosread_a_SOURCES += read_dimes.c
 endif
-libadiosread_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
+if HAVE_DATATAP
+libadiosread_a_SOURCES += read_datatap.c  
+libadiosread_a_CFLAGS = -I/ccs/home/zf2/work/pe/include 
+libadiosread_a_CPPFLAGS += -I/ccs/home/zf2/work/pe/include 
+endif
 
 if BUILD_FORTRAN
 lib_LIBRARIES += libadiosreadf.a
@@ -213,14 +219,19 @@ libadiosreadf_a_SOURCES = adios_bp_v1.c \
                       read_bp.c \
                       globals.c
                       
+libadiosreadf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 if HAVE_DART
 libadiosreadf_a_SOURCES += read_dart.c
 endif
 if HAVE_DIMES
-libadiosreadf_a_SOURCES += read_dimes.c
+libadiosreadf_a_SOURCES += read_dimes.c  
+endif
+if HAVE_DATATAP
+libadiosreadf_a_SOURCES += read_datatap.c 
+libadiosreadf_a_CFLAGS = -I/ccs/home/zf2/work/pe/include 
+libadiosreadf_a_CPPFLAGS += -I/ccs/home/zf2/work/pe/include 
 endif
 
-libadiosreadf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 
 # adiosf_read.mod is not really usable, 
 # so it is not used and installed right now
@@ -250,6 +261,10 @@ endif
 if HAVE_DIMES
 libadiosread_nompi_a_SOURCES += read_dimes.c
 endif
+#if HAVE_DATATAP
+#libadiosread_nompi_a_SOURCES += read_datatap.c queue.c
+#endif
+
 # Note: utils/adios_lint needs to link with adios_internals_mxml.o which depends
 #       on adios_internals.c, buffer.c and adios_transport_hooks.c. 
 #       We put these objects in libadiosread_nompi
@@ -265,14 +280,16 @@ libadiosreadf_nompi_a_SOURCES = mpidummy.c\
                                 adiosf_read.c \
                                 adios_read_hooks.c \
                                 common_read.c \
-                                read_bp.c \
-                                globals.c 
+                                read_bp.c 
 if HAVE_DART
 libadiosreadf_nompi_a_SOURCES += read_dart.c
 endif
 if HAVE_DIMES
 libadiosreadf_nompi_a_SOURCES += read_dimes.c
 endif
+#if HAVE_DATATAP
+#libadiosreadf_nompi_a_SOURCES += read_datatap.c queue.c
+#endif
 endif
 
 noinst_LIBRARIES = libadios_internal_nompi.a

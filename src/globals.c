@@ -137,3 +137,61 @@ int  globals_adios_is_dimes_connected_from_both()
 }
 #endif
 
+#if NO_DATATAP == 0
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define OPLEN 2
+static char OP[OPLEN] = { '(', ')' };
+static char *OP_REP[OPLEN] = { "_PPLT_", "_PPRT_" };
+
+char *getFixedName(char *name)
+{
+    char *tempname = (char *) malloc(sizeof(char) * 255);
+    snprintf(tempname, 255, "%s\0", name);
+    char *oldname = strdup(name);
+    char *loc = NULL;
+    int i;
+
+    do
+    {
+        for (i = 0; i < OPLEN; i++)
+        {
+    //checking operator OP[i]
+            loc = strchr(oldname, OP[i]);
+            if (loc == NULL)
+                continue;
+            *loc = 0;
+            snprintf(tempname, 255, "%s%s%s\0", oldname, OP_REP[i], &loc[1]);
+            free(oldname);
+            oldname = strdup(tempname);
+        }
+    }
+    while (loc != NULL);
+    free(oldname);
+
+fprintf(stderr, "im here %s %s %s:%d\n", name, tempname, __FILE__,__LINE__);
+    return tempname;
+}
+
+char *get_full_path_name(char *name, char *path)
+{
+    char *full_pathname = (char *) malloc(strlen(name)+strlen(path)+2);
+    if(!full_pathname) {
+        fprintf(stderr, "cannot allocate memory. %s:%d\n", __FILE__,__LINE__);
+        return NULL;
+    }
+    if (!strcmp (path, "/")) {
+        sprintf (full_pathname, "/%s\0", name);
+    }
+    else {
+        sprintf (full_pathname, "%s/%s\0", path, name);
+    }
+fprintf(stderr, "im here %s %s %s %s:%d\n", name, path, full_pathname,__FILE__,__LINE__);
+    return full_pathname;
+}
+
+#endif
+

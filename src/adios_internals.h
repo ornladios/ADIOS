@@ -518,6 +518,7 @@ int adios_int_is_num (char * temp); // 1 == yes, 0 == no
 extern "C" {
 #endif
 
+#if 1
 /* LIST */
 typedef struct ListElmt_
 {
@@ -555,6 +556,8 @@ int queue_enqueue (Queue * queue, const void * data);
 int queue_dequeue (Queue * queue, void ** data);
 #define queue_peek(queue) ((queue)->head == NULL ? NULL : (queue)->head->data)
 #define queue_size list_size
+
+#endif
 
 #ifdef __cplusplus
 }

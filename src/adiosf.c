@@ -407,6 +407,7 @@ void FC_FUNC_(adios_define_var, adios_DEFINE_VAR)
     buf4 = futils_fstr_to_cstr (global_dimensions, global_dimensions_size);
     buf5 = futils_fstr_to_cstr (local_offsets, local_offsets_size);
 
+fprintf(stderr, "im here varname %s path %s %s:%d\n", buf1, buf2,__FILE__,__LINE__);
     if (buf1 != 0 && buf2 != 0) {
         *err = adios_common_define_var (*group_id, buf1, buf2
                                        ,(enum ADIOS_DATATYPES) *type

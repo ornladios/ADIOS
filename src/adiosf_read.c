@@ -147,6 +147,7 @@ void FC_FUNC_(adios_gopen, ADIOS_GOPEN)
          int     * err,
          int       grpname_len)
 {
+fprintf(stderr, "im here %s:%d\n", __FILE__,__LINE__);
     char *namestr;
     ADIOS_GROUP *agp;
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
@@ -169,6 +170,7 @@ void FC_FUNC_(adios_gopen, ADIOS_GOPEN)
     *err = -adios_errno;
     if (*err)
         fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+fprintf(stderr, "im here %s:%d\n", __FILE__,__LINE__);
 }
 
 void FC_FUNC_(adios_gclose, ADIOS_GCLOSE) (int64_t * gp, int * err)
@@ -189,21 +191,30 @@ void FC_FUNC_(adios_inq_group, ADIOS_INQ_GROUP)
          int       vnamelist_len, 
          int       anamelist_len) 
 {
+fprintf(stderr, "im here %s:%d\n", __FILE__,__LINE__);
     ADIOS_GROUP *agp = (ADIOS_GROUP *) *gp;
+fprintf(stderr, "im here %s:%d\n", __FILE__,__LINE__);
     int i;
     if (agp != NULL) {
+fprintf(stderr, "im here %s:%d\n", __FILE__,__LINE__);
         for (i=0;i<agp->vars_count;i++) {
+fprintf(stderr, "im here i %d %s %s:%d\n", i, agp->var_namelist[i],__FILE__,__LINE__);
             futils_cstr_to_fstr( agp->var_namelist[i], (char *)vnamelist+i*vnamelist_len, vnamelist_len);
+fprintf(stderr, "im here %s:%d\n", __FILE__,__LINE__);
         } 
+fprintf(stderr, "im here %s:%d\n", __FILE__,__LINE__);
         for (i=0;i<agp->attrs_count;i++) {
+fprintf(stderr, "im here %s:%d\n", __FILE__,__LINE__);
             futils_cstr_to_fstr( agp->attr_namelist[i], (char *)anamelist+i*anamelist_len, anamelist_len);
         } 
+fprintf(stderr, "im here %s:%d\n", __FILE__,__LINE__);
         *timestep = agp->timestep;
         *lasttimestep = agp->lasttimestep;
         *err = 0;
     } else {
         *err = 1;
     }
+fprintf(stderr, "im here %s:%d\n", __FILE__,__LINE__);
 }
 
 void FC_FUNC_(adios_inq_var, ADIOS_INQ_VAR) 

@@ -4875,6 +4875,7 @@ const char * adios_file_mode_to_string (int mode)
     return buf;
 }
 
+#if 1
 //////////////////////////////////////////////////////////////////////////////
 // Queue management code intended for adaptive API use
 //////////////////////////////////////////////////////////////////////////////
@@ -4981,3 +4982,4 @@ int queue_dequeue (Queue * queue, void ** data)
 {
     return list_rem_next (queue, NULL, data);
 }
+#endif

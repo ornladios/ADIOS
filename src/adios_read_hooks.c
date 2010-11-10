@@ -48,6 +48,10 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
         ASSIGN_FNS(dimes,ADIOS_READ_METHOD_DIMES)
 #endif
 
+#if NO_DATATAP == 0 && !defined(_NOMPI)
+        ASSIGN_FNS(datatap,ADIOS_READ_METHOD_DATATAP)
+#endif
+
 #if HAVE_PHDF5
         //ASSIGN_FNS(hdf5,ADIOS_READ_METHOD_HDF5)
 #endif

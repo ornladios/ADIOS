@@ -39,7 +39,7 @@ void adios_read_##a##_reset_dimension_order (ADIOS_FILE *fp, int is_fortran); \
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-#define ADIOS_READ_METHOD_COUNT 4
+#define ADIOS_READ_METHOD_COUNT 5
 
 // forward declare the functions (or dummies for internals use)
 FORWARD_DECLARE(bp)
@@ -49,6 +49,9 @@ FORWARD_DECLARE(dart)
 #endif
 #if HAVE_DIMES
 FORWARD_DECLARE(dimes)
+#endif
+#if NO_DATATAP == 0
+FORWARD_DECLARE(datatap)
 #endif
 
 
