@@ -31,7 +31,13 @@ enum adios_opcode {
     ADIOS_END_ITER_OP,
     ADIOS_START_CALC_OP,
     ADIOS_STOP_CALC_OP,
-    ADIOS_CLOSE_OP
+    ADIOS_CLOSE_OP,
+    ADIOS_FINALIZE_OP,
+
+    ADIOS_READ_FOPEN_OP,
+    ADIOS_READ_FCLOSE_OP,
+    ADIOS_READ_GET_VARTYPE_SIZE_OP,
+    ADIOS_READ_READ_VAR_OP
 };
 
 
@@ -64,6 +70,7 @@ const ADIOS_DIM_MAX = 16;
  * Argument structure for adios_open
  */
 struct adios_open_args {
+    string          client_id<ADIOS_PATH_MAX>;
     string          gname<ADIOS_PATH_MAX>;
     string          fname<ADIOS_PATH_MAX>;
     adios_open_mode mode;
@@ -103,7 +110,8 @@ struct adios_read_args {
     uint64_t max_read;
     uint16_t is_scalar;
     struct adios_var offsets<ADIOS_DIM_MAX>;
-    struct adios_var dims<ADIOS_DIM_MAX>;
+    struct adios_var ldims<ADIOS_DIM_MAX>;
+    struct adios_var gdims<ADIOS_DIM_MAX>;
 };
 
 /**
@@ -125,7 +133,8 @@ struct adios_write_args {
     uint16_t is_scalar;
     int64_t  writer_rank;
     struct adios_var offsets<ADIOS_DIM_MAX>;
-    struct adios_var dims<ADIOS_DIM_MAX>;
+    struct adios_var ldims<ADIOS_DIM_MAX>;
+    struct adios_var gdims<ADIOS_DIM_MAX>;
 };
 
 /**
@@ -162,4 +171,80 @@ struct adios_stop_calc_args {
 struct adios_close_args {
     string  fname<ADIOS_PATH_MAX>;
     int64_t fd;
+};
+
+/**
+ * Marshalled arguments for adios_finalize
+ */
+struct adios_finalize_args {
+    string client_id<ADIOS_PATH_MAX>;
+};
+
+
+/**
+ * Argument structure for adios_read_fopen
+ */
+struct adios_read_fopen_args {
+    string client_id<ADIOS_PATH_MAX>;
+    string gname<ADIOS_PATH_MAX>;
+    string fname<ADIOS_PATH_MAX>;
+    uint64_t requested_timestep;
+};
+
+/**
+ * Structure for adios_read_fopen result
+ */
+struct adios_read_fopen_res {
+    int64_t fd;
+};
+
+/**
+ * Marshaled arguments for adios_read
+ */
+struct adios_read_read_var_args {
+    int64_t  fd;
+    string   client_id<ADIOS_PATH_MAX>;
+    uint64_t open_timestep;
+    string   vpath<ADIOS_PATH_MAX>;
+    string   vname<ADIOS_PATH_MAX>;
+    uint64_t max_read;
+    uint16_t is_scalar;
+
+    uint64_t offsets[3];
+    uint64_t counts[3];
+};
+
+/**
+ * Marshaled arguments for adios_read result
+ */
+struct adios_read_read_var_res {
+    uint64_t bytes_read;
+};
+
+/**
+ * Marshaled arguments for adios_read
+ */
+struct adios_read_get_vartype_size_args {
+    int64_t  fd;
+    string   client_id<ADIOS_PATH_MAX>;
+    uint64_t open_timestep;
+    string   vpath<ADIOS_PATH_MAX>;
+    string   vname<ADIOS_PATH_MAX>;
+};
+
+/**
+ * Marshaled arguments for adios_read result
+ */
+struct adios_read_get_vartype_size_res {
+    uint64_t vartype_size;
+};
+
+/**
+ * Marshalled arguments for adios_fclose
+ */
+struct adios_read_fclose_args {
+    int64_t  fd;
+    uint64_t open_timestep;
+    string   client_id<ADIOS_PATH_MAX>;
+    string   fname<ADIOS_PATH_MAX>;
 };
