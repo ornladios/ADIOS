@@ -20,7 +20,7 @@ ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C])])
 AC_LANG(C++)
 ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C++])])
 
-AC_ARG_ENABLE(fortran, 
+AC_ARG_ENABLE(fortran,
     [AS_HELP_STRING([--disable-fortran],[disable Fortran test programs in ADIOS.])])
 AM_CONDITIONAL([BUILD_FORTRAN], [test "x$enable_fortran" != "xno"])
 
@@ -71,8 +71,8 @@ AC_DATATAP
 AC_LANG(C)
 
 
-AC_ARG_ENABLE(research-transports, 
-    [AS_HELP_STRING([--enable-research-transports], 
+AC_ARG_ENABLE(research-transports,
+    [AS_HELP_STRING([--enable-research-transports],
         [Enable building the various research transports. Default is not to build these as they are not part of the base distribution.])])
 AM_CONDITIONAL([RESEARCH_TRANSPORTS], [test "x$enable_research_transports" == "xyes"])
 
@@ -80,7 +80,7 @@ AC_LANG(C)
 
 AM_CONDITIONAL([HAVE_DATATAP], [test x$datatap != xdisable])
 
-AC_ARG_ENABLE(write, 
+AC_ARG_ENABLE(write,
     [AS_HELP_STRING([--disable-write],[disable building the write methods in ADIOS. Must be used on MacOSX])])
 AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
 
@@ -120,7 +120,7 @@ fi
 dnl Generate flags for adios lib creation which depends on the packages we found
 dnl ADIOSLIB_* for compiling libadios.a and libadiosf.a, and linking codes with those
 dnl ADIOSLIB_SEQ_* for codes using libadios_internal_nompi.a (like bp2ncd, bp2h5, bpdump etc)
-dnl ADIOSREADLIB_* for codes using libadiosread.a, libadiosreadf.a, libadiosread_nompi.a 
+dnl ADIOSREADLIB_* for codes using libadiosread.a, libadiosreadf.a, libadiosread_nompi.a
 dnl adios_config will contain flags for users' code linking based on these flags
 dnl EXTRA flags are used for compiling adios stuff, which need not go into adios_config for user codes
 ADIOSLIB_EXTRA_CPPFLAGS="-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE"
@@ -132,14 +132,14 @@ ADIOSLIB_SEQ_CPPFLAGS="-D_NOMPI ${MXML_CPPFLAGS}"
 ADIOSLIB_SEQ_CFLAGS=
 ADIOSLIB_SEQ_LDFLAGS="${MXML_LDFLAGS}"
 ADIOSLIB_SEQ_LDADD="-lm ${MXML_LIBS}"
-ADIOSREADLIB_CPPFLAGS=""
+ADIOSREADLIB_CPPFLAGS="${MXML_CPPFLAGS}"
 ADIOSREADLIB_CFLAGS=
-ADIOSREADLIB_LDFLAGS=
-ADIOSREADLIB_LDADD="-lm"
-ADIOSREADLIB_SEQ_CPPFLAGS="-D_NOMPI"
+ADIOSREADLIB_LDFLAGS="${MXML_LDFLAGS}"
+ADIOSREADLIB_LDADD="-lm ${MXML_LIBS}"
+ADIOSREADLIB_SEQ_CPPFLAGS="-D_NOMPI ${MXML_CPPFLAGS}"
 ADIOSREADLIB_SEQ_CFLAGS=
-ADIOSREADLIB_SEQ_LDFLAGS=
-ADIOSREADLIB_SEQ_LDADD="-lm"
+ADIOSREADLIB_SEQ_LDFLAGS="${MXML_LDFLAGS}"
+ADIOSREADLIB_SEQ_LDADD="-lm ${MXML_LIBS}"
 if test "x${datatap}" != "xdisable"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${DT_CPPFLAGS}"
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${DT_CFLAGS}"
@@ -179,6 +179,14 @@ if test -z "${HAVE_NSSI_TRUE}"; then
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${NSSI_CFLAGS}"
     ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${NSSI_LDFLAGS}"
     ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${NSSI_LIBS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${NSSI_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${NSSI_CFLAGS}"
+    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${NSSI_LDFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${NSSI_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${NSSI_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${NSSI_CFLAGS}"
+    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${NSSI_LDFLAGS}"
+    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${NSSI_LIBS}"
 fi
 if test -z "${HAVE_NC4PAR_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${NC4PAR_CPPFLAGS}"
@@ -319,7 +327,7 @@ echo "      - MPIFC   = $MPIFC";
 echo "      - MPILIBS = $MPILIBS";
 echo
 
-if test "x$enable_research_transports" == "xyes"; then 
+if test "x$enable_research_transports" == "xyes"; then
         echo "  - Research Transports Included";
 
 else
@@ -345,7 +353,7 @@ if test -z "${HAVE_PORTALS_TRUE}"; then
         echo "      - PORTALS_LIBS = $PORTALS_LIBS";
         echo
 else
-	echo "  - No Portals"
+    echo "  - No Portals"
 fi
 
 if test -z "${HAVE_INFINIBAND_TRUE}"; then
@@ -356,7 +364,7 @@ if test -z "${HAVE_INFINIBAND_TRUE}"; then
         echo "      - INFINIBAND_LIBS = $INFINIBAND_LIBS";
         echo
 else
-	echo "  - No InfiniBand"
+    echo "  - No InfiniBand"
 fi
 
 dnl if test -z "${HAVE_GENGETOPT_TRUE}"; then
@@ -372,12 +380,12 @@ dnl fi
 
 if test "x${datatap}" != "xdisable"; then
         echo "  - DataTap with interconnect: $datatap";
-	echo "	   - DT_CFLAGS     = $DT_CFLAGS";
-	echo "	   - DT_CPPFLAGS   = $DT_CPPFLAGS";
-	echo "	   - DT_LDFLAGS    = $DT_LDFLAGS";
-	echo "	   - DT_LIBS       = $DT_LIBS";
+    echo "	   - DT_CFLAGS     = $DT_CFLAGS";
+    echo "	   - DT_CPPFLAGS   = $DT_CPPFLAGS";
+    echo "	   - DT_LDFLAGS    = $DT_LDFLAGS";
+    echo "	   - DT_LIBS       = $DT_LIBS";
         echo
-else	
+else
         echo "  - No DataTap transport";
 fi
 
@@ -389,7 +397,7 @@ if test -z "${HAVE_DART_TRUE}"; then
         echo "      - DART_LIBS = $DART_LIBS";
         echo
 else
-	echo "  - No DART to build DART transport method"
+    echo "  - No DART to build DART transport method"
 fi
 
 if test -z "${HAVE_DIMES_TRUE}"; then
@@ -401,7 +409,7 @@ if test -z "${HAVE_DIMES_TRUE}"; then
         echo
 else
         echo "  - No DIMES to build DIMES transport method"
-fi  
+fi
 
 if test -z "${HAVE_PHDF5_TRUE}"; then
         echo "  - PHDF5";
@@ -411,7 +419,7 @@ if test -z "${HAVE_PHDF5_TRUE}"; then
         echo "      - PHDF5_LIBS = $PHDF5_LIBS";
         echo
 else
-	echo "  - No PHDF5"
+    echo "  - No PHDF5"
 fi
 
 if test -z "${HAVE_HDF5_TRUE}"; then
@@ -422,7 +430,7 @@ if test -z "${HAVE_HDF5_TRUE}"; then
         echo "      - HDF5_LIBS = $HDF5_LIBS";
         echo
 else
-	echo "  - No HDF5"
+    echo "  - No HDF5"
 fi
 
 if test -z "${HAVE_NC4PAR_TRUE}"; then
@@ -433,7 +441,7 @@ if test -z "${HAVE_NC4PAR_TRUE}"; then
         echo "      - NC4PAR_LIBS = $NC4PAR_LIBS";
         echo
 else
-	echo "  - No NETCDF 4 Parallel"
+    echo "  - No NETCDF 4 Parallel"
 fi
 
 if test -z "${HAVE_NETCDF_TRUE}"; then
@@ -444,7 +452,7 @@ if test -z "${HAVE_NETCDF_TRUE}"; then
         echo "      - NETCDF_LIBS = $NETCDF_LIBS";
         echo
 else
-	echo "  - No NETCDF"
+    echo "  - No NETCDF"
 fi
 
 if test -z "${HAVE_NSSI_TRUE}"; then
@@ -455,5 +463,5 @@ if test -z "${HAVE_NSSI_TRUE}"; then
         echo "      - NSSI_LIBS = $NSSI_LIBS";
         echo
 else
-	echo "  - No NSSI"
+    echo "  - No NSSI"
 fi
