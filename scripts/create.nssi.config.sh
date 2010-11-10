@@ -5,6 +5,13 @@ SERVER_CONTACT_INFO=$1 ; shift
 
 CONFIG_FRAG=/tmp/config.frag.$PBS_JOBID
 
+while [ ! -s ${SERVER_CONTACT_INFO} ]; do
+  echo "waiting for contact info.  retry in 1 second..."
+  sleep 1
+done
+ls -l ${SERVER_CONTACT_INFO}
+
+
 cat >$CONFIG_FRAG<<HERE
 <?xml version="1.0"?>
 <nssi-config>
