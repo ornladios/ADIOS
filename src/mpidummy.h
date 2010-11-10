@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -35,7 +35,9 @@ typedef int MPI_Fint;
 #define MPI_BYTE                    1          /* I need the size of the type here */
 #define MPI_INFO_NULL               NULL
 
+#define MPI_COMM_NULL               0
 #define MPI_COMM_WORLD              1
+#define MPI_COMM_SELF               2
 
 #define MPI_INT                     1
 
