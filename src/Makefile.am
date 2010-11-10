@@ -5,6 +5,7 @@ METASOURCES=AUTO
 
 bin_PROGRAMS=
 if HAVE_NSSI
+
 bin_PROGRAMS+=nssi-staging-server
 
 nssi_staging_server_SOURCES = nssi_staging_server.cpp aggregation.cpp
@@ -14,10 +15,29 @@ nssi_staging_server_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 nssi_staging_server_LDADD = $(top_builddir)/src/libadios.a
 nssi_staging_server_LDADD += $(ADIOSLIB_LDADD) $(NSSI_SERVER_LIBS)
 
+bin_PROGRAMS+=nssi-coupling-server
+
+nssi_coupling_server_SOURCES = nssi_coupling_server.cpp
+nssi_coupling_server_CFLAGS=$(ADIOSLIB_CFLAGS)
+nssi_coupling_server_CPPFLAGS=$(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL # -DUSE_TIMERS
+nssi_coupling_server_LDFLAGS = $(ADIOSLIB_LDFLAGS) 
+nssi_coupling_server_LDADD = $(top_builddir)/src/libadios.a
+nssi_coupling_server_LDADD += $(ADIOSLIB_LDADD) $(NSSI_SERVER_LIBS)
+
 endif # HAVE_NSSI
 
 include_HEADERS=
 lib_LIBRARIES=
+
+libadiosread_a_CPPFLAGS=
+libadiosreadf_a_CPPFLAGS=
+libadiosread_nompi_a_CPPFLAGS=
+libadiosreadf_nompi_a_CPPFLAGS=
+
+libadiosread_a_CFLAGS= 
+libadiosreadf_a_CFLAGS= 
+libadiosread_nompi_a_CFLAGS= 
+libadiosreadf_nompi_a_CFLAGS= 
 
 if BUILD_WRITE
 lib_LIBRARIES += libadios.a
@@ -71,7 +91,7 @@ endif # BUILD_FORTRAN
 
 libadios_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
 libadios_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
-libadiosf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
+libadiosf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
 libadiosf_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
 
 if HAVE_DART
@@ -116,12 +136,12 @@ endif
 if HAVE_NSSI
 dist_libadios_a_SOURCES = adios_nssi_args.x
 nodist_libadios_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
-libadios_a_SOURCES += adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
+libadios_a_SOURCES += adios_nssi_config.c adios_nssi.c adios_nssi_filter.c read_nssi.c
 libadios_a_CPPFLAGS += -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 if BUILD_FORTRAN
 nodist_libadiosf_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 dist_libadiosf_a_SOURCES = adios_nssi_args.x
-libadiosf_a_SOURCES += adios_nssi_config.c adios_nssi.c adios_nssi_filter.c
+libadiosf_a_SOURCES += adios_nssi_config.c adios_nssi.c adios_nssi_filter.c read_nssi.c
 libadiosf_a_CPPFLAGS += -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 endif
 
@@ -198,7 +218,15 @@ endif
 if HAVE_DIMES
 libadiosread_a_SOURCES += read_dimes.c
 endif
-libadiosread_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
+if HAVE_NSSI
+dist_libadiosread_a_SOURCES = adios_nssi_args.x
+nodist_libadiosread_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
+libadiosread_a_SOURCES += adios_nssi_config.c read_nssi.c
+libadiosread_a_CPPFLAGS += -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
+libadiosread_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
+libadiosread_a_CFLAGS   += $(ADIOSLIB_CFLAGS) 
+endif
+libadiosread_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 
 if BUILD_FORTRAN
 lib_LIBRARIES += libadiosreadf.a
@@ -219,8 +247,16 @@ endif
 if HAVE_DIMES
 libadiosreadf_a_SOURCES += read_dimes.c
 endif
+if HAVE_NSSI
+dist_libadiosreadf_a_SOURCES = adios_nssi_args.x
+nodist_libadiosreadf_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
+libadiosreadf_a_SOURCES += adios_nssi_config.c read_nssi.c
+libadiosreadf_a_CPPFLAGS += -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
+libadiosreadf_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
+libadiosreadf_a_CFLAGS   += $(ADIOSLIB_CFLAGS) 
+endif
 
-libadiosreadf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
+libadiosreadf_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 
 # adiosf_read.mod is not really usable, 
 # so it is not used and installed right now
@@ -250,6 +286,14 @@ endif
 if HAVE_DIMES
 libadiosread_nompi_a_SOURCES += read_dimes.c
 endif
+if HAVE_NSSI
+dist_libadiosread_nompi_a_SOURCES = adios_nssi_args.x
+nodist_libadiosread_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
+libadiosread_nompi_a_SOURCES += adios_nssi_config.c read_nssi.c
+libadiosread_nompi_a_CPPFLAGS += -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
+libadiosread_nompi_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
+libadiosread_nompi_a_CFLAGS   += $(ADIOSLIB_CFLAGS) 
+endif
 # Note: utils/adios_lint needs to link with adios_internals_mxml.o which depends
 #       on adios_internals.c, buffer.c and adios_transport_hooks.c. 
 #       We put these objects in libadiosread_nompi
@@ -273,6 +317,14 @@ endif
 if HAVE_DIMES
 libadiosreadf_nompi_a_SOURCES += read_dimes.c
 endif
+if HAVE_NSSI
+dist_libadiosreadf_nompi_a_SOURCES = adios_nssi_args.x
+nodist_libadiosreadf_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
+libadiosreadf_nompi_a_SOURCES += adios_nssi_config.c read_nssi.c
+libadiosreadf_nompi_a_CPPFLAGS += -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
+libadiosreadf_nompi_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
+libadiosreadf_nompi_a_CFLAGS   += $(ADIOSLIB_CFLAGS) 
+endif
 endif
 
 noinst_LIBRARIES = libadios_internal_nompi.a
@@ -287,8 +339,8 @@ libadios_internal_nompi_a_SOURCES = mpidummy.c \
                                     adios_internals_mxml.c
 
 
-libadiosread_nompi_a_CPPFLAGS = -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
-libadiosreadf_nompi_a_CPPFLAGS = -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
+libadiosread_nompi_a_CPPFLAGS  += -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
+libadiosreadf_nompi_a_CPPFLAGS += -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 libadios_internal_nompi_a_CPPFLAGS = -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS)
 #Note: -DNOMPI chokes IBM's bgxlf compiler but it can pass -D_NOMPI. 
 
