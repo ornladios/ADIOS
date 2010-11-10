@@ -24,6 +24,7 @@
 #include "adios_nssi_args.h"
 #include "adios_nssi_config.h"
 #include "nssi_logger.h"
+#include "ptl_uuid.h"
 #endif
 
 #include "io_timer.h"
@@ -63,6 +64,7 @@ struct adios_nssi_method_data_struct
 {
     nssi_request start_calc_req;
     int          has_outstanding_req;
+    int          default_svc_index;  /* service to use when there is no open file (eg. finalize) */
 };
 
 /* Need a struct to encapsulate var offset info.
@@ -115,6 +117,7 @@ static List open_file_list;
 ///////////////////////////
 static int adios_nssi_initialized = 0;
 
+static char *job_id=NULL;
 static int global_rank=-1;
 static int global_size=-1;
 static nssi_service *svcs;
@@ -562,7 +565,7 @@ static void create_offset_list_for_var(
     }
 }
 
-static int gen_dim_list(
+static int gen_ldim_list(
         struct adios_group_struct *group,
         struct adios_var_struct *pvar_root,
         struct adios_attribute_struct *patt_root)
@@ -600,7 +603,7 @@ static int gen_dim_list(
     }
 }
 
-static void create_dim_list_for_var(
+static void create_ldim_list_for_var(
         struct adios_var_struct *v,
         struct adios_group_struct *group,
         struct adios_var_struct *pvar_root,
@@ -662,6 +665,68 @@ static void create_dim_list_for_var(
     }
 }
 
+static void create_gdim_list_for_var(
+        struct adios_var_struct *v,
+        struct adios_group_struct *group,
+        struct adios_var_struct *pvar_root,
+        struct adios_attribute_struct *patt_root,
+        u_int *dim_count,
+        struct adios_var **dim_values)
+{
+    struct adios_dimension_struct *dims;
+    char dim_name[255];
+
+    *dim_count=0;
+    *dim_values=NULL;
+
+    if ((v) && (v->dimensions)) {
+        int global_dim_count=0;
+        dims=v->dimensions;
+        while (dims) {
+            if (dims->dimension.time_index == adios_flag_yes) {
+                dims = dims->next;
+                continue;
+            }
+            parse_dimension_name(group, pvar_root, patt_root, &dims->global_dimension, dim_name);
+            global_dim_count++;
+            dims = dims->next;
+        }
+
+        *dim_count=global_dim_count;
+        *dim_values=calloc(global_dim_count, sizeof(struct adios_var));
+
+        dims=v->dimensions;
+        int dim_idx=0;
+        while (dims) {
+            if (dims->dimension.time_index == adios_flag_yes) {
+                dims = dims->next;
+                continue;
+            }
+            parse_dimension_name(group, pvar_root, patt_root, &dims->global_dimension, dim_name);
+            if (dim_name[0] == '\0') {
+                sprintf(dim_name, "%s_%s_dim_%d", /*v->path*/"", v->name, dim_idx);
+                (*dim_values)[dim_idx].is_anonymous=TRUE;
+            }
+            (*dim_values)[dim_idx].vpath=strdup(v->path);
+            (*dim_values)[dim_idx].vname=strdup(dim_name);
+//            struct var_dim *vd=var_dim_find("", dim_name);
+//            memcpy(&(args->dims.dims_val[dim_idx].vdata), vd->dvalue, vd->dsize);
+//            args->dims.dims_val[dim_idx].vdatasize=vd->dsize;
+            uint64_t value=0;
+            parse_dimension_size(group, pvar_root, patt_root, &dims->global_dimension, &value);
+            memcpy(&((*dim_values)[dim_idx].vdata), &value, 4);
+            (*dim_values)[dim_idx].vdatasize=4;
+            if (DEBUG>3) printf("create: dim_name(%s) dvalue(%lu)\n", dim_name, value);
+            if (global_rank==0) {
+                if (DEBUG>3) printf(":o(%d)", value);
+            }
+
+            dim_idx++;
+            dims = dims->next;
+        }
+    }
+}
+
 static int read_var(
         struct adios_nssi_file_data_struct *file_data,
         struct adios_group_struct *group,
@@ -675,7 +740,8 @@ static int read_var(
     adios_read_args args;
     adios_read_res  res;
 
-    memset(&args, 0, sizeof(adios_read_args));
+    memset(&args, 0, sizeof(args));
+    memset(&res, 0, sizeof(res));
     args.fd    = file_data->fd;
     args.max_read = pvar->data_size;
     args.vpath = strdup(pvar->path);
@@ -690,8 +756,10 @@ static int read_var(
 
     args.offsets.offsets_len=0;
     args.offsets.offsets_val=NULL;
-    args.dims.dims_len=0;
-    args.dims.dims_val=NULL;
+    args.ldims.ldims_len=0;
+    args.ldims.ldims_val=NULL;
+    args.gdims.gdims_len=0;
+    args.gdims.gdims_val=NULL;
     if (pvar->dimensions) {
         create_offset_list_for_var(
                  pvar,
@@ -700,13 +768,20 @@ static int read_var(
                  group->attributes,
                  &args.offsets.offsets_len,
                  &args.offsets.offsets_val);
-        create_dim_list_for_var(
+        create_ldim_list_for_var(
                  pvar,
                  group,
                  group->vars,
                  group->attributes,
-                 &args.dims.dims_len,
-                 &args.dims.dims_val);
+                 &args.ldims.ldims_len,
+                 &args.ldims.ldims_val);
+        create_gdim_list_for_var(
+                 pvar,
+                 group,
+                 group->vars,
+                 group->attributes,
+                 &args.gdims.gdims_len,
+                 &args.gdims.gdims_val);
      }
 
     Func_Timer("ADIOS_READ_OP",
@@ -729,11 +804,16 @@ static int read_var(
             free(args.offsets.offsets_val[i].vname);
         }
         free(args.offsets.offsets_val);
-        for (i=0;i<args.dims.dims_len;i++) {
-            free(args.dims.dims_val[i].vpath);
-            free(args.dims.dims_val[i].vname);
+        for (i=0;i<args.ldims.ldims_len;i++) {
+            free(args.ldims.ldims_val[i].vpath);
+            free(args.ldims.ldims_val[i].vname);
         }
-        free(args.dims.dims_val);
+        free(args.ldims.ldims_val);
+        for (i=0;i<args.gdims.gdims_len;i++) {
+            free(args.gdims.gdims_val[i].vpath);
+            free(args.gdims.gdims_val[i].vname);
+        }
+        free(args.gdims.gdims_val);
     }
 
     return return_code;
@@ -756,7 +836,8 @@ static int write_var(
 
 //    var_offset_printall();
 
-    memset(&args, 0, sizeof(adios_write_args));
+    memset(&args, 0, sizeof(args));
+    memset(&res, 0, sizeof(res));
     args.fd    = file_data->fd;
     args.vpath = strdup(pvar->path);
     args.vname = strdup(pvar->name);
@@ -770,8 +851,10 @@ static int write_var(
     args.writer_rank=file_data->rank;
     args.offsets.offsets_len=0;
     args.offsets.offsets_val=NULL;
-    args.dims.dims_len=0;
-    args.dims.dims_val=NULL;
+    args.ldims.ldims_len=0;
+    args.ldims.ldims_val=NULL;
+    args.gdims.gdims_len=0;
+    args.gdims.gdims_val=NULL;
     if (pvar->dimensions) {
         create_offset_list_for_var(
                  pvar,
@@ -780,13 +863,20 @@ static int write_var(
                  group->attributes,
                  &args.offsets.offsets_len,
                  &args.offsets.offsets_val);
-        create_dim_list_for_var(
+        create_ldim_list_for_var(
                  pvar,
                  group,
                  group->vars,
                  group->attributes,
-                 &args.dims.dims_len,
-                 &args.dims.dims_val);
+                 &args.ldims.ldims_len,
+                 &args.ldims.ldims_val);
+        create_gdim_list_for_var(
+                 pvar,
+                 group,
+                 group->vars,
+                 group->attributes,
+                 &args.gdims.gdims_len,
+                 &args.gdims.gdims_val);
      }
 
     Func_Timer("ADIOS_WRITE_OP",
@@ -814,11 +904,16 @@ static int write_var(
             free(args.offsets.offsets_val[i].vname);
         }
         free(args.offsets.offsets_val);
-        for (i=0;i<args.dims.dims_len;i++) {
-            free(args.dims.dims_val[i].vpath);
-            free(args.dims.dims_val[i].vname);
+        for (i=0;i<args.ldims.ldims_len;i++) {
+            free(args.ldims.ldims_val[i].vpath);
+            free(args.ldims.ldims_val[i].vname);
         }
-        free(args.dims.dims_val);
+        free(args.ldims.ldims_val);
+        for (i=0;i<args.gdims.gdims_len;i++) {
+            free(args.gdims.gdims_val[i].vpath);
+            free(args.gdims.gdims_val[i].vname);
+        }
+        free(args.gdims.gdims_val);
     }
 
     return return_code;
@@ -889,6 +984,7 @@ void adios_nssi_init(
     NSSI_REGISTER_CLIENT_STUB(ADIOS_START_CALC_OP, adios_start_calc_args, void, void);
     NSSI_REGISTER_CLIENT_STUB(ADIOS_STOP_CALC_OP, adios_stop_calc_args, void, void);
     NSSI_REGISTER_CLIENT_STUB(ADIOS_CLOSE_OP, adios_close_args, void, void);
+    NSSI_REGISTER_CLIENT_STUB(ADIOS_FINALIZE_OP, adios_finalize_args, void, void);
 
     list_init(&open_file_list, open_file_free);
     list_init(&var_offset_list, var_offset_free);
@@ -896,6 +992,7 @@ void adios_nssi_init(
 
     private = malloc(sizeof(struct adios_nssi_method_data_struct));
     private->has_outstanding_req=FALSE;
+    private->default_svc_index=-1;
     method->method_data = private;
 
     parse_nssi_config(getenv("ADIOS_NSSI_CONFIG_FILE"), &nssi_cfg);
@@ -919,13 +1016,14 @@ enum ADIOS_FLAG adios_nssi_should_buffer(
 
     of=open_file_find(method->base_path, f->name);
     if (of == NULL) {
-        fprintf(stderr, "file is not open.  FAIL.");
+        fprintf(stderr, "file is not open.  FAIL.\n");
         return adios_flag_no;
     }
     file_data=of->file_data;
 
     if (DEBUG>3) printf("rank(%d) enter adios_nssi_should_buffer (write_size_bytes=%lu)\n", global_rank, f->write_size_bytes);
 
+    memset(&args, 0, sizeof(args));
     args.fd = file_data->fd;
     MPI_Reduce(
             &f->write_size_bytes,
@@ -971,6 +1069,7 @@ int adios_nssi_open(
 
     struct open_file *of=NULL;
     struct adios_nssi_file_data_struct *file_data=NULL;
+    struct adios_nssi_method_data_struct *private=(struct adios_nssi_method_data_struct *)method->method_data;
 
     if (DEBUG>3) printf("rank(%d) enter adios_nssi_open\n", global_rank);
 
@@ -980,7 +1079,7 @@ int adios_nssi_open(
         file_data->fd         = -1;
         file_data->group_comm = MPI_COMM_NULL;
         file_data->size       = 0;
-        file_data->rank       = -1;
+        file_data->rank       = 0;
 
         file_data->comm = NULL;
 
@@ -1036,6 +1135,9 @@ int adios_nssi_open(
             file_data->svc_index = file_data->rank/(file_data->size/nssi_cfg.num_servers);
         }
     }
+    if (private->default_svc_index == -1) {
+        private->default_svc_index=file_data->svc_index;
+    }
 
     /* create a new communicator for just those clients, who share a default service. */
     if (DEBUG>3) printf("global_rank(%d): adios_nssi_open: before MPI_Comm_split\n", global_rank);
@@ -1067,16 +1169,61 @@ int adios_nssi_open(
     }
 
 
+    if (job_id==NULL) {
+        if (file_data->rank==0) {
+            job_id = getenv("PBS_JOBID");
+            if (job_id == NULL) {
+                fprintf(stderr, "adios_nssi_open: unable to determine job id.  defaulting id to \"UNKNOWN_JOB_ID\".\n");
+                job_id = strdup("UNKNOWN_JOB_ID");
+            } else {
+                int len=strlen(job_id)+36+1;
+                job_id=calloc(len,1);
+
+                uuid_t *uuid;
+                char *uuid_str=NULL;
+                uuid_create(&uuid);
+                uuid_make(uuid, UUID_MAKE_V1);
+                uuid_export(uuid, UUID_FMT_STR, &uuid_str, NULL);
+                uuid_destroy(uuid);
+
+                sprintf(job_id, "%s.%s", getenv("PBS_JOBID"), uuid_str);
+
+                free(uuid_str);
+
+                MPI_Bcast (job_id, len, MPI_BYTE, 0, file_data->group_comm);
+            }
+        } else {
+            job_id = getenv("PBS_JOBID");
+            if (job_id == NULL) {
+                fprintf(stderr, "adios_nssi_open: unable to determine job id.  defaulting id to \"UNKNOWN_JOB_ID\".\n");
+                job_id = strdup("UNKNOWN_JOB_ID");
+            } else {
+                int len=strlen(job_id)+36+1;
+                job_id=calloc(len,1);
+
+                MPI_Bcast (job_id, len, MPI_BYTE, 0, file_data->group_comm);
+            }
+        }
+    }
+
+    fprintf(stderr, "adios_nssi_open: job_id=%s\n", job_id);
+
+
+
+
     gen_offset_list(
             f->group,
             f->group->vars,
             f->group->attributes);
-    gen_dim_list(
+    gen_ldim_list(
             f->group,
             f->group->vars,
             f->group->attributes);
     var_offset_printall();
 
+    memset(&args, 0, sizeof(args));
+    memset(&res, 0, sizeof(res));
+    args.client_id = strdup(job_id);
     args.fname = malloc(sizeof(char) * (strlen(method->base_path) + strlen(f->name) + 1));
     sprintf(args.fname, "%s%s", method->base_path, f->name);
     args.gname = strdup(method->group->name);
@@ -1143,6 +1290,7 @@ void adios_nssi_start_calculation(
 
         if (of->has_outstanding_req == FALSE) {
             if (file_data->collective_op_rank == 0) {
+                memset(&args, 0, sizeof(args));
                 args.fd = file_data->fd;
                 Func_Timer("ADIOS_START_CALC_OP",
                         rc = nssi_call_rpc(&svcs[file_data->svc_index],
@@ -1268,6 +1416,7 @@ void adios_nssi_stop_calculation(
         myrank=file_data->rank;
 
         if (file_data->collective_op_rank == 0) {
+            memset(&args, 0, sizeof(args));
             args.fd = file_data->fd;
             Func_Timer("ADIOS_STOP_CALC_OP",
                     rc = nssi_call_rpc_sync(&svcs[file_data->svc_index],
@@ -1408,7 +1557,6 @@ void adios_nssi_close(
     struct adios_attribute_struct * a = f->group->attributes;
     int myrank;
 
-    adios_start_calc_args start_calc_args;
     adios_close_args close_args;
 
     struct open_file *of=NULL;
@@ -1448,23 +1596,10 @@ void adios_nssi_close(
         }
     }
 
-//    if (file_data->collective_op_rank == 0) {
-//        start_calc_args.fd = file_data->fd;
-//        Func_Timer("ADIOS_START_CALC_OP",
-//                rc = nssi_call_rpc_sync(&svcs[file_data->svc_index],
-//                ADIOS_START_CALC_OP,
-//                &start_calc_args,
-//                NULL,
-//                0,
-//                NULL););
-//        if (rc != NSSI_OK) {
-//            //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
-//        }
-//    }
-
 //    // make sure all clients have finsihed I/O before closing
 //    MPI_Barrier(file_data->group_comm);
     if (file_data->collective_op_rank == 0) {
+        memset(&close_args, 0, sizeof(close_args));
         close_args.fname = malloc(sizeof(char) * (strlen(method->base_path) + strlen(f->name) + 1));
         sprintf(close_args.fname, "%s%s", method->base_path, f->name);
         close_args.fd = file_data->fd;
@@ -1500,62 +1635,31 @@ void adios_nssi_finalize(
 {
     int rc=NSSI_OK;
     int myrank;
+    adios_finalize_args finalize_args;
+    struct adios_nssi_method_data_struct *private=(struct adios_nssi_method_data_struct *)method->method_data;
 
     if (DEBUG>3) printf("rank(%d) enter adios_nssi_finalize\n", global_rank);
 
-//    adios_close_args close_args;
-//
-//    ListElmt *of_elmt;
-////    ListElmt *req_elmt;
-//    struct open_file *of=NULL;
-//    struct adios_nssi_file_data_struct *file_data=NULL;
-////    nssi_request *req;
-//
-//    of_elmt = list_head(&open_file_list);
-//    while(of_elmt) {
-//        of = list_data(of_elmt);
-//        if (of == NULL) {
-//            fprintf(stderr, "file is not open.  FAIL.");
-//            return;
-//        }
-//        file_data=of->file_data;
-//        myrank=file_data->rank;
-//
-////        req_elmt = list_head(&(of->outstanding_reqs));
-////        while(req_elmt) {
-////        	req = list_data(req_elmt);
-////        	if (req == NULL) {
-////        		fprintf(stderr, "file is not open.  FAIL.");
-////        		return;
-////        	}
-////
-////        	req_elmt = list_next(req_elmt);
-////        }
-//
-//        if (file_data->collective_op_rank == 0) {
-//            close_args.fname = malloc(sizeof(char) * (strlen(of->fpath) + strlen(of->fname) + 1));
-//            sprintf(close_args.fname, "%s%s", of->fpath, of->fname);
-//            close_args.fd = file_data->fd;
-//            Func_Timer("ADIOS_CLOSE_OP",
-//                    rc = nssi_call_rpc_sync(&svcs[file_data->svc_index],
-//                    ADIOS_CLOSE_OP,
-//                    &close_args,
-//                    NULL,
-//                    0,
-//                    NULL););
-//            if (rc != NSSI_OK) {
-//                //log_error(adios_nssi_debug_level, "unable to call remote adios_read");
-//            }
-//            free(close_args.fname);
-//        }
-//
-//        file_data->group_comm = MPI_COMM_NULL;
-//        file_data->fd = -1;
-//        file_data->rank = -1;
-//        file_data->size = 0;
-//
-//        of_elmt = list_next(of_elmt);
-//    }
+    if (global_rank == 0) {
+        if (job_id==NULL) {
+            if (DEBUG>2) fprintf(stderr, "adios_nssi_finalize - adios_nssi_open was never called.  skipping finalize.\n");
+        } else {
+            memset(&finalize_args, 0, sizeof(finalize_args));
+            finalize_args.client_id = strdup(job_id);
+            if (DEBUG>3) printf("rank(%d) sending ADIOS_FINALIZE_OP\n", myrank);
+            Func_Timer("ADIOS_FINALIZE_OP",
+                    rc = nssi_call_rpc_sync(&svcs[private->default_svc_index],
+                            ADIOS_FINALIZE_OP,
+                            &finalize_args,
+                            NULL,
+                            0,
+                            NULL););
+            if (rc != NSSI_OK) {
+                fprintf(stderr, "NSSI ERROR: ADIOS_FINALIZE_OP failed\n");
+            }
+            free(finalize_args.client_id);
+        }
+    }
 
     free_nssi_config(&nssi_cfg);
 
