@@ -24,7 +24,6 @@
 #include "adios_nssi_args.h"
 #include "adios_nssi_config.h"
 #include "nssi_logger.h"
-#include "ptl_uuid.h"
 #endif
 
 #include "io_timer.h"
@@ -1179,11 +1178,17 @@ int adios_nssi_open(
                 int len=strlen(job_id)+36+1;
                 job_id=calloc(len,1);
 
-                uuid_t *uuid;
+                struct uuid_st;
+                extern int uuid_create   (      struct uuid_st **_uuid);
+                extern int uuid_destroy  (      struct uuid_st  *_uuid);
+                extern int uuid_make     (      struct uuid_st  *_uuid, unsigned int _mode, ...);
+                extern int uuid_export   (const struct uuid_st  *_uuid, unsigned int _fmt,       void **_data_ptr, size_t *_data_len);
+
+                struct uuid_st *uuid;
                 char *uuid_str=NULL;
                 uuid_create(&uuid);
-                uuid_make(uuid, UUID_MAKE_V1);
-                uuid_export(uuid, UUID_FMT_STR, &uuid_str, NULL);
+                uuid_make(uuid, 1);
+                uuid_export(uuid, 1, &uuid_str, NULL);
                 uuid_destroy(uuid);
 
                 sprintf(job_id, "%s.%s", getenv("PBS_JOBID"), uuid_str);
