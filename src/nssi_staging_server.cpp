@@ -468,11 +468,11 @@ int nssi_staging_read_stub(
         Func_Timer("adios_set_path_var", adios_set_path_var(args->fd, args->offsets.offsets_val[i].vpath, args->offsets.offsets_val[i].vname););
         Func_Timer("adios_read", adios_read(args->fd, args->offsets.offsets_val[i].vname, odata, 8););
     }
-    for (int i=0;i<args->dims.dims_len;i++) {
+    for (int i=0;i<args->ldims.ldims_len;i++) {
         uint64_t *ddata=(uint64_t *)malloc(sizeof(uint8_t));
-        *ddata = args->dims.dims_val[i].vdata;
-        Func_Timer("adios_set_path_var", adios_set_path_var(args->fd, args->dims.dims_val[i].vpath, args->dims.dims_val[i].vname););
-        Func_Timer("adios_read", adios_read(args->fd, args->dims.dims_val[i].vname, ddata, 8););
+        *ddata = args->ldims.ldims_val[i].vdata;
+        Func_Timer("adios_set_path_var", adios_set_path_var(args->fd, args->ldims.ldims_val[i].vpath, args->ldims.ldims_val[i].vname););
+        Func_Timer("adios_read", adios_read(args->fd, args->ldims.ldims_val[i].vname, ddata, 8););
     }
 
     v=(char *)calloc(args->max_read, 1);
@@ -543,8 +543,8 @@ int nssi_staging_write_stub(
         chunk->atype = (enum ADIOS_DATATYPES)args->atype;
         chunk->len   = args->vsize;
         chunk->num_elements = 1;
-        for (int i=0;i<args->dims.dims_len;i++) {
-            chunk->num_elements *= args->dims.dims_val[i].vdata;
+        for (int i=0;i<args->ldims.ldims_len;i++) {
+            chunk->num_elements *= args->ldims.ldims_val[i].vdata;
         }
         chunk->offset_path = (char **)calloc(args->offsets.offsets_len, sizeof(char *));
         chunk->offset_name = (char **)calloc(args->offsets.offsets_len, sizeof(char *));
@@ -554,13 +554,13 @@ int nssi_staging_write_stub(
             chunk->offset_name[i] = strdup(args->offsets.offsets_val[i].vname);
             chunk->offset[i] = args->offsets.offsets_val[i].vdata;
         }
-        chunk->count_path = (char **)calloc(args->dims.dims_len, sizeof(char *));
-        chunk->count_name = (char **)calloc(args->dims.dims_len, sizeof(char *));
-        chunk->count  = (uint64_t *)calloc(args->dims.dims_len, sizeof(uint64_t));;
-        for (int i=0;i<args->dims.dims_len;i++) {
-            chunk->count_path[i] = strdup(args->dims.dims_val[i].vpath);
-            chunk->count_name[i] = strdup(args->dims.dims_val[i].vname);
-            chunk->count[i] = args->dims.dims_val[i].vdata;
+        chunk->count_path = (char **)calloc(args->ldims.ldims_len, sizeof(char *));
+        chunk->count_name = (char **)calloc(args->ldims.ldims_len, sizeof(char *));
+        chunk->count  = (uint64_t *)calloc(args->ldims.ldims_len, sizeof(uint64_t));;
+        for (int i=0;i<args->ldims.ldims_len;i++) {
+            chunk->count_path[i] = strdup(args->ldims.ldims_val[i].vpath);
+            chunk->count_name[i] = strdup(args->ldims.ldims_val[i].vname);
+            chunk->count[i] = args->ldims.ldims_val[i].vdata;
         }
         add_chunk(chunk);
 
@@ -645,6 +645,31 @@ int nssi_staging_end_iter_stub(
     return rc;
 }
 
+int nssi_staging_finalize_stub(
+        const unsigned long request_id,
+        const nssi_remote_pid *caller,
+        const adios_finalize_args *args,
+        const nssi_rma *data_addr,
+        const nssi_rma *res_addr)
+{
+    int rc = 0;
+
+    if (DEBUG>2) printf("myrank(%d): enter nssi_staging_finalize_stub(%s)\n", grank, args->client_id);
+
+    /*
+     *
+     * do nothing
+     *
+     */
+
+    /* send result to client */
+    rc = nssi_send_result(caller, request_id, rc, NULL, res_addr);
+
+    if (DEBUG>2) printf("myrank(%d): exit nssi_staging_finalize_stub(%s)\n", grank, args->client_id);
+
+    return rc;
+}
+
 /* -------- END SERVER-SIDE STUBS -------------- */
 
 int nssi_staging_server_init(const char *adios_config_file)
@@ -669,6 +694,7 @@ int nssi_staging_server_init(const char *adios_config_file)
     NSSI_REGISTER_SERVER_STUB(ADIOS_START_CALC_OP, nssi_staging_start_calc_stub, adios_start_calc_args, void);
     NSSI_REGISTER_SERVER_STUB(ADIOS_STOP_CALC_OP, nssi_staging_stop_calc_stub, adios_stop_calc_args, void);
     NSSI_REGISTER_SERVER_STUB(ADIOS_CLOSE_OP, nssi_staging_close_stub, adios_close_args, void);
+    NSSI_REGISTER_SERVER_STUB(ADIOS_FINALIZE_OP, nssi_staging_finalize_stub, adios_finalize_args, void);
 
     return 0;
 }
