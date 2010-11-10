@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -39,7 +39,7 @@ void adios_read_##a##_reset_dimension_order (ADIOS_FILE *fp, int is_fortran); \
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-#define ADIOS_READ_METHOD_COUNT 4
+#define ADIOS_READ_METHOD_COUNT 5
 
 // forward declare the functions (or dummies for internals use)
 FORWARD_DECLARE(bp)
@@ -50,25 +50,28 @@ FORWARD_DECLARE(dart)
 #if HAVE_DIMES
 FORWARD_DECLARE(dimes)
 #endif
+#if HAVE_NSSI
+FORWARD_DECLARE(nssi)
+#endif
 
 
-typedef int (* ADIOS_INIT_FN) (MPI_Comm comm); 
-typedef int (* ADIOS_FINALIZE_FN) (); 
-typedef ADIOS_FILE * (* ADIOS_FOPEN_FN) (const char * fname, MPI_Comm comm); 
-typedef int (* ADIOS_FCLOSE_FN) (ADIOS_FILE *fp); 
-typedef ADIOS_GROUP * (* ADIOS_GOPEN_FN) (ADIOS_FILE *fp, const char * grpname); 
-typedef ADIOS_GROUP * (* ADIOS_GOPEN_BYID_FN) (ADIOS_FILE *fp, int grpid); 
-typedef int (* ADIOS_GCLOSE_FN) (ADIOS_GROUP *gp); 
-typedef ADIOS_VARINFO * (* ADIOS_INQ_VAR_FN) (ADIOS_GROUP *gp, const char * varname); 
-typedef ADIOS_VARINFO * (* ADIOS_INQ_VAR_BYID_FN) (ADIOS_GROUP *gp, int varid); 
-typedef int64_t (* ADIOS_READ_VAR_FN) (ADIOS_GROUP * gp, const char * varname, const uint64_t * start, const uint64_t * count, void * data); 
-typedef int64_t (* ADIOS_READ_VAR_BYID_FN) (ADIOS_GROUP * gp, int varid, const uint64_t * start, const uint64_t * count, void * data); 
-typedef int (* ADIOS_GET_ATTR_FN) (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type, int * size, void ** data); 
-typedef int (* ADIOS_GET_ATTR_BYID_FN) (ADIOS_GROUP * gp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data); 
-typedef void (* ADIOS_RESET_DIMENSION_ORDER_FN) (); 
+typedef int (* ADIOS_INIT_FN) (MPI_Comm comm);
+typedef int (* ADIOS_FINALIZE_FN) ();
+typedef ADIOS_FILE * (* ADIOS_FOPEN_FN) (const char * fname, MPI_Comm comm);
+typedef int (* ADIOS_FCLOSE_FN) (ADIOS_FILE *fp);
+typedef ADIOS_GROUP * (* ADIOS_GOPEN_FN) (ADIOS_FILE *fp, const char * grpname);
+typedef ADIOS_GROUP * (* ADIOS_GOPEN_BYID_FN) (ADIOS_FILE *fp, int grpid);
+typedef int (* ADIOS_GCLOSE_FN) (ADIOS_GROUP *gp);
+typedef ADIOS_VARINFO * (* ADIOS_INQ_VAR_FN) (ADIOS_GROUP *gp, const char * varname);
+typedef ADIOS_VARINFO * (* ADIOS_INQ_VAR_BYID_FN) (ADIOS_GROUP *gp, int varid);
+typedef int64_t (* ADIOS_READ_VAR_FN) (ADIOS_GROUP * gp, const char * varname, const uint64_t * start, const uint64_t * count, void * data);
+typedef int64_t (* ADIOS_READ_VAR_BYID_FN) (ADIOS_GROUP * gp, int varid, const uint64_t * start, const uint64_t * count, void * data);
+typedef int (* ADIOS_GET_ATTR_FN) (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type, int * size, void ** data);
+typedef int (* ADIOS_GET_ATTR_BYID_FN) (ADIOS_GROUP * gp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data);
+typedef void (* ADIOS_RESET_DIMENSION_ORDER_FN) ();
 
 struct adios_read_hooks_struct
-{   
+{
     ADIOS_INIT_FN           adios_init_fn;
     ADIOS_FINALIZE_FN       adios_finalize_fn;
     ADIOS_FOPEN_FN          adios_fopen_fn;

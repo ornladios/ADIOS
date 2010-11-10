@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -6,7 +6,7 @@
  */
 
 /*
- *   Read C API for ADIOS BP format files 
+ *   Read C API for ADIOS BP format files
  */
 #ifndef __ADIOS_READ_H__
 #define __ADIOS_READ_H__
@@ -68,15 +68,15 @@ typedef struct {
         void     ** maxs;           /* maximum per each timestep (array of timestep elements)         */
         double   ** avgs;           /* average per each timestep (array of timestep elements)         */
         double   ** std_devs;       /* standard deviation per each timestep (array of timestep elements)         */
-		struct ADIOS_HIST			/* Histogram */
-		{
-			uint32_t num_breaks;
-			double max;
-			double min;
-			double *breaks;
-			uint32_t **frequenciess;
-			uint32_t *gfrequencies;
-		} *hist;
+        struct ADIOS_HIST			/* Histogram */
+        {
+            uint32_t num_breaks;
+            double max;
+            double min;
+            double *breaks;
+            uint32_t **frequenciess;
+            uint32_t *gfrequencies;
+        } *hist;
 } ADIOS_VARINFO;
 
 /* The list of the available read methods */
@@ -85,15 +85,16 @@ enum ADIOS_READ_METHOD {
         ,ADIOS_READ_METHOD_HDF5   = 1    /* Read from HDF5 file (written by PHDF5 method)               */
         ,ADIOS_READ_METHOD_DART   = 2    /* Read from memory written by DART method                     */
         ,ADIOS_READ_METHOD_DIMES  = 3    /* Read from memory written by DIMES method                    */
+        ,ADIOS_READ_METHOD_NSSI   = 4    /* Read from memory written by NSSI method                    */
 };
 
 #ifndef __INCLUDED_FROM_FORTRAN_API__
 
 /** Functions that return a pointer to some data structures (fopen, gopen), return NULL
-    on error and set adios_errno to a non-zero value and writes an error string.  
-    You have direct access to that string so you can print it. 
-    Do not write anything into it, please. 
-    Only the last error message is always available. 
+    on error and set adios_errno to a non-zero value and writes an error string.
+    You have direct access to that string so you can print it.
+    Do not write anything into it, please.
+    Only the last error message is always available.
 */
 extern int adios_errno;
 const char *adios_errmsg();
@@ -107,9 +108,9 @@ int adios_set_read_method (enum ADIOS_READ_METHOD method);
 
 /** Initialize and finalize the read method.
  *  This is needed for the DART method only and only if multiple fopen()...fclose() cycles
- *  are used. In such a case, init/finalize will perform the connection/disconnection to 
- *  the DART server once. 
- *  For other methods, these functions do nothing. 
+ *  are used. In such a case, init/finalize will perform the connection/disconnection to
+ *  the DART server once.
+ *  For other methods, these functions do nothing.
  */
 int adios_read_init(MPI_Comm comm);
 int adios_read_finalize();
@@ -117,14 +118,14 @@ int adios_read_finalize();
 /** Open an adios file.
  *  IN:  fname    pathname of file to be opened
  *       comm     the MPI communicator of all processes that want to read data from the file
- *                 if compile with -D_NOMPI, pass any integer here. 
+ *                 if compile with -D_NOMPI, pass any integer here.
  *  RETURN:       pointer to an ADIOS_FILE struct, NULL on error (sets adios_errno)
  */
 ADIOS_FILE * adios_fopen (const char * fname, MPI_Comm comm);
 
 /** Close an adios file.
  *  It will free the content of the underlying data structures and the fp pointer itself.
- *  IN:   fp       pointer to an ADIOS_FILE struct 
+ *  IN:   fp       pointer to an ADIOS_FILE struct
  *  RETURN: 0 OK, !=0 on error (also sets adios_errno)
  */
 int adios_fclose (ADIOS_FILE *fp);
@@ -135,21 +136,21 @@ int adios_fclose (ADIOS_FILE *fp);
 void adios_reset_dimension_order (ADIOS_FILE *fp, int is_fortran);
 
 
-/** Open an adios group. Usually there is one adios group in a file, 
- *  but there can be more than one. 
+/** Open an adios group. Usually there is one adios group in a file,
+ *  but there can be more than one.
  *  IN:  fp       pointer to an (opened) ADIOS_FILE struct
  *       grpname  name of the group
  *  RETURN:       pointer to an ADIOS_GROUP struct, NULL on error (sets adios_errno)
  */
 ADIOS_GROUP * adios_gopen (ADIOS_FILE *fp, const char * grpname);
 
-/** Open a group by index 
+/** Open a group by index
  *       grpid    index of group (0..fp->groups_count-1)
  *                in fp->group_namelist of ADIOS_FILE struct
  */
 ADIOS_GROUP * adios_gopen_byid (ADIOS_FILE *fp, int grpid);
 
-/** Close an adios group. 
+/** Close an adios group.
  *  To free the data structures allocated at gopen, you need to call this function
  *  IN:  gp       pointer to an (opened) ADIOS_GROUP struct
  *  RETURN: 0 OK, !=0 on error (also sets adios_errno)
@@ -160,7 +161,7 @@ int adios_gclose (ADIOS_GROUP *gp);
 /** Inquiry about one variable in a group.
  *  This function does not read anything from the file but processes info
  *  already in memory after fopen and gopen.
- *  It allocates memory for the ADIOS_VARINFO struct and content, so 
+ *  It allocates memory for the ADIOS_VARINFO struct and content, so
  *  you need to free resources later with adios_free_varinfo().
  *
  *  IN:  gp       pointer to an (opened) ADIOS_GROUP struct
@@ -182,7 +183,7 @@ ADIOS_VARINFO * adios_inq_var_byid (ADIOS_GROUP *gp, int varid);
 void adios_free_varinfo (ADIOS_VARINFO *cp);
 
 /** Read a variable (slice) from the file.
- *  You need to allocate the memory for the data. 
+ *  You need to allocate the memory for the data.
  *  IN:  gp        pointer to an (opened) ADIOS_GROUP struct
  *       varname   name of the variable
  *       start     array of offsets to start reading in each dimension
@@ -190,31 +191,31 @@ void adios_free_varinfo (ADIOS_VARINFO *cp);
  *  OUT: data      data of the variable
  *  RETURN: the number of bytes read, <0 on error, sets adios_errno too
  */
-int64_t adios_read_var (ADIOS_GROUP    * gp, 
-                        const char     * varname, 
+int64_t adios_read_var (ADIOS_GROUP    * gp,
+                        const char     * varname,
                         const uint64_t * start,
-                        const uint64_t * count, 
+                        const uint64_t * count,
                         void           * data);
 
-/** Read a variable by index 
+/** Read a variable by index
  *       varid    index of variable (0..gp->vars_count-1)
  *                in gp->vars_namelist of ADIOS_GROUP struct
  */
 int64_t adios_read_var_byid (ADIOS_GROUP * gp, int varid,
-                             const uint64_t * start, const uint64_t * count, 
+                             const uint64_t * start, const uint64_t * count,
                              void * data);
 
 /** Get an attribute in a group.
  *  This function does not read anything from the file but processes info
  *  already in memory after fopen and gopen.
  *  The memory for the data is allocated within the library.
- *  You can use free() to free the memory after use. 
+ *  You can use free() to free the memory after use.
  *
  *  IN:  gp       pointer to an (opened) ADIOS_GROUP struct
  *       attrname name of the attribute
  *  OUT: type     adios type of attribute (see enum ADIOS_DATATYPES in adios_types.h)
  *       size     memory size of value (n+1 for a string of n characters)
- *       data     pointer to the value. You need to cast it afterward according to the type. 
+ *       data     pointer to the value. You need to cast it afterward according to the type.
  *  RETURN: 0 OK, error: set and return adios_errno
  */
 int adios_get_attr (ADIOS_GROUP           * gp,
@@ -223,12 +224,12 @@ int adios_get_attr (ADIOS_GROUP           * gp,
                     int                   * size,
                     void                 ** data);
 
-/** Convenience function to get an attribute by name 
+/** Convenience function to get an attribute by name
  *       attrid   index of attribute (0..gp->attrs_count-1)
  *                in gp->attr_namelist of ADIOS_GROUP struct
  */
-int adios_get_attr_byid (ADIOS_GROUP * gp, int attrid, enum ADIOS_DATATYPES * type, 
-                         int * size, void ** data); 
+int adios_get_attr_byid (ADIOS_GROUP * gp, int attrid, enum ADIOS_DATATYPES * type,
+                         int * size, void ** data);
 
 /** Return the name of an adios type */
 const char * adios_type_to_string (enum ADIOS_DATATYPES type);
@@ -237,7 +238,7 @@ const char * adios_type_to_string (enum ADIOS_DATATYPES type);
  *  If the type is adios_string, and the second argument is
  *  the string itself, it returns strlen(data)+1.
  *  For other types, it does not care about data and returns
- *  the size occupied by one element. 
+ *  the size occupied by one element.
  */
 int adios_type_size(enum ADIOS_DATATYPES type, void *data);
 

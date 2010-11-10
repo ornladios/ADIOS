@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -27,7 +27,7 @@ if (!strcasecmp (buf,b)) \
 (*t) [b].adios_read_var_fn = adios_read_##a##_read_var; \
 (*t) [b].adios_read_var_byid_fn = adios_read_##a##_read_var_byid; \
 (*t) [b].adios_get_attr_fn = adios_read_##a##_get_attr; \
-(*t) [b].adios_get_attr_byid_fn = adios_read_##a##_get_attr_byid; 
+(*t) [b].adios_get_attr_byid_fn = adios_read_##a##_get_attr_byid;
 
 void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
 {
@@ -50,6 +50,10 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
 
 #if HAVE_PHDF5
         //ASSIGN_FNS(hdf5,ADIOS_READ_METHOD_HDF5)
+#endif
+
+#if HAVE_NSSI
+        ASSIGN_FNS(nssi,ADIOS_READ_METHOD_NSSI)
 #endif
 
         //printf("%s: adios_read_hooks = %x\n",__func__,*t);
