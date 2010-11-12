@@ -10,6 +10,16 @@
 #include <atl.h>
 #include <evpath.h>
 //#include <mpi.h>
+
+#ifdef _NOMPI
+    /* Sequential processes can use the library compiled with -D_NOMPI */
+#   include "mpidummy.h"
+#define MPI_SUM 0
+#else
+    /* Parallel applications should use MPI to communicate file info and slices of data */
+#   include "mpi.h"
+#endif
+
 #include <pthread.h>
 #include "adios.h"
 #include "adios_read.h"
@@ -191,7 +201,7 @@ static FMField *find_field (char *name, char *path, FMFieldList flist)
 int64_t read_array(datatap_read_file_data *ds, datatap_var_info *var, 
                     uint64_t *start, uint64_t *count, void *data)
 {
-    int type_size = adios_type_size(var->type, NULL);
+    int type_size = common_read_type_size(var->type, NULL);
 fprintf(stderr, "im here type_size %d %s:%d\n", type_size, __FILE__,__LINE__);
     int64_t total_size = 0;
 
@@ -494,7 +504,7 @@ fprintf(stderr, "im here rank %d var name %s i %d %s:%d\n",dt_read_data->dt_comm
                 v = &(pg->vars[i]);
 fprintf(stderr, "im here rank %d var name %s i %d %s:%d\n",dt_read_data->dt_comm_rank,var->varname,i,__FILE__,__LINE__);
                  
-                int type_size = adios_type_size(v->type, NULL); 
+                int type_size = common_read_type_size(v->type, NULL); 
 fprintf(stderr, "im here rank %d var name %s i %d %s:%d\n",dt_read_data->dt_comm_rank,var->varname,i,__FILE__,__LINE__);
                 FMField *f = find_field(v->varname, v->varpath, filed_list);
 fprintf(stderr, "im here rank %d var name %s i %d %s:%d\n",dt_read_data->dt_comm_rank,var->varname,i,__FILE__,__LINE__);
@@ -696,6 +706,7 @@ fprintf(stderr, "im here rank= %d client rank=%d data handler done %s:%d\n",h->r
 
 void * dt_server_thread_func (void *arg)
 {
+fprintf(stderr, "im here %s:%d\n",__FILE__,__LINE__);
     MPI_Comm orig_comm = (MPI_Comm) arg;
 
 #if 0 // open-mpi   
@@ -709,13 +720,23 @@ void * dt_server_thread_func (void *arg)
     dt_read_data->dt_comm = orig_comm;
 #endif
 
+fprintf(stderr, "im here %s:%d\n",__FILE__,__LINE__);
+
+#ifdef _NOMPI
+    dt_read_data->dt_comm_size = 1;
+    dt_read_data->dt_comm_rank = 0;
+#else 
     MPI_Comm_size(dt_read_data->dt_comm, &(dt_read_data->dt_comm_size));
     MPI_Comm_rank(dt_read_data->dt_comm, &(dt_read_data->dt_comm_rank));
+#endif
   
+fprintf(stderr, "im here %s:%d\n",__FILE__,__LINE__);
     // initialize ptlpbio interface
     dt_read_data->dt_cm = CManager_create();
+fprintf(stderr, "im here %s:%d\n",__FILE__,__LINE__);
     CMlisten_specific(dt_read_data->dt_cm, NULL);
 
+fprintf(stderr, "im here %s:%d\n",__FILE__,__LINE__);
     lrand48();
 
     dt_read_data->dt_handle = EVthin_portals_listen(dt_read_data->dt_cm, 120,
@@ -736,6 +757,7 @@ void * dt_server_thread_func (void *arg)
     // a file so upstream writers can connect to this application
     outputConnectionData(param_file, dt_read_data->dt_handle);
 
+fprintf(stderr, "im here %s:%d\n",__FILE__,__LINE__);
     dt_read_data->dt_server_ready = 1;
 
     // serve the network
@@ -748,6 +770,7 @@ void * dt_server_thread_func (void *arg)
 
 int adios_read_datatap_init (MPI_Comm comm)
 {
+fprintf(stderr, "im here %s:%d\n",__FILE__,__LINE__);
     setenv("CMSelfFormats", "1", 1);
 
     // initialize Datatap read method structure
@@ -761,6 +784,7 @@ int adios_read_datatap_init (MPI_Comm comm)
     // enable threading for EVPath
     gen_pthread_init();
 
+fprintf(stderr, "im here %s:%d\n",__FILE__,__LINE__);
 #if 0
     // set up queue for incoming data chunks
     dt_read_data->dt_queue =(Queue *) calloc(1, sizeof(Queue));
@@ -787,6 +811,7 @@ int adios_read_datatap_init (MPI_Comm comm)
     // TODO: wait until the dt server thread is ready
     while(!dt_read_data->dt_server_ready) { }
     
+fprintf(stderr, "im here %s:%d\n",__FILE__,__LINE__);
     return 0;
 }
 
@@ -825,8 +850,15 @@ ADIOS_FILE *adios_read_datatap_fopen(const char *fname, MPI_Comm comm)
     // 0: file not found
     int my_status, global_status;
     int total_num_readers, my_rank;
+
+#ifdef _NOMPI
+    total_num_readers = 1;
+    my_rank = 0;
+#else
     MPI_Comm_size(comm, &total_num_readers);
     MPI_Comm_rank(comm, &my_rank);
+#endif
+
     ds->comm = comm;
     ds->my_rank = my_rank;
     ds->comm_size = total_num_readers;
@@ -838,13 +870,15 @@ ADIOS_FILE *adios_read_datatap_fopen(const char *fname, MPI_Comm comm)
     if(ds->f_info) {
         // now I should tell my peer readers that I have seen this file available locally
         my_status = 1;
-        int rc = MPI_Allreduce(&my_status, &global_status, 1, MPI_INT, MPI_SUM, comm);
-        if(rc != MPI_SUCCESS) {
-            fprintf(stderr, "something bad happened somewhere.\n");
-            free(ds->file_name);
-            free(ds);
-            return NULL;
-        } 
+        if(total_num_readers > 1) {
+            int rc = MPI_Allreduce(&my_status, &global_status, 1, MPI_INT, MPI_SUM, comm);
+            if(rc != MPI_SUCCESS) {
+                fprintf(stderr, "something bad happened somewhere.\n");
+                free(ds->file_name);
+                free(ds);
+                return NULL;
+            } 
+        }
         // now I can move on to process meta-data
 fprintf(stderr, "im here rank %d move on %s:%d\n", my_rank, __FILE__,__LINE__);
     }
@@ -854,63 +888,76 @@ fprintf(stderr, "im here rank %d move on %s:%d\n", my_rank, __FILE__,__LINE__);
             adios_error(err_end_of_file, "Reach the end of file (%s).", fname);
             free(ds->file_name);
             free(ds);
-           
-            // now I should wait for my peer readers to see EOF in their local context
-            int rc = MPI_Barrier(comm);
-            if(rc != MPI_SUCCESS) {
-                fprintf(stderr, "something bad happened somewhere.\n");
+    
+            if(total_num_readers > 1) {               
+                // now I should wait for my peer readers to see EOF in their local context
+                int rc = MPI_Barrier(comm);
+                if(rc != MPI_SUCCESS) {
+                    fprintf(stderr, "something bad happened somewhere.\n");
+                }
+                return NULL; 
             }
-            return NULL; 
         }
         else {
-            // I didn't see the file available in my local context, but my peer readers may
-            // have seen it, so I should ask them to figure out
+            if(total_num_readers > 1) {
+
+                // I didn't see the file available in my local context, but my peer readers may
+                // have seen it, so I should ask them to figure out
 fprintf(stderr, "im here rank %d ask %s:%d\n", my_rank, __FILE__,__LINE__);
-            my_status = 0;
-            MPI_Allreduce(&my_status, &global_status, 1, MPI_INT, MPI_SUM, comm);
-            if(global_status == 0) { // no one see file available
+                my_status = 0;
+                MPI_Allreduce(&my_status, &global_status, 1, MPI_INT, MPI_SUM, comm);
+                if(global_status == 0) { // no one see file available
 fprintf(stderr, "im here rank %d no file %s:%d\n", my_rank, __FILE__,__LINE__);
+                    adios_errno = err_file_not_found_error;
+                    adios_error(err_file_not_found_error, "Cannot find file (%s).", fname);
+fprintf(stderr, "im here rank %d no file %s:%d\n", my_rank, __FILE__,__LINE__);
+                    free(ds->file_name);
+                    free(ds);
+                    return NULL;
+                }
+                else { 
+                    // some one has seen this file available, so I should keep polling instead of return
+                    do {
+fprintf(stderr, "im here rank %d %s:%d\n", my_rank, __FILE__,__LINE__);
+                        is_EOF = 0;
+                        ds->f_info = datatap_get_file_info(dt_read_data->dt_handle, 
+                            fname, dt_read_data->num_io_dumps, &is_EOF);
+                        if(ds->f_info) { 
+                            // now we get it!
+fprintf(stderr, "im here rank %d %s:%d\n", my_rank, __FILE__,__LINE__);
+                            break;
+                        }
+                        else {
+                            if(is_EOF) {
+                                adios_errno = err_end_of_file;
+                                adios_error(err_end_of_file, "Reach the end of file (%s).", fname);
+                                free(ds->file_name);
+                                free(ds);
+
+                                int rc = MPI_Barrier(comm);
+                                if(rc != MPI_SUCCESS) {
+                                    fprintf(stderr, "something bad happened somewhere.\n");
+                                }
+                                return NULL;
+                            }
+                            else {
+                                usleep(10000); // TODO: we need to set a proper value
+fprintf(stderr, "im here rank %d %s:%d\n", my_rank, __FILE__,__LINE__);
+                                continue;
+                            }
+                        }  
+                    } 
+                    while (1);
+                }
+            }
+            else {
                 adios_errno = err_file_not_found_error;
                 adios_error(err_file_not_found_error, "Cannot find file (%s).", fname);
 fprintf(stderr, "im here rank %d no file %s:%d\n", my_rank, __FILE__,__LINE__);
                 free(ds->file_name);
                 free(ds);
                 return NULL;
-            }
-            else { 
-                // some one has seen this file available, so I should keep polling instead of return
-                do {
-fprintf(stderr, "im here rank %d %s:%d\n", my_rank, __FILE__,__LINE__);
-                    is_EOF = 0;
-                    ds->f_info = datatap_get_file_info(dt_read_data->dt_handle, 
-                        fname, dt_read_data->num_io_dumps, &is_EOF);
-                    if(ds->f_info) { 
-                        // now we get it!
-fprintf(stderr, "im here rank %d %s:%d\n", my_rank, __FILE__,__LINE__);
-                        break;
-                    }
-                    else {
-                        if(is_EOF) {
-                            adios_errno = err_end_of_file;
-                            adios_error(err_end_of_file, "Reach the end of file (%s).", fname);
-                            free(ds->file_name);
-                            free(ds);
-
-                            int rc = MPI_Barrier(comm);
-                            if(rc != MPI_SUCCESS) {
-                                fprintf(stderr, "something bad happened somewhere.\n");
-                            }
-                            return NULL;
-                        }
-                        else {
-                            usleep(10000); // TODO: we need to set a proper value
-fprintf(stderr, "im here rank %d %s:%d\n", my_rank, __FILE__,__LINE__);
-                            continue;
-                        }
-                    }  
-                } 
-                while (1);
-            } 
+            }  
         }
     }       
 fprintf(stderr, "im here rank %d see file %s:%d\n", my_rank, __FILE__,__LINE__);
@@ -999,7 +1046,7 @@ fprintf(stderr, "im here info size %d num vars %d %s:%d\n", total_var_info_size,
                 current_var->num_chunks = 0;
                 current_var->chunks = NULL;
                 if(!current_var->ndims) { // scalars and strings
-                    current_var->data_size = adios_type_size(current_var->type, current_pos);
+                    current_var->data_size = common_read_type_size(current_var->type, current_pos);
                 }
 fprintf(stderr, "im here %s %s %d %s:%d\n", current_var->varname, current_var->varpath, current_var->ndims, __FILE__,__LINE__);
                 current_var->next = ds->vars;
@@ -1182,7 +1229,7 @@ fprintf(stderr, "im here rank %d %s:%d\n", ds->my_rank, __FILE__,__LINE__);
                 current_var->num_chunks = 0;
                 current_var->chunks = NULL;
                 if(!current_var->ndims) { // scalars and strings
-                    current_var->data_size = adios_type_size(current_var->type, current_pos);
+                    current_var->data_size = common_read_type_size(current_var->type, current_pos);
                 }
                 current_var->next = ds->vars_peer;
                 ds->vars_peer = current_var;
@@ -1875,7 +1922,7 @@ fprintf(stderr, "im here %s:%d\n",__FILE__,__LINE__);
                 }
                 v->dims[0] = 1; // TODO: only one timestep in the file
             }
-            //int value_size = adios_type_size(v->type, current_var->chunks->data);
+            //int value_size = common_read_type_size(v->type, current_var->chunks->data);
             int value_size = current_var->data_size;
             v->value = malloc(value_size);
             if(!v->value) {
@@ -1926,7 +1973,7 @@ fprintf(stderr, "im here %s:%d\n",__FILE__,__LINE__);
                         }
                         v->dims[0] = 1; // TODO: only one timestep in the file
                     }
-                    int value_size = adios_type_size(v->type, ds->pgs[i].vars[j].data);
+                    int value_size = common_read_type_size(v->type, ds->pgs[i].vars[j].data);
                     v->value = malloc(value_size); 
                     if(!v->value) {
                         adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
@@ -2097,7 +2144,7 @@ fprintf(stderr, "im here rank %d %s:%d\n", ds->my_rank, __FILE__,__LINE__);
 
                     if(ds->my_rank != 0) {
                         int i = 0;
-                        total_size = adios_type_size(current_var->type, NULL); 
+                        total_size = common_read_type_size(current_var->type, NULL); 
                         for(; i < current_var->ndims; i ++) {
                              total_size *= count[i];
                         }
@@ -2152,7 +2199,7 @@ fprintf(stderr, "im here rank %d %s:%d\n", ds->my_rank, __FILE__,__LINE__);
                         return -1;
                     }
   
-                    total_size = adios_type_size(current_pg->vars[v].type, current_pg->vars[v].data);                
+                    total_size = common_read_type_size(current_pg->vars[v].type, current_pg->vars[v].data);                
                     memcpy(data, current_pg->vars[v].data, total_size);
                     return total_size;
                 }
@@ -2199,7 +2246,7 @@ fprintf(stderr, "im here rank %d %s:%d\n", ds->my_rank, __FILE__,__LINE__);
                         var_info->global_offsets[i] = start[i];
                         total_size = total_size * count[i];
                     }
-                    total_size *= adios_type_size(var_info->type, NULL);
+                    total_size *= common_read_type_size(var_info->type, NULL);
                     var_info->data = data;
                     var_info->data_size = total_size;
                     
