@@ -254,6 +254,27 @@ int64_t common_read_read_var (ADIOS_GROUP * gp, const char * varname,
     return retval;
 }
 
+int64_t common_read_read_local_var (ADIOS_GROUP    * gp,
+                                    const char     * varname,
+                                    int            idx,
+                                    const uint64_t * start,
+                                    const uint64_t * count,
+                                    void           * data)
+{
+    struct common_read_internals_struct * internals;
+    int64_t retval;
+
+    adios_errno = 0;
+    if (gp) {
+        internals = (struct common_read_internals_struct *) gp->fp->internal_data;
+        retval = internals->read_hooks[internals->method].adios_read_local_var_fn (gp, varname, idx, start, count, data);
+    } else {
+        adios_error (err_invalid_group_struct, "Null pointer passed as group to adios_read_local_var()");
+        retval = -err_invalid_group_struct;
+    }
+    return retval;
+}
+
 int64_t common_read_read_var_byid (ADIOS_GROUP    * gp,
                              int              varid,
                              const uint64_t  * start,

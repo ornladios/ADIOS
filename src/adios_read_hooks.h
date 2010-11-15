@@ -25,6 +25,7 @@ int adios_read_##a##_gclose (ADIOS_GROUP *gp); \
 ADIOS_VARINFO * adios_read_##a##_inq_var (ADIOS_GROUP *gp, const char * varname); \
 ADIOS_VARINFO * adios_read_##a##_inq_var_byid (ADIOS_GROUP *gp, int varid); \
 int64_t adios_read_##a##_read_var (ADIOS_GROUP * gp, const char * varname, const uint64_t * start, const uint64_t * count, void * data); \
+int64_t adios_read_##a##_read_local_var (ADIOS_GROUP * gp, const char * varname, int idx, const uint64_t * start, const uint64_t * count, void * data); \
 int64_t adios_read_##a##_read_var_byid (ADIOS_GROUP * gp, int varid, const uint64_t * start, const uint64_t * count, void * data); \
 int adios_read_##a##_get_attr (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type, int * size, void ** data); \
 int adios_read_##a##_get_attr_byid (ADIOS_GROUP * gp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data); \
@@ -65,6 +66,7 @@ typedef int (* ADIOS_GCLOSE_FN) (ADIOS_GROUP *gp);
 typedef ADIOS_VARINFO * (* ADIOS_INQ_VAR_FN) (ADIOS_GROUP *gp, const char * varname);
 typedef ADIOS_VARINFO * (* ADIOS_INQ_VAR_BYID_FN) (ADIOS_GROUP *gp, int varid);
 typedef int64_t (* ADIOS_READ_VAR_FN) (ADIOS_GROUP * gp, const char * varname, const uint64_t * start, const uint64_t * count, void * data);
+typedef int64_t (* ADIOS_READ_LOCAL_VAR_FN) (ADIOS_GROUP * gp, const char * varname, int idx, const uint64_t * start, const uint64_t * count, void * data);
 typedef int64_t (* ADIOS_READ_VAR_BYID_FN) (ADIOS_GROUP * gp, int varid, const uint64_t * start, const uint64_t * count, void * data);
 typedef int (* ADIOS_GET_ATTR_FN) (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type, int * size, void ** data);
 typedef int (* ADIOS_GET_ATTR_BYID_FN) (ADIOS_GROUP * gp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data);
@@ -82,6 +84,7 @@ struct adios_read_hooks_struct
     ADIOS_INQ_VAR_FN        adios_inq_var_fn;
     ADIOS_INQ_VAR_BYID_FN   adios_inq_var_byid_fn;
     ADIOS_READ_VAR_FN       adios_read_var_fn;
+    ADIOS_READ_LOCAL_VAR_FN adios_read_local_var_fn;
     ADIOS_READ_VAR_BYID_FN  adios_read_var_byid_fn;
     ADIOS_GET_ATTR_FN       adios_get_attr_fn;
     ADIOS_GET_ATTR_BYID_FN  adios_get_attr_byid_fn;

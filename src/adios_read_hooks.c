@@ -25,6 +25,7 @@ if (!strcasecmp (buf,b)) \
 (*t) [b].adios_inq_var_fn = adios_read_##a##_inq_var; \
 (*t) [b].adios_inq_var_byid_fn = adios_read_##a##_inq_var_byid; \
 (*t) [b].adios_read_var_fn = adios_read_##a##_read_var; \
+(*t) [b].adios_read_local_var_fn = adios_read_##a##_read_local_var; \
 (*t) [b].adios_read_var_byid_fn = adios_read_##a##_read_var_byid; \
 (*t) [b].adios_get_attr_fn = adios_read_##a##_get_attr; \
 (*t) [b].adios_get_attr_byid_fn = adios_read_##a##_get_attr_byid;

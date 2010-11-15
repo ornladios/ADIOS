@@ -39,7 +39,12 @@ int64_t common_read_read_var (ADIOS_GROUP    * gp,
                         const uint64_t * start,
                         const uint64_t * count, 
                         void           * data);
-
+int64_t common_read_read_local_var (ADIOS_GROUP    * gp,
+                                    const char     * varname,
+                                    int            idx,
+                                    const uint64_t * start,
+                                    const uint64_t * count,
+                                    void           * data);
 int64_t common_read_read_var_byid (ADIOS_GROUP * gp, int varid,
                              const uint64_t * start, const uint64_t * count, 
                              void * data);
