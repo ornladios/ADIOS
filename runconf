@@ -290,6 +290,21 @@ elif [ `hostname | cut -c 1-6` == "tomato" ]; then
         --with-hdf5=/home/thkorde/local \
         --with-netcdf=/home/thkorde/local
 
+elif [ `hostname | cut -c 1-4` == "qliu" ]; then
+
+    #########################
+    # Gary's ubuntu laptop #
+    #########################
+    echo "Configure on UBUNTU"
+    export CC=mpicc
+    export CFLAGS="-g -O0 -fPIC"
+    ./configure --prefix=/home/qliu/ADIOS \
+        --enable-dependency-tracking \
+        --with-mxml=/home/qliu/mxml \
+        #--with-phdf5=/home/thkorde/local \
+        #--with-hdf5=/home/thkorde/local \
+        #--with-netcdf=/home/thkorde/local
+
 elif [ `hostname | cut -c 1-5` == "smoky" ]; then
 
     #########
