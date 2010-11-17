@@ -1808,13 +1808,13 @@ int64_t adios_read_bp_read_local_var (ADIOS_GROUP * gp, const char * varname,
         i=-1;
         swap_order(ndim, ldims, &(i));
     }
-    
-    /*        
+
+    /*
     printf("ldims   = "); for (j = 0; j < ndim; j++) printf("%d ",ldims[j]); printf("\n");
     printf("count_notime   = "); for (j = 0; j < ndim_notime; j++) printf("%d ",count_notime[j]); printf("\n");
     printf("start_notime   = "); for (j = 0; j < ndim_notime; j++) printf("%d ",start_notime[j]); printf("\n");
-    */
-            
+    */        
+
     for (j = 0; j < ndim_notime; j++)
     {
         payload_size *= ldims [j];
@@ -1861,17 +1861,17 @@ int64_t adios_read_bp_read_local_var (ADIOS_GROUP * gp, const char * varname,
     {
         /* The slowest changing dimensions should not be read completely but
            we still need to read only one block */
-        uint64_t size_in_dset = 0;
-        uint64_t offset_in_dset = 0;
    
-        size_in_dset = count_notime[0];
-        offset_in_dset = start_notime[0];
-        slice_size = size_in_dset * datasize * size_of_type;
+        uint64_t size_in_dset = count_notime[0];
+        uint64_t offset_in_dset = start_notime[0];
+
+        slice_size = (break_dim == -1 ? datasize * size_of_type : size_in_dset * datasize * size_of_type);
     
         if (var_root->characteristics[start_idx + idx].payload_offset > 0)
         {
             slice_offset = var_root->characteristics[start_idx + idx].payload_offset 
                          + offset_in_dset * datasize * size_of_type;
+
             if (!has_subfile)
             {
                 MPI_FILE_READ_OPS
@@ -1886,7 +1886,7 @@ int64_t adios_read_bp_read_local_var (ADIOS_GROUP * gp, const char * varname,
             slice_offset = 0;
             MPI_FILE_READ_OPS1
         }
-    
+
         memcpy ((char *)data, fh->b->buff + fh->b->offset, slice_size);
         if (fh->mfooter.change_endianness == adios_flag_yes)
         {
@@ -1994,7 +1994,6 @@ int64_t adios_read_bp_read_local_var (ADIOS_GROUP * gp, const char * varname,
     }
     
     total_size += items_read * size_of_type;
-    free (dims);
 
     return total_size;
 }
