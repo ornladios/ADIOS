@@ -197,6 +197,26 @@ int64_t adios_read_var (ADIOS_GROUP    * gp,
                         const uint64_t * count,
                         void           * data);
 
+/** Read a local variable from the file.
+ *  To read a global variable, you should use adios_read_var() instead.
+ *  You need to allocate memory for the data.
+ *  IN:  gp        pointer to an (opened) ADIOS_GROUP struct
+ *       varname   name of the variable
+ *       idx       which local variable to read in. For example, if variable NX
+                   is dumped out by every processor, this idx denotes which copy of NX
+                   you want to read in. The NX dumped out by rank 0 will have idx 0.
+ *       start     array of offsets to start reading in each dimension
+ *       count     number of data elements to read in each dimension
+ *  OUT: data      data of the variable
+ *  RETURN: the number of bytes read, <0 on error, sets adios_errno too
+ */
+int64_t adios_read_local_var (ADIOS_GROUP    * gp,
+                              const char     * varname,
+                              int            idx,
+                              const uint64_t * start,
+                              const uint64_t * count,
+                              void           * data);
+
 /** Read a variable by index
  *       varid    index of variable (0..gp->vars_count-1)
  *                in gp->vars_namelist of ADIOS_GROUP struct
