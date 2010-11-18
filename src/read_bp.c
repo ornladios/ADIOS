@@ -1457,6 +1457,7 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (ADIOS_GROUP *gp, int varid)
         free(vi);
         return NULL;
     }
+    vi->characteristics_count = var_root->characteristics_count;
 
     /* Get value or min/max */
 

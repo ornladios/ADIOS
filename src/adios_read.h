@@ -59,6 +59,7 @@ typedef struct {
         int        ndim;            /* number of dimensions, 0 for scalars                            */
         uint64_t * dims;            /* size of each dimension                                         */
         int        timedim;         /* -1: variable has no timesteps in file, >=0: which dimension is time     */
+        int        characteristics_count; /* number of characteristic                                 */
         void     * value;           /* value of a scalar variable, NULL for array.                    */
         void     * gmin;            /* minimum value in an array variable, = value for a scalar       */
         void     * gmax;            /* maximum value of an array variable (over all timesteps)        */
@@ -197,7 +198,7 @@ int64_t adios_read_var (ADIOS_GROUP    * gp,
                         const uint64_t * count,
                         void           * data);
 
-/** Read a local variable from the file.
+/** Read a local variable from the file. This function is for reading BP only.
  *  To read a global variable, you should use adios_read_var() instead.
  *  You need to allocate memory for the data.
  *  IN:  gp        pointer to an (opened) ADIOS_GROUP struct
