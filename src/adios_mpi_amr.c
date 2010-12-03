@@ -28,10 +28,13 @@ static int adios_mpi_amr_initialized = 0;
 static int * g_is_aggregator = 0;
 static int g_num_aggregators = 0;
 static int g_merging_pgs = 0;
+static int g_num_ost = 0;
+static int g_threading = 0;
 static int g_color1 = 0;
 static int g_color2 = 0;
 static MPI_Offset * g_offsets= 0;
-static pthread_t g_t, g_t1;
+static int * g_ost_skipping_list = 0;
+static pthread_t g_sot, g_mot, g_swt; // subfile open thread, metadata file open thread, subfile write thread
 
 static struct adios_MPI_thread_data_open open_thread_data1;
 static struct adios_MPI_thread_data_open open_thread_data2;
@@ -48,6 +51,8 @@ static struct adios_MPI_thread_data_open open_thread_data2;
 #define ATTR_COUNT_SIZE  2
 #define ATTR_LEN_SIZE    8
 #define MAX_AGG_BUF      704643072
+#define DEFAULT_NUM_OST  672
+#define DEFAULT_STRIPE_COUNT 4
 
 struct adios_MPI_data_struct
 {
@@ -251,15 +256,74 @@ static void trim_spaces (char * str)
 
 }
 
+int * allocOSTList (int n_ost)
+{
+    int * ost_list = (int *) malloc (n_ost * sizeof (int));
+
+    if (ost_list == 0)
+    {   
+        fprintf (stderr, "can not malloc");
+        return 0;
+    }
+    memset (ost_list, 0, n_ost * sizeof (int));
+
+    return ost_list;
+}
+
+/* Parse the XML transport parameter to get the list of OST's to skip */
+int * parseOSTSkipping (int * ost_list, char * str, int n_ost)
+{
+    char * p = 0, * dash = 0;
+    char n[16];
+    int ost_id1, ost_id2, i;
+
+    if (ost_list == 0)
+    {
+        fprintf (stderr, "Pointer ost_list is null.\n");
+        return 0;
+    }
+
+    p = strtok (str, ",");
+    while (p)
+    {
+        dash = strchr (p, '-');
+        if (!dash)
+        {
+            ost_id1 = atoi (p);
+            ost_id2 = ost_id1;
+        }
+        else
+        {
+            strncpy (n, p, dash - p);
+            n[dash - p] = '\0';
+            ost_id1 = atoi (n);
+  
+            strncpy (n, dash + 1, strlen (dash + 1));
+            n[strlen (dash + 1)] = '\0';
+            ost_id2 = atoi (n);
+        }
+
+        for (i = ost_id1; i <= ost_id2; i++)
+        {
+            ost_list[i] = 1;
+        }
+          
+        p = strtok (NULL, ",");
+    }
+
+    return ost_list;
+}
+
 static void
 adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
 {
     struct statfs fsbuf;
-    int err = 0, flag, num_ost;
+    int err = 0, flag;
     uint64_t striping_unit = 0;
     uint64_t block_unit = 0;
     uint16_t striping_count = 0;
     char     value[64], *temp_string, *p_count,*p_size;
+    int fd, old_mask, perm, n_ost_skipping, n_ost, n, i;
     MPI_Info info_used;
 
 //#ifndef ADIOS_LUSTRE
@@ -272,7 +336,7 @@ adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
     if (p_count = strstr (temp_string, "stripe_count"))
     {
         char * p = strchr (p_count, '=');
-        char * q = strtok (p, ",");
+        char * q = strtok (p, ";");
         if (!q)
             striping_count = atoi (q + 1);
         else
@@ -280,24 +344,7 @@ adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
     }
 
     if (striping_count <= 0)
-        striping_count = 4;
-
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
-    if (p_size = strstr (temp_string, "num_ost"))
-    {
-        char * p = strchr (p_size, '=');
-        char * q = strtok (p, ",");
-        if (!q)
-            num_ost = atoi(q + 1);
-        else
-            num_ost = atoi(p + 1);
-    }
-
-    // number of ost's is, by default, 672 (jaguar configuration).
-    if (num_ost <= 0)
-        num_ost = 672;
+        striping_count = DEFAULT_STRIPE_COUNT;
 
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
@@ -305,7 +352,7 @@ adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
     if (p_size = strstr (temp_string, "stripe_size"))
     {
         char * p = strchr (p_size, '=');
-        char * q = strtok (p, ",");
+        char * q = strtok (p, ";");
         if (!q)
             striping_unit = atoi(q + 1);
         else
@@ -321,7 +368,7 @@ adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
     if (p_size = strstr (temp_string, "block_size"))
     {
         char * p = strchr (p_size, '=');
-        char * q = strtok (p, ",");
+        char * q = strtok (p, ";");
         if (!q)
             block_unit = atoi(q + 1);
         else
@@ -332,8 +379,6 @@ adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
         block_unit = 1048576;
 
     free (temp_string);
-
-    int fd, old_mask, perm;
 
     old_mask = umask(022);
     umask(old_mask);
@@ -346,7 +391,39 @@ adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
         lum.lmm_pattern = 0;
         lum.lmm_stripe_size = striping_unit;
         lum.lmm_stripe_count = striping_count;
-        lum.lmm_stripe_offset = g_color1 % num_ost;
+
+        // calculate the # of ost's to skip
+        n_ost_skipping = 0;
+        for (i = 0; i < g_num_ost; i++)
+        {
+            if (g_ost_skipping_list[i] == 1)
+            {
+                n_ost_skipping++;
+            }
+        }
+
+        // the actual # of ost that can be used
+        n_ost = g_num_ost - n_ost_skipping;
+        if (n_ost <= 0)
+        {
+            fprintf (stderr, "No OST to use.\n");
+            return;
+        }
+
+        i = 0;
+        while (i < g_num_ost)
+        {
+            if (g_ost_skipping_list[i] == 0)
+            {
+                n++;
+                if (n - 1 == g_color1 % n_ost)
+                    break;
+            }
+            
+            i++;
+        }
+
+        lum.lmm_stripe_offset = i;
         ioctl (fd, LL_IOC_LOV_SETSTRIPE
               ,(void *) &lum
               );
@@ -373,7 +450,7 @@ adios_mpi_amr_set_block_unit(uint64_t *block_unit, char *parameters)
     if (p_size = strstr (temp_string, "block_size"))
     {
         char * p = strchr (p_size, '=');
-        char * q = strtok (p, ",");
+        char * q = strtok (p, ";");
         if (!q)
             *block_unit = atoi(q + 1);
         else
@@ -396,27 +473,78 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, int nproc, int rank)
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
+    // set up # of aggregators
     if (p_size = strstr (temp_string, "num_aggregators"))
     {
         char * p = strchr (p_size, '=');
-        char * q = strtok (p, ",");
+        char * q = strtok (p, ";");
         if (!q)
             g_num_aggregators = atoi(q + 1);
         else
             g_num_aggregators = atoi(p + 1);
     }
 
+    // set up whether to merge PG
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
     if (p_size = strstr (temp_string, "merging_pgs"))
     {
         char * p = strchr (p_size, '=');
-        char * q = strtok (p, ",");
+        char * q = strtok (p, ";");
         if (!q)
             g_merging_pgs = atoi(q + 1);
         else
             g_merging_pgs = atoi(p + 1);
+    }
+
+    // set up whether to thread IO ops
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    if (p_size = strstr (temp_string, "threading"))
+    {
+        char * p = strchr (p_size, '=');
+        char * q = strtok (p, ";");
+        if (!q)
+            g_threading = atoi(q + 1);
+        else
+            g_threading = atoi(p + 1);
+    }
+
+    // set up the number of OST to use
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    if (p_size = strstr (temp_string, "num_ost"))
+    {
+        char * p = strchr (p_size, '=');
+        char * q = strtok (p, ";");
+        if (!q)
+            g_num_ost = atoi(q + 1);
+        else
+            g_num_ost = atoi(p + 1);
+    }
+
+    // number of ost's is, by default, 672 (jaguar configuration).
+    if (g_num_ost <= 0)
+        g_num_ost = DEFAULT_NUM_OST;
+
+    // set up which ost's to skip
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    g_ost_skipping_list = allocOSTList (g_num_ost);
+
+    if (p_size = strstr (temp_string, "osts_to_skip"))
+    {
+        char * p = strchr (p_size, '=');
+        char * q = strtok (p, ";");
+
+        if (!q)
+            g_ost_skipping_list = parseOSTSkipping (g_ost_skipping_list, q + 1, g_num_ost);
+        else
+            g_ost_skipping_list = parseOSTSkipping (g_ost_skipping_list, p + 1, g_num_ost);
     }
 
     free (temp_string);
@@ -1242,14 +1370,19 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                         open_thread_data1.name = md->subfile_name;
                         open_thread_data1.striping_unit = &md->striping_unit;
                         open_thread_data1.parameters = method->parameters;
-/*
-                        pthread_create (&g_t, NULL
-                                       ,adios_mpi_amr_do_open_thread
-                                       ,(void *) &open_thread_data1
-                                       );
-*/
 
-                        adios_mpi_amr_do_open_thread ((void *) &open_thread_data1);
+                        if (g_threading)
+                        {
+                            pthread_create (&g_sot, NULL
+                                           ,adios_mpi_amr_do_open_thread
+                                           ,(void *) &open_thread_data1
+                                           );
+                        }
+                        else
+                        {
+                            adios_mpi_amr_do_open_thread ((void *) &open_thread_data1);
+                        }
+
                         // open metadata file
                         if (md->rank == 0)
                         {
@@ -1257,13 +1390,18 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                             open_thread_data2.name = fd->name;
                             open_thread_data2.striping_unit = &md->striping_unit;
                             open_thread_data2.parameters = method->parameters;
-/*
-                            pthread_create (&g_t1, NULL
-                                           ,adios_mpi_amr_do_open_thread
-                                           ,(void *) &open_thread_data2
-                                           );
-*/
-                             adios_mpi_amr_do_open_thread ((void *) &open_thread_data2);
+
+                            if (g_threading)
+                            {
+                                pthread_create (&g_mot, NULL
+                                               ,adios_mpi_amr_do_open_thread
+                                               ,(void *) &open_thread_data2
+                                               );
+                            }
+                            else
+                            {
+                                adios_mpi_amr_do_open_thread ((void *) &open_thread_data2);
+                            }
                         }
                     }
                 }
@@ -2683,11 +2821,14 @@ void adios_mpi_amr_close (struct adios_file_struct * fd
 
                 if (fd->shared_buffer == adios_flag_yes)
                 {
-#if 1
                     aggr_buff = realloc (aggr_buff, total_data_size + buffer_offset);
                     memcpy (aggr_buff + total_data_size, buffer, buffer_offset); 
 
-//                    pthread_join (g_t, NULL);
+                    // Waiting for the subfile to open if pthread is enabled
+                    if (g_threading)
+                    {
+                        pthread_join (g_sot, NULL);
+                    }
 
                     index_start1 = 0;
                     total_data_size1 = total_data_size + buffer_offset;
@@ -2698,19 +2839,18 @@ void adios_mpi_amr_close (struct adios_file_struct * fd
                     write_thread_data.total_data_size = &total_data_size1;
                     write_thread_data.block_unit = &md->block_unit;
 
-#endif
-
-#if 0
-                    write_thread_data.fh = &md->fh;
-                    write_thread_data.base_offset = &index_start;
-                    write_thread_data.aggr_buff = buffer;
-                    write_thread_data.total_data_size = &buffer_offset;
-                    write_thread_data.block_unit = &md->block_unit;
-#endif
-                    pthread_create (&g_t, NULL
-                                   ,adios_mpi_amr_do_write_thread
-                                   ,(void *) &write_thread_data
-                                   );
+                    // Threading the write so that we can overlap write with index collection.
+                    if (g_threading)
+                    {
+                        pthread_create (&g_swt, NULL
+                                       ,adios_mpi_amr_do_write_thread
+                                       ,(void *) &write_thread_data
+                                       );
+                    }
+                    else
+                    {
+                        adios_mpi_amr_do_write_thread ((void *) &write_thread_data);
+                    }
                 }
 #if 0
                 adios_mpi_amr_striping_unit_write(
@@ -2854,7 +2994,12 @@ void adios_mpi_amr_close (struct adios_file_struct * fd
                               ,MPI_INFO_NULL, &m_file
                               );
 #endif
-//                pthread_join (g_t1, NULL);
+                // Waiting for metadata file to open
+                if (g_threading)
+                {
+                    pthread_join (g_mot, NULL);
+                }
+
                 adios_mpi_amr_striping_unit_write(
                                   md->mfh,
                                   -1,
@@ -2862,16 +3007,6 @@ void adios_mpi_amr_close (struct adios_file_struct * fd
                                   global_index_buffer_offset,
                                   md->block_unit);
 
-#if 0
-                adios_mpi_amr_striping_unit_write(
-                                  m_file,
-                                  -1,
-                                  global_index_buffer,
-                                  global_index_buffer_offset,
-                                  md->block_unit);
-
-                MPI_File_close (&m_file);
-#endif
                 if (global_index_buffer)
                 {
                     free (global_index_buffer);
@@ -2883,7 +3018,11 @@ void adios_mpi_amr_close (struct adios_file_struct * fd
 
             if (is_aggregator (md->rank))
             {
-                pthread_join (g_t, NULL);
+                if (g_threading)
+                {
+                    pthread_join (g_swt, NULL);
+                }
+
                 FREE (aggr_buff);
             }
             FREE (buffer);
@@ -2907,6 +3046,7 @@ void adios_mpi_amr_close (struct adios_file_struct * fd
 
             FREE (md->subfile_name);
             FREE (g_is_aggregator);
+            FREE (g_ost_skipping_list);
             FREE (g_offsets);
 
             break;
