@@ -140,7 +140,7 @@ int main (int argc, char ** argv)
     uint64_t   adios_groupsize, adios_totalsize;
     int        err;
     int64_t        readsize;
-    int        read_planes = 1;
+    int        read_planes = 4;
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(comm,&rank);
     MPI_Comm_size(comm,&size);
@@ -186,8 +186,8 @@ int main (int argc, char ** argv)
 	  } else {
 	    // we will do some string maniupulation to set the global bounds, offsets, and local bounds... 
 	    j = 0 ;
-            if (DEBUG) printf("Scott first dim = %d\n",v->dims[0]);
-	    for ( ii=0;ii<v->dims[0];ii++ ) { //split the first dimension...
+   // for now, we need to make sure that the first dimension  
+	    for ( ii=0;ii<v->dims[0];ii+=read_planes ) { //split the first dimension...
 	      strcpy(gbounds,"");
 	      strcpy(lbounds,"");
 	      strcpy(offs,"");
@@ -195,7 +195,7 @@ int main (int argc, char ** argv)
 	      sprintf(tstring,"%d,",(int)v->dims[0]);
 	      strcat(gbounds,tstring);
 	      
-	      sprintf(tstring,"%d,",(int) 1);
+	      sprintf(tstring,"%d,",(int) read_planes);
 	      strcat(lbounds,tstring);	      
 	      
 	      sprintf(tstring,"%d,",(int) ii);//the offset is the plane ii
@@ -265,7 +265,7 @@ int main (int argc, char ** argv)
 	  } else {
 	    // now we will read in the variable, and then write it out....
 	    // allocate the memory, read in the data, and then write it out....
-	    for (ii=0;ii<v->dims[0];ii++) { // loop on the reading of the first dimension....
+	    for (ii=0;ii<v->dims[0];ii+=read_planes) { // loop on the reading of the first dimension....
 	      readsize = 1;	      
 	      for (j=1;j<(v->ndim);j++) {
 		readsize = readsize * v->dims[j];
