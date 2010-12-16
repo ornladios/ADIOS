@@ -140,7 +140,7 @@ int main (int argc, char ** argv)
     uint64_t   adios_groupsize, adios_totalsize;
     int        err;
     int64_t        readsize;
-    int        read_planes = 4;
+    int        read_planes = 2;
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(comm,&rank);
     MPI_Comm_size(comm,&size);
@@ -173,7 +173,7 @@ int main (int argc, char ** argv)
 	// now I need to create this group in the file that will be written
 	adios_declare_group(&m_adios_group,f->group_namelist[gidx],"",adios_flag_yes);
         adios_select_method (m_adios_group, "MPI", "", "");
-	
+
         for (i = 0; i < g->vars_count; i++) {
 	  ADIOS_VARINFO * v = adios_inq_var_byid (g, i);
 	  // now I can declare the variable...
@@ -186,7 +186,7 @@ int main (int argc, char ** argv)
 	  } else {
 	    // we will do some string maniupulation to set the global bounds, offsets, and local bounds... 
 	    j = 0 ;
-   // for now, we need to make sure that the first dimension  
+   // for now, we need to make sure that the first dimension	    
 	    for ( ii=0;ii<v->dims[0];ii+=read_planes ) { //split the first dimension...
 	      strcpy(gbounds,"");
 	      strcpy(lbounds,"");
@@ -272,11 +272,13 @@ int main (int argc, char ** argv)
 		s[j] = 0;
 		c[j] = v->dims[j];
 	      } // we are reading in with a 1 on the last dimension... so this will be the correct size...
+	      readsize*= read_planes;
 	      s[0] = ii; // this is the plane we are reading....
-	      c[0] = 1; // we are only reading 1 plane....
+	      c[0] = read_planes; // we are only reading read_plane planes....
 	      err = getTypeInfo( v->type, &out_size);
 	      data = (void *) malloc(readsize*out_size);
 	      bytes_read = adios_read_var_byid(g,v->varid,s,c,data);
+	      if (DEBUG && ii==0) printf("RW %f MB\n",(float) (bytes_read/1024./1024.));
 	      // ok... now we write this out....
               if (DEBUG) printf ("%s %d\n",g->var_namelist[i],bytes_read);
 	      adios_write(m_adios_file,g->var_namelist[i],data);
@@ -289,5 +291,6 @@ int main (int argc, char ** argv)
     } // end of all of the groups
     adios_fclose(f);
     adios_finalize(rank);
+    MPI_Finalize();
     return(0);
 }
