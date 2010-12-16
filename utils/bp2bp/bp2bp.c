@@ -132,15 +132,17 @@ int main (int argc, char ** argv)
     uint64_t   c[] = {0,0,0,0,0,0,0,0,0,0};
     uint64_t   count[MAX_DIMS], hcount[MAX_DIMS], bytes_read = 0;
     char       aname[256],fname[256];
-    int64_t        dims [MAX_DIMS];
+    int64_t    dims [MAX_DIMS];
     int        st, ct,out_size;
     char       ** grp_name;
     int64_t    m_adios_group, m_adios_file;
-    int64_t        msize;
+    int64_t    msize,var_size;
     uint64_t   adios_groupsize, adios_totalsize;
     int        err;
-    int64_t        readsize;
-    int        read_planes = 2;
+    int64_t    readsize;
+    int        read_planes;
+    int        buff_size=100;
+    int        flag;
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(comm,&rank);
     MPI_Comm_size(comm,&size);
@@ -153,7 +155,7 @@ int main (int argc, char ** argv)
 
     ADIOS_FILE * f = adios_fopen (argv[1], comm);
     adios_init_noxml(); // no xml will be used to write the new adios file
-    adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 100); // allocate 100MB buffer
+    adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, buff_size); // allocate MB buffer
 
     if (f == NULL) {
         if (DEBUG) printf ("%s\n", adios_errmsg());
@@ -174,6 +176,9 @@ int main (int argc, char ** argv)
 	adios_declare_group(&m_adios_group,f->group_namelist[gidx],"",adios_flag_yes);
         adios_select_method (m_adios_group, "MPI", "", "");
 
+	// for each variable, I need to know how  much to read in... I have a buffer, so I can
+	// think that I can read in this much data..
+
         for (i = 0; i < g->vars_count; i++) {
 	  ADIOS_VARINFO * v = adios_inq_var_byid (g, i);
 	  // now I can declare the variable...
@@ -186,6 +191,26 @@ int main (int argc, char ** argv)
 	  } else {
 	    // we will do some string maniupulation to set the global bounds, offsets, and local bounds... 
 	    j = 0 ;
+
+	    // find out how many planes to read in... we can do this easily
+	    err = getTypeInfo( v->type, &out_size); // this is the first multiplier....
+	    var_size=1;
+	    for (ii=1;ii<v->ndim;ii++) { //figure out the size of just 1 plane we will read... 
+	      var_size*=v->dims[ii];
+	    }
+	    var_size*=out_size; // this is the size for 1 plane... now we can figure out
+	    bytes_read = 0;
+	    flag = 0;
+	    for (ii=0;ii<v->dims[0];ii++) {
+	      bytes_read +=var_size;
+	      if (bytes_read > 1024*1024*buff_size) {
+		read_planes = ii;
+		flag = 1;
+		exit;
+	      }
+	    }
+	    if (flag == 0) read_planes = v->dims[0];
+	    printf ("read_planes = %d\n",read_planes);
    // for now, we need to make sure that the first dimension	    
 	    for ( ii=0;ii<v->dims[0];ii+=read_planes ) { //split the first dimension...
 	      strcpy(gbounds,"");
@@ -231,7 +256,7 @@ int main (int argc, char ** argv)
 	    for (j=0;j<v->ndim;j++) {
 	      msize = msize * v->dims[j];
 	    }
-	    err = getTypeInfo( v->type, &out_size);
+
 	    adios_groupsize+= out_size * msize;
 	    if (DEBUG) printf("name=%s size=%d\n",g->var_namelist[i],out_size*msize);
 	    
