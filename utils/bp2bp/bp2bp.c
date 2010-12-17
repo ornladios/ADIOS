@@ -52,10 +52,8 @@ typedef int bool;
 MPI_Comm   comm = MPI_COMM_WORLD;
 
 
-//#define MAX_BUFFERSIZE 81 
-#define MAX_BUFFERSIZE 10485760
 #define MAX_DIMS 20
-#define DEBUG 0
+#define DEBUG 1
 #define verbose 1
 
 int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize);
@@ -126,7 +124,6 @@ int main (int argc, char ** argv)
     int        rank, size, gidx, i, j, k,l, ii;
     enum       ADIOS_DATATYPES attr_type;
     void       * data = NULL;
-    uint64_t   MAX_BUFFER = 1024 * 1024 * 100;
     uint64_t   start[] = {0,0,0,0,0,0,0,0,0,0};
     uint64_t   s[] = {0,0,0,0,0,0,0,0,0,0};
     uint64_t   c[] = {0,0,0,0,0,0,0,0,0,0};
@@ -140,15 +137,15 @@ int main (int argc, char ** argv)
     uint64_t   adios_groupsize, adios_totalsize;
     int        err;
     int64_t    readsize;
-    int        read_planes;
-    int        buff_size=100;
+    int        *read_planes,*read_planes_end;
+    int        buff_size=1;
     int        flag;
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(comm,&rank);
     MPI_Comm_size(comm,&size);
 
     if (argc < 2) {
-        printf("Usage: %s <BP-file> <HDF5-file>\n", argv[0]);
+        printf("Usage: %s <BP-file> <ADIOS-file>\n", argv[0]);
         return 1;
     }
 
@@ -178,7 +175,8 @@ int main (int argc, char ** argv)
 
 	// for each variable, I need to know how  much to read in... I have a buffer, so I can
 	// think that I can read in this much data..
-
+	read_planes = (int *) malloc(sizeof(int)*g->vars_count);
+	read_planes_end = (int *) malloc(sizeof(int)*g->vars_count);
         for (i = 0; i < g->vars_count; i++) {
 	  ADIOS_VARINFO * v = adios_inq_var_byid (g, i);
 	  // now I can declare the variable...
@@ -187,7 +185,7 @@ int main (int argc, char ** argv)
 	    adios_define_var(m_adios_group,g->var_namelist[i],"",v->type,0,0,0);
 	    err = getTypeInfo( v->type, &out_size);
 	    adios_groupsize+= out_size;
-	    if (DEBUG) printf("name=%s size=%d\n",g->var_namelist[i],out_size);
+	    //if (DEBUG) printf("name=%s size=%d\n",g->var_namelist[i],out_size);
 	  } else {
 	    // we will do some string maniupulation to set the global bounds, offsets, and local bounds... 
 	    j = 0 ;
@@ -201,18 +199,16 @@ int main (int argc, char ** argv)
 	    var_size*=out_size; // this is the size for 1 plane... now we can figure out
 	    bytes_read = 0;
 	    flag = 0;
-	    for (ii=0;ii<v->dims[0];ii++) {
-	      bytes_read +=var_size;
-	      if (bytes_read > 1024*1024*buff_size) {
-		read_planes = ii;
-		flag = 1;
-		exit;
-	      }
+	    ii=0;
+	    while (bytes_read < 1024*1024*buff_size)  {
+	      bytes_read+=var_size;
+	      ii++;
 	    }
-	    if (flag == 0) read_planes = v->dims[0];
-	    printf ("read_planes = %d\n",read_planes);
-   // for now, we need to make sure that the first dimension	    
-	    for ( ii=0;ii<v->dims[0];ii+=read_planes ) { //split the first dimension...
+
+	    read_planes[i] = ii;
+	    //printf ("read_planes = %d\n",read_planes[i]);
+	    // for now, we need to make sure that the first dimension	    
+	    for ( ii=0;ii<v->dims[0]-read_planes[i];ii+=read_planes[i] ) { //split the first dimension...
 	      strcpy(gbounds,"");
 	      strcpy(lbounds,"");
 	      strcpy(offs,"");
@@ -220,7 +216,7 @@ int main (int argc, char ** argv)
 	      sprintf(tstring,"%d,",(int)v->dims[0]);
 	      strcat(gbounds,tstring);
 	      
-	      sprintf(tstring,"%d,",(int) read_planes);
+	      sprintf(tstring,"%d,",(int) read_planes[i]);
 	      strcat(lbounds,tstring);	      
 	      
 	      sprintf(tstring,"%d,",(int) ii);//the offset is the plane ii
@@ -247,10 +243,51 @@ int main (int argc, char ** argv)
 	      strcat(offs,tstring);
 	      
 	      adios_define_var(m_adios_group,g->var_namelist[i],"",v->type,lbounds,gbounds,offs);
-	      if (DEBUG) printf("name gbounds=%s: lbounds=%s: offs=%s\n",gbounds, lbounds, offs);
+	      if (DEBUG) printf("name=%s, gbounds=%s: lbounds=%s: offs=%s\n",g->var_namelist[i],gbounds, lbounds, offs);
 	      // we have a new variable for each sub block being written........
 	    }// end of looping for the splitting of the last dimension
 	    
+	    // now because we don't have an even divisbile, we need to declare the last piece SAK
+	    // we were we... 
+	    read_planes_end[i] = v->dims[0] - ii;
+	    strcpy(gbounds,"");
+	    strcpy(lbounds,"");
+	    strcpy(offs,"");
+	    // we divide the first dimension up.. not the last...
+	    sprintf(tstring,"%d,",(int)v->dims[0]);
+	    strcat(gbounds,tstring);
+	    
+	    sprintf(tstring,"%d,",(int) read_planes_end[i]);
+	    strcat(lbounds,tstring);	      
+	    
+	    sprintf(tstring,"%d,",(int) ii);//the offset is the plane ii
+	    strcat(offs,tstring);
+	    
+	    for (j=1;j<v->ndim-1;j++) {
+	      sprintf(tstring,"%d,",(int)v->dims[j]);
+	      strcat(gbounds,tstring);
+	      
+	      sprintf(tstring,"%d,",(int)v->dims[j]);
+	      strcat(lbounds,tstring);
+	      
+	      sprintf(tstring,"%d,",(int) 0);
+	      strcat(offs,tstring);
+	    }
+	    
+	    sprintf(tstring,"%d\0",(int)v->dims[j]);
+	    strcat(gbounds,tstring);
+	    
+	    sprintf(tstring,"%d\0",(int)v->dims[j]);
+	    strcat(lbounds,tstring);
+	    
+	    sprintf(tstring,"%d\0",(int) 0);
+	    strcat(offs,tstring);
+	    
+	    adios_define_var(m_adios_group,g->var_namelist[i],"",v->type,lbounds,gbounds,offs);
+	    if (DEBUG) printf("name=%s, gbounds=%s: lbounds=%s: offs=%s\n",g->var_namelist[i],gbounds, lbounds, offs);
+	    
+	    
+	    //end of the last piece declaration....
 	    
 	    msize = 1;
 	    for (j=0;j<v->ndim;j++) {
@@ -258,19 +295,19 @@ int main (int argc, char ** argv)
 	    }
 
 	    adios_groupsize+= out_size * msize;
-	    if (DEBUG) printf("name=%s size=%d\n",g->var_namelist[i],out_size*msize);
+	    // if (DEBUG) printf("name=%s size=%d\n",g->var_namelist[i],out_size*msize);
 	    
 	  }
 	} // finished declaring all of the variables
 	// Now we can define the attributes....
 	
-        if (DEBUG) printf("  Attributes=%d:\n", g->attrs_count);
+	// if (DEBUG) printf("  Attributes=%d:\n", g->attrs_count);
         for (i = 0; i < g->attrs_count; i++) {
 	  enum ADIOS_DATATYPES atype;
 	  int  asize;
 	  void *adata;
 	  adios_get_attr_byid (g, i, &atype, &asize, &adata);
-	  if (DEBUG) printf("attribute name=%s\n",g->attr_namelist[i]);
+	  // if (DEBUG) printf("attribute name=%s\n",g->attr_namelist[i]);
 	  adios_define_attribute(m_adios_group,g->attr_namelist[i],"",atype,adata,g->attr_namelist[i]);
 	}
 	/*------------------------------ NOW WE WRITE -------------------------------------------- */
@@ -290,25 +327,42 @@ int main (int argc, char ** argv)
 	  } else {
 	    // now we will read in the variable, and then write it out....
 	    // allocate the memory, read in the data, and then write it out....
-	    for (ii=0;ii<v->dims[0];ii+=read_planes) { // loop on the reading of the first dimension....
+	    for (ii=0;ii<v->dims[0]-read_planes[i];ii+=read_planes[i]) { // loop on the reading of the first dimension....
 	      readsize = 1;	      
 	      for (j=1;j<(v->ndim);j++) {
 		readsize = readsize * v->dims[j];
 		s[j] = 0;
 		c[j] = v->dims[j];
 	      } // we are reading in with a 1 on the last dimension... so this will be the correct size...
-	      readsize*= read_planes;
+	      readsize*= read_planes[i];
 	      s[0] = ii; // this is the plane we are reading....
-	      c[0] = read_planes; // we are only reading read_plane planes....
+	      c[0] = read_planes[i]; // we are only reading read_plane planes....
 	      err = getTypeInfo( v->type, &out_size);
 	      data = (void *) malloc(readsize*out_size);
 	      bytes_read = adios_read_var_byid(g,v->varid,s,c,data);
-	      if (DEBUG && ii==0) printf("RW %f MB\n",(float) (bytes_read/1024./1024.));
+	      //if (DEBUG && ii==0) printf("RW %f MB\n",(float) (bytes_read/1024./1024.));
 	      // ok... now we write this out....
               if (DEBUG) printf ("%s %d\n",g->var_namelist[i],bytes_read);
 	      adios_write(m_adios_file,g->var_namelist[i],data);
 	      free(data);
 	    }
+	    readsize = 1;	      
+	    for (j=1;j<(v->ndim);j++) {
+	      readsize = readsize * v->dims[j];
+	      s[j] = 0;
+	      c[j] = v->dims[j];
+	    } // we are reading in with a 1 on the last dimension... so this will be the correct size...
+	    readsize*= read_planes_end[i];
+	    s[0] = ii; // this is the plane we are reading....
+	    c[0] = read_planes_end[i]; // we are only reading read_plane planes....
+	    err = getTypeInfo( v->type, &out_size);
+	    data = (void *) malloc(readsize*out_size);
+	    bytes_read = adios_read_var_byid(g,v->varid,s,c,data);
+	    //	    if (DEBUG && ii==0) printf("RW %f MB\n",(float) (bytes_read/1024./1024.));
+	    // ok... now we write this out....
+	    if (DEBUG) printf ("%s %d\n",g->var_namelist[i],bytes_read);
+	    adios_write(m_adios_file,g->var_namelist[i],data);
+	    free(data);
 	  }
 	}// end of the writing of the variable..
 	adios_close(m_adios_file);
