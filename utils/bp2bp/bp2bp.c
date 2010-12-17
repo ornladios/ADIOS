@@ -53,7 +53,7 @@ MPI_Comm   comm = MPI_COMM_WORLD;
 
 
 #define MAX_DIMS 20
-#define DEBUG 1
+#define DEBUG 0
 #define verbose 1
 
 int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize);
@@ -138,7 +138,7 @@ int main (int argc, char ** argv)
     int        err;
     int64_t    readsize;
     int        *read_planes,*read_planes_end;
-    int        buff_size=1;
+    int        buff_size=100;
     int        flag;
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(comm,&rank);
@@ -200,13 +200,13 @@ int main (int argc, char ** argv)
 	    bytes_read = 0;
 	    flag = 0;
 	    ii=0;
-	    while (bytes_read < 1024*1024*buff_size)  {
+	    while (bytes_read < 1024*1024*buff_size && ii<v->dims[0])  {
 	      bytes_read+=var_size;
 	      ii++;
 	    }
 
 	    read_planes[i] = ii;
-	    //printf ("read_planes = %d\n",read_planes[i]);
+	    printf ("i=%d, read_planes = %d, total=%d\n",i,read_planes[i],v->dims[0]);
 	    // for now, we need to make sure that the first dimension	    
 	    for ( ii=0;ii<v->dims[0]-read_planes[i];ii+=read_planes[i] ) { //split the first dimension...
 	      strcpy(gbounds,"");
