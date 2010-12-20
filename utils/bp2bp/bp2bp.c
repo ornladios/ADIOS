@@ -43,79 +43,16 @@
 #include "dmalloc.h"
 #endif
 
-typedef int bool;
-#define false 0
-#define true  1
-
-
-
 MPI_Comm   comm = MPI_COMM_WORLD;
 
 
 #define MAX_DIMS 20
-#define DEBUG 0
+#define DEBUG 1
 #define verbose 1
 
 int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize);
 
 
-int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize)
-{
-  switch(adiosvartype) {
-  case adios_unsigned_byte:
-    *elemsize = 1;
-    break;
-  case adios_byte:
-    *elemsize = 1;
-    break;
-  case adios_string:
-    *elemsize = 1;
-    break;
-
-  case adios_unsigned_short:  
-    *elemsize = 2;
-    break;
-  case adios_short:
-    *elemsize = 2;
-    break;
-
-  case adios_unsigned_integer:
-    *elemsize = 4;
-    break;
-  case adios_integer:    
-    *elemsize = 4;
-    break;
-
-  case adios_unsigned_long:
-    *elemsize = 8;
-    break;
-  case adios_long:        
-    *elemsize = 8;
-    break;   
-
-  case adios_real:
-    *elemsize = 4;
-    break;
-
-  case adios_double:
-    *elemsize = 8;
-    break;
-
-  case adios_complex:  
-    *elemsize = 8;
-    break;
-
-  case adios_double_complex:
-    *elemsize = 16;
-    break;
-
-  case adios_long_double: // do not know how to print
-    //*elemsize = 16;
-  default:
-    return 1;
-  }
-  return 0;
-}
 
 int main (int argc, char ** argv)  
 {
@@ -138,7 +75,7 @@ int main (int argc, char ** argv)
     int        err;
     int64_t    readsize;
     int        *read_planes,*read_planes_end;
-    int        buff_size=100;
+    int        buff_size=10;
     int        flag;
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(comm,&rank);
@@ -160,7 +97,7 @@ int main (int argc, char ** argv)
     }
     adios_groupsize = 0;
     /* For all groups */
-    for (gidx = 0; gidx < f->groups_count; gidx++) {
+    for (gidx = 0; gidx < f->groups_count; gidx++) { 
         if (DEBUG) printf("Group %s:\n", f->group_namelist[gidx]);
         ADIOS_GROUP * g = adios_gopen (f, f->group_namelist[gidx]);
 
@@ -315,7 +252,7 @@ int main (int argc, char ** argv)
 	
 	// open up the file for writing....
 	printf("opening file = %s, with group %s, size=%lld\n",argv[2],f->group_namelist[gidx],adios_groupsize);
-	adios_open(&m_adios_file, f->group_namelist[gidx],argv[2],"a",&comm);
+	adios_open(&m_adios_file, f->group_namelist[gidx],argv[2],"w",&comm);
 	adios_group_size( m_adios_file, adios_groupsize, &adios_totalsize);
 	// now we have to write out the variables.... since they are all declared now
 	// This will be the place we actually write out the data!!!!!!!!
@@ -372,4 +309,62 @@ int main (int argc, char ** argv)
     adios_finalize(rank);
     MPI_Finalize();
     return(0);
+}
+
+int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize)
+{
+  switch(adiosvartype) {
+  case adios_unsigned_byte:
+    *elemsize = 1;
+    break;
+  case adios_byte:
+    *elemsize = 1;
+    break;
+  case adios_string:
+    *elemsize = 1;
+    break;
+
+  case adios_unsigned_short:  
+    *elemsize = 2;
+    break;
+  case adios_short:
+    *elemsize = 2;
+    break;
+
+  case adios_unsigned_integer:
+    *elemsize = 4;
+    break;
+  case adios_integer:    
+    *elemsize = 4;
+    break;
+
+  case adios_unsigned_long:
+    *elemsize = 8;
+    break;
+  case adios_long:        
+    *elemsize = 8;
+    break;   
+
+  case adios_real:
+    *elemsize = 4;
+    break;
+
+  case adios_double:
+    *elemsize = 8;
+    break;
+
+  case adios_complex:  
+    *elemsize = 8;
+    break;
+
+  case adios_double_complex:
+    *elemsize = 16;
+    break;
+
+  case adios_long_double: // do not know how to print
+    //*elemsize = 16;
+  default:
+    return 1;
+  }
+  return 0;
 }
