@@ -46,8 +46,8 @@
 MPI_Comm   comm = MPI_COMM_WORLD;
 
 
-#define MAX_DIMS 20
-#define DEBUG 1
+#define MAX_DIMS 100
+#define DEBUG 0
 #define verbose 1
 
 int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize);
@@ -57,15 +57,14 @@ int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize);
 int main (int argc, char ** argv)  
 {
     char       filename [256]; 
-    char       gbounds[24], lbounds[24], offs[24],tstring[8];
+    char       gbounds[64], lbounds[64], offs[64],tstring[32], tstring2[32];
     int        rank, size, gidx, i, j, k,l, ii;
     enum       ADIOS_DATATYPES attr_type;
     void       * data = NULL;
     uint64_t   start[] = {0,0,0,0,0,0,0,0,0,0};
     uint64_t   s[] = {0,0,0,0,0,0,0,0,0,0};
     uint64_t   c[] = {0,0,0,0,0,0,0,0,0,0};
-    uint64_t   count[MAX_DIMS], hcount[MAX_DIMS], bytes_read = 0;
-    char       aname[256],fname[256];
+    uint64_t   bytes_read = 0;
     int64_t    dims [MAX_DIMS];
     int        st, ct,out_size;
     char       ** grp_name;
@@ -75,14 +74,14 @@ int main (int argc, char ** argv)
     int        err;
     int64_t    readsize;
     int        *read_planes,*read_planes_end;
-    int        buff_size=10;
+    int        buff_size=1;
     int        flag;
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(comm,&rank);
     MPI_Comm_size(comm,&size);
 
     if (argc < 2) {
-        printf("Usage: %s <BP-file> <ADIOS-file>\n", argv[0]);
+        printf("Usage: %s <BP-file> <ADIOS-file> [buffer_size MB]\n", argv[0]);
         return 1;
     }
 
@@ -95,6 +94,7 @@ int main (int argc, char ** argv)
         if (DEBUG) printf ("%s\n", adios_errmsg());
 	return -1;
     }
+    buff_size = atoi(argv[3]);
     adios_groupsize = 0;
     /* For all groups */
     for (gidx = 0; gidx < f->groups_count; gidx++) { 
@@ -142,7 +142,18 @@ int main (int argc, char ** argv)
 	      ii++;
 	    }
 
-	    read_planes[i] = ii;
+	    //read_planes[i] = ii;
+	    // try just having this as our parmeter
+
+	    read_planes[i] = (int) buff_size;
+	    flag=1;
+	    while (flag == 1) {
+	      if (v->dims[0] % read_planes[i] !=0 ){
+		read_planes[i]--;
+	      } else {
+		flag = 0;
+	      }
+	    }
 	    printf ("i=%d, read_planes = %d, total=%d\n",i,read_planes[i],v->dims[0]);
 	    // for now, we need to make sure that the first dimension	    
 	    for ( ii=0;ii<v->dims[0]-read_planes[i];ii+=read_planes[i] ) { //split the first dimension...
@@ -179,6 +190,16 @@ int main (int argc, char ** argv)
 	      sprintf(tstring,"%d\0",(int) 0);
 	      strcat(offs,tstring);
 	      
+	      // write this for just the last variable differently......
+	      /* 	      strcpy(tstring,g->var_namelist[i]); */
+	      /* 	      strcat(tstring,"_offset"); */
+	      /* 	      adios_define_var(m_adios_group,tstring,"",adios_int,0,0,0);// define this for the offset... */
+	      /* 	      strcpy(tstring2,g->var_namelist[i]); */
+	      /* 	      strcat(tstring2,"_lbounds"); */
+	      /* 	      adios_define_var(m_adios_group,tstring2,"",adios_int,0,0,0);// define this for the local bounds */
+	      
+	      
+	      /* 	      adios_define_var(m_adios_group,g->var_namelist[i],"",v->type,tstring2,gbounds,tstring); */
 	      adios_define_var(m_adios_group,g->var_namelist[i],"",v->type,lbounds,gbounds,offs);
 	      if (DEBUG) printf("name=%s, gbounds=%s: lbounds=%s: offs=%s\n",g->var_namelist[i],gbounds, lbounds, offs);
 	      // we have a new variable for each sub block being written........
@@ -186,7 +207,7 @@ int main (int argc, char ** argv)
 	    
 	    // now because we don't have an even divisbile, we need to declare the last piece SAK
 	    // we were we... 
-	    read_planes_end[i] = v->dims[0] - ii;
+	    read_planes_end[i] = v->dims[0] - ii;//v->dims[0] - read_planes[i];
 	    strcpy(gbounds,"");
 	    strcpy(lbounds,"");
 	    strcpy(offs,"");
@@ -221,7 +242,7 @@ int main (int argc, char ** argv)
 	    strcat(offs,tstring);
 	    
 	    adios_define_var(m_adios_group,g->var_namelist[i],"",v->type,lbounds,gbounds,offs);
-	    if (DEBUG) printf("name=%s, gbounds=%s: lbounds=%s: offs=%s\n",g->var_namelist[i],gbounds, lbounds, offs);
+
 	    
 	    
 	    //end of the last piece declaration....
@@ -230,7 +251,7 @@ int main (int argc, char ** argv)
 	    for (j=0;j<v->ndim;j++) {
 	      msize = msize * v->dims[j];
 	    }
-
+	    printf("name=%s, gbounds=%s: lbounds=%s: offs=%s, size=%d\n",g->var_namelist[i],gbounds, lbounds, offs,out_size*msize);
 	    adios_groupsize+= out_size * msize;
 	    // if (DEBUG) printf("name=%s size=%d\n",g->var_namelist[i],out_size*msize);
 	    
@@ -283,6 +304,7 @@ int main (int argc, char ** argv)
 	      adios_write(m_adios_file,g->var_namelist[i],data);
 	      free(data);
 	    }
+	    // Now we are on the last plane
 	    readsize = 1;	      
 	    for (j=1;j<(v->ndim);j++) {
 	      readsize = readsize * v->dims[j];
@@ -295,9 +317,19 @@ int main (int argc, char ** argv)
 	    err = getTypeInfo( v->type, &out_size);
 	    data = (void *) malloc(readsize*out_size);
 	    bytes_read = adios_read_var_byid(g,v->varid,s,c,data);
+	    printf("Last plane %d %d\n",s[0],c[0]);
 	    //	    if (DEBUG && ii==0) printf("RW %f MB\n",(float) (bytes_read/1024./1024.));
 	    // ok... now we write this out....
 	    if (DEBUG) printf ("%s %d\n",g->var_namelist[i],bytes_read);
+	    // we must write the local bounds as an array and the offsets..
+	    
+/* 	      strcpy(tstring,g->var_namelist[i]); */
+/* 	      strcat(tstring,"_offset"); */
+/* 	      strcpy(tstring2,g->var_namelist[i]); */
+/* 	      strcat(tstring2,"_lbounds"); */
+/* 	      adios_write(m_adios_file,tstring ,s); */
+/* 	      adios_write(m_adios_file,tstring2,c); */
+	    //
 	    adios_write(m_adios_file,g->var_namelist[i],data);
 	    free(data);
 	  }
