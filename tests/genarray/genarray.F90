@@ -1,4 +1,4 @@
-!
+
 !  ADIOS is freely available under the terms of the BSD license described
 !  in the COPYING file in the top level directory of this source distribution.
 !
@@ -22,6 +22,8 @@ module genarray_comm
     character(len=256) :: outputfile, inputfile
     integer :: npx, npy, npz  ! # of processors in x-y-z direction
     integer :: ndx, ndy, ndz  ! size of array per processor
+    integer :: timesteps      ! number of timesteps to write
+    integer :: sleeptime      ! time to sleep between time steps
     logical :: common_size    ! .true.  if common local sizes are given as argument
                               ! .false. if we have to read sizes from a file
 
@@ -86,19 +88,7 @@ program genarray
     call determineOffsets()
     call generateLocalArray()
 
-    call MPI_BARRIER(MPI_COMM_WORLD,err)
-    start_time = MPI_WTIME()
     call writeArray()
-    call MPI_BARRIER(MPI_COMM_WORLD,err)
-    end_time = MPI_WTIME()
-    total_time = end_time - start_time
-
-    sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
-    gbs = sz/total_time
-
-    !if (rank==0) write(6,*) total_time
-    if (rank==0) write(6,'(a10,d12.2,2x,d12.2,2x,d12.3)') outputfile,sz,total_time,gbs
-
     ! Terminate
     call MPI_Barrier (MPI_COMM_WORLD, ierr)
     call adios_finalize (rank, ierr)
@@ -176,37 +166,34 @@ subroutine writeArray()
     implicit none
     integer*8 adios_handle, adios_groupsize
     integer adios_err
+    integer :: tstep
+    character(2) :: mode = "w"
     include 'mpif.h'
 
-    call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
-    cache_start_time = MPI_WTIME()
 
-    group = "genarray"
-    call adios_open (adios_handle, group, outputfile, "w", group_comm, adios_err)
+    do tstep=1,timesteps
+        if (tstep > 1) mode = "a"
+        double_xyz = tstep + double_xyz
+        call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
+        cache_start_time = MPI_WTIME()
+        group = "genarray"
+        call adios_open (adios_handle, group, outputfile, mode, group_comm, adios_err)
 #include "gwrite_genarray.fh"
-    call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
-    cache_end_time = MPI_WTIME()
-    cache_total_time = cache_end_time - cache_start_time
-
-    sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
-    gbs = sz/cache_total_time
-
-    !if (rank==0) write(6,*) total_time
-    if (rank==0) print '("Writing: ",a10,d12.2,2x,d12.2,2x,d12.3)', outputfile,sz,cache_total_time,gbs
-
-    call adios_start_calculation(adios_err)
-    call adios_end_iteration(adios_err)
-    call adios_stop_calculation(adios_err)
-
-    call adios_close (adios_handle, adios_err)
-
-
+        call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
+        cache_end_time = MPI_WTIME()
+        cache_total_time = cache_end_time - cache_start_time
+        sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
+        gbs = sz/cache_total_time
+        call adios_close (adios_handle, adios_err)
+        if (rank==0) print '("Writing: ",a10,d12.2,2x,d12.2,2x,d12.3)', outputfile,sz,cache_total_time,gbs
+        if (tstep<timesteps) call sleep(sleeptime)
+     end do
 end subroutine writeArray
 
 
 !!***************************
 subroutine usage()
-    print *, "Usage: genarray  output N  M  K  [nx  ny  nz | infile]"
+    print *, "Usage: genarray  output N  M  K  [infile|nx  ny  nz timesteps sleeptime]"
     print *, "output: name of output file"
     print *, "N:      number of processes in X dimension"
     print *, "M:      number of processes in Y dimension"
@@ -215,6 +202,8 @@ subroutine usage()
     print *, "ny:     local array size in Y dimension per processor"
     print *, "nz:     local array size in Z dimension per processor"
     print *, "infile: file that describes nx ny nz for each processor"
+    print *, "timesteps: the total number of timesteps to output" 
+    print *, "sleeptime: the time to sleep (s)"
 end subroutine usage
 
 !!***************************
@@ -231,6 +220,7 @@ subroutine processArgs()
 #endif
 
     character(len=256) :: npx_str, npy_str, npz_str, ndx_str, ndy_str, ndz_str
+    character(len=256) :: time_str,sleep_str
     integer :: numargs
 
     !! process arguments
@@ -253,7 +243,7 @@ subroutine processArgs()
         ndy = 0
         ndz = 0
         common_size = .false.
-    else if (numargs == 7) then
+    else if (numargs == 9) then
         call getarg(5, ndx_str)
         call getarg(6, ndy_str)
         call getarg(7, ndz_str)
@@ -262,6 +252,10 @@ subroutine processArgs()
         read (ndz_str,'(i6)') ndz
         inputfile=char(0)
         common_size = .true.
+        call getarg(8, time_str)
+        call getarg(9, sleep_str)
+        read (time_str,'(i6)') timesteps
+        read (sleep_str,'(i6)') sleeptime
     else
         call usage()
         call exit(1)
