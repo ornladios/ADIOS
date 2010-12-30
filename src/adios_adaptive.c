@@ -2477,6 +2477,16 @@ struct timeval a, b, c;
 ///////////////////////////////////////////////////////////////////////////////
 /////// START OF WRITER ///////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
+            // begin code for global index collection
+            MPI_Comm coord_comm;
+            int color;
+            if (md->rank == md->sub_coord_rank)
+                color = 1;
+            else
+                color = MPI_UNDEFINED;
+            MPI_Comm_split (md->group_comm, color, md->rank, &coord_comm);
+            // end code for global index collection
+
             uint64_t * msg = 0;
             int source;
             int tag;
@@ -3245,6 +3255,29 @@ gettimeofday (&timing.t13, NULL);
                         }
 
                         // insert the global index collection here
+                        // rebuild the index for sending without version
+                        index_buffer_offset = 0;
+                        free (index_buffer);
+                        index_buffer = 0;
+                        index_buffer_size = 0;
+                        adios_write_index_v1 (&index_buffer, &index_buffer_size
+                                             ,&index_buffer_offset
+                                             ,(md->stripe_size *
+                                                       (indices_received + 1)
+                                              )
+                                             ,md->old_pg_root
+                                             ,md->old_vars_root
+                                             ,md->old_attrs_root
+                                             );
+                        uint32_t size = (uint32_t) index_buffer_offset;
+                        int coord_rank;
+                        MPI_Comm_rank (coord_comm, &coord_rank);
+                        MPI_Gather (&size, 1, MPI_INT
+                                   ,0, 0, MPI_INT, 0, coord_comm
+                                   );
+                        MPI_Gatherv (&index_buffer, size, MPI_BYTE
+                                    ,0, 0, 0, MPI_BYTE, 0, coord_comm
+                                    );
 
                         // once we are done sending the index, shutdown
                         shutdown_flag = SHUTDOWN_FLAG;
@@ -4405,6 +4438,123 @@ gettimeofday (&timing.t13, NULL);
                         // simplify the messaging to solicit and gather the
                         // variable-sized index pieces. Look at what is done
                         // in the normal MPI method for the bcast/gatherv setup
+                        int coord_size;
+                        MPI_Comm_size (coord_comm, &coord_size);
+                        int * index_sizes = malloc (4 * coord_size);
+                        int * index_offsets = malloc (4 * coord_size);
+                        char * recv_buffer = 0;
+                        uint32_t size = 0, global_total_size = 0;
+                        MPI_Gather (&size, 1, MPI_INT, index_sizes, 1, MPI_INT
+                                   ,0, coord_comm
+                                   );
+
+                        for (i = 0; i < coord_size; i++)
+                        {
+                            index_offsets [i] = global_total_size;
+                            global_total_size += index_sizes [i];
+                        }
+
+                        recv_buffer = malloc (global_total_size);
+                        MPI_Gatherv (&size, 0, MPI_BYTE
+                                    ,recv_buffer, index_sizes, index_offsets
+                                    ,MPI_BYTE, 0, coord_comm
+                                    );
+
+                        struct adios_bp_buffer_struct_v1 b;
+                        memset (&b, 0, sizeof (struct adios_bp_buffer_struct_v1));
+
+                        for (i = 1; i < coord_size; i++)
+                        {
+                            b.buff = recv_buffer + index_offsets [i - 1];
+                            b.length = index_sizes [i - 1];
+                            b.offset = 0;
+
+                            adios_parse_process_group_index_v1 (&b
+                                                               ,&new_pg_root
+                                                               );
+                            adios_parse_vars_index_v1 (&b, &new_vars_root);
+                            adios_parse_attributes_index_v1 (&b
+                                                            ,&new_attrs_root
+                                                            );
+
+                            adios_merge_index_v1 (&md->old_pg_root
+                                                 ,&md->old_vars_root
+                                                 ,&md->old_attrs_root
+                                                 ,new_pg_root, new_vars_root
+                                                 ,new_attrs_root
+                                                 );
+                            new_pg_root = 0;
+                            new_vars_root = 0;
+                            new_attrs_root = 0;
+                        }
+
+                        free (b.buff);
+                        free (recv_buffer);
+                        free (index_sizes);
+                        free (index_offsets);
+
+                        char * global_index_buffer = 0;
+                        uint64_t global_index_buffer_size = 0;
+                        uint64_t global_index_buffer_offset = 0;
+                        uint64_t global_index_start = 0;
+                        uint16_t flag = 0;
+
+                        adios_write_index_v1 (&global_index_buffer
+                                             ,&global_index_buffer_size
+                                             ,&global_index_buffer_offset
+                                             ,global_index_start
+                                             ,md->old_pg_root
+                                             ,md->old_vars_root
+                                             ,md->old_attrs_root
+                                             );
+                        flag |= ADIOS_VERSION_HAVE_SUBFILE;
+                        adios_write_version_flag_v1 (&global_index_buffer
+                                                    ,&global_index_buffer_size
+                                                    ,&global_index_buffer_offset
+                                                    ,flag
+                                                    );
+                        int master_index = 0;
+                        char * metadata_filename = malloc (
+                                                strlen (method->base_path)
+                                              + strlen (fd->name) + 1
+                                             );
+                        sprintf (metadata_filename, "%s%s", method->base_path
+                                ,fd->name
+                                );
+                        master_index = open (metadata_filename
+                                            , O_WRONLY | O_CREAT
+                                             | O_TRUNC | O_LARGEFILE
+                                            ,  S_IRUSR | S_IWUSR
+                                             | S_IRGRP | S_IWGRP
+                                             | S_IROTH | S_IWOTH
+                                            );
+                        if (master_index == -1)
+                        {
+                            fprintf (stderr, "ADAPTIVE metadata file create "
+                                             "failed for "
+                                             "base_path %s, "
+                                             "metadata file name %s\n"
+                                    ,method->base_path, metadata_filename
+                                    );
+
+                            free (metadata_filename);
+                        }
+                        ssize_t written_size = write (master_index
+                                                     ,global_index_buffer
+                                                     ,global_index_buffer_offset
+                                                     );
+                        if (written_size != global_index_buffer_offset)
+                        {
+                            fprintf (stderr
+                                    ,"ADAPTIVE method tried to write %llu, "
+                                     "only wrote %llu\n"
+                                    ,fd->bytes_written
+                                    ,written_size
+                                    );
+                        }
+                        close (master_index);
+                        free (metadata_filename);
+                        free (recv_buffer);
 #if COLLECT_METRICS
 gettimeofday (&timing.t9, NULL);
 timing.t10.tv_sec = timing.t9.tv_sec;
