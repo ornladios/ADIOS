@@ -47,7 +47,7 @@ MPI_Comm   comm = MPI_COMM_WORLD;
 
 
 #define MAX_DIMS 100
-#define DEBUG 1
+#define DEBUG 0
 #define verbose 1
 
 int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize);
@@ -69,21 +69,21 @@ int main (int argc, char ** argv)
     int        st, ct,out_size;
     char       ** grp_name;
     int64_t    m_adios_group, m_adios_file;
-    int64_t    msize,var_size;
+    int64_t    msize,msize2, var_size;
     uint64_t   adios_groupsize, adios_totalsize;
     int        err;
     int64_t    readsize;
     int        *read_planes,*read_planes_end;
-    int        buff_size=512;
+    int        buff_size=768;
     int        flag;
     int        WRITEME=1, WRITEMELAST=10;
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(comm,&rank);
     MPI_Comm_size(comm,&size);
 
-    if (argc < 2) {
-        printf("Usage: %s <BP-file> <ADIOS-file> [buffer_size MB]\n", argv[0]);
-        return 1;
+    if (argc < 5) {
+      if (rank==0) printf("Usage: %s <BP-file> <ADIOS-file> [buffer_size MB]\n", argv[0]);
+      return 1;
     }
 
     ADIOS_FILE * f = adios_fopen (argv[1], comm);
@@ -108,7 +108,7 @@ int main (int argc, char ** argv)
 	/* First create all of the groups */
 	// now I need to create this group in the file that will be written
 	adios_declare_group(&m_adios_group,f->group_namelist[gidx],"",adios_flag_yes);
-        adios_select_method (m_adios_group, "MPI", "", "");
+        adios_select_method (m_adios_group, argv[4], "", "");
 
 	// for each variable, I need to know how  much to read in... I have a buffer, so I can
 	// think that I can read in this much data..
@@ -154,9 +154,14 @@ int main (int argc, char ** argv)
 		flag = 0;
 	      }
 	    }
-	    if (i==13) printf ("rank=%d, i=%d, read_planes = %d, total=%d\n",rank,i,read_planes[i],v->dims[0]);
+	    if (i==13 && DEBUG) printf ("rank=%d, i=%d, read_planes = %d, total=%d\n",rank,i,read_planes[i],v->dims[0]);
 	    // for now, we need to make sure that the first dimension	    
+	    msize =1;
+	    for (ii =1;ii<v->ndim;ii++) {
+	      msize = msize * v->dims[ii]; // we are calculating the size of the group to output
+	    }
 
+	    msize2 = 0;
 	    for ( ii=rank*read_planes[i];ii<v->dims[0];ii+=read_planes[i]*size ) { //split the first dimension...
 	      strcpy(gbounds,"");
 	      strcpy(lbounds,"");
@@ -166,7 +171,8 @@ int main (int argc, char ** argv)
 	      strcat(gbounds,tstring);
 	      
 	      sprintf(tstring,"%d,",(int) read_planes[i]);
-	      strcat(lbounds,tstring);	      
+	      strcat(lbounds,tstring);
+	      msize2 = msize2 + read_planes[i];
 	      
 	      sprintf(tstring,"%d,",(int) ii);//the offset is the plane ii
 	      strcat(offs,tstring);
@@ -236,7 +242,7 @@ int main (int argc, char ** argv)
 	      
 	      sprintf(tstring,"%d,",(int)v->dims[j]);
 	      strcat(lbounds,tstring);
-	      
+	     
 	      sprintf(tstring,"%d,",(int) 0);
 	      strcat(offs,tstring);
 	    }
@@ -244,9 +250,9 @@ int main (int argc, char ** argv)
 	    sprintf(tstring,"%d\0",(int)v->dims[j]);
 	    strcat(gbounds,tstring);
 	    
-	    sprintf(tstring,"%d\0",(int)v->dims[j]);
-	    strcat(lbounds,tstring);
-	    
+/* 	    sprintf(tstring,"%d\0",(int)v->dims[j]); */
+/* 	    strcat(lbounds,tstring); */
+	    msize2+=read_planes_end[i];
 	    sprintf(tstring,"%d\0",(int) 0);
 	    strcat(offs,tstring);
 	    if (DEBUG && i==13) printf("LP:rank=%d, name=%s, gbounds=%s: lbounds=%s: offs=%s\n",rank,g->var_namelist[i],gbounds, lbounds, offs);
@@ -257,12 +263,8 @@ int main (int argc, char ** argv)
 	   } 
 	    //end of the last piece declaration....
 	    
-	    msize = 1;
-	    for (j=0;j<v->ndim;j++) {
-	      msize = msize * v->dims[j];
-	    }
-	    adios_groupsize+= out_size * msize;
-	    // if (DEBUG) printf("name=%s size=%d\n",g->var_namelist[i],out_size*msize);
+	    adios_groupsize+= out_size * msize * msize2;
+	    if (DEBUG) printf("rank = %d, name=%s size=%d\n",rank,g->var_namelist[i],adios_groupsize);
 	    
 	  }
 	} // finished declaring all of the variables
@@ -283,7 +285,7 @@ int main (int argc, char ** argv)
 
     if (WRITEME==1) {
 	// open up the file for writing....
-	printf("opening file = %s, with group %s, size=%lld\n",argv[2],f->group_namelist[gidx],adios_groupsize);
+	if (DEBUG) printf("opening file = %s, with group %s, size=%lld\n",argv[2],f->group_namelist[gidx],adios_groupsize);
 	adios_open(&m_adios_file, f->group_namelist[gidx],argv[2],"w",&comm);
 	adios_group_size( m_adios_file, adios_groupsize, &adios_totalsize);
 	// now we have to write out the variables.... since they are all declared now
