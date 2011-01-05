@@ -12,6 +12,13 @@
  */
 
 
+/* Now we have to get the last plane section working, to divide up any way we want.
+   Then we can divide up the pieces with not just the last dimension, but also the
+   dimension before that.... I.e. we can can make larger chunks....
+   The idea is that we want as few chunks as possible, given the total number of procs
+   which will read in the the data
+*/
+
 #ifndef _GNU_SOURCE
 #   define _GNU_SOURCE
 #endif
@@ -47,7 +54,7 @@ MPI_Comm   comm = MPI_COMM_WORLD;
 
 
 #define MAX_DIMS 100
-#define DEBUG 0
+#define DEBUG 1
 #define verbose 1
 #define TIMING 100
 
@@ -77,7 +84,7 @@ int main (int argc, char ** argv)
     int        *read_planes,*read_planes_end;
     int        buff_size=768;
     int        flag,itime;
-    int        WRITEME=1, WRITEMELAST=10;
+    int        WRITEME=1, WRITEMELAST=0;
     MPI_Init(&argc,&argv);
     MPI_Comm_rank(comm,&rank);
     MPI_Comm_size(comm,&size);
@@ -136,7 +143,8 @@ int main (int argc, char ** argv)
       // think that I can read in this much data..
       read_planes = (int *) malloc(sizeof(int)*g->vars_count);
       read_planes_end = (int *) malloc(sizeof(int)*g->vars_count);
-      for (i = 0; i < g->vars_count; i++) {
+      //for (i = 0; i < g->vars_count; i++) {  
+      for (i = 13; i < 14; i++) { // SAK --- just for testing 1 variable output....
 	ADIOS_VARINFO * v = adios_inq_var_byid (g, i);
 	// now I can declare the variable...
 	// if it's a scalar then we declare like:
@@ -144,7 +152,6 @@ int main (int argc, char ** argv)
 	  adios_define_var(m_adios_group,g->var_namelist[i],"",v->type,0,0,0);
 	  err = getTypeInfo( v->type, &out_size);
 	  adios_groupsize+= out_size;
-	  //if (DEBUG) printf("name=%s size=%d\n",g->var_namelist[i],out_size);
 	} else {
 	  // we will do some string maniupulation to set the global bounds, offsets, and local bounds... 
 	  j = 0 ;
@@ -167,23 +174,21 @@ int main (int argc, char ** argv)
 	  // try just having this as our parmeter
 	  
 	  read_planes[i] = (int) buff_size;
-	  flag=1;
-	  while (flag == 1) {
-	    if (v->dims[0] % read_planes[i] !=0 ){
-	      read_planes[i]--;
-	    } else {
-	      flag = 0;
-	    }
-	  }
-	  if (i==13 && DEBUG) printf ("rank=%d, i=%d, read_planes = %d, total=%d\n",rank,i,read_planes[i],v->dims[0]);
+
 	  // for now, we need to make sure that the first dimension	    
 	  msize =1;
 	  for (ii =1;ii<v->ndim;ii++) {
 	    msize = msize * v->dims[ii]; // we are calculating the size of the group to output
 	  }
-	  
+	  flag =0;
 	  msize2 = 0;
 	  for ( ii=rank*read_planes[i];ii<v->dims[0];ii+=read_planes[i]*size ) { //split the first dimension...
+	    if (read_planes[i] + ii > v->dims[0]) {
+	      read_planes_end[i] = v->dims[0] - ii;
+	      if (DEBUG==1 && i==13) printf("rank=%d, read_planes_end = %d %d %d: %d\n",rank,v->dims[0],ii,read_planes[i],read_planes_end[i]);
+	      flag = 1;
+	    }
+	    //  if (read_planes[i] + ii <= v->dims[0]) {
 	    strcpy(gbounds,"");
 	    strcpy(lbounds,"");
 	    strcpy(offs,"");
@@ -191,9 +196,15 @@ int main (int argc, char ** argv)
 	    sprintf(tstring,"%d,",(int)v->dims[0]);
 	    strcat(gbounds,tstring);
 	    
-	    sprintf(tstring,"%d,",(int) read_planes[i]);
+	    if (flag==0) {
+	      sprintf(tstring,"%d,",(int) read_planes[i]);
+	      msize2 = msize2 + read_planes[i];
+	    }
+	    else if (flag==1) { 	      
+	      sprintf(tstring,"%d,",(int) read_planes_end[i]);
+	      msize2 = msize2 + read_planes_end[i];
+	    }
 	    strcat(lbounds,tstring);
-	    msize2 = msize2 + read_planes[i];
 	    
 	    sprintf(tstring,"%d,",(int) ii);//the offset is the plane ii
 	    strcat(offs,tstring);
@@ -218,93 +229,34 @@ int main (int argc, char ** argv)
 	    sprintf(tstring,"%d\0",(int) 0);
 	    strcat(offs,tstring);
 	    
-	    // write this for just the last variable differently......
-	    /* 	      strcpy(tstring,g->var_namelist[i]); */
-	    /* 	      strcat(tstring,"_offset"); */
-	    /* 	      adios_define_var(m_adios_group,tstring,"",adios_int,0,0,0);// define this for the offset... */
-	    /* 	      strcpy(tstring2,g->var_namelist[i]); */
-	    /* 	      strcat(tstring2,"_lbounds"); */
-	    /* 	      adios_define_var(m_adios_group,tstring2,"",adios_int,0,0,0);// define this for the local bounds */
-	    
-	    
-	    /* 	      adios_define_var(m_adios_group,g->var_namelist[i],"",v->type,tstring2,gbounds,tstring); */
 	    adios_define_var(m_adios_group,g->var_namelist[i],"",v->type,lbounds,gbounds,offs);
-	    if (DEBUG&&i==13) printf("rank=%d, name=%s, gbounds=%s: lbounds=%s: offs=%s\n",rank,g->var_namelist[i],gbounds, lbounds, offs);
+	    if (DEBUG&&i==13) printf("rank=%d, name=%s, gbounds=%s: lbounds=%s: offs=%s,flag=%d\n",rank,g->var_namelist[i],gbounds, lbounds, offs,flag);
+	    
 	    // we have a new variable for each sub block being written........
-	  }// end of looping for the splitting of the last dimension
+	}// end of looping for the splitting of the last dimension
 	  
-	  // now because we don't have an even divisbile, we need to declare the last piece SAK
-	  // the end must take into account multiple procs....
-	  if (i==13 &&DEBUG) printf("rank=%d, ii=%d\n",rank,ii);
-	  // what was the largest that I went to?
-	  //int largest_def = ii + read_planes[i] * (size-1)
-	  read_planes_end[i] = read_planes[i];
-	  if ((read_planes_end[i]  + ii)>v->dims[0]) {
-	    read_planes_end[i] = v->dims[0] -ii;
-	  }
-	  //read_planes_end[i] = v->dims[0]-size*read_planes[i] - ii;//v->dims[0] - read_planes[i];
-	  if (read_planes_end[i]>0) {
-	    strcpy(gbounds,"");
-	    strcpy(lbounds,"");
-	    strcpy(offs,"");
-	    // we divide the first dimension up.. not the last...
-	    sprintf(tstring,"%d,",(int)v->dims[0]);
-	    strcat(gbounds,tstring);
-	    
-	    sprintf(tstring,"%d,",(int) read_planes_end[i]);
-	    strcat(lbounds,tstring);	      
-	    
-	    sprintf(tstring,"%d,",(int) ii);//the offset is the plane ii
-	    strcat(offs,tstring);
-	    
-	    for (j=1;j<v->ndim-1;j++) {
-	      sprintf(tstring,"%d,",(int)v->dims[j]);
-	      strcat(gbounds,tstring);
-	      
-	      sprintf(tstring,"%d,",(int)v->dims[j]);
-	      strcat(lbounds,tstring);
-	      
-	      sprintf(tstring,"%d,",(int) 0);
-	      strcat(offs,tstring);
-	    }
-	    
-	    sprintf(tstring,"%d\0",(int)v->dims[j]);
-	    strcat(gbounds,tstring);
-	    
-	    
-	    msize2+=read_planes_end[i];
-	    sprintf(tstring,"%d\0",(int) 0);
-	    strcat(offs,tstring);
-	    if (DEBUG && i==13) printf("LP:rank=%d, name=%s, gbounds=%s: lbounds=%s: offs=%s\n",rank,g->var_namelist[i],gbounds, lbounds, offs);
-	    
-	    adios_define_var(m_adios_group,g->var_namelist[i],"",v->type,lbounds,gbounds,offs);
-	    
-	    
-	  } 
-	  //end of the last piece declaration....
 	  
-	  adios_groupsize+= out_size * msize * msize2;
-	  if (DEBUG) printf("rank = %d, name=%s size=%d\n",rank,g->var_namelist[i],adios_groupsize);
-	  
-	  }
-      } // finished declaring all of the variables
-	// Now we can define the attributes....
+	adios_groupsize+= out_size * msize * msize2;
+	
+	}
+    } // finished declaring all of the variables
+    // Now we can define the attributes....
+    
+    // if (DEBUG) printf("  Attributes=%d:\n", g->attrs_count);
+    for (i = 0; i < g->attrs_count; i++) {
+      enum ADIOS_DATATYPES atype;
+      int  asize;
+      void *adata;
+      adios_get_attr_byid (g, i, &atype, &asize, &adata);
+      // if (DEBUG) printf("attribute name=%s\n",g->attr_namelist[i]);
+      adios_define_attribute(m_adios_group,g->attr_namelist[i],"",atype,adata,g->attr_namelist[i]);
+    }
+    if (TIMING==100) {
+      MPI_Barrier(MPI_COMM_WORLD);
       
-	// if (DEBUG) printf("  Attributes=%d:\n", g->attrs_count);
-      for (i = 0; i < g->attrs_count; i++) {
-	enum ADIOS_DATATYPES atype;
-	int  asize;
-	void *adata;
-	adios_get_attr_byid (g, i, &atype, &asize, &adata);
-	// if (DEBUG) printf("attribute name=%s\n",g->attr_namelist[i]);
-	adios_define_attribute(m_adios_group,g->attr_namelist[i],"",atype,adata,g->attr_namelist[i]);
-      }
-      if (TIMING==100) {
-	MPI_Barrier(MPI_COMM_WORLD);
-      
-	end_time[0] = MPI_Wtime();
-	total_time[0]+=end_time[0] - start_time[0];
-      }
+      end_time[0] = MPI_Wtime();
+      total_time[0]+=end_time[0] - start_time[0];
+    }
       /*------------------------------ NOW WE WRITE -------------------------------------------- */
       // Now we have everything declared... now we need to write them out!!!!!!
       
@@ -317,11 +269,12 @@ int main (int argc, char ** argv)
 	// now we have to write out the variables.... since they are all declared now
 	// This will be the place we actually write out the data!!!!!!!!
         //for (i = 0; i < 14;i++) { 
-	for (i = 0; i < g->vars_count; i++) {
+	//for (i = 0; i < g->vars_count; i++) {
+	for (i = 13; i < 14;i++) { 
 	  ADIOS_VARINFO * v = adios_inq_var_byid (g, i);
 	  // first we can write out the scalars very easily........
 	  if (v->ndim == 0) {
-
+	    
 	    if (TIMING==100) {
 	      MPI_Barrier(MPI_COMM_WORLD);
 	      start_time[2] = MPI_Wtime();
@@ -329,7 +282,7 @@ int main (int argc, char ** argv)
 	    adios_write(m_adios_file,g->var_namelist[i],v->value); //I think there will be a problem for strings.... Please check this out SAK
 	    if (TIMING==100) {
 	      MPI_Barrier(MPI_COMM_WORLD);
-
+	      
 	      end_time[2] = MPI_Wtime();
 	      total_time[2]+=end_time[2] - start_time[2];
 	    }
@@ -337,7 +290,7 @@ int main (int argc, char ** argv)
 	    // now we will read in the variable, and then write it out....
 	    // allocate the memory, read in the data, and then write it out....
 	    for ( ii=rank*read_planes[i];ii<v->dims[0];ii+=read_planes[i]*size ) { //split the first dimension...
-	      readsize = 1;	      
+	      readsize = 1; 
 	      for (j=1;j<(v->ndim);j++) {
 		readsize = readsize * v->dims[j];
 		s[j] = 0;
@@ -346,6 +299,12 @@ int main (int argc, char ** argv)
 	      readsize*= read_planes[i];
 	      s[0] = ii; // this is the plane we are reading....
 	      c[0] = read_planes[i]; // we are only reading read_plane planes....
+	      flag = 0;
+	      // Now we will care if we are on the last plane....
+	      if (read_planes[i] + ii > v->dims[0]) {
+		c[0] = read_planes_end[i];
+	      }
+	      
 	      err = getTypeInfo( v->type, &out_size);
 	      // in this version all chunks will be the same size, so only allocate 1 time
 	      /*if (ii=rank*read_planes[i])*/ data = (void *) malloc(readsize*out_size);
@@ -359,13 +318,15 @@ int main (int argc, char ** argv)
 		end_time[1] = MPI_Wtime();
 		total_time[1]+=end_time[1] -start_time[1];
 	      }
-	      if (ii==0) printf("RW %f MB\n",(float) (bytes_read/1024./1024.));
+	      if (ii==0) 
+printf("RW %f MB\n",(float) (bytes_read/1024./1024.));
 	      // ok... now we write this out....
               if (DEBUG) printf ("ADIOS WRITE: rank=%d, name=%s datasize=%d\n",rank,g->var_namelist[i],bytes_read);
 	      if (TIMING==100) {
 		MPI_Barrier(MPI_COMM_WORLD);
 		start_time[2] = MPI_Wtime();
 	      }
+	      if (DEBUG && i==13) printf("rank=%d, write s[0]=%d, c[0]=%d\n",rank,s[0],c[0]); 
 	      adios_write(m_adios_file,g->var_namelist[i],data);
 	      if (TIMING==100) {
 		MPI_Barrier(MPI_COMM_WORLD);
@@ -375,7 +336,6 @@ int main (int argc, char ** argv)
 	      }
 	      free(data);
 	    }
-	    //free(data); // only free it on the last chunk, if we have all chunks equal size
 	    // Now we are on the last plane
 	    if (WRITEMELAST==1) {
 	      readsize = 1;	      
@@ -402,18 +362,9 @@ int main (int argc, char ** argv)
 	      }
 	      
 	      printf("Last plane %d %d\n",s[0],c[0]);
-	      //	    if (DEBUG && ii==0) printf("RW %f MB\n",(float) (bytes_read/1024./1024.));
 	      // ok... now we write this out....
 	      if (DEBUG) printf ("%s %d\n",g->var_namelist[i],bytes_read);
-	      // we must write the local bounds as an array and the offsets..
-	      
-	      /* 	      strcpy(tstring,g->var_namelist[i]); */
-	      /* 	      strcat(tstring,"_offset"); */
-	      /* 	      strcpy(tstring2,g->var_namelist[i]); */
-	      /* 	      strcat(tstring2,"_lbounds"); */
-	      /* 	      adios_write(m_adios_file,tstring ,s); */
-	      /* 	      adios_write(m_adios_file,tstring2,c); */
-	      //
+
 
 	      
 	      if (TIMING==100) {
