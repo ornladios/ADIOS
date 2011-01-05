@@ -3275,7 +3275,7 @@ gettimeofday (&timing.t13, NULL);
                         MPI_Gather (&size, 1, MPI_INT
                                    ,0, 0, MPI_INT, 0, coord_comm
                                    );
-                        MPI_Gatherv (&index_buffer, size, MPI_BYTE
+                        MPI_Gatherv (index_buffer, size, MPI_BYTE
                                     ,0, 0, 0, MPI_BYTE, 0, coord_comm
                                     );
 
@@ -4465,8 +4465,8 @@ gettimeofday (&timing.t13, NULL);
 
                         for (i = 1; i < coord_size; i++)
                         {
-                            b.buff = recv_buffer + index_offsets [i - 1];
-                            b.length = index_sizes [i - 1];
+                            b.buff = recv_buffer + index_offsets [i];
+                            b.length = index_sizes [i];
                             b.offset = 0;
 
                             adios_parse_process_group_index_v1 (&b
@@ -4488,7 +4488,7 @@ gettimeofday (&timing.t13, NULL);
                             new_attrs_root = 0;
                         }
 
-                        free (b.buff);
+                        //free (b.buff); // handled by the recv_buffer below
                         free (recv_buffer);
                         free (index_sizes);
                         free (index_offsets);
@@ -4554,7 +4554,6 @@ gettimeofday (&timing.t13, NULL);
                         }
                         close (master_index);
                         free (metadata_filename);
-                        free (recv_buffer);
 #if COLLECT_METRICS
 gettimeofday (&timing.t9, NULL);
 timing.t10.tv_sec = timing.t9.tv_sec;
