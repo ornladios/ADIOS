@@ -382,9 +382,10 @@ adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
         else
             block_unit = atoi(p + 1);
     }
-
-    if (block_unit <= 0)
-        block_unit = 1048576;
+    else
+    {
+        block_unit = 0;
+    }
 
     free (temp_string);
 
@@ -464,9 +465,10 @@ adios_mpi_amr_set_block_unit(uint64_t *block_unit, char *parameters)
         else
             *block_unit = atoi(p + 1);
     }
-
-    if (*block_unit <= 0)
-        *block_unit = 1048576;
+    else
+    {
+        *block_unit = 0;
+    }
 
     free (temp_string);
 }
@@ -1363,7 +1365,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                                                       ,md->size
                                                       ,md->rank
                                                       );
-            adios_mpi_amr_set_block_unit (&md->block_unit, method->parameters);
+            //adios_mpi_amr_set_block_unit (&md->block_unit, method->parameters);
 
             // Check if fd->name contains path
             if (ch = strrchr (fd->name, '/'))

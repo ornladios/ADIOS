@@ -261,6 +261,30 @@ void FC_FUNC_(adios_read_var, ADIOS_READ_VAR)
         fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
+void FC_FUNC_(adios_read_local_var, ADIOS_READ_LOCAL_VAR)
+        (int64_t  * gp,
+         char     * varname,
+         int      * idx,
+         uint64_t * start,
+         uint64_t * count,
+         void     * data,
+         int64_t  * read_bytes,
+         int varname_len)
+{
+    ADIOS_GROUP *agp = (ADIOS_GROUP *) *gp;
+    char *varstr;
+    int i;
+    varstr = futils_fstr_to_cstr(varname, varname_len);
+    if (varstr != NULL) {
+        *read_bytes = common_read_read_local_var (agp, varstr, *idx, start, count, data);
+        free(varstr);
+    } else {
+        *read_bytes = -adios_errno;
+    }
+    if (*read_bytes < 0)
+        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+}
+
 /* Specific function for each data type */
 void FC_FUNC_(adios_read_var_int1, ADIOS_READ_VAR_INT1) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
 void FC_FUNC_(adios_read_var_int2, ADIOS_READ_VAR_INT2) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
