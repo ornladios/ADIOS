@@ -13,6 +13,7 @@
 #include <sys/vfs.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <assert.h>
@@ -44,6 +45,7 @@ struct adios_adaptive_data_struct
     MPI_Comm group_comm;
     int rank;
     int size;
+    char * subfile_name;
 
     void * comm;  // temporary until finished moving from should_buffer to open
 
@@ -932,6 +934,7 @@ void adios_adaptive_init (const char * parameters
     md = (struct adios_adaptive_data_struct *) method->method_data;
     md->f = -1;
     md->fh = 0;
+    md->subfile_name = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
     md->rank = 0;
@@ -1793,9 +1796,8 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
 
         case adios_mode_write:
         {
-            fd->base_offset = 0;
-            fd->pg_start_in_file = 0;
-
+// this needs to be replaced with something that understands directories
+#if 0
             // this needs to be before our build_file_offsets because
             // that process will attempt to create the file from scratch
             // and set the stripe parameters
@@ -1803,6 +1805,24 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             {
                 unlink (name); // make sure clean
             }
+#endif
+
+            // begin make dir for subfiles
+            if (md->rank == 0)
+            {
+                // 4 bytes for ".dir"
+                char * dir_name = malloc (strlen (fd->name) + 4 + 1);
+                sprintf (dir_name, "%s%s", fd->name, ".dir");
+
+                mkdir (dir_name, S_IRWXU | S_IRWXG);
+
+                free (dir_name);
+            }
+            MPI_Barrier (md->group_comm);
+            // end make dir subfiles
+
+            fd->base_offset = 0;
+            fd->pg_start_in_file = 0;
 
             // figure out the offsets and create the file with proper striping
             // before the MPI_File_open is called
@@ -1811,6 +1831,8 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
 #endif
             adios_build_file_offset (md, fd, name);
 
+// replaced with the subdir piece below
+#if 0
             if (md->split_groups != 1)
             {
                 // if we need to do a file split, we need to fixup the name
@@ -1823,9 +1845,34 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 sprintf (split_name, split_format, md->group);
                 strcat (name, split_name);
             }
+#endif
 #if COLLECT_METRICS
             gettimeofday (&timing.t5, NULL);
 #endif
+            // begin fixup name for subdir
+            char * ch;
+            char * name_no_path;
+            if (ch = strrchr (fd->name, '/'))
+            {
+                name_no_path = malloc (strlen (ch + 1) + 1);
+                strcpy (name_no_path, ch + 1);
+            }
+            else
+            {
+                name_no_path = malloc (strlen (fd->name) + 1);
+                strcpy (name_no_path, fd->name);
+            }
+
+            name = realloc (name, strlen (fd->name) + 5 + strlen (method->base_path) + strlen (name_no_path) + 1 + 10 + 1);
+            // create the subfile name, e.g., restart.bp.1
+            // 1 for '.', + 10 for subfile index + 1 for '\0'
+            sprintf (name, "%s%s%s%s.%d", fd->name, ".dir/", method->base_path, name_no_path, md->group);
+            md->subfile_name = strdup (name);
+            fd->subfile_index = (uint32_t) md->group;
+
+            free (name_no_path);
+            // end fixup name for subdir
+
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
             {
@@ -2594,6 +2641,32 @@ timeval_subtract (&timing.t8, &b, &a);
             {
                 char * new_name;
 
+                // begin fixup name for subdir
+                char * ch;
+                char * name_no_path;
+                if (ch = strrchr (fd->name, '/'))
+                {
+                    name_no_path = malloc (strlen (ch + 1) + 1);
+                    strcpy (name_no_path, ch + 1);
+                }
+                else
+                {
+                    name_no_path = malloc (strlen (fd->name) + 1);
+                    strcpy (name_no_path, fd->name);
+                }
+
+                new_name = malloc (strlen (fd->name) + 5 + strlen (method->base_path) + strlen (name_no_path) + 1 + 10 + 1);
+                // create the subfile name, e.g., restart.bp.1
+                // 1 for '.', + 10 for subfile index + 1 for '\0'
+                sprintf (new_name, "%s%s%s%s.%d", fd->name, ".dir/", method->base_path, name_no_path, msg [1]);
+                md->subfile_name = strdup (new_name);
+                fd->subfile_index = (uint32_t) msg [1];
+
+                free (name_no_path);
+                // end fixup name for subdir
+
+// replaced with above
+#if 0
                 new_name = malloc (  strlen (method->base_path)
                                    + strlen (fd->name) + 1 + 6
                                   ); // 6 extra for '.XXXXX' file number
@@ -2601,6 +2674,7 @@ timeval_subtract (&timing.t8, &b, &a);
                 sprintf (new_name, split_format, method->base_path
                         ,fd->name, msg [1]
                         );
+#endif
 
                 int af = open (new_name, O_WRONLY | O_LARGEFILE);
                 if (af != -1)
@@ -2628,6 +2702,8 @@ timeval_subtract (&timing.t8, &b, &a);
                             ,new_name
                             );
                 }
+
+                free (new_name);
             }
 
             // respond to sub coord(s) we are done
@@ -4857,6 +4933,11 @@ print_metrics (md, iteration++);
 
     md->f = -1;
     md->fh = 0;
+    if (md->subfile_name)
+    {
+        free (md->subfile_name);
+        md->subfile_name = 0;
+    }
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
     md->group_comm = MPI_COMM_NULL;
