@@ -62,6 +62,7 @@ libadios_a_SOURCES = adios.c \
                      adios_read_hooks.c \
                      common_read.c \
                      read_bp.c \
+                     read_bp_subfile.c \
                      globals.c
 if BUILD_FORTRAN
 lib_LIBRARIES += libadiosf.a
@@ -86,6 +87,7 @@ libadiosf_a_SOURCES = adiosf.c \
                      adios_read_hooks.c \
                      common_read.c \
                      read_bp.c \
+                     read_bp_subfile.c \
                      globals.c
 endif # BUILD_FORTRAN
 
@@ -211,6 +213,7 @@ libadiosread_a_SOURCES = adios_bp_v1.c \
                       adios_read_hooks.c \
                       common_read.c \
                       read_bp.c \
+                      read_bp_subfile.c \
                       globals.c
 if HAVE_DART
 libadiosread_a_SOURCES += read_dart.c
@@ -239,6 +242,7 @@ libadiosreadf_a_SOURCES = adios_bp_v1.c \
                       adios_read_hooks.c \
                       common_read.c \
                       read_bp.c \
+                      read_bp_subfile.c \
                       globals.c
                       
 if HAVE_DART
@@ -275,6 +279,7 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
                       adios_read_hooks.c \
                       common_read.c \
                       read_bp.c \
+                      read_bp_subfile.c \
                       adios_internals.c \
                       buffer.c \
                       adios_transport_hooks.c \
@@ -310,6 +315,7 @@ libadiosreadf_nompi_a_SOURCES = mpidummy.c\
                                 adios_read_hooks.c \
                                 common_read.c \
                                 read_bp.c \
+                                read_bp_subfile.c \
                                 globals.c 
 if HAVE_DART
 libadiosreadf_nompi_a_SOURCES += read_dart.c

@@ -40,6 +40,7 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
                calloc (ADIOS_READ_METHOD_COUNT, sizeof (struct adios_read_hooks_struct));
 
         ASSIGN_FNS(bp,ADIOS_READ_METHOD_BP)
+        ASSIGN_FNS(bp_subfile,ADIOS_READ_METHOD_BP_SUBFILE)
 
 #if HAVE_DART
         ASSIGN_FNS(dart,ADIOS_READ_METHOD_DART)
