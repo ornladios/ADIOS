@@ -29,6 +29,7 @@ enum ADIOS_ERRCODES {
     ,err_invalid_read_method
     ,err_connection_failed
     ,err_out_of_bound
+    ,err_operation_not_supported
     ,err_unspecified
 };
 
