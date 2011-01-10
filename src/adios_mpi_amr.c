@@ -42,7 +42,7 @@ static int g_color2 = 0;
 static MPI_Offset * g_offsets= 0;
 static int * g_ost_skipping_list = 0;
 static pthread_t g_sot, g_mot, g_swt; // subfile open thread, metadata file open thread, subfile write thread
-static enum ADIOS_MPI_AMR_IO_TYPE g_io_type = ADIOS_MPI_AMR_IO_NONE;
+static enum ADIOS_MPI_AMR_IO_TYPE g_io_type = ADIOS_MPI_AMR_IO_AG;
 
 static struct adios_MPI_thread_data_open open_thread_data1;
 static struct adios_MPI_thread_data_open open_thread_data2;
@@ -4055,7 +4055,7 @@ void adios_mpi_amr_close (struct adios_file_struct * fd
         return;
     }
 
-    g_io_type = ADIOS_MPI_AMR_IO_NONE;
+    //g_io_type = ADIOS_MPI_AMR_IO_NONE;
 }
 
 void adios_mpi_amr_finalize (int mype, struct adios_method_struct * method)
