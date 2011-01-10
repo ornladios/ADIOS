@@ -432,3 +432,10 @@ int64_t adios_read_dart_read_var_byid (ADIOS_GROUP    * gp,
 }
 
 
+int64_t adios_read_dart_read_local_var (ADIOS_GROUP * gp, const char * varname,
+                                      int vidx, const uint64_t * start,
+                                      const uint64_t * count, void * data)
+{  
+    adios_error (err_operation_not_supported, "adios_read_local_var() is not supported with DART method.");
+    return -adios_errno;
+}
