@@ -45,7 +45,7 @@ module genarray_comm
     integer   :: err
 
     real*8 :: start_time, end_time, total_time,gbs,sz
-    real*8 :: cache_start_time, cache_end_time, cache_total_time
+    real*8 :: io_start_time, io_end_time, io_total_time
 
 
 end module genarray_comm
@@ -66,7 +66,7 @@ program genarray
 
     call processArgs()
     if (rank == 0) then
-        print *,"Output file: "//trim(outputfile)
+        print *,"Output file(s): "//trim(outputfile)//".<step>.bp"
         print '(" Process number        : ",i0," x ",i0," x ",i0)', npx,npy,npz
         if (common_size) then
             print '(" Array size per process: ",i0," x ",i0," x ",i0)', ndx,ndy,ndz
@@ -168,24 +168,27 @@ subroutine writeArray()
     integer adios_err
     integer :: tstep
     character(2) :: mode = "w"
+    character(len=256) :: outfilename
     include 'mpif.h'
 
 
+    if (rank==0) print '("Writing: "," filename ",14x,"size(GB)",4x,"io_time(sec)",6x,"GB/s")'
     do tstep=1,timesteps
-        if (tstep > 1) mode = "a"
+        !if (tstep > 1) mode = "a"
         double_xyz = tstep + double_xyz
         call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
-        cache_start_time = MPI_WTIME()
+        io_start_time = MPI_WTIME()
         group = "genarray"
-        call adios_open (adios_handle, group, outputfile, mode, group_comm, adios_err)
+        write (outfilename,'(a,".",i3.3,".bp")') trim(outputfile),tstep
+        call adios_open (adios_handle, group, outfilename, mode, group_comm, adios_err)
 #include "gwrite_genarray.fh"
-        call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
-        cache_end_time = MPI_WTIME()
-        cache_total_time = cache_end_time - cache_start_time
-        sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
-        gbs = sz/cache_total_time
         call adios_close (adios_handle, adios_err)
-        if (rank==0) print '("Writing: ",a10,d12.2,2x,d12.2,2x,d12.3)', outputfile,sz,cache_total_time,gbs
+        call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
+        io_end_time = MPI_WTIME()
+        io_total_time = io_end_time - io_start_time
+        sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
+        gbs = sz/io_total_time
+        if (rank==0) print '("Writing: ",a20,d12.2,2x,d12.2,2x,d12.3)', outfilename,sz,io_total_time,gbs
         if (tstep<timesteps) call sleep(sleeptime)
      end do
 end subroutine writeArray
