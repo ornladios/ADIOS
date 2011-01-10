@@ -63,7 +63,7 @@ elif test x"$with_datatap" = xyes -o x"$with_datatap" = xcheck; then
 
 		if test -n "$cercs_cv_ptlpbio_link_dir";then
 			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ptlpbio_link_dir"
-			DT_LIBS="$DT_LIBS -lptlclient"
+			DT_LIBS="$DT_LIBS -lptlclient -lptlserver -lbench -ldl"
 			datatap=portals
 		else
 			temptest=disable
@@ -114,7 +114,7 @@ dnl directory given .. add it to search path with CERCS_REQUIRE_PACKAGE
 
 		if test -n "$cercs_cv_ptlpbio_link_dir";then
 			DT_LDFLAGS="$DT_LDFLAGS -L$cercs_cv_ptlpbio_link_dir"
-			DT_LIBS="$DT_LIBS -lptlclient"
+			DT_LIBS="$DT_LIBS -lptlclient -lptlserver -lbench -ldl"
 			datatap=portals
 		else
 			temptest=disable
