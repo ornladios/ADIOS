@@ -20,10 +20,18 @@
 
 
 /* functions currently defined in adios_dart.c and read_dart.c */
+
+/* Tell the DataSpaces order of dimensions for a 1-3 dim array written from Fortran or C.
+   unpack=1: the reverse of packing (to retrieve the original order).
+   didx should be an int [3] array in any case.
+ */
+void ds_dimension_ordering(int ndims, int is_app_fortran, int unpack, int *didx);
+
 void ds_pack_file_info (int time, int nvars, int nattrs, int group_index_len, char * groupname,
                         /*OUT*/char **buf, /*OUT*/int *buf_len);
 
-ADIOS_FILE * ds_unpack_file_info (char * buf, int buf_len);
+//ADIOS_FILE * ds_unpack_file_info (char * buf, int buf_len,
+//                                  /* OUT */ struct adios_read_dart_data_struct * ds)
 
 void ds_pack_group_info (struct adios_file_struct *fd
         ,struct adios_method_struct * method
@@ -32,7 +40,7 @@ void ds_pack_group_info (struct adios_file_struct *fd
         ,char ** buffer, int *buffer_size, int *nvars, int *nattrs
         );
 
-ADIOS_GROUP * ds_unpack_group_info (char * buf, struct adios_read_dart_group_struct * group);
+//ADIOS_GROUP * ds_unpack_group_info (char * buf, struct adios_read_dart_group_struct * group);
 
 
 /***********************

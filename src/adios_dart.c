@@ -23,6 +23,7 @@
 #include "adios_transport_hooks.h"
 #include "adios_internals.h"
 #include "adios_internals_mxml.h"
+#include "ds_metadata.h"
 
 #include "dart.h"
 
@@ -320,6 +321,7 @@ void adios_dart_write (struct adios_file_struct * fd
     unsigned int version;
 
     int dims[3]={1,1,1}, gdims[3]={0,0,0}, lb[3]={0,0,0}, ub[3]={0,0,0}; /* lower and upper bounds for DataSpaces */
+    int didx[3]; // for reordering the dimensions
     int ndims = 0;
     int hastime = 0;
     struct adios_dimension_struct* var_dimensions = v->dimensions;
@@ -383,14 +385,21 @@ void adios_dart_write (struct adios_file_struct * fd
     /* Put type info as T<varname>, integer in 0,0,0,0,0,0 position */
     //err = dart_put(dart_type_var_name, version, 4, 0,0,0,0,0,0, &(v->type)); 
 
-    if (group->adios_host_language_fortran == adios_flag_yes || ndims == 1) {
-        /* Flip 1st and 2nd dimension for DataSpaces representation
-           for any Fortran writings and for any 1D array*/
-        dart_put(dart_var_name, version, var_type_size, lb[1], lb[0], lb[2], ub[1], ub[0], ub[2], data);
-    } else {
-        /* Keep dimension order in case of C writer of 2-3D arrays for DataSpaces representation */
-        dart_put(dart_var_name, version, var_type_size, lb[0], lb[1], lb[2], ub[0], ub[1], ub[2], data);
-    }
+    ds_dimension_ordering(ndims,
+            group->adios_host_language_fortran == adios_flag_yes, 
+            0 /*pack*/, didx);
+
+    dart_put(dart_var_name, version, var_type_size, 
+             lb[didx[0]], lb[didx[1]], lb[didx[2]], 
+             ub[didx[0]], ub[didx[1]], ub[didx[2]], 
+             data);
+    
+    log_debug ("var_name=%s, dimension ordering=(%d,%d,%d), gdims=(%d,%d,%d), lb=(%d,%d,%d), ub=(%d,%d,%d)\n",
+            dart_var_name, 
+            didx[0], didx[1], didx[2], 
+            gdims[didx[0]], gdims[didx[1]], gdims[didx[2]], 
+            lb[didx[0]], lb[didx[1]], lb[didx[2]], 
+            ub[didx[0]], ub[didx[1]], ub[didx[2]]);
 }
 
 void adios_dart_get_write_buffer (struct adios_file_struct * fd
@@ -620,8 +629,7 @@ static int ds_get_full_name (char * path, char * name, int maxlen,
     return len;
 }
 
-
-static void ds_pack_group_info (struct adios_file_struct *fd
+void ds_pack_group_info (struct adios_file_struct *fd
                                   ,struct adios_method_struct * method
                                   ,struct adios_index_var_struct_v1 *vars_root
                                   ,struct adios_index_attribute_struct_v1 * attrs_root
@@ -638,6 +646,7 @@ static void ds_pack_group_info (struct adios_file_struct *fd
     uint64_t ldims[10], gdims[10]; // we can write only 3 dimensions, will drop time dim
     *nvars = 0;
     *nattrs = 0;
+    int didx[3]; // dimension ordering indices
 
     log_debug ("%s entered\n", __func__);
 
@@ -646,8 +655,9 @@ static void ds_pack_group_info (struct adios_file_struct *fd
     while (v) {
         size += 4*sizeof(int) // name len, type, hastime, number of dims 
                 + strlen(v->var_name) + strlen(v->var_path) + 1  // full path
-                + v->characteristics->dims.count * 8; // dimensions (can be larger then needed due time dim)
+                + 3 * 8; // always write 3 dimensions in the index (even for scalars)
         if (v->characteristics->dims.count == 0) {
+            // For scalars, we write the value into the index
             if (v->type != adios_string)
                 size += adios_get_type_size(v->type, NULL);
             else
@@ -714,6 +724,11 @@ static void ds_pack_group_info (struct adios_file_struct *fd
             }
             j++;
         }
+        for (i=j; i<3; i++) {
+            // fill up dimensions up to 3rd dim
+            ldims[i] = 1;
+            gdims[i] = 1;
+        }
         ndims = (j < 3 ? j : 3); // we can have max 3 dimensions in DataSpaces
         memcpy (b, &hastime, sizeof(int)); // has time dimension?
         log_debug("             has time = %d (%d)\n", hastime, *(int*)b);
@@ -721,18 +736,22 @@ static void ds_pack_group_info (struct adios_file_struct *fd
         memcpy (b, &ndims, sizeof(int)); // number of dimensions
         log_debug("             ndims = %d (%d)\n", ndims, *(int*)b);
         b += sizeof(int); 
-        for (i = 0; i < ndims; i++) {
-            if (gdims[i]) { 
+        ds_dimension_ordering(ndims, 
+                fd->group->adios_host_language_fortran == adios_flag_yes, 
+                0 /*pack*/, didx);
+        for (i = 0; i < 3; i++) {
+            if (gdims[didx[i]]) { 
                 // global variable
-                memcpy (b, &(gdims[i]), 8);  // ith dimension 
+                memcpy (b, &(gdims[didx[i]]), 8);  // ith dimension 
             } else { 
                 // a local variable has no global dimensions
                 // in space, its local dimensions become the global dimensions
-                memcpy (b, &(ldims[i]), 8);  // ith dimension 
+                memcpy (b, &(ldims[didx[i]]), 8);  // ith dimension 
             }
             b += 8; 
         }
-        if (v->characteristics->dims.count == 0) {// ndims = 0 may mean a timed scalar, which has no characteristics->value!
+        if (v->characteristics->dims.count == 0) {
+            // NOTE: ndims = 0 can mean a timed scalar, which has no characteristics->value!
             // store scalar value too
             if (v->type != adios_string) {
                 size = adios_get_type_size(v->type, NULL);
@@ -773,10 +792,14 @@ static void ds_pack_group_info (struct adios_file_struct *fd
     }
 
     // sanity check
-    if ( (int)(b-*buffer) != *buffer_size) {
+    if ( (int)(b-*buffer) > *buffer_size) {
         log_error ("ERROR in %s. Calculated group index buffer size as %d, but filled after that with %d bytes\n",
             __func__, *buffer_size, (int)(b-*buffer));
     }
+    // written buffer might be shorter than calculated since we skip time dimensions.
+    // set the correct size now
+    *buffer_size = (int)(b-*buffer);
+    memcpy (*buffer, buffer_size, sizeof(int));  
 
     
     log_debug("   %s: buffer length = %d, content:\n", __func__, *buffer_size);
@@ -828,6 +851,7 @@ void adios_dart_close (struct adios_file_struct * fd
     struct adios_index_var_struct_v1 * vars_root;
     struct adios_index_attribute_struct_v1 * attrs_root;
     struct adios_attribute_struct * a = fd->group->attributes;
+    int lb[3], ub[3], didx[3]; // for reordering DS dimensions
 
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
@@ -863,7 +887,10 @@ void adios_dart_close (struct adios_file_struct * fd
             /* Put GROUP@fn/gn header into space */
             snprintf(dart_var_name, MAXDARTNAMELEN, "GROUP@%s/%s", fd->name, fd->group->name);
             log_debug ("%s: put %s with buf len %d into space\n", __func__, dart_var_name, indexlen);
-            dart_put(dart_var_name, version, 1,    0, 0, 0,    0, indexlen-1, 0, indexbuf); 
+            ub[0] = indexlen-1; ub[1] = 0; ub[2] = 0;
+            ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
+            dart_put(dart_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
+                     ub[didx[0]], ub[didx[1]], ub[didx[2]],  indexbuf); 
 
             /* Create and put FILE@fn header into space */
             char * file_info_buf; /* store FILE@fn's group list */
@@ -878,7 +905,10 @@ void adios_dart_close (struct adios_file_struct * fd
                 *(int*)(file_info_buf+16), *(int*)(file_info_buf+20),
                 file_info_buf+24);
             /* Flip 1st and 2nd dimension for DataSpaces representation for a 1D array*/
-            dart_put (dart_var_name, version, 1,   0, 0, 0,   0, file_info_buf_len-1, 0, file_info_buf);
+            ub[0] = file_info_buf_len-1; ub[1] = 0; ub[2] = 0;
+            ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
+            dart_put(dart_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
+                     ub[didx[0]], ub[didx[1]], ub[didx[2]], file_info_buf); 
 
             free (indexbuf);
 

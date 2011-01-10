@@ -22,6 +22,7 @@
 #include "adios_error.h"
 #include "futils.h"
 #include "globals.h"
+#include "ds_metadata.h"
 
 #include "dart.h"
 
@@ -73,6 +74,7 @@ struct adios_read_dart_data_struct { // accessible as fp->fh
 // Declarations
 static int adios_read_dart_get (const char * varname, enum ADIOS_DATATYPES vartype, 
                                 struct adios_read_dart_data_struct * ds, 
+                                int ndims, int is_fortran_ordering, 
                                 int * offset, int * readsize, void * data);
 
 /* If init is used, we connect to DART here, otherwise we connect in fopen.
@@ -230,7 +232,7 @@ ADIOS_FILE * adios_read_dart_fopen (const char * fname, MPI_Comm comm)
     DBG_PRINTF("   rank %d: call dcg_lock_on_read(%s)\n", ds->mpi_rank, fname);
     dart_lock_on_read(fname);
     DBG_PRINTF("   rank %d: dart_get %s\n", ds->mpi_rank, dart_fname);
-    err = adios_read_dart_get(dart_fname, adios_byte, ds, offset, readsize, file_info_buf);
+    err = adios_read_dart_get(dart_fname, adios_byte, ds, 1, 0, offset, readsize, file_info_buf);
     if (err) {
         /* Check if this file is finalized by the writer */
         char dart_cname[MAXDARTNAMELEN];
@@ -240,7 +242,7 @@ ADIOS_FILE * adios_read_dart_fopen (const char * fname, MPI_Comm comm)
         snprintf(dart_cname, MAXDARTNAMELEN, "CLOSED@%s",fname);
         ds->access_version = 0; // this variable is stored with version 0 only
         DBG_PRINTF("   rank %d: dart_get %s\n", ds->mpi_rank, dart_cname);
-        err = adios_read_dart_get(dart_cname, adios_integer, ds, coffset, creadsize, &cvalue);
+        err = adios_read_dart_get(dart_cname, adios_integer, ds, 1, 0, coffset, creadsize, &cvalue);
         ds->access_version = save_version; 
         if (!err) {
             /* This file was finalized */
@@ -315,6 +317,8 @@ ADIOS_GROUP * ds_unpack_group_info (char * buf, struct adios_read_dart_group_str
     struct adios_read_dart_var_struct * vars;
     struct adios_read_dart_attr_struct * attrs;
     int buf_len = group->group_index_len;
+    uint64_t dims[3]; // all variables has 3 dimension values in the index 
+    int didx[3]; // dimension reordering 
     
 
     if (!buf || buf_len < 12)
@@ -406,30 +410,35 @@ ADIOS_GROUP * ds_unpack_group_info (char * buf, struct adios_read_dart_group_str
         // dimensions
         vars[i].ndims = *(int*)b; 
         b += sizeof(int);
-        DBG_PRINTF("        ndims = %d, b = %d\n", vars[i].ndims, b);
-        for (j=0; j < vars[i].ndims; j++) {
-            vars[i].dims[j] = *(uint64_t*)b; 
+        DBG_PRINTF("        ndims w/o time = %d, b = %d\n", vars[i].ndims, b);
+        for (j=0; j < 3; j++) {
+            dims[j] = *(uint64_t*)b; 
             b += 8;
-            DBG_PRINTF("          dim[%d] = %lld, b = %d\n", j, vars[i].dims[j], b);
+            DBG_PRINTF("          unordered dim[%d] = %lld, b = %d\n", j, dims[j], b);
         }
+        // reorder DS dimensions to Fortran/C dimensions
+        ds_dimension_ordering (vars[i].ndims, futils_is_called_from_fortran(), 
+                               1 /*unpack*/, didx);
+        // handle time too in this reordering
+        k=0;
+        if (vars[i].hastime && !futils_is_called_from_fortran()) {
+            // C reader: time dimension is first. 
+            k=1;
+            vars[i].dims[0] = 1;
+            DBG_PRINTF("          dim[0] = %lld (time)\n", vars[i].dims[0], b);
+        }
+        for (j=0; j < vars[i].ndims; j++) {
+            vars[i].dims[j+k] = dims[didx[j]];
+            DBG_PRINTF("          dim[%d] = %lld, b = %d\n", j+k, vars[i].dims[j+k], b);
+        }
+        if (vars[i].hastime && futils_is_called_from_fortran()) {
+            // Fortran reader: time dimension is last
+            vars[i].dims[ vars[i].ndims ] = 1;
+            DBG_PRINTF("          dim[%d] = %lld (time)", 
+                    vars[i].ndims, vars[i].dims[vars[i].ndims]);
+        }
+
         if (vars[i].hastime) {
-            // first or last dimension will be time
-            if (futils_is_called_from_fortran()) {
-                // Fortran reader: time dimension is last
-                DBG_PRINTF("          Add time dimension to the end\n");
-                vars[i].dims[ vars[i].ndims ] = 1;
-                DBG_PRINTF("          dim[%d] = %lld (time)", 
-                            vars[i].ndims, vars[i].dims[vars[i].ndims]);
-            } else {
-                // C reader: time dimension is first. need to shift
-                DBG_PRINTF("          Add time dimension to the beginning\n");
-                for (j = vars[i].ndims; j > 0; j--) {
-                    vars[i].dims[j] = vars[i].dims[j-1];
-                    DBG_PRINTF("          dim[%d] = %lld (shifted) \n", j, vars[i].dims[j]);
-                }
-                vars[i].dims[0] = 1;
-                DBG_PRINTF("          dim[0] = %lld (time)\n", vars[i].dims[0], b);
-            }
             vars[i].ndims++;
             DBG_PRINTF("        ndims = %d (with time)\n", vars[i].ndims);
         }
@@ -536,7 +545,7 @@ ADIOS_GROUP * adios_read_dart_gopen (ADIOS_FILE *fp, const char * grpname)
     char dart_name[MAXDARTNAMELEN];
     snprintf (dart_name, MAXDARTNAMELEN, "GROUP@%s/%s",ds->fname, grpname);
     DBG_PRINTF("-- %s, rank %d: Get variable %s with size %d\n", __func__, ds->mpi_rank, dart_name, readsize[0]);
-    err = adios_read_dart_get(dart_name, adios_byte, ds, offset, readsize, group_info_buf);
+    err = adios_read_dart_get(dart_name, adios_byte, ds, 1, 0, offset, readsize, group_info_buf);
     if (err) {
         adios_error (err_invalid_group, "Invalid group name %s for file %s. "
                      "Entity %s could not be retrieved from DataSpaces\n",
@@ -753,22 +762,31 @@ void adios_read_dart_free_varinfo (ADIOS_VARINFO *vp)
 
 static int adios_read_dart_get (const char * varname, enum ADIOS_DATATYPES vartype, 
                                 struct adios_read_dart_data_struct * ds, 
+                                int ndims, int is_fortran_ordering, 
                                 int * offset, int * readsize, void * data)
 {
 
     struct obj_data *od;
     int elemsize = common_read_type_size(vartype, NULL);
-    int err;
+    int i, err;
+    int didx[3];
+    int lb[3] = {0,0,0};
+    int ub[3] = {0,0,0};
+
+    // reorder DS dimensions to Fortran/C dimensions
+    ds_dimension_ordering (ndims, is_fortran_ordering, 0 /*pack*/, didx);
+    for (i=0; i<3; i++) {
+        lb[i] = offset[didx[i]];
+        ub[i] = offset[didx[i]]+readsize[didx[i]]-1;
+    }
 
     DBG_PRINTF("-- %s, rank %d: get data: varname=%s version=%d, lb=(%d,%d,%d) ub=(%d,%d,%d)}\n",
-        __func__, ds->mpi_rank, varname, ds->access_version, offset[1], offset[0], offset[2],
-        offset[1]+readsize[1]-1, offset[0]+readsize[0]-1, offset[2]+readsize[2]-1);
+        __func__, ds->mpi_rank, varname, ds->access_version, lb[0], lb[1], lb[2], 
+        ub[0], ub[1], ub[2]);
 
     err =  dart_get (varname, ds->access_version, elemsize, 
-                     offset[1], offset[0], offset[2],
-                     offset[1]+readsize[1]-1,
-                     offset[0]+readsize[0]-1,
-                     offset[2]+readsize[2]-1,
+                     lb[0], lb[1], lb[2],
+                     ub[0], ub[1], ub[2],
                      data
                     );
     /*if (err == -ENOMEM) {
@@ -889,12 +907,63 @@ int64_t adios_read_dart_read_var_byid (ADIOS_GROUP    * gp,
     DBG_PRINTF("-- %s, rank %d: get data: varname=%s offset=(%d,%d,%d) readsize=(%d,%d,%d)}\n",
         __func__, ds->mpi_rank, dart_name, offset[0], offset[1], offset[2], readsize[0], readsize[1], readsize[2]);
 
-    err = adios_read_dart_get(dart_name, vars[varid].type, ds, offset, readsize, data);
+    err = adios_read_dart_get(dart_name, vars[varid].type, ds, 
+                              ndims, futils_is_called_from_fortran(),
+                              offset, readsize, data);
     if (err)
         return err;
 
     return total_size;
 }
 
+
+/* Tell the DataSpaces order of dimensions for a 1-3 dim array written from Fortran or C.
+   unpack=1: the reverse of packing (to retrieve the original order).
+   didx should be an int [3] array in any case.
+*/
+void ds_dimension_ordering(int ndims, int is_app_fortran, int unpack, int *didx)
+{
+    /* Order of dimensions: in DataSpaces: slow, fast, slowest
+       Fortran: i,j,k --> j, i, k  = lb[1], lb[0], lb[2]
+                i,j   --> j, i     = lb[1], lb[0], lb[2]=1
+                i     --> 1, i     = lb[1]=1, lb[0], lb[2]=1
+       C:       i,j,k --> j, k, i  = lb[1], lb[2], lb[0]
+                i,j   --> i, j     = lb[0], lb[1], lb[2]=1
+                i     --> 1, i     = lb[1]=1, lb[0], lb[2]=1 (same as Fortran)
+
+       unpack: C(i,j,k) ordering applied twice does not result in the original order
+               so we need to have a reverse mapping for this case.
+               For all the other cases, applying twice results in the same order
+               even for packing from Fortran and unpacking to C, and vice versa.
+               F(i,j,k) -(pack)-> DS(j,i,k) -(unpack)-> C(k,j,i) or F(i,j,k)
+               C(i,j,k) -(pack)-> DS(j,k,i) -(unpack)-> C(i,j,k) or F(k,j,i)
+               F(i,j)   -(pack)-> DS(j,i)   -(unpack)-> C(j,i)   or F(i,j)
+               C(i,j)   -(pack)-> DS(i,j)   -(unpack)-> C(i,j)   or F(j,i)
+               F(i)     -(pack)-> DS(1,i)   -(unpack)-> C(i,(1)) or F(i,(1))
+               C(i)     -(pack)-> DS(1,i)   -(unpack)-> C(i,(1)) or F(i,(1))
+    */
+
+    if (ndims == 0) {
+        didx[0] = 0; didx[1] = 1; didx[2] = 2;
+    } else if (is_app_fortran || ndims == 1) {
+        /* Flip 1st and 2nd dimension for DataSpaces representation
+           for any Fortran writings and for any 1D array :
+           Fortran: i,j,k --> j, i, k  = lb[1], lb[0], lb[2]
+           C:       i     --> 1, i     = lb[1]=1, lb[0], lb[2]=1 
+        */
+        didx[0] = 1; didx[1] = 0; didx[2] = 2;
+    } else if (ndims == 2) {
+        /* C: i,j   --> i, j     = lb[0], lb[1], lb[2]=1 */
+        didx[0] = 0; didx[1] = 1; didx[2] = 2;
+    } else { // (ndims == 3) 
+        if (!unpack) {
+            /* C: i,j,k --> j, k, i  = lb[1], lb[2], lb[0] */
+            didx[0] = 1; didx[1] = 2; didx[2] = 0;
+        } else {
+            /* DataSpaces x,y,z --> z,x,y  (ijk->kij, or jki->ijk) */
+            didx[0] = 2; didx[1] = 0; didx[2] = 1;
+        }
+    }
+}
 
 
