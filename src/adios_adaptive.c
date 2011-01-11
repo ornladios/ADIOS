@@ -1189,8 +1189,23 @@ void build_offsets (struct adios_bp_buffer_struct_v1 * b
 }
 
 static void
+adios_set_default_group_number (struct adios_adaptive_data_struct *md
+                               ,struct adios_file_struct *fd, char *name
+                               )
+{
+    md->groups = (md->size > md->max_storage_targets)
+                                         ? md->max_storage_targets : md->size;
+    md->split_groups = md->groups;
+    calc_groups (md->rank, md->size, md->groups
+                ,&md->group, &md->group_size, &md->sub_coord_rank
+                ,&md->coord_rank
+                );
+}
+
+static void
 adios_build_file_offset (struct adios_adaptive_data_struct *md
-                        ,struct adios_file_struct *fd, char *name)
+                        ,struct adios_file_struct *fd, char *name
+                        )
 {
 #define SCATTER_PARAMS 5
     if (md->group_comm != MPI_COMM_NULL)
@@ -1531,14 +1546,40 @@ static void set_stripe_size (struct adios_adaptive_data_struct * md
 
             md->storage_targets = 1;
 
+            // make a base filename with a path for setting the subfiles attrs
+            char * name = 0;
+{
+            // begin fixup name for subdir
+            char * ch;
+            char * name_no_path;
+            if (ch = strrchr (fd->name, '/'))
+            {
+                name_no_path = malloc (strlen (ch + 1) + 1);
+                strcpy (name_no_path, ch + 1);
+            }
+            else
+            {
+                name_no_path = malloc (strlen (fd->name) + 1);
+                strcpy (name_no_path, fd->name);
+            }
+
+            name = realloc (name, strlen (fd->name) + 5 + strlen (md->method->base_path) + strlen (name_no_path) + 1 + 10 + 1);
+            // create the subfile name, e.g., restart.bp
+            // 1 for '.', + 10 for subfile index + 1 for '\0'
+            sprintf (name, "%s%s%s%s", fd->name, ".dir/", md->method->base_path, name_no_path);
+
+            free (name_no_path);
+            // end fixup name for subdir
+}
+
             int * f_split = malloc (sizeof (int) * md->split_groups);
             char split_format [7] = ".%d";
             char split_name [7];
-            char * new_name = malloc (strlen (filename) + 7 + 1);
+            char * new_name = malloc (strlen (name) + 7 + 1);
             for (i = 0; i < md->split_groups; i++)
             {
                 sprintf (split_name, split_format, i);
-                sprintf (new_name, "%s%s", filename, split_name);
+                sprintf (new_name, "%s%s", name, split_name);
                 if (fd->mode == adios_mode_write)
                     unlink (new_name);  // clean up old stuff
                 f_split [i] = open (new_name
@@ -1566,6 +1607,10 @@ static void set_stripe_size (struct adios_adaptive_data_struct * md
                 f_split = 0;
             }
             unlink (filename);
+            if (name)
+            {
+                free (name);
+            }
         }
     }
 #if COLLECT_METRICS
@@ -1806,19 +1851,42 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 unlink (name); // make sure clean
             }
 #endif
+            // figure out the default file number for this process
+            adios_set_default_group_number (md, fd, name);
 
             // begin make dir for subfiles
+            {
+            // 4 bytes for ".dir"
+            char * dir_name = malloc (strlen (fd->name) + 4 + 1);
+            sprintf (dir_name, "%s%s", fd->name, ".dir");
+
             if (md->rank == 0)
             {
-                // 4 bytes for ".dir"
-                char * dir_name = malloc (strlen (fd->name) + 4 + 1);
-                sprintf (dir_name, "%s%s", fd->name, ".dir");
-
                 mkdir (dir_name, S_IRWXU | S_IRWXG);
-
-                free (dir_name);
             }
+
             MPI_Barrier (md->group_comm);
+            {
+                int res = -1;
+                int count = 0;
+                struct stat buf;
+
+                for (count = 0; count < 20 && res == -1; count++)
+                {
+                    res = stat (dir_name, &buf);
+                    usleep (100000);
+                }
+
+                if (count == 20 && res == -1)
+                {
+                    fprintf (stderr, "error creating directory "
+                                     "for output: %s\n"
+                            ,dir_name
+                            );
+                }
+            }
+            free (dir_name);
+            }
             // end make dir subfiles
 
             fd->base_offset = 0;
@@ -1829,7 +1897,6 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
 #if COLLECT_METRICS
             gettimeofday (&timing.t16, NULL);
 #endif
-            adios_build_file_offset (md, fd, name);
 
 // replaced with the subdir piece below
 #if 0
@@ -1873,10 +1940,17 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
             free (name_no_path);
             // end fixup name for subdir
 
+            adios_build_file_offset (md, fd, name);
+
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
             {
-                md->f = open (name, O_WRONLY | O_LARGEFILE | O_CREAT | O_TRUNC);
+                int old_mask;
+                int perm;
+                old_mask = umask (0);
+                umask (old_mask);
+                perm = old_mask ^ 0666;
+                md->f = open (name, O_WRONLY | O_LARGEFILE | O_CREAT | O_TRUNC, perm);
                 if (next != -1)
                 {
                     //pthread_mutex_lock (&md->mpi_mutex);
@@ -1899,7 +1973,12 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                               );
                     //pthread_mutex_unlock (&md->mpi_mutex);
                 }
-                md->f = open (name, O_WRONLY | O_LARGEFILE | O_CREAT | O_TRUNC);
+                int old_mask;
+                int perm;
+                old_mask = umask (0);
+                umask (old_mask);
+                perm = old_mask ^ 0666;
+                md->f = open (name, O_WRONLY | O_LARGEFILE | O_CREAT | O_TRUNC, perm);
             }
             if (next != -1)
                 MPI_Wait (&md->req, &md->status);
