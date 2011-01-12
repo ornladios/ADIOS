@@ -40,7 +40,7 @@ void adios_read_##a##_reset_dimension_order (ADIOS_FILE *fp, int is_fortran); \
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-#define ADIOS_READ_METHOD_COUNT 5
+#define ADIOS_READ_METHOD_COUNT 7
 
 // forward declare the functions (or dummies for internals use)
 FORWARD_DECLARE(bp)
@@ -54,6 +54,9 @@ FORWARD_DECLARE(dimes)
 #endif
 #if HAVE_NSSI
 FORWARD_DECLARE(nssi)
+#endif
+#if HAVE_NSSI
+FORWARD_DECLARE(datatap)
 #endif
 
 

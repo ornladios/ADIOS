@@ -52,4 +52,11 @@ int  globals_adios_is_dimes_connected_from_writer();
 int  globals_adios_is_dimes_connected_from_both();
 #endif
 
+#if NO_DATATAP == 0
+
+char *getFixedName(char *name);
+char *get_full_path_name(char *name, char *path);
+
+#endif
+
 #endif  /*__GLOBALS_H__*/

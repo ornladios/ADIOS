@@ -58,6 +58,10 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
         ASSIGN_FNS(nssi,ADIOS_READ_METHOD_NSSI)
 #endif
 
+#if HAVE_DATATAP
+        ASSIGN_FNS(datatap,ADIOS_READ_METHOD_DATATAP)
+#endif
+
         //printf("%s: adios_read_hooks = %x\n",__func__,*t);
         did_init = 1;
     }

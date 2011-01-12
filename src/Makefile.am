@@ -111,9 +111,9 @@ endif
 endif
 
 if HAVE_DATATAP
-libadios_a_SOURCES += adios_datatap.c
+libadios_a_SOURCES += adios_datatap.c read_datatap.c
 if BUILD_FORTRAN
-libadiosf_a_SOURCES += adios_datatap.c
+libadiosf_a_SOURCES += adios_datatap.c read_datatap.c
 endif
 endif 
 
@@ -221,14 +221,18 @@ endif
 if HAVE_DIMES
 libadiosread_a_SOURCES += read_dimes.c
 endif
+if HAVE_DATATAP
+libadiosread_a_SOURCES += read_datatap.c
+endif
 if HAVE_NSSI
 dist_libadiosread_a_SOURCES = adios_nssi_args.x
 nodist_libadiosread_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 libadiosread_a_SOURCES += adios_nssi_config.c read_nssi.c
 libadiosread_a_CPPFLAGS += -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
-libadiosread_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
+#libadiosread_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
 libadiosread_a_CFLAGS   += $(ADIOSLIB_CFLAGS) 
 endif
+
 libadiosread_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 
 if BUILD_FORTRAN
@@ -251,12 +255,15 @@ endif
 if HAVE_DIMES
 libadiosreadf_a_SOURCES += read_dimes.c
 endif
+if HAVE_DATATAP
+libadiosreadf_a_SOURCES += read_datatap.c
+endif
 if HAVE_NSSI
 dist_libadiosreadf_a_SOURCES = adios_nssi_args.x
 nodist_libadiosreadf_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 libadiosreadf_a_SOURCES += adios_nssi_config.c read_nssi.c
 libadiosreadf_a_CPPFLAGS += -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
-libadiosreadf_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
+#libadiosreadf_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
 libadiosreadf_a_CFLAGS   += $(ADIOSLIB_CFLAGS) 
 endif
 
@@ -291,6 +298,9 @@ endif
 if HAVE_DIMES
 libadiosread_nompi_a_SOURCES += read_dimes.c
 endif
+if HAVE_DATATAP
+libadiosread_nompi_a_SOURCES += read_datatap.c
+endif
 if HAVE_NSSI
 dist_libadiosread_nompi_a_SOURCES = adios_nssi_args.x
 nodist_libadiosread_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
@@ -323,6 +333,9 @@ endif
 if HAVE_DIMES
 libadiosreadf_nompi_a_SOURCES += read_dimes.c
 endif
+if HAVE_DATATAP
+libadiosread_nompi_a_SOURCES += read_datatap.c
+endif
 if HAVE_NSSI
 dist_libadiosreadf_nompi_a_SOURCES = adios_nssi_args.x
 nodist_libadiosreadf_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
@@ -331,7 +344,7 @@ libadiosreadf_nompi_a_CPPFLAGS += -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_S
 libadiosreadf_nompi_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
 libadiosreadf_nompi_a_CFLAGS   += $(ADIOSLIB_CFLAGS) 
 endif
-endif
+endif  #BUILD_FORTRAN
 
 noinst_LIBRARIES = libadios_internal_nompi.a
 libadios_internal_nompi_a_SOURCES = mpidummy.c \

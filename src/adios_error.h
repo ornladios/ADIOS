@@ -30,6 +30,7 @@ enum ADIOS_ERRCODES {
     ,err_connection_failed
     ,err_out_of_bound
     ,err_operation_not_supported
+    ,err_end_of_file    // stream: fopen() returns if reached end of stream
     ,err_unspecified
 };
 

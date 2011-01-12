@@ -42,6 +42,7 @@ typedef int MPI_Fint;
 #define MPI_INT                     1
 
 int MPI_Init(int *argc, char ***argv);
+int MPI_Finalize();
 
 int MPI_Barrier(MPI_Comm comm);
 int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm);
