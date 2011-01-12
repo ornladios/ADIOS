@@ -207,6 +207,7 @@ int main( int argc, char *argv[] ) {
                 readattrs = true;
                 break;
             case 'n':
+                errno = 0;
                 tmp = strtol(optarg, (char **)NULL, 0);
                 if (errno) {
                     fprintf(stderr, "Error: could not convert --columns value: %s\n", optarg);
@@ -240,6 +241,7 @@ int main( int argc, char *argv[] ) {
                 break;
                 /*
                    case 't':
+                   errno = 0;
                    tmp = strtol(optarg, (char **)NULL, 0);
                    if (errno) {
                    fprintf(stderr, "Error: could not convert --time value: %s\n", optarg);
