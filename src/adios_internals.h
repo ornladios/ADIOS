@@ -518,7 +518,7 @@ int adios_int_is_num (char * temp); // 1 == yes, 0 == no
 extern "C" {
 #endif
 
-#if 0
+#if 1
 /* LIST */
 typedef struct ListElmt_
 {
