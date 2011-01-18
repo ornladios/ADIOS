@@ -4,7 +4,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_REVISION($Revision$)
 
 AC_CONFIG_HEADERS(config.h)
-AM_INIT_AUTOMAKE(adios,1.2.1)
+AM_INIT_AUTOMAKE(adios,1.2.2)
 
 AC_LANG(C)
 AC_C_STRINGIZE
@@ -132,19 +132,27 @@ ADIOSLIB_SEQ_CPPFLAGS="-D_NOMPI ${MXML_CPPFLAGS}"
 ADIOSLIB_SEQ_CFLAGS=
 ADIOSLIB_SEQ_LDFLAGS="${MXML_LDFLAGS}"
 ADIOSLIB_SEQ_LDADD="-lm ${MXML_LIBS}"
-ADIOSREADLIB_CPPFLAGS="${MXML_CPPFLAGS}"
+ADIOSREADLIB_CPPFLAGS=
 ADIOSREADLIB_CFLAGS=
-ADIOSREADLIB_LDFLAGS="${MXML_LDFLAGS}"
-ADIOSREADLIB_LDADD="-lm ${MXML_LIBS}"
-ADIOSREADLIB_SEQ_CPPFLAGS="-D_NOMPI ${MXML_CPPFLAGS}"
+ADIOSREADLIB_LDFLAGS=
+ADIOSREADLIB_LDADD="-lm"
+ADIOSREADLIB_SEQ_CPPFLAGS="-D_NOMPI"
 ADIOSREADLIB_SEQ_CFLAGS=
-ADIOSREADLIB_SEQ_LDFLAGS="${MXML_LDFLAGS}"
-ADIOSREADLIB_SEQ_LDADD="-lm ${MXML_LIBS}"
+ADIOSREADLIB_SEQ_LDFLAGS=
+ADIOSREADLIB_SEQ_LDADD="-lm"
 if test "x${datatap}" != "xdisable"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${DT_CPPFLAGS}"
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${DT_CFLAGS}"
     ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${DT_LDFLAGS}"
     ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${DT_LIBS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${DT_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${DT_CFLAGS}"
+    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${DT_LDFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${DT_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${DT_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${DT_CFLAGS}"
+    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${DT_LDFLAGS}"
+    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${DT_LIBS}"
 fi
 if test -z "${HAVE_DART_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${DART_CPPFLAGS}"
@@ -179,14 +187,14 @@ if test -z "${HAVE_NSSI_TRUE}"; then
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${NSSI_CFLAGS}"
     ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${NSSI_LDFLAGS}"
     ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${NSSI_LIBS}"
-    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${NSSI_CPPFLAGS}"
-    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${NSSI_CFLAGS}"
-    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${NSSI_LDFLAGS}"
-    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${NSSI_LIBS}"
-    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${NSSI_CPPFLAGS}"
-    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${NSSI_CFLAGS}"
-    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${NSSI_LDFLAGS}"
-    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${NSSI_LIBS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${MXML_CPPFLAGS} ${NSSI_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${MXML_CPPFLAGS} ${NSSI_CFLAGS}"
+    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${MXML_LDFLAGS} ${NSSI_LDFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${MXML_LIBS} ${NSSI_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${MXML_CPPFLAGS} ${NSSI_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${MXML_CPPFLAGS} ${NSSI_CFLAGS}"
+    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${MXML_LDFLAGS} ${NSSI_LDFLAGS}"
+    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${MXML_LIBS} ${NSSI_LIBS}"
 fi
 if test -z "${HAVE_NC4PAR_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${NC4PAR_CPPFLAGS}"
@@ -328,41 +336,41 @@ echo "      - MPILIBS = $MPILIBS";
 echo
 
 if test "x$enable_research_transports" == "xyes"; then
-        echo "  - Research Transports Included";
+    echo "  - Research Transports Included";
 
 else
-        echo "  - No research transport methods";
+    echo "  - No research transport methods";
 fi
 
 if test -z "${HAVE_MXML_TRUE}"; then
-        echo "  - MXML";
-        echo "      - MXML_CFLAGS = $MXML_CFLAGS";
-        echo "      - MXML_CPPFLAGS = $MXML_CPPFLAGS";
-        echo "      - MXML_LDFLAGS = $MXML_LDFLAGS";
-        echo "      - MXML_LIBS = $MXML_LIBS";
-        echo
+    echo "  - MXML";
+    echo "      - MXML_CFLAGS = $MXML_CFLAGS";
+    echo "      - MXML_CPPFLAGS = $MXML_CPPFLAGS";
+    echo "      - MXML_LDFLAGS = $MXML_LDFLAGS";
+    echo "      - MXML_LIBS = $MXML_LIBS";
+    echo
 else
-        echo "  - No MXML"
+    echo "  - No MXML"
 fi
 
 if test -z "${HAVE_PORTALS_TRUE}"; then
-        echo "  - PORTALS";
-        echo "      - PORTALS_CFLAGS = $PORTALS_CFLAGS";
-        echo "      - PORTALS_CPPFLAGS = $PORTALS_CPPFLAGS";
-        echo "      - PORTALS_LDFLAGS = $PORTALS_LDFLAGS";
-        echo "      - PORTALS_LIBS = $PORTALS_LIBS";
-        echo
+    echo "  - PORTALS";
+    echo "      - PORTALS_CFLAGS = $PORTALS_CFLAGS";
+    echo "      - PORTALS_CPPFLAGS = $PORTALS_CPPFLAGS";
+    echo "      - PORTALS_LDFLAGS = $PORTALS_LDFLAGS";
+    echo "      - PORTALS_LIBS = $PORTALS_LIBS";
+    echo
 else
     echo "  - No Portals"
 fi
 
 if test -z "${HAVE_INFINIBAND_TRUE}"; then
-        echo "  - INFINIBAND";
-        echo "      - INFINIBAND_CFLAGS = $INFINIBAND_CFLAGS";
-        echo "      - INFINIBAND_CPPFLAGS = $INFINIBAND_CPPFLAGS";
-        echo "      - INFINIBAND_LDFLAGS = $INFINIBAND_LDFLAGS";
-        echo "      - INFINIBAND_LIBS = $INFINIBAND_LIBS";
-        echo
+    echo "  - INFINIBAND";
+    echo "      - INFINIBAND_CFLAGS = $INFINIBAND_CFLAGS";
+    echo "      - INFINIBAND_CPPFLAGS = $INFINIBAND_CPPFLAGS";
+    echo "      - INFINIBAND_LDFLAGS = $INFINIBAND_LDFLAGS";
+    echo "      - INFINIBAND_LIBS = $INFINIBAND_LIBS";
+    echo
 else
     echo "  - No InfiniBand"
 fi
@@ -379,89 +387,89 @@ dnl         echo "  - No Gengetopt"
 dnl fi
 
 if test "x${datatap}" != "xdisable"; then
-        echo "  - DataTap with interconnect: $datatap";
-    echo "	   - DT_CFLAGS     = $DT_CFLAGS";
-    echo "	   - DT_CPPFLAGS   = $DT_CPPFLAGS";
-    echo "	   - DT_LDFLAGS    = $DT_LDFLAGS";
-    echo "	   - DT_LIBS       = $DT_LIBS";
-        echo
+    echo "  - DataTap with interconnect: $datatap";
+    echo "      - DT_CFLAGS     = $DT_CFLAGS";
+    echo "      - DT_CPPFLAGS   = $DT_CPPFLAGS";
+    echo "      - DT_LDFLAGS    = $DT_LDFLAGS";
+    echo "      - DT_LIBS       = $DT_LIBS";
+    echo
 else
-        echo "  - No DataTap transport";
+    echo "  - No DataTap transport";
 fi
 
 if test -z "${HAVE_DART_TRUE}"; then
-        echo "  - DART transport method";
-        echo "      - DART_CFLAGS = $DART_CFLAGS";
-        echo "      - DART_CPPFLAGS = $DART_CPPFLAGS";
-        echo "      - DART_LDFLAGS = $DART_LDFLAGS";
-        echo "      - DART_LIBS = $DART_LIBS";
-        echo
+    echo "  - DART transport method";
+    echo "      - DART_CFLAGS = $DART_CFLAGS";
+    echo "      - DART_CPPFLAGS = $DART_CPPFLAGS";
+    echo "      - DART_LDFLAGS = $DART_LDFLAGS";
+    echo "      - DART_LIBS = $DART_LIBS";
+    echo
 else
     echo "  - No DART to build DART transport method"
 fi
 
 if test -z "${HAVE_DIMES_TRUE}"; then
-        echo "  - DIMES transport method";
-        echo "      - DIMES_CFLAGS = $DIMES_CFLAGS";
-        echo "      - DIMES_CPPFLAGS = $DIMES_CPPFLAGS";
-        echo "      - DIMES_LDFLAGS = $DIMES_LDFLAGS";
-        echo "      - DIMES_LIBS = $DIMES_LIBS";
-        echo
+    echo "  - DIMES transport method";
+    echo "      - DIMES_CFLAGS = $DIMES_CFLAGS";
+    echo "      - DIMES_CPPFLAGS = $DIMES_CPPFLAGS";
+    echo "      - DIMES_LDFLAGS = $DIMES_LDFLAGS";
+    echo "      - DIMES_LIBS = $DIMES_LIBS";
+    echo
 else
-        echo "  - No DIMES to build DIMES transport method"
+    echo "  - No DIMES to build DIMES transport method"
 fi
 
 if test -z "${HAVE_PHDF5_TRUE}"; then
-        echo "  - PHDF5";
-        echo "      - PHDF5_CFLAGS = $PHDF5_CFLAGS";
-        echo "      - PHDF5_CPPFLAGS = $PHDF5_CPPFLAGS";
-        echo "      - PHDF5_LDFLAGS = $PHDF5_LDFLAGS";
-        echo "      - PHDF5_LIBS = $PHDF5_LIBS";
-        echo
+    echo "  - PHDF5";
+    echo "      - PHDF5_CFLAGS = $PHDF5_CFLAGS";
+    echo "      - PHDF5_CPPFLAGS = $PHDF5_CPPFLAGS";
+    echo "      - PHDF5_LDFLAGS = $PHDF5_LDFLAGS";
+    echo "      - PHDF5_LIBS = $PHDF5_LIBS";
+    echo
 else
     echo "  - No PHDF5"
 fi
 
 if test -z "${HAVE_HDF5_TRUE}"; then
-        echo "  - HDF5";
-        echo "      - HDF5_CFLAGS = $HDF5_CFLAGS";
-        echo "      - HDF5_CPPFLAGS = $HDF5_CPPFLAGS";
-        echo "      - HDF5_LDFLAGS = $HDF5_LDFLAGS";
-        echo "      - HDF5_LIBS = $HDF5_LIBS";
-        echo
+    echo "  - HDF5";
+    echo "      - HDF5_CFLAGS = $HDF5_CFLAGS";
+    echo "      - HDF5_CPPFLAGS = $HDF5_CPPFLAGS";
+    echo "      - HDF5_LDFLAGS = $HDF5_LDFLAGS";
+    echo "      - HDF5_LIBS = $HDF5_LIBS";
+    echo
 else
     echo "  - No HDF5"
 fi
 
 if test -z "${HAVE_NC4PAR_TRUE}"; then
-        echo "  - NetCDF 4 Parallel";
-        echo "      - NC4PAR_CFLAGS = $NC4PAR_CFLAGS";
-        echo "      - NC4PAR_CPPFLAGS = $NC4PAR_CPPFLAGS";
-        echo "      - NC4PAR_LDFLAGS = $NC4PAR_LDFLAGS";
-        echo "      - NC4PAR_LIBS = $NC4PAR_LIBS";
-        echo
+    echo "  - NetCDF 4 Parallel";
+    echo "      - NC4PAR_CFLAGS = $NC4PAR_CFLAGS";
+    echo "      - NC4PAR_CPPFLAGS = $NC4PAR_CPPFLAGS";
+    echo "      - NC4PAR_LDFLAGS = $NC4PAR_LDFLAGS";
+    echo "      - NC4PAR_LIBS = $NC4PAR_LIBS";
+    echo
 else
     echo "  - No NETCDF 4 Parallel"
 fi
 
 if test -z "${HAVE_NETCDF_TRUE}"; then
-        echo "  - NetCDF";
-        echo "      - NETCDF_CFLAGS = $NETCDF_CFLAGS";
-        echo "      - NETCDF_CPPFLAGS = $NETCDF_CPPFLAGS";
-        echo "      - NETCDF_LDFLAGS = $NETCDF_LDFLAGS";
-        echo "      - NETCDF_LIBS = $NETCDF_LIBS";
-        echo
+    echo "  - NetCDF";
+    echo "      - NETCDF_CFLAGS = $NETCDF_CFLAGS";
+    echo "      - NETCDF_CPPFLAGS = $NETCDF_CPPFLAGS";
+    echo "      - NETCDF_LDFLAGS = $NETCDF_LDFLAGS";
+    echo "      - NETCDF_LIBS = $NETCDF_LIBS";
+    echo
 else
     echo "  - No NETCDF"
 fi
 
 if test -z "${HAVE_NSSI_TRUE}"; then
-        echo "  - NSSI";
-        echo "      - NSSI_CFLAGS = $NSSI_CFLAGS";
-        echo "      - NSSI_CPPFLAGS = $NSSI_CPPFLAGS";
-        echo "      - NSSI_LDFLAGS = $NSSI_LDFLAGS";
-        echo "      - NSSI_LIBS = $NSSI_LIBS";
-        echo
+    echo "  - NSSI";
+    echo "      - NSSI_CFLAGS = $NSSI_CFLAGS";
+    echo "      - NSSI_CPPFLAGS = $NSSI_CPPFLAGS";
+    echo "      - NSSI_LDFLAGS = $NSSI_LDFLAGS";
+    echo "      - NSSI_LIBS = $NSSI_LIBS";
+    echo
 else
     echo "  - No NSSI"
 fi
