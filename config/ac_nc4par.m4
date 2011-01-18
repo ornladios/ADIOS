@@ -91,12 +91,14 @@ else
         fi
     fi
 
+    save_CC="$CC"
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
     LIBS="$LIBS $NC4PAR_LIBS"
     LDFLAGS="$LDFLAGS $NC4PAR_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $NC4PAR_CPPFLAGS"
+    CC="$MPICC"
     
     if test -z "${HAVE_NC4PAR_TRUE}"; then
         AC_CHECK_HEADERS(netcdf.h,
@@ -132,6 +134,7 @@ else
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"
     CPPFLAGS="$save_CPPFLAGS"
+    CC="$save_CC"
     
     # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
     if test -z "${HAVE_NC4PAR_TRUE}"; then
