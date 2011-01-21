@@ -67,8 +67,11 @@ PROGRAMS = $(bin_PROGRAMS)
 am_bp2ncd_OBJECTS = bp2ncd-bp2ncd.$(OBJEXT)
 bp2ncd_OBJECTS = $(am_bp2ncd_OBJECTS)
 am__DEPENDENCIES_1 =
-bp2ncd_DEPENDENCIES = $(top_builddir)/src/libadios_internal_nompi.a \
-	$(am__DEPENDENCIES_1)
+@USE_PARALLEL_COMPILER_FALSE@bp2ncd_DEPENDENCIES = $(top_builddir)/src/libadios_internal_nompi.a \
+@USE_PARALLEL_COMPILER_FALSE@	$(am__DEPENDENCIES_1)
+@USE_PARALLEL_COMPILER_TRUE@bp2ncd_DEPENDENCIES =  \
+@USE_PARALLEL_COMPILER_TRUE@	$(top_builddir)/src/libadios.a \
+@USE_PARALLEL_COMPILER_TRUE@	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -304,10 +307,14 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 bp2ncd_SOURCES = bp2ncd.c
-bp2ncd_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS)
-bp2ncd_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS) -static-libtool-libs
-bp2ncd_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
-	$(ADIOSLIB_SEQ_LDADD)
+@USE_PARALLEL_COMPILER_FALSE@bp2ncd_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) $(ADIOSLIB_SEQ_CFLAGS)
+@USE_PARALLEL_COMPILER_TRUE@bp2ncd_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
+@USE_PARALLEL_COMPILER_TRUE@bp2ncd_CFLAGS = $(ADIOSLIB_CFLAGS) 
+@USE_PARALLEL_COMPILER_FALSE@bp2ncd_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS) -static-libtool-libs
+@USE_PARALLEL_COMPILER_TRUE@bp2ncd_LDFLAGS = $(ADIOSLIB_LDFLAGS) -static-libtool-libs
+@USE_PARALLEL_COMPILER_FALSE@bp2ncd_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
+@USE_PARALLEL_COMPILER_FALSE@	$(ADIOSLIB_SEQ_LDADD)
+@USE_PARALLEL_COMPILER_TRUE@bp2ncd_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 EXTRA_DIST = bp2ncd.h
 all: all-am
 
@@ -390,10 +397,10 @@ distclean-compile:
 	$(LTCOMPILE) -c -o $@ $<
 
 bp2ncd-bp2ncd.o: bp2ncd.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp2ncd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bp2ncd-bp2ncd.o `test -f 'bp2ncd.c' || echo '$(srcdir)/'`bp2ncd.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp2ncd_CPPFLAGS) $(CPPFLAGS) $(bp2ncd_CFLAGS) $(CFLAGS) -c -o bp2ncd-bp2ncd.o `test -f 'bp2ncd.c' || echo '$(srcdir)/'`bp2ncd.c
 
 bp2ncd-bp2ncd.obj: bp2ncd.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp2ncd_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bp2ncd-bp2ncd.obj `if test -f 'bp2ncd.c'; then $(CYGPATH_W) 'bp2ncd.c'; else $(CYGPATH_W) '$(srcdir)/bp2ncd.c'; fi`
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp2ncd_CPPFLAGS) $(CPPFLAGS) $(bp2ncd_CFLAGS) $(CFLAGS) -c -o bp2ncd-bp2ncd.obj `if test -f 'bp2ncd.c'; then $(CYGPATH_W) 'bp2ncd.c'; else $(CYGPATH_W) '$(srcdir)/bp2ncd.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
