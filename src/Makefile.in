@@ -750,7 +750,7 @@ METASOURCES = AUTO
 @HAVE_NSSI_TRUE@	$(top_builddir)/src/libadios.a \
 @HAVE_NSSI_TRUE@	$(ADIOSLIB_LDADD) $(NSSI_SERVER_LIBS)
 include_HEADERS = adios.h adios_types.h adios_read.h \
-	adios_read_hooks.h mpidummy.h io_timer.h
+	adios_read_hooks.h adios_error.h mpidummy.h io_timer.h
 
 # adiosf_read.mod is not really usable, 
 # so it is not used and installed right now

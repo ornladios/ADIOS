@@ -200,6 +200,7 @@ include_HEADERS += adios.h \
                    adios_types.h \
                    adios_read.h \
                    adios_read_hooks.h \
+                   adios_error.h \
                    mpidummy.h \
                    io_timer.h
 
