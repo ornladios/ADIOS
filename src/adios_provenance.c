@@ -251,7 +251,11 @@ int adios_provenance_open (struct adios_file_struct * fd
 					);
 				return 0;
 			    }
-			    off_t offset = llseek(md->b.f, 0, SEEK_END);
+#ifndef __APPLE__
+			    off_t offset = lseek64(md->b.f, 0, SEEK_END);
+#else
+			    off_t offset = lseek(md->b.f, 0, SEEK_END);
+#endif
 			    fd->base_offset = offset;
 			    fd->pg_start_in_file = offset;
 			}
@@ -774,7 +778,11 @@ void adios_provenance_close (struct adios_file_struct * fd
 		    // Writing into a file
 		    case (adios_provenance_outputmethod_file):
 		    {
-			llseek (md->b.f, 0, SEEK_END);
+#ifndef __APPLE__
+			lseek64 (md->b.f, 0, SEEK_END);
+#else
+			lseek (md->b.f, 0, SEEK_END);
+#endif
 			write (md->b.f, buffer, buffer_offset);
 			adios_posix_close_internal (&md->b);
 			
