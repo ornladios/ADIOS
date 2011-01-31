@@ -236,7 +236,10 @@ int adios_provenance_open (struct adios_file_struct * fd
 			if (md->b.f == -1)
 			{
 			    md->b.f = open (ADIOS_PROVENANCE_OUTPUTFILE
-				    ,O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE
+				    ,O_WRONLY | O_CREAT | O_TRUNC
+#ifndef __APPLE__
+| O_LARGEFILE
+#endif
 				    ,S_IRUSR | S_IWUSR 
 				    | S_IRGRP | S_IWGRP 
 				    | S_IROTH | S_IWOTH

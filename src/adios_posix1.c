@@ -86,7 +86,11 @@ int adios_posix1_open (struct adios_file_struct * fd
     {
         case adios_mode_read:
         {
-            p->b.f = open (name, O_RDONLY | O_LARGEFILE);
+            p->b.f = open (name, O_RDONLY
+#ifndef __APPLE__
+| O_LARGEFILE
+#endif
+);
             if (p->b.f == -1)
             {
                 fprintf (stderr, "ADIOS POSIX1: file not found: %s\n", fd->name);
@@ -103,7 +107,10 @@ int adios_posix1_open (struct adios_file_struct * fd
 
         case adios_mode_write:
         {
-            p->b.f = open (name, O_WRONLY | O_CREAT | O_TRUNC | O_LARGEFILE
+            p->b.f = open (name, O_WRONLY | O_CREAT | O_TRUNC
+#ifndef __APPLE__
+| O_LARGEFILE
+#endif
                             ,  S_IRUSR | S_IWUSR
                              | S_IRGRP | S_IWGRP
                              | S_IROTH | S_IWOTH
@@ -128,11 +135,18 @@ int adios_posix1_open (struct adios_file_struct * fd
         case adios_mode_append:
         {
             int old_file = 1;
-            p->b.f = open (name, O_RDWR | O_LARGEFILE);
+            p->b.f = open (name, O_RDWR
+#ifndef __APPLE__
+| O_LARGEFILE
+#endif
+);
             if (p->b.f == -1)
             {
                 old_file = 0;
-                p->b.f = open (name,  O_WRONLY | O_CREAT | O_LARGEFILE
+                p->b.f = open (name,  O_WRONLY | O_CREAT
+#ifndef __APPLE__
+| O_LARGEFILE
+#endif
                                 ,  S_IRUSR | S_IWUSR
                                  | S_IRGRP | S_IWGRP
                                  | S_IROTH | S_IWOTH

@@ -10,7 +10,12 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#ifndef __APPLE__
 #include <sys/vfs.h>
+#else
+#include <sys/param.h>
+#include <sys/mount.h>
+#endif
 #include <sys/ioctl.h>
 
 // mpi

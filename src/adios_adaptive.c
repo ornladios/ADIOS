@@ -10,7 +10,12 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#ifndef __APPLE__
 #include <sys/vfs.h>
+#else
+#include <sys/param.h>
+#include <sys/mount.h>
+#endif
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <sys/stat.h>
@@ -1950,7 +1955,11 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 old_mask = umask (0);
                 umask (old_mask);
                 perm = old_mask ^ 0666;
-                md->f = open (name, O_WRONLY | O_LARGEFILE | O_CREAT | O_TRUNC, perm);
+                md->f = open (name, O_WRONLY
+#ifndef __APPLE__
+| O_LARGEFILE
+#endif
+| O_CREAT | O_TRUNC, perm);
                 if (next != -1)
                 {
                     //pthread_mutex_lock (&md->mpi_mutex);
@@ -1978,7 +1987,11 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
                 old_mask = umask (0);
                 umask (old_mask);
                 perm = old_mask ^ 0666;
-                md->f = open (name, O_WRONLY | O_LARGEFILE | O_CREAT | O_TRUNC, perm);
+                md->f = open (name, O_WRONLY
+#ifndef __APPLE__
+| O_LARGEFILE
+#endif
+| O_CREAT | O_TRUNC, perm);
             }
             if (next != -1)
                 MPI_Wait (&md->req, &md->status);
@@ -2755,7 +2768,11 @@ timeval_subtract (&timing.t8, &b, &a);
                         );
 #endif
 
-                int af = open (new_name, O_WRONLY | O_LARGEFILE);
+                int af = open (new_name, O_WRONLY
+#ifndef __APPLE__
+| O_LARGEFILE
+#endif
+);
                 if (af != -1)
                 {
                     lseek (af, md->stripe_size * msg [5], SEEK_SET);
@@ -4678,7 +4695,10 @@ gettimeofday (&timing.t13, NULL);
                                 );
                         master_index = open (metadata_filename
                                             , O_WRONLY | O_CREAT
-                                             | O_TRUNC | O_LARGEFILE
+                                             | O_TRUNC
+#ifndef __APPLE__
+| O_LARGEFILE
+#endif
                                             ,  S_IRUSR | S_IWUSR
                                              | S_IRGRP | S_IWGRP
                                              | S_IROTH | S_IWOTH
