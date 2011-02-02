@@ -13,11 +13,6 @@
 // see if we have MPI or other tools
 #include "config.h"
 
-// mpi
-#if HAVE_MPI
-#include "mpi.h"
-#endif
-
 #include "adios.h"
 #include "adios_types.h"
 #include "adios_transport_hooks.h"
@@ -53,7 +48,7 @@ struct adios_DART_data_struct
     MPI_Comm mpi_comm;
 #endif
     int  num_of_files; // how many files do we have with this method
-    char *fnames[10];  // names of files (needed at finalize)
+    char *fnames[20];  // names of files (needed at finalize)
 };
 
 
@@ -919,11 +914,11 @@ void adios_dart_close (struct adios_file_struct * fd
                     break;
             }
             if (i == p->num_of_files) {
-                if (p->num_of_files < 10) {
+                if (p->num_of_files < 20) {
                     p->fnames[ p->num_of_files ] = strdup(fd->name);
                     p->num_of_files++;
                 } else {
-                    log_error ("%s: Max 10 files can be written by one application using the DART method\n");
+                    log_error ("%s: Max 20 files can be written by one application using the DART method\n",__func__);
                 }
             }
         }

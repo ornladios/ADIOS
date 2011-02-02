@@ -11,76 +11,84 @@
 #include "adios_types.h"
 #include <stdint.h>
 
+#ifdef _NOMPI
+/* Sequential processes can use the library compiled with -D_NOMPI */
+#   include "mpidummy.h"
+#else
+/* Parallel applications should use MPI to communicate file info and slices of data */
+#   include "mpi.h"
+#endif
+
 // ADIOS - Adaptable IO System
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// Global setup using the XML file
-int adios_init (const char * config);
+    // Global setup using the XML file
+    int adios_init (const char * config);
 
-int adios_finalize (int mype);
+    int adios_finalize (int mype);
 
-// end user calls for each I/O operation
-// modes = "r" = "read", "w" = "write", "a" = "append", "u" = "update"
-int adios_open (int64_t * fd, const char * group_name, const char * name
-               ,const char * mode, void * comm
-               );
+    // end user calls for each I/O operation
+    // modes = "r" = "read", "w" = "write", "a" = "append", "u" = "update"
+    int adios_open (int64_t * fd, const char * group_name, const char * name
+            ,const char * mode, void * comm
+            );
 
-int adios_group_size (int64_t fd_p, uint64_t data_size
-                     ,uint64_t * total_size
-                     );
+    int adios_group_size (int64_t fd_p, uint64_t data_size
+            ,uint64_t * total_size
+            );
 
-int adios_write (int64_t fd_p, const char * name, void * var);
+    int adios_write (int64_t fd_p, const char * name, void * var);
 
-int adios_get_write_buffer (int64_t fd_p, const char * name
-                           ,uint64_t * size
-                           ,void ** buffer
-                           );
+    int adios_get_write_buffer (int64_t fd_p, const char * name
+            ,uint64_t * size
+            ,void ** buffer
+            );
 
-int adios_read (int64_t fd_p, const char * name, void * buffer
-               ,uint64_t buffer_size
-               );
+    int adios_read (int64_t fd_p, const char * name, void * buffer
+            ,uint64_t buffer_size
+            );
 
-int adios_set_path (int64_t fd_p, const char * path);
+    int adios_set_path (int64_t fd_p, const char * path);
 
-int adios_set_path_var (int64_t fd_p, const char * path, const char * name);
+    int adios_set_path_var (int64_t fd_p, const char * path, const char * name);
 
-int adios_end_iteration (void);
+    int adios_end_iteration (void);
 
-int adios_start_calculation (void);
+    int adios_start_calculation (void);
 
-int adios_stop_calculation (void);
+    int adios_stop_calculation (void);
 
-int adios_close (int64_t fd_p);
+    int adios_close (int64_t fd_p);
 
-// ADIOS No-XML API's
-int adios_init_noxml (void);
+    // ADIOS No-XML API's
+    int adios_init_noxml (void);
 
-// To allocate ADIOS buffer
-int adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
-                          ,uint64_t buffer_size);
+    // To allocate ADIOS buffer
+    int adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
+            ,uint64_t buffer_size);
 
-// To declare a ADIOS group
-int adios_declare_group (int64_t * id, const char * name
-                        ,const char * time_index
-                        ,enum ADIOS_FLAG stats
-                        );
-// To free a ADIOS group
-int adios_free_group (int64_t id);
+    // To declare a ADIOS group
+    int adios_declare_group (int64_t * id, const char * name
+            ,const char * time_index
+            ,enum ADIOS_FLAG stats
+            );
+    // To free a ADIOS group
+    int adios_free_group (int64_t id);
 
-// To select a I/O method for a ADIOS group
-int adios_select_method (int64_t group, const char * method
-                        ,const char * parameters
-                        ,const char * base_path
-                        );
+    // To select a I/O method for a ADIOS group
+    int adios_select_method (int64_t group, const char * method
+            ,const char * parameters
+            ,const char * base_path
+            );
 
-// To define a ADIOS variable
-int adios_define_var (int64_t group_id, const char * name
-                     ,const char * path, int type
-                     ,const char * dimensions
-                     ,const char * global_dimensions
+    // To define a ADIOS variable
+    int adios_define_var (int64_t group_id, const char * name
+            ,const char * path, int type
+            ,const char * dimensions
+            ,const char * global_dimensions
                      ,const char * local_offsets
                      );
 

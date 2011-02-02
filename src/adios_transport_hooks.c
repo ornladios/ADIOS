@@ -7,7 +7,7 @@
 
 #include "config.h"
 
-#ifdef _NOMPI
+#ifdef _INTERNAL
     /* Sequential processes can use the library compiled with -D_NOMPI */
 #   define ADIOS_EMPTY_TRANSPORTS
 #else
@@ -41,54 +41,62 @@ void adios_init_transports (struct adios_transport_struct ** t)
     *t = (struct adios_transport_struct *)
            calloc (ADIOS_METHOD_COUNT, sizeof (struct adios_transport_struct));
 
-#ifndef NO_RESEARCH_TRANSPORTS
-    ASSIGN_FNS(adaptive,ADIOS_METHOD_ADAPTIVE)
-#endif
+#ifndef ADIOS_EMPTY_TRANSPORTS
 
-#if HAVE_MPI
+#  ifndef NO_RESEARCH_TRANSPORTS
+    ASSIGN_FNS(adaptive,ADIOS_METHOD_ADAPTIVE)
+#  endif
+
+#  ifndef _NOMPI
+
+#    if HAVE_MPI
     ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)
     ASSIGN_FNS(mpi_lustre,ADIOS_METHOD_MPI_LUSTRE)
     ASSIGN_FNS(mpi_amr,ADIOS_METHOD_MPI_AMR)
-#ifndef NO_RESEARCH_TRANSPORTS
+#      ifndef NO_RESEARCH_TRANSPORTS
     ASSIGN_FNS(mpi_stripe,ADIOS_METHOD_MPI_STRIPE)
     ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)
     ASSIGN_FNS(mpi_stagger,ADIOS_METHOD_MPI_STAGGER)
     ASSIGN_FNS(mpi_aggregate,ADIOS_METHOD_MPI_AGG)
     ASSIGN_FNS(mpi_amr1,ADIOS_METHOD_MPI_AMR1)
-#endif
-#endif
+#      endif
+#    endif
 
-#if NO_DATATAP == 0
+#    if HAVE_PHDF5
+    ASSIGN_FNS(phdf5,ADIOS_METHOD_PHDF5)
+#    endif
+
+#    if HAVE_NC4PAR
+    ASSIGN_FNS(nc4,ADIOS_METHOD_NC4)
+#    endif
+
+#    if HAVE_NSSI
+    ASSIGN_FNS(nssi,ADIOS_METHOD_NSSI_STAGING)
+    ASSIGN_FNS(nssi_filter,ADIOS_METHOD_NSSI_FILTER)
+#    endif
+
+#  endif /* _NOMPI */
+
+#  if NO_DATATAP == 0
     ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP)
-#endif
+#  endif
 
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)
     ASSIGN_FNS(posix1,ADIOS_METHOD_POSIX1)
 
-#if HAVE_DART
+#  if HAVE_DART
     ASSIGN_FNS(dart,ADIOS_METHOD_DART)
-#endif
+#  endif
 
-#if HAVE_DIMES
+#  if HAVE_DIMES
 ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES)
-#endif
+#  endif
 
-#if HAVE_PHDF5
-    ASSIGN_FNS(phdf5,ADIOS_METHOD_PHDF5)
-#endif
-
-#if HAVE_NC4PAR
-    ASSIGN_FNS(nc4,ADIOS_METHOD_NC4)
-#endif
-
-#if HAVE_NSSI
-    ASSIGN_FNS(nssi,ADIOS_METHOD_NSSI_STAGING)
-    ASSIGN_FNS(nssi_filter,ADIOS_METHOD_NSSI_FILTER)
-#endif
-
-#ifndef NO_RESEARCH_TRANSPORTS
+#  ifndef NO_RESEARCH_TRANSPORTS
     ASSIGN_FNS(provenance,ADIOS_METHOD_PROVENANCE)
-#endif
+#  endif
+
+#endif /* ADIOS_EMPTY_TRANSPORTS */
 }
 
 int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method

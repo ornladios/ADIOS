@@ -19,7 +19,6 @@
 #include <sys/ioctl.h>
 #include <assert.h>
 
-// mpi
 #include "mpi.h"
 
 // xml parser

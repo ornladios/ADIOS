@@ -40,7 +40,7 @@ libadiosread_nompi_a_CFLAGS=
 libadiosreadf_nompi_a_CFLAGS= 
 
 if BUILD_WRITE
-lib_LIBRARIES += libadios.a
+lib_LIBRARIES += libadios.a libadios_nompi.a
 libadios_a_SOURCES = adios.c \
                      common_adios.c \
                      adios_transport_hooks.c \
@@ -64,8 +64,31 @@ libadios_a_SOURCES = adios.c \
                      read_bp.c \
                      read_bp_subfile.c \
                      globals.c
+
+libadios_nompi_a_SOURCES = adios.c \
+                     common_adios.c \
+                     adios_transport_hooks.c \
+                     adios_posix.c \
+                     adios_posix1.c \
+                     adios_internals.c \
+                     adios_internals_mxml.c \
+                     buffer.c \
+                     adios_socket.c \
+                     adios_bp_v1.c  \
+                     adios_endianness.c \
+                     bp_utils.c \
+                     futils.c \
+                     adios_error.c \
+                     adios_read.c \
+                     adios_read_hooks.c \
+                     common_read.c \
+                     read_bp.c \
+                     read_bp_subfile.c \
+                     globals.c \
+                     mpidummy.c
+
 if BUILD_FORTRAN
-lib_LIBRARIES += libadiosf.a
+lib_LIBRARIES += libadiosf.a 
 libadiosf_a_SOURCES = adiosf.c \
                      common_adios.c \
                      adios_transport_hooks.c \
@@ -93,11 +116,14 @@ endif # BUILD_FORTRAN
 
 libadios_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
 libadios_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
+libadios_nompi_a_CPPFLAGS = -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) # -DUSE_TIMERS
+libadios_nompi_a_CFLAGS = -D_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
 libadiosf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
 libadiosf_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
 
 if HAVE_DART
 libadios_a_SOURCES += adios_dart.c read_dart.c
+libadios_nompi_a_SOURCES += adios_dart.c read_dart.c
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_dart.c read_dart.c
 endif
@@ -105,6 +131,7 @@ endif
 
 if HAVE_DIMES
 libadios_a_SOURCES += adios_dimes.c read_dimes.c
+libadios_nompi_a_SOURCES += adios_dimes.c read_dimes.c
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_dimes.c read_dimes.c
 endif
@@ -112,6 +139,7 @@ endif
 
 if HAVE_DATATAP
 libadios_a_SOURCES += adios_datatap.c read_datatap.c
+libadios_nompi_a_SOURCES += adios_datatap.c read_datatap.c
 if BUILD_FORTRAN
 libadiosf_a_SOURCES += adios_datatap.c read_datatap.c
 endif
@@ -191,6 +219,7 @@ libadiosf_a_SOURCES += adios_mpi_stagger.c \
 endif
 else
 libadios_a_CPPFLAGS += -DNO_RESEARCH_TRANSPORTS
+libadios_nompi_a_CPPFLAGS += -DNO_RESEARCH_TRANSPORTS
 libadiosf_a_CPPFLAGS += -DNO_RESEARCH_TRANSPORTS
 endif  # RESEARCH_TRANSPORTS
 
@@ -361,7 +390,7 @@ libadios_internal_nompi_a_SOURCES = mpidummy.c \
 
 libadiosread_nompi_a_CPPFLAGS  += -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 libadiosreadf_nompi_a_CPPFLAGS += -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
-libadios_internal_nompi_a_CPPFLAGS = -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS)
+libadios_internal_nompi_a_CPPFLAGS = -D_INTERNAL $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS)
 #Note: -DNOMPI chokes IBM's bgxlf compiler but it can pass -D_NOMPI. 
 
 if HAVE_DMALLOC

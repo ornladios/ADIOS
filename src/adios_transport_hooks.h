@@ -12,9 +12,7 @@
 #include <stdint.h>
 #include <string.h>
 
-// this is defined in the lint program to get empty implementations
-#ifdef ADIOS_EMPTY_TRANSPORTS
-#define FORWARD_DECLARE(a) \
+#define FORWARD_DECLARE_EMPTY(a) \
 void adios_##a##_init (const char * parameters \
                       ,struct adios_method_struct * method \
                       ) {} \
@@ -48,7 +46,11 @@ void adios_##a##_finalize (int mype, struct adios_method_struct * method) {} \
 void adios_##a##_end_iteration (struct adios_method_struct * method) {} \
 void adios_##a##_start_calculation (struct adios_method_struct * method) {} \
 void adios_##a##_stop_calculation (struct adios_method_struct * method) {}
-#else
+
+//#ifdef ADIOS_EMPTY_TRANSPORTS
+// this is defined in the lint program to get empty implementations
+//#define FORWARD_DECLARE(a) FORWARD_DECLARE_EMPTY(a) \
+//#else
 #define FORWARD_DECLARE(a) \
 void adios_##a##_init (const char * parameters \
                       ,struct adios_method_struct * method \
@@ -83,7 +85,7 @@ void adios_##a##_finalize (int mype, struct adios_method_struct * method); \
 void adios_##a##_end_iteration (struct adios_method_struct * method); \
 void adios_##a##_start_calculation (struct adios_method_struct * method); \
 void adios_##a##_stop_calculation (struct adios_method_struct * method);
-#endif
+//#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -127,7 +129,8 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
 };
 
 // forward declare the functions (or dummies for internals use)
-FORWARD_DECLARE(mpi)
+#if !defined(_NOMPI) || !defined (ADIOS_EMPTY_TRANSPORTS)
+     FORWARD_DECLARE(mpi)
      FORWARD_DECLARE(mpi_lustre)
      FORWARD_DECLARE(mpi_cio)
      FORWARD_DECLARE(mpi_stripe)
@@ -135,17 +138,27 @@ FORWARD_DECLARE(mpi)
      FORWARD_DECLARE(mpi_aggregate)
      FORWARD_DECLARE(mpi_amr)
      FORWARD_DECLARE(mpi_amr1)
-     FORWARD_DECLARE(datatap)
-     FORWARD_DECLARE(posix)
-     FORWARD_DECLARE(posix1)
-     FORWARD_DECLARE(provenance)
      FORWARD_DECLARE(phdf5)
      FORWARD_DECLARE(nc4)
      FORWARD_DECLARE(nssi)
      FORWARD_DECLARE(nssi_filter)
-     FORWARD_DECLARE(adaptive)
+#endif
 
-#if HAVE_DART
+#ifdef ADIOS_EMPTY_TRANSPORTS
+     FORWARD_DECLARE_EMPTY(datatap)
+     FORWARD_DECLARE_EMPTY(posix)
+     FORWARD_DECLARE_EMPTY(posix1)
+     FORWARD_DECLARE_EMPTY(provenance)
+     FORWARD_DECLARE_EMPTY(adaptive)
+#else
+     FORWARD_DECLARE(datatap)
+     FORWARD_DECLARE(posix)
+     FORWARD_DECLARE(posix1)
+     FORWARD_DECLARE(provenance)
+     FORWARD_DECLARE(adaptive)
+#endif
+
+#if defined(HAVE_DART) && !defined(ADIOS_EMPTY_TRANSPORTS) 
 FORWARD_DECLARE(dart)
 #endif
 

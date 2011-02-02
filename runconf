@@ -57,7 +57,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         --with-phdf5=${PAR_HDF5_DIR} \
         --with-phdf5-libs="${PAR_HDF5_CLIB}" \
-        --without-datatap 
+        --without-datatap --without-infiniband
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--with-datatap=/ccs/home/habbasi/work/ewok/
         #--enable-datatap=ib
@@ -212,8 +212,9 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         #export CC=mpicc
         #export FC=mpif90
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
-        export CFLAGS="-fPIC" 
-        ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xt5.$TARGET \
+        export CFLAGS="-fPIC -g -O0" 
+        #./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xt5.$TARGET \
+        ./configure --prefix=/ccs/proj/fus022/norbert/RMP/adios.xt5.$TARGET \
         --enable-dependency-tracking \
         --with-portals=/opt/xt-pe/2.2.41A \
         --with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \

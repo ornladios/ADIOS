@@ -7,7 +7,6 @@
 #include <string.h>
 #include <ffs.h>
 #include <atl.h>
-#include <mpi.h>
 #include "adios.h"
 #include "adios_internals.h"
 #include "adios_transport_hooks.h"

@@ -23,9 +23,6 @@
 #include <stdint.h>
 #include <assert.h>
 
-// mpi
-#include "mpi.h"
-
 // xml parser
 #include <mxml.h>
 

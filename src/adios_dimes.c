@@ -13,11 +13,6 @@
 // see if we have MPI or other tools
 #include "config.h"
 
-// mpi
-#if HAVE_MPI
-#include "mpi.h"
-#endif
-
 #include "adios.h"
 #include "adios_types.h"
 #include "adios_transport_hooks.h"

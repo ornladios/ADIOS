@@ -21,9 +21,7 @@ Arguments
    -l   Print linker flags for C/C++, using ADIOS write/read methods
    -f   Print above flags for Fortran90
    -r   Print above flags for using ADIOS read library only.
-   -s   Print above flags for using ADIOS read library only and
-          in a sequential code (no MPI). 
-          -r is implicit for -s, because the write API is parallel-only. 
+   -s   Print above flags for using ADIOS in a sequential code (no MPI). 
 Notes
    - Multiple options of d,c,l are enabled. In such a case, the output is
      a list of FLAG=flags, where FLAG is one of (DIR, CFLAGS, LDFLAGS)
@@ -64,9 +62,9 @@ if [ $NFLAGS_ASKED == 0 ]; then
     PRINT_LDFLAGS=yes
 fi
 
-if [ "$OPT_SEQ" == "yes" ]; then
-    OPT_READ=yes
-fi
+#if [ "$OPT_SEQ" == "yes" ]; then
+#    OPT_READ=yes
+#fi
 
 # Print requested values
 if [ "$PRINT_DIR" == "yes" ]; then
@@ -84,7 +82,11 @@ if [ "$PRINT_CFLAGS" == "yes" ]; then
             CFLAGS="$ADIOSREAD_INC"
         fi 
     else
-        CFLAGS="$ADIOS_INC"
+        if [ "$OPT_SEQ" == "yes" ]; then
+            CFLAGS="$ADIOS_SEQ_INC"
+        else
+            CFLAGS="$ADIOS_INC"
+        fi 
     fi
     if [ $NFLAGS_ASKED -gt 1 ]; then
         echo -n "CFLAGS="
@@ -94,18 +96,30 @@ fi
 
 if [ "$PRINT_LDFLAGS" == "yes" ]; then
     if [ "$OPT_SEQ" == "yes" ]; then
-        if [ "$OPT_FORTRAN" == "yes" ]; then
-            LDFLAGS="$ADIOSREAD_SEQ_FLIB"
-        else
-            LDFLAGS="$ADIOSREAD_SEQ_CLIB"
+        if [ "$OPT_READ" == "yes" ]; then
+            # ADIOSREAD + SEQ
+            if [ "$OPT_FORTRAN" == "yes" ]; then
+                LDFLAGS="$ADIOSREAD_SEQ_FLIB"
+            else
+                LDFLAGS="$ADIOSREAD_SEQ_CLIB"
+            fi
+        else  # ADIOS + SEQ
+            if [ "$OPT_FORTRAN" == "yes" ]; then
+                #LDFLAGS="$ADIOS_SEQ_FLIB"
+                LDFLAGS="There is no Fortran library of ADIOS for sequential codes"
+            else
+                LDFLAGS="$ADIOS_SEQ_CLIB"
+            fi
         fi
     elif [ "$OPT_READ" == "yes" ]; then
+        # ADIOSREAD + parallel code
         if [ "$OPT_FORTRAN" == "yes" ]; then
             LDFLAGS="$ADIOSREAD_FLIB"
         else
             LDFLAGS="$ADIOSREAD_CLIB"
         fi
-    else
+    else 
+        # ADIOS + parallel code
         if [ "$OPT_FORTRAN" == "yes" ]; then
             LDFLAGS="$ADIOS_FLIB"
         else

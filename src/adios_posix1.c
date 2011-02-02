@@ -17,11 +17,6 @@
 // see if we have MPI or other tools
 #include "config.h"
 
-// mpi
-#if HAVE_MPI
-#include "mpi.h"
-#endif
-
 // xml parser
 #include <mxml.h>
 
