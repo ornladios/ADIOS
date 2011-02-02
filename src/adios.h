@@ -89,6 +89,19 @@ int adios_define_attribute (int64_t group, const char * name
                            ,const char * value, const char * var
                            );
 
+/** Set the application's ID for adios_read_init()
+ *  when using a staging method (DART, DIMES, NSSI or DATATAP).
+ *  The ID should be unique for each application accessing the staging area
+ *  IN:  id   a number unique for this application
+ *  RETURN:       0 if accepted, <0 on error
+ *  It is optional to use it before calling adios_init. Default is 1. 
+ *  It has no effect for file based methods.
+ *  Note: this function is defined both in adios.h and adios_read.h so that
+ *  writing-only and reading-only applications can both use it.
+ */ 
+int adios_set_application_id (int id);
+
+
 /********************************************/
 /*           F O R T R A N  A P I           */
 /********************************************/
