@@ -37,9 +37,17 @@
 #endif
 
 #define MAXDARTNAMELEN 128
-
+/* Maximum number of different filenames allowed per process during the whole run */
+#define MAXNFILE 10 
 /*#define DART_DO_VERSIONING   define it at configure as -DDART_DO_VERSIONING in CFLAGS */
-static int number_of_fopens = 0;  /* for versioning, works only if one file is fopened (in a loop) in the application */
+
+struct adios_read_dart_fileversions_struct { // describes one variable (of one group)
+    char      * filename[MAXNFILE];
+    int         version[MAXNFILE];  /* for versioning of one given filename */
+};
+static struct adios_read_dart_fileversions_struct file_versions;
+static int n_filenames; /* number of filenames appeared during the run */
+
 
 struct adios_read_dart_var_struct { // describes one variable (of one group)
     char                 * name;
@@ -105,6 +113,7 @@ int adios_read_dart_init (MPI_Comm comm)
         //dpeers = dart_peers(dcg);
     }
     globals_adios_set_dart_connected_from_reader();
+    n_filenames = 0;
     return 0; 
 }
 
@@ -203,7 +212,25 @@ ADIOS_FILE * adios_read_dart_fopen (const char * fname, MPI_Comm comm)
     /* fill out dart method specific struct */
     ds->fname = strdup(fname);
 #ifdef DART_DO_VERSIONING
-    ds->access_version = number_of_fopens;  /* Read data of separate versions from DataSpaces */
+   // check this filename's version number
+    int fidx;
+    for (fidx=0; fidx<n_filenames; fidx++) {
+        if (!strcmp(fname, file_versions.filename[fidx]))
+            break;
+    }
+    if (fidx == n_filenames) {
+        if (n_filenames < MAXNFILE) {
+            file_versions.filename[ n_filenames ] = strdup(fname);
+            file_versions.version [ n_filenames ] = -1;
+            n_filenames++;
+        } else {
+            DBG_PRINTF("ADIOS ERROR: rank %d: Too many different filenames has been used for adios_fopen().\n\tDART method allows max %d files\n", ds->mpi_rank, MAXNFILE);
+            adios_error (err_too_many_files, "Too many different filenames has been used for adios_fopen().\n\tDART method allows max %d files", MAXNFILE);
+            return NULL;
+        }
+    }
+    ds->access_version = file_versions.version[fidx]+1;  /* Read data of separate versions from DataSpaces */
+    DBG_PRINTF("fopen version filename=%s version=%d fidx=%d\n", fname, ds->access_version, fidx);
 #else
     ds->access_version = 0;    /* Data in DataSpaces is always overwritten (read same version) */
 #endif
@@ -270,7 +297,7 @@ ADIOS_FILE * adios_read_dart_fopen (const char * fname, MPI_Comm comm)
     fp->fh = (uint64_t) ds;
     DBG_PRINTF("-- %s, rank %d: done fp=%x, fp->fh=%x\n", __func__, ds->mpi_rank, fp, fp->fh);
 #ifdef DART_DO_VERSIONING
-    number_of_fopens++;
+    file_versions.version[fidx]++; // next open will use new version
 #endif
     return fp;
 }

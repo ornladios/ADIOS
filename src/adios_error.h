@@ -31,6 +31,7 @@ enum ADIOS_ERRCODES {
     ,err_out_of_bound
     ,err_operation_not_supported
     ,err_end_of_file    // stream: fopen() returns if reached end of stream
+    ,err_too_many_files  // DART allows for using only a fixed number of different filenames
     ,err_unspecified
 };
 
