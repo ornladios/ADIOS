@@ -24,12 +24,12 @@ if HAVE_NSSI
 endif
 
 install-data-hook:
+	echo -n "VERSIONSTRING=\"$(PACKAGE) version $(VERSION) svn revision " >> adios_config.flags
 	if type svnversion &>/dev/null; then \
-	    SVNVERSION=`svnversion`; \
+	    echo `svnversion`\" >> adios_config.flags; \
 	else \
-	    SVNVERSION="unknown"; \
+	    echo "unknown\""; >> adios_config.flags \
 	    echo "Error: svnversion command not found"; \
-	fi \
-	echo "VERSIONSTRING=\"$(PACKAGE) version $(VERSION) svn revision $(SVNVERSION}\"" >> adios_config.flags
+	fi 
 	cp adios_config.flags $(DESTDIR)$(bindir)
         

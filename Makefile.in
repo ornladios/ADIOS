@@ -796,13 +796,13 @@ uninstall-info: uninstall-info-recursive
 
 
 install-data-hook:
+	echo -n "VERSIONSTRING=\"$(PACKAGE) version $(VERSION) svn revision " >> adios_config.flags
 	if type svnversion &>/dev/null; then \
-	    SVNVERSION=`svnversion`; \
+	    echo `svnversion`\" >> adios_config.flags; \
 	else \
-	    SVNVERSION="unknown"; \
+	    echo "unknown\""; >> adios_config.flags \
 	    echo "Error: svnversion command not found"; \
-	fi \
-	echo "VERSIONSTRING=\"$(PACKAGE) version $(VERSION) svn revision $(SVNVERSION}\"" >> adios_config.flags
+	fi 
 	cp adios_config.flags $(DESTDIR)$(bindir)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
