@@ -33229,16 +33229,14 @@ if test "$no_create" != yes; then
 fi
 
 
+# Get the version of the source we are configuring here
+# Just to print it out at the end of configure
+# see also Makefile.am:install-data-hook
 if type svnversion &>/dev/null; then
     SVNVERSION=`svnversion`
 else
     SVNVERSION="unknown"
-    { { echo "$as_me:$LINENO: error: svnversion command not found" >&5
-echo "$as_me: error: svnversion command not found" >&2;}
-   { (exit 1); exit 1; }; }
 fi
-echo "VERSIONSTRING=\"${PACKAGE} version ${VERSION} svn revision ${SVNVERSION}\"" >> adios_config.flags
-
 
 echo
 echo "*********************************"

@@ -341,14 +341,14 @@ AC_CONFIG_FILES([Makefile
 
 AC_OUTPUT
 
+# Get the version of the source we are configuring here
+# Just to print it out at the end of configure
+# see also Makefile.am:install-data-hook
 if type svnversion &>/dev/null; then
     SVNVERSION=`svnversion`
 else
     SVNVERSION="unknown"
-    AC_MSG_ERROR([svnversion command not found])
 fi
-echo "VERSIONSTRING=\"${PACKAGE} version ${VERSION} svn revision ${SVNVERSION}\"" >> adios_config.flags
-
 
 echo
 echo "*********************************"
