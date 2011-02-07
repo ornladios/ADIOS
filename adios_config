@@ -14,7 +14,7 @@ fi
 . ${FLAGSFILE}
 
 function Usage () {
-    echo "`basename $0` [-d | -c | -l] [-f] [-r] [-s]
+    echo "`basename $0` [-d | -c | -l] [-f] [-r] [-s] [-v]
 Arguments
    -d   Print base directory for ADIOS install
    -c   Print compiler flags for C/C++, using ADIOS write/read methods
@@ -22,6 +22,7 @@ Arguments
    -f   Print above flags for Fortran90
    -r   Print above flags for using ADIOS read library only.
    -s   Print above flags for using ADIOS in a sequential code (no MPI). 
+   -v   Print version of the installed package
 Notes
    - Multiple options of d,c,l are enabled. In such a case, the output is
      a list of FLAG=flags, where FLAG is one of (DIR, CFLAGS, LDFLAGS)
@@ -40,7 +41,7 @@ OPT_READ=no
 OPT_SEQ=no
 NFLAGS_ASKED=0
 
-while getopts ":dclfrsh" Option
+while getopts ":dclfrsvh" Option
 do          
   case $Option in               
         d) PRINT_DIR=yes; let "NFLAGS_ASKED=NFLAGS_ASKED+1";;
@@ -49,6 +50,7 @@ do
         f) OPT_FORTRAN=yes;;
         r) OPT_READ=yes;;
         s) OPT_SEQ=yes;;
+        v) echo "$VERSIONSTRING"; exit 0;;
         h) Usage; exit 0;;
         *) echo "Invalid option -$Option."; Usage; exit 255;;   # DEFAULT
   esac

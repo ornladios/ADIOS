@@ -33229,12 +33229,21 @@ if test "$no_create" != yes; then
 fi
 
 
+if type svnversion &>/dev/null; then
+    SVNVERSION=`svnversion`
+else
+    SVNVERSION="unknown"
+    { { echo "$as_me:$LINENO: error: svnversion command not found" >&5
+echo "$as_me: error: svnversion command not found" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+echo "VERSIONSTRING=\"${PACKAGE} version ${VERSION} svn revision ${SVNVERSION}\"" >> adios_config.flags
+
+
 echo
 echo "*********************************"
 echo $PACKAGE configured as follows:
 echo "*********************************"
-echo
-
 echo
 echo "  - General Compile FLAGS";
 echo "      - CC  = $CC";
@@ -33381,3 +33390,6 @@ if test -z "${HAVE_NSSI_TRUE}"; then
 else
     echo "  - No NSSI"
 fi
+
+echo "  - SVN version = ${SVNVERSION}"
+echo "  - Install path = ${prefix}"

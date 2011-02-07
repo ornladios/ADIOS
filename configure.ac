@@ -341,12 +341,19 @@ AC_CONFIG_FILES([Makefile
 
 AC_OUTPUT
 
+if type svnversion &>/dev/null; then
+    SVNVERSION=`svnversion`
+else
+    SVNVERSION="unknown"
+    AC_MSG_ERROR([svnversion command not found])
+fi
+echo "VERSIONSTRING=\"${PACKAGE} version ${VERSION} svn revision ${SVNVERSION}\"" >> adios_config.flags
+
+
 echo
 echo "*********************************"
 echo $PACKAGE configured as follows:
 echo "*********************************"
-echo
-
 echo
 echo "  - General Compile FLAGS";
 echo "      - CC  = $CC";
@@ -503,3 +510,6 @@ if test -z "${HAVE_NSSI_TRUE}"; then
 else
     echo "  - No NSSI"
 fi
+
+echo "  - SVN version = ${SVNVERSION}"
+echo "  - Install path = ${prefix}"
