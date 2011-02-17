@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <adios-config host-language="C">
   <adios-group name="restart" coordination-communicator="comm" time-index="time">
 <!--
@@ -23,13 +24,16 @@
     <attribute name="timestep2" path="/abc" value="1"/>
 -->
 
-    <var name="byte_test_length" type="integer"/>
+    <var name="byte_test_length" type="long"/>
 
     <var name="byte_test" type="byte" dimensions="byte_test_length"/>
   
   </adios-group>
 
-  <transport group="restart" method="MPI">max_storage_targets=672;min_stripe_count=1;max_stripe_count=1;files_number=1;overlap_factor=0;split_target_count=1;split_files_count=max</transport>
+<!--
+  <transport group="restart" method="ADAPTIVE">max_storage_targets=672;max_stripe_count=160;files_number=16;overlap_factor= 0;min_stripe_count=3;split_target_count=3;split_files_count=max</transport>
+-->
+  <transport group="restart" method="MPI">max_storage_targets=144;max_stripe_count=144;files_number=1;overlap_factor= 0;min_stripe_count=1;split_target_count=1;split_files_count=max</transport>
 
   <buffer size-MB="1000" allocate-time="now"/>
 
