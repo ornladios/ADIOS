@@ -382,6 +382,7 @@ adios_mpi_lustre_get_striping_unit(MPI_File fh, char *filename)
         fd =  open(filename, O_RDONLY, perm);
         if (fd != -1) {
             struct lov_user_md lum;
+            memset (&lum, 0, sizeof(struct lov_user_md));
             lum.lmm_magic = LOV_USER_MAGIC;
             err = ioctl(fd, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
             if (err == 0 && lum.lmm_stripe_size > 0) {
