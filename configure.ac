@@ -321,6 +321,7 @@ AC_CONFIG_FILES([Makefile
                  utils/bp2ascii/Makefile
                  utils/bpsplit/Makefile
                  utils/bpls/Makefile
+                 utils/bp2bp/Makefile
                  examples/Makefile
                  examples/C/Makefile
                  examples/C/scalars/Makefile

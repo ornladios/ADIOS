@@ -35,7 +35,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@BUILD_WRITE_TRUE@am__append_1 = adios_lint
+@BUILD_WRITE_TRUE@am__append_1 = adios_lint bp2bp
 @HAVE_HDF5_TRUE@am__append_2 = bp2h5
 @HAVE_NETCDF_TRUE@am__append_3 = bp2ncd
 subdir = utils
@@ -72,7 +72,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = gpp bpdump bp2ascii bpsplit bpls adios_lint bp2h5 \
+DIST_SUBDIRS = gpp bpdump bp2ascii bpsplit bpls adios_lint bp2bp bp2h5 \
 	bp2ncd
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@

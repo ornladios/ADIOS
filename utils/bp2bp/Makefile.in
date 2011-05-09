@@ -67,8 +67,8 @@ PROGRAMS = $(bin_PROGRAMS)
 am_bp2bp_OBJECTS = bp2bp-bp2bp.$(OBJEXT)
 bp2bp_OBJECTS = $(am_bp2bp_OBJECTS)
 am__DEPENDENCIES_1 =
-bp2bp_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
-	$(top_builddir)/src/libadios.a $(am__DEPENDENCIES_1)
+bp2bp_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -89,6 +89,10 @@ ACLOCAL = @ACLOCAL@
 ADIOSLIB_CFLAGS = @ADIOSLIB_CFLAGS@
 ADIOSLIB_CPPFLAGS = @ADIOSLIB_CPPFLAGS@
 ADIOSLIB_EXTRA_CPPFLAGS = @ADIOSLIB_EXTRA_CPPFLAGS@
+ADIOSLIB_INT_CFLAGS = @ADIOSLIB_INT_CFLAGS@
+ADIOSLIB_INT_CPPFLAGS = @ADIOSLIB_INT_CPPFLAGS@
+ADIOSLIB_INT_LDADD = @ADIOSLIB_INT_LDADD@
+ADIOSLIB_INT_LDFLAGS = @ADIOSLIB_INT_LDFLAGS@
 ADIOSLIB_LDADD = @ADIOSLIB_LDADD@
 ADIOSLIB_LDFLAGS = @ADIOSLIB_LDFLAGS@
 ADIOSLIB_SEQ_CFLAGS = @ADIOSLIB_SEQ_CFLAGS@
@@ -115,13 +119,15 @@ BUILD_FORTRAN_FALSE = @BUILD_FORTRAN_FALSE@
 BUILD_FORTRAN_TRUE = @BUILD_FORTRAN_TRUE@
 BUILD_WRITE_FALSE = @BUILD_WRITE_FALSE@
 BUILD_WRITE_TRUE = @BUILD_WRITE_TRUE@
-CC = @CC@
+
+#if USE_PARALLEL_COMPILER
+CC = $(MPICC)
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CSH = @CSH@
-CXX = @CXX@
+CXX = $(MPICXX)
 CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
@@ -248,6 +254,7 @@ PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
 RESEARCH_TRANSPORTS_FALSE = @RESEARCH_TRANSPORTS_FALSE@
 RESEARCH_TRANSPORTS_TRUE = @RESEARCH_TRANSPORTS_TRUE@
+SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -301,10 +308,9 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
 bp2bp_SOURCES = bp2bp.c
-bp2bp_CPPFLAGS = -DH5_USE_16_API -O0 -g $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS) $(ADIOSREADLIB_CFLAGS )
-bp2bp_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
-bp2bp_LDADD = $(top_builddir)/src/libadiosread.a \
-	$(top_builddir)/src/libadios.a $(ADIOSREADLIB_LDADD)
+bp2bp_CPPFLAGS = $(ADIOSLIB_CPPFLAGS) $(ADIOSLIB_CFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) 
+bp2bp_LDFLAGS = $(ADIOSLIB_LDFLAGS) 
+bp2bp_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 all: all-am
 
 .SUFFIXES:
@@ -567,9 +573,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-info-am
 	pdf pdf-am ps ps-am tags uninstall uninstall-am \
 	uninstall-binPROGRAMS uninstall-info-am
 
-
-#CC=$(MPICC)
-#CXX=$(MPICXX)
+#endif
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
