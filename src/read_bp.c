@@ -2833,6 +2833,8 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
                 for (j = 0; j< ndim; j++) {
                     gdims[j]=ldims[j];
                 }
+                // we need to read only the first PG, not all, so let's prevent a second loop
+                stop_idx = start_idx;
             }
 
             /* Again, a Fortran written file has the dimensions in Fortran order we need to swap here */
@@ -2858,13 +2860,13 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
                 }
             }
 
-            /*
+            
             printf("ldims   = "); for (j = 0; j<ndim; j++) printf("%d ",ldims[j]); printf("\n");
             printf("gdims   = "); for (j = 0; j<ndim; j++) printf("%d ",gdims[j]); printf("\n");
             printf("offsets = "); for (j = 0; j<ndim; j++) printf("%d ",offsets[j]); printf("\n");
             printf("count_notime   = "); for (j = 0; j<ndim_notime; j++) printf("%d ",count_notime[j]); printf("\n");
             printf("start_notime   = "); for (j = 0; j<ndim_notime; j++) printf("%d ",start_notime[j]); printf("\n");
-            */
+            
                 
             for (j = 0; j < ndim_notime; j++) {
     
