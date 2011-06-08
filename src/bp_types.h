@@ -54,7 +54,7 @@ typedef struct BP_file_handle BP_file_handle_list;
 struct BP_FILE {
     MPI_File mpi_fh;
     char * fname; // Main file name is needed to calculate subfile names
-    BP_file_handle_list * sfh; // This list links all the subfiles handle together    
+    BP_file_handle_list * sfh; // This list links all the subfiles handle together
     MPI_Comm comm;
     struct adios_bp_buffer_struct_v1 * b;
     struct bp_index_pg_struct_v1 * pgs_root;
@@ -65,6 +65,7 @@ struct BP_FILE {
     struct BP_GROUP_ATTR * gattr_h;
     uint32_t tidx_start;
     uint32_t tidx_stop;
+    void * priv
 };
 
 struct BP_GROUP_VAR {
