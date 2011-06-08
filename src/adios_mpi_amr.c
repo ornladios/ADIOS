@@ -420,6 +420,7 @@ adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
         }
 
         i = 0;
+        n = 0;
         while (i < g_num_ost)
         {
             if (g_ost_skipping_list[i] == 0)
