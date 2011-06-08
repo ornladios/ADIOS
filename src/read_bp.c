@@ -1465,7 +1465,7 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (ADIOS_GROUP *gp, int varid)
                           &(vi->ndim), &(vi->dims), &(vi->timedim));
     
     if (file_is_fortran != futils_is_called_from_fortran()) {
-        /* If this is a Fortran written file and this is called from C code,  
+        /* If this is a Fortran written file and this is called from C code/  
            or this is a C written file and this is called from Fortran code ==>
            We need to reverse the order of the dimensions */
         swap_order(vi->ndim, vi->dims, &(vi->timedim));
@@ -2910,7 +2910,6 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
             hole_break = i;
             slice_offset = 0;
             slice_size = 0;
-
             if (hole_break == -1) {
                 /* The complete read happens to be exactly one pg, and the entire pg */
                 /* This means we enter this only once, and npg=1 at the end */
@@ -2941,6 +2940,7 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
                 int isize;
                 uint64_t size_in_dset = 0;
                 uint64_t offset_in_dset = 0;
+                uint64_t offset_in_var = 0;
     
                 isize = offsets[0] + ldims[0];
                 if (start_notime[0] >= offsets[0]) {
@@ -2951,6 +2951,7 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
                         else
                             size_in_dset = count_notime[0];
                         offset_in_dset = start_notime[0] - offsets[0];
+                        offset_in_var = 0;
                     }
                 }
                 else {
@@ -2961,10 +2962,12 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
                     // tail is in
                         size_in_dset = count_notime[0] + start_notime[0] - offsets[0];
                     offset_in_dset = 0;
+                    offset_in_var = offsets[0] - start_notime[0];
                 }
     
                 slice_size = size_in_dset * datasize * size_of_type;
-    
+                write_offset = offset_in_var * datasize * size_of_type;
+ 
                 if (var_root->characteristics[start_idx + idx].payload_offset > 0) {
                     slice_offset = var_root->characteristics[start_idx + idx].payload_offset 
                                  + offset_in_dset * datasize * size_of_type;
@@ -2984,7 +2987,7 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
                     change_endianness((char *)data + write_offset, slice_size, var_root->type);
                 }
     
-                write_offset +=  slice_size;
+                //write_offset +=  slice_size;
             }
             else 
             {
