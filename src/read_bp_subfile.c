@@ -1496,8 +1496,6 @@ void init_read (struct BP_FILE * fh)
 {
     int thread_level, i, remain;
     int color1, color2;
-    MPI_Request req;
-    MPI_Status status;
     char * env_str;
 
     struct proc_struct * p = (struct proc_struct *) malloc (sizeof (struct proc_struct));
@@ -2479,8 +2477,6 @@ int adios_read_bp_subfile_gclose (ADIOS_GROUP * gp)
     struct BP_GROUP * gh = (struct BP_GROUP *) gp->gh;
     struct BP_FILE * fh = gh->fh;
     struct proc_struct * p = (struct proc_struct *) fh->priv;
-    MPI_Request req;
-    MPI_Status status;
     candidate_reader * h = p->local_read_request_list;
     int i, type, count, varid, ndims, total_size, size = calc_data_size (p);
     void * buf;
