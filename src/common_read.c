@@ -86,6 +86,7 @@ int common_read_fclose (ADIOS_FILE *fp)
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_fclose_fn (fp);
+        free (internals);
     } else {
         adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_fclose()");
         retval = -err_invalid_file_pointer;
