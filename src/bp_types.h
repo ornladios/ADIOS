@@ -65,7 +65,7 @@ struct BP_FILE {
     struct BP_GROUP_ATTR * gattr_h;
     uint32_t tidx_start;
     uint32_t tidx_stop;
-    void * priv
+    void * priv;
 };
 
 struct BP_GROUP_VAR {
