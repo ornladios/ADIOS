@@ -1108,7 +1108,9 @@ void adios_posix_close (struct adios_file_struct * fd
                 }
                 else
                 {
-                    MPI_Gather (&buffer_size, 1, MPI_INT
+					// Added this explicit cast to avoid truncation of low-order bytes on BGP
+					int i_buffer_size = (int) buffer_size;
+                    MPI_Gather (&i_buffer_size, 1, MPI_INT
                                ,0, 0, MPI_INT
                                ,0, p->group_comm
                                );
