@@ -22,12 +22,14 @@
 #include "adios_internals.h"
 #include "adios_internals_mxml.h"
 #include "globals.h"
+#include "adios_error.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
 
 extern struct adios_transport_struct * adios_transports;
+extern int adios_errno;
 
 int adios_set_application_id (int id)
 {
@@ -63,7 +65,7 @@ int adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_open (int64_t * fd, const char * group_name, const char * name
+enum ADIOS_ERRCODES adios_open (int64_t * fd, const char * group_name, const char * name
                ,const char * mode, void * comm
                )
 {

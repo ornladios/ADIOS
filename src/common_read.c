@@ -74,6 +74,8 @@ ADIOS_FILE * common_read_fopen (const char * fname, MPI_Comm comm)
     // save the method in fp->internal_data
     if (fp)
         fp->internal_data = (void *)internals;
+    else
+        free (internals);
     return fp;
 }
 
@@ -91,6 +93,7 @@ int common_read_fclose (ADIOS_FILE *fp)
         adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_fclose()");
         retval = -err_invalid_file_pointer;
     }
+    free (internals);
     return retval;
 }
 

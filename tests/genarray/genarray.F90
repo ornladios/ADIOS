@@ -181,8 +181,10 @@ subroutine writeArray()
         group = "genarray"
         write (outfilename,'(a,".",i3.3,".bp")') trim(outputfile),tstep
         call adios_open (adios_handle, group, outfilename, mode, group_comm, adios_err)
-#include "gwrite_genarray.fh"
-        call adios_close (adios_handle, adios_err)
+        if (adios_err==0) then
+#include    "gwrite_genarray.fh"
+            call adios_close (adios_handle, adios_err)
+        endif
         call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
         io_end_time = MPI_WTIME()
         io_total_time = io_end_time - io_start_time

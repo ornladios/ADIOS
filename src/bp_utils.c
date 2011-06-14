@@ -107,7 +107,7 @@ int bp_read_open (const char * filename,
         int len = 0;
         memset (e, 0, MPI_MAX_ERROR_STRING);
         MPI_Error_string (err, e, &len);
-        adios_error (err_MPI_open_error, "MPI open failed for %s: '%s'\n", filename, e);
+        adios_error (err_file_open_error, "MPI open failed for %s: '%s'\n", filename, e);
         return adios_flag_no;
     }
 

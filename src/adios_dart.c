@@ -290,7 +290,8 @@ enum ADIOS_FLAG adios_dart_should_buffer (struct adios_file_struct * fd
     //}
     
 
-    return adios_flag_no;  // this will take care of it
+    return fd->shared_buffer; // we do not care about ADIOS shared buffer
+    //return adios_flag_no;  // this will take care of it
 }
 
 

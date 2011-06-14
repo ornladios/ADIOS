@@ -1,0 +1,6 @@
+ARDMA: Adios RDMA
+
+RDMA functions for both staging servers and staging methods.
+Implemented with various RDMA libraries: InfiniBand, Portals, Gemini
+
+

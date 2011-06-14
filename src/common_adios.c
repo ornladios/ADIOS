@@ -20,6 +20,7 @@
 #include "adios_internals.h"
 #include "adios_internals_mxml.h"
 #include "buffer.h"
+#include "adios_error.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -73,7 +74,7 @@ int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_allo
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int common_adios_open (int64_t * fd, const char * group_name
+enum ADIOS_ERRCODES common_adios_open (int64_t * fd, const char * group_name
                 ,const char * name, const char * file_mode, void * comm
                )
 {
@@ -83,8 +84,14 @@ int common_adios_open (int64_t * fd, const char * group_name
     struct adios_group_struct * g = 0;
     struct adios_method_list_struct * methods = 0;
     enum ADIOS_METHOD_MODE mode;
+    enum ADIOS_ERRCODES method_retval = err_no_error;
 
     adios_common_get_group (&group_id, group_name);
+    if (!group_id) {
+        fprintf (stderr, "adios_open: unknown group: %s\n", group_name);
+        free(fd_p);
+        return err_invalid_group;
+    }
     g = (struct adios_group_struct *) group_id;
     methods = g->methods;
 
@@ -105,9 +112,10 @@ int common_adios_open (int64_t * fd, const char * group_name
                             ,file_mode
                             );
 
+                    free(fd_p);
                     *fd = 0;
 
-                    return 1;
+                    return err_invalid_file_mode;
                 }
 
     fd_p->name = strdup (name);
@@ -128,23 +136,29 @@ int common_adios_open (int64_t * fd, const char * group_name
     if (mode != adios_mode_read)
         g->time_index++;
 
-    while (methods)
+    while (methods && method_retval==err_no_error)
     {
         if (   methods->method->m != ADIOS_METHOD_UNKNOWN
             && methods->method->m != ADIOS_METHOD_NULL
             && adios_transports [methods->method->m].adios_open_fn
            )
         {
-            adios_transports [methods->method->m].adios_open_fn
+            method_retval = adios_transports [methods->method->m].adios_open_fn
                                                  (fd_p, methods->method, comm);
         }
 
         methods = methods->next;
     }
 
-    *fd = (int64_t) fd_p;
+    if (method_retval == err_no_error) {
+        *fd = (int64_t) fd_p;
+    } else {
+        free(fd_p);
+        *fd = 0;
+    }
 
-    return 0;
+    printf ("+++ adios_open: retval=%lld, fd=%lld\n", method_retval, *fd);
+    return method_retval; 
 }
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include "adios_types.h"
 #include "adios_internals.h"
+#include "adios_error.h"
 
 /* Write functions for ADIOS
  *
@@ -32,7 +33,7 @@ int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_allo
 
 // end user calls for each I/O operation
 // modes = "r" = "read", "w" = "write", "a" = "append", "u" = "update"
-int common_adios_open (int64_t * fd, const char * group_name, const char * name
+enum ADIOS_ERRCODES common_adios_open (int64_t * fd, const char * group_name, const char * name
                ,const char * mode, void * comm
                );
 

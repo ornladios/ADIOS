@@ -125,7 +125,8 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
               ,ADIOS_METHOD_NSSI_STAGING = 18
               ,ADIOS_METHOD_NSSI_FILTER  = 19
               ,ADIOS_METHOD_DIMES        = 20
-              ,ADIOS_METHOD_COUNT        = 21
+              ,ADIOS_METHOD_STAGING      = 21
+              ,ADIOS_METHOD_COUNT        = 22
 };
 
 // forward declare the functions (or dummies for internals use)
@@ -164,6 +165,10 @@ FORWARD_DECLARE(dart)
 
 #if HAVE_DIMES
 FORWARD_DECLARE(dimes)
+#endif
+
+#if defined (HAVE_RDMA) && !defined(ADIOS_EMPTY_TRANSPORTS)
+FORWARD_DECLARE(staging)
 #endif
 
 

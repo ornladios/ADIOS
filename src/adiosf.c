@@ -79,7 +79,7 @@ void FC_FUNC_(adios_open, adios_OPEN)
     buf3 = futils_fstr_to_cstr (mode, mode_size);
 
     if (buf1 != 0 && buf2 != 0 && buf3 != 0) {
-        *err = common_adios_open (fd, buf1, buf2, buf3, comm);
+        *err = (int) common_adios_open (fd, buf1, buf2, buf3, comm);
         free (buf1);
         free (buf2);
         free (buf3);

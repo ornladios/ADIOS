@@ -464,7 +464,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CPP EGREP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE HAVE_MPI_TRUE HAVE_MPI_FALSE MPICC MPILIBS MPICXX BUILD_FORTRAN_TRUE BUILD_FORTRAN_FALSE FC FCFLAGS ac_ct_FC FCLIBS MPIFC build build_cpu build_vendor build_os host host_cpu host_vendor host_os SED LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL HAVE_MXML_TRUE HAVE_MXML_FALSE PTHREAD_CC PTHREAD_LIBS PTHREAD_CFLAGS MXML_LIBS MXML_LDFLAGS MXML_CPPFLAGS HAVE_INFINIBAND_TRUE HAVE_INFINIBAND_FALSE INFINIBAND_CPPFLAGS INFINIBAND_CFLAGS INFINIBAND_LDFLAGS INFINIBAND_LIBS INFINIBAND_HEADER HAVE_PORTALS_TRUE HAVE_PORTALS_FALSE NEED_DARWIN_SINGLE_MODULE_TRUE NEED_DARWIN_SINGLE_MODULE_FALSE PORTALS_CPPFLAGS PORTALS_CFLAGS PORTALS_LDFLAGS PORTALS_LIBS PORTALS_HEADER PORTALS_NAL_HEADER PORTALS_RT_HEADER HAVE_HDF5_TRUE HAVE_HDF5_FALSE HDF5_LIBS HDF5_LDFLAGS HDF5_CPPFLAGS HAVE_PHDF5_TRUE HAVE_PHDF5_FALSE PHDF5_LIBS PHDF5_LDFLAGS PHDF5_CPPFLAGS HAVE_NETCDF_TRUE HAVE_NETCDF_FALSE NETCDF_LIBS NETCDF_LDFLAGS NETCDF_CPPFLAGS HAVE_NC4PAR_TRUE HAVE_NC4PAR_FALSE NC4PAR_LIBS NC4PAR_LDFLAGS NC4PAR_CPPFLAGS HAVE_PABLO_TRUE HAVE_PABLO_FALSE PABLO_LIBS PABLO_LDFLAGS PABLO_CPPFLAGS HAVE_NSSI_TRUE HAVE_NSSI_FALSE NSSI_LIBS NSSI_SERVER_LIBS NSSI_CFLAGS NSSI_CPPFLAGS NSSI_LDFLAGS NSSI_SRCDIR NSSI_BUILDDIR HAVE_DART_TRUE HAVE_DART_FALSE DART_LIBS DART_LDFLAGS DART_CPPFLAGS HAVE_DIMES_TRUE HAVE_DIMES_FALSE DIMES_LIBS DIMES_LDFLAGS DIMES_CPPFLAGS HAVE_DMALLOC_TRUE HAVE_DMALLOC_FALSE DMALLOC_LIBS DMALLOC_LDFLAGS DMALLOC_CPPFLAGS CSH PATHPROG DT_LIBS DT_CPPFLAGS DT_LDFLAGS RESEARCH_TRANSPORTS_TRUE RESEARCH_TRANSPORTS_FALSE HAVE_DATATAP_TRUE HAVE_DATATAP_FALSE BUILD_WRITE_TRUE BUILD_WRITE_FALSE USE_PARALLEL_COMPILER_TRUE USE_PARALLEL_COMPILER_FALSE ADIOSLIB_CPPFLAGS ADIOSLIB_CFLAGS ADIOSLIB_LDFLAGS ADIOSLIB_LDADD ADIOSLIB_SEQ_CPPFLAGS ADIOSLIB_SEQ_CFLAGS ADIOSLIB_SEQ_LDFLAGS ADIOSLIB_SEQ_LDADD ADIOSLIB_INT_CPPFLAGS ADIOSLIB_INT_CFLAGS ADIOSLIB_INT_LDFLAGS ADIOSLIB_INT_LDADD ADIOSREADLIB_CPPFLAGS ADIOSREADLIB_CFLAGS ADIOSREADLIB_LDFLAGS ADIOSREADLIB_LDADD ADIOSREADLIB_SEQ_CPPFLAGS ADIOSREADLIB_SEQ_CFLAGS ADIOSREADLIB_SEQ_LDFLAGS ADIOSREADLIB_SEQ_LDADD ADIOSLIB_EXTRA_CPPFLAGS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CPP EGREP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE HAVE_MPI_TRUE HAVE_MPI_FALSE MPICC MPILIBS MPICXX BUILD_FORTRAN_TRUE BUILD_FORTRAN_FALSE FC FCFLAGS ac_ct_FC FCLIBS MPIFC build build_cpu build_vendor build_os host host_cpu host_vendor host_os SED LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL HAVE_MXML_TRUE HAVE_MXML_FALSE PTHREAD_CC PTHREAD_LIBS PTHREAD_CFLAGS MXML_LIBS MXML_LDFLAGS MXML_CPPFLAGS HAVE_INFINIBAND_TRUE HAVE_INFINIBAND_FALSE INFINIBAND_CPPFLAGS INFINIBAND_CFLAGS INFINIBAND_LDFLAGS INFINIBAND_LIBS INFINIBAND_HEADER HAVE_PORTALS_TRUE HAVE_PORTALS_FALSE NEED_DARWIN_SINGLE_MODULE_TRUE NEED_DARWIN_SINGLE_MODULE_FALSE PORTALS_CPPFLAGS PORTALS_CFLAGS PORTALS_LDFLAGS PORTALS_LIBS PORTALS_HEADER PORTALS_NAL_HEADER PORTALS_RT_HEADER HAVE_HDF5_TRUE HAVE_HDF5_FALSE HDF5_LIBS HDF5_LDFLAGS HDF5_CPPFLAGS HAVE_PHDF5_TRUE HAVE_PHDF5_FALSE PHDF5_LIBS PHDF5_LDFLAGS PHDF5_CPPFLAGS HAVE_NETCDF_TRUE HAVE_NETCDF_FALSE NETCDF_LIBS NETCDF_LDFLAGS NETCDF_CPPFLAGS HAVE_NC4PAR_TRUE HAVE_NC4PAR_FALSE NC4PAR_LIBS NC4PAR_LDFLAGS NC4PAR_CPPFLAGS HAVE_PABLO_TRUE HAVE_PABLO_FALSE PABLO_LIBS PABLO_LDFLAGS PABLO_CPPFLAGS HAVE_NSSI_TRUE HAVE_NSSI_FALSE NSSI_LIBS NSSI_SERVER_LIBS NSSI_CFLAGS NSSI_CPPFLAGS NSSI_LDFLAGS NSSI_SRCDIR NSSI_BUILDDIR HAVE_DART_TRUE HAVE_DART_FALSE DART_LIBS DART_LDFLAGS DART_CPPFLAGS HAVE_DIMES_TRUE HAVE_DIMES_FALSE DIMES_LIBS DIMES_LDFLAGS DIMES_CPPFLAGS HAVE_DMALLOC_TRUE HAVE_DMALLOC_FALSE DMALLOC_LIBS DMALLOC_LDFLAGS DMALLOC_CPPFLAGS CSH PATHPROG DT_LIBS DT_CPPFLAGS DT_LDFLAGS RESEARCH_TRANSPORTS_TRUE RESEARCH_TRANSPORTS_FALSE HAVE_DATATAP_TRUE HAVE_DATATAP_FALSE BUILD_WRITE_TRUE BUILD_WRITE_FALSE USE_PARALLEL_COMPILER_TRUE USE_PARALLEL_COMPILER_FALSE HAVE_RDMA_TRUE HAVE_RDMA_FALSE ADIOSLIB_CPPFLAGS ADIOSLIB_CFLAGS ADIOSLIB_LDFLAGS ADIOSLIB_LDADD ADIOSLIB_SEQ_CPPFLAGS ADIOSLIB_SEQ_CFLAGS ADIOSLIB_SEQ_LDFLAGS ADIOSLIB_SEQ_LDADD ADIOSLIB_INT_CPPFLAGS ADIOSLIB_INT_CFLAGS ADIOSLIB_INT_LDFLAGS ADIOSLIB_INT_LDADD ADIOSREADLIB_CPPFLAGS ADIOSREADLIB_CFLAGS ADIOSREADLIB_LDFLAGS ADIOSREADLIB_LDADD ADIOSREADLIB_SEQ_CPPFLAGS ADIOSREADLIB_SEQ_CFLAGS ADIOSREADLIB_SEQ_LDFLAGS ADIOSREADLIB_SEQ_LDADD ADIOSLIB_EXTRA_CPPFLAGS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -31048,6 +31048,35 @@ fi
 echo "$as_me: Use NC4PAR for sequential NETCDF tools" >&6;}
 fi
 
+if test -z "${HAVE_PORTALS_TRUE}" -o -z "${HAVE_INFINIBAND_TRUE}"; then
+
+
+if true; then
+  HAVE_RDMA_TRUE=
+  HAVE_RDMA_FALSE='#'
+else
+  HAVE_RDMA_TRUE='#'
+  HAVE_RDMA_FALSE=
+fi
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RDMA 1
+_ACEOF
+
+else
+
+
+if false; then
+  HAVE_RDMA_TRUE=
+  HAVE_RDMA_FALSE='#'
+else
+  HAVE_RDMA_TRUE='#'
+  HAVE_RDMA_FALSE=
+fi
+
+fi
+#AM_CONDITIONAL(HAVE_RDMA,true)
 
 ADIOSLIB_EXTRA_CPPFLAGS="-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE"
 ADIOSLIB_CPPFLAGS="${MXML_CPPFLAGS}"
@@ -31156,6 +31185,9 @@ if test -z "${HAVE_PORTALS_TRUE}"; then
     ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${PORTALS_LDFLAGS}"
     ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${PORTALS_LIBS}"
 fi
+if test -z "${HAVE_RDMA_TRUE}"; then
+    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} -lardma_client"
+fi
 if test -z "${HAVE_INFINIBAND_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${INFINIBAND_CPPFLAGS}"
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${INFINIBAND_CFLAGS}"
@@ -31231,7 +31263,7 @@ _ACEOF
         echo "#### Defined USE_PARALLEL_COMPILER to = [${USE_PARALLEL_COMPILER}]"
 fi
 
-                                                                                                                                                                                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile tests/genarray/Makefile tests/bp_read/Makefile tests/suite/Makefile tests/suite/programs/Makefile utils/Makefile utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile utils/bpls/Makefile utils/bp2bp/Makefile examples/Makefile examples/C/Makefile examples/C/scalars/Makefile examples/C/arrays/Makefile examples/C/attributes/Makefile examples/C/manual/Makefile examples/C/global-array/Makefile examples/C/global-array-time/Makefile examples/C/stat/Makefile examples/C/read_all/Makefile examples/Fortran/Makefile examples/Fortran/scalars/Makefile examples/Fortran/arrays/Makefile examples/Fortran/global-array/Makefile examples/Fortran/global-array-time/Makefile adios_config.flags"
+                                                                                                                                                                                                                                                                                                                                                                                  ac_config_files="$ac_config_files Makefile src/Makefile src/ardma/Makefile src/staging_server/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile tests/genarray/Makefile tests/bp_read/Makefile tests/suite/Makefile tests/suite/programs/Makefile utils/Makefile utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile utils/bpls/Makefile utils/bp2bp/Makefile examples/Makefile examples/C/Makefile examples/C/scalars/Makefile examples/C/arrays/Makefile examples/C/attributes/Makefile examples/C/manual/Makefile examples/C/global-array/Makefile examples/C/global-array-time/Makefile examples/C/stat/Makefile examples/C/read_all/Makefile examples/Fortran/Makefile examples/Fortran/scalars/Makefile examples/Fortran/arrays/Makefile examples/Fortran/global-array/Makefile examples/Fortran/global-array-time/Makefile adios_config.flags"
 
 
 cat >confcache <<\_ACEOF
@@ -31759,6 +31791,20 @@ echo "$as_me: error: conditional \"USE_PARALLEL_COMPILER\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${HAVE_RDMA_TRUE}" && test -z "${HAVE_RDMA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_RDMA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_RDMA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_RDMA_TRUE}" && test -z "${HAVE_RDMA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_RDMA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_RDMA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
 : ${CONFIG_STATUS=./config.status}
 ac_clean_files_save=$ac_clean_files
@@ -32205,6 +32251,8 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+  "src/ardma/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/ardma/Makefile" ;;
+  "src/staging_server/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/staging_server/Makefile" ;;
   "tests/Makefile" ) CONFIG_FILES="$CONFIG_FILES tests/Makefile" ;;
   "tests/C/Makefile" ) CONFIG_FILES="$CONFIG_FILES tests/C/Makefile" ;;
   "tests/Fortran/Makefile" ) CONFIG_FILES="$CONFIG_FILES tests/Fortran/Makefile" ;;
@@ -32491,6 +32539,8 @@ s,@BUILD_WRITE_TRUE@,$BUILD_WRITE_TRUE,;t t
 s,@BUILD_WRITE_FALSE@,$BUILD_WRITE_FALSE,;t t
 s,@USE_PARALLEL_COMPILER_TRUE@,$USE_PARALLEL_COMPILER_TRUE,;t t
 s,@USE_PARALLEL_COMPILER_FALSE@,$USE_PARALLEL_COMPILER_FALSE,;t t
+s,@HAVE_RDMA_TRUE@,$HAVE_RDMA_TRUE,;t t
+s,@HAVE_RDMA_FALSE@,$HAVE_RDMA_FALSE,;t t
 s,@ADIOSLIB_CPPFLAGS@,$ADIOSLIB_CPPFLAGS,;t t
 s,@ADIOSLIB_CFLAGS@,$ADIOSLIB_CFLAGS,;t t
 s,@ADIOSLIB_LDFLAGS@,$ADIOSLIB_LDFLAGS,;t t
@@ -33277,6 +33327,12 @@ if test -z "${HAVE_MXML_TRUE}"; then
     echo
 else
     echo "  - No MXML"
+fi
+
+if test -z "${HAVE_RDMA_TRUE}"; then
+    echo "  - RDMA layer found, see below which one";
+else
+    echo "  - No RDMA layer"
 fi
 
 if test -z "${HAVE_PORTALS_TRUE}"; then

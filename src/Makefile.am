@@ -145,6 +145,12 @@ libadiosf_a_SOURCES += adios_datatap.c read_datatap.c
 endif
 endif 
 
+if HAVE_RDMA
+libadios_a_SOURCES += adios_staging.c 
+if BUILD_FORTRAN
+libadiosf_a_SOURCES += adios_staging.c 
+endif
+endif
 
 if HAVE_PHDF5
 libadios_a_SOURCES += adios_phdf5.c 
@@ -398,6 +404,10 @@ libadiosread_nompi_a_CPPFLAGS += -DDMALLOC
 #libadiosreadf_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
 #libadiosreadf_nompi_a_CPPFLAGS += -DDMALLOC $(DMALLOC_CPPFLAGS)
 #endif
+endif
+
+if HAVE_RDMA
+SUBDIRS=ardma . staging_server
 endif
 
 CC=$(MPICC)

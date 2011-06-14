@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <adios-config host-language="Fortran">
-  <adios-group name="genarray" coordination-communicator="group_comm" time-index="steps">
+  <adios-group name="genarray" coordination-communicator="group_comm"> <!-- time-index="steps"-->
     <var name="gndx" path="/dimensions" type="integer"/>
     <var name="gndy" path="/dimensions" type="integer"/>
     <var name="gndz" path="/dimensions" type="integer"/>
@@ -25,15 +25,15 @@
 
     <!-- 3D array written by genarray with 1 timesteps -->
     <global-bounds dimensions="gndx,gndy,gndz" offsets="offx,offy,offz">
-        <var name="var1" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz,steps"/>
-        <var name="var2" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz,steps"/>
-        <var name="var3" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz,steps"/>
-        <var name="var4" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz,steps"/>
-        <var name="var5" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz,steps"/>
-        <var name="var6" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz,steps"/>
-        <var name="var7" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz,steps"/>
-        <var name="var8" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz,steps"/>
-        <var name="var9" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz,steps"/>
+        <var name="var1" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/><!--,steps"/-->
+        <var name="var2" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/><!--,steps"/-->
+        <var name="var3" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/><!--,steps"/-->
+        <var name="var4" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/><!--,steps"/-->
+        <var name="var5" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/><!--,steps"/-->
+        <var name="var6" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/><!--,steps"/-->
+        <var name="var7" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/><!--,steps"/-->
+        <var name="var8" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/><!--,steps"/-->
+        <var name="var9" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" dimensions="ndx,ndy,ndz"/><!--,steps"/-->
     </global-bounds>
     <attribute name="description" path="/var/double_xyz"
                value="3D array with 3D decomposition"/>
@@ -41,7 +41,12 @@
 
   </adios-group>
 
-  <method group="genarray" method="POSIX"/>
+  <!--method group="genarray" method="POSIX"/-->
+  <!--method group="genarray" method="MPI_AMR">stripe_count=32;stripe_size=1048576;num_aggregators=4;merging_pgs=0"</method-->
+  <!--method group="genarray" method="STAGING">memory_buffer_size=1048576;verbose=3</method-->
+  <!--method group="genarray" method="STAGING">memory_buffer_size=5242880;verbose=3</method-->
+  <method group="genarray" method="STAGING">memory_buffer_size=1048576000;verbose=3</method>
+
 
   <buffer size-MB="20" allocate-time="now"/>
 

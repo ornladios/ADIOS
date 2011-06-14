@@ -89,7 +89,11 @@ void adios_init_transports (struct adios_transport_struct ** t)
 #  endif
 
 #  if HAVE_DIMES
-ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES)
+    ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES)
+#  endif
+
+#  if HAVE_RDMA
+    ASSIGN_FNS(staging,ADIOS_METHOD_STAGING)
 #  endif
 
 #  ifndef NO_RESEARCH_TRANSPORTS
@@ -138,6 +142,11 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 #if HAVE_DIMES
     MATCH_STRING_TO_METHOD("DIMES",ADIOS_METHOD_DIMES,1)
 #endif
+
+#if HAVE_RDMA
+    MATCH_STRING_TO_METHOD("STAGING",ADIOS_METHOD_STAGING,1)
+#endif
+
 
 #if HAVE_PHDF5
     MATCH_STRING_TO_METHOD("PHDF5",ADIOS_METHOD_PHDF5,1)

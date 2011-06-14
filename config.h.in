@@ -149,6 +149,9 @@
 /* Define to 1 if the system has the type `ptl_time_t'. */
 #undef HAVE_PTL_TIME_T
 
+/* Define if you have RDMA layer. */
+#undef HAVE_RDMA
+
 /* Define to 1 if you have the `sched_yield' function. */
 #undef HAVE_SCHED_YIELD
 

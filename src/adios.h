@@ -9,6 +9,7 @@
 #define ADIOS_H
 
 #include "adios_types.h"
+#include "adios_error.h"
 #include <stdint.h>
 
 #ifdef _NOMPI
@@ -25,6 +26,8 @@
 extern "C" {
 #endif
 
+    extern int adios_errno;
+
     // Global setup using the XML file
     int adios_init (const char * config);
 
@@ -32,7 +35,7 @@ extern "C" {
 
     // end user calls for each I/O operation
     // modes = "r" = "read", "w" = "write", "a" = "append", "u" = "update"
-    int adios_open (int64_t * fd, const char * group_name, const char * name
+    enum ADIOS_ERRCODES adios_open (int64_t * fd, const char * group_name, const char * name
             ,const char * mode, void * comm
             );
 

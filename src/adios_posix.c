@@ -272,7 +272,7 @@ int adios_posix_open (struct adios_file_struct * fd
 
                 free (subfile_name);
 
-                return 0;
+                return err_file_not_found_error;
             }
             fd->base_offset = 0;
             fd->pg_start_in_file = 0;
@@ -316,7 +316,7 @@ int adios_posix_open (struct adios_file_struct * fd
                 free (subfile_name);
                 free (mdfile_name);
 
-                return 0;
+                return err_file_open_error;
             }
 
 #ifdef HAVE_MPI
@@ -340,7 +340,7 @@ int adios_posix_open (struct adios_file_struct * fd
                         free (subfile_name);
                         free (mdfile_name);
 
-                        return 0;
+                        return err_file_open_error;
                     }
                 }
             }
@@ -391,7 +391,7 @@ int adios_posix_open (struct adios_file_struct * fd
                     free (subfile_name);
                     free (mdfile_name);
 
-                    return 0;
+                    return err_file_open_error;
                 }
             }
 #ifdef HAVE_MPI
@@ -422,7 +422,7 @@ int adios_posix_open (struct adios_file_struct * fd
                             free (subfile_name);
                             free (mdfile_name);
 
-                            return 0;
+                            return err_file_open_error;
                         }
                     }
                 }
@@ -482,7 +482,7 @@ int adios_posix_open (struct adios_file_struct * fd
                         free (subfile_name);
                         free (mdfile_name);
 
-                        return 0;
+                        return err_invalid_file_version;
                 }
             }
 
@@ -496,14 +496,14 @@ int adios_posix_open (struct adios_file_struct * fd
             free (subfile_name);
             free (mdfile_name);
 
-            return 0;
+            return err_invalid_file_mode;
         }
     }
 
     free (subfile_name);
     free (mdfile_name);
 
-    return 1;
+    return err_no_error;
 }
 
 enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd

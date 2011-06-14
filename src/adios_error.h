@@ -11,7 +11,7 @@
 enum ADIOS_ERRCODES {
      err_no_error = 0
     ,err_no_memory
-    ,err_MPI_open_error
+    ,err_file_open_error
     ,err_file_not_found_error
     ,err_invalid_file_pointer
     ,err_invalid_group
@@ -32,6 +32,16 @@ enum ADIOS_ERRCODES {
     ,err_operation_not_supported
     ,err_end_of_file    // stream: fopen() returns if reached end of stream
     ,err_too_many_files  // DART allows for using only a fixed number of different filenames
+
+    // Write API only errors
+    ,err_invalid_file_mode     // wrong file mode parameter to adios_open()
+    ,err_invalid_file_version  // BP version of existing file is not the expected in open with append mode
+    ,err_invalid_method_mode   // wrong mode parameter to a method (some does not support reading)
+    ,err_staging_in_progress   // previous (asynchronous) staging operation is still in progress
+    ,err_staging_failed        // previous (asynchronous) staging operation failed
+    ,err_staging_uninitialized // staging method was not initialized before calling method functions
+
+
     ,err_unspecified
 };
 

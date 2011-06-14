@@ -116,6 +116,15 @@ if test -z "${HAVE_NC4PAR_TRUE}" -a -z "${HAVE_NETCDF_FALSE}"; then
     AC_MSG_NOTICE([Use NC4PAR for sequential NETCDF tools])
 fi
 
+dnl Define HAVE_RDMA if one of RDMA libraries are found
+if test -z "${HAVE_PORTALS_TRUE}" -o -z "${HAVE_INFINIBAND_TRUE}"; then
+    AM_CONDITIONAL(HAVE_RDMA,true)
+    AC_DEFINE(HAVE_RDMA,1,[Define if you have RDMA layer.])
+else
+    AM_CONDITIONAL(HAVE_RDMA,false)
+fi
+dnl FIXME: for testing now turned on RDMA even if we have none
+#AM_CONDITIONAL(HAVE_RDMA,true)
 
 dnl Generate flags for adios lib creation which depends on the packages we found
 dnl ADIOSLIB_* for compiling libadios.a and libadiosf.a, and linking codes with those
@@ -232,6 +241,9 @@ if test -z "${HAVE_PORTALS_TRUE}"; then
     ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${PORTALS_LDFLAGS}"
     ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${PORTALS_LIBS}"
 fi
+if test -z "${HAVE_RDMA_TRUE}"; then
+    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} -lardma_client"
+fi
 if test -z "${HAVE_INFINIBAND_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${INFINIBAND_CPPFLAGS}"
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${INFINIBAND_CFLAGS}"
@@ -305,6 +317,8 @@ fi
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
+                 src/ardma/Makefile
+                 src/staging_server/Makefile
                  tests/Makefile
                  tests/C/Makefile
                  tests/Fortran/Makefile
@@ -389,6 +403,12 @@ if test -z "${HAVE_MXML_TRUE}"; then
     echo
 else
     echo "  - No MXML"
+fi
+
+if test -z "${HAVE_RDMA_TRUE}"; then
+    echo "  - RDMA layer found, see below which one";
+else
+    echo "  - No RDMA layer"
 fi
 
 if test -z "${HAVE_PORTALS_TRUE}"; then
