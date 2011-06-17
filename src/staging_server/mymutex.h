@@ -15,7 +15,7 @@
 #   define pthread_condattr_t int
     inline int pthread_cond_init(pthread_cond_t *cond, pthread_condattr_t *attr) {return 0;}
     inline int pthread_cond_signal(pthread_cond_t *cond) {return 0;}
-    inline int pthread_cond_wait(pthread_cond_t *cond) {return 0;}
+    inline int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {return 0;}
 #endif
 
 

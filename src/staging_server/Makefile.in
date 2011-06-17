@@ -66,6 +66,7 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_bp_staging_server_OBJECTS = bp_staging_server-options.$(OBJEXT) \
 	bp_staging_server-mem.$(OBJEXT) \
+	bp_staging_server-precedence.$(OBJEXT) \
 	bp_staging_server-transport_thread.$(OBJEXT) \
 	bp_staging_server-bpworker_thread.$(OBJEXT) \
 	bp_staging_server-bpwriter_thread.$(OBJEXT) \
@@ -319,7 +320,7 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src \
 	-I$(top_builddir)/src/ardma
 AUTOMAKE_OPTIONS = no-dependencies
-bp_staging_server_SOURCES = options.c mem.c transport_thread.c bpworker_thread.c bpwriter_thread.c bpindexing_thread.c queue.c dirutil.c main.c
+bp_staging_server_SOURCES = options.c mem.c precedence.c transport_thread.c bpworker_thread.c bpwriter_thread.c bpindexing_thread.c queue.c dirutil.c main.c
 bp_staging_server_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
 bp_staging_server_CFLAGS = $(ADIOSLIB_CFLAGS)
 bp_staging_server_LDADD = $(top_builddir)/src/libadios.a $(top_builddir)/src/ardma/libardma_server.a $(ADIOSLIB_LDADD)
@@ -415,6 +416,12 @@ bp_staging_server-mem.o: mem.c
 
 bp_staging_server-mem.obj: mem.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp_staging_server_CPPFLAGS) $(CPPFLAGS) $(bp_staging_server_CFLAGS) $(CFLAGS) -c -o bp_staging_server-mem.obj `if test -f 'mem.c'; then $(CYGPATH_W) 'mem.c'; else $(CYGPATH_W) '$(srcdir)/mem.c'; fi`
+
+bp_staging_server-precedence.o: precedence.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp_staging_server_CPPFLAGS) $(CPPFLAGS) $(bp_staging_server_CFLAGS) $(CFLAGS) -c -o bp_staging_server-precedence.o `test -f 'precedence.c' || echo '$(srcdir)/'`precedence.c
+
+bp_staging_server-precedence.obj: precedence.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp_staging_server_CPPFLAGS) $(CPPFLAGS) $(bp_staging_server_CFLAGS) $(CFLAGS) -c -o bp_staging_server-precedence.obj `if test -f 'precedence.c'; then $(CYGPATH_W) 'precedence.c'; else $(CYGPATH_W) '$(srcdir)/precedence.c'; fi`
 
 bp_staging_server-transport_thread.o: transport_thread.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp_staging_server_CPPFLAGS) $(CPPFLAGS) $(bp_staging_server_CFLAGS) $(CFLAGS) -c -o bp_staging_server-transport_thread.o `test -f 'transport_thread.c' || echo '$(srcdir)/'`transport_thread.c

@@ -189,8 +189,8 @@ void worker_finalize (void)
 
 
 /* local functions */
-int calc_pull_number(uint64_t maxpgsize);
-int * calc_pull_order(void);
+static int calc_pull_number(uint64_t maxpgsize);
+static int * calc_pull_order(void);
 
 int worker_main (void *arg)
 {
@@ -575,7 +575,7 @@ int worker_main (void *arg)
 
 
 /* Calculate how many PGs to pull at once */
-int calc_pull_number(uint64_t maxpgsize)
+static int calc_pull_number(uint64_t maxpgsize)
 {
     /* h  = half of available rdma buffersize 
        b  = min (h, max block size we intend to use)
