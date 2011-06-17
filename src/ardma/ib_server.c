@@ -23,6 +23,13 @@
 #include "ardma_common.h"
 #include "ib_common.h"
 
+enum COMPLETION_WAIT {
+    COMPL_READY,            // not waiting for any send completion events
+    COMPL_PULL_INDEX,       // waiting for index pull completion
+    COMPL_PULL_DATA,        // waiting for data pull completion
+    COMPL_ACK               // waiting for completion of acknowledgement message 
+};
+
 // variables, one per connected client
 // we use this struct in work requests and get as id->context in WC completions
 struct connection {
@@ -39,13 +46,6 @@ struct connection {
     enum COMPLETION_WAIT waitingfor; // to identify send completion events
     uint64_t pg_local_addr; // address of PG in local memory after pull started (used only for checksum)
     int     needs_ack;      // 1: acknowledgement should be sent, 0: ack was already sent
-};
-
-enum COMPLETION_WAIT {
-    COMPL_READY,            // not waiting for any send completion events
-    COMPL_PULL_INDEX,       // waiting for index pull completion
-    COMPL_PULL_DATA,        // waiting for data pull completion
-    COMPL_ACK               // waiting for completion of acknowledgement message 
 };
 
 // server connection variables (one instance per server)
@@ -393,6 +393,14 @@ int ardma_server_check_events (struct ardma_server_connection * asc)
                         log_error("rank %d: RDMA Error: Completion failed, waitfor=%d, status = %d: %s\n",
                                 rank, conn->waitingfor, wc.status, ibv_wc_status_str(wc.status));
                         ardma_server_cb_failure(asc);
+                        /*
+                        if (conn->waitingfor == COMPL_PULL_DATA) {
+                            // send failure ack to client now
+                            ardma_server_send_ack1(asc, conn->crank - asc->lrank, 1);
+                            conn->needs_ack = 0;
+                            // Note: this send would fail anyway if the read already failed
+                        }
+                        */
                         continue;
                     }
 
