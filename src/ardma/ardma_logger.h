@@ -11,33 +11,32 @@
 extern FILE *ardma_logf;  
 extern int ardma_verbose_level; 
 
-inline void ardma_logger_init (char *logpath, int verbose_level, int rank)
-{   
-    if (!logpath || !strcmp(logpath, "stderr")) {
-        ardma_logf = stderr;
-    } else if (!strcmp(logpath, "stdout")) {
-        ardma_logf = stdout;
-    } else { 
-        char path[256];
-        if (rank >= 0)
-            snprintf (path, 256, "%s.%d", logpath, rank);
-        else
-            strncpy (path, logpath, 256);
-        ardma_logf = fopen (path, "w");
-        if (!ardma_logf) {           
-            fprintf (stderr, "Logger file %s cannot be opened. Use stderr for logging.\n"
-                             "       errno=%d: %s\n", path, errno, strerror(errno));
-            ardma_logf = stderr;     
-        }
-    }
-    ardma_verbose_level = verbose_level;
+//inline void ardma_logger_init (char *logpath, int verbose_level, int rank)
+#define ardma_logger_init(logpath, verbose_level, rank) { \
+    if (!logpath || !strcmp(logpath, "stderr")) { \
+        ardma_logf = stderr; \
+    } else if (!strcmp(logpath, "stdout")) { \
+        ardma_logf = stdout; \
+    } else {  \
+        char path[256]; \
+        if (rank >= 0) \
+            snprintf (path, 256, "%s.%d", logpath, rank); \
+        else \
+            strncpy (path, logpath, 256); \
+        ardma_logf = fopen (path, "w"); \
+        if (!ardma_logf) {  \
+            fprintf (stderr, "Logger file %s cannot be opened. Use stderr for logging.\n" \
+                             "       errno=%d: %s\n", path, errno, strerror(errno)); \
+            ardma_logf = stderr; \
+        } \
+    } \
+    ardma_verbose_level = verbose_level; \
 }   
     
-inline void ardma_logger_finalize()
-{   
-    if (!ardma_logf && ardma_logf != stdout && ardma_logf != stderr)
-        fclose(ardma_logf);
-}   
+#define ardma_logger_finalize() { \
+    if (!ardma_logf && ardma_logf != stdout && ardma_logf != stderr) \
+        fclose(ardma_logf); \
+}
     
 //#define ardma_logger(verbose_level, ...) if (verbose >= verbose_level) fprintf (stderr, __VA_ARGS__); 
   
