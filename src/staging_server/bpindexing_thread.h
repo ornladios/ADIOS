@@ -40,21 +40,19 @@ extern struct indexing_data_struct indexing_data;
     pthread_cond_t  indexing_cv;
     void * bpindexing_thread_main (void *arg);
     // tell indexing thread to start working
-    inline void bpindexing_request_doindex (void)
-    {
-        pthread_mutex_lock(&indexing_mutex);
-        indexing_data.indexing_request = INDEXING_REQUEST_INDEX;
-        indexing_data.indexing_completed = false;
-        pthread_cond_signal(&indexing_cv);
-        pthread_mutex_unlock(&indexing_mutex);
+#   define bpindexing_request_doindex() { \
+        pthread_mutex_lock(&indexing_mutex); \
+        indexing_data.indexing_request = INDEXING_REQUEST_INDEX; \
+        indexing_data.indexing_completed = false; \
+        pthread_cond_signal(&indexing_cv); \
+        pthread_mutex_unlock(&indexing_mutex); \
     }
     // tell indexing thread to exit
-    inline void bpindexing_request_doexit (void)
-    {
-        pthread_mutex_lock(&indexing_mutex);
-        indexing_data.indexing_request = INDEXING_REQUEST_EXIT;
-        pthread_cond_signal(&indexing_cv);
-        pthread_mutex_unlock(&indexing_mutex);
+#   define bpindexing_request_doexit() { \
+        pthread_mutex_lock(&indexing_mutex); \
+        indexing_data.indexing_request = INDEXING_REQUEST_EXIT; \
+        pthread_cond_signal(&indexing_cv); \
+        pthread_mutex_unlock(&indexing_mutex); \
     }
 
 #else
