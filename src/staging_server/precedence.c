@@ -2,6 +2,8 @@
 #include "mymutex.h"
 #include "precedence.h"
 
+//static const char tabs[] = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
+
 struct precedence_struct {
     pthread_mutex_t mutex;
     pthread_cond_t  cond_var;
@@ -25,21 +27,17 @@ struct precedence_struct * precedence_create (int max_prec)
 void precedence_get (struct precedence_struct *p, int my_prec)
 {
     if (!p) return;
+    //printf("%.*s%d:   lock...\n", 2*my_prec, tabs, my_prec);
     pthread_mutex_lock (&p->mutex);
+    //printf("%.*s%d:   locked.\n", 2*my_prec, tabs, my_prec);
     while (p->current_precedence != my_prec) {
         // wait until thread with lower prec makes a get/release
+        //printf("%.*s%d:   wait...\n", 2*my_prec, tabs, my_prec);
         pthread_cond_wait (&p->cond_var, &p->mutex);
+        //printf("%.*s%d:   woke up.\n", 2*my_prec, tabs, my_prec);
     } 
-    /* 
-    if (p->current_precedence > my_prec) {
-        // logical error, this guy should have called before
-        log_error ("ERROR in precedence: thread called with precedence %d "
-                   "when precedence level is already %d. "
-                   "Behavior is undefined from this point.\n",
-                   my_prec, p->current_precedence);
-    };
-    */
     // this thread has now control until it calls release
+    //pthread_mutex_unlock (&p->mutex);
     p->current_precedence = my_prec;
     return;
 }
@@ -47,14 +45,19 @@ void precedence_get (struct precedence_struct *p, int my_prec)
 void precedence_release (struct precedence_struct *p)
 {
     if (!p) return;
+    //pthread_mutex_lock (&p->mutex);
+    int my_prec = p->current_precedence;
     if (p->current_precedence < p->max_precedence) {
         p->current_precedence++;
-        // wake up those who still wait (at next unlock)
-        pthread_cond_broadcast (&p->cond_var);
     } else {
         p->current_precedence = 0;
     }
+    // wake up those who still wait (at next unlock)
+    //printf("%.*s%d:   signal to prec=%d...\n", 2*my_prec, tabs, my_prec, p->current_precedence);
+    pthread_cond_broadcast (&p->cond_var);
+    //printf("%.*s%d:   unlock...\n", 2*my_prec, tabs, my_prec);
     pthread_mutex_unlock (&p->mutex);
+    //printf("%.*s%d:   unlocked.\n", 2*my_prec, tabs, my_prec);
 }
 
 

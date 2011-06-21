@@ -8,8 +8,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include "config.h"
-
 #include "bpwriter_thread.h"
 #include "globals.h"
 #include "precedence.h"
@@ -222,11 +220,15 @@ void bpwriter_open (struct writer_request_open * o)
         }
     }
     // broadcast res(=errno) from rank 0 to all 
+    //log_debug("rank %d: ---------- Writer get precedence...\n", gd.mpi_rank);
     precedence_get(gd.prec_writer_indexing, 0);
+    //log_debug("rank %d: ---------- Writer got it.\n", gd.mpi_rank);
     MPI_Comm newcomm;
     MPI_Comm_dup(gd.mpi_comm, &newcomm);
     MPI_Bcast (&res, 1, MPI_INT, 0, newcomm);
+    //log_debug("rank %d: ---------- Writer release precedence...\n", gd.mpi_rank);
     precedence_release(gd.prec_writer_indexing);
+    //log_debug("rank %d: ---------- Writer released it.\n", gd.mpi_rank);
 
     if (!res) {
         // add filename to path

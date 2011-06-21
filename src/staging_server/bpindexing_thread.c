@@ -3,8 +3,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include "config.h"
-
 #include "bpindexing_thread.h"
 #include "globals.h"
 #include "precedence.h"
@@ -168,7 +166,9 @@ void bpindexing_doindex (void)
         Assumption: total size of indexes is still <2GB because of
                     int arrays in MPI_Gatherv
     */
+    //log_debug("rank %d: ---------- Indexing get precedence...\n", gd.mpi_rank);
     precedence_get(gd.prec_writer_indexing, 1);
+    //log_debug("rank %d: ---------- Indexing got it.\n", gd.mpi_rank);
     MPI_Comm newcomm;
     MPI_Comm_dup(gd.mpi_comm, &newcomm);
     
@@ -270,7 +270,9 @@ void bpindexing_doindex (void)
         free (index_sizes);
         free (index_offsets);
     }
+    //log_debug("rank %d: ---------- Indexing release precedence...\n", gd.mpi_rank);
     precedence_release(gd.prec_writer_indexing);
+    //log_debug("rank %d: ---------- Indexing released it...\n", gd.mpi_rank);
     
     log_debug("rank %d: Indexing: clear and complete doindex\n", gd.mpi_rank);
     adios_clear_index_v1 (pg_root, vars_root, attrs_root);
