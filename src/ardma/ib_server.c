@@ -30,6 +30,9 @@ enum COMPLETION_WAIT {
     COMPL_ACK               // waiting for completion of acknowledgement message 
 };
 
+const int DEFAULT_BLOCKSIZE = 1024*1024*2; // chop up large buffer pulls into separate blocks
+static int blocksize; // a variable for block size, but currently not user-modifiable
+
 // variables, one per connected client
 // we use this struct in work requests and get as id->context in WC completions
 struct connection {
@@ -44,8 +47,12 @@ struct connection {
     uint64_t idx_size;      // size of buffer IDX 
     uint32_t idx_rkey;      // RDMA rkey for pulling buffer IDX
     enum COMPLETION_WAIT waitingfor; // to identify send completion events
-    uint64_t pg_local_addr; // address of PG in local memory after pull started (used only for checksum)
+    uint64_t pg_local_addr; // address of PG in local memory after pull started
     int     needs_ack;      // 1: acknowledgement should be sent, 0: ack was already sent
+    // pulling PG in blocks:
+    int      nblocks;       // number of blocks to pull (is incremented in ardma_server_pull_block())
+    uint64_t pg_offset;     // offset of next block to be pulled
+    uint64_t lkey;          // local target's RDMA key
 };
 
 // server connection variables (one instance per server)
@@ -83,6 +90,8 @@ static int on_cm_event(struct rdma_cm_event *event, struct ardma_server_connecti
 static int ardma_server_send_ack1 (struct ardma_server_connection *asc, 
                                    int idx, // client idx, 0..asc->nc-1 
                                    int status);
+static int ardma_server_pull_block (struct ardma_server_connection *asc,
+                                    struct connection * conn);
 
 
 /* Initialize ardma 
@@ -96,6 +105,7 @@ struct ardma_server_connection * ardma_server_init (MPI_Comm comm, int verbose_l
     asc->nc_current = -1;
 
     ardma_verbose_level = verbose_level;
+    blocksize = DEFAULT_BLOCKSIZE;
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
@@ -411,28 +421,33 @@ int ardma_server_check_events (struct ardma_server_connection * asc)
                         conn->waitingfor = COMPL_READY;
                         break;
                     case COMPL_PULL_DATA:
-                        /* data pull completed */
-                        cksum = ardma_calc_checksum ((char *)conn->pg_local_addr, conn->pg_size);
-                        if (cksum != conn->pg_cksum) {
-                            log_error("rank %d: RDMA Error: Checksum error of pulled PG of client %d: "
-                                    "client sent = %llu, calculated locally = %llu\n",
-                                    rank, conn->crank, conn->pg_cksum, cksum);
-                            /*
-                            int i;
-                            log_debug("rank %d: pulled PG = [", rank);
-                            for (i=0; i<8; i++) 
-                                log_debug("%hhu ",(char) *((char*)(conn->pg_local_addr+i)));
-                            log_debug("... ");
-                            for (i=8; i>0; i--) 
-                                log_debug("%hhu ",(char) *((char*)conn->pg_local_addr+conn->pg_size-i));
-                            log_debug("]\n");
-                            */
-                        }
+                        /* data block pull completed */
+                        if (conn->pg_offset < conn->pg_size) {
+                            // pull next block
+                            ardma_server_pull_block (asc, conn);
+                        } else {
+                            cksum = ardma_calc_checksum ((char *)conn->pg_local_addr, conn->pg_size);
+                            if (cksum != conn->pg_cksum) {
+                                log_error("rank %d: RDMA Error: Checksum error of pulled PG of client %d: "
+                                        "client sent = %llu, calculated locally = %llu\n",
+                                        rank, conn->crank, conn->pg_cksum, cksum);
+                                /*
+                                   int i;
+                                   log_debug("rank %d: pulled PG = [", rank);
+                                   for (i=0; i<8; i++) 
+                                   log_debug("%hhu ",(char) *((char*)(conn->pg_local_addr+i)));
+                                   log_debug("... ");
+                                   for (i=8; i>0; i--) 
+                                   log_debug("%hhu ",(char) *((char*)conn->pg_local_addr+conn->pg_size-i));
+                                   log_debug("]\n");
+                                 */
+                            }
 
-                        /* report back */
-                        ardma_server_cb_pulled_data (asc, conn->crank);
-                        conn->waitingfor = COMPL_READY;
-                        conn->needs_ack = 1;
+                            /* report back */
+                            ardma_server_cb_pulled_data (asc, conn->crank);
+                            conn->waitingfor = COMPL_READY;
+                            conn->needs_ack = 1;
+                        }
                         break;
                     default:
                         log_error("rank %d: RDMA Error: Unexpected send completion event: "
@@ -653,13 +668,42 @@ int ardma_server_pull_index (struct ardma_server_connection *asc, int crank,
     return retval;
 }
 
+/* Pull the next block of the PG data block of a client. 
+   Offsets are saved in conn struct itself and are incremented
+   in this function.
+*/
+static int ardma_server_pull_block (struct ardma_server_connection *asc,
+                                    struct connection * conn)
+{
+    int idx = conn->crank - asc->lrank;  // 0..asc->nc-1
+    int retval;
+    uint64_t pullsize = conn->pg_size - conn->pg_offset;
+    if (pullsize > blocksize) 
+        pullsize = blocksize;
+
+    log_debug("rank %d: pull block: client=%d size=%lld raddr=%lld laddr=%lld\n", 
+              rank, idx, pullsize, conn->pg_addr+conn->pg_offset, 
+              conn->pg_local_addr+conn->pg_offset);
+
+    retval = ardma_server_post_send (conn->pg_local_addr+conn->pg_offset, pullsize, conn->lkey,
+                                     conn->pg_addr+conn->pg_offset, conn->pg_rkey, conn);
+    if (!retval) {
+        conn->waitingfor = COMPL_PULL_DATA;
+        conn->pg_offset += pullsize;
+        conn->nblocks++;
+    } else { /* send acknowledgement of failure to client */
+        ardma_server_send_ack1(asc, idx, 1);
+        conn->needs_ack = 0;
+    }
+    return retval;
+}
+
 /* Pull the data block from client (unscheduled)*/
 int ardma_server_pull_data (struct ardma_server_connection *asc, int crank, 
                             struct ardma_memory *mem, uint64_t offset, uint64_t size)
 {
     int idx = crank - asc->lrank;  // 0..asc->nc-1
     struct connection * conn = &conns[idx];
-    struct ibv_mr * mr = (struct ibv_mr *)mem->rdma_data;
     int retval;
  
     log_debug("rank %d: pull data from client %d local rank=%d pgsize=%lld "
@@ -684,15 +728,13 @@ int ardma_server_pull_data (struct ardma_server_connection *asc, int crank,
         return 1;
     }
 
-    retval = ardma_server_post_send ((uint64_t)mem->buf+offset, conn->pg_size, mr->lkey,
-                                     conn->pg_addr, conn->pg_rkey, conn);
-    if (!retval) {
-        conn->waitingfor = COMPL_PULL_DATA;
-        conn->pg_local_addr = (uint64_t)mem->buf+offset; 
-    } else { /* send acknowledgement of failure to client */
-        ardma_server_send_ack1(asc, idx, 1);
-        conn->needs_ack = 0;
-    }
+    /* Pull only first block if buffer is big */
+    conn->pg_offset = 0;
+    conn->nblocks = 0;
+    conn->lkey  = ((struct ibv_mr *)mem->rdma_data)->lkey;
+    conn->pg_local_addr = (uint64_t)mem->buf+offset;  
+
+    retval = ardma_server_pull_block (asc, conn);
 
     return retval;
 }
