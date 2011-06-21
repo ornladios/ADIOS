@@ -37,10 +37,12 @@ typedef int bool;
 #define BYTES_2GB   2147483648
 static const uint64_t MAX_BLOCK_SIZE = BYTES_512MB; // do not write more than that at once
                                                     // unless user specifies it with --maxblock
+static const int MAX_CLIENT_PULLS = 8;              // pull max. from this many clients at once per process 
 
 /* User arguments */
 EXT uint64_t user_max_memory_allowed;  // max buffer size to pull client data
 EXT uint64_t user_max_block_size;      // pull/write this size in total (unless one client data is bigger)
+EXT int      user_max_client_pulls;    // max number of clients to pull from at once (by one server process)
 EXT int verbose;                       // verbosity level for logging
 EXT bool logfile_separate_ranks;       // create separate log file per rank
 EXT char * logpath;                    // log file, default=stderr

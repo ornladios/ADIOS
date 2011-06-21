@@ -349,14 +349,20 @@ int worker_main (void *arg)
                            all-protected (filled with one block being written) 
                            => set pso to 0 instead of weo
                         */
-                        if (cb.pso != 0 && cb.pso != cb.weo) {
-                            // sanity check
-                            log_error("rank %d: Code error for special case for np=1 handling of pso. "
-                                 "Assumption did not hold: 0 != cb.pso=%lld "
-                                 "!= cb.weo=%lld, cb.peo=%lld, nc=%d, nextpull=%d\n",
-                                 gd.mpi_rank, cb.pso, cb.weo, cb.peo, gd.nc, cb.nextpull);
+                        if (cb.pso == cb.peo && cb.peo == cb.weo) {
+                            /*
+                            if (cb.pso != 0 && cb.pso != cb.weo) {
+                                // sanity check
+                                log_error("rank %d: Code error for special case for np=1 handling of pso. "
+                                        "Assumption did not hold: 0 != cb.pso=%lld "
+                                        "!= cb.weo=%lld, cb.peo=%lld, nc=%d, nextpull=%d\n",
+                                        gd.mpi_rank, cb.pso, cb.weo, cb.peo, gd.nc, cb.nextpull);
+                            }
+                            */
+                            log_debug("rank %d: special case for np=1 pso=peo=weo=%lld -> set pso to 0\n",
+                                       gd.mpi_rank, cb.pso);
+                            cb.pso = 0;
                         }
-                        cb.pso = 0;
                     } 
 
                     wr->type = WRITER_REQUEST_WRITE;
@@ -587,6 +593,8 @@ static int calc_pull_number(uint64_t maxpgsize)
     int n = s / maxpgsize;
     if (n > gd.nc)
         n = gd.nc;
+    if (n > user_max_client_pulls)
+        n = user_max_client_pulls;
     log_debug("rank %d: calc_pull_number h=%lld, b=%lld, s=%lld, n=%d\n", gd.mpi_rank, h,b,s,n)
     return n;
 }

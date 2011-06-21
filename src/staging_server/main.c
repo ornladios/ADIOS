@@ -42,6 +42,7 @@ int main (int argc, char ** argv)
 
     /* set options to default then get user options */
     user_max_block_size = MAX_BLOCK_SIZE;
+    user_max_client_pulls = MAX_CLIENT_PULLS;
     user_max_memory_allowed = 0;
     logfile_separate_ranks = false;
     verbose = 0;

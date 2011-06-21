@@ -10,13 +10,14 @@ static struct option options[] = {
     {"verbose",              no_argument,          NULL,    'v'},
     {"maxmem",               required_argument,    NULL,    'm'},
     {"maxblock",             required_argument,    NULL,    'b'},
+    {"maxclientpulls",       required_argument,    NULL,    'c'},
     {"logpath",              required_argument,    NULL,    'l'},
     {"logbyranks",           no_argument,          NULL,    'r'},
     {NULL,                   0,                    NULL,    0}
 };
 
 
-static const char *optstring = "hvm:b:l:r";
+static const char *optstring = "hvm:b:c:l:r";
 
 // help function
 static void display_help(char * prgname) 
@@ -27,20 +28,22 @@ static void display_help(char * prgname)
 "to write to disk in ADIOS BP format\n"
 "\n"
 "Options:\n"
-"  --maxmem    | -m         Maximum buffer size to be used by one process of\n"
+"  --maxmem     | -m        Maximum buffer size to be used by one process of\n"
 "                             the server (in MBs) to pull data from the\n"
 "                             client application.\n"
-"  --maxblock  | -b         Request maximum size for block size of one write.\n"
+"  --maxblock   | -b        Request maximum size for block size of one write.\n"
 "                             (in MBs). To be maximum, it should be less then\n"
 "                             half of maxmem and greater than any data block\n"
 "                             from any client process.\n"
-"  --logpath   | -l         Path for errors and verbose logging\n"
+"  --maxclientpulls | -c    Max. number of clients to pull from at once by one\n"
+"                             server process. \n"
+"  --logpath    | -l        Path for errors and verbose logging\n"
 "                             default is stderr\n"
 "  --logbyranks | -r        Separate log file per process\n"
 "\n"
 "Help options\n"
-"  --help      | -h         Print this help.\n"
-"  --verbose   | -v         Print log about what this program is doing.\n"
+"  --help       | -h        Print this help.\n"
+"  --verbose    | -v        Print log about what this program is doing.\n"
 "                             Use multiple -v to increase logging level.\n"
        ,prgname);
 }
@@ -78,6 +81,15 @@ int options_process_args( int argc, char *argv[] )
                 }
                 user_max_block_size  = (uint64_t)tmp;
                 user_max_block_size *= 1048576; // argument was given as MB
+                break;
+            case 'c':
+                errno = 0;
+                tmp = strtol(optarg, (char **)NULL, 0);
+                if (errno) {
+                    fprintf(stderr, "Error: could not convert --maxclientpulls value: %s\n", optarg);
+                    return 1;
+                }
+                user_max_client_pulls  = (uint64_t)tmp;
                 break;
             case 'h':
                 display_help(argv[0]);
