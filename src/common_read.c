@@ -93,7 +93,6 @@ int common_read_fclose (ADIOS_FILE *fp)
         adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_fclose()");
         retval = -err_invalid_file_pointer;
     }
-    free (internals);
     return retval;
 }
 
