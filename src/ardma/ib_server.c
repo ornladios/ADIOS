@@ -747,7 +747,7 @@ int ardma_server_finalize(struct ardma_server_connection ** asc_p)
 
     if (conns) {
         // destroy each QP per client if they had not disconnected (should have)
-        for (i==0; i<asc->nc; i++) {
+        for (i=0; i<asc->nc; i++) {
             if (conns[i].id != 0) {
                 log_debug("rank %d: transport: destroy rdma qp & id client=%d\n",
                           rank, conns[i].crank);
