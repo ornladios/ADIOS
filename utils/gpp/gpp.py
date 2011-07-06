@@ -13,7 +13,33 @@ def callback(arg, dirname,fnames):
             or filename.endswith(".f95") or filename.endswith(".c")):
            arg.append(filename)
 
+
+def checkXML (config_file, path):
+    if path == '':
+        adios_lint = 'adios_lint '
+    else:
+        adios_lint = path + '/adios_lint '
+    rv = os.system (adios_lint + config_file)
+    if rv == 0:
+        return 'success'
+    elif rv == 32512:  # System unable to find adios_lint command
+        print "Unable to find adios_lint. Proceeding with code generation."
+        return 'success'
+    else:
+        print "gpp.py failed."
+        return 'failure'
+
+
 def main(argv=None):
+
+    if len (sys.argv) != 2:
+        print 'Usage: gpp.py <config file>\n'
+        return 1
+
+    check_val = checkXML (sys.argv[1], sys.argv[0].rpartition('/')[0])  # Path is everything preceeding the last forward slash
+    if check_val != 'success':
+        return 1
+
     global vardict
     vardict = xmlparser.getVarlistFromXML(sys.argv[1])
     for fname in vardict:

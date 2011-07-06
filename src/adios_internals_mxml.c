@@ -2734,7 +2734,12 @@ static int parseBuffer (mxml_node_t * node)
 
         if (adios_buffer_alloc_when_get() == ADIOS_BUFFER_ALLOC_NOW)
         {
+
+// Do not attempt to allocate the buffer when this is being called from adios_lint
+#ifndef _INTERNAL
             return adios_set_buffer_size ();
+#endif
+
         }
     }
 
