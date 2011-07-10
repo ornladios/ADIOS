@@ -20,8 +20,8 @@ int main (int argc, char ** argv)
 {
 	char        filename [256];
 	int         rank, size, i;
-	int         NX = 10000; 
-	double      t[NX], s[NX], p[NX];
+	int         NX = 10; 
+	double      t[NX];
 	MPI_Comm    comm = MPI_COMM_WORLD;
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
@@ -34,11 +34,7 @@ int main (int argc, char ** argv)
 	MPI_Comm_size (comm, &size);
 
 	for (i = 0; i < NX; i++)
-        {
 		t[i] = rank*NX + i;
-		p[i] = rank*NX + i + 100;
-		s[i] = rank*NX + i + 1000;
-        }
 
 	strcpy (filename, "adios_global.bp");
 
