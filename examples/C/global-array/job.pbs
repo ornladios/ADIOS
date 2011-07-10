@@ -4,4 +4,6 @@
 #PBS -l walltime=00:05:00,nodes=3:ppn=2
 
 cd $PBS_O_WORKDIR
-mpirun -np 6 ./adios_global >& result.dat
+
+export num_aggregators=4
+mpirun -np 16 ./adios_read_global >& result.dat

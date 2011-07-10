@@ -40,7 +40,7 @@ fi
 # Check for the dmalloc library and headers
 AC_TRY_COMPILE([#include "dmalloc.h"],
         [char * s; s=malloc(sizeof(char)*10); free(s);],
-        [DMALLOC_LIBS="-ldmalloc"],
+        [DMALLOC_LIBS="-ldmallocth"],
         [AM_CONDITIONAL(HAVE_DMALLOC,false)])
 
 LIBS="$save_LIBS"

@@ -135,6 +135,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_dart.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
+	$(top_srcdir)/config/ac_lustre.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_nc4par.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
@@ -387,9 +388,9 @@ libadiosread_nompi_a_LIBADD =
 am__libadiosread_nompi_a_SOURCES_DIST = mpidummy.c adios_bp_v1.c \
 	adios_endianness.c bp_utils.c futils.c adios_error.c \
 	adios_read.c adios_read_hooks.c common_read.c read_bp.c \
-	read_bp_subfile.c adios_internals.c buffer.c \
-	adios_transport_hooks.c globals.c read_dart.c read_dimes.c \
-	read_datatap.c adios_nssi_config.c read_nssi.c
+	adios_internals.c buffer.c adios_transport_hooks.c globals.c \
+	read_dart.c read_dimes.c read_datatap.c adios_nssi_config.c \
+	read_nssi.c
 @HAVE_DART_TRUE@am__objects_22 =  \
 @HAVE_DART_TRUE@	libadiosread_nompi_a-read_dart.$(OBJEXT)
 @HAVE_DIMES_TRUE@am__objects_23 =  \
@@ -409,7 +410,6 @@ am_libadiosread_nompi_a_OBJECTS =  \
 	libadiosread_nompi_a-adios_read_hooks.$(OBJEXT) \
 	libadiosread_nompi_a-common_read.$(OBJEXT) \
 	libadiosread_nompi_a-read_bp.$(OBJEXT) \
-	libadiosread_nompi_a-read_bp_subfile.$(OBJEXT) \
 	libadiosread_nompi_a-adios_internals.$(OBJEXT) \
 	libadiosread_nompi_a-buffer.$(OBJEXT) \
 	libadiosread_nompi_a-adios_transport_hooks.$(OBJEXT) \
@@ -459,8 +459,8 @@ libadiosreadf_nompi_a_LIBADD =
 am__libadiosreadf_nompi_a_SOURCES_DIST = mpidummy.c adios_bp_v1.c \
 	adios_endianness.c bp_utils.c futils.c adios_error.c \
 	adiosf_read.c adios_read_hooks.c common_read.c read_bp.c \
-	read_bp_subfile.c globals.c read_dart.c read_dimes.c \
-	adios_nssi_config.c read_nssi.c
+	globals.c read_dart.c read_dimes.c adios_nssi_config.c \
+	read_nssi.c
 @BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__objects_31 = libadiosreadf_nompi_a-read_dart.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_32 = libadiosreadf_nompi_a-read_dimes.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__objects_33 = libadiosreadf_nompi_a-adios_nssi_config.$(OBJEXT) \
@@ -476,7 +476,6 @@ am__libadiosreadf_nompi_a_SOURCES_DIST = mpidummy.c adios_bp_v1.c \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-adios_read_hooks.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-common_read.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-read_bp.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-read_bp_subfile.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-globals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_31) $(am__objects_32) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_33)
@@ -565,6 +564,10 @@ ACLOCAL = @ACLOCAL@
 ADIOSLIB_CFLAGS = @ADIOSLIB_CFLAGS@
 ADIOSLIB_CPPFLAGS = @ADIOSLIB_CPPFLAGS@
 ADIOSLIB_EXTRA_CPPFLAGS = @ADIOSLIB_EXTRA_CPPFLAGS@
+ADIOSLIB_INT_CFLAGS = @ADIOSLIB_INT_CFLAGS@
+ADIOSLIB_INT_CPPFLAGS = @ADIOSLIB_INT_CPPFLAGS@
+ADIOSLIB_INT_LDADD = @ADIOSLIB_INT_LDADD@
+ADIOSLIB_INT_LDFLAGS = @ADIOSLIB_INT_LDFLAGS@
 ADIOSLIB_LDADD = @ADIOSLIB_LDADD@
 ADIOSLIB_LDFLAGS = @ADIOSLIB_LDFLAGS@
 ADIOSLIB_SEQ_CFLAGS = @ADIOSLIB_SEQ_CFLAGS@
@@ -643,6 +646,8 @@ HAVE_HDF5_FALSE = @HAVE_HDF5_FALSE@
 HAVE_HDF5_TRUE = @HAVE_HDF5_TRUE@
 HAVE_INFINIBAND_FALSE = @HAVE_INFINIBAND_FALSE@
 HAVE_INFINIBAND_TRUE = @HAVE_INFINIBAND_TRUE@
+HAVE_LUSTRE_FALSE = @HAVE_LUSTRE_FALSE@
+HAVE_LUSTRE_TRUE = @HAVE_LUSTRE_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_MXML_FALSE = @HAVE_MXML_FALSE@
@@ -677,6 +682,9 @@ LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LN_S = @LN_S@
 LTLIBOBJS = @LTLIBOBJS@
+LUSTRE_CPPFLAGS = @LUSTRE_CPPFLAGS@
+LUSTRE_LDFLAGS = @LUSTRE_LDFLAGS@
+LUSTRE_LIBS = @LUSTRE_LIBS@
 MAKEINFO = @MAKEINFO@
 MPICC = @MPICC@
 MPICXX = @MPICXX@
@@ -902,19 +910,18 @@ libadiosread_a_SOURCES = adios_bp_v1.c adios_endianness.c bp_utils.c \
 libadiosread_nompi_a_SOURCES = mpidummy.c adios_bp_v1.c \
 	adios_endianness.c bp_utils.c futils.c adios_error.c \
 	adios_read.c adios_read_hooks.c common_read.c read_bp.c \
-	read_bp_subfile.c adios_internals.c buffer.c \
-	adios_transport_hooks.c globals.c $(am__append_43) \
-	$(am__append_44) $(am__append_45) $(am__append_46) \
-	$(am__append_52)
+	adios_internals.c buffer.c adios_transport_hooks.c globals.c \
+	$(am__append_43) $(am__append_44) $(am__append_45) \
+	$(am__append_46) $(am__append_52)
 @HAVE_NSSI_TRUE@dist_libadiosread_nompi_a_SOURCES = adios_nssi_args.x
 @HAVE_NSSI_TRUE@nodist_libadiosread_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@libadiosreadf_nompi_a_SOURCES = mpidummy.c \
 @BUILD_FORTRAN_TRUE@	adios_bp_v1.c adios_endianness.c \
 @BUILD_FORTRAN_TRUE@	bp_utils.c futils.c adios_error.c \
 @BUILD_FORTRAN_TRUE@	adiosf_read.c adios_read_hooks.c \
-@BUILD_FORTRAN_TRUE@	common_read.c read_bp.c read_bp_subfile.c \
-@BUILD_FORTRAN_TRUE@	globals.c $(am__append_50) \
-@BUILD_FORTRAN_TRUE@	$(am__append_51) $(am__append_53)
+@BUILD_FORTRAN_TRUE@	common_read.c read_bp.c globals.c \
+@BUILD_FORTRAN_TRUE@	$(am__append_50) $(am__append_51) \
+@BUILD_FORTRAN_TRUE@	$(am__append_53)
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@dist_libadiosreadf_nompi_a_SOURCES = adios_nssi_args.x
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@nodist_libadiosreadf_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 noinst_LIBRARIES = libadios_internal_nompi.a
@@ -1994,12 +2001,6 @@ libadiosread_nompi_a-read_bp.o: read_bp.c
 libadiosread_nompi_a-read_bp.obj: read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-read_bp.obj `if test -f 'read_bp.c'; then $(CYGPATH_W) 'read_bp.c'; else $(CYGPATH_W) '$(srcdir)/read_bp.c'; fi`
 
-libadiosread_nompi_a-read_bp_subfile.o: read_bp_subfile.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-read_bp_subfile.o `test -f 'read_bp_subfile.c' || echo '$(srcdir)/'`read_bp_subfile.c
-
-libadiosread_nompi_a-read_bp_subfile.obj: read_bp_subfile.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-read_bp_subfile.obj `if test -f 'read_bp_subfile.c'; then $(CYGPATH_W) 'read_bp_subfile.c'; else $(CYGPATH_W) '$(srcdir)/read_bp_subfile.c'; fi`
-
 libadiosread_nompi_a-adios_internals.o: adios_internals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_internals.o `test -f 'adios_internals.c' || echo '$(srcdir)/'`adios_internals.c
 
@@ -2221,12 +2222,6 @@ libadiosreadf_nompi_a-read_bp.o: read_bp.c
 
 libadiosreadf_nompi_a-read_bp.obj: read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-read_bp.obj `if test -f 'read_bp.c'; then $(CYGPATH_W) 'read_bp.c'; else $(CYGPATH_W) '$(srcdir)/read_bp.c'; fi`
-
-libadiosreadf_nompi_a-read_bp_subfile.o: read_bp_subfile.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-read_bp_subfile.o `test -f 'read_bp_subfile.c' || echo '$(srcdir)/'`read_bp_subfile.c
-
-libadiosreadf_nompi_a-read_bp_subfile.obj: read_bp_subfile.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-read_bp_subfile.obj `if test -f 'read_bp_subfile.c'; then $(CYGPATH_W) 'read_bp_subfile.c'; else $(CYGPATH_W) '$(srcdir)/read_bp_subfile.c'; fi`
 
 libadiosreadf_nompi_a-globals.o: globals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-globals.o `test -f 'globals.c' || echo '$(srcdir)/'`globals.c

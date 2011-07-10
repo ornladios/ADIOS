@@ -13,7 +13,7 @@ int main (int argc, char ** argv)
 	char        filename [256];
 	int         rank;
 	int         NX = 10; 
-	double      t[NX];
+	double      t[NX], p[NX], s[NX];
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
 	int         adios_err;

@@ -68,7 +68,7 @@ elif [ `hostname | cut -c 1-4` == "ewok" ]; then
     ########
     # Ewok #
     ########
-    echo "Configure on EWOK"
+    echo "Configure on SITH"
     source /etc/profile.d/modules.sh
     module unload hdf5
     module unload netcdf
@@ -80,16 +80,16 @@ elif [ `hostname | cut -c 1-4` == "ewok" ]; then
     module load PE-$TARGET
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
-    module load hdf5/1.8.2
+    #module load hdf5/1.8.2
     SEQ_HDF5_DIR=$HDF5_DIR
     SEQ_HDF5_CLIB=$HDF5_CLIB
-    module unload hdf5
-    module load hdf5/1.8.2_par
+    #module unload hdf5
+    #module load hdf5/1.8.2_par
     PAR_HDF5_DIR=$HDF5_DIR
     PAR_HDF5_CLIB=$HDF5_CLIB
-    module unload hdf5
+    #module unload hdf5
     # Seq NetCDF 3 for bp2ncd
-    module load netcdf/3.6.2
+    #module load netcdf/3.6.2
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
@@ -97,7 +97,6 @@ elif [ `hostname | cut -c 1-4` == "ewok" ]; then
         export CC=pgcc
         export CXX=pgCC
         export FC=pgf90
-        module swap pgi pgi/10.5
     elif [ "$TARGET" == "gnu" ]; then
         export CC=gcc
         export CXX=g++
@@ -108,23 +107,67 @@ elif [ `hostname | cut -c 1-4` == "ewok" ]; then
     fi
         
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/ewok.$TARGET \
+    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/sith.$TARGET \
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
         --enable-research-transports  \
-        --without-datatap \
-        --with-hdf5=${SEQ_HDF5_DIR} \
-        --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
-        --with-phdf5=${PAR_HDF5_DIR} \
-        --with-phdf5-libs="${PAR_HDF5_CLIB}"
-        #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
+        --without-datatap
+        #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
         #--with-datatap=/ccs/home/habbasi/work/ewok/
         #--enable-datatap=ib
 
 
+elif [ `hostname | cut -c 1-4` == "lens" ]; then
+    echo "Configure on LENS"
+    source /etc/profile.d/modules.sh
+    module unload hdf5
+    module unload netcdf
+    module unload PE-gnu
+    module unload PE-pgi
+    module unload PE-pathscale
+    module unload pgi
+    TARGET=pgi
+    module load PE-$TARGET
+    # Use both seq hdf5 (for utils) and 
+    #   parallel hdf5 (for PHDF5 method)
+    #module load hdf5/1.8.2
+    SEQ_HDF5_DIR=$HDF5_DIR
+    SEQ_HDF5_CLIB=$HDF5_CLIB
+    #module unload hdf5
+    #module load hdf5/1.8.2_par
+    PAR_HDF5_DIR=$HDF5_DIR
+    PAR_HDF5_CLIB=$HDF5_CLIB
+    #module unload hdf5
+    # Seq NetCDF 3 for bp2ncd
+    #module load netcdf/3.6.2
+    export MPICC=mpicc
+    export MPICXX=mpiCC
+    export MPIFC=mpif90
+    if [ "$TARGET" == "pgi" ]; then
+        export CC=pgcc
+        export CXX=pgCC
+        export FC=pgf90
+        module switch pgi pgi/10.5
+    elif [ "$TARGET" == "gnu" ]; then
+        export CC=gcc
+        export CXX=g++
+        export FC=gfortran
+    else
+        echo "TARGET must be pgi or gnu"
+        exit 1
+    fi
+
+    export CFLAGS="-g -fPIC"
+    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/sith.$TARGET \
+        --enable-dependency-tracking \
+        --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
+        --enable-research-transports  \
+        --without-datatap \
+        --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.lens.$TARGET
+
 elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "chester" ]; then
 
-    BUILD_STAGING=true
+    BUILD_STAGING=false
     if [ $BUILD_STAGING == "false" ]; then
     
         ##########
@@ -156,7 +199,10 @@ elif [ `hostname | cut -c 1-6` == "jaguar" -o `hostname | cut -c 1-7` == "cheste
         #export FC=mpif90
         CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
             --enable-dependency-tracking \
-            --without-portals 
+            --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.pgi \
+            --without-portals \
+            --with-lustre=/opt/xt-lustre-ss/2.2_1.6.5/usr
+#            --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.$TARGET
 #            --enable-research-transports \
 #            --with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
 #            --with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-$TARGET \
