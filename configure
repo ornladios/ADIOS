@@ -27881,7 +27881,7 @@ if test "${with_lustre+set}" = set; then
          LUSTRE_LIBS="-llustreapi";
          LUSTRE_CPPFLAGS="-I$withval/include";
 else
-  with_netcdf=check
+  with_lustre=no
 fi;
 
 if test "x$with_lustre" == "xno"; then

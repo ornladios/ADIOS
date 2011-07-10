@@ -26,7 +26,7 @@ AC_ARG_WITH(lustre,
         [LUSTRE_LDFLAGS="-L$withval/lib";
          LUSTRE_LIBS="-llustreapi";
          LUSTRE_CPPFLAGS="-I$withval/include";],
-        [with_netcdf=check])
+        [with_lustre=no])
 
 if test "x$with_lustre" == "xno"; then
 
@@ -48,9 +48,9 @@ dnl                [AM_CONDITIONAL(HAVE_DMALLOC,false)])
 dnl fi
 
 # Check for the lustre library and headers
-dnl AC_TRY_COMPILE([#include "dmalloc.h"],
-dnl        [char * s; s=malloc(sizeof(char)*10); free(s);],
-dnl        [DMALLOC_LIBS="-llustreapi"],
+dnl AC_TRY_COMPILE([struct obd_uuid {char uuid[40];};int fd, num_ost;struct obd_uuid uuids[1024];],
+dnl        [llapi_lov_get_uuids(fd, uuids, &num_ost);],
+dnl        [LUSTRE_LIBS="-llustreapi"],
 dnl        [AM_CONDITIONAL(HAVE_LUSTRE,false)])
 
 LIBS="$save_LIBS"

@@ -1046,7 +1046,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                 lum.lmm_stripe_offset = -1;
 
                 ioctl (f, LL_IOC_LOV_SETSTRIPE ,(void *) &lum);
-
+#ifdef HAVE_LUSTRE
                 md->g_num_ost = 1024;
                 rc = llapi_lov_get_uuids(f, uuids, &md->g_num_ost);
                 if (rc != 0)
@@ -1055,7 +1055,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                             ,strerror(errno)
                             );
                 }
-
+#endif
                 close (f);
 
                 MPI_File_open (MPI_COMM_SELF, fd->name
