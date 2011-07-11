@@ -1,5 +1,5 @@
 1.3 Released July 12, 2011
-    - New read routine
+    - New read method BP_STAGED for reading files with improved performance
     - Changes in MPI_AMR and MPI_LUSTRE to support default parameters. Parameters for MPI_LUSTRE and MPI_AMR
       in XML file are not mandatory any more.
 

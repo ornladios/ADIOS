@@ -53,13 +53,13 @@ void getReadInfo (ADIOS_GROUP * gp
                  ,uint64_t * count
                  ,read_info * ri
                  );
-static int adios_read_bp_subfile_get_dimensioncharacteristics (
+static int adios_read_bp_staged_get_dimensioncharacteristics (
                            struct adios_index_characteristic_struct_v1 * c
                           ,uint64_t * ldims
                           ,uint64_t * gdims
                           ,uint64_t * offsets
                           );
-static void adios_read_bp_subfile_get_dimensions (struct adios_index_var_struct_v1 * v
+static void adios_read_bp_staged_get_dimensions (struct adios_index_var_struct_v1 * v
                                                  ,int ntsteps, int file_is_fortran
                                                  ,int * ndim, uint64_t ** dims
                                                  ,int * tdim
@@ -77,13 +77,13 @@ void getDataAddress (ADIOS_GROUP * gp, int varid
 static MPI_File * get_BP_file_handle(struct BP_file_handle * l, uint32_t file_index);
 static void add_BP_file_handle (struct BP_file_handle ** l, struct BP_file_handle * n);
 
-int64_t adios_read_bp_subfile_read_var_byid2 (ADIOS_GROUP    * gp, 
+int64_t adios_read_bp_staged_read_var_byid2 (ADIOS_GROUP    * gp, 
                                       int            varid,
                                       const uint64_t * start,
                                       const uint64_t * count,
                                       void           * data);
 static ADIOS_VARINFO * _inq_var_byid (struct BP_FILE * fh, int varid);
-void adios_read_bp_subfile_free_varinfo (ADIOS_VARINFO *vp);
+void adios_read_bp_staged_free_varinfo (ADIOS_VARINFO *vp);
 
 // used to specify which thread is the target for the MPI messages
 enum MPI_TAG
@@ -472,7 +472,7 @@ candidate_reader * split_read_requests (ADIOS_GROUP * gp, candidate_reader * r)
     v = adios_find_var_byid (gp, varid);
 
     /* Get dimensions and flip if caller != writer language */
-    adios_read_bp_subfile_get_dimensions (v
+    adios_read_bp_staged_get_dimensions (v
                                          ,fh->tidx_stop - fh->tidx_start + 1
                                          ,file_is_fortran
                                          ,&ndim
@@ -566,7 +566,7 @@ candidate_reader * split_read_requests (ADIOS_GROUP * gp, candidate_reader * r)
         {
             idx_table[idx] = 1;
             /* Each pg can have a different sized array, so we need the actual dimensions from it */
-            is_global = adios_read_bp_subfile_get_dimensioncharacteristics(&(v->characteristics[start_idx + idx])
+            is_global = adios_read_bp_staged_get_dimensioncharacteristics(&(v->characteristics[start_idx + idx])
                                                                           ,ldims
                                                                           ,gdims
                                                                           ,offsets
@@ -813,7 +813,7 @@ static void process_read_requests (struct proc_struct * p)
     }
 }
 
-void adios_read_bp_subfile_read_buffer (ADIOS_GROUP * gp
+void adios_read_bp_staged_read_buffer (ADIOS_GROUP * gp
                                        ,uint64_t buffer_offset
                                        ,candidate_reader * r
                                        ,candidate_reader * s
@@ -939,7 +939,7 @@ void adios_read_bp_subfile_read_buffer (ADIOS_GROUP * gp
             idx_check2 = 1;
     
             /* Each pg can have a different sized array, so we need the actual dimensions from it */
-            is_global = adios_read_bp_subfile_get_dimensioncharacteristics (&(v->characteristics[start_idx + idx])
+            is_global = adios_read_bp_staged_get_dimensioncharacteristics (&(v->characteristics[start_idx + idx])
                                                                            ,ldims
                                                                            ,gdims
                                                                            ,offsets
@@ -1221,7 +1221,7 @@ void adios_read_bp_subfile_read_buffer (ADIOS_GROUP * gp
 #undef MAX_DIMS
 }
 
-void adios_read_bp_subfile_read_chunk (ADIOS_GROUP * gp, int file_idx, uint64_t chunk_offset, uint64_t size)
+void adios_read_bp_staged_read_chunk (ADIOS_GROUP * gp, int file_idx, uint64_t chunk_offset, uint64_t size)
 {
     struct BP_GROUP * gh;
     struct BP_FILE * fh;
@@ -1370,7 +1370,7 @@ double t2, t3, t4, t5;
 
             t4 = MPI_Wtime ();
             // read a chunk from file into internal buffer
-            adios_read_bp_subfile_read_chunk (p->gp, o_start->ra->file_idx, o_start->ra->offset, o_prev_end->ra->offset - o_start->ra->offset + payload_size); 
+            adios_read_bp_staged_read_chunk (p->gp, o_start->ra->file_idx, o_start->ra->offset, o_prev_end->ra->offset - o_start->ra->offset + payload_size); 
 
             t5 = MPI_Wtime ();
 //    printf ("read chunk = %f \n", t5 - t4);
@@ -1380,7 +1380,7 @@ double t2, t3, t4, t5;
             {
                 parent = s->ra->parent;
                 // copy data from internal buffer to user buffer
-//                adios_read_bp_subfile_read_buffer (p->gp, o_start->ra->offset, parent, s);
+//                adios_read_bp_staged_read_buffer (p->gp, o_start->ra->offset, parent, s);
 
                 s = s->next;
             } while (s != o_end);
@@ -1641,7 +1641,7 @@ static void close_all_BP_files (struct BP_file_handle * l)
  * We know if it is different from the current system, so here
  * we determine the current endianness and report accordingly.
  */
-static int adios_read_bp_subfile_get_endianness( uint32_t change_endianness )
+static int adios_read_bp_staged_get_endianness( uint32_t change_endianness )
 {
    int LE = 0;
    int BE = !LE;
@@ -1684,8 +1684,8 @@ static int getNumSubfiles (const char * fname)
     return n;
 }
 
-int adios_read_bp_subfile_init (MPI_Comm comm) { return 0; }
-int adios_read_bp_subfile_finalize () { return 0; }
+int adios_read_bp_staged_init (MPI_Comm comm) { return 0; }
+int adios_read_bp_staged_finalize () { return 0; }
 
 void broadcast_fh_buffer (struct BP_FILE * fh)
 {
@@ -1814,7 +1814,7 @@ fprintf (stderr, "bc %s bo 1 = %llu, bo 2 = %llu, len = %d\n", vars_root->var_na
 
             }
 
-            adios_read_bp_subfile_free_varinfo (vi);
+            adios_read_bp_staged_free_varinfo (vi);
 
             vars_root = vars_root->next;
         }
@@ -2043,7 +2043,7 @@ fprintf (stderr, "bc 1 v->id = %d, bo 1 = %llu, bo 2 = %llu, v->var_name = %s\n"
     }
 }
 
-ADIOS_FILE * adios_read_bp_subfile_fopen (const char * fname, MPI_Comm comm)
+ADIOS_FILE * adios_read_bp_staged_fopen (const char * fname, MPI_Comm comm)
 {
     int i, rank;
     struct BP_FILE * fh;
@@ -2121,7 +2121,7 @@ ADIOS_FILE * adios_read_bp_subfile_fopen (const char * fname, MPI_Comm comm)
         fp->ntimesteps = fh->tidx_stop - fh->tidx_start + 1;
         fp->file_size = fh->mfooter.file_size;
         fp->version = fh->mfooter.version;
-        fp->endianness = adios_read_bp_subfile_get_endianness (fh->mfooter.change_endianness);
+        fp->endianness = adios_read_bp_staged_get_endianness (fh->mfooter.change_endianness);
     }
 
     broadcast_fh_buffer (fh);
@@ -2150,7 +2150,7 @@ ADIOS_FILE * adios_read_bp_subfile_fopen (const char * fname, MPI_Comm comm)
 /* This function can be called if user places 
    the wrong sequences of dims for a var 
 */   
-void adios_read_bp_subfile_reset_dimension_order (ADIOS_FILE *fp, int is_fortran)
+void adios_read_bp_staged_reset_dimension_order (ADIOS_FILE *fp, int is_fortran)
 {
     struct BP_FILE * fh = (struct BP_FILE *)(fp->fh);
     struct bp_index_pg_struct_v1 ** root = &(fh->pgs_root);
@@ -2164,7 +2164,7 @@ void adios_read_bp_subfile_reset_dimension_order (ADIOS_FILE *fp, int is_fortran
     }
 }
 
-int adios_read_bp_subfile_fclose (ADIOS_FILE *fp) 
+int adios_read_bp_staged_fclose (ADIOS_FILE *fp) 
 {
     struct BP_FILE * fh = (struct BP_FILE *) fp->fh;
     struct BP_GROUP_VAR * gh = fh->gvar_h;
@@ -2356,7 +2356,7 @@ int adios_read_bp_subfile_fclose (ADIOS_FILE *fp)
 }
 
 
-ADIOS_GROUP * adios_read_bp_subfile_gopen (ADIOS_FILE *fp, const char * grpname)
+ADIOS_GROUP * adios_read_bp_staged_gopen (ADIOS_FILE *fp, const char * grpname)
 {
     struct BP_FILE * fh = (struct BP_FILE *) fp->fh;
     int grpid, rank, nproc; 
@@ -2374,14 +2374,14 @@ ADIOS_GROUP * adios_read_bp_subfile_gopen (ADIOS_FILE *fp, const char * grpname)
         return NULL;
     }
 
-    gp = adios_read_bp_subfile_gopen_byid (fp, grpid);
+    gp = adios_read_bp_staged_gopen_byid (fp, grpid);
 
     p->gp = gp; 
 
     return gp;
 }
 
-ADIOS_GROUP * adios_read_bp_subfile_gopen_byid (ADIOS_FILE *fp, int grpid)
+ADIOS_GROUP * adios_read_bp_staged_gopen_byid (ADIOS_FILE *fp, int grpid)
 {
     struct BP_FILE * fh = (struct BP_FILE *) fp->fh;
     struct BP_GROUP * gh;
@@ -2449,7 +2449,7 @@ ADIOS_GROUP * adios_read_bp_subfile_gopen_byid (ADIOS_FILE *fp, int grpid)
     for (i=0;i<gp->vars_count;i++) {
         if (!gp->var_namelist[i]) { 
             adios_error (err_no_memory, "Could not allocate buffer for %d strings in adios_gopen()", gp->vars_count);
-            adios_read_bp_subfile_gclose(gp);
+            adios_read_bp_staged_gclose(gp);
             return NULL;
         }
         else
@@ -2461,7 +2461,7 @@ ADIOS_GROUP * adios_read_bp_subfile_gopen_byid (ADIOS_FILE *fp, int grpid)
     for (i=0;i<gp->attrs_count;i++) {
         if (!gp->attr_namelist[i]) {
             adios_error (err_no_memory, "Could not allocate buffer for %d strings in adios_gopen()", gp->vars_count);
-            adios_read_bp_subfile_gclose(gp);
+            adios_read_bp_staged_gclose(gp);
             return NULL;
         }
         else {
@@ -2472,7 +2472,7 @@ ADIOS_GROUP * adios_read_bp_subfile_gopen_byid (ADIOS_FILE *fp, int grpid)
     return gp;
 }
                    
-int adios_read_bp_subfile_gclose (ADIOS_GROUP * gp)
+int adios_read_bp_staged_gclose (ADIOS_GROUP * gp)
 {
     struct BP_GROUP * gh = (struct BP_GROUP *) gp->gh;
     struct BP_FILE * fh = gh->fh;
@@ -2586,7 +2586,7 @@ int adios_read_bp_subfile_gclose (ADIOS_GROUP * gp)
     return 0;
 }
 
-int adios_read_bp_subfile_get_attr (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type,
+int adios_read_bp_staged_get_attr (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type,
                     int * size, void ** data)
 {
     // Find the attribute: full path is stored with a starting / 
@@ -2624,10 +2624,10 @@ int adios_read_bp_subfile_get_attr (ADIOS_GROUP * gp, const char * attrname, enu
         return adios_errno;
     }
 
-    return adios_read_bp_subfile_get_attr_byid(gp, attrid, type, size, data);
+    return adios_read_bp_staged_get_attr_byid(gp, attrid, type, size, data);
 }
 
-int adios_read_bp_subfile_get_attr_byid (ADIOS_GROUP * gp, int attrid, 
+int adios_read_bp_staged_get_attr_byid (ADIOS_GROUP * gp, int attrid, 
                     enum ADIOS_DATATYPES * type, int * size, void ** data)
 {
     int    i, offset, count;
@@ -2756,7 +2756,7 @@ int adios_read_bp_subfile_get_attr_byid (ADIOS_GROUP * gp, int attrid,
                 return adios_errno;
             }
 
-            status = adios_read_bp_subfile_read_var (gp, varname, &start, &count, tmpdata);
+            status = adios_read_bp_staged_read_var (gp, varname, &start, &count, tmpdata);
             
             if (status < 0) {
                 char *msg = strdup(adios_get_last_errmsg());
@@ -2827,7 +2827,7 @@ static void swap_order (int n, uint64_t * array, int * tdim)
 /* Look up variable id based on variable name.
    Return index 0..gp->vars_count-1 if found, -1 otherwise
 */
-static int adios_read_bp_subfile_find_var(ADIOS_GROUP *gp, const char *varname)
+static int adios_read_bp_staged_find_var(ADIOS_GROUP *gp, const char *varname)
 {
     // Find the variable: full path is stored with a starting / 
     // Like in HDF5, we need to match names given with or without the starting /
@@ -2893,7 +2893,7 @@ static int adios_read_bp_subfile_find_var(ADIOS_GROUP *gp, const char *varname)
 
 // NCSU - Reading the statistics
 /** Get value and statistics, allocate space for them too */
-static void adios_read_bp_subfile_get_characteristics (struct adios_index_var_struct_v1 * var_root, ADIOS_VARINFO *vi)
+static void adios_read_bp_staged_get_characteristics (struct adios_index_var_struct_v1 * var_root, ADIOS_VARINFO *vi)
 {
     int i, j, c, count = 1;
     int size, sum_size, sum_type;
@@ -3379,7 +3379,7 @@ static void adios_read_bp_subfile_get_characteristics (struct adios_index_var_st
 /* get local and global dimensions and offsets from a variable characteristics 
    return: 1 = it is a global array, 0 = local array
 */
-static int adios_read_bp_subfile_get_dimensioncharacteristics (
+static int adios_read_bp_staged_get_dimensioncharacteristics (
                            struct adios_index_characteristic_struct_v1 * c
                           ,uint64_t * ldims
                           ,uint64_t * gdims
@@ -3405,7 +3405,7 @@ static int adios_read_bp_subfile_get_dimensioncharacteristics (
     return is_global;
 }
 
-static void adios_read_bp_subfile_get_dimensions (struct adios_index_var_struct_v1 * v
+static void adios_read_bp_staged_get_dimensions (struct adios_index_var_struct_v1 * v
                                                  ,int ntsteps, int file_is_fortran
                                                  ,int * ndim, uint64_t ** dims
                                                  ,int * tdim
@@ -3433,7 +3433,7 @@ fprintf (stderr, "[%3d] ndim 2 = %d\n", rank, * ndim);
     * dims = (uint64_t *) malloc (sizeof (uint64_t) * (* ndim));
     memset (* dims, 0, sizeof (uint64_t) * (* ndim));
 
-    is_global = adios_read_bp_subfile_get_dimensioncharacteristics (&(v->characteristics[0])
+    is_global = adios_read_bp_staged_get_dimensioncharacteristics (&(v->characteristics[0])
                                                                    ,ldims
                                                                    ,gdims
                                                                    ,offsets
@@ -3502,12 +3502,12 @@ fprintf (stderr, "[%3d] ndim 2 = %d\n", rank, * ndim);
     }
 }
 
-ADIOS_VARINFO * adios_read_bp_subfile_inq_var (ADIOS_GROUP *gp, const char * varname) 
+ADIOS_VARINFO * adios_read_bp_staged_inq_var (ADIOS_GROUP *gp, const char * varname) 
 {
-    int varid = adios_read_bp_subfile_find_var(gp, varname);
+    int varid = adios_read_bp_staged_find_var(gp, varname);
     if (varid < 0)
         return NULL;
-    return adios_read_bp_subfile_inq_var_byid(gp, varid);
+    return adios_read_bp_staged_inq_var_byid(gp, varid);
 }
 
 static ADIOS_VARINFO * _inq_var_byid (struct BP_FILE * fh, int varid)
@@ -3548,7 +3548,7 @@ static ADIOS_VARINFO * _inq_var_byid (struct BP_FILE * fh, int varid)
     vi->characteristics_count = var_root->characteristics_count;
 
     /* Get value or min/max */
-    adios_read_bp_subfile_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
+    adios_read_bp_staged_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
                           &(vi->ndim), &(vi->dims), &(vi->timedim));
     
     if (file_is_fortran != futils_is_called_from_fortran()) {
@@ -3560,12 +3560,12 @@ static ADIOS_VARINFO * _inq_var_byid (struct BP_FILE * fh, int varid)
                 (file_is_fortran ? "Fortran" : "C"), (futils_is_called_from_fortran() ? "Fortran" : "C"));*/
     }
     
-    adios_read_bp_subfile_get_characteristics (var_root, vi);
+    adios_read_bp_staged_get_characteristics (var_root, vi);
 
     return vi;
 }
 
-ADIOS_VARINFO * adios_read_bp_subfile_inq_var_byid (ADIOS_GROUP *gp, int varid)
+ADIOS_VARINFO * adios_read_bp_staged_inq_var_byid (ADIOS_GROUP *gp, int varid)
 {
     struct BP_GROUP      * gh;
     struct BP_FILE       * fh;
@@ -3618,7 +3618,7 @@ ADIOS_VARINFO * adios_read_bp_subfile_inq_var_byid (ADIOS_GROUP *gp, int varid)
 
     /* Get value or min/max */
 
-    adios_read_bp_subfile_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
+    adios_read_bp_staged_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
                           &(vi->ndim), &(vi->dims), &(vi->timedim));
 
     if (file_is_fortran != futils_is_called_from_fortran()) {
@@ -3630,12 +3630,12 @@ ADIOS_VARINFO * adios_read_bp_subfile_inq_var_byid (ADIOS_GROUP *gp, int varid)
                 (file_is_fortran ? "Fortran" : "C"), (futils_is_called_from_fortran() ? "Fortran" : "C"));*/
     }
 
-    adios_read_bp_subfile_get_characteristics (var_root, vi);
+    adios_read_bp_staged_get_characteristics (var_root, vi);
 
     return vi;
 }
 
-void adios_read_bp_subfile_free_varinfo (ADIOS_VARINFO *vp)
+void adios_read_bp_staged_free_varinfo (ADIOS_VARINFO *vp)
 {
     if (vp) {
         if (vp->dims)   free(vp->dims);
@@ -3838,7 +3838,7 @@ void getReadInfo (ADIOS_GROUP * gp
     has_subfile = fh->mfooter.version & ADIOS_VERSION_HAVE_SUBFILE;
 
     /* Get dimensions and flip if caller != writer language */
-    adios_read_bp_subfile_get_dimensions (v
+    adios_read_bp_staged_get_dimensions (v
                                          ,fh->tidx_stop - fh->tidx_start + 1
                                          ,file_is_fortran
                                          ,&ri->ndim
@@ -3918,7 +3918,7 @@ void getDataAddress (ADIOS_GROUP * gp, int varid
     v = adios_find_var_byid (gp, varid);
 
     /* Get dimensions and flip if caller != writer language */
-    adios_read_bp_subfile_get_dimensions (v
+    adios_read_bp_staged_get_dimensions (v
                                          ,fh->tidx_stop - fh->tidx_start + 1
                                          ,file_is_fortran
                                          ,&ndim
@@ -3995,7 +3995,7 @@ void getDataAddress (ADIOS_GROUP * gp, int varid
         {
             idx_table[idx] = 1;
             /* Each pg can have a different sized array, so we need the actual dimensions from it */
-            is_global = adios_read_bp_subfile_get_dimensioncharacteristics(&(v->characteristics[start_idx + idx])
+            is_global = adios_read_bp_staged_get_dimensioncharacteristics(&(v->characteristics[start_idx + idx])
                                                                           ,ldims
                                                                           ,gdims
                                                                           ,offsets
@@ -4088,7 +4088,7 @@ void getDataAddress (ADIOS_GROUP * gp, int varid
     }
 }
 
-int64_t adios_read_bp_subfile_read_var (ADIOS_GROUP * gp
+int64_t adios_read_bp_staged_read_var (ADIOS_GROUP * gp
                                        ,const char * varname
                                        ,const uint64_t * start
                                        ,const uint64_t * count
@@ -4112,7 +4112,7 @@ int64_t adios_read_bp_subfile_read_var (ADIOS_GROUP * gp
     fh = gh->fh;
     assert (fh);
 
-    varid = adios_read_bp_subfile_find_var (gp, varname);
+    varid = adios_read_bp_staged_find_var (gp, varname);
     if (varid < 0 || varid >= gh->vars_count)
     {
         adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
@@ -4125,7 +4125,7 @@ int64_t adios_read_bp_subfile_read_var (ADIOS_GROUP * gp
     read_args * ra = (read_args *) malloc (sizeof (read_args));
     assert (ra);
 
-    ADIOS_VARINFO * vi = adios_read_bp_subfile_inq_var_byid (gp, varid);
+    ADIOS_VARINFO * vi = adios_read_bp_staged_inq_var_byid (gp, varid);
     ra->varid = varid;
     ra->ndims = vi->ndim;
 
@@ -4148,7 +4148,7 @@ int64_t adios_read_bp_subfile_read_var (ADIOS_GROUP * gp
 
     getDataAddress (gp, varid, start, count, &ra->file_idx, &ra->offset, &payload_size);
 
-    adios_read_bp_subfile_free_varinfo (vi);
+    adios_read_bp_staged_free_varinfo (vi);
 
     r = (candidate_reader *) malloc (sizeof (candidate_reader));
     assert (r);
@@ -4167,7 +4167,7 @@ int64_t adios_read_bp_subfile_read_var (ADIOS_GROUP * gp
  * array fashion (as opposed to global array)  *
  *     Q. Liu, 11/2010                         *
  ***********************************************/
-int64_t adios_read_bp_subfile_read_local_var (ADIOS_GROUP * gp, const char * varname,
+int64_t adios_read_bp_staged_read_local_var (ADIOS_GROUP * gp, const char * varname,
                                       int vidx, const uint64_t * start,
                                       const uint64_t * count, void * data)
 {
@@ -4208,7 +4208,7 @@ int64_t adios_read_bp_subfile_read_local_var (ADIOS_GROUP * gp, const char * var
         return -adios_errno;
     }
 
-    varid = adios_read_bp_subfile_find_var(gp, varname);
+    varid = adios_read_bp_staged_find_var(gp, varname);
     if (varid < 0 || varid >= gh->vars_count)
     {
         adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
@@ -4334,7 +4334,7 @@ int64_t adios_read_bp_subfile_read_local_var (ADIOS_GROUP * gp, const char * var
     uint64_t payload_size = size_of_type;
 
     /* To get ldims for the index vidx */
-    adios_read_bp_subfile_get_dimensioncharacteristics( &(var_root->characteristics[vidx]),
+    adios_read_bp_staged_get_dimensioncharacteristics( &(var_root->characteristics[vidx]),
                                                 ldims, gdims, offsets);
 
     /* Again, a Fortran written file has the dimensions in Fortran order we need to swap here */
@@ -4536,7 +4536,7 @@ int64_t adios_read_bp_subfile_read_local_var (ADIOS_GROUP * gp, const char * var
 
 // The purpose of keeping this function is to be able
 // to read in old BP files. Can be deleted later on.
-int64_t adios_read_bp_subfile_read_var_byid1 (ADIOS_GROUP    * gp,
+int64_t adios_read_bp_staged_read_var_byid1 (ADIOS_GROUP    * gp,
                              int              varid,
                              const uint64_t  * start,
                              const uint64_t  * count,
@@ -4602,7 +4602,7 @@ int64_t adios_read_bp_subfile_read_var_byid1 (ADIOS_GROUP    * gp,
     }
 
     /* Get dimensions and flip if caller != writer language */
-    adios_read_bp_subfile_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
+    adios_read_bp_staged_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
                           &ndim, &dims, &timedim);
 
     /* Here the cases in which .bp written from Fortran and C are considered separately.
@@ -4887,7 +4887,7 @@ printf ("pgcount = %lld\n", pgcount);
             uint64_t payload_size = size_of_type;
     
             /* Each pg can have a different sized array, so we need the actual dimensions from it */
-            is_global = adios_read_bp_subfile_get_dimensioncharacteristics( &(var_root->characteristics[start_idx + idx]),
+            is_global = adios_read_bp_staged_get_dimensioncharacteristics( &(var_root->characteristics[start_idx + idx]),
                                                             ldims, gdims, offsets);
             if (!is_global) {
                 // we use gdims below, which is 0 for a local array; set to ldims here
@@ -5155,7 +5155,7 @@ printf ("pgcount = %lld\n", pgcount);
     return total_size;
 }
 
-int64_t adios_read_bp_subfile_read_var_byid2 (ADIOS_GROUP    * gp,
+int64_t adios_read_bp_staged_read_var_byid2 (ADIOS_GROUP    * gp,
                                       int            varid,
                                       const uint64_t * start,
                                       const uint64_t * count,
@@ -5198,7 +5198,7 @@ int64_t adios_read_bp_subfile_read_var_byid2 (ADIOS_GROUP    * gp,
     }
 
     /* Get dimensions and flip if caller != writer language */
-    adios_read_bp_subfile_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
+    adios_read_bp_staged_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
                           &ndim, &dims, &timedim);
 
     /* In a Fortran written files, dimensions are in reversed order for C */
@@ -5331,7 +5331,7 @@ int64_t adios_read_bp_subfile_read_var_byid2 (ADIOS_GROUP    * gp,
             uint64_t payload_size = size_of_type;
     
             /* Each pg can have a different sized array, so we need the actual dimensions from it */
-            is_global = adios_read_bp_subfile_get_dimensioncharacteristics( &(var_root->characteristics[start_idx + idx]),
+            is_global = adios_read_bp_staged_get_dimensioncharacteristics( &(var_root->characteristics[start_idx + idx]),
                                                             ldims, gdims, offsets);
             if (!is_global) {
                 // we use gdims below, which is 0 for a local array; set to ldims here
@@ -5611,7 +5611,7 @@ int64_t adios_read_bp_subfile_read_var_byid2 (ADIOS_GROUP    * gp,
     return total_size;
 }
 
-int64_t adios_read_bp_subfile_read_var_byid (ADIOS_GROUP    * gp,
+int64_t adios_read_bp_staged_read_var_byid (ADIOS_GROUP    * gp,
                                      int            varid,
                                      const uint64_t  * start,
                                      const uint64_t  * count,
@@ -5642,8 +5642,8 @@ int64_t adios_read_bp_subfile_read_var_byid (ADIOS_GROUP    * gp,
     has_time_index_characteristic = fh->mfooter.version & ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC;
     if (!has_time_index_characteristic) {
         // read older file format. Can be deleted later on.
-        return adios_read_bp_subfile_read_var_byid1(gp, varid, start, count, data);
+        return adios_read_bp_staged_read_var_byid1(gp, varid, start, count, data);
     } else {
-        return adios_read_bp_subfile_read_var_byid2(gp, varid, start, count, data);
+        return adios_read_bp_staged_read_var_byid2(gp, varid, start, count, data);
     }
 }
