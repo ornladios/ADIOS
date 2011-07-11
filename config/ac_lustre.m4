@@ -34,40 +34,40 @@ if test "x$with_lustre" == "xno"; then
 
 else
 
-save_CPPFLAGS="$CPPFLAGS"
-save_LIBS="$LIBS"
-save_LDFLAGS="$LDFLAGS"
-LIBS="$LIBS -llustreapi"
-LDFLAGS="$LDFLAGS $LUSTRE_LDFLAGS"
-CPPFLAGS="$CPPFLAGS $LUSTRE_CPPFLAGS"
-
-dnl if test -z "${HAVE_DMALLOC_TRUE}"; then
-dnl        AC_CHECK_HEADERS(dmalloc.h,
-dnl                ,
-dnl                [AM_CONDITIONAL(HAVE_DMALLOC,false)])
-dnl fi
-
-# Check for the lustre library and headers
-dnl AC_TRY_COMPILE([struct obd_uuid {char uuid[40];};int fd, num_ost;struct obd_uuid uuids[1024];],
-dnl        [llapi_lov_get_uuids(fd, uuids, &num_ost);],
-dnl        [LUSTRE_LIBS="-llustreapi"],
-dnl        [AM_CONDITIONAL(HAVE_LUSTRE,false)])
-
-LIBS="$save_LIBS"
-LDFLAGS="$save_LDFLAGS"
-CPPFLAGS="$save_CPPFLAGS"
-
-AC_SUBST(LUSTRE_LIBS)
-AC_SUBST(LUSTRE_LDFLAGS)
-AC_SUBST(LUSTRE_CPPFLAGS)
-
-# Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
-if test -z "${HAVE_LUSTRE_TRUE}"; then
-        ifelse([$1],,[AC_DEFINE(HAVE_LUSTRE,1,[Define if you have LUSTRE.])],[$1])
-        :
-else
-        $2
-        :
-fi
+    save_CPPFLAGS="$CPPFLAGS"
+    save_LIBS="$LIBS"
+    save_LDFLAGS="$LDFLAGS"
+    LIBS="$LIBS -llustreapi"
+    LDFLAGS="$LDFLAGS $LUSTRE_LDFLAGS"
+    CPPFLAGS="$CPPFLAGS $LUSTRE_CPPFLAGS"
+    
+    dnl if test -z "${HAVE_DMALLOC_TRUE}"; then
+    dnl        AC_CHECK_HEADERS(dmalloc.h,
+    dnl                ,
+    dnl                [AM_CONDITIONAL(HAVE_DMALLOC,false)])
+    dnl fi
+    
+    # Check for the lustre library and headers
+    dnl AC_TRY_COMPILE([struct obd_uuid {char uuid[40];};int fd, num_ost;struct obd_uuid uuids[1024];],
+    dnl        [llapi_lov_get_uuids(fd, uuids, &num_ost);],
+    dnl        [LUSTRE_LIBS="-llustreapi"],
+    dnl        [AM_CONDITIONAL(HAVE_LUSTRE,false)])
+    
+    LIBS="$save_LIBS"
+    LDFLAGS="$save_LDFLAGS"
+    CPPFLAGS="$save_CPPFLAGS"
+    
+    AC_SUBST(LUSTRE_LIBS)
+    AC_SUBST(LUSTRE_LDFLAGS)
+    AC_SUBST(LUSTRE_CPPFLAGS)
+    
+    # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
+    if test -z "${HAVE_LUSTRE_TRUE}"; then
+            ifelse([$1],,[AC_DEFINE(HAVE_LUSTRE,1,[Define if you have LUSTRE.])],[$1])
+            :
+    else
+            $2
+            :
+    fi
 fi
 ])dnl AC_LUSTRE

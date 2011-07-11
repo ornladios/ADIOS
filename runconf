@@ -18,7 +18,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module unload PE-intel
     module unload PE-pathscale
     module unload pgi gcc intel pathscale
-    TARGET=pgi
+    TARGET=gnu
     module load PE-$TARGET
     module load mxml
     # Use both seq hdf5 (for utils) and 
@@ -31,8 +31,15 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     PAR_HDF5_DIR=$HDF5_DIR
     PAR_HDF5_CLIB=$HDF5_CLIB
     module unload hdf5
-    # Parallel NetCDF 4 
-    #module load netcdf/4.1.1_par
+    # Seq. and Parallel NetCDF 4 
+    module load netcdf/4.1.1
+    SEQ_NC_DIR=$NETCDF_DIR
+    SEQ_NC_CLIB=$NETCDF_CLIB
+    module unload netcdf
+    module load netcdf/4.1.1_par
+    PAR_NC_DIR=$NETCDF_DIR
+    PAR_NC_CLIB=$NETCDF_CLIB
+    module unload netcdf
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
@@ -57,62 +64,13 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         --with-phdf5=${PAR_HDF5_DIR} \
         --with-phdf5-libs="${PAR_HDF5_CLIB}" \
+        --with-netcdf=${SEQ_NC_DIR} \
+        --with-netcdf-libs="${SEQ_NC_CLIB}" \
+        --with-nc4par=${PAR_NC_DIR} \
+        --with-nc4par-libs="${PAR_NC_CLIB}" \
+        --with-lustre=/usr \
         --without-datatap --without-infiniband
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
-        #--with-datatap=/ccs/home/habbasi/work/ewok/
-        #--enable-datatap=ib
-
-
-elif [ `hostname | cut -c 1-4` == "ewok" ]; then
-
-    ########
-    # Ewok #
-    ########
-    echo "Configure on SITH"
-    source /etc/profile.d/modules.sh
-    module unload hdf5
-    module unload netcdf
-    module unload PE-gnu
-    module unload PE-pgi
-    module unload PE-pathscale
-    module unload pgi
-    TARGET=pgi
-    module load PE-$TARGET
-    # Use both seq hdf5 (for utils) and 
-    #   parallel hdf5 (for PHDF5 method)
-    #module load hdf5/1.8.2
-    SEQ_HDF5_DIR=$HDF5_DIR
-    SEQ_HDF5_CLIB=$HDF5_CLIB
-    #module unload hdf5
-    #module load hdf5/1.8.2_par
-    PAR_HDF5_DIR=$HDF5_DIR
-    PAR_HDF5_CLIB=$HDF5_CLIB
-    #module unload hdf5
-    # Seq NetCDF 3 for bp2ncd
-    #module load netcdf/3.6.2
-    export MPICC=mpicc
-    export MPICXX=mpiCC
-    export MPIFC=mpif90
-    if [ "$TARGET" == "pgi" ]; then
-        export CC=pgcc
-        export CXX=pgCC
-        export FC=pgf90
-    elif [ "$TARGET" == "gnu" ]; then
-        export CC=gcc
-        export CXX=g++
-        export FC=gfortran
-    else
-        echo "TARGET must be pgi or gnu"
-        exit 1
-    fi
-        
-    export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/sith.$TARGET \
-        --enable-dependency-tracking \
-        --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
-        --enable-research-transports  \
-        --without-datatap
-        #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
         #--with-datatap=/ccs/home/habbasi/work/ewok/
         #--enable-datatap=ib
 
