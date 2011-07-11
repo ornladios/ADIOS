@@ -43,7 +43,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C adios_read_global_no_xml"
-$MPIRUN $NP_MPIRUN $READPROCS ./adios_read_global_no_xml | sort > c_read.txt
+$MPIRUN $NP_MPIRUN $READPROCS ./adios_read_global_no_xml > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of adios_read_global_no_xml exited with $EX"

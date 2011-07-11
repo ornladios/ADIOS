@@ -20,14 +20,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include "mpi.h"
 #include "adios_read.h"
 
 int main (int argc, char ** argv) 
 {
     char        filename [256];
-    int         rank, size, i, j;
+    int         rank, size, i, j, npl, token;
     MPI_Comm    comm = MPI_COMM_WORLD;
+    MPI_Status  status;
     void * data = NULL;
     uint64_t start[1], count[1], bytes_read = 0;
 
@@ -67,17 +69,33 @@ int main (int argc, char ** argv)
 
     bytes_read = adios_read_var (g, "temperature", start, count, data);
 
-    for (i = 0; i < slice_size; i++) {
-        printf (" %6.3g", * (double *)data + i);
+    if (rank > 0) {
+        MPI_Recv (&token, 1, MPI_INT, rank-1, 0, comm, &status);
     }
-    printf ("\n");
+
+    printf (" ======== Rank %d ========== \n", rank);
+    npl = 10;
+    for (i = 0; i < slice_size; i+=npl) {
+        printf ("[%4.4d]  ", rank*slice_size+i);
+        for (j= 0; j < npl; j++) {
+            printf (" %6.6g", * ((double *)data + i + j));
+        }
+        printf ("\n");
+    }
+    fflush(stdout);
+    sleep(1);
+
+    if (rank < size-1) {
+        MPI_Send (&token, 1, MPI_INT, rank+1, 0, comm);
+    }
+
+    MPI_Barrier (comm);
 
     free (data);
 
     adios_gclose (g);
     adios_fclose (f);
 
-    MPI_Barrier (comm);
 
     MPI_Finalize ();
     return 0;
