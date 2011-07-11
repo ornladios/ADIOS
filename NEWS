@@ -1,3 +1,8 @@
+1.3 Released July 12, 2011
+    - New read routine
+    - Changes in MPI_AMR and MPI_LUSTRE to support default parameters. Parameters for MPI_LUSTRE and MPI_AMR
+      in XML file are not mandatory any more.
+
 1.2.1 Released Aug 25, 2010
     - Bug fix in read API (arrays written every timestep but without time dimension caused aborts)
     - DIMES method from Rutgers
