@@ -18,7 +18,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module unload PE-intel
     module unload PE-pathscale
     module unload pgi gcc intel pathscale
-    TARGET=gnu
+    TARGET=pgi
     module load PE-$TARGET
     module load mxml
     # Use both seq hdf5 (for utils) and 
@@ -51,6 +51,10 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         export CC=gcc
         export CXX=g++
         export FC=gfortran
+    elif [ "$TARGET" == "intel" ]; then
+        export CC=icc
+        export CXX=icpc
+        export FC=ifort
     else
         echo "TARGET must be pgi or gnu"
         exit 1
@@ -240,21 +244,23 @@ elif [ `hostname | cut -c 1-4` == "euge" ]; then
     echo "Configure on Eugene (BlueGene)"
     export MPICC=mpixlc_r
     export MPIFC=mpixlf90
-    export CFLAGS="-g -O0"
+    #export CFLAGS="-g -O0"
+    export CFLAGS=""
     export FC=xlf90
     export CC=xlc_r
 
     source /etc/profile.d/modules.sh
+    module load python
     # NetCDF 3 for bp2ncd
     module load netcdf/3.6.2-linux
     # Seq HDF5 for bp2h5 
-    module load hdf5/1.8.1-linux
-    # HDF5_DIR is not defined by this hdf5 module so we do it here
-    HDF5_DIR=/sw/bgp/hdf5/1.8.1/sles10.1_xlc9.0xlf11.1
+    #module load hdf5/1.8.5-linux
+    export HDF5_DIR="/sw/bgp/hdf5/1.8.5/sles10.2_xlc9.0xlf11.1/install"
+    export HDF5_CLIB="-I/sw/bgp/hdf5/1.8.5/sles10.2_xlc9.0xlf11.1/install/include -L/sw/bgp/hdf5/1.8.5/sles10.2_xlc9.0xlf11.1/install/lib -lhdf5_hl -lhdf5 -L/sw/bgp/szip/2.1/sles10.1_xlc9.0/lib -lsz /usr/lib/libz.a"
+    module load mxml
 
     ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eugene \
             --enable-dependency-tracking \
-            --with-mxml=/ccs/proj/e2e/adios/bgp \
             --with-hdf5=$HDF5_DIR \
             --with-hdf5-libs="$HDF5_CLIB" \
             --without-phdf5
