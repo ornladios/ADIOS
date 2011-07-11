@@ -338,6 +338,24 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     char value[64], *temp_string, *p_count,*p_size;
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
+
+    // set up the number of OST to use
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    if (p_size = strstr (temp_string, "num_ost"))
+    {
+        char * p = strchr (p_size, '=');
+        char * q = strtok (p, ";");
+        if (!q)
+            md->g_num_ost = atoi(q + 1);
+        else
+            md->g_num_ost = atoi(p + 1);
+    }
+    else
+    {
+    }
+
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
@@ -380,23 +398,6 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     {
         // by default, threading is disabled.
         md->g_threading = 0;
-    }
-
-    // set up the number of OST to use
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
-    if (p_size = strstr (temp_string, "num_ost"))
-    {
-        char * p = strchr (p_size, '=');
-        char * q = strtok (p, ";");
-        if (!q)
-            md->g_num_ost = atoi(q + 1);
-        else
-            md->g_num_ost = atoi(p + 1);
-    }
-    else
-    {
     }
 
     // set up which ost's to skip
@@ -920,8 +921,8 @@ void adios_mpi_amr_init (const char * parameters
     md->g_color2 = 0;
     md->g_offsets = 0;
     md->g_ost_skipping_list = 0;
-    md->open_thread_data;
-    md->g_io_type;
+    md->open_thread_data = 0;
+    md->g_io_type = ADIOS_MPI_AMR_IO_BG;
 
     adios_buffer_struct_init (&md->b);
 }
