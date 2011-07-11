@@ -959,7 +959,8 @@ libadios_internal_nompi_a_CPPFLAGS = -D_INTERNAL $(ADIOSLIB_EXTRA_CPPFLAGS) $(AD
 EXTRA_DIST = adios_bp_v1.h adios_endianness.h adios_error.h \
              adios_internals.h adios_internals_mxml.h \
              adios_nssi_config.h adios_socket.h adios_transport_hooks.h aggregation.h \
-             bp_types.h bp_utils.h buffer.h common_adios.h common_read.h futils.h globals.h 
+             bp_types.h bp_utils.h buffer.h common_adios.h common_read.h futils.h globals.h \
+             ds_metadata.h
 
 all: all-am
 
