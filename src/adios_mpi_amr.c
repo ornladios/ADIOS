@@ -297,7 +297,7 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
         n_ost = md->g_num_ost - n_ost_skipping;
         if (n_ost <= 0)
         {
-            fprintf (stderr, "No OST to use.\n");
+            fprintf (stderr, "No OST to use. Set num_ost=NNN in the adios config xml file.\n");
             return;
         }
 
