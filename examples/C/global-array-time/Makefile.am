@@ -20,4 +20,4 @@ adios_read_globaltime_LDADD += $(ADIOSLIB_LDADD)
                 
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = adios_globaltime.xml gread_temperature.ch gwrite_temperature.ch job.pbs
+EXTRA_DIST = adios_globaltime.xml gread_restart.ch gwrite_restart.ch job.pbs

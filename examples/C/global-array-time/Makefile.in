@@ -338,7 +338,7 @@ adios_read_globaltime_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSLIB_LDADD)
 adios_read_globaltime_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
-EXTRA_DIST = adios_globaltime.xml gread_temperature.ch gwrite_temperature.ch job.pbs
+EXTRA_DIST = adios_globaltime.xml gread_restart.ch gwrite_restart.ch job.pbs
 all: all-am
 
 .SUFFIXES:
