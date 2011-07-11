@@ -805,7 +805,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                                   ,fd->group->name, md->old_pg_root
                                   );
                     MPI_Scatter (offsets, 3, MPI_LONG_LONG
-                                ,offsets, 3, MPI_LONG_LONG
+                                ,MPI_IN_PLACE, 3, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
                     md->b.read_pg_offset = offsets [0];
@@ -817,7 +817,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                     MPI_Offset offset [3];
                     offset [0] = offset [1] = offset [2] = 0;
 
-                    MPI_Scatter (offset, 3, MPI_LONG_LONG
+                    MPI_Scatter (0, 0, 0
                                 ,offset, 3, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
@@ -899,7 +899,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                     else
                         offsets [0] = fd->write_size_bytes;
 
-                    MPI_Gather (offsets, 1, MPI_LONG_LONG
+                    MPI_Gather (MPI_IN_PLACE, 1, MPI_LONG_LONG
                                ,offsets, 1, MPI_LONG_LONG
                                ,0, md->group_comm
                                );
@@ -922,7 +922,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                     md->b.pg_index_offset =   offsets [md->size - 1]
                                             + last_offset;
                     MPI_Scatter (offsets, 1, MPI_LONG_LONG
-                                ,offsets, 1, MPI_LONG_LONG
+                                ,MPI_IN_PLACE, 1, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
                     fd->base_offset = offsets [0];
@@ -939,11 +939,11 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                         offset = fd->write_size_bytes;
 
                     MPI_Gather (&offset, 1, MPI_LONG_LONG
-                               ,&offset, 1, MPI_LONG_LONG
+                               ,0, 0, 0
                                ,0, md->group_comm
                                );
 
-                    MPI_Scatter (&offset, 1, MPI_LONG_LONG
+                    MPI_Scatter (0, 0, 0
                                 ,&offset, 1, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
@@ -1201,7 +1201,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                     else
                         offsets [0] = fd->write_size_bytes;
 
-                    MPI_Gather (offsets, 1, MPI_LONG_LONG
+                    MPI_Gather (MPI_IN_PLACE, 1, MPI_LONG_LONG
                                ,offsets, 1, MPI_LONG_LONG
                                ,0, md->group_comm
                                );
@@ -1217,7 +1217,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                     md->b.pg_index_offset =   offsets [md->size - 1]
                                             + last_offset;
                     MPI_Scatter (offsets, 1, MPI_LONG_LONG
-                                ,offsets, 1, MPI_LONG_LONG
+                                ,MPI_IN_PLACE, 1, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
                     fd->base_offset = offsets [0];
@@ -1235,11 +1235,11 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
 
 
                     MPI_Gather (&offset, 1, MPI_LONG_LONG
-                               ,&offset, 1, MPI_LONG_LONG
+                               ,0, 0, 0
                                ,0, md->group_comm
                                );
 
-                    MPI_Scatter (&offset, 1, MPI_LONG_LONG
+                    MPI_Scatter (0, 0, 0
                                 ,&offset, 1, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
