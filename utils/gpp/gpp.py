@@ -36,7 +36,7 @@ def main(argv=None):
         print 'Usage: gpp.py <config file>\n'
         return 1
 
-    check_val = checkXML (sys.argv[1], sys.argv[0].rpartition('/')[0])  # Path is everything preceeding the last forward slash
+    check_val = checkXML (sys.argv[1], os.path.dirname(sys.argv[0])) 
     if check_val != 'success':
         return 1
 
