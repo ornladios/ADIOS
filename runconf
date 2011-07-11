@@ -330,7 +330,8 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     CFLAGS="-DO_LARGEFILE=0 -fno-common" ./configure --prefix=/opt/adios \
         --with-mxml=/opt/mxml \
         --with-netcdf=/opt/netcdf \
-        --with-phdf5=/opt/hdf5
+        --with-phdf5=/opt/hdf5 \
+        --with-hdf5=/opt/hdf5.seq
 
 elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
 
