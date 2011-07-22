@@ -93,7 +93,7 @@ if test x"$ac_with_infiniband" = xyes; then
                     [ac_infiniband_lib_ok=no],
                     [$save_LIBS $PTHREAD_LDFLAGS $PTHREAD_LIBS])
             if test -n $LIBS; then
-                INFINIBAND_LIBS="$INFINIBAND_LIBS $LIBS";
+                INFINIBAND_LIBS="$LIBS";
             fi
             LIBS=$save_LIBS;
         fi

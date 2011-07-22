@@ -57,6 +57,7 @@ dnl g/^hardcode_libdir_flag_spec_ld=".*"/s//hardcode_libdir_flag_spec_ld=""/
 AC_PROG_MXML
 dnl AC_PROG_GENGETOPT
 AC_INFINIBAND
+AC_RDMACM
 AC_PORTALS
 AC_HDF5
 AC_PHDF5
@@ -117,7 +118,7 @@ if test -z "${HAVE_NC4PAR_TRUE}" -a -z "${HAVE_NETCDF_FALSE}"; then
 fi
 
 dnl Define HAVE_RDMA if one of RDMA libraries are found
-if test -z "${HAVE_PORTALS_TRUE}" -o -z "${HAVE_INFINIBAND_TRUE}"; then
+if test -z "${HAVE_PORTALS_TRUE}" -o -z "${HAVE_RDMACM_TRUE}"; then
     AM_CONDITIONAL(HAVE_RDMA,true)
     AC_DEFINE(HAVE_RDMA,1,[Define if you have RDMA layer.])
 else
@@ -243,6 +244,16 @@ if test -z "${HAVE_PORTALS_TRUE}"; then
 fi
 if test -z "${HAVE_RDMA_TRUE}"; then
     ADIOSLIB_LDADD="${ADIOSLIB_LDADD} -lardma_client"
+fi
+if test -z "${HAVE_RDMACM_TRUE}"; then
+    ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${RDMACM_CPPFLAGS}"
+    ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${RDMACM_CFLAGS}"
+    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${RDMACM_LDFLAGS}"
+    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${RDMACM_LIBS}"
+    ADIOSLIB_SEQ_CPPFLAGS="${ADIOSLIB_SEQ_CPPFLAGS} ${RDMACM_CPPFLAGS}"
+    ADIOSLIB_SEQ_CFLAGS="${ADIOSLIB_SEQ_CFLAGS} ${RDMACM_CFLAGS}"
+    ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${RDMACM_LDFLAGS}"
+    ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${RDMACM_LIBS}"
 fi
 if test -z "${HAVE_INFINIBAND_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${INFINIBAND_CPPFLAGS}"
@@ -429,6 +440,16 @@ if test -z "${HAVE_INFINIBAND_TRUE}"; then
     echo "      - INFINIBAND_LDFLAGS = $INFINIBAND_LDFLAGS";
     echo "      - INFINIBAND_LIBS = $INFINIBAND_LIBS";
     echo
+    if test -z "${HAVE_RDMACM_TRUE}"; then
+        echo "  - RDMA CMA for Infiniband";
+        echo "      - RDMACM_CFLAGS = $RDMACM_CFLAGS";
+        echo "      - RDMACM_CPPFLAGS = $RDMACM_CPPFLAGS";
+        echo "      - RDMACM_LDFLAGS = $RDMACM_LDFLAGS";
+        echo "      - RDMACM_LIBS = $RDMACM_LIBS";
+        echo
+    else
+        echo "  - No RDMA CMA for InfiniBand"
+    fi
 else
     echo "  - No InfiniBand"
 fi

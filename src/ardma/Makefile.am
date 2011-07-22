@@ -16,11 +16,11 @@ endif
 
 if HAVE_INFINIBAND
 libardma_client_a_SOURCES = ib_client.c 
-libardma_client_a_CPPFLAGS = $(INFINIBAND_CPPFLAGS)
-libardma_client_a_CFLAGS = $(INFINIBAND_CFLAGS)
+libardma_client_a_CPPFLAGS = $(RDMACM_CPPFLAGS) $(INFINIBAND_CPPFLAGS)
+libardma_client_a_CFLAGS = $(RDMACM_CFLAGS) $(INFINIBAND_CFLAGS)
 libardma_server_a_SOURCES = ib_server.c 
-libardma_server_a_CPPFLAGS = $(INFINIBAND_CPPFLAGS)
-libardma_server_a_CFLAGS = $(INFINIBAND_CFLAGS)
+libardma_server_a_CPPFLAGS = $(RDMACM_CPPFLAGS) $(INFINIBAND_CPPFLAGS)
+libardma_server_a_CFLAGS = $(RDMA_CFLAGS) $(INFINIBAND_CFLAGS)
 endif
 
 CC=${MPICC}

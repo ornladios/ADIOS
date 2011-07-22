@@ -152,6 +152,12 @@
 /* Define if you have RDMA layer. */
 #undef HAVE_RDMA
 
+/* Define if you have the rdmacm. */
+#undef HAVE_RDMACM
+
+/* Define to 1 if you have <rdma/rdma_cma.h>. */
+#undef HAVE_RDMA_CMA_H
+
 /* Define to 1 if you have the `sched_yield' function. */
 #undef HAVE_SCHED_YIELD
 
