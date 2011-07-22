@@ -14,7 +14,7 @@ libardma_server_a_CPPFLAGS = $(PORTALS_CPPFLAGS)
 libardma_server_a_CFLAGS = $(PORTALS_CFLAGS)
 endif
 
-if HAVE_INFINIBAND
+if HAVE_RDMACM
 libardma_client_a_SOURCES = ib_client.c 
 libardma_client_a_CPPFLAGS = $(RDMACM_CPPFLAGS) $(INFINIBAND_CPPFLAGS)
 libardma_client_a_CFLAGS = $(RDMACM_CFLAGS) $(INFINIBAND_CFLAGS)

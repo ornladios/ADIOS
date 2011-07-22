@@ -73,17 +73,17 @@ LIBRARIES = $(lib_LIBRARIES)
 ARFLAGS = cru
 libardma_client_a_AR = $(AR) $(ARFLAGS)
 libardma_client_a_LIBADD =
-am__libardma_client_a_SOURCES_DIST = ib_client.c portals_client.c
-@HAVE_INFINIBAND_FALSE@@HAVE_PORTALS_TRUE@am_libardma_client_a_OBJECTS = libardma_client_a-portals_client.$(OBJEXT)
-@HAVE_INFINIBAND_TRUE@am_libardma_client_a_OBJECTS =  \
-@HAVE_INFINIBAND_TRUE@	libardma_client_a-ib_client.$(OBJEXT)
+am__libardma_client_a_SOURCES_DIST = portals_client.c ib_client.c
+@HAVE_PORTALS_FALSE@@HAVE_RDMACM_TRUE@am_libardma_client_a_OBJECTS = libardma_client_a-ib_client.$(OBJEXT)
+@HAVE_PORTALS_TRUE@am_libardma_client_a_OBJECTS =  \
+@HAVE_PORTALS_TRUE@	libardma_client_a-portals_client.$(OBJEXT)
 libardma_client_a_OBJECTS = $(am_libardma_client_a_OBJECTS)
 libardma_server_a_AR = $(AR) $(ARFLAGS)
 libardma_server_a_LIBADD =
-am__libardma_server_a_SOURCES_DIST = ib_server.c portals_server.c
-@HAVE_INFINIBAND_FALSE@@HAVE_PORTALS_TRUE@am_libardma_server_a_OBJECTS = libardma_server_a-portals_server.$(OBJEXT)
-@HAVE_INFINIBAND_TRUE@am_libardma_server_a_OBJECTS =  \
-@HAVE_INFINIBAND_TRUE@	libardma_server_a-ib_server.$(OBJEXT)
+am__libardma_server_a_SOURCES_DIST = portals_server.c ib_server.c
+@HAVE_PORTALS_FALSE@@HAVE_RDMACM_TRUE@am_libardma_server_a_OBJECTS = libardma_server_a-ib_server.$(OBJEXT)
+@HAVE_PORTALS_TRUE@am_libardma_server_a_OBJECTS =  \
+@HAVE_PORTALS_TRUE@	libardma_server_a-portals_server.$(OBJEXT)
 libardma_server_a_OBJECTS = $(am_libardma_server_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
@@ -332,18 +332,18 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes)
 AUTOMAKE_OPTIONS = no-dependencies
 lib_LIBRARIES = libardma_client.a libardma_server.a
-@HAVE_INFINIBAND_TRUE@libardma_client_a_SOURCES = ib_client.c 
 @HAVE_PORTALS_TRUE@libardma_client_a_SOURCES = portals_client.c 
-@HAVE_INFINIBAND_TRUE@libardma_client_a_CPPFLAGS = $(RDMACM_CPPFLAGS) $(INFINIBAND_CPPFLAGS)
+@HAVE_RDMACM_TRUE@libardma_client_a_SOURCES = ib_client.c 
 @HAVE_PORTALS_TRUE@libardma_client_a_CPPFLAGS = $(PORTALS_CPPFLAGS)
-@HAVE_INFINIBAND_TRUE@libardma_client_a_CFLAGS = $(RDMACM_CFLAGS) $(INFINIBAND_CFLAGS)
+@HAVE_RDMACM_TRUE@libardma_client_a_CPPFLAGS = $(RDMACM_CPPFLAGS) $(INFINIBAND_CPPFLAGS)
 @HAVE_PORTALS_TRUE@libardma_client_a_CFLAGS = $(PORTALS_CFLAGS)
-@HAVE_INFINIBAND_TRUE@libardma_server_a_SOURCES = ib_server.c 
+@HAVE_RDMACM_TRUE@libardma_client_a_CFLAGS = $(RDMACM_CFLAGS) $(INFINIBAND_CFLAGS)
 @HAVE_PORTALS_TRUE@libardma_server_a_SOURCES = portals_server.c 
-@HAVE_INFINIBAND_TRUE@libardma_server_a_CPPFLAGS = $(RDMACM_CPPFLAGS) $(INFINIBAND_CPPFLAGS)
+@HAVE_RDMACM_TRUE@libardma_server_a_SOURCES = ib_server.c 
 @HAVE_PORTALS_TRUE@libardma_server_a_CPPFLAGS = $(PORTALS_CPPFLAGS)
-@HAVE_INFINIBAND_TRUE@libardma_server_a_CFLAGS = $(RDMA_CFLAGS) $(INFINIBAND_CFLAGS)
+@HAVE_RDMACM_TRUE@libardma_server_a_CPPFLAGS = $(RDMACM_CPPFLAGS) $(INFINIBAND_CPPFLAGS)
 @HAVE_PORTALS_TRUE@libardma_server_a_CFLAGS = $(PORTALS_CFLAGS)
+@HAVE_RDMACM_TRUE@libardma_server_a_CFLAGS = $(RDMA_CFLAGS) $(INFINIBAND_CFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -430,29 +430,29 @@ distclean-compile:
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
 
-libardma_client_a-ib_client.o: ib_client.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libardma_client_a_CPPFLAGS) $(CPPFLAGS) $(libardma_client_a_CFLAGS) $(CFLAGS) -c -o libardma_client_a-ib_client.o `test -f 'ib_client.c' || echo '$(srcdir)/'`ib_client.c
-
-libardma_client_a-ib_client.obj: ib_client.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libardma_client_a_CPPFLAGS) $(CPPFLAGS) $(libardma_client_a_CFLAGS) $(CFLAGS) -c -o libardma_client_a-ib_client.obj `if test -f 'ib_client.c'; then $(CYGPATH_W) 'ib_client.c'; else $(CYGPATH_W) '$(srcdir)/ib_client.c'; fi`
-
 libardma_client_a-portals_client.o: portals_client.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libardma_client_a_CPPFLAGS) $(CPPFLAGS) $(libardma_client_a_CFLAGS) $(CFLAGS) -c -o libardma_client_a-portals_client.o `test -f 'portals_client.c' || echo '$(srcdir)/'`portals_client.c
 
 libardma_client_a-portals_client.obj: portals_client.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libardma_client_a_CPPFLAGS) $(CPPFLAGS) $(libardma_client_a_CFLAGS) $(CFLAGS) -c -o libardma_client_a-portals_client.obj `if test -f 'portals_client.c'; then $(CYGPATH_W) 'portals_client.c'; else $(CYGPATH_W) '$(srcdir)/portals_client.c'; fi`
 
-libardma_server_a-ib_server.o: ib_server.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libardma_server_a_CPPFLAGS) $(CPPFLAGS) $(libardma_server_a_CFLAGS) $(CFLAGS) -c -o libardma_server_a-ib_server.o `test -f 'ib_server.c' || echo '$(srcdir)/'`ib_server.c
+libardma_client_a-ib_client.o: ib_client.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libardma_client_a_CPPFLAGS) $(CPPFLAGS) $(libardma_client_a_CFLAGS) $(CFLAGS) -c -o libardma_client_a-ib_client.o `test -f 'ib_client.c' || echo '$(srcdir)/'`ib_client.c
 
-libardma_server_a-ib_server.obj: ib_server.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libardma_server_a_CPPFLAGS) $(CPPFLAGS) $(libardma_server_a_CFLAGS) $(CFLAGS) -c -o libardma_server_a-ib_server.obj `if test -f 'ib_server.c'; then $(CYGPATH_W) 'ib_server.c'; else $(CYGPATH_W) '$(srcdir)/ib_server.c'; fi`
+libardma_client_a-ib_client.obj: ib_client.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libardma_client_a_CPPFLAGS) $(CPPFLAGS) $(libardma_client_a_CFLAGS) $(CFLAGS) -c -o libardma_client_a-ib_client.obj `if test -f 'ib_client.c'; then $(CYGPATH_W) 'ib_client.c'; else $(CYGPATH_W) '$(srcdir)/ib_client.c'; fi`
 
 libardma_server_a-portals_server.o: portals_server.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libardma_server_a_CPPFLAGS) $(CPPFLAGS) $(libardma_server_a_CFLAGS) $(CFLAGS) -c -o libardma_server_a-portals_server.o `test -f 'portals_server.c' || echo '$(srcdir)/'`portals_server.c
 
 libardma_server_a-portals_server.obj: portals_server.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libardma_server_a_CPPFLAGS) $(CPPFLAGS) $(libardma_server_a_CFLAGS) $(CFLAGS) -c -o libardma_server_a-portals_server.obj `if test -f 'portals_server.c'; then $(CYGPATH_W) 'portals_server.c'; else $(CYGPATH_W) '$(srcdir)/portals_server.c'; fi`
+
+libardma_server_a-ib_server.o: ib_server.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libardma_server_a_CPPFLAGS) $(CPPFLAGS) $(libardma_server_a_CFLAGS) $(CFLAGS) -c -o libardma_server_a-ib_server.o `test -f 'ib_server.c' || echo '$(srcdir)/'`ib_server.c
+
+libardma_server_a-ib_server.obj: ib_server.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libardma_server_a_CPPFLAGS) $(CPPFLAGS) $(libardma_server_a_CFLAGS) $(CFLAGS) -c -o libardma_server_a-ib_server.obj `if test -f 'ib_server.c'; then $(CYGPATH_W) 'ib_server.c'; else $(CYGPATH_W) '$(srcdir)/ib_server.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
