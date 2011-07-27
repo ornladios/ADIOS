@@ -150,7 +150,8 @@ void list_print_readers (struct proc_struct * p, candidate_reader * h)
     while (h)
     {
         ra = h->ra;
-        printf ("%d [varid: %d, ndims = %d, start[0]: %llu, start[1]: %llu, count[0]: %llu, count[1]: %llu, file_index: %d, offset = %llu]\n", p->rank, ra->varid, ra->ndims, ra->start[0], ra->start[1], ra->count[0], ra->count[1], ra->file_idx, ra->offset);
+        //printf ("%d [varid: %d, ndims = %d, start[0]: %llu, start[1]: %llu, count[0]: %llu, count[1]: %llu, file_index: %d, offset = %llu]\n", p->rank, ra->varid, ra->ndims, ra->start[0], ra->start[1], ra->count[0], ra->count[1], ra->file_idx, ra->offset);
+//        printf ("%d [varid: %d, ndims = %d, start[0]: %llu, count[0]: %llu, file_index: %d, offset = %llu]\n", p->rank, ra->varid, ra->ndims, ra->start[0], ra->count[0], ra->file_idx, ra->offset);
         h = h->next;
     }
     printf ("\n");
@@ -1380,7 +1381,7 @@ double t2, t3, t4, t5;
             {
                 parent = s->ra->parent;
                 // copy data from internal buffer to user buffer
-//                adios_read_bp_staged_read_buffer (p->gp, o_start->ra->offset, parent, s);
+                adios_read_bp_staged_read_buffer (p->gp, o_start->ra->offset, parent, s);
 
                 s = s->next;
             } while (s != o_end);
@@ -2560,7 +2561,7 @@ int adios_read_bp_staged_gclose (ADIOS_GROUP * gp)
     if (isAggregator (p))
     {
         sort_read_requests (p);
-        //list_print_readers (p, p->split_read_request_list);
+//        list_print_readers (p, p->split_read_request_list);
 
     struct timeval t0, t1;
     gettimeofday (&t0, NULL);

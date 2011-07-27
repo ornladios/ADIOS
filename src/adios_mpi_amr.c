@@ -83,7 +83,6 @@ struct adios_MPI_data_struct
     MPI_Offset * g_offsets;
     int * g_ost_skipping_list;
     pthread_t g_sot;
-    pthread_t g_mot;
     pthread_t g_swt; // subfile open thread, metadata file open thread, subfile write thread
     struct adios_MPI_thread_data_open * open_thread_data;
     enum ADIOS_MPI_AMR_IO_TYPE g_io_type;
@@ -2389,11 +2388,6 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                                             ,flag
                                             );
 
-                if (md->g_threading)
-                {
-                    pthread_join (md->g_mot, NULL);
-                }
-
                 adios_mpi_amr_striping_unit_write(
                                   md->mfh,
                                   -1,
@@ -3321,12 +3315,6 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                               ,MPI_INFO_NULL, &m_file
                               );
 #endif
-                // Waiting for metadata file to open
-                if (md->g_threading)
-                {
-                    pthread_join (md->g_mot, NULL);
-                }
-
                 adios_mpi_amr_striping_unit_write(
                                   md->mfh,
                                   -1,
