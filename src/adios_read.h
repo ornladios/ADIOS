@@ -23,6 +23,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*************************/
 /* Types used in the API */
 /*************************/
@@ -282,4 +286,9 @@ const char * adios_type_to_string (enum ADIOS_DATATYPES type);
 int adios_type_size(enum ADIOS_DATATYPES type, void *data);
 
 #endif  /*__INCLUDED_FROM_FORTRAN_API__*/
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif  /*__ADIOS_READ_H__*/
