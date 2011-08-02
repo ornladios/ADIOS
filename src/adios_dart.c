@@ -774,7 +774,7 @@ void ds_pack_group_info (struct adios_file_struct *fd
         // store scalar value too
         if (a->type != adios_string) {
             size = adios_get_type_size(a->type, NULL);
-            memcpy (b, &(a->characteristics->value), size); 
+            memcpy (b, a->characteristics->value, size); 
             b += size; 
         } else {
             size = adios_get_type_size(a->type, a->characteristics->value);
