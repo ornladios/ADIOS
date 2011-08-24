@@ -770,7 +770,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                     MPI_Offset offset [3];
                     offset [0] = offset [1] = offset [2] = 0;
 
-                    MPI_Scatter (0, 0, 0
+                    MPI_Scatter (0, 3, MPI_LONG_LONG
                                 ,offset, 3, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
