@@ -540,7 +540,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
             offset[0] = fd->write_size_bytes;
 
             MPI_Gather (offset, 1, MPI_LONG_LONG
-                       ,0, 0, 0
+                       ,0, 1, MPI_LONG_LONG
                        ,0, md->group_comm
                        );
 

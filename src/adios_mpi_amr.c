@@ -1378,11 +1378,11 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
 
 
                     MPI_Gather (&offset, 1, MPI_LONG_LONG
-                               ,0, 0, 0
+                               ,0, 1, MPI_LONG_LONG
                                ,0, md->group_comm
                                );
 
-                    MPI_Scatter (0, 0, 0
+                    MPI_Scatter (0, 1, MPI_LONG_LONG
                                 ,&offset, 1, MPI_LONG_LONG
                                 ,0, md->group_comm
                                 );
