@@ -9,7 +9,7 @@
 # 5. add to EXTRA_DIST any non-source files that should go with the distribution
 check_readonly_C=
 if BUILD_WRITE
-check_C= 
+check_C=local_array_time 
 endif
 
 if BUILD_FORTRAN
@@ -40,11 +40,16 @@ posix_method.o: gwrite_posix_method.fh
 gwrite_posix_method.fh: posix_method.xml
 	$(top_srcdir)/utils/gpp/gpp.py posix_method.xml
 
+local_array_time_SOURCES=local_array_time.c
+local_array_time_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+local_array_time_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 
-EXTRA_DIST = posix_method.xml
 
-CLEANFILES = gwrite_posix_method.fh gread_posix_method.fh
+EXTRA_DIST = posix_method.xml local_array_time.xml
 
+CLEANFILES = gwrite_posix_method.fh gread_posix_method.fh 
+
+CC=$(MPICC)
 FC=$(MPIFC)
 
 FCLINK = \
