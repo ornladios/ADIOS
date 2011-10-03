@@ -2442,6 +2442,25 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
         break;
     }
 
+    if (md && md->fh)
+        MPI_File_close (&md->fh);
+
+    if (md && md->mfh)
+        MPI_File_close (&md->mfh);
+
+    if (   md->group_comm != MPI_COMM_WORLD
+        && md->group_comm != MPI_COMM_SELF
+        && md->group_comm != MPI_COMM_NULL
+       )
+    {   
+        md->group_comm = MPI_COMM_NULL;
+    }
+
+    md->fh = 0;
+    md->mfh = 0;
+    md->req = 0;
+    memset (&md->status, 0, sizeof (MPI_Status));
+
     return;
 }
 
@@ -2460,19 +2479,11 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
     switch (fd->mode)
     {
         case adios_mode_read:
+        case adios_mode_append:
         {
-            // read the index to find the place to start reading
-            adios_mpi_amr_do_read (fd, method);
-            struct adios_var_struct * v = fd->group->vars;
-            while (v)
-            {
-                v->data = 0;
-                v = v->next;
-            }
-
+            fprintf (stderr, "Only \"w\" is supported by MPI_AMR Aggregation IO\n");
             break;
         }
-
         case adios_mode_write:
         {
             char * buffer = 0;
@@ -3367,239 +3378,6 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
             break;
         }
 
-        case adios_mode_append:
-        {
-            char * buffer = 0;
-            uint64_t buffer_size = 0;
-            uint64_t buffer_offset = 0;
-            uint64_t index_start = md->b.pg_index_offset;
-
-            if (fd->shared_buffer == adios_flag_no)
-            {
-                MPI_Offset new_off;
-                // set it up so that it will start at 0, but have correct sizes
-                MPI_File_get_position (md->fh, &new_off);
-                fd->offset = fd->base_offset - md->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                adios_write_close_vars_v1 (fd);
-                // fd->vars_start gets updated with the size written
-                uint64_t count;
-                count = adios_mpi_amr_striping_unit_write(
-                                  md->fh,
-                                  md->vars_start,
-                                  fd->buffer,
-                                  md->vars_header_size
-                                  );
-                if (count != md->vars_header_size)
-                {
-                    fprintf (stderr, "d:MPI method tried to write %llu, "
-                                     "only wrote %llu\n"
-                            ,md->vars_header_size
-                            ,count
-                            );
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-                adios_shared_buffer_free (&md->b);
-
-                adios_write_open_attributes_v1 (fd);
-                md->vars_start = new_off;
-                md->vars_header_size = fd->offset;
-                MPI_File_seek (md->fh, new_off + md->vars_header_size
-                              ,MPI_SEEK_SET
-                              ); // go back to end, but after attr header
-                fd->base_offset += fd->offset;  // add size of header
-                fd->offset = 0;
-                fd->bytes_written = 0;
-
-                while (a)
-                {
-                    adios_write_attribute_v1 (fd, a);
-                    count = adios_mpi_amr_striping_unit_write(
-                                  md->fh,
-                                  -1,
-                                  fd->buffer,
-                                  fd->bytes_written
-                                  );
-                    if (count != fd->bytes_written)
-                    {
-                        fprintf (stderr, "e:MPI method tried to write %llu, "
-                                         "only wrote %llu\n"
-                                ,fd->bytes_written
-                                ,count
-                                );
-                    }
-                    fd->base_offset += count;
-                    fd->offset = 0;
-                    fd->bytes_written = 0;
-                    adios_shared_buffer_free (&md->b);
-
-                    a = a->next;
-                }
-
-                // set it up so that it will start at 0, but have correct sizes
-                fd->offset = fd->base_offset - md->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                adios_write_close_attributes_v1 (fd);
-                // fd->vars_start gets updated with the size written
-                count = adios_mpi_amr_striping_unit_write(
-                                  md->fh,
-                                  md->vars_start,
-                                  fd->buffer,
-                                  md->vars_header_size
-                                  );
-                if (count != md->vars_header_size)
-                {
-                    fprintf (stderr, "f:MPI method tried to write %llu, "
-                                     "only wrote %llu\n"
-                            ,md->vars_header_size
-                            ,count
-                            );
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-            }
-
-            // build index appending to any existing index
-            adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
-                                 ,&md->old_attrs_root
-                                 );
-            // if collective, gather the indexes from the rest and call
-            if (md->group_comm != MPI_COMM_NULL)
-            {
-                if (md->rank == 0)
-                {
-                    int * index_sizes = malloc (4 * md->size);
-                    int * index_offsets = malloc (4 * md->size);
-                    char * recv_buffer = 0;
-                    uint32_t size = 0;
-                    uint32_t total_size = 0;
-                    int i;
-
-                    MPI_Gather (&size, 1, MPI_INT
-                               ,index_sizes, 1, MPI_INT
-                               ,0, md->group_comm
-                               );
-
-                    for (i = 0; i < md->size; i++)
-                    {
-                        index_offsets [i] = total_size;
-                        total_size += index_sizes [i];
-                    }
-
-                    recv_buffer = malloc (total_size);
-
-                    MPI_Gatherv (&size, 0, MPI_BYTE
-                                ,recv_buffer, index_sizes, index_offsets
-                                ,MPI_BYTE, 0, md->group_comm
-                                );
-
-                    char * buffer_save = md->b.buff;
-                    uint64_t buffer_size_save = md->b.length;
-                    uint64_t offset_save = md->b.offset;
-
-                    for (i = 1; i < md->size; i++)
-                    {
-                        md->b.buff = recv_buffer + index_offsets [i];
-                        md->b.length = index_sizes [i];
-                        md->b.offset = 0;
-
-                        adios_parse_process_group_index_v1 (&md->b
-                                                           ,&new_pg_root
-                                                           );
-                        adios_parse_vars_index_v1 (&md->b, &new_vars_root);
-                        adios_parse_attributes_index_v1 (&md->b
-                                                        ,&new_attrs_root
-                                                        );
-                        adios_merge_index_v1 (&md->old_pg_root
-                                             ,&md->old_vars_root
-                                             ,&md->old_attrs_root
-                                             ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
-                                             );
-                        new_pg_root = 0;
-                        new_vars_root = 0;
-                        new_attrs_root = 0;
-                    }
-                    md->b.buff = buffer_save;
-                    md->b.length = buffer_size_save;
-                    md->b.offset = offset_save;
-
-                    free (recv_buffer);
-                    free (index_sizes);
-                    free (index_offsets);
-                }
-                else
-                {
-                    adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                         ,0, md->old_pg_root
-                                         ,md->old_vars_root
-                                         ,md->old_attrs_root
-                                         );
-
-                    MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
-                               ,0, md->group_comm
-                               );
-                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
-                                ,0, 0, 0, MPI_BYTE
-                                ,0, md->group_comm
-                                );
-                }
-            }
-
-            if (fd->shared_buffer == adios_flag_yes)
-            {
-                // everyone writes their data
-                adios_mpi_amr_striping_unit_write(
-                                  md->fh,
-                                  fd->base_offset,
-                                  fd->buffer,
-                                  fd->bytes_written
-                                  );
-            }
-
-            if (md->rank == 0)
-            {
-                uint32_t flag = 0;
-
-                adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                     ,index_start, md->old_pg_root
-                                     ,md->old_vars_root
-                                     ,md->old_attrs_root
-                                     );
-
-                flag |= ADIOS_VERSION_HAVE_SUBFILE;
-                adios_write_version_flag_v1 (&buffer, &buffer_size, &buffer_offset, flag);
-/*
-                adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
-*/
-
-                adios_mpi_amr_striping_unit_write(
-                                  md->fh,
-                                  md->b.pg_index_offset,
-                                  buffer,
-                                  buffer_offset
-                                  );
-            }
-
-            free (buffer);
-
-            adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
-            adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
-                                 ,md->old_attrs_root
-                                 );
-            new_pg_root = 0;
-            new_vars_root = 0;
-            new_attrs_root = 0;
-            md->old_pg_root = 0;
-            md->old_vars_root = 0;
-            md->old_attrs_root = 0;
-
-            break;
-        }
-
         default:
         {
             fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
@@ -3624,14 +3402,6 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
     md->mfh = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
-    md->group_comm = MPI_COMM_NULL;
-
-    adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
-                         ,md->old_attrs_root
-                         );
-    md->old_pg_root = 0;
-    md->old_vars_root = 0;
-    md->old_attrs_root = 0;
 }
 
 void adios_mpi_amr_close (struct adios_file_struct * fd
