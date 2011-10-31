@@ -28,7 +28,7 @@ install-data-hook:
 	if type svnversion &>/dev/null; then \
 	    echo `svnversion`\" >> adios_config.flags; \
 	else \
-	    echo "unknown\""; >> adios_config.flags \
+	    echo "unknown\"" >> adios_config.flags; \
 	    echo "Error: svnversion command not found"; \
 	fi 
 	cp adios_config.flags $(DESTDIR)$(bindir)
