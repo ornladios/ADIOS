@@ -1693,7 +1693,7 @@ void broadcast_fh_buffer (struct BP_FILE * fh)
     struct bp_index_pg_struct_v1 * pgs_root = fh->pgs_root, * pg;
     struct adios_index_var_struct_v1 * vars_root = fh->vars_root, * v;
     struct adios_index_attribute_struct_v1 * attrs_root = fh->attrs_root;
-    void * buffer;
+    char * buffer;
     uint64_t buffer_size, buffer_offset = 0;
     int i, j, timedim;
     uint16_t len;
