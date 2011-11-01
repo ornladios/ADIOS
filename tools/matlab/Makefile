@@ -1,6 +1,6 @@
 include ../../adios_config.flags
 
-MEXOPTS="-g -DDEBUG"
+MEXOPTS=-g -DDEBUG
 default:
 	@echo "ADIOS reader methods for MATLAB"
 	@echo "Have 'mex' compiler in the path and run"
