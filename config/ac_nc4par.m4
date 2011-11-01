@@ -111,7 +111,10 @@ else
     
     if test -z "${HAVE_NC4PAR_TRUE}"; then
         AC_MSG_CHECKING([if nc4 parallel code can be compiled])
-        AC_TRY_COMPILE([#include "netcdf.h"],
+        AC_TRY_COMPILE(
+            [#include "mpi.h"
+             #include "netcdf.h"
+            ],
             [int ncid;
              MPI_Info info;
              MPI_Comm comm;
