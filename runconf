@@ -414,6 +414,40 @@ elif [ `hostname | cut -c 1-4` == "nid0" ]; then
         --with-dart=/global/homes/p/pnorbert/dart.0628.pgi
     
 
+elif [ `hostname | cut -c 1-6` == "hopper" ]; then
+    ##########
+    # Hopper #
+    ##########
+    TARGET=pgi
+    echo "Configure on HOPPER for $TARGET env."
+    export CC=cc
+    export CXX=CC
+    export FC=ftn
+    module unload hdf5
+    module unload netcdf
+    module unload hdf5-parallel
+    module unload netcdf-hdf5parallel
+    module unload PrgEnv-gnu
+    module unload PrgEnv-pgi
+    module unload PrgEnv-pathscale
+    module unload PrgEnv-cray
+    TARGET=pgi
+    module load PrgEnv-$TARGET
+    #if [ "${TARGET}" == "pgi" ]; then
+    #    module swap pgi pgi/10.5.0
+    #fi
+    module load python
+    export LDFLAGS="-pgcpplibs"
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
+    export CFLAGS="-fPIC"
+    #./configure --prefix=/project/projectdirs/m499/adios \
+    ./configure --prefix=/global/homes/p/pnorbert/adios/1.3.1/hopper/$TARGET \
+        --enable-dependency-tracking \
+        --with-mxml=$HOME/mxml/mxml.hopper \
+        --with-lustre=/usr \
+        --without-hdf5 --without-netcdf
+
+
 elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; then
 
     #######
