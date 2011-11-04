@@ -26,9 +26,9 @@
 void worker_global_init (void)
 {
     uint64_t available_memory = mem_get_available (user_max_memory_allowed);
-        log_info("rank %d: available memory = %lld bytes\n", gd.mpi_rank, available_memory);
+    log_info("rank %d: available memory = %lld bytes\n", gd.mpi_rank, available_memory);
 
-    gd.requested_rdma_buffer_size = available_memory*0.9; // Use 90% to pull data
+    gd.requested_rdma_buffer_size = (uint64_t)2*(uint64_t)(1024*1024*1024);// available_memory*0.9; // Use 90% to pull data
     gd.need_index = 1;
 }
 
