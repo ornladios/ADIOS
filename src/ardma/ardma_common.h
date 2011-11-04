@@ -6,6 +6,7 @@
 #ifndef ARDMA_COMMON_H
 #define ARDMA_COMMON_H
 
+#include <stdint.h> /* uint64_t */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

@@ -4,6 +4,7 @@
 #include "ardma_server.h"
 #include "ardma_common.h"
 #include "portals_common.h"
+#include "../adios_internals.h"
 
 #include <netdb.h>
 #include <stdio.h>
@@ -94,9 +95,9 @@ struct ardma_server_connection * ardma_server_init (MPI_Comm comm, int verbose_l
     ptl_handle_md_t connmd_h;
     connmd.start = conn_list;
     connmd.length = sizeof(req_conn)*LISTSIZE;
-    connmd.threshold = PTL_MD_THRESH_INF;
+    connmd.threshold = LISTSIZE;
     connmd.max_size = sizeof(req_conn)*LISTSIZE;
-    connmd.options = PTL_MD_OP_PUT | PTL_MD_TRUNCATE | PTL_MD_MAX_SIZE;
+    connmd.options = PTL_MD_OP_PUT | PTL_MD_OP_GET | PTL_MD_TRUNCATE;
     connmd.eq_handle = local_info.eqh;
     connmd.user_ptr = (void*)asc;
 	
@@ -200,10 +201,16 @@ int ardma_server_check_events( struct ardma_server_connection *asc)
     int which = 0;
     
     //check the event queue for remote events
+    log_debug("iface = %d nihandle = %d uid = %d pid.pid = %d pid.nid = %d index = %d meh = %d eqh = %d\n",
+	      local_info.iface, local_info.nihandle, local_info.uid,
+	      local_info.pid.pid, local_info.pid.nid, local_info.index,
+	      local_info.meh, local_info.eqh);
+
     do
     {
 	//
-	retval = PtlEQPoll(&local_info.eqh, 1, 100,
+	log_info("checking for event\n");
+	retval = PtlEQPoll(&local_info.eqh, 1, 10000,
 			   &event, &which);
 	if(retval == PTL_OK)
 	{
@@ -217,12 +224,12 @@ int ardma_server_check_events( struct ardma_server_connection *asc)
 	    
 	    if(event.match_bits == CONN_MATCH)
 	    {
-		log_info("recieved connection request\n");
+		log_debug("recieved connection request\n");
 		
 	    }
 	    else if(event.match_bits == DATA_MATCH)
 	    {
-		log_info("recieved data request\n");
+		log_debug("recieved data request\n");
 
 	    }
 	    else
@@ -247,18 +254,70 @@ int ardma_server_check_events( struct ardma_server_connection *asc)
 
 }
 
-void ardma_server_cb_request (struct ardma_server_connection * asc, 
-                              int crank, int nodeid, 
-                              uint64_t pg_size, uint64_t idx_size,
-                              int timestep, char * path)
+/* void ardma_server_cb_request (struct ardma_server_connection * asc,  */
+/*                               int crank, int nodeid,  */
+/*                               uint64_t pg_size, uint64_t idx_size, */
+/*                               int timestep, char * path) */
 
-{
+/* { */
 
-}
+/* } */
 
 							
-void ardma_server_cb_failure( struct ardma_server_connection *asc)
+/* void ardma_server_cb_failure( struct ardma_server_connection *asc) */
+/* { */
+
+
+/* } */
+
+/* Pull the index from client */
+int ardma_server_pull_index (struct ardma_server_connection *asc, int crank, 
+                             struct ardma_memory *mem, uint64_t offset)
 {
 
+}
+
+/* Pull the next block of the PG data block of a client. 
+   Offsets are saved in conn struct itself and are incremented
+   in this function.
+*/
+static int ardma_server_pull_block (struct ardma_server_connection *asc,
+                                    struct connection * conn)
+{
 
 }
+
+
+/* Pull the data block from client (unscheduled)*/
+int ardma_server_pull_data (struct ardma_server_connection *asc, int crank, 
+                            struct ardma_memory *mem, uint64_t offset,
+			    uint64_t size)
+{
+
+}
+
+/* Deregister memory. Return 0 on success, !=0 on error */
+int ardma_server_deregister_memory (struct ardma_memory *mem) 
+{
+
+}
+
+/* Allocate and register memory to rdma layer. 
+Return: ardma_memory struct pointer to the allocated buffer, NULL on error
+ */
+struct ardma_memory * ardma_server_register_memory (uint64_t size) 
+{
+
+}
+
+
+
+/* Send acknowledgement message to all clients that the staging completed, 
+   i.e. a new request can be sent.
+ */
+int ardma_server_send_acknowledgement (struct ardma_server_connection *asc, int status)
+{
+
+}
+
+

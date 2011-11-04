@@ -1,4 +1,7 @@
+#include "ardma_common.h"
 #include "portals_common.h"
+#include "../adios_internals.h"
+#include "ardma_logger.h"
 
 
 extern int portal_init_common(ninfo *local_info)
@@ -8,6 +11,8 @@ extern int portal_init_common(ninfo *local_info)
 
     int retval = 0;
     int max_interfaces;
+
+    ardma_logger_init(NULL, 3, -1);
 
 #if  defined(__LIBCATAMOUNT__)
     ptl_interface_t ptl_iface = CRAY_QK_NAL;
@@ -25,6 +30,11 @@ extern int portal_init_common(ninfo *local_info)
     ptl_pt_index_t  ptl_index;
     ptl_handle_eq_t eq_handle_data;
 
+    ptl_process_id_t pidany;
+    pidany.pid =  PTL_PID_ANY ;
+    pidany.nid =  PTL_NID_ANY ;
+
+
     retval = PtlInit(&max_interfaces);
     if(retval != PTL_OK)
     {
@@ -36,7 +46,7 @@ extern int portal_init_common(ninfo *local_info)
 	
 	
     retval = PtlNIInit(ptl_iface, PTL_PID_ANY, NULL, &nilimits, &nihandle);
-    if(retval != PTL_OK)
+    if(retval != PTL_OK && retval != PTL_IFACE_DUP)
     {
 	log_error("PORTALS PtlNIInit \t%s\n", PtlErrorStr(retval));
 	return retval;
@@ -64,14 +74,16 @@ extern int portal_init_common(ninfo *local_info)
         return retval;
     }
 
-    retval = PtlEQAlloc(nihandle, QSIZE, PTL_EQ_HANDLER_NONE, &local_info->eqh);
+    retval = PtlEQAlloc(nihandle, LISTSIZE, PTL_EQ_HANDLER_NONE, &eq_handle);
     if(retval != PTL_OK)
     {
 	log_error("PORTALS: PtlEQAlloc\t%s\n", PtlErrorStr(retval));
 	return retval;
     }
 	
-    retval = PtlMEAttachAny(nihandle, &ptl_index, pidany, CONN_MATCH, 0, PTL_RETAIN, &local_info->meh);
+    retval = PtlMEAttachAny(nihandle, &ptl_index, pidany, 
+			    CONN_MATCH, 0, 
+			    PTL_RETAIN, &me_handle);
     if(retval != PTL_OK)
     {
 	log_error("PORTALS: PtlMEAttachAny\t%s\n", PtlErrorStr(retval));
@@ -92,11 +104,14 @@ extern int portal_init_common(ninfo *local_info)
     local_info->match = CONN_MATCH;//this is static right now but we might
     //have to make this a dynamically selected number if we deal with
     //multiple data types perhaps. we might use some of the match/ignore tricks?
+    local_info->eqh = eq_handle;
+    local_info->meh = me_handle;
 	
 	
-    log_debug("iface = %d nihandle = %p uid = %d pid.pid = %d pid.nid = %d index = %d\n",
+    log_debug("iface = %d nihandle = %d uid = %d pid.pid = %d pid.nid = %d index = %d meh = %d eqh = %d\n",
 	      local_info->iface, local_info->nihandle, local_info->uid,
-	      local_info->pid.pid, local_info->pid.nid, local_info->index);
+	      local_info->pid.pid, local_info->pid.nid, local_info->index,
+	      local_info->meh, local_info->eqh);
 
     return 0;
 }

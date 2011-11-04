@@ -40,8 +40,8 @@ typedef void (*ptl_eq_handler_t)(ptl_event_t *event);
 
 //connection match
 
-static int CONN_MATCH=0x0000001;
-static int DATA_MATCH=0x0000010;
+static ptl_match_bits_t CONN_MATCH=0x1010101;
+static ptl_match_bits_t DATA_MATCH=0x0101010;
 #define MAXPATHLEN 255
 
 static int LISTSIZE=1024*1024;
@@ -115,6 +115,5 @@ extern int  portal_init_common(ninfo *local_info);
 
 
 static int QSIZE = 8192;
-ptl_process_id_t pidany = {PTL_PID_ANY,PTL_NID_ANY};
 
 #endif

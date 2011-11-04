@@ -6,6 +6,8 @@
 #include "ardma_client.h" 
 #include "ardma_common.h"
 #include "portals_common.h"
+#include "../adios_internals.h"
+
 
 #include <netdb.h>
 #include <stdio.h>
@@ -17,7 +19,7 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <poll.h>
-
+#include <mpi.h>
 
 
 
@@ -25,6 +27,7 @@
 /*
  * External functions
  */
+FILE *ardma_logf;
 
 int ardma_verbose_level =  2;
 static int connection_established = 0; // 1: when connection to server is made
@@ -138,7 +141,8 @@ static sinfo *readConnectionFile(char *filename)
     int pt;
     int match;
     int count = 0;
-	
+
+    log_info("readConnectionFile\n");	
 
     FILE *f;
     f = fopen(filename, "r");
@@ -156,10 +160,11 @@ static sinfo *readConnectionFile(char *filename)
 	    server->server.pt = pt;
 	    server->server.match = match;
 				
-	    list_ins(server_list, (void*)server);
+	    list_ins_next(server_list, NULL,
+			  (void*)server);
 				
 	}			
-	sinfo *headserver = (sinfo*)list_head(server_list);
+	sinfo *headserver = (sinfo*)list_data(list_head(server_list));
 	return headserver;
 			
     }
@@ -188,6 +193,8 @@ static sinfo *getConnectionInfo(MPI_Comm comm)
     int pt;
     int match;
     int count = 0;
+
+    log_info("getConnectionInfo\n");
 	
 
     if(!rank)
@@ -208,7 +215,9 @@ static sinfo *getConnectionInfo(MPI_Comm comm)
 		server->server.pt = pt;
 		server->server.match = match;
 				
-		list_ins(server_list, (void*)server);
+		list_ins_next(server_list, NULL,
+			      (void*)server);
+
 				
 	    }
 			
@@ -221,7 +230,7 @@ static sinfo *getConnectionInfo(MPI_Comm comm)
 	    }
 	    //lets use the first server
 			
-	    sinfo *headserver = (sinfo*)list_head(server_list);
+	    sinfo *headserver = (sinfo*)list_data(list_tail(server_list));
 	    return headserver;
 	}
 	else
@@ -270,13 +279,19 @@ struct ardma_client_connection * ardma_client_connect (MPI_Comm comm)
 		
     }
 	
+
+    log_info("Server Info: %d %d %d %d\n", server->server.id.pid,
+	     server->server.id.nid, 
+	     server->server.pt,
+	     server->server.match);
+	     
 	
     //init the connection structure 
 	
 	
     client->comm = comm; //MPI_dup comm maybe?
-    MPI_rank(comm, &client->rank);
-    MPI_size(comm, &client->size);
+    MPI_Comm_rank(comm, &client->rank);
+    MPI_Comm_size(comm, &client->size);
 	
 //    memcpy(&server->server, remote, sizeof(ptlinfo));
 	
@@ -292,13 +307,13 @@ struct ardma_client_connection * ardma_client_connect (MPI_Comm comm)
     //reply contains the match entry for the request buffer
     //on the server side
 
+    memset(&client->conn.md, 0, sizeof(client->conn.md));
+
     client->conn.md.start = &conn_msg;
-    client->conn.md.length = sizeof(conn_msg);
+    client->conn.md.length = sizeof(req_conn);
     client->conn.md.threshold = PTL_MD_THRESH_INF;
-    client->conn.md.max_size = sizeof(conn_msg);
     client->conn.md.options = PTL_MD_OP_PUT | PTL_MD_OP_GET | 
-	PTL_MD_MANAGE_REMOTE | PTL_MD_TRUNCATE | 
-	PTL_MD_MAX_SIZE;
+	PTL_MD_MANAGE_REMOTE;
     client->conn.md.user_ptr = (void*)client;
     client->conn.md.eq_handle = local_info.eqh;
 
@@ -313,14 +328,17 @@ struct ardma_client_connection * ardma_client_connect (MPI_Comm comm)
 	return NULL;
     }
 
-    log_info("sending connection request to server\n");
+    log_info("sending connection request to server %d.%d:%d:%d handle = %d\n",
+	     server->server.id.pid, server->server.id.nid,
+	     server->server.pt, server->server.match, client->conn.h);
 	
     retval = PtlPut(client->conn.h,
 		    PTL_NO_ACK_REQ,
 		    server->server.id, //remote id
 		    server->server.pt, //remote index
-		    server->server.ac, //remote ac but not used
-		    server->server.match, //remote match id that we read from file
+		    0, //remote ac but not used
+		    CONN_MATCH,
+//		    server->server.match, //remote match id that we read from file
 		    0, 0); //don't need offset or header dat afor now
     if(retval != PTL_OK)
     {
@@ -347,12 +365,12 @@ struct ardma_client_connection * ardma_client_connect (MPI_Comm comm)
 	}
 
 	log_debug("event: type=%d\ninitiator:(%d,%d)\n\
-               uid = %d\t jid = %d\n			  \
-               pt_index = %d\t match = %d\n		  \
-               rlength = %d\t mlength = %d\n	  \
-               offset = %d\t md_handle = %d\n	  \
-               md = %d\t hdr_data = %ull\n		  \
-               seq = %d\t sequence = %d\n", 
+               uid = %d\n jid = %d\n\
+               pt_index = %d\n match = %d\n\
+               rlength = %d\n mlength = %d\n\
+               offset = %d\n md_handle = %d\n\
+               md = %d\n hdr_data = %ull\n\
+               seq = %d\n sequence = %d\n", 
 		  event.type, event.initiator.nid, event.initiator.pid,
 		  event.uid, event.jid, event.pt_index, event.match_bits,
 		  event.rlength, event.mlength, event.offset, event.md_handle,
@@ -361,7 +379,7 @@ struct ardma_client_connection * ardma_client_connect (MPI_Comm comm)
 	if(is_end_event(event))
 	{
 	    log_debug("event is end of sequence of events\n");
-	    if(event.type = PTL_EVENT_PUT_END)
+	    if(event.type == PTL_EVENT_PUT_END)
 	    {
 		log_debug("server has sent a response");
 		if(event.md.start != client->conn.md.start)
@@ -524,3 +542,11 @@ static int destroymd()
 }
 
 
+
+
+/* check if previous staging has completed */
+enum ARDMA_STAGING_STATUS ardma_client_staging_status (struct ardma_client_connection *acc)
+{
+
+
+}
