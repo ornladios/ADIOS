@@ -63,6 +63,7 @@ libadios_a_SOURCES = adios.c \
                      common_read.c \
                      read_bp.c \
                      read_bp_staged.c \
+                     read_bp_staged1.c \
                      globals.c
 
 libadios_nompi_a_SOURCES = adios.c \
@@ -84,6 +85,7 @@ libadios_nompi_a_SOURCES = adios.c \
                      common_read.c \
                      read_bp.c \
                      read_bp_staged.c \
+                     read_bp_staged1.c \
                      globals.c \
                      mpidummy.c
 
@@ -111,6 +113,7 @@ libadiosf_a_SOURCES = adiosf.c \
                      common_read.c \
                      read_bp.c \
                      read_bp_staged.c \
+                     read_bp_staged1.c \
                      globals.c
 endif # BUILD_FORTRAN
 
@@ -244,6 +247,7 @@ libadiosread_a_SOURCES = adios_bp_v1.c \
                       common_read.c \
                       read_bp.c \
                       read_bp_staged.c \
+                      read_bp_staged1.c \
                       globals.c
 if HAVE_DART
 libadiosread_a_SOURCES += read_dart.c
@@ -277,6 +281,7 @@ libadiosreadf_a_SOURCES = adios_bp_v1.c \
                       common_read.c \
                       read_bp.c \
                       read_bp_staged.c \
+                      read_bp_staged1.c \
                       globals.c
                       
 if HAVE_DART

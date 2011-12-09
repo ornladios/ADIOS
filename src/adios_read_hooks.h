@@ -45,6 +45,7 @@ void adios_read_##a##_reset_dimension_order (ADIOS_FILE *fp, int is_fortran); \
 // forward declare the functions (or dummies for internals use)
 FORWARD_DECLARE(bp)
 FORWARD_DECLARE(bp_staged)
+FORWARD_DECLARE(bp_staged1)
 FORWARD_DECLARE(hdf5)
 #if HAVE_DART
 FORWARD_DECLARE(dart)

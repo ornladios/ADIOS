@@ -97,6 +97,7 @@ enum ADIOS_READ_METHOD {
         ,ADIOS_READ_METHOD_DIMES      = 4    /* Read from memory written by DIMES method                    */
         ,ADIOS_READ_METHOD_NSSI       = 5    /* Read from memory written by NSSI method                     */
         ,ADIOS_READ_METHOD_DATATAP    = 6    /* Read from memory written by DATATAP method                  */
+        ,ADIOS_READ_METHOD_BP_STAGED1 = 7    /* Read from ADIOS BP file (written by POSIX, MPI_AMR etc methods) */
 };
 
 #ifndef __INCLUDED_FROM_FORTRAN_API__
