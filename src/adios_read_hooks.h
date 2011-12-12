@@ -40,7 +40,7 @@ void adios_read_##a##_reset_dimension_order (ADIOS_FILE *fp, int is_fortran); \
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-#define ADIOS_READ_METHOD_COUNT 7
+#define ADIOS_READ_METHOD_COUNT 8
 
 // forward declare the functions (or dummies for internals use)
 FORWARD_DECLARE(bp)
