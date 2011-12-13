@@ -18,16 +18,30 @@
 #include "dmalloc.h"
 #endif
 
+enum pattern 
+{
+    PATTERN_1 = 1,
+    PATTERN_2,
+    PATTERN_3
+};
+
 int main (int argc, char ** argv) 
 {
-    char        filename [256];
-    int         rank, size, i, j, NX;
+    char filename [256];
+    int rank, size, i, j, NX, pattern;
     MPI_Comm    comm = MPI_COMM_WORLD;
     void * data = NULL, * data1 = NULL, * data2 = NULL;
     uint64_t start[2], count[2], bytes_read = 0, slice_size;
 
     MPI_Init (&argc, &argv);
 
+    if (argc != 2)
+    {
+        printf ("Invalid command line arguments.\n");
+        exit (1);
+    }
+
+    pattern = atoi (argv[1]);
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
@@ -51,21 +65,61 @@ int main (int argc, char ** argv)
 
     ADIOS_VARINFO * v = adios_inq_var (g, "temperature");
 
-    start[0] = 0;
-    count[0] = v->dims[0];
-
-    slice_size = v->dims[1]/size;
-
-    start[1] = slice_size * rank;
-    if (rank == size - 1)
+    switch (pattern)
     {
-        slice_size = slice_size + v->dims[1] % size;
+        case PATTERN_1:
+            slice_size = v->dims[0]/size;
+
+            start[0] = rank * slice_size;
+            count[0] = slice_size;
+            if (rank == size - 1)
+            {
+                slice_size = slice_size + v->dims[0] % size;
+            }
+
+            start[1] = 0;
+            count[1] = v->dims[1];
+
+            data = malloc (slice_size * v->dims[1] * sizeof (double));
+
+            break;
+        case PATTERN_2:
+            start[0] = 0;
+            count[0] = v->dims[0];
+
+            slice_size = v->dims[1]/size;
+
+            start[1] = slice_size * rank;
+            if (rank == size - 1)
+            {
+                slice_size = slice_size + v->dims[1] % size;
+            }
+            count[1] = slice_size;
+
+            data = malloc (slice_size * v->dims[0] * sizeof (double));
+
+            break;
+        case PATTERN_3:
+            start[0] = 1;
+            count[0] = v->dims[0] - 2;
+
+            slice_size = (v->dims[1] - 4) / size;
+
+            start[1] = 2 + slice_size * rank;
+            if (rank == size - 1)
+            {
+                slice_size = slice_size + (v->dims[1] - 4) % size;
+            }
+            count[1] = slice_size;
+
+            data = malloc (slice_size * (v->dims[0] - 2) * sizeof (double));
+
+            break;
+        default:
+            printf ("wrong pattern value\n");
     }
-    count[1] = slice_size;
 
-    data = malloc (slice_size * v->dims[0] * sizeof (double));
     assert (data);
-
     bytes_read = adios_read_var (g, "temperature", start, count, data);
 
     adios_gclose (g);
@@ -74,9 +128,9 @@ int main (int argc, char ** argv)
 
     if (rank == 0)
     {
-        for (i = 0; i < v->dims[0]; i++)
+        for (i = 0; i < count[0]; i++)
         {
-            for (j = 0; j < slice_size; j++)
+            for (j = 0; j < count[1]; j++)
             {
                 printf (" %7.5g", * ((double *)data + i * slice_size + j));
             }
