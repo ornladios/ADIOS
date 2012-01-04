@@ -100,19 +100,25 @@ int main (int argc, char ** argv)
 
             break;
         case PATTERN_3:
-            start[0] = 1;
-            count[0] = v->dims[0] - 2;
+            start[0] = 0;
 
-            slice_size = (v->dims[1] - 4) / size;
+//            count[0] = v->dims[0] - 2;
+            count[0] = 4;
 
+//            slice_size = (v->dims[1] - 4) / size;
+            slice_size = 3;
+
+//            start[1] = 2 + slice_size * rank;
             start[1] = 2 + slice_size * rank;
+/*
             if (rank == size - 1)
             {
                 slice_size = slice_size + (v->dims[1] - 4) % size;
             }
+*/
             count[1] = slice_size;
 
-            data = malloc (slice_size * (v->dims[0] - 2) * sizeof (double));
+            data = malloc (slice_size * count[0] * sizeof (double));
 
             break;
         default:
@@ -132,7 +138,7 @@ int main (int argc, char ** argv)
         {
             for (j = 0; j < count[1]; j++)
             {
-                printf (" %7.5g", * ((double *)data + i * slice_size + j));
+                printf (" %7.5g", * ((double *)data + i * count[1] + j));
             }
 
             printf ("\n");

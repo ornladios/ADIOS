@@ -63,7 +63,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     fi
         
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/sith.$TARGET \
+    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/sith.$TARGET \
         --enable-dependency-tracking \
         --enable-research-transports  \
         --with-hdf5=${SEQ_HDF5_DIR} \
@@ -271,7 +271,7 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
-        CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/adios/xt5.$TARGET \
+        CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
             --enable-dependency-tracking \
             --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.pgi \
             --without-portals \

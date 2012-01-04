@@ -401,10 +401,14 @@ static void sort_read_requests (struct proc_struct * p)
     p->split_read_request_list1 = n;
 }
 
-/* Sort list by r->rank */
-static void sort_list_by_rank (struct proc_struct * p)
+/*************************************************
+ This routine sorts split_read_request_list1 by
+ the r->rank of each entry. This is to make the
+ subsequent data shuffling easy.
+**************************************************/
+static void sort_list_by_rank (struct proc_struct * p, candidate_reader * list)
 {
-    candidate_reader * r = p->split_read_request_list1;
+    candidate_reader * r = list;
     candidate_reader * next = 0, * h = 0, * l = 0, * m = 0;
 
     while (r)
@@ -493,8 +497,8 @@ static int is_same_read_request (candidate_reader * r, int varid, int ndims
     return 0;
 }
 
-/* re-distribute I/O requests among only aggregators */
-static void build_data_buffer (struct proc_struct * p)
+/* This routine shuffles data among aggregators */
+static void shuffle_data (struct proc_struct * p)
 {
     candidate_reader * r, * parent;
     void * b = 0, * recv_buffer2 = 0;
@@ -521,14 +525,13 @@ static void build_data_buffer (struct proc_struct * p)
     }
     
     /* Sort the split_read_request_list1 by the r->rank */
-    sort_list_by_rank (p);
-
-    r = p->split_read_request_list1;
+    sort_list_by_rank (p, p->split_read_request_list1);
 
     g_prev = -1;
     offset_prev = 0;
     offset = 0;
 
+    r = p->split_read_request_list1;
     while (r)
     {
         g = rank_to_group_mapping (p, r->rank);
@@ -558,14 +561,14 @@ static void build_data_buffer (struct proc_struct * p)
             _buffer_write32 (&b, &buffer_size, &offset, &r->ra->size, 4);
             _buffer_write32 (&b, &buffer_size, &offset, r->ra->data, r->ra->size);
 
-            /* r-ra->data is not needed anymore */
+            /* r-ra->data (who is a child) is not needed anymore */
             free (r->ra->data);
             r->ra->data = 0;
         }
 
         r = r->next;
     }
-
+#undef INVALID_VALUE
 #if 0
 if (p->rank = 2)
     for (i = 0; i < size; i++)
@@ -675,8 +678,8 @@ if (p->rank = 2)
        to parent. Check whether r->ra->data is null or not. If it 
        is null, it is a request from other aggregators.
     */
-    r = p->split_read_request_list1;
 
+    r = p->split_read_request_list1;
     while (r)
     {
         if (r->ra->data)
@@ -1526,8 +1529,10 @@ void adios_read_bp_staged1_read_buffer (ADIOS_GROUP * gp
     memset (&ri, 0, sizeof (read_info));
 
     getReadInfo (gp, varid, r_start, r_count, &ri);
-    start_notime = ri.start_notime;
-    count_notime = ri.count_notime;
+//    start_notime = ri.start_notime;
+//    count_notime = ri.count_notime;
+    start_notime = s_start;
+    count_notime = s_count;
 
     /* items_read = how many data elements are we going to read in total (per timestep) */
     items_read = 1;
@@ -1863,8 +1868,11 @@ void adios_read_bp_staged1_read_buffer (ADIOS_GROUP * gp
                     end_in_payload += s_temp * (offset_in_dset[i] + size_in_dset[i] - 1) * size_unit;
                     s_temp *= ldims[i];
                 }
-    
+
                 slice_size = end_in_payload - start_in_payload + 1 * size_unit;
+/*
+                slice_size = datasize * size_unit; 
+*/
                 slice_offset =  v->characteristics[start_idx + idx].payload_offset
                                   + start_in_payload;
  
@@ -1881,21 +1889,51 @@ void adios_read_bp_staged1_read_buffer (ADIOS_GROUP * gp
 
                 if (idx_check2)
                 {
+/*
                     s->ra->data = malloc (slice_size);
+*/
+/*
+int rank;
+MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+printf ("[%d: %d] s->ra->size = %llu, datasize = %llu, slice_size = %llu\n", rank, r->rank, s->ra->size, datasize, slice_size);
+*/
+                    s->ra->data = malloc (s->ra->size);
+
                     assert (s->ra->data);
 
                     data = s->ra->data;
-
+/*
                     memcpy (data, fh->b->buff + slice_offset - buffer_offset, slice_size);
+
 
                     if (fh->mfooter.change_endianness == adios_flag_yes)
                     {   
                         change_endianness ((char *) data, slice_size, v->type);
                     }
+*/
 
 /*
+printf ("copy_data: %7.5g %7.5g %7.5g %7.5g %7.5g %7.5g %7.5g %7.5g %7.5g %7.5g\n"
+       , * (double *) (fh->b->buff + slice_offset - buffer_offset)
+       , * ((double *) (fh->b->buff + slice_offset - buffer_offset) + 1)
+       , * ((double *) (fh->b->buff + slice_offset - buffer_offset) + 2)
+       , * ((double *) (fh->b->buff + slice_offset - buffer_offset) + 3)
+       , * ((double *) (fh->b->buff + slice_offset - buffer_offset) + 4)
+       , * ((double *) (fh->b->buff + slice_offset - buffer_offset) + 5)
+       , * ((double *) (fh->b->buff + slice_offset - buffer_offset) + 6)
+       , * ((double *) (fh->b->buff + slice_offset - buffer_offset) + 7)
+       , * ((double *) (fh->b->buff + slice_offset - buffer_offset) + 8)
+       , * ((double *) (fh->b->buff + slice_offset - buffer_offset) + 9)
+       );
+*/
+
+/*
+printf ("var_stride = %lu, dset_stride = %lu, var_offset = %lu, dset_offset = %lu, datasize = %lu, size_unit = %d\n", var_stride, dset_stride, var_offset, dset_offset, datasize, size_unit); 
+*/
+if (r->rank == 0)
+
                     copy_data (data
-                              ,fh->b->buff + fh->b->offset + slice_offset - buffer_offset
+                              ,fh->b->buff + slice_offset - buffer_offset
                               ,0
                               ,break_dim
                               ,size_in_dset
@@ -1908,6 +1946,18 @@ void adios_read_bp_staged1_read_buffer (ADIOS_GROUP * gp
                               ,datasize
                               ,size_unit 
                               );
+
+//printf ("after copy_data = %7.5f %7.5f %7.5f %7.5f\n", * (double *) data, * ((double *) data + 1), * ((double *) data + 2), * ((double *) data + 3));
+/*
+MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+if (rank != 0)
+while (1);
+*/
+/*
+                    if (fh->mfooter.change_endianness == adios_flag_yes)
+                    {   
+                        change_endianness ((char *) data, slice_size, v->type);
+                    }
 */
 
                 }
@@ -2023,8 +2073,7 @@ gettimeofday (&t0, NULL);
 
 }
 
-/* 
-The read request link list needs to be sorted beforehand
+/* The read request link list needs to be sorted beforehand
 */
 static void do_read (struct proc_struct * p)
 {
@@ -2142,6 +2191,7 @@ static void free_candidate_reader_list (candidate_reader * h)
 static void free_proc_struct (struct proc_struct * p)
 {
     candidate_reader * h = p->local_read_request_list, * n;
+
     while (h)
     {
         n = h->next;
@@ -2854,7 +2904,7 @@ ADIOS_FILE * adios_read_bp_staged1_fopen (const char * fname, MPI_Comm comm)
             }
         }
 
-printf ("rank: %d, f1 = %d, f2 = %d\n", p->rank, p->f1, p->f2);
+//printf ("rank: %d, f1 = %d, f2 = %d\n", p->rank, p->f1, p->f2);
 
         /* fill out ADIOS_FILE struct */
         fp->vars_count = fh->mfooter.vars_count;
@@ -3331,7 +3381,6 @@ int adios_read_bp_staged1_gclose (ADIOS_GROUP * gp)
 #if DEBUG
 //
 //if (p->rank == 0)
-//{
 //        list_print_readers (p, p->split_read_request_list1);
 //        printf ("=======================\n");
 //        list_print_readers (p, p->split_read_request_list2);
@@ -3344,7 +3393,7 @@ int adios_read_bp_staged1_gclose (ADIOS_GROUP * gp)
 
         do_read (p);
 
-        build_data_buffer (p);
+        shuffle_data (p);
 #if DEBUG
     gettimeofday (&t1, NULL);
 //    printf ("[%3d] do_read time = %f\n", p->rank, t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000);

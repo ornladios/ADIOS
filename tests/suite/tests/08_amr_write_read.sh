@@ -21,34 +21,37 @@ fi
 # copy codes and inputs to .
 cp $SRCDIR/programs/adios_amr_write .
 cp $SRCDIR/programs/adios_amr_write.xml .
-
-echo "Run C adios_amr_write"
-ls -l ./adios_amr_write
-echo $MPIRUN $NP_MPIRUN $PROCS ./adios_amr_write
-$MPIRUN $NP_MPIRUN $PROCS ./adios_amr_write
-EX=$?
-ls -l ./adios_amr_write.bp
-if [ ! -f adios_amr_write.bp ]; then
-    echo "ERROR: C version of adios_amr_write failed. No BP file is created. Exit code=$EX"
-    exit 1
-fi
-
-# copy codes and inputs to .
 cp $SRCDIR/programs/adios_staged_read .
 
-echo "Run C adios_staged_read"
-ls -l ./adios_staged_read
-echo $MPIRUN $NP_MPIRUN $READPROCS ./adios_staged_read
-export num_aggregators=2
-export chunk_size=64
-for ((n=1; n <= 3 ; n++))
+for ((m=1; m <= 2 ; m++))
 do
- $MPIRUN $NP_MPIRUN $READPROCS ./adios_staged_read $n| grep -v aggregator | grep [0-9] > 08_amr_write_read_$n.txt
- EX=$?
- echo "Check output with reference"
- diff -q 08_amr_write_read_$n.txt $SRCDIR/reference/amr_write_read_$n.txt
- if [ $? != 0 ]; then
-    echo "ERROR: C version of adios_staged_read produced data different from the reference."
-    exit 1
- fi
-done  
+    echo "Run C adios_amr_write"
+    ls -l ./adios_amr_write
+    echo $MPIRUN $NP_MPIRUN $PROCS ./adios_amr_write $m
+    rm -f *.bp
+    $MPIRUN $NP_MPIRUN $PROCS ./adios_amr_write $m
+    EX=$?
+    ls -l ./adios_amr_write.bp
+    if [ ! -f adios_amr_write.bp ]; then
+        echo "ERROR: C version of adios_amr_write failed. No BP file is created. Exit code=$EX"
+        exit 1
+    fi
+
+    echo "Run C adios_staged_read"
+    ls -l ./adios_staged_read
+    echo $MPIRUN $NP_MPIRUN $READPROCS ./adios_staged_read $n
+    export num_aggregators=2
+    export chunk_size=64
+    for ((n=1; n <= 3 ; n++))
+    do
+        $MPIRUN $NP_MPIRUN $READPROCS ./adios_staged_read $n| grep -v aggregator | grep [0-9] > 08_amr_write_read_$n.txt
+        EX=$?
+       echo "Check output with reference"
+       diff -q 08_amr_write_read_$n.txt $SRCDIR/reference/amr_write_read_$n.txt
+       if [ $? != 0 ]; then
+           echo "ERROR: C version of adios_staged_read produced data different from the reference."
+           exit 1
+       fi
+    done
+
+done 

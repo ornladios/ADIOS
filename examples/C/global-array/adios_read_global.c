@@ -23,19 +23,34 @@
 #include "mpi.h"
 #include "adios_read.h"
 
+#ifdef DMALLOC
+#include "dmalloc.h"
+#endif
+
 int main (int argc, char ** argv) 
 {
     char        filename [256];
-    int         rank, size, i, j;
+    int         rank, size, i, j, NX = 16;
     MPI_Comm    comm = MPI_COMM_WORLD;
-    void * data = NULL;
+    void * data = NULL, * data1 = NULL, * data2 = NULL;
     uint64_t start[2], count[2], bytes_read = 0;
+    struct timeval t0, t1;
 
     MPI_Init (&argc, &argv);
+
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    ADIOS_FILE * f = adios_fopen ("adios_global.bp", comm);
+    adios_set_read_method (ADIOS_READ_METHOD_BP_STAGED1);
+
+    MPI_Barrier (MPI_COMM_WORLD);
+    gettimeofday (&t0, NULL);
+
+    MPI_Comm_rank (comm, &rank);
+
+//    ADIOS_FILE * f = adios_fopen ("adios_global.bp", comm);
+    ADIOS_FILE * f = adios_fopen ("adios_amr_write.bp", comm);
+
     if (f == NULL)
     {
         printf ("%s\n", adios_errmsg());
@@ -53,14 +68,15 @@ int main (int argc, char ** argv)
 
     /* Using less readers to read the global array back, i.e., non-uniform */
     uint64_t slice_size = v->dims[0]/size;
-    start[0] = slice_size * rank;
-    if (rank == size-1) /* last rank may read more lines */
-        slice_size = slice_size + v->dims[0]%size;
-    count[0] = slice_size;
-
     start[1] = 0;
+//printf ("slice_size = %llu\n", slice_size);
+    if (rank == size-1)
+        slice_size = slice_size + v->dims[0]%size;
+
     count[1] = v->dims[1];
-       
+
+    start[0] = rank * slice_size;
+    count[0] = slice_size;
 
     data = malloc (slice_size * v->dims[1] * sizeof (double));
     if (data == NULL)
@@ -69,22 +85,36 @@ int main (int argc, char ** argv)
         return -1;
     }
 
+    //FIXME: temperature and pressure has the same data
+//    bytes_read = adios_read_var (g, "NX", start, count, &NX);
     bytes_read = adios_read_var (g, "temperature", start, count, data);
 
+    adios_gclose (g);
+
+    adios_fclose (f);
+//printf ("NX = %d\n", NX);
+
+if (rank == 0)
+{
     for (i = 0; i < slice_size; i++) {
-        printf ("rank %d: [%lld,%d:%lld]", rank, start[0]+i, 0, slice_size);
+//        printf ("rank %3d: temperature [%lld,%d:%lld]", rank, start[0]+i, 0, slice_size);
         for (j = 0; j < v->dims[1]; j++)
-            printf (" %6.6g", * ((double *)data + i * v->dims[1] + j));
+            printf (" %7.5g", * ((double *)data + i * v->dims[1] + j));
         printf ("\n");
     }
+}
+
+    MPI_Barrier (MPI_COMM_WORLD);
+    gettimeofday (&t1, NULL);
 
     free (data);
 
-    adios_gclose (g);
-    adios_fclose (f);
+    adios_free_varinfo (v);
 
-    MPI_Barrier (comm);
-
+    if (rank == 0)
+    {
+        printf ("IO time = %f \n", t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000 );
+    }
     MPI_Finalize ();
     return 0;
 }
