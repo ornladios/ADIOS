@@ -39,11 +39,11 @@ do
 
     echo "Run C adios_staged_read"
     ls -l ./adios_staged_read
-    echo $MPIRUN $NP_MPIRUN $READPROCS ./adios_staged_read $n
     export num_aggregators=2
     export chunk_size=64
-    for ((n=1; n <= 3 ; n++))
+    for ((n=1; n <= 4 ; n++))
     do
+        echo $MPIRUN $NP_MPIRUN $READPROCS ./adios_staged_read $n
         $MPIRUN $NP_MPIRUN $READPROCS ./adios_staged_read $n| grep -v aggregator | grep [0-9] > 08_amr_write_read_$n.txt
         EX=$?
        echo "Check output with reference"

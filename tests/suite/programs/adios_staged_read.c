@@ -22,7 +22,8 @@ enum pattern
 {
     PATTERN_1 = 1,
     PATTERN_2,
-    PATTERN_3
+    PATTERN_3,
+    PATTERN_4
 };
 
 int main (int argc, char ** argv) 
@@ -101,21 +102,23 @@ int main (int argc, char ** argv)
             break;
         case PATTERN_3:
             start[0] = 0;
-
-//            count[0] = v->dims[0] - 2;
             count[0] = 4;
 
-//            slice_size = (v->dims[1] - 4) / size;
             slice_size = 3;
 
-//            start[1] = 2 + slice_size * rank;
             start[1] = 2 + slice_size * rank;
-/*
-            if (rank == size - 1)
-            {
-                slice_size = slice_size + (v->dims[1] - 4) % size;
-            }
-*/
+            count[1] = slice_size;
+
+            data = malloc (slice_size * count[0] * sizeof (double));
+
+            break;
+        case PATTERN_4:
+            start[0] = 0;
+            count[0] = 32;
+
+            slice_size = 3;
+
+            start[1] = 2 + slice_size * rank;
             count[1] = slice_size;
 
             data = malloc (slice_size * count[0] * sizeof (double));
