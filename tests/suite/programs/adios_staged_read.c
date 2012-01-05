@@ -23,7 +23,8 @@ enum pattern
     PATTERN_1 = 1,
     PATTERN_2,
     PATTERN_3,
-    PATTERN_4
+    PATTERN_4,
+    PATTERN_5
 };
 
 int main (int argc, char ** argv) 
@@ -124,6 +125,18 @@ int main (int argc, char ** argv)
             data = malloc (slice_size * count[0] * sizeof (double));
 
             break;
+        case PATTERN_5:
+            start[0] = 0;
+            count[0] = 32;
+
+            slice_size = 3;
+
+            start[1] = 2 + slice_size * rank;
+            count[1] = slice_size;
+
+            data = malloc (slice_size * count[0] * sizeof (double));
+
+            break;
         default:
             printf ("wrong pattern value\n");
     }
@@ -135,16 +148,34 @@ int main (int argc, char ** argv)
 
     adios_fclose (f);
 
-    if (rank == 0)
+    if (pattern != PATTERN_5)
     {
-        for (i = 0; i < count[0]; i++)
+        if (rank == 0)
         {
-            for (j = 0; j < count[1]; j++)
+            for (i = 0; i < count[0]; i++)
             {
-                printf (" %7.5g", * ((double *)data + i * count[1] + j));
-            }
+                for (j = 0; j < count[1]; j++)
+                {
+                    printf (" %7.5g", * ((double *)data + i * count[1] + j));
+                }
 
-            printf ("\n");
+                printf ("\n");
+            }
+        }
+    }
+    else
+    {
+        if (rank == 1)
+        {
+            for (i = 0; i < count[0]; i++)
+            {
+                for (j = 0; j < count[1]; j++)
+                {
+                    printf (" %7.5g", * ((double *)data + i * count[1] + j));
+                }
+
+                printf ("\n");
+            }
         }
     }
 

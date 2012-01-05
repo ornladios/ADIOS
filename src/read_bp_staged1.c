@@ -716,6 +716,7 @@ static void send_read_data (struct proc_struct * p)
         if (g == p->group && p->rank != r->rank && r->ra->data)
         {
             assert (r->ra->data);
+
             MPI_Send (r->ra->data, r->ra->size, MPI_BYTE
                      ,r->rank - p->aggregator_rank, TAG_DATA, p->new_comm
                      );  
@@ -1930,8 +1931,6 @@ printf ("copy_data: %7.5g %7.5g %7.5g %7.5g %7.5g %7.5g %7.5g %7.5g %7.5g %7.5g\
 /*
 printf ("var_stride = %lu, dset_stride = %lu, var_offset = %lu, dset_offset = %lu, datasize = %lu, size_unit = %d\n", var_stride, dset_stride, var_offset, dset_offset, datasize, size_unit); 
 */
-if (r->rank == 0)
-
                     copy_data (data
                               ,fh->b->buff + slice_offset - buffer_offset
                               ,0
@@ -3390,12 +3389,11 @@ int adios_read_bp_staged1_gclose (ADIOS_GROUP * gp)
         struct timeval t0, t1;
         gettimeofday (&t0, NULL);
 #endif
-
         do_read (p);
 
         shuffle_data (p);
 #if DEBUG
-    gettimeofday (&t1, NULL);
+        gettimeofday (&t1, NULL);
 //    printf ("[%3d] do_read time = %f\n", p->rank, t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000);
 #endif
         send_read_data (p);
