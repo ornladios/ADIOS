@@ -33,6 +33,7 @@
 #define READ_CLOSE 0
 #define MAX_DIMS 32
 #define DEBUG 1
+#define INVALID_VALUE -1
 
 typedef struct read_info
 {
@@ -137,8 +138,8 @@ struct proc_struct
     int f1;
     int f2;
     MPI_Comm group_comm;
-    MPI_Comm new_comm;
-    MPI_Comm new_comm2;
+    MPI_Comm new_comm;  /* MPI communicator for a group */
+    MPI_Comm new_comm2; /* MPI communicator for all the aggregators */
     int aggregator_rank;
     int aggregator_new_rank;
     candidate_reader * local_read_request_list;
@@ -516,7 +517,6 @@ static void shuffle_data (struct proc_struct * p)
     assert (offsets);
     assert (sizes);
 
-#define INVALID_VALUE -1
     /* Init offsets and sizes */
     for (i = 0; i < size; i++)
     {
@@ -568,7 +568,6 @@ static void shuffle_data (struct proc_struct * p)
 
         r = r->next;
     }
-#undef INVALID_VALUE
 #if 0
 if (p->rank = 2)
     for (i = 0; i < size; i++)
@@ -703,9 +702,11 @@ if (p->rank = 2)
     }
 }
 
+/* Send read data from aggregator to member processors */
 static void send_read_data (struct proc_struct * p)
 {
     int g;
+    void * b = 0;
 
     candidate_reader * r = p->local_read_request_list;
 
@@ -713,7 +714,10 @@ static void send_read_data (struct proc_struct * p)
     {
         g = rank_to_group_mapping (p, r->rank);
 
-        if (g == p->group && p->rank != r->rank && r->ra->data)
+        /*  g == p->group       -> requests are from processors that belong to the group
+            p->rank != r->rank  -> requests are NOT from aggregator itself
+        */
+        if (g == p->group && p->rank != r->rank)
         {
             assert (r->ra->data);
 
@@ -726,6 +730,68 @@ static void send_read_data (struct proc_struct * p)
     }
 }
 
+/* Send read data from aggregator to member processors */
+static void send_read_data1 (struct proc_struct * p)
+{
+    int g, i;
+    void * b = 0, * recv_buff = 0;
+    uint32_t offset = 0, buffer_size = 0;
+    int size, * sizes = 0, * offsets = 0;
+    candidate_reader * r = p->local_read_request_list;
+
+    MPI_Comm_size (p->new_comm, &size);
+
+    sizes = (int *) malloc (size * 4);
+    offsets = (int *) malloc (size * 4);
+    assert (sizes);
+    assert (offsets);
+
+    for (i = 0; i < size; i++)
+    {
+        sizes[i] = 0;
+        offsets[i] = INVALID_VALUE;
+    }
+
+    while (r)
+    {
+        g = rank_to_group_mapping (p, r->rank);
+
+        /*  g == p->group       -> requests are from processors that belong to the group
+            p->rank != r->rank  -> requests are NOT from aggregator itself
+        */
+
+        if (g == p->group && p->rank != r->rank)
+        {
+            assert (r->ra->data);
+
+            if (offsets[r->rank - p->aggregator_rank] == INVALID_VALUE)
+            {
+                offsets[r->rank - p->aggregator_rank] = offset;
+            }
+
+            sizes[r->rank - p->aggregator_rank] += r->ra->size;
+
+            _buffer_write32 (&b, &buffer_size, &offset, r->ra->data, r->ra->size);
+
+            /* Free it immediately to avoid double buffering */
+            free (r->ra->data);
+            r->ra->data = 0;
+        }
+
+        r = r->next;
+    }
+
+    MPI_Scatterv (b, sizes, offsets, MPI_BYTE
+                 ,recv_buff, 0, MPI_BYTE
+                 ,0, p->new_comm
+                 );
+
+    free (b);
+    free (sizes);
+    free (offsets);
+}
+
+/* Receive read data from aggregator */
 static void get_read_data (struct proc_struct * p)
 {
     MPI_Status status;
@@ -743,6 +809,52 @@ static void get_read_data (struct proc_struct * p)
             r = r->next;
         }
     }
+}
+
+/* Receive read data from aggregator */
+static void get_read_data1 (struct proc_struct * p)
+{
+    void * b = 0, * recv_buff = 0;
+    int * sizes = 0, * offsets = 0;
+    int size = 0;
+    MPI_Status status;
+    candidate_reader * r = p->local_read_request_list;
+
+    if (p->rank == p->aggregator_rank)
+    {
+        return;
+    }
+
+    r = p->local_read_request_list;
+    while (r)
+    {
+        size += r->ra->size;
+        r = r->next;
+    }
+
+    recv_buff = malloc (size);
+    if (recv_buff == 0)
+    {
+        printf ("Warning: the size of data is 0\n");
+        return;
+    }
+
+    MPI_Scatterv (b, sizes, offsets, MPI_BYTE
+                 ,recv_buff, size, MPI_BYTE
+                 ,0, p->new_comm
+                 );
+
+    b = recv_buff;
+    r = p->local_read_request_list;
+    while (r)
+    {
+        memcpy (r->ra->data, b, r->ra->size);
+        b += r->ra->size;
+
+        r = r->next;
+    }
+
+    free (recv_buff);
 }
 
 static void parse_buffer (struct proc_struct * p, void * b, uint32_t len)
@@ -824,11 +936,20 @@ static void parse_buffer (struct proc_struct * p, void * b, uint32_t len)
     }
 }
 
-static void split_read_requests (ADIOS_GROUP * gp
-                                ,candidate_reader * r
-                                ,candidate_reader ** h1
-                                ,candidate_reader ** h2
-                                )
+/* This routine split a read requests into smaller
+   requests which fits PG boundary. For example, a BP
+   file contains two PG's with one PG contains an array [0,99]
+   and the other contains [100,199]. A read request of [0,199] will
+   be split into two requests, i.e., [0,99] and [100,199].
+   h1 points to those sub-requests that access subfiles [f1,f2].
+   h2 points to those that don't access [f1,f2], which means data
+   will be read by other aggregators and sent over.
+*/
+static void split_read_request (ADIOS_GROUP * gp
+                               ,candidate_reader * r
+                               ,candidate_reader ** h1
+                               ,candidate_reader ** h2
+                               )
 {
     struct BP_GROUP * gh;
     struct BP_FILE * fh;
@@ -1217,6 +1338,9 @@ static void split_read_requests (ADIOS_GROUP * gp
     }
 }
 
+/* Split orginal read requests into split_read_request_list1
+   and split_read_request_list2.
+*/
 static void process_read_requests (struct proc_struct * p)
 {
     candidate_reader * h = p->local_read_request_list;
@@ -1226,7 +1350,7 @@ static void process_read_requests (struct proc_struct * p)
     {
         n1 = n2 = 0;
 
-        split_read_requests (p->gp, h, &n1, &n2);
+        split_read_request (p->gp, h, &n1, &n2);
 
         if (n1)
         {
@@ -3278,6 +3402,13 @@ int adios_read_bp_staged1_gclose (ADIOS_GROUP * gp)
 
     buf = p->b;
 
+    /*  1. All rank packs their read requests.
+        2. Aggregator gets requests from all the processors in the group
+        3. Subsequently, all aggregators share with others the requests it
+           received previously.
+        Note: the two-round communication is to avoid scalability issue so
+        that MPI_Allgatherv() call is done on a smaller scale.
+     */    
     while (h)
     {
         buffer_write (&buf, &p->rank, 4);
@@ -3396,11 +3527,11 @@ int adios_read_bp_staged1_gclose (ADIOS_GROUP * gp)
         gettimeofday (&t1, NULL);
 //    printf ("[%3d] do_read time = %f\n", p->rank, t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000);
 #endif
-        send_read_data (p);
+        send_read_data1 (p);
     }
     else
     {
-        get_read_data (p); 
+        get_read_data1 (p); 
     }
 
     free_proc_struct (p);

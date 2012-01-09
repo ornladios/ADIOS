@@ -64,7 +64,9 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 @BUILD_WRITE_TRUE@am__EXEEXT_1 = local_array_time$(EXEEXT) \
 @BUILD_WRITE_TRUE@	adios_amr_write$(EXEEXT) \
-@BUILD_WRITE_TRUE@	adios_staged_read$(EXEEXT)
+@BUILD_WRITE_TRUE@	adios_amr_write_2vars$(EXEEXT) \
+@BUILD_WRITE_TRUE@	adios_staged_read$(EXEEXT) \
+@BUILD_WRITE_TRUE@	adios_staged_read_2vars$(EXEEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
@@ -73,10 +75,20 @@ adios_amr_write_OBJECTS = $(am_adios_amr_write_OBJECTS)
 am__DEPENDENCIES_1 =
 adios_amr_write_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1)
+am_adios_amr_write_2vars_OBJECTS = adios_amr_write_2vars.$(OBJEXT)
+adios_amr_write_2vars_OBJECTS = $(am_adios_amr_write_2vars_OBJECTS)
+adios_amr_write_2vars_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
 am_adios_staged_read_OBJECTS = adios_staged_read.$(OBJEXT)
 adios_staged_read_OBJECTS = $(am_adios_staged_read_OBJECTS)
 adios_staged_read_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
 	$(am__DEPENDENCIES_1)
+am_adios_staged_read_2vars_OBJECTS =  \
+	adios_staged_read_2vars.$(OBJEXT)
+adios_staged_read_2vars_OBJECTS =  \
+	$(am_adios_staged_read_2vars_OBJECTS)
+adios_staged_read_2vars_DEPENDENCIES =  \
+	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1)
 am_local_array_time_OBJECTS = local_array_time.$(OBJEXT)
 local_array_time_OBJECTS = $(am_local_array_time_OBJECTS)
 local_array_time_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -102,10 +114,14 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(adios_amr_write_SOURCES) $(adios_staged_read_SOURCES) \
-	$(local_array_time_SOURCES) $(posix_method_SOURCES)
-DIST_SOURCES = $(adios_amr_write_SOURCES) $(adios_staged_read_SOURCES) \
-	$(local_array_time_SOURCES) $(posix_method_SOURCES)
+SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
+	$(adios_staged_read_SOURCES) \
+	$(adios_staged_read_2vars_SOURCES) $(local_array_time_SOURCES) \
+	$(posix_method_SOURCES)
+DIST_SOURCES = $(adios_amr_write_SOURCES) \
+	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
+	$(adios_staged_read_2vars_SOURCES) $(local_array_time_SOURCES) \
+	$(posix_method_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -343,7 +359,7 @@ target_alias = @target_alias@
 # 4. add files to CLEANFILES that should be deleted at 'make clean'
 # 5. add to EXTRA_DIST any non-source files that should go with the distribution
 check_readonly_C = 
-@BUILD_WRITE_TRUE@check_C = local_array_time adios_amr_write adios_staged_read
+@BUILD_WRITE_TRUE@check_C = local_array_time adios_amr_write adios_amr_write_2vars adios_staged_read adios_staged_read_2vars
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
 
@@ -366,9 +382,15 @@ local_array_time_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 adios_amr_write_SOURCES = adios_amr_write.c
 adios_amr_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 adios_amr_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+adios_amr_write_2vars_SOURCES = adios_amr_write_2vars.c
+adios_amr_write_2vars_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+adios_amr_write_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 adios_staged_read_SOURCES = adios_staged_read.c
 adios_staged_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
 adios_staged_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+adios_staged_read_2vars_SOURCES = adios_staged_read_2vars.c
+adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+adios_staged_read_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 EXTRA_DIST = posix_method.xml local_array_time.xml
 CLEANFILES = gwrite_posix_method.fh gread_posix_method.fh 
 FCLINK = \
@@ -418,9 +440,15 @@ clean-checkPROGRAMS:
 adios_amr_write$(EXEEXT): $(adios_amr_write_OBJECTS) $(adios_amr_write_DEPENDENCIES) 
 	@rm -f adios_amr_write$(EXEEXT)
 	$(LINK) $(adios_amr_write_LDFLAGS) $(adios_amr_write_OBJECTS) $(adios_amr_write_LDADD) $(LIBS)
+adios_amr_write_2vars$(EXEEXT): $(adios_amr_write_2vars_OBJECTS) $(adios_amr_write_2vars_DEPENDENCIES) 
+	@rm -f adios_amr_write_2vars$(EXEEXT)
+	$(LINK) $(adios_amr_write_2vars_LDFLAGS) $(adios_amr_write_2vars_OBJECTS) $(adios_amr_write_2vars_LDADD) $(LIBS)
 adios_staged_read$(EXEEXT): $(adios_staged_read_OBJECTS) $(adios_staged_read_DEPENDENCIES) 
 	@rm -f adios_staged_read$(EXEEXT)
 	$(LINK) $(adios_staged_read_LDFLAGS) $(adios_staged_read_OBJECTS) $(adios_staged_read_LDADD) $(LIBS)
+adios_staged_read_2vars$(EXEEXT): $(adios_staged_read_2vars_OBJECTS) $(adios_staged_read_2vars_DEPENDENCIES) 
+	@rm -f adios_staged_read_2vars$(EXEEXT)
+	$(LINK) $(adios_staged_read_2vars_LDFLAGS) $(adios_staged_read_2vars_OBJECTS) $(adios_staged_read_2vars_LDADD) $(LIBS)
 local_array_time$(EXEEXT): $(local_array_time_OBJECTS) $(local_array_time_DEPENDENCIES) 
 	@rm -f local_array_time$(EXEEXT)
 	$(LINK) $(local_array_time_LDFLAGS) $(local_array_time_OBJECTS) $(local_array_time_LDADD) $(LIBS)
@@ -435,7 +463,9 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_amr_write.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_amr_write_2vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_2vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local_array_time.Po@am__quote@
 
 .F90.o:
@@ -724,7 +754,9 @@ posix_method.o: gwrite_posix_method.fh
 gwrite_posix_method.fh: posix_method.xml
 	$(top_srcdir)/utils/gpp/gpp.py posix_method.xml
 adios_amr_write.o: adios_amr_write.c
+adios_amr_write_2vars.o: adios_amr_write_2vars.c
 adios_staged_read.o: adios_staged_read.c
+adios_staged_read_2vars.o: adios_staged_read_2vars.c
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
