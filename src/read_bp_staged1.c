@@ -32,7 +32,7 @@
 
 #define READ_CLOSE 0
 #define MAX_DIMS 32
-#define DEBUG 1
+#define DEBUG 0
 #define INVALID_VALUE -1
 
 typedef struct read_info
@@ -339,7 +339,7 @@ static void _buffer_write32 (char ** buffer, uint32_t * buffer_size
         else
         {
             fprintf (stderr, "Cannot allocate memory in buffer_write.  "
-                             "Requested: %llu\n", *buffer_offset + size + 1000);
+                             "Requested: %u\n", *buffer_offset + size + 1000);
 
             return;
         }
@@ -498,11 +498,18 @@ static int is_same_read_request (candidate_reader * r, int varid, int ndims
     return 0;
 }
 
-/* This routine shuffles data among aggregators */
+/* This routine shuffles data among aggregators.
+   It is called after do_read(), which populates
+   split_read_request_list1, which contains data
+   for both the local group and other remotes groups.
+   In the end of the routine, it copies read data from
+   split_read_request_list1 and split_read_request_list2
+   to local_read_request_list.
+*/
 static void shuffle_data (struct proc_struct * p)
 {
     candidate_reader * r, * parent;
-    void * b = 0, * recv_buffer2 = 0;
+    char * b = 0, * recv_buffer2 = 0;
     uint32_t * recv_sizes = 0;
     uint32_t offset, total_size = 0, len, buffer_size;
     int * offsets = 0, * sizes = 0, * offsets2 = 0, * sizes2 = 0;
@@ -513,7 +520,6 @@ static void shuffle_data (struct proc_struct * p)
 
     offsets = malloc (size * 4);
     sizes = malloc (size * 4);
-
     assert (offsets);
     assert (sizes);
 
@@ -561,7 +567,10 @@ static void shuffle_data (struct proc_struct * p)
             _buffer_write32 (&b, &buffer_size, &offset, &r->ra->size, 4);
             _buffer_write32 (&b, &buffer_size, &offset, r->ra->data, r->ra->size);
 
-            /* r-ra->data (who is a child) is not needed anymore */
+            /* NOTE: r-ra->data in child is not needed anymore.
+               Release it right away so that the overall memory consumption 
+               is minimized.
+            */
             free (r->ra->data);
             r->ra->data = 0;
         }
@@ -607,8 +616,6 @@ if (p->rank = 2)
         }
     }
 
-    free (recv_sizes);
-
     recv_buffer2 = malloc (len);
     assert (recv_buffer2);
 
@@ -648,7 +655,6 @@ if (p->rank = 2)
         offset += ndims * 8;
  
         r = p->split_read_request_list2;
-
         while (r)
         {
             if (is_same_read_request (r, varid, ndims, start, count) && !r->ra->data)
@@ -671,6 +677,11 @@ if (p->rank = 2)
         free (count);
     }
 
+    free (sizes);
+    free (sizes2);
+    free (offsets);
+    free (offsets2);
+    free (recv_sizes);
     free (recv_buffer2);
 
     /* Traverse split_read_request_list1 and copy data from child
@@ -684,6 +695,9 @@ if (p->rank = 2)
         if (r->ra->data)
         {
             copy_buffer (p->gp, r->ra->parent, r);
+
+            free (r->ra->data);
+            r->ra->data = 0;
         }
 
         r = r->next;
@@ -698,12 +712,15 @@ if (p->rank = 2)
     {
         copy_buffer (p->gp, r->ra->parent, r);
 
+        free (r->ra->data);
+        r->ra->data = 0;
+     
         r = r->next;
     }
 }
 
 /* Send read data from aggregator to member processors */
-static void send_read_data (struct proc_struct * p)
+static void send_read_data1 (struct proc_struct * p)
 {
     int g;
     void * b = 0;
@@ -731,10 +748,10 @@ static void send_read_data (struct proc_struct * p)
 }
 
 /* Send read data from aggregator to member processors */
-static void send_read_data1 (struct proc_struct * p)
+static void send_read_data (struct proc_struct * p)
 {
     int g, i;
-    void * b = 0, * recv_buff = 0;
+    char * b = 0, * recv_buff = 0;
     uint32_t offset = 0, buffer_size = 0;
     int size, * sizes = 0, * offsets = 0;
     candidate_reader * r = p->local_read_request_list;
@@ -792,7 +809,7 @@ static void send_read_data1 (struct proc_struct * p)
 }
 
 /* Receive read data from aggregator */
-static void get_read_data (struct proc_struct * p)
+static void get_read_data1 (struct proc_struct * p)
 {
     MPI_Status status;
     candidate_reader * r = p->local_read_request_list;
@@ -812,7 +829,7 @@ static void get_read_data (struct proc_struct * p)
 }
 
 /* Receive read data from aggregator */
-static void get_read_data1 (struct proc_struct * p)
+static void get_read_data (struct proc_struct * p)
 {
     void * b = 0, * recv_buff = 0;
     int * sizes = 0, * offsets = 0;
@@ -911,11 +928,10 @@ static void parse_buffer (struct proc_struct * p, void * b, uint32_t len)
         b += 8;
         l += 8;
 
-/* DO NOT ALLOCATE PARENT BUFFER AT THIS POINT. DELAY IT TO THE END */
-/*
-        r->ra->data = malloc (r->ra->size);
-        assert (r->ra->data);
-*/
+        /* DO NOT ALLOCATE PARENT BUFFER AT THIS POINT. Delay it to the point when necessary.
+           Do it when copying child buffer to parent (and after it, child buffer
+           will be released) so that the overall memory consumption won't be tripled.
+        */
         r->ra->data = 0;
 
         r->ra->parent = 0;
@@ -1481,7 +1497,7 @@ static void copy_buffer (ADIOS_GROUP * gp, candidate_reader * parent, candidate_
             assert (parent->ra->data);
         }
 
-        memcpy (parent->ra->data, parent->ra->data, size_unit);
+        memcpy (parent->ra->data, child->ra->data, size_unit);
 
         if (get_type (gp, varid) == adios_string)
         {
@@ -2329,6 +2345,7 @@ static void free_proc_struct (struct proc_struct * p)
             free (h->ra->count);
         }
 
+        /* DO NOT free if the request is from aggregator itself */
         if (h->ra && h->ra->data && h->rank != p->rank)
         {
             free (h->ra->data);
@@ -2343,6 +2360,7 @@ static void free_proc_struct (struct proc_struct * p)
         h = n;
     }
 
+    /* Free both split_read_request_list1 and split_read_request_list2 */
     h = p->split_read_request_list1;
     while (h)
     {
@@ -2356,6 +2374,42 @@ static void free_proc_struct (struct proc_struct * p)
         if (h->ra && h->ra->count)
         {
             free (h->ra->count); 
+        }
+
+        /* h->ra->data should have already been freed after copy_buffer() */
+        if (h->ra && h->ra->data)
+        {
+            free (h->ra->data);
+        }
+
+        if (h->ra)
+        {
+            free (h->ra);
+        }
+
+        free (h);
+        h = n;
+    }
+
+    h = p->split_read_request_list2;
+    while (h)
+    {
+        n = h->next;
+
+        if (h->ra && h->ra->start)
+        {
+            free (h->ra->start);
+        }
+
+        if (h->ra && h->ra->count)
+        {
+            free (h->ra->count);
+        }
+
+        /* h->ra->data should have already been freed after copy_buffer() */
+        if (h->ra && h->ra->data)
+        {
+            free (h->ra->data);
         }
 
         if (h->ra)
@@ -2579,7 +2633,7 @@ static void broadcast_fh_buffer (struct BP_FILE * fh)
     struct bp_index_pg_struct_v1 * pgs_root = fh->pgs_root, * pg;
     struct adios_index_var_struct_v1 * vars_root = fh->vars_root, * v;
     struct adios_index_attribute_struct_v1 * attrs_root = fh->attrs_root;
-    void * buffer;
+    char * buffer;
     uint64_t buffer_size, buffer_offset = 0;
     int i, j, timedim;
     uint16_t len;
@@ -2654,7 +2708,6 @@ static void broadcast_fh_buffer (struct BP_FILE * fh)
         vars_root = fh->vars_root;
         while (vars_root)
         {
-uint64_t bo = buffer_offset;
             _buffer_write (&buffer, &buffer_size, &buffer_offset, &vars_root->id, 2); // id
 
             len = strlen (vars_root->group_name);
@@ -3209,7 +3262,9 @@ int adios_read_bp_staged1_fclose (ADIOS_FILE *fp)
             if (gh->time_index && gh->time_index[j])
                 free(gh->time_index[j]);
         }
-        free (gh->time_index);
+        
+        if (gh->time_index)
+            free (gh->time_index);
     
         for (i=0;i<gh->group_count;i++) { 
             if (gh->namelist[i])
@@ -3397,16 +3452,15 @@ int adios_read_bp_staged1_gclose (ADIOS_GROUP * gp)
     void * buf;
 
     p->b = malloc (size);
-
     assert (p->b);
 
     buf = p->b;
 
     /*  1. All rank packs their read requests.
-        2. Aggregator gets requests from all the processors in the group
-        3. Subsequently, all aggregators share with others the requests it
+        2. An aggregator gets packed requests from all the processors in the group
+        3. Subsequently, all aggregators share with each other the requests it
            received previously.
-        Note: the two-round communication is to avoid scalability issue so
+        Note: the two-round communication is designed to avoid scalability issue so
         that MPI_Allgatherv() call is done on a smaller scale.
      */    
     while (h)
@@ -3509,7 +3563,6 @@ int adios_read_bp_staged1_gclose (ADIOS_GROUP * gp)
     {
         sort_read_requests (p);
 #if DEBUG
-//
 //if (p->rank == 0)
 //        list_print_readers (p, p->split_read_request_list1);
 //        printf ("=======================\n");
@@ -3525,13 +3578,13 @@ int adios_read_bp_staged1_gclose (ADIOS_GROUP * gp)
         shuffle_data (p);
 #if DEBUG
         gettimeofday (&t1, NULL);
-//    printf ("[%3d] do_read time = %f\n", p->rank, t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000);
+        printf ("[%3d] do_read time = %f\n", p->rank, t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000);
 #endif
-        send_read_data1 (p);
+        send_read_data (p);
     }
     else
     {
-        get_read_data1 (p); 
+        get_read_data (p); 
     }
 
     free_proc_struct (p);

@@ -67,7 +67,7 @@ static void adios_read_bp_staged_get_dimensions (struct adios_index_var_struct_v
 static struct adios_index_var_struct_v1 * adios_find_var_byid (ADIOS_GROUP * gp, int varid);
 static int get_var_start_index (struct adios_index_var_struct_v1 * v, int t);
 static int get_var_stop_index (struct adios_index_var_struct_v1 * v, int t);
-void getDataAddress (ADIOS_GROUP * gp, int varid
+static void getDataAddress (ADIOS_GROUP * gp, int varid
                     ,const uint64_t * start
                     ,const uint64_t * count
                     ,int * file_idx
