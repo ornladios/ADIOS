@@ -3983,7 +3983,12 @@ static void getDataAddress (ADIOS_GROUP * gp, int varid
             idx = 0;
 
             if (isTimeless (file_tdim) )
-                break;
+            {
+
+                * file_idx = v->characteristics[start_idx + idx].file_index;
+                * offset = v->characteristics[start_idx + idx].payload_offset;
+                * payload_size = bp_get_type_size (v->type, v->characteristics[start_idx + idx].value);
+            } 
             else
                 continue;
         }
