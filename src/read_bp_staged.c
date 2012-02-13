@@ -3959,12 +3959,6 @@ static void getDataAddress (ADIOS_GROUP * gp, int varid
                );
     }
 
-    if (futils_is_called_from_fortran ())
-    {
-        _swap_order (ndim_notime, count_notime);
-        _swap_order (ndim_notime, start_notime);
-    }
-
     for (t = start_time; t <= stop_time; t++)
     {
         start_idx = get_var_start_index (v, t);
@@ -3988,6 +3982,8 @@ static void getDataAddress (ADIOS_GROUP * gp, int varid
                 * file_idx = v->characteristics[start_idx + idx].file_index;
                 * offset = v->characteristics[start_idx + idx].payload_offset;
                 * payload_size = bp_get_type_size (v->type, v->characteristics[start_idx + idx].value);
+
+                return;
             } 
             else
                 continue;
