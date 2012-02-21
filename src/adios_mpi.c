@@ -413,6 +413,7 @@ int adios_mpi_open (struct adios_file_struct * fd
     // we have to wait for the group_size (should_buffer) to get the comm
     // before we can do an open for any of the modes
     md->comm = comm;
+    adios_buffer_struct_clear (&md->b);
 
 #if COLLECT_METRICS
     timing.write_count = 0;
@@ -903,7 +904,6 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
         case adios_mode_append:
         {
             int old_file = 1;
-            adios_buffer_struct_clear (&md->b);
 
             if (md->group_comm == MPI_COMM_NULL || md->rank == 0)
             {
