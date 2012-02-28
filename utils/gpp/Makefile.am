@@ -1,2 +1,2 @@
-dist_bin_SCRIPTS = gpp.py xmlparser.py gpp_types.py
+dist_bin_SCRIPTS = gpp.py ad_config.py type_mapper.py
 
