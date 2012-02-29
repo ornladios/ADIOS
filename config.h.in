@@ -207,6 +207,9 @@
    your system. */
 #undef PTHREAD_CREATE_JOINABLE
 
+/* Skel timing is enabled */
+#undef SKEL_TIMING
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 

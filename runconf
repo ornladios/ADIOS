@@ -63,7 +63,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     fi
         
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/sith.$TARGET \
+    ./configure --prefix=/ccs/home/lot/adios-working/adios-install/sith.$TARGET \
         --enable-dependency-tracking \
         --enable-research-transports  \
         --with-hdf5=${SEQ_HDF5_DIR} \
@@ -75,6 +75,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-nc4par=${PAR_NC_DIR} \
         --with-nc4par-libs="${PAR_NC_CLIB}" \
         --with-lustre=/usr \
+        --enable-skel-timing \
         --without-datatap --without-infiniband
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--with-datatap=/ccs/home/habbasi/work/ewok/

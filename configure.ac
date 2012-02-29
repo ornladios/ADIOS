@@ -79,6 +79,18 @@ AM_CONDITIONAL([RESEARCH_TRANSPORTS], [test "x$enable_research_transports" == "x
 
 AC_LANG(C)
 
+
+AC_ARG_ENABLE(skel-timing,
+    [AS_HELP_STRING([--enable-skel-timing],
+        [Include the skel timing mechanism. By default this is not included])])
+AM_CONDITIONAL([SKEL_TIMING], [test "x$enable_skel_timing" == "xyes"])
+
+if test "x$enable_skel_timing" == "xyes"; then
+    AC_DEFINE(SKEL_TIMING, 1, [Skel timing is enabled])
+fi
+
+AC_LANG(C)
+
 AM_CONDITIONAL([HAVE_DATATAP], [test x$datatap != xdisable])
 
 AC_ARG_ENABLE(write,
@@ -389,6 +401,13 @@ if test "x$enable_research_transports" == "xyes"; then
 
 else
     echo "  - No research transport methods";
+fi
+
+if test "x$enable_skel_timing" == "xyes"; then
+    echo "  - Skel Timing Mechanism Enabled";
+
+else
+    echo "  - Skel Timing Mechanism Disabled";
 fi
 
 if test -z "${HAVE_MXML_TRUE}"; then
