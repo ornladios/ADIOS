@@ -3,7 +3,7 @@ INCLUDES += -I$(top_builddir)/src
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-noinst_PROGRAMS = adios_global adios_global_2files adios_read_global adios_read_global_simple adios_global_no_xml adios_read_global_no_xml
+noinst_PROGRAMS = adios_global adios_global_2files adios_read_global adios_global_no_xml adios_read_global_no_xml
 
 adios_global_SOURCES = adios_global.c
 adios_global_LDADD = $(top_builddir)/src/libadios.a 
