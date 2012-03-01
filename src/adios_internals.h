@@ -15,6 +15,10 @@
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
 
+#ifdef SKEL_TIMING
+#include "adios_timing.h"
+#endif
+
 enum ADIOS_METHOD_MODE {adios_mode_write  = 1
                        ,adios_mode_read   = 2
                        ,adios_mode_update = 3 // not supported yet
@@ -177,6 +181,11 @@ struct adios_file_struct
 
     uint64_t vars_start;    // offset for where to put the var/attr count
     uint16_t vars_written;  // count of vars/attrs to write
+
+#ifdef SKEL_TIMING
+    struct adios_timing_struct * timing_obj;
+#endif
+
 };
 
 struct adios_dimension_item_struct

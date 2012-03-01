@@ -124,6 +124,7 @@ int common_adios_open (int64_t * fd, const char * group_name
     fd_p->write_size_bytes = 0;
     fd_p->base_offset = 0;
     fd_p->pg_start_in_file = 0;
+	fd_p->timing_obj = 0;
 
     if (mode != adios_mode_read)
         g->time_index++;
