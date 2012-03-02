@@ -386,6 +386,17 @@ void FC_FUNC_(adios_close, adios_CLOSE) (int64_t * fd_p, int * err)
     *err = common_adios_close (*fd_p);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_timing_write_xml, adios_TIMING_WRITE_XML) (int64_t * fd_p, const char* filename, int filename_size)
+{
+    char * cfile = 0;
+    cfile = futils_fstr_to_cstr (filename, filename_size);
+
+    adios_timing_write_xml (*fd_p, cfile);
+}
+
+
+
 //////////////////////////////////////////////////////////////////////////////
 // Methods normally only called by the XML parser
 //////////////////////////////////////////////////////////////////////////////

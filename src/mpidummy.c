@@ -14,6 +14,7 @@
 #include <string.h>
 //#define _LARGEFILE64_SOURCE
 #include <sys/types.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 #include "mpidummy.h"
@@ -106,4 +107,10 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
     return MPI_SUCCESS;
 }
 
-
+double MPI_Wtime()
+{
+	// Implementation not tested
+	struct timeval tv;
+	gettimeofday (&tv, NULL);
+	return (double)(tv.tv_sec) + (double)(tv.tv_usec) / 1000000;	
+}

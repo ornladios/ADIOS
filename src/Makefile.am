@@ -64,11 +64,9 @@ libadios_a_SOURCES = adios.c \
                      read_bp.c \
                      read_bp_staged.c \
                      read_bp_staged1.c \
-                     globals.c
+                     globals.c \
+                     adios_timing.c
 
-if SKEL_TIMING
-libadios_a_SOURCES += adios_timing.c
-endif
 
 libadios_nompi_a_SOURCES = adios.c \
                      common_adios.c \
@@ -91,11 +89,9 @@ libadios_nompi_a_SOURCES = adios.c \
                      read_bp_staged.c \
                      read_bp_staged1.c \
                      globals.c \
-                     mpidummy.c
+                     mpidummy.c \
+                     adios_timing.c
 
-if SKEL_TIMING
-libadios_nompi_a_SOURCES += adios_timing.c
-endif
 
 
 if BUILD_FORTRAN
@@ -123,11 +119,8 @@ libadiosf_a_SOURCES = adiosf.c \
                      read_bp.c \
                      read_bp_staged.c \
                      read_bp_staged1.c \
-                     globals.c
-
-if SKEL_TIMING
-libadiosf_a_SOURCES += adios_timing.c
-endif
+                     globals.c \
+                     adios_timing.c
 
 
 endif # BUILD_FORTRAN
@@ -403,11 +396,9 @@ libadios_internal_nompi_a_SOURCES = mpidummy.c \
                                     buffer.c \
                                     adios_transport_hooks.c \
                                     adios_error.c \
-                                    adios_internals_mxml.c
+                                    adios_internals_mxml.c \
+                                    adios_timing.c
 
-if SKEL_TIMING
-libadios_internal_nompi_a_SOURCES += adios_timing.c
-endif
 
 libadiosread_nompi_a_CPPFLAGS  += -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 libadiosreadf_nompi_a_CPPFLAGS += -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)

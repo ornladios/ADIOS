@@ -109,6 +109,8 @@ int adios_define_attribute (int64_t group, const char * name
  */ 
 int adios_set_application_id (int id);
 
+void adios_timing_write_xml (int64_t fd_p, const char* filename);
+
 
 /********************************************/
 /*           F O R T R A N  A P I           */
