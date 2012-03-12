@@ -3551,7 +3551,7 @@ static ADIOS_VARINFO * _inq_var_byid (struct BP_FILE * fh, int varid)
     /* Get value or min/max */
     adios_read_bp_staged_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
                           &(vi->ndim), &(vi->dims), &(vi->timedim));
-    
+#if 0
     if (file_is_fortran != futils_is_called_from_fortran()) {
         /* If this is a Fortran written file and this is called from C code,  
            or this is a C written file and this is called from Fortran code ==>
@@ -3560,7 +3560,7 @@ static ADIOS_VARINFO * _inq_var_byid (struct BP_FILE * fh, int varid)
         /*printf("File was written from %s and read now from %s, so we swap order of dimensions\n",
                 (file_is_fortran ? "Fortran" : "C"), (futils_is_called_from_fortran() ? "Fortran" : "C"));*/
     }
-    
+#endif
     adios_read_bp_staged_get_characteristics (var_root, vi);
 
     return vi;
