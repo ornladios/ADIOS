@@ -21,6 +21,8 @@
 #include "hdf5.h"
 #endif
 
+static const int debug=0;
+
 #define NUM_GP 24
 void adios_phdf5_end_iteration (struct adios_method_struct * method)
 {
@@ -251,7 +253,7 @@ void adios_phdf5_write (struct adios_file_struct * fd
                                                        method->method_data;
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
-        if (md->rank==0) {
+        if (debug && md->rank==0) {
             fprintf(stderr, "-------------------------\n");
             fprintf(stderr, "write var: %s start!\n", v->name);
         }
@@ -262,7 +264,7 @@ void adios_phdf5_write (struct adios_file_struct * fd
     {
        //fprintf(stderr, "entering unknown phdf5 mode %d!\n", fd->mode);
     }
-    if (md->rank==0) {
+    if (debug && md->rank==0) {
         fprintf(stderr, "write var: %s end!\n", v->name);
         //fprintf(stderr, "-------------------------\n");
     }
@@ -320,7 +322,7 @@ void adios_phdf5_close (struct adios_file_struct * fd
     struct adios_attribute_struct * a = fd->group->attributes;
 
     if (fd->mode == adios_mode_read) {
-        if (md->rank==0) {
+        if (debug && md->rank==0) {
            fprintf(stderr, "-------------------------\n");
            fprintf(stderr, "reading done, phdf5 file is closed;\n");
            fprintf(stderr, "-------------------------\n");
@@ -337,7 +339,7 @@ void adios_phdf5_close (struct adios_file_struct * fd
                           ,md->size);
             a = a->next;
         }
-        if (md->rank==0) {
+        if (debug && md->rank==0) {
            fprintf(stderr, "-------------------------\n");
            fprintf(stderr, "writing done, phdf5 file is closed;\n");
            fprintf(stderr, "-------------------------\n");
@@ -560,7 +562,7 @@ int hr_var (hid_t root_id
         hsize_t * h5_globaldims, * h5_localdims, * h5_offsets, * h5_strides; 
         hsize_t h5_gbstrides[2],h5_gbglobaldims[2], h5_gblocaldims[2], h5_gboffsets[2], *h5_gbdims;
         char name[256];
-        if(myrank==0)printf("\tenter global writing!\n");
+        if(debug && myrank==0)printf("\tenter global writing!\n");
         h5_gbdims = (hsize_t *)malloc(rank * 3 * sizeof(hsize_t));
         h5_strides = (hsize_t *) malloc (rank * sizeof(hsize_t));
 
@@ -754,7 +756,7 @@ int hw_var (hid_t root_id
 
         hsize_t h5_gbstrides[2], h5_gbglobaldims[2], h5_gblocaldims[2], h5_gboffsets[2];
         char name[256];
-        if(myrank==0)printf("\tenter global reading!\n");
+        if(debug&&myrank==0)printf("\tenter global reading!\n");
 
         h5_gbstrides [0] = 1;
         h5_gbstrides [1] = 1;
@@ -780,7 +782,7 @@ int hw_var (hid_t root_id
              h5_offsets[i] = parse_dimension (pvar_root, patt_root, &dims->local_offset);
              if (dims)
                  dims = dims -> next;
-             if (myrank==0) {
+             if (debug && myrank==0) {
                  printf("\t%s[%d]: g(%d):l(%d):o(%d)\n"
                        ,pvar->name,i
                        ,h5_globaldims[i]
