@@ -69,7 +69,7 @@ int main (int argc, char ** argv)
                     printf(", %d",v->dims[j]);
                 printf("] = \n");
 
-                if (total_size > 1024*1024) {
+                if (total_size > 1024*1024*1024) {
                     printf("        // too big, do not read in\n");
                 } else {
                     data = malloc (total_size);
@@ -85,6 +85,8 @@ int main (int argc, char ** argv)
 
                     if (bytes_read < 0) {
                         printf ("%s\n", adios_errmsg());
+                    } else if (bytes_read > 1024*1024) {
+                        printf ("Too big to print\n");
                     } else if (v->ndim == 1) {
                         printf ("        [");
                         for (j = 0; j < v->dims[0]; j++) 
@@ -110,7 +112,7 @@ int main (int argc, char ** argv)
                             printf ("\n");
                         }
                     } else {
-                        printf ("    cannot print arrays with >2 dimensions\n");
+                        printf ("    cannot print arrays with >3 dimensions\n");
                     }
                     free (data);
                 }
