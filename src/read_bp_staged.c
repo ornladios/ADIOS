@@ -141,6 +141,32 @@ static int isAggregator (struct proc_struct * p)
     return (p->rank == p->aggregator_rank);
 }
 
+/* Helper routine that maps reader rank to a group */
+static int rank_to_group_mapping (struct proc_struct * p, int rank)
+{
+    int grp_size = p->size / p->groups;
+    int remain = p->size - grp_size * p->groups;
+    int g;
+
+    if (remain == 0)
+    {
+        g = rank / grp_size;
+    }
+    else
+    {
+        if (rank < (grp_size + 1) * remain)
+        {
+            g = rank / (grp_size + 1);
+        }
+        else
+        {
+            g = remain + (rank - (grp_size + 1) * remain) / grp_size;
+        }
+    }
+
+    return g;
+}
+
 static void list_print_readers (struct proc_struct * p, candidate_reader * h)
 {
     read_args * ra;
@@ -150,7 +176,7 @@ static void list_print_readers (struct proc_struct * p, candidate_reader * h)
     while (h)
     {
         ra = h->ra;
-        //printf ("%d [varid: %d, ndims = %d, start[0]: %llu, start[1]: %llu, count[0]: %llu, count[1]: %llu, file_index: %d, offset = %llu]\n", p->rank, ra->varid, ra->ndims, ra->start[0], ra->start[1], ra->count[0], ra->count[1], ra->file_idx, ra->offset);
+        printf ("%d [varid: %d, ndims = %d, start[0]: %llu, start[1]: %llu, count[0]: %llu, count[1]: %llu, file_index: %d, offset = %llu]\n", h->rank, ra->varid, ra->ndims, ra->start[0], ra->start[1], ra->count[0], ra->count[1], ra->file_idx, ra->offset);
 //        printf ("%d [varid: %d, ndims = %d, start[0]: %llu, count[0]: %llu, file_index: %d, offset = %llu]\n", p->rank, ra->varid, ra->ndims, ra->start[0], ra->count[0], ra->file_idx, ra->offset);
         h = h->next;
     }
@@ -300,6 +326,33 @@ static void _buffer_read (char * buffer, uint64_t * buffer_offset
     *buffer_offset += size;
 }
 
+// *****************************************************************************
+static void _buffer_write32 (char ** buffer, uint32_t * buffer_size
+                            ,uint32_t * buffer_offset
+                            ,const void * data, uint32_t size
+                            )
+{
+    if (*buffer_offset + size > *buffer_size || *buffer == 0)
+    {
+        char * b = realloc (*buffer, *buffer_offset + size + 1000);
+        if (b)
+        {
+            *buffer = b;
+            *buffer_size = (*buffer_offset + size + 1000);
+        }
+        else
+        {
+            fprintf (stderr, "Cannot allocate memory in buffer_write.  "
+                             "Requested: %u\n", *buffer_offset + size + 1000);
+
+            return;
+        }
+    }
+
+    memcpy (*buffer + *buffer_offset, data, size);
+    *buffer_offset += size;
+}
+
 static void sort_read_requests (struct proc_struct * p)
 {
     int file_idx;
@@ -344,7 +397,7 @@ static void sort_read_requests (struct proc_struct * p)
     p->split_read_request_list = n;
 }
 
-static void send_read_data (struct proc_struct * p)
+static void send_read_data1 (struct proc_struct * p)
 {
     void * data = 0;
     uint64_t ds;
@@ -365,7 +418,67 @@ static void send_read_data (struct proc_struct * p)
     }
 }
 
-static void get_read_data (struct proc_struct * p)
+static void send_read_data (struct proc_struct * p)
+{
+    int g, i;
+    char * b = 0, * recv_buff = 0;
+    uint32_t offset = 0, buffer_size = 0;
+    int size, * sizes = 0, * offsets = 0;
+    candidate_reader * r = p->local_read_request_list;
+
+    MPI_Comm_size (p->new_comm, &size);
+
+    sizes = (int *) malloc (size * 4);
+    offsets = (int *) malloc (size * 4);
+    assert (sizes);
+    assert (offsets);
+
+    for (i = 0; i < size; i++)
+    {
+        sizes[i] = 0;
+        offsets[i] = -1;
+    }
+
+    while (r)
+    {
+        g = rank_to_group_mapping (p, r->rank);
+
+        /*  g == p->group       -> requests are from processors that belong to the group
+            p->rank != r->rank  -> requests are NOT from aggregator itself
+        */
+
+        if (g == p->group && p->rank != r->rank)
+        {
+            assert (r->ra->data);
+
+            if (offsets[r->rank - p->aggregator_rank] == -1)
+            {
+                offsets[r->rank - p->aggregator_rank] = offset;
+            }
+
+            sizes[r->rank - p->aggregator_rank] += r->ra->size;
+
+            _buffer_write32 (&b, &buffer_size, &offset, r->ra->data, r->ra->size);
+
+            /* Free it immediately to avoid double buffering */
+            free (r->ra->data);
+            r->ra->data = 0;
+        }
+
+        r = r->next;
+    }
+
+    MPI_Scatterv (b, sizes, offsets, MPI_BYTE
+                 ,recv_buff, 0, MPI_BYTE
+                 ,0, p->new_comm
+                 );
+
+    free (b);
+    free (sizes);
+    free (offsets);
+}
+
+static void get_read_data1 (struct proc_struct * p)
 {
     MPI_Status status;
     candidate_reader * r = p->local_read_request_list;
@@ -382,6 +495,52 @@ static void get_read_data (struct proc_struct * p)
             r = r->next;
         }
     }
+}
+
+/* Receive read data from aggregator */
+static void get_read_data (struct proc_struct * p)
+{
+    void * b = 0, * recv_buff = 0;
+    int * sizes = 0, * offsets = 0;
+    int size = 0;
+    MPI_Status status;
+    candidate_reader * r = p->local_read_request_list;
+
+    if (p->rank == p->aggregator_rank)
+    {
+        return;
+    }
+
+    r = p->local_read_request_list;
+    while (r)
+    {
+        size += r->ra->size;
+        r = r->next;
+    }
+
+    recv_buff = malloc (size);
+    if (recv_buff == 0)
+    {
+        printf ("Warning: the size of data is 0\n");
+        return;
+    }
+
+    MPI_Scatterv (b, sizes, offsets, MPI_BYTE
+                 ,recv_buff, size, MPI_BYTE
+                 ,0, p->new_comm
+                 );
+
+    b = recv_buff;
+    r = p->local_read_request_list;
+    while (r)
+    {
+        memcpy (r->ra->data, b, r->ra->size);
+        b += r->ra->size;
+
+        r = r->next;
+    }
+
+    free (recv_buff);
 }
 
 static void parse_buffer (struct proc_struct * p, void * b, int src)
@@ -544,6 +703,7 @@ static candidate_reader * split_read_requests (ADIOS_GROUP * gp, candidate_reade
             assert (n->ra);
 
             n->ra->varid = r->ra->varid;
+            n->ra->ndims = 0;
             n->ra->file_idx = v->characteristics[start_idx + idx].file_index;
             n->ra->offset = v->characteristics[start_idx + idx].payload_offset;
             n->ra->parent = r;
@@ -656,6 +816,7 @@ static candidate_reader * split_read_requests (ADIOS_GROUP * gp, candidate_reade
             assert (n->ra);
 
             n->ra->varid = r->ra->varid;
+            n->ra->ndims = r->ra->ndims;
 
             n->ra->start = (uint64_t *) malloc (ndim_notime * 8);
             assert (n->ra->start);
@@ -1496,7 +1657,7 @@ static void free_proc_struct (struct proc_struct * p)
 static void init_read (struct BP_FILE * fh)
 {
     int thread_level, i, remain;
-    int color1, color2;
+    int color1, color2, global_rank;
     char * env_str;
 
     struct proc_struct * p = (struct proc_struct *) malloc (sizeof (struct proc_struct));
@@ -1515,7 +1676,8 @@ static void init_read (struct BP_FILE * fh)
 
     p->num_aggregators = atoi (env_str);
 
-    if (p->rank == 0)
+    MPI_Comm_rank (MPI_COMM_WORLD, &global_rank);
+    if (global_rank == 0)
     {
         printf ("%d aggregators are used.\n", p->num_aggregators);
     }
@@ -2561,13 +2723,34 @@ int adios_read_bp_staged_gclose (ADIOS_GROUP * gp)
     if (isAggregator (p))
     {
         sort_read_requests (p);
-//        list_print_readers (p, p->split_read_request_list);
-
+/*
+if (p->rank == 0)
+{
+printf ("=============\n");
+        list_print_readers (p, p->split_read_request_list);
+printf ("=============\n");
+}
+*/
     struct timeval t0, t1;
     gettimeofday (&t0, NULL);
 
         do_read (p);
+/*
+if (p->rank == 0)
+{
+candidate_reader * tr = p->local_read_request_list;
+while (tr)
+{
+    printf ("data = ");
+    int i;
+    for (i = 0; i <16;i++)
+    printf ("%4.4f ", * ((double *) tr->ra->data + i));
+printf ("\n");
+    tr = tr->next;
+}
 
+}
+*/
     gettimeofday (&t1, NULL);
 //    printf ("[%3d] do_read time = %f\n", p->rank, t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000);
 
@@ -3585,7 +3768,7 @@ ADIOS_VARINFO * adios_read_bp_staged_inq_var_byid (ADIOS_GROUP *gp, int varid)
     assert (fh);
 
     if (varid < 0 || varid >= gh->vars_count) {
-        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
+        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)(1)", varid, gh->vars_count);
         return NULL;
     }
     vi = (ADIOS_VARINFO *) malloc(sizeof(ADIOS_VARINFO));
@@ -4117,7 +4300,7 @@ int64_t adios_read_bp_staged_read_var (ADIOS_GROUP * gp
     varid = adios_read_bp_staged_find_var (gp, varname);
     if (varid < 0 || varid >= gh->vars_count)
     {
-        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
+        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)(2) %s", varid, gh->vars_count, varname);
         return -adios_errno;
     }
 
@@ -4213,7 +4396,7 @@ int64_t adios_read_bp_staged_read_local_var (ADIOS_GROUP * gp, const char * varn
     varid = adios_read_bp_staged_find_var(gp, varname);
     if (varid < 0 || varid >= gh->vars_count)
     {
-        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
+        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)(3)", varid, gh->vars_count);
         return -adios_errno;
     }
 
@@ -4587,7 +4770,7 @@ int64_t adios_read_bp_staged_read_var_byid1 (ADIOS_GROUP    * gp,
         return -adios_errno;
     }
     if (varid < 0 || varid >= gh->vars_count) {
-        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
+        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)(4)", varid, gh->vars_count);
         return -adios_errno;
     }
     
