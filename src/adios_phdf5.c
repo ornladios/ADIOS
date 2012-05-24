@@ -79,7 +79,7 @@ int adios_getsize(enum ADIOS_DATATYPES type, void * val);
 
 // adios_flag determine whether it is dataset or group
 
-void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level,enum ADIOS_FLAG grpflag);
+void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level,enum ADIOS_FLAG *grpflag);
 void hw_gclose ( hid_t * grp_ids, int level, enum ADIOS_FLAG grpflag);
 
 int getH5TypeId ( enum ADIOS_DATATYPES type, hid_t* h5_type_id, enum ADIOS_FLAG);
@@ -259,6 +259,7 @@ void adios_phdf5_write (struct adios_file_struct * fd
         }
         hw_var (md->root_id, fd->group->vars, fd->group->attributes
                  ,v, fd->group->adios_host_language_fortran,md->rank,md->size);
+        MPI_Barrier(md->comm);
     }
     else
     {
@@ -379,12 +380,13 @@ int hw_attribute ( hid_t root_id
     hsize_t * h5_globaldims, * h5_localdims, * h5_offsets, * h5_strides; 
     struct adios_dimension_struct * dims;
     struct adios_var_struct * var_linked;
+    enum ADIOS_FLAG flag = adios_flag_unknown;
      
     h5_plist_id = H5Pcreate(H5P_DATASET_XFER);
     h5_plist_id=H5P_DEFAULT;  
  
     H5Pset_dxpl_mpio(h5_plist_id, H5FD_MPIO_COLLECTIVE); 
-    hw_gopen (root_id, patt->path,grp_ids, &level, adios_flag_yes);
+    hw_gopen (root_id, patt->path,grp_ids, &level, &flag);
     int err_code = 0;
     //printf("patt->type=%d patt->name : %s\n", patt->type, patt->name);
     if (patt->type == -1) {
@@ -395,7 +397,7 @@ int hw_attribute ( hid_t root_id
                         ,var_linked->name, var_linked->id);
                 err_code = -2;  
                 H5Pclose(h5_plist_id);
-                hw_gclose (grp_ids,level, adios_flag_yes);
+                hw_gclose (grp_ids,level, flag);
                 return err_code;
         }
         else
@@ -489,7 +491,7 @@ int hw_attribute ( hid_t root_id
         }
     }
     H5Pclose (h5_plist_id); 
-    hw_gclose (grp_ids,level, adios_flag_yes);
+    hw_gclose (grp_ids,level, flag);
     return err_code;
 } 
 int hr_var (hid_t root_id
@@ -506,6 +508,7 @@ int hr_var (hid_t root_id
     herr_t  status; 
     hid_t   h5_plist_id, h5_type_id, h5_dataspace_id, h5_dataset_id, h5_memspace_id, grp_ids[NUM_GP];
     struct adios_dimension_struct * dims = pvar->dimensions;
+    enum ADIOS_FLAG flag_yes = adios_flag_yes;
 
     h5_plist_id = H5Pcreate(H5P_DATASET_XFER);
     h5_plist_id = H5P_DEFAULT;
@@ -527,7 +530,7 @@ int hr_var (hid_t root_id
     //    sprintf (name, "%s/%s", name, pvar->name);
 
     if (pvar->path)
-        hw_gopen (root_id, pvar->path, grp_ids, &level, adios_flag_yes);
+        hw_gopen (root_id, pvar->path, grp_ids, &level, &flag_yes);
     //printf("root_id=%d, grd_ids[%d]=%d\n", root_id, level, grp_ids[level]); 
     // variable is scalar only need to read by every processor 
 
@@ -546,7 +549,7 @@ int hr_var (hid_t root_id
             fprintf (stderr, "PHDF5 ERROR: can not open dataset: %s in hr_var\n", pvar->name);
         H5Sclose (h5_dataspace_id);
         H5Tclose (h5_type_id);
-        hw_gclose (grp_ids,level, adios_flag_yes);
+        hw_gclose (grp_ids,level, flag_yes);
         return err_code; 
     }
 // variable is dataset
@@ -691,6 +694,7 @@ int hw_var (hid_t root_id
     herr_t  status; 
     hid_t   h5_plist_id, h5_type_id, h5_dataspace_id, h5_dataset_id, h5_memspace_id, grp_ids[NUM_GP];
     struct adios_dimension_struct * dims = pvar->dimensions;
+    enum ADIOS_FLAG flag_yes = adios_flag_yes;
      
     h5_plist_id = H5Pcreate(H5P_DATASET_XFER);
     h5_plist_id=H5P_DEFAULT;   
@@ -713,9 +717,9 @@ int hw_var (hid_t root_id
     //for(i=0;i<nproc;i++)
     {
     if (pvar->path)
-        hw_gopen (root_id, pvar->path, grp_ids, &level, adios_flag_yes);
+        hw_gopen (root_id, pvar->path, grp_ids, &level, &flag_yes);
     }
-    // printf("root_id=%d, grp_id=%d\n", root_id, grp_ids[level]);
+    printf("root_id=%d, grp_id=%d\n", root_id, grp_ids[level]);
 
     if (!dims) {
         h5_dataspace_id = H5Screate(H5S_SCALAR);
@@ -741,7 +745,7 @@ int hw_var (hid_t root_id
         H5Sclose (h5_dataspace_id); 
         H5Tclose (h5_type_id);
         H5Pclose (h5_plist_id);
-        hw_gclose (grp_ids,level, adios_flag_yes);
+        hw_gclose (grp_ids,level, flag_yes);
         return 0;
     }// end of scalar read
 
@@ -1083,12 +1087,12 @@ void hw_gclose (hid_t * grp_id, int level, enum ADIOS_FLAG flag) {
 // adios_flag_no       dataset
 // adios_flag_unknown 
 
-void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level, enum ADIOS_FLAG flag) {
+void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level, enum ADIOS_FLAG *flag) {
 
-    if (flag == adios_flag_unknown) {
-        fprintf (stderr, "Unknown flag in hw_gclose!\n");
-        return;
-    }
+    //if (flag == adios_flag_unknown) {
+    //   fprintf (stderr, "Unknown flag in hw_gclose!\n");
+    //    return;
+    //}
     int i, idx = 0, len = 0;
     char * pch, ** grp_name, * tmpstr;
     tmpstr= (char *)malloc(strlen(path)+1);
@@ -1109,15 +1113,27 @@ void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level, enum ADI
     for ( i = 0; i < *level; i++) {
         grp_id [i + 1] = H5Gopen (grp_id [i],grp_name [i]);
         if (grp_id [i + 1] < 0) {
-            if ((i+1) == *level && (flag == adios_flag_no)) {
-                MPI_Barrier(MPI_COMM_WORLD);
+            if ((i+1) == *level && (*flag == adios_flag_unknown)) {
+                /* FIX: attribute may belong to a dataset or is a standalone thing */
+                //MPI_Barrier(MPI_COMM_WORLD);
                 grp_id [i + 1] = H5Dopen (grp_id [i],grp_name [i]);
-                MPI_Barrier(MPI_COMM_WORLD);
+                if (grp_id [i + 1] < 0) {
+                    grp_id [i + 1] = H5Gcreate (grp_id [i], grp_name [i], 0);
+                    *flag = adios_flag_yes; // it is a (new) group
+                } else {
+                    *flag = adios_flag_no; // it is an existing dataset
+                }
+                //MPI_Barrier(MPI_COMM_WORLD);
+            }
+            if ((i+1) == *level && (*flag == adios_flag_no)) {
+                //MPI_Barrier(MPI_COMM_WORLD);
+                grp_id [i + 1] = H5Dopen (grp_id [i],grp_name [i]);
+                //MPI_Barrier(MPI_COMM_WORLD);
             }
             else {
-                MPI_Barrier(MPI_COMM_WORLD);
+                //MPI_Barrier(MPI_COMM_WORLD);
                 grp_id [i + 1] = H5Gcreate (grp_id [i], grp_name [i], 0);
-                MPI_Barrier(MPI_COMM_WORLD);
+                //MPI_Barrier(MPI_COMM_WORLD);
 //                printf("creat grp:name[%d]=%s id=%d level=%d\n", i,grp_name[i],grp_id[i+1],*level);
             }
         }
