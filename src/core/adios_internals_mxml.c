@@ -15,18 +15,18 @@
 
 #ifdef _NOMPI
     /* Sequential processes can use the library compiled with -D_NOMPI */
-#   include "mpidummy.h"
+#   include "public/mpidummy.h"
 #else
     /* Parallel applications should use MPI to communicate  */
 #   include "mpi.h"
 #endif
 
-#include "adios.h"
-#include "adios_transport_hooks.h"
-#include "adios_bp_v1.h"
-#include "adios_internals.h"
-#include "adios_internals_mxml.h"
-#include "buffer.h"
+#include "public/adios.h"
+#include "core/adios_transport_hooks.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_internals.h"
+#include "core/adios_internals_mxml.h"
+#include "core/buffer.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"

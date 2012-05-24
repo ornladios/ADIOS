@@ -11,12 +11,12 @@
 #ifndef __COMMON_READ_H__
 #define __COMMON_READ_H__
 
-#include "adios_types.h"
-#include "adios_read.h"  /* C API's struct's are used here */
+#include "public/adios_types.h"
+#include "public/adios_read.h"  /* C API's struct's are used here */
 
 #ifdef _NOMPI
     /* Sequential processes can use the library compiled with -D_NOMPI */
-#   include "mpidummy.h"
+#   include "public/mpidummy.h"
 #else
     /* Parallel applications should use MPI to communicate file info and slices of data */
 #   include "mpi.h"

@@ -10,12 +10,12 @@
 #include <unistd.h>
 #include <stdint.h>
 
-#include "common_adios.h"
-#include "adios_internals.h"
-#include "adios_internals_mxml.h"
-#include "adios_transport_hooks.h"
-#include "futils.h"
-#include "globals.h"
+#include "core/common_adios.h"
+#include "core/adios_internals.h"
+#include "core/adios_internals_mxml.h"
+#include "core/adios_transport_hooks.h"
+#include "core/futils.h"
+#include "public/globals.h"
 
 #ifdef __cplusplus
 extern "C"  /* prevent C++ name mangling */

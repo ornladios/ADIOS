@@ -17,11 +17,10 @@
 // xml parser
 #include <mxml.h>
 
-#include "adios.h"
-#include "adios_transport_hooks.h"
-#include "adios_bp_v1.h"
-#include "adios_internals.h"
-#include "buffer.h"
+#include "core/adios_transport_hooks.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_internals.h"
+#include "core/buffer.h"
 
 #ifdef SKEL_TIMING
 #define START_TIMER(t) adios_timing_go (fd->timing_obj, (t) ) 

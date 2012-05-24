@@ -12,17 +12,14 @@
 #include <math.h>
 #include <string.h>
 
-// mpi
-#include "mpi.h"
-
 // xml parser
 #include <mxml.h>
 
-#include "adios.h"
-#include "adios_transport_hooks.h"
-#include "adios_bp_v1.h"
-#include "adios_internals.h"
-#include "buffer.h"
+#include "public/adios.h" // MPI or dummy MPI
+#include "core/adios_transport_hooks.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_internals.h"
+#include "core/buffer.h"
 
 /** A method to allow apps sending provenance info 
     - through a socket or
@@ -1048,7 +1045,7 @@ static void _look_for_listener(char *env_var_name
 } // _look_for_listener
 
 
-#include "adios_socket.h"
+#include "core/adios_socket.h"
 
 
 /** Create a socket and connect to listener.

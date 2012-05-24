@@ -6,9 +6,9 @@
  */
 
 
-#include "adios_internals.h"
-#include "adios_timing.h"
-#include "adios.h"
+#include "public/adios.h"
+#include "core/adios_internals.h"
+#include "core/adios_timing.h"
 #include <string.h>
 #include <stdio.h>
 

@@ -8,8 +8,8 @@
 #ifndef __BP_TYPES_H__
 #define __BP_TYPES_H__
 
-#include "adios_bp_v1.h"
-#include "adios_types.h"
+#include "public/adios_types.h"
+#include "core/adios_bp_v1.h"
 
 #define BP_MAX_RANK 32
 #define BP_MAX_NDIMS (BP_MAX_RANK+1)

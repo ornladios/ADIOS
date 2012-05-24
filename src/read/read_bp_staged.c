@@ -17,14 +17,13 @@
 #include <math.h>
 #include <pthread.h>
 #include <assert.h>
-#include "adios.h"
-#include "bp_utils.h"
-#include "bp_types.h"
-#include "adios_types.h"
-#include "adios_read.h"
-#include "adios_read_hooks.h"
-#include "adios_error.h"
-#include "futils.h"
+#include "public/adios_types.h"
+#include "public/adios_read.h"
+#include "public/adios_error.h"
+#include "core/bp_utils.h"
+#include "core/bp_types.h"
+#include "core/adios_read_hooks.h"
+#include "core/futils.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"

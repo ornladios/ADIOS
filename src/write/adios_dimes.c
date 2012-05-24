@@ -13,11 +13,11 @@
 // see if we have MPI or other tools
 #include "config.h"
 
-#include "adios.h"
-#include "adios_types.h"
-#include "adios_transport_hooks.h"
-#include "adios_internals.h"
-#include "adios_internals_mxml.h"
+#include "public/adios.h"
+#include "public/adios_types.h"
+#include "core/adios_transport_hooks.h"
+#include "core/adios_internals.h"
+#include "core/adios_internals_mxml.h"
 
 #include "dimes.h"
 /*#define DIMES_DO_VERSIONING define it at configure as -DDART_DO_VERSIONING in CFLAGS*/

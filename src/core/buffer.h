@@ -8,7 +8,7 @@
 #ifndef ADIOS_BUFFER_H
 #define ADIOS_BUFFER_H
 
-#include "adios_types.h"
+#include "public/adios_types.h"
 
 void      adios_buffer_size_requested_set (uint64_t v);
 uint64_t  adios_buffer_size_requested_get (void);

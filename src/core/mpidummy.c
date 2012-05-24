@@ -17,7 +17,7 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-#include "mpidummy.h"
+#include "public/mpidummy.h"
 
 #if defined(__APPLE__) || defined(__WIN32__) 
 #    define lseek64 lseek

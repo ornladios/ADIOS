@@ -20,11 +20,11 @@
 // xml parser
 #include <mxml.h>
 
-#include "adios.h"
-#include "adios_transport_hooks.h"
-#include "adios_bp_v1.h"
-#include "adios_internals.h"
-#include "buffer.h"
+#include "public/adios.h" // MPI or dummy MPI
+#include "core/adios_transport_hooks.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_internals.h"
+#include "core/buffer.h"
 
 static int adios_posix1_initialized = 0;
 

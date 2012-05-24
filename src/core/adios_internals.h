@@ -12,11 +12,11 @@
 #include <stdlib.h>
 
 // need the enum for the transports
-#include "adios_transport_hooks.h"
-#include "adios_bp_v1.h"
+#include "core/adios_transport_hooks.h"
+#include "core/adios_bp_v1.h"
 
 #ifdef SKEL_TIMING
-#include "adios_timing.h"
+#include "core/adios_timing.h"
 #endif
 
 enum ADIOS_METHOD_MODE {adios_mode_write  = 1

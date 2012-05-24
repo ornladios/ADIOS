@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-#include "adios_types.h"
+#include "public/adios_types.h"
 
 void show_bytes(unsigned char * start, int len)
 {

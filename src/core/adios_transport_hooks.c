@@ -14,10 +14,10 @@
     /* Parallel applications should use MPI to communicate file info and slices of data */
 #endif
 
-#include "adios.h"
-#include "adios_transport_hooks.h"
-#include "adios_bp_v1.h"
-#include "adios_internals.h"
+#include "public/adios.h"
+#include "core/adios_transport_hooks.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_internals.h"
 
 #define MATCH_STRING_TO_METHOD(b,d,r) \
 if (!strcasecmp (buf,b)) \

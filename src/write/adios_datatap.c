@@ -7,9 +7,9 @@
 #include <string.h>
 #include <ffs.h>
 #include <atl.h>
-#include "adios.h"
-#include "adios_internals.h"
-#include "adios_transport_hooks.h"
+#include "public/adios.h"
+#include "core/adios_internals.h"
+#include "core/adios_transport_hooks.h"
 
 #include <sys/queue.h>
 #if HAVE_PORTALS == 1

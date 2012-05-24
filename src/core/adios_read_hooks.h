@@ -11,7 +11,7 @@
 #include "config.h"
 #include <stdint.h>
 #include <string.h>
-#include "adios_read.h"
+#include "public/adios_read.h"
 
 #define FORWARD_DECLARE(a) \
 int adios_read_##a##_init (MPI_Comm comm); \

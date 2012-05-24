@@ -17,9 +17,9 @@
 #include <stdint.h>
 #include <sys/stat.h>
 
-#include "adios.h"
-#include "adios_internals.h"
-#include "adios_bp_v1.h"
+#include "public/adios.h"
+#include "core/adios_internals.h"
+#include "core/adios_bp_v1.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"

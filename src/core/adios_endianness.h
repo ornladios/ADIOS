@@ -8,7 +8,7 @@
 #ifndef ENDIANNESS_H 
 #define ENDIANNESS_H 1
 
-#include "adios_types.h"
+#include "public/adios_types.h"
 
 void show_bytes(unsigned char * start, int len);
 

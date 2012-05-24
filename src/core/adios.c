@@ -5,7 +5,7 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-#include "../config.h"
+#include "config.h"
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
@@ -15,13 +15,13 @@
 // xml parser
 #include <mxml.h>
 
-#include "adios.h"
-#include "common_adios.h"
-#include "adios_transport_hooks.h"
-#include "adios_bp_v1.h"
-#include "adios_internals.h"
-#include "adios_internals_mxml.h"
-#include "globals.h"
+#include "public/adios.h"
+#include "public/globals.h"
+#include "core/common_adios.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_internals.h"
+#include "core/adios_internals_mxml.h"
+#include "core/adios_transport_hooks.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"

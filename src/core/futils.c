@@ -7,9 +7,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "futils.h"
-#include "bp_utils.h" // error()
-#include "adios_error.h" // err_no_memory
+#include "core/futils.h"
+#include "core/bp_utils.h" // error()
+#include "public/adios_error.h" // err_no_memory
 
 #ifdef DMALLOC
 #include "dmalloc.h"

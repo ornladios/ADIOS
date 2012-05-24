@@ -13,16 +13,15 @@
 #include <stdlib.h>
 #include <string.h>
 //#include <errno.h>  /* ENOMEM */
-#include "adios.h"
-#include "bp_utils.h"
-#include "bp_types.h"
-#include "adios_types.h"
-#include "adios_read.h"
-#include "adios_read_hooks.h"
-#include "adios_error.h"
-#include "futils.h"
-#include "globals.h"
-#include "ds_metadata.h"
+#include "public/adios_types.h"
+#include "public/adios_read.h"
+#include "public/adios_error.h"
+#include "public/globals.h"
+#include "core/bp_utils.h"
+#include "core/bp_types.h"
+#include "core/adios_read_hooks.h"
+#include "core/futils.h"
+#include "core/ds_metadata.h"
 
 #include "dart_interface.h"
 

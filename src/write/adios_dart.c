@@ -13,12 +13,12 @@
 // see if we have MPI or other tools
 #include "config.h"
 
-#include "adios.h"
-#include "adios_types.h"
-#include "adios_transport_hooks.h"
-#include "adios_internals.h"
-#include "adios_internals_mxml.h"
-#include "ds_metadata.h"
+#include "public/adios.h"
+#include "public/adios_types.h"
+#include "core/adios_transport_hooks.h"
+#include "core/adios_internals.h"
+#include "core/adios_internals_mxml.h"
+#include "core/ds_metadata.h"
 
 #include "dart_interface.h"
 

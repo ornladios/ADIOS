@@ -10,11 +10,11 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <string.h>
-#include "adios.h"
-#include "bp_utils.h"
-#include "adios_bp_v1.h"
-#include "adios_error.h"
-#include "adios_endianness.h"
+#include "public/adios.h"
+#include "public/adios_error.h"
+#include "core/bp_utils.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_endianness.h"
 #define BYTE_ALIGN 8
 #define MINIFOOTER_SIZE 28
 

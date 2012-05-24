@@ -13,14 +13,13 @@
 #include <stdio.h>
 
 #include "mpi.h"
-#include "adios.h"
-#include "adios_types.h"
-#include "adios_bp_v1.h"
-#include "adios_transport_hooks.h"
-#include "adios_internals.h"
+#include "public/adios_types.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_transport_hooks.h"
+#include "core/adios_internals.h"
 #include "netcdf.h"
 
-#include "io_timer.h"
+#include "nssi/io_timer.h"
 
 
 #ifndef FALSE

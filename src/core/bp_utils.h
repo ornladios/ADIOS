@@ -11,11 +11,11 @@
 #include <stdio.h>
 #include <sys/types.h>
 #ifdef _NOMPI
-#   include "mpidummy.h"
+#   include "public/mpidummy.h"
 #else
 #   include "mpi.h"
 #endif
-#include "bp_types.h"
+#include "core/bp_types.h"
 #define VARS_MINIHEADER_SIZE 10
 
 void bp_alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);

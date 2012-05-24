@@ -14,12 +14,12 @@
 // xml parser
 #include <mxml.h>
 
-#include "common_adios.h"
-#include "adios_transport_hooks.h"
-#include "adios_bp_v1.h"
-#include "adios_internals.h"
-#include "adios_internals_mxml.h"
-#include "buffer.h"
+#include "core/common_adios.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_internals.h"
+#include "core/adios_internals_mxml.h"
+#include "core/buffer.h"
+#include "core/adios_transport_hooks.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"

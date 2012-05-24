@@ -9,8 +9,8 @@
 #define COMMON_ADIOS_H
 
 #include <stdint.h>
-#include "adios_types.h"
-#include "adios_internals.h"
+#include "public/adios_types.h"
+#include "core/adios_internals.h"
 
 /* Write functions for ADIOS
  *

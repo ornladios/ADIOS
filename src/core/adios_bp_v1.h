@@ -9,8 +9,8 @@
 #define ADIOS_BP_V1_H
 #include "stdint.h"
 #include "unistd.h"
-#include "adios_types.h"
-#include "adios_transport_hooks.h"
+#include "public/adios_types.h"
+#include "core/adios_transport_hooks.h"
 
 #define ADIOS_VERSION_NUM_MASK                       0x00000011
 #define ADIOS_VERSION_HAVE_SUBFILE                   0x00000100

@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include "adios_error.h"
+#include "public/adios_error.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"

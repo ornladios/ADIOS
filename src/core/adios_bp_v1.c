@@ -15,10 +15,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "adios_types.h"
-#include "adios_internals.h"
-#include "adios_bp_v1.h"
-#include "adios_endianness.h"
+#include "public/adios_types.h"
+#include "core/adios_internals.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_endianness.h"
 
 #if defined(__APPLE__)
 #    define O_LARGEFILE 0

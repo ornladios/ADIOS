@@ -8,12 +8,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "adios.h"
-#include "common_read.h"
-#include "adios_read.h"
-#include "adios_error.h"
-#include "adios_read_hooks.h"
-#include "futils.h"
+#include "public/adios_read.h"
+#include "public/adios_error.h"
+#include "core/common_read.h"
+#include "core/adios_read_hooks.h"
+#include "core/futils.h"
 #define BYTE_ALIGN 8
 
 #ifdef DMALLOC

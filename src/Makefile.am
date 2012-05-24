@@ -55,17 +55,17 @@ libadios_a_SOURCES = core/adios.c \
                      core/common_read.c \
                      core/globals.c \
                      core/adios_timing.c \
-                     read/adios_read_hooks.c \
+                     core/adios_read_hooks.c \
+                     core/adios_transport_hooks.c \
+                     core/adios_socket.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
-                     write/adios_transport_hooks.c \
                      write/adios_mpi.c \
                      write/adios_mpi_lustre.c \
                      write/adios_mpi_amr.c \
                      write/adios_posix.c \
-                     write/adios_posix1.c \
-                     write/adios_socket.c 
+                     write/adios_posix1.c 
 
 
 libadios_nompi_a_SOURCES = core/adios.c \
@@ -83,14 +83,14 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/globals.c \
                      core/mpidummy.c \
                      core/adios_timing.c \
-                     read/adios_read_hooks.c \
+                     core/adios_read_hooks.c \
+                     core/adios_transport_hooks.c \
+                     core/adios_socket.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
-                     write/adios_transport_hooks.c \
                      write/adios_posix.c \
-                     write/adios_posix1.c \
-                     write/adios_socket.c 
+                     write/adios_posix1.c 
 
 
 
@@ -110,17 +110,17 @@ libadiosf_a_SOURCES = core/adiosf.c \
                      core/common_read.c \
                      core/globals.c \
                      core/adios_timing.c \
-                     read/adios_read_hooks.c \
+                     core/adios_read_hooks.c \
+                     core/adios_transport_hooks.c \
+                     core/adios_socket.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
-                     write/adios_transport_hooks.c \
                      write/adios_mpi.c \
                      write/adios_mpi_lustre.c \
                      write/adios_mpi_amr.c \
                      write/adios_posix.c \
-                     write/adios_posix1.c \
-                     write/adios_socket.c \
+                     write/adios_posix1.c 
 
 
 endif # BUILD_FORTRAN
@@ -240,7 +240,7 @@ include_HEADERS += public/adios.h \
                    public/adios_types.h \
                    public/adios_read.h \
                    public/adios_error.h \
-                   public/mpidummy.h \
+                   public/mpidummy.h 
 
                    #adios_read_hooks.h \
                    #io_timer.h
@@ -254,7 +254,7 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/adios_read.c \
                       core/common_read.c \
                       core/globals.c \
-                      read/adios_read_hooks.c \
+                      core/adios_read_hooks.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
@@ -288,7 +288,7 @@ libadiosreadf_a_SOURCES = core/adios_bp_v1.c \
                       core/adiosf_read.c \
                       core/common_read.c \
                       core/globals.c \
-                      read/adios_read_hooks.c \
+                      core/adios_read_hooks.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
@@ -331,9 +331,9 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/adios_internals.c \
                       core/buffer.c \
                       core/globals.c \
-                      read/adios_read_hooks.c \
-                      read/read_bp.c \
-                      write/adios_transport_hooks.c 
+                      core/adios_read_hooks.c \
+                      core/adios_transport_hooks.c \
+                      read/read_bp.c 
 
 if HAVE_DART
 libadiosread_nompi_a_SOURCES += read/read_dart.c
@@ -367,7 +367,7 @@ libadiosreadf_nompi_a_SOURCES = core/mpidummy.c\
                                 core/adiosf_read.c \
                                 core/common_read.c \
                                 core/globals.c \
-                                read/adios_read_hooks.c \
+                                core/adios_read_hooks.c \
                                 read/read_bp.c 
 if HAVE_DART
 libadiosreadf_nompi_a_SOURCES += read/read_dart.c
@@ -398,7 +398,7 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_error.c \
                                     core/adios_internals_mxml.c \
                                     core/adios_timing.c \
-                                    write/adios_transport_hooks.c \
+                                    core/adios_transport_hooks.c 
 
 
 libadiosread_nompi_a_CPPFLAGS  += -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
@@ -439,9 +439,11 @@ CXX=$(MPICXX)
 #adios_flags.c: adios_flags.h
 
 
-EXTRA_DIST = adios_bp_v1.h adios_endianness.h adios_error.h \
-             adios_internals.h adios_internals_mxml.h \
-             adios_nssi_config.h adios_socket.h adios_transport_hooks.h aggregation.h \
-             bp_types.h bp_utils.h buffer.h common_adios.h common_read.h futils.h globals.h \
-             ds_metadata.h
+EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
+             core/adios_internals.h core/adios_internals_mxml.h core/adios_socket.h \
+             core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
+             core/common_read.h core/futils.h core/globals.h core/ds_metadata.h \
+             core/adios_transport_hooks.h \
+             public/adios_error.h \
+             nssi/adios_nssi_config.h nssi/aggregation.h 
 

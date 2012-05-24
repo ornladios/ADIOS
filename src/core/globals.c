@@ -9,7 +9,7 @@
  *   Functions, constants globally for both the Write and Read API
  */
 
-#include "globals.h"
+#include "public/globals.h"
 
 static int globals_adios_appid = -1;
 static int globals_adios_was_set = 0;

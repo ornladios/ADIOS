@@ -15,8 +15,8 @@
 #define __SPACES_INDEX_H__
 
 #include <stdint.h>
-#include "adios_types.h"
-#include "adios_read.h"
+#include "public/adios_types.h"
+#include "public/adios_read.h"
 
 
 /* functions currently defined in adios_dart.c and read_dart.c */

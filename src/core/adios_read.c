@@ -7,13 +7,12 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "adios.h"
-#include "bp_utils.h"
-#include "bp_types.h"
-#include "adios_read.h"
-#include "common_read.h"
-#include "adios_error.h"
-#include "futils.h"
+#include "public/adios_read.h"
+#include "public/adios_error.h"
+#include "core/bp_utils.h"
+#include "core/bp_types.h"
+#include "core/common_read.h"
+#include "core/futils.h"
 #define BYTE_ALIGN 8
 
 #ifdef DMALLOC
