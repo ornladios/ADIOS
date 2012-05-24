@@ -24,7 +24,7 @@
 #include "globals.h"
 #include "ds_metadata.h"
 
-#include "dart.h"
+#include "dart_interface.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
