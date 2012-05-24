@@ -31,6 +31,7 @@ program read_bp_f
     integer,dimension(48) :: bconds  ! all boundary conditions as one array
     character(20)    :: vname
     integer          :: one, rank, nproc 
+    integer          :: timestep, lasttimestep
     real*8,dimension(102,66,3)  :: b1
 
     call MPI_Init (ierr)
@@ -38,7 +39,7 @@ program read_bp_f
     call mpi_comm_rank(comm, rank, ierr)
     call mpi_comm_size(comm, nproc, ierr)
 
-    call adios_set_read_method (1, ierr);
+    call adios_set_read_method (0, ierr);
     varchar = ' '
     !call adios_fopen (fh, "/lustre/spider/scratch/pnorbert/TRACKP.bp", comm, ierr)
     !call adios_fopen (fh, "TRACKP_00010.bp", comm, ierr)
@@ -49,7 +50,8 @@ program read_bp_f
     !call adios_fopen (fh, "pgood.bp", comm, ierr)
     !call adios_fopen (fh, "xgc.flowdiag.bp", comm, ierr)
     !call adios_fopen (fh, "xgc.restart.000.03600.bp", comm, ierr)
-    call adios_fopen (fh, "adios_global.bp", comm, gcnt, ierr)
+    !call adios_fopen (fh, "adios_global.bp", comm, gcnt, ierr)
+    call adios_fopen (fh, "testbp_c.bp", comm, gcnt, ierr)
     !call adios_fopen (fh, "testbp.bp", comm, ierr)
     !call adios_fopen (fh, "record.bp", comm, ierr)
     !call adios_fopen (fh, "outxz.bp", comm, ierr)
@@ -64,7 +66,7 @@ program read_bp_f
     enddo
 
     call adios_gopen (fh, gh, gnamelist(1), vcnt, acnt, ierr) 
-    call adios_inq_group(gh, vnamelist, anamelist, ierr)
+    call adios_inq_group(gh, vnamelist, anamelist, timestep, lasttimestep, ierr)
 
     write (*,'("Number of variables in group ",a,": ",i0)') trim(gnamelist(1)), vcnt
     do i=1,vcnt 
