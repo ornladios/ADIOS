@@ -14,22 +14,24 @@
 #include "public/adios_read.h"
 
 #define FORWARD_DECLARE(a) \
-int adios_read_##a##_init (MPI_Comm comm); \
-int adios_read_##a##_finalize (); \
-int adios_read_##a##_fclose (ADIOS_FILE *fp); \
-ADIOS_FILE * adios_read_##a##_fopen (const char * fname, MPI_Comm comm); \
-int adios_read_##a##_fclose (ADIOS_FILE *fp); \
-ADIOS_GROUP * adios_read_##a##_gopen (ADIOS_FILE *fp, const char * grpname); \
-ADIOS_GROUP * adios_read_##a##_gopen_byid (ADIOS_FILE *fp, int grpid); \
-int adios_read_##a##_gclose (ADIOS_GROUP *gp); \
-ADIOS_VARINFO * adios_read_##a##_inq_var (ADIOS_GROUP *gp, const char * varname); \
-ADIOS_VARINFO * adios_read_##a##_inq_var_byid (ADIOS_GROUP *gp, int varid); \
-int64_t adios_read_##a##_read_var (ADIOS_GROUP * gp, const char * varname, const uint64_t * start, const uint64_t * count, void * data); \
-int64_t adios_read_##a##_read_local_var (ADIOS_GROUP * gp, const char * varname, int idx, const uint64_t * start, const uint64_t * count, void * data); \
-int64_t adios_read_##a##_read_var_byid (ADIOS_GROUP * gp, int varid, const uint64_t * start, const uint64_t * count, void * data); \
-int adios_read_##a##_get_attr (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type, int * size, void ** data); \
-int adios_read_##a##_get_attr_byid (ADIOS_GROUP * gp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data); \
-void adios_read_##a##_reset_dimension_order (ADIOS_FILE *fp, int is_fortran); \
+int adios_read_##a##_init_method (MPI_Comm comm, const char * parameters); \
+int adios_read_##a##_finalize_method (); \
+ADIOS_FILE * adios_read_##a##_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, int timeout_msec); \
+ADIOS_FILE * adios_read_##a##_open_file (const char * fname, MPI_Comm comm); \
+int adios_read_##a##_close (const ADIOS_FILE *fp); \
+int adios_read_##a##_advance_step (const ADIOS_FILE *fp, int last, int wait_for_step); \
+void adios_read_##a##_release_step (const ADIOS_FILE *fp); \
+ADIOS_VARINFO * adios_read_##a##_inq_var (const ADIOS_FILE *fp, const char * varname); \
+ADIOS_VARINFO * adios_read_##a##_inq_var_byid (const ADIOS_FILE *gp, int varid); \
+int adios_read_##a##_inq_var_stat (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo, int per_step_stat, int per_block_stat); \
+int adios_read_##a##_inq_var_blockinfo (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo); \
+int adios_read_##a##_schedule_read (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel, const char * varname, int from_steps, int nsteps, void * data); \
+int adios_read_##a##_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel, int varid, int from_steps, int nsteps, void * data) ; \
+int adios_read_##a##_perform_reads (const ADIOS_FILE *fp, int blocking); \
+int adios_read_##a##_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk); \
+int adios_read_##a##_get_attr (const ADIOS_FILE * fp, const char * attrname, enum ADIOS_DATATYPES * type, int * size, void ** data); \
+int adios_read_##a##_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data); \
+void adios_read_##a##_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran); \
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -46,7 +48,6 @@ void adios_read_##a##_reset_dimension_order (ADIOS_FILE *fp, int is_fortran); \
 FORWARD_DECLARE(bp)
 FORWARD_DECLARE(bp_staged)
 FORWARD_DECLARE(bp_staged1)
-FORWARD_DECLARE(hdf5)
 #if HAVE_DART
 FORWARD_DECLARE(dart)
 #endif
@@ -56,44 +57,57 @@ FORWARD_DECLARE(dimes)
 #if HAVE_NSSI
 FORWARD_DECLARE(nssi)
 #endif
-#if HAVE_NSSI
+#if HAVE_DATATAP
 FORWARD_DECLARE(datatap)
 #endif
+//FORWARD_DECLARE(hdf5)
 
 
-typedef int (* ADIOS_INIT_FN) (MPI_Comm comm);
-typedef int (* ADIOS_FINALIZE_FN) ();
-typedef ADIOS_FILE * (* ADIOS_FOPEN_FN) (const char * fname, MPI_Comm comm);
-typedef int (* ADIOS_FCLOSE_FN) (ADIOS_FILE *fp);
-typedef ADIOS_GROUP * (* ADIOS_GOPEN_FN) (ADIOS_FILE *fp, const char * grpname);
-typedef ADIOS_GROUP * (* ADIOS_GOPEN_BYID_FN) (ADIOS_FILE *fp, int grpid);
-typedef int (* ADIOS_GCLOSE_FN) (ADIOS_GROUP *gp);
-typedef ADIOS_VARINFO * (* ADIOS_INQ_VAR_FN) (ADIOS_GROUP *gp, const char * varname);
-typedef ADIOS_VARINFO * (* ADIOS_INQ_VAR_BYID_FN) (ADIOS_GROUP *gp, int varid);
-typedef int64_t (* ADIOS_READ_VAR_FN) (ADIOS_GROUP * gp, const char * varname, const uint64_t * start, const uint64_t * count, void * data);
-typedef int64_t (* ADIOS_READ_LOCAL_VAR_FN) (ADIOS_GROUP * gp, const char * varname, int idx, const uint64_t * start, const uint64_t * count, void * data);
-typedef int64_t (* ADIOS_READ_VAR_BYID_FN) (ADIOS_GROUP * gp, int varid, const uint64_t * start, const uint64_t * count, void * data);
-typedef int (* ADIOS_GET_ATTR_FN) (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type, int * size, void ** data);
-typedef int (* ADIOS_GET_ATTR_BYID_FN) (ADIOS_GROUP * gp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data);
-typedef void (* ADIOS_RESET_DIMENSION_ORDER_FN) ();
+typedef int  (* ADIOS_INIT_METHOD_FN) (MPI_Comm comm, const char * parameters);
+typedef int  (* ADIOS_FINALIZE_METHOD_FN) ();
+typedef ADIOS_FILE * (* ADIOS_OPEN_STREAM_FN) (const char * fname, MPI_Comm comm, 
+                                 enum ADIOS_LOCKMODE lock_mode, int timeout_msec);
+typedef ADIOS_FILE * (* ADIOS_OPEN_FILE_FN) (const char * fname, MPI_Comm comm);
+typedef int  (* ADIOS_CLOSE_FN) (const ADIOS_FILE *fp);
+typedef int  (* ADIOS_ADVANCE_STEP_FN) (const ADIOS_FILE *fp, int last, int wait_for_step);
+typedef void (* ADIOS_RELEASE_STEP_FN) (const ADIOS_FILE *fp);
+typedef ADIOS_VARINFO * (* ADIOS_INQ_VAR_FN) (const ADIOS_FILE *fp, const char * varname);
+typedef ADIOS_VARINFO * (* ADIOS_INQ_VAR_BYID_FN) (const ADIOS_FILE *fp, int varid);
+typedef int  (* ADIOS_INQ_VAR_STAT_FN) (const ADIOS_FILE *fp, const ADIOS_VARINFO *varinfo,
+                                 int per_step_stat, int per_block_stat);
+typedef int  (* ADIOS_INQ_VAR_BLOCKINFO_FN) (const ADIOS_FILE *fp, const ADIOS_VARINFO *varinfo);
+typedef int  (* ADIOS_SCHEDULE_READ_FN) (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel, 
+                                 const char * varname, int from_steps, int nsteps, void * data);
+typedef int  (* ADIOS_SCHEDULE_READ_BYID_FN) (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel, 
+                                 int varid, int from_steps, int nsteps, void * data);
+typedef int  (* ADIOS_PERFORM_READS_FN) (const ADIOS_FILE *fp, int blocking);
+typedef int  (* ADIOS_CHECK_READS_FN) (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk);
+typedef int  (* ADIOS_GET_ATTR_FN) (const ADIOS_FILE * fp, const char * attrname, 
+                                 enum ADIOS_DATATYPES * type, int * size, void ** data);
+typedef int  (* ADIOS_GET_ATTR_BYID_FN) (const ADIOS_FILE * fp, int attrid, 
+                                 enum ADIOS_DATATYPES * type, int * size, void ** data);
+typedef void (* ADIOS_RESET_DIMENSION_ORDER_FN) (const ADIOS_FILE *fp, int is_fortran);
 
 struct adios_read_hooks_struct
 {
-    ADIOS_INIT_FN           adios_init_fn;
-    ADIOS_FINALIZE_FN       adios_finalize_fn;
-    ADIOS_FOPEN_FN          adios_fopen_fn;
-    ADIOS_FCLOSE_FN         adios_fclose_fn;
-    ADIOS_GOPEN_FN          adios_gopen_fn;
-    ADIOS_GOPEN_BYID_FN     adios_gopen_byid_fn;
-    ADIOS_GCLOSE_FN         adios_gclose_fn;
-    ADIOS_INQ_VAR_FN        adios_inq_var_fn;
-    ADIOS_INQ_VAR_BYID_FN   adios_inq_var_byid_fn;
-    ADIOS_READ_VAR_FN       adios_read_var_fn;
-    ADIOS_READ_LOCAL_VAR_FN adios_read_local_var_fn;
-    ADIOS_READ_VAR_BYID_FN  adios_read_var_byid_fn;
-    ADIOS_GET_ATTR_FN       adios_get_attr_fn;
-    ADIOS_GET_ATTR_BYID_FN  adios_get_attr_byid_fn;
-    ADIOS_RESET_DIMENSION_ORDER_FN adios_reset_dimension_order_fn;
+    ADIOS_INIT_METHOD_FN            adios_init_method_fn;
+    ADIOS_FINALIZE_METHOD_FN        adios_finalize_method_fn;
+    ADIOS_OPEN_STREAM_FN            adios_open_stream_fn;
+    ADIOS_OPEN_FILE_FN              adios_open_file_fn;
+    ADIOS_CLOSE_FN                  adios_close_fn;
+    ADIOS_ADVANCE_STEP_FN           adios_advance_step_fn;
+    ADIOS_RELEASE_STEP_FN           adios_release_step_fn;
+    ADIOS_INQ_VAR_FN                adios_inq_var_fn;
+    ADIOS_INQ_VAR_BYID_FN           adios_inq_var_byid_fn;
+    ADIOS_INQ_VAR_STAT_FN           adios_inq_var_stat_fn;
+    ADIOS_INQ_VAR_BLOCKINFO_FN      adios_inq_var_blockinfo_fn;
+    ADIOS_SCHEDULE_READ_FN          adios_schedule_read_fn;
+    ADIOS_SCHEDULE_READ_BYID_FN     adios_schedule_read_byid_fn;
+    ADIOS_PERFORM_READS_FN          adios_perform_reads_fn;
+    ADIOS_CHECK_READS_FN            adios_check_reads_fn;
+    ADIOS_GET_ATTR_FN               adios_get_attr_fn;
+    ADIOS_GET_ATTR_BYID_FN          adios_get_attr_byid_fn;
+    ADIOS_RESET_DIMENSION_ORDER_FN  adios_reset_dimension_order_fn;
 };
 
 #undef FORWARD_DECLARE

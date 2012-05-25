@@ -9,30 +9,33 @@
 #define __ADIOS_ERROR_H_
 
 enum ADIOS_ERRCODES {
-     err_no_error = 0
-    ,err_no_memory
-    ,err_MPI_open_error
-    ,err_file_not_found_error
-    ,err_invalid_file_pointer
-    ,err_invalid_group
-    ,err_invalid_group_struct
-    ,err_invalid_varid
-    ,err_invalid_varname
-    ,err_corrupted_variable
-    ,err_invalid_attrid
-    ,err_invalid_attrname
-    ,err_corrupted_attribute
-    ,err_invalid_attribute_reference
-    ,err_invalid_timestep
-    ,err_no_data_at_timestep
-    ,err_time_at_wrong_dimension
-    ,err_invalid_read_method
-    ,err_connection_failed
-    ,err_out_of_bound
-    ,err_operation_not_supported
-    ,err_end_of_file    // stream: fopen() returns if reached end of stream
-    ,err_too_many_files  // DART allows for using only a fixed number of different filenames
-    ,err_unspecified
+    err_no_error = 0,
+    err_no_memory,
+    err_MPI_open_error,
+    err_file_not_found,
+    err_invalid_file_pointer,
+    err_invalid_group,
+    err_invalid_group_struct,
+    err_invalid_varid,
+    err_invalid_varname,
+    err_corrupted_variable,
+    err_invalid_attrid,
+    err_invalid_attrname,
+    err_corrupted_attribute,
+    err_invalid_attribute_reference,
+    err_invalid_timestep,
+    err_no_data_at_timestep,
+    err_time_at_wrong_dimension,
+    err_invalid_read_method,
+    err_connection_failed,
+    err_out_of_bound,
+    err_operation_not_supported,
+    err_end_of_stream,    // stream: reached end of stream, returned by adios_read_open() or
+                          //         by adios_advance_step()
+    err_step_notready,    // stream: tried to advance the step, but no new step has arrived yet
+    err_too_many_files,   // DART allows for using only a fixed number of different filenames
+
+    err_unspecified
 };
 
 void adios_error (enum ADIOS_ERRCODES errno, char *fmt, ...);

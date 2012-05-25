@@ -15,26 +15,31 @@ if (!strcasecmp (buf,b)) \
 {*method=d;*requires_group_comm=r;return 1;}
 
 #define ASSIGN_FNS(a,b) \
-(*t) [b].adios_init_fn = adios_read_##a##_init; \
-(*t) [b].adios_finalize_fn = adios_read_##a##_finalize; \
-(*t) [b].adios_fopen_fn = adios_read_##a##_fopen; \
-(*t) [b].adios_fclose_fn = adios_read_##a##_fclose; \
-(*t) [b].adios_gopen_fn = adios_read_##a##_gopen; \
-(*t) [b].adios_gopen_byid_fn = adios_read_##a##_gopen_byid; \
-(*t) [b].adios_gclose_fn = adios_read_##a##_gclose; \
+(*t) [b].adios_init_method_fn = adios_read_##a##_init_method; \
+(*t) [b].adios_finalize_method_fn = adios_read_##a##_finalize_method; \
+(*t) [b].adios_open_stream_fn = adios_read_##a##_open_stream; \
+(*t) [b].adios_open_file_fn = adios_read_##a##_open_file; \
+(*t) [b].adios_close_fn = adios_read_##a##_close; \
+(*t) [b].adios_advance_step_fn = adios_read_##a##_advance_step; \
+(*t) [b].adios_release_step_fn = adios_read_##a##_release_step; \
 (*t) [b].adios_inq_var_fn = adios_read_##a##_inq_var; \
 (*t) [b].adios_inq_var_byid_fn = adios_read_##a##_inq_var_byid; \
-(*t) [b].adios_read_var_fn = adios_read_##a##_read_var; \
-(*t) [b].adios_read_local_var_fn = adios_read_##a##_read_local_var; \
-(*t) [b].adios_read_var_byid_fn = adios_read_##a##_read_var_byid; \
+(*t) [b].adios_inq_var_stat_fn = adios_read_##a##_inq_var_stat; \
+(*t) [b].adios_inq_var_blockinfo_fn = adios_read_##a##_inq_var_blockinfo; \
+(*t) [b].adios_schedule_read_fn = adios_read_##a##_schedule_read; \
+(*t) [b].adios_schedule_read_byid_fn = adios_read_##a##_schedule_read_byid; \
+(*t) [b].adios_perform_reads_fn = adios_read_##a##_perform_reads; \
+(*t) [b].adios_check_reads_fn = adios_read_##a##_check_reads; \
 (*t) [b].adios_get_attr_fn = adios_read_##a##_get_attr; \
-(*t) [b].adios_get_attr_byid_fn = adios_read_##a##_get_attr_byid;
+(*t) [b].adios_get_attr_byid_fn = adios_read_##a##_get_attr_byid; \
+(*t) [b].adios_reset_dimension_order_fn = adios_read_##a##_reset_dimension_order; \
 
 void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
 {
     static int did_init = 0;
     // we need to init only once in the lifetime of an application
-    // called from common_read.c/common_read_fopen()
+    // called from common_read.c/common_read_init_method() and 
+    // from common_read.c/common_read_open_*() 
     if (!did_init) {
         *t = (struct adios_read_hooks_struct *)
                calloc (ADIOS_READ_METHOD_COUNT, sizeof (struct adios_read_hooks_struct));
@@ -53,11 +58,11 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
 #endif
 
 #if HAVE_PHDF5
-        //ASSIGN_FNS(hdf5,ADIOS_READ_METHOD_HDF5)
+        m//ASSIGN_FNS(hdf5,ADIOS_READ_METHOD_HDF5)
 #endif
 
 #if HAVE_NSSI
-        ASSIGN_FNS(nssi,ADIOS_READ_METHOD_NSSI)
+        //ASSIGN_FNS(nssi,ADIOS_READ_METHOD_NSSI)
 #endif
 
 #if HAVE_DATATAP

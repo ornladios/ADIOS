@@ -7,86 +7,66 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "public/adios_read.h"
+#include "public/adios_read_v2.h"
 #include "public/adios_error.h"
-#include "core/bp_utils.h"
-#include "core/bp_types.h"
 #include "core/common_read.h"
-#include "core/futils.h"
 #define BYTE_ALIGN 8
 
-#ifdef DMALLOC
-#include "dmalloc.h"
-#endif
 
 const char *adios_errmsg ()
 {
     return adios_get_last_errmsg();
 }
 
-int adios_set_read_method (enum ADIOS_READ_METHOD method)
+int adios_read_init_method (enum ADIOS_READ_METHOD method, MPI_Comm comm, const char * parameters)
 {
-    return common_read_set_read_method (method);
+    return common_read_init_method (method,comm,parameters);
 } 
 
-int adios_read_init(MPI_Comm comm)
+int adios_read_finalize_method(enum ADIOS_READ_METHOD method)
 {
-    return common_read_init (comm);
+    return common_read_finalize_method(method);
 }
 
-int adios_read_finalize()
+ADIOS_FILE * adios_read_open_stream (const char * fname,
+                                     enum ADIOS_READ_METHOD method,
+                                     MPI_Comm comm,
+                                     enum ADIOS_LOCKMODE lock_mode,
+                                     int timeout_msec)
 {
-    return common_read_finalize();
+    return common_read_open_stream (fname, method, comm, lock_mode, timeout_msec);
 }
 
-ADIOS_FILE * adios_fopen (const char * fname, MPI_Comm comm)
+ADIOS_FILE * adios_read_open_file (const char * fname,
+                                   enum ADIOS_READ_METHOD method,
+                                   MPI_Comm comm)
 {
-    return common_read_fopen (fname, comm);
+    return common_read_open_file (fname, method, comm);
 }
 
-int adios_fclose (ADIOS_FILE *fp) 
+int adios_read_close (ADIOS_FILE *fp) 
 {
-    return common_read_fclose (fp);
+    return common_read_close (fp);
 }
 
-
-ADIOS_GROUP * adios_gopen (ADIOS_FILE *fp, const char * grpname)
+int adios_advance_step (ADIOS_FILE *fp, int last, int wait_for_step)
 {
-    return common_read_gopen (fp, grpname);
+    return common_read_advance_step (fp, last, wait_for_step);
 }
 
-ADIOS_GROUP * adios_gopen_byid (ADIOS_FILE *fp, int grpid)
+void adios_release_step (ADIOS_FILE *fp)
 {
-    return common_read_gopen_byid (fp, grpid);
-}
-                   
-int adios_gclose (ADIOS_GROUP *gp)
-{
-    return common_read_gclose (gp);
+    common_read_release_step (fp);
 }
 
-
-int adios_get_attr (ADIOS_GROUP * gp, const char * attrname, enum ADIOS_DATATYPES * type,
-                    int * size, void ** data)
+ADIOS_VARINFO * adios_inq_var (ADIOS_FILE  *fp, const char * varname) 
 {
-    return common_read_get_attr (gp, attrname, type, size, data);
+    return common_read_inq_var (fp, varname);
 }
 
-int adios_get_attr_byid (ADIOS_GROUP * gp, int attrid, 
-                    enum ADIOS_DATATYPES * type, int * size, void ** data)
+ADIOS_VARINFO * adios_inq_var_byid (ADIOS_FILE  *fp, int varid)
 {
-    return common_read_get_attr_byid (gp, attrid, type, size, data);
-}
-
-
-ADIOS_VARINFO * adios_inq_var (ADIOS_GROUP *gp, const char * varname) 
-{
-    return common_read_inq_var (gp, varname);
-}
-
-ADIOS_VARINFO * adios_inq_var_byid (ADIOS_GROUP *gp, int varid)
-{
-    return common_read_inq_var_byid (gp, varid);
+    return common_read_inq_var_byid (fp, varid);
 }
 
 void adios_free_varinfo (ADIOS_VARINFO *vp)
@@ -94,30 +74,62 @@ void adios_free_varinfo (ADIOS_VARINFO *vp)
     common_read_free_varinfo (vp);
 }
 
-int64_t adios_read_var (ADIOS_GROUP * gp, const char * varname,
-                        const uint64_t * start, const uint64_t * count,
-                        void * data)
+int adios_inq_var_stat (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
+                                    int per_step_stat, int per_writer_stat)
 {
-    return common_read_read_var (gp, varname, start, count, data);
+    return common_read_inq_var_stat (fp, varinfo, per_step_stat, per_writer_stat);
 }
 
-int64_t adios_read_local_var (ADIOS_GROUP    * gp,
-                              const char     * varname,
-                              int            idx,
-                              const uint64_t * start,
-                              const uint64_t * count,
-                              void           * data)
+int adios_inq_var_blockinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 {
-    return common_read_read_local_var (gp, varname, idx, start, count, data);
+    return common_read_inq_var_blockinfo (fp, varinfo);
 }
 
-int64_t adios_read_var_byid (ADIOS_GROUP    * gp,
-                             int              varid,
-                             const uint64_t  * start,
-                             const uint64_t  * count,
-                             void           * data)
+int adios_schedule_read (const ADIOS_FILE      * fp,
+                             const ADIOS_SELECTION * sel,
+                             const char            * varname,
+                             int                     from_steps,
+                             int                     nsteps,
+                             void                  * data)
 {
-    return common_read_read_var_byid (gp, varid, start, count, data);
+    return common_read_schedule_read (fp, sel, varname, from_steps, nsteps, data);
+}
+
+int adios_schedule_read_byid (const ADIOS_FILE      * fp,
+                                  const ADIOS_SELECTION * sel,
+                                  int                     varid,
+                                  int                     from_steps,
+                                  int                     nsteps,
+                                  void                  * data)
+{
+    return common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, data);
+}
+
+int adios_perform_reads (const ADIOS_FILE *fp, int blocking)
+{
+    return common_read_perform_reads (fp, blocking);
+}
+
+int adios_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
+{
+    return common_read_check_reads (fp, chunk);
+}
+
+void adios_free_chunk (ADIOS_VARCHUNK *chunk)
+{
+    common_read_free_chunk (chunk);
+}
+
+int adios_get_attr (ADIOS_FILE  * fp, const char * attrname, enum ADIOS_DATATYPES * type,
+                    int * size, void ** data)
+{
+    return common_read_get_attr (fp, attrname, type, size, data);
+}
+
+int adios_get_attr_byid (ADIOS_FILE  * fp, int attrid, 
+                    enum ADIOS_DATATYPES * type, int * size, void ** data)
+{
+    return common_read_get_attr_byid (fp, attrid, type, size, data);
 }
 
 const char * adios_type_to_string (enum ADIOS_DATATYPES type)
@@ -130,10 +142,20 @@ int adios_type_size(enum ADIOS_DATATYPES type, void *data)
     return common_read_type_size(type, data);
 }
 
-
-void adios_print_groupinfo (ADIOS_GROUP *gp) 
+int adios_get_grouplist (ADIOS_FILE  *fp, char **group_namelist)
 {
-    common_read_print_groupinfo(gp);
+    return common_read_get_grouplist (fp, group_namelist);
+}
+
+int adios_group_view (ADIOS_FILE  *fp, int groupid)
+{
+    return common_read_group_view (fp, groupid);
+}
+
+/*
+void adios_print_groupinfo (ADIOS_FILE  *fp) 
+{
+    common_read_print_groupinfo(fp);
 }
 
 
@@ -141,4 +163,5 @@ void adios_print_fileinfo (ADIOS_FILE *fp)
 {
     common_read_print_fileinfo(fp);
 }
+*/
 
