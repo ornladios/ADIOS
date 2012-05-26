@@ -1217,7 +1217,9 @@ static void shuffle_data (struct proc_struct * p)
     int * offsets = 0, * sizes = 0, * offsets2 = 0, * sizes2 = 0;
     int i, size, g, g_prev, offset_prev, varid, ndims;
     uint64_t * start, * count;
-
+#if DEBUG
+    struct timeval t0, t1, t2, t3, t4, t5;
+#endif
     MPI_Comm_size (p->new_comm2, &size);
 
     offsets = malloc (size * 4);
@@ -1237,8 +1239,13 @@ static void shuffle_data (struct proc_struct * p)
        since the data that fall under an aggregator will be consecutive list entries.
      */
     //sort_list_by_rank (p, &p->split_read_request_list1);
+#if DEBUG
+    gettimeofday (&t0, NULL);
+#endif
     merge_sort_list_by_rank (p, &p->split_read_request_list1);
-
+#if DEBUG
+    gettimeofday (&t1, NULL);
+#endif
     g_prev = -1;
     offset_prev = 0;
     offset = 0;
@@ -1351,7 +1358,7 @@ if (p->rank = 2)
     recv_buffer2 = malloc (len);
     assert (recv_buffer2);
 
-#if DEBUG
+#if 0
     for (i = 0; i < size; i++)
     {
         printf ("aggregator : %d, offsets2[%d] = %d, sizes2[%d] = %d\n", p->rank, i, offsets2[i], i, sizes2[i]);
@@ -1359,8 +1366,7 @@ if (p->rank = 2)
 #endif
 
 #if DEBUG
-    struct timeval t0, t1, t2;
-    gettimeofday (&t0, NULL);
+    gettimeofday (&t2, NULL);
 #endif
 
     MPI_Alltoallv (b, sizes, offsets, MPI_BYTE
@@ -1368,8 +1374,7 @@ if (p->rank = 2)
                   ,p->new_comm2
                   );
 #if DEBUG
-    gettimeofday (&t1, NULL);
-    printf ("alltoall = %7.5g\n", t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000);
+    gettimeofday (&t3, NULL);
 #endif
     /* Free sender buffer and let 'be' point to receiver buffer */
     free (b);
@@ -1492,8 +1497,7 @@ if (p->rank = 2)
     free_candidate_reader_list (recv_list);
 #endif
 #if DEBUG
-    gettimeofday (&t2, NULL);
-    printf (" after alltoall = %7.5g\n", t2.tv_sec - t1.tv_sec + (double)(t2.tv_usec - t1.tv_usec)/1000000);
+    gettimeofday (&t4, NULL);
 #endif
     free (sizes);
     free (sizes2);
@@ -1564,6 +1568,15 @@ while (tr)
      
         r = r->next;
     }
+#if DEBUG
+    gettimeofday (&t5, NULL);
+    printf ("[%3d]: shuffle_data = %f, %f, %f, %f, %f\n", p->rank, t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000
+                                                              , t2.tv_sec - t1.tv_sec + (double)(t2.tv_usec - t1.tv_usec)/1000000
+                                                              , t3.tv_sec - t2.tv_sec + (double)(t3.tv_usec - t2.tv_usec)/1000000
+                                                              , t4.tv_sec - t3.tv_sec + (double)(t4.tv_usec - t3.tv_usec)/1000000
+                                                              , t5.tv_sec - t4.tv_sec + (double)(t5.tv_usec - t4.tv_usec)/1000000
+           );
+#endif
 }
 
 /* Send read data from aggregator to member processors */
