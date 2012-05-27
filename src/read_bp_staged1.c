@@ -5,12 +5,25 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  *
  * Author: Qing Liu
+ *
+ * Some notes about the memory consumption for this method.
+ * The overall memory usage is tripled across all the processors in the worst case.
+ * 1. The memory the application passes to the adios_read_var() statement
+ * 2. In the worst case, all the data that one processor requests is from a remote group.
+ *    We need to allocate space at both the remote group (aggregator)  and the local group (aggregator).
+ *
+ * 3. From 1 and 2, the overall comsumption is tripled. Note that to avoid even more memory
+ *    consumption, the data field in local_read_request_list isn't allocated with memory in the first place.
+ *    when split_read_request_list1 and split_read_request_list2 are constructed and data have been either
+ *    read or received from a remote group, we copy data in these two lists to local_read_request_list. The
+ *    trick is that we first allocate the memory for one entry in local_read_request_list and then do the copy.
+ *    Then we deallocate the memory in split_read_request_list1/2 immediately. Q. Liu, May 26th, 2012.
  */
 
 
-/******************************/
-/* A read method for BP files */
-/******************************/
+/*************************************/
+/* A staged read method for BP files */
+/*************************************/
 
 #include <stdlib.h>
 #include <string.h>
