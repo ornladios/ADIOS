@@ -45,6 +45,11 @@ ADIOS_FILE * adios_fopen (const char * fname, MPI_Comm comm)
     return common_read_fopen (fname, comm);
 }
 
+void adios_reset_dimension_order (ADIOS_FILE *fp, int is_fortran)
+{
+    return common_read_reset_dimension_order (fp, is_fortran);
+}
+
 int adios_fclose (ADIOS_FILE *fp) 
 {
     return common_read_fclose (fp);
