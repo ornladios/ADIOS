@@ -79,20 +79,26 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -ldart2 -lspaces"
+#    LIBS="$LIBS -ldart2 -lspaces"
+    LIBS="$LIBS -ldart -ldataspaces"
     LDFLAGS="$LDFLAGS $DART_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $DART_CPPFLAGS"
     
     if test -z "${HAVE_DART_TRUE}"; then
-            AC_CHECK_HEADERS(dart.h,
+#            AC_CHECK_HEADERS(dart.h,
+            AC_CHECK_HEADERS(dart_interface.h,
                     ,
                     [AM_CONDITIONAL(HAVE_DART,false)])
     fi
     
     # Check for the Mini-XML library and headers
-    AC_TRY_COMPILE([#include "dart.h"],
+#    AC_TRY_COMPILE([#include "dart.h"],
+#            [int err; err = dart_init(1,1);],
+#            [DART_LIBS="-ldart2 -lspaces"],
+#            [AM_CONDITIONAL(HAVE_DART,false)])
+    AC_TRY_COMPILE([#include "dart_interface.h"],
             [int err; err = dart_init(1,1);],
-            [DART_LIBS="-ldart2 -lspaces"],
+            [DART_LIBS="-ldart -ldataspaces -lrdmacm -libverbs"],
             [AM_CONDITIONAL(HAVE_DART,false)])
     
     LIBS="$save_LIBS"
