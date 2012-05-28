@@ -12,6 +12,7 @@
 #include "core/common_read.h"
 #include "core/adios_read_hooks.h"
 #include "core/futils.h"
+#include "core/bp_utils.h" // struct namelists_struct
 #define BYTE_ALIGN 8
 
 #ifdef DMALLOC
@@ -27,6 +28,21 @@ static enum ADIOS_READ_METHOD selected_method = ADIOS_READ_METHOD_BP;
 struct common_read_internals_struct {
     enum ADIOS_READ_METHOD method;
     struct adios_read_hooks_struct * read_hooks; /* Save adios_read_hooks for each fopen for Matlab */
+    
+    /* Group view information *//* Actual method provides the group names */
+    int     ngroups;
+    char ** group_namelist;
+    int   * nvars_per_group;     /* # of variables per each group */
+    int   * nattrs_per_group;    /* # of attributes per each group */
+    int     group_in_view;       /* 0..ngroups-1: selected group in view,
+                                  -1: all groups */
+    int     group_varid_offset;  /* offset of var IDs from specific group to full list
+                                    if a selected group is in view */
+    int     group_attrid_offset;
+    int     full_nvars;          /* fp->nvars to save here for a group view */
+    char ** full_varnamelist;    /* fp->var_namelist to save here if one group is viewed */
+    int     full_nattrs;         /* fp->nvars to save here for a group view */
+    char ** full_attrnamelist;   /* fp->attr_namelist to save here if one group is viewed */
 };
 
 
@@ -37,7 +53,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
             "Invalid read method (=%d) passed to adios_read_init_method().", (int)method);
-        return -err_invalid_read_method;
+        return err_invalid_read_method;
     } 
     // init the adios_read_hooks_struct if not yet initialized  
     adios_read_hooks_init (&adios_read_hooks); 
@@ -51,7 +67,7 @@ int common_read_finalize_method(enum ADIOS_READ_METHOD method)
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
             "Invalid read method (=%d) passed to adios_read_finalize_method().", (int)method);
-        return -err_invalid_read_method;
+        return err_invalid_read_method;
     } 
 
     return adios_read_hooks[method].adios_finalize_method_fn ();
@@ -84,9 +100,17 @@ ADIOS_FILE * common_read_open_stream (const char * fname,
 
     fp = adios_read_hooks[internals->method].adios_open_stream_fn (fname, comm, lock_mode, timeout_msec);
 
-    // save the method in fp->internal_data
-    if (fp)
+    // save the method and group information in fp->internal_data
+    if (fp){
+        adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups, 
+                &internals->group_namelist, &internals->nvars_per_group, &internals->nattrs_per_group);
+        internals->group_in_view = -1;
+        internals->group_varid_offset = 0;
+        internals->group_attrid_offset = 0;
         fp->internal_data = (void *)internals;
+    } else {
+        free (internals);
+    }
     return fp;
 }
 
@@ -115,13 +139,21 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 
     fp = adios_read_hooks[internals->method].adios_open_file_fn (fname, comm);
 
-    // save the method in fp->internal_data
-    if (fp)
+    // save the method and group information in fp->internal_data
+    if (fp){
+        adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups, 
+                &internals->group_namelist, &internals->nvars_per_group, &internals->nattrs_per_group);
+        internals->group_in_view = -1;
+        internals->group_varid_offset = 0;
+        internals->group_attrid_offset = 0;
         fp->internal_data = (void *)internals;
+    } else {
+        free (internals);
+    }
     return fp;
 }
 
-int common_read_close (const ADIOS_FILE *fp) 
+int common_read_close (ADIOS_FILE *fp) 
 {
     struct common_read_internals_struct * internals;
     int retval;
@@ -133,7 +165,7 @@ int common_read_close (const ADIOS_FILE *fp)
         free (internals);
     } else {
         adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_read_close()");
-        retval = -err_invalid_file_pointer;
+        retval = err_invalid_file_pointer;
     }
     return retval;
 }
@@ -152,7 +184,7 @@ void common_read_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 }
 
 
-int common_read_advance_step (const ADIOS_FILE *fp, int last, int wait_for_step)
+int common_read_advance_step (ADIOS_FILE *fp, int last, int wait_for_step)
 {
     struct common_read_internals_struct * internals;
     int retval;
@@ -161,16 +193,25 @@ int common_read_advance_step (const ADIOS_FILE *fp, int last, int wait_for_step)
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_advance_step_fn (fp, last, wait_for_step);
-        free (internals);
+        /* Update group information too */
+        adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups, 
+                &internals->group_namelist, &internals->nvars_per_group, &internals->nattrs_per_group);
+        if (internals->group_in_view > -1) {
+            /* if we have a group view, we need to update the presented list again */
+            /* advance_step updated fp->nvars, nattrs, var_namelist, attr_namelist */
+            int groupid = internals->group_in_view;
+            internals->group_in_view = -1; // we have the full view at this moment 
+            common_read_group_view (fp, groupid);
+        }
     } else {
         adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_advance_step()");
-        retval = -err_invalid_file_pointer;
+        retval = err_invalid_file_pointer;
     }
     return retval;
 }
 
 
-void common_read_release_step (const ADIOS_FILE *fp) 
+void common_read_release_step (ADIOS_FILE *fp) 
 {
     struct common_read_internals_struct * internals;
 
@@ -184,6 +225,48 @@ void common_read_release_step (const ADIOS_FILE *fp)
 }
 
 
+static int common_read_find_name (int n, char ** namelist, const char *name, int role)
+{
+    /** Find a string name in a list of names and return the index. 
+        Search should work with starting / characters and without.
+        Create adios error and return -1 if name is null or
+          if name is not found in the list.
+        role = 0 for variable search, 1 for attribute search
+     */
+    int id, nstartpos=0, sstartpos;
+    char ** s = namelist;
+    char *rolename[2] = { "variable", "attribute" };
+    int roleerror[2] = { err_invalid_varname, err_invalid_attrname };
+
+    if (!name) {
+        adios_error (roleerror[role!=0], "Null pointer passed as %s name!", rolename[role!=0]);
+        return -1;
+    }
+
+    // find names with or without beginning /
+    if (*name == '/') nstartpos = 1;
+
+    for (id=0; id < n; id++) {
+        if (*s[0] == '/') sstartpos = 1;
+        else sstartpos = 0;
+        //DBG_PRINTF("     check %s, startpos=%d\n", *s, sstartpos);
+        if (!strcmp (*s+sstartpos, name+nstartpos))
+            break; // found this name
+        s++;
+    }
+
+    if (id == n) {
+        adios_error (roleerror[role!=0], "%s '%s' is not found! One "
+                "possible error is to set the view to a specific group and "
+                "then try to read a %s of another group. In this case, "
+                "reset the group view with adios_group_view(fp,-1).", 
+                rolename[role!=0], name, rolename[role!=0]);
+        return -1;
+    }
+    return id;
+}
+
+
 ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname) 
 {
     struct common_read_internals_struct * internals;
@@ -192,7 +275,12 @@ ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname)
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = internals->read_hooks[internals->method].adios_inq_var_fn (fp, varname);
+        int varid = common_read_find_name (fp->nvars, fp->var_namelist, varname, 0);
+        if (varid >= 0) {
+            retval = common_read_inq_var_byid (fp, varid);
+        } else {
+            retval = NULL;
+        }
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var()");
         retval = NULL;
@@ -209,7 +297,8 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = internals->read_hooks[internals->method].adios_inq_var_byid_fn (fp, varid);
+        /* Translate varid to varid in global varlist if a selected group is in view */ 
+        retval = internals->read_hooks[internals->method].adios_inq_var_byid_fn (fp, varid+internals->group_varid_offset);
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_byid()");
         retval = NULL;
@@ -229,12 +318,27 @@ int common_read_inq_var_stat (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinf
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_inq_var_stat_fn (fp, varinfo, per_step_stat, per_block_stat);
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_byid()");
-        retval = -err_invalid_file_pointer;
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_stat()");
+        retval = err_invalid_file_pointer;
     }
     return retval;
 }
 
+int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo)
+{
+    struct common_read_internals_struct * internals;
+    int retval;
+    
+    adios_errno = 0;
+    if (fp) {
+        internals = (struct common_read_internals_struct *) fp->internal_data;
+        retval = internals->read_hooks[internals->method].adios_inq_var_blockinfo_fn (fp, varinfo);
+    } else {
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_blockinfo()");
+        retval = err_invalid_file_pointer;
+    }
+    return retval;
+}
 
 #define MYFREE(p) {free(p); p=NULL;}
 void common_read_free_varinfo (ADIOS_VARINFO *vp)
@@ -307,10 +411,15 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = internals->read_hooks[internals->method].adios_schedule_read_fn (fp, sel, varname, from_steps, nsteps, data);
+        int varid = common_read_find_name (fp->nvars, fp->var_namelist, varname, 0);
+        if (varid >= 0) {
+            retval = common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, data);
+        } else {
+            retval = adios_errno; // adios_errno was set in common_read_find_name
+        }
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_schedule_read()");
-        retval = -err_invalid_file_pointer;
+        retval = err_invalid_file_pointer;
     }
     return retval;
 }
@@ -330,10 +439,10 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid, from_steps, nsteps, data);
+        retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_schedule_read_byid()");
-        retval = -err_invalid_file_pointer;
+        retval = err_invalid_file_pointer;
     }
     return retval;
 }
@@ -350,7 +459,7 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
         retval = internals->read_hooks[internals->method].adios_perform_reads_fn (fp, blocking);
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_perform_reads()");
-        retval = -err_invalid_file_pointer;
+        retval = err_invalid_file_pointer;
     }
     return retval;
 }
@@ -367,13 +476,13 @@ int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
         retval = internals->read_hooks[internals->method].adios_check_reads_fn (fp, chunk);
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_check_reads()");
-        retval = -err_invalid_file_pointer;
+        retval = err_invalid_file_pointer;
     }
     return retval;
 }
 
 
-void common_read_free_chunk (const ADIOS_VARCHUNK *chunk)
+void common_read_free_chunk (ADIOS_VARCHUNK *chunk)
 {
     /** Free the memory of a chunk allocated inside adios_check_reads().
      * It only frees the ADIOS_VARCHUNK struct and the ADIOS_SELECTION struct
@@ -402,10 +511,15 @@ int common_read_get_attr (const ADIOS_FILE * fp,
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = internals->read_hooks[internals->method].adios_get_attr_fn (fp, attrname, type, size, data);
+        int attrid = common_read_find_name (fp->nattrs, fp->attr_namelist, attrname, 1);
+        if (attrid > -1) {
+            retval = common_read_get_attr_byid (fp, attrid, type, size, data);
+        } else {
+            retval = adios_errno; // adios_errno was set in common_read_find_name
+        }
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_read_get_attr()");
-        retval = -err_invalid_file_pointer;
+        retval = err_invalid_file_pointer;
     }
     return retval;
 }
@@ -423,10 +537,10 @@ int common_read_get_attr_byid (const ADIOS_FILE * fp,
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = internals->read_hooks[internals->method].adios_get_attr_byid_fn (fp, attrid, type, size, data);
+        retval = internals->read_hooks[internals->method].adios_get_attr_byid_fn (fp, attrid+internals->group_attrid_offset, type, size, data);
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_read_get_attr_byid()");
-        retval = -err_invalid_file_pointer;
+        retval = err_invalid_file_pointer;
     }
     return retval;
 }
@@ -470,13 +584,78 @@ int common_read_type_size(enum ADIOS_DATATYPES type, void *data)
 }
 
 
-int common_read_get_grouplist (const ADIOS_FILE  *fp, char **group_namelist)
+int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist)
 {
+    struct common_read_internals_struct * internals;
+    int retval;
+    
+    adios_errno = 0;
+    if (fp) {
+        internals = (struct common_read_internals_struct *) fp->internal_data;
+        retval = internals->ngroups;
+        *group_namelist = internals->group_namelist;
+    } else {
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_get_grouplist()");
+        retval = err_invalid_file_pointer;
+    }
+    return retval;
 }
 
-
-int common_read_group_view (const ADIOS_FILE  *fp, int groupid)
+/** Select a subset of variables and attributes to present in ADIOS_FILE struct.
+    ADIOS_FILE-> nvars, nattrs, var_namelist, attr_namelist will contain
+    only a subset of all variables and attributes.
+    internals-> full_* stores the complete lists for reset or change of group
+ */
+int common_read_group_view (ADIOS_FILE  *fp, int groupid)
 {
+    struct common_read_internals_struct * internals;
+    int retval, i;
+    
+    adios_errno = 0;
+    if (fp) {
+        internals = (struct common_read_internals_struct *) fp->internal_data;
+        if (groupid >= 0 && groupid < internals->ngroups) {
+            /* 1. save complete list if first done */
+            if (internals->group_in_view == -1) {
+                internals->full_nvars = fp->nvars;
+                internals->full_varnamelist = fp->var_namelist;
+                internals->full_nattrs = fp->nattrs;
+                internals->full_attrnamelist = fp->attr_namelist;
+            }
+            /* Set ID offsets for easier indexing of vars/attrs in other functions */
+            internals->group_varid_offset = 0;
+            internals->group_attrid_offset = 0;
+            for (i=0; i<groupid; i++) {
+                internals->group_varid_offset += internals->nvars_per_group[i];
+                internals->group_attrid_offset += internals->nattrs_per_group[i];
+            }
+            /* Set view to this group */
+            fp->nvars = internals->nvars_per_group[groupid];
+            fp->var_namelist = &(internals->full_varnamelist [internals->group_varid_offset]);
+            fp->nattrs = internals->nattrs_per_group[groupid];
+            fp->attr_namelist = &(internals->full_attrnamelist [internals->group_attrid_offset]);
+            internals->group_in_view = groupid;
+            retval = 0;
+
+        } else if (groupid == -1) {
+            /* Reset to full view */
+            fp->nvars  = internals->full_nvars;
+            fp->var_namelist  = internals->full_varnamelist;
+            fp->nattrs = internals->full_nattrs;
+            fp->attr_namelist  = internals->full_attrnamelist;
+            internals->group_varid_offset = 0;
+            internals->group_attrid_offset = 0;
+            internals->group_in_view = -1;
+            retval = 0;
+        } else {
+            adios_error (err_invalid_group, "Invalid group ID in adios_group_view()");
+            retval = err_invalid_group;
+        }
+    } else {
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_group_view()");
+        retval = err_invalid_file_pointer;
+    }
+    return retval;
 }
 
 
@@ -485,7 +664,7 @@ void common_read_print_fileinfo (const ADIOS_FILE *fp)
     int i;
     int ngroups;
     char **group_namelist;
-    ngroups = common_read_get_grouplist (fp, group_namelist);
+    ngroups = common_read_get_grouplist (fp, &group_namelist);
 
     printf ("---------------------------\n");
     printf ("     file information\n");
