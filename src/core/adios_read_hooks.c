@@ -22,17 +22,15 @@ if (!strcasecmp (buf,b)) \
 (*t) [b].adios_close_fn = adios_read_##a##_close; \
 (*t) [b].adios_advance_step_fn = adios_read_##a##_advance_step; \
 (*t) [b].adios_release_step_fn = adios_read_##a##_release_step; \
-(*t) [b].adios_inq_var_fn = adios_read_##a##_inq_var; \
 (*t) [b].adios_inq_var_byid_fn = adios_read_##a##_inq_var_byid; \
 (*t) [b].adios_inq_var_stat_fn = adios_read_##a##_inq_var_stat; \
 (*t) [b].adios_inq_var_blockinfo_fn = adios_read_##a##_inq_var_blockinfo; \
-(*t) [b].adios_schedule_read_fn = adios_read_##a##_schedule_read; \
 (*t) [b].adios_schedule_read_byid_fn = adios_read_##a##_schedule_read_byid; \
 (*t) [b].adios_perform_reads_fn = adios_read_##a##_perform_reads; \
 (*t) [b].adios_check_reads_fn = adios_read_##a##_check_reads; \
-(*t) [b].adios_get_attr_fn = adios_read_##a##_get_attr; \
 (*t) [b].adios_get_attr_byid_fn = adios_read_##a##_get_attr_byid; \
 (*t) [b].adios_reset_dimension_order_fn = adios_read_##a##_reset_dimension_order; \
+(*t) [b].adios_get_groupinfo_fn = adios_read_##a##_get_groupinfo; \
 
 void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
 {
@@ -58,7 +56,7 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
 #endif
 
 #if HAVE_PHDF5
-        m//ASSIGN_FNS(hdf5,ADIOS_READ_METHOD_HDF5)
+        //ASSIGN_FNS(hdf5,ADIOS_READ_METHOD_HDF5)
 #endif
 
 #if HAVE_NSSI

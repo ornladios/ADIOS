@@ -40,17 +40,17 @@ ADIOS_FILE * common_read_open_file   (const char * fname,
                                      enum ADIOS_READ_METHOD method,
                                      MPI_Comm comm);
 
-int common_read_close (const ADIOS_FILE *fp);
+int common_read_close (ADIOS_FILE *fp);
 
-int common_read_advance_step (const ADIOS_FILE *fp, int last, int wait_for_step);
-void common_read_release_step (const ADIOS_FILE *fp);
+int common_read_advance_step (ADIOS_FILE *fp, int last, int wait_for_step);
+void common_read_release_step (ADIOS_FILE *fp);
 
 ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE  *fp, const char * varname);
 ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE  *fp, int varid);
 int common_read_inq_var_stat (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo,
                              int per_step_stat, int per_block_stat);
 int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo);
-void common_read_free_varinfo (const ADIOS_VARINFO *vp);
+void common_read_free_varinfo (ADIOS_VARINFO *vp);
 
 int common_read_schedule_read (const ADIOS_FILE      * fp,
                                const ADIOS_SELECTION * sel,
@@ -68,7 +68,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
 
 int common_read_perform_reads (const ADIOS_FILE *fp, int blocking);
 int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk);
-void common_read_free_chunk (const ADIOS_VARCHUNK *chunk);
+void common_read_free_chunk (ADIOS_VARCHUNK *chunk);
 
 
 int common_read_get_attr (const ADIOS_FILE            * fp,
@@ -83,8 +83,8 @@ int common_read_get_attr_byid (const ADIOS_FILE  * fp, int attrid, enum ADIOS_DA
 const char * common_read_type_to_string (enum ADIOS_DATATYPES type);
 int common_read_type_size(enum ADIOS_DATATYPES type, void *data);
 
-int common_read_get_grouplist (const ADIOS_FILE  *fp, char **group_namelist);
-int common_read_group_view (const ADIOS_FILE  *fp, int groupid);
+int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist);
+int common_read_group_view (ADIOS_FILE  *fp, int groupid);
 
 // internal function to support version 1 time-dimension reads
 int common_read_is_var_timed (const ADIOS_FILE *fp, int varid);
