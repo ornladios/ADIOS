@@ -16,7 +16,7 @@
 
 #ifdef _NOMPI
     /* Sequential processes can use the library compiled with -D_NOMPI */
-#   include "mpidummy.h"
+#   include "public/mpidummy.h"
 #else
     /* Parallel applications should use MPI to communicate file info and slices of data */
 #   include "mpi.h"
