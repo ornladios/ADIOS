@@ -87,10 +87,23 @@ static int adios_read_bp_get_endianness( uint32_t change_endianness )
         return current_endianness;
 }
 
-int adios_read_bp_init (MPI_Comm comm) { return 0; }
-int adios_read_bp_finalize () { return 0; }
 
-ADIOS_FILE * adios_read_bp_fopen (const char * fname, MPI_Comm comm)
+int adios_read_bp_init_method (MPI_Comm comm, const char * parameters)
+{
+    return 0;
+}
+
+int adios_read_bp_finalize_method ()
+{
+    return 0;
+}
+
+ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, int timeout_msec)
+{
+    return 0; //FIXME
+}
+
+ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
 {
     int i, rank;    
     struct BP_FILE * fh;
@@ -98,11 +111,10 @@ ADIOS_FILE * adios_read_bp_fopen (const char * fname, MPI_Comm comm)
     uint64_t header_size;
 
     adios_errno = 0;
+    MPI_Comm_rank (comm, &rank);
+
     fh = (struct BP_FILE *) malloc (sizeof (struct BP_FILE));
-    if (!fh) {
-        adios_error ( err_no_memory, "Cannot allocate memory for file info.");
-        return NULL;
-    }
+    assert (fh);
 
     fh->fname = (fname ? strdup (fname) : 0L);
     fh->sfh = 0;
@@ -111,42 +123,48 @@ ADIOS_FILE * adios_read_bp_fopen (const char * fname, MPI_Comm comm)
     fh->pgs_root = 0;
     fh->vars_root = 0;
     fh->attrs_root = 0;
+
     fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
-    if (!fh->b) {
-        adios_error ( err_no_memory, "Cannot allocate memory for file info.");
-        return NULL;
-    }
+    assert (fh->b);
+
     fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
-    if (!fp) {
-        adios_error ( err_no_memory, "Cannot allocate memory for file info.");
-        return NULL;
-    }
+    assert (fp);
 
     adios_buffer_struct_init (fh->b);
-    MPI_Comm_rank (comm, &rank);
-    if (bp_read_open (fname, comm, fh))
-        return NULL;
 
-    /* Only rank=0 process reads the footer and it broadcasts to all other processes */
-    if ( rank == 0 ) {
-        if (bp_read_minifooter (fh))
-            return NULL;
+    if (bp_read_open (fname, comm, fh))
+    {
+        return NULL;
     }
-    MPI_Bcast (&fh->mfooter, sizeof(struct bp_minifooter),MPI_BYTE, 0, comm);
+
+    /* Only rank 0 reads the footer and it broadcasts to all other processes */
+    if (rank == 0)
+    {
+        if (bp_read_minifooter (fh))
+        {
+            return NULL;
+        }
+    }
+
+    /* Broadcast to all other processors */
+    MPI_Bcast (&fh->mfooter, sizeof (struct bp_minifooter), MPI_BYTE, 0, comm);
     
     header_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
 
-    if ( rank != 0) {
-        if (!fh->b->buff) {
+    if (rank != 0)
+    {
+        if (!fh->b->buff)
+        {
             bp_alloc_aligned (fh->b, header_size);
-            if (!fh->b->buff)
-                return NULL;
+            assert (fh->b->buff);
+
             memset (fh->b->buff, 0, header_size);
             fh->b->offset = 0;
         }
     }
-    MPI_Barrier(comm);
-    MPI_Bcast (fh->b->buff, fh->mfooter.file_size-fh->mfooter.pgs_index_offset, MPI_BYTE, 0 , comm);
+
+    MPI_Barrier (comm);
+    MPI_Bcast (fh->b->buff, fh->mfooter.file_size-fh->mfooter.pgs_index_offset, MPI_BYTE, 0, comm);
 
     /* Everyone parses the index on its own */
     bp_parse_pgs (fh);
@@ -155,28 +173,324 @@ ADIOS_FILE * adios_read_bp_fopen (const char * fname, MPI_Comm comm)
 
     /* fill out ADIOS_FILE struct */
     fp->fh = (uint64_t) fh;
-    fp->groups_count = fh->gvar_h->group_count;
-    fp->vars_count = fh->mfooter.vars_count;
-    fp->attrs_count = fh->mfooter.attrs_count;
-    fp->tidx_start = fh->tidx_start;
-    fp->ntimesteps = fh->tidx_stop - fh->tidx_start + 1;
+    fp->nvars = fh->mfooter.vars_count;
+    fp->nattrs = fh->mfooter.attrs_count;
     fp->file_size = fh->mfooter.file_size;
     fp->version = fh->mfooter.version;
-    fp->endianness = adios_read_bp_get_endianness(fh->mfooter.change_endianness);
-    alloc_namelist (&fp->group_namelist,fp->groups_count); 
-    for (i=0;i<fp->groups_count;i++) {
-        if (!fp->group_namelist[i]) {
-            adios_error (err_no_memory, "Could not allocate buffer for %d strings in adios_fopen()", fp->groups_count);
-            adios_read_bp_fclose(fp);
-            return NULL;
-        }
-        else  {
-            strcpy(fp->group_namelist[i],fh->gvar_h->namelist[i]);
-        }
-    }
+    fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
+
     return fp;
 }
 
+int adios_read_bp_close (ADIOS_FILE *fp)
+{
+    struct BP_FILE * fh = (struct BP_FILE *) fp->fh;
+    struct BP_GROUP_VAR * gh = fh->gvar_h;
+    struct BP_GROUP_ATTR * ah = fh->gattr_h;
+    struct adios_index_var_struct_v1 * vars_root = fh->vars_root, *vr;
+    struct adios_index_attribute_struct_v1 * attrs_root = fh->attrs_root, *ar;
+    struct bp_index_pg_struct_v1 * pgs_root = fh->pgs_root, *pr;
+    int i,j;
+    MPI_File mpi_fh = fh->mpi_fh;
+
+    adios_errno = 0;
+    if (fh->mpi_fh) 
+        MPI_File_close (&mpi_fh);
+
+    if (fh->sfh)
+        close_all_BP_files (fh->sfh);
+
+    if (fh->b) {
+        adios_posix_close_internal (fh->b);
+        free(fh->b);
+    }
+
+    /* Free variable structures */
+    /* alloc in bp_utils.c: bp_parse_vars() */
+    while (vars_root) {
+        vr = vars_root;
+        vars_root = vars_root->next;
+        for (j = 0; j < vr->characteristics_count; j++) {
+            // alloc in bp_utils.c:bp_parse_characteristics() <- bp_get_characteristics_data()
+            if (vr->characteristics[j].dims.dims)
+                free (vr->characteristics[j].dims.dims);
+            if (vr->characteristics[j].value)
+                free (vr->characteristics[j].value);
+            // NCSU - Clearing up statistics
+            if (vr->characteristics[j].stats)
+            {
+                uint8_t k = 0, idx = 0;
+                uint8_t i = 0, count = adios_get_stat_set_count(vr->type);
+
+                while (vr->characteristics[j].bitmap >> k)
+                {
+                    if ((vr->characteristics[j].bitmap >> k) & 1)
+                    {
+                        for (i = 0; i < count; i ++)
+                        {
+                            if (k == adios_statistic_hist)
+                            {
+                                struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct *) (vr->characteristics [j].stats[i][idx].data);
+                                free (hist->breaks);
+                                free (hist->frequencies);
+                                free (hist);
+                            }
+                            else
+                            free (vr->characteristics[j].stats [i][idx].data);
+                        }
+                        idx ++;
+                    }
+                    k ++;
+                }
+
+                for (i = 0; i < count; i ++)
+                    free (vr->characteristics[j].stats [i]);
+
+                free (vr->characteristics[j].stats);
+                vr->characteristics[j].stats = 0;
+            }
+        }
+        if (vr->characteristics) 
+            free (vr->characteristics);
+        if (vr->group_name) 
+            free (vr->group_name);
+        if (vr->var_name) 
+            free (vr->var_name);
+        if (vr->var_path) 
+            free (vr->var_path);
+        free(vr);
+    }
+
+    /* Free attributes structures */
+    /* alloc in bp_utils.c bp_parse_attrs() */
+    while (attrs_root) {
+        ar = attrs_root;
+        attrs_root = attrs_root->next;
+        for (j = 0; j < ar->characteristics_count; j++) {
+            if (ar->characteristics[j].value)
+                free (ar->characteristics[j].value);
+        }
+        if (ar->characteristics) 
+            free (ar->characteristics);
+        if (ar->group_name) 
+            free (ar->group_name);
+        if (ar->attr_name) 
+            free (ar->attr_name);
+        if (ar->attr_path) 
+            free (ar->attr_path);
+        free(ar);
+    }
+
+
+    /* Free process group structures */
+    /* alloc in bp_utils.c bp_parse_pgs() first loop */
+    //printf ("pgs: %d\n", fh->mfooter.pgs_count);
+    while (pgs_root) {
+        pr = pgs_root;
+        pgs_root = pgs_root->next;
+        //printf("%d\tpg pid=%d addr=%x next=%x\n",i, pr->process_id, pr, pr->next);
+        if (pr->group_name)
+            free(pr->group_name);
+        if (pr->time_index_name)
+            free(pr->time_index_name);
+        free(pr);
+    }
+
+    /* Free variable structures in BP_GROUP_VAR */
+    if (gh) {
+        for (j=0;j<2;j++) { 
+            for (i=0;i<gh->group_count;i++) {
+                if (gh->time_index[j][i])
+                    free(gh->time_index[j][i]);
+            }
+            if (gh->time_index[j])
+                free(gh->time_index[j]);
+        }
+        free (gh->time_index);
+    
+        for (i=0;i<gh->group_count;i++) { 
+            if (gh->namelist[i])
+                free(gh->namelist[i]);
+        }
+        if (gh->namelist)
+            free (gh->namelist);
+
+        for (i=0;i<fh->mfooter.vars_count;i++) {
+            if (gh->var_namelist[i])
+                free(gh->var_namelist[i]);
+            if (gh->var_offsets[i]) 
+                free(gh->var_offsets[i]);
+        }
+        if (gh->var_namelist)
+            free (gh->var_namelist);
+
+        if (gh->var_offsets) 
+            free(gh->var_offsets);
+
+        if (gh->var_counts_per_group)
+            free(gh->var_counts_per_group);
+
+        if (gh->pg_offsets)
+            free (gh->pg_offsets);
+
+        free (gh);
+    }
+
+    /* Free attribute structures in BP_GROUP_ATTR */
+    if (ah) {
+        for (i = 0; i < fh->mfooter.attrs_count; i++) {
+            if (ah->attr_offsets[i]) 
+                free(ah->attr_offsets[i]);
+            if (ah->attr_namelist[i]) 
+                free(ah->attr_namelist[i]);
+        }
+        if (ah->attr_offsets)
+            free(ah->attr_offsets);
+        if (ah->attr_namelist)
+            free(ah->attr_namelist);
+        if (ah->attr_counts_per_group) 
+            free(ah->attr_counts_per_group);
+
+        free(ah);
+    }
+
+    if (fh->fname)
+        free (fh->fname);
+        
+    if (fh)
+        free (fh);    
+
+    free(fp);
+
+    return 0;
+}
+
+int adios_read_bp_advance_step (ADIOS_FILE *fp, int last, int wait_for_step)
+{
+    return 0;
+}
+
+void adios_read_bp_release_step (ADIOS_FILE *fp)
+{
+}
+
+ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
+{
+    struct BP_GROUP * gh;
+    struct BP_FILE * fh;
+    ADIOS_VARINFO * vi;
+    int file_is_fortran, i, k;
+    struct adios_index_var_struct_v1 * var_root;
+
+    adios_errno = 0;
+
+    assert (fp);
+
+    fh = (struct BP_FILE *)fp->fh;
+    assert (fh);
+
+    if (varid < 0 || varid >= fp->nvars)
+    {
+        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, fp->nvars);
+        return NULL;
+    }
+
+    vi = (ADIOS_VARINFO *) malloc (sizeof (ADIOS_VARINFO));
+    assert (vi);
+
+    file_is_fortran = is_fortran_file (fh);
+//    file_is_fortran = (fh->pgs_root->adios_host_language_fortran == adios_flag_yes);
+    
+    var_root = gh->vars_root; /* first variable of this group. Need to traverse the list */
+    for (i = 0; i < varid && var_root; i++)
+    {
+        var_root = var_root->next;
+    }
+
+    if (i!=varid)
+    {
+        adios_error (err_corrupted_variable, "Variable id=%d is valid but was not found in internal data structures!",varid);
+        return NULL; 
+    }
+
+
+    vi->varid = varid;
+    vi->type = var_root->type;
+    if (!var_root->characteristics_count)
+    {
+        adios_error (err_corrupted_variable,
+                     "Variable %d does not have information on dimensions", varid
+                    );
+        free(vi);
+        return NULL;
+    }
+
+    /* Get value or min/max */
+    //FIXME
+/*
+    adios_read_bp_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
+                          &(vi->ndim), &(vi->dims), &(vi->timedim));
+*/
+    
+    if (file_is_fortran != futils_is_called_from_fortran()) {
+        /* If this is a Fortran written file and this is called from C code/  
+           or this is a C written file and this is called from Fortran code ==>
+           We need to reverse the order of the dimensions */
+//FIXME
+/*
+        swap_order(vi->ndim, vi->dims, &(vi->timedim));
+*/
+        /*printf("File was written from %s and read now from %s, so we swap order of dimensions\n",
+                (file_is_fortran ? "Fortran" : "C"), (futils_is_called_from_fortran() ? "Fortran" : "C"));*/
+    }
+/*//FIXME
+    adios_read_bp_get_characteristics (var_root, vi);
+*/
+    return vi;
+}
+
+int adios_read_bp_inq_var_stat (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo, int per_step_stat, int per_block_stat)
+{
+    return 0;
+}
+
+int adios_read_bp_inq_var_blockinfo (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo)
+{
+    return 0;
+}
+
+int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel, int varid, int from_steps, int nsteps, void * data)
+{
+    return 0;
+}
+
+int adios_read_bp_perform_reads (const ADIOS_FILE *fp, int blocking)
+{
+    return 0;
+}
+
+int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
+{
+    return 0;
+}
+
+int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data)
+{
+    return 0;
+}
+
+void adios_read_bp_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
+{
+
+}
+
+void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group)
+{
+
+}
+
+
+#if 0
 /* This function can be called if user places 
    the wrong sequences of dims for a var 
 */   
@@ -3518,3 +3832,4 @@ double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
     }
     return cov;
 }
+#endif

@@ -34,7 +34,7 @@
 #define DEBUG 0
 #define INVALID_VALUE -1
 #define HT_SIZE 100
-
+#if 0
 typedef struct read_info
 {
     int ndim;
@@ -7671,3 +7671,4 @@ int64_t adios_read_bp_staged1_read_var_byid (ADIOS_GROUP    * gp,
         return adios_read_bp_staged1_read_var_byid2(gp, varid, start, count, data);
     }
 }
+#endif

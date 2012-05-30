@@ -40,6 +40,8 @@ int bp_parse_vars (struct BP_FILE * fh);
 const char * bp_value_to_string (enum ADIOS_DATATYPES type, void * data);
 int bp_get_type_size (enum ADIOS_DATATYPES type, void * var);
 void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES type);
+int is_fortran_file (struct BP_FILE * fh);
+int has_subfiles (struct BP_FILE * fh);
 
 void print_process_group_index (
                          struct adios_index_process_group_struct_v1 * pg_root

@@ -31,6 +31,7 @@
 
 #define READ_CLOSE 0
 
+#if 0
 typedef struct read_info
 {
     int ndim;
@@ -46,6 +47,7 @@ typedef struct read_info
 static void swap_order (int n, uint64_t * array, int * tdim);
 static void _swap_order (int n, uint64_t * array);
 static int isTimeless (int tdim);
+#
 void getReadInfo (ADIOS_GROUP * gp
                  ,struct adios_index_var_struct_v1 * v
                  ,uint64_t * start
@@ -5831,3 +5833,4 @@ int64_t adios_read_bp_staged_read_var_byid (ADIOS_GROUP    * gp,
         return adios_read_bp_staged_read_var_byid2(gp, varid, start, count, data);
     }
 }
+#endif

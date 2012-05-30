@@ -1578,6 +1578,16 @@ void copy_data (void *dst, void *src,
     }
 }
 
+int is_fortran_file (struct BP_FILE * fh)
+{
+    return (fh->pgs_root->adios_host_language_fortran == adios_flag_yes);
+}
+
+int has_subfiles (struct BP_FILE * fh)
+{
+    return (fh->mfooter.version & ADIOS_VERSION_HAVE_SUBFILE);
+}
+
 /** Return the memory size of one data element of an adios type.
  *  If the type is adios_string, and the second argument is
  *  the string itself, it returns strlen(var)+1.
