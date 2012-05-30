@@ -58,6 +58,7 @@ libadios_a_SOURCES = core/adios.c \
                      core/adios_read_hooks.c \
                      core/adios_transport_hooks.c \
                      core/adios_socket.c \
+                     core/adios_logger.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -86,6 +87,7 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/adios_read_hooks.c \
                      core/adios_transport_hooks.c \
                      core/adios_socket.c \
+                     core/adios_logger.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -113,6 +115,7 @@ libadiosf_a_SOURCES = core/adiosf.c \
                      core/adios_read_hooks.c \
                      core/adios_transport_hooks.c \
                      core/adios_socket.c \
+                     core/adios_logger.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -255,6 +258,7 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/common_read.c \
                       core/globals.c \
                       core/adios_read_hooks.c \
+                      core/adios_logger.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
@@ -289,6 +293,7 @@ libadiosreadf_a_SOURCES = core/adios_bp_v1.c \
                       core/common_read.c \
                       core/globals.c \
                       core/adios_read_hooks.c \
+                      core/adios_logger.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
@@ -329,6 +334,7 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/adios_read.c \
                       core/common_read.c \
                       core/adios_internals.c \
+                      core/adios_logger.c \
                       core/buffer.c \
                       core/globals.c \
                       core/adios_read_hooks.c \
