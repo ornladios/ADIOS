@@ -141,6 +141,22 @@ enum ADIOS_READ_METHOD {
         ADIOS_READ_METHOD_FLEXIO     = 5,  /* Read from memory written by FLEXIO method                   */
 };
 
+/** Locking mode for streams. 
+ *  In case of real streams, a step may need to be locked in memory to be able
+ *  to read all data of the step completely.
+ *     ADIOS_LOCKMODE_NONE = no locking. A step can disappear between open and read
+ *     ADIOS_LOCKMODE_CURRENT = lock current step. Do not allow to be removed until
+ *         closing or moving away from this step. Future steps may be removed by
+ *         the method to store even newer steps. Therefore, steps may be missing.
+ *     ADIOS_LOCKMODE_ALL = lock current step and all newer steps
+ *  In case of a file opened as a stream, locking mode has no effect. 
+ */
+enum ADIOS_LOCKMODE { 
+        ADIOS_LOCKMODE_NONE = 0, 
+        ADIOS_LOCKMODE_CURRENT = 1,
+        ADIOS_LOCKMODE_ALL = 2
+}; 
+
 #ifndef __INCLUDED_FROM_FORTRAN_API__
 
 /** Functions that return a pointer to some data structures (e.g. adios_fopen),
@@ -186,22 +202,6 @@ int adios_read_init_method (enum ADIOS_READ_METHOD method,
 /** Finalize the selected method. Required for all methods that are initialized. 
  */
 int adios_read_finalize_method(enum ADIOS_READ_METHOD method);
-
-/** Locking mode for streams. 
- *  In case of real streams, a step may need to be locked in memory to be able
- *  to read all data of the step completely.
- *     ADIOS_LOCKMODE_NONE = no locking. A step can disappear between open and read
- *     ADIOS_LOCKMODE_CURRENT = lock current step. Do not allow to be removed until
- *         closing or moving away from this step. Future steps may be removed by
- *         the method to store even newer steps. Therefore, steps may be missing.
- *     ADIOS_LOCKMODE_ALL = lock current step and all newer steps
- *  In case of a file opened as a stream, locking mode has no effect. 
- */
-enum ADIOS_LOCKMODE { 
-        ADIOS_LOCKMODE_NONE = 0, 
-        ADIOS_LOCKMODE_CURRENT = 1,
-        ADIOS_LOCKMODE_ALL = 2
-}; 
 
 /** Open an adios file/stream as a stream.
  *  Only one step at a time can be read. The list of variables will change when
