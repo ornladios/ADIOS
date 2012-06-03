@@ -708,4 +708,57 @@ void common_read_print_fileinfo (const ADIOS_FILE *fp)
 }
 
 
+/**    SELECTIONS   **/ 
+ADIOS_SELECTION * common_read_selection_boundingbox (uint64_t ndim, const uint64_t *start, const uint64_t *count)
+{   
+    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
+    if (sel) {
+        sel->type = ADIOS_SELECTION_BOUNDINGBOX;
+        sel->u.bb.ndim = ndim;
+        sel->u.bb.start = (uint64_t *)start;
+        sel->u.bb.count = (uint64_t *)count;
+    } else {
+        adios_error(err_no_memory, "Cannot allocate memory for bounding box selection");
+    }
+    return sel;
+}
+
+
+ADIOS_SELECTION * common_read_selection_points (uint64_t ndim, uint64_t npoints, const uint64_t *points)
+{   
+    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
+    if (sel) {
+        sel->type = ADIOS_SELECTION_POINTS;
+        sel->u.points.ndim = ndim;
+        sel->u.points.npoints = npoints;
+        sel->u.points.points = (uint64_t *) points;
+    } else {
+        adios_error(err_no_memory, "Cannot allocate memory for points selection");
+    }
+    return sel;
+}
+
+ADIOS_SELECTION * common_read_selection_writeblock (int index)
+{   
+    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
+    if (sel) {
+        sel->type = ADIOS_SELECTION_WRITEBLOCK;
+        sel->u.block.index = index;
+    } else {
+        adios_error(err_no_memory, "Cannot allocate memory for writeblock selection");
+    }
+    return sel;
+}
+
+ADIOS_SELECTION * common_read_selection_auto (char *hints)
+{   
+    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
+    if (sel) {
+        sel->type = ADIOS_SELECTION_AUTO;
+        sel->u.autosel.hints = hints;
+    } else {
+        adios_error(err_no_memory, "Cannot allocate memory for auto selection");
+    }
+    return sel;
+}
 

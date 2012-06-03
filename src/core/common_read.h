@@ -91,4 +91,12 @@ int common_read_is_var_timed (const ADIOS_FILE *fp, int varid);
 
 void common_read_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran);
 void common_read_print_fileinfo (const ADIOS_FILE *fp);
+
+// selections 
+ADIOS_SELECTION * common_read_selection_boundingbox (uint64_t ndim, const uint64_t *start, const uint64_t *count);
+ADIOS_SELECTION * common_read_selection_points (uint64_t ndim, uint64_t npoints, const uint64_t *points);
+ADIOS_SELECTION * common_read_selection_writeblock (int index);
+ADIOS_SELECTION * common_read_selection_auto (char *hints);
+
+
 #endif
