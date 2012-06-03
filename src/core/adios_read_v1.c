@@ -67,13 +67,13 @@ int adios_set_read_method_v1 (enum ADIOS_READ_METHOD_V1 method)
             lastmethod = ADIOS_READ_METHOD_BP;
             break;
         case ADIOS_READ_METHOD_BP_STAGED_V1:
-            lastmethod = ADIOS_READ_METHOD_BP_STAGED2;
-            break;
-        case ADIOS_READ_METHOD_BP_STAGED1_V1:
             lastmethod = ADIOS_READ_METHOD_BP_STAGED;
             break;
+        case ADIOS_READ_METHOD_BP_STAGED1_V1:
+            lastmethod = ADIOS_READ_METHOD_BP_STAGED1;
+            break;
         case ADIOS_READ_METHOD_DART_V1:
-            lastmethod = ADIOS_READ_METHOD_DATASPACES;
+            lastmethod = ADIOS_READ_METHOD_DART;
             break;
         case ADIOS_READ_METHOD_DIMES_V1:
             lastmethod = ADIOS_READ_METHOD_DIMES;
@@ -293,7 +293,7 @@ int64_t adios_read_var_v1 (ADIOS_GROUP_V1  * gp, const char * varname,
     /* variable name -> varid */
     ADIOS_VARINFO * vi = common_read_inq_var (f, varname);
     if (!vi) 
-        return -adios_errno;
+        return adios_errno;
 
     return adios_read_var_byid_v1 (gp, vi->varid, start, count, data);
 
@@ -310,7 +310,7 @@ int64_t adios_read_var_byid_v1 (ADIOS_GROUP_V1 * gp,
     /* First get the number of dimensions of the variable */
     ADIOS_VARINFO * vi = common_read_inq_var_byid (f, varid);
     if (!vi) 
-        return -adios_errno;
+        return adios_errno;
     ADIOS_VARINFO_V1 * v = adios_varinfo_to_v1 (gp, vi, 0); // fixes time
 
     int ndim = v->ndim;
@@ -337,7 +337,7 @@ int64_t adios_read_var_byid_v1 (ADIOS_GROUP_V1 * gp,
         for (i=0; i<v->ndim; i++)
             rbytes *= (int64_t) count[i];
     } else {
-        rbytes = (int64_t) -adios_errno;
+        rbytes = (int64_t) adios_errno;
     }
 
     adios_free_varinfo_v1(v);
@@ -372,7 +372,7 @@ int64_t adios_read_local_var_v1 (ADIOS_GROUP_V1 * gp,
     /* First get the number of dimensions of the variable */
     ADIOS_VARINFO * vi = common_read_inq_var (f, varname);
     if (!vi) 
-        return -adios_errno;
+        return adios_errno;
 
     /* get step from the idx, and check validity of idx */
     int step = 0;
@@ -386,7 +386,7 @@ int64_t adios_read_local_var_v1 (ADIOS_GROUP_V1 * gp,
         adios_error (err_out_of_bound, "ADIOS ERROR: local "
                 "variable %s has only %d blocks in file. "
                 "Requested index %d\n", varname, vi->sum_nblocks, idx);
-        return -adios_errno;
+        return adios_errno;
     }
     common_read_inq_var_blockinfo (f, vi); // get info on each block
 
@@ -398,7 +398,7 @@ int64_t adios_read_local_var_v1 (ADIOS_GROUP_V1 * gp,
                 "are not allowed. Variable %s, block %d, dimension %d size is %lld, "
                 "requested %lld from offset %lld\n", 
                 varname, idx, vi->blockinfo[idx].count[i], count[i], start[i]);
-            return -adios_errno;
+            return adios_errno;
         }
     }
 
@@ -413,7 +413,7 @@ int64_t adios_read_local_var_v1 (ADIOS_GROUP_V1 * gp,
         for (i=0; i<vi->ndim; i++)
             rbytes *= (int64_t) count[i];
     } else {
-        rbytes = (int64_t) -adios_errno;
+        rbytes = (int64_t) adios_errno;
     }
 
     common_read_free_varinfo(vi);
