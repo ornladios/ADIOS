@@ -1,0 +1,49 @@
+WRITE
+=====
+
+- write attributes only from rank 0; keep all as special flag in XML?
+- add special attributes to output:
+   - adios version numbers (major,minor,revision)
+   - create time
+   - modification time
+   - undef value (also func: adios_undef_get(), adios_undef_set())
+- bring back "write=no" into XML tag to skip some variables
+- time-reset function for appending data to the same timestep
+
+READ
+====
+- new read API
+- hide special attributes from attribute list
+- missing data blocks if read should contain undef values
+- init method parameter: abort_on_error (good for debugging)
+
+- statistics
+  - check if void** or void* arrays should be the per-step stats
+  - modify fortran read functions accordingly
+  - modify manual 
+  - test the heck out of this best, complex type data too
+
+
+SKEL
+===
+- own manual
+
+SCHEMA
+======
+- add to manual
+
+
+PYTHON WRAPPER
+==============
+- example codes
+- add to manual
+
+JAVA WRAPPER
+============
+- example codes
+- add to manual
+
+
+
+
+
