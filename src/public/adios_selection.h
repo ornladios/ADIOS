@@ -83,7 +83,7 @@ typedef struct {
 /** Selection for reading a subset of a variable. 
  *  // A selection is an additive list of bounding boxes and point-sets 
  */
-typedef struct ADIOS_SELECTION_STRUCT  ADIOS_SELECTION;
+//typedef struct ADIOS_SELECTION_STRUCT  ADIOS_SELECTION;
 typedef struct { 
        enum ADIOS_SELECTION_TYPE    type; /* Type of selection */
        union {
@@ -93,7 +93,7 @@ typedef struct {
             ADIOS_SELECTION_AUTO_STRUCT autosel;
        } u;
        /*ADIOS_SELECTION             *next;*/
-} ADIOS_SELECTION_STRUCT;
+} ADIOS_SELECTION;
 
 #ifndef __INCLUDED_FROM_FORTRAN_API__
 
@@ -141,7 +141,7 @@ ADIOS_SELECTION* adios_selection_writeblock (int index);
  *       hints    Method dependent parameters to influence what and how to 
  *                return (e.g. decomposition; ordering of returned chunks)
  */
-ADIOS_SELECTION* adios_selection_auto (const char * hints);
+ADIOS_SELECTION* adios_selection_auto (char * hints);
 
 /** Make a strided hyperslab selection the same way as in HDF5. 
  *  IN:
