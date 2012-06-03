@@ -477,11 +477,12 @@ int adios_type_size(enum ADIOS_DATATYPES type, void *data);
  *
  *  IN:   fp              pointer to an (opened) ADIOS_FILE struct
  *  OUT:  group_namelist  list of strings,
+ *                        Note: one should pass a pointer to char** list
  *  RETURN:               number of groups, <0 on error 
  *                        (sets adios_errno too)
  *  
  */
-int adios_get_grouplist (ADIOS_FILE  *fp, char **group_namelist);
+int adios_get_grouplist (ADIOS_FILE  *fp, char ***group_namelist);
 
 /** Restrict the view of variables/attributes to a certain group.
  *  The provided ADIOS_FILE structure is directly modified but
