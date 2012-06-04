@@ -22,7 +22,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "mpi.h"
-#include "adios_read.h"
+#include "public/adios_read.h"
 
 int main (int argc, char ** argv) 
 {
@@ -36,7 +36,7 @@ int main (int argc, char ** argv)
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
-
+#if 0
     ADIOS_FILE * f = adios_fopen ("adios_global_no_xml.bp", comm);
     if (f == NULL)
     {
@@ -96,7 +96,7 @@ int main (int argc, char ** argv)
     adios_gclose (g);
     adios_fclose (f);
 
-
+#endif
     MPI_Finalize ();
     return 0;
 }

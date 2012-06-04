@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 #include "public/adios_read.h"
 #include "public/adios_error.h"
 #include "public/adios_types.h"
@@ -376,6 +377,30 @@ void adios_read_bp_release_step (ADIOS_FILE *fp)
 
 ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 {
+#if 0
+typedef struct {
+        int        varid;           /* variable index (0..ADIOS_FILE.nvars-1)                         */
+        enum ADIOS_DATATYPES type;  /* type of variable                                               */
+        int        ndim;            /* number of dimensions, 0 for scalars                            */
+        uint64_t * dims;            /* size of each dimension.
+                                       If variable has no global view 'dims' report the size of the 
+                                       local array written by process rank 0. 
+                                    */
+        int        nsteps;          /* Number of steps of the variable in file. 
+                                       There is always at least one step.                             */
+                                    /* In streams it always equals 1.                                 */
+        void     * value;           /* value of a scalar variable, NULL for array.                    */
+        int        global;          /* 1: global view (was defined by writer), 
+                                       0: pieces written by writers without defining a global array   */
+        int      * nblocks;         /* Number of blocks that comprise this variable in a step
+                                       It is an array of 'nsteps' integers                            */
+        int        sum_nblocks;     /* Number of all blocks of all steps, the sum of the nblocks array*/
+        ADIOS_VARSTAT  *statistics; /* Statistics, retrieved in separate call: adios_inq_var_stat()   */
+        ADIOS_VARBLOCK *blockinfo;  /* Spatial arrangement of written blocks, 
+                                       retrieved in separate call: adios_inq_var_blockinfo()       
+                                       It is an array of 'sum_nblocks' elements                       */
+} ADIOS_VARINFO;
+#endif
     struct BP_GROUP * gh;
     struct BP_FILE * fh;
     ADIOS_VARINFO * vi;
@@ -398,8 +423,9 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
     vi = (ADIOS_VARINFO *) malloc (sizeof (ADIOS_VARINFO));
     assert (vi);
 
+    vi->varid = varid;
+    vi->type = var_root->type;
     file_is_fortran = is_fortran_file (fh);
-//    file_is_fortran = (fh->pgs_root->adios_host_language_fortran == adios_flag_yes);
     
     var_root = gh->vars_root; /* first variable of this group. Need to traverse the list */
     for (i = 0; i < varid && var_root; i++)
@@ -413,9 +439,6 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
         return NULL; 
     }
 
-
-    vi->varid = varid;
-    vi->type = var_root->type;
     if (!var_root->characteristics_count)
     {
         adios_error (err_corrupted_variable,
@@ -446,6 +469,8 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 /*//FIXME
     adios_read_bp_get_characteristics (var_root, vi);
 */
+    //adios_read_bp_inq_var_stat (fp, vi, );
+
     return vi;
 }
 

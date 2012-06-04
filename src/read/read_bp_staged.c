@@ -31,6 +31,86 @@
 
 #define READ_CLOSE 0
 
+
+int adios_read_bp_staged_init_method (MPI_Comm comm, const char * parameters)
+{
+    return 0;
+}
+
+int adios_read_bp_staged_finalize_method ()
+{
+    return 0;
+}
+
+ADIOS_FILE * adios_read_bp_staged_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, int timeout_msec)
+{
+    return 0;
+}
+
+ADIOS_FILE * adios_read_bp_staged_open_file (const char * fname, MPI_Comm comm)
+{
+    return 0;
+}
+
+int adios_read_bp_staged_close (ADIOS_FILE *fp)
+{
+    return 0;
+}
+
+int adios_read_bp_staged_advance_step (ADIOS_FILE *fp, int last, int wait_for_step)
+{
+    return 0;
+}
+
+void adios_read_bp_staged_release_step (ADIOS_FILE *fp)
+{
+
+}
+
+ADIOS_VARINFO * adios_read_bp_staged_inq_var_byid (const ADIOS_FILE *gp, int varid)
+{
+    return 0;
+}
+
+int adios_read_bp_staged_inq_var_stat (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo, int per_step_stat, int per_block_stat)
+{
+    return 0;
+}
+
+int adios_read_bp_staged_inq_var_blockinfo (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo)
+{
+    return 0;
+}
+
+int adios_read_bp_staged_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel, int varid, int from_steps, int nsteps, void * data)
+{
+    return 0;
+}
+
+int adios_read_bp_staged_perform_reads (const ADIOS_FILE *fp, int blocking)
+{
+    return 0;
+}
+
+int adios_read_bp_staged_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
+{
+    return 0;
+}
+
+int adios_read_bp_staged_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data)
+{
+    return 0;
+}
+
+void adios_read_bp_staged_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
+{
+
+}
+
+void adios_read_bp_staged_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group)
+{
+
+}
 #if 0
 typedef struct read_info
 {

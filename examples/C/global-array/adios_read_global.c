@@ -40,7 +40,7 @@ int main (int argc, char ** argv)
 
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
-
+#if 0
     adios_set_read_method (ADIOS_READ_METHOD_BP_STAGED1);
 
     MPI_Barrier (MPI_COMM_WORLD);
@@ -57,7 +57,6 @@ int main (int argc, char ** argv)
         return -1;
     }
 
-#if 0
     ADIOS_GROUP * g = adios_gopen (f, "temperature");
     if (g == NULL)
     {
