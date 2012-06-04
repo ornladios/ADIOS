@@ -15,12 +15,12 @@
 #include <stdio.h>
 #include <string.h>
 #include "mpi.h"
-#include "adios.h"
+#include "public/adios.h"
 int main (int argc, char ** argv) 
 {
 	char        filename [256];
 	int         rank, size, i;
-	int         NX = 16; 
+	int         NX = 4096; 
 	double      t[NX], t1, t2;
 	MPI_Comm    comm = MPI_COMM_WORLD;
 
