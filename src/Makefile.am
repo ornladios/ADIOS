@@ -59,6 +59,7 @@ libadios_a_SOURCES = core/adios.c \
                      core/adios_transport_hooks.c \
                      core/adios_socket.c \
                      core/adios_logger.c \
+                     core/params.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -88,6 +89,7 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/adios_transport_hooks.c \
                      core/adios_socket.c \
                      core/adios_logger.c \
+                     core/params.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -115,6 +117,7 @@ FortranLibSources = core/adiosf.c \
                      core/adios_transport_hooks.c \
                      core/adios_socket.c \
                      core/adios_logger.c \
+                     core/params.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -267,6 +270,7 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/globals.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
+                      core/params.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
@@ -301,6 +305,7 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       core/globals.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
+                      core/params.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
@@ -350,6 +355,7 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/globals.c \
                       core/adios_read_hooks.c \
                       core/adios_transport_hooks.c \
+                      core/params.c \
                       read/read_bp.c 
 
 if HAVE_DART
@@ -377,15 +383,16 @@ libadiosread_nompi_a_CPPFLAGS  += -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREA
 if BUILD_FORTRAN
 lib_LIBRARIES += libadiosreadf_nompi.a libadiosreadf_nompi_v1.a
 FortranReadSeqLibSource = core/mpidummy.c\
-                                core/adios_bp_v1.c \
-                                core/adios_endianness.c \
-                                core/bp_utils.c \
-                                core/futils.c \
-                                core/adios_error.c \
-                                core/common_read.c \
-                                core/globals.c \
-                                core/adios_read_hooks.c \
-                                read/read_bp.c 
+                          core/adios_bp_v1.c \
+                          core/adios_endianness.c \
+                          core/bp_utils.c \
+                          core/futils.c \
+                          core/adios_error.c \
+                          core/common_read.c \
+                          core/globals.c \
+                          core/adios_read_hooks.c \
+                          core/params.c \
+                          read/read_bp.c 
 if HAVE_DART
 FortranReadSeqLibSource += read/read_dart.c
 endif
@@ -422,6 +429,7 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_error.c \
                                     core/adios_internals_mxml.c \
                                     core/adios_timing.c \
+                                    core/params.c \
                                     core/adios_transport_hooks.c 
 
 
