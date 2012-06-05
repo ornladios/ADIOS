@@ -4,7 +4,7 @@
 #include <limits.h>
 #include <errno.h>
 
-#include "params.h"
+#include "util.h"
 
 
 static char * remove_whitespace (char *start, char *end) 

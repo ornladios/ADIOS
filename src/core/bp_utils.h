@@ -42,7 +42,10 @@ int bp_get_type_size (enum ADIOS_DATATYPES type, void * var);
 void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES type);
 int is_fortran_file (struct BP_FILE * fh);
 int has_subfiles (struct BP_FILE * fh);
-
+int bp_get_dimensioncharacteristics(struct adios_index_characteristic_struct_v1 *ch,
+                                    uint64_t *ldims, uint64_t *gdims, uint64_t *offsets);
+void bp_get_dimensions (struct adios_index_var_struct_v1 *var_root, int ntsteps, int file_is_fortran,
+                        int *ndim, uint64_t **dims, int *timedim);
 void print_process_group_index (
                          struct adios_index_process_group_struct_v1 * pg_root
                          );

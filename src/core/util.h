@@ -1,5 +1,5 @@
-#ifndef PARAMS_H_
-#define PARAMS_H_
+#ifndef UTIL_H_
+#define UTIL_H_
 
 
 struct PairStruct {

@@ -947,6 +947,115 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
     return 0;
 }
 
+/* get local and global dimensions and offsets from a variable characteristics 
+   return: 1 = it is a global array, 0 = local array
+*/
+int bp_get_dimensioncharacteristics(struct adios_index_characteristic_struct_v1 *ch,
+                                    uint64_t *ldims, uint64_t *gdims, uint64_t *offsets)
+{
+    int is_global=0; // global array or just an array written by one process?
+    int ndim = ch->dims.count;
+    int k;
+
+    for (k=0; k < ndim; k++) {
+        ldims[k]   = ch->dims.dims[k*3];
+        gdims[k]   = ch->dims.dims[k*3+1];
+        offsets[k] = ch->dims.dims[k*3+2];
+        is_global = is_global || gdims[k];
+    }
+    return is_global;
+}
+
+void bp_get_dimensions (struct adios_index_var_struct_v1 *var_root, int ntsteps, int file_is_fortran,
+                                   int *ndim, uint64_t **dims, int *timedim)
+{
+    int i, k;
+    int is_global; // global array or just an array written by one process?
+    uint64_t ldims[32];
+    uint64_t gdims[32];
+    uint64_t offsets[32];
+
+    /* Get dimension information */
+    *ndim = var_root->characteristics [0].dims.count;
+    *dims = NULL;
+    *timedim = -1;
+    if (*ndim == 0) {
+        /* done with this scalar variable */
+        return ;
+    }
+
+    *dims = (uint64_t *) malloc (sizeof(uint64_t) * (*ndim));
+    memset(*dims,0,sizeof(uint64_t)*(*ndim));
+
+    is_global = bp_get_dimensioncharacteristics( &(var_root->characteristics[0]),
+                                                 ldims, gdims, offsets);
+
+    if (!is_global) {
+        /* local array */
+        for (i=0; i < *ndim; i++) {
+            /* size of time dimension is always registered as 1 for an array */
+            if (ldims[i] == 1 && var_root->characteristics_count > 1) {
+                *timedim = i;
+                (*dims)[i] = ntsteps;
+            } else {
+                (*dims)[i] = ldims[i];
+            }
+            gdims[i] = ldims[i];
+        }
+    }
+    else {
+        /* global array:
+           time dimension: ldims=1, gdims=0
+           in C array, it can only be the first dim
+           in Fortran array, it can only be the last dim
+           (always the slowest changing dim)
+        */
+        if (gdims[*ndim-1] == 0)
+        {
+            if (!file_is_fortran) {
+                /* first dimension is the time (C array)
+                 * ldims[0] = 1 but gdims does not contain time info and 
+                 * gdims[0] is 1st data dimension and 
+                 * gdims is shorter by one value than ldims in case of C.
+                 * Therefore, gdims[*ndim-1] = 0 if there is a time dimension. 
+                 */
+                *timedim = 0;
+                // error check
+                if (*ndim > 1 && ldims[0] != 1) {
+                    fprintf(stderr,"ADIOS Error: this is a BP file with C ordering but we didn't find"
+                            "an array to have time dimension in the first dimension. l:g:o = (");
+                    for (i=0; i < *ndim; i++) {
+                        fprintf(stderr,"%llu:%llu:%llu%s", ldims[i], gdims[i], offsets[i], (i<*ndim-1 ? ", " : "") );
+                    }
+                    fprintf(stderr, ")\n");
+                }
+                (*dims)[0] = ntsteps;
+                for (i=1; i < *ndim; i++)
+                    (*dims)[i]=gdims[i-1];
+            } else {
+                // last dimension is the time (Fortran array)
+                *timedim = *ndim - 1;
+
+                if (*ndim > 1 && ldims[*ndim-1] != 1) {
+                    fprintf(stderr,"ADIOS Error: this is a BP file with Fortran array ordering but we didn't find"
+                            "an array to have time dimension in the last dimension. l:g:o = (");
+                    for (i=0; i < *ndim; i++) {
+                        fprintf(stderr,"%llu:%llu:%llu%s", ldims[i], gdims[i], offsets[i], (i<*ndim-1 ? ", " : "") );
+                    }
+                    fprintf(stderr, ")\n");
+                }
+                for (i=0; i < *ndim-1; i++)
+                    (*dims)[i]=gdims[i];
+                (*dims)[*timedim] = ntsteps;
+            }
+        } else {
+            // no time dimenstion
+            for (i=0; i < *ndim; i++)
+                 (*dims)[i]=gdims[i];
+        }
+    }
+}
+
 void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_DATATYPES type)
 {
     int16_t data_size;
