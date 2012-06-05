@@ -458,7 +458,7 @@ const char * value_to_string_ptr (enum ADIOS_DATATYPES type, void * data, uint64
         case adios_complex:
         {
             float * p = (float *) data;
-            sprintf (s, "(%f %f)", p [element * 2 + 0]
+            sprintf (s, "(%g %g)", p [element * 2 + 0]
                                  , p [element * 2 + 1]
                     );
             break;

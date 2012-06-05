@@ -17,6 +17,7 @@
 #include "public/adios_read.h"
 #include "public/adios_error.h"
 #include "public/adios_types.h"
+#include "core/util.h"
 #include "core/bp_utils.h"
 #include "core/bp_types.h"
 #include "core/adios_read_hooks.h"
@@ -114,6 +115,7 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
     adios_errno = 0;
     MPI_Comm_rank (comm, &rank);
 
+printf ("test here\n");
     fh = (struct BP_FILE *) malloc (sizeof (struct BP_FILE));
     assert (fh);
 
@@ -404,7 +406,7 @@ typedef struct {
     struct BP_GROUP * gh;
     struct BP_FILE * fh;
     ADIOS_VARINFO * vi;
-    int file_is_fortran, i, k;
+    int file_is_fortran, i, k, timedim;
     struct adios_index_var_struct_v1 * var_root;
 
     adios_errno = 0;
@@ -433,9 +435,11 @@ typedef struct {
         var_root = var_root->next;
     }
 
-    if (i!=varid)
+    if (i != varid)
     {
-        adios_error (err_corrupted_variable, "Variable id=%d is valid but was not found in internal data structures!",varid);
+        adios_error (err_corrupted_variable,
+                     "Variable id=%d is valid but was not found in internal data structures!",
+                     varid);
         return NULL; 
     }
 
@@ -448,21 +452,15 @@ typedef struct {
         return NULL;
     }
 
-    /* Get value or min/max */
-    //FIXME
-/*
-    adios_read_bp_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
-                          &(vi->ndim), &(vi->dims), &(vi->timedim));
-*/
+    bp_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
+                       &(vi->ndim), &(vi->dims), &(timedim));
     
-    if (file_is_fortran != futils_is_called_from_fortran()) {
+    if (file_is_fortran != futils_is_called_from_fortran())
+    {
         /* If this is a Fortran written file and this is called from C code/  
            or this is a C written file and this is called from Fortran code ==>
            We need to reverse the order of the dimensions */
-//FIXME
-/*
-        swap_order(vi->ndim, vi->dims, &(vi->timedim));
-*/
+        swap_order(vi->ndim, vi->dims, &timedim);
         /*printf("File was written from %s and read now from %s, so we swap order of dimensions\n",
                 (file_is_fortran ? "Fortran" : "C"), (futils_is_called_from_fortran() ? "Fortran" : "C"));*/
     }

@@ -69,9 +69,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export CFLAGS="-g -fPIC" 
     ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/sith.$TARGET \
         --enable-dependency-tracking \
-        --enable-research-transports  \
         --with-lustre=/usr \
-        $WITHDART \
         --without-datatap #--without-infiniband
         #--with-hdf5=${SEQ_HDF5_DIR} \
         #--with-hdf5-libs="${SEQ_HDF5_CLIB}" \
@@ -354,6 +352,7 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
         module unload PrgEnv-cray
         module unload xt-papi
         module load PrgEnv-$TARGET
+        module swap xtpe-interlagos xtpe-istanbul
         #module load szip
         #module load xt-papi
         module load mxml
@@ -363,8 +362,10 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
         CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
             --enable-dependency-tracking \
             --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.pgi \
-            --without-portals \
-            --with-lustre=/opt/xt-lustre-ss/2.2_1.6.5/usr
+            --with-hdf5=/opt/cray/hdf5/1.8.7/pgi/109 \
+            --with-phdf5=/opt/cray/hdf5-parallel/1.8.7/pgi/109 \
+            --without-portals
+#            --with-lustre=/opt/xt-lustre-ss/2.2_1.6.5/usr
 #            --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.$TARGET
 #            --enable-research-transports \
 #            --with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \

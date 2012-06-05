@@ -32,6 +32,7 @@ int main (int argc, char ** argv)
     char        filename [256];
     int         rank, size, i, j, NX = 16;
     MPI_Comm    comm = MPI_COMM_WORLD;
+    ADIOS_FILE * fp;
     void * data = NULL, * data1 = NULL, * data2 = NULL;
     uint64_t start[2], count[2], bytes_read = 0;
     struct timeval t0, t1;
@@ -40,6 +41,15 @@ int main (int argc, char ** argv)
 
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
+
+    adios_read_init_method (ADIOS_READ_METHOD_BP, comm, "");
+
+    fp = adios_read_open_file ("adios_global.bp", ADIOS_READ_METHOD_BP, comm);
+    //adios_inq_var_byid (fp, 
+    adios_read_close (fp);
+
+    adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+
 #if 0
     adios_set_read_method (ADIOS_READ_METHOD_BP_STAGED1);
 
