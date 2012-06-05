@@ -7,7 +7,7 @@
 // xml parser
 #include <mxml.h>
 
-// dart
+// for dataspaces ???
 #include <sys/uio.h>
 
 // see if we have MPI or other tools
@@ -22,24 +22,24 @@
 
 #include "dart_interface.h"
 
-/*#define DART_DO_VERSIONING  define it at configure as -DDART_DO_VERSIONING in CFLAGS */
+/*#define DATASPACES_NO_VERSIONING  define it at configure as -DDATASPACES_NO_VERSIONING in CFLAGS */
 
-#define adios_logger(verbose_level, ...) if (adios_dart_verbose >= verbose_level) fprintf (stderr, __VA_ARGS__); 
+#define adios_logger(verbose_level, ...) if (adios_dataspaces_verbose >= verbose_level) fprintf (stderr, __VA_ARGS__); 
 
 #define log_error(...) adios_logger(0, __VA_ARGS__)
 #define log_warn(...) adios_logger(1, __VA_ARGS__)
 #define log_info(...) adios_logger(2, __VA_ARGS__)
 #define log_debug(...) adios_logger(3, __VA_ARGS__)
 
-static int adios_dart_initialized = 0;
-#define MAXDARTNAMELEN 128
-//static char dart_type_var_name[MAXDARTNAMELEN];
-static char dart_var_name[MAXDARTNAMELEN];
-static unsigned int adios_dart_verbose = 3;
+static int adios_dataspaces_initialized = 0;
+#define MAX_DS_NAMELEN 128
+//static char ds_type_var_name[MAX_DS_NAMELEN];
+static char ds_var_name[MAX_DS_NAMELEN];
+static unsigned int adios_dataspaces_verbose = 3;
 
-struct adios_DART_data_struct
+struct adios_ds_data_struct
 {
-    int rank;   // dart rank or MPI rank if MPI is available
+    int rank;   // dataspaces rank or MPI rank if MPI is available
     int peers;  // from xml parameter or group communicator
     int appid;  // from xml parameter or 1
     int time_index; // versioning in DataSpaces, start from 0
@@ -104,18 +104,18 @@ int get_dim_rank_value(struct adios_dimension_item_struct * dim_info, struct adi
     }
 }
 
-void adios_dart_init (const char * parameters,
+void adios_dataspaces_init (const char * parameters,
                      struct adios_method_struct * method
                      )
 {
-    struct adios_DART_data_struct *p = 0;
-    if (!adios_dart_initialized)
+    struct adios_ds_data_struct *p = 0;
+    if (!adios_dataspaces_initialized)
     {
-        adios_dart_initialized = 1;
+        adios_dataspaces_initialized = 1;
     }
    
-    method->method_data = calloc (1, sizeof (struct adios_DART_data_struct));
-    p = (struct adios_DART_data_struct*)method->method_data;
+    method->method_data = calloc (1, sizeof (struct adios_ds_data_struct));
+    p = (struct adios_ds_data_struct*)method->method_data;
     
     int index, i;
     char temp[64];
@@ -139,12 +139,12 @@ void adios_dart_init (const char * parameters,
 #endif
     p->num_of_files = 0;
 
-    log_info ("adios_dart_init: appid=%d\n", p->appid);
+    log_info ("adios_dataspaces_init: appid=%d\n", p->appid);
    
 }
 
 
-static void adios_dart_var_to_comm  (const char * comm_name
+static void adios_dataspaces_var_to_comm  (const char * comm_name
                                     ,enum ADIOS_FLAG host_language_fortran
                                     ,void * data
                                     ,MPI_Comm * comm
@@ -211,29 +211,29 @@ static void adios_dart_var_to_comm  (const char * comm_name
     }
 }
 
-int adios_dart_open (struct adios_file_struct * fd,
+int adios_dataspaces_open (struct adios_file_struct * fd,
                     struct adios_method_struct * method,
                     void *comm
                     )
 {
     int ret = 0;
-    struct adios_DART_data_struct *p = (struct adios_DART_data_struct *)
+    struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
                                                 method->method_data;
     int num_peers = p->peers;
   
-    log_info ("adios_dart_open: open %s, mode=%d, time_index=%d \n",
+    log_info ("adios_dataspaces_open: open %s, mode=%d, time_index=%d \n",
                         fd->name, fd->mode, p->time_index);
 
-    // connect to DART at the very first adios_open(), disconnect in adios_finalize()
+    // connect to DATASPACES at the very first adios_open(), disconnect in adios_finalize()
     // connect only if the READ API has not connected yet
-    if (!globals_adios_is_dart_connected()) {
+    if (!globals_adios_is_dataspaces_connected()) {
 
 #if HAVE_MPI
     // if we have MPI and a communicator, we can get the exact size of this application
-    // that we need to tell DART
+    // that we need to tell DATASPACES
         MPI_Comm group_comm;
         if (comm) {
-            adios_dart_var_to_comm (fd->group->group_comm, fd->group->adios_host_language_fortran,
+            adios_dataspaces_var_to_comm (fd->group->group_comm, fd->group->adios_host_language_fortran,
                                     comm, &group_comm);
             MPI_Comm_rank ( group_comm, &(p->rank));
             MPI_Comm_size ( group_comm, &num_peers);
@@ -242,13 +242,13 @@ int adios_dart_open (struct adios_file_struct * fd,
         }
 #endif
 
-        log_debug ("adios_dart_open: rank=%d connect to DART, peers=%d, appid=%d \n",
+        log_debug ("adios_dataspaces_open: rank=%d connect to DATASPACES, peers=%d, appid=%d \n",
                         p->rank, num_peers, p->appid);
 
         //Init the dart client
         ret = dart_init (num_peers, p->appid);
         if (ret) {
-            log_error ("adios_dart_open: rank=%d Failed to connect to DART: err=%d,  rank=%d\n", p->rank, ret);        
+            log_error ("adios_dataspaces_open: rank=%d Failed to connect to DATASPACES: err=%d,  rank=%d\n", p->rank, ret);        
             return ret;
         }
 
@@ -257,15 +257,15 @@ int adios_dart_open (struct adios_file_struct * fd,
         dart_peers (&(p->peers));
 #endif
 
-        log_debug ("adios_dart_open: rank=%d connected to DART: peers=%d\n", p->rank, p->peers);        
+        log_debug ("adios_dataspaces_open: rank=%d connected to DATASPACES: peers=%d\n", p->rank, p->peers);        
     }
-    globals_adios_set_dart_connected_from_writer();
+    globals_adios_set_dataspaces_connected_from_writer();
    
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
-        log_debug ("adios_dart_open: rank=%d call write lock...\n", p->rank);        
+        log_debug ("adios_dataspaces_open: rank=%d call write lock...\n", p->rank);        
         dart_lock_on_write (fd->name);  
-        log_debug ("adios_dart_open: rank=%d got write lock\n", p->rank);        
+        log_debug ("adios_dataspaces_open: rank=%d got write lock\n", p->rank);        
     }
     else if (fd->mode == adios_mode_read)
     {
@@ -275,7 +275,7 @@ int adios_dart_open (struct adios_file_struct * fd,
     return ret;
 }
 
-enum ADIOS_FLAG adios_dart_should_buffer (struct adios_file_struct * fd
+enum ADIOS_FLAG adios_dataspaces_should_buffer (struct adios_file_struct * fd
                                          ,struct adios_method_struct * method
                                          )
 {
@@ -294,13 +294,13 @@ enum ADIOS_FLAG adios_dart_should_buffer (struct adios_file_struct * fd
 }
 
 
-void adios_dart_write (struct adios_file_struct * fd
+void adios_dataspaces_write (struct adios_file_struct * fd
                       ,struct adios_var_struct * v
                       ,void * data
                       ,struct adios_method_struct * method
                       )
 {
-    struct adios_DART_data_struct *p = (struct adios_DART_data_struct *)
+    struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
                                                             method->method_data;
     struct adios_group_struct *group = fd->group;
     //Get var size
@@ -337,22 +337,22 @@ void adios_dart_write (struct adios_file_struct * fd
         var_dimensions = var_dimensions->next;
     }
 
-#ifdef DART_DO_VERSIONING
-    version = p->time_index;  /* Add new data as separate to DataSpaces */
-#else
+#ifdef DATASPACES_NO_VERSIONING
     version = 0;              /* Update/overwrite data in DataSpaces  (we write time_index as a variable at close)*/
+#else
+    version = p->time_index;  /* Add new data as separate to DataSpaces */
 #endif
     
     if (v->path != NULL && v->path[0] != '\0' && strcmp(v->path,"/")) 
-        snprintf(dart_var_name, MAXDARTNAMELEN, "%s/%s/%s/%s", fd->name, fd->group->name, v->path, v->name);
+        snprintf(ds_var_name, MAX_DS_NAMELEN, "%s/%s/%s/%s", fd->name, fd->group->name, v->path, v->name);
     else 
-        snprintf(dart_var_name, MAXDARTNAMELEN, "%s/%s//%s", fd->name, fd->group->name, v->name);
+        snprintf(ds_var_name, MAX_DS_NAMELEN, "%s/%s//%s", fd->name, fd->group->name, v->name);
 
-    //snprintf(dart_type_var_name, MAXDARTNAMELEN, "TYPE@%s", dart_var_name);
+    //snprintf(dart_type_var_name, MAX_DS_NAMELEN, "TYPE@%s", ds_var_name);
     
     /* non-global variables are put in space ONLY by rank = 0 process */
     if (gdims[0] == 0 && p->rank != 0) {
-        //fprintf(stderr, "rank=%d var_name=%s is not global. Skip\n", p->rank, dart_var_name);
+        //fprintf(stderr, "rank=%d var_name=%s is not global. Skip\n", p->rank, ds_var_name);
         return;
     }
 
@@ -370,7 +370,7 @@ void adios_dart_write (struct adios_file_struct * fd
     
 
     log_debug ("var_name=%s, type=%s(%d) elemsize=%d, version=%d, ndims=%d, size=(%d,%d,%d), gdim=(%d,%d,%d), lb=(%d,%d,%d), ub=(%d,%d,%d)\n",
-            dart_var_name, adios_type_to_string_int(v->type), v->type, var_type_size, version, ndims,
+            ds_var_name, adios_type_to_string_int(v->type), v->type, var_type_size, version, ndims,
             dims[0], dims[1], dims[2], gdims[0], gdims[1], gdims[2], lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
 
     /* non-timed scalars are written in the metadata at close(), not here */
@@ -384,20 +384,20 @@ void adios_dart_write (struct adios_file_struct * fd
             group->adios_host_language_fortran == adios_flag_yes, 
             0 /*pack*/, didx);
 
-    dart_put(dart_var_name, version, var_type_size, 
+    dart_put(ds_var_name, version, var_type_size, 
              lb[didx[0]], lb[didx[1]], lb[didx[2]], 
              ub[didx[0]], ub[didx[1]], ub[didx[2]], 
              data);
     
     log_debug ("var_name=%s, dimension ordering=(%d,%d,%d), gdims=(%d,%d,%d), lb=(%d,%d,%d), ub=(%d,%d,%d)\n",
-            dart_var_name, 
+            ds_var_name, 
             didx[0], didx[1], didx[2], 
             gdims[didx[0]], gdims[didx[1]], gdims[didx[2]], 
             lb[didx[0]], lb[didx[1]], lb[didx[2]], 
             ub[didx[0]], ub[didx[1]], ub[didx[2]]);
 }
 
-void adios_dart_get_write_buffer (struct adios_file_struct * fd
+void adios_dataspaces_get_write_buffer (struct adios_file_struct * fd
                                  ,struct adios_var_struct * v
                                  ,uint64_t * size
                                  ,void ** buffer
@@ -460,13 +460,13 @@ void adios_dart_get_write_buffer (struct adios_file_struct * fd
 }
 
 /* NOT IMPLEMENTED. Use the Read API to read variables */
-void adios_dart_read (struct adios_file_struct * fd
+void adios_dataspaces_read (struct adios_file_struct * fd
                      ,struct adios_var_struct * v, void * buffer
                      ,uint64_t buffer_size
                      ,struct adios_method_struct * method
                      )
 {
-    struct adios_DART_data_struct *p = (struct adios_DART_data_struct *)
+    struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
                                                             method->method_data;
     uint64_t var_type_size = adios_get_type_size(v->type, v->data);
 
@@ -490,14 +490,14 @@ void adios_dart_read (struct adios_file_struct * fd
 }
 
 /* Gather var/attr indices from all processes to rank 0 */
-static void adios_dart_gather_indices (struct adios_file_struct * fd
+static void adios_dataspaces_gather_indices (struct adios_file_struct * fd
                                ,struct adios_method_struct * method
                                ,struct adios_index_process_group_struct_v1 **pg_root 
                                ,struct adios_index_var_struct_v1 **vars_root
                                ,struct adios_index_attribute_struct_v1 ** attrs_root
                                )
 {
-    struct adios_DART_data_struct *p = (struct adios_DART_data_struct *)
+    struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
                                                 method->method_data;
     struct adios_index_process_group_struct_v1 * my_pg_root = 0;
     struct adios_index_var_struct_v1 * my_vars_root = 0;
@@ -631,7 +631,7 @@ void ds_pack_group_info (struct adios_file_struct *fd
                                   ,char ** buffer, int *buffer_size, int *nvars, int *nattrs
                                   )
 {
-    struct adios_DART_data_struct *p = (struct adios_DART_data_struct *)
+    struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
                                                 method->method_data;
     struct adios_index_var_struct_v1 * v = vars_root;
     struct adios_index_attribute_struct_v1 * a = attrs_root;
@@ -836,11 +836,11 @@ void ds_pack_file_info (int time, int nvars, int nattrs, int group_index_len, ch
     b[namelen] = 0;
 }
 
-void adios_dart_close (struct adios_file_struct * fd
+void adios_dataspaces_close (struct adios_file_struct * fd
                       ,struct adios_method_struct * method
                       )
 {
-    struct adios_DART_data_struct *p = (struct adios_DART_data_struct *)
+    struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
                                                 method->method_data;
     struct adios_index_process_group_struct_v1 * pg_root;
     struct adios_index_var_struct_v1 * vars_root;
@@ -858,17 +858,17 @@ void adios_dart_close (struct adios_file_struct * fd
 
         //adios_write_close_vars_v1 (fd);
         /* Gather var/attr indices from all processes to rank 0 */
-        adios_dart_gather_indices (fd, method, &pg_root, &vars_root ,&attrs_root);
+        adios_dataspaces_gather_indices (fd, method, &pg_root, &vars_root ,&attrs_root);
 
         if (p->rank == 0) {
 
             /* Write two adios specific variables with the name of the file and name of the group into the space */
             /* ADIOS Read API fopen() checks these variables to see if writing already happened */
             unsigned int version;
-#ifdef DART_DO_VERSIONING
-            version = p->time_index;  /* Add new data as separate to DataSpaces */
-#else
+#ifdef DATASPACES_NO_VERSIONING
             version = 0;              /* Update/overwrite data in DataSpaces */
+#else
+            version = p->time_index;  /* Add new data as separate to DataSpaces */
 #endif
 
             /* Make metadata from indices */
@@ -880,21 +880,21 @@ void adios_dart_close (struct adios_file_struct * fd
 
             
             /* Put GROUP@fn/gn header into space */
-            snprintf(dart_var_name, MAXDARTNAMELEN, "GROUP@%s/%s", fd->name, fd->group->name);
-            log_debug ("%s: put %s with buf len %d into space\n", __func__, dart_var_name, indexlen);
+            snprintf(ds_var_name, MAX_DS_NAMELEN, "GROUP@%s/%s", fd->name, fd->group->name);
+            log_debug ("%s: put %s with buf len %d into space\n", __func__, ds_var_name, indexlen);
             ub[0] = indexlen-1; ub[1] = 0; ub[2] = 0;
             ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
-            dart_put(dart_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
+            dart_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
                      ub[didx[0]], ub[didx[1]], ub[didx[2]],  indexbuf); 
 
             /* Create and put FILE@fn header into space */
             char * file_info_buf; /* store FILE@fn's group list */
             int    file_info_buf_len; /* = 128 currently */
-            snprintf (dart_var_name, MAXDARTNAMELEN, "FILE@%s", fd->name);
+            snprintf (ds_var_name, MAX_DS_NAMELEN, "FILE@%s", fd->name);
             ds_pack_file_info (p->time_index, nvars, nattrs, indexlen, fd->group->name, 
                                &file_info_buf, &file_info_buf_len);
             log_debug ("%s: put %s = buflen=%d time=%d nvars=%d nattr=%d index=%d name=%d:%s into space\n",
-                __func__, dart_var_name, 
+                __func__, ds_var_name, 
                 *(int*)file_info_buf, *(int*)(file_info_buf+4), 
                 *(int*)(file_info_buf+8), *(int*)(file_info_buf+12),
                 *(int*)(file_info_buf+16), *(int*)(file_info_buf+20),
@@ -902,7 +902,7 @@ void adios_dart_close (struct adios_file_struct * fd
             /* Flip 1st and 2nd dimension for DataSpaces representation for a 1D array*/
             ub[0] = file_info_buf_len-1; ub[1] = 0; ub[2] = 0;
             ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
-            dart_put(dart_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
+            dart_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
                      ub[didx[0]], ub[didx[1]], ub[didx[2]], file_info_buf); 
 
             free (indexbuf);
@@ -918,7 +918,7 @@ void adios_dart_close (struct adios_file_struct * fd
                     p->fnames[ p->num_of_files ] = strdup(fd->name);
                     p->num_of_files++;
                 } else {
-                    log_error ("%s: Max 20 files can be written by one application using the DART method\n",__func__);
+                    log_error ("%s: Max 20 files can be written by one application using the DATASPACES method\n",__func__);
                 }
             }
         }
@@ -943,30 +943,30 @@ void adios_dart_close (struct adios_file_struct * fd
     log_info ("%s: exit\n", __func__);
 }
 
-void adios_dart_finalize (int mype, struct adios_method_struct * method)
+void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
 {
-    struct adios_DART_data_struct *p = (struct adios_DART_data_struct *)
+    struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
         method->method_data;
     int i;
-    char dart_var_name[MAXDARTNAMELEN];
+    char ds_var_name[MAX_DS_NAMELEN];
 
     if (p->rank == 0) {
         // tell the readers which files are finalized
         //dart_lock_on_write("CLOSE");
         for (i=0; i<p->num_of_files; i++) {
             /* Put CLOSED@fn into space. Indicates that this file will not be extended anymore. */
-            snprintf(dart_var_name, MAXDARTNAMELEN, "CLOSED@%s", p->fnames[i]);
-            log_debug ("%s: put %s with %d bytes into the space\n", __func__, dart_var_name, sizeof(int));
-            dart_put(dart_var_name, 0, sizeof(int),    0, 0, 0,    0, 0, 0, &i); 
+            snprintf(ds_var_name, MAX_DS_NAMELEN, "CLOSED@%s", p->fnames[i]);
+            log_debug ("%s: put %s with %d bytes into the space\n", __func__, ds_var_name, sizeof(int));
+            dart_put(ds_var_name, 0, sizeof(int),    0, 0, 0,    0, 0, 0, &i); 
             free (p->fnames[i]);
         }
         //dart_put_sync();
         //dart_unlock_on_write("CLOSE");
     }
 
-    // disconnect from dart if we are connected from writer but not anymore from reader
-    if (globals_adios_is_dart_connected_from_writer() && 
-            !globals_adios_is_dart_connected_from_both())
+    // disconnect from dataspaces if we are connected from writer but not anymore from reader
+    if (globals_adios_is_dataspaces_connected_from_writer() && 
+            !globals_adios_is_dataspaces_connected_from_both())
     {
         log_debug ("%s: call dart_barrier(), rank=%d\n", __func__,mype);
         dart_barrier();
@@ -974,22 +974,22 @@ void adios_dart_finalize (int mype, struct adios_method_struct * method)
         dart_finalize();
 
     }
-    globals_adios_set_dart_disconnected_from_writer();
+    globals_adios_set_dataspaces_disconnected_from_writer();
 
-    adios_dart_initialized = 0;
+    adios_dataspaces_initialized = 0;
 
     log_info("%s: exit\n", __func__);
 }
 
-void adios_dart_end_iteration (struct adios_method_struct * method)
+void adios_dataspaces_end_iteration (struct adios_method_struct * method)
 {
 }
 
-void adios_dart_start_calculation (struct adios_method_struct * method)
+void adios_dataspaces_start_calculation (struct adios_method_struct * method)
 {
 }
 
-void adios_dart_stop_calculation (struct adios_method_struct * method)
+void adios_dataspaces_stop_calculation (struct adios_method_struct * method)
 {
 }
 

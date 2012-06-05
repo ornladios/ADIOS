@@ -38,7 +38,7 @@ host_triplet = @host@
 subdir = tests/suite
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_dart.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_dataspaces.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
 	$(top_srcdir)/config/ac_dimes.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
@@ -117,9 +117,9 @@ CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
-DART_CPPFLAGS = @DART_CPPFLAGS@
-DART_LDFLAGS = @DART_LDFLAGS@
-DART_LIBS = @DART_LIBS@
+DATASPACES_CPPFLAGS = @DATASPACES_CPPFLAGS@
+DATASPACES_LDFLAGS = @DATASPACES_LDFLAGS@
+DATASPACES_LIBS = @DATASPACES_LIBS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DIMES_CPPFLAGS = @DIMES_CPPFLAGS@
@@ -142,8 +142,8 @@ FC = @FC@
 FCFLAGS = @FCFLAGS@
 FCLIBS = @FCLIBS@
 FFLAGS = @FFLAGS@
-HAVE_DART_FALSE = @HAVE_DART_FALSE@
-HAVE_DART_TRUE = @HAVE_DART_TRUE@
+HAVE_DATASPACES_FALSE = @HAVE_DATASPACES_FALSE@
+HAVE_DATASPACES_TRUE = @HAVE_DATASPACES_TRUE@
 HAVE_DATATAP_FALSE = @HAVE_DATATAP_FALSE@
 HAVE_DATATAP_TRUE = @HAVE_DATATAP_TRUE@
 HAVE_DIMES_FALSE = @HAVE_DIMES_FALSE@

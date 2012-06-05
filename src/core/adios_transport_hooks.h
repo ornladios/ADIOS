@@ -107,7 +107,7 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
               ,ADIOS_METHOD_MPI         = 0
               ,ADIOS_METHOD_DATATAP     = 1
               ,ADIOS_METHOD_POSIX       = 2
-              ,ADIOS_METHOD_DART        = 3
+              ,ADIOS_METHOD_DATASPACES  = 3
               ,ADIOS_METHOD_VTK         = 4
               ,ADIOS_METHOD_POSIX_ASCII = 5
               ,ADIOS_METHOD_MPI_CIO     = 6
@@ -158,8 +158,8 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
      FORWARD_DECLARE(adaptive)
 #endif
 
-#if defined(HAVE_DART) && !defined(ADIOS_EMPTY_TRANSPORTS) 
-FORWARD_DECLARE(dart)
+#if defined(HAVE_DATASPACES) && !defined(ADIOS_EMPTY_TRANSPORTS) 
+FORWARD_DECLARE(dataspaces)
 #endif
 
 #if HAVE_DIMES

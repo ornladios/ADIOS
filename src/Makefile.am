@@ -137,11 +137,11 @@ libadios_nompi_a_CFLAGS = -D_NOMPI $(ADIOSLIB_SEQ_CFLAGS)
 libadiosf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
 libadiosf_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
 
-if HAVE_DART
-libadios_a_SOURCES += write/adios_dart.c read/read_dart.c
-libadios_nompi_a_SOURCES += write/adios_dart.c read/read_dart.c
+if HAVE_DATASPACES
+libadios_a_SOURCES += write/adios_dataspaces.c read/read_dataspaces.c
+libadios_nompi_a_SOURCES += write/adios_dataspaces.c read/read_dataspaces.c
 if BUILD_FORTRAN
-FortranLibSources += write/adios_dart.c read/read_dart.c
+FortranLibSources += write/adios_dataspaces.c read/read_dataspaces.c
 endif
 endif
 
@@ -274,8 +274,8 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
-if HAVE_DART
-libadiosread_a_SOURCES += read/read_dart.c
+if HAVE_DATASPACES
+libadiosread_a_SOURCES += read/read_dataspaces.c
 endif
 if HAVE_DIMES
 libadiosread_a_SOURCES += read/read_dimes.c
@@ -310,8 +310,8 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
                       
-if HAVE_DART
-FortranReadLibSource += read/read_dart.c
+if HAVE_DATASPACES
+FortranReadLibSource += read/read_dataspaces.c
 endif
 if HAVE_DIMES
 FortranReadLibSource += read/read_dimes.c
@@ -358,8 +358,8 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/util.c \
                       read/read_bp.c 
 
-if HAVE_DART
-libadiosread_nompi_a_SOURCES += read/read_dart.c
+if HAVE_DATASPACES
+libadiosread_nompi_a_SOURCES += read/read_dataspaces.c
 endif
 if HAVE_DIMES
 libadiosread_nompi_a_SOURCES += read/read_dimes.c
@@ -393,8 +393,8 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/adios_read_hooks.c \
                           core/util.c \
                           read/read_bp.c 
-if HAVE_DART
-FortranReadSeqLibSource += read/read_dart.c
+if HAVE_DATASPACES
+FortranReadSeqLibSource += read/read_dataspaces.c
 endif
 if HAVE_DIMES
 FortranReadSeqLibSource += read/read_dimes.c

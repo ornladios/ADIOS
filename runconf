@@ -49,12 +49,12 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         export CC=pgcc
         export CXX=pgCC
         export FC=pgf90
-        WITHDART="--with-dart=/ccs/proj/e2e/dataspaces/sith/$TARGET"
+        WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/sith/$TARGET"
     elif [ "$TARGET" == "gnu" ]; then
         export CC=gcc
         export CXX=g++
         export FC=gfortran
-        WITHDART="--with-dart=/ccs/proj/e2e/dataspaces/sith/$TARGET"
+        WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/sith/$TARGET"
     elif [ "$TARGET" == "intel" ]; then
         export CC=icc
         export CXX=icpc

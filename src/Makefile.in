@@ -43,9 +43,9 @@ bin_PROGRAMS = $(am__EXEEXT_1)
 @HAVE_NSSI_TRUE@	nssi-coupling-server
 @BUILD_WRITE_TRUE@am__append_2 = libadios.a libadios_nompi.a
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_3 = libadiosf.a libadiosf_v1.a
-@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@am__append_4 = write/adios_dart.c read/read_dart.c
-@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@am__append_5 = write/adios_dart.c read/read_dart.c
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@am__append_6 = write/adios_dart.c read/read_dart.c
+@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__append_4 = write/adios_dataspaces.c read/read_dataspaces.c
+@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__append_5 = write/adios_dataspaces.c read/read_dataspaces.c
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__append_6 = write/adios_dataspaces.c read/read_dataspaces.c
 @BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__append_7 = write/adios_dimes.c read/read_dimes.c
 @BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__append_8 = write/adios_dimes.c read/read_dimes.c
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__append_9 = write/adios_dimes.c read/read_dimes.c
@@ -82,7 +82,7 @@ bin_PROGRAMS = $(am__EXEEXT_1)
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_26 = -DNO_RESEARCH_TRANSPORTS
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_27 = -DNO_RESEARCH_TRANSPORTS
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_28 = -DNO_RESEARCH_TRANSPORTS
-@HAVE_DART_TRUE@am__append_29 = read/read_dart.c
+@HAVE_DATASPACES_TRUE@am__append_29 = read/read_dataspaces.c
 @HAVE_DIMES_TRUE@am__append_30 = read/read_dimes.c
 @HAVE_DATATAP_TRUE@am__append_31 = read/read_datatap.c
 @HAVE_NSSI_TRUE@am__append_32 = nssi/adios_nssi_config.c read/read_nssi.c
@@ -90,14 +90,14 @@ bin_PROGRAMS = $(am__EXEEXT_1)
 #libadiosread_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
 @HAVE_NSSI_TRUE@am__append_34 = $(ADIOSLIB_CFLAGS) 
 @BUILD_FORTRAN_TRUE@am__append_35 = libadiosreadf.a libadiosreadf_v1.a
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__append_36 = read/read_dart.c
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__append_36 = read/read_dataspaces.c
 @BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__append_37 = read/read_dimes.c
 @BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__append_38 = read/read_datatap.c
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_39 = nssi/adios_nssi_config.c read/read_nssi.c
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_40 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_41 = $(ADIOSLIB_CFLAGS) 
 @BUILD_FORTRAN_TRUE@am__append_42 = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
-@HAVE_DART_TRUE@am__append_43 = read/read_dart.c
+@HAVE_DATASPACES_TRUE@am__append_43 = read/read_dataspaces.c
 @HAVE_DIMES_TRUE@am__append_44 = read/read_dimes.c
 @HAVE_DATATAP_TRUE@am__append_45 = read/read_datatap.c
 @HAVE_NSSI_TRUE@am__append_46 = nssi/adios_nssi_config.c read/read_nssi.c
@@ -109,7 +109,7 @@ bin_PROGRAMS = $(am__EXEEXT_1)
 #       We put these objects in libadiosread_nompi
 #       so we do not need to make another _nompi lib just for adios_lint
 @BUILD_FORTRAN_TRUE@am__append_49 = libadiosreadf_nompi.a libadiosreadf_nompi_v1.a
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__append_50 = read/read_dart.c
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__append_50 = read/read_dataspaces.c
 @BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__append_51 = read/read_dimes.c
 @BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__append_52 = read/read_datatap.c
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_53 = nssi/adios_nssi_config.c read/read_nssi.c
@@ -127,7 +127,7 @@ subdir = src
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_dart.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_dataspaces.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
 	$(top_srcdir)/config/ac_dimes.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
@@ -169,20 +169,21 @@ am__libadios_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	core/adios_read.c core/common_read.c core/globals.c \
 	core/adios_timing.c core/adios_read_hooks.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
-	core/adios_logger.c core/params.c read/read_bp.c \
+	core/adios_logger.c core/util.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c write/adios_mpi.c \
 	write/adios_mpi_lustre.c write/adios_mpi_amr.c \
-	write/adios_posix.c write/adios_posix1.c write/adios_dart.c \
-	read/read_dart.c write/adios_dimes.c read/read_dimes.c \
-	write/adios_datatap.c read/read_datatap.c write/adios_phdf5.c \
-	write/adios_nc4.c nssi/adios_nssi_config.c write/adios_nssi.c \
+	write/adios_posix.c write/adios_posix1.c \
+	write/adios_dataspaces.c read/read_dataspaces.c \
+	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
+	read/read_datatap.c write/adios_phdf5.c write/adios_nc4.c \
+	nssi/adios_nssi_config.c write/adios_nssi.c \
 	nssi/adios_nssi_filter.c read/read_nssi.c \
 	write/adios_mpi_stagger.c write/adios_mpi_aggregate.c \
 	write/adios_provenance.c write/adios_mpi_cio.c \
 	write/adios_mpi_stripe.c write/adios_mpi_amr1.c \
 	write/adios_adaptive.c
-@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@am__objects_1 = libadios_a-adios_dart.$(OBJEXT) \
-@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@	libadios_a-read_dart.$(OBJEXT)
+@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_1 = libadios_a-adios_dataspaces.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadios_a-read_dataspaces.$(OBJEXT)
 @BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_2 = libadios_a-adios_dimes.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@	libadios_a-read_dimes.$(OBJEXT)
 @BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_3 = libadios_a-adios_datatap.$(OBJEXT) \
@@ -218,7 +219,7 @@ am__libadios_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 @BUILD_WRITE_TRUE@	libadios_a-adios_transport_hooks.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_socket.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_logger.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	libadios_a-params.$(OBJEXT) \
+@BUILD_WRITE_TRUE@	libadios_a-util.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-read_bp.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-read_bp_staged.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-read_bp_staged1.$(OBJEXT) \
@@ -248,7 +249,7 @@ am_libadios_internal_nompi_a_OBJECTS =  \
 	libadios_internal_nompi_a-adios_error.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_internals_mxml.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_timing.$(OBJEXT) \
-	libadios_internal_nompi_a-params.$(OBJEXT) \
+	libadios_internal_nompi_a-util.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transport_hooks.$(OBJEXT)
 libadios_internal_nompi_a_OBJECTS =  \
 	$(am_libadios_internal_nompi_a_OBJECTS)
@@ -261,13 +262,14 @@ am__libadios_nompi_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	core/adios_read.c core/common_read.c core/globals.c \
 	core/mpidummy.c core/adios_timing.c core/adios_read_hooks.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
-	core/adios_logger.c core/params.c read/read_bp.c \
+	core/adios_logger.c core/util.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
-	write/adios_posix.c write/adios_posix1.c write/adios_dart.c \
-	read/read_dart.c write/adios_dimes.c read/read_dimes.c \
-	write/adios_datatap.c read/read_datatap.c
-@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@am__objects_8 = libadios_nompi_a-adios_dart.$(OBJEXT) \
-@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@	libadios_nompi_a-read_dart.$(OBJEXT)
+	write/adios_posix.c write/adios_posix1.c \
+	write/adios_dataspaces.c read/read_dataspaces.c \
+	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
+	read/read_datatap.c
+@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_8 = libadios_nompi_a-adios_dataspaces.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadios_nompi_a-read_dataspaces.$(OBJEXT)
 @BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_9 = libadios_nompi_a-adios_dimes.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@	libadios_nompi_a-read_dimes.$(OBJEXT)
 @BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_10 = libadios_nompi_a-adios_datatap.$(OBJEXT) \
@@ -292,7 +294,7 @@ am__libadios_nompi_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_transport_hooks.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_socket.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_logger.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	libadios_nompi_a-params.$(OBJEXT) \
+@BUILD_WRITE_TRUE@	libadios_nompi_a-util.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-read_bp.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-read_bp_staged.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-read_bp_staged1.$(OBJEXT) \
@@ -309,20 +311,21 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/futils.c core/adios_error.c core/bp_utils.c \
 	core/common_read.c core/globals.c core/adios_timing.c \
 	core/adios_read_hooks.c core/adios_transport_hooks.c \
-	core/adios_socket.c core/adios_logger.c core/params.c \
+	core/adios_socket.c core/adios_logger.c core/util.c \
 	read/read_bp.c read/read_bp_staged.c read/read_bp_staged1.c \
 	write/adios_mpi.c write/adios_mpi_lustre.c \
 	write/adios_mpi_amr.c write/adios_posix.c write/adios_posix1.c \
-	write/adios_dart.c read/read_dart.c write/adios_dimes.c \
-	read/read_dimes.c write/adios_datatap.c read/read_datatap.c \
-	write/adios_phdf5.c write/adios_nc4.c nssi/adios_nssi_config.c \
-	write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c \
+	write/adios_dataspaces.c read/read_dataspaces.c \
+	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
+	read/read_datatap.c write/adios_phdf5.c write/adios_nc4.c \
+	nssi/adios_nssi_config.c write/adios_nssi.c \
+	nssi/adios_nssi_filter.c read/read_nssi.c \
 	write/adios_mpi_stagger.c write/adios_mpi_aggregate.c \
 	write/adios_provenance.c write/adios_mpi_cio.c \
 	write/adios_mpi_stripe.c write/adios_mpi_amr1.c \
 	write/adios_adaptive.c core/adiosf_read.c
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@am__objects_11 = libadiosf_a-adios_dart.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@	libadiosf_a-read_dart.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_11 = libadiosf_a-adios_dataspaces.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadiosf_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_12 = libadiosf_a-adios_dimes.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@	libadiosf_a-read_dimes.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_13 = libadiosf_a-adios_datatap.$(OBJEXT) \
@@ -357,7 +360,7 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_transport_hooks.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_socket.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_logger.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-params.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-util.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-read_bp.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-read_bp_staged.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-read_bp_staged1.$(OBJEXT) \
@@ -389,20 +392,21 @@ am__libadiosf_v1_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/futils.c core/adios_error.c core/bp_utils.c \
 	core/common_read.c core/globals.c core/adios_timing.c \
 	core/adios_read_hooks.c core/adios_transport_hooks.c \
-	core/adios_socket.c core/adios_logger.c core/params.c \
+	core/adios_socket.c core/adios_logger.c core/util.c \
 	read/read_bp.c read/read_bp_staged.c read/read_bp_staged1.c \
 	write/adios_mpi.c write/adios_mpi_lustre.c \
 	write/adios_mpi_amr.c write/adios_posix.c write/adios_posix1.c \
-	write/adios_dart.c read/read_dart.c write/adios_dimes.c \
-	read/read_dimes.c write/adios_datatap.c read/read_datatap.c \
-	write/adios_phdf5.c write/adios_nc4.c nssi/adios_nssi_config.c \
-	write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c \
+	write/adios_dataspaces.c read/read_dataspaces.c \
+	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
+	read/read_datatap.c write/adios_phdf5.c write/adios_nc4.c \
+	nssi/adios_nssi_config.c write/adios_nssi.c \
+	nssi/adios_nssi_filter.c read/read_nssi.c \
 	write/adios_mpi_stagger.c write/adios_mpi_aggregate.c \
 	write/adios_provenance.c write/adios_mpi_cio.c \
 	write/adios_mpi_stripe.c write/adios_mpi_amr1.c \
 	write/adios_adaptive.c core/adiosf_read_v1.c
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@am__objects_19 = libadiosf_v1_a-adios_dart.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DART_TRUE@	libadiosf_v1_a-read_dart.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_19 = libadiosf_v1_a-adios_dataspaces.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadiosf_v1_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_20 = libadiosf_v1_a-adios_dimes.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@	libadiosf_v1_a-read_dimes.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_21 = libadiosf_v1_a-adios_datatap.$(OBJEXT) \
@@ -437,7 +441,7 @@ am__libadiosf_v1_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_transport_hooks.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_socket.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_logger.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-params.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-util.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-read_bp.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-read_bp_staged.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-read_bp_staged1.$(OBJEXT) \
@@ -463,10 +467,11 @@ am__libadiosread_a_SOURCES_DIST = core/adios_bp_v1.c \
 	core/adios_endianness.c core/bp_utils.c core/futils.c \
 	core/adios_error.c core/adios_read.c core/common_read.c \
 	core/globals.c core/adios_read_hooks.c core/adios_logger.c \
-	core/params.c read/read_bp.c read/read_bp_staged.c \
-	read/read_bp_staged1.c read/read_dart.c read/read_dimes.c \
-	read/read_datatap.c nssi/adios_nssi_config.c read/read_nssi.c
-@HAVE_DART_TRUE@am__objects_27 = libadiosread_a-read_dart.$(OBJEXT)
+	core/util.c read/read_bp.c read/read_bp_staged.c \
+	read/read_bp_staged1.c read/read_dataspaces.c \
+	read/read_dimes.c read/read_datatap.c nssi/adios_nssi_config.c \
+	read/read_nssi.c
+@HAVE_DATASPACES_TRUE@am__objects_27 = libadiosread_a-read_dataspaces.$(OBJEXT)
 @HAVE_DIMES_TRUE@am__objects_28 = libadiosread_a-read_dimes.$(OBJEXT)
 @HAVE_DATATAP_TRUE@am__objects_29 =  \
 @HAVE_DATATAP_TRUE@	libadiosread_a-read_datatap.$(OBJEXT)
@@ -483,8 +488,7 @@ am_libadiosread_a_OBJECTS = libadiosread_a-adios_bp_v1.$(OBJEXT) \
 	libadiosread_a-globals.$(OBJEXT) \
 	libadiosread_a-adios_read_hooks.$(OBJEXT) \
 	libadiosread_a-adios_logger.$(OBJEXT) \
-	libadiosread_a-params.$(OBJEXT) \
-	libadiosread_a-read_bp.$(OBJEXT) \
+	libadiosread_a-util.$(OBJEXT) libadiosread_a-read_bp.$(OBJEXT) \
 	libadiosread_a-read_bp_staged.$(OBJEXT) \
 	libadiosread_a-read_bp_staged1.$(OBJEXT) $(am__objects_27) \
 	$(am__objects_28) $(am__objects_29) $(am__objects_30)
@@ -502,11 +506,10 @@ am__libadiosread_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	core/futils.c core/adios_error.c core/adios_read.c \
 	core/common_read.c core/adios_internals.c core/adios_logger.c \
 	core/buffer.c core/globals.c core/adios_read_hooks.c \
-	core/adios_transport_hooks.c core/params.c read/read_bp.c \
-	read/read_dart.c read/read_dimes.c read/read_datatap.c \
+	core/adios_transport_hooks.c core/util.c read/read_bp.c \
+	read/read_dataspaces.c read/read_dimes.c read/read_datatap.c \
 	nssi/adios_nssi_config.c read/read_nssi.c
-@HAVE_DART_TRUE@am__objects_31 =  \
-@HAVE_DART_TRUE@	libadiosread_nompi_a-read_dart.$(OBJEXT)
+@HAVE_DATASPACES_TRUE@am__objects_31 = libadiosread_nompi_a-read_dataspaces.$(OBJEXT)
 @HAVE_DIMES_TRUE@am__objects_32 =  \
 @HAVE_DIMES_TRUE@	libadiosread_nompi_a-read_dimes.$(OBJEXT)
 @HAVE_DATATAP_TRUE@am__objects_33 = libadiosread_nompi_a-read_datatap.$(OBJEXT)
@@ -527,7 +530,7 @@ am_libadiosread_nompi_a_OBJECTS =  \
 	libadiosread_nompi_a-globals.$(OBJEXT) \
 	libadiosread_nompi_a-adios_read_hooks.$(OBJEXT) \
 	libadiosread_nompi_a-adios_transport_hooks.$(OBJEXT) \
-	libadiosread_nompi_a-params.$(OBJEXT) \
+	libadiosread_nompi_a-util.$(OBJEXT) \
 	libadiosread_nompi_a-read_bp.$(OBJEXT) $(am__objects_31) \
 	$(am__objects_32) $(am__objects_33) $(am__objects_34)
 am__dist_libadiosread_nompi_a_SOURCES_DIST = nssi/adios_nssi_args.x
@@ -541,11 +544,11 @@ libadiosreadf_a_LIBADD =
 am__libadiosreadf_a_SOURCES_DIST = core/adios_bp_v1.c \
 	core/adios_endianness.c core/bp_utils.c core/futils.c \
 	core/adios_error.c core/common_read.c core/globals.c \
-	core/adios_read_hooks.c core/adios_logger.c core/params.c \
+	core/adios_read_hooks.c core/adios_logger.c core/util.c \
 	read/read_bp.c read/read_bp_staged.c read/read_bp_staged1.c \
-	read/read_dart.c read/read_dimes.c read/read_datatap.c \
+	read/read_dataspaces.c read/read_dimes.c read/read_datatap.c \
 	nssi/adios_nssi_config.c read/read_nssi.c core/adiosf_read.c
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__objects_35 = libadiosreadf_a-read_dart.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_35 = libadiosreadf_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_36 = libadiosreadf_a-read_dimes.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_37 = libadiosreadf_a-read_datatap.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__objects_38 = libadiosreadf_a-adios_nssi_config.$(OBJEXT) \
@@ -560,7 +563,7 @@ am__libadiosreadf_a_SOURCES_DIST = core/adios_bp_v1.c \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-globals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-adios_read_hooks.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-adios_logger.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	libadiosreadf_a-params.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@	libadiosreadf_a-util.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-read_bp.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-read_bp_staged.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-read_bp_staged1.$(OBJEXT) \
@@ -579,11 +582,11 @@ libadiosreadf_nompi_a_LIBADD =
 am__libadiosreadf_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	core/adios_bp_v1.c core/adios_endianness.c core/bp_utils.c \
 	core/futils.c core/adios_error.c core/common_read.c \
-	core/globals.c core/adios_read_hooks.c core/params.c \
-	read/read_bp.c read/read_dart.c read/read_dimes.c \
+	core/globals.c core/adios_read_hooks.c core/util.c \
+	read/read_bp.c read/read_dataspaces.c read/read_dimes.c \
 	read/read_datatap.c nssi/adios_nssi_config.c read/read_nssi.c \
 	core/adiosf_read.c
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__objects_40 = libadiosreadf_nompi_a-read_dart.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_40 = libadiosreadf_nompi_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_41 = libadiosreadf_nompi_a-read_dimes.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_42 = libadiosreadf_nompi_a-read_datatap.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__objects_43 = libadiosreadf_nompi_a-adios_nssi_config.$(OBJEXT) \
@@ -598,7 +601,7 @@ am__libadiosreadf_nompi_a_SOURCES_DIST = core/mpidummy.c \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-common_read.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-globals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-adios_read_hooks.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-params.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-util.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-read_bp.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_40) $(am__objects_41) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_42) $(am__objects_43)
@@ -616,11 +619,11 @@ libadiosreadf_nompi_v1_a_LIBADD =
 am__libadiosreadf_nompi_v1_a_SOURCES_DIST = core/mpidummy.c \
 	core/adios_bp_v1.c core/adios_endianness.c core/bp_utils.c \
 	core/futils.c core/adios_error.c core/common_read.c \
-	core/globals.c core/adios_read_hooks.c core/params.c \
-	read/read_bp.c read/read_dart.c read/read_dimes.c \
+	core/globals.c core/adios_read_hooks.c core/util.c \
+	read/read_bp.c read/read_dataspaces.c read/read_dimes.c \
 	read/read_datatap.c nssi/adios_nssi_config.c read/read_nssi.c \
 	core/adiosf_read_v1.c
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__objects_45 = libadiosreadf_nompi_v1_a-read_dart.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_45 = libadiosreadf_nompi_v1_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_46 = libadiosreadf_nompi_v1_a-read_dimes.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_47 = libadiosreadf_nompi_v1_a-read_datatap.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__objects_48 = libadiosreadf_nompi_v1_a-adios_nssi_config.$(OBJEXT) \
@@ -634,7 +637,7 @@ am__libadiosreadf_nompi_v1_a_SOURCES_DIST = core/mpidummy.c \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-common_read.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-globals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-adios_read_hooks.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-params.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-util.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-read_bp.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_45) $(am__objects_46) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_47) $(am__objects_48)
@@ -648,12 +651,12 @@ libadiosreadf_v1_a_LIBADD =
 am__libadiosreadf_v1_a_SOURCES_DIST = core/adios_bp_v1.c \
 	core/adios_endianness.c core/bp_utils.c core/futils.c \
 	core/adios_error.c core/common_read.c core/globals.c \
-	core/adios_read_hooks.c core/adios_logger.c core/params.c \
+	core/adios_read_hooks.c core/adios_logger.c core/util.c \
 	read/read_bp.c read/read_bp_staged.c read/read_bp_staged1.c \
-	read/read_dart.c read/read_dimes.c read/read_datatap.c \
+	read/read_dataspaces.c read/read_dimes.c read/read_datatap.c \
 	nssi/adios_nssi_config.c read/read_nssi.c \
 	core/adiosf_read_v1.c
-@BUILD_FORTRAN_TRUE@@HAVE_DART_TRUE@am__objects_50 = libadiosreadf_v1_a-read_dart.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_50 = libadiosreadf_v1_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_51 = libadiosreadf_v1_a-read_dimes.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_52 = libadiosreadf_v1_a-read_datatap.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__objects_53 = libadiosreadf_v1_a-adios_nssi_config.$(OBJEXT) \
@@ -668,7 +671,7 @@ am__libadiosreadf_v1_a_SOURCES_DIST = core/adios_bp_v1.c \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-globals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-adios_read_hooks.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-adios_logger.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-params.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-util.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-read_bp.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-read_bp_staged.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-read_bp_staged1.$(OBJEXT) \
@@ -807,9 +810,9 @@ CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
-DART_CPPFLAGS = @DART_CPPFLAGS@
-DART_LDFLAGS = @DART_LDFLAGS@
-DART_LIBS = @DART_LIBS@
+DATASPACES_CPPFLAGS = @DATASPACES_CPPFLAGS@
+DATASPACES_LDFLAGS = @DATASPACES_LDFLAGS@
+DATASPACES_LIBS = @DATASPACES_LIBS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DIMES_CPPFLAGS = @DIMES_CPPFLAGS@
@@ -832,8 +835,8 @@ FC = @FC@
 FCFLAGS = @FCFLAGS@
 FCLIBS = @FCLIBS@
 FFLAGS = @FFLAGS@
-HAVE_DART_FALSE = @HAVE_DART_FALSE@
-HAVE_DART_TRUE = @HAVE_DART_TRUE@
+HAVE_DATASPACES_FALSE = @HAVE_DATASPACES_FALSE@
+HAVE_DATASPACES_TRUE = @HAVE_DATASPACES_TRUE@
 HAVE_DATATAP_FALSE = @HAVE_DATATAP_FALSE@
 HAVE_DATATAP_TRUE = @HAVE_DATATAP_TRUE@
 HAVE_DIMES_FALSE = @HAVE_DIMES_FALSE@
@@ -1034,7 +1037,7 @@ libadiosreadf_nompi_a_CFLAGS = $(am__append_55)
 @BUILD_WRITE_TRUE@	core/adios_timing.c core/adios_read_hooks.c \
 @BUILD_WRITE_TRUE@	core/adios_transport_hooks.c \
 @BUILD_WRITE_TRUE@	core/adios_socket.c core/adios_logger.c \
-@BUILD_WRITE_TRUE@	core/params.c read/read_bp.c \
+@BUILD_WRITE_TRUE@	core/util.c read/read_bp.c \
 @BUILD_WRITE_TRUE@	read/read_bp_staged.c read/read_bp_staged1.c \
 @BUILD_WRITE_TRUE@	write/adios_mpi.c write/adios_mpi_lustre.c \
 @BUILD_WRITE_TRUE@	write/adios_mpi_amr.c write/adios_posix.c \
@@ -1053,7 +1056,7 @@ libadiosreadf_nompi_a_CFLAGS = $(am__append_55)
 @BUILD_WRITE_TRUE@	core/adios_read_hooks.c \
 @BUILD_WRITE_TRUE@	core/adios_transport_hooks.c \
 @BUILD_WRITE_TRUE@	core/adios_socket.c core/adios_logger.c \
-@BUILD_WRITE_TRUE@	core/params.c read/read_bp.c \
+@BUILD_WRITE_TRUE@	core/util.c read/read_bp.c \
 @BUILD_WRITE_TRUE@	read/read_bp_staged.c read/read_bp_staged1.c \
 @BUILD_WRITE_TRUE@	write/adios_posix.c write/adios_posix1.c \
 @BUILD_WRITE_TRUE@	$(am__append_5) $(am__append_8) \
@@ -1076,7 +1079,7 @@ libadiosreadf_nompi_a_CFLAGS = $(am__append_55)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/adios_transport_hooks.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/adios_socket.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/adios_logger.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/params.c \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/util.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	read/read_bp.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	read/read_bp_staged.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	read/read_bp_staged1.c \
@@ -1118,7 +1121,7 @@ libadiosreadf_nompi_a_CFLAGS = $(am__append_55)
 libadiosread_a_SOURCES = core/adios_bp_v1.c core/adios_endianness.c \
 	core/bp_utils.c core/futils.c core/adios_error.c \
 	core/adios_read.c core/common_read.c core/globals.c \
-	core/adios_read_hooks.c core/adios_logger.c core/params.c \
+	core/adios_read_hooks.c core/adios_logger.c core/util.c \
 	read/read_bp.c read/read_bp_staged.c read/read_bp_staged1.c \
 	$(am__append_29) $(am__append_30) $(am__append_31) \
 	$(am__append_32)
@@ -1129,7 +1132,7 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c core/adios_endianness.c \
 @BUILD_FORTRAN_TRUE@	core/futils.c core/adios_error.c \
 @BUILD_FORTRAN_TRUE@	core/common_read.c core/globals.c \
 @BUILD_FORTRAN_TRUE@	core/adios_read_hooks.c \
-@BUILD_FORTRAN_TRUE@	core/adios_logger.c core/params.c \
+@BUILD_FORTRAN_TRUE@	core/adios_logger.c core/util.c \
 @BUILD_FORTRAN_TRUE@	read/read_bp.c read/read_bp_staged.c \
 @BUILD_FORTRAN_TRUE@	read/read_bp_staged1.c $(am__append_36) \
 @BUILD_FORTRAN_TRUE@	$(am__append_37) $(am__append_38) \
@@ -1145,7 +1148,7 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c core/adios_bp_v1.c \
 	core/adios_error.c core/adios_read.c core/common_read.c \
 	core/adios_internals.c core/adios_logger.c core/buffer.c \
 	core/globals.c core/adios_read_hooks.c \
-	core/adios_transport_hooks.c core/params.c read/read_bp.c \
+	core/adios_transport_hooks.c core/util.c read/read_bp.c \
 	$(am__append_43) $(am__append_44) $(am__append_45) \
 	$(am__append_46)
 @HAVE_NSSI_TRUE@dist_libadiosread_nompi_a_SOURCES = nssi/adios_nssi_args.x
@@ -1155,7 +1158,7 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c core/adios_bp_v1.c \
 @BUILD_FORTRAN_TRUE@	core/bp_utils.c core/futils.c \
 @BUILD_FORTRAN_TRUE@	core/adios_error.c core/common_read.c \
 @BUILD_FORTRAN_TRUE@	core/globals.c core/adios_read_hooks.c \
-@BUILD_FORTRAN_TRUE@	core/params.c read/read_bp.c \
+@BUILD_FORTRAN_TRUE@	core/util.c read/read_bp.c \
 @BUILD_FORTRAN_TRUE@	$(am__append_50) $(am__append_51) \
 @BUILD_FORTRAN_TRUE@	$(am__append_52) $(am__append_53)
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@dist_libadiosreadf_nompi_a_SOURCES = nssi/adios_nssi_args.x
@@ -1174,7 +1177,7 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_error.c \
                                     core/adios_internals_mxml.c \
                                     core/adios_timing.c \
-                                    core/params.c \
+                                    core/util.c \
                                     core/adios_transport_hooks.c 
 
 libadios_internal_nompi_a_CPPFLAGS = -D_INTERNAL $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
@@ -1472,11 +1475,11 @@ libadios_a-adios_logger.o: core/adios_logger.c
 libadios_a-adios_logger.obj: core/adios_logger.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_logger.obj `if test -f 'core/adios_logger.c'; then $(CYGPATH_W) 'core/adios_logger.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_logger.c'; fi`
 
-libadios_a-params.o: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-params.o `test -f 'core/params.c' || echo '$(srcdir)/'`core/params.c
+libadios_a-util.o: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-util.o `test -f 'core/util.c' || echo '$(srcdir)/'`core/util.c
 
-libadios_a-params.obj: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-params.obj `if test -f 'core/params.c'; then $(CYGPATH_W) 'core/params.c'; else $(CYGPATH_W) '$(srcdir)/core/params.c'; fi`
+libadios_a-util.obj: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-util.obj `if test -f 'core/util.c'; then $(CYGPATH_W) 'core/util.c'; else $(CYGPATH_W) '$(srcdir)/core/util.c'; fi`
 
 libadios_a-read_bp.o: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-read_bp.o `test -f 'read/read_bp.c' || echo '$(srcdir)/'`read/read_bp.c
@@ -1526,17 +1529,17 @@ libadios_a-adios_posix1.o: write/adios_posix1.c
 libadios_a-adios_posix1.obj: write/adios_posix1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
 
-libadios_a-adios_dart.o: write/adios_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_dart.o `test -f 'write/adios_dart.c' || echo '$(srcdir)/'`write/adios_dart.c
+libadios_a-adios_dataspaces.o: write/adios_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_dataspaces.o `test -f 'write/adios_dataspaces.c' || echo '$(srcdir)/'`write/adios_dataspaces.c
 
-libadios_a-adios_dart.obj: write/adios_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_dart.obj `if test -f 'write/adios_dart.c'; then $(CYGPATH_W) 'write/adios_dart.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_dart.c'; fi`
+libadios_a-adios_dataspaces.obj: write/adios_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_dataspaces.obj `if test -f 'write/adios_dataspaces.c'; then $(CYGPATH_W) 'write/adios_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_dataspaces.c'; fi`
 
-libadios_a-read_dart.o: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-read_dart.o `test -f 'read/read_dart.c' || echo '$(srcdir)/'`read/read_dart.c
+libadios_a-read_dataspaces.o: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-read_dataspaces.o `test -f 'read/read_dataspaces.c' || echo '$(srcdir)/'`read/read_dataspaces.c
 
-libadios_a-read_dart.obj: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-read_dart.obj `if test -f 'read/read_dart.c'; then $(CYGPATH_W) 'read/read_dart.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dart.c'; fi`
+libadios_a-read_dataspaces.obj: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-read_dataspaces.obj `if test -f 'read/read_dataspaces.c'; then $(CYGPATH_W) 'read/read_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dataspaces.c'; fi`
 
 libadios_a-adios_dimes.o: write/adios_dimes.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_dimes.o `test -f 'write/adios_dimes.c' || echo '$(srcdir)/'`write/adios_dimes.c
@@ -1700,11 +1703,11 @@ libadios_internal_nompi_a-adios_timing.o: core/adios_timing.c
 libadios_internal_nompi_a-adios_timing.obj: core/adios_timing.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_timing.obj `if test -f 'core/adios_timing.c'; then $(CYGPATH_W) 'core/adios_timing.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_timing.c'; fi`
 
-libadios_internal_nompi_a-params.o: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-params.o `test -f 'core/params.c' || echo '$(srcdir)/'`core/params.c
+libadios_internal_nompi_a-util.o: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-util.o `test -f 'core/util.c' || echo '$(srcdir)/'`core/util.c
 
-libadios_internal_nompi_a-params.obj: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-params.obj `if test -f 'core/params.c'; then $(CYGPATH_W) 'core/params.c'; else $(CYGPATH_W) '$(srcdir)/core/params.c'; fi`
+libadios_internal_nompi_a-util.obj: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-util.obj `if test -f 'core/util.c'; then $(CYGPATH_W) 'core/util.c'; else $(CYGPATH_W) '$(srcdir)/core/util.c'; fi`
 
 libadios_internal_nompi_a-adios_transport_hooks.o: core/adios_transport_hooks.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_transport_hooks.o `test -f 'core/adios_transport_hooks.c' || echo '$(srcdir)/'`core/adios_transport_hooks.c
@@ -1826,11 +1829,11 @@ libadios_nompi_a-adios_logger.o: core/adios_logger.c
 libadios_nompi_a-adios_logger.obj: core/adios_logger.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_logger.obj `if test -f 'core/adios_logger.c'; then $(CYGPATH_W) 'core/adios_logger.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_logger.c'; fi`
 
-libadios_nompi_a-params.o: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-params.o `test -f 'core/params.c' || echo '$(srcdir)/'`core/params.c
+libadios_nompi_a-util.o: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-util.o `test -f 'core/util.c' || echo '$(srcdir)/'`core/util.c
 
-libadios_nompi_a-params.obj: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-params.obj `if test -f 'core/params.c'; then $(CYGPATH_W) 'core/params.c'; else $(CYGPATH_W) '$(srcdir)/core/params.c'; fi`
+libadios_nompi_a-util.obj: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-util.obj `if test -f 'core/util.c'; then $(CYGPATH_W) 'core/util.c'; else $(CYGPATH_W) '$(srcdir)/core/util.c'; fi`
 
 libadios_nompi_a-read_bp.o: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-read_bp.o `test -f 'read/read_bp.c' || echo '$(srcdir)/'`read/read_bp.c
@@ -1862,17 +1865,17 @@ libadios_nompi_a-adios_posix1.o: write/adios_posix1.c
 libadios_nompi_a-adios_posix1.obj: write/adios_posix1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
 
-libadios_nompi_a-adios_dart.o: write/adios_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_dart.o `test -f 'write/adios_dart.c' || echo '$(srcdir)/'`write/adios_dart.c
+libadios_nompi_a-adios_dataspaces.o: write/adios_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_dataspaces.o `test -f 'write/adios_dataspaces.c' || echo '$(srcdir)/'`write/adios_dataspaces.c
 
-libadios_nompi_a-adios_dart.obj: write/adios_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_dart.obj `if test -f 'write/adios_dart.c'; then $(CYGPATH_W) 'write/adios_dart.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_dart.c'; fi`
+libadios_nompi_a-adios_dataspaces.obj: write/adios_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_dataspaces.obj `if test -f 'write/adios_dataspaces.c'; then $(CYGPATH_W) 'write/adios_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_dataspaces.c'; fi`
 
-libadios_nompi_a-read_dart.o: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-read_dart.o `test -f 'read/read_dart.c' || echo '$(srcdir)/'`read/read_dart.c
+libadios_nompi_a-read_dataspaces.o: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-read_dataspaces.o `test -f 'read/read_dataspaces.c' || echo '$(srcdir)/'`read/read_dataspaces.c
 
-libadios_nompi_a-read_dart.obj: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-read_dart.obj `if test -f 'read/read_dart.c'; then $(CYGPATH_W) 'read/read_dart.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dart.c'; fi`
+libadios_nompi_a-read_dataspaces.obj: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-read_dataspaces.obj `if test -f 'read/read_dataspaces.c'; then $(CYGPATH_W) 'read/read_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dataspaces.c'; fi`
 
 libadios_nompi_a-adios_dimes.o: write/adios_dimes.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_dimes.o `test -f 'write/adios_dimes.c' || echo '$(srcdir)/'`write/adios_dimes.c
@@ -2000,11 +2003,11 @@ libadiosf_a-adios_logger.o: core/adios_logger.c
 libadiosf_a-adios_logger.obj: core/adios_logger.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_logger.obj `if test -f 'core/adios_logger.c'; then $(CYGPATH_W) 'core/adios_logger.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_logger.c'; fi`
 
-libadiosf_a-params.o: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-params.o `test -f 'core/params.c' || echo '$(srcdir)/'`core/params.c
+libadiosf_a-util.o: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-util.o `test -f 'core/util.c' || echo '$(srcdir)/'`core/util.c
 
-libadiosf_a-params.obj: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-params.obj `if test -f 'core/params.c'; then $(CYGPATH_W) 'core/params.c'; else $(CYGPATH_W) '$(srcdir)/core/params.c'; fi`
+libadiosf_a-util.obj: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-util.obj `if test -f 'core/util.c'; then $(CYGPATH_W) 'core/util.c'; else $(CYGPATH_W) '$(srcdir)/core/util.c'; fi`
 
 libadiosf_a-read_bp.o: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-read_bp.o `test -f 'read/read_bp.c' || echo '$(srcdir)/'`read/read_bp.c
@@ -2054,17 +2057,17 @@ libadiosf_a-adios_posix1.o: write/adios_posix1.c
 libadiosf_a-adios_posix1.obj: write/adios_posix1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
 
-libadiosf_a-adios_dart.o: write/adios_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_dart.o `test -f 'write/adios_dart.c' || echo '$(srcdir)/'`write/adios_dart.c
+libadiosf_a-adios_dataspaces.o: write/adios_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_dataspaces.o `test -f 'write/adios_dataspaces.c' || echo '$(srcdir)/'`write/adios_dataspaces.c
 
-libadiosf_a-adios_dart.obj: write/adios_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_dart.obj `if test -f 'write/adios_dart.c'; then $(CYGPATH_W) 'write/adios_dart.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_dart.c'; fi`
+libadiosf_a-adios_dataspaces.obj: write/adios_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_dataspaces.obj `if test -f 'write/adios_dataspaces.c'; then $(CYGPATH_W) 'write/adios_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_dataspaces.c'; fi`
 
-libadiosf_a-read_dart.o: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-read_dart.o `test -f 'read/read_dart.c' || echo '$(srcdir)/'`read/read_dart.c
+libadiosf_a-read_dataspaces.o: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-read_dataspaces.o `test -f 'read/read_dataspaces.c' || echo '$(srcdir)/'`read/read_dataspaces.c
 
-libadiosf_a-read_dart.obj: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-read_dart.obj `if test -f 'read/read_dart.c'; then $(CYGPATH_W) 'read/read_dart.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dart.c'; fi`
+libadiosf_a-read_dataspaces.obj: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-read_dataspaces.obj `if test -f 'read/read_dataspaces.c'; then $(CYGPATH_W) 'read/read_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dataspaces.c'; fi`
 
 libadiosf_a-adios_dimes.o: write/adios_dimes.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_dimes.o `test -f 'write/adios_dimes.c' || echo '$(srcdir)/'`write/adios_dimes.c
@@ -2282,11 +2285,11 @@ libadiosf_v1_a-adios_logger.o: core/adios_logger.c
 libadiosf_v1_a-adios_logger.obj: core/adios_logger.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_logger.obj `if test -f 'core/adios_logger.c'; then $(CYGPATH_W) 'core/adios_logger.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_logger.c'; fi`
 
-libadiosf_v1_a-params.o: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-params.o `test -f 'core/params.c' || echo '$(srcdir)/'`core/params.c
+libadiosf_v1_a-util.o: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-util.o `test -f 'core/util.c' || echo '$(srcdir)/'`core/util.c
 
-libadiosf_v1_a-params.obj: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-params.obj `if test -f 'core/params.c'; then $(CYGPATH_W) 'core/params.c'; else $(CYGPATH_W) '$(srcdir)/core/params.c'; fi`
+libadiosf_v1_a-util.obj: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-util.obj `if test -f 'core/util.c'; then $(CYGPATH_W) 'core/util.c'; else $(CYGPATH_W) '$(srcdir)/core/util.c'; fi`
 
 libadiosf_v1_a-read_bp.o: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-read_bp.o `test -f 'read/read_bp.c' || echo '$(srcdir)/'`read/read_bp.c
@@ -2336,17 +2339,17 @@ libadiosf_v1_a-adios_posix1.o: write/adios_posix1.c
 libadiosf_v1_a-adios_posix1.obj: write/adios_posix1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
 
-libadiosf_v1_a-adios_dart.o: write/adios_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_dart.o `test -f 'write/adios_dart.c' || echo '$(srcdir)/'`write/adios_dart.c
+libadiosf_v1_a-adios_dataspaces.o: write/adios_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_dataspaces.o `test -f 'write/adios_dataspaces.c' || echo '$(srcdir)/'`write/adios_dataspaces.c
 
-libadiosf_v1_a-adios_dart.obj: write/adios_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_dart.obj `if test -f 'write/adios_dart.c'; then $(CYGPATH_W) 'write/adios_dart.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_dart.c'; fi`
+libadiosf_v1_a-adios_dataspaces.obj: write/adios_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_dataspaces.obj `if test -f 'write/adios_dataspaces.c'; then $(CYGPATH_W) 'write/adios_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_dataspaces.c'; fi`
 
-libadiosf_v1_a-read_dart.o: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-read_dart.o `test -f 'read/read_dart.c' || echo '$(srcdir)/'`read/read_dart.c
+libadiosf_v1_a-read_dataspaces.o: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-read_dataspaces.o `test -f 'read/read_dataspaces.c' || echo '$(srcdir)/'`read/read_dataspaces.c
 
-libadiosf_v1_a-read_dart.obj: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-read_dart.obj `if test -f 'read/read_dart.c'; then $(CYGPATH_W) 'read/read_dart.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dart.c'; fi`
+libadiosf_v1_a-read_dataspaces.obj: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-read_dataspaces.obj `if test -f 'read/read_dataspaces.c'; then $(CYGPATH_W) 'read/read_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dataspaces.c'; fi`
 
 libadiosf_v1_a-adios_dimes.o: write/adios_dimes.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_dimes.o `test -f 'write/adios_dimes.c' || echo '$(srcdir)/'`write/adios_dimes.c
@@ -2516,11 +2519,11 @@ libadiosread_a-adios_logger.o: core/adios_logger.c
 libadiosread_a-adios_logger.obj: core/adios_logger.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_logger.obj `if test -f 'core/adios_logger.c'; then $(CYGPATH_W) 'core/adios_logger.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_logger.c'; fi`
 
-libadiosread_a-params.o: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-params.o `test -f 'core/params.c' || echo '$(srcdir)/'`core/params.c
+libadiosread_a-util.o: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-util.o `test -f 'core/util.c' || echo '$(srcdir)/'`core/util.c
 
-libadiosread_a-params.obj: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-params.obj `if test -f 'core/params.c'; then $(CYGPATH_W) 'core/params.c'; else $(CYGPATH_W) '$(srcdir)/core/params.c'; fi`
+libadiosread_a-util.obj: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-util.obj `if test -f 'core/util.c'; then $(CYGPATH_W) 'core/util.c'; else $(CYGPATH_W) '$(srcdir)/core/util.c'; fi`
 
 libadiosread_a-read_bp.o: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-read_bp.o `test -f 'read/read_bp.c' || echo '$(srcdir)/'`read/read_bp.c
@@ -2540,11 +2543,11 @@ libadiosread_a-read_bp_staged1.o: read/read_bp_staged1.c
 libadiosread_a-read_bp_staged1.obj: read/read_bp_staged1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-read_bp_staged1.obj `if test -f 'read/read_bp_staged1.c'; then $(CYGPATH_W) 'read/read_bp_staged1.c'; else $(CYGPATH_W) '$(srcdir)/read/read_bp_staged1.c'; fi`
 
-libadiosread_a-read_dart.o: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-read_dart.o `test -f 'read/read_dart.c' || echo '$(srcdir)/'`read/read_dart.c
+libadiosread_a-read_dataspaces.o: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-read_dataspaces.o `test -f 'read/read_dataspaces.c' || echo '$(srcdir)/'`read/read_dataspaces.c
 
-libadiosread_a-read_dart.obj: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-read_dart.obj `if test -f 'read/read_dart.c'; then $(CYGPATH_W) 'read/read_dart.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dart.c'; fi`
+libadiosread_a-read_dataspaces.obj: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-read_dataspaces.obj `if test -f 'read/read_dataspaces.c'; then $(CYGPATH_W) 'read/read_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dataspaces.c'; fi`
 
 libadiosread_a-read_dimes.o: read/read_dimes.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-read_dimes.o `test -f 'read/read_dimes.c' || echo '$(srcdir)/'`read/read_dimes.c
@@ -2660,11 +2663,11 @@ libadiosread_nompi_a-adios_transport_hooks.o: core/adios_transport_hooks.c
 libadiosread_nompi_a-adios_transport_hooks.obj: core/adios_transport_hooks.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_transport_hooks.obj `if test -f 'core/adios_transport_hooks.c'; then $(CYGPATH_W) 'core/adios_transport_hooks.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_transport_hooks.c'; fi`
 
-libadiosread_nompi_a-params.o: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-params.o `test -f 'core/params.c' || echo '$(srcdir)/'`core/params.c
+libadiosread_nompi_a-util.o: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-util.o `test -f 'core/util.c' || echo '$(srcdir)/'`core/util.c
 
-libadiosread_nompi_a-params.obj: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-params.obj `if test -f 'core/params.c'; then $(CYGPATH_W) 'core/params.c'; else $(CYGPATH_W) '$(srcdir)/core/params.c'; fi`
+libadiosread_nompi_a-util.obj: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-util.obj `if test -f 'core/util.c'; then $(CYGPATH_W) 'core/util.c'; else $(CYGPATH_W) '$(srcdir)/core/util.c'; fi`
 
 libadiosread_nompi_a-read_bp.o: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-read_bp.o `test -f 'read/read_bp.c' || echo '$(srcdir)/'`read/read_bp.c
@@ -2672,11 +2675,11 @@ libadiosread_nompi_a-read_bp.o: read/read_bp.c
 libadiosread_nompi_a-read_bp.obj: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-read_bp.obj `if test -f 'read/read_bp.c'; then $(CYGPATH_W) 'read/read_bp.c'; else $(CYGPATH_W) '$(srcdir)/read/read_bp.c'; fi`
 
-libadiosread_nompi_a-read_dart.o: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-read_dart.o `test -f 'read/read_dart.c' || echo '$(srcdir)/'`read/read_dart.c
+libadiosread_nompi_a-read_dataspaces.o: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-read_dataspaces.o `test -f 'read/read_dataspaces.c' || echo '$(srcdir)/'`read/read_dataspaces.c
 
-libadiosread_nompi_a-read_dart.obj: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-read_dart.obj `if test -f 'read/read_dart.c'; then $(CYGPATH_W) 'read/read_dart.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dart.c'; fi`
+libadiosread_nompi_a-read_dataspaces.obj: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-read_dataspaces.obj `if test -f 'read/read_dataspaces.c'; then $(CYGPATH_W) 'read/read_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dataspaces.c'; fi`
 
 libadiosread_nompi_a-read_dimes.o: read/read_dimes.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-read_dimes.o `test -f 'read/read_dimes.c' || echo '$(srcdir)/'`read/read_dimes.c
@@ -2762,11 +2765,11 @@ libadiosreadf_a-adios_logger.o: core/adios_logger.c
 libadiosreadf_a-adios_logger.obj: core/adios_logger.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-adios_logger.obj `if test -f 'core/adios_logger.c'; then $(CYGPATH_W) 'core/adios_logger.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_logger.c'; fi`
 
-libadiosreadf_a-params.o: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-params.o `test -f 'core/params.c' || echo '$(srcdir)/'`core/params.c
+libadiosreadf_a-util.o: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-util.o `test -f 'core/util.c' || echo '$(srcdir)/'`core/util.c
 
-libadiosreadf_a-params.obj: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-params.obj `if test -f 'core/params.c'; then $(CYGPATH_W) 'core/params.c'; else $(CYGPATH_W) '$(srcdir)/core/params.c'; fi`
+libadiosreadf_a-util.obj: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-util.obj `if test -f 'core/util.c'; then $(CYGPATH_W) 'core/util.c'; else $(CYGPATH_W) '$(srcdir)/core/util.c'; fi`
 
 libadiosreadf_a-read_bp.o: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-read_bp.o `test -f 'read/read_bp.c' || echo '$(srcdir)/'`read/read_bp.c
@@ -2786,11 +2789,11 @@ libadiosreadf_a-read_bp_staged1.o: read/read_bp_staged1.c
 libadiosreadf_a-read_bp_staged1.obj: read/read_bp_staged1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-read_bp_staged1.obj `if test -f 'read/read_bp_staged1.c'; then $(CYGPATH_W) 'read/read_bp_staged1.c'; else $(CYGPATH_W) '$(srcdir)/read/read_bp_staged1.c'; fi`
 
-libadiosreadf_a-read_dart.o: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-read_dart.o `test -f 'read/read_dart.c' || echo '$(srcdir)/'`read/read_dart.c
+libadiosreadf_a-read_dataspaces.o: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-read_dataspaces.o `test -f 'read/read_dataspaces.c' || echo '$(srcdir)/'`read/read_dataspaces.c
 
-libadiosreadf_a-read_dart.obj: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-read_dart.obj `if test -f 'read/read_dart.c'; then $(CYGPATH_W) 'read/read_dart.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dart.c'; fi`
+libadiosreadf_a-read_dataspaces.obj: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-read_dataspaces.obj `if test -f 'read/read_dataspaces.c'; then $(CYGPATH_W) 'read/read_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dataspaces.c'; fi`
 
 libadiosreadf_a-read_dimes.o: read/read_dimes.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-read_dimes.o `test -f 'read/read_dimes.c' || echo '$(srcdir)/'`read/read_dimes.c
@@ -2882,11 +2885,11 @@ libadiosreadf_nompi_a-adios_read_hooks.o: core/adios_read_hooks.c
 libadiosreadf_nompi_a-adios_read_hooks.obj: core/adios_read_hooks.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-adios_read_hooks.obj `if test -f 'core/adios_read_hooks.c'; then $(CYGPATH_W) 'core/adios_read_hooks.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_read_hooks.c'; fi`
 
-libadiosreadf_nompi_a-params.o: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-params.o `test -f 'core/params.c' || echo '$(srcdir)/'`core/params.c
+libadiosreadf_nompi_a-util.o: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-util.o `test -f 'core/util.c' || echo '$(srcdir)/'`core/util.c
 
-libadiosreadf_nompi_a-params.obj: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-params.obj `if test -f 'core/params.c'; then $(CYGPATH_W) 'core/params.c'; else $(CYGPATH_W) '$(srcdir)/core/params.c'; fi`
+libadiosreadf_nompi_a-util.obj: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-util.obj `if test -f 'core/util.c'; then $(CYGPATH_W) 'core/util.c'; else $(CYGPATH_W) '$(srcdir)/core/util.c'; fi`
 
 libadiosreadf_nompi_a-read_bp.o: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-read_bp.o `test -f 'read/read_bp.c' || echo '$(srcdir)/'`read/read_bp.c
@@ -2894,11 +2897,11 @@ libadiosreadf_nompi_a-read_bp.o: read/read_bp.c
 libadiosreadf_nompi_a-read_bp.obj: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-read_bp.obj `if test -f 'read/read_bp.c'; then $(CYGPATH_W) 'read/read_bp.c'; else $(CYGPATH_W) '$(srcdir)/read/read_bp.c'; fi`
 
-libadiosreadf_nompi_a-read_dart.o: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-read_dart.o `test -f 'read/read_dart.c' || echo '$(srcdir)/'`read/read_dart.c
+libadiosreadf_nompi_a-read_dataspaces.o: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-read_dataspaces.o `test -f 'read/read_dataspaces.c' || echo '$(srcdir)/'`read/read_dataspaces.c
 
-libadiosreadf_nompi_a-read_dart.obj: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-read_dart.obj `if test -f 'read/read_dart.c'; then $(CYGPATH_W) 'read/read_dart.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dart.c'; fi`
+libadiosreadf_nompi_a-read_dataspaces.obj: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-read_dataspaces.obj `if test -f 'read/read_dataspaces.c'; then $(CYGPATH_W) 'read/read_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dataspaces.c'; fi`
 
 libadiosreadf_nompi_a-read_dimes.o: read/read_dimes.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-read_dimes.o `test -f 'read/read_dimes.c' || echo '$(srcdir)/'`read/read_dimes.c
@@ -2990,11 +2993,11 @@ libadiosreadf_nompi_v1_a-adios_read_hooks.o: core/adios_read_hooks.c
 libadiosreadf_nompi_v1_a-adios_read_hooks.obj: core/adios_read_hooks.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-adios_read_hooks.obj `if test -f 'core/adios_read_hooks.c'; then $(CYGPATH_W) 'core/adios_read_hooks.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_read_hooks.c'; fi`
 
-libadiosreadf_nompi_v1_a-params.o: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-params.o `test -f 'core/params.c' || echo '$(srcdir)/'`core/params.c
+libadiosreadf_nompi_v1_a-util.o: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-util.o `test -f 'core/util.c' || echo '$(srcdir)/'`core/util.c
 
-libadiosreadf_nompi_v1_a-params.obj: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-params.obj `if test -f 'core/params.c'; then $(CYGPATH_W) 'core/params.c'; else $(CYGPATH_W) '$(srcdir)/core/params.c'; fi`
+libadiosreadf_nompi_v1_a-util.obj: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-util.obj `if test -f 'core/util.c'; then $(CYGPATH_W) 'core/util.c'; else $(CYGPATH_W) '$(srcdir)/core/util.c'; fi`
 
 libadiosreadf_nompi_v1_a-read_bp.o: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-read_bp.o `test -f 'read/read_bp.c' || echo '$(srcdir)/'`read/read_bp.c
@@ -3002,11 +3005,11 @@ libadiosreadf_nompi_v1_a-read_bp.o: read/read_bp.c
 libadiosreadf_nompi_v1_a-read_bp.obj: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-read_bp.obj `if test -f 'read/read_bp.c'; then $(CYGPATH_W) 'read/read_bp.c'; else $(CYGPATH_W) '$(srcdir)/read/read_bp.c'; fi`
 
-libadiosreadf_nompi_v1_a-read_dart.o: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-read_dart.o `test -f 'read/read_dart.c' || echo '$(srcdir)/'`read/read_dart.c
+libadiosreadf_nompi_v1_a-read_dataspaces.o: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-read_dataspaces.o `test -f 'read/read_dataspaces.c' || echo '$(srcdir)/'`read/read_dataspaces.c
 
-libadiosreadf_nompi_v1_a-read_dart.obj: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-read_dart.obj `if test -f 'read/read_dart.c'; then $(CYGPATH_W) 'read/read_dart.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dart.c'; fi`
+libadiosreadf_nompi_v1_a-read_dataspaces.obj: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-read_dataspaces.obj `if test -f 'read/read_dataspaces.c'; then $(CYGPATH_W) 'read/read_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dataspaces.c'; fi`
 
 libadiosreadf_nompi_v1_a-read_dimes.o: read/read_dimes.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-read_dimes.o `test -f 'read/read_dimes.c' || echo '$(srcdir)/'`read/read_dimes.c
@@ -3092,11 +3095,11 @@ libadiosreadf_v1_a-adios_logger.o: core/adios_logger.c
 libadiosreadf_v1_a-adios_logger.obj: core/adios_logger.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-adios_logger.obj `if test -f 'core/adios_logger.c'; then $(CYGPATH_W) 'core/adios_logger.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_logger.c'; fi`
 
-libadiosreadf_v1_a-params.o: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-params.o `test -f 'core/params.c' || echo '$(srcdir)/'`core/params.c
+libadiosreadf_v1_a-util.o: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-util.o `test -f 'core/util.c' || echo '$(srcdir)/'`core/util.c
 
-libadiosreadf_v1_a-params.obj: core/params.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-params.obj `if test -f 'core/params.c'; then $(CYGPATH_W) 'core/params.c'; else $(CYGPATH_W) '$(srcdir)/core/params.c'; fi`
+libadiosreadf_v1_a-util.obj: core/util.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-util.obj `if test -f 'core/util.c'; then $(CYGPATH_W) 'core/util.c'; else $(CYGPATH_W) '$(srcdir)/core/util.c'; fi`
 
 libadiosreadf_v1_a-read_bp.o: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-read_bp.o `test -f 'read/read_bp.c' || echo '$(srcdir)/'`read/read_bp.c
@@ -3116,11 +3119,11 @@ libadiosreadf_v1_a-read_bp_staged1.o: read/read_bp_staged1.c
 libadiosreadf_v1_a-read_bp_staged1.obj: read/read_bp_staged1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-read_bp_staged1.obj `if test -f 'read/read_bp_staged1.c'; then $(CYGPATH_W) 'read/read_bp_staged1.c'; else $(CYGPATH_W) '$(srcdir)/read/read_bp_staged1.c'; fi`
 
-libadiosreadf_v1_a-read_dart.o: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-read_dart.o `test -f 'read/read_dart.c' || echo '$(srcdir)/'`read/read_dart.c
+libadiosreadf_v1_a-read_dataspaces.o: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-read_dataspaces.o `test -f 'read/read_dataspaces.c' || echo '$(srcdir)/'`read/read_dataspaces.c
 
-libadiosreadf_v1_a-read_dart.obj: read/read_dart.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-read_dart.obj `if test -f 'read/read_dart.c'; then $(CYGPATH_W) 'read/read_dart.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dart.c'; fi`
+libadiosreadf_v1_a-read_dataspaces.obj: read/read_dataspaces.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-read_dataspaces.obj `if test -f 'read/read_dataspaces.c'; then $(CYGPATH_W) 'read/read_dataspaces.c'; else $(CYGPATH_W) '$(srcdir)/read/read_dataspaces.c'; fi`
 
 libadiosreadf_v1_a-read_dimes.o: read/read_dimes.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-read_dimes.o `test -f 'read/read_dimes.c' || echo '$(srcdir)/'`read/read_dimes.c

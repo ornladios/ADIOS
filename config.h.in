@@ -26,11 +26,11 @@
 /* Define if you have Cray Portals. */
 #undef HAVE_CRAY_PORTALS
 
-/* Define if you have the DART. */
-#undef HAVE_DART
-
 /* Define to 1 if you have the <dart_interface.h> header file. */
 #undef HAVE_DART_INTERFACE_H
+
+/* Define if you have the DATASPACES. */
+#undef HAVE_DATASPACES
 
 /* Define if you have the DIMES. */
 #undef HAVE_DIMES

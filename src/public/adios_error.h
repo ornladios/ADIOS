@@ -35,7 +35,7 @@ enum ADIOS_ERRCODES {
     err_end_of_stream                   = -21,    // stream: reached end of stream, returned by adios_read_open() or
                           //         by adios_advance_step()
     err_step_notready                   = -22,    // stream: tried to advance the step, but no new step has arrived yet
-    err_too_many_files                  = -23,   // DART allows for using only a fixed number of different filenames
+    err_too_many_files                  = -23,   // some staging methods allow for using only a fixed number of different filenames
 
     err_unspecified                     = -24
 };

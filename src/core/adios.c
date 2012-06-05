@@ -16,7 +16,7 @@
 #include <mxml.h>
 
 #include "public/adios.h"
-#include "public/globals.h"
+#include "core/globals.h"
 #include "core/common_adios.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"

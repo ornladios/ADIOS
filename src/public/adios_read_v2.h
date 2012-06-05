@@ -136,7 +136,7 @@ enum ADIOS_READ_METHOD {
         ADIOS_READ_METHOD_BP         = 0,  /* Read from ADIOS BP file (written by POSIX, MPI etc methods) */
         ADIOS_READ_METHOD_BP_STAGED  = 1,  /* Read from ADIOS BP file (written by POSIX, MPI_AMR etc methods) */
         ADIOS_READ_METHOD_BP_STAGED1 = 2,  /* Read from ADIOS BP file (written by POSIX, MPI_AMR etc methods) */
-        ADIOS_READ_METHOD_DART       = 3,  /* Read from memory written by DATASPACES method               */
+        ADIOS_READ_METHOD_DATASPACES = 3,  /* Read from memory written by DATASPACES method               */
         ADIOS_READ_METHOD_DIMES      = 4,  /* Read from memory written by DIMES method                    */
         ADIOS_READ_METHOD_FLEXIO     = 5,  /* Read from memory written by FLEXIO method                   */
 };
@@ -195,7 +195,7 @@ int adios_read_init_method (enum ADIOS_READ_METHOD method,
  *                  memory for all internal data structures.
  *                  0 means, it can use as much memory as necessary
  *  app_id
- *      when using a staging method (DART, DIMES, NSSI or DATATAP).
+ *      when using a staging method (DATASPACES, DIMES, NSSI or DATATAP).
  *      The ID should be unique for each application accessing the staging area
  */
 

@@ -16,7 +16,7 @@
 #include "public/adios_types.h"
 #include "public/adios_read.h"
 #include "public/adios_error.h"
-#include "public/globals.h"
+#include "core/globals.h"
 #include "core/bp_utils.h"
 #include "core/bp_types.h"
 #include "core/adios_read_hooks.h"
@@ -38,7 +38,7 @@
 #define MAXDARTNAMELEN 128
 /* Maximum number of different filenames allowed per process during the whole run */
 #define MAXNFILE 10 
-/*#define DART_DO_VERSIONING   define it at configure as -DDART_DO_VERSIONING in CFLAGS */
+/*#define DATASPACES_NO_VERSIONING   define it at configure as -DDATASPACES_NO_VERSIONING in CFLAGS */
 
 struct adios_read_dart_fileversions_struct { // describes one variable (of one group)
     char      * filename[MAXNFILE];
@@ -210,7 +210,9 @@ ADIOS_FILE * adios_read_dart_fopen (const char * fname, MPI_Comm comm)
 
     /* fill out dart method specific struct */
     ds->fname = strdup(fname);
-#ifdef DART_DO_VERSIONING
+#ifdef DATASPACES_NO_VERSIONING
+    ds->access_version = 0;    /* Data in DataSpaces is always overwritten (read same version) */
+#else
    // check this filename's version number
     int fidx;
     for (fidx=0; fidx<n_filenames; fidx++) {
@@ -230,8 +232,6 @@ ADIOS_FILE * adios_read_dart_fopen (const char * fname, MPI_Comm comm)
     }
     ds->access_version = file_versions.version[fidx]+1;  /* Read data of separate versions from DataSpaces */
     DBG_PRINTF("fopen version filename=%s version=%d fidx=%d\n", fname, ds->access_version, fidx);
-#else
-    ds->access_version = 0;    /* Data in DataSpaces is always overwritten (read same version) */
 #endif
     MPI_Comm_rank(comm, &ds->mpi_rank);
 
@@ -295,7 +295,7 @@ ADIOS_FILE * adios_read_dart_fopen (const char * fname, MPI_Comm comm)
 
     fp->fh = (uint64_t) ds;
     DBG_PRINTF("-- %s, rank %d: done fp=%x, fp->fh=%x\n", __func__, ds->mpi_rank, fp, fp->fh);
-#ifdef DART_DO_VERSIONING
+#ifndef DATASPACES_NO_VERSIONING
     file_versions.version[fidx]++; // next open will use new version
 #endif
     return fp;

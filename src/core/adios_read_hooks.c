@@ -47,8 +47,8 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
         ASSIGN_FNS(bp_staged,ADIOS_READ_METHOD_BP_STAGED)
         ASSIGN_FNS(bp_staged1,ADIOS_READ_METHOD_BP_STAGED1)
 #endif
-#if HAVE_DART
-        ASSIGN_FNS(dart,ADIOS_READ_METHOD_DART)
+#if HAVE_DATASPACES
+        ASSIGN_FNS(dataspaces,ADIOS_READ_METHOD_DATASPACES)
 #endif
 
 #if HAVE_DIMES

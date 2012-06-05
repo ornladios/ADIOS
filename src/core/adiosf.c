@@ -15,7 +15,7 @@
 #include "core/adios_internals_mxml.h"
 #include "core/adios_transport_hooks.h"
 #include "core/futils.h"
-#include "public/globals.h"
+#include "core/globals.h"
 
 #ifdef __cplusplus
 extern "C"  /* prevent C++ name mangling */

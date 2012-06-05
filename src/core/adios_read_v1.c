@@ -73,7 +73,7 @@ int adios_set_read_method_v1 (enum ADIOS_READ_METHOD_V1 method)
             lastmethod = ADIOS_READ_METHOD_BP_STAGED1;
             break;
         case ADIOS_READ_METHOD_DART_V1:
-            lastmethod = ADIOS_READ_METHOD_DART;
+            lastmethod = ADIOS_READ_METHOD_DATASPACES;
             break;
         case ADIOS_READ_METHOD_DIMES_V1:
             lastmethod = ADIOS_READ_METHOD_DIMES;

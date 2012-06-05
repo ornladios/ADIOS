@@ -6,10 +6,10 @@
  */
 
 /*
- *   Functions, constants globally for both the Write and Read API
+ *   Functions, constants globally for both the Write and Read API of Staging methods
  */
 
-#include "public/globals.h"
+#include "globals.h"
 
 static int globals_adios_appid = -1;
 static int globals_adios_was_set = 0;
@@ -25,59 +25,59 @@ int globals_adios_get_application_id (int *was_set)
     return globals_adios_appid;
 }
 
-#ifdef HAVE_DART
-enum DART_CONNECTION { dart_disconnected = 0, 
-                       dart_connected_from_reader = 1,
-                       dart_connected_from_writer = 2,
-                       dart_connected_from_both = 3
+#ifdef HAVE_DATASPACES
+enum DATASPACES_CONNECTION { dataspaces_disconnected = 0, 
+                       dataspaces_connected_from_reader = 1,
+                       dataspaces_connected_from_writer = 2,
+                       dataspaces_connected_from_both = 3
                      };
-static enum DART_CONNECTION globals_adios_connected_to_dart = dart_disconnected;
+static enum DATASPACES_CONNECTION globals_adios_connected_to_dataspaces = dataspaces_disconnected;
 
-void globals_adios_set_dart_connected_from_reader()
+void globals_adios_set_dataspaces_connected_from_reader()
 { 
-    if (globals_adios_connected_to_dart == dart_disconnected)
-        globals_adios_connected_to_dart = dart_connected_from_reader;
-    else if (globals_adios_connected_to_dart == dart_connected_from_writer)
-        globals_adios_connected_to_dart = dart_connected_from_both;
+    if (globals_adios_connected_to_dataspaces == dataspaces_disconnected)
+        globals_adios_connected_to_dataspaces = dataspaces_connected_from_reader;
+    else if (globals_adios_connected_to_dataspaces == dataspaces_connected_from_writer)
+        globals_adios_connected_to_dataspaces = dataspaces_connected_from_both;
 }
-void globals_adios_set_dart_disconnected_from_reader()
+void globals_adios_set_dataspaces_disconnected_from_reader()
 { 
-    if (globals_adios_connected_to_dart == dart_connected_from_reader)
-        globals_adios_connected_to_dart = dart_disconnected;
-    else if (globals_adios_connected_to_dart == dart_connected_from_both)
-        globals_adios_connected_to_dart = dart_connected_from_writer;
+    if (globals_adios_connected_to_dataspaces == dataspaces_connected_from_reader)
+        globals_adios_connected_to_dataspaces = dataspaces_disconnected;
+    else if (globals_adios_connected_to_dataspaces == dataspaces_connected_from_both)
+        globals_adios_connected_to_dataspaces = dataspaces_connected_from_writer;
 }
-void globals_adios_set_dart_connected_from_writer()
+void globals_adios_set_dataspaces_connected_from_writer()
 {
-    if (globals_adios_connected_to_dart == dart_disconnected)
-        globals_adios_connected_to_dart = dart_connected_from_writer;
-    else if (globals_adios_connected_to_dart == dart_connected_from_reader)
-        globals_adios_connected_to_dart = dart_connected_from_both;
+    if (globals_adios_connected_to_dataspaces == dataspaces_disconnected)
+        globals_adios_connected_to_dataspaces = dataspaces_connected_from_writer;
+    else if (globals_adios_connected_to_dataspaces == dataspaces_connected_from_reader)
+        globals_adios_connected_to_dataspaces = dataspaces_connected_from_both;
 }
-void globals_adios_set_dart_disconnected_from_writer()
+void globals_adios_set_dataspaces_disconnected_from_writer()
 { 
-    if (globals_adios_connected_to_dart == dart_connected_from_writer)
-        globals_adios_connected_to_dart = dart_disconnected;
-    else if (globals_adios_connected_to_dart == dart_connected_from_both)
-        globals_adios_connected_to_dart = dart_connected_from_reader;
+    if (globals_adios_connected_to_dataspaces == dataspaces_connected_from_writer)
+        globals_adios_connected_to_dataspaces = dataspaces_disconnected;
+    else if (globals_adios_connected_to_dataspaces == dataspaces_connected_from_both)
+        globals_adios_connected_to_dataspaces = dataspaces_connected_from_reader;
 }
-int  globals_adios_is_dart_connected()
+int  globals_adios_is_dataspaces_connected()
 { 
-    return (globals_adios_connected_to_dart != dart_disconnected);
+    return (globals_adios_connected_to_dataspaces != dataspaces_disconnected);
 }
-int  globals_adios_is_dart_connected_from_reader()
+int  globals_adios_is_dataspaces_connected_from_reader()
 { 
-    return (globals_adios_connected_to_dart == dart_connected_from_reader || 
-            globals_adios_connected_to_dart == dart_connected_from_both);
+    return (globals_adios_connected_to_dataspaces == dataspaces_connected_from_reader || 
+            globals_adios_connected_to_dataspaces == dataspaces_connected_from_both);
 }
-int  globals_adios_is_dart_connected_from_writer()
+int  globals_adios_is_dataspaces_connected_from_writer()
 { 
-    return (globals_adios_connected_to_dart == dart_connected_from_writer || 
-            globals_adios_connected_to_dart == dart_connected_from_both);
+    return (globals_adios_connected_to_dataspaces == dataspaces_connected_from_writer || 
+            globals_adios_connected_to_dataspaces == dataspaces_connected_from_both);
 }
-int  globals_adios_is_dart_connected_from_both()
+int  globals_adios_is_dataspaces_connected_from_both()
 {
-    return (globals_adios_connected_to_dart == dart_connected_from_both);
+    return (globals_adios_connected_to_dataspaces == dataspaces_connected_from_both);
 }
 #endif
 

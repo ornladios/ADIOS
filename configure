@@ -464,7 +464,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CPP EGREP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE HAVE_MPI_TRUE HAVE_MPI_FALSE MPICC MPILIBS MPICXX BUILD_FORTRAN_TRUE BUILD_FORTRAN_FALSE FC FCFLAGS ac_ct_FC FCLIBS MPIFC build build_cpu build_vendor build_os host host_cpu host_vendor host_os SED LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL HAVE_MXML_TRUE HAVE_MXML_FALSE PTHREAD_CC PTHREAD_LIBS PTHREAD_CFLAGS MXML_LIBS MXML_LDFLAGS MXML_CPPFLAGS HAVE_INFINIBAND_TRUE HAVE_INFINIBAND_FALSE INFINIBAND_CPPFLAGS INFINIBAND_CFLAGS INFINIBAND_LDFLAGS INFINIBAND_LIBS INFINIBAND_HEADER HAVE_PORTALS_TRUE HAVE_PORTALS_FALSE NEED_DARWIN_SINGLE_MODULE_TRUE NEED_DARWIN_SINGLE_MODULE_FALSE PORTALS_CPPFLAGS PORTALS_CFLAGS PORTALS_LDFLAGS PORTALS_LIBS PORTALS_HEADER PORTALS_NAL_HEADER PORTALS_RT_HEADER HAVE_HDF5_TRUE HAVE_HDF5_FALSE HDF5_LIBS HDF5_LDFLAGS HDF5_CPPFLAGS HAVE_PHDF5_TRUE HAVE_PHDF5_FALSE PHDF5_LIBS PHDF5_LDFLAGS PHDF5_CPPFLAGS HAVE_NETCDF_TRUE HAVE_NETCDF_FALSE NETCDF_LIBS NETCDF_LDFLAGS NETCDF_CPPFLAGS HAVE_NC4PAR_TRUE HAVE_NC4PAR_FALSE NC4PAR_LIBS NC4PAR_LDFLAGS NC4PAR_CPPFLAGS HAVE_PABLO_TRUE HAVE_PABLO_FALSE PABLO_LIBS PABLO_LDFLAGS PABLO_CPPFLAGS HAVE_NSSI_TRUE HAVE_NSSI_FALSE NSSI_LIBS NSSI_SERVER_LIBS NSSI_CFLAGS NSSI_CPPFLAGS NSSI_LDFLAGS NSSI_SRCDIR NSSI_BUILDDIR HAVE_DART_TRUE HAVE_DART_FALSE DART_LIBS DART_LDFLAGS DART_CPPFLAGS HAVE_DIMES_TRUE HAVE_DIMES_FALSE DIMES_LIBS DIMES_LDFLAGS DIMES_CPPFLAGS HAVE_DMALLOC_TRUE HAVE_DMALLOC_FALSE DMALLOC_LIBS DMALLOC_LDFLAGS DMALLOC_CPPFLAGS HAVE_LUSTRE_TRUE HAVE_LUSTRE_FALSE LUSTRE_LIBS LUSTRE_LDFLAGS LUSTRE_CPPFLAGS CSH PATHPROG DT_LIBS DT_CPPFLAGS DT_LDFLAGS RESEARCH_TRANSPORTS_TRUE RESEARCH_TRANSPORTS_FALSE SKEL_TIMING_TRUE SKEL_TIMING_FALSE HAVE_DATATAP_TRUE HAVE_DATATAP_FALSE BUILD_WRITE_TRUE BUILD_WRITE_FALSE USE_PARALLEL_COMPILER_TRUE USE_PARALLEL_COMPILER_FALSE ADIOSLIB_CPPFLAGS ADIOSLIB_CFLAGS ADIOSLIB_LDFLAGS ADIOSLIB_LDADD ADIOSLIB_SEQ_CPPFLAGS ADIOSLIB_SEQ_CFLAGS ADIOSLIB_SEQ_LDFLAGS ADIOSLIB_SEQ_LDADD ADIOSLIB_INT_CPPFLAGS ADIOSLIB_INT_CFLAGS ADIOSLIB_INT_LDFLAGS ADIOSLIB_INT_LDADD ADIOSREADLIB_CPPFLAGS ADIOSREADLIB_CFLAGS ADIOSREADLIB_LDFLAGS ADIOSREADLIB_LDADD ADIOSREADLIB_SEQ_CPPFLAGS ADIOSREADLIB_SEQ_CFLAGS ADIOSREADLIB_SEQ_LDFLAGS ADIOSREADLIB_SEQ_LDADD ADIOSLIB_EXTRA_CPPFLAGS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CPP EGREP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE HAVE_MPI_TRUE HAVE_MPI_FALSE MPICC MPILIBS MPICXX BUILD_FORTRAN_TRUE BUILD_FORTRAN_FALSE FC FCFLAGS ac_ct_FC FCLIBS MPIFC build build_cpu build_vendor build_os host host_cpu host_vendor host_os SED LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL HAVE_MXML_TRUE HAVE_MXML_FALSE PTHREAD_CC PTHREAD_LIBS PTHREAD_CFLAGS MXML_LIBS MXML_LDFLAGS MXML_CPPFLAGS HAVE_INFINIBAND_TRUE HAVE_INFINIBAND_FALSE INFINIBAND_CPPFLAGS INFINIBAND_CFLAGS INFINIBAND_LDFLAGS INFINIBAND_LIBS INFINIBAND_HEADER HAVE_PORTALS_TRUE HAVE_PORTALS_FALSE NEED_DARWIN_SINGLE_MODULE_TRUE NEED_DARWIN_SINGLE_MODULE_FALSE PORTALS_CPPFLAGS PORTALS_CFLAGS PORTALS_LDFLAGS PORTALS_LIBS PORTALS_HEADER PORTALS_NAL_HEADER PORTALS_RT_HEADER HAVE_HDF5_TRUE HAVE_HDF5_FALSE HDF5_LIBS HDF5_LDFLAGS HDF5_CPPFLAGS HAVE_PHDF5_TRUE HAVE_PHDF5_FALSE PHDF5_LIBS PHDF5_LDFLAGS PHDF5_CPPFLAGS HAVE_NETCDF_TRUE HAVE_NETCDF_FALSE NETCDF_LIBS NETCDF_LDFLAGS NETCDF_CPPFLAGS HAVE_NC4PAR_TRUE HAVE_NC4PAR_FALSE NC4PAR_LIBS NC4PAR_LDFLAGS NC4PAR_CPPFLAGS HAVE_PABLO_TRUE HAVE_PABLO_FALSE PABLO_LIBS PABLO_LDFLAGS PABLO_CPPFLAGS HAVE_NSSI_TRUE HAVE_NSSI_FALSE NSSI_LIBS NSSI_SERVER_LIBS NSSI_CFLAGS NSSI_CPPFLAGS NSSI_LDFLAGS NSSI_SRCDIR NSSI_BUILDDIR HAVE_DATASPACES_TRUE HAVE_DATASPACES_FALSE DATASPACES_LIBS DATASPACES_LDFLAGS DATASPACES_CPPFLAGS HAVE_DIMES_TRUE HAVE_DIMES_FALSE DIMES_LIBS DIMES_LDFLAGS DIMES_CPPFLAGS HAVE_DMALLOC_TRUE HAVE_DMALLOC_FALSE DMALLOC_LIBS DMALLOC_LDFLAGS DMALLOC_CPPFLAGS HAVE_LUSTRE_TRUE HAVE_LUSTRE_FALSE LUSTRE_LIBS LUSTRE_LDFLAGS LUSTRE_CPPFLAGS CSH PATHPROG DT_LIBS DT_CPPFLAGS DT_LDFLAGS RESEARCH_TRANSPORTS_TRUE RESEARCH_TRANSPORTS_FALSE SKEL_TIMING_TRUE SKEL_TIMING_FALSE HAVE_DATATAP_TRUE HAVE_DATATAP_FALSE BUILD_WRITE_TRUE BUILD_WRITE_FALSE USE_PARALLEL_COMPILER_TRUE USE_PARALLEL_COMPILER_FALSE ADIOSLIB_CPPFLAGS ADIOSLIB_CFLAGS ADIOSLIB_LDFLAGS ADIOSLIB_LDADD ADIOSLIB_SEQ_CPPFLAGS ADIOSLIB_SEQ_CFLAGS ADIOSLIB_SEQ_LDFLAGS ADIOSLIB_SEQ_LDADD ADIOSLIB_INT_CPPFLAGS ADIOSLIB_INT_CFLAGS ADIOSLIB_INT_LDFLAGS ADIOSLIB_INT_LDADD ADIOSREADLIB_CPPFLAGS ADIOSREADLIB_CFLAGS ADIOSREADLIB_LDFLAGS ADIOSREADLIB_LDADD ADIOSREADLIB_SEQ_CPPFLAGS ADIOSREADLIB_SEQ_CFLAGS ADIOSREADLIB_SEQ_LDFLAGS ADIOSREADLIB_SEQ_LDADD ADIOSLIB_EXTRA_CPPFLAGS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1093,10 +1093,10 @@ Optional Packages:
   --with-nc4par-libs=<linker flags besides -L<nc4par_libdir>, e.g. -lnetcdf>
   --with-pablo=DIR      Location of Pablo library
   --with-nssi=DIR      Location of NSSI
-  --with-dart=DIR         Build the DART transport method. Point to the DART
-                          installation.
-  --with-dart-incdir=<location of dart includes>
-  --with-dart-libdir=<location of dart library>
+  --with-dataspaces=DIR   Build the DATASPACES transport method. Point to the
+                          DATASPACES installation.
+  --with-dataspaces-incdir=<location of dataspaces includes>
+  --with-dataspaces-libdir=<location of dataspaces library>
   --with-dimes=DIR        Build the DIMES transport method. Point to the DIMES
                           installation.
   --with-dimes-incdir=<location of dimes includes>
@@ -27016,78 +27016,78 @@ fi
 
 
 if true; then
-  HAVE_DART_TRUE=
-  HAVE_DART_FALSE='#'
+  HAVE_DATASPACES_TRUE=
+  HAVE_DATASPACES_FALSE='#'
 else
-  HAVE_DART_TRUE='#'
-  HAVE_DART_FALSE=
+  HAVE_DATASPACES_TRUE='#'
+  HAVE_DATASPACES_FALSE=
 fi
 
 
 
-# Check whether --with-dart or --without-dart was given.
-if test "${with_dart+set}" = set; then
-  withval="$with_dart"
-  DART_LDFLAGS="-L$withval/lib";
-         DART_CPPFLAGS="-I$withval/include";
+# Check whether --with-dataspaces or --without-dataspaces was given.
+if test "${with_dataspaces+set}" = set; then
+  withval="$with_dataspaces"
+  DATASPACES_LDFLAGS="-L$withval/lib";
+         DATASPACES_CPPFLAGS="-I$withval/include";
 else
-  with_dart=check
+  with_dataspaces=check
 fi;
 
-if test "x$with_dart" == "xno"; then
+if test "x$with_dataspaces" == "xno"; then
 
 
 
 if false; then
-  HAVE_DART_TRUE=
-  HAVE_DART_FALSE='#'
+  HAVE_DATASPACES_TRUE=
+  HAVE_DATASPACES_FALSE='#'
 else
-  HAVE_DART_TRUE='#'
-  HAVE_DART_FALSE=
+  HAVE_DATASPACES_TRUE='#'
+  HAVE_DATASPACES_FALSE=
 fi
 
 
 else
 
 
-# Check whether --with-dart-incdir or --without-dart-incdir was given.
-if test "${with_dart_incdir+set}" = set; then
-  withval="$with_dart_incdir"
-  DART_INCDIR=$withval
-                 with_dart=detailed
+# Check whether --with-dataspaces-incdir or --without-dataspaces-incdir was given.
+if test "${with_dataspaces_incdir+set}" = set; then
+  withval="$with_dataspaces_incdir"
+  DATASPACES_INCDIR=$withval
+                 with_dataspaces=detailed
 fi;
 
 
-# Check whether --with-dart-libdir or --without-dart-libdir was given.
-if test "${with_dart_libdir+set}" = set; then
-  withval="$with_dart_libdir"
-  DART_LIBDIR=$withval
-                 with_dart=detailed
+# Check whether --with-dataspaces-libdir or --without-dataspaces-libdir was given.
+if test "${with_dataspaces_libdir+set}" = set; then
+  withval="$with_dataspaces_libdir"
+  DATASPACES_LIBDIR=$withval
+                 with_dataspaces=detailed
 fi;
 
 
-            if test -n "${DART_DIR}" -a -z "${DART_INCDIR}"; then
-            DART_INCDIR="${DART_DIR}/include";
-        elif test -n "${DART}" -a -d "${DART}"; then
-            DART_INCDIR="${DART}/include"
+            if test -n "${DATASPACES_DIR}" -a -z "${DATASPACES_INCDIR}"; then
+            DATASPACES_INCDIR="${DATASPACES_DIR}/include";
+        elif test -n "${DATASPACES}" -a -d "${DATASPACES}"; then
+            DATASPACES_INCDIR="${DATASPACES}/include"
     fi
 
-            if test -n "${DART_DIR}" -a -z "${DART_LIBDIR}"; then
-            DART_LIBDIR="${DART_DIR}/lib";
-        elif test -n "${DART}" -a -d "${DART}"; then
-            DART_LIBDIR="${DART}/lib"
+            if test -n "${DATASPACES_DIR}" -a -z "${DATASPACES_LIBDIR}"; then
+            DATASPACES_LIBDIR="${DATASPACES_DIR}/lib";
+        elif test -n "${DATASPACES}" -a -d "${DATASPACES}"; then
+            DATASPACES_LIBDIR="${DATASPACES}/lib"
     fi
 
-        if test -n "${DART_INCDIR}"; then
-            DART_CPPFLAGS="-I${DART_INCDIR}"
+        if test -n "${DATASPACES_INCDIR}"; then
+            DATASPACES_CPPFLAGS="-I${DATASPACES_INCDIR}"
     else
-            ac_dart_ok=no
+            ac_dataspaces_ok=no
     fi
 
-        if test -n "${DART_LIBDIR}"; then
-            DART_LDFLAGS="-L${DART_LIBDIR}"
+        if test -n "${DATASPACES_LIBDIR}"; then
+            DATASPACES_LDFLAGS="-L${DATASPACES_LIBDIR}"
     else
-            ac_dart_ok=no
+            ac_dataspaces_ok=no
     fi
 
     save_CPPFLAGS="$CPPFLAGS"
@@ -27095,11 +27095,11 @@ fi;
     save_LDFLAGS="$LDFLAGS"
 #    LIBS="$LIBS -ldart2 -lspaces"
     LIBS="$LIBS -ldart -ldataspaces"
-    LDFLAGS="$LDFLAGS $DART_LDFLAGS"
-    CPPFLAGS="$CPPFLAGS $DART_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $DATASPACES_LDFLAGS"
+    CPPFLAGS="$CPPFLAGS $DATASPACES_CPPFLAGS"
 
-    if test -z "${HAVE_DART_TRUE}"; then
-#            AC_CHECK_HEADERS(dart.h,
+    if test -z "${HAVE_DATASPACES_TRUE}"; then
+#            AC_CHECK_HEADERS(dataspaces.h,
 
 for ac_header in dart_interface.h
 do
@@ -27250,11 +27250,11 @@ else
 
 
 if false; then
-  HAVE_DART_TRUE=
-  HAVE_DART_FALSE='#'
+  HAVE_DATASPACES_TRUE=
+  HAVE_DATASPACES_FALSE='#'
 else
-  HAVE_DART_TRUE='#'
-  HAVE_DART_FALSE=
+  HAVE_DATASPACES_TRUE='#'
+  HAVE_DATASPACES_FALSE=
 fi
 
 fi
@@ -27264,10 +27264,10 @@ done
     fi
 
     # Check for the Mini-XML library and headers
-#    AC_TRY_COMPILE([#include "dart.h"],
-#            [int err; err = dart_init(1,1);],
-#            [DART_LIBS="-ldart2 -lspaces"],
-#            [AM_CONDITIONAL(HAVE_DART,false)])
+#    AC_TRY_COMPILE([#include "dataspaces.h"],
+#            [int err; err = dataspaces_init(1,1);],
+#            [DATASPACES_LIBS="-ldart2 -lspaces"],
+#            [AM_CONDITIONAL(HAVE_DATASPACES,false)])
     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -27313,7 +27313,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  DART_LIBS="-ldart -ldataspaces -lrdmacm -libverbs"
+  DATASPACES_LIBS="-ldart -ldataspaces -lrdmacm -libverbs"
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
@@ -27321,11 +27321,11 @@ sed 's/^/| /' conftest.$ac_ext >&5
 
 
 if false; then
-  HAVE_DART_TRUE=
-  HAVE_DART_FALSE='#'
+  HAVE_DATASPACES_TRUE=
+  HAVE_DATASPACES_FALSE='#'
 else
-  HAVE_DART_TRUE='#'
-  HAVE_DART_FALSE=
+  HAVE_DATASPACES_TRUE='#'
+  HAVE_DATASPACES_FALSE=
 fi
 
 fi
@@ -27340,10 +27340,10 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 
 
     # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
-    if test -z "${HAVE_DART_TRUE}"; then
+    if test -z "${HAVE_DATASPACES_TRUE}"; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_DART 1
+#define HAVE_DATASPACES 1
 _ACEOF
 
             :
@@ -31201,23 +31201,23 @@ if test "x${datatap}" != "xdisable"; then
     ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${DT_LDFLAGS}"
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${DT_LIBS}"
 fi
-if test -z "${HAVE_DART_TRUE}"; then
-    ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${DART_CPPFLAGS}"
+if test -z "${HAVE_DATASPACES_TRUE}"; then
+    ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${DATASPACES_CPPFLAGS}"
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS}"
-    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${DART_LDFLAGS}"
-    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${DART_LIBS}"
-    ADIOSLIB_SEQ_CPPFLAGS="${ADIOSLIB_SEQ_CPPFLAGS} ${DART_CPPFLAGS}"
+    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${DATASPACES_LDFLAGS}"
+    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${DATASPACES_LIBS}"
+    ADIOSLIB_SEQ_CPPFLAGS="${ADIOSLIB_SEQ_CPPFLAGS} ${DATASPACES_CPPFLAGS}"
     ADIOSLIB_SEQ_CFLAGS="${ADIOSLIB_SEQ_CFLAGS}"
-    ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${DART_LDFLAGS}"
-    ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${DART_LIBS}"
-    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${DART_CPPFLAGS}"
-    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${DART_CFLAGS}"
-    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${DART_LDFLAGS}"
-    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${DART_LIBS}"
-    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${DART_CPPFLAGS}"
-    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${DART_CFLAGS}"
-    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${DART_LDFLAGS}"
-    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${DART_LIBS}"
+    ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${DATASPACES_LDFLAGS}"
+    ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${DATASPACES_LIBS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${DATASPACES_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${DATASPACES_CFLAGS}"
+    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${DATASPACES_LDFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${DATASPACES_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${DATASPACES_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${DATASPACES_CFLAGS}"
+    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${DATASPACES_LDFLAGS}"
+    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${DATASPACES_LIBS}"
 fi
 if test -z "${HAVE_DIMES_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${DIMES_CPPFLAGS}"
@@ -31753,31 +31753,31 @@ echo "$as_me: error: conditional \"HAVE_NSSI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${HAVE_DART_TRUE}" && test -z "${HAVE_DART_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_DART\" was never defined.
+if test -z "${HAVE_DATASPACES_TRUE}" && test -z "${HAVE_DATASPACES_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_DATASPACES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_DART\" was never defined.
+echo "$as_me: error: conditional \"HAVE_DATASPACES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${HAVE_DART_TRUE}" && test -z "${HAVE_DART_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_DART\" was never defined.
+if test -z "${HAVE_DATASPACES_TRUE}" && test -z "${HAVE_DATASPACES_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_DATASPACES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_DART\" was never defined.
+echo "$as_me: error: conditional \"HAVE_DATASPACES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${HAVE_DART_TRUE}" && test -z "${HAVE_DART_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_DART\" was never defined.
+if test -z "${HAVE_DATASPACES_TRUE}" && test -z "${HAVE_DATASPACES_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_DATASPACES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_DART\" was never defined.
+echo "$as_me: error: conditional \"HAVE_DATASPACES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${HAVE_DART_TRUE}" && test -z "${HAVE_DART_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_DART\" was never defined.
+if test -z "${HAVE_DATASPACES_TRUE}" && test -z "${HAVE_DATASPACES_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_DATASPACES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_DART\" was never defined.
+echo "$as_me: error: conditional \"HAVE_DATASPACES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -32611,11 +32611,11 @@ s,@NSSI_CPPFLAGS@,$NSSI_CPPFLAGS,;t t
 s,@NSSI_LDFLAGS@,$NSSI_LDFLAGS,;t t
 s,@NSSI_SRCDIR@,$NSSI_SRCDIR,;t t
 s,@NSSI_BUILDDIR@,$NSSI_BUILDDIR,;t t
-s,@HAVE_DART_TRUE@,$HAVE_DART_TRUE,;t t
-s,@HAVE_DART_FALSE@,$HAVE_DART_FALSE,;t t
-s,@DART_LIBS@,$DART_LIBS,;t t
-s,@DART_LDFLAGS@,$DART_LDFLAGS,;t t
-s,@DART_CPPFLAGS@,$DART_CPPFLAGS,;t t
+s,@HAVE_DATASPACES_TRUE@,$HAVE_DATASPACES_TRUE,;t t
+s,@HAVE_DATASPACES_FALSE@,$HAVE_DATASPACES_FALSE,;t t
+s,@DATASPACES_LIBS@,$DATASPACES_LIBS,;t t
+s,@DATASPACES_LDFLAGS@,$DATASPACES_LDFLAGS,;t t
+s,@DATASPACES_CPPFLAGS@,$DATASPACES_CPPFLAGS,;t t
 s,@HAVE_DIMES_TRUE@,$HAVE_DIMES_TRUE,;t t
 s,@HAVE_DIMES_FALSE@,$HAVE_DIMES_FALSE,;t t
 s,@DIMES_LIBS@,$DIMES_LIBS,;t t
@@ -33483,18 +33483,18 @@ if test "x${datatap}" != "xdisable"; then
     echo "      - DT_LIBS       = $DT_LIBS";
     echo
 else
-    echo "  - No DataTap transport";
+    echo "  - No DataTap transport to build DATATAP transport method";
 fi
 
-if test -z "${HAVE_DART_TRUE}"; then
-    echo "  - DART transport method";
-    echo "      - DART_CFLAGS = $DART_CFLAGS";
-    echo "      - DART_CPPFLAGS = $DART_CPPFLAGS";
-    echo "      - DART_LDFLAGS = $DART_LDFLAGS";
-    echo "      - DART_LIBS = $DART_LIBS";
+if test -z "${HAVE_DATASPACES_TRUE}"; then
+    echo "  - DATASPACES transport method";
+    echo "      - DATASPACES_CFLAGS = $DATASPACES_CFLAGS";
+    echo "      - DATASPACES_CPPFLAGS = $DATASPACES_CPPFLAGS";
+    echo "      - DATASPACES_LDFLAGS = $DATASPACES_LDFLAGS";
+    echo "      - DATASPACES_LIBS = $DATASPACES_LIBS";
     echo
 else
-    echo "  - No DART to build DART transport method"
+    echo "  - No DATASPACES to build DATASPACES transport method"
 fi
 
 if test -z "${HAVE_DIMES_TRUE}"; then
@@ -33516,7 +33516,7 @@ if test -z "${HAVE_PHDF5_TRUE}"; then
     echo "      - PHDF5_LIBS = $PHDF5_LIBS";
     echo
 else
-    echo "  - No PHDF5"
+    echo "  - No PHDF5 to build PHDF5 transport method"
 fi
 
 if test -z "${HAVE_HDF5_TRUE}"; then
@@ -33538,7 +33538,7 @@ if test -z "${HAVE_NC4PAR_TRUE}"; then
     echo "      - NC4PAR_LIBS = $NC4PAR_LIBS";
     echo
 else
-    echo "  - No NETCDF 4 Parallel"
+    echo "  - No NETCDF 4 Parallel to build NC4 transport method"
 fi
 
 if test -z "${HAVE_NETCDF_TRUE}"; then
@@ -33560,7 +33560,7 @@ if test -z "${HAVE_NSSI_TRUE}"; then
     echo "      - NSSI_LIBS = $NSSI_LIBS";
     echo
 else
-    echo "  - No NSSI"
+    echo "  - No NSSI to build NSSI transport method"
 fi
 
 echo "  - SVN version = ${SVNVERSION}"

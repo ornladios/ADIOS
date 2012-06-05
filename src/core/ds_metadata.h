@@ -6,7 +6,7 @@
  */
 
 /*
- *  Metadata (index) for DART and DIMES methods
+ *  Metadata (index) for DATASPACES and DIMES methods
  * 
  *  Data structures to store the index (aka footer for BP format) that can be
  *  put into DataSpaces to describe the variables/attributes there
@@ -19,7 +19,7 @@
 #include "public/adios_read.h"
 
 
-/* functions currently defined in adios_dart.c and read_dart.c */
+/* functions currently defined in adios_dataspaces.c and read_dataspaces.c */
 
 /* Tell the DataSpaces order of dimensions for a 1-3 dim array written from Fortran or C.
    unpack=1: the reverse of packing (to retrieve the original order).

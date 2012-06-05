@@ -46,8 +46,8 @@ void adios_read_##a##_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char **
 FORWARD_DECLARE(bp)
 FORWARD_DECLARE(bp_staged)
 FORWARD_DECLARE(bp_staged1)
-#if HAVE_DART
-FORWARD_DECLARE(dart)
+#if HAVE_DATASPACES
+FORWARD_DECLARE(dataspaces)
 #endif
 #if HAVE_DIMES
 FORWARD_DECLARE(dimes)
