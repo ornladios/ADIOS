@@ -44,6 +44,9 @@
 #define adios_read_local_var adios_read_local_var_v1
 #define adios_get_attr adios_get_attr_v1
 #define adios_get_attr_byid adios_get_attr_byid_v1
+#define adios_type_to_string adios_type_to_string_v1
+#define adios_type_size adios_type_size_v1
+
 
 #define err_end_of_file err_end_of_stream
 

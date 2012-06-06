@@ -42,6 +42,8 @@
 #undef adios_read_local_var
 #undef adios_get_attr
 #undef adios_get_attr_byid
+#undef adios_type_to_string
+#undef adios_type_size
 
 
 #include "core/common_read.h"
@@ -421,24 +423,24 @@ int64_t adios_read_local_var_v1 (ADIOS_GROUP_V1 * gp,
     return rbytes;
 }
 
-const char * adios_type_to_string (enum ADIOS_DATATYPES type)
+const char * adios_type_to_string_v1 (enum ADIOS_DATATYPES type)
 {
     return common_read_type_to_string (type);
 }
 
-int adios_type_size(enum ADIOS_DATATYPES type, void *data)
+int adios_type_size_v1(enum ADIOS_DATATYPES type, void *data)
 {
     return common_read_type_size(type, data);
 }
 
 
-void adios_print_groupinfo (ADIOS_FILE  *fp) 
+static void adios_print_groupinfo (ADIOS_FILE  *fp) 
 {
     common_read_print_groupinfo(fp);
 }
 
 
-void adios_print_fileinfo (ADIOS_FILE *fp) 
+static void adios_print_fileinfo (ADIOS_FILE *fp) 
 {
     common_read_print_fileinfo(fp);
 }

@@ -52,6 +52,7 @@ libadios_a_SOURCES = core/adios.c \
                      core/futils.c \
                      core/adios_error.c \
                      core/adios_read.c \
+                     core/adios_read_v1.c \
                      core/common_read.c \
                      core/globals.c \
                      core/adios_timing.c \
@@ -81,6 +82,7 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/futils.c \
                      core/adios_error.c \
                      core/adios_read.c \
+                     core/adios_read_v1.c \
                      core/common_read.c \
                      core/globals.c \
                      core/mpidummy.c \
@@ -266,6 +268,7 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/futils.c \
                       core/adios_error.c \
                       core/adios_read.c \
+                      core/adios_read_v1.c \
                       core/common_read.c \
                       core/globals.c \
                       core/adios_read_hooks.c \
@@ -348,6 +351,7 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/futils.c \
                       core/adios_error.c \
                       core/adios_read.c \
+                      core/adios_read_v1.c \
                       core/common_read.c \
                       core/adios_internals.c \
                       core/adios_logger.c \
