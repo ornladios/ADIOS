@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "adios_read_v1.h"
+#include "public/adios_read_v1.h"
 
 #undef ADIOS_FILE
 #undef ADIOS_GROUP
@@ -44,10 +44,10 @@
 #undef adios_get_attr_byid
 
 
-#include "common_read.h"
+#include "core/common_read.h"
 
 
-#include "adios_error.h"
+#include "public/adios_error.h"
 #define BYTE_ALIGN 8
 
 static enum ADIOS_READ_METHOD lastmethod = ADIOS_READ_METHOD_BP;
@@ -119,7 +119,7 @@ ADIOS_FILE_V1 * adios_fopen_v1 (const char * fname, MPI_Comm comm)
             fp1->endianness  = fp->endianness; 
 
             /* FIX: no groups in new version, extra function should support this */
-            fp1->groups_count = common_read_get_grouplist(fp, fp1->group_namelist);
+            fp1->groups_count = common_read_get_grouplist(fp, &fp1->group_namelist);
 
             fp1->internal_data = fp;
         } else {
@@ -256,7 +256,7 @@ static ADIOS_VARINFO_V1 * adios_varinfo_to_v1 (ADIOS_GROUP_V1 *gp, ADIOS_VARINFO
             v->hist->max = stat->histogram->max;
             v->hist->min = stat->histogram->min;
             v->hist->breaks = stat->histogram->breaks;
-            v->hist->frequenciess = stat->histogram->frequenciess;
+            v->hist->frequenciess = stat->histogram->frequencies;
             v->hist->gfrequencies = stat->histogram->gfrequencies;
         }
         
