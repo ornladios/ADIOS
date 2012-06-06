@@ -307,7 +307,7 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
 }
 
 
-int common_read_inq_var_stat (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo,
+int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
                              int per_step_stat, int per_block_stat)
 {
     struct common_read_internals_struct * internals;
@@ -324,7 +324,7 @@ int common_read_inq_var_stat (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinf
     return retval;
 }
 
-int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo)
+int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 {
     struct common_read_internals_struct * internals;
     int retval;

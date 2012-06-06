@@ -47,9 +47,9 @@ void common_read_release_step (ADIOS_FILE *fp);
 
 ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE  *fp, const char * varname);
 ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE  *fp, int varid);
-int common_read_inq_var_stat (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo,
+int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
                              int per_step_stat, int per_block_stat);
-int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo);
+int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
 void common_read_free_varinfo (ADIOS_VARINFO *vp);
 
 int common_read_schedule_read (const ADIOS_FILE      * fp,

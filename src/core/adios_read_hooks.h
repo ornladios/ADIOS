@@ -22,8 +22,8 @@ int adios_read_##a##_close (ADIOS_FILE *fp); \
 int adios_read_##a##_advance_step (ADIOS_FILE *fp, int last, int wait_for_step); \
 void adios_read_##a##_release_step (ADIOS_FILE *fp); \
 ADIOS_VARINFO * adios_read_##a##_inq_var_byid (const ADIOS_FILE *gp, int varid); \
-int adios_read_##a##_inq_var_stat (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo, int per_step_stat, int per_block_stat); \
-int adios_read_##a##_inq_var_blockinfo (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo); \
+int adios_read_##a##_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo, int per_step_stat, int per_block_stat); \
+int adios_read_##a##_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo); \
 int adios_read_##a##_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel, int varid, int from_steps, int nsteps, void * data) ; \
 int adios_read_##a##_perform_reads (const ADIOS_FILE *fp, int blocking); \
 int adios_read_##a##_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk); \
@@ -70,9 +70,9 @@ typedef int  (* ADIOS_CLOSE_FN) (ADIOS_FILE *fp);
 typedef int  (* ADIOS_ADVANCE_STEP_FN) (ADIOS_FILE *fp, int last, int wait_for_step);
 typedef void (* ADIOS_RELEASE_STEP_FN) (ADIOS_FILE *fp);
 typedef ADIOS_VARINFO * (* ADIOS_INQ_VAR_BYID_FN) (const ADIOS_FILE *fp, int varid);
-typedef int  (* ADIOS_INQ_VAR_STAT_FN) (const ADIOS_FILE *fp, const ADIOS_VARINFO *varinfo,
+typedef int  (* ADIOS_INQ_VAR_STAT_FN) (const ADIOS_FILE *fp, ADIOS_VARINFO *varinfo,
                                  int per_step_stat, int per_block_stat);
-typedef int  (* ADIOS_INQ_VAR_BLOCKINFO_FN) (const ADIOS_FILE *fp, const ADIOS_VARINFO *varinfo);
+typedef int  (* ADIOS_INQ_VAR_BLOCKINFO_FN) (const ADIOS_FILE *fp, ADIOS_VARINFO *varinfo);
 typedef int  (* ADIOS_SCHEDULE_READ_BYID_FN) (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel, 
                                  int varid, int from_steps, int nsteps, void * data);
 typedef int  (* ADIOS_PERFORM_READS_FN) (const ADIOS_FILE *fp, int blocking);
