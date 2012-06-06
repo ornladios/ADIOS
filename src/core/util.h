@@ -18,7 +18,7 @@ typedef struct PairStruct PairStruct;
    Also, simple "name" or "name=" patterns are processed and 
    returned with value=NULL. 
 */
-PairStruct * text_to_name_value_pairs (char * text);
+PairStruct * text_to_name_value_pairs (const char * text);
 void free_name_value_pairs (PairStruct * pairs);
 /* Reverse the order in an array in place.
    use swapping from Fortran/column-major order to ADIOS-read-api/C/row-major order and back

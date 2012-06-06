@@ -74,7 +74,7 @@ static void splitnamevalue (const char * line, int linelen,  char **name, char *
     }
 }
 
-PairStruct * text_to_name_value_pairs (char * text)
+PairStruct * text_to_name_value_pairs (const char * text)
 {
     /* Process a multi-line and/or ;-separated text and create a list
        of name=value pairs from each line which has a 
