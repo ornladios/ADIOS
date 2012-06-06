@@ -97,6 +97,8 @@ ADIOS_SELECTION * common_read_selection_boundingbox (uint64_t ndim, const uint64
 ADIOS_SELECTION * common_read_selection_points (uint64_t ndim, uint64_t npoints, const uint64_t *points);
 ADIOS_SELECTION * common_read_selection_writeblock (int index);
 ADIOS_SELECTION * common_read_selection_auto (char *hints);
+void common_read_selection_delete (ADIOS_SELECTION *sel);
+
 
 
 #endif

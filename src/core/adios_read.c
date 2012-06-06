@@ -185,4 +185,9 @@ ADIOS_SELECTION * adios_selection_auto (char *hints)
     return common_read_selection_auto (hints);
 }
 
+void adios_selection_delete (ADIOS_SELECTION *sel)
+{
+    common_read_selection_delete (sel);
+}
+
 
