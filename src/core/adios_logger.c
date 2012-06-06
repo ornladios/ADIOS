@@ -11,8 +11,9 @@
 #include <errno.h>
 #include "core/adios_logger.h"
 
-FILE *adios_logf;
-int adios_verbose_level;
+FILE *adios_logf = 0;
+int adios_verbose_level = 0;
+char *adios_log_names[4] = {"ERROR","WARN","INFO","DBG"};
 
 
 void adios_logger_init (char *logpath, int verbose_level, int rank)
