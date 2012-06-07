@@ -86,7 +86,9 @@ int common_read_type_size(enum ADIOS_DATATYPES type, void *data);
 int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist);
 int common_read_group_view (ADIOS_FILE  *fp, int groupid);
 
-// internal function to support version 1 time-dimension reads
+/* internal function to support version 1 time-dimension reads
+   called from adios_read_v1.c and adiosf_read_v1.c 
+*/
 int common_read_is_var_timed (const ADIOS_FILE *fp, int varid);
 
 void common_read_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran);

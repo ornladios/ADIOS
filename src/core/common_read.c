@@ -678,6 +678,24 @@ int common_read_group_view (ADIOS_FILE  *fp, int groupid)
     return retval;
 }
 
+/* internal function to support version 1 time-dimension reads
+   called from adios_read_v1.c and adiosf_read_v1.c 
+*/
+int common_read_is_var_timed (const ADIOS_FILE *fp, int varid)
+{
+    struct common_read_internals_struct * internals;
+    int retval;
+    
+    adios_errno = 0;
+    if (fp) {
+        internals = (struct common_read_internals_struct *) fp->internal_data;
+        retval = internals->read_hooks[internals->method].adios_is_var_timed_fn (fp, varid+internals->group_varid_offset);
+    } else {
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to common_read_is_var_timed()");
+        retval = err_invalid_file_pointer;
+    }
+    return retval;
+}
 
 void common_read_print_fileinfo (const ADIOS_FILE *fp) 
 {
