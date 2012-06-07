@@ -7,7 +7,7 @@
 
 /*
  *   Read C API for ADIOS BP format files
- *   Define -DADIOS_USE_API_1 at compile time when including "adios_read.h" 
+ *   Define -DADIOS_USE_READ_API_1 at compile time when including "adios_read.h" 
  *   to use this version of the API. 
  */
 #ifndef __ADIOS_READ_V1_H__

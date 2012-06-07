@@ -11,7 +11,7 @@
 #ifndef __ADIOS_READ_H__
 #define __ADIOS_READ_H__
 
-#ifdef ADIOS_USE_API_1
+#ifdef ADIOS_USE_READ_API_1
 #  include "adios_read_v1.h"
 #else 
 #  include "adios_read_v2.h"
