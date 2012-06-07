@@ -434,9 +434,10 @@ int adios_type_size_v1(enum ADIOS_DATATYPES type, void *data)
 }
 
 
-static void adios_print_groupinfo (ADIOS_FILE  *fp) 
+static void adios_print_groupinfo (ADIOS_GROUP_V1  *gp) 
 {
-    common_read_print_groupinfo(fp);
+    ADIOS_FILE *f = (ADIOS_FILE*)gp->fp->internal_data;
+    common_read_print_fileinfo(f);
 }
 
 
