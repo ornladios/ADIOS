@@ -76,7 +76,8 @@ adios_globaltime_no_xml_OBJECTS =  \
 	$(am_adios_globaltime_no_xml_OBJECTS)
 adios_globaltime_no_xml_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1)
-am_adios_read_globaltime_OBJECTS = adios_read_globaltime.$(OBJEXT)
+am_adios_read_globaltime_OBJECTS =  \
+	adios_read_globaltime-adios_read_globaltime.$(OBJEXT)
 adios_read_globaltime_OBJECTS = $(am_adios_read_globaltime_OBJECTS)
 adios_read_globaltime_DEPENDENCIES =  \
 	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1)
@@ -325,7 +326,8 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-INCLUDES = $(all_includes) -I$(top_builddir)/src
+INCLUDES = $(all_includes) -I$(top_builddir)/src \
+	-I$(top_builddir)/src/public
 AUTOMAKE_OPTIONS = no-dependencies
 adios_globaltime_SOURCES = adios_globaltime.c
 adios_globaltime_LDADD = $(top_builddir)/src/libadios.a \
@@ -336,6 +338,7 @@ adios_globaltime_no_xml_LDADD = $(top_builddir)/src/libadios.a \
 	$(ADIOSLIB_LDADD)
 adios_globaltime_no_xml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_globaltime_SOURCES = adios_read_globaltime.c
+adios_read_globaltime_CPPFLAGS = -DADIOS_USE_READ_API_1
 adios_read_globaltime_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSLIB_LDADD)
 adios_read_globaltime_LDFLAGS = $(ADIOSLIB_LDFLAGS)
@@ -405,6 +408,12 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
+
+adios_read_globaltime-adios_read_globaltime.o: adios_read_globaltime.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_globaltime_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_globaltime-adios_read_globaltime.o `test -f 'adios_read_globaltime.c' || echo '$(srcdir)/'`adios_read_globaltime.c
+
+adios_read_globaltime-adios_read_globaltime.obj: adios_read_globaltime.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_globaltime_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_globaltime-adios_read_globaltime.obj `if test -f 'adios_read_globaltime.c'; then $(CYGPATH_W) 'adios_read_globaltime.c'; else $(CYGPATH_W) '$(srcdir)/adios_read_globaltime.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

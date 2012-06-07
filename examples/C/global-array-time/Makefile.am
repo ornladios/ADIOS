@@ -1,5 +1,5 @@
 INCLUDES = $(all_includes)
-INCLUDES += -I$(top_builddir)/src
+INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
@@ -14,6 +14,7 @@ adios_globaltime_no_xml_LDADD = $(top_builddir)/src/libadios.a
 adios_globaltime_no_xml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_globaltime_no_xml_LDADD += $(ADIOSLIB_LDADD)
 adios_read_globaltime_SOURCES = adios_read_globaltime.c
+adios_read_globaltime_CPPFLAGS = -DADIOS_USE_READ_API_1
 adios_read_globaltime_LDADD = $(top_builddir)/src/libadiosread.a
 adios_read_globaltime_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_globaltime_LDADD += $(ADIOSLIB_LDADD)

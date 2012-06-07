@@ -1,5 +1,5 @@
 INCLUDES = $(all_includes)
-INCLUDES += -I$(top_builddir)/src
+INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 

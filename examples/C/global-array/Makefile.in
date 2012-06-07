@@ -333,7 +333,8 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-INCLUDES = $(all_includes) -I$(top_builddir)/src
+INCLUDES = $(all_includes) -I$(top_builddir)/src \
+	-I$(top_builddir)/src/public
 AUTOMAKE_OPTIONS = no-dependencies
 adios_global_SOURCES = adios_global.c
 adios_global_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
