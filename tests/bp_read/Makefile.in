@@ -76,7 +76,7 @@ am__bp_read_f_SOURCES_DIST = bp_read_f.F90
 @BUILD_FORTRAN_TRUE@	bp_read_f-bp_read_f.$(OBJEXT)
 bp_read_f_OBJECTS = $(am_bp_read_f_OBJECTS)
 @BUILD_FORTRAN_TRUE@bp_read_f_DEPENDENCIES =  \
-@BUILD_FORTRAN_TRUE@	$(top_builddir)/src/libadiosreadf.a \
+@BUILD_FORTRAN_TRUE@	$(top_builddir)/src/libadiosreadf_v1.a \
 @BUILD_FORTRAN_TRUE@	$(am__DEPENDENCIES_1)
 am_genbp_OBJECTS = genbp-genbp.$(OBJEXT)
 genbp_OBJECTS = $(am_genbp_OBJECTS)
@@ -331,7 +331,7 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src \
-	#-I/ccs/home/sklasky/parallel-netcdf/jaguar/include
+	-I$(top_builddir)/src/public
 AUTOMAKE_OPTIONS = no-dependencies
 
 # read_coords read_phi read_parts_global read_gena read_gena_pncd read_pixie_all
@@ -341,9 +341,9 @@ genbp_CFLAGS = $(ADIOSLIB_CFLAGS)
 genbp_LDADD = $(top_builddir)/src/libadios.a $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
 genbp_LDFLAGS = $(ADIOSLIB_LDFLAGS) 
 @BUILD_FORTRAN_TRUE@bp_read_f_SOURCES = bp_read_f.F90
-@BUILD_FORTRAN_TRUE@bp_read_f_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@bp_read_f_CPPFLAGS = -DADIOS_USE_READ_API_1 $(ADIOSLIB_CPPFLAGS)
 @BUILD_FORTRAN_TRUE@bp_read_f_CFLAGS = $(ADIOSLIB_CFLAGS)
-@BUILD_FORTRAN_TRUE@bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf.a $(ADIOSREADLIB_LDADD)
+@BUILD_FORTRAN_TRUE@bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf_v1.a $(ADIOSREADLIB_LDADD)
 @BUILD_FORTRAN_TRUE@bp_read_f_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
 bp_read_c_SOURCES = bp_read_c.c
 bp_read_c_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)

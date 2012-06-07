@@ -1,5 +1,5 @@
 INCLUDES = $(all_includes)
-INCLUDES += -I$(top_builddir)/src #-I/ccs/home/sklasky/parallel-netcdf/jaguar/include
+INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
@@ -19,9 +19,9 @@ genbp_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 
 if BUILD_FORTRAN
 bp_read_f_SOURCES = bp_read_f.F90
-bp_read_f_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+bp_read_f_CPPFLAGS = -DADIOS_USE_READ_API_1 $(ADIOSLIB_CPPFLAGS)
 bp_read_f_CFLAGS = $(ADIOSLIB_CFLAGS)
-bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf.a $(ADIOSREADLIB_LDADD)
+bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf_v1.a $(ADIOSREADLIB_LDADD)
 bp_read_f_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
 endif
 
