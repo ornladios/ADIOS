@@ -58,7 +58,6 @@ typedef struct {
 
 
 typedef struct {
-        int        characteristics_count; /* number of characteristics ???                           */
         void     * min;            /* minimum value in an array variable, = value for a scalar       */
         void     * max;            /* maximum value of an array variable (over all steps)            */
         double   * avg;            /* average value of an array variable (over all steps)            */
