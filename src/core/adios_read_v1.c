@@ -5,6 +5,7 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -44,6 +45,8 @@
 #undef adios_get_attr_byid
 #undef adios_type_to_string
 #undef adios_type_size
+#undef adios_print_groupinfo
+//#undef adios_print_fileinfo
 
 
 #include "core/common_read.h"
@@ -434,15 +437,389 @@ int adios_type_size_v1(enum ADIOS_DATATYPES type, void *data)
 }
 
 
-static void adios_print_groupinfo (ADIOS_GROUP_V1  *gp) 
+void adios_print_groupinfo (ADIOS_GROUP_V1 *gp) 
 {
     ADIOS_FILE *f = (ADIOS_FILE*)gp->fp->internal_data;
     common_read_print_fileinfo(f);
 }
 
 
-static void adios_print_fileinfo (ADIOS_FILE *fp) 
+void adios_print_fileinfo_v1 (ADIOS_FILE_V1 *fp) 
 {
-    common_read_print_fileinfo(fp);
+    ADIOS_FILE *f = (ADIOS_FILE*)fp->internal_data;
+    common_read_print_fileinfo(f);
 }
 
+
+
+// NCSU - Timer series analysis, correlation
+double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char * characteristic, uint32_t time_start, uint32_t time_end, uint32_t lag)
+{
+    int i,j;
+
+    double avg_x = 0.0, avg_y = 0.0, avg_lag = 0.0;
+    double var_x = 0.0, var_y = 0.0, var_lag = 0.0;
+    double cov = 0;
+
+    if (vix == NULL)
+    {
+        fprintf(stderr, "Variable not defined\n");
+        return 0;
+    }
+
+    // If the vix and viy are not time series objects, return.
+    if ((vix->timedim < 0) && (viy->timedim < 0))
+    {             
+        fprintf(stderr, "Covariance must involve timeseries data\n");
+        return 0;
+    }                                                                    
+
+    uint32_t min = vix->dims[0] - 1;
+    if (viy && (min > viy->dims[0] - 1))
+        min = viy->dims[0] - 1;         
+    
+    if(time_start == 0 && time_end == 0) 
+    { //global covariance
+        if(viy == NULL) {
+            fprintf(stderr, "Must have two variables for global covariance\n");
+            return 0;
+        }                                                                          
+
+        // Assign vix to viy, and calculate covariance
+        viy = vix;
+        time_start = 0;
+        time_end = min;
+    }
+    // Check the bounds of time
+    if (    (time_start >= 0) && (time_start <= min)
+            &&      (time_end >= 0)   && (time_end <= min)
+            &&  (time_start <= time_end))
+    {
+        if(viy == NULL) //user must want to run covariance against itself
+        {
+            if(! (time_end+lag) > min)
+            {                                                                        
+                fprintf(stderr, "Must leave enough timesteps for lag\n");
+                return 0;
+            }
+
+            if (strcmp(characteristic, "average") == 0 || strcmp(characteristic, "avg") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double (adios_double, vix->avgs[i]) / (time_end - time_start + 1);
+                    avg_lag += bp_value_to_double (adios_double, vix->avgs[i + lag]) / (time_end - time_start + 1);
+                }
+
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    double val_x = bp_value_to_double (adios_double, vix->avgs[i]); 
+                    double val_lag = bp_value_to_double (adios_double, vix->avgs[i + lag]); 
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    var_lag += (val_lag - avg_lag) * (val_lag - avg_lag) / (time_end - time_start + 1);
+                    cov += (val_x - avg_x) * (val_lag - avg_lag) / (time_end - time_start + 1);
+                }
+            }
+            else if (strcmp(characteristic, "standard deviation") == 0 || strcmp(characteristic, "std_dev") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double (adios_double, vix->std_devs[i]) / (time_end - time_start + 1);
+                    avg_lag += bp_value_to_double (adios_double, vix->std_devs[i + lag]) / (time_end - time_start + 1);
+                }
+
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    double val_x = bp_value_to_double (adios_double, vix->std_devs[i]);
+                    double val_lag = bp_value_to_double (adios_double, vix->std_devs[i + lag]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
+                    var_lag += (val_lag - avg_lag) * (val_lag - avg_lag) / (time_end - time_start + 1);
+                    cov += (val_x - avg_x) * (val_lag - avg_lag) / (time_end - time_start + 1);
+                }
+            }
+            else if (strcmp(characteristic, "minimum") == 0 || strcmp(characteristic, "min") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double (vix->type, vix->mins[i]) / (time_end - time_start + 1);
+                    avg_lag += bp_value_to_double (vix->type, vix->mins[i + lag]) / (time_end - time_start + 1);
+                }
+
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    double val_x = bp_value_to_double (vix->type, vix->mins[i]); 
+                    double val_lag = bp_value_to_double (vix->type, vix->mins[i + lag]); 
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    var_lag += (val_lag - avg_lag) * (val_lag - avg_lag) / (time_end - time_start + 1);
+                    cov += (val_x - avg_x) * (val_lag - avg_lag) / (time_end - time_start + 1);
+                }
+            }
+            else if (strcmp(characteristic, "maximum") == 0 || strcmp(characteristic, "max") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double (vix->type, vix->maxs[i]) / (time_end - time_start + 1);
+                    avg_lag += bp_value_to_double (vix->type, vix->maxs[i]) / (time_end - time_start + 1);
+                }
+
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    double val_x = bp_value_to_double (vix->type, vix->maxs[i]); 
+                    double val_lag = bp_value_to_double (vix->type, vix->maxs[i + lag]); 
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    var_lag += (val_lag - avg_lag) * (val_lag - avg_lag) / (time_end - time_start + 1);
+                    cov += (val_x - avg_x) * (val_lag - avg_lag) / (time_end - time_start + 1);
+                }
+            }
+            else
+            {
+                fprintf (stderr, "Unknown characteristic\n");
+                return 0;
+            }
+            return cov / (sqrt (var_x) * sqrt (var_lag));
+        }
+        else
+        {
+            if (strcmp(characteristic, "average") == 0 || strcmp(characteristic, "avg") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double(adios_double, vix->avgs[i]) / (time_end - time_start + 1);
+                    avg_y += bp_value_to_double(adios_double, viy->avgs[i]) / (time_end - time_start + 1);
+                }
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    double val_x = bp_value_to_double (adios_double, vix->avgs[i]); 
+                    double val_y = bp_value_to_double (adios_double, viy->avgs[i]); 
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    var_y += (val_y - avg_y) * (val_y - avg_y) / (time_end - time_start + 1);
+                    cov += (val_x - avg_x) * (val_y - avg_y) / (time_end - time_start + 1);
+                }
+            }
+            else if (strcmp(characteristic, "standard deviation") == 0 || strcmp(characteristic, "std_dev") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double(adios_double, vix->std_devs[i]) / (time_end - time_start + 1);
+                    avg_y += bp_value_to_double(adios_double, viy->std_devs[i]) / (time_end - time_start + 1);
+                }
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    double val_x = bp_value_to_double (adios_double, vix->std_devs[i]);
+                    double val_y = bp_value_to_double (adios_double, viy->std_devs[i]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
+                    var_y += (val_y - avg_y) * (val_y - avg_y) / (time_end - time_start + 1);
+                    cov += (val_x - avg_x) * (val_y - avg_y) / (time_end - time_start + 1);
+                }
+            }
+            else if (strcmp(characteristic, "minimum") == 0 || strcmp(characteristic, "min") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double(vix->type, vix->mins[i]) / (time_end - time_start + 1);
+                    avg_y += bp_value_to_double(viy->type, viy->mins[i]) / (time_end - time_start + 1);
+                }
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    double val_x = bp_value_to_double (vix->type, vix->mins[i]); 
+                    double val_y = bp_value_to_double (viy->type, viy->mins[i]); 
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    var_y += (val_y - avg_y) * (val_y - avg_y) / (time_end - time_start + 1);
+                    cov += (val_x - avg_x) * (val_y - avg_y) / (time_end - time_start + 1);
+                }
+            }
+            else if (strcmp(characteristic, "maximum") == 0 || strcmp(characteristic, "max") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double(vix->type, vix->maxs[i]) / (time_end - time_start + 1);
+                    avg_y += bp_value_to_double(vix->type, viy->maxs[i]) / (time_end - time_start + 1);
+                }
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    double val_x = bp_value_to_double (vix->type, vix->maxs[i]); 
+                    double val_y = bp_value_to_double (viy->type, viy->maxs[i]); 
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    var_y += (val_y - avg_y) * (val_y - avg_y) / (time_end - time_start + 1);
+                    cov += (val_x - avg_x) * (val_y - avg_y) / (time_end - time_start + 1);
+                }
+            }
+            else
+            {
+                fprintf (stderr, "Unknown characteristic\n");
+                return 0;
+            }
+            return cov / (sqrt (var_x) * sqrt (var_y));
+        }
+    }
+    else
+    {
+        fprintf (stderr, "Time values out of bounds\n");
+        return 0;
+    }
+}
+
+// NCSU - Time series analysis, covariance
+//covariance(x,y) = sum(i=1,..N) [(x_1 - x_mean)(y_i - y_mean)]/N
+double adios_stat_cov_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char * characteristic, uint32_t time_start, uint32_t time_end, uint32_t lag)
+{
+    int i,j;
+
+    double avg_x = 0.0, avg_y = 0.0, avg_lag = 0.0;
+    double cov = 0;
+
+    if (vix == NULL)
+    {
+        fprintf(stderr, "Variable not defined\n");
+        return 0;
+    }
+
+    // If the vix and viy are not time series objects, return.
+    if ((vix->timedim < 0) && (viy->timedim < 0))
+    {             
+        fprintf(stderr, "Covariance must involve timeseries data\n");
+        return 0;
+    }                                                                    
+
+    uint32_t min = vix->dims[0] - 1;
+    if (viy && (min > viy->dims[0] - 1))
+        min = viy->dims[0] - 1;         
+    
+    if(time_start == 0 && time_end == 0) 
+    { //global covariance
+        if(viy == NULL) {
+            fprintf(stderr, "Must have two variables for global covariance\n");
+            return 0;
+        }                                                                          
+
+        // Assign vix to viy, and calculate covariance
+        viy = vix;
+        time_start = 0;
+        time_end = min;
+    }
+    // Check the bounds of time
+    if (    (time_start >= 0) && (time_start <= min)
+            &&      (time_end >= 0)   && (time_end <= min)
+            &&  (time_start <= time_end))
+    {
+        if(viy == NULL) //user must want to run covariance against itself
+        {
+            if(! (time_end+lag) > min)
+            {                                                                        
+                fprintf(stderr, "Must leave enough timesteps for lag\n");
+                return 0;
+            }
+
+            if (strcmp(characteristic, "average") == 0 || strcmp(characteristic, "avg") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double (adios_double, vix->avgs[i]) / (time_end - time_start + 1);
+                    avg_lag += bp_value_to_double (adios_double, vix->avgs[i + lag]) / (time_end - time_start + 1);
+                }
+
+                for (i = time_start; i <= time_end; i ++)
+                    cov += (bp_value_to_double (adios_double, vix->avgs[i]) - avg_x) * (bp_value_to_double (adios_double, vix->avgs[i+lag]) - avg_lag) / (time_end - time_start + 1);
+            }
+            else if (strcmp(characteristic, "standard deviation") == 0 || strcmp(characteristic, "std_dev") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double (adios_double, vix->std_devs[i]) / (time_end - time_start + 1);
+                    avg_lag += bp_value_to_double (adios_double, vix->std_devs[i + lag]) / (time_end - time_start + 1);
+                }
+
+                for (i = time_start; i <= time_end; i ++)
+                    cov += (bp_value_to_double (adios_double, vix->std_devs[i]) - avg_x) * (bp_value_to_double (adios_double, vix->std_devs[i+lag]) - avg_lag) / (time_end - time_start + 1);
+            }
+            else if (strcmp(characteristic, "minimum") == 0 || strcmp(characteristic, "min") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double (vix->type, vix->mins[i]) / (time_end - time_start + 1);
+                    avg_lag += bp_value_to_double (vix->type, vix->mins[i + lag]) / (time_end - time_start + 1);
+                }
+
+                for (i = time_start; i <= time_end; i ++)
+                    cov += (bp_value_to_double (vix->type, vix->mins[i]) - avg_x) * (bp_value_to_double (vix->type, vix->mins[i+lag]) - avg_lag) / (time_end - time_start + 1);
+            }
+            else if (strcmp(characteristic, "maximum") == 0 || strcmp(characteristic, "max") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double (vix->type, vix->maxs[i]) / (time_end - time_start + 1);
+                    avg_lag += bp_value_to_double (vix->type, vix->maxs[i + lag]) / (time_end - time_start + 1);
+                }
+
+                for (i = time_start; i <= time_end; i ++)
+                    cov += (bp_value_to_double (vix->type, vix->maxs[i]) - avg_x) * (bp_value_to_double (vix->type, vix->maxs[i+lag]) - avg_lag) / (time_end - time_start + 1);
+            }
+            else
+            {
+                fprintf (stderr, "Unknown characteristic\n");
+                return 0;
+            }
+        }
+        else
+        {
+            if (strcmp(characteristic, "average") == 0 || strcmp(characteristic, "avg") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double(adios_double, vix->avgs[i]) / (time_end - time_start + 1);
+                    avg_y += bp_value_to_double(adios_double, viy->avgs[i]) / (time_end - time_start + 1);
+                }
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    cov += (bp_value_to_double(adios_double, vix->avgs[i]) - avg_x) * (bp_value_to_double(adios_double, viy->avgs[i]) - avg_y) / (time_end - time_start + 1);
+                }
+            }
+            else if (strcmp(characteristic, "standard deviation") == 0 || strcmp(characteristic, "std_dev") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double(adios_double, vix->std_devs[i]) / (time_end - time_start + 1);
+                    avg_y += bp_value_to_double(adios_double, viy->std_devs[i]) / (time_end - time_start + 1);
+                }
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    cov += (bp_value_to_double(adios_double, vix->std_devs[i]) - avg_x) * (bp_value_to_double(adios_double, viy->std_devs[i]) - avg_y) / (time_end - time_start + 1);
+                }
+            }
+            else if (strcmp(characteristic, "minimum") == 0 || strcmp(characteristic, "min") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double(vix->type, vix->mins[i]) / (time_end - time_start + 1);
+                    avg_y += bp_value_to_double(viy->type, viy->mins[i]) / (time_end - time_start + 1);
+                }
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    cov += (bp_value_to_double(vix->type, vix->mins[i]) - avg_x) * (bp_value_to_double(viy->type, viy->mins[i]) - avg_y) / (time_end - time_start + 1);
+                }
+            }
+            else if (strcmp(characteristic, "maximum") == 0 || strcmp(characteristic, "max") == 0)
+            {
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    avg_x += bp_value_to_double(vix->type, vix->maxs[i]) / (time_end - time_start + 1);
+                    avg_y += bp_value_to_double(vix->type, viy->maxs[i]) / (time_end - time_start + 1);
+                }
+                for (i = time_start; i <= time_end; i ++)
+                {
+                    cov += (bp_value_to_double(vix->type, vix->maxs[i]) - avg_x) * (bp_value_to_double(viy->type, viy->maxs[i]) - avg_y) / (time_end - time_start + 1);
+                }
+            }
+            else
+            {
+                fprintf (stderr, "Unknown characteristic\n");
+                return 0;
+            }
+        }
+    }
+    else
+    {
+        fprintf (stderr, "Time values out of bounds\n");
+    }
+    return cov;
+}
