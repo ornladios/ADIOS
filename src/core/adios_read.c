@@ -152,18 +152,11 @@ int adios_group_view (ADIOS_FILE  *fp, int groupid)
     return common_read_group_view (fp, groupid);
 }
 
-/*
-void adios_print_groupinfo (ADIOS_FILE  *fp) 
-{
-    common_read_print_groupinfo(fp);
-}
-
-
 void adios_print_fileinfo (ADIOS_FILE *fp) 
 {
     common_read_print_fileinfo(fp);
 }
-*/
+
 
 ADIOS_SELECTION * adios_selection_boundingbox (uint64_t ndim, const uint64_t *start, const uint64_t *count)
 {
