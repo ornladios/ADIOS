@@ -30,7 +30,7 @@ int adios_read_##a##_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk
 int adios_read_##a##_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data); \
 void adios_read_##a##_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran); \
 void adios_read_##a##_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group); \
-void adios_read_##a##_is_var_timed (const ADIOS_FILE *fp, int varid); \
+int adios_read_##a##_is_var_timed (const ADIOS_FILE *fp, int varid); \
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
