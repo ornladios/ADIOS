@@ -299,6 +299,10 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
         internals = (struct common_read_internals_struct *) fp->internal_data;
         /* Translate varid to varid in global varlist if a selected group is in view */ 
         retval = internals->read_hooks[internals->method].adios_inq_var_byid_fn (fp, varid+internals->group_varid_offset);
+        if (retval) {
+            /* Translate real varid to the group varid presented to the user */
+            retval->varid = varid;
+        }
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_byid()");
         retval = NULL;
@@ -312,11 +316,19 @@ int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
 {
     struct common_read_internals_struct * internals;
     int retval;
+    int group_varid;
     
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
+        if (varinfo) {
+            /* Translate group varid presented to the user to the real varid */
+            group_varid = varinfo->varid;
+            varinfo->varid = varinfo->varid + internals->group_varid_offset;
+        }
         retval = internals->read_hooks[internals->method].adios_inq_var_stat_fn (fp, varinfo, per_step_stat, per_block_stat);
+        /* Translate back real varid to the group varid presented to the user */
+        varinfo->varid = group_varid;
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_stat()");
         retval = err_invalid_file_pointer;
@@ -328,11 +340,19 @@ int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo
 {
     struct common_read_internals_struct * internals;
     int retval;
+    int group_varid;
     
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
+        if (varinfo) {
+            /* Translate group varid presented to the user to the real varid */
+            group_varid = varinfo->varid;
+            varinfo->varid = varinfo->varid + internals->group_varid_offset;
+        }
         retval = internals->read_hooks[internals->method].adios_inq_var_blockinfo_fn (fp, varinfo);
+        /* Translate back real varid to the group varid presented to the user */
+        varinfo->varid = group_varid;
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_blockinfo()");
         retval = err_invalid_file_pointer;
