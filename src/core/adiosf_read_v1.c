@@ -350,7 +350,7 @@ void FC_FUNC_(adios_read_var, ADIOS_READ_VAR)
             tidx = 0;
         }
 
-        ADIOS_SELECTION * sel = adios_selection_boundingbox (vi->ndim, start, count);
+        ADIOS_SELECTION * sel = common_read_selection_boundingbox (vi->ndim, start, count);
 
         common_read_schedule_read (afp, sel, varname, from_step, nsteps, data);
         int ret = common_read_perform_reads (afp, 1);
@@ -364,8 +364,8 @@ void FC_FUNC_(adios_read_var, ADIOS_READ_VAR)
             *read_bytes = (int64_t) adios_errno;
         }
 
-        adios_free_varinfo(vi);
-        adios_selection_delete(sel);
+        common_read_free_varinfo(vi);
+        common_read_selection_delete(sel);
         free(varstr);
     } else {
         *read_bytes = adios_errno;
@@ -439,7 +439,7 @@ void FC_FUNC_(adios_read_local_var, ADIOS_READ_LOCAL_VAR)
             }
         }
 
-        ADIOS_SELECTION * sel = adios_selection_writeblock (idx_in_step);
+        ADIOS_SELECTION * sel = common_read_selection_writeblock (idx_in_step);
 
         common_read_schedule_read_byid (afp, sel, vi->varid, step, 1, data);
         int ret = common_read_perform_reads (afp, 1);
@@ -453,7 +453,7 @@ void FC_FUNC_(adios_read_local_var, ADIOS_READ_LOCAL_VAR)
         }
 
         common_read_free_varinfo(vi);
-        adios_selection_delete(sel);
+        common_read_selection_delete(sel);
         free(varstr);
 
     } else {
@@ -508,7 +508,7 @@ void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS)
     if (vi != NULL) {
         size = bp_get_type_size(vi->type, vi->value);
         // get statistics information per each step
-        adios_inq_var_stat (afp, vi, 1, 0); 
+        common_read_inq_var_stat (afp, vi, 1, 0); 
         if (vi->type == adios_string) size++;
         if (vi->value) memcpy(value, vi->value, size);
 
