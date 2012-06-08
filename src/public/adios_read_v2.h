@@ -213,10 +213,10 @@ int adios_read_finalize_method(enum ADIOS_READ_METHOD method);
  *                If compiled with -D_NOMPI, pass any integer here.
  *       lock_mode   In case of real streams, a step may need to be locked in memory to be able
  *                      to read all data of the step completely.
- *       timeout_msec  >=0: block until the stream becomes available but 
- *                         for max 'timeout_msec' milliseconds.
- *                         0 means forwever. 
- *                     <0: return immediately if stream is not available
+ *       timeout_sec  >=0.0: block until the stream becomes available but 
+ *                           for max 'timeout_sec' seconds.
+ *                           0.0 means forwever. 
+ *                     <0.0: return immediately if stream is not available
  *                     Note: 0 = does not ever return with err_file_not_found error, which is dangerous
  **                       if the stream name is simply mistyped in the code.
  *  RETURN:       pointer to an ADIOS_FILE struct, NULL on error (sets adios_errno)
@@ -233,7 +233,7 @@ ADIOS_FILE * adios_read_open_stream (const char * fname,
                                      enum ADIOS_READ_METHOD method, 
                                      MPI_Comm comm, 
                                      enum ADIOS_LOCKMODE lock_mode,
-                                     int timeout_msec);
+                                     float timeout_sec);
 
 /** Open an adios file as a file.
  *  Each variable can have different number of steps. Arbitrary steps of a variable
@@ -270,15 +270,17 @@ int adios_read_close (ADIOS_FILE *fp);
  *
  *  IN:   fp       pointer to an ADIOS_FILE struct
  *        last     0: next available step, !=0: newest available step 
- *        wait_for_step  >0: block until the step becomes available
- *                       i.e. does not return with err_step_notready.
+ *        timeout_sec  >=0.0: block until the next step becomes available but 
+ *                            for max 'timeout_sec' seconds.
+ *                            0.0 means forwever. 
+ *                 <0.0: return immediately if step is not available
  *  RETURN: 0 OK, !=0 on error (also sets adios_errno)
  *      
  *  Possible errors (adios_errno values):
  *       err_end_of_stream  Stream has ended, no more steps should be expected
  *       err_step_notready  The requested step is not yet available
  */
-int adios_advance_step (ADIOS_FILE *fp, int last, int wait_for_step); 
+int adios_advance_step (ADIOS_FILE *fp, int last, float timeout_sec); 
 
 /** Release a step in a stream without seeking to the next step.
   * This function is to inform the read method that the current step is

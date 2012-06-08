@@ -32,9 +32,9 @@ ADIOS_FILE * adios_read_open_stream (const char * fname,
                                      enum ADIOS_READ_METHOD method,
                                      MPI_Comm comm,
                                      enum ADIOS_LOCKMODE lock_mode,
-                                     int timeout_msec)
+                                     float timeout_sec)
 {
-    return common_read_open_stream (fname, method, comm, lock_mode, timeout_msec);
+    return common_read_open_stream (fname, method, comm, lock_mode, timeout_sec);
 }
 
 ADIOS_FILE * adios_read_open_file (const char * fname,
@@ -49,9 +49,9 @@ int adios_read_close (ADIOS_FILE *fp)
     return common_read_close (fp);
 }
 
-int adios_advance_step (ADIOS_FILE *fp, int last, int wait_for_step)
+int adios_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
 {
-    return common_read_advance_step (fp, last, wait_for_step);
+    return common_read_advance_step (fp, last, timeout_sec);
 }
 
 void adios_release_step (ADIOS_FILE *fp)

@@ -78,7 +78,7 @@ ADIOS_FILE * common_read_open_stream (const char * fname,
                                       enum ADIOS_READ_METHOD method, 
                                       MPI_Comm comm, 
                                       enum ADIOS_LOCKMODE lock_mode, 
-                                      int timeout_msec)
+                                      float timeout_sec)
 {
     ADIOS_FILE * fp;
     struct common_read_internals_struct * internals; 
@@ -98,7 +98,7 @@ ADIOS_FILE * common_read_open_stream (const char * fname,
     internals->method = selected_method;
     internals->read_hooks = adios_read_hooks;
 
-    fp = adios_read_hooks[internals->method].adios_open_stream_fn (fname, comm, lock_mode, timeout_msec);
+    fp = adios_read_hooks[internals->method].adios_open_stream_fn (fname, comm, lock_mode, timeout_sec);
 
     // save the method and group information in fp->internal_data
     if (fp){
@@ -162,6 +162,9 @@ int common_read_close (ADIOS_FILE *fp)
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_close_fn (fp);
+        free_namelist (internals->group_namelist, internals->ngroups);
+        free (internals->nvars_per_group);
+        free (internals->nattrs_per_group);
         free (internals);
     } else {
         adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_read_close()");
@@ -184,7 +187,7 @@ void common_read_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 }
 
 
-int common_read_advance_step (ADIOS_FILE *fp, int last, int wait_for_step)
+int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
 {
     struct common_read_internals_struct * internals;
     int retval;
@@ -192,7 +195,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, int wait_for_step)
     adios_errno = 0;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = internals->read_hooks[internals->method].adios_advance_step_fn (fp, last, wait_for_step);
+        retval = internals->read_hooks[internals->method].adios_advance_step_fn (fp, last, timeout_sec);
         /* Update group information too */
         adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups, 
                 &internals->group_namelist, &internals->nvars_per_group, &internals->nattrs_per_group);

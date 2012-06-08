@@ -28,6 +28,8 @@ extern "C"  /* prevent C++ name mangling */
 
 extern int adios_errno;
 
+#define PRINT_ERRMSG() fprintf(stderr, "ADIOS READ ERROR: %s\n", adios_get_last_errmsg())
+
 /*********************/
 /* FORTRAN INTERFACE */
 /*********************/
@@ -48,7 +50,7 @@ void FC_FUNC_(adios_read_init_method, ADIOS_READ_INIT_METHOD) (
     *err = common_read_init_method (method, comm, paramstr);
     free(paramstr);
     if (*err)
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        PRINT_ERRMSG();
 }
 
 void FC_FUNC_(adios_read_finalize_method, ADIOS_READ_FINALIZE_METHOD) (int *fmethod, int * err)
@@ -57,7 +59,7 @@ void FC_FUNC_(adios_read_finalize_method, ADIOS_READ_FINALIZE_METHOD) (int *fmet
     *err = common_read_finalize_method (method);
     futils_called_from_fortran_unset();
     if (*err)
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        PRINT_ERRMSG();
 }
 
 
@@ -67,7 +69,7 @@ void FC_FUNC_(adios_read_open_stream, ADIOS_READ_OPEN_STREAM)
          int     * fmethod,
          int     * fcomm,
          int     * lockmode,
-         int     * timeout_msec,
+         float   * timeout_sec,
          int     * err,
          int       fname_len)
 {
@@ -80,7 +82,7 @@ void FC_FUNC_(adios_read_open_stream, ADIOS_READ_OPEN_STREAM)
 
     namestr = futils_fstr_to_cstr(fname, fname_len);
     if (namestr != NULL) {
-        afp = common_read_open_stream (namestr, method, comm, lockm, *timeout_msec);
+        afp = common_read_open_stream (namestr, method, comm, lockm, *timeout_sec);
         *fp = (int64_t) afp;
         free(namestr);
     } else {
@@ -88,7 +90,7 @@ void FC_FUNC_(adios_read_open_stream, ADIOS_READ_OPEN_STREAM)
     }
     *err = adios_errno;
     if (*err)
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        PRINT_ERRMSG();
 }
 
 
@@ -116,8 +118,28 @@ void FC_FUNC_(adios_read_open_file, ADIOS_READ_OPEN_FILE)
     }
     *err = adios_errno;
     if (*err)
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        PRINT_ERRMSG();
 }
+
+
+int FC_FUNC_(adios_advance_step, ADIOS_ADVANCE_STEP) 
+        (int64_t *fp, int *last, float *timeout_sec, int *err)
+{
+    ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
+    *err = common_read_advance_step (afp, *last, *timeout_sec);
+    if (*err)
+        PRINT_ERRMSG();
+}
+
+
+void FC_FUNC_(adios_release_step, ADIOS_RELEASE_STEP) (int64_t *fp)
+{
+    ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
+    common_read_release_step (afp);
+    if (adios_errno)
+        PRINT_ERRMSG();
+}
+
 
 void FC_FUNC_(adios_reset_dimension_order, ADIOS_RESET_DIMENSION_ORDER)
         (int64_t * fp, int * flag)
@@ -125,7 +147,7 @@ void FC_FUNC_(adios_reset_dimension_order, ADIOS_RESET_DIMENSION_ORDER)
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
     common_read_reset_dimension_order(afp, *flag);
     if (adios_errno)
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        PRINT_ERRMSG();
 }
 
 void FC_FUNC_(adios_read_close, ADIOS_READ_CLOSE) (int64_t * fp, int * err)
@@ -134,7 +156,7 @@ void FC_FUNC_(adios_read_close, ADIOS_READ_CLOSE) (int64_t * fp, int * err)
     *err = common_read_close (afp);
     futils_called_from_fortran_unset();
     if (*err)
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        PRINT_ERRMSG();
 }
 
 void FC_FUNC_(adios_inq_ngroups, ADIOS_INQ_NGROUPS) 
@@ -146,7 +168,7 @@ void FC_FUNC_(adios_inq_ngroups, ADIOS_INQ_NGROUPS)
         *groups_count = common_read_get_grouplist (afp, &group_namelist);
         *err = adios_errno;
         if (*err)
-            fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+            PRINT_ERRMSG();
     } else {
         *groups_count = 0;
         *err = 1;
@@ -167,7 +189,7 @@ void FC_FUNC_(adios_inq_groupnames, ADIOS_INQ_GROUPNAMES)
         }
         *err = adios_errno;
         if (*err)
-            fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+            PRINT_ERRMSG();
     } else {
         *err = 1;
     }
@@ -180,7 +202,7 @@ void FC_FUNC_(adios_group_view, ADIOS_GROUP_VIEW)
     if (afp != NULL) {
         *err = common_read_group_view (afp, *groupid);
         if (*err)
-            fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+            PRINT_ERRMSG();
     } else {
         *err = 1;
     }
@@ -275,7 +297,7 @@ void FC_FUNC_(adios_inq_var, ADIOS_INQ_VAR)
     }
     *err = adios_errno;
     if (*err < 0)
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        PRINT_ERRMSG();
 }
 
 void FC_FUNC_(adios_get_scalar, ADIOS_GET_SCALAR) 
@@ -294,7 +316,7 @@ void FC_FUNC_(adios_get_scalar, ADIOS_GET_SCALAR)
         vi = common_read_inq_var (afp, varstr);
         free(varstr);
     }
-    if (vi != NULL) {
+    if (vi != NULL && vi->value != NULL) {
         int size = bp_get_type_size(vi->type, vi->value);
         memcpy(data, vi->value, size);
         common_read_free_varinfo(vi);
@@ -303,7 +325,7 @@ void FC_FUNC_(adios_get_scalar, ADIOS_GET_SCALAR)
     }
     *err = adios_errno;
     if (*err < 0)
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        PRINT_ERRMSG();
 }
 
 void FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ) 
@@ -328,7 +350,7 @@ void FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ)
         *err = adios_errno;
     }
     if (*err < 0)
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        PRINT_ERRMSG();
 }
 
 void FC_FUNC_(adios_perform_reads, ADIOS_PERFORM_READS) 
@@ -338,7 +360,7 @@ void FC_FUNC_(adios_perform_reads, ADIOS_PERFORM_READS)
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
     *err = common_read_perform_reads (afp, 1); // only blocking read implemented for Fortran
     if (*err < 0)
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        PRINT_ERRMSG();
 }
 
 void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS) 
@@ -444,7 +466,7 @@ void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS)
     }
     *err = adios_errno;
     if (*err < 0)
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        PRINT_ERRMSG();
 }
 
 void FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) 
@@ -472,7 +494,7 @@ void FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR)
         *err = adios_errno;
     }
     if (*err < 0)
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        PRINT_ERRMSG();
 }
 
 void FC_FUNC_(adios_inq_attr, ADIOS_INQ_ATTR) 
@@ -496,7 +518,7 @@ void FC_FUNC_(adios_inq_attr, ADIOS_INQ_ATTR)
         *err = adios_errno;
     }
     if (*err < 0)
-        fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
+        PRINT_ERRMSG();
 }
 
 void FC_FUNC_(adios_selection_boundingbox, ADIOS_SELECTION_BOUNDINGBOX) 
