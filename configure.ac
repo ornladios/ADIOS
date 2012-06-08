@@ -54,6 +54,8 @@ dnl EOF
 dnl g/^hardcode_libdir_flag_spec=".*"/s//hardcode_libdir_flag_spec=""/
 dnl g/^hardcode_libdir_flag_spec_ld=".*"/s//hardcode_libdir_flag_spec_ld=""/
 
+AC_SEARCH_LIBS([nanosleep], [rt])
+AC_CHECK_FUNCS([nanosleep strncpy strerror gettimeofday])
 AC_PROG_MXML
 dnl AC_PROG_GENGETOPT
 AC_INFINIBAND

@@ -86,6 +86,9 @@
 /* Define to 1 if you have the <mxml.h> header file. */
 #undef HAVE_MXML_H
 
+/* Define to 1 if you have the `nanosleep' function. */
+#undef HAVE_NANOSLEEP
+
 /* Define if you have NC4PAR. */
 #undef HAVE_NC4PAR
 
@@ -161,6 +164,9 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
+/* Define to 1 if you have the `strerror' function. */
+#undef HAVE_STRERROR
+
 /* Define to 1 if cpp supports the ANSI # stringizing operator. */
 #undef HAVE_STRINGIZE
 
@@ -169,6 +175,9 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
+
+/* Define to 1 if you have the `strncpy' function. */
+#undef HAVE_STRNCPY
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
