@@ -247,7 +247,7 @@ static ADIOS_VARINFO_V1 * adios_varinfo_to_v1 (ADIOS_GROUP_V1 *gp, ADIOS_VARINFO
                                        vi, 1, 0);
 
         if (stat) {
-            v->characteristics_count = stat->characteristics_count;
+            v->characteristics_count;// = stat->characteristics_count; FIXME
             v->gmin = stat->min; 
             v->gmax = stat->max; 
             v->gavg = stat->avg; 

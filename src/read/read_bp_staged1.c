@@ -45,7 +45,7 @@ int adios_read_bp_staged1_finalize_method ()
     return 0;
 }
 
-ADIOS_FILE * adios_read_bp_staged1_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, int timeout_msec)
+ADIOS_FILE * adios_read_bp_staged1_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
 {
     return 0;
 }
@@ -60,7 +60,7 @@ int adios_read_bp_staged1_close (ADIOS_FILE *fp)
     return 0;
 }
 
-int adios_read_bp_staged1_advance_step (ADIOS_FILE *fp, int last, int wait_for_step)
+int adios_read_bp_staged1_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
 {
     return 0;
 }
