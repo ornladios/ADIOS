@@ -338,6 +338,22 @@ void list_insert_read_request (read_request ** h, read_request * q)
     return;
 }
 
+/*
+void list_free_read_request (read_request * h)
+{
+    read_request * n;
+
+    while (h)
+    {
+        n = h->next;
+
+        free_selection (sel);
+        free (h);
+        h = n;
+    }
+}
+*/
+
 ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel)
 {
     ADIOS_SELECTION * nsel;
@@ -380,5 +396,20 @@ ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel)
     }
 
     return nsel;
+}
+
+void free_selection (ADIOS_SELECTION * sel)
+{
+    sel->type = sel->type;
+
+    if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
+    {
+        free (sel->u.bb.start);
+        free (sel->u.bb.count);
+    }
+    else if (sel->type == ADIOS_SELECTION_POINTS)
+    {
+        free (sel->u.points.points);
+    }
 }
 

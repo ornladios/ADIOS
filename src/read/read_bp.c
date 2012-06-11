@@ -195,7 +195,7 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
 int adios_read_bp_close (ADIOS_FILE *fp)
 {
     //FIXME: free BP_PROC properly
-    struct BP_PROC * p = (struct BP_FILE *) fp->fh;
+    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
     struct BP_FILE * fh = p->fh;
     struct BP_GROUP_VAR * gh = fh->gvar_h;
     struct BP_GROUP_ATTR * ah = fh->gattr_h;
@@ -388,6 +388,7 @@ void adios_read_bp_release_step (ADIOS_FILE *fp)
 
 ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 {
+    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
     struct BP_FILE * fh;
     ADIOS_VARINFO * varinfo;
     int file_is_fortran, i, k, timedim, size;
@@ -397,7 +398,7 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 
     assert (fp);
 
-    fh = (struct BP_FILE *)fp->fh;
+    fh = (struct BP_FILE *)p->fh;
     assert (fh);
 
     if (varid < 0 || varid >= fp->nvars)
@@ -479,6 +480,7 @@ int adios_read_bp_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo, i
 
 int adios_read_bp_inq_var_blockinfo (ADIOS_FILE * fp, ADIOS_VARINFO * varinfo)
 {
+    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
     int i, file_is_fortran, timedim;
     uint64_t * ldims, * gdims, * offsets;
     struct BP_FILE * fh;
@@ -486,7 +488,7 @@ int adios_read_bp_inq_var_blockinfo (ADIOS_FILE * fp, ADIOS_VARINFO * varinfo)
 
     assert (varinfo);
 
-    fh = (struct BP_FILE *) fp->fh;
+    fh = (struct BP_FILE *) p->fh;
     file_is_fortran = is_fortran_file (fh);
     var_root = bp_find_var_byid (fh, varinfo->varid);
 
