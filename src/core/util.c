@@ -309,4 +309,76 @@ void free_namelist (char **namelist, int length)
         return;
 }
 
+void list_insert_reader (read_request ** h, read_request * q)
+{
+    read_request * head;
+    if (!h || !q)
+    {
+        printf ("Error: list_insert_reader ()\n");
+        return;
+    }
+
+    head = * h;
+    if (!head)
+    {
+        * h = q;
+        q->next = NULL;
+
+        return;
+    }
+
+    while (head->next)
+    {
+        head = head->next;
+    }
+
+    head->next = q;
+    q->next = NULL;
+
+    return;
+}
+
+ADIOS_SELECTION * copy_selection (ADIOS_SELECTION * sel)
+{
+    ADIOS_SELECTION * nsel;
+
+    nsel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
+    assert (nsel);
+
+    nsel->type = sel->type;
+
+    if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
+    {
+        nsel->u.bb.ndim = sel->u.bb.ndim;
+        nsel->u.bb.start = (uint64_t *) malloc (sel->u.bb.ndim * 8);
+        nsel->u.bb.count = (uint64_t *) malloc (sel->u.bb.ndim * 8);
+        assert (nsel->u.bb.start && nsel->u.bb.count);
+
+        memcpy (nsel->u.bb.start, sel->u.bb.start, sel->u.bb.ndim * 8);
+        memcpy (nsel->u.bb.count, sel->u.bb.count, sel->u.bb.ndim * 8);
+    }
+    else if (sel->type == ADIOS_SELECTION_POINTS)
+    {
+        nsel->u.points.ndim = sel->u.points.ndim;
+        nsel->u.points.npoints = sel->u.points.npoints;
+        nsel->u.points.points = (uint64_t *) malloc (sel->u.points.npoints * 8);
+        assert (nsel->u.points.points);
+
+        memcpy (nsel->u.points.points, sel->u.points.points, sel->u.points.npoints * 8);
+    }
+    else if (sel->type == ADIOS_SELECTION_WRITEBLOCK)
+    {
+        nsel->u.block.index = sel->u.block.index;
+    }
+    else if (sel->type == ADIOS_SELECTION_AUTO)
+    {
+        //FIXME
+    }
+    else
+    {
+        //FIXME
+    }
+
+    return nsel;
+}
 

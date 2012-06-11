@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include "public/adios_types.h"
+#include "public/adios_selection.h"
 
 struct PairStruct {
     char * name;
@@ -10,6 +11,28 @@ struct PairStruct {
     struct PairStruct * next;
 };
 typedef struct PairStruct PairStruct;
+
+typedef struct read_request
+{
+    int rank; // the rank of processor which issued this request. 
+    ADIOS_SELECTION * sel;
+    int varid;
+    int from_steps;
+    int nsteps;
+    void * data;
+    void * priv; // private structure for each read method
+/*
+    int ndims;
+    uint64_t * start;
+    uint64_t * count;
+    void * data;
+    uint64_t size;
+    int file_idx;
+    uint64_t offset;
+    void * parent;
+*/
+    struct read_request * next;
+} read_request;
 
 /* Process a ;-separated and possibly multi-line text and 
    create a list of name=value pairs from each 
@@ -40,4 +63,6 @@ void copy_data (void *dst, void *src,
                 );
 void alloc_namelist (char ***namelist, int length);
 void free_namelist (char **namelist, int length);
+void list_insert_reader (read_request ** h, read_request * q);
+ADIOS_SELECTION * copy_selection (ADIOS_SELECTION * sel);
 #endif
