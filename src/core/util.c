@@ -309,12 +309,12 @@ void free_namelist (char **namelist, int length)
         return;
 }
 
-void list_insert_reader (read_request ** h, read_request * q)
+void list_insert_read_request (read_request ** h, read_request * q)
 {
     read_request * head;
     if (!h || !q)
     {
-        printf ("Error: list_insert_reader ()\n");
+        printf ("Error: list_insert_read_request ()\n");
         return;
     }
 
@@ -338,7 +338,7 @@ void list_insert_reader (read_request ** h, read_request * q)
     return;
 }
 
-ADIOS_SELECTION * copy_selection (ADIOS_SELECTION * sel)
+ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel)
 {
     ADIOS_SELECTION * nsel;
 

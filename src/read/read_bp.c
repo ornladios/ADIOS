@@ -107,7 +107,8 @@ ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum 
 
 ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
 {
-    int i, rank;    
+    int i, rank;
+    struct BP_PROC * p;
     struct BP_FILE * fh;
     ADIOS_FILE * fp;
     uint64_t header_size;
@@ -124,9 +125,15 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
     fh->pgs_root = 0;
     fh->vars_root = 0;
     fh->attrs_root = 0;
-
     fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     assert (fh->b);
+
+    p = (struct BP_PROC *) malloc (sizeof (struct BP_PROC));
+    assert (p);
+    p->rank = rank;
+    p->fh = fh;
+    p->local_read_request_list = 0;
+    p->priv = 0;
 
     fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
     assert (fp);
@@ -173,7 +180,7 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
     bp_parse_attrs (fh);
 
     /* fill out ADIOS_FILE struct */
-    fp->fh = (uint64_t) fh;
+    fp->fh = (uint64_t) p;
     fp->nvars = fh->mfooter.vars_count;
     fp->var_namelist = fh->gvar_h->var_namelist;
     fp->nattrs = fh->mfooter.attrs_count;
@@ -187,7 +194,9 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
 
 int adios_read_bp_close (ADIOS_FILE *fp)
 {
-    struct BP_FILE * fh = (struct BP_FILE *) fp->fh;
+    //FIXME: free BP_PROC properly
+    struct BP_PROC * p = (struct BP_FILE *) fp->fh;
+    struct BP_FILE * fh = p->fh;
     struct BP_GROUP_VAR * gh = fh->gvar_h;
     struct BP_GROUP_ATTR * ah = fh->gattr_h;
     struct adios_index_var_struct_v1 * vars_root = fh->vars_root, *vr;
@@ -963,25 +972,23 @@ static int schedule_read_bbox (const ADIOS_FILE * fp, const ADIOS_SELECTION * se
 /* Note: the varid isn't the perceived varid by the user */
 int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel, int varid, int from_steps, int nsteps, void * data)
 {
+    struct BP_PROC * p;
+    read_request * r;
+
     assert (fp && sel);
-    
-    if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
-    {
-        return schedule_read_bbox (fp, sel, varid, from_steps, nsteps, data);
-    }
-    else if (sel->type == ADIOS_SELECTION_POINTS)
-    {
 
-    }
-    else if (sel->type == ADIOS_SELECTION_WRITEBLOCK)
-    {
+    p = (struct BP_PROC *) fp;
+    assert (p);
 
-    }
-    else
-    {
+    r = (read_request *) malloc (sizeof (read_request));
+    assert (r);
 
-    }
-    
+    r->rank = p->rank;
+    r->sel = copy_selection (sel);
+    r->next = NULL;
+
+    list_insert_read_request (&p->local_read_request_list, r);
+     
     return 0;
 }
 

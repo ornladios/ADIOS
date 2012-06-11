@@ -68,6 +68,14 @@ struct BP_FILE {
     void * priv;
 };
 
+// save per proc info
+struct BP_PROC {
+    int rank;
+    struct BP_FILE * fh;
+    read_request * local_read_request_list;
+    void * priv;
+};
+
 struct BP_GROUP_VAR {
 	uint16_t group_count;
 	uint16_t group_id; 

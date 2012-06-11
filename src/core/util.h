@@ -63,6 +63,6 @@ void copy_data (void *dst, void *src,
                 );
 void alloc_namelist (char ***namelist, int length);
 void free_namelist (char **namelist, int length);
-void list_insert_reader (read_request ** h, read_request * q);
-ADIOS_SELECTION * copy_selection (ADIOS_SELECTION * sel);
+void list_insert_read_request (read_request ** h, read_request * q);
+ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel);
 #endif
