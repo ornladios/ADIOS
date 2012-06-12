@@ -95,7 +95,7 @@ PairStruct * text_to_name_value_pairs (const char * text)
 
     if (!text) return res;
 
-    item  = text; 
+    item  = (char *)text; 
     while (item) {
         delim = strchr (item, ';');
         if (delim) 
