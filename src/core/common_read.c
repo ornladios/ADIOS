@@ -299,12 +299,20 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
     
     adios_errno = 0;
     if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
-        /* Translate varid to varid in global varlist if a selected group is in view */ 
-        retval = internals->read_hooks[internals->method].adios_inq_var_byid_fn (fp, varid+internals->group_varid_offset);
-        if (retval) {
-            /* Translate real varid to the group varid presented to the user */
-            retval->varid = varid;
+        if (varid >= 0 && varid < fp->nvars) {
+            internals = (struct common_read_internals_struct *) fp->internal_data;
+            /* Translate varid to varid in global varlist if a selected group is in view */ 
+            retval = internals->read_hooks[internals->method].adios_inq_var_byid_fn 
+                                            (fp, varid+internals->group_varid_offset);
+            if (retval) {
+                /* Translate real varid to the group varid presented to the user */
+                retval->varid = varid;
+            }
+        } else {
+            adios_error (err_invalid_varid, 
+                         "Variable ID %d is not valid adios_inq_var_byid(). "
+                         "Available 0..%d", varid, fp->nvars-1);
+            retval = NULL;
         }
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_byid()");
@@ -461,8 +469,15 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
     
     adios_errno = 0;
     if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
+        if (varid >=0 && varid < fp->nvars) {
+            internals = (struct common_read_internals_struct *) fp->internal_data;
+            retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
+        } else {
+            adios_error (err_invalid_varid, 
+                         "Variable ID %d is not valid in adios_schedule_read_byid(). "
+                         "Available 0..%d", varid, fp->nvars-1);
+            retval = err_invalid_varid;
+        }
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_schedule_read_byid()");
         retval = err_invalid_file_pointer;
@@ -559,8 +574,15 @@ int common_read_get_attr_byid (const ADIOS_FILE * fp,
     
     adios_errno = 0;
     if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = internals->read_hooks[internals->method].adios_get_attr_byid_fn (fp, attrid+internals->group_attrid_offset, type, size, data);
+        if (attrid >= 0 && attrid < fp->nattrs) {
+            internals = (struct common_read_internals_struct *) fp->internal_data;
+            retval = internals->read_hooks[internals->method].adios_get_attr_byid_fn (fp, attrid+internals->group_attrid_offset, type, size, data);
+        } else {
+            adios_error (err_invalid_attrid, 
+                         "Attribute ID %d is not valid in adios_get_attr_byid(). "
+                         "Available 0..%d", attrid, fp->nattrs-1);
+            retval = err_invalid_attrid;
+        }
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_read_get_attr_byid()");
         retval = err_invalid_file_pointer;
