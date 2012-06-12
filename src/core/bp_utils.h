@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#   include "public/adios_read.h" // ADIOS_FILE*
 #ifdef _NOMPI
 #   include "public/mpidummy.h"
 #else
