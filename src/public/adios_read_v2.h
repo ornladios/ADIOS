@@ -377,7 +377,7 @@ int adios_inq_var_blockinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
  *                  already available of a variable (in ADIOS own memory)
  *                  and the application has to rearrange the data. The user
  *                  has to process/copy the data before getting new chunks.
- *  RETURN: the number of bytes read, <0 on error, sets adios_errno too
+ *  RETURN: 0 OK, !=0 on error, sets adios_errno too
  */
 int adios_schedule_read (const ADIOS_FILE * fp,
                          const ADIOS_SELECTION * sel,
