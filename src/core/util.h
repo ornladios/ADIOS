@@ -20,6 +20,7 @@ typedef struct read_request
     int from_steps;
     int nsteps;
     void * data;
+// above is the common fields that all read method will use
     void * priv; // private structure for each read method
 /*
     int ndims;

@@ -100,9 +100,58 @@ int adios_read_bp_finalize_method ()
     return 0;
 }
 
+/* As opposed to open_file, open_stream opens one step only. */
 ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
 {
-    return 0; //FIXME
+    int i, rank;
+    struct BP_PROC * p;
+    struct BP_FILE * fh;
+    ADIOS_FILE * fp;
+    uint64_t header_size;
+
+    MPI_Comm_rank (comm, &rank);
+
+    fh = (struct BP_FILE *) malloc (sizeof (struct BP_FILE));
+    assert (fh);
+
+    fh->fname = (fname ? strdup (fname) : 0L);
+    fh->sfh = 0;
+    fh->comm = comm;
+    fh->gvar_h = 0;
+    fh->pgs_root = 0;
+    fh->vars_root = 0;
+    fh->attrs_root = 0;
+    fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
+    assert (fh->b);
+
+    p = (struct BP_PROC *) malloc (sizeof (struct BP_PROC));
+    assert (p);
+    p->rank = rank;
+    p->fh = fh;
+    p->local_read_request_list = 0;
+    p->priv = 0;
+
+    fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
+    assert (fp);
+
+    bp_open (fname, comm, fh);
+
+#if 0
+    /* fill out ADIOS_FILE struct */
+    fp->fh = (uint64_t) p;
+    fp->nvars = fh->mfooter.vars_count;
+    fp->var_namelist = fh->gvar_h->var_namelist;
+    fp->nattrs = fh->mfooter.attrs_count;
+    fp->attr_namelist = fh->gattr_h->attr_namelist;
+#endif
+    fp->file_size = fh->mfooter.file_size;
+    fp->version = fh->mfooter.version;
+    fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
+
+    // seek to the initial step
+    bp_seek_to_step (fp, 0);
+
+    return fp;
 }
 
 ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
@@ -137,7 +186,7 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
 
     fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
     assert (fp);
-
+#if 0
     adios_buffer_struct_init (fh->b);
 
     if (bp_read_open (fname, comm, fh))
@@ -178,6 +227,8 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
     bp_parse_pgs (fh);
     bp_parse_vars (fh);
     bp_parse_attrs (fh);
+#endif
+    bp_open (fname, comm, fh);
 
     /* fill out ADIOS_FILE struct */
     fp->fh = (uint64_t) p;
@@ -961,16 +1012,6 @@ static int schedule_read_bbox1 (const ADIOS_FILE * fp, const ADIOS_SELECTION * s
     return 0;
 }
 
-static int schedule_read_bbox (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel,
-                               int varid, int from_steps,
-                               int nsteps, void * data
-                              )
-{
-
-    return 0;
-
-}
-
 /* Note: the varid isn't the perceived varid by the user */
 int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel, int varid, int from_steps, int nsteps, void * data)
 {
@@ -987,10 +1028,15 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
 
     r->rank = p->rank;
     r->sel = copy_selection (sel);
-    r->next = NULL;
+    r->varid = varid;
+    r->from_steps = from_steps;
+    r->nsteps = nsteps;
+    r->data = data;
+    r->priv = 0;
+    r->next = 0;
 
     list_insert_read_request (&p->local_read_request_list, r);
-     
+
     return 0;
 }
 

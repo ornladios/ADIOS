@@ -31,11 +31,14 @@ int bp_read_close (struct adios_bp_buffer_struct_v1 * b);
 int bp_read_open (const char * filename,
 	 	  MPI_Comm comm, 
 		  struct BP_FILE * fh);
-
+int bp_open (const char * fname,
+             MPI_Comm comm,
+             struct BP_FILE * fh);
 int bp_read_minifooter (struct BP_FILE * bp_struct);
 int bp_parse_pgs (struct BP_FILE * fh);
 int bp_parse_attrs (struct BP_FILE * fh);
 int bp_parse_vars (struct BP_FILE * fh);
+int bp_seek_to_step (ADIOS_FILE * fp, int tostep);
 
 const char * bp_value_to_string (enum ADIOS_DATATYPES type, void * data);
 int bp_get_type_size (enum ADIOS_DATATYPES type, void * var);

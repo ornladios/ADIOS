@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <string.h>
 #include "public/adios.h"
+#include "public/adios_read.h"
 #include "public/adios_error.h"
 #include "core/bp_utils.h"
 #include "core/adios_bp_v1.h"
@@ -116,6 +117,61 @@ int bp_read_open (const char * filename,
     fh->b->file_size = file_size;
     fh->mfooter.file_size = file_size;
      
+    return 0;
+}
+
+/* This routine does the parallel bp file open and index parsing.
+ */
+int bp_open (const char * fname,
+             MPI_Comm comm,
+             struct BP_FILE * fh)
+{
+    int rank;
+    uint64_t header_size;
+
+    MPI_Comm_rank (comm, &rank);
+
+    adios_buffer_struct_init (fh->b);
+
+    if (bp_read_open (fname, comm, fh))
+    {
+        return -1;
+    }
+
+    /* Only rank 0 reads the footer and it broadcasts to all other processes */
+    if (rank == 0)
+    {
+        if (bp_read_minifooter (fh))
+        {
+            return -1;
+        }
+    }
+
+    /* Broadcast to all other processors */
+    MPI_Bcast (&fh->mfooter, sizeof (struct bp_minifooter), MPI_BYTE, 0, comm);
+
+    header_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
+
+    if (rank != 0)
+    {
+        if (!fh->b->buff)
+        {
+            bp_alloc_aligned (fh->b, header_size);
+            assert (fh->b->buff);
+
+            memset (fh->b->buff, 0, header_size);
+            fh->b->offset = 0;
+        }
+    }
+
+    MPI_Barrier (comm);
+    MPI_Bcast (fh->b->buff, fh->mfooter.file_size-fh->mfooter.pgs_index_offset, MPI_BYTE, 0, comm);
+
+    /* Everyone parses the index on its own */
+    bp_parse_pgs (fh);
+    bp_parse_vars (fh);
+    bp_parse_attrs (fh);
+
     return 0;
 }
 
@@ -945,6 +1001,130 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
             fprintf (stderr, "Unknown characteristic:%d. skipped.\n", c);
             break;
     }
+    return 0;
+}
+
+/* Seek to the specified step and prepare related fields in ADIOS_FILE structure */
+int bp_seek_to_step (ADIOS_FILE * fp, int tostep)
+{
+    int i, j;
+    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
+    struct BP_FILE * fh = p->fh;
+    struct adios_index_var_struct_v1 * var_root;
+    struct adios_index_attribute_struct_v1 * attr_root;
+
+    if (tostep < fh->tidx_start || tostep > fh->tidx_stop)
+    {
+        adios_error (err_invalid_timestep, "Invalid step: %d\n", tostep);
+        return -1;
+    }
+
+    /* Prepare vars */
+    fp->nvars = 0;
+    var_root = fh->vars_root;
+
+    while (var_root)
+    {
+        for (i = 0; i < var_root->characteristics_count; i++)
+        {
+            if (var_root->characteristics[i].time_index == tostep)
+            {
+                fp->nvars++;
+                break;    
+            }
+        }
+      
+        var_root = var_root->next;
+    }
+
+    alloc_namelist (&fp->var_namelist, fp->nvars);
+
+    var_root = fh->vars_root;
+    j = 0;
+    while (var_root)
+    {
+        for (i = 0; i < var_root->characteristics_count; i++)
+        {
+            if (var_root->characteristics[i].time_index == tostep)
+            {
+                if (strcmp (var_root->var_path,"/"))
+                {
+                    fp->var_namelist[j] = (char *)malloc (strlen((var_root)->var_name)
+                                          + strlen (var_root->var_path) + 1 + 1   // extra / and ending \0
+                                          );
+                    strcpy (fp->var_namelist[j], var_root->var_path);
+                }
+                else
+                {
+                    fp->var_namelist[j] = (char *) malloc (strlen (var_root->var_name) + 1 + 1);
+                    fp->var_namelist[j][0] = '\0';
+                }
+
+                strcat (fp->var_namelist[j], "/");
+                strcat (fp->var_namelist[j], var_root->var_name);
+
+                j++;
+
+                break;
+            }
+        }
+
+        var_root = var_root->next;
+    }
+
+    /* Prepare attrs */
+    fp->nattrs = 0;
+    attr_root = fh->attrs_root;
+
+    while (attr_root)
+    {
+        for (i = 0; i < attr_root->characteristics_count; i++)
+        {
+            if (attr_root->characteristics[i].time_index == tostep)
+            {
+                fp->nattrs++;
+                break;
+            }
+        }
+
+        attr_root = attr_root->next;
+    }
+
+    alloc_namelist (&fp->attr_namelist, fp->nattrs);
+
+    attr_root = fh->attrs_root;
+    j = 0;
+    while (attr_root)
+    {
+        for (i = 0; i < attr_root->characteristics_count; i++)
+        {
+            if (attr_root->characteristics[i].time_index == tostep)
+            {
+                if (strcmp (attr_root->attr_path,"/"))
+                {
+                    fp->attr_namelist[j] = (char *)malloc (strlen((attr_root)->attr_name)
+                                          + strlen (attr_root->attr_path) + 1 + 1   // extra / and ending \0
+                                          );
+                    strcpy (fp->attr_namelist[j], attr_root->attr_path);
+                }
+                else
+                {
+                    fp->attr_namelist[j] = (char *) malloc (strlen (attr_root->attr_name) + 1 + 1);
+                    fp->attr_namelist[j][0] = '\0';
+                }
+
+                strcat (fp->attr_namelist[j], "/");
+                strcat (fp->attr_namelist[j], attr_root->attr_name);
+
+                j++;
+
+                break;
+            }
+        }
+
+        attr_root = attr_root->next;
+    }
+
     return 0;
 }
 
