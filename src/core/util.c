@@ -413,3 +413,33 @@ void free_selection (ADIOS_SELECTION * sel)
     }
 }
 
+#include <time.h> // nanosleep 
+void adios_nanosleep (int sec, int nanosec)
+{
+#if HAVE_NANOSLEEP
+    struct timespec treq = {.tv_sec=sec, .tv_nsec=nanosec};
+    struct timespec trem;
+    int r;
+    r = nanosleep(&treq, &trem);
+    while (r == -1 && errno == EINTR) {
+        treq.tv_sec = trem.tv_sec;
+        treq.tv_nsec = trem.tv_nsec;
+        r = nanosleep (&trem, &treq);
+    }
+#else
+    if (sec>0)
+        sleep(sec);
+    else
+        sleep(1);
+
+#endif
+}   
+
+#include <sys/time.h>
+struct timeval adios_timer_tp;
+double adios_gettime() 
+{
+    gettimeofday(&adios_timer_tp, NULL); \
+        return  ((double)adios_timer_tp.tv_sec + ((double)adios_timer_tp.tv_usec)/1000000.0);
+}
+

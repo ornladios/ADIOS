@@ -67,4 +67,10 @@ void free_namelist (char **namelist, int length);
 void list_insert_read_request (read_request ** h, read_request * q);
 ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel);
 void free_selection (ADIOS_SELECTION * sel);
+
+/* sleep for a bit */
+void adios_nanosleep (int sec, int nanosec);
+/* get current time as double (in seconds) */
+double adios_gettime();
+
 #endif
