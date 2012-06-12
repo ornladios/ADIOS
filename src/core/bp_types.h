@@ -10,6 +10,7 @@
 
 #include "public/adios_types.h"
 #include "core/adios_bp_v1.h"
+#include "core/util.h" /* struct read_request */
 
 #define BP_MAX_RANK 32
 #define BP_MAX_NDIMS (BP_MAX_RANK+1)
