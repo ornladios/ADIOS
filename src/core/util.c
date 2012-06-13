@@ -174,12 +174,12 @@ void free_namelist (char **namelist, int length)
         return;
 }
 
-void list_insert_read_request (read_request ** h, read_request * q)
+void list_insert_read_request_tail (read_request ** h, read_request * q)
 {
     read_request * head;
     if (!h || !q)
     {
-        printf ("Error: list_insert_read_request ()\n");
+        printf ("Error: list_insert_read_request_tail cannot handle NULL parameters ()\n");
         return;
     }
 
@@ -199,6 +199,30 @@ void list_insert_read_request (read_request ** h, read_request * q)
 
     head->next = q;
     q->next = NULL;
+
+    return;
+}
+
+void list_insert_read_request_next (read_request ** h, read_request * q)
+{
+    read_request * head;
+    if (!h || !q)
+    {
+        printf ("Error: list_insert_read_request_next cannot handle NULL parameters ()\n");
+        return;
+    }
+
+    head = * h;
+    if (!head)
+    {
+        * h = q;
+        q->next = NULL;
+    }
+    else
+    {
+        q->next = head->next;
+        head->next = q;
+    }
 
     return;
 }
