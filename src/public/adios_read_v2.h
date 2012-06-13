@@ -416,7 +416,8 @@ int adios_perform_reads (const ADIOS_FILE *fp, int blocking);
  *  IN:  fp         Handler to file or stream
  *  OUT: chunk      A chunk completed by the time of calling this function.
  *                  It is NULL if no chunk is returned.
- *  RETURN:         0: all chunks have been returned, no need to call again
+ *  RETURN:         0: all chunks have been returned previously, 
+ *                     no need to call again (chunk is NULL, too)
  *                  1: some chunks are/will be available, call again
  *                  <0 on error, sets adios_errno too
  */
