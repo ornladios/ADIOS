@@ -12,9 +12,10 @@
 #include <stdint.h>
 #include <string.h>
 #include "public/adios_read.h"
+#include "core/util.h" // PairStruct*
 
 #define FORWARD_DECLARE(a) \
-int adios_read_##a##_init_method (MPI_Comm comm, const char * parameters); \
+int adios_read_##a##_init_method (MPI_Comm comm, PairStruct *params); \
 int adios_read_##a##_finalize_method (); \
 ADIOS_FILE * adios_read_##a##_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec); \
 ADIOS_FILE * adios_read_##a##_open_file (const char * fname, MPI_Comm comm); \
@@ -62,7 +63,7 @@ FORWARD_DECLARE(datatap)
 //FORWARD_DECLARE(hdf5)
 
 
-typedef int  (* ADIOS_INIT_METHOD_FN) (MPI_Comm comm, const char * parameters);
+typedef int  (* ADIOS_INIT_METHOD_FN) (MPI_Comm comm, PairStruct * params);
 typedef int  (* ADIOS_FINALIZE_METHOD_FN) ();
 typedef ADIOS_FILE * (* ADIOS_OPEN_STREAM_FN) (const char * fname, MPI_Comm comm, 
                                  enum ADIOS_LOCKMODE lock_mode, float timeout_sec);

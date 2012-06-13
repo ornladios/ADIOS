@@ -8,7 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "public/adios_error.h"
+#include "core/adios_logger.h"
 #include "core/common_read.h"
 #include "core/adios_read_hooks.h"
 #include "core/futils.h"
@@ -50,6 +52,10 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
                              MPI_Comm comm,
                              const char * parameters)
 {
+    PairStruct *params, *p, *prev_p;
+    int verbose_level, removeit;
+    int retval; 
+
     adios_errno = err_no_error;
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
@@ -59,7 +65,54 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     // init the adios_read_hooks_struct if not yet initialized  
     adios_read_hooks_init (&adios_read_hooks); 
 
-    return adios_read_hooks[method].adios_init_method_fn (comm, parameters);
+    // process common parameters here
+    params = text_to_name_value_pairs (parameters);
+    p = params;
+    prev_p = NULL;
+    while (p) {
+        removeit = 0;
+        if (!strcasecmp (p->name, "verbose")) 
+        {
+            if (p->value) {
+                verbose_level = strtol(p->value, NULL, 10);
+                if (errno) {
+                    log_error ("Invalid 'verbose' parameter passed to read init function: '%s'\n", p->value);
+                    verbose_level = 1; // print errors only
+                }
+            } else {
+                verbose_level = 3;  // info level
+            }
+            adios_verbose_level = verbose_level;
+            removeit = 1;
+        }
+        else if (!strcasecmp (p->name, "quiet")) 
+        {
+            adios_verbose_level = 0; //don't print errors
+            removeit = 1;
+        }
+        if (removeit) {
+            if (p == params) {
+                // remove head
+                p = p->next;
+                params->next = NULL;
+                free_name_value_pairs (params);
+            } else {
+                // remove from middle of the list
+                prev_p->next = p->next;
+                p->next = NULL;
+                free_name_value_pairs (p);
+                p = prev_p->next;
+            }
+        } else {
+            prev_p = p;
+            p = p->next;
+        }
+    }
+
+    // call method specific init 
+    retval = adios_read_hooks[method].adios_init_method_fn (comm, params);
+    free_name_value_pairs (params);
+    return retval;
 }
 
 
