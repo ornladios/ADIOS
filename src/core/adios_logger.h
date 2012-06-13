@@ -4,7 +4,6 @@
 /* Logger functions */
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 
 extern FILE *adios_logf;
 extern int adios_verbose_level;

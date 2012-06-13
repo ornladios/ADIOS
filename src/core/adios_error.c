@@ -10,6 +10,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include "public/adios_error.h"
+#include "core/adios_logger.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -36,6 +37,7 @@ void adios_error (enum ADIOS_ERRCODES errno, char *fmt, ...)
     va_start(ap, fmt);
     (void) vsnprintf(aerr, ERRMSG_MAXLEN, fmt, ap);
     va_end(ap);
+    log_error(aerr);
 }
 
 void adios_error_at_line (enum ADIOS_ERRCODES errno, const char* filename, unsigned int linenum, char *fmt, ...)
@@ -45,4 +47,5 @@ void adios_error_at_line (enum ADIOS_ERRCODES errno, const char* filename, unsig
     va_start(ap, fmt);
     (void) vsnprintf(aerr, ERRMSG_MAXLEN, fmt, ap);
     va_end(ap);
+    log_error(aerr);
 }
