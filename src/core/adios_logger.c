@@ -12,7 +12,7 @@
 #include "core/adios_logger.h"
 
 FILE *adios_logf = 0;
-int adios_verbose_level = 0;
+int adios_verbose_level = 1; // ERROR level (0 = no logs)
 char *adios_log_names[4] = {"ERROR","WARN","INFO","DBG"};
 
 
