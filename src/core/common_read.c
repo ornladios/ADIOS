@@ -50,6 +50,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
                              MPI_Comm comm,
                              const char * parameters)
 {
+    adios_errno = err_no_error;
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
             "Invalid read method (=%d) passed to adios_read_init_method().", (int)method);
@@ -64,6 +65,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
 
 int common_read_finalize_method(enum ADIOS_READ_METHOD method)
 {
+    adios_errno = err_no_error;
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
             "Invalid read method (=%d) passed to adios_read_finalize_method().", (int)method);
@@ -89,7 +91,7 @@ ADIOS_FILE * common_read_open_stream (const char * fname,
         return NULL;
     } 
 
-    adios_errno = 0;
+    adios_errno = err_no_error;
     internals = (struct common_read_internals_struct *) 
                     calloc(1,sizeof(struct common_read_internals_struct));
     // init the adios_read_hooks_struct if not yet initialized 
@@ -128,7 +130,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
         return NULL;
     } 
 
-    adios_errno = 0;
+    adios_errno = err_no_error;
     internals = (struct common_read_internals_struct *) 
                     calloc(1,sizeof(struct common_read_internals_struct));
     // init the adios_read_hooks_struct if not yet initialized 
@@ -158,7 +160,7 @@ int common_read_close (ADIOS_FILE *fp)
     struct common_read_internals_struct * internals;
     int retval;
 
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_close_fn (fp);
@@ -177,7 +179,7 @@ void common_read_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
     struct common_read_internals_struct * internals;
 
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         internals->read_hooks[internals->method].adios_reset_dimension_order_fn (fp, is_fortran);
@@ -192,7 +194,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
     struct common_read_internals_struct * internals;
     int retval;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_advance_step_fn (fp, last, timeout_sec);
@@ -218,7 +220,7 @@ void common_read_release_step (ADIOS_FILE *fp)
 {
     struct common_read_internals_struct * internals;
 
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         internals->read_hooks[internals->method].adios_release_step_fn (fp);
@@ -275,7 +277,7 @@ ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname)
     struct common_read_internals_struct * internals;
     ADIOS_VARINFO * retval;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         int varid = common_read_find_name (fp->nvars, fp->var_namelist, varname, 0);
@@ -297,7 +299,7 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
     struct common_read_internals_struct * internals;
     ADIOS_VARINFO * retval;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         if (varid >= 0 && varid < fp->nvars) {
             internals = (struct common_read_internals_struct *) fp->internal_data;
@@ -329,7 +331,7 @@ int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
     int retval;
     int group_varid;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         if (varinfo) {
@@ -353,7 +355,7 @@ int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo
     int retval;
     int group_varid;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         if (varinfo) {
@@ -439,7 +441,7 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
     struct common_read_internals_struct * internals;
     int retval;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         int varid = common_read_find_name (fp->nvars, fp->var_namelist, varname, 0);
@@ -467,7 +469,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
     struct common_read_internals_struct * internals;
     int retval;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         if (varid >=0 && varid < fp->nvars) {
             internals = (struct common_read_internals_struct *) fp->internal_data;
@@ -491,7 +493,7 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
     struct common_read_internals_struct * internals;
     int retval;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_perform_reads_fn (fp, blocking);
@@ -508,7 +510,7 @@ int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
     struct common_read_internals_struct * internals;
     int retval;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_check_reads_fn (fp, chunk);
@@ -546,7 +548,7 @@ int common_read_get_attr (const ADIOS_FILE * fp,
     struct common_read_internals_struct * internals;
     int retval;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         int attrid = common_read_find_name (fp->nattrs, fp->attr_namelist, attrname, 1);
@@ -572,7 +574,7 @@ int common_read_get_attr_byid (const ADIOS_FILE * fp,
     struct common_read_internals_struct * internals;
     int retval;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         if (attrid >= 0 && attrid < fp->nattrs) {
             internals = (struct common_read_internals_struct *) fp->internal_data;
@@ -634,7 +636,7 @@ int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist)
     struct common_read_internals_struct * internals;
     int retval;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->ngroups;
@@ -656,7 +658,7 @@ int common_read_group_view (ADIOS_FILE  *fp, int groupid)
     struct common_read_internals_struct * internals;
     int retval, i;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         if (groupid >= 0 && groupid < internals->ngroups) {
@@ -711,7 +713,7 @@ int common_read_is_var_timed (const ADIOS_FILE *fp, int varid)
     struct common_read_internals_struct * internals;
     int retval;
     
-    adios_errno = 0;
+    adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_is_var_timed_fn (fp, varid+internals->group_varid_offset);
@@ -774,6 +776,7 @@ void common_read_print_fileinfo (const ADIOS_FILE *fp)
 /**    SELECTIONS   **/ 
 ADIOS_SELECTION * common_read_selection_boundingbox (uint64_t ndim, const uint64_t *start, const uint64_t *count)
 {   
+    adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
         sel->type = ADIOS_SELECTION_BOUNDINGBOX;
@@ -789,6 +792,7 @@ ADIOS_SELECTION * common_read_selection_boundingbox (uint64_t ndim, const uint64
 
 ADIOS_SELECTION * common_read_selection_points (uint64_t ndim, uint64_t npoints, const uint64_t *points)
 {   
+    adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
         sel->type = ADIOS_SELECTION_POINTS;
@@ -803,6 +807,7 @@ ADIOS_SELECTION * common_read_selection_points (uint64_t ndim, uint64_t npoints,
 
 ADIOS_SELECTION * common_read_selection_writeblock (int index)
 {   
+    adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
         sel->type = ADIOS_SELECTION_WRITEBLOCK;
@@ -815,6 +820,7 @@ ADIOS_SELECTION * common_read_selection_writeblock (int index)
 
 ADIOS_SELECTION * common_read_selection_auto (char *hints)
 {   
+    adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
         sel->type = ADIOS_SELECTION_AUTO;
