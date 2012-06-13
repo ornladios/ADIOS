@@ -48,7 +48,6 @@ void ds_pack_group_info (struct adios_file_struct *fd
 
 SI = sizeof(int) = 4
 
-CURRENT structure
         128 fix bytes, 1 group
         bytes   content
          SI      = length of this buffer (=128 bytes fixed right now)
@@ -58,18 +57,6 @@ CURRENT structure
          SI      = length of group index (in GROUP@fn/gn variable)
          SI      = N length of name  
          N      = group name (no \0)
-GOAL structure (needs read from space before writing)
-        bytes   content
-         SI      = length of this buffer (=128 bytes fixed right now)
-         SI      = time index
-         SI      = number of variables in file 
-         SI      = number of attributes in file
-         SI      = G number of groups
-    G*  ( 
-         SI      = length of group index (in GROUP@fn/gn variable)
-         SI      = N length of name 
-         N      = group name (no \0)
-        )
 */
 
 
@@ -78,7 +65,7 @@ GOAL structure (needs read from space before writing)
 
    SI = sizeof(int) = 4
 
-   Size = N bytes, N is found in FILE buffer
+   Size = N bytes, N is found in FILE buffer (length of group index)
         bytes   content
          SI      = length of this buffer  (=N above)
          SI      = NV number of variables in file (actually in the group)
