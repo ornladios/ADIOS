@@ -5,13 +5,6 @@
 #include "public/adios_types.h"
 #include "public/adios_selection.h"
 
-struct PairStruct {
-    char * name;
-    char * value;
-    struct PairStruct * next;
-};
-typedef struct PairStruct PairStruct;
-
 typedef struct read_request
 {
     int rank; // the rank of processor which issued this request. 
@@ -20,6 +13,7 @@ typedef struct read_request
     int from_steps;
     int nsteps;
     void * data;
+    uint64_t datasize; // size of selection to hold data
 // above is the common fields that all read method will use
     void * priv; // private structure for each read method
 /*
@@ -35,15 +29,6 @@ typedef struct read_request
     struct read_request * next;
 } read_request;
 
-/* Process a ;-separated and possibly multi-line text and 
-   create a list of name=value pairs from each 
-   item which has a "name=value" pattern. Whitespaces are removed. 
-   Input is not modified. Space is allocated;
-   Also, simple "name" or "name=" patterns are processed and 
-   returned with value=NULL. 
-*/
-PairStruct * text_to_name_value_pairs (const char * text);
-void free_name_value_pairs (PairStruct * pairs);
 /* Reverse the order in an array in place.
    use swapping from Fortran/column-major order to ADIOS-read-api/C/row-major order and back
 */
@@ -68,6 +53,30 @@ void list_insert_read_request (read_request ** h, read_request * q);
 ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel);
 void free_selection (ADIOS_SELECTION * sel);
 
+/*******************************************************
+   Processing parameter lists
+**********************************************************/
+/*
+   Process a ;-separated and possibly multi-line text and 
+   create a list of name=value pairs from each 
+   item which has a "name=value" pattern. Whitespaces are removed. 
+   Input is not modified. Space is allocated;
+   Also, simple "name" or "name=" patterns are processed and 
+   returned with value=NULL. 
+*/
+struct PairStruct {
+    char * name;
+    char * value;
+    struct PairStruct * next;
+};
+typedef struct PairStruct PairStruct;
+
+PairStruct * text_to_name_value_pairs (const char * text);
+void free_name_value_pairs (PairStruct * pairs);
+
+/**********************************************************
+   Timing
+**********************************************************/
 /* sleep for a bit */
 void adios_nanosleep (int sec, int nanosec);
 /* get current time as double (in seconds) */
