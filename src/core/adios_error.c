@@ -30,20 +30,20 @@ const char *adios_get_last_errmsg (void)
     return aerr; 
 }
 
-void adios_error (enum ADIOS_ERRCODES errno, char *fmt, ...) 
+void adios_error (enum ADIOS_ERRCODES errcode, char *fmt, ...) 
 {
     va_list ap;
-    adios_errno = (int)errno;
+    adios_errno = (int)errcode;
     va_start(ap, fmt);
     (void) vsnprintf(aerr, ERRMSG_MAXLEN, fmt, ap);
     va_end(ap);
     log_error(aerr);
 }
 
-void adios_error_at_line (enum ADIOS_ERRCODES errno, const char* filename, unsigned int linenum, char *fmt, ...)
+void adios_error_at_line (enum ADIOS_ERRCODES errcode, const char* filename, unsigned int linenum, char *fmt, ...)
 {
     va_list ap;
-    adios_errno = (int)errno;
+    adios_errno = (int)errcode;
     va_start(ap, fmt);
     (void) vsnprintf(aerr, ERRMSG_MAXLEN, fmt, ap);
     va_end(ap);
