@@ -15,7 +15,7 @@
 
 /** Set an application ID for this program. 
  *  This function is necessary for methods who needs a unique ID from each participating applications.
- *  Currently, this is the DART method for code coupling of independent applications.
+ *  Currently, this is the DATASPACES/DIMES methods for code coupling of independent applications.
  *
  *  This function is called from the applicatin through adios_set_application_id()
  */
@@ -30,16 +30,16 @@ int globals_adios_get_application_id (int *was_set);
 
 
 /* Note: would be nice a <string, int> map for arbitrary globals */
-#ifdef HAVE_DART
-void globals_adios_set_dart_connected_from_reader();
-void globals_adios_set_dart_disconnected_from_reader();
-void globals_adios_set_dart_connected_from_writer();
-void globals_adios_set_dart_disconnected_from_writer();
-int  globals_adios_is_dart_connected(); // from any
-int  globals_adios_is_dart_connected_from_reader();
-int  globals_adios_is_dart_connected_from_writer();
-int  globals_adios_is_dart_connected_from_both();
-#endif /* HAVE_DART */
+#ifdef HAVE_DATASPACES
+void globals_adios_set_dataspaces_connected_from_reader();
+void globals_adios_set_dataspaces_disconnected_from_reader();
+void globals_adios_set_dataspaces_connected_from_writer();
+void globals_adios_set_dataspaces_disconnected_from_writer();
+int  globals_adios_is_dataspaces_connected(); // from any
+int  globals_adios_is_dataspaces_connected_from_reader();
+int  globals_adios_is_dataspaces_connected_from_writer();
+int  globals_adios_is_dataspaces_connected_from_both();
+#endif /* HAVE_DATASPACES */
 
 #ifdef HAVE_DIMES
 void globals_adios_set_dimes_connected_from_reader();
