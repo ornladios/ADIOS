@@ -1125,6 +1125,8 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep)
         attr_root = attr_root->next;
     }
 
+    fp->current_step = tostep;
+
     return 0;
 }
 

@@ -52,7 +52,7 @@ struct BP_file_handle
 
 typedef struct BP_file_handle BP_file_handle_list;
 
-struct BP_FILE {
+typedef struct BP_FILE {
     MPI_File mpi_fh;
     char * fname; // Main file name is needed to calculate subfile names
     BP_file_handle_list * sfh; // This list links all the subfiles handle together
@@ -67,15 +67,15 @@ struct BP_FILE {
     uint32_t tidx_start;
     uint32_t tidx_stop;
     void * priv;
-};
+} BP_FILE;
 
 // save per proc info
-struct BP_PROC {
+typedef struct BP_PROC {
     int rank;
     struct BP_FILE * fh;
     read_request * local_read_request_list;
     void * priv;
-};
+} BP_PROC;
 
 struct BP_GROUP_VAR {
 	uint16_t group_count;
