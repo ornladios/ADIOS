@@ -13,7 +13,7 @@
 #include "../config.h"
 #include <stdlib.h>
 #include <string.h>
-//#include <errno.h>  /* ENOMEM */
+#include <errno.h>  /* errno */
 #include "public/adios_types.h"
 #include "public/adios_read.h"
 #include "public/adios_error.h"
@@ -31,6 +31,8 @@
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
+
+#define MYFREE(p) {free(p); p=NULL;}
 
 /*
 #include <time.h> // nanosleep
@@ -129,6 +131,8 @@ struct dataspaces_data_struct { // accessible as fp->fh
     read_request * req_list;     // list of scheduled requests
     read_request * req_list_tail; // tail of list of scheduled requests (to speed up insert)
     int nreq;                    // number of scheduled requests
+    /* single chunk */
+    ADIOS_VARCHUNK *chunk;       // the single chunk to store the last read and serve the user
 };
 
 // Declarations
@@ -164,38 +168,43 @@ int adios_read_dataspaces_init_method (MPI_Comm comm, PairStruct * params)
 
     PairStruct *p = params;
     while (p) {
-        if (!strcasecmp (p->name, "appid")) {
+        if (!strcasecmp (p->name, "app_id")) {
+            errno = 0;
             appid = strtol(p->value, NULL, 10);
-            if (appid > 0) {
-                log_debug ("Appid parameter set to %d for DATASPACES read method\n", appid);
+            if (appid > 0 && !errno) {
+                log_debug ("App ID parameter set to %d for DATASPACES read method\n", 
+                            appid);
                 globals_adios_set_application_id (appid);
             } else {
-                log_error ("Invalid 'appid' parameter given to the DATASPACES read method: '%s'\n", p->value);
+                log_error ("Invalid 'app_id' parameter given to the DATASPACES read "
+                           "method: '%s'\n", p->value);
             }
         } else if (!strcasecmp (p->name, "max_chunk_size")) {
+            errno = 0;
             max_chunk_size = strtol(p->value, NULL, 10);
-            if (max_chunk_size > 0) {
-                log_debug ("max_chunk_size set to %dMB for DATASPACES read method\n", max_chunk_size);
+            if (max_chunk_size > 0 && !errno) {
+                log_debug ("max_chunk_size set to %dMB for DATASPACES read method\n", 
+                            max_chunk_size);
                 chunk_buffer_size = max_chunk_size * 1024 * 1024;
             } else {
-                log_error ("Invalid 'max_chunk_size' parameter given to the DATASPACES read method: '%s'\n", p->value);
+                log_error ("Invalid 'max_chunk_size' parameter given to the DATASPACES "
+                            "read method: '%s'\n", p->value);
             }
-        } else if (!strcasecmp (p->name, "verbose")) {
-            log_debug ("Parameter name %s is not recognized by the DATASPACES read method\n", p->name);
-
         } else {
-            log_error ("Parameter name %s is not recognized by the DATASPACES read method\n", p->name);
+            log_error ("Parameter name %s is not recognized by the DATASPACES read "
+                        "method\n", p->name);
         }
         p = p->next;
     }
 
 
     /* Connect to DATASPACES, but only if we are not yet connected (from Write API) */
-    if (!globals_adios_is_dart_connected()) {
+    if (!globals_adios_is_dataspaces_connected()) {
         appid = globals_adios_get_application_id (&was_set);
         if (!was_set) 
             appid = 2;
-        log_debug("-- %s, rank %d: connect to dataspaces with nproc=%d and appid=%d\n", __func__, rank, nproc, appid);
+        log_debug("-- %s, rank %d: connect to dataspaces with nproc=%d and appid=%d\n", 
+                    __func__, rank, nproc, appid);
         err = dart_init(nproc, appid);
         if (err < 0) {
             adios_error (err_connection_failed, "Failed to connect with DATASPACES\n");
@@ -205,21 +214,22 @@ int adios_read_dataspaces_init_method (MPI_Comm comm, PairStruct * params)
         //drank = dart_rank(dcg);
         //dpeers = dart_peers(dcg);
     }
-    globals_adios_set_dart_connected_from_reader();
+    globals_adios_set_dataspaces_connected_from_reader();
     n_filenames = 0;
+    log_info("Connected to DATASPACES\n");
     return 0; 
 }
 
 int adios_read_dataspaces_finalize_method () 
 { 
     // disconnect from DATASPACES only if we the reader is connected (the writer not anymore)
-    if (globals_adios_is_dart_connected_from_reader() && 
-        !globals_adios_is_dart_connected_from_both()) 
+    if (globals_adios_is_dataspaces_connected_from_reader() && 
+        !globals_adios_is_dataspaces_connected_from_both()) 
     {
         dart_finalize();
-        log_debug("-- %s: disconnected from dataspaces\n", __func__);
+        log_info("Disconnected from DATASPACES\n");
     }
-    globals_adios_set_dart_disconnected_from_reader();
+    globals_adios_set_dataspaces_disconnected_from_reader();
     if (chunk_buffer) {
         free (chunk_buffer); 
         chunk_buffer = NULL;
@@ -294,9 +304,10 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
     log_debug("   %s: buffer length = %d, content:\n", __func__, buf_len);
     for (i=0; i<buf_len; i+=16) {
         for (j=0; j<4; j++) {
-            log_debug("%3.3d %3.3d %3.3d %3.3d    ", b[i+4*j], b[i+4*j+1], b[i+4*j+2], b[i+4*j+3]);
+            log_debug_cont("%3.3d %3.3d %3.3d %3.3d    ", 
+                    b[i+4*j], b[i+4*j+1], b[i+4*j+2], b[i+4*j+3]);
         }
-        log_debug("\n");
+        log_debug_cont("\n");
     }
     
 
@@ -465,7 +476,7 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
     return 0;
 }
 
-static int dataspaces_get_groupdata (ADIOS_FILE *fp)
+static int get_groupdata (ADIOS_FILE *fp)
 {
     struct dataspaces_data_struct * ds = (struct dataspaces_data_struct *) fp->fh;
 
@@ -523,7 +534,7 @@ static int get_step (ADIOS_FILE *fp, enum WHICH_VERSION which_version, float tim
     snprintf(ds_fname, MAX_DS_NAMELEN, "FILE@%s",fp->path);
     log_debug("-- %s, rank %d: Get variable %s\n", __func__, ds->mpi_rank, ds_fname);
     /* We perform dart_lock_on_read here and release it in fclose (using fname as id) */
-    log_debug("   rank %d: call dcg_lock_on_read(%s)\n", ds->mpi_rank, fp->path);
+    log_debug("   rank %d: call dart_lock_on_read(%s)\n", ds->mpi_rank, fp->path);
     dart_lock_on_read(fp->path);
     ds->locked_fname = 1;
     ds->freed_mem = 0;
@@ -553,7 +564,7 @@ static int get_step (ADIOS_FILE *fp, enum WHICH_VERSION which_version, float tim
                         ds->mpi_rank, fp, fp->fh);
 
                 /* Get the variables and attributes the (only) group separately */
-                err = dataspaces_get_group (fp, 0);
+                err = get_groupdata (fp);
                 if (err) {
                     // something went wrong with the group(s)
                     found_stream = 0;
@@ -588,8 +599,9 @@ static int get_step (ADIOS_FILE *fp, enum WHICH_VERSION which_version, float tim
                 */
 
 
-                log_debug ("Data of '%s' does not exist in DataSpaces (yet)\n", ds_fname);
-                //adios_error (err_file_not_found_error, "Data of '%s' does not exist in DataSpaces\n", ds_fname);
+                //log_debug ("Data of '%s' does not exist in DataSpaces (yet)\n", ds_fname);
+                adios_error (err_file_not_found, 
+                           "Data of '%s' does not exist in DataSpaces\n", ds_fname);
             }
         }
 
@@ -606,7 +618,7 @@ static int get_step (ADIOS_FILE *fp, enum WHICH_VERSION which_version, float tim
     } // while (stay_in_loop)
     if (!found_stream) {
         // release lock here if we have not opened it (otherwise release at close)
-        log_debug("   rank %d: call dcg_unlock_on_read(%s)\n", ds->mpi_rank, fp->path);
+        log_debug("   rank %d: call dart_unlock_on_read(%s)\n", ds->mpi_rank, fp->path);
         dart_unlock_on_read(fp->path);
     }
     return !found_stream;
@@ -653,11 +665,12 @@ ADIOS_FILE * adios_read_dataspaces_open_stream (const char * fname,
     ds->req_list = NULL;
     ds->req_list_tail = NULL;
     ds->nreq = 0;
+    ds->chunk = NULL;
 
     /* if not connected to DATASPACES, connect now (and disconnect in adios_read_close) */
-    if (!globals_adios_is_dart_connected_from_reader()) {
+    if (!globals_adios_is_dataspaces_connected_from_reader()) {
         log_debug("-- %s, rank %d: call init first\n", __func__, ds->mpi_rank);
-        if (!adios_read_dataspaces_init(comm)) {
+        if (!adios_read_dataspaces_init_method(comm, NULL)) {
             free(ds);
             free(fp->path);
             free(fp);
@@ -705,7 +718,6 @@ ADIOS_FILE * adios_read_dataspaces_open_stream (const char * fname,
     return fp;
 }
 
-#define MYFREE(p) {free(p); p=NULL;}
 static void free_step_data (ADIOS_FILE *fp) 
 {
     struct dataspaces_data_struct * ds = 
@@ -748,6 +760,7 @@ int adios_read_dataspaces_close (ADIOS_FILE *fp)
 
     /* Release read lock locked in fopen */
     if (ds->locked_fname) {
+        log_debug("   rank %d: call dart_unlock_on_read(%s)\n", ds->mpi_rank, fp->path);
         dart_unlock_on_read(fp->path);
         ds->locked_fname = 0;
     }
@@ -759,8 +772,9 @@ int adios_read_dataspaces_close (ADIOS_FILE *fp)
 
     free_step_data (fp);
 
+    if (ds->chunk) MYFREE(ds->chunk);
     free (ds);
-    if (fp->path) { free (fp->path); fp->path = 0; }
+    if (fp->path) MYFREE(fp->path);
     free (fp);
     return 0;
 }
@@ -784,13 +798,14 @@ int adios_read_dataspaces_advance_step (ADIOS_FILE *fp, int last, float timeout_
         which_version = CURRENT_VERSION; 
     else
         which_version = NEXT_AVAILABLE_VERSION; 
-    log_debug("open version filename=%s version=%d which_version=%s\n", 
-              fp->path, ds->access_version,
+    log_debug("advance to version %d of filename=%s which_version=%s\n", 
+              ds->access_version, fp->path,
               which_version_str[which_version]);
 #endif
 
     if (ds->locked_fname) {
         /* Release previous read lock locked in fopen (not released by a release_step() */
+        log_debug("   rank %d: call dart_unlock_on_read(%s)\n", ds->mpi_rank, fp->path);
         dart_unlock_on_read(fp->path);
         ds->locked_fname = 0;
     }
@@ -821,6 +836,7 @@ void adios_read_dataspaces_release_step (ADIOS_FILE *fp)
 
     /* Release read lock locked in fopen */
     if (ds->locked_fname) {
+        log_debug("   rank %d: call dart_unlock_on_read(%s)\n", ds->mpi_rank, fp->path);
         dart_unlock_on_read(fp->path);
         ds->locked_fname = 0;
     }
@@ -926,11 +942,11 @@ static int adios_read_dataspaces_get (const char * varname, enum ADIOS_DATATYPES
                     );
     /*if (err == -ENOMEM) {
         adios_error (err_no_memory, "Not enough memory for DATASPACES to perform dart_get()");  
-        return -err_no_memory;
+        return err_no_memory;
     } 
     else*/ if (err) {
         adios_error (err_corrupted_variable, "DATASPACES failed to read variable %s.\n", varname);  
-        return -err_corrupted_variable;
+        return err_corrupted_variable;
     }
 
     return 0;
@@ -1020,6 +1036,7 @@ int adios_read_dataspaces_schedule_read_byid (const ADIOS_FILE * fp,
 
                 /* We determine here what to read for this process.
                    Let's do a simple 1D domain decomposition
+                   FIXME: should be smarter and do multi-dim decomp if needed
                 */
                 memcpy (s, 0, 10*sizeof(uint64_t));
                 memcpy (c, var->dims, 10*sizeof(uint64_t));
@@ -1088,8 +1105,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
 {
     struct dataspaces_data_struct * ds = (struct dataspaces_data_struct *) fp->fh;
     struct dataspaces_var_struct * var = &ds->vars[r->varid];
-    ADIOS_VARCHUNK * chunk;
-    int64_t total_size;
+    //int64_t total_size;
     int offset[3] = {0,0,0};
     int readsize[3] = {1,1,1};
     int elemsize;
@@ -1097,72 +1113,99 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
     int i,k,ndims,tidx;
     char ds_name[MAX_DS_NAMELEN];
 
-    chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
-    if (!chunk) {
+    if (!ds->chunk)
+        ds->chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
+    if (!ds->chunk) {
         adios_error (err_no_memory, 
                 "Could not allocate buffer for group name in adios_read_open_stream()\n");
         return NULL;
     }
-    chunk->varid = r->varid;
-    chunk->type = var->type;
+    ds->chunk->varid = r->varid;
+    ds->chunk->type = var->type;
+    ds->chunk->sel = NULL;
     elemsize = common_read_type_size (var->type, var->value);
 
     // handle scalars first (no need to read from space again)
     if (var->ndims == 0) { 
         if (r->data) {
             memcpy (r->data, var->value, elemsize);
-            chunk->data = r->data;
+            ds->chunk->data = r->data;
         } else {
-            chunk->data = var->value;
+            ds->chunk->data = var->value;
         }
-        return chunk;
+        return ds->chunk;
     }
         
     if (r->data) {
         // read into user allocated memory
-        chunk->data = r->data;
+        ds->chunk->data = r->data;
     } else {
         // read into method-allocated memory
-        chunk->data = get_chunk_buffer();
-        if (!chunk->data) {
-            free (chunk);
+        ds->chunk->data = get_chunk_buffer();
+        if (!ds->chunk->data) {
             return NULL;
         }
     }
 
-    total_size = elemsize;
-    for (i=0; i<var->ndims; i++) {
-        offset[i]    = (int) start[i];
-        readsize[i]  = (int) count[i];
-        total_size   = total_size * count[i];
+    snprintf(ds_name, MAX_DS_NAMELEN, "%s/%s/%s", fp->path, ds->group_name, var->name);
+
+    if (r->sel->type == ADIOS_SELECTION_BOUNDINGBOX)
+    {
+        // transform uint64_t array to int array for DataSpaces
+        for (i=0; i<var->ndims; i++) {
+            offset[i]    = (int) r->sel->u.bb.start[i];
+            readsize[i]  = (int) r->sel->u.bb.count[i];
+        }
+
+        log_debug("-- %s, rank %d: get data: varname=%s start=(%lld,%lld,%lld) count=(%lld,%lld,%lld)}\n",
+                __func__, ds->mpi_rank, ds_name, 
+                r->sel->u.bb.start[0], r->sel->u.bb.start[1], r->sel->u.bb.start[2], 
+                r->sel->u.bb.count[0], r->sel->u.bb.count[1], r->sel->u.bb.count[2]);
+        log_debug("-- %s, rank %d: get data: varname=%s offset=(%d,%d,%d) readsize=(%d,%d,%d)}\n",
+                __func__, ds->mpi_rank, ds_name, offset[0], offset[1], offset[2], 
+                readsize[0], readsize[1], readsize[2]);
+
+        err = adios_read_dataspaces_get(ds_name, var->type, ds, 
+                var->ndims, futils_is_called_from_fortran(),
+                offset, readsize, ds->chunk->data);
+    }
+    else if (r->sel->type == ADIOS_SELECTION_POINTS)
+    {
+        err = 0;
+        k = 0;
+        while (!err && k < r->sel->u.points.npoints) {
+            // pick and read k-th point individually
+            for (i=0; i<var->ndims; i++) {
+                offset[i]    = (int) r->sel->u.points.points[k*var->ndims+i];
+                readsize[i]  = 1;
+            }
+
+            err = adios_read_dataspaces_get(ds_name, var->type, ds, 
+                    var->ndims, futils_is_called_from_fortran(),
+                    offset, readsize, ds->chunk->data+k*elemsize);
+            k++;
+        }
+    }
+    else
+    {
+        log_error ("Programming error: in Dataspaces method's read_var(), there "
+                   "should be no selection type other than bounding box and points. "
+                   "type = %d, var = %s\n", r->sel->type, var->name);
+        err = 1;
+
     }
 
-    snprintf(ds_name, MAX_DS_NAMELEN, "%s/%s/%s", fp->path, ds->group_name, var->name);
-    log_debug("-- %s, rank %d: get data: varname=%s start=(%lld,%lld,%lld) count=(%lld,%lld,%lld)}\n",
-        __func__, ds->mpi_rank, ds_name, start[0], start[1], start[2], 
-        count[0], count[1], count[2]);
-    log_debug("-- %s, rank %d: get data: varname=%s offset=(%d,%d,%d) readsize=(%d,%d,%d)}\n",
-        __func__, ds->mpi_rank, ds_name, offset[0], offset[1], offset[2], 
-        readsize[0], readsize[1], readsize[2]);
-
-    err = adios_read_dataspaces_get(ds_name, var->type, ds, 
-                              var->ndims, futils_is_called_from_fortran(),
-                              offset, readsize, chunk->data);
     if (err) {
-        free (chunk);
         return NULL;
     }
 
-    return chunk;
-
-
+    return ds->chunk;
 }
 
 int adios_read_dataspaces_perform_reads (const ADIOS_FILE *fp, int blocking)
 {
     struct dataspaces_data_struct * ds = (struct dataspaces_data_struct *) fp->fh;
     read_request * r;
-    ADIOS_VARCHUNK * chunk;
 
     /* 1. prepare all reads */
     // check if all user memory is provided for blocking read
@@ -1186,16 +1229,13 @@ int adios_read_dataspaces_perform_reads (const ADIOS_FILE *fp, int blocking)
         return 0;
 
     while (ds->req_list != NULL && adios_errno == err_no_error) {
-        chunk = read_var (fp, ds->req_list);
+        read_var (fp, ds->req_list);
     
         // remove head from list
         r = ds->req_list;
         ds->req_list = ds->req_list->next;
         free(r);
         ds->nreq--;
-
-        // we do not need the chunk anymore
-        common_read_free_chunk (chunk);
     }
     ds->req_list_tail = NULL;
 
@@ -1214,6 +1254,10 @@ int adios_read_dataspaces_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** 
             /* Request size does not fit into the chunk buffer.
                Chop up the request into multiple smaller chunks here.
             */
+            /* FIXME: do this chunking */
+            log_error ("DATASPACES method cannot do chunking at this moment. "
+                        "Choose a max_chunk_size=N parameter so that each variable "
+                        "request fits into the buffer\n");
 
         }
 
@@ -1239,122 +1283,6 @@ int adios_read_dataspaces_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** 
     return retval;
 }
 
-#if 0
-int64_t adios_read_dataspaces_read_var (ADIOS_GROUP * gp, const char * varname,
-                        const uint64_t * start, const uint64_t * count,
-                        void * data)
-{
-    struct dataspaces_data_struct * ds = (struct dataspaces_data_struct *) gp->fp->fh;
-    struct dataspaces_var_struct * vars = ds->groups[gp->grpid].vars;
-    int varid; 
-
-    varid = adios_read_dataspaces_find_varname (gp->vars_count, vars, varname);
-    if (varid == -1) {
-        adios_error (err_invalid_varname,
-                "Variable name '%s' not found among %d variables of group '%s'!",
-                varname, gp->vars_count, gp->fp->group_namelist[gp->grpid]
-                );
-        return -adios_errno;
-    }
-
-    return adios_read_dataspaces_read_var_byid(gp, varid, start, count, data);
-}
-
-
-int64_t adios_read_dataspaces_read_var_byid (ADIOS_GROUP    * gp,
-                             int              varid,
-                             const uint64_t  * start,
-                             const uint64_t  * count,
-                             void           * data)
-{
-    int64_t total_size;
-    int offset[3] = {0,0,0};
-    int readsize[3] = {1,1,1};
-    struct dataspaces_data_struct * ds = (struct dataspaces_data_struct *) gp->fp->fh;
-    struct dataspaces_var_struct * vars = ds->groups[gp->grpid].vars;
-    int elemsize;
-    int err;
-    int i,k,ndims,tidx;
-    char ds_name[MAX_DS_NAMELEN];
-
-    if (varid < 0 || varid > gp->vars_count) {
-        adios_error (err_invalid_varid, "Group %s has %d variables. Invalid varid %d",
-                    gp->fp->group_namelist[gp->grpid], gp->vars_count, varid);
-        return -adios_errno;
-    }
-
-    elemsize = common_read_type_size(vars[varid].type, vars[varid].value);
-
-    // handle scalars first (no need to read from space again)
-    if (vars[varid].ndims == 0) { // && !vars[varid].hastime) {
-        if (data) {
-            memcpy (data, vars[varid].value, elemsize);
-        } else {
-            adios_error (err_no_memory, "adios_read_var() expects an allocated array to store data.");
-            return -adios_errno;
-        }
-        return elemsize;
-    }
-        
-    adios_errno = err_no_error;
-    k=0;
-    ndims = vars[varid].ndims;
-    /* DATASPACES uses integers for boundaries */
-    if (vars[varid].hastime) {
-        /* DATASPACES has no time dimensions stored in space. Remove from dims */
-        ndims = vars[varid].ndims - 1;
-        if (futils_is_called_from_fortran()) {
-            // Fortran: time dim is last
-            k = 0;
-            tidx = ndims;
-        } else {
-            // C: time dim is first
-            k = 1;
-            tidx = 0;
-        }
-        if (start[tidx] != gp->timestep || count[tidx] != 1) {
-            adios_error (err_out_of_bound, 
-                         "offset/readsize is out of bound in time dimension %d for variable %s\n"
-                         "you can read 1 element from offset (=timestep) %lld\n" 
-                         "you provided start=%lld, count=%lld\n",
-                         tidx, vars[varid].name, gp->timestep, start[tidx], count[tidx]
-                         );
-            return -adios_errno;
-        }
-    } else {
-        k = 0;
-    }
-    total_size = elemsize;
-    for (i=0; i<ndims; i++) {
-        if ( start[i+k] < 0 || start[i+k]+count[i+k] > vars[varid].dims[i+k]) {
-            adios_error (err_out_of_bound, 
-                         "offset/readsize is out of bound in dimension %d for variable %s\n"
-                         "size of dimension %d = %lld; you provided start=%lld, count=%lld",
-                         i+k, vars[varid].name, i+k, vars[varid].dims[i+k], start[i+k], count[i+k]
-                         );
-            return -adios_errno;
-        }
-        offset[i]    = (int) start[i+k];
-        readsize[i]  = (int) count[i+k];
-        total_size   = total_size * count[i+k];
-    }
-
-    snprintf(ds_name, MAX_DS_NAMELEN, "%s/%s/%s", 
-             fp->path, gp->fp->group_namelist[gp->grpid], vars[varid].name);
-    log_debug("-- %s, rank %d: get data: varname=%s start=(%lld,%lld,%lld,%lld) count=(%lld,%lld,%lld,%lld)}\n",
-        __func__, ds->mpi_rank, ds_name, start[0], start[1], start[2], start[3], count[0], count[1], count[2], count[3]);
-    log_debug("-- %s, rank %d: get data: varname=%s offset=(%d,%d,%d) readsize=(%d,%d,%d)}\n",
-        __func__, ds->mpi_rank, ds_name, offset[0], offset[1], offset[2], readsize[0], readsize[1], readsize[2]);
-
-    err = adios_read_dataspaces_get(ds_name, vars[varid].type, ds, 
-                              ndims, futils_is_called_from_fortran(),
-                              offset, readsize, data);
-    if (err)
-        return err;
-
-    return total_size;
-}
-#endif
 
 /* Tell the DataSpaces order of dimensions for a 1-3 dim array written from Fortran or C.
    unpack=1: the reverse of packing (to retrieve the original order).
