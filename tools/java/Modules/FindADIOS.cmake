@@ -25,6 +25,10 @@
 # NOTE: 
 # This module is written based FindMPI. Most routines are copied from FindMPI.
 
+# include this to handle the QUIETLY and REQUIRED arguments
+include(${CMAKE_CURRENT_LIST_DIR}/FindPackageHandleStandardArgs.cmake)
+include(GetPrerequisites)
+
 if(NOT DEFINED ADIOS_USE_MPI)
   set(ADIOS_USE_MPI TRUE)
 endif()
@@ -127,8 +131,6 @@ set(ADIOS_INCLUDE_PATH  ${ADIOS_INCLUDE_PATH_WORK}  CACHE STRING "ADIOS include 
 set(ADIOS_LINK_FLAGS    ${ADIOS_LINK_FLAGS_WORK}    CACHE STRING "ADIOS linking flags"             FORCE)
 set(ADIOS_LIBRARIES     ${ADIOS_LIBRARIES_WORK}     CACHE STRING "ADIOS libraries to link against" FORCE)
 
-set(ADIOS_FOUND FALSE)
-if (ADIOS_INCLUDE_PATH AND ADIOS_LIBRARIES)
-  set(ADIOS_FOUND TRUE)
-endif()
+find_package_handle_standard_args(ADIOS DEFAULT_MSG ADIOS_INCLUDE_PATH ADIOS_LIBRARIES)
+
 
