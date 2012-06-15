@@ -25,7 +25,6 @@
 /* Note: MATLAB reloads the mex64 files each time, so all static variables get the original value.
    Therefore static variables cannot be used to pass info between two Matlab/ADIOS calls */
 static struct adios_read_hooks_struct * adios_read_hooks = 0;
-static enum ADIOS_READ_METHOD selected_method = ADIOS_READ_METHOD_BP;
 
 struct common_read_internals_struct {
     enum ADIOS_READ_METHOD method;
@@ -74,6 +73,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
         if (!strcasecmp (p->name, "verbose")) 
         {
             if (p->value) {
+                errno = 0;
                 verbose_level = strtol(p->value, NULL, 10);
                 if (errno) {
                     log_error ("Invalid 'verbose' parameter passed to read init function: '%s'\n", p->value);
@@ -150,7 +150,7 @@ ADIOS_FILE * common_read_open_stream (const char * fname,
     // init the adios_read_hooks_struct if not yet initialized 
     adios_read_hooks_init (&adios_read_hooks); 
 
-    internals->method = selected_method;
+    internals->method = method;
     internals->read_hooks = adios_read_hooks;
 
     fp = adios_read_hooks[internals->method].adios_open_stream_fn (fname, comm, lock_mode, timeout_sec);
@@ -189,7 +189,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     // init the adios_read_hooks_struct if not yet initialized 
     adios_read_hooks_init (&adios_read_hooks); 
 
-    internals->method = selected_method;
+    internals->method = method;
     internals->read_hooks = adios_read_hooks;
 
     fp = adios_read_hooks[internals->method].adios_open_file_fn (fname, comm);
