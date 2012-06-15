@@ -1,0 +1,369 @@
+
+\vspace{24pt}
+\begin{flushright}
+{\color{color08} \textbf{ORNL/TM-2009/100\label{OLEHLINK6}}}
+\end{flushright}
+
+\vspace{60pt}
+{\huge \textbf{ADIOS 1.4 User's Manual}}
+
+\vspace{36pt}
+\textbf{July 2012\pagebreak{}}
+
+
+\begin{longtable}{|p{4.443in}|p{0.057in}|}
+\hline
+
+\begin{center}
+{\small \textbf{DOCUMENT AVAILABILITY}}
+\end{center}
+
+
+{\small Reports produced after January 1, 1996, are generally available free via 
+the U.S. Department of Energy (DOE) Information Bridge:}
+
+
+\leftskip=18pt
+{\small \textbf{Web site:}}{\small  http://www.osti.gov/bridge}
+
+
+\leftskip=0pt
+{\small Reports produced before January 1, 1996, may be purchased by members of 
+the public from the following source:}
+
+
+\parindent=18pt
+{\small National Technical Information Service}
+
+{\small 5285 Port Royal Road}
+
+{\small Springfield, VA 22161}
+
+{\small \textit{\textbf{Telephone:}}}{\small  703-605-6000 (1-800-553-6847)}
+
+{\small \textit{\textbf{TDD:}}}{\small  703-487-4639}
+
+{\small \textit{\textbf{Fax:}}}{\small  703-605-6900}
+
+{\small \textit{\textbf{E-mail:}}}{\small  info@ntis.fedworld.gov}
+
+{\small \textit{\textbf{Web site:}}}{\small  http://www.ntis.gov/support/ordernowabout.htm}
+
+
+\parindent=0pt
+{\small Reports are available to DOE employees, DOE contractors, Energy Technology 
+Data Exchange (ETDE) representatives, and International Nuclear Information System 
+(INIS) representatives from the following source:}
+
+
+\parindent=18pt
+{\small Office of Scientific and Technical Information}
+
+{\small P.O. Box 62}
+
+{\small Oak Ridge, TN 37831}
+
+{\small \textit{\textbf{Telephone:}}}{\small  865-576-8401}
+
+{\small \textit{\textbf{Fax:}}}{\small  865-576-5728}
+
+{\small \textit{\textbf{E-mail:}}}{\small  reports@adonis.osti.gov}
+
+\leftskip=18pt
+\parindent=0pt
+{\small \textit{\textbf{Web site:}}}{\small  http://www.osti.gov/contact.html}
+
+\\\hline
+\end{longtable}
+
+%\vspace{48pt}
+\begin{longtable}{|p{4.443in}|p{0.057in}|}
+\hline
+% ROW 1
+\begin{minipage}[t]{4.443in}\raggedright %\linebreak
+{\small This report was prepared as an account of work sponsored by an agency of 
+the United States Government. Neither the United States government nor any agency 
+thereof, nor any of their employees, makes any warranty, express or implied, or 
+assumes any legal liability or responsibility for the accuracy, completeness, or 
+usefulness of any information, apparatus, product, or process disclosed, or represents 
+that its use would not infringe privately owned rights. Reference herein to any 
+specific commercial product, process, or service by trade name, trademark, manufacturer, 
+or otherwise, does not necessarily constitute or imply its endorsement, recommendation, 
+or favoring by the United States Government or any agency thereof. The views and 
+opinions of authors expressed herein do not necessarily state or reflect those 
+of the United States Government or any agency thereof.}\end{minipage}\\
+\hline
+\end{longtable}
+\pagebreak{}
+
+\vspace{12pt}
+\begin{flushright}
+{\color{color08} \textbf{ORNL/TM-2009/100\label{HToc533553247}\label{HToc6041549}\label{HToc6042388}\label{HToc8548020}\label{HToc528144461}\label{HToc528743868}\label{HToc528745033}}}
+\end{flushright}
+
+%\vspace{36pt}
+\begin{center}
+{\Large \textbf{ADIOS 1.4 USER'S MANUAL}}
+
+\vspace{60pt}
+Prepared for the
+
+%\vspace{12pt}
+Office of Science
+
+%\vspace{12pt}
+U.S. Department of Energy
+
+%\vspace{60pt}
+N. Podhorszki, Q. Liu, S. Klasky, 
+
+%\vspace{12pt}
+J. Lofstead, S. Hodson, F. Zheng, M. Wolf, T. Kordenbrock, H. Abbasi, N. Samatova
+
+%\vspace{72pt}
+July 2012
+
+\vspace{72pt}
+Prepared by
+
+%\vspace{24pt}
+OAK RIDGE NATIONAL LABORATORY
+
+%\vspace{12pt}
+Oak Ridge, Tennessee 37831-6070
+
+%\vspace{12pt}
+managed by
+
+%\vspace{12pt}
+UT-BATTELLE, LLC
+
+%\vspace{12pt}
+for the
+
+%\vspace{12pt}
+U.S. DEPARTMENT OF ENERGY
+
+%\vspace{12pt}
+under contract DE-AC05-00OR22725
+
+%\vspace{42pt}
+\end{center}
+
+
+\newpage
+
+\tableofcontents
+
+
+\newpage
+
+\listoffigures
+
+
+\newpage
+
+\comment {
+
+\vspace{30pt}
+\leftskip=0pt
+\textbf{Figures}
+
+\vspace{18pt}
+Figure 1. ADIOS programming example. \pageref{HToc144350161}
+
+\vspace{6pt}
+Figure 2. Example XML configuration \pageref{HToc144350162}
+
+\vspace{6pt}
+Figure 3. Example XML file for time allocation. \pageref{HToc14435}
+
+\vspace{6pt}
+Figure 4. Server-friendly metadata approach: offset the create/open in time \pageref{HToc144350164}
+
+\vspace{6pt}
+Figure 5. Example XML \pageref{HToc144350165}
+
+\vspace{6pt}
+Figure 6. Example C source \pageref{HToc144350166}
+
+\vspace{6pt}
+Figure 7. Example Original Client XML \pageref{HToc144350167}
+
+\vspace{6pt}
+Figure 8. Example NSSI Client XML \pageref{HToc144350168}
+
+\vspace{6pt}
+Figure 9. Example NSSI Staging Service XML \pageref{HToc144350169}
+
+\vspace{6pt}
+Figure 10. Example PBS script with NSSI Staging Service 35
+
+\vspace{6pt}
+Figure 11. DataTap architecture \pageref{HToc144350171}
+
+\vspace{6pt}
+Figure 12. Select DART as a transport method in the configuration file example. \pageref{HToc144350172}
+
+\vspace{6pt}
+Figure 13. Start the server component in a job file first. \pageref{HToc144350173}
+
+\vspace{6pt}
+Figure 14. Wait for server start-up completion and export the configuration to 
+environment variables. \pageref{HToc144350174}
+
+\vspace{6pt}
+Figure 15. BP file structure \pageref{HToc144350175}
+
+\vspace{6pt}
+Figure 16. Group index table \pageref{HToc144350176}
+
+\vspace{6pt}
+Figure 17. Variables index table \pageref{HToc144350177}
+
+\vspace{6pt}
+Figure 18. Process group structure \pageref{HToc144350178}
+
+\vspace{6pt}
+Figure 19. Attribute entry structure \pageref{HToc144350179}
+
+\vspace{6pt}
+Figure 20. bpls utility \pageref{HToc144350180}
+
+\vspace{6pt}
+Figure 21. bpdump utility \pageref{HToc144350181}
+
+\vspace{6pt}
+Figure 22. Original program (examples/C/manual/1\_nonadios\_example.c). \pageref{HToc144350182}
+
+\vspace{6pt}
+Figure 23. Example config.xml file 68
+
+\vspace{6pt}
+Figure 24. Example gwrite\_temperature.ch file \pageref{HToc144350184}
+
+\vspace{6pt}
+Figure 25. Example adios program to write P files from P processors (examples/C/manual/2\_adios\_write.c) \pageref{HToc144350185}
+
+\vspace{6pt}
+Figure 26. Read in data generated by 2\_adios\_write using gread\_temperature.ch 
+(examples/C/manual/3\_adios\_read.c) \pageref{HToc144350186}
+
+\vspace{6pt}
+Figure 27. Example of a generated gread\_temperature.ch file \pageref{HToc144350187}
+
+\vspace{6pt}
+Figure 28. Example ADIOS program writing N files from P processors (N) \pageref{HToc144350188}
+
+\vspace{6pt}
+Figure 29. Config.xml for a global array  (examples/C/global-array/adios\_global.xml) \pageref{HToc144350189}
+
+\vspace{6pt}
+Figure 30. gwrite header file generated from config.xml \pageref{}
+
+\vspace{6pt}
+Figure 31. Config.xml for a global array with time (examples/C/global-array-time/adios\_globaltime.xml) \pageref{HToc144350191}
+
+\vspace{6pt}
+Figure 32. Config.xml for creating histogram for an array variable (examples/C/stat/stat.xml) 78
+
+
+}
+
+
+\vspace{66pt}
+\textbf{Abbreviations}
+
+\begin{description}
+\item[ADIOS]  Adaptive Input/Output System
+\item[API] Application Program Interface
+\item[DART] Decoupled and Asynchronous Remote Transfers
+\item[GTC] Gyrokinetic Turbulence Code
+\item[HPC] High-Performance Computing
+\item[I/O] Input/Output
+\item[MDS] Metadata Server
+\item[MPI] Message Passing Interface
+\item[NCCS] National Center for Computational Sciences
+\item[ORNL] Oak Ridge National Laboratory
+\item[OS] Operating System
+\item[PG] Process Group
+\item[POSIX] Portable Operating System Interface
+\item[RDMA] Remote Direct Memory Access
+\item[XML] Extensible Markup Language
+\end{description}
+
+
+\vspace{18pt}
+\begin{center}
+{\large \textbf{Acknowledgments}}
+\end{center}
+
+\vspace{6pt}
+The Adaptive Input/Output (I/O) system (ADIOS) is a joint product of the National 
+Center of Computational Sciences (NCCS) at Oak Ridge National Laboratory (ORNL) 
+and the Center for Experimental Research in Computer Systems at the Georgia Institute 
+of Technology. This work is being led by Scott Klasky (ORNL); Jay Lofstead (Georgia 
+Tech, funded from Sandia Labs) is the main contributor. ADIOS has greatly benefited 
+from the efforts of the following ORNL staff: Steve Hodson, who gave tremendous 
+input and guidance; Chen Jin, who integrated ADIOS routines into multiple scientific 
+applications; Norbert Podhorszki, who integrated ADIOS with the Kepler workflow 
+system and worked with Qing Gary Liu on the read API. ADIOS also benefited from 
+the efforts of the Georgia Tech team, including Prof. Karsten Schwan, Prof. Matt 
+Wolf, Hassan Abbasi, and Fang Zheng. Wei Keng Liao, Northwestern University, and 
+Wang Di, SUN, have also been invaluable in our coding efforts of ADIOS, writing 
+several important code parts. Essentially, ADIOS is componentization of I/O transport 
+methods. Among the suite of transport methods, {\color{color01} Decoupled and Asynchronous 
+Remote Transfers (}DART) was developed by Prof. Manish Parashar and his student 
+Ciprian Docan of Rutgers University.
+
+\vspace{6pt}
+Without a scientific application, ADIOS would not have come this far. Special thanks 
+go to Stephane Ethier at the Princeton Plasma Physics Laboratory (GTS); Researcher 
+Yong Xiao and Prof. Zhihong Lin from the University of California, Irvine (GTC); 
+Julian Cummings at the California Institute of Technology; Seung-Hoe and Prof. 
+C. S. Chang at New York University (XGC); Jackie Chen and Ray Grout at Sandia (S3D); 
+and Luis Chacon at ORNL (Pixie3D). 
+
+\vspace{6pt}
+This project is sponsored by ORNL, Georgia Tech, The Scientific Data Management 
+Center (SDM) at Lawrence Berkeley National Laboratory, and the U.S. Department 
+of Defense. 
+
+\vspace{6pt}
+{\Large \textbf{ADIOS contributors}}
+
+\vspace{6pt}
+\leftskip=36pt
+\parindent=-36pt
+\textbf{ANL}: Rob Ross
+
+\vspace{6pt}
+\textbf{Auburn University}: Weikuan Yu, Yuan Tian
+
+\vspace{6pt}
+\textbf{Georgia Tech}: Hasan Abbasi, Jay Lofstead, Karsten Schwan, Fang Zheng,
+
+\vspace{6pt}
+\textbf{NCSU}: Xiaosong Ma, Sriram Lakshminarasimhan, Abhijit Sachidananda, 
+
+\vspace{6pt}
+Michael Warren 
+
+\vspace{6pt}
+\textbf{Northwestern University}: Alok Choudhary, Wei Keng Liao, Chen Jin
+
+\vspace{6pt}
+\textbf{ORNL}: Steve Hodson, Scott Klasky, Qing Gary Liu, Jeremy Logan
+
+\vspace{6pt}
+Norbert Podhorszki, Steve Poole, Nagiza Samatova, Matthew Wolf
+
+\vspace{6pt}
+\textbf{Rutgers University}: Ciprian Docan, Fan Zhang, Manish Parashar
+
+\vspace{6pt}
+\textbf{Sandia}: Todd Kordenbrock
+
+\vspace{6pt}
+\textbf{SUN}: Wang Di\label{HToc82067512}\label{HToc84890214}\label{HToc212016589}\label{HToc212016831}\label{HToc82064257}\label{HToc182553322}
+

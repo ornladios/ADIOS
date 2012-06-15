@@ -1,0 +1,78 @@
+%&LaTeX
+% !TEX encoding = UTF-8 Unicode
+\documentclass{article}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+
+%\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{color}
+
+\usepackage{ifpdf}
+
+\ifx\pdftexversion\undefined %if using TeX
+    \usepackage{graphicx}
+\else %if using PDFTeX
+    \ifpdf %if using PDFTeX in PDF mode
+        \usepackage[pdftex]{graphicx}
+        \DeclareGraphicsExtensions{.pdf,.png,.mps}
+        \usepackage{pgf}
+    \else %if using TeX or PDFTeX in TeX mode
+        \usepackage{graphicx}
+        \DeclareGraphicsExtensions{.eps,.bmp}
+        \DeclareGraphicsRule{.emf}{bmp}{}{}% declare EMF filename extension
+        \DeclareGraphicsRule{.png}{bmp}{}{}% declare PNG filename extension
+        \usepackage{pgf}
+        \usepackage{pstricks} %variant: \usepackage{pst-all}
+\fi
+
+\definecolor{color01}{rgb}{0.00,0.00,0.00}
+\definecolor{color02}{rgb}{0.00,0.00,1.00}
+\definecolor{color06}{rgb}{1.00,0.00,0.00}
+\definecolor{color08}{rgb}{1.00,1.00,1.00}
+\definecolor{color17}{rgb}{0.14,0.25,0.38}
+\definecolor{color20}{rgb}{0.31,0.51,0.74}
+\definecolor{color26}{rgb}{0.50,0.50,0.50}
+
+\newcommand{\comment}[1]{}
+
+
+\begin{document}
+
+\input{front_matter.tex}
+
+\input{introduction.tex}
+
+\input{installation.tex}
+
+\input{adios_write_api}
+
+\input{adios_noxml_write_api}
+
+\input{xml_format}
+
+\input{transport_methods}
+
+\input{adios_read_api}
+
+\input{bp_file_format}
+
+\input{utilities}
+
+\input{converters}
+
+\input{gpp}
+
+\input{c_programming}
+
+\input{developer}
+
+\input{appendix}
+
+\end{document}
+
+
+
+
+

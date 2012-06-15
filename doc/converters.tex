@@ -1,0 +1,80 @@
+\vspace{34pt}
+%\section*{{\Large \textbf{10 Converters}}}
+\section{Converters}
+
+\vspace{24pt}
+\leftskip=0pt
+To make BP files compatible with the popular file formats, we provide a series 
+of converters to convert BP files to HDF5, NETCDF, or ASCII. As long as users give 
+the required schema via the configuration file, the different converter tools currently 
+in ADIOS have the features to translate intermediate BP files to the expected HDF5, 
+NetCDF, or ASCII formats.\label{HToc82067530}
+
+\vspace{24pt}
+\subsection*{{\large 10.1 }{\large \textbf{ \label{HToc84890282}\label{HToc212016658}\label{HToc212016900}\label{HToc182553431}bp2h5}}}
+
+\vspace{10pt}
+This converter, as indicated by its name, can convert BP files into HDF5 files. 
+Therefore, the same postprocessing tools can be used to analyze or visualize the 
+converted HDF5 files, which have the same data schema as the original ones. The 
+converter can match the row-based or column-based memory layout for datasets inside 
+the file based on which language the source codes are written in.  If the XML file 
+specifies global-bounds information, the individual sub-blocks of the dataset from 
+different process groups will be merged into one global the dataset in HDF file.\label{HToc82067531}
+
+\vspace{10pt}
+\subsection*{{\large 10.2 }{\large \textbf{ \label{HToc84890283}\label{HToc212016659}\label{HToc212016901}\label{HToc182553432}bp2ncd}}}
+
+\vspace{10pt}
+The bp2ncd converter is used to translate bp files into NetCDF files. In Chap. 
+5, we describe the time-index as an attribute for adios-group. If the variable 
+is time-based, one of its dimensions needs to be specified by this time-index variable, 
+which is defined as an unlimited dimension in the file into which it is to be converted. 
+a NetCDF dimension has a name and a length. If the constant value is declared as 
+a dimension value, the dimension in NetCDF will be named varname\_n, in which varname 
+is the name of the variable and n is the nth dimension for that variable. To make 
+the name for the dimension value more meaningful, the users can also declare the 
+dimension value as an attribute whose name can be picked up by the converter and 
+used as the dimension name.
+
+\vspace{10pt}
+Based on the given global bounds information in a BP file, the converter can also 
+reconstruct the individual pieces from each process group and create the global 
+space array in NetCDF. A final word about editing the XML file: the name string 
+can contain only letters, numbers or underscores (``\_''). Therefore, the attribute 
+or variable name should conform to this rule. \label{HToc84890284}\label{HToc212016660}\label{HToc212016902}\label{HToc82067532}\label{HToc182553433}
+
+\vspace{10pt}
+\subsection*{{\large 10.3 }{\large \textbf{bp2ascii}}}
+
+\vspace{10pt}
+Sometimes, scientists want to extract one variable with all the time steps or want 
+to extract several variables at the same time steps and store the resulting data 
+in ASCII format. The Bp2ascii converter tool allows users to accomplish those tasks. 
+
+\vspace{10pt}
+Bp2ascii bp\_filename -v x1 ... xn [-c/-r] -t m,n
+
+\vspace{10pt}
+-v - specify the variables need to be printed out in ASCII file
+
+\vspace{10pt}
+-c -print variable values for all the time steps in column
+
+\vspace{10pt}
+-r - print variable values for all the time steps in row
+
+\vspace{10pt}
+-t - print variable values for time step m to n,  if not defined, all the time 
+steps will be printed out.
+
+\vspace{10pt}
+\subsection*{{\large 10.4 }{\large \textbf{ \label{HToc84890285}\label{HToc212016661}\label{HToc212016903}\label{HToc182553434}Parallel 
+Converter Tools}}}
+
+\vspace{10pt}
+Currently, all of the converters mentioned above can only sequentially parse bp 
+files. We will work on developing parallel versions of all of the converters for 
+improved performance. As a result, the extra conversion cost to translate bp into 
+the expected file format can be unnoticeable compared with the file transfer time. 
+ \label{HToc84890286}\label{HToc212016662}\label{HToc212016904}\label{HToc182553435}

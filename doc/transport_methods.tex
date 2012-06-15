@@ -1,0 +1,827 @@
+\vspace{22pt}
+%\section*{{\Large \textbf{6 Transport methods}}}
+\section{Transport Methods}
+
+\vspace{24pt}
+\leftskip=0pt
+Because of the time it can take to move data from one process to another or to 
+write and read data to and from a disk, it is often advantageous to arrange the 
+program so that some work can be done while the messages are in transit. So far, 
+we have used non-blocking operations to avoid waiting. Here we describe some details 
+for arranging a program so that computation and I/O can take place simultaneously.\label{HToc84890256}\label{HToc212016632}\label{HToc212016874}\label{HToc182553380}
+
+\vspace{24pt}
+\subsection*{{\large 6.1 }{\large \textbf{Synchronous methods\label{HToc84890257}\label{HToc212016633}\label{HToc212016875}\label{HToc182553381}}}}
+
+\vspace{10pt}
+\subsubsection*{{\large \textbf{6.1.1 NULL}}}
+
+\vspace{10pt}
+The ADIOS NULL method allows users to quickly comment out an ADIOS group by changing 
+the transport method to ``NULL,'' users can test the speed of the routine by timing 
+the output against no I/O. This is especially useful when working with asynchronous 
+methods, which take an indeterminate amount of time.  Another useful feature of 
+this I/O is that it quickly allows users to test out the system and determine whether 
+bugs are caused by the I/O system or by other places in the codes.\label{HToc84890258}\label{HToc212016634}\label{HToc212016876}\label{HToc182553382}
+
+\vspace{10pt}
+\subsubsection*{{\large \textbf{6.1.2 POSIX}}}
+
+\vspace{10pt}
+The simplest method provided in ADIOS just does binary POSIX I/O operations. Currently, 
+it does not support shared file writing or reading and has limited additional functionality. 
+The main purpose for the POSIX I/O method is to provide a simple way to migrate 
+a one-file-per-process I/O routine to ADIOS and to test the results without introducing 
+any complexity from MPI-IO or other I/O methods. Performance gains just by using 
+this transport method are likely due to our aggressive buffering for better streaming 
+performance to storage. The buffering method writes out files in BP format, which 
+is a compact, self-describing format. 
+
+\vspace{10pt}
+Additional features may be added to the ADIOS POSIX transport method over time. 
+A new transport method with a related name, such as POSIX-ASCII, may be provided 
+to perform I/O with additional features. The POSIX-ASCII example would write out 
+a text version of the data formatted nicely according to some parameters provided 
+in the XML file.\label{HToc84890259}\label{HToc212016635}\label{HToc212016877}\label{HToc182553383}
+
+\vspace{10pt}
+\subsubsection*{{\large \textbf{6.1.3 MPI}}}
+
+\vspace{10pt}
+Many large-scale scientific simulations generate a large amount of data, spanning 
+thousands of files or datasets. The use of MPI-IO reduces the amount of files and 
+thus is helpful for data management, storage, and access. 
+
+\vspace{10pt}
+The original MPI method was developed based on our experiments with generating 
+the better MPI-IO performance on the ORNL Jaguar machine. Many of the insights 
+have helped us achieve excellent performance on both the Jaguar XT4 machine and 
+on the other clusters. Some of the key insights we have taken advantage of include 
+artificially serialized MPI\_File\_open calls and additional timing delays that 
+can achieve reduced delays due to metadata server (MDS) conflicts on the attached 
+Lustre storage system.
+
+\vspace{10pt}
+The adapted code takes full advantage of NxM grouping through the coordination-communicator. 
+This grouping generates one file per coordination-communicator with the data stored 
+sequentially based on the process rank within the communicator.  Figure 5 presents 
+in the example of GTC code, 32 processes in the same Toroidal zone write to one 
+integrated file. Additional serialization of the MPI\_File\_open calls is done 
+using this communicator as well because each process may have a different size 
+data payload. Rank 0 calculates the size that it will write, calls MPI\_File\_open, 
+and then sends its size to rank 1. Rank 1 listens for the offset to start from, 
+adds its calculated size, does an MPI\_File\_open, and sends the new offset to 
+rank 2. This continues for all processes within the communicator. Additional delays 
+for performance based on the number of processes in the communicator and the projected 
+load on the Lustre MDS can be used to introduce some additional artificial delays 
+that ultimately reduce the amount of time the MPI\_File\_open calls take by reducing 
+the bottleneck at the MDS. An important fact to be noted is that individual file 
+pointers are retrieved by MPI\_File\_open so that each process has its own file 
+pointer for file seek and other I/O operations.
+
+\begin{figure}[htbp]
+\begin{center}
+\includegraphics[width=290pt, height=185pt]{ADIOS-Manual-fig009.png}
+\caption{This should be the caption for \texttt{ADIOS-Manual-fig009.png}.}
+\end{center}
+\end{figure}\label{HRef140733021}\label{HRef140744843}\label{HToc144350164}
+
+\vspace{22pt}
+\begin{center}
+{\color{color20} \textbf{Figure 5. Server-friendly metadata approach: offset the 
+create/open in time}}
+\end{center}
+
+\vspace{10pt}
+We built the MPI transport method, mainly with Lustre in mind because it has been 
+the primary parallel storage service we have available. However, other file-system-specific 
+tunings are certainly possible and fully planned as part of this transport method 
+system. For each new file system we encounter, a new transport method implementation 
+tuned for that file system, and potentially that platform, can be developed without 
+impacting any of the scientific code.
+
+\vspace{10pt}
+The MPI transport method is the most mature, fully featured, and well tested method 
+in ADIOS. We recommend to anyone creating a new transport method that they study 
+it as a model of full functionality and some of the advantages that can be made 
+through careful management of the storage resources.\label{HToc84890260}\label{HToc212016636}\label{HToc212016878}\label{HToc182553384}
+
+\vspace{10pt}
+\subsubsection*{{\large \textbf{6.1.4 MPI\_LUSTRE}}}
+
+\vspace{10pt}
+The MPI\_LUSTRE method is the MPI method with stripe alignment to achieve even 
+greater write performance on the Lustre file system. Each writing process' data 
+is aligned to Lustre stripes. This results in better parallelization of the storage 
+elements. The drawback of using this method is that empty chunks are created between 
+the data sets of the separate processes in the output file, and thus the file size 
+is larger than with using the MPI method. The size of an empty space is the difference 
+between the size of the output data of one writing process and the total size of 
+Lustre stripes that can hold that amount of data, so that the next writing process' 
+output starts aligned with another stripe. Choose the stripe size for the output 
+file therefore carefully, to make the empty space as small as possible. 
+
+\vspace{10pt}
+The following XML snippet shows how to use the MPI\_LUSTRE method in ADIOS. 
+
+\vspace{22pt}
+\texttt{<}method group=\texttt{"}temperature\texttt{"} method=\texttt{"}MPI\_LUSTRE\texttt{"}\texttt{>}
+
+\vspace{10pt}
+\parindent=14pt
+stripe\_count=16,stripe\_size=4194304,block\_size=4194304
+
+\vspace{10pt}
+\parindent=0pt
+\texttt{<}/method\texttt{>}
+
+\vspace{22pt}
+There are three key parameters used in this method.
+
+\vspace{10pt}
+\ensuremath{\Sigma} \textbf{stripe\_count} specifies how many storage targets to 
+use for the whole output file. If not set, the default value is 4.
+
+\vspace{10pt}
+\ensuremath{\Sigma} \textbf{stripe\_size}  specifies Lustre stripe size in bytes. 
+If not set, the default value is 1048576 (i.e. 1 MB).
+
+\vspace{10pt}
+\ensuremath{\Sigma} \textbf{block\_size}   specifies the size of each I/O write 
+request. As an example, if total data size to be written from one process is 800 
+MB at a time, and you want ADIOS to issue twenty I/O write requests issued from 
+one process to Lustre during the writing, then the block\_size should be 40MB.
+
+\vspace{22pt}
+Note in 1.3 and later releases, with Lustreapi option enabled in configuration, 
+MPI\_LUSTRE sets the parameters automatically and therefore parameters in XML are 
+not required.  The method automatically calculates the data size from each processor 
+and sets the proper striping parameters. \label{HRef278374093}\label{HToc182553385}
+
+\vspace{22pt}
+\subsubsection*{{\large \textbf{6.1.5 MPI\_AMR}}}
+
+\vspace{10pt}
+The MPI\_AMR method is designed to maximize write performance for applications 
+such as adaptive mesh refinement (AMR) on the Lustre file system. In AMR-like applications, 
+each processor outputs varying amount of data and some can output very small size 
+data. Based upon MPI\_LUSTRE method, MPI\_AMR further improves the write speed 
+by 
+
+\vspace{22pt}
+1. aggregating data from multiple MPI processors into large chunks. This effectively 
+increases the size of each request and reduces the number of I/O requests.
+
+\vspace{10pt}
+2. threading the metadata operations such as file open. Users are encouraged to 
+call adios\_open and adios\_group\_size API as early as possible. In case Lustre 
+MDS has a performance hit, the overall metadata performance won't be affected. 
+The following code snippet shows a typical way of using this method to improve 
+metadata performance.
+
+\vspace{22pt}
+\leftskip=36pt
+adios\_open(...);
+
+\vspace{10pt}
+adios\_group\_size(...);......
+
+\vspace{22pt}
+//do your computation......
+
+\vspace{22pt}
+adios\_write(..);
+
+\vspace{10pt}
+adios\_write(..);
+
+\vspace{10pt}
+adios\_close(..);
+
+\vspace{22pt}
+\leftskip=0pt
+3. further removing communication and wide striping overhead by writing out subfiles. 
+Please refer to POSIX method on how to read data from subfiles.
+
+\vspace{22pt}
+The following XML snippet shows how to use MPI\_AMR method in ADIOS.
+
+\vspace{10pt}
+There are two key parameters used in this method.
+
+\vspace{22pt}
+\texttt{<}method group=\texttt{"}tracers\texttt{"} method=\texttt{"}MPI\_AMR\texttt{"}\texttt{>}
+
+\vspace{10pt}
+\parindent=18pt
+num\_aggregators=24;num\_ost=672
+
+\vspace{10pt}
+\parindent=0pt
+\texttt{<}/method\texttt{>}
+
+\vspace{22pt}
+\ensuremath{\Sigma} \textbf{num\_aggregators} specifies the number of aggregators 
+to use.
+
+\vspace{10pt}
+\ensuremath{\Sigma} \textbf{num\_ost }specifies the number of Lustre storage targets 
+ available in the file system. Note this parameter is mandatory if ``---with-lustre'' 
+option is not given during ADIOS configuration.
+
+\vspace{22pt}
+For example, if you have an MPI job with 120,000 processors and the number of aggregator 
+is set to 2400, then each aggregator will aggregate the data from 120,000/2400=50 
+processors.
+
+\vspace{10pt}
+ADIOS MPI\_AMR method allocates stand-alone internal buffers for aggregating data. 
+As opposed to ADIOS buffer (the size of which is set from XML file), these buffers 
+are allocated separately and the total size (on one processor) is twice the ADIOS 
+group size. User needs to make sure each process has enough memory when using this 
+method.  
+
+\vspace{10pt}
+Note that in 1.3 and later releases, with Lustreapi option enabled in configuration, 
+MPI\_AMR sets the parameters automatically and therefore parameters in XML are 
+not required. The method automatically calculates the data size from each processor 
+and sets the proper aggregation parameters.\label{HToc84890261}\label{HToc212016637}\label{HToc212016879}\label{HToc182553386}
+
+\vspace{10pt}
+\subsubsection*{{\large \textbf{6.1.6 PHDF5}}}
+
+\vspace{10pt}
+HDF5, as a hierarchical File structure, has been widely adopted for data storage 
+in various scientific research fields.  Parallel HDF5 (PHDF5) provides a series 
+of APIs to perform the I/O operations in parallel from multiple processors, which 
+dramatically improves the I/O performance of the sequential approach to read/write 
+an HDF5 file. In order to make the difference in transport methods and file formats 
+transparent to the end users, we provide a mechanism that write/read an HDF5 file 
+with the same schema by keeping the same common adios routines with only one entry 
+change in the XML file. This method provides users with the capability to write 
+out exactly the same HDF5 files as those generated by their original PHDF5 routines. 
+Doing so allows for the same analysis tool chain to analyze the data. 
+
+\vspace{10pt}
+Currently, HDF5 supports two I/O modes: independent and Collective read or write, 
+which can use either the MPI or the POSIX driver by specifying the dataset transfer 
+property list in H5Dwrite function calls. In this release, only the MPI driver 
+is supported in ADIOS; later on, both I/O drivers will be supported by changing 
+the attribute information for PHDF5 method elements in XML. \label{HToc182553387}
+
+\vspace{10pt}
+\subsubsection*{{\large \textbf{6.1.7 NetCDF4}}}
+
+\vspace{10pt}
+Another widely accepted standard file format is NetCDF, which is the most frequently 
+used file format in the climate and weather research communities.  Beginning with 
+the NetCDF 4.0 release, NetCDF has added PHDF5 as a new option for data storage 
+called the ``netcdf-4 format''.  When a NetCDF4 file is opened in this new format, 
+NetCDF4 inherits PHDF5's parallel I/O capabilities.
+
+\vspace{10pt}
+The NetCDF4 method creates a single shared filed in the ``netcdf-4 format'' and 
+uses the parallel I/O features.  The NetCDF4 method supports multiple open files. 
+ To select the NetCDF4 method use ``NC4'' as the method name in the XML file.
+
+\vspace{10pt}
+\textbf{Restrictions:} Due to the collective nature of the NetCDF4 API, there are 
+some legal XML files that will not work with the NetCDF4 method.  The most notable 
+incompatibility is an XML fragment that creates an array variable without a surrounding 
+global-bounds.  Within the application, a call to adios\_set\_path() is used to 
+add a unique prefix to the variable name.  A rank-based prefix is an example. 
+
+
+\vspace{22pt}
+\leftskip=18pt
+\texttt{<}?xml version=\texttt{"}1.0\texttt{"}?\texttt{>}
+
+\vspace{10pt}
+\texttt{<}adios-config host-language=\texttt{"}C\texttt{"}\texttt{>}
+
+\vspace{10pt}
+\parindent=14pt
+\texttt{<}adios-group name=\texttt{"}atoms \texttt{"} coordination-communicator=\texttt{"}comm\texttt{"}\texttt{>}
+
+\vspace{10pt}
+\parindent=28pt
+\texttt{<}var name=\texttt{"}nparam\texttt{"} type=\texttt{"}integer\texttt{"}/\texttt{>}
+
+\vspace{10pt}
+\texttt{<}var name=\texttt{"}ntracked\texttt{"} type=\texttt{"}integer\texttt{"}/\texttt{>}
+
+\vspace{10pt}
+\parindent=57pt
+\texttt{<}var name=\texttt{"}atoms \texttt{"} type=\texttt{"}real\texttt{"} dimensions=\texttt{"}nparam,ntracked\texttt{"}/\texttt{>}
+
+\vspace{10pt}
+\parindent=14pt
+\texttt{<}/adios-group\texttt{>}
+
+\vspace{10pt}
+\parindent=0pt
+\texttt{<}method group=\texttt{"}atoms\texttt{"} method=\texttt{"}NC4 \texttt{"}/\texttt{>}
+
+\vspace{10pt}
+\texttt{<}buffer size-MB=\texttt{"}1\texttt{"} allocate-time=\texttt{"}now\texttt{"}/\texttt{>}
+
+\vspace{10pt}
+\texttt{<}/adios-config\texttt{>}
+
+\label{HToc144350165}
+
+\vspace{22pt}
+{\color{color20} \textbf{Figure 6. Example XML}}
+
+
+
+\vspace{22pt}
+char path[1024];
+
+\vspace{10pt}
+adios\_init (\texttt{"}config.xml\texttt{"});
+
+\vspace{10pt}
+adios\_open (\&adios\_handle, \texttt{"}atoms\texttt{"}, filename, \texttt{"}w\texttt{"}, 
+\&comm);
+
+\vspace{10pt}
+sprintf(path, ``node\_\%d\_'', myrank);
+
+\vspace{10pt}
+adios\_set\_path(adios\_handle, path);
+
+\vspace{10pt}
+\#include \texttt{"}gwrite\_atoms.ch\texttt{"}
+
+\vspace{10pt}
+adios\_close (adios\_handle);
+
+\vspace{10pt}
+adios\_finalize (myrank);
+
+\vspace{22pt}
+{\color{color20} \textbf{Figure 7. Example C source}}
+
+\vspace{10pt}
+\leftskip=0pt
+This technique is an optimization that allows each rank to creates a variable of 
+the exact dimensions of the data being written.  In this example, each rank may 
+be tracking a different number of atoms.
+
+\vspace{10pt}
+The NetCDF4 collective API expects each rank to write the same variable with the 
+same dimensions.  The example violates both of these expectations.
+
+\vspace{10pt}
+Note: NetCDF4 files created in the new ``netcdf-4 format'' cannot be opened with 
+existing tools linked with NetCDF 3.x.  However, NetCDF4 provides a backward compatibility 
+API, so that these tools can be relinked with NetCDF4.  After relink, these tools 
+can open files in the ``netcdf-4 format''.\label{HToc182553388}
+
+\vspace{10pt}
+\subsubsection*{{\large \textbf{6.1.8 Other methods}}}
+
+\vspace{10pt}
+ADIOS provides an easy plug-in mechanism for users or developers to design their 
+own transport method. A step-by-step instruction for inserting a new I/O method 
+is given in Section 13.1. Users are likely to choose the best method from among 
+the supported or customized methods for the running their platforms, thus avoiding 
+the need to verify their source codes due to the switching of I/O methods.\label{HToc182553389}
+
+\vspace{10pt}
+\subsection*{{\large 6.2 }{\large \textbf{Asynchronous methods\label{HToc182553390}}}}
+
+\vspace{10pt}
+\subsubsection*{{\large \textbf{6.2.1 Network Scalable Service Interface (NSSI)}}}
+
+\vspace{10pt}
+The Network Scalable Service Interface (NSSI) is a client-server development framework 
+for large-scale HPC systems.  NSSI was originally developed out of necessity for 
+the Lightweight File Systems (LWFS) project, a joint effort between researchers 
+at Sandia National Laboratories and the University of New Mexico.  The LWFS approach 
+was to provide a core set of fundamental capabilities for security, data-movement, 
+and storage, and allow extensibility through the development of additional services. 
+ The NSSI framework was designed to be the vehicle to enable the rapid development 
+of such services.
+
+\vspace{10pt}
+The NSSI method is composed of two components - a client method and a staging service. 
+ The client method does not perform any file I/O.  Instead, all ADIOS operations 
+become requests to the staging service.  The staging service is an ADIOS application, 
+which allows the user to select any ADIOS method for output.  Client requests fall 
+into two categories - pass-through and cached.  Pass-through requests are requests 
+that are synchronous on the staging service and return an error immediately on 
+failure.  adios\_open() is an example of a pass-through request.  Cached requests 
+are requests that are asynchronous on the staging service and return an error at 
+a later time on failure.  adios\_write() is an example of a cached request.  All 
+data cached for a particular file is aggregated and flushed when the client calls 
+adios\_close().
+
+\vspace{10pt}
+Each component requires its own XML config file.  The client method can be selected 
+in the client XML config using ``NSSI'' as the method.  The service XML config 
+must be the same as the client XML config except that the method is ``NSSI\_FILTER''. 
+ When the NSSI\_FILTER method is selected, the ``submethod'' parameter is required. 
+ The ``submethod'' parameter specifies the ADIOS method that the staging service 
+will use for output.  Converting an existing XML config file for use with NSSI 
+is illustrated in the following three Figures.
+
+
+\vspace{18pt}
+\texttt{<}method method=\texttt{"}\textbf{MPI}\texttt{"} group=\texttt{"}atoms\texttt{"}\texttt{>}\textbf{max\_storage\_targets=160}\texttt{<}/method\texttt{>}
+
+\label{HToc144350167}
+
+\vspace{18pt}
+\leftskip=18pt
+{\color{color20} \textbf{Figure 8. Example Original Client XML}}
+
+
+
+\vspace{18pt}
+\texttt{<}method method=\texttt{"}\textbf{NSSI}\texttt{"} group=\texttt{"}atoms/\texttt{>}
+
+\label{HToc144350168}
+
+\vspace{18pt}
+{\color{color20} \textbf{Figure 9. Example NSSI Client XML}}
+
+
+
+\vspace{18pt}
+\texttt{<}method method=\texttt{"}\textbf{NSSI\_FILTER}\texttt{"} group=\texttt{"}atoms\texttt{"}\texttt{>}
+
+\vspace{6pt}
+\textbf{submethod=''MPI''};\textbf{subparameters=''max\_storage\_targets=160''}
+
+\vspace{6pt}
+\texttt{<}/method\texttt{>}
+
+\label{HToc144350169}
+
+\vspace{18pt}
+{\color{color20} \textbf{Figure 10. Example NSSI Staging Service XML}}
+
+\vspace{6pt}
+\leftskip=0pt
+After creating new config files, the application's PBS script (or other runtime 
+script) must be modified to start the staging service prior to application launch 
+and stop the staging service after application termination. The ADIOS distribution 
+includes three scripts to help with these tasks.
+
+\vspace{6pt}
+The start.nssi.staging.sh script launches the staging service.  start.nssi.staging.sh 
+takes two arguments - the number of staging services and an XML config file.
+
+\vspace{6pt}
+The create.nssi.config.sh script creates an XML file that the NSSI method uses 
+to locate the staging services.  create.nssi.config.sh takes two arguments - the 
+name of the output config file and the name of the file containing a list of service 
+contact info.  The service contact file is created by the staging service at startup. 
+ The staging service uses the ADIOS\_NSSI\_CONTACT\_INFO environment variable to 
+determine the pathname of the contact file.
+
+\vspace{6pt}
+The kill.nssi.staging.sh script sends a kill request to the staging service.  kill.nssi.staging.sh 
+ takes one argument - the name of the file containing a list of service contact 
+info (ADIOS\_NSSI\_CONTACT\_INFO).  The staging service will gracefully terminate.
+
+
+\vspace{18pt}
+{\small \#!/bin/bash}
+
+\vspace{6pt}
+{\small \#PBS -l walltime=01:00:00,size=128}
+
+\vspace{18pt}
+{\small export RUNTIME\_PATH=/tmp/work/\$USER/genarray3d.\$PBS\_JOBID}
+
+\vspace{6pt}
+{\small mkdir -p \$RUNTIME\_PATH}
+
+\vspace{6pt}
+{\small cd \$RUNTIME\_PATH}
+
+\vspace{18pt}
+{\small \textbf{export ADIOS\_NSSI\_CONTACT\_INFO=\$RUNTIME\_PATH/nssi\_contact.xml}}
+
+\vspace{6pt}
+{\small \textbf{export ADIOS\_NSSI\_CONFIG\_FILE=\$RUNTIME\_PATH/nssi\_config.xml}}
+
+\vspace{6pt}
+{\small \textbf{\$ADIOS\_DIR/scripts/start.nssi.staging.sh 4 \$RUNTIME\_PATH/genarray3d.server.xml 
+\texttt{>}server.log 2\texttt{>}\&1 \&}}
+
+\vspace{6pt}
+{\small \textbf{sleep 3}}
+
+\vspace{6pt}
+{\small \textbf{\$ADIOS\_DIR/scripts/create.nssi.config.sh \$ADIOS\_NSSI\_CONFIG\_FILE 
+\$ADIOS\_NSSI\_CONTACT\_INFO}}
+
+\vspace{18pt}
+{\small aprun -n 64 \$ADIOS\_SRC\_PATH/tests/genarray/genarray \$RUNTIME\_PATH/test.output 
+4 4 4 128 128 80 \texttt{>}runlog}
+
+\vspace{18pt}
+{\small \textbf{\$ADIOS\_DIR/scripts/kill.nssi.staging.sh \$ADIOS\_NSSI\_CONTACT\_INFO}}
+
+\label{HRef140733157}\label{HToc144350170}
+
+\vspace{18pt}
+\leftskip=18pt
+{\color{color20} \textbf{Figure 11. Example PBS script with NSSI Staging Service}}
+
+\vspace{6pt}
+\leftskip=0pt
+Figure 11 is a example PBS script that highlights the changes required to launch 
+the NSSI staging service.
+
+\vspace{6pt}
+\textbf{Required Environment Variables.}  The NSSI Staging Service requires that 
+the ADIOS\_NSSI\_CONTACT\_INFO variable be set.  This variable specifies the full 
+pathname of the file that the service uses to save its contact information.  Depending 
+on the platform, the contact information is a NID/PID pair or a hostname/port pair. 
+ Rank0 is responsible for gathering the contact information from all members of 
+the job and writing the contact file.  The NSSI method requires that the ADIOS\_NSSI\_CONFIG\_FILE 
+variable be set.  This variable specifies the full pathname of the file that contains 
+the complete configuration information for the NSSI method.  A configuration file 
+with contact information and reasonable defaults for everything else can be created 
+with the create.nssi.config.sh script.
+
+\vspace{6pt}
+\textbf{Calculating the Number of Staging Services Required.}  Remember that all 
+adios\_write() operations are cached requests.  This implies that the staging service 
+must have enough RAM available to cache all data written by its clients between 
+adios\_open() and adios\_close().  The current aggregation algorithm requires a 
+buffer equal to the size of the data into which the data is aggregated.  The start.nssi.staging.sh 
+script launches a single service per node, so the largest amount of data that can 
+be cached per service is 50\% of the memory on a node minus system overhead.  System 
+overhead can be estimated at 500MB.  If a node has 16GB of memory, the amount of 
+data that can be cached is 7.75GB ((16GB-500MB)/2).  To balance the load on the 
+staging services, the number of clients should be evenly divisible by the number 
+of staging services.
+
+\vspace{6pt}
+\textbf{Calculating the Number of Additional Cores Required for Staging.}  The 
+NSSI staging services run on compute nodes, so additional resources are required 
+to run the job.  For each staging service required, add the number of cores per 
+node to the size of the job.  If each node has 12 cores and the job requires 16 
+staging services, add 192 cores to the job.
+
+\vspace{6pt}
+The NSSI transport method is experimental and is not included with the public version 
+of the ADIOS source code in this release; however it is available for use on the 
+XT4 and XT5 machines at ORNL.\label{HToc84890266}\label{HToc212016642}\label{HToc212016884}\label{HToc182553391}
+
+\vspace{6pt}
+\subsubsection*{{\large \textbf{6.2.2 DataTap}}}
+
+\vspace{10pt}
+DataTap is an asynchronous data transport method built to ensure very high levels 
+of scalability through server-directed I/O. It is implemented as a request-read 
+service designed to bridge the order-of-magnitude difference between available 
+memories on the I/O partition compared with the compute partition. We assume the 
+existence of a large number of compute nodes producing data (we refer to them as 
+``\textit{DataTap }clients'') and a smaller number of I/O nodes receiving the data 
+(we refer to them as ``\textit{DataTap }servers'') (see Figure 12). 
+
+\begin{figure}[htbp]
+\begin{center}
+\includegraphics[width=222pt, height=97pt]{ADIOS-Manual-fig022.png}
+\caption{DataTap architecture}
+\end{center}
+\end{figure}\label{HRef119578596}\label{HToc144350171}
+
+
+\vspace{10pt}
+Upon application request, the compute node marks up the data in PBIO format and 
+issues a request for a data transfer to the server. The server queues the request 
+until sufficient receive buffer space is available. The major cost associated with 
+setting up the transfer is the cost of allocating the data buffer and copying the 
+data. However, this overhead is small enough to have little impact on the overall 
+application runtime. When the server has sufficient buffer space, a remote direct 
+memory access (RDMA) read request is issued to the client to read the remote data 
+into a local buffer. The data are then written out to disk or transmitted over 
+the network as input for further processing in the I/O Graph. 
+
+\vspace{10pt}
+We used the Gyrokinetic Turbulence Code (GTC) as an experimental tested for the 
+DataTap transport. GTC is a particle-in-cell code for simulating fusion within 
+tokamaks, and it is able to scale to multiple thousands of processors. In its default 
+I/O pattern, the dominant I/O cost is from each processor writing out the local 
+particle array into a file. Asynchronous I/O reduces this cost to just a local 
+memory copy, thereby reducing the overhead of I/O in the application.
+
+\vspace{10pt}
+The DataTap transport method is experimental and is not included with the public 
+version of the ADIOS source code in this release; however it is available for use 
+on the XT4 and XT5 machines at ORNL.\label{HToc84890267}\label{HToc212016643}\label{HToc212016885}\label{HToc182553392}
+
+\vspace{10pt}
+\subsubsection*{{\large {\color{color01} \textbf{6.2.3 Decoupled and Asynchronous 
+Remote Transfers}}}{\large \textbf{ (DART)}}}
+
+\vspace{10pt}
+DART is an asynchronous I/O transfer method within ADIOS that enables low-overhead, 
+high-throughput data extraction from a running simulation. DART consists of two 
+main components: (1) a DARTClient module and (2) a DARTServer module. Internally, 
+DART uses RDMA to implement the communication, coordination, and data transport 
+between the DARTClient and the DARTServer modules.
+
+\vspace{10pt}
+The DARTClient module is a light library that provides the asynchronous I/O API. 
+It integrates with the ADIOS layer by extending the generic ADIOS data transport 
+hooks. It uses the ADIOS layer features to collect and encode the data written 
+by the application into a local transport buffer. Once it has collected data from 
+a simulation, DARTClient notifies the DARTServer through a coordination channel 
+that it has data available to send out. DARTClient then returns and allows the 
+application to continue its computations while data are asynchronously extracted 
+by the DARTServer.
+
+\vspace{10pt}
+The DARTServer module is a stand-alone service that runs independently of a simulation 
+on a set of dedicated nodes in the staging area. It transfers data from the DARTClient 
+and can save it to local storage system, e.g., Lustre file system, stream it to 
+remote sites, e.g., Ewok cluster, or serve it directly from the staging area to 
+other applications. One instance of the DARTServer can service multiple DARTClient 
+instances in parallel. Further, the server can run in cooperative mode (i.e., multiple 
+instances of the server cooperate to service the clients in parallel and to balance 
+load). The DARTServer receives notification messages from the clients, schedules 
+the requests, and initiates the data transfers from the clients in parallel. The 
+server schedules and prioritizes the data transfers while the simulation is computing 
+in order to overlap data transfers with computations, to maximize data throughput, 
+and to minimize the overhead on the simulation.
+
+\vspace{10pt}
+DART is an asynchronous method available in ADIOS, that can be selected by specifying 
+the transport method in the external ADIOS XML configuration file as ``DART''.
+
+
+\vspace{18pt}
+\leftskip=18pt
+\texttt{<}method priority=''3'' method=\texttt{"}\textbf{DART}\texttt{"} group=\texttt{"}fluxdiag\texttt{"}/\texttt{>}
+
+\label{HToc144350172}
+
+\vspace{18pt}
+{\color{color20} \textbf{Figure 13. Select DART as a transport method in the configuration 
+file example.}}
+
+\vspace{6pt}
+\leftskip=0pt
+To make use of the DART transport, an application job needs to also run the DARTServer 
+component together with the application. The server should be configured and started 
+before the application as a separate job in the system. For example:
+
+\vspace{18pt}
+\leftskip=18pt
+aprun  -n  \$SPROC ./dart\_server -s \$SPROC -c \$PROC \&\texttt{>} log.server 
+\&
+
+\label{HToc144350173}
+
+\vspace{18pt}
+{\color{color20} \textbf{Figure 14. Start the server component in a job file first.}}
+
+\vspace{6pt}
+\leftskip=0pt
+The variable \$SPROC represents the number of server instances to run, and the 
+variable \$PROC represents the number of application processes. For example if 
+the job script runs a coupling scenario with two applications that run on 128 and 
+432 processors respectively, then the value of \$PROC is 560. The `\&' character 
+at the end of the line would place the `aprun' command in the background, and will 
+allow the job script to continue and run the other applications. The server processes 
+produce a configuration file, i.e., `conf' that is used by the DARTClient component 
+to connect to the servers. This file contains the `nid' (network identifier), and 
+`pid' (process identifier) of the master server, which coordinates the client registration 
+and discovery process. The job script should wait for the servers to start-up and 
+produce the `conf' file, which it can then export to environment variables, e.g., 
+P2TNID, and P2TPID. The clients can use these variables to connect to the server. 
+Exporting the master server identifier through environment variable prevents the 
+larger number of clients from accessing the file system at once.
+
+\vspace{18pt}
+\leftskip=18pt
+while [ ! -f conf ]; do
+
+\vspace{6pt}
+\parindent=14pt
+echo ``Waiting for servers to start-up''
+
+\vspace{6pt}
+sleep 2s
+
+\vspace{6pt}
+done
+
+\vspace{18pt}
+while read line; do
+
+\vspace{6pt}
+\parindent=28pt
+export set ``\$\{line\}''
+
+\vspace{6pt}
+\parindent=0pt
+done \texttt{<} conf
+
+\label{HToc144350174}
+
+\vspace{18pt}
+{\color{color20} \textbf{Figure 15. Wait for server start-up completion and export 
+the configuration to environment variables.}}
+
+\vspace{6pt}
+\leftskip=0pt
+The server component will terminate automatically when the applications will finish. 
+The DARTClient components will send an unregister message to the server before 
+they finish execution, and the servers will exit after they receive \$PROC unregister 
+messages.
+
+\vspace{6pt}
+The DART transport method is experimental and is not included with the public version 
+of the ADIOS source code in this release; however it is available for use on the 
+XT4 and XT5 machines at ORNL.\label{HToc182553393}
+
+\vspace{6pt}
+\subsection*{{\large 6.3 }{\large \textbf{Other research methods at ORNL\label{HToc182553394}}}}
+
+\vspace{10pt}
+\subsubsection*{{\large \textbf{6.3.1 MPI-CIO}}}
+
+\vspace{10pt}
+MPI-IO defines a set of portable programming interfaces that enable multiple processes 
+to have concurrent access to shared files [1]. It is often used to store and retrieve 
+structured data in their canonical order. The interfaces are split into two types: 
+collective I/O and independent I/O. Collective functions require all processes 
+to participate. Independent I/O, in contrast, requires no process synchronization.
+
+\vspace{10pt}
+Collective I/O enables process collaboration to rearrange I/O requests for better 
+performance [2,3]. The collective I/O method in ADIOS first defines MPI fileviews 
+for all processes based on the data partitioning information provided in the XML 
+configuration file. ADIOS also generates MPI-IO hints, such as data sieving and 
+I/O aggregators, based on the access pattern and underlying file system configuration. 
+The hints are supplied to the MPI-IO library for further performance enhancement. 
+The syntax to describe the data-partitioning pattern in the XML file uses the \texttt{<}global-bounds 
+dimensions offsets\texttt{>} tag, which defines the global array size and the offsets 
+of local subarrays in the global space. 
+
+\vspace{10pt}
+The global-bounds element contains one or more nested var elements, each specifying 
+a local array that exists within the described dimensions and offset.  Multiple 
+global-bounds elements are permitted, and strictly local arrays can be specified 
+outside the context of the global-bounds element.
+
+\vspace{10pt}
+As with other data elements, each of the attributes of the global-bounds element 
+is provided by the adios\_write call. The dimensions attribute is specified by 
+all participating processes and defines how big the total global space is.  This 
+value must agree for all nodes. The offset attribute specifies the offset into 
+this global space to which the local values are addressed. The actual size of the 
+local element is specified in the nested var element(s).  For example, if the global 
+bounds dimension were 50 and the offset were 10, then the var(s) nested within 
+the global-bounds would all be declared in a global array of 50 elements with each 
+local array starting at an offset of 10 from the start of the array.  If more than 
+one var is nested within the global-bounds, they share the declaration of the bounds 
+but are treated individually and independently for data storage purposes. 
+
+\vspace{10pt}
+This research method is installed on Jaguar at ORNL only but is not part of the 
+public release.\label{HToc182553395}
+
+\vspace{10pt}
+\subsubsection*{{\large \textbf{6.3.2 MPI-AIO}}}
+
+\vspace{10pt}
+The initial implementation of the asynchronous MPI-IO method (MPI-AIO) is patterned 
+after the MPI-IO method. Scheduled metadata commands are performed with the same 
+serialization of MPI\_Open calls as given in Figure 5 on page \pageref{HRef140744843}.
+
+\vspace{10pt}
+The degree of I/O synchronicity depends on several factors. First, the ADIOS library 
+must be built with versions of MPI that are built with asynchronous I/O support 
+through the MPI\_File\_iwrite, MPI\_File\_iread, and MPI\_Wait calls. If asynchronous 
+I/O is not available, the calls revert to synchronous (read blocking) behavior 
+identical to the MPI-IO method described in the previous section. 
+
+\vspace{10pt}
+Another important factor is the amount of available ADIOS buffer space. In the 
+MPI-IO method, data are transported and ADIOS buffer allocation is reclaimed for 
+subsequent use with calls to adios\_close (). In the MPI-AIO method, the ``close'' 
+process can be deferred until buffer allocation is needed for new data. However, 
+if the buffer allocation is exceeded, the data must be synchronously transported 
+before the application can proceed.
+
+\vspace{10pt}
+The deferral of data transport is key to effectively scheduling asynchronous I/O 
+with a computation. In ADIOS version 1.4, the application explicitly signals that 
+data transport must be complete with intelligent placement of the adios\_close 
+() call to indicate when I/O must be complete. Later versions of ADIOS will perform 
+I/O between adios\_begin\_calculation and adios\_end\_calculation calls, and complete 
+I/O on adios\_end\_iteration calls.
+
+\vspace{10pt}
+This research module is not released in ADIOS 1.4.\label{HRef118286941}\label{HToc84890268}\label{HToc212016644}\label{HToc212016886}\label{HToc182553396}
