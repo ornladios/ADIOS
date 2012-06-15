@@ -13,7 +13,7 @@
 
 FILE *adios_logf = 0;
 int adios_verbose_level = 1; // ERROR level (0 = no logs)
-char *adios_log_names[4] = {"ERROR","WARN","INFO","DBG"};
+char *adios_log_names[4] = {"ERROR","WARN ","INFO ","DEBUG"};
 
 
 void adios_logger_init (char *logpath, int verbose_level, int rank)
