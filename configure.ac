@@ -4,7 +4,7 @@ AC_CONFIG_AUX_DIR(config)
 AC_REVISION($Revision$)
 
 AC_CONFIG_HEADERS(config.h)
-AM_INIT_AUTOMAKE(adios,1.3.1)
+AM_INIT_AUTOMAKE(adios,1.4.0-pre1)
 
 AC_LANG(C)
 AC_C_STRINGIZE
@@ -14,7 +14,7 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
 
-AC_LANG(C)
+0-AC_LANG(C)
 ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C])])
 
 AC_LANG(C++)
@@ -328,6 +328,32 @@ if test -z "${USE_PARALLEL_COMPILER_TRUE}"; then
         echo "#### Defined USE_PARALLEL_COMPILER to = [${USE_PARALLEL_COMPILER}]"
 fi
 
+dnl Generate major/minor/micro version numbers
+VERSION_MAJOR=[`echo ${VERSION} | sed -e "s/\..*//"`]
+AC_DEFINE_UNQUOTED(VERSION_MAJOR, ${VERSION_MAJOR}, [Major version number])
+VERSION_MINOR=[`echo ${VERSION} | sed -e "s/[0-9]*\.\([0-9]*\).*/\1/"`]
+AC_DEFINE_UNQUOTED(VERSION_MINOR, ${VERSION_MINOR}, [Minor version number])
+VERSION_MICRO=[`echo ${VERSION} | sed -e "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/"`]
+dnl if micro not defined, here it equals to VERSION; do a minus
+VERSION_MICRO=`echo ${VERSION_MICRO} | sed -e "s/${VERSION}//"`
+if test -z "${VERSION_MICRO}"; then
+    VERSION_MICRO=0
+fi
+AC_DEFINE_UNQUOTED(VERSION_MICRO, ${VERSION_MICRO}, [Micro version number])
+
+# Get the version of the source we are configuring here
+# Just to print it out at the end of configure
+# see also Makefile.am:install-data-hook
+if type svnversion &>/dev/null; then
+    SVNVERSION=`svnversion`
+else
+    SVNVERSION="unknown"
+fi
+AC_DEFINE_UNQUOTED(VERSION_SVNREV, "${SVNVERSION}", [svn revision number])
+
+
+
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  tests/Makefile
@@ -366,15 +392,6 @@ AC_CONFIG_FILES([Makefile
                 ])
 
 AC_OUTPUT
-
-# Get the version of the source we are configuring here
-# Just to print it out at the end of configure
-# see also Makefile.am:install-data-hook
-if type svnversion &>/dev/null; then
-    SVNVERSION=`svnversion`
-else
-    SVNVERSION="unknown"
-fi
 
 echo
 echo "*********************************"

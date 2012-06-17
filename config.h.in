@@ -227,3 +227,15 @@
 
 /* Version number of package */
 #undef VERSION
+
+/* Major version number */
+#undef VERSION_MAJOR
+
+/* Micro version number */
+#undef VERSION_MICRO
+
+/* Minor version number */
+#undef VERSION_MINOR
+
+/* svn revision number */
+#undef VERSION_SVNREV
