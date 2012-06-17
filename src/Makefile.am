@@ -392,6 +392,7 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/bp_utils.c \
                           core/futils.c \
                           core/adios_error.c \
+                          core/adios_logger.c \
                           core/common_read.c \
                           core/globals.c \
                           core/adios_read_hooks.c \
@@ -431,6 +432,7 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_internals.c \
                                     core/buffer.c \
                                     core/adios_error.c \
+                                    core/adios_logger.c \
                                     core/adios_internals_mxml.c \
                                     core/adios_timing.c \
                                     core/util.c \
