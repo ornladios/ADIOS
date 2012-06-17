@@ -5,6 +5,7 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
+#include "../config.h" /* VERSION_xxx */
 #include <math.h>
 #include <string.h>
 #include <ctype.h>  /* isdigit() */
@@ -3612,6 +3613,30 @@ int adios_write_index_v1 (char ** buffer
     // attrs index count/size prefix
     buffer_write (buffer, buffer_size, &buffer_offset_start, &attrs_count, 2);
     buffer_write (buffer, buffer_size, &buffer_offset_start, &index_size, 8);
+
+
+    /* Since ADIOS 1.4 Write new information before the last 24+4 bytes into the footer 
+        New information's format
+            24 characters: ADIOS-BP v<version>, padded with spaces up to 24
+            1 byte: major version
+            1 byte: minor version
+            1 byte: micro version
+            1 byte: 0
+    */
+    {
+        char verstr[25] = "                    ";
+        unsigned char ver;
+        snprintf (verstr, 25, "ADIOS-BP v%-14.14s", VERSION); 
+        buffer_write (buffer, buffer_size, buffer_offset, verstr, 24);
+        ver = VERSION_MAJOR;
+        buffer_write (buffer, buffer_size, buffer_offset, &ver, 1);
+        ver = VERSION_MINOR;
+        buffer_write (buffer, buffer_size, buffer_offset, &ver, 1);
+        ver = VERSION_MICRO;
+        buffer_write (buffer, buffer_size, buffer_offset, &ver, 1);
+        ver = 0;
+        buffer_write (buffer, buffer_size, buffer_offset, &ver, 1);
+    }
 
     // location of the beginning of the indexes (first proc groups then vars)
     buffer_write (buffer, buffer_size, buffer_offset, &pg_index_start, 8);
