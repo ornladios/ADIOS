@@ -256,6 +256,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
 
         MPI_Comm_rank (p->group_comm, &p->rank);
         MPI_Comm_size (p->group_comm, &p->size);
+        fd->group->process_id = p->rank;
 
         sprintf (rank_string, "%d", p->rank);
         // fd->name + '.' + MPI rank + '\0'
@@ -1015,29 +1016,31 @@ void adios_posix_close (struct adios_file_struct * fd
                 fd->offset = 0;
                 fd->bytes_written = 0;
 
-                while (a)
-                {
-                    adios_write_attribute_v1 (fd, a);
-                    if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
-                        fprintf (stderr, "adios_posix_write exceeds pg bound. File is corrupted. "
-                                         "Need to enlarge group size. \n");
-					START_TIMER (ADIOS_TIMER_POSIX_MD);
-                    ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
-					STOP_TIMER (ADIOS_TIMER_POSIX_MD);
-                    if (s != fd->bytes_written)
+                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
+                    while (a)
                     {
-                        fprintf (stderr, "POSIX method tried to write %llu, "
-                                         "only wrote %llu\n"
-                                ,fd->bytes_written
-                                ,s
-                                );
-                    }
-                    fd->base_offset += s;
-                    fd->offset = 0;
-                    fd->bytes_written = 0;
-                    adios_shared_buffer_free (&p->b);
+                        adios_write_attribute_v1 (fd, a);
+                        if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+                            fprintf (stderr, "adios_posix_write exceeds pg bound. File is corrupted. "
+                                    "Need to enlarge group size. \n");
+                        START_TIMER (ADIOS_TIMER_POSIX_MD);
+                        ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
+                        STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+                        if (s != fd->bytes_written)
+                        {
+                            fprintf (stderr, "POSIX method tried to write %llu, "
+                                    "only wrote %llu\n"
+                                    ,fd->bytes_written
+                                    ,s
+                                    );
+                        }
+                        fd->base_offset += s;
+                        fd->offset = 0;
+                        fd->bytes_written = 0;
+                        adios_shared_buffer_free (&p->b);
 
-                    a = a->next;
+                        a = a->next;
+                    }
                 }
 
                 // set it up so that it will start at 0, but have correct sizes
@@ -1245,26 +1248,28 @@ void adios_posix_close (struct adios_file_struct * fd
                 fd->offset = 0;
                 fd->bytes_written = 0;
 
-                while (a)
-                {
-                    adios_write_attribute_v1 (fd, a);
-					START_TIMER (ADIOS_TIMER_POSIX_MD);
-                    ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
-					STOP_TIMER (ADIOS_TIMER_POSIX_MD);
-                    if (s != fd->bytes_written)
+                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
+                    while (a)
                     {
-                        fprintf (stderr, "POSIX method tried to write %llu, "
-                                         "only wrote %llu\n"
-                                ,fd->bytes_written
-                                ,s
-                                );
-                    }
-                    fd->base_offset += s;
-                    fd->offset = 0;
-                    fd->bytes_written = 0;
-                    adios_shared_buffer_free (&p->b);
+                        adios_write_attribute_v1 (fd, a);
+                        START_TIMER (ADIOS_TIMER_POSIX_MD);
+                        ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
+                        STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+                        if (s != fd->bytes_written)
+                        {
+                            fprintf (stderr, "POSIX method tried to write %llu, "
+                                    "only wrote %llu\n"
+                                    ,fd->bytes_written
+                                    ,s
+                                    );
+                        }
+                        fd->base_offset += s;
+                        fd->offset = 0;
+                        fd->bytes_written = 0;
+                        adios_shared_buffer_free (&p->b);
 
-                    a = a->next;
+                        a = a->next;
+                    }
                 }
 
                 // set it up so that it will start at 0, but have correct sizes

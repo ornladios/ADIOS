@@ -1637,66 +1637,68 @@ void adios_mpi_close (struct adios_file_struct * fd
                 fd->offset = 0;
                 fd->bytes_written = 0;
 
-                while (a)
-                {
-                    adios_write_attribute_v1 (fd, a);
-                    if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
-                        fprintf (stderr, "mpi_file_write exceeds PG bound(2). File is corrupted. "
-                                         "Need to enlarge group size.\n");
+                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
+                    while (a)
+                    {
+                        adios_write_attribute_v1 (fd, a);
+                        if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+                            fprintf (stderr, "mpi_file_write exceeds PG bound(2). File is corrupted. "
+                                    "Need to enlarge group size.\n");
 #if 0
-                    err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
-                                         ,MPI_BYTE, &md->status
-                                         );
-#endif
-                    {
-                        uint64_t total_written = 0;
-                        uint64_t to_write = fd->bytes_written;
-                        int write_len = 0;
-                        int count;
-                        char * buf_ptr = fd->buffer;
-                        while (total_written < fd->bytes_written)
-                        {
-                            write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                            err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
-                            MPI_Get_count(&md->status, MPI_BYTE, &count);
-                            if (count != write_len)
-                            {
-                                err = count;
-                                break;
-                            }
-                            total_written += count;
-                            buf_ptr += count;
-                            to_write -= count;
-                            //err = total_written;
-                        }
-                    }
-                    if (err != MPI_SUCCESS) 
-                    {              
-                        char e [MPI_MAX_ERROR_STRING];
-                        int len = 0;
-                        memset (e, 0, MPI_MAX_ERROR_STRING);
-                        MPI_Error_string (err, e, &len);
-                        fprintf (stderr, "adios_mpi_close (2) failed %s: '%s'\n"
-                                ,fd->name, e
-                                );       
-
-                    }
-
-                    MPI_Get_count (&md->status, MPI_BYTE, &count);
-                    if (count != fd->bytes_written)
-                    {
-                        fprintf (stderr, "e:MPI method tried to write %llu, "
-                                         "only wrote %d\n"
-                                ,fd->bytes_written
-                                ,count
+                        err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+                                ,MPI_BYTE, &md->status
                                 );
-                    }
-                    fd->base_offset += count;
-                    fd->offset = 0;
-                    fd->bytes_written = 0;
-                    adios_shared_buffer_free (&md->b);
+#endif
+                        {
+                            uint64_t total_written = 0;
+                            uint64_t to_write = fd->bytes_written;
+                            int write_len = 0;
+                            int count;
+                            char * buf_ptr = fd->buffer;
+                            while (total_written < fd->bytes_written)
+                            {
+                                write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                                err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                                MPI_Get_count(&md->status, MPI_BYTE, &count);
+                                if (count != write_len)
+                                {
+                                    err = count;
+                                    break;
+                                }
+                                total_written += count;
+                                buf_ptr += count;
+                                to_write -= count;
+                                //err = total_written;
+                            }
+                        }
+                        if (err != MPI_SUCCESS) 
+                        {              
+                            char e [MPI_MAX_ERROR_STRING];
+                            int len = 0;
+                            memset (e, 0, MPI_MAX_ERROR_STRING);
+                            MPI_Error_string (err, e, &len);
+                            fprintf (stderr, "adios_mpi_close (2) failed %s: '%s'\n"
+                                    ,fd->name, e
+                                    );       
 
-                    a = a->next;
+                        }
+
+                        MPI_Get_count (&md->status, MPI_BYTE, &count);
+                        if (count != fd->bytes_written)
+                        {
+                            fprintf (stderr, "e:MPI method tried to write %llu, "
+                                    "only wrote %d\n"
+                                    ,fd->bytes_written
+                                    ,count
+                                    );
+                        }
+                        fd->base_offset += count;
+                        fd->offset = 0;
+                        fd->bytes_written = 0;
+                        adios_shared_buffer_free (&md->b);
+
+                        a = a->next;
+                    }
                 }
 
                 // set it up so that it will start at 0, but have correct sizes
@@ -2076,62 +2078,64 @@ timeval_subtract (&timing.t8, &b, &a);
                 fd->offset = 0;
                 fd->bytes_written = 0;
 
-                while (a)
-                {
-                    adios_write_attribute_v1 (fd, a);
+                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
+                    while (a)
+                    {
+                        adios_write_attribute_v1 (fd, a);
 #if 0
-                    err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
-                                         ,MPI_BYTE, &md->status
-                                         );
-#endif
-                    {
-                        uint64_t total_written = 0;
-                        uint64_t to_write = fd->bytes_written;
-                        int write_len = 0;
-                        int count;
-                        char * buf_ptr = fd->buffer;
-                        while (total_written < fd->bytes_written)
-                        {
-                            write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
-                            err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
-                            MPI_Get_count(&md->status, MPI_BYTE, &count);
-                            if (count != write_len)
-                            {
-                                err = count;
-                                break;
-                            }
-                            total_written += count;
-                            buf_ptr += count;
-                            to_write -= count;
-                            //err = total_written;
-                        }
-                    }              
-                    if (err != MPI_SUCCESS) 
-                    {              
-                        char e [MPI_MAX_ERROR_STRING];
-                        int len = 0;
-                        memset (e, 0, MPI_MAX_ERROR_STRING);
-                        MPI_Error_string (err, e, &len);
-                        fprintf (stderr, "adios_mpi_close (7) failed %s: '%s'\n"
-                                ,fd->name, e
-                                );       
-                    }
-
-                    MPI_Get_count (&md->status, MPI_BYTE, &count);
-                    if (count != fd->bytes_written)
-                    {
-                        fprintf (stderr, "e:MPI method tried to write %llu, "
-                                         "only wrote %d\n"
-                                ,fd->bytes_written
-                                ,count
+                        err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
+                                ,MPI_BYTE, &md->status
                                 );
-                    }
-                    fd->base_offset += count;
-                    fd->offset = 0;
-                    fd->bytes_written = 0;
-                    adios_shared_buffer_free (&md->b);
+#endif
+                        {
+                            uint64_t total_written = 0;
+                            uint64_t to_write = fd->bytes_written;
+                            int write_len = 0;
+                            int count;
+                            char * buf_ptr = fd->buffer;
+                            while (total_written < fd->bytes_written)
+                            {
+                                write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                                err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
+                                MPI_Get_count(&md->status, MPI_BYTE, &count);
+                                if (count != write_len)
+                                {
+                                    err = count;
+                                    break;
+                                }
+                                total_written += count;
+                                buf_ptr += count;
+                                to_write -= count;
+                                //err = total_written;
+                            }
+                        }              
+                        if (err != MPI_SUCCESS) 
+                        {              
+                            char e [MPI_MAX_ERROR_STRING];
+                            int len = 0;
+                            memset (e, 0, MPI_MAX_ERROR_STRING);
+                            MPI_Error_string (err, e, &len);
+                            fprintf (stderr, "adios_mpi_close (7) failed %s: '%s'\n"
+                                    ,fd->name, e
+                                    );       
+                        }
 
-                    a = a->next;
+                        MPI_Get_count (&md->status, MPI_BYTE, &count);
+                        if (count != fd->bytes_written)
+                        {
+                            fprintf (stderr, "e:MPI method tried to write %llu, "
+                                    "only wrote %d\n"
+                                    ,fd->bytes_written
+                                    ,count
+                                    );
+                        }
+                        fd->base_offset += count;
+                        fd->offset = 0;
+                        fd->bytes_written = 0;
+                        adios_shared_buffer_free (&md->b);
+
+                        a = a->next;
+                    }
                 }
 
                 // set it up so that it will start at 0, but have correct sizes

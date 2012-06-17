@@ -1755,34 +1755,36 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                 fd->offset = 0;
                 fd->bytes_written = 0;
 
-                while (a)
-                {
-                    adios_write_attribute_v1 (fd, a);
-                    if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
-                        fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
-                                         "Need to enlarge group size. \n");
-					START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                    count = adios_mpi_lustre_striping_unit_write(
-                                      md->fh,
-                                      -1,
-                                      fd->buffer,
-                                      fd->bytes_written,
-                                      md->block_unit);
-					STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                    if (count != fd->bytes_written)
+                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
+                    while (a)
                     {
-                        fprintf (stderr, "e:MPI method tried to write %llu, "
-                                         "only wrote %llu\n"
-                                ,fd->bytes_written
-                                ,count
-                                );
-                    }
-                    fd->base_offset += count;
-                    fd->offset = 0;
-                    fd->bytes_written = 0;
-                    adios_shared_buffer_free (&md->b);
+                        adios_write_attribute_v1 (fd, a);
+                        if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+                            fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
+                                    "Need to enlarge group size. \n");
+                        START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
+                        count = adios_mpi_lustre_striping_unit_write(
+                                md->fh,
+                                -1,
+                                fd->buffer,
+                                fd->bytes_written,
+                                md->block_unit);
+                        STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
+                        if (count != fd->bytes_written)
+                        {
+                            fprintf (stderr, "e:MPI method tried to write %llu, "
+                                    "only wrote %llu\n"
+                                    ,fd->bytes_written
+                                    ,count
+                                    );
+                        }
+                        fd->base_offset += count;
+                        fd->offset = 0;
+                        fd->bytes_written = 0;
+                        adios_shared_buffer_free (&md->b);
 
-                    a = a->next;
+                        a = a->next;
+                    }
                 }
 
                 // set it up so that it will start at 0, but have correct sizes
@@ -2036,31 +2038,33 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                 fd->offset = 0;
                 fd->bytes_written = 0;
 
-                while (a)
-                {
-                    adios_write_attribute_v1 (fd, a);
-					START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                    count = adios_mpi_lustre_striping_unit_write(
-                                  md->fh,
-                                  -1,
-                                  fd->buffer,
-                                  fd->bytes_written,
-                                  md->block_unit);
-					STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                    if (count != fd->bytes_written)
+                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
+                    while (a)
                     {
-                        fprintf (stderr, "e:MPI method tried to write %llu, "
-                                         "only wrote %llu\n"
-                                ,fd->bytes_written
-                                ,count
-                                );
-                    }
-                    fd->base_offset += count;
-                    fd->offset = 0;
-                    fd->bytes_written = 0;
-                    adios_shared_buffer_free (&md->b);
+                        adios_write_attribute_v1 (fd, a);
+                        START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
+                        count = adios_mpi_lustre_striping_unit_write(
+                                md->fh,
+                                -1,
+                                fd->buffer,
+                                fd->bytes_written,
+                                md->block_unit);
+                        STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
+                        if (count != fd->bytes_written)
+                        {
+                            fprintf (stderr, "e:MPI method tried to write %llu, "
+                                    "only wrote %llu\n"
+                                    ,fd->bytes_written
+                                    ,count
+                                    );
+                        }
+                        fd->base_offset += count;
+                        fd->offset = 0;
+                        fd->bytes_written = 0;
+                        adios_shared_buffer_free (&md->b);
 
-                    a = a->next;
+                        a = a->next;
+                    }
                 }
 
                 // set it up so that it will start at 0, but have correct sizes

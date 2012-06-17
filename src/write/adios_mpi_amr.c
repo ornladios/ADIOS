@@ -1909,91 +1909,93 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                 fd->offset = 0;
                 fd->bytes_written = 0;
 
-                while (a)
-                {
-                    adios_write_attribute_v1 (fd, a);
-
-                    int bytes_written[new_group_size];
-                    int disp[new_group_size];
-                    int total_size = 0;
-                    void * aggr_buff;
-
-                    START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                    MPI_Gather (&fd->bytes_written, 1, MPI_INT
-                               ,bytes_written, 1, MPI_INT
-                               ,0, new_comm
-                               );
-                    STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-
-                    disp[0] = 0;
-                    for (i = 1; i < new_group_size; i++)
+                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
+                    while (a)
                     {
-                        disp[i] = disp[i - 1] + bytes_written[i - 1];
-                    }
-                    total_size += disp[new_group_size - 1]
-                                + bytes_written[new_group_size - 1];
+                        adios_write_attribute_v1 (fd, a);
 
-                    if (is_aggregator(md->rank))
-                    {
-                        aggr_buff = malloc (total_size);
-                        if (aggr_buff == 0)
-                        {
-                            fprintf (stderr, "Can not alloc aggregation buffer.\n"
-                                             "Need to increase the number of aggregators.\n"
-                                    );
-                            return;
-                        }
-                    }
+                        int bytes_written[new_group_size];
+                        int disp[new_group_size];
+                        int total_size = 0;
+                        void * aggr_buff;
 
-                    START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                    MPI_Gatherv (fd->buffer, fd->bytes_written, MPI_BYTE
-                                ,aggr_buff, bytes_written, disp, MPI_BYTE
-                                ,0, new_comm);
-                    STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                        START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                        MPI_Gather (&fd->bytes_written, 1, MPI_INT
+                                ,bytes_written, 1, MPI_INT
+                                ,0, new_comm
+                                );
+                        STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
 
-                    if (is_aggregator (md->rank))
-                    {
-                        START_TIMER (ADIOS_TIMER_MPI_AMR_IO);
-                        count = adios_mpi_amr_striping_unit_write(
-                                          md->fh,
-                                          -1,
-                                          aggr_buff, //fd->buffer,
-                                          total_size //fd->bytes_written,
-                                          );
-                        STOP_TIMER (ADIOS_TIMER_MPI_AMR_IO);
-                        if (count != total_size)
-                        {
-                            fprintf (stderr, "e:MPI method tried to write %llu, "
-                                             "only wrote %llu\n"
-                                     ,fd->bytes_written
-                                     ,count
-                                     );
-                        }
-                    }
-
-                    // Broadcast new offsets to all processors in the communicator.
-                    uint64_t new_offsets[new_group_size];
-
-                    if (is_aggregator (md->rank))
-                    {
-                        new_offsets[0] = a->write_offset;
+                        disp[0] = 0;
                         for (i = 1; i < new_group_size; i++)
                         {
-                            new_offsets[i] = new_offsets[i - 1] + bytes_written[i - 1];
+                            disp[i] = disp[i - 1] + bytes_written[i - 1];
                         }
+                        total_size += disp[new_group_size - 1]
+                            + bytes_written[new_group_size - 1];
+
+                        if (is_aggregator(md->rank))
+                        {
+                            aggr_buff = malloc (total_size);
+                            if (aggr_buff == 0)
+                            {
+                                fprintf (stderr, "Can not alloc aggregation buffer.\n"
+                                        "Need to increase the number of aggregators.\n"
+                                        );
+                                return;
+                            }
+                        }
+
+                        START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                        MPI_Gatherv (fd->buffer, fd->bytes_written, MPI_BYTE
+                                ,aggr_buff, bytes_written, disp, MPI_BYTE
+                                ,0, new_comm);
+                        STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+
+                        if (is_aggregator (md->rank))
+                        {
+                            START_TIMER (ADIOS_TIMER_MPI_AMR_IO);
+                            count = adios_mpi_amr_striping_unit_write(
+                                    md->fh,
+                                    -1,
+                                    aggr_buff, //fd->buffer,
+                                    total_size //fd->bytes_written,
+                                    );
+                            STOP_TIMER (ADIOS_TIMER_MPI_AMR_IO);
+                            if (count != total_size)
+                            {
+                                fprintf (stderr, "e:MPI method tried to write %llu, "
+                                        "only wrote %llu\n"
+                                        ,fd->bytes_written
+                                        ,count
+                                        );
+                            }
+                        }
+
+                        // Broadcast new offsets to all processors in the communicator.
+                        uint64_t new_offsets[new_group_size];
+
+                        if (is_aggregator (md->rank))
+                        {
+                            new_offsets[0] = a->write_offset;
+                            for (i = 1; i < new_group_size; i++)
+                            {
+                                new_offsets[i] = new_offsets[i - 1] + bytes_written[i - 1];
+                            }
+                        }
+
+                        START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                        MPI_Bcast (new_offsets, new_group_size, MPI_LONG_LONG, 0, new_comm);
+                        STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                        a->write_offset = new_offsets[new_rank];
+
+                        fd->base_offset += count;
+                        fd->offset = 0;
+                        fd->bytes_written = 0;
+                        adios_shared_buffer_free (&md->b);
+
+                        a = a->next;
                     }
-
-                    START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                    MPI_Bcast (new_offsets, new_group_size, MPI_LONG_LONG, 0, new_comm);
-                    STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                    a->write_offset = new_offsets[new_rank];
-
-                    fd->base_offset += count;
-                    fd->offset = 0;
-                    fd->bytes_written = 0;
-                    adios_shared_buffer_free (&md->b);
-
-                    a = a->next;
                 }
 
                 // set it up so that it will start at 0, but have correct sizes
@@ -2649,93 +2651,95 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 fd->offset = 0;
                 fd->bytes_written = 0;
 
-                while (a)
-                {
-                    adios_write_attribute_v1 (fd, a);
-
-                    int bytes_written[new_group_size];
-                    int disp[new_group_size];
-                    int total_size = 0;
-                    void * aggr_buff;
-
-                    START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                    MPI_Gather (&fd->bytes_written, 1, MPI_INT
-                               ,bytes_written, 1, MPI_INT
-                               ,0, new_comm
-                               );
-                    STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-
-                    disp[0] = 0;
-                    for (i = 1; i < new_group_size; i++)
+                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
+                    while (a)
                     {
-                        disp[i] = disp[i - 1] + bytes_written[i - 1];
-                    }
-                    total_size += disp[new_group_size - 1]
-                                + bytes_written[new_group_size - 1];
+                        adios_write_attribute_v1 (fd, a);
 
-                    if (is_aggregator(md->rank))
-                    {
-                        aggr_buff = malloc (total_size);
-                        if (aggr_buff == 0)
-                        {
-                            fprintf (stderr, "Can not alloc aggregation buffer.\n"
-                                             "Need to increase the number of aggregators.\n"
-                                    );
-                            return;
-                        }
-                    }
+                        int bytes_written[new_group_size];
+                        int disp[new_group_size];
+                        int total_size = 0;
+                        void * aggr_buff;
 
-                    START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                    MPI_Gatherv (fd->buffer, fd->bytes_written, MPI_BYTE
-                                ,aggr_buff, bytes_written, disp, MPI_BYTE
-                                ,0, new_comm);
-                    STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                        START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                        MPI_Gather (&fd->bytes_written, 1, MPI_INT
+                                ,bytes_written, 1, MPI_INT
+                                ,0, new_comm
+                                );
+                        STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
 
-                    if (is_aggregator (md->rank))
-                    {
-                        START_TIMER (ADIOS_TIMER_MPI_AMR_IO);
-                        count = adios_mpi_amr_striping_unit_write(
-                                          md->fh,
-                                          -1,
-                                          aggr_buff, //fd->buffer,
-                                          total_size //fd->bytes_written,
-                                          );
-                        STOP_TIMER (ADIOS_TIMER_MPI_AMR_IO);
-
-                        if (count != total_size)
-                        {
-                            fprintf (stderr, "e:MPI method tried to write %llu, "
-                                             "only wrote %llu\n"
-                                     ,fd->bytes_written
-                                     ,count
-                                     );
-                        }
-                    }
-
-                    // Broadcast new offsets to all processors in the communicator.
-                    uint64_t new_offsets[new_group_size];
-
-                    if (is_aggregator (md->rank))
-                    {
-                        new_offsets[0] = a->write_offset;
+                        disp[0] = 0;
                         for (i = 1; i < new_group_size; i++)
                         {
-                            new_offsets[i] = new_offsets[i - 1] + bytes_written[i - 1];
+                            disp[i] = disp[i - 1] + bytes_written[i - 1];
                         }
+                        total_size += disp[new_group_size - 1]
+                            + bytes_written[new_group_size - 1];
+
+                        if (is_aggregator(md->rank))
+                        {
+                            aggr_buff = malloc (total_size);
+                            if (aggr_buff == 0)
+                            {
+                                fprintf (stderr, "Can not alloc aggregation buffer.\n"
+                                        "Need to increase the number of aggregators.\n"
+                                        );
+                                return;
+                            }
+                        }
+
+                        START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                        MPI_Gatherv (fd->buffer, fd->bytes_written, MPI_BYTE
+                                ,aggr_buff, bytes_written, disp, MPI_BYTE
+                                ,0, new_comm);
+                        STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+
+                        if (is_aggregator (md->rank))
+                        {
+                            START_TIMER (ADIOS_TIMER_MPI_AMR_IO);
+                            count = adios_mpi_amr_striping_unit_write(
+                                    md->fh,
+                                    -1,
+                                    aggr_buff, //fd->buffer,
+                                    total_size //fd->bytes_written,
+                                    );
+                            STOP_TIMER (ADIOS_TIMER_MPI_AMR_IO);
+
+                            if (count != total_size)
+                            {
+                                fprintf (stderr, "e:MPI method tried to write %llu, "
+                                        "only wrote %llu\n"
+                                        ,fd->bytes_written
+                                        ,count
+                                        );
+                            }
+                        }
+
+                        // Broadcast new offsets to all processors in the communicator.
+                        uint64_t new_offsets[new_group_size];
+
+                        if (is_aggregator (md->rank))
+                        {
+                            new_offsets[0] = a->write_offset;
+                            for (i = 1; i < new_group_size; i++)
+                            {
+                                new_offsets[i] = new_offsets[i - 1] + bytes_written[i - 1];
+                            }
+                        }
+
+                        START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                        MPI_Bcast (new_offsets, new_group_size, MPI_LONG_LONG, 0, new_comm);
+                        STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+
+                        a->write_offset = new_offsets[new_rank];
+
+                        fd->base_offset += count;
+                        fd->offset = 0;
+                        fd->bytes_written = 0;
+                        adios_shared_buffer_free (&md->b);
+
+                        a = a->next;
                     }
-
-                    START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                    MPI_Bcast (new_offsets, new_group_size, MPI_LONG_LONG, 0, new_comm);
-                    STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-
-                    a->write_offset = new_offsets[new_rank];
-
-                    fd->base_offset += count;
-                    fd->offset = 0;
-                    fd->bytes_written = 0;
-                    adios_shared_buffer_free (&md->b);
-
-                    a = a->next;
                 }
 
                 // set it up so that it will start at 0, but have correct sizes

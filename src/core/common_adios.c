@@ -593,11 +593,12 @@ int common_adios_close (int64_t fd_p)
 
         adios_write_open_attributes_v1 (fd);
 
-        while (a)
-        {
-            adios_write_attribute_v1 (fd, a);
-
-            a = a->next;
+        if (!fd->group->process_id) {
+            // from ADIOS 1.4, only rank 0 writes attributes
+            while (a) {
+                adios_write_attribute_v1 (fd, a);
+                a = a->next;
+            }
         }
 
         adios_write_close_attributes_v1 (fd);
