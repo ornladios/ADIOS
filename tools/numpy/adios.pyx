@@ -1,74 +1,24 @@
+"""
+ ADIOS is freely available under the terms of the BSD license described
+ in the COPYING file in the top level directory of this source distribution.
+
+ Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
+"""
+
 import numpy as np
 cimport numpy as np
 ##import cython
 ##cimport cython
 
+## ==========
+## ADIOS Exported Functions
+## ==========
+
 from libc.stdint cimport uint32_t, int64_t, uint64_t
 from libc.stdlib cimport malloc, free
 
-cdef extern from "adios.h":
-    ctypedef char* const_char_ptr "const char*"
-    cdef int adios_init (char * config)
-    cdef int adios_finalize (int mype)
-    cdef int adios_open (int64_t * fd, char * group_name, char * name, 
-                         char * mode, void * comm)
-    cdef int adios_group_size (int64_t fd_p, uint64_t data_size,
-                               uint64_t * total_size)
-    cdef int adios_write (int64_t fd_p, char * name, void * var)
-    cdef int adios_read (int64_t fd_p, char * name, void * buffer, uint64_t buffer_size)
-
-    cdef int adios_close (int64_t fd_p)
-    cdef int adios_init_noxml ()
-
-cpdef init_noxml():
-    return adios_init_noxml()
-
-cpdef init(char * config):
-    return adios_init(config)
-
-cpdef int64_t open(char * group_name, char * name, char * mode):
-    cdef int64_t fd
-    cdef int result
-    result = adios_open(&fd, group_name, name, mode, NULL)
-    return fd
-
-cpdef int64_t set_group_size(int64_t fd_p, uint64_t data_size):
-    cdef uint64_t total_size
-    cdef int result
-    result = adios_group_size(fd_p, data_size, &total_size)
-    return total_size
-
-cpdef int write (int64_t fd_p, char * name, np.ndarray val):
-    assert val.flags.contiguous, 'Only contiguous arrays are supported.'
-    return adios_write (fd_p, name, <void *> val.data)
-
-cpdef int write_int (int64_t fd_p, char * name, int val):
-    return adios_write (fd_p, name, &val)
-
-cpdef int write_long (int64_t fd_p, char * name, long val):
-    return adios_write (fd_p, name, &val)
-
-cpdef int write_float (int64_t fd_p, char * name, float val):
-    return adios_write (fd_p, name, &val)
-
-cpdef int read(int64_t fd_p, char * name, np.ndarray val):
-    assert val.flags.contiguous, 'Only contiguous arrays are supported.'
-    print "Reading ... ", val.itemsize * val.size, "(bytes)"
-    return adios_read(fd_p, name, <void *> val.data, val.itemsize * val.size)
-
-cpdef int close(int64_t fd_p):
-    return adios_close(fd_p)
-
-cpdef finalize(int mype = 0):
-    return adios_finalize(mype)
-
-"""
-Adios Read API
-"""
-##from MPI cimport MPI_Comm, Comm 
-
 cdef extern from "adios_types.h":
-    cdef enum ADIOS_DATATYPES:
+    ctypedef enum ADIOS_DATATYPES:
         adios_unknown
         adios_byte
         adios_short
@@ -84,6 +34,34 @@ cdef extern from "adios_types.h":
         adios_string
         adios_complex
         adios_double_complex
+
+    ctypedef enum ADIOS_BUFFER_ALLOC_WHEN:
+        ADIOS_BUFFER_ALLOC_UNKNOWN
+        ADIOS_BUFFER_ALLOC_NOW
+        ADIOS_BUFFER_ALLOC_LATER
+
+    ctypedef enum ADIOS_FLAG:
+        pass
+
+cdef extern from "adios.h":
+    ctypedef char* const_char_ptr "const char*"
+    cdef int adios_init (char * config)
+    cdef int adios_finalize (int mype)
+    cdef int adios_open (int64_t * fd, char * group_name, char * name, 
+                         char * mode, void * comm)
+    cdef int adios_group_size (int64_t fd_p, uint64_t data_size,
+                               uint64_t * total_size)
+    cdef int adios_write (int64_t fd_p, char * name, void * var)
+    cdef int adios_read (int64_t fd_p, char * name, void * buffer, uint64_t buffer_size)
+
+    cdef int adios_close (int64_t fd_p)
+    
+    cdef int adios_init_noxml ()
+    cdef int adios_allocate_buffer (ADIOS_BUFFER_ALLOC_WHEN when, uint64_t buffer_size)
+    cdef int adios_declare_group (int64_t * id, char * name, char * time_index, ADIOS_FLAG stats)
+    cdef int adios_define_var (int64_t group_id, char * name, char * path, int type, char * dimensions, char * global_dimensions, char * local_offsets)
+    cdef int adios_define_attribute (int64_t group, char * name, char * path, ADIOS_DATATYPES type, char * value, char * var)
+    cdef int adios_select_method (int64_t group, char * method, char * parameters, char * base_path)
 
 cdef extern from "adios_read.h":
     ctypedef struct MPI_Comm:
@@ -148,6 +126,125 @@ cdef extern from "adios_read.h":
 
     cdef char * adios_errmsg()
     cdef int adios_errno
+
+
+## ==========
+## ADIOS Enum
+## ==========
+
+class DATATYPE(object):
+    unknown = -1
+    byte = 0
+    short = 1
+    integer = 2
+    long = 4
+    unsigned_byte = 50
+    unsigned_short = 51
+    unsigned_integer = 52
+    unsigned_long = 54
+    real = 5
+    double = 6
+    long_double = 7
+    string = 9
+    complex = 10
+    double_complex = 11
+
+class FLAG(object):
+    UNKNOWN = 0
+    YES = 1
+    NO = 2
+    
+class BUFFER_ALLOC_WHEN(object):
+    UNKNOWN = 0
+    NOW = 1
+    LATER = 2
+    
+## ==========
+## ADIOS Write API
+## ==========
+
+cpdef init(char * config):
+    return adios_init(config)
+
+cpdef int64_t open(char * group_name, char * name, char * mode):
+    cdef int64_t fd
+    cdef int result
+    result = adios_open(&fd, group_name, name, mode, NULL)
+    return fd
+
+cpdef int64_t set_group_size(int64_t fd_p, uint64_t data_size):
+    cdef uint64_t total_size
+    cdef int result
+    result = adios_group_size(fd_p, data_size, &total_size)
+    return total_size
+
+cpdef int write (int64_t fd_p, char * name, np.ndarray val):
+    assert val.flags.contiguous, 'Only contiguous arrays are supported.'
+    return adios_write (fd_p, name, <void *> val.data)
+
+cpdef int write_int (int64_t fd_p, char * name, int val):
+    return adios_write (fd_p, name, &val)
+
+cpdef int write_long (int64_t fd_p, char * name, long val):
+    return adios_write (fd_p, name, &val)
+
+cpdef int write_float (int64_t fd_p, char * name, float val):
+    return adios_write (fd_p, name, &val)
+
+cpdef int read(int64_t fd_p, char * name, np.ndarray val):
+    assert val.flags.contiguous, 'Only contiguous arrays are supported.'
+    print "Reading ... ", val.itemsize * val.size, "(bytes)"
+    return adios_read(fd_p, name, <void *> val.data, val.itemsize * val.size)
+
+cpdef int close(int64_t fd_p):
+    return adios_close(fd_p)
+
+cpdef finalize(int mype = 0):
+    return adios_finalize(mype)
+
+## ==========
+## ADIOS No-XML API
+## ==========
+# adios_init_noxml
+# adios_allocate_buffer
+# adios_declare_group
+# adios_define_var
+# adios_define_attribute
+# adios_select_method
+
+cpdef int init_noxml():
+    return adios_init_noxml()
+
+cpdef int allocate_buffer(int when, uint64_t buffer_size):
+    return adios_allocate_buffer(<ADIOS_BUFFER_ALLOC_WHEN> when, buffer_size)
+
+cpdef int64_t declare_group(char * name, char * time_index, int stats):
+    cdef int64_t id = 0
+    adios_declare_group (&id, name, time_index, <ADIOS_FLAG> stats)
+    return id
+
+cpdef int define_var(int64_t group_id, char * name, char * path, int type,
+                     char * dimensions,
+                     char * global_dimensions,
+                     char * local_offsets):
+    return adios_define_var(group_id, name, path, type,
+                            dimensions, global_dimensions, local_offsets)
+
+cpdef int define_attribute (int64_t group, char * name, char * path,
+                            int type, char * value, char * var):
+    return adios_define_attribute (group, name, path,
+                                   <ADIOS_DATATYPES> type, value, var)
+
+cpdef int select_method (int64_t group,
+                         char * method,
+                         char * parameters,
+                         char * base_path):
+    return adios_select_method (group, method, parameters, base_path)
+
+
+## ==========
+## ADIOS Read API
+## ==========
 
 cpdef type adios2nptype(ADIOS_DATATYPES t):
     cdef type ntype = None
@@ -236,6 +333,10 @@ cdef adios2scalar(ADIOS_DATATYPES t, void * val):
         return (<long double *> val)[0]
     else:
         return None
+
+## ==========
+## ADIOS Class Definition
+## ==========
 
 cdef class AdiosFile:
     cdef ADIOS_FILE * fp

@@ -56,3 +56,4 @@ set_target_properties (adios
 ENABLE_TESTING()
 add_test (test_write ${CMAKE_CURRENT_SOURCE_DIR}/test/test_adios_write.sh ${CMAKE_CURRENT_SOURCE_DIR}/test)
 add_test (test_read ${CMAKE_CURRENT_SOURCE_DIR}/test/test_adios_read.sh ${CMAKE_CURRENT_SOURCE_DIR}/test)
+add_test (test_noxml ${CMAKE_CURRENT_SOURCE_DIR}/test/test_adios_noxml.sh ${CMAKE_CURRENT_SOURCE_DIR}/test)
