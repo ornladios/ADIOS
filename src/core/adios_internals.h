@@ -150,6 +150,8 @@ struct adios_group_struct
     struct adios_method_list_struct * methods;
 
     struct adios_mesh_struct * mesh;
+
+    //int attrid_update_epoch; // ID of special attribute "/__adios__/update_time_epoch" to find it fast
 };
 
 struct adios_group_list_struct
@@ -162,7 +164,7 @@ struct adios_group_list_struct
 struct adios_file_struct
 {
     char * name;
-    uint32_t subfile_index; // needs to be set in ADIOS method if generates subfiles
+    int32_t subfile_index; // needs to be set in ADIOS method if generates subfiles
     struct adios_group_struct * group;
     enum ADIOS_METHOD_MODE mode;
     uint64_t data_size;
