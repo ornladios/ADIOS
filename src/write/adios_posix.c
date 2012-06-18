@@ -395,6 +395,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
         }
 
         case adios_mode_append:
+        case adios_mode_update:
         {
             int old_file = 1;
 #ifdef HAVE_MPI
@@ -1131,9 +1132,12 @@ void adios_posix_close (struct adios_file_struct * fd
                                                            ,&new_pg_root
                                                            );
                         adios_parse_vars_index_v1 (&p->b, &new_vars_root);
+                        // do not merge attributes from other processes from 1.4
+                        /*
                         adios_parse_attributes_index_v1 (&p->b
                                                         ,&new_attrs_root
                                                         );
+                        */
 
                         adios_merge_index_v1 (&p->old_pg_root
                                              ,&p->old_vars_root
@@ -1212,6 +1216,7 @@ void adios_posix_close (struct adios_file_struct * fd
         }
 
         case adios_mode_append:
+        case adios_mode_update:
         {
             if (fd->shared_buffer == adios_flag_no)
             {
@@ -1354,9 +1359,12 @@ void adios_posix_close (struct adios_file_struct * fd
                                                            ,&new_pg_root
                                                            );
                         adios_parse_vars_index_v1 (&p->b, &new_vars_root);
+                        // do not merge attributes from other processes from 1.4
+                        /*
                         adios_parse_attributes_index_v1 (&p->b
                                                         ,&new_attrs_root
                                                         );
+                         */
 
                         adios_merge_index_v1 (&p->old_pg_root
                                              ,&p->old_vars_root

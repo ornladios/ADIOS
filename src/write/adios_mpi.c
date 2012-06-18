@@ -901,6 +901,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
         }
 
         case adios_mode_append:
+        case adios_mode_update:
         {
             int old_file = 1;
 
@@ -1811,9 +1812,12 @@ void adios_mpi_close (struct adios_file_struct * fd
                                                            ,&new_pg_root
                                                            );
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        // do not merge attributes from other processes from 1.4
+                        /*
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
                                                         );
+                        */
                         adios_merge_index_v1 (&md->old_pg_root
                                              ,&md->old_vars_root
                                              ,&md->old_attrs_root
@@ -1998,6 +2002,7 @@ timeval_subtract (&timing.t8, &b, &a);
         }
 
         case adios_mode_append:
+        case adios_mode_update:
         {
             char * buffer = 0;
             uint64_t buffer_size = 0;
@@ -2245,9 +2250,12 @@ timeval_subtract (&timing.t8, &b, &a);
                                                            ,&new_pg_root
                                                            );
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        // do not merge attributes from other processes from 1.4
+                        /*
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
                                                         );
+                         */
                         adios_merge_index_v1 (&md->old_pg_root
                                              ,&md->old_vars_root
                                              ,&md->old_attrs_root

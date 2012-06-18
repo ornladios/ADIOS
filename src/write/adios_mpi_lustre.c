@@ -1874,9 +1874,12 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                                                            ,&new_pg_root
                                                            );
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        // do not merge attributes from other processes from 1.4
+                        /*
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
                                                         );
+                         */
                         adios_merge_index_v1 (&md->old_pg_root
                                              ,&md->old_vars_root
                                              ,&md->old_attrs_root
@@ -2145,9 +2148,12 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                                                            ,&new_pg_root
                                                            );
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        // do not merge attributes from other processes from 1.4
+                        /*
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
                                                         );
+                         */
                         adios_merge_index_v1 (&md->old_pg_root
                                              ,&md->old_vars_root
                                              ,&md->old_attrs_root
