@@ -52,7 +52,3 @@ void adios_error_at_line (enum ADIOS_ERRCODES errcode, const char* filename, uns
     log_error(aerr);
 }
 
-void adios_abort_on_error()
-{
-    abort_on_error = 1;
-}

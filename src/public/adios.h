@@ -9,6 +9,7 @@
 #define ADIOS_H
 
 #include "adios_types.h"
+#include "adios_error.h"
 #include <stdint.h>
 
 #ifdef _NOMPI

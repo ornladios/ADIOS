@@ -11,13 +11,16 @@
 #include <errno.h>
 #include "core/adios_logger.h"
 
-FILE *adios_logf = 0;
-int adios_verbose_level = 1; // ERROR level (0 = no logs)
+FILE *adios_logf = NULL;
+int adios_verbose_level = 2; // WARN level (0 = no logs)
+int adios_abort_on_error = 0;  
 char *adios_log_names[4] = {"ERROR","WARN ","INFO ","DEBUG"};
 
 
-void adios_logger_init (char *logpath, int verbose_level, int rank)
+void adios_logger_open (char *logpath, int rank)
 { 
+    adios_logger_close();
+
     if (!logpath || !strcmp(logpath, "stderr")) { 
         adios_logf = stderr; 
     } else if (!strcmp(logpath, "stdout")) { 
@@ -35,17 +38,16 @@ void adios_logger_init (char *logpath, int verbose_level, int rank)
             adios_logf = stderr; 
         } 
     } 
-    adios_verbose_level = verbose_level; 
 }   
     
-void adios_logger_finalize() 
+void adios_logger_close() 
 { 
     if (!adios_logf && adios_logf != stdout && adios_logf != stderr) 
         fclose(adios_logf); 
 }
     
 /*
-void adios_logger(int verbose_level, ...) 
+void adios_log(int verbose_level, ...) 
 {
     if (adios_verbose_level >= verbose_level) { 
         fprintf (adios_logf, __VA_ARGS__); 

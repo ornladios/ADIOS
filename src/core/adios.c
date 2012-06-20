@@ -16,12 +16,14 @@
 #include <mxml.h>
 
 #include "public/adios.h"
+#include "public/adios_error.h"
 #include "core/globals.h"
 #include "core/common_adios.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
 #include "core/adios_internals_mxml.h"
 #include "core/adios_transport_hooks.h"
+#include "core/adios_logger.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -87,7 +89,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
-        fprintf (stderr, "Invalid handle passed to adios_write\n");
+        adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_write\n");
         return 1;
     }
 
@@ -104,7 +106,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
 
     if (!v)
     {
-        fprintf (stderr, "Bad var name (ignored): '%s'\n", name);
+        adios_error (err_invalid_varname, "Bad var name (ignored) in adios_write(): '%s'\n", name);
 
         return 1;
     }
@@ -115,14 +117,14 @@ int adios_write (int64_t fd_p, const char * name, void * var)
             && v->is_dim != adios_flag_yes
            )
         {
-            fprintf (stderr, "write attempted on %s in %s.  This was opened for read\n" ,name , fd->name);
+            adios_error (err_invalid_file_mode, "write attempted on %s in %s.  This was opened for read\n" ,name , fd->name);
             return 1;
         }
     }
 
     if (!var)
     {
-        fprintf (stderr, "Invalid data: %s\n", name);
+        adios_error (err_invalid_data, "Invalid data (NULL pointer) passed to write for variable %s\n", name);
 
         return 1;
     }
@@ -159,11 +161,9 @@ int adios_write (int64_t fd_p, const char * name, void * var)
                 v->data = malloc (element_size);
                 if (!v->data)
                 {
-                    fprintf (stderr, "cannot allocate %lld bytes to copy "
-                                     "scalar %s\n"
-                            ,element_size
-                            ,v->name
-                            );
+                    adios_error (err_no_memory, 
+                                 "In adios_write, cannot allocate %lld bytes to copy scalar %s\n",
+                                 element_size, v->name);
 
                     return 0;
                 }
@@ -175,11 +175,9 @@ int adios_write (int64_t fd_p, const char * name, void * var)
                 v->data = malloc (element_size + 1);
                 if (!v->data)
                 {
-                    fprintf (stderr, "cannot allocate %lld bytes to copy "
-                                     "scalar %s\n"
-                            ,element_size
-                            ,v->name
-                            );
+                    adios_error (err_no_memory, 
+                                 "In adios_write, cannot allocate %lld bytes to copy string %s\n",
+                                 element_size, v->name);
 
                     return 0;
                 }

@@ -11,7 +11,7 @@
 enum ADIOS_ERRCODES {
     err_no_error                        = 0,
     err_no_memory                       = -1,
-    err_MPI_open_error                  = -2,
+    err_file_open_error                 = -2,
     err_file_not_found                  = -3,
     err_invalid_file_pointer            = -4,
     err_invalid_group                   = -5,
@@ -37,7 +37,14 @@ enum ADIOS_ERRCODES {
     err_step_notready                   = -22,    // stream: tried to advance the step, but no new step has arrived yet
     err_too_many_files                  = -23,   // some staging methods allow for using only a fixed number of different filenames
 
-    err_unspecified                     = -24
+    // Write method errors
+    err_invalid_file_mode               = -100,
+    err_invalid_data                    = -101,
+
+
+
+
+    err_unspecified                     = -200
 };
 
 void adios_error (enum ADIOS_ERRCODES errcode, char *fmt, ...);
