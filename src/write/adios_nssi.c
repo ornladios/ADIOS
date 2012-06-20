@@ -19,6 +19,7 @@
 #include "adios_bp_v1.h"
 #include "adios_transport_hooks.h"
 #include "adios_internals.h"
+#include "util.h"
 #ifdef HAVE_NSSI
 #include "nssi_client.h"
 #include "adios_nssi_args.h"
@@ -941,7 +942,7 @@ static void adios_var_to_comm_nssi(
 }
 
 void adios_nssi_init(
-        const char *parameters,
+        const PairStruct *parameters,
         struct adios_method_struct *method)
 {
     int rc=NSSI_OK;

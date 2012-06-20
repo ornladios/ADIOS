@@ -205,7 +205,7 @@ struct adios_dimension_struct
     struct adios_dimension_struct * next;
 };
 
-typedef void (* ADIOS_INIT_FN) (const char * parameters
+typedef void (* ADIOS_INIT_FN) (const PairStruct * parameters
                                ,struct adios_method_struct * method
                                );
 typedef int (* ADIOS_OPEN_FN) (struct adios_file_struct * fd

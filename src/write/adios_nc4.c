@@ -17,6 +17,7 @@
 #include "core/adios_bp_v1.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_internals.h"
+#include "core/util.h"
 #include "netcdf.h"
 
 #include "nssi/io_timer.h"
@@ -1315,7 +1316,7 @@ static void adios_var_to_comm_nc4(
     }
 }
 void adios_nc4_init(
-        const char *parameters,
+        const PairStruct * parameters,
         struct adios_method_struct *method)
 {
     struct adios_nc4_data_struct *md=NULL;

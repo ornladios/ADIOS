@@ -26,6 +26,7 @@
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
 #include "core/buffer.h"
+#include "core/util.h"
 
 #if defined(__APPLE__) 
 #    define O_LARGEFILE 0
@@ -162,7 +163,7 @@ static void adios_var_to_comm (const char * comm_name
 }
 #endif
 
-void adios_posix_init (const char * parameters
+void adios_posix_init (const PairStruct * parameters
                       ,struct adios_method_struct * method
                       )
 {

@@ -18,6 +18,7 @@
 #include "core/adios_transport_hooks.h"
 #include "core/adios_internals.h"
 #include "core/adios_internals_mxml.h"
+#include "core/util.h"
 #include "core/ds_metadata.h"
 
 #include "dart_interface.h"
@@ -104,7 +105,7 @@ int get_dim_rank_value(struct adios_dimension_item_struct * dim_info, struct adi
     }
 }
 
-void adios_dataspaces_init (const char * parameters,
+void adios_dataspaces_init (const PairStruct * parameters,
                      struct adios_method_struct * method
                      )
 {

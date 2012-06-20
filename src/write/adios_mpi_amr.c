@@ -22,6 +22,7 @@
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
 #include "core/buffer.h"
+#include "core/util.h"
 
 enum ADIOS_MPI_AMR_IO_TYPE
 {
@@ -896,7 +897,7 @@ static void adios_var_to_comm (const char * comm_name
     }
 }
 
-void adios_mpi_amr_init (const char * parameters
+void adios_mpi_amr_init (const PairStruct * parameters
                          ,struct adios_method_struct * method
                          )
 {

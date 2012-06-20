@@ -20,6 +20,7 @@
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
 #include "core/buffer.h"
+#include "core/util.h"
 
 /** A method to allow apps sending provenance info 
     - through a socket or
@@ -141,7 +142,7 @@ struct adios_PROVENANCE_data_struct
 /* ======== PUBLIC FUNCTIONS  ========== */
 
 
-void adios_provenance_init (const char * parameters
+void adios_provenance_init (const PairStruct * parameters
                            ,struct adios_method_struct * method
                            )
 {

@@ -16,6 +16,7 @@
 #include "core/adios_bp_v1.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_internals.h"
+#include "core/util.h"
 #ifdef PHDF5 
 #include "hdf5.h"
 #endif
@@ -45,7 +46,7 @@ void adios_phdf5_get_write_buffer (struct adios_file_struct * fd
 
 
 #ifndef PHDF5
-void adios_phdf5_init(const char *parameters
+void adios_phdf5_init(const PairStruct * parameters
                      ,struct adios_method_struct * method
                      ){}
 void adios_phdf5_finalize (int mype, struct adios_method_struct * method){}
@@ -141,7 +142,7 @@ static void adios_var_to_comm_phdf5 (enum ADIOS_FLAG host_language_fortran
         *comm = MPI_COMM_WORLD;
     }
 }
-void adios_phdf5_init(const char *parameters
+void adios_phdf5_init(const PairStruct * parameters
                      ,struct adios_method_struct * method
                      )
 {

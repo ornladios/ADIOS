@@ -18,6 +18,7 @@
 #include "core/adios_transport_hooks.h"
 #include "core/adios_internals.h"
 #include "core/adios_internals_mxml.h"
+#include "core/util.h"
 
 #include "dimes.h"
 /*#define DIMES_DO_VERSIONING define it at configure as -DDART_DO_VERSIONING in CFLAGS*/
@@ -89,7 +90,7 @@ int adios_dimes_get_dim_rank_value(struct adios_dimension_item_struct * dim_info
     }
 }
 
-void adios_dimes_init(const char *parameters,
+void adios_dimes_init(const PairStruct *parameters,
 					struct adios_method_struct *method)
 {
 	struct adios_DIMES_data_struct *p = NULL;

@@ -10,6 +10,7 @@
 #include "public/adios.h"
 #include "core/adios_internals.h"
 #include "core/adios_transport_hooks.h"
+#include "core/util.h"
 
 #include <sys/queue.h>
 #if HAVE_PORTALS == 1
@@ -150,7 +151,7 @@ findFixedName(struct fm_structure *fm, char *name)
 
 
 extern void
-adios_datatap_init(const char *params, struct adios_method_struct *method)
+adios_datatap_init(const PairStruct *params, struct adios_method_struct *method)
 {
 	if (method->method_data != NULL)
 	{
@@ -165,10 +166,10 @@ adios_datatap_init(const char *params, struct adios_method_struct *method)
 
 	mdata->opencount = 0;
 	mdata->initialized = 1;
-	if (params != NULL && strlen(params) > 1)
+	if (md->parameters != NULL && strlen(md->parameters) > 1)
 	{
 //contains the file name of the file to read?
-		mdata->pfile = strdup(params);
+		mdata->pfile = strdup(md->parameters);
 	}
 	else
 		mdata->pfile = strdup("params");
@@ -1060,7 +1061,7 @@ adios_datatap_open(struct adios_file_struct *fd,
 }
 
 extern void
-adios_datatap_init(const char *params, struct adios_method_struct *method)
+adios_datatap_init(const PairStruct *params, struct adios_method_struct *method)
 {
 }
 

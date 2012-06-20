@@ -28,6 +28,7 @@
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
 #include "core/buffer.h"
+#include "core/util.h"
 
 static int adios_mpi_stagger_initialized = 0;
 
@@ -277,7 +278,7 @@ static void adios_var_to_comm (const char * comm_name
     }
 }
 
-void adios_mpi_stagger_init (const char * parameters
+void adios_mpi_stagger_init (const PairStruct * parameters
                     ,struct adios_method_struct * method
                     )
 {
@@ -317,12 +318,12 @@ void adios_mpi_stagger_init (const char * parameters
     md->split_files_count = split_files_unknown;
 
     // parse the parameters into key=value segments for optional settings
-    if (parameters)
+    if (method->parameters)
     {
-        int param_len = strlen (parameters);
+        int param_len = strlen (method->parameters);
         if (param_len > 0)
         {
-            char * p = strdup (parameters);
+            char * p = strdup (method->parameters);
             char * token = strtok (p, ";");
 
             while (token)

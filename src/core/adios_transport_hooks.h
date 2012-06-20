@@ -11,9 +11,10 @@
 #include "config.h"
 #include <stdint.h>
 #include <string.h>
+#include "core/util.h" /* PairStruct* */
 
 #define FORWARD_DECLARE_EMPTY(a) \
-void adios_##a##_init (const char * parameters \
+void adios_##a##_init (const PairStruct * parameters \
                       ,struct adios_method_struct * method \
                       ) {} \
 int adios_##a##_open (struct adios_file_struct * fd \
@@ -52,7 +53,7 @@ void adios_##a##_stop_calculation (struct adios_method_struct * method) {}
 //#define FORWARD_DECLARE(a) FORWARD_DECLARE_EMPTY(a) \
 //#else
 #define FORWARD_DECLARE(a) \
-void adios_##a##_init (const char * parameters \
+void adios_##a##_init (const PairStruct * parameters \
                       ,struct adios_method_struct * method \
                       ); \
 int adios_##a##_open (struct adios_file_struct * fd \

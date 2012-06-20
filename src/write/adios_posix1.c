@@ -25,6 +25,7 @@
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
 #include "core/buffer.h"
+#include "core/util.h"
 
 static int adios_posix1_initialized = 0;
 
@@ -42,7 +43,7 @@ struct adios_POSIX1_data_struct
     uint64_t vars_header_size;
 };
 
-void adios_posix1_init (const char * parameters
+void adios_posix1_init (const PairStruct * parameters
                       ,struct adios_method_struct * method
                       )
 {

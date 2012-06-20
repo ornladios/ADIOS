@@ -21,6 +21,7 @@
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
 #include "core/buffer.h"
+#include "core/util.h"
 
 static int adios_mpi_amr1_initialized = 0;
 static int * g_is_aggregator = 0;
@@ -751,7 +752,7 @@ static void adios_var_to_comm (const char * comm_name
     }
 }
 
-void adios_mpi_amr1_init (const char * parameters
+void adios_mpi_amr1_init (const PairStruct * parameters
                     ,struct adios_method_struct * method
                     )
 {

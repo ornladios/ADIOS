@@ -27,6 +27,8 @@
 #include "core/adios_internals.h"
 #include "core/adios_internals_mxml.h"
 #include "core/buffer.h"
+#include "core/adios_logger.h"
+#include "core/util.h" // PairStruct*
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -3043,6 +3045,73 @@ int adios_local_config ()
     return 1;
 }
 
+static PairStruct * get_and_preprocess_params (const char * parameters)
+{
+    PairStruct *params, *p, *prev_p;
+    int verbose_level, removeit, save;
+
+    params = text_to_name_value_pairs (parameters);
+
+    p = params;
+    prev_p = NULL;
+    while (p) {
+        //fprintf(stderr, "Parameter    name = %s  value = %s\n", p->name, p->value);
+        removeit = 0;
+        if (!strcasecmp (p->name, "verbose"))
+        {
+            if (p->value) {
+                errno = 0;
+                verbose_level = strtol(p->value, NULL, 10);
+                if (errno) {
+                    log_error ("Invalid 'verbose' parameter passed to read init function: '%s'\n", p->value);
+                    verbose_level = 1; // print errors only
+                }
+            } else {
+                verbose_level = 3;  // info level
+            }
+            adios_verbose_level = verbose_level;
+            removeit = 1;
+        }
+        else if (!strcasecmp (p->name, "quiet"))
+        {
+            adios_verbose_level = 0; //don't print errors
+            removeit = 1;
+        }
+        else if (!strcasecmp (p->name, "abort_on_error"))
+        {
+            adios_abort_on_error();
+            save = adios_verbose_level;
+            adios_verbose_level = 2;
+            log_warn ("ADIOS is set to abort on error\n");
+            adios_verbose_level = save;
+            removeit = 1;
+        }
+        if (removeit) {
+            if (p == params) {
+                // remove head
+                //fprintf(stderr, "  Remove HEAD  p = %x p->next = %x\n", p, p->next);
+                p = p->next; 
+                params->next = NULL;
+                free_name_value_pairs (params);
+                params = p;
+            } else {
+                // remove from middle of the list
+                //fprintf(stderr, "  Remove MIDDLE prev = %x p = %x p->next = %x\n", prev_p, p, p->next);
+                prev_p->next = p->next;
+                p->next = NULL;
+                free_name_value_pairs (p);
+                p = prev_p->next;
+            }
+        } else {
+            //fprintf(stderr, "  Keep MIDDLE prev = %x p = %x p->next = %x\n", prev_p, p, p->next);
+            prev_p = p;
+            p = p->next;
+        }
+    }
+
+    return params;
+}
+
 int adios_common_select_method (int priority, const char * method
                                ,const char * parameters, const char * group
                                ,const char * base_path, int iters
@@ -3059,7 +3128,7 @@ int adios_common_select_method (int priority, const char * method
     new_method->m = ADIOS_METHOD_UNKNOWN;
     new_method->base_path = strdup (base_path);
     new_method->method = strdup (method);
-    new_method->parameters = strdup (parameters);
+    new_method->parameters = strdup (parameters); // string goes into BP file
     new_method->iterations = iters;
     new_method->priority = priority;
     new_method->method_data = 0;
@@ -3072,8 +3141,12 @@ int adios_common_select_method (int priority, const char * method
             && adios_transports [new_method->m].adios_init_fn
            )
         {
+            PairStruct * params = get_and_preprocess_params (parameters);
+
             adios_transports [new_method->m].adios_init_fn
-                                       (parameters, new_method);
+                                       (params, new_method);
+
+            free_name_value_pairs (params);
         }
     }
     else
@@ -3161,8 +3234,12 @@ int adios_common_select_method_by_group_id (int priority, const char * method
             && adios_transports [new_method->m].adios_init_fn
            )
         {
+            PairStruct * params = get_and_preprocess_params (parameters);
+
             adios_transports [new_method->m].adios_init_fn
-                                       (parameters, new_method);
+                                       (params, new_method);
+
+            free_name_value_pairs (params);
         }
     }
     else

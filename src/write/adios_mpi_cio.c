@@ -20,6 +20,7 @@
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
+#include "core/util.h"
 
 #define STR_LEN 1000
 
@@ -85,7 +86,7 @@ static void adios_var_to_comm (const char * varname
     }
 }
 
-void adios_mpi_cio_init (const char * parameters
+void adios_mpi_cio_init (const PairStruct * parameters
                     ,struct adios_method_struct * method
                     )
 {
