@@ -301,6 +301,8 @@ void free_selection (ADIOS_SELECTION * sel)
     {
         free (sel->u.points.points);
     }
+
+    free (sel);
 }
 
 
