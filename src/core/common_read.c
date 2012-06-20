@@ -105,6 +105,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
                 p = p->next;
                 params->next = NULL;
                 free_name_value_pairs (params);
+                params = p;
             } else {
                 // remove from middle of the list
                 prev_p->next = p->next;
