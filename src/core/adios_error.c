@@ -21,6 +21,8 @@
 //  adios_errno is extern defined in adios_read.h and adiosf.c
 int adios_errno;  
 
+static int abort_on_error = 0;
+
 // string to store last error message
 // cannot be static because adios_errmsg returns it
 char aerr[ERRMSG_MAXLEN];
@@ -48,4 +50,9 @@ void adios_error_at_line (enum ADIOS_ERRCODES errcode, const char* filename, uns
     (void) vsnprintf(aerr, ERRMSG_MAXLEN, fmt, ap);
     va_end(ap);
     log_error(aerr);
+}
+
+void adios_abort_on_error()
+{
+    abort_on_error = 1;
 }

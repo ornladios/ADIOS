@@ -52,7 +52,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
                              const char * parameters)
 {
     PairStruct *params, *p, *prev_p;
-    int verbose_level, removeit;
+    int verbose_level, removeit, save;
     int retval; 
 
     adios_errno = err_no_error;
@@ -76,7 +76,10 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
                 errno = 0;
                 verbose_level = strtol(p->value, NULL, 10);
                 if (errno) {
+                    save = adios_verbose_level;
+                    adios_verbose_level = 1;
                     log_error ("Invalid 'verbose' parameter passed to read init function: '%s'\n", p->value);
+                    adios_verbose_level = save;
                     verbose_level = 1; // print errors only
                 }
             } else {
@@ -88,6 +91,15 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
         else if (!strcasecmp (p->name, "quiet")) 
         {
             adios_verbose_level = 0; //don't print errors
+            removeit = 1;
+        }
+        else if (!strcasecmp (p->name, "abort_on_error")) 
+        {
+            adios_abort_on_error();
+            save = adios_verbose_level;
+            adios_verbose_level = 2;
+            log_warn ("ADIOS is set to abort on error\n");
+            adios_verbose_level = save;
             removeit = 1;
         }
         if (removeit) {
