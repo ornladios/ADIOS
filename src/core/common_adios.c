@@ -5,11 +5,14 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
+#include "../config.h"
+
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <sys/time.h> // gettimeofday
 
 // xml parser
 #include <mxml.h>
@@ -129,8 +132,36 @@ int common_adios_open (int64_t * fd, const char * group_name
 	fd_p->timing_obj = 0;
 #endif
 
-    if (mode != adios_mode_read)
+#if 1
+    /* Time index magic done here */
+    if (mode == adios_mode_write) 
+    {
+        /* Traditionally, time=1 at the first step, and for subsequent file 
+           creations, time increases. Although, each file contains one step,
+           the time index indicates that they are in a series.
+        */
         g->time_index++;
+    } 
+    else if (mode == adios_mode_append)
+    {
+        g->time_index++;
+    }
+    else if (mode == adios_mode_update && g->time_index > 1)
+    {
+        /* Update from Append differs only in the time index. All methods had
+           code for Append, now for Update we decrease the counter by one,
+           for all methods. (But do not go below 1).
+        */
+        g->time_index--;
+    }
+    /* time starts from 1 not from 0 (traditionally; now no one cares */
+    if (g->time_index == 0)
+        g->time_index = 1;
+#else
+    /* old way pre-1.4*/
+    if (mode != adios_mode_read) 
+        g->time_index++;
+#endif
 
     while (methods)
     {
@@ -152,6 +183,8 @@ int common_adios_open (int64_t * fd, const char * group_name
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+static const char ADIOS_ATTR_PATH[] = "/__adios__";
+
 int common_adios_group_size (int64_t fd_p
                      ,uint64_t data_size
                      ,uint64_t * total_size
@@ -173,6 +206,54 @@ int common_adios_group_size (int64_t fd_p
         fd->buffer = 0;
         *total_size = 0;
         return 0;
+    }
+
+    /* Add ADIOS internal attributes now (should be before calculating the overhead) */
+    if (fd->mode != adios_mode_read && 
+         (fd->group->process_id == 0 || fd->subfile_index != -1)
+       ) 
+    {
+        struct timeval tp;
+        char epoch[16];
+        gettimeofday(&tp, NULL); 
+        sprintf(epoch, "%d", (int) tp.tv_sec);
+
+        int def_adios_init_attrs = 1;
+        // if we append/update, define these attributes only at the first step
+        if (fd->mode != adios_mode_write && fd->group->time_index > 1)
+            def_adios_init_attrs = 0;
+
+        if (def_adios_init_attrs) {
+            fprintf (stderr, "DEFINE ADIOS ATTRS, time = %d, rank = %d, epoch = %s subfile=%d\n", 
+                    fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
+            adios_common_define_attribute ((int64_t)fd->group, "version", ADIOS_ATTR_PATH, 
+                    adios_string, VERSION, NULL);
+
+            adios_common_define_attribute ((int64_t)fd->group, "create_time_epoch", ADIOS_ATTR_PATH,
+                    adios_integer, epoch, NULL);
+            adios_common_define_attribute ((int64_t)fd->group, "update_time_epoch", ADIOS_ATTR_PATH,
+                    adios_integer, epoch, NULL);
+            // id of last attribute is fd->group->member_count
+            fd->group->attrid_update_epoch = fd->group->member_count;
+            
+        }
+        /* FIXME: this code works fine, it does not duplicate the attribute, 
+           but the index will still contain all copies and the read will see 
+           only the first one. Thus updating an attribute does not work 
+           in practice.
+         */
+        else 
+        {
+            // update attribute of update time (define would duplicate it) 
+            struct adios_attribute_struct * attr = adios_find_attribute_by_id
+                   (fd->group->attributes, fd->group->attrid_update_epoch); 
+            if (attr) {
+                fprintf (stderr, "UPDATE ADIOS ATTR name=%s, time = %d, rank = %d, epoch = %s, subfile=%d\n", 
+                         attr->name, fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
+                free(attr->value);
+                adios_parse_scalar_string (adios_integer, (void *) epoch, &attr->value);
+            }
+        }
     }
 
     fd->write_size_bytes = data_size;
@@ -591,10 +672,17 @@ int common_adios_close (int64_t fd_p)
     {
         adios_write_close_vars_v1 (fd);
 
+        /* FIXME: this strategy writes all attributes defined in time step 0
+           and thus duplicates them in the PGs and in the attribute index.
+           For write mode, where files are new, this is good.
+           For append/update it is unnecessary and replicates the attributes
+           in the index.
+           One should write the newly created attributes only in append mode.
+        */
         adios_write_open_attributes_v1 (fd);
 
-        if (!fd->group->process_id) {
-            // from ADIOS 1.4, only rank 0 writes attributes
+        if (!fd->group->process_id || fd->subfile_index != -1) {
+            // from ADIOS 1.4, only rank 0 writes attributes (or to subfiles)
             while (a) {
                 adios_write_attribute_v1 (fd, a);
                 a = a->next;

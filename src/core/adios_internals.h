@@ -151,7 +151,7 @@ struct adios_group_struct
 
     struct adios_mesh_struct * mesh;
 
-    //int attrid_update_epoch; // ID of special attribute "/__adios__/update_time_epoch" to find it fast
+    int attrid_update_epoch; // ID of special attribute "/__adios__/update_time_epoch" to find it fast
 };
 
 struct adios_group_list_struct
