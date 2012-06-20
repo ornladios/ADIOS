@@ -1,35 +1,27 @@
-\vspace{34pt}
-%\section*{{\Large \textbf{9 Utilities\label{HToc82067528}}}}
-\section{Utilities}
+%\chapter*{{\Large \textbf{9 Utilities\label{HToc82067528}}}}
+\chapter{Utilities}
 
-\vspace{24pt}
-\subsection*{{\large 9.1 }{\large \textbf{ \label{HToc84890279}\label{HToc212016655}\label{HToc212016897}\label{HToc182553426}adios\_lint}}}
+\section*{{\large 9.1 }{\large \textbf{ \label{HToc84890279}\label{HToc212016655}\label{HToc212016897}\label{HToc182553426}adios\_lint}}}
 
-\vspace{10pt}
 We provide a verification tool, called adios\_lint, which comes with ADIOS. It 
 can help users to eliminate unnecessary semantic errors and to verify the integrity 
 of the XML file. Use of adios\_lint is very straightforward; enter the adios\_lint 
 command followed by the config file name.\label{HToc82067529}\label{HToc84890280}\label{HToc212016656}\label{HToc212016898}\label{HToc182553427}
 
-\vspace{10pt}
-\subsection*{{\large 9.2 }{\large \textbf{adios\_config}}}
+\section*{{\large 9.2 }{\large \textbf{adios\_config}}}
 
-\vspace{10pt}
 This script provides the necessary compile and linking flags to use ADIOS in your 
 application and the version information of the ADIOS installation.  See Section 
 2.5 for how to use it or run \texttt{"}adios\_config -h\texttt{"} to see the options. 
 \label{HToc182553428}
 
-\vspace{10pt}
-\subsection*{{\large 9.3 }{\large \textbf{bpls}}}
+\section*{{\large 9.3 }{\large \textbf{bpls}}}
 
-\vspace{10pt}
 The bpls utility is used to list the content of a BP file or to dump arbitrary 
 subarrays of a variable. By default, it lists the variables in the file including 
 the type, name, and dimensionality. Here is the description of additional options 
 (use bpls \-{}h to print help on all options for this utility).
 
-\vspace{10pt}
 \leftskip=36pt
 \parindent=-36pt
 -l  Displays the global statistics associated with each array (minimum, maximum, 
@@ -37,41 +29,32 @@ average and standard deviation) and the value of each scalar. Note that the deta
 listing does not have extra overhead of processing since this information is available 
 in the footer of the BP file. 
 
-\vspace{10pt}
 -t  When added to the -l option, displays the statistics associated with the variables 
 for every timestep. 
 
-\vspace{10pt}
 -p Dumps the histogram binning intervals and their corresponding frequencies, if 
 histograms were enabled while writing the bp file. This option generates a ``\texttt{<}variable-name\texttt{>}.gpl'' 
 file that can be given to the `gnuplot' program as input. 
 
-\vspace{10pt}
 -a Lists attributes besides the variables
 
-\vspace{10pt}
 -A Lists only the attributes
 
-\vspace{10pt}
 -r Sorts the full listing by names. Name masks to list only a subset of the variables/attributes 
 can be given like with the -ls command or as regular expressions (with -e option).
 
-\vspace{10pt}
 -v Verbose. It prints some information about the file in the beginning before listing 
 the variables. 
 
-\vspace{10pt}
 -S Dump byte arrays as strings instead of with the default numerical listing. 2D 
 byte arrays are printed as a series of strings. 
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 Since bpls is written in C, the order of dimensions is reported with row-major 
 ordering, i.e., if Fortran application wrote an NxM 2D variable, bpls reports it 
 as an MxN variable. 
 
-\vspace{10pt}
 \leftskip=36pt
 \parindent=-36pt
 -d Dumps the values of the variables. A subset of a variable can be dumped by using 
@@ -83,300 +66,219 @@ an array and negative values are handled as counts from backward. Thus, -s ``-1,
 reads in one row of a 2D array. Or -s ``1,1'' -c ``-2,-2'' reads in the variable 
 without the edge elements (row 0, colum 0, last row and last column).
 
-\vspace{22pt}
 \leftskip=0pt
 \parindent=0pt
 Time is handled as an additional dimension, i.e., if a 2D variable is written several 
 times into the same BP file, bpls lists it as a 3D array with the time dimension 
 being the first (slowest changing) dimension. 
 
-\vspace{10pt}
 In the example below, a 4 process application wrote a 4x4 array (each process wrote 
 a 2x2 subset) with values from 0 to 15 once under the name /var/int\_xy and 3 times 
 under the name /var/int\_xyt. 
 
-\vspace{10pt}
 \$ bpls -latv g\_2x2\_2x2\_t3.bp
 
-\vspace{10pt}
 File info:
 
-\vspace{10pt}
 \parindent=7pt
 of groups:     1
 
-\vspace{10pt}
 of variables:  11
 
-\vspace{10pt}
 of attributes: 7
 
-\vspace{10pt}
 time steps:    3 starting from 1
 
-\vspace{10pt}
 file size:     779 KB
 
-\vspace{10pt}
 bp version:    1
 
-\vspace{10pt}
 endianness:    Little Endian
 
-\vspace{22pt}
 \parindent=0pt
 Group genarray:
 
-\vspace{10pt}
 \parindent=7pt
 integer    /dimensions/X             scalar = 4 
 
-\vspace{10pt}
 integer    /dimensions/Y             scalar = 4 
 
-\vspace{10pt}
 integer    /info/nproc               scalar = 4 
 
-\vspace{10pt}
 string     /info/nproc/description   attr   = \texttt{"}Number of writers\texttt{"}
 
-\vspace{10pt}
 integer    /info/npx                 scalar = 2 
 
-\vspace{10pt}
 string     /info/npx/description     attr   = \texttt{"}Number of processors in 
 x dimension\texttt{"}
 
-\vspace{10pt}
 integer    /info/npy                 scalar = 2 
 
-\vspace{10pt}
 string     /info/npy/description     attr   = \texttt{"}Number of processors in 
 y dimension\texttt{"}
 
-\vspace{10pt}
 \textbf{integer    /var/int\_xy               \{4, 4\} = 0 / 15 }
 
-\vspace{10pt}
 string     /var/int\_xy/description   attr   = \texttt{"}2D array with 2D decomposition\texttt{"}
 
-\vspace{10pt}
 \textbf{integer    /var/int\_xyt              \{3, 4, 4\} = 0 / 15 }
 
-\vspace{10pt}
 string     /var/int\_xyt/description  attr   = \texttt{"}3D array with 2D decomposition 
 with time in 3rd dimension\texttt{"}
 
 \label{HToc144350180}
 
-\vspace{22pt}
 \leftskip=18pt
 \parindent=0pt
 {\color{color20} \textbf{Figure 21. bpls utility}}
 
-\vspace{10pt}
 \leftskip=0pt
 The content of /var/int\_xy can be dumped with
 
-\vspace{10pt}
 \$ bpls  g\_2x2\_2x2\_t3.bp -d -n 4 var/int\_xy
 
-\vspace{10pt}
 \parindent=7pt
 integer    /var/int\_xy    \{4, 4\}
 
-\vspace{10pt}
 \parindent=14pt
 (0,0)    0 1 2 3 
 
-\vspace{10pt}
 (1,0)    4 5 6 7 
 
-\vspace{10pt}
 (2,0)    8 9 10 11 
 
-\vspace{10pt}
 (3,0)    12 13 14 15
 
-\vspace{22pt}
 \parindent=0pt
 The ``central'' 2x2 subset of /var/int\_xy can be dumped with
 
-\vspace{10pt}
 \$ bpls g\_2x2\_2x2\_t3.bp -d -s \texttt{"}1,1\texttt{"} -c \texttt{"}2,2\texttt{"} 
 -n 2 var/int\_xy
 
-\vspace{10pt}
 \parindent=7pt
 integer    /var/int\_xy    \{4, 4\}
 
-\vspace{10pt}
 \parindent=14pt
 slice (1:2, 1:2)
 
-\vspace{10pt}
 (1,1)    5 6 
 
-\vspace{10pt}
 (2,1)    9 10
 
-\vspace{22pt}
 \parindent=0pt
 The last element of /var/int\_xyt for each timestep can be dumped with
 
-\vspace{10pt}
 \$ bpls g\_2x2\_2x2\_t3.bp -d -s \texttt{"}0,-1,-1\texttt{"} -c \texttt{"}-1,1,1\texttt{"} 
 -n 1 var/int\_xyt
 
-\vspace{10pt}
 \parindent=7pt
 integer    /var/int\_xyt   \{3, 4, 4\}
 
-\vspace{10pt}
 \parindent=14pt
 slice (0:2, 3:3, 3:3)
 
-\vspace{10pt}
 (0,3,3)    15 
 
-\vspace{10pt}
 (1,3,3)    15 
 
-\vspace{10pt}
 (2,3,3)    15\label{HToc182553429}
 
-\vspace{10pt}
-\subsection*{{\large 9.4 }{\large \textbf{bpdump}}}
+\section*{{\large 9.4 }{\large \textbf{bpdump}}}
 
-\vspace{10pt}
 \parindent=0pt
 The bpdump utility enables users to examine the contents of a bp file more closely 
 to the actual BP format than with bpls and to display all the contents or selected 
 variables in the format on the standard output. Each writing process' output is 
 printed separately. 
 
-\vspace{10pt}
 \parindent=3pt
 It dumps the bp file content, including the indexes for all the process groups, 
 variables, and attributes, followed by the variables and attributes list of individual 
 process groups (see Figure 22 ).
 
-\vspace{22pt}
 \parindent=0pt
 bpdump [-d var\textbar{}--dump var] \texttt{<}filename\texttt{>}
 
-\vspace{10pt}
 ========================================================
 
-\vspace{10pt}
 Process Groups Index:
 
-\vspace{10pt}
 Group: temperature
 
-\vspace{10pt}
 \parindent=28pt
 Process ID: 0
 
-\vspace{10pt}
 Time Name:
 
-\vspace{10pt}
 \parindent=57pt
 Time: 1
 
-\vspace{10pt}
 \parindent=28pt
 Offset in File: 0
 
-\vspace{10pt}
 \parindent=0pt
 ========================================================
 
-\vspace{10pt}
 Vars Index:
 
-\vspace{10pt}
 Var (Group) [ID]: /NX (temperature) [1]
 
-\vspace{10pt}
 \parindent=28pt
 Datatype: integer
 
-\vspace{10pt}
 Vars Characteristics: 20
 
-\vspace{10pt}
 \parindent=0pt
 Offset(46)              Value(10)
 
-\vspace{10pt}
 Var (Group) [ID]: /size (temperature) [2]
 
-\vspace{10pt}
 \parindent=28pt
 Datatype: integer
 
-\vspace{10pt}
 Vars Characteristics: 20
 
-\vspace{10pt}
 \parindent=0pt
 Offset(77)              Value(20)...
 
-\vspace{22pt}
 Var (Group) [ID]: /rank (temperature) [3]
 
-\vspace{10pt}
 \parindent=28pt
 Datatype: integer
 
-\vspace{10pt}
 Vars Characteristics: 20
 
-\vspace{10pt}
 \parindent=86pt
 Offset(110)             Value(0)...
 
-\vspace{22pt}
 \parindent=0pt
 Var (Group) [ID]: /temperature (temperature) [4]
 
-\vspace{10pt}
 \parindent=28pt
 Datatype: double
 
-\vspace{10pt}
 Vars Characteristics: 20
 
-\vspace{10pt}
 \parindent=86pt
 Offset(143)             Min(1.000000e-01)               Max(9.100000e+00)      
          Dims (l:g:o): (1:20:0,10:10:0)...
 
-\vspace{22pt}
 \parindent=0pt
 ========================================================
 
-\vspace{10pt}
 Attributes Index:
 
-\vspace{10pt}
 Attribute (Group) [ID]: /recorded-date (temperature) [5]
 
-\vspace{10pt}
 \parindent=28pt
 Datatype: string
 
-\vspace{10pt}
 Attribute Characteristics: 20
 
-\vspace{10pt}
 \parindent=0pt
 Offset(363)             Value(Sep-19-2008)...
 
 \label{HRef119579247}\label{HToc144350181}
 
-\vspace{34pt}
 \leftskip=18pt
 {\color{color20} \textbf{Figure 22. bpdump utility\label{HToc84890281}\label{HToc212016657}\label{HToc212016899}\label{HToc182553430}}}

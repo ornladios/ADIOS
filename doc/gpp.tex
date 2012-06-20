@@ -1,8 +1,6 @@
-\vspace{22pt}
-%\section*{{\Large \textbf{11 Group read/write process }}}
-\section{Group Read/Write Process}
+%\chapter*{{\Large \textbf{11 Group read/write process }}}
+\chapter{Group Read/Write Process}
 
-\vspace{24pt}
 In ADIOS, we provide a python script, which takes a configuration file name as 
 an input argument and produces a series of preprocessing files corresponding to 
 the individual adios-group in the XML file. Depending on which language (C or FORTRAN) 
@@ -13,105 +11,75 @@ calls for all the variables defined inside adios-group. One need to use only the
 ``\#include filename.ch'' statement in the source code between the pair of adios\_open 
 and adios\_close.
 
-\vspace{24pt}
 Users either type the following command line or incorporate it into a Makefile:
 
-\vspace{24pt}
 python gpp.py \texttt{<}config\_fname\texttt{>}\label{HToc84890287}\label{HToc212016663}\label{HToc212016905}\label{HToc182553436}
 
-\vspace{24pt}
-\subsection*{{\large 11.1 }{\large \textbf{Gwrite/gread/read}}}
+\section*{{\large 11.1 }{\large \textbf{Gwrite/gread/read}}}
 
-\vspace{10pt}
 Below are a few example of the mapping from var element to adios\_write/read:
 
-\vspace{10pt}
 In adios-group ``weather'', we have a variable declared in the following forms:
 
-\vspace{10pt}
 1) \texttt{<}var name=''temperature'' gwrite=''t'' gread=''t\_read'' type=''adios\_double'' 
 dimensions=''NX''/\texttt{>}
 
-\vspace{10pt}
 When the python command is executed, two files are produced, gwrite\_weather.ch 
 and gread\_weather.ch. The gwrite\_weather.ch command contains 
 
-\vspace{10pt}
 adios\_write (adios\_handle, ``temperature'', t);
 
-\vspace{10pt}
 while gread\_weather.ch contains
 
-\vspace{10pt}
 adios\_read (adios\_handle, ``temperature'', t\_read).
 
-\vspace{10pt}
 2) \texttt{<}var name=''temperature'' gwrite=''t'' gread=''t\_read'' type=''adios\_double'' 
 dimensions=''NX'' \textit{read=''no''}/\texttt{>}
 
-\vspace{10pt}
 In this case, only the adios\_write statement is generated in gwrite\_weather.ch. 
 The adios\_read statement is not generated because the value of attribute read 
 is set to ``no''. 
 
-\vspace{10pt}
 3) \texttt{<}var name=''temperature'' gread=''t\_read'' type=''adios\_double'' 
 dimensions=''NX'' /\texttt{>}
 
-\vspace{10pt}
 adios\_write (adios\_handle, ``temperature'', temperature)
 
-\vspace{10pt}
 adios\_read (adios\_handle, ``temperature'', t\_read).
 
-\vspace{10pt}
 4) \texttt{<}var name=''temperature'' gwrite=''t'' type=''adios\_double'' dimensions=''NX'' 
 /\texttt{>}
 
-\vspace{10pt}
 adios\_write (adios\_handle, ``temperature'', t)
 
-\vspace{10pt}
 adios\_read (adios\_handle, ``temperature'', temperature)\label{HToc84890288}\label{HToc212016664}\label{HToc212016906}\label{HToc182553437}
 
-\vspace{10pt}
-\subsection*{{\large 11.2 }{\large \textbf{Add conditional expression}}}
+\section*{{\large 11.2 }{\large \textbf{Add conditional expression}}}
 
-\vspace{10pt}
 Sometimes, the adios\_write routines are not perfectly written out one after another. 
 There might be some conditional expressions or loop statements. The following example 
 will show you how to address this type of issue via XML editing.
 
-\vspace{10pt}
 \texttt{<}gwrite src=''if (rank == 0) \{''/\texttt{>}
 
-\vspace{10pt}
 \leftskip=18pt
 \texttt{<}var name=''temperature'' gwrite=''t'' gread=''t\_read'' type=''adios\_double'' 
 dimensions=''NX'' read=''no''/\texttt{>}
 
-\vspace{10pt}
 \leftskip=0pt
 \texttt{<}gwrite src=''\}''/\texttt{>}
 
-\vspace{10pt}
 Rerun the python command; the following statements will be generated in gwrite\_weather.ch,
 
-\vspace{10pt}
 if (mype==0) \{
 
-\vspace{10pt}
 adios\_write (adios\_handle, ``temperature'', t)
 
-\vspace{10pt}
 \}
 
-\vspace{10pt}
 gread\_weather.ch has same condition expression added.\label{HToc84890289}\label{HToc212016665}\label{HToc212016907}\label{HToc182553438}
 
-\vspace{10pt}
-\subsection*{{\large 11.3 }{\large \textbf{Dependency in Makefile}}}
+\section*{{\large 11.3 }{\large \textbf{Dependency in Makefile}}}
 
-\vspace{10pt}
 Since we include the header files in the source, the users need to include the 
 header files as a part of dependency rules in the Makefile.\label{HToc82067534}\label{HToc84890290}\label{HToc212016666}\label{HToc212016908}\label{HToc182553439}

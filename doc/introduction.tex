@@ -1,14 +1,9 @@
-%\vspace{30pt}
-%\section*{{\Large \textbf{Introduction\label{HToc84890215}\label{HToc212016590}\label{HToc212016832}\label{HToc182553323}}}}
-\section{Introduction}
+\chapter{Introduction}
 
-%\vspace{24pt}
-%\subsection*{{\large 1.1 }{\large \textbf{Goals}}}
-\subsection{Goals}
+\section{Goals}
 
-%\vspace{10pt}
-\leftskip=0pt
-\parindent=0pt
+%\leftskip=0pt
+%\parindent=0pt
 As computational power has increased dramatically with the increase in the number 
 of processors, input/output (IO) performance has become one of the most significant 
 bottlenecks in today's high-performance computing (HPC) applications. With this 
@@ -18,13 +13,10 @@ Research in Computer Systems have teamed together to design the Adaptive I/O Sys
 efficient on different clusters or supercomputer platforms. We are also providing 
 easy-to-use, high-level application program interfaces (APIs) so that application 
 scientists can easily adapt the ADIOS library and produce science without diving 
-too deeply into computer configuration and skills. \label{HToc84890216}\label{HToc212016591}\label{HToc212016833}\label{HToc182553324}
+too deeply into computer configuration and skills. 
 
-%\vspace{10pt}
-%\subsection*{{\large 1.2 }{\large \textbf{What Is ADIOS?}}}
-\subsection{What is ADIOS?}
+\section{What is ADIOS?}
 
-%\vspace{10pt}
 {\color{color01} ADIOS is a state-of-the-art componentization of the IO system 
 that has demonstrated impressive IO performance results on leadership class machines 
 and clusters; sometimes showing an improvement of more than 1000 times over well 
@@ -34,14 +26,10 @@ to adopt the best I/O method for different computer infrastructures with very li
 modification of their scientific applications. ADIOS has a suite of simple, easy-to-use 
 APIs. Instead of being provided as the arguments of APIs, all the required metadata 
 are stored in an external Extensible Markup Language (XML) configuration file, 
-which is readable, editable, and portable for most machines. \label{HToc212016592}\label{HToc212016834}\label{HToc84890217}\label{HToc182553325}
+which is readable, editable, and portable for most machines. 
 
-%\vspace{10pt}
-%\subsection*{{\large 1.3 }{\large \textbf{The Basic ADIOS Group Concept}}}
-\subsection{The Basic ADIOS Group Concept}
+\section{The Basic ADIOS Group Concept}
 
-%\vspace{10pt}
-\parindent=3pt
 The ADIOS ``group'' is a concept in which input variables are tagged according 
 to the functionality of their respective output files. For example, a common scientific 
 application has checkpoint files prefixed with restart and monitoring files prefixed 
@@ -49,14 +37,10 @@ with diagnostics. In the XML configuration file, the user can define two separat
 groups with tag names of adios-group as ``restart'' and ``diagnostic.'' Each group 
 contains a set of variables and attributes that need to be written into their respective 
 output files. Each group can choose to have different I/O transport methods, which 
-can be optimal for their I/O patterns.\label{HToc84890218}\label{HToc212016593}\label{HToc212016835}\label{HToc182553326}
+can be optimal for their I/O patterns.
 
-%\vspace{10pt}
-%\subsection*{{\large 1.4 }{\large \textbf{Other Interesting Features of ADIOS}}}
-\subsection{Other Interesting Features of ADIOS}
+\section{Other Interesting Features of ADIOS}
 
-%\vspace{10pt}
-\parindent=0pt
 ADIOS contains a new self-describing file format, BP. The BP file format was specifically 
 designed to support delayed consistency, lightweight data characterization, and 
 resilience. ADIOS also contains python scripts that allow users to easily write 
@@ -66,7 +50,6 @@ I/O methods for a single group. This is especially useful if users want to write
 data out to the file system, simultaneously capturing the metadata in a database 
 method, and visualizing with a visualization method.
 
-%\vspace{10pt}
 The read API enables reading arbitrary subarrays of variables in a BP file and 
 thus variables written out from N processor can be read in on arbitrary number 
 of processors. ADIOS also takes care of the endianness problem at converting to 
@@ -74,33 +57,24 @@ the reader's architecture automatically at reading time. Matlab reader is includ
 in the release while the VisIt parallel interactive visualization software can 
 read BP files too (from version 2.0). 
 
-%\vspace{10pt}
 ADIOS is fully supported on Cray XT and IBM BlueGene/P computers as well as on 
-Linux clusters and Mac OSX. \label{HToc84890219}\label{HToc212016594}\label{HToc212016836}\label{HToc182553327}
+Linux clusters and Mac OSX. 
 
-%\vspace{10pt}
-%\subsection*{{\large 1.5 }{\large \textbf{Future ADIOS 2.0 Goals}}}
-\subsection{Future ADIOS 2.0 Goals}
+\section{Future ADIOS 2.0 Goals}
 
-%\vspace{10pt}
 One of the main goals for ADIOS 2.0 is to produce faster reads via indexing methods. 
 Another goal is to provide more advanced data types via XML in ADIOS so that it 
 will be compatible with F90/c/C++ structures/objects. 
 
-%\vspace{10pt}
 We will also work on the following advanced topics for ADIOS 2.0: 
 
 \begin{itemize}
-\item
-A link to an external database for provenance recording.
+    \item A link to an external database for provenance recording.
 
-\item
-Autonomics through a feedback mechanism from the file system 
+    \item Autonomics through a feedback mechanism from the file system 
 to optimize I/O performance. For instance, ADIOS can be adaptively changed from 
 a synchronous to an asynchronous method or can decide when to write restart to 
 improve I/O performance.
 
-\item
-A staging area for data querying, analysis, and in situ visualization.\label{HToc84890220}\label{HToc212016595}\label{HToc212016837}\label{HToc182553328}
-
+    \item A staging area for data querying, analysis, and in situ visualization.
 \end{itemize}

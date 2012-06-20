@@ -1,23 +1,17 @@
-\vspace{36pt}
-%\section*{{\Large \textbf{13 Developer Manual\label{HToc82067539}\label{HToc84890311}\label{HToc212016686}\label{HToc212016928}\label{HRef119999608}\label{HToc182553453}}}}
-\section{Developer Manual}
+\chapter{Developer Manual}
 
-\vspace{37pt}
-\subsection*{{\large 13.1 }{\large \textbf{Create New Transport Methods}}}
+\section{Create New Transport Methods}
 
-\vspace{10pt}
 One of ADIOS's important features is the componentization of transport methods. 
 Users can switch among the typical methods that we support or even create their 
 own methods, which can be easily plugged into our library. The following sections 
 provide the procedures for adding the new transport method called ``abc'' into 
 the ADIOS library. In this version of ADIOS, all the source files are located in 
-/trunk/src/.\label{HToc84890312}\label{HToc212016687}\label{HToc212016929}\label{HToc182553454}
+/trunk/src/; the core files in /trunk/src/core/, the write method in /trunk/src/write
+and the read method in /trunk/src/read.
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{13.1.1 Add the new method macros in adios\_transport\_hooks.h 
-}}}
+\subsection{Add the new method macros in adios\_transport\_hooks.h}
 
-\vspace{10pt}
 The first file users need to examine is adios\_transport\_hooks.h, which basically 
 defines all the transport methods and interface functions between detailed transport 
 implementation and user APIs. In the file, we first find the line that defines 
@@ -25,1408 +19,607 @@ the enumeration type Adios\_IO\_methods\_datatype add the declaration of method
 ID ADIOS\_METHOD\_ABC, and, because we add a new method, update total number of 
 transport methods ADIOS\_METHOD\_COUNT from 9 to 10.
 
-\vspace{10pt}
 1. enum Adios\_IO\_methods datatype 
+\begin{lstlisting}[caption={Add a new write method, step 1}]
 
-\vspace{10pt}
-enum ADIOS\_IO\_METHOD \{
+enum ADIOS_IO_METHOD {
+    ADIOS_METHOD_UNKNOWN    = -2,
+    ADIOS_METHOD_NULL       = -1,
+    ADIOS_METHOD_MPI        = 0,
+    ...
+    ADIOS_METHOD_PROVENANCE = 8,
 
-\vspace{10pt}
-\parindent=79pt
-ADIOS\_METHOD\_UNKNOWN   = -2
+    `\color{javapurple}{\bf ADIOS\_METHOD\_ABC        = 9,}`
 
-\vspace{10pt}
-\parindent=75pt
-,ADIOS\_METHOD\_NULL              = -1
+    ADIOS_METHOD_COUNT      = 10
+};
+\end{lstlisting}
 
-\vspace{10pt}
-,ADIOS\_METHOD\_MPI                 = 0
-
-\vspace{23pt}
-\parindent=226pt
-,ADIOS\_METHOD\_PHDF5            = 8
-
-\vspace{10pt}
-\parindent=0pt
-ADIOS\_METHOD\_ABC  = 9
-
-\vspace{10pt}
-\parindent=75pt
-ADIOS\_METHOD\_COUNT           = 9   ADIOS\_METHOD\_COUNT  = 10
-
-\vspace{10pt}
-\};
-
-\vspace{23pt}
-\parindent=0pt
 2. Next, we need to declare the transport APIs for method ``abc,'' including init/finalize, 
 open/close, should\_buffer, and read/write. Similar to the other methods, we need 
 to add 
 
-\vspace{10pt}
-\parindent=18pt
-FORWARD\_DECLARE (abc)
+\begin{lstlisting}
+    FORWARD_DECLARE (abc)
+\end{lstlisting}
 
-\vspace{10pt}
-\parindent=0pt
 3. Then, we add the mapping of the string name ``abc'' of the new transport method 
 to the method ID - ADIOS\_METHOD\_ABC, which has been already defined in enumeration 
 type Adios\_IO\_methods\_datatype. As the last parameter, ``1'' here means the 
 method requires communications, or ``0'' if not.
 
-\vspace{10pt}
-MATCH\_STRING\_TO\_METHOD (\texttt{"}abc\texttt{"}, ADIOS\_METHOD\_ABC, 1)     
+\begin{lstlisting}
+    MATCH_STRING_TO_METHOD ("abc", ADIOS_METHOD_ABC, 1)     
+\end{lstlisting}
         
-
-\vspace{10pt}
 4. Lastly, we add the mapping of the string name needed in the initialization functions 
 to the method ID, which will be used by adios\_transport\_struct variables defined 
 in adios\_internals.h.
 
-\vspace{10pt}
-ASSIGN\_FNS (abc, ADIOS\_METHOD\_ABC)\label{HToc84890313}\label{HToc212016688}\label{HToc212016930}\label{HToc182553455}
+\begin{lstlisting}
+    ASSIGN_FNS (abc, ADIOS_METHOD_ABC)
+\end{lstlisting}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{13.1.2 Create adios\_abc.c}}}
+\subsection{Create adios\_abc.c}
 
-\vspace{10pt}
 In this section, we demonstrate how to implement different transport APIs for method 
 ``abc.'' In adios\_abc.c, we need to implement at least 11 required routines: 
 
-\vspace{10pt}
-1. ``adios\_abc\_init'' allocates the method\_data field in adios\_method\_struct 
+\begin{enumerate}
+\item ``adios\_abc\_init'' allocates the method\_data field in adios\_method\_struct 
 to the user-defined transport data structure, such as adios\_abc\_data\_struct, 
 and initializes this data structure. Before the function returns, the initialization 
 status can be set by statement ``adios\_abc\_initialized = 1.''
 
-\vspace{10pt}
-2. ``adios\_abc\_open'' opens a file if there is only one processor writing to 
+\item ``adios\_abc\_open'' opens a file if there is only one processor writing to 
 the file. Otherwise, this function does nothing; instead, we use adios\_abc\_should\_buffer 
 to coordinate the file open operations.   
 
-\vspace{10pt}
-3. ``adios\_abc\_should\_buffer,'' called by the ``common\_adios\_group\_size'' 
+\item ``adios\_abc\_should\_buffer,'' called by the ``common\_adios\_group\_size'' 
 function in adios.c, needs to include coordination of open operations if multiple 
 processes are writing to the same file. 
 
-\vspace{10pt}
-4. ``adios\_abc\_write'', in the case of no buffering or overflow, writes data 
+\item ``adios\_abc\_write'', in the case of no buffering or overflow, writes data 
 directly to disk. Otherwise, it verifies whether the internally recorded memory 
 pointer is consistent with the vector variable's address passed in the function 
 parameter and frees that block of memory if it is not needed any more.  
 
-\vspace{10pt}
-5. ``adios\_abc\_read'' associates the internal data structure's address to the 
+\item ``adios\_abc\_read'' associates the internal data structure's address to the 
 variable specified in the function parameter.
 
-\vspace{10pt}
-6. ``adios\_abc\_close'' simply closes the file if no buffering scheme is used. 
+\item ``adios\_abc\_close'' simply closes the file if no buffering scheme is used. 
 However, in general, this function performs most of the actual disk writing/reading 
 the buffers to/from the file by one or more processors in the same communicator 
 domain and then close the file. 
 
-\vspace{10pt}
-7. ``adios\_abc\_finalize'' resets the initialization status back to 0 if it has 
+\item ``adios\_abc\_finalize'' resets the initialization status back to 0 if it has 
 been set to 1 by adios\_abc\_init. 
 
-\vspace{10pt}
 If you are developing asynchronous methods, the following functions need to be 
 implemented as well; otherwise you can leave them as empty implementation.
 
-\vspace{10pt}
-8. adios\_abc\_get\_write\_buffer,
+\item adios\_abc\_get\_write\_buffer,
 
-\vspace{10pt}
-9. ``adios\_abc\_end\_iteration`` is {\color{color01} a tick counter for the I/O 
-routines to time how fast they are emptying the buffers.} 
+\item ``adios\_abc\_end\_iteration`` is a tick counter for the I/O 
+routines to time how fast they are emptying the buffers. 
 
-\vspace{10pt}
-10. ``adios\_abc\_start\_calculation'' {\color{color01} indicates that it is now 
+\item ``adios\_abc\_start\_calculation'' indicates that it is now 
 an ideal time to do bulk data transfers because the code will not be performing 
-I/O for a while.}
+I/O for a while.
 
-\vspace{10pt}
-11. ``adios\_abc\_stop\_calculation`` indicates {\color{color01} that bulk data 
+\item ``adios\_abc\_stop\_calculation`` indicates that bulk data 
 transfers should cease because the code is about to start communicating with other 
-nodes.}
+nodes.
+\end{enumerate}
 
-\vspace{10pt}
 The following is One of the most important things that needs to be noted: 
 
-\vspace{10pt}
 fd-\texttt{>}shared\_buffer = adios\_flag\_no,
 
-\vspace{10pt}
 which means that the methods do not need a buffering scheme, such as PHDF5, and 
 that data write out occurs immediately once adios\_write returns.
 
-\vspace{10pt}
 If fd-\texttt{>}shared\_buffer = adios\_flag\_yes, the users can employ the self-defined 
-buffering scheme to improve I/O performance.\label{HToc84890314}\label{HToc212016689}\label{HToc212016931}\label{HToc182553456}
+buffering scheme to improve I/O performance.
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{13.1.3 A walk-through example}}}
+\subsection{A walk-through example}
 
-\vspace{10pt}
 Now let's look at an example of adding an unbuffered POSIX method to ADIOS.  According 
 to the steps described above, we first open the header file --``adios\_transport\_hooks.h,'' 
 and add the following statements:
 
-\vspace{10pt}
-\ensuremath{\Sigma} \textbf{enum ADIOS\_IO\_METHOD} \{
+\begin{lstlisting}[emph={ADIOS_METHOD_POSIX_ASCII_NB}, emphstyle={\color{red}\large\bf},
+                   caption={Example: add unbuffered POSIX method, step 1}]
+enum ADIOS_IO_METHOD {
 
-\vspace{10pt}
-\parindent=79pt
-ADIOS\_METHOD\_UNKNOWN     = -2
+    ADIOS_METHOD_UNKNOWN        = -2,
+    ADIOS_METHOD_NULL           = -1,
+    ADIOS_METHOD_MPI            = 0,
+    ...
+    ADIOS_METHOD_PROVENANCE     = 8,
+    // method ID for binary transport method
+    ADIOS_METHOD_POSIX_ASCII_NB = 9, 
+    // total method number
+    ADIOS_METHOD_COUNT          = 10 
+};
 
-\vspace{10pt}
-\parindent=75pt
-,ADIOS\_METHOD\_NULL                 = -1
+FORWARD_DECLARE (posix_ascii_nb);
 
-\vspace{10pt}
-,ADIOS\_METHOD\_MPI                    = 0...
+MATCH_STRING_TO_METHOD ("posix_ascii_nb", ADIOS_METHOD_POSIX_ASCII_NB, 0)
 
-\vspace{23pt}
-\parindent=226pt
-,ADIOS\_METHOD\_PROVENANCE  = 8
+ASSIGN_FNS (binary, ADIOS_METHOD_POSIX_ASCII_NB)
+\end{lstlisting}
 
-\vspace{10pt}
-\parindent=0pt
-// method ID for binary transport method
-
-\vspace{10pt}
-\parindent=75pt
-\textbf{,ADIOS\_METHOD\_POSIX\_ASCII\_NB  = 9 }
-
-\vspace{10pt}
-// total method number
-
-\vspace{10pt}
-\textbf{,ADIOS\_METHOD\_COUNT  = 10 }
-
-\vspace{10pt}
-\};
-
-\vspace{10pt}
-\parindent=0pt
-\ensuremath{\Sigma} \textbf{FORWARD\_DECLARE (posix\_ascii\_nb);}
-
-\vspace{23pt}
-\ensuremath{\Sigma} \textbf{MATCH\_STRING\_TO\_METHOD (\texttt{"}posix\_ascii\_nb\texttt{"}}
-
-\vspace{10pt}
-\textbf{, ADIOS\_METHOD\_ POSIX\_ASCII\_NB, 0)}
-
-\vspace{10pt}
-\ensuremath{\Sigma} \textbf{ASSIGN\_FNS (binary, ADIOS\_METHOD\_ POSIX\_ASCII\_NB)}
-
-\vspace{10pt}
 Next, we must create adios\_posix\_ascii\_nb,c, which defines all the required 
 routines listed in Sect. 12.1.2 The blue highlights below mark out the data structures 
 and required functions that developers need to implement in the source code. 
 
-\vspace{23pt}
-static int adios\_posix\_ascii\_nb\_initialized{\color{color02}  }= 0;
-
-\vspace{10pt}
-struct {\color{color02} adios\_POSIX\_ASCII\_UNBUFFERED\_data\_struct }
-
-\vspace{10pt}
-\{
-
-\vspace{10pt}
-\parindent=14pt
-FILE *f;
-
-\vspace{10pt}
-uint64\_t file\_size;
-
-\vspace{10pt}
-\parindent=0pt
-\};
-
-\vspace{23pt}
-void {\color{color02} adios\_posix\_ascii\_nb \_init} {\color{color02} (const char 
-*parameters}
-
-\vspace{10pt}
-\parindent=183pt
-{\color{color02} , struct adios\_method\_struct * method) }
-
-\vspace{10pt}
-\parindent=0pt
-\{
-
-\vspace{10pt}
-\parindent=14pt
-struct adios\_POSIX\_ASCII\_UNBUFFERED\_data\_struct * md;
-
-\vspace{10pt}
-if (!adios\_posix\_ascii\_nb\_initialized)
-
-\vspace{10pt}
-\parindent=28pt
-\{
-
-\vspace{10pt}
-adios\_posix\_ascii\_nb\_initialized = 1;
-
-\vspace{10pt}
-\parindent=43pt
-\}
-
-\vspace{10pt}
-\parindent=14pt
-method-\texttt{>}method\_data = malloc (
-
-\vspace{10pt}
-\parindent=147pt
-sizeof(struct adios\_POSIX\_ASCII\_UNBUFFERED\_data\_struct)
-
-\vspace{10pt}
-\parindent=237pt
-);
-
-\vspace{10pt}
-\parindent=14pt
-md = (struct adios\_POSIX\_ASCII\_UNBUFFERED\_data\_struct *) 
-
-\vspace{10pt}
-\parindent=165pt
-method-\texttt{>}method\_data;      
-
-\vspace{10pt}
-\parindent=14pt
-md-\texttt{>}f = 0;
-
-\vspace{10pt}
-md-\texttt{>}file\_size = 0;
-
-\vspace{10pt}
-\}
-
-\vspace{23pt}
-int {\color{color02} adios\_posix\_ascii\_nb \_open (struct adios\_file\_struct 
-* fd}
-
-\vspace{10pt}
-\parindent=133pt
-{\color{color02} , struct adios\_method\_struct * method)}
-
-\vspace{10pt}
-\parindent=0pt
-\{
-
-\vspace{10pt}
-\parindent=14pt
-char * name;
-
-\vspace{10pt}
-struct adios\_POSIX\_ASCII\_UNBUFFERED\_data\_struct * p;
-
-\vspace{10pt}
-\parindent=28pt
-struct stat s;
-
-\vspace{10pt}
-\parindent=14pt
-p = (struct adios\_POSIX\_ASCII\_UNBUFFERED\_data\_struct *)
-
-\vspace{10pt}
-\parindent=208pt
-method-\texttt{>}method\_data;
-
-\vspace{10pt}
-\parindent=14pt
-name = malloc (strlen (method-\texttt{>}base\_path) + strlen (fd-\texttt{>}name) 
-+ 1);
-
-\vspace{10pt}
-sprintf (name, \texttt{"}\%s\%s\texttt{"}, method-\texttt{>}base\_path, fd-\texttt{>}name);
-
-\vspace{10pt}
-\parindent=28pt
-if (stat (name, \&s) == 0)
-
-\vspace{10pt}
-p-\texttt{>}file\_size = s.st\_size;
-
-\vspace{10pt}
-\parindent=43pt
-switch (fd-\texttt{>}mode)
-
-\vspace{10pt}
-\parindent=14pt
-\{
-
-\vspace{10pt}
-\parindent=28pt
-case adios\_mode\_read:
-
-\vspace{10pt}
-\{
-
-\vspace{10pt}
-\parindent=72pt
-p-\texttt{>}f = fopen (name, \texttt{"}r\texttt{"});
-
-\vspace{10pt}
-\parindent=43pt
-if (p-\texttt{>}f \texttt{<}= 0)
-
-\vspace{10pt}
-\{
-
-\vspace{10pt}
-\parindent=100pt
-fprintf (stderr, \texttt{"}ADIOS POSIX ASCII UNBUFFERED: \texttt{"}
-
-\vspace{10pt}
-\parindent=118pt
-\texttt{"}file not found: \%s\textbackslash{}n\texttt{"}, fd-\texttt{>}name);
-
-\vspace{10pt}
-\parindent=57pt
-free (name);
-
-\vspace{10pt}
-return 0;
-
-\vspace{10pt}
-\parindent=100pt
-\}
-
-\vspace{10pt}
-\parindent=43pt
-break;
-
-\vspace{10pt}
-\parindent=28pt
-\}
-
-\vspace{10pt}
-case adios\_mode\_write:
-
-\vspace{10pt}
-\parindent=57pt
-\{
-
-\vspace{10pt}
-\parindent=43pt
-p-\texttt{>}f = fopen (name, \texttt{"}w\texttt{"});
-
-\vspace{10pt}
-if (p-\texttt{>}f \texttt{<}= 0)
-
-\vspace{10pt}
-\parindent=86pt
-\{
-
-\vspace{10pt}
-\parindent=57pt
-fprintf (stderr, \texttt{"}adios\_posix\_ascii\_nb\_open \texttt{"}
-
-\vspace{10pt}
-\parindent=111pt
-\texttt{"}failed for base\_path \%s, name \%s\textbackslash{}n\texttt{"}
-
-\vspace{10pt}
-\parindent=0pt
-,method-\texttt{>}base\_path, fd-\texttt{>}name
-
-\vspace{10pt}
-);
-
-\vspace{10pt}
-\parindent=57pt
-free (name);
-
-\vspace{10pt}
-return 0;
-
-\vspace{10pt}
-\parindent=100pt
-\}
-
-\vspace{10pt}
-\parindent=43pt
-break;
-
-\vspace{10pt}
-\parindent=28pt
-\} 
-
-\vspace{10pt}
-case adios\_mode\_append:
-
-\vspace{10pt}
-\parindent=57pt
-\{
-
-\vspace{10pt}
-\parindent=43pt
-int old\_file = 1;
-
-\vspace{10pt}
-p-\texttt{>}f = fopen (name, \texttt{"}a\texttt{"});
-
-\vspace{10pt}
-\parindent=86pt
-if (p-\texttt{>}f \texttt{<}= 0)
-
-\vspace{10pt}
-\parindent=43pt
-\{
-
-\vspace{10pt}
-\parindent=57pt
-fprintf (stderr, \texttt{"}adios\_posix\_ascii\_nb\_open\texttt{"}
-
-\vspace{10pt}
-\parindent=118pt
-\texttt{"} failed for base\_path \%s, name \%s\textbackslash{}n\texttt{"}
-
-\vspace{10pt}
-\parindent=86pt
-,method-\texttt{>}base\_path, fd-\texttt{>}name
-
-\vspace{10pt}
-);
-
-\vspace{10pt}
-\parindent=144pt
-free (name);
-
-\vspace{10pt}
-\parindent=57pt
-return 0;
-
-\vspace{10pt}
-\parindent=43pt
-\}
-
-\vspace{10pt}
-break;
-
-\vspace{10pt}
-\parindent=72pt
-\}
-
-\vspace{10pt}
-\parindent=28pt
-default:
-
-\vspace{10pt}
-\{
-
-\vspace{10pt}
-\parindent=72pt
-fprintf (stderr, \texttt{"}Unknown file mode: \%d\textbackslash{}n\texttt{"}, fd-\texttt{>}mode);
-
-\vspace{10pt}
-\parindent=43pt
-free (name);
-
-\vspace{10pt}
-return 0;
-
-\vspace{10pt}
-\parindent=72pt
-\}
-
-\vspace{10pt}
-\parindent=14pt
-\}
-
-\vspace{10pt}
-free (name);
-
-\vspace{10pt}
-\parindent=28pt
-return 0;
-
-\vspace{10pt}
-\parindent=0pt
-\}
-
-\vspace{23pt}
-enum ADIOS\_FLAG {\color{color02} \textbf{adios\_posix\_ascii\_nb\_should\_buffer}}{\color{color02}  
+\begin{lstlisting}[emph={ADIOS_METHOD_POSIX_ASCII_NB}, emphstyle={\color{red}\large\bf},
+                   caption={Example: add unbuffered POSIX method, C source of write method}]
+static int adios_posix_ascii_nb_initialized = 0;
+
+struct adios_POSIX_ASCII_UNBUFFERED_data_struct
+{
+    FILE *f;
+    uint64_t file_size;
+};
+
+void adios_posix_ascii_nb_init (const char *parameters, 
+                                struct adios_method_struct * method)
+{
+    struct adios_POSIX_ASCII_UNBUFFERED_data_struct * md;
+
+    if (!adios_posix_ascii_nb_initialized)
+    {
+        adios_posix_ascii_nb_initialized = 1;
+    }
+
+    method->method_data = malloc (
+            sizeof(struct adios_POSIX_ASCII_UNBUFFERED_data_struct));
+    md = (struct adios_POSIX_ASCII_UNBUFFERED_data_struct *) 
+            method->method_data;
+    md->f = 0;
+    md->file_size = 0;
 }
 
-\vspace{10pt}
-\parindent=205pt
-{\color{color02} (struct adios\_file\_struct * fd}
-
-\vspace{10pt}
-{\color{color02} ,struct adios\_method\_struct * method}
-
-\vspace{10pt}
-\parindent=410pt
-{\color{color02} ,void * comm) }
-
-\vspace{10pt}
-\parindent=0pt
-\{
-
-\vspace{10pt}
-\parindent=14pt
-//in this case, we don't use shared\_buffer
-
-\vspace{10pt}
-return adios\_flag\_no;
-
-\vspace{10pt}
-\parindent=0pt
-\}
-
-\vspace{23pt}
-void {\color{color02} \textbf{adios\_posix\_ascii\_nb\_write}} (struct adios\_file\_struct 
-* fd
-
-\vspace{10pt}
-\parindent=158pt
-,struct adios\_var\_struct * v 
-
-\vspace{10pt}
-,void * data
-
-\vspace{10pt}
-\parindent=316pt
-,struct adios\_method\_struct * method ) 
-
-\vspace{10pt}
-\parindent=0pt
-\{
-
-\vspace{10pt}
-\parindent=14pt
-struct adios\_POSIX\_ASCII\_UNBUFFERED\_data\_struct * p;
-
-\vspace{10pt}
-p = (struct adios\_POSIX\_ASCII\_UNBUFFERED\_data\_struct *)
-
-\vspace{10pt}
-\parindent=154pt
-method-\texttt{>}method\_data;
-
-\vspace{10pt}
-\parindent=14pt
-if (!v-\texttt{>}dimensions) \{
-
-\vspace{10pt}
-\parindent=28pt
-switch (v-\texttt{>}type)
-
-\vspace{10pt}
-\{
-
-\vspace{10pt}
-\parindent=72pt
-case adios\_byte:
-
-\vspace{10pt}
-\parindent=43pt
-case adios\_unsigned\_byte:
-
-\vspace{10pt}
-\parindent=57pt
-fprintf (p-\texttt{>}f,\texttt{"}\%c\textbackslash{}n\texttt{"}, *((char *)data)); 
-
-\vspace{10pt}
-break;
-
-\vspace{10pt}
-\parindent=100pt
-case adios\_short:
-
-\vspace{10pt}
-\parindent=43pt
-case adios\_integer:
-
-\vspace{10pt}
-case adios\_unsigned\_short:
-
-\vspace{10pt}
-\parindent=86pt
-case adios\_unsigned\_integer:
-
-\vspace{10pt}
-\parindent=57pt
-fprintf (p-\texttt{>}f,\texttt{"}\%d\textbackslash{}n\texttt{"}, *((int *)data)); 
-
-\vspace{10pt}
-break;
-
-\vspace{10pt}
-\parindent=100pt
-case adios\_real:
-
-\vspace{10pt}
-\parindent=43pt
-case adios\_double:
-
-\vspace{10pt}
-case adios\_long\_double:
-
-\vspace{10pt}
-\parindent=100pt
-fprintf (p-\texttt{>}f,\texttt{"}\%f\textbackslash{}n\texttt{"}, *((double *)data)); 
-
-\vspace{10pt}
-\parindent=57pt
-break;
-
-\vspace{10pt}
-\parindent=43pt
-case adios\_string:
-
-\vspace{10pt}
-\parindent=57pt
-fprintf (p-\texttt{>}f,\texttt{"}\%s\textbackslash{}n\texttt{"}, (char *)data); 
-
-\vspace{10pt}
-break;
-
-\vspace{10pt}
-\parindent=100pt
-case adios\_complex:
-
-\vspace{10pt}
-\parindent=57pt
-fprintf (p-\texttt{>}f,\texttt{"}\%f+\%fi\textbackslash{}n\texttt{"}, *((float 
-*)data),*((float *)(data+4))); 
-
-\vspace{10pt}
-break;
-
-\vspace{10pt}
-\parindent=100pt
-case adios\_double\_complex:
-
-\vspace{10pt}
-\parindent=57pt
-fprintf (p-\texttt{>}f,\texttt{"}\%f+\%fi\textbackslash{}n\texttt{"}, *((double 
-*)data),*((double *)(data+8))); 
-
-\vspace{10pt}
-break;
-
-\vspace{10pt}
-\parindent=3pt
-default:
-
-\vspace{10pt}
-\parindent=57pt
-break;
-
-\vspace{10pt}
-\parindent=18pt
-\}
-
-\vspace{10pt}
-\parindent=14pt
-\} 
-
-\vspace{10pt}
-else
-
-\vspace{10pt}
-\parindent=28pt
-\{
-
-\vspace{10pt}
-uint64\_t j;
-
-\vspace{10pt}
-\parindent=57pt
-int element\_size = adios\_get\_type\_size (v-\texttt{>}type, v-\texttt{>}data);
-
-\vspace{10pt}
-\parindent=28pt
-printf(\texttt{"}element\_size: \%d\textbackslash{}n\texttt{"},element\_size);
-
-\vspace{10pt}
-uint64\_t var\_size = adios\_get\_var\_size (v, fd-\texttt{>}group, v-\texttt{>}data)/element\_size;
-
-\vspace{10pt}
-\parindent=57pt
-switch (v-\texttt{>}type)
-
-\vspace{10pt}
-\parindent=28pt
-\{
-
-\vspace{10pt}
-\parindent=43pt
-case adios\_byte:
-
-\vspace{10pt}
-case adios\_unsigned\_byte:
-
-\vspace{10pt}
-\parindent=100pt
-for (j = 0;j \texttt{<} var\_size; j++)
-
-\vspace{10pt}
-\parindent=72pt
-fprintf (p-\texttt{>}f,\texttt{"}\%c \texttt{"}, *((char *)(data+j)));
-
-\vspace{10pt}
-\parindent=57pt
-printf(\texttt{"}\textbackslash{}n\texttt{"});
-
-\vspace{10pt}
-break;
-
-\vspace{10pt}
-\parindent=100pt
-case adios\_short:
-
-\vspace{10pt}
-\parindent=43pt
-case adios\_integer:
-
-\vspace{10pt}
-case adios\_unsigned\_short:
-
-\vspace{10pt}
-\parindent=86pt
-case adios\_unsigned\_integer:
-
-\vspace{10pt}
-\parindent=57pt
-for (j = 0;j \texttt{<} var\_size; j++)
-
-\vspace{10pt}
-\parindent=72pt
-fprintf (p-\texttt{>}f,\texttt{"}\%d \texttt{"}, *((int *)(data+element\_size*j)));
-
-\vspace{10pt}
-\parindent=57pt
-printf(\texttt{"}\textbackslash{}n\texttt{"});
-
-\vspace{10pt}
-break;
-
-\vspace{10pt}
-\parindent=100pt
-case adios\_real:
-
-\vspace{10pt}
-\parindent=43pt
-case adios\_double:
-
-\vspace{10pt}
-case adios\_long\_double:
-
-\vspace{10pt}
-\parindent=100pt
-for (j = 0;j \texttt{<} var\_size; j++)
-
-\vspace{10pt}
-\parindent=72pt
-fprintf (p-\texttt{>}f,\texttt{"}\%f \texttt{"}, * ( (double *)(data+element\_size*j)) 
-);
-
-\vspace{10pt}
-\parindent=57pt
-printf(\texttt{"}\textbackslash{}n\texttt{"});
-
-\vspace{10pt}
-break;
-
-\vspace{10pt}
-\parindent=100pt
-case adios\_string:
-
-\vspace{10pt}
-\parindent=57pt
-for (j = 0;j \texttt{<} var\_size; j++)
-
-\vspace{10pt}
-\parindent=72pt
-fprintf (p-\texttt{>}f,\texttt{"}\%s \texttt{"}, (char *)data);
-
-\vspace{10pt}
-\parindent=57pt
-printf(\texttt{"}\textbackslash{}n\texttt{"});
-
-\vspace{10pt}
-break;
-
-\vspace{10pt}
-\parindent=100pt
-case adios\_complex:
-
-\vspace{10pt}
-\parindent=57pt
-for (j = 0;j \texttt{<} var\_size; j++)
-
-\vspace{10pt}
-\parindent=72pt
-fprintf (p-\texttt{>}f, \texttt{"}\%f+\%fi \texttt{"}, *((float *)(data+element\_size*j))
-
-\vspace{10pt}
-\parindent=100pt
-,*((float *)(data+4+element\_size*j))
-
-\vspace{10pt}
-);
-
-\vspace{10pt}
-\parindent=158pt
-printf(\texttt{"}\textbackslash{}n\texttt{"});
-
-\vspace{10pt}
-\parindent=57pt
-break;
-
-\vspace{10pt}
-\parindent=43pt
-case adios\_double\_complex:
-
-\vspace{10pt}
-\parindent=57pt
-for (j = 0;j \texttt{<} var\_size; j++)
-
-\vspace{10pt}
-\parindent=72pt
-fprintf (p-\texttt{>}f,\texttt{"}\%f+\%fi \texttt{"}, *((double *)(data+element\_size*j))
-
-\vspace{10pt}
-\parindent=100pt
-,*((double *)(data+element\_size*j+8)));
-
-\vspace{10pt}
-\parindent=57pt
-printf(\texttt{"}\textbackslash{}n\texttt{"});
-
-\vspace{10pt}
-break;
-
-\vspace{10pt}
-\parindent=100pt
-default:
-
-\vspace{10pt}
-\parindent=57pt
-break;
-
-\vspace{10pt}
-\parindent=28pt
-\} 
-
-\vspace{10pt}
-\parindent=14pt
-\}
-
-\vspace{10pt}
-\parindent=0pt
-\}
-
-\vspace{23pt}
-\parindent=100pt
-void {\color{color02} \textbf{adios\_posix\_ascii\_nb\_get\_write\_buffer }}
-
-\vspace{10pt}
-\parindent=190pt
-{\color{color02} (struct adios\_file\_struct * fd}
-
-\vspace{10pt}
-\parindent=194pt
-{\color{color02} ,struct adios\_var\_struct * v}
-
-\vspace{10pt}
-{\color{color02} ,uint64\_t * size}
-
-\vspace{10pt}
-\parindent=388pt
-{\color{color02} ,void ** buffer}
-
-\vspace{10pt}
-\parindent=194pt
-{\color{color02} ,struct adios\_method\_struct * method) }
-
-\vspace{10pt}
-\parindent=0pt
-\{
-
-\vspace{10pt}
-\parindent=14pt
+int adios_posix_ascii_nb _open (struct adios_file_struct * fd, 
+                                struct adios_method_struct * method)
+{
+    char * name;
+    struct adios_POSIX_ASCII_UNBUFFERED_data_struct * p;
+    struct stat s;
+
+    p = (struct adios_POSIX_ASCII_UNBUFFERED_data_struct *) 
+            method->method_data;
+    name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
+    sprintf (name, "\%s\%s", method->base_path, fd->name);
+    if (stat (name, \&s) == 0)
+        p->file_size = s.st_size;
+
+    switch (fd->mode)
+    {
+        case adios_mode_read:
+        {
+            p->f = fopen (name, "r");
+            if (p->f <= 0)
+            {
+                fprintf (stderr, "ADIOS POSIX ASCII UNBUFFERED: "
+                        "file not found: \%s\n", fd->name);
+                free (name);
+                return 0;
+            }
+            break;
+        }
+
+        case adios_mode_write:
+        {
+            p->f = fopen (name, "w");
+            if (p->f <= 0)
+            {
+                fprintf (stderr, "adios_posix_ascii_nb_open " 
+                        "failed for base_path %s, name %s\n", 
+                        method->base_path, fd->name 
+                        );
+                free (name);
+                return 0;
+            }
+            break;
+        } 
+
+        case adios_mode_append:
+        {
+            int old_file = 1;
+            p->f = fopen (name, "a");
+            if (p->f <= 0)
+            {
+                fprintf (stderr, "adios_posix_ascii_nb_open"
+                        " failed for base_path \%s, name \%s\n"
+                        ,method->base_path, fd->name
+                        );
+                free (name);
+                return 0;
+            }
+            break;
+        }
+
+        default:
+        {
+            fprintf (stderr, "Unknown file mode: \%d\n", fd->mode);
+            free (name);
+            return 0;
+        }
+    }
+    free (name);
+    return 0;
+}
+
+enum ADIOS_FLAG adios_posix_ascii_nb_should_buffer(
+                            struct adios_file_struct * fd,
+                            struct adios_method_struct * method,
+                            void * comm) 
+{
+    //in this case, we don't use shared_buffer
+    return adios_flag_no;
+}
+
+void adios_posix_ascii_nb_write (struct adios_file_struct * fd,
+                                 struct adios_var_struct * v,
+                                 void * data,
+                                 struct adios_method_struct * method) 
+{
+    struct adios_POSIX_ASCII_UNBUFFERED_data_struct * p;
+    p = (struct adios_POSIX_ASCII_UNBUFFERED_data_struct *)
+            method->method_data;
+    if (!v->dimensions) {
+        switch (v->type)
+        {
+            case adios_byte:
+            case adios_unsigned_byte:
+                fprintf (p->f,"\%c\n", *((char *)data)); 
+                break;
+            case adios_short:
+            case adios_integer:
+            case adios_unsigned_short:
+            case adios_unsigned_integer:
+                fprintf (p->f,"\%d\n", *((int *)data)); 
+                break;
+            case adios_real:
+            case adios_double:
+            case adios_long_double:
+                fprintf (p->f,"\%f\n", *((double *)data)); 
+                break;
+            case adios_string:
+                fprintf (p->f,"\%s\n", (char *)data); 
+                break;
+            case adios_complex:
+                fprintf (p->f,"\%f+\%fi\n", 
+                         *((float *)data),*((float *)(data+4))); 
+                break;
+            case adios_double_complex:
+                fprintf (p->f,"\%f+\%fi\n", 
+                         *((double *)data),*((double *)(data+8))); 
+                break;
+            default:
+                break;
+        }
+    } 
+    else
+    {
+        uint64_t j;
+        int element_size = adios_get_type_size (v->type, v->data);
+        printf("element_size: \%d\n",element_size);
+        uint64_t var_size = adios_get_var_size (v, fd->group, v->data) /
+                                element_size;
+        switch (v->type)
+        {
+            case adios_byte:
+            case adios_unsigned_byte:
+                for (j = 0;j < var_size; j++)
+                    fprintf (p->f,"\%c ", *((char *)(data+j)));
+                printf("\n");
+                break;
+            case adios_short:
+            case adios_integer:
+            case adios_unsigned_short:
+            case adios_unsigned_integer:
+                for (j = 0;j < var_size; j++)
+                    fprintf (p->f,"\%d ", *((int *)(data+element_size*j)));
+                printf("\n");
+                break;
+            case adios_real:
+            case adios_double:
+            case adios_long_double:
+                for (j = 0;j < var_size; j++)
+                    fprintf (p->f,"\%f ", * ( (double *)(data+element_size*j)));
+                printf("\n");
+                break;
+            case adios_string:
+                for (j = 0;j < var_size; j++)
+                    fprintf (p->f,"\%s ", (char *)data);
+                printf("\n");
+                break;
+            case adios_complex:
+                for (j = 0;j < var_size; j++)
+                    fprintf (p->f, "\%f+\%fi ", *((float *)(data+element_size*j)),
+                            *((float *)(data+4+element_size*j)));
+                printf("\n");
+                break;
+            case adios_double_complex:
+                for (j = 0;j < var_size; j++)
+                    fprintf (p->f,"\%f+\%fi ", *((double *)(data+element_size*j)),
+                            *((double *)(data+element_size*j+8)));
+                printf("\n");
+                break;
+            default:
+                break;
+        } 
+    }
+}
+
+void adios_posix_ascii_nb_get_write_buffer (struct adios_file_struct * fd,
+                                            struct adios_var_struct * v,
+                                            uint64_t * size,
+                                            void ** buffer,
+                                            struct adios_method_struct * method)
+{
 *buffer = 0;
+}
 
-\vspace{10pt}
-\parindent=0pt
-\}
+void adios_posix_ascii_nb_read (struct adios_file_struct * fd,
+                                struct adios_var_struct * v, 
+                                void * buffer,
+                                uint64_t buffer_size,
+                                struct adios_method_struct * method)
+{
+    v->data = buffer;
+    v->data_size = buffer_size; 
+}
 
-\vspace{23pt}
-void {\color{color02} \textbf{adios\_posix\_ascii\_nb\_read}}\textbf{ }{\color{color02} (struct 
-adios\_file\_struct * fd}
+int adios_posix_ascii_nb_close (struct adios_file_struct * fd,
+                                struct adios_method_struct * method)
+{
+    struct adios_POSIX_ASCII_UNBUFFERED_data_struct * p;
+    p = (struct adios_POSIX_ASCII_UNBUFFERED_data_struct *)
+        method->method_data;
+    if (p->f <= 0)
+    {
+        fclose (p->f);
+    }
+    p->f = 0;
+    p->file_size = 0; 
+}
 
-\vspace{10pt}
-\parindent=115pt
-{\color{color02} ,struct adios\_var\_struct * v, void * buffer}
+void adios_posix_ascii_nb_finalize (int mype, 
+                                    struct adios_method_struct * method)} 
+{
+    if (adios_posix_ascii_nb_initialized)
+        adios_posix_ascii_nb_initialized = 0; 
+}
 
-\vspace{10pt}
-\parindent=118pt
-{\color{color02} ,uint64\_t buffer\_size}
+\end{lstlisting}
 
-\vspace{10pt}
-{\color{color02} ,struct adios\_method\_struct * method )}
-
-\vspace{10pt}
-\parindent=0pt
-\{
-
-\vspace{10pt}
-\parindent=14pt
-v-\texttt{>}data = buffer;
-
-\vspace{10pt}
-v-\texttt{>}data\_size = buffer\_size; 
-
-\vspace{10pt}
-\parindent=0pt
-\}
-
-\vspace{23pt}
-\textbf{int}{\color{color02} \textbf{ adios\_posix\_ascii\_nb\_close}} {\color{color02} (struct 
-adios\_file\_struct * fd}
-
-\vspace{10pt}
-\parindent=194pt
-{\color{color02} , struct adios\_method\_struct * method)}
-
-\vspace{10pt}
-\parindent=0pt
-\{
-
-\vspace{10pt}
-struct adios\_POSIX\_ASCII\_UNBUFFERED\_data\_struct * p;
-
-\vspace{10pt}
-\parindent=14pt
-p = (struct adios\_POSIX\_ASCII\_UNBUFFERED\_data\_struct *)
-
-\vspace{10pt}
-\parindent=208pt
-method-\texttt{>}method\_data;
-
-\vspace{10pt}
-\parindent=14pt
-if (p-\texttt{>}f \texttt{<}= 0)
-
-\vspace{10pt}
-\{
-
-\vspace{10pt}
-\parindent=43pt
-fclose (p-\texttt{>}f);
-
-\vspace{10pt}
-\parindent=14pt
-\}
-
-\vspace{10pt}
-p-\texttt{>}f = 0;
-
-\vspace{10pt}
-\parindent=28pt
-p-\texttt{>}file\_size = 0; 
-
-\vspace{10pt}
-\parindent=0pt
-\}
-
-\vspace{23pt}
-void {\color{color02} \textbf{adios\_posix\_ascii\_nb\_finalize}}\textbf{ }{\color{color02} (int 
-mype, struct adios\_method\_struct * method)} 
-
-\vspace{10pt}
-\{
-
-\vspace{10pt}
-\parindent=14pt
-if (adios\_posix\_ascii\_nb\_initialized)
-
-\vspace{10pt}
-\parindent=28pt
-adios\_posix\_ascii\_nb\_initialized = 0; 
-
-\vspace{10pt}
-\parindent=0pt
-\}
-
-\vspace{36pt}
 The binary transport method blocks methods for simplicity. Therefore,  no special 
 implementation for the three functions below is necessary and their function bodies 
 can be left empty:
 
-\vspace{23pt}
-{\color{color02} \textbf{adios\_posix\_ascii\_nb\_end\_iteration}}{\color{color02}  
-(struct adios\_method\_struct * method) }\{\}
+\begin{lstlisting}
+adios_posix_ascii_nb_end_iteration (struct adios_method_struct * method) {}
+adios_posix_ascii_nb_start_calculation (struct adios_method_struct * method) {}
+adios posix_ascii_nb stop_calculation (struct adios_method_struct * method) {}
+\end{lstlisting}
 
-\vspace{10pt}
-{\color{color02} \textbf{adios\_posix\_ascii\_nb\_start\_calculation}}{\color{color02}  
-(struct adios\_method\_struct * method) }\{\}
-
-\vspace{10pt}
-{\color{color02} \textbf{adios posix\_ascii\_nb stop\_calculation}}{\color{color02}  
-(struct adios\_method\_struct * method)} \{\}
-
-\vspace{23pt}
 Above, we have implemented the POSIX\_ASCII\_NB transport method. When users specify 
 POSIX\_ASCII\_NB method in xml file, the users' applications will generate ASCII 
 files by using common ADIOS APIs. However, in order to achieve better I/O performance, 
-a buffering scheme needs to be included into this example.\label{HToc82067540}\label{HToc84890315}\label{HToc212016690}\label{HToc212016932}\label{HToc182553457}
+a buffering scheme needs to be included into this example.
 
-\vspace{10pt}
-\subsection*{{\large 13.2 }{\large \textbf{Profiling the Application and ADIOS}}}
+\section{Profiling the Application and ADIOS}
 
-\vspace{10pt}
 There are two ways to get profiling information of ADIOS I/O operations. One way 
 is for the user to explicitly insert a set of profiling API calls around ADIOS 
 API calls in the source code. The other way is to link the user code with a renamed 
-ADIOS library and an ADIOS API wrapper library. \label{HToc84890316}\label{HToc212016691}\label{HToc212016933}\label{HToc182553458}
+ADIOS library and an ADIOS API wrapper library. 
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{13.2.1 Use profiling API in source code}}}
+\subsection{Use profiling API in source code}
 
-\vspace{10pt}
 The profiling library called libadios\_timing.a implements a set of profiling API 
 calls. The user can use these API calls to wrap the ADIOS API calls in the source 
 code to get profiling information. 
 
-\vspace{10pt}
 The adios-timing.h header file contains the declarations of those profiling functions. 
 
-\vspace{10pt}
-\begin{longtable}{|p{4.448in}|p{0.052in}|}
-\hline
-% ROW 1
-\begin{minipage}[t]{4.448in}\raggedright /*\linebreak
-* initialize profiling \linebreak
-*\linebreak
-* Fortran interface\linebreak
-*/\linebreak
-int init\_prof\_all\_(char *prof\_file\_name, int prof\_file\_name\_size);\linebreak
-/*\linebreak
-* record open start time for specified group\linebreak
-*\linebreak
-* Fortran interface\linebreak
-*/\linebreak
-void open\_start\_for\_group\_(int64\_t *gp\_prof\_handle, char *group\_name, int 
-*cycle, int *gp\_name\_size);\linebreak
-/*\linebreak
-* record open end time for specified group\linebreak
-*\linebreak
-* Fortran interface\linebreak
-*/\linebreak
-void open\_end\_for\_group\_(int64\_t *gp\_prof\_handle, int *cycle);\linebreak
-/*\linebreak
-* record write start time for specified group\linebreak
-*\linebreak
-* Fortran interface\linebreak
-*/\linebreak
-void write\_start\_for\_group\_(int64\_t *gp\_prof\_handle, int *cycle);\linebreak
-/*\linebreak
-* record write end time for specified group\linebreak
-*\linebreak
-* Fortran interface\linebreak
-*/\linebreak
-void write\_end\_for\_group\_(int64\_t *gp\_prof\_handle, int *cycle);\linebreak
-/*\linebreak
-* record close start time for specified group\linebreak
-*\linebreak
-* Fortran interface\linebreak
-*/\linebreak
-void close\_start\_for\_group\_(int64\_t *gp\_prof\_handle, int *cycle);\linebreak
-/*\linebreak
-* record close end time for specified group\linebreak
-*\linebreak
-* Fortran interface\linebreak
-*/\linebreak
-void close\_end\_for\_group\_(int64\_t *gp\_prof\_handle, int *cycle);\linebreak
-/*\linebreak
-* Report timing info for all groups\linebreak
-*\linebreak
-* Fortran interface  \linebreak
-*/\linebreak
-int finalize\_prof\_all\_();\linebreak
-/*\linebreak
-* record start time of a simulation cycle\linebreak
-*\linebreak
-* Fortran interface \linebreak
-*/\linebreak
-void cycle\_start\_(int *cycle);\linebreak
-/*\linebreak
-* record end time of a simulation cycle\linebreak
-*\linebreak
-* Fortran interface \linebreak
-*/\linebreak
-void cycle\_end\_(int *cycle);\end{minipage}\\
-\hline
-\end{longtable}
+\begin{lstlisting}[frame=single, backgroundcolor=\color{gray85}]
+/*
+ * initialize profiling 
+ *
+ * Fortran interface
+ */
+int init_prof_all_(char *prof_file_name, int prof_file_name_size);
 
-\vspace{142pt}
+/*
+ * record open start time for specified group
+ *
+ * Fortran interface
+ */
+void open_start_for_group_ (int64_t *gp_prof_handle, char *group_name, 
+                            int *cycle, int *gp_name_size);
+
+/*
+ * record open end time for specified group
+ *
+ * Fortran interface
+ */
+void open_end_for_group_(int64_t *gp_prof_handle, int *cycle);
+
+/*
+ * record write start time for specified group
+ *
+ * Fortran interface
+ */
+void write_start_for_group_(int64_t *gp_prof_handle, int *cycle);
+
+/*
+ * record write end time for specified group
+ *
+ * Fortran interface
+ */
+void write_end_for_group_(int64_t *gp_prof_handle, int *cycle);
+
+/*
+ * record close start time for specified group
+*
+ * Fortran interface
+ */
+void close_start_for_group_(int64_t *gp_prof_handle, int *cycle);
+
+/*
+ * record close end time for specified group
+ *
+ * Fortran interface
+ */
+void close_end_for_group_(int64_t *gp_prof_handle, int *cycle);
+
+/*
+ * Report timing info for all groups
+ *
+ * Fortran interface  
+ */
+int finalize_prof_all_();
+
+/*
+ * record start time of a simulation cycle
+ *
+ * Fortran interface 
+ */
+void cycle_start_(int *cycle);
+
+/*
+ * record end time of a simulation cycle
+ *
+ * Fortran interface 
+ */
+void cycle_end_(int *cycle);
+
+\end{lstlisting}
+
 An example of using these functions is given below....
 
-\vspace{23pt}
+\begin{lstlisting}[language=Fortran, frame=single, backgroundcolor=\color{gray85}]
+...
 ! initialization ADIOS
-
-\vspace{10pt}
-CALL adios\_init (\texttt{"}config.xml\texttt{"}//char(0))
-
-\vspace{10pt}
-! initialize profiling library; the parameter specifies the file where profiling 
-information is written
-
-\vspace{10pt}
-CALL init\_prof\_all(\texttt{"}log\texttt{"}//char(0))...
-
-\vspace{23pt}
-CALL MPI\_Barrier(toroidal\_comm, error )
-
-\vspace{23pt}
+CALL adios_init ("config.xml"//char(0))
+! initialize profiling library; the parameter specifies the file where 
+! profiling information is written
+CALL init_prof_all("log"//char(0))
+...
+CALL MPI_Barrier(toroidal_comm, error )
 ! record start time of open
-
-\vspace{10pt}
-! group\_prof\_handle is an OUT parameter holding the handle for the group `output3d.0'
-
-\vspace{10pt}
+! group_prof_handle is an OUT parameter holding the handle for the 
+! group 'output3d.0'
 ! istep is iteration no.
+CALL open_start_for_group(group_prof_handle, "output3d.0"//char(0),istep)
 
-\vspace{10pt}
-CALL open\_start\_for\_group(group\_prof\_handle, \texttt{"}output3d.0\texttt{"}//char(0),istep)
+CALL adios_open(adios_handle, "output3d.0"//char(0), "w"//char(0))
 
-\vspace{23pt}
-CALL adios\_open(adios\_handle, \texttt{"}output3d.0\texttt{"}//char(0), ``w''//char(0))
-
-\vspace{23pt}
 ! record end time of open
+CALL open_end_for_group(group_prof_handle,istep)
 
-\vspace{10pt}
-CALL open\_end\_for\_group(group\_prof\_handle,istep)
-
-\vspace{23pt}
 ! record start time of write
+CALL write_start_for_group(group_prof_handle,istep)
 
-\vspace{10pt}
-CALL write\_start\_for\_group(group\_prof\_handle,istep)
+#include "gwrite_output3d.0.fh"
 
-\vspace{23pt}
-\#include \texttt{"}gwrite\_output3d.0.fh\texttt{"}
-
-\vspace{23pt}
 ! record end time of write
+CALL write_end_for_group(group_prof_handle,istep)
 
-\vspace{10pt}
-CALL write\_end\_for\_group(group\_prof\_handle,istep)
-
-\vspace{23pt}
 ! record start time of close
+CALL cose_start_for_group(group_prof_handle,istep)
 
-\vspace{10pt}
-CALL cose\_start\_for\_group(group\_prof\_handle,istep)
+CALL adios_close(adios_handle,adios_err)
 
-\vspace{23pt}
-CALL adios\_close(adios\_handle,adios\_err)
-
-\vspace{23pt}
 ! record end time of close
+CALL close_end_for_group(group_prof_handle,istep)
 
-\vspace{10pt}
-CALL close\_end\_for\_group(group\_prof\_handle,istep)...
+...
+CALL adios_finalize (myid)
 
-\vspace{36pt}
-CALL adios\_finalize (myid)
+! finalize; profiling information are gathered and 
+! min/max/mean/var are calculated for each IO dump
+CALL finalize_prof()
 
-\vspace{23pt}
-! finalize; profiling information are gathered and min/max/mean/var are calculated 
-for each IO dump
+CALL MPI_FINALIZE(error)
 
-\vspace{10pt}
-CALL finalize\_prof()
 
-\vspace{23pt}
-CALL MPI\_FINALIZE(error)
+\end{lstlisting}
 
-%\vspace{10pt}
-%\begin{longtable}{|p{4.500in}|}
-%\hline
-% ROW 1
-%\begin{minipage}[t]{4.500in}\raggedright 
-%\hline
-%\end{longtable}
-
-\vspace{23pt}
 When the code is run, profiling information will be saved to the file ''./log'' 
 (specified in init\_prof\_all ()). Below is an example.
 
-\vspace{10pt}
-{\small Fri Aug 22 15:42:04 EDT 2008}
+{\small 
+\begin{lstlisting}[language=Fortran, frame=single, backgroundcolor=\color{gray85}]
+Fri Aug 22 15:42:04 EDT 2008
+I/O Timing results
+Operations   : min                 max                 mean                var
+cycle no       3
+io count       0
+# Open       : 0.107671            0.108245            0.108032            0.000124
+# Open start : 1219434228.866144   1219434230.775268   1219434229.748614   0.588501
+# Open end   : 1219434228.974225   1219434230.883335   1219434229.856646   0.588486
+# Write      : 0.000170            0.000190            0.000179            0.000005
+# Write start: 1219434228.974226   1219434230.883336   1219434229.856647   0.588486
+# Write end  : 1219434228.974405   1219434230.883514   1219434229.856826   0.588484
+# Close      : 0.001608            0.001743            0.001656            0.000036
+# Close start: 1219434228.974405   1219434230.883514   1219434229.856826   0.588484
+# Close end  : 1219434228.976040   1219434230.885211   1219434229.858482   0.588489
+# Total      : 0.109484            0.110049            0.109868            0.000137
+cycle no       6
+io count       1
+# Open       : 0.000007            0.000011            0.000009            0.000001
+# Open start : 1219434240.098444   1219434242.007951   1219434240.981075   0.588556
+# Open end   : 1219434240.098452   1219434242.007962   1219434240.981083   0.588556
+# Write      : 0.000175            0.000196            0.000180            0.000004
+# Write start: 1219434240.098452   1219434242.007962   1219434240.981083   0.588557
+# Write end  : 1219434240.098631   1219434242.008158   1219434240.981264   0.588558
+# Close      : 0.000947            0.003603            0.001234            0.000466
+# Close start: 1219434240.098631   1219434242.008158   1219434240.981264   0.588558
+# Close end  : 1219434240.099665   1219434242.009620   1219434240.982498   0.588447
+# Total      : 0.001132            0.003789            0.001423            0.000466
 
-\vspace{10pt}
-{\small I/O Timing results}
+\end{lstlisting}
+}
 
-\vspace{10pt}
-{\small Operations    :          min                     max                   
-  mean                    var}
-
-\vspace{10pt}
-{\small cycle no         3}
-
-\vspace{10pt}
-{\small io count         0}
-
-\vspace{10pt}
-{\small \# Open        :          0.107671                0.108245             
-   0.108032                0.000124}
-
-\vspace{10pt}
-{\small \# Open start  :          1219434228.866144       1219434230.775268    
-   1219434229.748614       0.588501}
-
-\vspace{10pt}
-{\small \# Open end    :          1219434228.974225       1219434230.883335    
-   1219434229.856646       0.588486}
-
-\vspace{10pt}
-{\small \# Write       :          0.000170                0.000190             
-   0.000179                0.000005}
-
-\vspace{10pt}
-{\small \# Write start :          1219434228.974226       1219434230.883336    
-   1219434229.856647       0.588486}
-
-\vspace{10pt}
-{\small \# Write end   :          1219434228.974405       1219434230.883514    
-   1219434229.856826       0.588484}
-
-\vspace{10pt}
-{\small \# Close       :          0.001608                0.001743             
-   0.001656                0.000036}
-
-\vspace{10pt}
-{\small \# Close start :          1219434228.974405       1219434230.883514    
-   1219434229.856826       0.588484}
-
-\vspace{10pt}
-{\small \# Close end   :          1219434228.976040       1219434230.885211    
-   1219434229.858482       0.588489}
-
-\vspace{10pt}
-{\small \# Total       :          0.109484                0.110049             
-   0.109868                0.000137}
-
-\vspace{10pt}
-{\small cycle no         6}
-
-\vspace{10pt}
-{\small io count         1}
-
-\vspace{10pt}
-{\small \# Open        :          0.000007                0.000011             
-   0.000009                0.000001}
-
-\vspace{10pt}
-{\small \# Open start  :          1219434240.098444       1219434242.007951    
-   1219434240.981075       0.588556}
-
-\vspace{10pt}
-{\small \# Open end    :          1219434240.098452       1219434242.007962    
-   1219434240.981083       0.588556}
-
-\vspace{10pt}
-{\small \# Write       :          0.000175                0.000196             
-   0.000180                0.000004}
-
-\vspace{10pt}
-{\small \# Write start :          1219434240.098452       1219434242.007962    
-   1219434240.981083       0.588557}
-
-\vspace{10pt}
-{\small \# Write end   :          1219434240.098631       1219434242.008158    
-   1219434240.981264       0.588558}
-
-\vspace{10pt}
-{\small \# Close       :          0.000947                0.003603             
-   0.001234                0.000466}
-
-\vspace{10pt}
-{\small \# Close start :          1219434240.098631       1219434242.008158    
-   1219434240.981264       0.588558}
-
-\vspace{10pt}
-{\small \# Close end   :          1219434240.099665       1219434242.009620    
-   1219434240.982498       0.588447}
-
-\vspace{10pt}
-{\small \# Total       :          0.001132                0.003789             
-   0.001423                0.000466}
-
-%\vspace{10pt}
-%\begin{longtable}{|p{4.500in}|}
-%\hline
-% ROW 1
-%\begin{minipage}[t]{4.500in}\raggedright \\
-%\hline
-%\end{longtable}
-
-\vspace{23pt}
 The script ``post\_script.sh'' extracts ``open time'', ``write time'', ``close 
 time'', and ``total time'' from the raw profiling results and saves them in separate 
-files: open, write, close, and total, respectively.\label{HToc212016692}\label{HToc212016815}\label{HToc212016934}\label{HToc212018088}
+files: open, write, close, and total, respectively.
 
-\vspace{10pt}
 To compile the code, one should link the code with the -\textit{ladios\_timing 
--ladios} option. \label{HToc84890317}\label{HToc212016693}\label{HToc212016935}\label{HToc182553459}
+-ladios} option. 
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{13.2.2 Use wrapper library}}}
+\subsection{Use wrapper library}
 
-\vspace{10pt}
 Another way to do profiling is to link the source code with a renamed ADIOS library 
 and a wrapper library. 
 
-\vspace{10pt}
 The renamed ADIOS library implements ``real'' ADIOS routines, but all ADIOS public 
 functions are renamed with a prefix ``P''. For example, adios\_open() is renamed 
 as Padios\_open(). The routine for parsing config.xml file is also changed to parse 
 extra flags in config.xml file to turn profiling on or off.
 
-\vspace{10pt}
 The wrapper library implements all adios pubic functions (e.g., adios\_open, adios\_write, 
 adios\_close) within each function. It calls the ``real'' function (Padios\_xxx()) 
 and measure the start and end time of the function call. 
 
-\vspace{10pt}
 There is an example wrapper library called libadios\_profiling.a. Developers can 
 implement their own wrapper library to customize the profiling.
 
-\vspace{10pt}
 To use the wrapper library, the user code should be linked with -\textit{ladios\_profiling 
 -ladios}. the wrapper library should precede the ``real'' ADIOS library. There 
 is no need to put additional profiling API calls in the source code. The user can 
 turn profiling on or off for each ADIOS group by setting a flag in the config.xml 
 file.
 
-\vspace{10pt}
-\texttt{<}adios-group name=\texttt{"}restart.model\texttt{"} profiling=``yes\textbar{}no\texttt{"}\texttt{>}
-
-\vspace{10pt}
-\parindent=14pt
-...
-
-\vspace{10pt}
-\parindent=0pt
-\texttt{<}/adios-group\texttt{>}
-
-%\vspace{10pt}
-%\begin{longtable}{|p{4.500in}|}
-%\hline
-% ROW 1
-%\begin{minipage}[t]{4.500in}\raggedright \\
-%\hline
-%\end{longtable}
-\label{HToc84890323}\label{HToc212016699}\label{HToc212016942}\label{HToc182553460}
+\begin{lstlisting}
+<adios-group name="restart.model" profiling="yes|no">
+    ...
+</adios-group\>
+\end{lstlisting}

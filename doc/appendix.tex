@@ -1,13 +1,9 @@
-\vspace{36pt}
-%\section*{{\Large \textbf{14 Appendix\label{HToc182553461}}}}
-\section{Appendix}
+%\chapter*{{\Large \textbf{14 Appendix\label{HToc182553461}}}}
+\chapter{Appendix}
 
-\vspace{37pt}
-%\subsection*{{\large 14.1 }{\large \textbf{Datatypes used in the ADIOS XML file}}}
-\subsection{Datatypes used in the ADIOS XML file}
+\section{Datatypes used in the ADIOS XML file}
 
-\vspace{10pt}
-\subsection*{\begin{longtable}{llllll}
+\section*{\begin{longtable}{llllll}
 \hline
 % ROW 1
 \multicolumn{1}{|p{0.287in}|}{\begin{minipage}[t]{0.287in}\centering
@@ -54,267 +50,194 @@
 \end{longtable}
 \label{HToc182553462}}
 
-\vspace{23pt}
-%\subsection*{{\large 14.2 }{\large \textbf{ADIOS APIs List}}}
-\subsection{ADIOS APIs List}
+\section{ADIOS APIs List}
 
 
 
-\vspace{23pt}
-%\subsection*{{\large 14.3 }{\large \textbf{An Example on Writing Sub-blocks using No-XML APIs}}}
-\subsection{An Example on Writing Sub-blocks using No-XML APIs}
+\section{An Example on Writing Sub-blocks using No-XML APIs}
 
-\vspace{10pt}
 This example illustrates both the use of sub blocks in writing, and the usage of 
 the ADIOS non-xml API's. This example will write out two sub blocks of the variable 
 temperature and place these in the global array. \textbf{Note:} if local dimension/global 
 dimension/offset of a variable is defined with passing a number, instead of using 
 names of variable as shown in the following code snippet, for example,
 
-\vspace{10pt}
 adios\_define\_var (m\_adios\_group, \texttt{"}temperature\texttt{"}
 
-\vspace{10pt}
 \parindent=86pt
 ,\texttt{"}\texttt{"}, adios\_double
 
-\vspace{10pt}
 ,\texttt{"}100\texttt{"}, \texttt{"}400\texttt{"}, \texttt{"}0\texttt{"});
 
-\vspace{23pt}
 \parindent=0pt
 the sequence of calling adios\_write needs to be exactly the same as that of calling 
 adios\_define\_var.
 
-\vspace{10pt}
 \#include \texttt{<}stdio.h\texttt{>}
 
-\vspace{10pt}
 \#include \texttt{<}string.h\texttt{>}
 
-\vspace{10pt}
 \#include \texttt{"}mpi.h\texttt{"}
 
-\vspace{10pt}
 \#include \texttt{"}adios.h\texttt{"}
 
-\vspace{10pt}
 \#include \texttt{"}adios\_types.h\texttt{"}
 
-\vspace{23pt}
 \#ifdef DMALLOC
 
-\vspace{10pt}
 \#include \texttt{"}dmalloc.h\texttt{"}
 
-\vspace{10pt}
 \#endif
 
-\vspace{23pt}
 int main (int argc, char ** argv)
 
-\vspace{10pt}
 \{
 
-\vspace{10pt}
 \parindent=28pt
 char        filename [256];
 
-\vspace{10pt}
 int         rank, size, i, block;
 
-\vspace{10pt}
 \parindent=57pt
 int         NX = 100, Global\_bounds, Offsets;
 
-\vspace{10pt}
 \parindent=28pt
 double      t[NX];
 
-\vspace{10pt}
 int         sub\_blocks = 3;
 
-\vspace{10pt}
 \parindent=57pt
 MPI\_Comm    comm = MPI\_COMM\_WORLD;
 
-\vspace{23pt}
 \parindent=28pt
 /* ADIOS variables declarations for matching gwrite\_temperature.ch */
 
-\vspace{10pt}
 int         adios\_err;
 
-\vspace{10pt}
 \parindent=57pt
 uint64\_t    adios\_groupsize, adios\_totalsize;
 
-\vspace{10pt}
 \parindent=28pt
 int64\_t     adios\_handle;
 
-\vspace{23pt}
 MPI\_Init (\&argc, \&argv);
 
-\vspace{10pt}
 \parindent=57pt
 MPI\_Comm\_rank (comm, \&rank);
 
-\vspace{10pt}
 \parindent=28pt
 MPI\_Comm\_size (comm, \&size);
 
-\vspace{23pt}
 Global\_bounds = sub\_blocks * NX * size;
 
-\vspace{23pt}
 \parindent=57pt
 strcpy (filename, \texttt{"}adios\_global\_no\_xml.bp\texttt{"});
 
-\vspace{23pt}
 \parindent=28pt
 adios\_init\_noxml ();
 
-\vspace{10pt}
 adios\_allocate\_buffer (ADIOS\_BUFFER\_ALLOC\_NOW, 10);
 
-\vspace{23pt}
 \parindent=57pt
 int64\_t       m\_adios\_group;
 
-\vspace{10pt}
 \parindent=28pt
 int64\_t       m\_adios\_file;
 
-\vspace{23pt}
 adios\_declare\_group (\&m\_adios\_group, \texttt{"}restart\texttt{"}, \texttt{"}iter\texttt{"}, 
 adios\_flag\_yes);
 
-\vspace{10pt}
 \parindent=57pt
 adios\_select\_method (m\_adios\_group, \texttt{"}MPI\texttt{"}, \texttt{"}\texttt{"}, 
 \texttt{"}\texttt{"});
 
-\vspace{10pt}
 \parindent=28pt
 adios\_define\_var (m\_adios\_group, \texttt{"}NX\texttt{"}
 
-\vspace{10pt}
 \parindent=86pt
 ,\texttt{"}\texttt{"}, adios\_integer
 
-\vspace{10pt}
 ,0, 0, 0);
 
-\vspace{23pt}
 \parindent=115pt
 adios\_define\_var (m\_adios\_group, \texttt{"}Global\_bounds\texttt{"}
 
-\vspace{10pt}
 \parindent=86pt
 ,\texttt{"}\texttt{"}, adios\_integer
 
-\vspace{10pt}
 ,0, 0, 0);
 
-\vspace{23pt}
 \parindent=115pt
 for (i=0;i\texttt{<}sub\_blocks;i++) \{
 
-\vspace{23pt}
 \parindent=39pt
 adios\_define\_var (m\_adios\_group, \texttt{"}Offsets\texttt{"}
 
-\vspace{10pt}
 \parindent=86pt
 ,\texttt{"}\texttt{"}, adios\_integer
 
-\vspace{10pt}
 ,0, 0, 0);
 
-\vspace{23pt}
 \parindent=126pt
 adios\_define\_var (m\_adios\_group, \texttt{"}temperature\texttt{"}
 
-\vspace{10pt}
 \parindent=86pt
 ,\texttt{"}\texttt{"}, adios\_double
 
-\vspace{10pt}
 ,\texttt{"}NX\texttt{"}, \texttt{"}Global\_bounds\texttt{"}, \texttt{"}Offsets\texttt{"});
 
-\vspace{10pt}
 \parindent=115pt
 \}
 
-\vspace{23pt}
 \parindent=28pt
 adios\_open (\&m\_adios\_file, \texttt{"}restart\texttt{"}, filename, \texttt{"}w\texttt{"}, 
 \&comm);
 
-\vspace{23pt}
 adios\_groupsize = sub\_blocks * (4 + 4 + 4 + NX * 8);
 
-\vspace{23pt}
 \parindent=57pt
 adios\_group\_size (m\_adios\_file, adios\_groupsize, \&adios\_totalsize);
 
-\vspace{10pt}
 \parindent=28pt
 adios\_write(m\_adios\_file, \texttt{"}NX\texttt{"}, (void *) \&NX);
 
-\vspace{10pt}
 adios\_write(m\_adios\_file, \texttt{"}Global\_bounds\texttt{"}, (void *) \&Global\_bounds);
 
-\vspace{10pt}
 \parindent=54pt
 /* now we will write the data for each sub block */
 
-\vspace{10pt}
 \parindent=28pt
 for (block=0;block\texttt{<}sub\_blocks;block++) \{
 
-\vspace{23pt}
 \parindent=39pt
 Offsets = rank * sub\_blocks * NX + block*NX;
 
-\vspace{10pt}
 adios\_write(m\_adios\_file, \texttt{"}Offsets\texttt{"}, (void *) \&Offsets);
 
-\vspace{23pt}
 \parindent=79pt
 for (i = 0; i \texttt{<} NX; i++)
 
-\vspace{10pt}
 \parindent=54pt
 t[i] = Offsets + i;
 
-\vspace{23pt}
 \parindent=39pt
 adios\_write(m\_adios\_file, \texttt{"}temperature\texttt{"}, t);
 
-\vspace{10pt}
 \parindent=28pt
 \}
 
-\vspace{23pt}
 adios\_close (m\_adios\_file);
 
-\vspace{23pt}
 \parindent=57pt
 MPI\_Barrier (comm);
 
-\vspace{23pt}
 \parindent=28pt
 adios\_finalize (rank);
 
-\vspace{23pt}
 MPI\_Finalize ();
 
-\vspace{10pt}
 \parindent=57pt
 return 0;
 
-\vspace{10pt}
 \parindent=0pt
 \}

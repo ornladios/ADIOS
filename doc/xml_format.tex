@@ -1,22 +1,17 @@
-\vspace{10pt}
-%\section*{{\Large \textbf{5 XML Config File Format\label{HToc82067518}}}}
-\section{XML Config File Format}
+%\chapter*{{\Large \textbf{5 XML Config File Format\label{HToc82067518}}}}
+\chapter{XML Config File Format}
 
-\vspace{24pt}
-\subsection*{{\large 5.1 }{\large \textbf{ \label{HToc84890241}\label{HToc212016617}\label{HToc212016859}\label{HToc182553364}Overview}}}
+\section*{{\large 5.1 }{\large \textbf{ \label{HToc84890241}\label{HToc212016617}\label{HToc212016859}\label{HToc182553364}Overview}}}
 
-\vspace{10pt}
 \leftskip=0pt
 XML is designed to allow users to store as much metadata as they can in an external 
 configuration file. Thus the scientific applications are less polluted and require 
 less effort to be verified again.
 
-\vspace{10pt}
 First, we present the XML template. Second, we demonstrate how to construct the 
 XML file from the user's own source code. Third, we note how to troubleshoot and 
 debug the errors in the file.  
 
-\vspace{10pt}
 Abstracting metadata, data type, and dimensions from the source code into an XML 
 file gives users more flexibility to annotate the arrays or variables and centralizes 
 the description of all the data structures, which in return, allows I/O componentization 
@@ -31,55 +26,42 @@ is useful for incorporating expressions as various array dimensions elements. Fi
 3 illustrates the corresponding XML configuration for the example we demonstrated 
 in Figure 1. 
 
-\vspace{10pt}
 At a minimum, a configuration document must declare an adios-config element. It 
 serves as a container for other elements; as such, it MUST be used as the root 
 element. The expected children in any order would be adios-group, method, and buffer. 
 The main elements of the xml file format are of the format 
 
-\vspace{10pt}
 \texttt{<}element-name attr1 attr2 ...\texttt{>}
 
 
-\vspace{22pt}
 \leftskip=28pt
 \texttt{<}adios-config\texttt{>}
 
-\vspace{10pt}
 \leftskip=45pt
 \texttt{<}adios-group\texttt{>}
 
-\vspace{10pt}
 \leftskip=63pt
 \texttt{<}var /\texttt{>}......
 
-\vspace{22pt}
 \texttt{<}attribute /\texttt{>}......
 
-\vspace{22pt}
 \leftskip=45pt
 \texttt{<}/adios-group\texttt{>}...
 
-\vspace{22pt}
 \texttt{<}method\texttt{>}......
 
-\vspace{22pt}
 \texttt{<}buffer\texttt{>}
 
-\vspace{10pt}
 \leftskip=28pt
 \texttt{<}/adios-config\texttt{>}
 
 \label{HToc144350162}\label{HRef119578307}
 
-\vspace{22pt}
 \leftskip=18pt
 {\color{color20} \textbf{Figure 3. Example XML configuration\label{HToc82067519}\label{HToc84890242}\label{HToc212016618}\label{HToc212016860}\label{HToc182553365}}}
 
-\vspace{10pt}
-\subsection*{{\large 5.2 }{\large \textbf{adios-group}}}
+\section*{{\large 5.2 }{\large \textbf{adios-group}}}
 
-\vspace{10pt}
 \leftskip=0pt
 The adios-group element represents a container for a list of variables that share 
 the common I/O pattern as stated in the basic concepts of ADIOS in the first chapter. 
@@ -88,10 +70,8 @@ functions of output in scientific applications, such as restart, diagnosis, and
 snapshot. Depending on the different applications, adios-group can occur as many 
 times as is needed. \label{HToc84890243}\label{HToc212016619}\label{HToc212016861}\label{HToc182553366}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{5.2.1 Declaration}}}
+\subsection*{{\large \textbf{5.2.1 Declaration}}}
 
-\vspace{10pt}
 The following example illustrates how to declare an adios group inside an XML file. 
 First we start with adios-group as our tag name, which is case insensitive. It 
 has an indispensable attribute called ``name,'' whose value is usually defined 
@@ -104,223 +84,168 @@ in the same communicator domain. ``Coordination-var'' provides the ability to us
 the user-defined variable, for example mype, rather than an MPI communicator for 
 file coordination. 
 
-\vspace{10pt}
 \texttt{<}\textbf{adios-group} \textbf{name}=``restart'' 
 
-\vspace{10pt}
 \leftskip=72pt
 host-language=``C''
 
-\vspace{10pt}
 coordination-communicator=''comm''
 
-\vspace{10pt}
 coordination-var=''mype''
 
-\vspace{10pt}
 time-index=''iter''/\texttt{>}
 
-\vspace{10pt}
 \leftskip=0pt
 Required:
 
-\vspace{10pt}
 \leftskip=18pt
 \parindent=3pt
 name---containing a descriptive string to name the group
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 Optional:
 
-\vspace{10pt}
 \leftskip=18pt
 \parindent=3pt
 host-language---language in which the source code for group is written
 
-\vspace{10pt}
 coordination-communicator---MPI-IO writing to a shared file
 
-\vspace{10pt}
 coordination-var---coordination variables for non-MPI methods, such as Datatap 
 method
 
-\vspace{10pt}
 time-index---time attribute variable\label{HToc82067520}\label{HToc84890244}\label{HToc212016620}\label{HToc212016862}\label{HRef278369587}\label{HToc182553367}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{5.2.2 Variables}}}
+\subsection*{{\large \textbf{5.2.2 Variables}}}
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 The nested variable element ``var'' for adios\_group, which can be either an array 
 or a primitive data type, is determined by the dimension attribute provided. 
 
-\vspace{10pt}
 \textbf{5.2.2.1 Declaration}
 
-\vspace{10pt}
 The following is an example showing how to define a variable in the XML file. 
 
-\vspace{10pt}
 \texttt{<}\textbf{var} \textbf{name}=``z-plane ion particles'' 
 
-\vspace{10pt}
 \leftskip=27pt
 gwrite=``zion''
 
-\vspace{10pt}
 gread=''zion\_read''
 
-\vspace{10pt}
 \textbf{type}=''adios\_real''
 
-\vspace{10pt}
 dimensions=''7,mimax''
 
-\vspace{10pt}
 read=''yes''/\texttt{>}
 
-\vspace{22pt}
 \leftskip=0pt
 \textbf{5.2.2.2 Attribute list}
 
-\vspace{10pt}
 The attributes associated with var element  as follows: 
 
-\vspace{10pt}
 Required:
 
-\vspace{10pt}
 \leftskip=18pt
 \parindent=3pt
 name - the string name of variable stored in the output file
 
-\vspace{10pt}
 type - the data type of the variable
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 Optional: 
 
-\vspace{10pt}
 \leftskip=72pt
 \parindent=-50pt
 gwrite - the value will be used in the python scripts to generate adios\_write 
 routines; the default value will be the same as attribute \textit{name} if gwrite 
 is not defined.
 
-\vspace{10pt}
 \leftskip=67pt
 \parindent=-45pt
 gread - the value will be used in the python scripts to generate adios\_read routines' 
 the default value will be the same as attribute \textit{name} if  gread is not 
 defined.
 
-\vspace{10pt}
 \leftskip=58pt
 \parindent=-36pt
 path - HDF-5-style path for the element or path to the HDF-5 group or data item 
 to which this attribute is attached.  The default value is ``/''.
 
-\vspace{10pt}
 \leftskip=94pt
 \parindent=-72pt
 dimensions - a comma-separated list of numbers and/or names that correspond to 
 integer var elements determine the size of this item. If not specified, the variable 
 is scalar.
 
-\vspace{10pt}
 \leftskip=58pt
 \parindent=-36pt
 read - value is either \textit{yes} or \textit{no}; in the case of no, the adios\_read 
 routine will not be generated for this var entry. If undefined, the default value 
 will be yes. \label{HToc82064271}\label{HToc82067521}\label{HToc84890245}\label{HToc212016621}\label{HToc212016863}\label{HRef278897265}\label{HToc182553368}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{5.2.3 Attributes}}}
+\subsection*{{\large \textbf{5.2.3 Attributes}}}
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 The attribute element for adios\_group provides the users with the ability to specify 
 more descriptive information about the variables or group. The attributes can be 
 defined in both static or dynamic fashions. \label{HToc82064272}
 
-\vspace{10pt}
 \textbf{5.2.3.1 Declaration}
 
-\vspace{10pt}
 The static type of attributes can be defined as follows:
 
-\vspace{10pt}
 \texttt{<}\textbf{attribute} name=``experimental date'' 
 
-\vspace{10pt}
 \leftskip=27pt
 \parindent=43pt
 path=``/zion''
 
-\vspace{10pt}
 value=''Sep-19-2008''
 
-\vspace{10pt}
 \parindent=0pt
 type=''adios\_real''/\texttt{>}
 
-\vspace{22pt}
 \leftskip=0pt
 If an attribute has dynamic value that is determined by the runtime execution of 
 the program, it can be specified as follows:
 
-\vspace{10pt}
 \texttt{<}\textbf{attribute} name=``experimental date'' 
 
-\vspace{10pt}
 \leftskip=27pt
 \parindent=43pt
 path=``/zion''
 
-\vspace{10pt}
 var=''time''/\texttt{>}
 
-\vspace{22pt}
 \leftskip=0pt
 \parindent=0pt
 where var ``time'' need to be defined in the same adios-group.
 
-\vspace{10pt}
 \textbf{5.2.3.2 Attribute list}
 
-\vspace{10pt}
 Required:\label{HToc82067522}
 
-\vspace{10pt}
 \leftskip=18pt
 \parindent=3pt
 name -  name of the attribute
 
-\vspace{10pt}
 path - hierarchical path inside the file for the attribute
 
-\vspace{10pt}
 value - attribute has static value of the attribute, mutually exclusive with the 
 attribute \textit{var}
 
-\vspace{10pt}
 type - string or numeric type, paired with attribute \textit{value}, in other words,, 
 mutually exclusive with the attribute \textit{var} also
 
-\vspace{10pt}
 var - attribute has dynamic value that is defined by a variable in \textit{var\label{HToc84890246}\label{HToc212016622}\label{HToc212016864}\label{HToc182553369}}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{5.2.4 Gwrite src}}}
+\subsection*{{\large \textbf{5.2.4 Gwrite src}}}
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 The element \texttt{<}Gwrite src=\texttt{"}...\texttt{"}\texttt{>} is unlike \texttt{<}var\texttt{>} 
@@ -330,23 +255,18 @@ of python scripts (see Chap. 10). Any content (usually comments, conditional sta
 or loop statements) in the value of attribute ``src'' is copied identically into 
 generated pre-processing files. Declaration
 
-\vspace{10pt}
 \texttt{<}gwrite src=''    ''/\texttt{>}
 
-\vspace{10pt}
 Required:
 
-\vspace{10pt}
 \leftskip=18pt
 \parindent=3pt
 src -  any statement that needs to be added into the source code. This code will 
 be inserted into the source code, and must be able to be compiled in the host language, 
 C or Fortran. \label{HToc84890247}\label{HToc212016623}\label{HToc212016865}\label{HRef278371183}\label{HToc182553370}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{5.2.5 Global arrays}}}
+\subsection*{{\large \textbf{5.2.5 Global arrays}}}
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 The \textbf{global-bounds} element is an optional nested element for the adios-group. 
@@ -356,10 +276,8 @@ is recorded in BP file and can be interpreted by converters or other postprocess
 tools or used to write out either HDF5 or NetCDF files by using PHDF5 or the PnetCDF 
 method.\label{HToc84890248}\label{HToc212016624}\label{HToc212016866}\label{HRef278371225}\label{HToc182553371}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{5.2.6 Time-index}}}
+\subsection*{{\large \textbf{5.2.6 Time-index}}}
 
-\vspace{10pt}
 ADIOS allows a dataset to be expanded in the space domain given by global bounds 
 and in time domain. It is very common for scientific applications to write out 
 a monitoring file at regular intervals. The file usually contains a group of time-based 
@@ -367,45 +285,34 @@ variables that have undetermined dimensional value on the time axis. ADIOS is Si
 to NetCDF in that it accumulates the time-index in terms of the number of records, 
 which theoretically can be added to infinity.
 
-\vspace{10pt}
 If any of variables in an adios group are time based, they can be marked out by 
 adding the time-index variable as another dimension value. 
 
-\vspace{10pt}
 \textbf{5.2.6.1 Declaration}
 
-\vspace{10pt}
 \texttt{<}\textbf{global-bounds} \textbf{dimensions}=``nx\_g, ny\_g'' \textbf{offsets}=``nx\_o,0''/\texttt{>}...
 
-\vspace{10pt}
 \parindent=21pt
 variable declarations ...
 
-\vspace{10pt}
 \parindent=0pt
 \texttt{<}/\textbf{global-bounds\texttt{>}}
 
-\vspace{10pt}
 Required:
 
-\vspace{10pt}
 \leftskip=18pt
 \parindent=3pt
 dimensions - the dimension of global space
 
-\vspace{10pt}
 offsets - the offset of the data set in global space
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 Any variables used in the global-bounds element for dimensions or offsets declaration 
 need to be defined in the same adios-group as either variables or attributes. 
 
-\vspace{10pt}
 For detailed global arrays use, see the example illustrated in Section 12.8.
 
-\vspace{10pt}
 \textbf{Changing I/O Without Changing Source:} The method element provides the 
 hook between the adios-group and the transport methods. The user employs a different 
 transport method simply by changing the method attribute of the method element. 
@@ -417,103 +324,76 @@ indicates how to write to disk, and the second performs the trigger for the work
 system. No recompilation, relinking, or any other code changes are required for 
 any of these changes to the XML file.\label{HToc82067523}\label{HToc84890250}\label{HToc212016626}\label{HToc212016868}\label{HToc182553372}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{5.2.7 Declaration}}}
+\subsection*{{\large \textbf{5.2.7 Declaration}}}
 
-\vspace{10pt}
 The transport element is used to specify the mapping of an I/O transport method, 
 including optional initialization parameters, to the respective adios-group. There 
 are two major attributes required for the method element: 
 
-\vspace{10pt}
 \texttt{<}\textbf{transport} \textbf{group}=``restart'' 
 
-\vspace{10pt}
 \leftskip=54pt
 \textbf{method}=``MPI''
 
-\vspace{10pt}
 priority=''1''
 
-\vspace{10pt}
 iteration=''100''/\texttt{>}
 
-\vspace{10pt}
 \leftskip=0pt
 Required:
 
-\vspace{10pt}
 \leftskip=18pt
 \parindent=3pt
 group - corresponds to an adios-group specified earlier in the file.
 
-\vspace{10pt}
 method - a string indicating a transport method to use with the associated adios-group
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 Optional: 
 
-\vspace{10pt}
 \leftskip=72pt
 \parindent=-50pt
 priority- a numeric priority for the I/O method to better schedule this write with 
 others that may be pending currently
 
-\vspace{10pt}
 \leftskip=85pt
 \parindent=-85pt
 base-path-the root directory to use when writing to disk or similar purposes
 
-\vspace{10pt}
 \parindent=-63pt
 iterations- a number of iterations between writes of this group used to gauge how 
 quickly this data should be evacuated from the compute node\label{HToc82067524}\label{HToc84890251}\label{HToc212016627}\label{HToc212016869}\label{HToc182553373}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{5.2.8 Methods list}}}
+\subsection*{{\large \textbf{5.2.8 Methods list}}}
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 As the componentization of the IO substrate, ADIOS supports a list of transport 
 methods, described in Section 6:
 
-\vspace{10pt}
 \ensuremath{\Sigma} NULL
 
-\vspace{10pt}
 \ensuremath{\Sigma} POSIX
 
-\vspace{10pt}
 \ensuremath{\Sigma} MPI
 
-\vspace{10pt}
 \ensuremath{\Sigma} MPI-LUSTRE
 
-\vspace{10pt}
 \ensuremath{\Sigma} MPI-AMR
 
-\vspace{10pt}
 \ensuremath{\Sigma} PHDF5
 
-\vspace{10pt}
 \ensuremath{\Sigma} NC4 (NETCDF4)
 
-\vspace{10pt}
 \ensuremath{\Sigma} NSSI
 
-\vspace{10pt}
 \ensuremath{\Sigma} DATATAP 
 
-\vspace{10pt}
 \ensuremath{\Sigma} DART\label{HToc82067525}\label{HToc84890252}\label{HToc212016628}\label{HToc212016870}\label{HRef278900114}\label{HToc182553374}
 
-\vspace{10pt}
-\subsection*{{\large 5.3 }{\large \textbf{Buffer specification}}}
+\section*{{\large 5.3 }{\large \textbf{Buffer specification}}}
 
-\vspace{10pt}
 The buffer element defines the attributes for internal buffer size and creating 
 time that apply to the whole application (Figure 4). The attribute allocate-time 
 is identified as being either{\small  ``}now'' or ``oncall'' to indicate when the 
@@ -522,39 +402,30 @@ decides that all memory needed for calculation has been allocated. It then calls
 upon ADIOS to allocate buffer. There are two alternative attributes for users to 
 define the buffer size: MB and free-memory-percentage. \label{HToc84890253}\label{HToc212016629}\label{HToc212016871}\label{HToc182553375}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{5.3.1 Declaration}}}
+\subsection*{{\large \textbf{5.3.1 Declaration}}}
 
-\vspace{10pt}
 \texttt{<}\textbf{buffer} \textbf{size-MB}=``100'' 
 
-\vspace{10pt}
 \leftskip=45pt
 \textbf{allocate-time}=``now'' /\texttt{>}
 
-\vspace{22pt}
 \leftskip=0pt
 Required:
 
-\vspace{10pt}
 \leftskip=76pt
 \parindent=-58pt
 size-MB - the user-defined size of  buffer in megabytes. ADIOS can at most allocate 
 from compute nodes. It is exclusive with free-memory-percentage.
 
-\vspace{10pt}
 free-memory percentage - the user-defined percentage from 0 to 100\% of free memory 
 available on the machine. It is exclusive with size-MB.
 
-\vspace{10pt}
 \leftskip=18pt
 \parindent=3pt
 allocate-time - indicates when the buffer should be allocated\label{HToc84890254}\label{HToc212016630}\label{HToc212016872}\label{HToc182553376}
 
-\vspace{10pt}
-\subsection*{{\large 5.4 }{\large \textbf{Enabling Histogram}}}
+\section*{{\large 5.4 }{\large \textbf{Enabling Histogram}}}
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 ADIOS 1.2 has the ability to {\color{color01} compute a histogram of the given 
@@ -565,82 +436,63 @@ to be performed. \texttt{"}\textbf{var}\texttt{"} is the name of the variable an
 \texttt{"}\textbf{adios-group}\texttt{"} is the name of the adios group to which 
 the variable belongs to. \label{HToc182553377}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{5.4.1 Declaration}}}
+\subsection*{{\large \textbf{5.4.1 Declaration}}}
 
-\vspace{10pt}
 The histogram binning intervals can be input in two ways via the XML file:
 
-\vspace{10pt}
 \ensuremath{\Sigma} By listing the break points as a list of comma separated values 
 in the parameter \texttt{"}break-points\texttt{"} 
 
-\vspace{10pt}
 \leftskip=99pt
 \parindent=-59pt
 \texttt{<}\textbf{analysis adios-group}=\texttt{"}temperature\texttt{"}    \textbf{var}=\texttt{"}temperature\texttt{"}
 
-\vspace{10pt}
 \parindent=-63pt
 \textbf{break-points}=\texttt{"}0, 100, 200, 300\texttt{"} /\texttt{>}
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 \ensuremath{\Sigma} By specifying the boundaries of the breaks, and the number 
 of intervals between variable's min and max values
 
-\vspace{10pt}
 \leftskip=99pt
 \parindent=-63pt
 \texttt{<}\textbf{analysis adios-group}=\texttt{"}temperature\texttt{"}    \textbf{var}=\texttt{"}temperature\texttt{"}
 
-\vspace{10pt}
 \textbf{min}=\texttt{"}0\texttt{"}    \textbf{max}=\texttt{"}300\texttt{"}    \textbf{count}=\texttt{"}3\texttt{"}/\texttt{>}
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 Both inputs create the bins (-Inf, 0), [0, 100), [100, 200), [200, 300), [300, 
 Inf). For this example, the final set of frequencies for these 5 binning intervals 
 will be calculated.
 
-\vspace{10pt}
 Required:
 
-\vspace{10pt}
 \leftskip=76pt
 \parindent=-54pt
 adios-group - corresponds to an adios-group specified earlier in the file.
 
-\vspace{10pt}
 var - corresponds to a variable in adios-group specified earlier in the file.
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 Optional:
 
-\vspace{10pt}
 \leftskip=36pt
 \parindent=-18pt
 break-points - list of comma separated values \textbf{sorted} in ascending order
 
-\vspace{10pt}
 \parindent=-3pt
 min  - minimum value of the binning boundary
 
-\vspace{10pt}
 \parindent=-18pt
 max - maximum value of the binning boundary 
 
-\vspace{10pt}
 (it should be greater than min)
 
-\vspace{10pt}
 count - number of break points between the min and max values 
 
-\vspace{10pt}
 \leftskip=0pt
 \parindent=0pt
 A valid set of binning intervals must be provided either by specifying \texttt{"}min,\texttt{"} 
@@ -650,65 +502,49 @@ will take precedence when calculating the histogram intervals, if \texttt{"}min,
 \texttt{"}max,\texttt{"} and \texttt{"}count\texttt{"} as well as ``break-points'' 
 are provided.\pagebreak{}\label{HToc182553378}
 
-\vspace{10pt}
-\subsection*{{\large \textbf{An Example XML file}}}
+\section*{{\large \textbf{An Example XML file}}}
 
 
-\vspace{22pt}
 \texttt{<}\textbf{adios-config} host-language=\texttt{"}C\texttt{"}\texttt{>}
 
-\vspace{22pt}
 \parindent=14pt
 \texttt{<}\textbf{adios-group} name=\texttt{"}temperature\texttt{"} coordination-communicator=\texttt{"}comm\texttt{"}\texttt{>}
 
-\vspace{10pt}
 \parindent=28pt
 \texttt{<}var name=\texttt{"}NX\texttt{"} type=\texttt{"}integer\texttt{"}/\texttt{>}
 
-\vspace{10pt}
 \texttt{<}var name=\texttt{"}t\texttt{"} type=\texttt{"}double\texttt{"} dimensions=\texttt{"}NX\texttt{"}/\texttt{>}
 
-\vspace{10pt}
 \parindent=57pt
 \texttt{<}attribute name=\texttt{"}recorded date\texttt{"} path=\texttt{"}/\texttt{"} 
 value=\texttt{"}Sep 19, 2008\texttt{"} type=\texttt{"}string\texttt{"}/\texttt{>}
 
-\vspace{22pt}
 \parindent=28pt
 {\color{color26} \texttt{<}!-- conditional writing of a variable --\texttt{>}}
 
-\vspace{10pt}
 \parindent=0pt
 \texttt{<}gwrite src=\texttt{"}if (want\_x) \{\texttt{"} /\texttt{>}
 
-\vspace{10pt}
 \parindent=43pt
 \texttt{<}var name=\texttt{"}x\texttt{"} type=\texttt{"}integer\texttt{"} dimensions=\texttt{"}NX\texttt{"}/\texttt{>}
 
-\vspace{10pt}
 \parindent=0pt
 \texttt{<}gwrite src=\texttt{"}\}\texttt{"} /\texttt{>}
 
-\vspace{22pt}
 \parindent=14pt
 \texttt{<}/\textbf{adios-group}\texttt{>}
 
-\vspace{22pt}
 \texttt{<}\textbf{method} group=\texttt{"} temperature \texttt{"} method=\texttt{"}MPI\texttt{"}/\texttt{>}
 
-\vspace{22pt}
 \texttt{<}\textbf{buffer} size-MB=\texttt{"}1\texttt{"} allocate-time=\texttt{"}now\texttt{"}/\texttt{>}
 
-\vspace{10pt}
 \texttt{<}\textbf{analysis }adios-group=\texttt{"}temperature\texttt{"} var=\texttt{"}t\texttt{"} 
 break-points=\texttt{"}0, 100, 200, 300\texttt{"}/\texttt{>}
 
-\vspace{22pt}
 \parindent=0pt
 \texttt{<}/\textbf{adios-config}\texttt{>}
 
 \label{HRef119578444}\label{HToc144350163}
 
-\vspace{22pt}
 \leftskip=18pt
 {\color{color20} \textbf{Figure 4. Example XML file.\label{HToc84890255}\label{HToc212016631}\label{HToc212016873}\label{HRef212367123}\label{HToc82067526}\label{HRef278374025}\label{HRef278895952}\label{HToc182553379}}}

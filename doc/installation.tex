@@ -1,424 +1,245 @@
-\vspace{22pt}
-%\section*{{\Large \textbf{2 Installation\label{HToc84890221}\label{HToc212016596}\label{HToc212016838}\label{HToc182553329}}}}
-\section{Installation}
+\chapter{Installation}
 
-\vspace{24pt}
-\subsection*{{\large 2.1 }{\large \textbf{Obtaining ADIOS}}}
+\section{Obtaining ADIOS}
 
-\vspace{10pt}
 You can download the latest version from the following website 
 
-\vspace{10pt}
-http://http://www.olcf.ornl.gov/center-projects/adios\label{HToc84890222}\label{HToc212016597}\label{HToc212016839}\label{HToc182553330}
+\begin{lstlisting}[language={}]
+http://www.olcf.ornl.gov/center-projects/adios
+\end{lstlisting}
 
-\vspace{10pt}
-\subsection*{{\large 2.2 }{\large \textbf{Quick Installation}}}
 
-\vspace{10pt}
+\section{Quick Installation}
+
 To get started with ADIOS, the following steps can be used to configure, build, 
 test, and install the ADIOS library, header files, and support programs. 
 
-\vspace{10pt}
+\begin{lstlisting}
 cd trunk/
-
-\vspace{10pt}
-./configure -prefix=\texttt{<}install-dir\texttt{>} \-{}\-{}with-mxml=\texttt{<}mxml-location\texttt{>}
-
-\vspace{10pt}
+./configure -prefix=<install-dir> --with-mxml=<mxml-location>
 make
-
-\vspace{10pt}
 make install
+\end{lstlisting}
 
-\vspace{10pt}
 Note: There is a runconf batch script in the trunk set up for our machines. Studying 
 it can help you setting up the appropriate environment variables and configure 
-options for your system.\label{HToc84890223}\label{HToc212016598}\label{HToc212016840}\label{HToc182553331}
+options for your system.
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{2.2.1 Linux cluster}}}
+\subsection{Linux cluster}
 
-\vspace{10pt}
 The following is a snapshot of the batch scripts on Ewok, an Intel-based Infiniband 
 cluster running Linux:
 
-\vspace{10pt}
+\begin{lstlisting}
 export MPICC=mpicc
-
-\vspace{10pt}
 export MPICXX=mpiCC
-
-\vspace{10pt}
 export MPIFC=mpif90
-
-\vspace{10pt}
 export CC=pgcc
-
-\vspace{10pt}
 export CXX=pgCC
-
-\vspace{10pt}
 export FC=pgf90
+export CFLAGS="-fPIC"
 
-\vspace{10pt}
-export CFLAGS=''-fPIC''
+./configure --prefix = <location for ADIOS software installation>
+            --with-mxml=<location of mini-xml installation>
+            --with-hdf5=<location of HDF5 installation>
+            --with-netcdf=<location of netCDF installation>
+\end{lstlisting}
 
-\vspace{10pt}
-./configure --prefix = \texttt{<}location for ADIOS software installation\texttt{>}
 
-\vspace{10pt}
---with-mxml=\texttt{<}location of mini-xml installation\texttt{>}
-
-\vspace{10pt}
-\parindent=43pt
---with-hdf5=\texttt{<}location of HDF5 installation\texttt{>}
-
-\vspace{10pt}
-\parindent=0pt
---with-netcdf=\texttt{<}location of netCDF installation\texttt{>}
-
-\vspace{22pt}
 The compiler pointed by MPICC is used to build all the parallel codes and tools 
 using MPI, while the compiler pointed by CC is used to build the sequential tools. 
 In practice, mpicc uses the compiler pointed by CC and adds the MPI library automatically. 
 On clusters, this makes no real difference, but on Bluegene, or Cray XT, parallel 
 codes are built for compute nodes, while the sequential tools are built for the 
-login nodes. The -fPIC compiler flag is needed only if you build the Matlab tools.\label{HToc84890224}\label{HToc212016599}\label{HToc212016841}\label{HToc182553332}
+login nodes. The -fPIC compiler flag is needed only if you build the Matlab tools.
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{2.2.2 Cray XT5}}}
 
-\vspace{10pt}
+\subsection{Cray XT5}
+
 To install ADIOS on a Cray XT5, the right compiler commands and configure flags 
 need to be set. The required commands for ADIOS installation on Jaguar are as follows:
 
-\vspace{10pt}
+\begin{lstlisting}
 export CC=cc
-
-\vspace{10pt}
 export CXX=CC
-
-\vspace{10pt}
 export FC=ftn
+./configure --prefix = <location for ADIOS software installation>
+            --with-mxml=<location of mini-xml installation>
+            --with-hdf5=<location of HDF5 installation>
+            --with-netcdf=<location of netCDF installation>
+\end{lstlisting}
 
-\vspace{10pt}
-./configure --prefix = \texttt{<}location for ADIOS software installation\texttt{>}
 
-\vspace{10pt}
-\parindent=43pt
---with-mxml=\texttt{<}location of mini-xml installation\texttt{>}
+\subsection{Support for Matlab}
 
-\vspace{10pt}
---with-hdf5=\texttt{<}location of HDF5 installation\texttt{>}
-
-\vspace{10pt}
-\parindent=0pt
---with-netcdf=\texttt{<}location of netCDF installation\texttt{>}\label{HToc182553333}
-
-\vspace{22pt}
-\subsubsection*{{\large \textbf{2.2.3 Support for Matlab}}}
-
-\vspace{10pt}
 Matlab requires ADIOS be built with the GNU C compiler. It also requires relocatable 
 codes, so you need to add the -fPIC flag to CFLAGS before configuring ADIOS. The 
 matlab reader is not built automatically at make and is not installed with ADIOS. 
 You need to compile it with Matlab's MEX compiler after the make and copy the files 
 manually to somewhere where Matlab can see them.
 
-\vspace{10pt}
+\begin{lstlisting}
 cd tools/matlab
+make matlab
+\end{lstlisting}
 
-\vspace{10pt}
-make matlab\label{HToc84890225}\label{HToc212016600}\label{HToc212016842}\label{HToc182553334}
 
-\vspace{22pt}
-\subsection*{{\large 2.3 }{\large \textbf{ADIOS Dependencies\label{HToc84890226}\label{HToc212016601}\label{HToc212016843}\label{HToc182553335}}}}
+\section{ADIOS Dependencies}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{2.3.1 Mini-XML parser (required)}}}
+\subsection{Mini-XML parser (required)}
 
-\vspace{10pt}
 The Mini-XML library is used to parse XML configuration files. Mini-XML can be 
 downloaded from 
 
-\vspace{10pt}
-http://www.minixml.org/software.php\label{HToc84890229}\label{HToc212016604}\label{HToc212016846}\label{HToc182553336}
+\begin{lstlisting}[language={}]
+http://www.minixml.org/software.php
+\end{lstlisting}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{2.3.2 MPI and MPI-IO (required)}}}
 
-\vspace{10pt}
+\subsection{MPI and MPI-IO (required)}
+
 MPI and MPI-IO is required for ADIOS.
 
-\vspace{10pt}
 Currently, most large-scale scientific applications rely on the Message Passing 
 Interface (MPI) library to implement communication among processes. For instance, 
 when the Portable Operating System Interface (POSIX) is used as transport method, 
 the rank of each processor in the same communication group, which needs to be retrieved 
 by the certain MPI APIs, is commonly used in defining the output files. MPI-IO 
-can also be considered the most generic I/O library on large-scale platforms. \label{HToc84890230}\label{HToc212016605}\label{HToc212016847}\label{HToc182553337}
+can also be considered the most generic I/O library on large-scale platforms. 
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{2.3.3 Python (required)}}}
+\subsection{Python (required)}
 
-\vspace{10pt}
-The XML processing utility utils/gpp/gpp.py is a code written in python using xml.dom.minidom. 
+The XML processing utility \verb+utils/gpp/gpp.py+ is a code written in python using xml.dom.minidom. 
 It is used to generate C or Fortran code from the XML configuration files that 
 can be included in the application source code.  Examples and tests will not build 
-without Python. \label{HToc182553338}
+without Python. 
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{2.3.4 Fortran90 compiler (optional)}}}
+\subsection{Fortran90 compiler (optional)}
 
-\vspace{10pt}
 The Fortran~90 interface and example codes are compiled only if there is an f90 
 compiler available. By default it is required but you can disable it with the option 
-\-{}\-{}disable\-{}fortran.\label{HToc182553339}
+\verb+--disable-fortran+.
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{2.3.5 Serial NetCDF-3 (optional)}}}
+\subsection{Serial NetCDF-3 (optional)}
 
-\vspace{10pt}
 The bp2ncd converter utility to NetCDF format is built only if NetCDF~is available. 
- Currently ADIOS uses the NetCDF-3 library. Use the option \-{}\-{}with\-{}netcdf=\texttt{<}path\texttt{>} 
-or ensure that the NETCDF\_DIR environment variable is set before configuring ADIOS.\label{HToc182553340}
+ Currently ADIOS uses the NetCDF-3 library. Use the option \verb+--with-netcdf=<path>+ 
+or ensure that the \verb+NETCDF_DIR+ environment variable is set before configuring ADIOS.
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{2.3.6 Serial HDF5 (optional)}}}
+\subsection{Serial HDF5 (optional)}
 
-\vspace{10pt}
 The bp2h5 converter utility to HDF5 format is built only if a HDF5 library is available. 
 Currently ADIOS uses the 1.6 version of the HDF5 API but it can be built and used 
-with the 1.8.x version of the HDF5 library too. Use the option \-{}\-{}with\-{}hdf5=\texttt{<}path\texttt{>} 
-when configuring ADIOS.\label{HToc84890227}\label{HToc212016602}\label{HToc212016844}\label{HToc182553341}
+with the 1.8.x version of the HDF5 library too. Use the option \verb+--with-hdf5=<path>+ 
+when configuring ADIOS.
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{2.3.7 PHDF5 (optional)}}}
+\subsection{PHDF5 (optional)}
 
-\vspace{10pt}
 The transport method writing files in the Parallel HDF5 format is built only if 
 a parallel version of the HDF5 library is (also) available. You need to use the 
-option \-{}\-{}with\-{}phdf5=\texttt{<}path\texttt{>} to build this transport method. 
+option \verb+--withh-phdf5=<path>+ to build this transport method. 
 
-\vspace{10pt}
 If you define Parallel HDF5 and do not define serial HDF5, then bp2h5 will be built 
 with the parallel library. 
 
-\vspace{10pt}
 Note that if you build this transport method, ADIOS will depend on PHDF5 when you 
 link any application with ADIOS even if you the application does not intend to 
 use this method. 
 
-\vspace{10pt}
 If you have problems compiling ADIOS with PHDF5 due to missing flags or libraries, 
 you can define them using 
 
-\vspace{10pt}
---with-phdf5-incdir=\texttt{<}path\texttt{>},
+\begin{lstlisting}
+--with-phdf5-incdir=<path>,
+--with-phdf5-libdir=<path> and 
+--with-phdf5-libs=<link time flags and libraries>
+\end{lstlisting}
 
-\vspace{10pt}
---with-phdf5-libdir=\texttt{<}path\texttt{>} and 
+\subsection{NetCDF-4 Parallel (optional)}
 
-\vspace{10pt}
---with-phdf5-libs=\texttt{<}link time flags and libraries\texttt{>}\label{HToc182553342}
-
-\vspace{10pt}
-\subsubsection*{{\large \textbf{2.3.8 NetCDF-4 Parallel (optional)}}}
-
-\vspace{10pt}
 The NC4 transport method writes files using the NetCDF-4 library which in turn 
-is based on the parallel HDF5 library. You need to use the option\-{}
+is based on the parallel HDF5 library. You need to use the option 
+\verb+--with-nc4par=<path>+ to build this transport method. Also, 
+you need the parallel HDF5 library. 
 
-\vspace{10pt}
--with\-{}nc4par=\texttt{<}path\texttt{>} to build this transport method. Also, 
-you need the parallel HDF5 library. \label{HToc182553343}
+\subsection{Lustreapi (optional)}
 
-\vspace{10pt}
-\subsubsection*{{\large \textbf{2.3.9 Lustreapi (optional)}}}
-
-\vspace{10pt}
-The Lustreapi library is used internally by MPI\_LUSTRE and MPI\_AMR method to 
+The Lustreapi library is used internally by \verb+MPI_LUSTRE+ and \verb+MPI_AMR+ method to 
 figure out Lustre parameters such stripe count and stripe size.  Without giving 
 this option, users are expected to manually set Lustre parameters from ADIOS XML 
-configuration file (see MPI\_LUSTRE and MPI\_AMR method).
+configuration file (see \verb+MPI_LUSTRE+ and \verb+MPI_AMR+ method). Use the configuration option
+\verb+--with-lustre=<path>+ to define the path to this library.
 
-\vspace{10pt}
---with-lustre=\texttt{<}path\texttt{>}\label{HToc84890231}\label{HToc212016606}\label{HToc212016848}\label{HToc182553344}
+\subsection{Read-only installation}
 
-\vspace{22pt}
-\subsubsection*{{\large \textbf{2.3.10 Read-only installation}}}
+If you just want the read API to be compiled for reading BP files, use the \verb+--disable-write+ option.
 
-\vspace{10pt}
-If you just want the read API to be compiled for reading BP files, use the \-{}\-{}disable\-{}write 
-option.\label{HToc182553345}
+\section{Full Installation}
 
-\vspace{10pt}
-\subsection*{{\large 2.4 }{\large \textbf{Full Installation}}}
+The following list is the complete set of options that can be used with 
+configure to build ADIOS and its support utilities:
 
-\vspace{10pt}
-The following list is the complete set of options that can be used {\color{color01} with 
-configure to build ADIOS and its support utilities:}
-
-\vspace{10pt}
-\parindent=7pt
-{\color{color01} --help              print the usage of ./configure command}
-
-\vspace{10pt}
+\begin{lstlisting}
+--help              print the usage of ./configure command}
 --with-tags[=TAGS]  include additional configurations [automatic]
-
-\vspace{10pt}
 --with-mxml=DIR     Location of Mini-XML library
+--with-hdf5=<location of HDF5 installation>
+--with-hdf5-incdir=<location of HDF5 includes>
+--with-hdf5-libdir=<location of HDF5 library>
+--with-phdf5=<location of PHDF5 installation>
+--with-phdf5-incdir=<location of PHDF5 includes>
+--with-phdf5-libdir=<location of PHDF5 library>
+--with-netcdf=<location of NetCDF installation>
+--with-netcdf-incdir=<location of NetCDF includes>
+--with-netcdf-libdir=<location of NetCDF library>
+--with-nc4par=<location of NetCDF 4 Parallel installation>
+--with-nc4par-incdir=<location of NetCDF 4 Parallel includes>
+--with-nc4par-libdir=<location of NetCDF 4 Parallel library>
+--with-nc4par-libs=<linker flags besides -L<nc4par_libdir>, e.g. -lnetcdf
+--with-lustre=<location of Lustreapi library>
+\end{lstlisting}
 
-\vspace{10pt}
-\parindent=0pt
---with-hdf5=\texttt{<}location of HDF5 installation\texttt{>}
-
-\vspace{10pt}
-\parindent=7pt
---with-hdf5-incdir=\texttt{<}location of HDF5 includes\texttt{>}
-
-\vspace{10pt}
---with-hdf5-libdir=\texttt{<}location of HDF5 library\texttt{>}
-
-\vspace{10pt}
-\parindent=0pt
---with-phdf5=\texttt{<}location of PHDF5 installation\texttt{>}
-
-\vspace{10pt}
-\parindent=7pt
---with-phdf5-incdir=\texttt{<}location of PHDF5 includes\texttt{>}
-
-\vspace{10pt}
---with-phdf5-libdir=\texttt{<}location of PHDF5 library\texttt{>}
-
-\vspace{10pt}
---with-netcdf=\texttt{<}location of NetCDF installation\texttt{>}
-
-\vspace{10pt}
-\parindent=14pt
---with-netcdf-incdir=\texttt{<}location of NetCDF includes\texttt{>}
-
-\vspace{10pt}
-\parindent=7pt
---with-netcdf-libdir=\texttt{<}location of NetCDF library\texttt{>}
-
-\vspace{10pt}
-\parindent=0pt
---with-nc4par=\texttt{<}location of NetCDF 4 Parallel installation\texttt{>}
-
-\vspace{10pt}
-\parindent=7pt
---with-nc4par-incdir=\texttt{<}location of NetCDF 4 Parallel includes\texttt{>}
-
-\vspace{10pt}
---with-nc4par-libdir=\texttt{<}location of NetCDF 4 Parallel library\texttt{>}
-
-\vspace{10pt}
-\parindent=14pt
---with-nc4par-libs=\texttt{<}linker flags besides -L\texttt{<}nc4par\_libdir\texttt{>}, 
-e.g. -lnetcdf
-
-\vspace{10pt}
-\parindent=0pt
---with-lustre=\texttt{<}location of Lustreapi library\texttt{>}
-
-\vspace{34pt}
 Some influential environment variables are lists below:
 
-\vspace{10pt}
-\parindent=7pt
+\begin{lstlisting}
 CC        C compiler command
-
-\vspace{10pt}
 CFLAGS    C compiler flags
-
-\vspace{10pt}
-\parindent=14pt
-LDFLAGS   linker flags, e.g. -L\texttt{<}lib dir\texttt{>} if you have libraries 
-in a
-
-\vspace{10pt}
-\parindent=43pt
-nonstandard directory \texttt{<}lib dir\texttt{>}
-
-\vspace{10pt}
-\parindent=7pt
-CPPFLAGS  C/C++ preprocessor flags, e.g. -I\texttt{<}include dir\texttt{>} if you
-
-\vspace{10pt}
-\parindent=43pt
-have headers in a nonstandard directory \texttt{<}include dir\texttt{>}
-
-\vspace{10pt}
-\parindent=7pt
+LDFLAGS   linker flags, e.g. -L<lib dir> if you have libraries 
+          in a nonstandard directory <lib dir>
+CPPFLAGS  C/C++ preprocessor flags, e.g. -I<include dir> if you
+          have headers in a nonstandard directory <include dir>
 CPP       C preprocessor
-
-\vspace{10pt}
 CXX       C++ compiler command
-
-\vspace{10pt}
-\parindent=14pt
 CXXFLAGS  C++ compiler flags
-
-\vspace{10pt}
-\parindent=7pt
 FC        Fortran compiler command
-
-\vspace{10pt}
 FCFLAGS   Fortran compiler flags
-
-\vspace{10pt}
-\parindent=14pt
 CXXCPP    C++ preprocessor
-
-\vspace{10pt}
-\parindent=7pt
 F77       Fortran 77 compiler command
-
-\vspace{10pt}
 FFLAGS    Fortran 77 compiler flags
-
-\vspace{10pt}
-\parindent=14pt
 MPICC     MPI C compiler command
+MPIFC     MPI Fortran compiler command
+\end{lstlisting}
 
-\vspace{10pt}
-\parindent=7pt
-MPIFC     MPI Fortran compiler command\label{HRef182456360}\label{HToc182553346}
 
-\vspace{22pt}
-\subsection*{{\large 2.5 }{\large \textbf{Compiling applications using ADIOS}}}
+\section{Compiling applications using ADIOS}
 
-\vspace{10pt}
-\parindent=0pt
 Adios configuration creates a text file that contains the flags and library dependencies 
 that should be used when compiling/linking user applications that use ADIOS. This 
-file is installed as bin/adios\_config.flags under the installation directory by 
-make install. A script, named adios\_config is also installed that can print out 
-selected flags. In a Makefile, if you set ADIOS\_DIR to the installation directory 
+file is installed as \verb+bin/adios_config.flags+ under the installation directory by 
+make install. A script, named \verb+adios_config+ is also installed that can print out 
+selected flags. In a Makefile, if you set \verb+ADIOS_DIR+ to the installation directory 
 of ADIOS, you can set the flags for building your code flexibly as shown below 
 for a Fortran application: 
 
-\vspace{10pt}
-override ADIOS\_DIR := \texttt{<}your ADIOS installation directory\texttt{>}
+\begin{lstlisting}
+override ADIOS_DIR := <your ADIOS installation directory>
+override ADIOS_INC := $(shell ${ADIOS_DIR}/bin/adios_config -c -f)
+override ADIOS_FLIB := $(shell ${ADIOS_DIR}/bin/adios_config -l -f)
 
-\vspace{10pt}
-override ADIOS\_INC := \$(shell \$\{ADIOS\_DIR\}/bin/adios\_config -c -f)
-
-\vspace{10pt}
-override ADIOS\_FLIB := \$(shell \$\{ADIOS\_DIR\}/bin/adios\_config -l -f)
-
-\vspace{22pt}
 example.o : example.F90
+        ${FC} -g -c ${ADIOS_INC} example.F90 $<
 
-\vspace{10pt}
-\parindent=28pt
-\$\{FC\} -g -c \$\{ADIOS\_INC\} example.F90  \$\texttt{<}
-
-\vspace{22pt}
-\parindent=0pt
 example: example.o
+        ${FC} -g -o example example.o ${ADIOS_FLIB} 
+\end{lstlisting}
 
-\vspace{10pt}
-\parindent=28pt
-\$\{FC\} -g -o example example.o \$\{ADIOS\_FLIB\} \label{HToc84890232}\label{HToc212016607}\label{HToc212016849}\label{HToc82067514}\label{HToc182553347}
