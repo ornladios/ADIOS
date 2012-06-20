@@ -12,7 +12,7 @@ In the following steps we will create programs that use ADIOS to write
 
 - one large BP file with the arrays from all processes
 
-- N files from P processes, where N \texttt{<}\texttt{<} P
+- N files from P processes, where $N<P$
 
 - the data of all processes as one global array into one file
 
@@ -24,205 +24,138 @@ file and run the program without recompiling it.
 
 \section{Non-ADIOS Program}
 
-The starting programming example, shown in Figure 23, writes a double-precision 
+The starting programming example, shown in Listing~\ref{c_programming:non-adios.c}, writes a double-precision 
 array t with size of NX into a separate file per process (the array is uninitialized 
 in the examples). 
 
-\#include \texttt{<}stdio.h\texttt{>}
+\begin{lstlisting}[language=C,caption=Original program
+  (examples/C/manual/1\_nonadios\_example.c]
 
-\#include \texttt{"}mpi.h\texttt{"}
-
-\#include \texttt{"}adios.h\texttt{"}
+#include <stdio.h>
+#include "mpi.h"
+#include "adios.h"
 
 int main (int argc, char ** argv) 
+{
+  char             filename [256];
+  int              rank;
+  int              NX=10;
+  double           t[NX];
+  FILE             * fp;
 
-\{
+  MPI_Init (&argc, &argv);
 
-\leftskip=18pt
-char      \textbf{    } filename [256];
+  MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
-int              rank;
+  sprintf (filename, "restart_%5.5d.dat", rank);
+  fp = open (filename, "w");
 
-int              NX\textbf{ }=\textbf{ }10;
+  fwrite (&NX, sizeof(int), 1, fp);
+  fwrite (t,  sizeof(double), NX, fp);
+  fclose (fp);
 
-double      t[NX];
+  MPI_Finalize ();
+  return 0;
+}
+\end{lstlisting}\label{c_programming:non-adios.c}
 
-FILE          * fp;
-
-MPI\_Init (\&argc, \&argv);
-
-MPI\_Comm\_rank (MPI\_COMM\_WORLD, \&rank);
-
-sprintf (filename, \texttt{"}restart\_\%5.5d.dat\texttt{"}, rank);
-
-fp = open (filename, \texttt{"}w\texttt{"});
-
-fwrite ( \&NX, sizeof(int), 1, fp);
-
-fwrite (t,  sizeof(double), NX, fp);
-
-fclose (fp);
-
-MPI\_Finalize ();
-
-return 0;
-
-\leftskip=0pt
-\}
-
-\label{HRef119579280}\label{HToc144350182}
-
-\leftskip=18pt
-{\color{color20} \textbf{Figure 23. Original program (examples/C/manual/1\_nonadios\_example.c).}}
-
-\leftskip=0pt
-\$ mpirun -np 4 1\_nonadios\_example
-
-\$ ls restart\_*
-
-restart\_00000.dat  restart\_00001.dat  restart\_00002.dat  restart\_00003.dat\label{HToc84890292}\label{HToc212016668}\label{HToc212016910}\label{HToc182553441}
+\begin{lstlisting}[]
+$ mpirun -np 4 1_nonadios_example
+$ ls restart_*
+restart_00000.dat  restart_00001.dat  restart_00002.dat  restart_00003.dat
+\end{lstlisting}
 
 \section{Construct an XML File}
 
 In the example above, the program is designed to write a file for each process. 
 There is a double-precision one-dimensional array called ``t''. We also need to 
 declare and write all variables that are used for dimensions (i.e. NX in our example). 
-Therefore, our configuration file is constructed as shown in Figure 24.
+Therefore, our configuration file is constructed as shown in Listing~\ref{c_programming:config.xml}.
 
+\begin{lstlisting}[language=XML,caption=Example config.xml]
 /* config.xml*/
 
-\texttt{<}?xml version=\texttt{"}1.0\texttt{"}?\texttt{>}
+<?xml version="1.0"?>
 
-\texttt{<}adios-config host-language=\texttt{"}C\texttt{"}\texttt{>}
+<adios-config host-language="C">
+    <adios-group name="temperature" coordination-communicator="comm">
+      <var name="NX" type="integer"/>
+      <var name="temperature" gwrite="t" type="double" dimensions="NX"/>
+      <attribute name="description" path="/temperature" type="string" value="Temperature array" />
+    </adios-group>
 
-\parindent=14pt
-\texttt{<}adios-group name=\texttt{"}temperature\texttt{"} coordination-communicator=\texttt{"}comm\texttt{"}\texttt{>}
+<method group="temperature" method="POSIX"/>
 
-\parindent=28pt
-\texttt{<}var name=\texttt{"}NX\texttt{"} type=\texttt{"}integer\texttt{"}/\texttt{>}
+<buffer size-MB="1" allocate-time="now"/>
 
-\texttt{<}var name=\texttt{"}temperature\texttt{"} gwrite=\texttt{"}t\texttt{"} 
-type=\texttt{"}double\texttt{"} dimensions=\texttt{"}NX\texttt{"}/\texttt{>}
-
-\parindent=10pt
-\texttt{<}attribute name=\texttt{"}description\texttt{"} path=\texttt{"}/temperature\texttt{"} 
- type=''string''
-
-\parindent=68pt
-value=\texttt{"}Temperature array\texttt{"} /\texttt{>}
-
-\parindent=0pt
-\texttt{<}/adios-group\texttt{>}
-
-\texttt{<}method group=\texttt{"}temperature\texttt{"} method=\texttt{"}POSIX\texttt{"}/\texttt{>}
-
-\texttt{<}buffer size-MB=\texttt{"}1\texttt{"} allocate-time=\texttt{"}now\texttt{"}/\texttt{>}
-
-\texttt{<}/adios-config\texttt{>}
-
-\label{HRef119579330}\label{HToc144350183}
-
-\leftskip=18pt
-{\color{color20} \textbf{Figure 24. Example config.xml file\label{HToc84890293}\label{HToc212016669}\label{HToc212016911}\label{HToc182553442}}}
+</adios-config>
+\end{lstlisting}\label{c_programming:config.xml}
 
 \section{Generate .ch file (s)}
 
-\leftskip=0pt
 The adios\_group\_size function and a set of adios\_write functions can be automatically 
 generated in gwrite\_temperature.ch file by using the following python command: 
+\\
+\texttt{gpp.py config.xml}
+\\
 
-gpp.py config.xml
+The generated gwrite\_temperature.ch file is shown in Listing~\ref{c_programming:g_write_temperature.h}.
 
-The generated gwrite\_temperature.ch file is shown in Figure 25.
-
+\begin{lstlisting}[language=C,caption=Example gwrite\_temperature.ch]
 /* gwrite\_temperature.ch */
-
-adios\_groupsize = 4 \textbackslash{}
-
-\parindent=57pt
-+ 8 * (NX);
-
-\parindent=0pt
-adios\_group\_size (adios\_handle, adios\_groupsize, \&adios\_totalsize);
-
-adios\_write (adios\_handle, \texttt{"}NX\texttt{"}, \&NX);
-
-adios\_write (adios\_handle, \texttt{"}temperature\texttt{"}, t);
-
-\label{HRef119579365}\label{HToc144350184}
-
-\leftskip=18pt
-{\color{color20} \textbf{Figure 25. Example gwrite\_temperature.ch file\label{HToc84890294}\label{HToc212016670}\label{HToc212016912}\label{HToc182553443}}}
+adios_groupsize = 4 \
+                + 8 * (NX);
+adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
+adios_write (adios_handle, "NX", &NX);
+adios_write (adios_handle, "temperature", t);
+\end{lstlisting}\label{c_programming:g_write_temperature.h}
 
 \section{POSIX transport method (P writers, P subfiles + 1 metadata file)}
 
-For our first program, we simply translate the program of Figure 23, so that all 
-of the I/O operations are done with ADIOS routines. The POSIX method can be used 
-to write out separate files for each processor in Figure 26. The changes to the 
-original example are highlighted. We need to use an MPI communicator in adios\_open() 
-because the subprocesses need to know the rank to create unique subfile names. 
+For our first program, we simply translate the program of
+Listing~\ref{c_programming:non-adios.c}, so that all of the I/O operations
+are done with ADIOS routines. The POSIX method can be used to write out
+separate files for each processor in
+Listing~\ref{c_programming:adios-write.c}. 
+The changes to the original
+example are highlighted. We need to use an MPI communicator in adios\_open()
+because the subprocesses need to know the rank to create unique subfile
+names.
 
+\begin{lstlisting}[language=C,caption=Example adios program to write P files from 
+P processors (examples/C/manual/2\_adios\_write.c]
 /*write Separate file for each process by using POSIX*/
 
-\#include \texttt{<}stdio.h\texttt{>}
-
-\#include \texttt{"}mpi.h\texttt{"}
-
-{\color{color02} \#include \texttt{"}adios.h\texttt{"}}
-
+#include <stdio.h>
+#include "mpi.h"
+#include "adios.h"
 int main (int argc, char ** argv) 
+{
+  char           filename [256];
+  int              rank;
+  int              NX = 10;
+  double      t[NX];
 
-\{
+  /* ADIOS variables declarations for matching gwrite_temperature.ch */
+  int                  adios_err;
+  uint64_t       adios_groupsize, adios_totalsize;
+  int64_t          adios_handle;
+  MPI_Comm  * comm =  MPI_COMM_WORLD;
 
-\leftskip=18pt
-char      \textbf{    } filename [256];
+  MPI_Init (&argc, &argv);
+  MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+  sprintf (filename, "restart.bp");
+  adios_init ("config.xml");
+  adios_open (&adios_handle, "temperature", filename, "w", &comm);
 
-int              rank;
+  #include "gwrite_temperature.ch"
 
-int              NX\textbf{ }=\textbf{ }10;
-
-double      t[NX];
-
-/* ADIOS variables declarations for matching gwrite\_temperature.ch */
-
-{\color{color02} int                  adios\_err;}
-
-{\color{color02} uint64\_t       adios\_groupsize, adios\_totalsize;}
-
-{\color{color02} int64\_t          adios\_handle;}
-
-{\color{color02} MPI\_Comm  * comm =  MPI\_COMM\_WORLD;}
-
-MPI\_Init (\&argc, \&argv);
-
-MPI\_Comm\_rank (MPI\_COMM\_WORLD, \&rank);
-
-sprintf (filename, \texttt{"}{\color{color02} restart.bp}\texttt{"});
-
-{\color{color02} adios\_init (\texttt{"}config.xml\texttt{"});}
-
-{\color{color02} adios\_open (\&adios\_handle, \texttt{"}temperature\texttt{"}, 
-filename, \texttt{"}w\texttt{"}, \&comm);}
-
-{\color{color02} \#include \texttt{"}gwrite\_temperature.ch\texttt{"}}
-
-{\color{color02} adios\_close (adios\_handle);}
-
-{\color{color02} adios\_finalize (rank);}
-
-MPI\_Finalize ();
-
-return 0;
-
-\leftskip=0pt
-\}
-
-\label{HRef119579429}\label{HToc144350185}
-
-\begin{center}
-{\color{color20} \textbf{Figure 26. Example adios program to write P files from 
-P processors (examples/C/manual/2\_adios\_write.c)}}
-\end{center}
+  adios_close (adios_handle);
+  adios_finalize (rank);
+  MPI_Finalize ();
+  return 0;
+}
+\end{lstlisting}\label{c_programming:adios-write.c}
 
 The POSIX method makes a directory to store all subfiles. As for the naming of 
 the directory, it appends ``.dir'' to the name the file, e.g., restart.bp.dir. 
@@ -232,28 +165,21 @@ communicators) to the name of the file (here restart.bp), so for example process
 the method also generates a global metadata file (restart.bp) which tracks all 
 the variables in each subfile. 
 
+\begin{lstlisting}[]
 \$ mpirun -np 4 2\_adios\_write
-
 \$ ls restart.bp
 
 restart.bp
-
 restart.bp.dir:
-
 restart.bp.0  restart.bp.1  restart.bp.2  restart.bp.3
 
-\$ bpls -lad restart.bp.dir/restart.bp.2 -n 10
-
-\parindent=7pt
-integer    /NX                       scalar = 10 
-
-double     /temperature              \{10\} = 20 / 29 
-
-\parindent=14pt
-(0)    20 21 22 23 24 25 26 27 28 29 
-
-\parindent=0pt
-string     /temperature/description  attr   = \texttt{"}Temperature array\texttt{"}\label{HToc84890296}\label{HToc212016672}\label{HToc212016914}\label{HToc182553444}
+$ bpls -lad restart.bp.dir/restart.bp.2 -n 10
+ 
+  integer    /NX                       scalar = 10 
+  double     /temperature              {10} = 20 / 29 
+    (0)    20 21 22 23 24 25 26 27 28 29 
+  string     /temperature/description  attr   = "Temperature"
+\end{lstlisting}
 
 \section{MPI-IO transport method (P writers, 1 file)}
 
@@ -263,30 +189,26 @@ changing or recompiling the source code.
 
 One entry change in the config.xml file can switch from POSIX to MPI:
 
-\leftskip=18pt
-\texttt{<}method group=''temperature'' method=''{\color{color02} \textbf{MPI''}}/\texttt{>}
+\begin{lstlisting}[language=XML]
+<method group="temperature" method="MPI">
+\end{lstlisting}
 
-\leftskip=0pt
 The MPI communicator is passed as an argument of adios\_open(). Because it is defined 
 as MPI\_COMM\_WORLD in the posix example already, the program does not need to 
 be modified or recompiled.
 
-\$ mpirun -np 4 2\_adios\_write
-
-\$ ls restart.bp
+\begin{lstlisting}
+$ mpirun -np 4 2_adios_write
+$ ls restart.bp
 
 restart.bp
-
-\$ bpls -l restart.bp
+$ bpls -l restart.bp
 
 Group temperature:
+    integer    /NX           scalar = 10 
+    double     /temperature  {10} = 0 / 39
+\end{lstlisting}
 
-\parindent=7pt
-integer    /NX           scalar = 10 
-
-double     /temperature  {\color{color06} \textbf{\{10\}}} = 0 / 39
-
-\parindent=0pt
 There are several ways to verify the binary results. We can either choose bpdump 
 to display the content of the file or use one of the converters (bp2ncd, bp2h5, 
 or bp2ascii), to produce the user's preferred file format (NetCDF, HDF5 or ASCII, 
@@ -301,7 +223,7 @@ This example, however, can be used for checkpoint/restart files where the applic
 would only read in data from the same number of processes as it was written (see 
 next example). The transparent switch between the POSIX and MPI methods allows 
 the user choose the better performing method for a particular system without changing 
-the source code. \label{HToc84890297}\label{HToc212016673}\label{HToc212016915}\label{HToc182553445}
+the source code. 
 
 \section{Reading data from the same number of processors}
 
@@ -315,89 +237,51 @@ illustrate how to easily change the code and xml file to read a variable.
 
 3. Insert \#include ``gread\_temperature.ch''
 
+\begin{lstlisting}[language=C,caption=Example of a generated gread\_temperature.ch 
+file examples/C/manual/3\_adios\_read.c]
 /*Read in data on same number of processors */
-
-\#include \texttt{<}stdio.h\texttt{>}
-
-\#include \texttt{"}mpi.h\texttt{"}
-
-\#include \texttt{"}adios.h\texttt{"}
+#include <stdio.h>
+#include "mpi.h"
+#include "adios.h"
 
 int main (int argc, char ** argv) 
+{
+    char           filename [256];
+    int              rank;
+    int              NX = 10;
+    double      t[NX];
 
-\{
+    /* ADIOS variables declarations for matching gread_temperature.ch */
+    int                  adios_err;
+    uint64_t       adios_groupsize, adios_totalsize, adios_buf_size;
+    int64_t          adios_handle;
+    MPI_Comm  comm =  MPI_COMM_WORLD;
 
-\leftskip=18pt
-char      \textbf{    } filename [256];
-
-int              rank;
-
-int              NX\textbf{ }=\textbf{ }10;
-
-double      t[NX];
-
-/* ADIOS variables declarations for matching gread\_temperature.ch */
-
-int                  adios\_err;
-
-uint64\_t       adios\_groupsize, adios\_totalsize{\color{color02} , adios\_buf\_size};
-
-int64\_t          adios\_handle;
-
-MPI\_Comm  comm =  MPI\_COMM\_WORLD;
-
-MPI\_Init (\&argc, \&argv);
-
-MPI\_Comm\_rank (MPI\_COMM\_WORLD, \&rank);
-
-sprintf (filename, \texttt{"}restart.bp\texttt{"});
-
-adios\_init (\texttt{"}config.xml\texttt{"});
-
-adios\_open (\&adios\_handle, \texttt{"}temperature\texttt{"}, filename, {\color{color02} \texttt{"}r\texttt{"}}, 
-\&comm);
-
-{\color{color02} \#include \texttt{"}gread\_temperature.ch\texttt{"}}
-
-adios\_close (adios\_handle);
-
-adios\_finalize (rank);
-
-MPI\_Finalize ();
-
-return 0;
-
-\leftskip=0pt
-\}
-
-\label{HRef119580520}\label{HToc144350186}
-
-\begin{center}
-{\color{color20} \textbf{Figure 27. Read in data generated by 2\_adios\_write using 
-gread\_temperature.ch}}
-
-{\color{color20} \textbf{(examples/C/manual/3\_adios\_read.c)}}
-\end{center}
+    MPI_Init (&argc, &argv);
+    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+    sprintf (filename, "restart.bp");
+    adios_init ("config.xml");
+    adios_open (&adios_handle, "temperature", filename, "r", &comm);
+#include "gread_temperature.ch"
+    adios_close (adios_handle);
+    adios_finalize (rank);
+    MPI_Finalize ();
+    return 0;
+}
+\end{lstlisting}
 
 The gread\_temperature.ch file generated by gpp.py is the following:
 
-/* gread\_temperature.ch */
+\begin{lstlisting}[caption=Example of a generated gread\_temperature.ch 
+file]
 
-adios\_group\_size (adios\_handle, adios\_groupsize, \&adios\_totalsize);
-
-adios\_buf\_size = 4;
-
-adios\_read (adios\_handle, \texttt{"}NX\texttt{"}, \&NX, adios\_buf\_size);
-
-adios\_buf\_size = NX;
-
-adios\_read (adios\_handle, \texttt{"}temperature\texttt{"}, t, adios\_buf\_size);
-
-\label{HToc144350187}
-
-\leftskip=18pt
-{\color{color20} \textbf{Figure 28. Example of a generated gread\_temperature.ch 
-file\label{HToc182553446}}}
+/* gread_temperature.ch */
+adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
+adios_buf_size = 4;
+adios_read (adios_handle, "NX", &NX, adios_buf_size);
+adios_buf_size = NX;
+adios_read (adios_handle, "temperature", t, adios_buf_size);
+\end{lstlisting}
 
 \section{Writing to Shared Files (P writers, N files)}
 
