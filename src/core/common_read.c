@@ -76,10 +76,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
                 errno = 0;
                 verbose_level = strtol(p->value, NULL, 10);
                 if (errno) {
-                    save = adios_verbose_level;
-                    adios_verbose_level = 1;
                     log_error ("Invalid 'verbose' parameter passed to read init function: '%s'\n", p->value);
-                    adios_verbose_level = save;
                     verbose_level = 1; // print errors only
                 }
             } else {
