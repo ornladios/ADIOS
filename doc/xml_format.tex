@@ -19,8 +19,7 @@ the data reorganization or selection code that may be interspersed with the writ
 calls. It is useful that the XML name attributes are just strings. The only restrictions 
 for their content are that if the item is to be used in a dataset dimension, it 
 must not contain commas and must contain at least one non-numeric character. This 
-is useful for incorporating expressions as various array dimensions elements. Figure 
-3 illustrates the corresponding XML configuration for the example we demonstrated 
+is useful for incorporating expressions as various array dimensions elements. Listing~\ref{list-xml-conf-example} llustrates the corresponding XML configuration for the example we demonstrated 
 in Figure 1. 
 
 At a minimum, a configuration document must declare an adios-config element. It 
@@ -32,7 +31,7 @@ The main elements of the xml file format are of the format
 <element-name attr1 attr2 ...>
 \end{lstlisting}
 
-\begin{lstlisting}[language=XML, caption=Example XML configuration]
+\begin{lstlisting}[language=XML, caption={Example XML configuration}, label=list-xml-conf-example]
 <adios-config> 
 	<adios-group>
 		<var />......
@@ -274,7 +273,7 @@ methods, described in Section 6:
 
 \section{Buffer specification}
 The buffer element defines the attributes for internal buffer size and creating 
-time that apply to the whole application (Figure 4). The attribute allocate-time 
+time that apply to the whole application (Listing~\ref{list-example-xml}). The attribute allocate-time 
 is identified as being either{\small  ``}now'' or ``oncall'' to indicate when the 
 buffer should be allocated. An ``oncall'' attribute waits until the programmer 
 decides that all memory needed for calculation has been allocated. It then calls 
@@ -350,7 +349,7 @@ are provided.
 
 \section{An Example XML file}
 
-\begin{lstlisting}[language=XML, caption=Example XML file.]
+\begin{lstlisting}[language=XML, caption={Example XML file.}, label=list-example-xml]
 <adios-config host-language="C">	<adios-group name="temperature" coordination-communicator="comm">		<var name="NX" type="integer"/>		<var name="t" type="double" dimensions="NX"/>
 		<attribute name="recorded date" path="/" value="Sep 19, 2008" 
 			type="string"/> 
