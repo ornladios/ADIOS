@@ -23,6 +23,8 @@
 #include "core/adios_internals_mxml.h"
 #include "core/buffer.h"
 #include "core/adios_transport_hooks.h"
+#include "core/adios_logger.h"
+#include "public/adios_error.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -104,9 +106,9 @@ int common_adios_open (int64_t * fd, const char * group_name
                     mode = adios_mode_update;
                 else
                 {
-                    fprintf (stderr, "adios_open: unknown file mode: %s\n"
-                            ,file_mode
-                            );
+                    adios_error(err_invalid_file_mode, 
+                        "adios_open: unknown file mode: %s, supported r,w,a,u\n",
+                        file_mode);
 
                     *fd = 0;
 
@@ -193,7 +195,7 @@ int common_adios_group_size (int64_t fd_p
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
-        fprintf (stderr, "Invalid handle passed to adios_group_size\n");
+        adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_group_size\n");
 
         return 1;
     }
@@ -224,8 +226,10 @@ int common_adios_group_size (int64_t fd_p
             def_adios_init_attrs = 0;
 
         if (def_adios_init_attrs) {
-            fprintf (stderr, "DEFINE ADIOS ATTRS, time = %d, rank = %d, epoch = %s subfile=%d\n", 
-                    fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
+            log_debug ("Define ADIOS extra attributes, "
+                       "time = %d, rank = %d, epoch = %s subfile=%d\n", 
+                       fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
+
             adios_common_define_attribute ((int64_t)fd->group, "version", ADIOS_ATTR_PATH, 
                     adios_string, VERSION, NULL);
 
@@ -248,8 +252,11 @@ int common_adios_group_size (int64_t fd_p
             struct adios_attribute_struct * attr = adios_find_attribute_by_id
                    (fd->group->attributes, fd->group->attrid_update_epoch); 
             if (attr) {
-                fprintf (stderr, "UPDATE ADIOS ATTR name=%s, time = %d, rank = %d, epoch = %s, subfile=%d\n", 
-                         attr->name, fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
+                log_debug ("Update ADIOS extra attribute name=%s, "
+                           "time = %d, rank = %d, epoch = %s, subfile=%d\n", 
+                           attr->name, fd->group->time_index, fd->group->process_id, 
+                           epoch, fd->subfile_index);
+
                 free(attr->value);
                 adios_parse_scalar_string (adios_integer, (void *) epoch, &attr->value);
             }
@@ -273,10 +280,9 @@ int common_adios_group_size (int64_t fd_p
     {
         fd->shared_buffer = adios_flag_no;
 
-        fprintf (stderr, "adios_group_size (%s): Not buffering. "
-                         "needs: %llu available: %llu.\n"
-                ,fd->group->name, fd->write_size_bytes, allocated
-                );
+        log_warn ("adios_group_size (%s): Not buffering. "
+                  "needs: %llu available: %llu.\n", 
+                  fd->group->name, fd->write_size_bytes, allocated);
     }
     else
     {
@@ -321,7 +327,7 @@ int common_adios_group_size (int64_t fd_p
         fd->bytes_written = 0;
         if (!fd->buffer)
         {
-            fprintf (stderr, "Cannot allocate %llu bytes for buffered output.\n",
+            adios_error (err_no_memory, "Cannot allocate %llu bytes for buffered output.\n",
                     fd->write_size_bytes);
 
             return 1;
@@ -392,7 +398,7 @@ int common_adios_get_write_buffer (int64_t fd_p, const char * name
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
-        fprintf (stderr, "Invalid handle passed to adios_get_write_buffer\n");
+        adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_group_size\n");
 
         return 1;
     }
@@ -403,20 +409,17 @@ int common_adios_get_write_buffer (int64_t fd_p, const char * name
 
     if (!v)
     {
-        fprintf (stderr
-                ,"Bad var name (ignored): '%s' (%c%c%c)\n"
-                ,name, name[0], name[1], name[2]
-                );
+        adios_error (err_invalid_varname, "Bad var name (ignored): '%s' (%c%c%c)\n",
+                     name, name[0], name[1], name[2]);
 
         return 1;
     }
 
     if (fd->mode == adios_mode_read)
     {
-        fprintf (stderr, "write attempted on %s in %s.  This was opened for"
-                         " read\n"
-                ,name , fd->name
-                );
+        adios_error (err_invalid_file_mode, 
+                     "write attempted on %s in %s. This was opened for read\n",
+                     name , fd->name);
 
         return 1;
     }
@@ -449,7 +452,7 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
-        fprintf (stderr, "Invalid handle passed to adios_read\n");
+        adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_group_size\n");
 
         return 1;
     }
@@ -464,9 +467,9 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
 
     if (!(fd->mode == adios_mode_read))
     {
-        fprintf (stderr, "read attempted on %s which was opened for write\n"
-                ,fd->name
-                );
+        adios_error (err_invalid_file_mode, 
+                     "read attempted on %s which was opened for write\n",
+                     fd->name);
 
         return 1;
     }
@@ -495,9 +498,8 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
     }
     else
     {
-        fprintf (stderr, "var %s in file %s not found on read\n"
-                ,name, fd->name
-                );
+        adios_error (err_invalid_varname, "var %s in file %s not found on read\n",
+                     name, fd->name);
 
         return 1;
     }
@@ -511,7 +513,7 @@ int common_adios_set_path (int64_t fd_p, const char * path)
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
-        fprintf (stderr, "Invalid handle passed to adios_set_path\n");
+        adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_set_path\n");
 
         return 1;
     }
@@ -554,7 +556,7 @@ int common_adios_set_path_var (int64_t fd_p, const char * path
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
-        fprintf (stderr, "Invalid handle passed to adios_set_path_var\n");
+        adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_set_path_var\n");
 
         return 1;
     }
@@ -575,9 +577,9 @@ int common_adios_set_path_var (int64_t fd_p, const char * path
     }
     else
     {
-        fprintf (stderr, "adios_set_path_var (path=%s, var=%s): var not found\n"
-                ,path, name
-                );
+        adios_error (err_invalid_varname, 
+                     "adios_set_path_var (path=%s, var=%s): var not found\n",
+                     path, name);
 
         return 1;
     }
@@ -654,7 +656,7 @@ int common_adios_close (int64_t fd_p)
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
-        fprintf (stderr, "Invalid handle passed to adios_close\n");
+        adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_close\n");
 
         return 1;
     }
