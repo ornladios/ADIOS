@@ -92,7 +92,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
         }
         else if (!strcasecmp (p->name, "abort_on_error")) 
         {
-            adios_abort_on_error();
+            adios_abort_on_error = 1;
             save = adios_verbose_level;
             adios_verbose_level = 2;
             log_warn ("ADIOS is set to abort on error\n");
