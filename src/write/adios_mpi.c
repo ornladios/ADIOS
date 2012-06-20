@@ -47,8 +47,6 @@ struct adios_MPI_data_struct
     int rank;
     int size;
 
-    void * comm; // used to pass from open to should_buffer until cleaned up
-
     struct adios_bp_buffer_struct_v1 b;
 
     struct adios_index_process_group_struct_v1 * old_pg_root;
@@ -409,10 +407,19 @@ int adios_mpi_open (struct adios_file_struct * fd
     gettimeofday (&timing.t0, NULL); // only used on rank == size - 1, but we don't
                               // have the comm yet to get the rank/size
 #endif
-    // we have to wait for the group_size (should_buffer) to get the comm
-    // before we can do an open for any of the modes
-    md->comm = comm;
     adios_buffer_struct_clear (&md->b);
+
+    adios_var_to_comm (fd->group->group_comm
+                      ,fd->group->adios_host_language_fortran
+                      ,comm
+                      ,&md->group_comm
+                      );
+    if (md->group_comm != MPI_COMM_NULL)
+    {
+        MPI_Comm_rank (md->group_comm, &md->rank);
+        MPI_Comm_size (md->group_comm, &md->size);
+    }
+    fd->group->process_id = md->rank;
 
 #if COLLECT_METRICS
     timing.write_count = 0;
@@ -420,6 +427,10 @@ int adios_mpi_open (struct adios_file_struct * fd
     if (timing.t24) free (timing.t24);
     timing.t24 = 0;
 #endif
+
+    // we have to wait for the group_size (should_buffer) 
+    // to calculate stripe sizes from output sizes of the processes
+    // before we can do an open for any of the modes
 
     return 1;
 }
@@ -646,18 +657,6 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf (name, "%s%s", method->base_path, fd->name);
-
-    adios_var_to_comm (fd->group->group_comm
-                      ,fd->group->adios_host_language_fortran
-                      ,md->comm
-                      ,&md->group_comm
-                      );
-    if (md->group_comm != MPI_COMM_NULL)
-    {
-        MPI_Comm_rank (md->group_comm, &md->rank);
-        MPI_Comm_size (md->group_comm, &md->size);
-    }
-    fd->group->process_id = md->rank;
 
     if (md->rank == md->size - 1)
         next = -1;
