@@ -16,6 +16,8 @@
 #include "core/adios_transport_hooks.h"
 #include "core/futils.h"
 #include "core/globals.h"
+#include "public/adios_error.h"
+#include "core/adios_logger.h"
 
 #ifdef __cplusplus
 extern "C"  /* prevent C++ name mangling */
@@ -117,7 +119,7 @@ void FC_FUNC_(adios_write, adios_WRITE)
     struct adios_file_struct * fd = (struct adios_file_struct *) *fd_p;
     if (!fd)
     {
-        fprintf (stderr, "Invalid handle passed to adios_write\n");
+        adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_write\n");
         *err = 1;
         return;
     }
@@ -146,7 +148,7 @@ void FC_FUNC_(adios_write, adios_WRITE)
 
     if (!v)
     {
-        fprintf (stderr, "Bad var name (ignored): '%s'\n", buf1);
+        adios_error (err_invalid_varname, "Bad var name (ignored): '%s'\n", buf1);
         *err = 1;
         free (buf1);
         return;
@@ -158,7 +160,7 @@ void FC_FUNC_(adios_write, adios_WRITE)
             && v->is_dim != adios_flag_yes
            )
         {
-            fprintf (stderr, "write attempted on %s in %s.  This was opened for read\n" ,buf1 , fd->name);
+            adios_error (err_invalid_file_mode, "write attempted on %s in %s.  This was opened for read\n" ,buf1 , fd->name);
             *err = 1;
             free (buf1);
             return;
@@ -167,7 +169,7 @@ void FC_FUNC_(adios_write, adios_WRITE)
 
     if (!var)
     {
-        fprintf (stderr, "Invalid data: %s\n", buf1);
+        adios_error (err_invalid_data, "Invalid data (NULL pointer) passed to write for variable %s\n", buf1);
         *err = 1;
         free (buf1);
         return;
@@ -242,12 +244,9 @@ void FC_FUNC_(adios_write, adios_WRITE)
                 v->data = malloc (element_size);
                 if (!v->data)
                 {
-                    fprintf (stderr, "cannot allocate %llu bytes to copy "
-                                     "scalar %s\n"
-                            ,element_size
-                            ,v->name
-                            );
-
+                    adios_error (err_no_memory, 
+                                 "In adios_write, cannot allocate %lld bytes to copy scalar %s\n",
+                                 element_size, v->name);
                     *err = 1;
                     free (buf1);
                     return;
@@ -259,12 +258,9 @@ void FC_FUNC_(adios_write, adios_WRITE)
                 v->data = futils_fstr_to_cstr (var, var_size);
                 if (!v->data)
                 {
-                    fprintf (stderr, "cannot allocate %llu bytes to copy "
-                                     "scalar %s\n"
-                            ,element_size
-                            ,v->name
-                            );
-
+                    adios_error (err_no_memory, 
+                                 "In adios_write, cannot allocate %lld bytes to copy string %s\n",
+                                 element_size, v->name);
                     *err = 1;
                     free (buf1);
                     return;
