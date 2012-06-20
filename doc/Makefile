@@ -1,6 +1,7 @@
 
 all:
 	pdflatex ADIOS-Manual
+	pdflatex ADIOS-Manual
 
 clean:
 	rm -f *.aux
