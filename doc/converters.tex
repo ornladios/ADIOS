@@ -41,16 +41,22 @@ Sometimes, scientists want to extract one variable with all the time steps or wa
 to extract several variables at the same time steps and store the resulting data 
 in ASCII format. The Bp2ascii converter tool allows users to accomplish those tasks. 
 
-Bp2ascii bp\_filename -v x1 ... xn [-c/-r] -t m,n
+\begin{lstlisting}[language=C,caption={},label={}]
+bp2ascii bp_filename -v x1 ... xn [-c/-r] -t m,n
+\end{lstlisting}
 
--v - specify the variables need to be printed out in ASCII file
+\begin{itemize}
+\item[-v] - specify the variables need to be printed out in ASCII file
 
--c -print variable values for all the time steps in column
+\item[-c] - print variable values for all the time steps in column
 
--r - print variable values for all the time steps in row
+\item[-r] - print variable values for all the time steps in row
 
--t - print variable values for time step m to n,  if not defined, all the time 
+\item[-t] - print variable values for time step m to n,  if not defined, all the time 
 steps will be printed out.
+\end{itemize}
+
+
 
 \section{Parallel Converter Tools}
 
