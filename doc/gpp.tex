@@ -1,4 +1,3 @@
-%\chapter*{{\Large \textbf{11 Group read/write process }}}
 \chapter{Group Read/Write Process}
 
 In ADIOS, we provide a python script, which takes a configuration file name as 
@@ -12,74 +11,76 @@ calls for all the variables defined inside adios-group. One need to use only the
 and adios\_close.
 
 Users either type the following command line or incorporate it into a Makefile:
+\\
+\\
+\verb+python gp.py+
 
-python gpp.py \texttt{<}config\_fname\texttt{>}\label{HToc84890287}\label{HToc212016663}\label{HToc212016905}\label{HToc182553436}
-
-\section*{{\large 11.1 }{\large \textbf{Gwrite/gread/read}}}
+\section{Gwrite/gread/read}
 
 Below are a few example of the mapping from var element to adios\_write/read:
 
 In adios-group ``weather'', we have a variable declared in the following forms:
 
-1) \texttt{<}var name=''temperature'' gwrite=''t'' gread=''t\_read'' type=''adios\_double'' 
-dimensions=''NX''/\texttt{>}
-
+\begin{enumerate}
+\item \verb+<var name="temperature" gwrite="t" gread="t_read" type="adios_double" dimensions="NX"/>}+
+\\
 When the python command is executed, two files are produced, gwrite\_weather.ch 
 and gread\_weather.ch. The gwrite\_weather.ch command contains 
-
-adios\_write (adios\_handle, ``temperature'', t);
-
+\\
+\verb+adios_write (adios_handle, "temperature", t);+
+\\
 while gread\_weather.ch contains
+\\
+\verb+adios_read (adios_handle, "temperature", t_read);+
 
-adios\_read (adios\_handle, ``temperature'', t\_read).
-
-2) \texttt{<}var name=''temperature'' gwrite=''t'' gread=''t\_read'' type=''adios\_double'' 
-dimensions=''NX'' \textit{read=''no''}/\texttt{>}
-
+\item \verb+<var name="temperature" gwrite="t" gread="t_read" type="adios_double" dimensions="NX" read="no"/>+
+\\
 In this case, only the adios\_write statement is generated in gwrite\_weather.ch. 
 The adios\_read statement is not generated because the value of attribute read 
 is set to ``no''. 
 
-3) \texttt{<}var name=''temperature'' gread=''t\_read'' type=''adios\_double'' 
-dimensions=''NX'' /\texttt{>}
+\item \verb+<var name="temperature" gread="t_read" type="adios_double" dimensions="NX" />+
+\\
+\verb+adios_write (adios_handle, "temperature", temperature);+
+\\
+\verb+adios_read (adios_handle, "temperature", t_read)};+
 
-adios\_write (adios\_handle, ``temperature'', temperature)
+\item \verb+<var name="temperature" gwrite="t" type="adios_double" dimensions="NX" />+
+\\
+\verb+adios_write (adios_handle, "temperature", t);+
+\\
+\verb+adios_read (adios_handle, "temperature", temperature);+
 
-adios\_read (adios\_handle, ``temperature'', t\_read).
+\end{enumerate}
 
-4) \texttt{<}var name=''temperature'' gwrite=''t'' type=''adios\_double'' dimensions=''NX'' 
-/\texttt{>}
 
-adios\_write (adios\_handle, ``temperature'', t)
 
-adios\_read (adios\_handle, ``temperature'', temperature)\label{HToc84890288}\label{HToc212016664}\label{HToc212016906}\label{HToc182553437}
-
-\section*{{\large 11.2 }{\large \textbf{Add conditional expression}}}
+\section{Add conditional expression}
 
 Sometimes, the adios\_write routines are not perfectly written out one after another. 
 There might be some conditional expressions or loop statements. The following example 
 will show you how to address this type of issue via XML editing.
 
-\texttt{<}gwrite src=''if (rank == 0) \{''/\texttt{>}
+\begin{lstlisting}[language=XML]
+<gwrite src="if (rank == 0) {"/>
 
-\leftskip=18pt
-\texttt{<}var name=''temperature'' gwrite=''t'' gread=''t\_read'' type=''adios\_double'' 
-dimensions=''NX'' read=''no''/\texttt{>}
+<var name="temperature" gwrite="t" gread="t_read" type="adios_double" dimensions="NX" read="no"/>
 
-\leftskip=0pt
-\texttt{<}gwrite src=''\}''/\texttt{>}
+<gwrite src="}"/>
+\end{lstlisting}
 
-Rerun the python command; the following statements will be generated in gwrite\_weather.ch,
+Rerun the python command; the following statements will be generated in
+gwrite\_weather.ch,
 
-if (mype==0) \{
+\begin{lstlisting}
+if (mype==0) {
+adios_write (adios_handle, "temperature", t)
+}
+\end{lstlisting}
 
-adios\_write (adios\_handle, ``temperature'', t)
+gread\_weather.ch has same condition expression added.
 
-\}
-
-gread\_weather.ch has same condition expression added.\label{HToc84890289}\label{HToc212016665}\label{HToc212016907}\label{HToc182553438}
-
-\section*{{\large 11.3 }{\large \textbf{Dependency in Makefile}}}
+\section*{Dependency in Makefile}
 
 Since we include the header files in the source, the users need to include the 
-header files as a part of dependency rules in the Makefile.\label{HToc82067534}\label{HToc84890290}\label{HToc212016666}\label{HToc212016908}\label{HToc182553439}
+header files as a part of dependency rules in the Makefile.
