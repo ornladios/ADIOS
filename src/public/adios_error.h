@@ -32,10 +32,15 @@ enum ADIOS_ERRCODES {
     err_out_of_bound                    = -19,
 
     err_operation_not_supported         = -20,
-    err_end_of_stream                   = -21,    // stream: reached end of stream, returned by adios_read_open() or
-                          //         by adios_advance_step()
-    err_step_notready                   = -22,    // stream: tried to advance the step, but no new step has arrived yet
-    err_too_many_files                  = -23,   // some staging methods allow for using only a fixed number of different filenames
+    err_end_of_stream                   = -21, /* stream: reached end of stream, 
+                                                  returned by adios_read_open() or
+                                                           by adios_advance_step()         */
+    err_step_notready                   = -22, /* stream: tried to advance the step, 
+                                                  but no new step has arrived yet          */
+    err_step_disappeared                = -23, /* stream: tried to advance the step, 
+                                                  but next step has already disappeared    */
+    err_too_many_files                  = -24, /* some staging methods allow for using only
+                                                  a fixed number of different filenames    */
 
     // Write method errors
     err_invalid_file_mode               = -100,

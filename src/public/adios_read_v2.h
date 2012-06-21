@@ -277,8 +277,9 @@ int adios_read_close (ADIOS_FILE *fp);
  *  RETURN: 0 OK, !=0 on error (also sets adios_errno)
  *      
  *  Possible errors (adios_errno values):
- *       err_end_of_stream  Stream has ended, no more steps should be expected
- *       err_step_notready  The requested step is not yet available
+ *       err_end_of_stream    Stream has ended, no more steps should be expected
+ *       err_step_notready    The requested step is not yet available
+ *       err_step_disappeared The requested step is not available anymore
  */
 int adios_advance_step (ADIOS_FILE *fp, int last, float timeout_sec); 
 
