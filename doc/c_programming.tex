@@ -286,114 +286,68 @@ adios_read (adios_handle, "temperature", t, adios_buf_size);
 
 \section{Writing to Shared Files (P writers, N files)}
 
-\leftskip=0pt
 As the number of processes increases to tens or hundreds of thousands, the amount 
 of files will increase by the same magnitude if we use the POSIX method or a single 
 shared file may be too large if we use the MPI method. In this example we address 
 a scenario in which multiple processes write to N files. In the following example 
 (Figure 29), we write out N files from P processes. This is achieved by creating 
-a separate communicator for N subsets of the processes using MPI\_Comm\_split(). 
+a separate communicator for N subsets of the processes using
+MPI\_Comm\_split(). 
 
-\#include \texttt{<}stdio.h\texttt{>}
+\begin{lstlisting}[language=C,caption=Example ADIOS program writing N files
+  from P processors (N)]
 
-\#include \texttt{"}mpi.h\texttt{"}
-
-\#include \texttt{"}adios.h\texttt{"}
-
+#include <stdio.h>
+#include "mpi.h"
+#include "adios.h"
 int main (int argc, char ** argv) 
+{
+  char           filename [256];
+  int              rank, size;
+  int              NX = 10; 
+  int              N = 3;
+  double      t[NX];
+  
+  /* ADIOS variables declarations for matching gwrite_temperature.ch */
+  int                 adios_err;
+  uint64_t      adios_groupsize, adios_totalsize;
+  int64_t     adios_handle;
+  MPI_Comm comm;
 
-\{
+  int              color, key;
+  MPI_Init (&argc, &argv);
+  MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+  MPI_Comm_size (MPI_COMM_WORLD, &size);
+  
+  /* MPI_Comm_split partitions the world group into N disjointed  subgroups, 
+  * the processes are ranked in terms of the argument key  
+  *  a new communicator comm is returned for this specific grid configuration
+  */
+  color = rank % N;
+  key = rank / N;
+  MPI_Comm_split (MPI_COMM_WORLD, color, key, &comm);
+  
+  /* every P/N processes write into the same file 
+  * there are N files generated. 
+  */
+  sprintf (filename, "restart_%5.5d.bp", color);
+  adios_init ("config.xml");
+  adios_open (&adios_handle, "temperature", filename, "w", &comm);
+  #include "gwrite_temperature.ch"
+  adios_close (adios_handle);
+  adios_finalize (rank);
+  MPI_Finalize ();
+  return 0;
+}
+\end{lstlisting}
 
-\leftskip=18pt
-char      \textbf{    } filename [256];
 
-int              rank, size;
-
-int              NX\textbf{ }=\textbf{ }10; 
-
-{\color{color02} int              N = 3;}
-
-double      t[NX];
-
-/* ADIOS variables declarations for matching gwrite\_temperature.ch */
-
-int        \textbf{         }adios\_err;
-
-uint64\_t      adios\_groupsize, adios\_totalsize;
-
-int64\_t     adios\_handle;
-
-MPI\_Comm comm;
-
-/* 
-
-int              color, key;
-
-MPI\_Init (\&argc, \&argv);
-
-MPI\_Comm\_rank (MPI\_COMM\_WORLD, \&rank);
-
-MPI\_Comm\_size (MPI\_COMM\_WORLD, \&size);
-
-/* MPI\_Comm\_split partitions the world group into N disjointed  subgroups, 
-
-\parindent=7pt
-* the processes are ranked in terms of the argument key  
-
-*  a new communicator comm is returned for this specific grid configuration
-
-*/
-
-\parindent=0pt
-{\color{color02} \textbf{color = rank \% N;}}
-
-{\color{color02} \textbf{key = rank / N;}}
-
-{\color{color02} \textbf{MPI\_Comm\_split (MPI\_COMM\_WORLD, color, key, \&comm);}}
-
-/* every P/N processes write into the same file 
-
-\parindent=7pt
-* there are N files generated. 
-
-*/
-
-\parindent=0pt
-{\color{color02} \textbf{sprintf (filename, \texttt{"}restart\_\%5.5d.bp\texttt{"}, 
-color);}}
-
-adios\_init (\texttt{"}config.xml\texttt{"});
-
-adios\_open (\&adios\_handle, \texttt{"}temperature\texttt{"}, filename, \texttt{"}w\texttt{"}, 
-\&comm);
-
-\#include \texttt{"}gwrite\_temperature.ch\texttt{"}
-
-adios\_close (adios\_handle);
-
-adios\_finalize (rank);
-
-MPI\_Finalize ();
-
-return 0;
-
-\leftskip=0pt
-\}
-
-\label{HRef119579635}\label{HToc144350188}
-
-\leftskip=18pt
-{\color{color20} \textbf{Figure 29. Example ADIOS program writing N files from 
-P processors (N)}}
-
-\leftskip=0pt
 The reconstructed MPI communicator comm is passed as an argument of the adios\_open() 
 call. Therefore, in this example, each file is written by the processes in the 
 same communication domain.
 
 There is no need to change the XML file in this case because we are still using 
-the MPI method. \label{HToc84890299}\label{HToc212016675}\label{HToc212016917}\label{HRef119999389}\label{HToc182553447}
-
+the MPI method. 
 \section{Global Arrays}
 \label{section-globalarrays}
 
@@ -405,55 +359,27 @@ becomes a separate dimension. Each process is writing the one dimensional temper
 array of size NX and the result is a two dimensional array of size PxNX. Figure 
 30 shows how to define a global array in the XML file. 
 
-\texttt{<}?xml version=\texttt{"}1.0\texttt{"}?\texttt{>}
+\begin{lstlisting}[language=XML,caption=Config.xml for a global array 
+(examples/C/global-array/adios\_global.xml]
 
-\texttt{<}adios-config host-language=\texttt{"}C\texttt{"}\texttt{>}
+<?xml version="1.0"?>
+<adios-config host-language="C">
+    <adios-group name="temperature" coordination-communicator="comm">
+        <var name="NX" type="integer"/>
+        <var name="size" type="integer"/>
+        <var name="rank" type="integer"/>
+        <global-bounds dimensions="size,NX" offsets="rank,0">
+             <var name="temperature" gwrite="t" type="double" dimensions="1,NX"/>
+        </global-bounds>
+        <attribute name="description" path="/temperature"
+                    value="Global array written from 'size' processes" type="string"/>
+    </adios-group>
 
-\parindent=14pt
-\texttt{<}adios-group name=\texttt{"}temperature\texttt{"} coordination-communicator=\texttt{"}comm\texttt{"}\texttt{>}
+<method group="temperature" method="MPI"/>
+<buffer size-MB="2" allocate-time="now"/>
 
-\parindent=28pt
-\texttt{<}var name=\texttt{"}NX\texttt{"} type=\texttt{"}integer\texttt{"}/\texttt{>}
-
-\texttt{<}var name=\texttt{"}size\texttt{"} type=\texttt{"}integer\texttt{"}/\texttt{>}
-
-\parindent=57pt
-\texttt{<}var name=\texttt{"}rank\texttt{"} type=\texttt{"}integer\texttt{"}/\texttt{>}
-
-\parindent=0pt
-{\color{color02} \texttt{<}global-bounds dimensions=\texttt{"}size,NX\texttt{"} 
-offsets=\texttt{"}rank,0\texttt{"}\texttt{>}}
-
-\parindent=7pt
-{\color{color02} \texttt{<}var name=\texttt{"}temperature\texttt{"} gwrite=\texttt{"}t\texttt{"} 
-type=\texttt{"}double\texttt{"} dimensions=\texttt{"}1,NX\texttt{"}/\texttt{>}}
-
-\parindent=0pt
-{\color{color02} \texttt{<}/global-bounds\texttt{>}}
-
-\parindent=28pt
-\texttt{<}attribute name=\texttt{"}description\texttt{"} path=\texttt{"}/temperature\texttt{"}
-
-\parindent=72pt
-value=\texttt{"}Global array written from 'size' processes\texttt{"} type=\texttt{"}string\texttt{"}/\texttt{>}
-
-\parindent=14pt
-\texttt{<}/adios-group\texttt{>}
-
-\parindent=0pt
-\texttt{<}method group=\texttt{"}temperature\texttt{"} method=\texttt{"}MPI\texttt{"}/\texttt{>}
-
-\texttt{<}buffer size-MB=\texttt{"}2\texttt{"} allocate-time=\texttt{"}now\texttt{"}/\texttt{>}
-
-\texttt{<}/adios-config\texttt{>} 
-
-\label{HRef119581446}\label{HToc144350189}
-
-\begin{center}
-{\color{color20} \textbf{Figure 30. Config.xml for a global array }}
-
-{\color{color20} \textbf{(examples/C/global-array/adios\_global.xml)\label{HToc212017568}\label{HToc212017704}}}
-\end{center}
+</adios-config>
+\end{lstlisting}
 
 The variable is inserted into a \texttt{<}global-bounds\texttt{>}...\texttt{<}/global-bounds\texttt{>} 
 section. The global array's global dimension is defined by the variables size and 
@@ -466,123 +392,66 @@ C code it is still a one dimensional array.
 
 The gwrite header file generated by gpp.py is the following:
 
-/* gwrite\_temperature.ch */
+\begin{lstlisting}[language=C,caption=gwrite header file generated from
+  config.xml]
 
-adios\_groupsize = 4 \textbackslash{}
+/* gwrite_temperature.ch */
+adios_groupsize = 4 \
+                                + 4 \
+                                + 4 \
+                                + 8 * (1) * (NX);
+adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
+adios_write (adios_handle, "NX", &NX);
+adios_write (adios_handle, "size", &size);
+adios_write (adios_handle, "rank", &rank);
+adios_write (adios_handle, "temperature", t);
 
-\parindent=115pt
-+ 4 \textbackslash{}
+\end{lstlisting}
 
-+ 4 \textbackslash{}
-
-\parindent=230pt
-+ 8 * (1) * (NX);
-
-\parindent=0pt
-adios\_group\_size (adios\_handle, adios\_groupsize, \&adios\_totalsize);
-
-adios\_write (adios\_handle, \texttt{"}NX\texttt{"}, \&NX);
-
-{\color{color02} adios\_write (adios\_handle, \texttt{"}size\texttt{"}, \&size);}
-
-{\color{color02} adios\_write (adios\_handle, \texttt{"}rank\texttt{"}, \&rank);}
-
-adios\_write (adios\_handle, \texttt{"}temperature\texttt{"}, t);
-
-\label{HToc144350190}
-
-\leftskip=18pt
-{\color{color20} \textbf{Figure 31. gwrite header file generated from config.xml}}
-
-\leftskip=0pt
 The program code is not very different from the one used in the above example. 
 It needs to have the size and rank variables in the code defined (see examples/C/global-array/adios\_global.c) 
-\label{HToc182553448}
 
 \subsection{MPI-IO transport method (P writers, 1 file)}
 
-\$ mpirun -np 4 ./adios\_global
+\begin{lstlisting}
 
-\$ ls adios\_global.bp 
+$ mpirun -np 4 ./adios_global
+$ ls adios_global.bp 
+adios_global.bp
 
-adios\_global.bp
+$  bpls -latd adios_global.bp -n 10
+  
+ integer    /NX                       scalar = 10
+ integer    /rank                     scalar = 0
+ integer    /size                     scalar = 4
+ double     /temperature              {4, 10} = 0 / 39 / 19.5 / 11.5434  {MIN / MAX / AVG / STD_DEV}
+    (0,0)    0 1 2 3 4 5 6 7 8 9
+    (1,0)    10 11 12 13 14 15 16 17 18 19
+    (2,0)    20 21 22 23 24 25 26 27 28 29
+    (3,0)    30 31 32 33 34 35 36 37 38 39
 
-\$  bpls -latd adios\_global.bp -n 10
-
-integer    /NX                       scalar = 10
-
-\parindent=3pt
-integer    /rank                     scalar = 0
-
-integer    /size                     scalar = 4
-
-\parindent=7pt
-double     /temperature              \{4, 10\} = 0 / 39 / 19.5 / 11.5434  \{MIN 
-/ MAX / AVG / STD\_DEV\}
-
-\parindent=14pt
-(0,0)    0 1 2 3 4 5 6 7 8 9
-
-(1,0)    10 11 12 13 14 15 16 17 18 19
-
-\parindent=28pt
-(2,0)    20 21 22 23 24 25 26 27 28 29
-
-\parindent=14pt
-(3,0)    30 31 32 33 34 35 36 37 38 39
-
-\parindent=7pt
-string     /temperature/description  attr   = \texttt{"}Global array written from 
-'size' processes\texttt{"}
-
-\parindent=0pt
+  string     /temperature/description  attr   = "Global array written from 'size' processes"
 The bp2ncd utility can be used to convert the bp file to an NetCDF file:
 
-\$ bp2ncd adios\_global.bp
-
-\$ ncdump adios\_global.nc 
-
-netcdf adios\_global \{
-
+$ bp2ncd adios_global.bp
+$ ncdump adios_global.nc 
+netcdf adios_global {
 dimensions:
-
-\parindent=28pt
-NX = 10 ;
-
-size = 4 ;
-
-\parindent=57pt
-rank = 1 ;
-
-\parindent=0pt
+        NX = 10 ;
+        size = 4 ;
+        rank = 1 ;
 variables:
-
-\parindent=28pt
-double temperature(size, NX) ;
-
-\parindent=57pt
-temperature:description = \texttt{"}Global array written from \textbackslash{}'size\textbackslash{}' 
-processes\texttt{"} ;
-
-\parindent=0pt
+        double temperature(size, NX) ;
+                temperature:description = "Global array written from \'size\' processes" ;
 data:
 
-\parindent=3pt
-temperature =
-
-\parindent=7pt
-0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-
-10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-
-\parindent=14pt
-20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
-
-\parindent=7pt
-30, 31, 32, 33, 34, 35, 36, 37, 38, 39 ;
-
-\parindent=0pt
-\}\label{HToc182553449}
+ temperature =
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+  20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+  30, 31, 32, 33, 34, 35, 36, 37, 38, 39 ;
+}
+\end{lstlisting}
 
 \subsection{POSIX transport method (P writers, P Subfiles + 1 Metadata file)}
 
@@ -591,47 +460,31 @@ metadata file (e.g., adios\_global.bp) as a parameter to bpls, not each individu
 files (e.g., adios\_global.bp.dir/adios\_global.bp.0). The output of the POSIX 
 and the MPI methods are equivalent from reading point of view. 
 
-\$ mpirun -np 4 ./adios\_global
+\begin{lstlisting}
+$ mpirun -np 4 ./adios_global
+$ ls adios_global.bp 
+adios_global.bp
 
-\$ ls adios\_global.bp 
+$  bpls -latd adios_global.bp -n 10
+  
+ integer    /NX                       scalar = 10
+ integer    /rank                     scalar = 0
+ integer    /size                     scalar = 4
+ double     /temperature              {4, 10} = 
+           0 / 39 / 19.5 / 11.5434  {MIN / MAX / AVG / STD_DEV}
+    (0,0)    0 1 2 3 4 5 6 7 8 9
+    (1,0)    10 11 12 13 14 15 16 17 18 19
+    (2,0)    20 21 22 23 24 25 26 27 28 29
+    (3,0)    30 31 32 33 34 35 36 37 38 39
 
-adios\_global.bp
+  string     /temperature/description  attr   = 
+           "Global array written from 'size' processes"
 
-\$  bpls -latd adios\_global.bp -n 10
-
-integer    /NX                       scalar = 10
-
-\parindent=3pt
-integer    /rank                     scalar = 0
-
-integer    /size                     scalar = 4
-
-\parindent=7pt
-double     /temperature              \{4, 10\} = 
-
-\parindent=0pt
-0 / 39 / 19.5 / 11.5434  \{MIN / MAX / AVG / STD\_DEV\}
-
-\parindent=14pt
-(0,0)    0 1 2 3 4 5 6 7 8 9
-
-(1,0)    10 11 12 13 14 15 16 17 18 19
-
-\parindent=28pt
-(2,0)    20 21 22 23 24 25 26 27 28 29
-
-\parindent=14pt
-(3,0)    30 31 32 33 34 35 36 37 38 39
-
-\parindent=7pt
-string     /temperature/description  attr   = 
-
-\parindent=0pt
-\texttt{"}Global array written from 'size' processes\texttt{"}
+\end{lstlisting}
 
 The examples/C/global-array/adios\_read\_global.c program shows how to use the 
 generic read API to read in the global array from arbitrary number of processes. 
-\label{HToc84890303}\label{HToc212016678}\label{HToc212016920}\label{HToc182553450}
+
 
 \section{Writing Time-Index into a Variable}
 
@@ -646,122 +499,58 @@ in the global bounds, only the individual variable. Also note, that the time dim
 must be the slowest changing dimension, i.e. in C, the first one and in Fortran, 
 it must be the last one.
 
+\begin{lstlisting}[language=XML,caption=Config.xml for a global array with time
+(examples/C/global-array-time/adios\_globaltime.xml]
+
 /* config.xml*/
+<adios-config host-language="C">
+    <adios-group name="temperature" coordination-communicator="comm" time-index="iter">
+        <var name="NX" type="integer"/>
+        <var name="size" type="integer"/>
+        <var name="key" type="integer"/>
+        <global-bounds dimensions="size,NX" offsets="key,0">
+            <var name="temperature" gwrite="t" type="double" 
+                      dimensions="iter,1,NX"/>    (Note, for Fortran, "iter"
+                      needs to be put in the end, i.e., dimension="NX,1,iter") 
+        </global-bounds>
+        <attribute name="description" path="/temperature" 
+            value="Global array written from 'size' processes over several timesteps" 
+            type="string"/>
+    </adios-group>
+<method group="temperature" method="MPI"/>
+<buffer size-MB="1" allocate-time="now"/>
+</adios-config>
+\end{lstlisting}
 
-\texttt{<}adios-config host-language=\texttt{"}C\texttt{"}\texttt{>}
-
-\parindent=14pt
-\texttt{<}adios-group name=\texttt{"}temperature\texttt{"} coordination-communicator=\texttt{"}comm\texttt{"} 
-time-index=''{\color{color02} \textbf{iter''}}\texttt{>}
-
-\parindent=28pt
-\texttt{<}var name=\texttt{"}NX\texttt{"} type=\texttt{"}integer\texttt{"}/\texttt{>}
-
-\texttt{<}var name=\texttt{"}size\texttt{"} type=\texttt{"}integer\texttt{"}/\texttt{>}
-
-\parindent=57pt
-\texttt{<}var name=\texttt{"}key\texttt{"} type=\texttt{"}integer\texttt{"}/\texttt{>}
-
-\parindent=0pt
-{\color{color02} \texttt{<}global-bounds dimensions=\texttt{"}size,NX\texttt{"} 
-offsets=\texttt{"}key,0\texttt{"}\texttt{>}}
-
-{\color{color02} \texttt{<}var name=\texttt{"}temperature\texttt{"} gwrite=\texttt{"}t\texttt{"} 
-type=\texttt{"}double\texttt{"} }
-
-{\color{color02} dimensions=\texttt{"}}{\color{color02} \textbf{iter}}{\color{color02} ,1,NX\texttt{"}/\texttt{>} 
-   }{\color{color02} \textbf{(Note, for Fortran, ``iter'' needs to be put in the 
-end, i.e., dimension=''NX,1,iter'')}}
-
-\parindent=14pt
-{\color{color02} \texttt{<}/global-bounds\texttt{>}}
-
-\parindent=28pt
-\texttt{<}attribute name=\texttt{"}description\texttt{"} path=\texttt{"}/temperature\texttt{"} 
-
-\parindent=43pt
-value=\texttt{"}Global array written from 'size' processes over several timesteps\texttt{"} 
-
-type=\texttt{"}string\texttt{"}/\texttt{>}
-
-\parindent=57pt
-\texttt{<}/adios-group\texttt{>}
-
-\parindent=0pt
-\texttt{<}method group=\texttt{"}temperature\texttt{"} method=\texttt{"}MPI\texttt{"}/\texttt{>}
-
-\texttt{<}buffer size-MB=\texttt{"}1\texttt{"} allocate-time=\texttt{"}now\texttt{"}/\texttt{>}
-
-\texttt{<}/adios-config\texttt{>}
-
-\label{HToc144350191}
-
-\begin{center}
-{\color{color20} \textbf{Figure 32. Config.xml for a global array with time}}
-
-{\color{color20} \textbf{(examples/C/global-array-time/adios\_globaltime.xml)}}
-\end{center}
-
-\baselineskip=13pt
 The examples/C/global-array-time/adios\_globaltime.c is similar to the previous 
 example adios\_global.c code. The only difference is that it has an iteration loop 
 where each process writes out the data in each of its 13 iterations.
 
-\$ mpirun -np 4 ./adios\_read\_globaltime
-
-\$ bpls -la adios\_globaltime.bp 
-
+\begin{lstlisting}
+$ mpirun -np 4 ./adios_read_globaltime
+$ bpls -la adios_globaltime.bp 
 Group temperature:
+  integer    /NX                       scalar = 10
+  integer    /size                     scalar = 4
+  integer    /rank                     scalar = 0
+  double     /temperature              {13, 4, 10} = 100 / 1339 / 719.5 / 374.344  {MIN / MAX / AVG / STD_DEV}
+  string     /temperature/description  attr   = "Global array written from 'size' processes over several timesteps"
 
-\parindent=7pt
-integer    /NX                       scalar = 10
+A slice of two timesteps (6th and 7th), dumped with bpls:
+$ bpls adios_globaltime.bp -s "5,0,0" -c "2,-1,-1" -n 10 -d temperature
+  double     /temperature  {13, 4, 10}
+    slice (5:6, 0:3, 0:9)
+    
+    (5,0,0)    600 601 602 603 604 605 606 607 608 609
+    (5,1,0)    610 611 612 613 614 615 616 617 618 619
+    (5,2,0)    620 621 622 623 624 625 626 627 628 629
+    (5,3,0)    630 631 632 633 634 635 636 637 638 639
+    (6,0,0)    700 701 702 703 704 705 706 707 708 709
+    (6,1,0)    710 711 712 713 714 715 716 717 718 719
+    (6,2,0)    720 721 722 723 724 725 726 727 728 729
+    (6,3,0)    730 731 732 733 734 735 736 737 738 739 
 
-integer    /size                     scalar = 4
-
-\parindent=14pt
-integer    /rank                     scalar = 0
-
-\parindent=7pt
-double     /temperature              \{13, 4, 10\} = 100 / 1339 / 719.5 / 374.344 
- \{MIN / MAX / AVG / STD\_DEV\}
-
-string     /temperature/description  attr   = \texttt{"}Global array written from 
-'size' processes over several timesteps\texttt{"}\label{HToc84890304}\label{HToc212016679}\label{HToc212016921}
-
-\parindent=0pt
-A slice of two timesteps (6\textsuperscript{th} and 7\textsuperscript{th}), dumped 
-with bpls:
-
-\$ bpls adios\_globaltime.bp -s \texttt{"}5,0,0\texttt{"} -c \texttt{"}2,-1,-1\texttt{"} 
--n 10 -d temperature
-
-\parindent=7pt
-double     /temperature  \{13, 4, 10\}
-
-\parindent=14pt
-slice (5:6, 0:3, 0:9)
-
-\parindent=0pt
-(5,0,0)    600 601 602 603 604 605 606 607 608 609
-
-\parindent=14pt
-(5,1,0)    610 611 612 613 614 615 616 617 618 619
-
-(5,2,0)    620 621 622 623 624 625 626 627 628 629
-
-\parindent=28pt
-(5,3,0)    630 631 632 633 634 635 636 637 638 639
-
-\parindent=14pt
-(6,0,0)    700 701 702 703 704 705 706 707 708 709
-
-(6,1,0)    710 711 712 713 714 715 716 717 718 719
-
-\parindent=28pt
-(6,2,0)    720 721 722 723 724 725 726 727 728 729
-
-\parindent=14pt
-(6,3,0)    730 731 732 733 734 735 736 737 738 739 \label{HToc182553451}
+\end{lstlisting}
 
 \section{Reading statistics}
 
@@ -774,65 +563,34 @@ adios\_double\_complex along with ``temperature.''  It also has histogram enable
 for the variable ``temperature.''  Comparing it with the XML in the previous example, 
 stat.xml has the following additions:
 
+\begin{lstlisting}[language=XML,caption=Config.xml for creating histogram for an array variable
+(examples/C/stat/stat.xml)]
+
+Config.xml for creating histogram for an array variable
+(examples/C/stat/stat.xml)
 /* stat.xml*/
 
-\texttt{<}?xml version=\texttt{"}1.0\texttt{"}?\texttt{>}
+<?xml version="1.0"?>
+<adios-config host-language="C">
+ 	<adios-group name="temperature" coordination-communicator="comm" 
+time-index="iter">
+ 		<var name="NX" type="integer"/>
+ 		<var name="rank" type="integer"/>
+ 		<var name="size" type="integer"/>
+ 		<global-bounds dimensions="size,NX" offsets="rank,0">
+ 			<var name="temperature" gwrite="t" type="double"
+ 				dimensions="iter,1,NX"/>
+ 	<var name="complex" gwrite="c" type="double complex"
+ 				dimensions="iter,1,NX"/>
+ 		</global-bounds>
+</adios-group>
 
-\texttt{<}adios-config host-language=\texttt{"}C\texttt{"}\texttt{>}
-
-\texttt{<}adios-group name=\texttt{"}temperature\texttt{"} coordination-communicator=\texttt{"}comm\texttt{"} 
-
-\leftskip=36pt
-\parindent=36pt
-time-index=\texttt{"}iter\texttt{"}\texttt{>}
-
-\leftskip=0pt
-\parindent=0pt
-\texttt{<}var name=\texttt{"}NX\texttt{"} type=\texttt{"}integer\texttt{"}/\texttt{>}
-
-\texttt{<}var name=\texttt{"}rank\texttt{"} type=\texttt{"}integer\texttt{"}/\texttt{>}
-
-\texttt{<}var name=\texttt{"}size\texttt{"} type=\texttt{"}integer\texttt{"}/\texttt{>}
-
-\texttt{<}global-bounds dimensions=\texttt{"}size,NX\texttt{"} offsets=\texttt{"}rank,0\texttt{"}\texttt{>}
-
-\texttt{<}var name=\texttt{"}temperature\texttt{"} gwrite=\texttt{"}t\texttt{"} 
-type=\texttt{"}double\texttt{"}
-
-dimensions=\texttt{"}iter,1,NX\texttt{"}/\texttt{>}
-
-\parindent=36pt
-{\color{color02} \texttt{<}}{\color{color02} \textbf{var}}{\color{color02}  name=\texttt{"}complex\texttt{"} 
-gwrite=\texttt{"}c\texttt{"} }{\color{color02} \textbf{type=\texttt{"}double complex\texttt{"}}}
-
-\parindent=0pt
-{\color{color02} dimensions=\texttt{"}iter,1,NX\texttt{"}/\texttt{>}}
-
-\texttt{<}/global-bounds\texttt{>}
-
-\parindent=36pt
-\texttt{<}/adios-group\texttt{>}
-
-\parindent=0pt
-\texttt{<}method group=\texttt{"}temperature\texttt{"} method=\texttt{"}MPI\texttt{"}/\texttt{>}
-
-\texttt{<}buffer size-MB=\texttt{"}5\texttt{"} allocate-time=\texttt{"}now\texttt{"}/\texttt{>}
-
-{\color{color02} \texttt{<}}{\color{color02} \textbf{analysis}}{\color{color02}  
-adios-group=\texttt{"}temperature\texttt{"} var=\texttt{"}temperature\texttt{"}}
-
-{\color{color02} break-points=\texttt{"}0, 100, 1000, 10000\texttt{"} /\texttt{>}}
-
-\texttt{<}/adios-config\texttt{>}
-
-\label{HToc144350192}
-
-\begin{center}
-{\color{color20} \textbf{Figure 33. Config.xml for creating histogram for an array 
-variable}}
-
-{\color{color20} \textbf{(examples/C/stat/stat.xml)}}
-\end{center}
+ 	<method group="temperature" method="MPI"/>
+ 	<buffer size-MB="5" allocate-time="now"/>
+ 	<analysis adios-group="temperature" var="temperature"
+ 		break-points="0, 100, 1000, 10000" />
+</adios-config>
+\end{lstlisting}
 
 To include histogram calculation, only the XML file needs to be updated, and no 
 change is required in the C code. The examples/C/stat/gwrite\_stat.ch requires 
@@ -840,21 +598,22 @@ an additional {\color{color02} 8 * (2) * NX} to be added to adios\_groupsize and
 an adios\_write (adios\_handle, \texttt{"}complex\texttt{"}, \&c) to handle the 
 complex numbers.
 
-\$ mpirun -np 2 ./stat\_write
+\begin{lstlisting}
+$ mpirun -np 2 ./stat_write
+[1]: adios_stat.bp written successfully
+[0]: adios_stat.bp written successfully
+\end{lstlisting}
 
-[1]: adios\_stat.bp written successfully
-
-[0]: adios\_stat.bp written successfully
 
 The examples/C/stat/stat\_read.c shows how to read back the statistics from the 
 bp file. First, the statistics need to be populated into an ADIOS\_VARINFO object. 
 This is done with the following set of commands.
 
-ADIOS\_FILE * f = adios\_fopen (\texttt{"}adios\_stat.bp\texttt{"}, comm);
-
-ADIOS\_GROUP * g = adios\_gopen (f, \texttt{"}temperature\texttt{"});
-
-ADIOS\_VARINFO * v = adios\_inq\_var (g, \texttt{"}temperature\texttt{"});
+\begin{lstlisting}[language=C]
+ADIOS_FILE * f = adios_fopen ("adios_stat.bp", comm);
+ADIOS_GROUP * g = adios_gopen (f, "temperature");
+ADIOS_VARINFO * v = adios_inq_var (g, "temperature");
+\end{lstlisting}
 
 The object `v' now contains all the statistical information for the variable ``temperature.'' 
 To access the histogram for temperature, we need to access the ADIOS\_HIST data 
@@ -862,41 +621,33 @@ structure inside the ADIOS\_VARINFO object. The code below prints the break poin
 and the interval frequencies for the global histogram. For `n' break points there 
 are `n + 1' intervals.
 
+\begin{lstlisting}
 /* Break points */
-
-for (j = 0; j \texttt{<} v-\texttt{>}hist-\texttt{>}num\_breaks; j++)
-
-\parindent=28pt
-printf (\texttt{"}\%lf \texttt{"}, v-\texttt{>}hist-\texttt{>}breaks[j]);
-
-\parindent=0pt
+for (j = 0; j < v->hist->num_breaks; j++)
+        printf ("%lf ", v->hist->breaks[j]);
 /* Frequencies */
-
-for (j = 0; j \texttt{<}= v-\texttt{>}hist-\texttt{>}num\_breaks; j++)
-
-\parindent=28pt
-printf (\texttt{"}\%d\textbackslash{}t\texttt{"}, v-\texttt{>}hist-\texttt{>}gfrequencies[j]);
-
-\parindent=0pt
-adios\_free\_varinfo(v);
+for (j = 0; j <= v->hist->num_breaks; j++)
+        printf ("%d\t", v->hist->gfrequencies[j]);
+adios_free_varinfo(v);
+\end{lstlisting}
 
 To access the statistics related to the variable ``complex,'' we need:
-
+\\
+\\
+\texttt{
 v = adios\_inq\_var (g, \texttt{"}complex\texttt{"});
-
+}
+\\
+\\
 The code below describes how to print the minimum values of the magnitude, real 
 and imaginary part of complex data at each timestep. For complex variables alone, 
 all statistics need to be typecasted into a double format.
 
-double ** Cmin = (double **) v-\texttt{>}mins;
-
-printf (\texttt{"}\textbackslash{}nMagnitude  Real  Imaginary\textbackslash{}n\texttt{"});
-
-for (j = 0; v-\texttt{>}ndim \texttt{>}= 0 \&\&  (j \texttt{<} v-\texttt{>}dims[0]); 
-j ++) 
-
-printf (\texttt{"}\%lf \%lf \%lf\textbackslash{}n\texttt{"}, 
-
-Cmin[j][0], Cmin[j][1], Cmin[j][2]);
-
-adios\_free\_varinfo(v);\label{HToc82064268}\label{HToc82067516}\label{HToc84890309}\label{HToc212016684}\label{HToc212016926}\label{HToc82067538}\label{HToc182553452}
+\begin{lstlisting}[language=C]
+double ** Cmin = (double **) v->mins;
+printf ("\nMagnitude  Real  Imaginary\n");
+for (j = 0; v->ndim >= 0 &&  (j < v->dims[0]); j ++) 
+     printf ("%lf %lf %lf\n", 
+             Cmin[j][0], Cmin[j][1], Cmin[j][2]);
+adios_free_varinfo(v);
+\end{lstlisting}
