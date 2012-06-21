@@ -887,6 +887,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
             ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
             dart_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
                      ub[didx[0]], ub[didx[1]], ub[didx[2]],  indexbuf); 
+            free (indexbuf);
 
             /* Create and put FILE@fn header into space */
             char * file_info_buf; /* store FILE@fn's group list */
@@ -906,7 +907,17 @@ void adios_dataspaces_close (struct adios_file_struct * fd
             dart_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
                      ub[didx[0]], ub[didx[1]], ub[didx[2]], file_info_buf); 
 
-            free (indexbuf);
+            /* Create and put VERSION@fn version info into space */
+            int version_buf[2] = {version, 0}; /* last version put in space; not terminated */
+            int version_buf_len = sizeof(int)*2;
+            snprintf (ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", fd->name);
+            log_debug ("%s: put %s with buf = [%d,%d] (len=%d) into space\n", 
+                       __func__, ds_var_name, version_buf[0], version_buf[1], version_buf_len);
+            ub[0] = version_buf_len-1; ub[1] = 0; ub[2] = 0;
+            ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
+            dart_put(ds_var_name, 0, 1,    0, 0, 0, /* lb 0..2 */
+                     ub[didx[0]], ub[didx[1]], ub[didx[2]],  version_buf); 
+            
 
             // remember this filename for finalize
             int i;
@@ -950,19 +961,33 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
         method->method_data;
     int i;
     char ds_var_name[MAX_DS_NAMELEN];
+    int lb[3], ub[3], didx[3]; // for reordering DS dimensions
+    int value[2] = {4,1}; // integer to be written to space (terminated=1)
 
     if (p->rank == 0) {
         // tell the readers which files are finalized
-        //dart_lock_on_write("CLOSE");
+        ///lb[0] = sizeof(int); lb[1] = 0; lb[2] = 0;
+        lb[0] = 0; lb[1] = 0; lb[2] = 0;
+        ub[0] = 2*sizeof(int)-1; ub[1] = 0; ub[2] = 0;
+        ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
         for (i=0; i<p->num_of_files; i++) {
-            /* Put CLOSED@fn into space. Indicates that this file will not be extended anymore. */
-            snprintf(ds_var_name, MAX_DS_NAMELEN, "CLOSED@%s", p->fnames[i]);
-            log_debug ("%s: put %s with %d bytes into the space\n", __func__, ds_var_name, sizeof(int));
-            dart_put(ds_var_name, 0, sizeof(int),    0, 0, 0,    0, 0, 0, &i); 
+            /* Put VERSION@fn into space. Indicates that this file will not be extended anymore. 
+                Update only the 2nd integer to 1;
+            */
+            snprintf(ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", p->fnames[i]);
+            log_debug ("%s: update %s with %d bytes in the space\n", __func__, ds_var_name, sizeof(int));
+            log_debug("%s: call dart_lock_on_write(%s)\n", __func__, p->fnames[i]);
+            dart_lock_on_write(p->fnames[i]);
+            dart_put(ds_var_name, 0, 1,   
+                     lb[didx[0]], lb[didx[1]], lb[didx[2]], 
+                     ub[didx[0]], ub[didx[1]], ub[didx[2]],  
+                     &value); 
+            log_debug("%s: call dart_put_sync()\n", __func__);
+            dart_put_sync();
+            log_debug("%s: call dart_unlock_on_write(%s)\n", __func__, p->fnames[i]);
+            dart_unlock_on_write(p->fnames[i]);
             free (p->fnames[i]);
         }
-        //dart_put_sync();
-        //dart_unlock_on_write("CLOSE");
     }
 
     // disconnect from dataspaces if we are connected from writer but not anymore from reader

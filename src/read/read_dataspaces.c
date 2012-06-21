@@ -114,7 +114,7 @@ struct dataspaces_attr_struct { // describes one attribute (of one group)
 };*/
 
 struct dataspaces_data_struct { // accessible as fp->fh
-    int access_version;         // counting the access
+    int current_step;           // counting the access
     int disconnect_at_close;    // disconnect from DATASPACES in fclose()
     int mpi_rank;               // rank of this process
     int nproc;                  // number of processes opening this stream
@@ -137,7 +137,7 @@ struct dataspaces_data_struct { // accessible as fp->fh
 
 // Declarations
 static int adios_read_dataspaces_get (const char * varname, enum ADIOS_DATATYPES vartype, 
-                                struct dataspaces_data_struct * ds, 
+                                int version, int rank, 
                                 int ndims, int is_fortran_ordering, 
                                 int * offset, int * readsize, void * data);
 
@@ -495,7 +495,8 @@ static int get_groupdata (ADIOS_FILE *fp)
     snprintf (ds_name, MAX_DS_NAMELEN, "GROUP@%s/%s",fp->path, ds->group_name);
     log_debug("-- %s, rank %d: Get variable %s with size %d\n", __func__, 
               ds->mpi_rank, ds_name, readsize[0]);
-    err = adios_read_dataspaces_get(ds_name, adios_byte, ds, 1, 0, offset, readsize, group_info_buf);
+    err = adios_read_dataspaces_get (ds_name, adios_byte, ds->current_step, ds->mpi_rank, 
+                                     1, 0, offset, readsize, group_info_buf);
     if (err) {
         adios_error (err_invalid_group, "Invalid group name %s for file %s. "
                      "Entity %s could not be retrieved from DataSpaces\n",
@@ -516,27 +517,50 @@ static int get_groupdata (ADIOS_FILE *fp)
     return 0;
 }
 
+static void lock_file (ADIOS_FILE *fp, struct dataspaces_data_struct *ds)
+{
+    if (!ds->locked_fname) {
+        log_debug("   rank %d: call dart_lock_on_read(%s)\n", ds->mpi_rank, fp->path);
+        dart_lock_on_read(fp->path);
+        ds->locked_fname = 1;
+    //} else {
+    //    log_error("   rank %d: lock_file called with the lock already in place\n", ds->mpi_rank);
+    }
+}
 
-enum WHICH_VERSION {CURRENT_VERSION, NEXT_AVAILABLE_VERSION, LAST_VERSION};
+static void unlock_file (ADIOS_FILE *fp, struct dataspaces_data_struct *ds)
+{
+    if (ds->locked_fname) {
+        log_debug("   rank %d: call dart_unlock_on_read(%s)\n", ds->mpi_rank, fp->path);
+        dart_unlock_on_read(fp->path);
+        ds->locked_fname = 0;
+    //} else {
+    //    log_error("   rank %d: unlock_file called with the lock already released\n", ds->mpi_rank);
+    }
+}
+
+
+enum WHICH_VERSION {NEXT_VERSION, NEXT_AVAILABLE_VERSION, LAST_VERSION};
 static const char * which_version_str[3] = {"current", "next available", "last"};
+enum STEP_STATUS {STEP_OK, STEP_STREAMNOTFOUND, STEP_STEPNOTREADY, STEP_STEPDISAPPEARED, STEP_STREAMTERMINATED, STEP_OTHERERROR};
 
-static int get_step (ADIOS_FILE *fp, enum WHICH_VERSION which_version, float timeout_sec)
+static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version, float timeout_sec)
 {
     /* Try to get variable with fname. If it does not exists, we get an error, which means
        the data does not exist. So we return an error just like with real files */
     struct dataspaces_data_struct * ds = (struct dataspaces_data_struct *) fp->fh;
-    int offset[] = {0,0,0}, readsize[3] = {FILEINFO_BUFLEN,1,1};
+    int offset[] = {0,0,0}, readsize[3] = {1,1,1};
     char file_info_buf[FILEINFO_BUFLEN];
-    int err;
+    int version_info_buf[2]; // 0: last version, 1: terminated?
+    int err, i;
+    char ds_vname[MAX_DS_NAMELEN];
     char ds_fname[MAX_DS_NAMELEN];
     double t1 = adios_gettime();
+    enum STEP_STATUS step_status = STEP_OK;
 
+    snprintf(ds_vname, MAX_DS_NAMELEN, "VERSION@%s",fp->path);
     snprintf(ds_fname, MAX_DS_NAMELEN, "FILE@%s",fp->path);
-    log_debug("-- %s, rank %d: Get variable %s\n", __func__, ds->mpi_rank, ds_fname);
-    /* We perform dart_lock_on_read here and release it in fclose (using fname as id) */
-    log_debug("   rank %d: call dart_lock_on_read(%s)\n", ds->mpi_rank, fp->path);
-    dart_lock_on_read(fp->path);
-    ds->locked_fname = 1;
+    //log_debug("-- %s, rank %d: Get variable %s\n", __func__, ds->mpi_rank, ds_fname);
     ds->freed_mem = 0;
 
     /* While loop for handling timeout
@@ -544,84 +568,146 @@ static int get_step (ADIOS_FILE *fp, enum WHICH_VERSION which_version, float tim
        timeout = 0: wait forever
        timeout < 0: return immediately
     */
-    int stay_in_loop = 1;
+    int stay_in_poll_loop = 1;
     int found_stream = 0;
-    while (stay_in_loop) {
-        log_debug("   rank %d: dart_get %s\n", ds->mpi_rank, ds_fname);
-        err = adios_read_dataspaces_get(ds_fname, adios_byte, ds, 1, 0, offset, readsize, file_info_buf);
+    int nversions, *versions;
+    while (stay_in_poll_loop) {
+        lock_file (fp, ds);
+        step_status = STEP_OK;
+
+        log_debug("   rank %d: dart_get %s\n", ds->mpi_rank, ds_vname);
+        readsize[0] = 2*sizeof(int); // VERSION%name is 2 integers only
+        err = adios_read_dataspaces_get (ds_vname, adios_byte, 0, ds->mpi_rank, 1, 0, 
+                                         offset, readsize, version_info_buf);
+
         if (!err) {
-            /* Found object with this access version */
-            stay_in_loop = 0;
-            log_debug("-- %s, rank %d: data of '%s' exists\n", __func__, ds->mpi_rank, ds_fname);
+            int last_version = version_info_buf[0];
+            int terminated = version_info_buf[1];
+            log_debug("   rank %d: version info: last=%d, terminated=%d\n", 
+                      ds->mpi_rank, last_version, terminated);
 
-            err = ds_unpack_file_info (fp, file_info_buf, FILEINFO_BUFLEN);
-            if (!err) {
-                found_stream = 1;
-                fp->current_step = ds->access_version;
-                fp->last_step = ds->access_version;
-    
-                log_debug("-- %s, rank %d: done fp=%x, fp->fh=%x\n", __func__, 
-                        ds->mpi_rank, fp, fp->fh);
+            if (last_version < step) {
+                // we have no more new steps
+                if (terminated) {
+                    // stream is gone, we read everything 
+                    step_status = STEP_STREAMTERMINATED;
+                    stay_in_poll_loop = 0;
+                } else {
+                    // a next step may come 
+                    step_status = STEP_STEPNOTREADY;
+                    // we may stay in poll loop
+                }
+            } else {
+                // Try to get the version the user wants
+                if (which_version == LAST_VERSION)
+                    step = last_version;
+                readsize[0] = FILEINFO_BUFLEN; // FILE%name is FILEINFO_BUFLEN bytes long
 
-                /* Get the variables and attributes the (only) group separately */
-                err = get_groupdata (fp);
-                if (err) {
-                    // something went wrong with the group(s)
-                    found_stream = 0;
+                int max_check_version = last_version;
+                if (which_version == NEXT_VERSION) 
+                    max_check_version = step;
+
+                // Loop until we find what we need or go past the last version
+                do {
+                    log_debug("   rank %d: dart_get %s\n", ds->mpi_rank, ds_fname);
+                    err = adios_read_dataspaces_get (ds_fname, adios_byte, step, ds->mpi_rank, 
+                                                     1, 0, offset, readsize, file_info_buf);
+                    step++; // value will go over the target with 1
+                } while (err && step <= max_check_version);
+
+                if (!err) {
+                    /* Found object with this access version */
+                    step--; // undo the last increment above
+                    ds->current_step = step;
+                    stay_in_poll_loop = 0;
+                    log_debug("   rank %d: step %d of '%s' exists\n", 
+                            ds->mpi_rank, ds->current_step, ds_fname);
+
+                    err = ds_unpack_file_info (fp, file_info_buf, FILEINFO_BUFLEN);
+                    if (!err) {
+                        found_stream = 1;
+                        fp->current_step = ds->current_step;
+                        fp->last_step = last_version;
+
+                        /* Get the variables and attributes the (only) group separately */
+                        err = get_groupdata (fp);
+                        if (err) {
+                            // something went wrong with the group(s)
+                            step_status = STEP_OTHERERROR;
+                        }
+                    } else {
+                        // something went wrong with the file metadata
+                        step_status = STEP_OTHERERROR;
+                    }
+
+                } else {
+                    if (which_version == NEXT_VERSION) 
+                    {
+                        if (step < last_version) {
+                            step_status = STEP_STEPDISAPPEARED;
+                            stay_in_poll_loop = 0;
+                        } else {
+                            step_status = STEP_STEPNOTREADY;
+                            // we may stay in poll loop
+                        }
+                    } 
+                    else if (which_version == LAST_VERSION || 
+                             which_version == NEXT_AVAILABLE_VERSION) 
+                    {
+                        step_status = STEP_OTHERERROR;
+                        stay_in_poll_loop = 0;
+                        log_warn ("DATASPACES method: Unexpected state: found last version %d"
+                                "of dataset but then could not read it.\n", step);
+                    }
                 }
             }
 
         } else {
-
-            /* Check if this file is finalized by the writer */
-            char ds_cname[MAX_DS_NAMELEN];
-            int coffset[] = {0,0,0}, creadsize[3] = {1,1,1};
-            int cvalue; 
-            int save_version = ds->access_version;
-            snprintf(ds_cname, MAX_DS_NAMELEN, "CLOSED@%s",fp->path);
-            ds->access_version = 0; // this variable is stored with version 0 only
-            log_debug("   rank %d: dart_get %s\n", ds->mpi_rank, ds_cname);
-            err = adios_read_dataspaces_get(ds_cname, adios_integer, ds, 1, 0, coffset, creadsize, &cvalue);
-            ds->access_version = save_version; 
-            if (!err) {
-                /* This file was finalized */
-                adios_error (err_end_of_stream, "End of file '%s'. Writer finalized this file.\n", fp->path);
-                stay_in_loop = 0;
-            } else {
-                /* Not finalized, just no new timestep available */
-
-                /* FIXME: implement code to distinguish if new versions are available.
-                   i.e. the first version is gone and we need to open the first available.
-
-                   fp->current_step should be the actual version opened
-                   fp->last_step should be the last available step already in DataSpaces
-
-                */
-
-
-                //log_debug ("Data of '%s' does not exist in DataSpaces (yet)\n", ds_fname);
-                adios_error (err_file_not_found, 
-                           "Data of '%s' does not exist in DataSpaces\n", ds_fname);
-            }
+            // This stream does not exist yet
+            log_info ("Data of '%s' does not exist (yet) in DataSpaces\n", fp->path);
+            step_status = STEP_STREAMNOTFOUND;
         }
 
+        if (step_status != STEP_OK)
+            unlock_file (fp, ds);
+        
+
         // check if we need to stay in loop 
-        if (stay_in_loop) {
+        if (stay_in_poll_loop) {
             if (timeout_sec < 0.0) 
-                stay_in_loop = 0;
+                stay_in_poll_loop = 0;
             else if (timeout_sec > 0.0 && (adios_gettime()-t1 > timeout_sec))
-                stay_in_loop = 0;
+                stay_in_poll_loop = 0;
             else
                 adios_nanosleep (0, 1000000); // sleep for 1 msec
         }
 
-    } // while (stay_in_loop)
-    if (!found_stream) {
-        // release lock here if we have not opened it (otherwise release at close)
-        log_debug("   rank %d: call dart_unlock_on_read(%s)\n", ds->mpi_rank, fp->path);
-        dart_unlock_on_read(fp->path);
+    } // while (stay_in_poll_loop)
+
+    // generate the appropriate error if needed
+    switch (step_status) {
+    case STEP_STREAMNOTFOUND:
+            adios_error (err_file_not_found, 
+                    "Data of '%s' does not exist in DataSpaces\n", fp->path);
+            break;
+    case STEP_STREAMTERMINATED:
+            adios_error (err_end_of_stream, 
+                    "Stream '%s' has been terminated. No more steps available\n", fp->path);
+            break;
+    case STEP_STEPNOTREADY:
+            adios_error (err_step_notready, 
+                    "Step %d in stream '%s' is not yet available\n", step, fp->path);
+            break;
+    case STEP_STEPDISAPPEARED:
+            adios_error (err_step_disappeared, 
+                    "Step %d in stream '%s' is not available anymore\n", step, fp->path);
+            break;
+    default:
+            break;
+
     }
-    return !found_stream;
+
+    return (step_status != STEP_OK); // 0 on success
 }
 
 
@@ -660,8 +746,9 @@ ADIOS_FILE * adios_read_dataspaces_open_stream (const char * fname,
     fp->path = strdup(fname);
     MPI_Comm_rank(comm, &ds->mpi_rank);
     MPI_Comm_size(comm, &ds->nproc);
-    ds->access_version = 0;    /* will try to get the first version of the file */
+    ds->current_step = -1;
     ds->lock_mode = lock_mode;
+    ds->locked_fname = 0;
     ds->req_list = NULL;
     ds->req_list_tail = NULL;
     ds->nreq = 0;
@@ -706,13 +793,15 @@ ADIOS_FILE * adios_read_dataspaces_open_stream (const char * fname,
     }
     ds->file_index = fidx;
 #endif
-    log_debug("open version filename=%s version=%d fidx=%d\n", fname, ds->access_version, fidx);
+    log_debug("open stream filename=%s fidx=%d\n", fname, fidx);
 
-    int err = get_step (fp, NEXT_AVAILABLE_VERSION, timeout_sec);
+    int err = get_step (fp, 0, NEXT_AVAILABLE_VERSION, timeout_sec);
     if (err) {
         free(ds);
         free(fp);
         fp = NULL;
+    } else {
+        log_debug("opened version %d of filename=%s\n", ds->current_step, fname);
     }
 
     return fp;
@@ -759,11 +848,7 @@ int adios_read_dataspaces_close (ADIOS_FILE *fp)
     log_debug("-- %s, rank %d: fp=%x\n", __func__, ds->mpi_rank, fp);
 
     /* Release read lock locked in fopen */
-    if (ds->locked_fname) {
-        log_debug("   rank %d: call dart_unlock_on_read(%s)\n", ds->mpi_rank, fp->path);
-        dart_unlock_on_read(fp->path);
-        ds->locked_fname = 0;
-    }
+    unlock_file (fp, ds);
 
     /* Disconnect from DATASPACES if we connected at open() */
     if (ds && ds->disconnect_at_close) {
@@ -788,33 +873,30 @@ int adios_read_dataspaces_advance_step (ADIOS_FILE *fp, int last, float timeout_
     enum WHICH_VERSION which_version;
 
 #ifdef DATASPACES_NO_VERSIONING
-    ds->access_version = 0;    /* Data in DataSpaces is always overwritten (read same version) */
-    which_version = CURRENT_VERSION;
+    ds->current_step = -1;    /* Data in DataSpaces is always overwritten (read same version) */
+    which_version = NEXT_VERSION;
 #else
-    ds->access_version++; // request this step (or later)
     if (last)
         which_version = LAST_VERSION; 
     else if (ds->lock_mode == ADIOS_LOCKMODE_ALL)
-        which_version = CURRENT_VERSION; 
+        which_version = NEXT_VERSION; 
     else
         which_version = NEXT_AVAILABLE_VERSION; 
-    log_debug("advance to version %d of filename=%s which_version=%s\n", 
-              ds->access_version, fp->path,
+    log_debug("advance from version %d of filename=%s which_version=%s\n", 
+              ds->current_step, fp->path,
               which_version_str[which_version]);
 #endif
 
     if (ds->locked_fname) {
-        /* Release previous read lock locked in fopen (not released by a release_step() */
-        log_debug("   rank %d: call dart_unlock_on_read(%s)\n", ds->mpi_rank, fp->path);
-        dart_unlock_on_read(fp->path);
-        ds->locked_fname = 0;
+        /* Release previous step (app did not call release_step() */
+        adios_read_dataspaces_release_step (fp);
     }
 
-    int err = get_step (fp, which_version, timeout_sec); // content of fp and ds changes!
+    int err = get_step (fp, ds->current_step+1, which_version, timeout_sec); // content of fp and ds changes!
 
     if (!err) {
-        file_versions.version [ ds->file_index ] = ds->access_version; // why do we store this?
-        log_debug("opened version filename=%s version=%d\n", fp->path, ds->access_version);
+        file_versions.version [ ds->file_index ] = ds->current_step; // why do we store this?
+        log_debug("advanced to version %d of filename=%s\n", ds->current_step, fp->path);
     } else {
         if (!adios_errno) {
             adios_error (err_unspecified, "Unspecified error during adios_advance_step()\n");
@@ -835,11 +917,7 @@ void adios_read_dataspaces_release_step (ADIOS_FILE *fp)
                 (struct dataspaces_attr_struct *) ds->attrs;
 
     /* Release read lock locked in fopen */
-    if (ds->locked_fname) {
-        log_debug("   rank %d: call dart_unlock_on_read(%s)\n", ds->mpi_rank, fp->path);
-        dart_unlock_on_read(fp->path);
-        ds->locked_fname = 0;
-    }
+    unlock_file (fp, ds);
 
     free_step_data (fp);
 }
@@ -912,7 +990,7 @@ int adios_read_dataspaces_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO
 
 
 static int adios_read_dataspaces_get (const char * varname, enum ADIOS_DATATYPES vartype, 
-                                struct dataspaces_data_struct * ds, 
+                                int version, int rank,
                                 int ndims, int is_fortran_ordering, 
                                 int * offset, int * readsize, void * data)
 {
@@ -932,10 +1010,10 @@ static int adios_read_dataspaces_get (const char * varname, enum ADIOS_DATATYPES
     }
 
     log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%d,%d,%d) ub=(%d,%d,%d)}\n",
-        __func__, ds->mpi_rank, varname, ds->access_version, lb[0], lb[1], lb[2], 
+        __func__, rank, varname, version, lb[0], lb[1], lb[2], 
         ub[0], ub[1], ub[2]);
 
-    err =  dart_get (varname, ds->access_version, elemsize, 
+    err =  dart_get (varname, version, elemsize, 
                      lb[0], lb[1], lb[2],
                      ub[0], ub[1], ub[2],
                      data
@@ -1165,7 +1243,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
                 __func__, ds->mpi_rank, ds_name, offset[0], offset[1], offset[2], 
                 readsize[0], readsize[1], readsize[2]);
 
-        err = adios_read_dataspaces_get(ds_name, var->type, ds, 
+        err = adios_read_dataspaces_get (ds_name, var->type, ds->current_step, ds->mpi_rank, 
                 var->ndims, futils_is_called_from_fortran(),
                 offset, readsize, ds->chunk->data);
     }
@@ -1180,7 +1258,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
                 readsize[i]  = 1;
             }
 
-            err = adios_read_dataspaces_get(ds_name, var->type, ds, 
+            err = adios_read_dataspaces_get (ds_name, var->type, ds->current_step, ds->mpi_rank, 
                     var->ndims, futils_is_called_from_fortran(),
                     offset, readsize, ds->chunk->data+k*elemsize);
             k++;
