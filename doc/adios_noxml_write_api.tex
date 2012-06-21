@@ -42,57 +42,41 @@ As opposed adios\_init, adios\_init\_noxml initialize ADIOS without loading XML
 configuration file. Note that adios\_init\_noxml is required to be called only 
 once and before any other ADIOS API. 
 
-\leftskip=22pt
-int adios\_init\_noxml ()
+\begin{lstlisting}[language=C,caption={},label={}]
+int adios_init_noxml ()
+\end{lstlisting}
 
-\leftskip=22pt
 Input: 
+\begin{itemize}
+\item None
+\end{itemize}
 
-\leftskip=45pt
-None
-
-\leftskip=22pt
 Fortran example: 
-
-\parindent=13pt
-call adios\_init\_noxml\_ (ierr)\label{HToc182553357}
+\begin{lstlisting}[language=Fortran,caption={},label={}]
+call adios_init_noxml_ (ierr)
+\end{lstlisting}
 
 \subsection{adios\_allocate\_buffer}
 
-\leftskip=0pt
-\parindent=0pt
 The adios\_allocate\_buffer routine allocates memory buffer for ADIOS internal. 
+\begin{lstlisting}[language=C,caption={},label={}]
+int adios_allocate_buffer (
+	enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when 
+	,uint64_t buffer_size)
+\end{lstlisting}
 
-\parindent=18pt
-int adios\_allocate\_buffer (
-
-\parindent=54pt
-enum ADIOS\_BUFFER\_ALLOC\_WHEN adios\_buffer\_alloc\_when
-
-\leftskip=22pt
-\parindent=68pt
-,uint64\_t buffer\_size)
-
-\leftskip=22pt
-\parindent=0pt
 Input: 
+\begin{itemize}
+\item adios\_buffer\_alloc\_when - indicates when ADIOS buffer should be allocated. The value can be either {\small ADIOS\_BUFFER\_ALLOC\_NOW                          
+   or ADIOS\_BUFFER\_ALLOC\_LATER.  }Please see section 5.3 for more details on ADIOS buffer.
+\item buffer\_size - the size of ADIOS buffer in MB. 
+\end{itemize}
 
-\leftskip=40pt
-adios\_buffer\_alloc\_when - indicates when ADIOS buffer should be allocated. The 
-value can be either {\small ADIOS\_BUFFER\_ALLOC\_NOW                          
-   or ADIOS\_BUFFER\_ALLOC\_LATER.  }Please see section 5.3 for more details on 
-ADIOS buffer.
 
-\leftskip=36pt
-\parindent=4pt
-buffer\_size - the size of ADIOS buffer in MB. 
-
-\leftskip=22pt
-\parindent=0pt
 Fortran example: 
-
-\leftskip=40pt
-call adios\_allocate\_buffer (10, adios\_err)
+\begin{lstlisting}[language=Fortran,caption={},label={}]
+call adios_allocate_buffer (10, adios_err)
+\end{lstlisting}
 
 Note that, as opposed to C API, the Fortran API doesn't have adios\_buffer\_alloc\_when 
 argument as it supports {\small ADIOS\_BUFFER\_ALLOC\_NOW }only as of the latest 
@@ -100,383 +84,179 @@ ADIOS version.\label{HToc182553358}
 
 \subsection{adios\_declare\_group}
 
-\leftskip=0pt
 This API is used to declare a new ADIOS group. The concept of ADIOS group, variable, 
 attribute is detailed in the next chapter.
 
-int adios\_declare\_group (int64\_t * id
+\begin{lstlisting}[language=C,caption={},label={}]
+int adios_define_var (int64_t group_id, const char * name
+	,const char * path ,int type
+	,const char * dimensions
+	,const char * local_offsets );
+\end{lstlisting}
 
-\parindent=172pt
-, const char * name
-
-, const char * time\_index
-
-\parindent=345pt
-, enum ADIOS\_FLAG stats
-
-\parindent=172pt
-);
-
-\leftskip=22pt
-\parindent=0pt
 Input: 
 
-\leftskip=36pt
-name - string containing the annotation name of the group 
+\begin{itemize}
+\item name - string containing the annotation name of the group 
 
-time\_index - string containing the name of time attribute. If there is no time 
+\item time\_index - string containing the name of time attribute. If there is no time 
 attribute, a null string (``'') should be passed
 
-stats - a flag indicating whether or not to generate ADIOS statistics during writing, 
-such as min/max/standard deviation. The value of \textit{stats} can be either adios\_flag\_yes{\Large  
+\item stats - a flag indicating whether or not to generate ADIOS statistics during writing, 
+such as min/max/standard deviation. The value of \textit{stats} can be either \item adios\_flag\_yes{\Large  
 }or adios\_flag\_no. If stats is set to adios\_flag\_yes, ADIOS internal calculates 
 and outputs statistics for each processor automatically. The downside of turning 
 stats on is that it consumes more CPU and memory during writing
+\end{itemize}
 
-\leftskip=22pt
 Output: 
+\begin{itemize}
+\item id - pointer to the ADIOS group structure
+\end{itemize}
 
-\leftskip=36pt
-id - pointer to the ADIOS group structure
-
-\leftskip=22pt
 Fortran example: 
-
-\parindent=13pt
-call adios\_declare\_group (m\_adios\_group, \texttt{"}restart\texttt{"}, \texttt{"}iter\texttt{"}, 
-1, adios\_err)\label{HToc182553359}
+\begin{lstlisting}[language=Fortran,caption={},label={}]
+call adios_declare_group (m_adios_group, "restart", "iter", 1, adios_err)
+\end{lstlisting}
 
 \subsection{adios\_define\_var}
 
-\leftskip=0pt
-\parindent=0pt
 This API is used to declare an ADIOS variable for a particular group. 
-
-\leftskip=22pt
-int adios\_define\_var (int64\_t group\_id, const char * name
-
-\parindent=122pt
-,const char * path
-
-\parindent=151pt
-,int type
-
-,const char * dimensions
-
-\parindent=302pt
-,const char * global\_dimensions
-
-\parindent=151pt
-,const char * local\_offsets
-
-);
+\begin{lstlisting}[language=C,caption={},label={}]
+int adios_define_var (int64_t group_id, const char * name	,const char * path 
+	,int type	,const char * dimensions
+	,const char * global_dimensions	,const char * local_offsets 
+	);
+\end{lstlisting}
 
 Input: 
-
-\leftskip=40pt
-\parindent=0pt
-group\_id - pointer to the internal group structure (returned by adios\_declare\_group 
+\begin{itemize}
+\item group\_id - pointer to the internal group structure (returned by adios\_declare\_group 
 call)
 
-name - string containing the annotation name of a variable
+\item name - string containing the annotation name of a variable
 
-path - string containing the path of an variable 
+\item path - string containing the path of an variable 
 
-type - variable type 
+\item type - variable type 
 
-dimensions - string containing variable local dimension. If the variable is a scalar, 
+\item dimensions - string containing variable local dimension. If the variable is a scalar, 
 null string (``'') is expected. See 5.2.5 and 5.2.6 for details on ADIOS dimensions.
 
-global\_dimensions - string containing variable global dimension. If the variable 
+\item global\_dimensions - string containing variable global dimension. If the variable 
 is a scalar or local array, null string (``'') is expected.
 
-local\_offsets - string containing variable local offset. If the variable is a 
+\item local\_offsets - string containing variable local offset. If the variable is a 
 scalar or local array, null string (``'') is expected.
+\end{itemize}
 
-\parindent=-18pt
 Output :
+\begin{itemize}
+\item None
+\end{itemize}
 
-\leftskip=0pt
-\parindent=18pt
-None
-
-\leftskip=22pt
-\parindent=0pt
 Fortran example: 
-
-\leftskip=40pt
-\parindent=3pt
-call adios\_define\_var (m\_adios\_group, \texttt{"}temperature\texttt{"} \&
-
-\parindent=93pt
-,\texttt{"}\texttt{"}, 6 \&
-
-,\texttt{"}NX\texttt{"}, \texttt{"}G\texttt{"}, \texttt{"}O\texttt{"}, adios\_err)\label{HToc182553360}
+\begin{lstlisting}[language=Fortran,caption={},label={}]
+call adios_define_var (m_adios_group, "temperature" &	,"", 6 &	,"NX", "G", "O", adios_err)
+\end{lstlisting}
 
 \subsection{adios\_define\_attribute}
 
-\leftskip=0pt
-\parindent=0pt
 This API is used to declare an ADIOS attribute for a particular group. See section 
 5.2.3 for more details on ADIOS attribute.
 
-\leftskip=22pt
-int adios\_define\_attribute (int64\_t group
+\begin{lstlisting}[language=C,caption={},label={}]
+int adios_define_attribute (int64_t group	,const char * name 
+	,const char * path	,enum ADIOS_DATATYPES type	,const char * value 
+	,const char * var	);
+\end{lstlisting}
 
-\parindent=187pt
-,const char * name
-
-,const char * path
-
-\parindent=374pt
-,enum ADIOS\_DATATYPES type
-
-\parindent=187pt
-,const char * value
-
-,const char * var
-
-\parindent=374pt
-);
-
-\parindent=0pt
 Input:
-
-\leftskip=45pt
-group - pointer to the internal group structure (returned by adios\_declare\_group 
+\begin{itemize}
+\item group - pointer to the internal group structure (returned by adios\_declare\_group 
 call)
 
-\leftskip=117pt
-\parindent=-72pt
-name - string containing the annotation name of an attribute
+\item name - string containing the annotation name of an attribute
 
-\leftskip=45pt
-\parindent=0pt
-path - string containing the path of an attribute
+\item path - string containing the path of an attribute
 
-type  - type of an attribute
+\item type  - type of an attribute
 
-value - pointer to a memory buffer that contains the value of the attribute
+\item value - pointer to a memory buffer that contains the value of the attribute
 
-var - name of the variable which contains the attribute value. This argument needs 
+\item var - name of the variable which contains the attribute value. This argument needs 
 to be set if argument ``value'' is null.  
+\end{itemize}
 
-\parindent=-22pt
 Output:
+\begin{itemize}
+\item None
+\end{itemize}
 
-\parindent=-4pt
-None
-
-\leftskip=22pt
-\parindent=0pt
 Fortran example: 
-
-\leftskip=0pt
-\parindent=46pt
-call adios\_define\_attribute (m\_adios\_group, \texttt{"}date\texttt{"} \&
-
-\parindent=234pt
-,\texttt{"}\texttt{"}, 9 \&
-
-,\texttt{"}Feb 2010\texttt{"} , \texttt{"}\texttt{"} , adios\_err)\label{HToc182553361}
+\begin{lstlisting}[language=Fortran,caption={},label={}]
+call adios_define_attribute (m_adios_group, "date" &	,"", 9 &	,"Feb 2010" , "" , adios_err)
+\end{lstlisting}
 
 \subsection{adios\_select\_method}
-
-\parindent=0pt
 This API is used to choose an ADIOS transport method for a particular group. 
 
-\leftskip=103pt
-\parindent=-81pt
-int adios\_select\_method (int64\_t group, const char * method
+\begin{lstlisting}[language=C,caption={},label={}]
+int adios_select_method (int64_t group, const char * method	,const char * parameters 
+	,const char * base_path
+	);
+\end{lstlisting}
 
-\parindent=91pt
-,const char * parameters
-
-,const char * base\_path
-
-\parindent=264pt
-);
-
-\leftskip=22pt
-\parindent=0pt
 Input:
-
-group - pointer to the internal group structure (returned by adios\_declare\_group 
+\begin{itemize}
+\item group - pointer to the internal group structure (returned by adios\_declare\_group 
 call)
 
-method - string containing the name of transport method that will be invoked during 
+\item method - string containing the name of transport method that will be invoked during 
 ADIOS write. A list of currently supported ADIOS methods can be found at Chapter 
 .
 
-parameters - string containing user defined parameters that are fed into transport 
+\item parameters - string containing user defined parameters that are fed into transport 
 method.  For example, in MPI\_AMR method, the number of subfiles to write can be 
 set via this argument (see section \ref{section-method-mpiamr}).  This argument will be ignored silently 
 if a transport method doesn't support the given parameters.
 
-base\_path -  string containing the root directory to use when writing to disk 
+\item base\_path -  string containing the root directory to use when writing to disk 
 or similar purposes
+\end{itemize}
 
-\leftskip=22pt
 Fortran example: 
-
-call adios\_select\_method (m\_adios\_group, \texttt{"}MPI\texttt{"}, \texttt{"}\texttt{"}, 
-\texttt{"}\texttt{"}, adios\_err)\label{HToc182553362}
+\begin{lstlisting}[language=Fortran,caption={},label={}]
+call adios_select_method (m_adios_group, "MPI", "", "", adios_err)
+\end{lstlisting}
 
 \section{Create a no-XML ADIOS program}
 
-\leftskip=0pt
 Below is a programming example that illustrates how to write a double-precision 
 array t and a double-precision array with size of NX using no-XML API.   A more 
 advanced example on writing out data sub-blocks is listed in the appendix 14.3. 
 
+\begin{lstlisting}[language=Fortran,caption={ADIOS no-XML example},label={}]
+program adios_global implicit none	include "mpif.h"	character(len=256) :: filename = "adios_global_no_xml.bp" 
+	integer :: rank, size, i, ierr	integer,parameter :: NX=10	integer :: O, G	real*8, dimension(NX) :: t integer :: comm	integer :: adios_err	integer*8 :: adios_groupsize, adios_totalsize integer*8 :: adios_handle	integer*8 :: m_adios_group
 
-program adios\_global
-
-\parindent=14pt
-implicit none
-
-include 'mpif.h'
-
-\parindent=28pt
-character(len=256)      :: filename = \texttt{"}adios\_global\_no\_xml.bp\texttt{"}
-
-\parindent=14pt
-integer                 :: rank, size, i, ierr
-
-integer,parameter       :: NX=10
-
-\parindent=28pt
-integer                 :: O, G
-
-\parindent=14pt
-real*8, dimension(NX)   :: t
-
-integer                 :: comm
-
-\parindent=28pt
-integer                 :: adios\_err
-
-\parindent=14pt
-integer*8               :: adios\_groupsize, adios\_totalsize
-
-integer*8               :: adios\_handle
-
-\parindent=28pt
-integer*8               :: m\_adios\_group
-
-\parindent=14pt
-call MPI\_Init (ierr)
-
-call MPI\_Comm\_dup (MPI\_COMM\_WORLD, comm, ierr)
-
-\parindent=28pt
-call MPI\_Comm\_rank (comm, rank, ierr)
-
-\parindent=14pt
-call MPI\_Comm\_size (comm, size, ierr)
-
-call adios\_init\_noxml (adios\_err)
-
-\parindent=28pt
-call adios\_allocate\_buffer (10, adios\_err)
-
-\parindent=14pt
-call adios\_declare\_group (m\_adios\_group, \texttt{"}restart\texttt{"}, \texttt{"}iter\texttt{"}, 
-1, adios\_err)
-
-call adios\_select\_method (m\_adios\_group, \texttt{"}MPI\texttt{"}, \texttt{"}\texttt{"}, 
-\texttt{"}\texttt{"}, adios\_err)
-
-! define a integer
-
-\parindent=28pt
-call adios\_define\_var (m\_adios\_group, \texttt{"}NX\texttt{"} \&
-
-\parindent=93pt
-,\texttt{"}\texttt{"}, 2 \&
-
-,\texttt{"}\texttt{"}, \texttt{"}\texttt{"}, \texttt{"}\texttt{"}, adios\_err)
-
-\parindent=108pt
-! define a integer
-
-\parindent=14pt
-call adios\_define\_var (m\_adios\_group, \texttt{"}G\texttt{"} \&
-
-\parindent=93pt
-,\texttt{"}\texttt{"}, 2 \&
-
-,\texttt{"}\texttt{"}, \texttt{"}\texttt{"}, \texttt{"}\texttt{"}, adios\_err)
-
-\parindent=108pt
-! define a integer
-
-\parindent=14pt
-call adios\_define\_var (m\_adios\_group, \texttt{"}O\texttt{"} \&
-
-\parindent=93pt
-,\texttt{"}\texttt{"}, 2 \&
-
-,\texttt{"}\texttt{"}, \texttt{"}\texttt{"}, \texttt{"}\texttt{"}, adios\_err)
-
-\parindent=108pt
-! define a global array
-
-\parindent=14pt
-call adios\_define\_var (m\_adios\_group, \texttt{"}temperature\texttt{"} \&
-
-\parindent=93pt
-,\texttt{"}\texttt{"}, 6 \&
-
-,\texttt{"}NX\texttt{"}, \texttt{"}G\texttt{"}, \texttt{"}O\texttt{"}, adios\_err)
-
-\parindent=108pt
-call adios\_open (adios\_handle, \texttt{"}restart\texttt{"}, filename, \texttt{"}w\texttt{"}, 
-comm, adios\_err)
-
-\parindent=14pt
-adios\_groupsize = 4 + 4 + 4 + NX * 8
-
-call adios\_group\_size (adios\_handle, adios\_groupsize, adios\_totalsize, adios\_err)
-
-\parindent=28pt
-G = NX * size
-
-\parindent=14pt
-O = NX * rank
-
-do i = 1, NX
-
-\parindent=43pt
-t(i)  = rank * NX + i - 1
-
-\parindent=14pt
-enddo
-
-call adios\_write (adios\_handle, \texttt{"}NX\texttt{"}, NX, adios\_err)
-
-\parindent=28pt
-call adios\_write (adios\_handle, \texttt{"}G\texttt{"}, G, adios\_err)
-
-\parindent=14pt
-call adios\_write (adios\_handle, \texttt{"}O\texttt{"}, O, adios\_err)
-
-call adios\_write (adios\_handle, \texttt{"}temperature\texttt{"}, t, adios\_err)
-
-\parindent=28pt
-call adios\_close (adios\_handle, adios\_err)
-
-\parindent=14pt
-call MPI\_Barrier (comm, ierr)
-
-call adios\_finalize (rank, adios\_err)
-
-\parindent=28pt
-call MPI\_Finalize (ierr)
-
-\parindent=0pt
-end program
-
-
-\leftskip=18pt
-{\color{color20} \textbf{Figure 2. ADIOS no-XML example\label{HToc182553363}}}
+	call MPI_Init (ierr)	call MPI_Comm_dup (MPI_COMM_WORLD, comm, ierr)	call MPI_Comm_rank (comm, rank, ierr) 
+	call MPI_Comm_size (comm, size, ierr)	call adios_init_noxml (adios_err)	call adios_allocate_buffer (10, adios_err)	call adios_declare_group (m_adios_group, "restart", "iter", 1, adios_err) 
+	call adios_select_method (m_adios_group, "MPI", "", "", adios_err)
+	
+	! define a integer	call adios_define_var (m_adios_group, "NX" & 
+		,"", 2 &		,"", "", "", adios_err) ! define a integer	call adios_define_var (m_adios_group, "G" & 
+		,"", 2 &		,"", "", "", adios_err) ! define a integer	call adios_define_var (m_adios_group, "O" & 
+		,"", 2 &		,"", "", "", adios_err)
+			! define a global array	call adios_define_var (m_adios_group, "temperature" & 
+		,"", 6 &		,"NX", "G", "O", adios_err)	call adios_open (adios_handle, "restart", filename, "w", comm, adios_err)
+	
+	adios_groupsize = 4 + 4 + 4 + NX * 8	call adios_group_size (adios_handle, adios_groupsize &
+		,adios_totalsize, adios_err)	G = NX * size 
+	O = NX * rank 
+	do i = 1, NX		t(i) = rank * NX + i - 1 
+	enddo
+	
+	call adios_write (adios_handle, "NX", NX, adios_err)	call adios_write (adios_handle, "G", G, adios_err)	call adios_write (adios_handle, "O", O, adios_err)	call adios_write (adios_handle, "temperature", t, adios_err)	call adios_close (adios_handle, adios_err) 
+	call MPI_Barrier (comm, ierr)	call adios_finalize (rank, adios_err)	call MPI_Finalize (ierr) 
+end program\end{lstlisting}
