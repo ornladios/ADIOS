@@ -18,11 +18,13 @@
 // xml parser
 #include <mxml.h>
 
+#include "public/adios_error.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
 #include "core/buffer.h"
 #include "core/util.h"
+#include "core/adios_logger.h"
 
 enum ADIOS_MPI_AMR_IO_TYPE
 {
@@ -178,7 +180,9 @@ int * allocOSTList (int n_ost)
 
     if (ost_list == 0)
     {   
-        fprintf (stderr, "can not malloc");
+        adios_error (err_no_memory, 
+                "Can not malloc %d bytes in allocOSTList() in MPI_AMR method\n",
+                n_ost*sizeof(int));
         return 0;
     }
     memset (ost_list, 0, n_ost * sizeof (int));
@@ -195,7 +199,7 @@ int * parseOSTSkipping (int * ost_list, char * str, int n_ost)
 
     if (ost_list == 0)
     {
-        fprintf (stderr, "Pointer ost_list is null.\n");
+        log_warn ("MPI_AMR method: Pointer ost_list is null.\n");
         return 0;
     }
 
@@ -309,7 +313,7 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
         n_ost = md->g_num_ost - n_ost_skipping;
         if (n_ost <= 0)
         {
-            fprintf (stderr, "No OST to use. Set num_ost=NNN in the adios config xml file.\n");
+            log_warn ("MPI_AMR method: No OST to use. Set num_ost=NNN in the adios config xml file.\n");
             return;
         }
 
@@ -339,7 +343,7 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
         close(fd);
     }
     else
-        printf("Warning: open failed on file %s %s.\n",filename,strerror(errno));
+        log_warn("MPI_AMR method: open to set lustre striping failed on file %s %s.\n",filename,strerror(errno));
 }
 
 static void
@@ -459,7 +463,7 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     md->g_is_aggregator = (int *) malloc (nproc * sizeof(int));
     if (md->g_is_aggregator == 0)
     {
-        fprintf (stderr, "can not malloc\n");
+        adios_error (err_no_memory, "Can not malloc %d bytes in MPI_AMR method, adios_mpi_amr_set_aggregation_parameters()\n", nproc*sizeof(int));
         return;
     }
     memset (md->g_is_aggregator, 0, nproc * sizeof(int));
@@ -517,7 +521,7 @@ static void adios_mpi_amr_buffer_write (char ** buffer, uint64_t * buffer_size
         }
         else
         {
-            fprintf (stderr, "Cannot allocate memory in adios_mpi_amr_buffer_write.  "
+            adios_error (err_no_memory, "Cannot allocate memory in adios_mpi_amr_buffer_write.  "
                              "Requested: %llu\n", *buffer_offset + size + 1000);
 
             return;
@@ -624,7 +628,9 @@ struct adios_var_struct * adios_mpi_amr_copy_var (struct adios_var_struct * v)
                             malloc (sizeof (struct adios_var_struct));
     if (v_new == 0)
     {
-        fprintf (stderr, "can not malloc\n");
+        adios_error (err_no_memory, "MPI_AMR method: Cannot allocate %d bytes "
+            "to duplicate variable structure in adios_mpi_amr_copy_var()\n",
+            sizeof (struct adios_var_struct));
         return 0;
     }
 
@@ -798,7 +804,9 @@ void * adios_mpi_amr_do_write_thread (void * param)
 
     if (count != *(td->total_data_size))
     {
-        fprintf (stderr, "Err in adios_mpi_amr_striping_unit_write()\n");
+        adios_error (err_unspecified, "Error in adios_mpi_amr_striping_unit_write(). "
+            "count = %llu != thread's total_data_size = %llu\n",
+            count, td->total_data_size);
     }
 
     return NULL;
@@ -818,10 +826,8 @@ static void adios_var_to_comm (const char * comm_name
         {
             if (!t)
             {
-                fprintf (stderr, "communicator not provided and none "
-                                 "listed in XML.  Defaulting to "
-                                 "MPI_COMM_SELF\n"
-                        );
+                log_warn ("MPI_AMR method: Communicator not provided and none "
+                        "listed in XML.  Defaulting to MPI_COMM_SELF\n");
 
                 *comm = MPI_COMM_SELF;
             }
@@ -843,10 +849,8 @@ static void adios_var_to_comm (const char * comm_name
             {
                 if (!t)
                 {
-                    fprintf (stderr, "communicator not provided and none "
-                                     "listed in XML.  Defaulting to "
-                                     "MPI_COMM_SELF\n"
-                            );
+                    log_warn ("MPI_AMR method: Communicator not provided and none "
+                            "listed in XML.  Defaulting to MPI_COMM_SELF\n");
 
                     *comm = MPI_COMM_SELF;
                 }
@@ -866,10 +870,8 @@ static void adios_var_to_comm (const char * comm_name
             {
                 if (!t)
                 {
-                    fprintf (stderr, "communicator not provided but one "
-                                     "listed in XML.  Defaulting to "
-                                     "MPI_COMM_WORLD\n"
-                            );
+                    log_warn ("MPI_AMR method: Communicator not provided but one is "
+                            "listed in XML.  Defaulting to MPI_COMM_WORLD\n");
 
                     *comm = MPI_COMM_WORLD;
                 }
@@ -889,9 +891,9 @@ static void adios_var_to_comm (const char * comm_name
     }
     else
     {
-        fprintf (stderr, "coordination-communication not provided. "
-                         "Using MPI_COMM_WORLD instead\n"
-                );
+        log_warn ("MPI_AMR method: Coordination-communication not provided. "
+                  "Using MPI_COMM_WORLD instead\n"
+                 );
 
         *comm = MPI_COMM_WORLD;
     }
@@ -1059,7 +1061,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
     {
         case adios_mode_read:
         {
-            fprintf (stderr, "Read mode is not supported in MPI_AMR method.\n");
+            adios_error (err_invalid_file_mode, "MPI_AMR method: Read mode is not supported.\n");
             break;
         }
 
@@ -1077,7 +1079,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                 f = open(fd->name, O_CREAT | O_RDWR | O_LOV_DELAY_CREATE, 0644);
                 if (f == -1)
                 {
-                    fprintf (stderr,"open() failed: %s\n", strerror(errno));
+                    adios_error (err_file_open_error,"MPI_AMR method: open() failed: %s\n", strerror(errno));
                     return -1;
                 }
 
@@ -1093,9 +1095,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                 rc = llapi_lov_get_uuids(f, uuids, &md->g_num_ost);
                 if (rc != 0)
                 {
-                    fprintf (stderr, "get uuids failed: %s\n"
-                            ,strerror(errno)
-                            );
+                    log_warn ("MPI_AMR method: Lustre get uuids failed after creating the file: %s\n" ,strerror(errno));
                 }
 #endif
                 close (f);
@@ -1187,9 +1187,9 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                         int len = 0;
                         memset (e, 0, MPI_MAX_ERROR_STRING);
                         MPI_Error_string (err, e, &len);
-                        fprintf (stderr, "MPI open write failed for %s: '%s'\n"
-                                ,name, e
-                                );
+                        adios_error (err_file_open_error,
+                                     "MPI_AMR method: MPI open failed for %s: '%s'\n", 
+                                     name, e);
                         free (name);
 
                         return adios_flag_no;
@@ -1233,9 +1233,9 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                     int len = 0;
                     memset (e, 0, MPI_MAX_ERROR_STRING);
                     MPI_Error_string (err, e, &len);
-                    fprintf (stderr, "MPI open write failed for %s: '%s'\n"
-                            ,name, e
-                            );
+                    adios_error (err_file_open_error,
+                                 "MPI_AMR method: MPI open failed for %s: '%s'\n", 
+                                 name, e);
                     free (name);
 
                     return adios_flag_no;
@@ -1364,9 +1364,9 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                 int len = 0;
                 memset (e, 0, MPI_MAX_ERROR_STRING);
                 MPI_Error_string (err, e, &len);
-                fprintf (stderr, "MPI open write failed for %s: '%s'\n"
-                        ,name, e
-                        );
+                adios_error (err_file_open_error,
+                             "MPI_AMR method: MPI open failed for %s: '%s'\n", 
+                             name, e);
                 free (name);
 
                 return adios_flag_no;
@@ -1442,7 +1442,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
 
         default:
         {
-            fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode, "MPI_AMR method: Unknown file mode requested: %d\n", fd->mode);
 
             free (name);
 
@@ -1470,11 +1470,8 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
             STOP_TIMER (ADIOS_TIMER_MPI_AMR_MD);
             if (count != fd->bytes_written)
             {
-                fprintf (stderr, "a:MPI method tried to write %llu, "
-                                 "only wrote %llu\n"
-                        ,fd->bytes_written
-                        ,count
-                        );
+                log_warn ("a:MPI_AMR method tried to write %llu, only wrote %llu\n", 
+                          fd->bytes_written, count);
             }
         }
         fd->base_offset += count;
@@ -1559,8 +1556,10 @@ void adios_mpi_amr_write (struct adios_file_struct * fd
             aggr_buff = malloc (total_size);
             if (aggr_buff == 0)
             {
-                fprintf (stderr, "Can not alloc aggregation buffer.\n"
-                                 "Need to increase the number of aggregators.\n"
+                adios_error (err_no_memory, 
+                        "MPI_AMR method: Cannot allocate aggregation buffer of %llu size.\n"
+                        "Need to increase the number of aggregators.\n",
+                        total_size
                         );
                 return;
             }
@@ -1585,11 +1584,8 @@ void adios_mpi_amr_write (struct adios_file_struct * fd
             STOP_TIMER (ADIOS_TIMER_MPI_AMR_IO);
             if (count != total_size)
             {
-                fprintf (stderr, "b:MPI method tried to write %llu, "
-                                 "only wrote %llu\n"
-                        ,total_size
-                        ,count
-                        );
+                log_warn ("b:MPI_AMR method tried to write %llu, only wrote %llu\n",
+                          total_size, count);
             }
 
             FREE (aggr_buff);
@@ -1651,9 +1647,9 @@ void adios_mpi_amr_get_write_buffer (struct adios_file_struct * fd
         if (!*buffer)
         {
             adios_method_buffer_free (mem_allowed);
-            fprintf (stderr, "Out of memory allocating %llu bytes for %s\n"
-                    ,*size, v->name
-                    );
+            adios_error (err_no_memory, 
+                    "MPI_AMR method: Out of memory allocating %llu bytes for variable %s\n",
+                    *size ,v->name);
             v->got_buffer = adios_flag_no;
             v->free_data = adios_flag_no;
             v->data_size = 0;
@@ -1672,11 +1668,10 @@ void adios_mpi_amr_get_write_buffer (struct adios_file_struct * fd
     else
     {
         adios_method_buffer_free (mem_allowed);
-        fprintf (stderr, "OVERFLOW: Cannot allocate requested buffer of %llu "
-                         "bytes for %s\n"
-                ,*size
-                ,v->name
-                );
+        adios_error (err_buffer_overflow, 
+                "MPI_AMR method: OVERFLOW: Cannot allocate requested buffer of %llu "
+                "bytes for %s. Allowed max size is %llu\n",
+                *size, v->name, mem_allowed);
         *size = 0;
         *buffer = 0;
     }
@@ -1764,9 +1759,8 @@ static void adios_mpi_amr_do_read (struct adios_file_struct * fd
                 }
                 else
                 {
-                    printf ("MPI read: skipping name: %s path: %s\n"
-                           ,var_header.name, var_header.path
-                           );
+                    log_warn ("MPI AMR method read: skipping name: %s path: %s\n",
+                           var_header.name, var_header.path);
                     adios_parse_var_data_payload_v1 (&md->b, &var_header
                                                     ,NULL, 0
                                                     );
@@ -1790,9 +1784,9 @@ static void adios_mpi_amr_do_read (struct adios_file_struct * fd
         }
 
         default:
-            fprintf (stderr, "MPI read: file version unknown: %u\n"
-                    ,md->b.version
-                    );
+            adios_error (err_invalid_file_version, 
+                    "MPI_AMR method read: file version unknown: %u\n",
+                    md->b.version);
             return;
     }
 
@@ -1834,8 +1828,10 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
     {
         case adios_mode_read:
         case adios_mode_append:
+        case adios_mode_update:
         {
-            fprintf (stderr, "Only \"w\" is supported by MPI_AMR Brigade IO\n");
+            adios_error (err_invalid_file_mode, 
+                    "Only \"w\" mode is supported by MPI_AMR Brigade IO\n");
             break;
         }
         case adios_mode_write:
@@ -1884,11 +1880,8 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                     STOP_TIMER (ADIOS_TIMER_MPI_AMR_MD);
                     if (count != md->vars_header_size)
                     {
-                        fprintf (stderr, "d:MPI method tried to write %llu, "
-                                         "only wrote %d\n"
-                                ,md->vars_header_size
-                                ,count
-                                );
+                        log_warn ("d:MPI_AMR method tried to write %llu, only wrote %llu\n",
+                                md->vars_header_size, count);
                     }
                 }
                 fd->offset = 0;
@@ -1937,9 +1930,9 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                             aggr_buff = malloc (total_size);
                             if (aggr_buff == 0)
                             {
-                                fprintf (stderr, "Can not alloc aggregation buffer.\n"
-                                        "Need to increase the number of aggregators.\n"
-                                        );
+                                adios_error (err_no_memory, 
+                                        "MPI_AMR method (BG): Cannot allocate aggregation buffer.\n"
+                                        "Need to increase the number of aggregators.\n");
                                 return;
                             }
                         }
@@ -1962,11 +1955,8 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                             STOP_TIMER (ADIOS_TIMER_MPI_AMR_IO);
                             if (count != total_size)
                             {
-                                fprintf (stderr, "e:MPI method tried to write %llu, "
-                                        "only wrote %llu\n"
-                                        ,fd->bytes_written
-                                        ,count
-                                        );
+                                log_warn ("e:MPI method tried to write %llu, only wrote %llu\n",
+                                          fd->bytes_written, count);
                             }
                         }
 
@@ -2016,11 +2006,8 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                     STOP_TIMER (ADIOS_TIMER_MPI_AMR_MD);
                     if (count != md->vars_header_size)
                     {
-                        fprintf (stderr, "f:MPI method tried to write %llu, "
-                                         "only wrote %llu\n"
-                                ,md->vars_header_size
-                                ,count
-                                );
+                        log_warn ("f:MPI_AMR method tried to write %llu, only wrote %llu\n",
+                                  md->vars_header_size, count);
                     }
                 }
 
@@ -2048,7 +2035,8 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                 disp = (int *) malloc (new_group_size * 4);
                 if (pg_sizes == 0 || disp == 0)
                 {
-                    fprintf (stderr, "can not malloc\n");
+                    adios_error (err_no_memory, "MPI_AMR method: Cannot allocate memory "
+                                "for merging process blocks (mpi_amr_bg_close)\n");
                     return;
                 }
 
@@ -2071,17 +2059,19 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                 {
                     if (2 * max_data_size > MAX_AGG_BUF)
                     {
-                        fprintf (stderr, "Warning: The max allowed aggregation buffer is %llu bytes.\n"
-                                "But this ADIOS method needs extra %llu bytes for aggregation\n"
-                                ,MAX_AGG_BUF, 2 * max_data_size);
+                        log_warn ("MPI_AMR method (BG): The max allowed aggregation "
+                                "buffer is %llu bytes.\n"
+                                "But this ADIOS method needs %llu bytes for aggregation\n",
+                                MAX_AGG_BUF, 2 * max_data_size);
                     }
 
                     aggr_buff = malloc (max_data_size);
                     recv_buff = malloc (max_data_size);
                     if (aggr_buff == 0 || recv_buff == 0)
                     {
-                        fprintf (stderr, "Can not alloc %d bytes for aggregation buffer.\n"
-                                ,max_data_size);
+                        adios_error (err_no_memory, "MPI_AMR method (BG): Cannot allocate "
+                                    "2 x %llu bytes for aggregation buffers.\n", 
+                                    max_data_size);
                         return;
                     }
                 }
@@ -2089,15 +2079,17 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                 {
                     if (max_data_size > MAX_AGG_BUF)
                     {
-                        fprintf (stderr, "The max allowed aggregation buffer is %llu.\n"
-                                ,MAX_AGG_BUF);
+                        log_warn ("MPI_AMR method (BG): The max allowed aggregation "
+                                  "buffer is %llu bytes.\n",
+                                  MAX_AGG_BUF);
                     }
 
                     recv_buff = malloc (max_data_size);
                     if (recv_buff == 0)
                     {
-                        fprintf (stderr, "Can not alloc %d bytes for aggregation buffer.\n"
-                                ,max_data_size);
+                        adios_error (err_no_memory, "MPI_AMR method (BG): Cannot allocate "
+                                    "%llu bytes for receive buffer.\n", 
+                                    max_data_size);
                         return;
                     }
                 }
@@ -2576,7 +2568,8 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
         case adios_mode_read:
         case adios_mode_append:
         {
-            fprintf (stderr, "Only \"w\" is supported by MPI_AMR Aggregation IO\n");
+            adios_error (err_invalid_file_mode, 
+                        "Only \"w\" mode is supported by MPI_AMR Aggregation IO\n");
             break;
         }
         case adios_mode_write:
@@ -2626,11 +2619,8 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                     if (count != md->vars_header_size)
                     {
-                        fprintf (stderr, "d:MPI method tried to write %llu, "
-                                         "only wrote %d\n"
-                                ,md->vars_header_size
-                                ,count
-                                );
+                        log_warn ("d:MPI_AMR method tried to write %llu, only wrote %d\n",
+                                md->vars_header_size, count);
                     }
                 }
                 fd->offset = 0;
@@ -2679,7 +2669,8 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                             aggr_buff = malloc (total_size);
                             if (aggr_buff == 0)
                             {
-                                fprintf (stderr, "Can not alloc aggregation buffer.\n"
+                                adios_error (err_no_memory, 
+                                        "MPI_AMR method (AG): Cannot allocate aggregation buffer.\n"
                                         "Need to increase the number of aggregators.\n"
                                         );
                                 return;
@@ -2705,11 +2696,8 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                             if (count != total_size)
                             {
-                                fprintf (stderr, "e:MPI method tried to write %llu, "
-                                        "only wrote %llu\n"
-                                        ,fd->bytes_written
-                                        ,count
-                                        );
+                                log_warn ("e:MPI_AMR method tried to write %llu, only wrote %llu\n",
+                                        fd->bytes_written, count);
                             }
                         }
 
@@ -2762,11 +2750,8 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                     if (count != md->vars_header_size)
                     {
-                        fprintf (stderr, "f:MPI method tried to write %llu, "
-                                         "only wrote %llu\n"
-                                ,md->vars_header_size
-                                ,count
-                                );
+                        log_warn ("f:MPI_AMR method tried to write %llu, only wrote %llu\n",
+                                  md->vars_header_size, count);
                     }
                 }
 
@@ -2791,7 +2776,11 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 disp = (int *) malloc (new_group_size * 4);
                 if (pg_sizes == 0 || disp == 0)
                 {
-                    fprintf (stderr, "can not malloc\n");
+                    adios_error (err_no_memory, 
+                            "MPI_AMR method (AG): Cannot allocate buffers (%d bytes) "
+                            "for merging process blocks.\n",
+                            2*4*new_group_size
+                            );
                     return;
                 }
 
@@ -2813,16 +2802,18 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 {
                     if (total_data_size > MAX_AGG_BUF)
                     {
-                        fprintf (stderr, "The max allowed aggregation buffer is %llu.\n"
-                                         "Need to increase the number of aggregators.\n"
-                                ,MAX_AGG_BUF);
+                        log_warn ("The max allowed aggregation buffer is %llu. Requested %llu.\n"
+                                "Need to increase the number of aggregators.\n",
+                                MAX_AGG_BUF, total_data_size);
                     }
                     aggr_buff = malloc (total_data_size);
                     if (aggr_buff == 0)
                     {
-                        fprintf (stderr, "Can not alloc %d bytes for aggregation buffer.\n"
-                                         "Need to increase the number of aggregators.\n"
-                                ,total_data_size);
+                        adios_error (err_no_memory, 
+                                "MPI_AMR method (AG): Cannot allocate %llu bytes "
+                                "for aggregation buffer.\n"
+                                "Need to increase the number of aggregators.\n",
+                                total_data_size);
                         return;
                     }
                 }
@@ -2840,7 +2831,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
             // Merge PG's on the aggregator side
             if (fd->shared_buffer == adios_flag_yes && md->g_merging_pgs)
             {
-                fprintf (stderr, "Merging pg is not supported yet\n");
+                log_warn ("MPI_AMR method (AG): Merging process blocks is not supported yet\n");
                 // Merge PG's on the aggregator side
                 struct adios_bp_buffer_struct_v1 b;
                 struct adios_process_group_header_struct_v1 pg_header;
@@ -2866,7 +2857,8 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 // reset vars count
                 if (vars_header.count * new_group_size > UINT16_MAX)
                 {
-                    fprintf (stderr, "Vars count exceed UINT16_MAX");
+                    adios_error (err_too_many_variables, 
+                        "MPI_AMR method (AG): Variable count exceeds UINT16_MAX (%d), UINT16_MAX");
                     return;
                 }
                 *(uint16_t *) (b.buff + vars_count_offset) = 
@@ -2895,7 +2887,11 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 if (pg_sizes == 0 || attr_sizes == 0 || disp == 0
                  || sendbuf == 0 || recvbuf == 0)
                 {
-                    fprintf (stderr, "can not malloc\n");
+                    adios_error (err_no_memory, 
+                            "MPI_AMR method (AG): Cannot allocate %llu bytes "
+                            "for send/recv/merge buffers.\n",
+                            5*4*new_group_size + 2*4
+                            );
                     return;
                 }
   
@@ -2930,9 +2926,10 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                     aggr_buff = malloc (total_data_size);
                     if (aggr_buff == 0)
                     {
-                        fprintf (stderr, "Can not alloc %d bytes for aggregation buffer.\n"
-                                         "Need to increase the number of aggregators.\n"
-                                ,total_data_size);
+                        adios_error (err_no_memory, "MPI_AMR method (AG): Cannot allocate "
+                                "%llu bytes for aggregation buffer.\n"
+                                "Need to increase the number of aggregators.\n",
+                                total_data_size);
                         return;
                     }
                 }
@@ -2964,9 +2961,10 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                     aggr_attr_buff = malloc (aggr_attr_size);
                     if (aggr_attr_buff == 0)
                     {
-                        fprintf (stderr, "can not alloc %d bytes for aggregation buffer.\n"
-                                         "Need to increase the number of aggregators.\n"
-                                ,aggr_attr_size);
+                        adios_error (err_no_memory, "MPI_AMR method (AG): Cannot allocate "
+                                "%llu bytes for aggregation attribute buffer.\n"
+                                "Need to increase the number of aggregators.\n",
+                                aggr_attr_size);
                         return;
                     }
 
@@ -3057,7 +3055,8 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                     if (count != total_data_size)
                     {
-                        fprintf (stderr, "Err in adios_mpi_amr_striping_unit_write()\n");
+                        adios_error (err_unspecified, 
+                                     "Error in adios_mpi_amr_striping_unit_write()\n");
                         return;
                     }
 
@@ -3522,7 +3521,9 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
         default:
         {
-            fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode, 
+                    "MPI_AMR method (AG): Unknown file mode (%d) at close time\n", 
+                    fd->mode);
         }
     }
 
@@ -3563,7 +3564,9 @@ void adios_mpi_amr_close (struct adios_file_struct * fd
     }
     else
     {
-        fprintf (stderr, "unknown I/O type. Only MPI_AMR_AGGREGATION and MPI_AMR_BRIGADE are supported\n");
+        adios_error (err_invalid_write_method, "MPI_AMR method: unknown I/O type (%d). "
+                "Only MPI_AMR_AGGREGATION and MPI_AMR_BRIGADE are supported\n",
+                md->g_io_type);
         return;
     }
     STOP_TIMER (ADIOS_TIMER_MPI_AMR_AD_CLOSE);

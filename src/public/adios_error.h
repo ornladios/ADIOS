@@ -39,7 +39,11 @@ enum ADIOS_ERRCODES {
 
     // Write method errors
     err_invalid_file_mode               = -100,
-    err_invalid_data                    = -101,
+    err_invalid_file_version            = -101,
+    err_invalid_data                    = -102,
+    err_buffer_overflow                 = -103,
+    err_too_many_variables              = -104,
+    err_invalid_write_method            = -105,
 
 
 
