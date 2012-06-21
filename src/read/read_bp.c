@@ -213,6 +213,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
             return read_var_bb (fp, r);
             break;
         case ADIOS_SELECTION_POINTS:
+            /* The idea is we convert a point selection to bounding box section. */
             size_of_type = bp_get_type_size (v->type, v->characteristics [0].value);
             nr = (read_request *) malloc (sizeof (read_request));
             assert (nr);
@@ -231,8 +232,8 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 
             nsel->type = ADIOS_SELECTION_BOUNDINGBOX;
             nsel->u.bb.ndim = sel->u.points.ndim;
-            nsel->u.bb.start = (uint64_t *) malloc (nsel->u.bb.ndim);
-            nsel->u.bb.count = (uint64_t *) malloc (nsel->u.bb.ndim);
+            nsel->u.bb.start = (uint64_t *) malloc (nsel->u.bb.ndim * 8);
+            nsel->u.bb.count = (uint64_t *) malloc (nsel->u.bb.ndim * 8);
             assert (nsel->u.bb.start && nsel->u.bb.count);
             
             for (i = 0; i < nsel->u.bb.ndim; i++)
@@ -242,13 +243,15 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 
             for (i = 0; i < sel->u.points.npoints; i++)
             {
-                memcpy ((char *)nsel->u.bb.start, (char *)sel->u.points.points[i * sel->u.points.ndim], sel->u.points.ndim * 8);
+                memcpy (nsel->u.bb.start, sel->u.points.points + i * sel->u.points.ndim, sel->u.points.ndim * 8);
+
                 chunk = read_var_bb (fp, nr);
- 
-                nr->data += sel->u.points.ndim * size_of_type;
+                nr->data += size_of_type;
             }
 
             free_selection (nsel);
+            free (nr);
+
             break;
         case ADIOS_SELECTION_WRITEBLOCK:
             break;
@@ -266,7 +269,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     struct adios_index_var_struct_v1 * v;
     int i, j, k, idx, t;
     int start_idx, stop_idx;
-    int ndim, ndim_notime, has_subfile, file_is_fortran;
+    int ndim, has_subfile, file_is_fortran;
     uint64_t size, * dims;
     uint64_t ldims[32], gdims[32], offsets[32];
     uint64_t datasize, nloop, dset_stride,var_stride, total_size=0, items_read;
@@ -293,6 +296,8 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     /* Get dimensions and flip if caller != writer language */
     /* Note: ndim below does include time if there is any */
     bp_get_and_swap_dimensions (v, file_is_fortran, &ndim, &dims, file_is_fortran);
+ 
+    assert (ndim == sel->u.bb.ndim);
 
     /* Fortran reader was reported of Fortran dimension order so it gives counts and starts in that order.
        We need to swap them here to read correctly in C order */
@@ -376,8 +381,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
         int * idx_table = (int *) malloc (sizeof (int) * (stop_idx - start_idx + 1));
 
         uint64_t write_offset = 0;
-        int npg = 0;
-        tmpcount = 0;
+//        tmpcount = 0;
 
         // loop over the list of pgs to read from one-by-one
         for (idx = 0; idx < stop_idx - start_idx + 1; idx++)
@@ -436,7 +440,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
             printf("start_notime   = "); for (j = 0; j<ndim_notime; j++) printf("%d ",start_notime[j]); printf("\n");
             */ 
                 
-            for (j = 0; j < ndim_notime; j++)
+            for (j = 0; j < ndim; j++)
             {
     
                 payload_size *= ldims [j];
@@ -445,7 +449,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                   || (start[j] > gdims[j]) 
                   || (start[j] + count[j] > gdims[j]))
                 {
-                    adios_error ( err_out_of_bound, "Error: Variable (id=%d) out of bound ("
+                    adios_error ( err_out_of_bound, "Error: Variable (id=%d) out of bound 1("
                         "the data in dimension %d to read is %llu elements from index %llu"
                         " but the actual data is [0,%llu])",
                         r->varid, j + 1, count[j], start[j], gdims[j] - 1);
@@ -465,7 +469,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
             if ( !idx_table[idx] ) {
                 continue;
             }
-            ++npg;
+//            ++npg;
     
             /* determined how many (fastest changing) dimensions can we read in in one read */
             int hole_break; 
@@ -568,7 +572,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 memset(offset_in_dset, 0 , 10 * 8);
                 memset(offset_in_var, 0 , 10 * 8);
                 int hit = 0;
-                for ( i = 0; i < ndim_notime ; i++) {
+                for ( i = 0; i < ndim ; i++) {
                     isize = offsets[i] + ldims[i];
                     if (start[i] >= offsets[i]) {
                         // head is in
@@ -602,14 +606,14 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 datasize = 1;
                 var_stride = 1;
     
-                for ( i = ndim_notime-1; i >= hole_break; i--) {
+                for ( i = ndim - 1; i >= hole_break; i--) {
                     datasize *= size_in_dset[i];
                     dset_stride *= ldims[i];
                     var_stride *= count[i];
                 }
     
                 uint64_t start_in_payload = 0, end_in_payload = 0, s = 1;
-                for (i = ndim_notime - 1; i > -1; i--) {
+                for (i = ndim - 1; i > -1; i--) {
                     start_in_payload += s * offset_in_dset[i] * size_of_type;
                     end_in_payload += s * (offset_in_dset[i] + size_in_dset[i] - 1) * size_of_type;
                     s *= ldims[i];
@@ -628,7 +632,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     MPI_FILE_READ_OPS2
                 }
  
-                for ( i = 0; i < ndim_notime ; i++)
+                for ( i = 0; i < ndim; i++)
                 {
                     offset_in_dset[i] = 0;
                 }
@@ -640,7 +644,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     nloop *= size_in_dset[i];
                 }
     
-                for ( i = 0; i < ndim_notime ; i++) {
+                for ( i = 0; i < ndim; i++) {
                     var_offset = offset_in_var[i] + var_offset * count[i];
                     dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
                 }
@@ -1284,6 +1288,7 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
     //FIXME
     v = bp_find_var_byid (fh, varid);
     type_size = bp_get_type_size (v->type, 0);;
+
     if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
     {
         datasize = type_size;
@@ -1294,11 +1299,7 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
     }
     else if (sel->type == ADIOS_SELECTION_POINTS)
     {
-        datasize = 0;
-        for (i = 0; i < sel->u.points.npoints; i++)
-        {
-            datasize += type_size * sel->u.bb.ndim;
-        }
+        datasize = type_size * sel->u.points.npoints;
     }
     
     r->priv = 0;

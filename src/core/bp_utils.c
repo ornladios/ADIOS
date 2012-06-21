@@ -1254,17 +1254,20 @@ void bp_get_dimensions (struct adios_index_var_struct_v1 * var_root, int file_is
     }
 }
 
-/* Get dimensions of a variable and flip them if swap_flag is set */
+/* Get dimensions of a variable and flip them if swap_flag is set.
+   ndim: has already taken time dimension out if there is any.
+   dims: is local dims if local array. is global dims if global array.
+*/
 void bp_get_and_swap_dimensions (struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
                                  int *ndim, uint64_t **dims, int swap_flag)
 {
-    int timedim = 0;
+    int dummy = 0;
 
     bp_get_dimensions (var_root, file_is_fortran, ndim, dims);
     if (swap_flag)
     {
         /* dummy timedim */
-        swap_order (*ndim, *dims, &timedim);
+        swap_order (*ndim, *dims, &dummy);
     }
 }
 

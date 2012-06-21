@@ -267,10 +267,10 @@ ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel)
     {
         nsel->u.points.ndim = sel->u.points.ndim;
         nsel->u.points.npoints = sel->u.points.npoints;
-        nsel->u.points.points = (uint64_t *) malloc (sel->u.points.npoints * 8);
+        nsel->u.points.points = (uint64_t *) malloc (nsel->u.points.npoints * nsel->u.points.ndim * 8);
         assert (nsel->u.points.points);
 
-        memcpy (nsel->u.points.points, sel->u.points.points, sel->u.points.npoints * 8);
+        memcpy (nsel->u.points.points, sel->u.points.points, sel->u.points.npoints * sel->u.points.ndim * 8);
     }
     else if (sel->type == ADIOS_SELECTION_WRITEBLOCK)
     {
