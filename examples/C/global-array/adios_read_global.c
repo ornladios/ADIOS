@@ -27,12 +27,20 @@
 #include "dmalloc.h"
 #endif
 
+// Bounding box selection or points selection
+#define BB 0
+// number of points to read if points selection
+#define NP 10
+
 int main (int argc, char ** argv) 
 {
     char        filename [256];
     int         rank, size, i, j, NX = 16;
     MPI_Comm    comm = MPI_COMM_WORLD;
     ADIOS_FILE * fp;
+    ADIOS_VARINFO * vi;
+    ADIOS_SELECTION sel;
+
     void * data = NULL, * data1 = NULL, * data2 = NULL;
     uint64_t start[2], count[2], bytes_read = 0;
     struct timeval t0, t1;
@@ -45,89 +53,92 @@ int main (int argc, char ** argv)
     adios_read_init_method (ADIOS_READ_METHOD_BP, comm, "");
 
     fp = adios_read_open_file ("adios_global.bp", ADIOS_READ_METHOD_BP, comm);
-    //adios_inq_var_byid (fp, 
-    adios_read_close (fp);
+    vi = adios_inq_var (fp, "temperature"); 
+    adios_inq_var_blockinfo (fp, vi);
 
-    adios_read_finalize_method (ADIOS_READ_METHOD_BP);
-
-#if 0
-    adios_set_read_method (ADIOS_READ_METHOD_BP_STAGED1);
-
-    MPI_Barrier (MPI_COMM_WORLD);
-    gettimeofday (&t0, NULL);
-
-    MPI_Comm_rank (comm, &rank);
-
-    ADIOS_FILE * f = adios_fopen ("adios_global.bp", comm);
-//    ADIOS_FILE * f = adios_fopen ("adios_amr_write.bp", comm);
-
-    if (f == NULL)
+    
+    for (i = 0; i < vi->ndim; i++)
     {
-        printf ("%s\n", adios_errmsg());
-        return -1;
+        printf ("[%ld]", vi->dims[i]);
     }
 
-    ADIOS_GROUP * g = adios_gopen (f, "temperature");
-    if (g == NULL)
-    {
-        printf ("%s\n", adios_errmsg());
-        return -1;
-    }
+    printf ("\n");
+    
+printf ("vi->sum_nblocks = %d\n", vi->sum_nblocks);
+printf ("vi->nsteps = %d\n", vi->nsteps);
 
-    ADIOS_VARINFO * v = adios_inq_var (g, "temperature");
-
-    /* Using less readers to read the global array back, i.e., non-uniform */
-    uint64_t slice_size = v->dims[1]/size;
+    uint64_t slice_size = vi->dims[1]/size;
     start[0] = 0;
 //printf ("slice_size = %llu\n", slice_size);
     if (rank == size-1)
-        slice_size = slice_size + v->dims[1]%size;
+        slice_size = slice_size + vi->dims[1]%size;
 
-    count[0] = v->dims[0];
+    count[0] = vi->dims[0];
 
     start[1] = rank * slice_size;
     count[1] = slice_size;
 
-    data = malloc (slice_size * v->dims[0] * sizeof (double));
-    if (data == NULL)
-    {
-        fprintf (stderr, "malloc failed.\n");
-        return -1;
-    }
-
-    //FIXME: temperature and pressure has the same data
-//    bytes_read = adios_read_var (g, "NX", start, count, &NX);
-    bytes_read = adios_read_var (g, "temperature", start, count, data);
-
-    adios_gclose (g);
-
-    adios_fclose (f);
-//printf ("NX = %d\n", NX);
-
-
-/*
-if (rank == 0)
-{
-    for (i = 0; i < v->dims[0]; i++) {
-//        printf ("rank %3d: temperature [%lld,%d:%lld]", rank, start[0]+i, 0, slice_size);
-        for (j = 0; j < slice_size; j++)
-            printf (" %7.5g", * ((double *)data + i * slice_size  + j));
-        printf ("\n");
-    }
-}
-*/
-    MPI_Barrier (MPI_COMM_WORLD);
-    gettimeofday (&t1, NULL);
-
-    free (data);
-
-    adios_free_varinfo (v);
-
+#if BB
+    data = malloc (slice_size * vi->dims[0] * 8);
     if (rank == 0)
     {
-        printf ("IO time = %f \n", t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000 );
+        for (i = 0; i < vi->dims[0]; i++)
+        {
+            for (j = 0; j < slice_size; j++)
+                * ((double *)data + i * slice_size  + j) = 0;
+        }
+    }
+#else
+    data = malloc (NP * 8);
+#endif
+
+#if BB
+    sel.type = ADIOS_SELECTION_BOUNDINGBOX;
+    sel.u.bb.ndim = vi->ndim;
+    sel.u.bb.start = start;
+    sel.u.bb.count = count;
+#else
+    sel.type = ADIOS_SELECTION_POINTS;
+    sel.u.points.ndim = vi->ndim;
+    sel.u.points.npoints = NP;
+    sel.u.points.points = malloc (sel.u.points.npoints * vi->ndim * 8);
+    for (i = 0; i < sel.u.points.npoints; i++)
+    {
+        sel.u.points.points[i * vi->ndim] = 0;
+        sel.u.points.points[i * vi->ndim + 1] = i;
     }
 #endif
+    adios_schedule_read (fp, &sel, "temperature", 1, 1, data);
+    adios_perform_reads (fp, 1);
+
+#if BB
+    if (rank == 0)
+    {
+        for (i = 0; i < vi->dims[0]; i++)
+        {
+            for (j = 0; j < slice_size; j++)
+                printf (" %7.5g", * ((double *)data + i * slice_size  + j));
+            printf ("\n");
+        }
+    }
+#else
+    if (rank == 0)
+    {
+        for (i = 0; i < sel.u.points.npoints; i++)
+        {
+            printf (" %7.5g", * ((double *)data + i));
+        }
+        printf ("\n");
+    }
+
+#endif
+
+    adios_read_close (fp);
+
+    adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+
+    free (data);
     MPI_Finalize ();
+
     return 0;
 }
