@@ -5,9 +5,9 @@
 We can read in any variable and any sub-array of a variable with the read API as 
 well as the attributes. There were three design choices when creating this API:
 
-1. Groups in the BP files are handled separately
+\begin{enumerate}
+\item Groups in the BP files are handled separately
 
-\leftskip=22pt
 Most BP files contain a single group and the variables and attributes in that group 
 have their paths so it looks like they are organized into a hierarchy. If a BP 
 file contains more than one groups, the second group can have a variable with the 
@@ -15,19 +15,15 @@ same path and name as a variable in the first group. We choose not to add the na
 of the groups to the root of all paths because that is inconvenient for the majority 
 of the BP files containing a single group.
 
-\leftskip=0pt
-2. Dimensions of arrays are reported differently for C and Fortran
+\item Dimensions of arrays are reported differently for C and Fortran
 
-\leftskip=22pt
 When reading from a different language than writing, the storage order of the dimensions 
 is the opposite. Instead of transposing multidimensional arrays in memory to order 
 the data correctly at read time, simply the dimensions are reported reversed. 
 
-\leftskip=0pt
-3. The C API returns structures filled with information while the Fortran API returns 
+\item The C API returns structures filled with information while the Fortran API returns 
 information in individual arguments
 
-\leftskip=22pt
 Since the BP file format is metadata rich, and the metadata is immediately accessible 
 in the footer of the file, we can have an easy to use API with few functions. The 
 open function returns information on the number of elements and timesteps and the 
@@ -35,8 +31,8 @@ list of groups in the file. The group open returns the list of variables and att
 in the group. The inquiry of a variable returns not just the type and dimensionality 
 of a variable but also the global minimum and maximum of it without reading in 
 the content of the variable from the file. 
+\end{enumerate}
 
-\leftskip=0pt
 The read API library has two versions. The MPI version should be used in parallel 
 programs. Only the rank=0 process reads the footer of the file and broadcasts it 
 to the other processes in adios\_fopen(). File access is handled through MPI\-{}IO 
@@ -58,35 +54,40 @@ Note: for Fortran, please read section 7.4 on page \pageref{HRef144348801}.
 
 The sequence of reading in a variable from the BP file is
 
-- open file
+\begin{itemize}
+\renewcommand{\labelitemi}{$-$}
+\item open file
 
-- open a group
+\item open a group
 
-- inquiry the variable to get type and dimensions
+\item inquiry the variable to get type and dimensions
 
-- allocate memory for the variable
+\item allocate memory for the variable
 
-- read in variable (whole or part of it)
+\item read in variable (whole or part of it)
 
-- free varinfo data structure
+\item free varinfo data structure
 
-- close group
+\item close group
 
-- close file
+\item close file
+\end{itemize}
 
 Example codes using the C API are 
 
-\leftskip=36pt
-- examples/C/read\_all/read\_all.c
+\begin{itemize}
+\renewcommand{\labelitemi}{$-$}
+\item examples/C/read\_all/read\_all.c
 
-- examples/C/global-array/adios\_read\_global\label{HToc182553399}
+\item examples/C/global-array/adios\_read\_global\label{HToc182553399}
+\end{itemize}
 
 \subsection{adios\_errmsg / adios\_errno}
 
-\leftskip=0pt
-int    adios\_errno
-
-char * adios\_errmsg()
+\begin{lstlisting}[]
+int    adios_errno
+char * adios_errmsg()
+\end{lstlisting}
 
 If an error occurrs during the call of a C api function, it either returns NULL 
 (instead of a pointer to an allocated structure) or a negative number. It also 
@@ -99,56 +100,32 @@ duplicating the string, so refrain from writing anything into it. Also, only the
 last error message is available at any time.\label{HToc182553400}
 
 \subsection{adios\_set\_read\_method}
-
-/** Set the reading method for the next adios\_fopen.
-
-\parindent=3pt
-*  IN:  method   read method to use
-
-*  RETURN:       0 if accepted, \texttt{<}0 on error
-
-\parindent=7pt
-*  It is optional to use it before calling adios\_fopen. Default is ADIOS\_READ\_METHOD\_BP.
-
-\parindent=3pt
-*/
-
-\parindent=0pt
-int adios\_set\_read\_method (enum ADIOS\_READ\_METHOD method);
+\begin{lstlisting}[]
+/** Set the reading method for the next adios_fopen.
+  *  IN:  method   read method to use
+  *  RETURN:       0 if accepted, <0 on error
+  *  It is optional to use it before calling adios_fopen. 
+  *  Default is ADIOS_READ_METHOD_BP.
+  */
+int adios_set_read_method (enum ADIOS_READ_METHOD method);
+\end{lstlisting}
 
 This API sets the reading method for the subsequent adios\_fopen. The methods supported 
 as of ADIOS 1.3 include
 
-enum ADIOS\_READ\_METHOD \{
-
-\parindent=32pt
-ADIOS\_READ\_METHOD\_BP = 0    /* Read from ADIOS BP file (written by POSIX, MPI 
-etc methods) */
-
-\parindent=28pt
-,ADIOS\_READ\_METHOD\_BP\_STAGED = 1    /* Read from ADIOS BP file (written by 
-POSIX, MPI\_AMR etc methods) */
-
-,ADIOS\_READ\_METHOD\_HDF5 = 2    /* Read from HDF5 file (written by PHDF5 method) 
-              */
-
-\parindent=57pt
-,ADIOS\_READ\_METHOD\_DART = 3    /* Read from memory written by DART method   
-                  */
-
-\parindent=28pt
-,ADIOS\_READ\_METHOD\_DIMES = 4    /* Read from memory written by DIMES method 
-                   */
-
-,ADIOS\_READ\_METHOD\_NSSI = 5    /* Read from memory written by NSSI method   
-                  */
-
-\parindent=57pt
-,ADIOS\_READ\_METHOD\_DATATAP = 6    /* Read from memory written by DATATAP method 
-                 */
-
-\parindent=0pt
-\};
+\begin{lstlisting}[]
+enum ADIOS_READ_METHOD {
+  ADIOS_READ_METHOD_BP = 0,    /* Read from ADIOS BP file (written by POSIX,
+                                   MPI etc methods) */
+  ADIOS_READ_METHOD_BP_STAGED = 1,    /* Read from ADIOS BP file (written by
+                                         POSIX, MPI_AMR etc methods) */
+  ADIOS_READ_METHOD_HDF5 = 2,    /* Read from HDF5 file (written by PHDF5 method) */
+  ADIOS_READ_METHOD_DART = 3,    /* Read from memory written by DART method */
+  ADIOS_READ_METHOD_DIMES = 4,    /* Read from memory written by DIMES method */
+  ADIOS_READ_METHOD_NSSI = 5,    /* Read from memory written by NSSI method */
+  ADIOS_READ_METHOD_DATATAP = 6    /* Read from memory written by DATATAP method */
+};
+\end{lstlisting}
 
 It is optional to use before calling adios\_fopen. The default is ADIOS\_READ\_METHOD\_BP. 
 Note for ADIOS\_READ\_METHOD\_BP\_STAGED method, two shell environment variables 
@@ -156,50 +133,35 @@ must be set before executing, namely, num\_aggregators, which specifies the numb
 of readers to use, and chunk\_size, which specifies the size of the chunk to read 
 in for each read request.
 
-export num\_aggregators=1
-
-export chunk\_size=16\label{HToc182553401}
+\begin{lstlisting}[]
+export num_aggregators=1
+export chunk_size=16
+\end{lstlisting}\label{HToc182553401}
 
 \subsection{adios\_fopen }
 
-ADIOS\_FILE * adios\_fopen (const char * fname, MPI\_Comm comm)
+\begin{lstlisting}[]
+ADIOS\_FILE * adios_fopen (const char * fname, MPI_Comm comm)
+\end{lstlisting}
 
 ADIOS FILE is a struct of
 
-\leftskip=22pt
-uint64\_t fh; File handler
+\begin{lstlisting}[]
+uint64_t fh;            /*File handler*/
+int groups_count;       /*Number of adios groups in file*/      
+int vars_count;         /*Number of variables in all groups*/  
+int attrs_count;        /*Number of attributes in all groups*/
+int tidx_start;         /*First timestep in file, usually 1*/
+int ntimesteps;         /*Number of timesteps in file.*/ 
+                        /*There is always at least one timestep*/
+int version;            /*ADIOS BP version of file format*/  
+uint64_t file_size;     /*Size of file in bytes*/ 
+int  endianness;        /*0: little endian, 1: big endian*/ 
+                        /*You do not need to care about this.*/
+char ** group_namelist; /*Names of the adios groups in
+                          the file (cf. groups_count)*/
+\end{lstlisting}
 
-int groups\_count; Number of adios groups in file      
-
-int vars\_count; Number of variables in all groups  
-
-int attrs\_count; Number of attributes in all groups
-
-int tidx\_start; First timestep in file, usually 1
-
-int ntimesteps; Number of timesteps in file. 
-
-\parindent=39pt
-There is always at least one timestep
-
-\parindent=0pt
-int version; ADIOS BP version of file format  
-
-uint64\_t file\_size;  Size of file in bytes 
-
-int  endianness;  0: little endian, 1: big endian 
-
-\parindent=39pt
-You do not need to care about this.
-
-\parindent=0pt
-char   **  group\_namelist; Names of the adios groups in the file 
-
-\parindent=39pt
-(cf. groups\_count)
-
-\leftskip=0pt
-\parindent=0pt
 The array for the list of group names is allocated in the function and is freed 
 in the close function.
 
@@ -211,16 +173,20 @@ an arbitrary integer value, which is not used at all. \label{HToc182553402}
 
 \subsection{adios\_fclose}
 
-int adios\_fclose (ADIOS\_FILE *fp)
+\begin{lstlisting}[]
+int adios_fclose (ADIOS\_FILE *fp)
+\end{lstlisting}
 
 You are expected to close a file when you do not need it anymore. This function 
 releases a lot of internal memory structures.\label{HToc182553403}
 
 \subsection{adios\_gopen / adios\_gopen\_byid}
 
-ADIOS\_GROUP * adios\_gopen (ADIOS\_FILE *fp, const char * grpname)
+\begin{lstlisting}[]
+ADIOS_GROUP * adios_gopen (ADIOS_FILE *fp, const char * grpname)
 
-ADIOS\_GROUP * adios\_gopen\_byid (ADIOS\_FILE *fp, int grpid)
+ADIOS_GROUP * adios_gopen_byid (ADIOS_FILE *fp, int grpid)
+\end{lstlisting}
 
 You need to open a group to get access to its variables and attributes. You can 
 open a group either by its name returned in the ADIOS\_FILE struct's group\_namelist 
@@ -231,22 +197,16 @@ You \textit{can} have several groups open at the same time.
 
 ADIOS\_GROUP is a struct of
 
-\leftskip=22pt
-uint64\_t gh;   Group handler
+\begin{lstlisting}[]
+uint64_t gh;           /*Group handler*/
+int grpid;             /*group index (0..ADIOS\_FILE.groups\_count-1)*/
+int vars_count;        /*Number of variables in this adios group*/
+char ** var_namelist;  /*Variable names in a char* array*/ 
+int attrs_count;       /*Number of attributes in this adios group*/
+char ** attr_namelist; /*Attribute names in a char* array*/ 
+ADIOS_FILE * fp;       /*pointer to the parent ADIOS\_FILE struct*/  
+\end{lstlisting}
 
-int grpid;   group index (0..ADIOS\_FILE.groups\_count-1)
-
-int vars\_count;   Number of variables in this adios group
-
-char   **  var\_namelist;  Variable names in a char* array 
-
-int attrs\_count;  Number of attributes in this adios group 
-
-char   ** attr\_namelist; Attribute names in a char* array 
-
-ADIOS\_FILE * fp;   pointer to the parent ADIOS\_FILE struct  
-
-\leftskip=0pt
 The arrays for the list of variable names and attribute name are allocated in the 
 function and are freed in the group close function.
 
@@ -258,15 +218,18 @@ original indices of the variables or to identify the variables by name. \label{H
 
 \subsection{adios\_gclose}
 
-int adios\_gclose (ADIOS\_GROUP *gp)
+\begin{lstlisting}[]
+int adios_gclose (ADIOS_GROUP *gp)
+\end{lstlisting}
 
 You need to close the group when you do not need it anymore. \label{HRef140808163}\label{HToc182553405}
 
 \subsection{adios\_inq\_var / adios\_inq\_var\_byid}
 
-ADIOS\_VARINFO * adios\_inq\_var (ADIOS\_GROUP *gp, const char * varname)
-
-ADIOS\_VARINFO * adios\_inq\_var\_byid (ADIOS\_GROUP *gp, int varid)
+\begin{lstlisting}[]
+ADIOS_VARINFO * adios_inq_var (ADIOS_GROUP *gp, const char * varname)
+ADIOS_VARINFO * adios_inq_var_byid (ADIOS_GROUP *gp, int varid)
+\end{lstlisting}
 
 This function should be used if you want to discover the type and dimensionality 
 of a variable or want to get the minimum/maximum/average/standard\_deviation values 
@@ -279,75 +242,36 @@ when you do not need it anymore by using the adios\_free\_varinfo() function.
 
 ADIOS\_VARINFO is a struct of 
 
-\leftskip=22pt
-int  grpid;  group index (0..ADIOS\_FILE.groups\_count-1)
+\begin{lstlisting}[]
+int  grpid;     /*group index (0..ADIOS\_FILE.groups\_count-1)*/
+int  varid;     /*variable index (0..ADIOS\_GROUP.var\_count-1)*/
+enum ADIOS_DATATYPES type;   /*type of variable*/
+int ndim;       /*number of dimensions, 0 for scalars*/ 
+uint64_t * dims;/*size of each dimension*/ 
+int timedim;    /* -1: variable has no timesteps in file.
+                  >=0: which dimension is time*/
+void * value;   /*value of a scalar variable, NULL for array.*/
+void * gmin;    /*minimum value in an array variable.*/ 
+void * gmax;    /*maximum value of an array variable*/ 
+void * gavg;    /*average value of an array variable*/
+void * gstd_dev;/*standard deviation value of an array variable
+                  (over all timesteps, for scalars they are = value)*/
+void * mins;    /*minimum per each timestep*/ 
+void * maxs;    /*maximum per each timestep*/
+void * avgs;    /*average per each timestep*/
+void * std_dev; /*standard deviation per each timestep
+                  (array of timestep elements)*/
+struct ADIOS_HIST {
+    uint32\_t num_breaks;  /*number of break points of the histogram*/
+    double min;            /*minimum of binning boundary*/ 
+    double max;            /*maximum of binning boundary*/ 
+    double * breaks;       /*break points of the histogram*/
+    uint32_t **frequencies;/*histogram values per timestep*/
+    uint32_t *gfrequencies;/*histogram values for all timesteps*/
+} *hist;        /*NULL if histogram binning interval was not 
+                  formed correctly at write time*/
+\end{lstlisting}
 
-int  varid; variable index (0..ADIOS\_GROUP.var\_count-1)
-
-enum ADIOS\_DATATYPES type;           type of variable
-
-int ndim;  number of dimensions, 0 for scalars 
-
-uint64\_t  * dims;  size of each dimension 
-
-int timedim;  -1: variable has no timesteps in file,
-
-\parindent=39pt
-\texttt{>}=0: which dimension is time
-
-\parindent=0pt
-void      * value;  value of a scalar variable, NULL for array.
-
-void      * gmin;  minimum value in an array variable. 
-
-void      * gmax;  maximum value of an array variable 
-
-void      *      gavg; average value of an array variable
-
-void      *      gstd\_dev; standard deviation value of an array variable
-
-\parindent=36pt
-(over all timesteps, for scalars they are = value)
-
-\parindent=0pt
-void      * mins; minimum per each timestep 
-
-void      * maxs;  maximum per each timestep
-
-void      * avgs;  average per each timestep
-
-void      * std\_dev;  standard deviation per each timestep
-
-\parindent=36pt
-(array of timestep elements)
-
-\parindent=0pt
-struct ADIOS\_HIST \{
-
-\parindent=3pt
-uint32\_t      num\_breaks;  number of break points of the histogram
-
-\parindent=7pt
-double   min; minimum of binning boundary 
-
-double   max;  maximum of binning boundary 
-
-\parindent=14pt
-double    *   breaks;        break points of the histogram
-
-\parindent=7pt
-uint32\_t  ** frequencies; histogram values per timestep
-
-uint32\_t  *   gfrequencies;  histogram values for all timesteps
-
-\leftskip=166pt
-\parindent=-144pt
-\} *hist;   NULL if histogram binning interval was not 
-
-formed correctly at write time
-
-\leftskip=0pt
-\parindent=0pt
 For complex numbers, the statistics in ADIOS\_VARINFO, like gmin, gavg, std\_devs 
 etc, are of base type double. They also have an additional dimension that stores 
 the statistics for the magnitude, the real part, and the imaginary part of the 
@@ -357,40 +281,28 @@ minimums for the real and the imaginary parts, respectively. \label{HToc18255340
 
 \subsection{adios\_free\_varinfo}
 
+\begin{lstlisting}[]
 void adios\_free\_varinfo (ADIOS\_VARINFO *cp)
+\end{lstlisting}
 
 Frees up the ADIOS\_VARINFO* structure returned by adios\_inq\_var().\label{HToc182553407}
 
 \subsection{adios\_read\_var / adios\_read\_var\_byid}
 
-int64\_t adios\_read\_var (ADIOS\_GROUP    * gp, 
+\begin{lstlisting}[]
+int64_t adios_read_var (ADIOS_GROUP * gp, 
+    const char   * varname,
+    const uint64_t * start,
+    const uint64_t * count,
+    void           * data)
 
-\parindent=86pt
-const char     * varname,
+int64_t adios_read_var_byid (ADIOS_GROUP * gp, 
+    int varid,
+    const uint64_t * start, 
+    const uint64_t * count,
+    void * data)
+\end{lstlisting}
 
-const uint64\_t * start,
-
-\parindent=172pt
-const uint64\_t * count,
-
-\parindent=86pt
-void           * data)
-
-\parindent=0pt
-int64\_t adios\_read\_var\_byid (ADIOS\_GROUP * gp, 
-
-\parindent=104pt
-int varid,
-
-const uint64\_t * start, 
-
-\parindent=208pt
-const uint64\_t * count,
-
-\parindent=104pt
-void * data)
-
-\parindent=0pt
 This function is used to read in the content of a variable, or a subset of it. 
 You need to allocate memory for receiving the data before calling this function. 
 The subset (or the entire set) is defined by the \textit{start} and \textit{count} 
@@ -410,34 +322,20 @@ function to get the size of one element of a given type (cf. ADIOS\_VARINFO.type
 
 \subsection{adios\_get\_attr / adios\_get\_attr\_byid}
 
-int adios\_get\_attr (ADIOS\_GROUP           * gp,
+\begin{lstlisting}[]
+int adios_get_attr (ADIOS_GROUP * gp,
+    const char            * attrname,
+    enum ADIOS_DATATYPES      * type,
+    int                       * size,
+    void                     ** data)
 
-\parindent=72pt
-const char            * attrname,
+int adios_get_attr_byid (ADIOS_GROUP * gp,
+    int                            attrid,
+    enum ADIOS_DATATYPES           * type,
+    int                            * size,
+    void                          ** data)
+\end{lstlisting}
 
-enum ADIOS\_DATATYPES  * type,
-
-\parindent=144pt
-int                   * size,
-
-\parindent=72pt
-void                 ** data)
-
-\parindent=0pt
-int adios\_get\_attr\_byid (ADIOS\_GROUP           * gp,
-
-\parindent=90pt
-int                     attrid,
-
-enum ADIOS\_DATATYPES  * type,
-
-\parindent=180pt
-int                   * size,
-
-\parindent=90pt
-void                 ** data)
-
-\parindent=0pt
 This function retrieves an attribute including its type, memory size and its value. 
 An attribute can only be a scalar value or a string. Memory is allocated in the 
 function to store the value. The allocated size is returned in the size argument. 
@@ -450,13 +348,17 @@ adios\_read\_var internally, so the file will be accessed to read in that scalar
 
 \subsection{adios\_type\_to\_string}
 
-const char * adios\_type\_to\_string (enum ADIOS\_DATATYPES type)
+\begin{lstlisting}[]
+const char * adios_type_to_string (enum ADIOS_DATATYPES type)
+\end{lstlisting}
 
 This function returns the name of a given type.\label{HToc182553410}
 
 \subsection{adios\_type\_size}
 
-int adios\_type\_size(enum ADIOS\_DATATYPES type, void *data)
+\begin{lstlisting}[]
+int adios_type_size(enum ADIOS_DATATYPES type, void *data)
+\end{lstlisting}
 
 This function returns the memory size of one data element of an adios type. If 
 the type is adios\_string, and the second argument is the string itself, it returns 
@@ -477,71 +379,55 @@ a variable that has a time index.\label{HToc182553412}
 This function calculates Pearson correlation/covariance of the characteristic data 
 of \textit{vix} and characteristic data of \textit{viy}.
 
-double adios\_stat\_cor (ADIOS\_VARINFO * vix, 
+\begin{lstlisting}[]
+double adios_stat_cor (ADIOS_VARINFO * vix, 
+    ADIOS_VARINFO                    * viy, 
+    char                  * characteristic, 
+    uint32_t                    time_start, 
+    uint32_t                      time_end, 
+    uint32_t                           lag)
 
-ADIOS\_VARINFO * viy, 
+double adios_stat_cov (ADIOS_VARINFO * vix, 
+    ADIOS_VARINFO                    * viy, 
+    char                  * characteristic, 
+    uint32_t                   time_start, 
+    uint32_t                     time_end, 
+    uint32_t                          lag)
+\end{lstlisting}
 
-\parindent=64pt
-char          * characteristic, 
-
-\parindent=46pt
-uint32\_t        time\_start, 
-
-\parindent=28pt
-uint32\_t        time\_end, 
-
-\parindent=7pt
-uint32\_t        lag)
-
-\parindent=0pt
-double adios\_stat\_cov (ADIOS\_VARINFO * vix, 
-
-ADIOS\_VARINFO * viy, 
-
-\parindent=64pt
-char          * characteristic, 
-
-\parindent=46pt
-uint32\_t        time\_start, 
-
-\parindent=28pt
-uint32\_t        time\_end, 
-
-\parindent=7pt
-uint32\_t        lag)
-
-\parindent=0pt
 Required:
 
-\ensuremath{\Sigma} vix - an ADIOS\_VARINFO object
+\begin{itemize}
+\item vix - an ADIOS\_VARINFO object
+\end{itemize}
 
 Optional:
 
-\ensuremath{\Sigma} viy - either an ADIOS\_VARINFO object or NULL 
+\begin{itemize}
+\item viy - either an ADIOS\_VARINFO object or NULL 
 
-\ensuremath{\Sigma} characteristics - can be any of the following pre-computed 
+\item characteristics - can be any of the following pre-computed 
 statistics: \texttt{"}minimum\texttt{"} or \texttt{"}maximum\texttt{"} or \texttt{"}average\texttt{"} 
 or \texttt{"}standard deviation\texttt{"} (alternatively, \texttt{"}min\texttt{"} 
 or \texttt{"}max\texttt{"} or \texttt{"}avg\texttt{"} or \texttt{"}std\_dev\texttt{"} 
 can be given)
 
-\ensuremath{\Sigma} time\_start - specifies the start time from which correlation/covariance 
+\item time\_start - specifies the start time from which correlation/covariance 
 should be performed
 
-\ensuremath{\Sigma} time\_end - specifies the end time up to which correlation/covariance 
+\item time\_end - specifies the end time up to which correlation/covariance 
 should be performed
 
-\leftskip=36pt
 time\_start and time\_end should be within the time bounds of vix and viy with 
 time\_start \texttt{<} time\_end
 
 If time\_start and time\_end = 0, the entire range of timesteps is considered. 
 In this case, vix and viy should have the same number of timesteps.
 
-\leftskip=0pt
-\ensuremath{\Sigma} lag - if viy is NULL, and if lag is given, correlation is performed 
+\item lag - if viy is NULL, and if lag is given, correlation is performed 
 between the data specified by vix, and vix shifted by 'lag' timesteps.  If viy 
 is not NULL, lag is ignored.\label{HRef144348794}\label{HRef144348801}\label{HToc182553413}
+\end{itemize}
 
 \section{Read Fortran API description}
 
@@ -578,219 +464,112 @@ which has access to only one timestep (or a subset of timesteps) in contrast to
 all timesteps in a time-indexed BP file, the current timestep and last available 
 timestep is returned. These values have no use for file reading right now but you 
 have to use dummy integer variables in the call otherwise your code will abort 
-with segmentation fault. 
+with a segmentation fault. 
 
-subroutine adios\_errmsg (msg)
-
-\parindent=36pt
-character(*),   intent(out) :: msg
-
-\parindent=0pt
+\begin{lstlisting}[language=Fortran]
+subroutine adios_errmsg (msg)
+    character(*),   intent(out) :: msg
 end subroutine
 
-subroutine adios\_fopen (fp, fname, comm, groups\_count, err)
-
-\parindent=36pt
-integer*8,      intent(out) :: fp
-
-character(*),   intent(in)  :: fname
-
-integer,        intent(in)  :: comm
-
-integer,        intent(out) :: groups\_count
-
-integer,        intent(out) :: err
-
-\parindent=0pt
+subroutine adios_fopen (fp, fname, comm, groups_count, err)
+    integer*8,      intent(out) :: fp
+    character(*),   intent(in)  :: fname
+    integer,        intent(in)  :: comm
+    integer,        intent(out) :: groups_count
+    integer,        intent(out) :: err
 end subroutine
 
-subroutine adios\_fclose (fp, err)
-
-\parindent=36pt
-integer*8,      intent(in)  :: fp
-
-integer,        intent(out) :: err
-
-\parindent=0pt
+subroutine adios_fclose (fp, err)
+    integer*8,      intent(in)  :: fp
+    integer,        intent(out) :: err
 end subroutine
 
-subroutine adios\_inq\_file (fp, vars\_count, 
-
-\parindent=97pt
-attrs\_count, tstart, ntsteps, 
-
-gnamelist, err)
-
-\parindent=36pt
-integer*8,      intent(in)  :: fp
-
-integer,        intent(out) :: vars\_count
-
-integer,        intent(out) :: attrs\_count
-
-integer,        intent(out) :: tstart
-
-integer,        intent(out) :: ntsteps
-
-character(*), dimension(*), intent(inout) :: gnamelist
-
-integer,        intent(out) :: err
-
-\parindent=0pt
+subroutine adios_inq_file (fp, vars_count, 
+             attrs_count, tstart, ntsteps, 
+                           gnamelist, err)
+    integer*8,      intent(in)  :: fp
+    integer,        intent(out) :: vars_count
+    integer,        intent(out) :: attrs_count
+    integer,        intent(out) :: tstart
+    integer,        intent(out) :: ntsteps
+    character(*), dimension(*), intent(inout) :: gnamelist
+    integer,        intent(out) :: err
 end subroutine
 
-subroutine adios\_gopen (fp, gp, grpname, vars\_count, 
-
-\parindent=86pt
-attrs\_count, err)
-
-\parindent=36pt
-integer*8,      intent(in)  :: fp
-
-integer*8,      intent(out) :: gp
-
-character(*),   intent(in)  :: grpname
-
-integer,        intent(out) :: vars\_count
-
-integer,        intent(out) :: attrs\_count
-
-integer,        intent(out) :: err
-
-\parindent=0pt
+subroutine adios_gopen (fp, gp, grpname, vars_count, 
+                                   attrs_count, err)
+    integer*8,      intent(in)  :: fp
+    integer*8,      intent(out) :: gp
+    character(*),   intent(in)  :: grpname
+    integer,        intent(out) :: vars_count
+    integer,        intent(out) :: attrs_count
+    integer,        intent(out) :: err
 end subroutine
 
-subroutine adios\_gclose (gp, err)
-
-\parindent=36pt
-integer*8,      intent(in)  :: gp
-
-integer,        intent(out) :: err
-
-\parindent=0pt
+subroutine adios_gclose (gp, err)
+    integer*8,      intent(in)  :: gp
+    integer,        intent(out) :: err
 end subroutine
 
-subroutine adios\_inq\_group (gp, vnamelist, anamelist, err)
-
-\parindent=36pt
-integer*8,      intent(in)  :: gp
-
-character(*), dimension(*), intent(inout) :: vnamelist
-
-character(*), dimension(*), intent(inout) :: anamelist
-
-integer,        intent(out) :: timestep
-
-integer,        intent(out) :: lasttimestep
-
-integer,        intent(out) :: err
-
-\parindent=0pt
+subroutine adios_inq_group (gp, vnamelist, anamelist, err)
+    integer*8,      intent(in)  :: gp
+    character(*), dimension(*), intent(inout) :: vnamelist
+    character(*), dimension(*), intent(inout) :: anamelist
+    integer,        intent(out) :: timestep
+    integer,        intent(out) :: lasttimestep
+    integer,        intent(out) :: err
 end subroutine
 
-subroutine adios\_inq\_var (gp, varname, vartype, ndim, 
-
-\parindent=93pt
-dims, timedim, err)
-
-\parindent=36pt
-integer*8,      intent(in)  :: gp
-
-character(*),   intent(in)  :: varname
-
-integer,        intent(out) :: vartype
-
-integer,        intent(out) :: ndim
-
-integer*8, dimension(*), intent(out) :: dims
-
-integer,        intent(out) :: timedim
-
-integer,        intent(out) :: err
-
-\parindent=0pt
+subroutine adios_inq_var (gp, varname, vartype, ndim, 
+                                  dims, timedim, err)
+    integer*8,      intent(in)  :: gp
+    character(*),   intent(in)  :: varname
+    integer,        intent(out) :: vartype
+    integer,        intent(out) :: ndim
+    integer*8, dimension(*), intent(out) :: dims
+    integer,        intent(out) :: timedim
+    integer,        intent(out) :: err
 end subroutine
 
-subroutine adios\_read\_var (gp, varname, start, count,
-
-\parindent=97pt
-data, read\_bytes)
-
-\parindent=36pt
-integer*8,      intent(in)  :: gp
-
-character(*),   intent(in)  :: varname
-
-integer*8, dimension(*), intent(in) :: start
-
-integer*8, dimension(*), intent(in) :: count
-
-\textit{GENERIC}, dimension(*), intent(inout) :: data
-
-integer*8,      intent(out) :: read\_bytes
-
-! read\_bytes \texttt{<} 0 indicates error
-
-\parindent=0pt
+subroutine adios_read_var (gp, varname, start, count,
+                                   data, read_bytes)
+    integer*8,      intent(in)  :: gp
+    character(*),   intent(in)  :: varname
+    integer*8, dimension(*), intent(in) :: start
+    integer*8, dimension(*), intent(in) :: count
+    GENERIC, dimension(*), intent(inout) :: data
+    integer*8,      intent(out) :: read_bytes
+    ! read_bytes < 0 indicates error
 end subroutine
 
-subroutine adios\_get\_varminmax (gp, varname, value, gmin, 
-
-\parindent=115pt
-gmax, mins, maxs, err)
-
-\parindent=36pt
-integer*8,      intent(in)  :: gp
-
-character(*),   intent(in)  :: varname
-
-\textit{GENERIC},        intent(out) :: value
-
-\textit{GENERIC},        intent(out) :: gmin
-
-\textit{GENERIC},        intent(out) :: gmax
-
-\textit{GENERIC}, dimension(*), intent(inout) :: mins
-
-\textit{GENERIC}, dimension(*), intent(inout) :: maxs
-
-integer,        intent(out) :: err
-
-\parindent=0pt
+subroutine adios_get_varminmax (gp, varname, value, gmin, 
+                                   gmax, mins, maxs, err)
+    integer*8,      intent(in)  :: gp
+    character(*),   intent(in)  :: varname
+    GENERIC,        intent(out) :: value
+    GENERIC,        intent(out) :: gmin
+    GENERIC,        intent(out) :: gmax
+    GENERIC, dimension(*), intent(inout) :: mins
+    GENERIC, dimension(*), intent(inout) :: maxs
+    integer,        intent(out) :: err
 end subroutine
 
-subroutine adios\_inq\_attr (gp, attrname, attrtype, 
-
-\parindent=97pt
-attrsize, err)
-
-\parindent=36pt
-integer*8,      intent(in) :: gp
-
-character(*),   intent(in)  :: attrname
-
-integer,        intent(out) :: attrtype
-
-integer,        intent(out) :: attrsize
-
-integer,        intent(out) :: err
-
-\parindent=0pt
+subroutine adios_inq_attr (gp, attrname, attrtype, 
+                                    attrsize, err)
+    integer*8,      intent(in) :: gp
+    character(*),   intent(in)  :: attrname
+    integer,        intent(out) :: attrtype
+    integer,        intent(out) :: attrsize
+    integer,        intent(out) :: err
 end subroutine
 
-subroutine adios\_get\_attr\_int1 (gp, attrname, attr, err)
-
-\parindent=36pt
-integer*8,      intent(in)  :: gp
-
-character(*),   intent(in)  :: attrname
-
-\textit{GENERIC}, dimension(*), intent(inout) :: attr
-
-integer,        intent(out) :: err 
-
-\parindent=0pt
-end subroutine\label{HToc182553414}
+subroutine adios_get_attr_int1 (gp, attrname, attr, err)
+    integer*8,      intent(in)  :: gp
+    character(*),   intent(in)  :: attrname
+    GENERIC, dimension(*), intent(inout) :: attr
+    integer,        intent(out) :: err 
+end subroutine
+\end{lstlisting}\label{HToc182553414}
 
 \section{Compiling and linking applications}
 
