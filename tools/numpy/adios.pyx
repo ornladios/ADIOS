@@ -179,8 +179,12 @@ cpdef int64_t set_group_size(int64_t fd_p, uint64_t data_size):
     return total_size
 
 cpdef int write (int64_t fd_p, char * name, np.ndarray val):
-    assert val.flags.contiguous, 'Only contiguous arrays are supported.'
-    return adios_write (fd_p, name, <void *> val.data)
+    ##assert val.flags.contiguous, 'Only contiguous arrays are supported.'
+    if not val.flags.contiguous:
+        valcopy = np.array(val, copy=True)
+    else
+        valcopy = val
+    return adios_write (fd_p, name, <void *> valcopy.data)
 
 cpdef int write_int (int64_t fd_p, char * name, int val):
     return adios_write (fd_p, name, &val)
