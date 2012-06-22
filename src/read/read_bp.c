@@ -272,11 +272,11 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     int ndim, has_subfile, file_is_fortran;
     uint64_t size, * dims;
     uint64_t ldims[32], gdims[32], offsets[32];
-    uint64_t datasize, nloop, dset_stride,var_stride, total_size=0, items_read;
+    uint64_t datasize, dset_stride,var_stride, total_size=0, items_read;
     uint64_t * count, * start;
     void * data;
     int dummy = -1, temp_timedim, is_global = 0, size_of_type;
-    uint64_t slice_offset, slice_size, tmpcount = 0;
+    uint64_t slice_offset, slice_size;
     uint64_t datatimeoffset = 0; // offset in data to write a given timestep
     MPI_Status status;
     ADIOS_VARCHUNK * chunk;
@@ -298,18 +298,19 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     bp_get_and_swap_dimensions (v, file_is_fortran, &ndim, &dims, file_is_fortran);
  
     assert (ndim == sel->u.bb.ndim);
+    ndim = sel->u.bb.ndim;
 
     /* Fortran reader was reported of Fortran dimension order so it gives counts and starts in that order.
        We need to swap them here to read correctly in C order */
     if (futils_is_called_from_fortran ())
     {
-        swap_order (sel->u.bb.ndim, start, &dummy);
-        swap_order (sel->u.bb.ndim, count, &dummy);
+        swap_order (ndim, start, &dummy);
+        swap_order (ndim, count, &dummy);
     }
 
     /* items_read = how many data elements are we going to read in total (per timestep) */
     items_read = 1;
-    for (i = 0; i < sel->u.bb.ndim; i++)
+    for (i = 0; i < ndim; i++)
     {
         items_read *= count[i];
     }
@@ -328,7 +329,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
             continue;
         }
 
-        if (sel->u.bb.ndim == 0)
+        if (ndim == 0)
         {
             /* READ A SCALAR VARIABLE */
             /* Prepare slice_offset, slice_size and idx for the later macro */
@@ -381,14 +382,12 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
         int * idx_table = (int *) malloc (sizeof (int) * (stop_idx - start_idx + 1));
 
         uint64_t write_offset = 0;
-//        tmpcount = 0;
 
         // loop over the list of pgs to read from one-by-one
         for (idx = 0; idx < stop_idx - start_idx + 1; idx++)
         {
             int flag;
             datasize = 1;
-            nloop = 1;
             var_stride = 1;
             dset_stride = 1;
             idx_table[idx] = 1;
@@ -469,7 +468,6 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
             if ( !idx_table[idx] ) {
                 continue;
             }
-//            ++npg;
     
             /* determined how many (fastest changing) dimensions can we read in in one read */
             int hole_break; 
@@ -568,15 +566,20 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 uint64_t size_in_dset[10];
                 uint64_t offset_in_dset[10];
                 uint64_t offset_in_var[10];
+
                 memset(size_in_dset, 0 , 10 * 8);
                 memset(offset_in_dset, 0 , 10 * 8);
                 memset(offset_in_var, 0 , 10 * 8);
+
                 int hit = 0;
-                for ( i = 0; i < ndim ; i++) {
+                for (i = 0; i < ndim; i++)
+                {
                     isize = offsets[i] + ldims[i];
-                    if (start[i] >= offsets[i]) {
+                    if (start[i] >= offsets[i])
+                    {
                         // head is in
-                        if (start[i]<isize) {
+                        if (start[i]<isize)
+                        {
                             if (start[i] + count[i] > isize)
                                 size_in_dset[i] = isize - start[i];
                             else
@@ -586,18 +589,21 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                             hit = 1 + hit * 10;
                         }
                         else
+                        {
                             hit = -1;
-                    }
-                    else {
-                        // middle is in
-                        if (isize < start[i] + count[i]) {
-                            size_in_dset[i] = ldims[i];
-                            hit = 2 + hit * 10;
                         }
-                        else {
+                    }
+                    else
+                    {
+                        // middle is in
+                        if (isize < start[i] + count[i])
+                        {
+                            size_in_dset[i] = ldims[i];
+                        }
+                        else
+                        {
                             // tail is in
                             size_in_dset[i] = count[i] + start[i] - offsets[i];
-                            hit = 3 + hit * 10;
                         }
                         offset_in_dset[i] = 0;
                         offset_in_var[i] = offsets[i] - start[i];
@@ -606,14 +612,16 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 datasize = 1;
                 var_stride = 1;
     
-                for ( i = ndim - 1; i >= hole_break; i--) {
+                for (i = ndim - 1; i >= hole_break; i--)
+                {
                     datasize *= size_in_dset[i];
                     dset_stride *= ldims[i];
                     var_stride *= count[i];
                 }
     
                 uint64_t start_in_payload = 0, end_in_payload = 0, s = 1;
-                for (i = ndim - 1; i > -1; i--) {
+                for (i = ndim - 1; i > -1; i--)
+                {
                     start_in_payload += s * offset_in_dset[i] * size_of_type;
                     end_in_payload += s * (offset_in_dset[i] + size_in_dset[i] - 1) * size_of_type;
                     s *= ldims[i];
@@ -640,11 +648,9 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     
                 uint64_t var_offset = 0;
                 uint64_t dset_offset = 0;
-                for ( i = 0; i < hole_break; i++) {
-                    nloop *= size_in_dset[i];
-                }
     
-                for ( i = 0; i < ndim; i++) {
+                for ( i = 0; i < ndim; i++)
+                {
                     var_offset = offset_in_var[i] + var_offset * count[i];
                     dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
                 }

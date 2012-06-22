@@ -32,7 +32,7 @@
 #define READ_CLOSE 0
 
 
-int adios_read_bp_staged_init_method (MPI_Comm comm, const char * parameters)
+int adios_read_bp_staged_init_method (MPI_Comm comm, PairStruct * param)
 {
     return 0;
 }

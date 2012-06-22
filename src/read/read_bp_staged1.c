@@ -35,7 +35,7 @@
 #define INVALID_VALUE -1
 #define HT_SIZE 100
 
-int adios_read_bp_staged1_init_method (MPI_Comm comm, const char * parameters)
+int adios_read_bp_staged1_init_method (MPI_Comm comm, PairStruct * param)
 {
     return 0;
 }
