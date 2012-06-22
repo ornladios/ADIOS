@@ -146,7 +146,7 @@ def get_fortran_read_statements (group):
             statements += ('starts[%d] = 0; counts[%d] = %s;\n' % (i,i,dim) )
             i = i + 1
 
-        statements += 'adios_read_var (adios_group, "' + var.get_name() + '", starts, counts, ' + var.get_gwrite() + ');\n'
+        statements += 'adios_schedule_read (fp, "' + var.get_name() + '", starts, counts, ' + var.get_gwrite() + ');\n'
 
     return statements
 
@@ -154,16 +154,13 @@ def get_fortran_read_statements (group):
 def get_c_read_statements (group):
 
     statements = ""
-    statements += 'uint64_t starts[64];\n'
-    statements += 'uint64_t counts[64];\n'
+    # Make a selection to capture writes done by the corresponding process in the writing application
+    statements += 'ADIOS_SELECTION *s = adios_selection_writeblock (rank);\n'
+    #statements += 'uint64_t counts[64];\n'
 
     for var in group.get_vars():
         if var.get_dimensions() == None:
             continue
-        i = 0
-        for dim in var.get_dimensions():
-            statements += ('starts[%d] = 0; counts[%d] = %s;\n' % (i,i,dim) )
-            i = i + 1
 
         # The tricky bit here is deciding whether we need the & before the variable name.
         # We omit it in two cases: 1) the variable type is string, or 2) the variable is not a scalar
@@ -172,8 +169,10 @@ def get_c_read_statements (group):
         else:
             var_prefix = '&'
 
-        statements += 'adios_read_var (adios_group, "' + var.get_name() + '", starts, counts, ' + var_prefix + var.get_gwrite() + ');\n'
+        statements += 'adios_schedule_read (fp, s, "' + var.get_name() + '", 1, 1, ' + var_prefix + var.get_gwrite() + ');\n'
 
+    statements += 'adios_perform_reads (fp, 1);\n'
+    statements += 'adios_selection_delete (s);\n'
     return statements
 
 
@@ -236,13 +235,13 @@ def generate_c (config):
         grfile = open ('gread_' + group.get_name() + '.ch', 'w')
 
         # Open group
-        grfile.write ('ADIOS_GROUP * adios_group = adios_gopen (adios_handle, "' + group.get_name() + '");\n')
+        #grfile.write ('ADIOS_GROUP * adios_group = adios_gopen (adios_handle, "' + group.get_name() + '");\n')
 
         # Read vars
         grfile.write (get_c_read_statements (group) )
 
         # Close group
-        grfile.write ('adios_gclose (adios_group);\n')
+        #grfile.write ('adios_gclose (adios_group);\n')
 
         # Close ch file
         grfile.close()

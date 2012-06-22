@@ -1,11 +1,4 @@
-adios_groupsize = 0;
-adios_totalsize = 0;
-adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
-adios_buf_size = 4;
-adios_read (adios_handle, "NX", &NX, adios_buf_size);
-adios_buf_size = 4;
-adios_read (adios_handle, "size", &size, adios_buf_size);
-adios_buf_size = 4;
-adios_read (adios_handle, "rank", &rank, adios_buf_size);
-adios_buf_size = 8 * (1) * (NX);
-adios_read (adios_handle, "temperature", temperature, adios_buf_size);
+ADIOS_SELECTION *s = adios_selection_writeblock (rank);
+adios_schedule_read (fp, s, "temperature", 1, 1, t);
+adios_perform_reads (fp, 1);
+adios_selection_delete (s);
