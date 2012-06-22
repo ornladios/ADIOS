@@ -5,7 +5,9 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "../config.h"
 #include "core/util.h"
+//#include "core/adios_logger.h"
 
 
 /* Reverse the order in an array in place.
@@ -458,16 +460,21 @@ void adios_nanosleep (int sec, int nanosec)
     struct timespec trem;
     int r;
     r = nanosleep(&treq, &trem);
+    //log_debug("adios_nanosleep: Nanoslept for %d.%9.9d sec, r=%d, errno=%d\n",
+    //          treq.tv_sec, treq.tv_nsec, r, errno);
     while (r == -1 && errno == EINTR) {
         treq.tv_sec = trem.tv_sec;
         treq.tv_nsec = trem.tv_nsec;
-        r = nanosleep (&trem, &treq);
+        r = nanosleep (&treq, &trem);
     }
 #else
-    if (sec>0)
+    if (sec>0) {
+        //log_debug("adios_nanosleep: Slept for %d seconds\n");
         sleep(sec);
-    else
+    } else {
+        //log_debug("adios_nanosleep: Slept for 1 second\n");
         sleep(1);
+    }
 
 #endif
 }   
