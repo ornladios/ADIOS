@@ -576,8 +576,8 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
         step_status = STEP_OK;
 
         log_debug("   rank %d: dart_get %s\n", ds->mpi_rank, ds_vname);
-        readsize[0] = 2*sizeof(int); // VERSION%name is 2 integers only
-        err = adios_read_dataspaces_get (ds_vname, adios_byte, 0, ds->mpi_rank, 1, 0, 
+        readsize[0] = 2; //*sizeof(int); // VERSION%name is 2 integers only
+        err = adios_read_dataspaces_get (ds_vname, adios_integer, 0, ds->mpi_rank, 1, 0, 
                                          offset, readsize, version_info_buf);
 
         if (!err) {
