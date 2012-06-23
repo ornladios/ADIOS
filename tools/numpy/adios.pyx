@@ -58,7 +58,7 @@ cdef extern from "adios.h":
     cdef int adios_write (int64_t fd_p, char * name, void * var)
     cdef int adios_read (int64_t fd_p, char * name, void * buffer, uint64_t buffer_size)
 
-    cdef int adios_close (int64_t fd_p)
+    cdef int adios_close(int64_t fd_p)
     
     cdef int adios_init_noxml ()
     cdef int adios_allocate_buffer (ADIOS_BUFFER_ALLOC_WHEN when, uint64_t buffer_size)
@@ -378,9 +378,15 @@ cdef class AdiosFile:
             self.group[grpname] = g
 
     def __del__(self):
-        if self.fp != NULL:
-            adios_fclose(self.fp)
-
+        self.close()
+            
+    cpdef close(self):
+        assert self.fp != NULL, 'Not an open file'
+        for g in self.group.values():
+            g.close()
+        adios_fclose(self.fp)
+        self.fp = NULL
+        
     cpdef printself(self):
         assert self.fp != NULL, 'Not an open file'
         print '=== AdiosFile ==='
@@ -421,9 +427,15 @@ cdef class AdiosGroup:
             self.var[varname[1:]] = v
 
     def __del__(self):
-        if self.gp != NULL:
-            adios_gclose(self.gp)
+        self.close()
 
+    cpdef close(self):
+        assert self.gp != NULL, 'Not an open file'
+        for v in self.var.values():
+            v.close()
+        adios_gclose(self.gp)
+        self.gp = NULL
+        
     cpdef printself(self):
         assert self.gp != NULL, 'Not an open file'
         print '=== AdiosGroup ==='
@@ -459,9 +471,13 @@ cdef class AdiosVariable:
         self.dims = tuple([self.vp.dims[i] for i in range(self.vp.ndim)])
         
     def __del__(self):
-        if self.vp != NULL:
-            adios_free_varinfo(self.vp)
+        self.close()
 
+    cpdef close(self):
+        assert self.vp != NULL, 'Not an open file'
+        adios_free_varinfo(self.vp)
+        self.vp = NULL
+        
     cpdef read(self, tuple offset = (), tuple count = ()):
         cdef type ntype = adios2nptype(self.vp.type)
         assert ntype is not None, 'Data type is not supported yet'
