@@ -7,8 +7,11 @@
 
 import numpy as np
 cimport numpy as np
-##import cython
-##cimport cython
+
+import mpi4py.MPI as MPI 
+cimport mpi4py.MPI as MPI 
+##from mpi4py.mpi_c cimport * 
+##from mpi4py.mpi_c import * 
 
 ## ==========
 ## ADIOS Exported Functions
@@ -166,10 +169,10 @@ class BUFFER_ALLOC_WHEN(object):
 cpdef init(char * config):
     return adios_init(config)
 
-cpdef int64_t open(char * group_name, char * name, char * mode):
+cpdef int64_t open(char * group_name, char * name, char * mode, MPI.Comm comm = MPI.COMM_WORLD):
     cdef int64_t fd
     cdef int result
-    result = adios_open(&fd, group_name, name, mode, NULL)
+    result = adios_open(&fd, group_name, name, mode, comm.ob_mpi)
     return fd
 
 cpdef int64_t set_group_size(int64_t fd_p, uint64_t data_size):
@@ -180,11 +183,13 @@ cpdef int64_t set_group_size(int64_t fd_p, uint64_t data_size):
 
 cpdef int write (int64_t fd_p, char * name, np.ndarray val):
     ##assert val.flags.contiguous, 'Only contiguous arrays are supported.'
-    if not val.flags.contiguous:
-        valcopy = np.array(val, copy=True)
-    else
-        valcopy = val
-    return adios_write (fd_p, name, <void *> valcopy.data)
+    cdef np.ndarray val_
+    if val.flags.contiguous:
+        val_ = val
+    else:
+        val_ = np.array(val, copy=True)
+
+    return adios_write (fd_p, name, <void *> val_.data)
 
 cpdef int write_int (int64_t fd_p, char * name, int val):
     return adios_write (fd_p, name, &val)
@@ -347,14 +352,17 @@ cdef class AdiosFile:
     def __init__(self):
         self.fp = NULL
 
+    def __init__(self, char * fname, MPI.Comm comm):
+        self.open(fname, comm)
+        
     def __init__(self, char * fname):
         self.open(fname)
 
     def __del__(self):
         self.close()
 
-    cpdef open(self, char * fname):
-        self.fp = adios_fopen(fname, <MPI_Comm> NULL)
+    cpdef open(self, char * fname, MPI.Comm comm = MPI.COMM_WORLD):
+        self.fp = adios_fopen(fname, <MPI_Comm> comm.ob_mpi)
 
     cpdef close(self):
         assert self.fp != NULL, 'Not an open file'
@@ -573,11 +581,13 @@ cdef class AdiosVariable:
             npcount = npshape - npoffset
         else:
             npcount = np.array(count, dtype=np.int64)
+            npcount = npcount - npoffset
+
         assert npshape.ndim == npcount.ndim, 'Shape dimension mismatch.'
         assert (npshape - npoffset >= npcount).all(), 'Count is larger than shape.'
             
         cdef np.ndarray var = np.zeros(npcount, dtype=ntype)
-        cdef int nbytes = adios_read_var_byid(
+        cdef int64_t nbytes = adios_read_var_byid(
             self.group.gp, 
             self.vp.varid, 
             <uint64_t *> npoffset.data, 
