@@ -4,13 +4,14 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/Modules/CMakeUtilityFunctions.cmake)
 
 project (AdiosPython CXX)
 
-find_package (PythonLibs REQUIRED 2.7)
+find_package (PythonLibs REQUIRED)
 include_directories (${PYTHON_INCLUDE_DIRS})
 ##print(PYTHON_INCLUDE_DIRS)
 
 find_package (PythonInterp REQUIRED)
 find_package (Numpy REQUIRED)
 include_directories (${PYTHON_NUMPY_INCLUDE_DIR})
+find_package (MPI4Py REQUIRED)
 
 option (ADIOS_USE_MPI "Use parallel ADIOS" ON)
 
@@ -30,7 +31,7 @@ foreach (FILE ${PSRCS})
 
   add_custom_command (
     OUTPUT ${OUTFILE}
-    COMMAND cython -o ${CMAKE_CURRENT_BINARY_DIR}/${OUTFILE} -I /ccs/home/jyc/sith/.local/lib/python2.7/site-packages/mpi4py/include ${CMAKE_CURRENT_SOURCE_DIR}/${FILE}
+    COMMAND cython -o ${CMAKE_CURRENT_BINARY_DIR}/${OUTFILE} -I${PYTHON_MPI4PY_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${FILE}
     DEPENDS ${FILE}
     )
   list (APPEND SRCS ${OUTFILE})

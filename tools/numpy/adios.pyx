@@ -9,9 +9,10 @@ import numpy as np
 cimport numpy as np
 
 import mpi4py.MPI as MPI 
-cimport mpi4py.MPI as MPI 
-##from mpi4py.mpi_c cimport * 
-##from mpi4py.mpi_c import * 
+cimport mpi4py.MPI as MPI
+
+import cython
+cimport cython
 
 ## ==========
 ## ADIOS Exported Functions
@@ -172,7 +173,7 @@ cpdef init(char * config):
 cpdef int64_t open(char * group_name, char * name, char * mode, MPI.Comm comm = MPI.COMM_WORLD):
     cdef int64_t fd
     cdef int result
-    result = adios_open(&fd, group_name, name, mode, comm.ob_mpi)
+    result = adios_open(&fd, group_name, name, mode, &comm.ob_mpi)
     return fd
 
 cpdef int64_t set_group_size(int64_t fd_p, uint64_t data_size):
@@ -182,7 +183,6 @@ cpdef int64_t set_group_size(int64_t fd_p, uint64_t data_size):
     return total_size
 
 cpdef int write (int64_t fd_p, char * name, np.ndarray val):
-    ##assert val.flags.contiguous, 'Only contiguous arrays are supported.'
     cdef np.ndarray val_
     if val.flags.contiguous:
         val_ = val
@@ -214,13 +214,6 @@ cpdef finalize(int mype = 0):
 ## ==========
 ## ADIOS No-XML API
 ## ==========
-# adios_init_noxml
-# adios_allocate_buffer
-# adios_declare_group
-# adios_define_var
-# adios_define_attribute
-# adios_select_method
-
 cpdef int init_noxml():
     return adios_init_noxml()
 
@@ -346,75 +339,47 @@ cdef adios2scalar(ADIOS_DATATYPES t, void * val):
 ## ==========
 ## ADIOS Class Definition
 ## ==========
-
+    
 cdef class AdiosFile:
-    cdef ADIOS_FILE * fp
-    def __init__(self):
-        self.fp = NULL
+    """ Private Memeber """
+    cpdef ADIOS_FILE * fp
 
-    def __init__(self, char * fname, MPI.Comm comm):
-        self.open(fname, comm)
+    """ Public Memeber """
+    cpdef public int groups_count
+    cpdef public int vars_count
+    cpdef public int attrs_count
+    cpdef public int tidx_start
+    cpdef public int ntimesteps
+    cpdef public int version
+    cpdef public int file_size
+    cpdef public int endianness
+    
+    cpdef public dict group
+    
+    def __init__(self, char * fname, MPI.Comm comm = MPI.COMM_WORLD):
+        self.fp = NULL
+        self.group = {}
         
-    def __init__(self, char * fname):
-        self.open(fname)
+        self.fp = adios_fopen(fname, comm.ob_mpi)
+        assert self.fp != NULL, 'Not an open file'
+
+        self.groups_count = self.fp.groups_count
+        self.vars_count   = self.fp.vars_count  
+        self.attrs_count  = self.fp.attrs_count 
+        self.tidx_start   = self.fp.tidx_start  
+        self.ntimesteps   = self.fp.ntimesteps  
+        self.version      = self.fp.version     
+        self.file_size    = self.fp.file_size   
+        self.endianness   = self.fp.endianness  
+    
+        cdef AdiosGroup g
+        for grpname in [self.fp.group_namelist[i] for i in range(self.groups_count)]:
+            g = AdiosGroup(self, grpname)
+            self.group[grpname] = g
 
     def __del__(self):
-        self.close()
-
-    cpdef open(self, char * fname, MPI.Comm comm = MPI.COMM_WORLD):
-        self.fp = adios_fopen(fname, <MPI_Comm> comm.ob_mpi)
-
-    cpdef close(self):
-        assert self.fp != NULL, 'Not an open file'
-        adios_fclose(self.fp)
-        self.fp = NULL
-        
-    cpdef int groups_count(self):
-        assert self.fp != NULL, 'Not an open file'
-        return self.fp.groups_count;
-
-    cpdef int vars_count(self):
-        assert self.fp != NULL, 'Not an open file'
-        return self.fp.vars_count;
-
-    cpdef int attrs_count(self):
-        assert self.fp != NULL, 'Not an open file'
-        return self.fp.attrs_count;
-
-    cpdef int tidx_start(self):
-        assert self.fp != NULL, 'Not an open file'
-        return self.fp.tidx_start
-
-    cpdef int ntimesteps(self):
-        assert self.fp != NULL, 'Not an open file'
-        return self.fp.ntimesteps
-
-    cpdef int version(self):
-        assert self.fp != NULL, 'Not an open file'
-        return self.fp.version
-
-    cpdef uint64_t file_size(self):
-        assert self.fp != NULL, 'Not an open file'
-        return self.fp.file_size
-
-    cpdef int endianness(self):
-        assert self.fp != NULL, 'Not an open file'
-        return self.fp.endianness
-
-    cpdef group_namelist(self):
-        return [self.fp.group_namelist[i] for i in range(self.fp.groups_count)]
-
-    cpdef AdiosGroup group(self, char * grpname):
-        assert self.fp != NULL, 'Not an open file'
-        cdef AdiosGroup g = AdiosGroup(self)
-        g.open(grpname)
-        return g
-
-    cpdef AdiosGroup group_byid(self, int grpid):
-        assert self.fp != NULL, 'Not an open file'
-        cdef AdiosGroup g = AdiosGroup(self)
-        g.open_byid(grpid)
-        return g
+        if self.fp != NULL:
+            adios_fclose(self.fp)
 
     cpdef printself(self):
         assert self.fp != NULL, 'Not an open file'
@@ -424,142 +389,78 @@ cdef class AdiosFile:
 
 
 cdef class AdiosGroup:
+    """ Private Memeber """
     cdef AdiosFile file
     cdef ADIOS_GROUP * gp
 
-    def __init__(self, AdiosFile file):
+    """ Public Memeber """
+    cpdef public int grpid
+    cpdef public int vars_count
+    cpdef public int attrs_count
+    cpdef public int timestep
+    cpdef public int lasttimestep
+    
+    cpdef public dict var
+    
+    def __init__(self, AdiosFile file, char * name):
         self.file = file
-        self.gp = NULL
+        self.var = {}
+        
+        self.gp = adios_gopen(self.file.fp, name)
+        assert self.gp != NULL, 'Not an open group'
+
+        self.grpid        = self.gp.grpid        
+        self.vars_count   = self.gp.vars_count   
+        self.attrs_count  = self.gp.attrs_count  
+        self.timestep     = self.gp.timestep     
+        self.lasttimestep = self.gp.lasttimestep 
+        
+        cdef AdiosVariable v
+        for varname in [self.gp.var_namelist[i] for i in range(self.vars_count)]:
+            v = AdiosVariable(self, varname)
+            self.var[varname[1:]] = v
 
     def __del__(self):
-        self.close()
-
-    cpdef open(self, char * name):
-        assert self.file is not None, 'AdiosFile is not set'
-        assert self.file.fp != NULL, 'Not an open file'
-        self.gp = adios_gopen(self.file.fp, name)
-
-    cpdef open_byid(self, int id):
-        assert self.file is not None, 'AdiosFile is not set'
-        assert self.file.fp != NULL, 'Not an open file'
-        self.gp = adios_gopen_byid(self.file.fp, id)
-
-    cpdef close(self):
-        assert self.gp != NULL, 'Not an open group'
-        adios_gclose(self.gp)
-        self.file = None
-        self.gp = NULL
-            
-    cpdef int grpid(self):
-        assert self.gp != NULL, 'Not an open group'
-        return self.gp.grpid
-
-    cpdef int vars_count(self):
-        assert self.gp != NULL, 'Not an open group'
-        return self.gp.vars_count;
-
-    cpdef var_namelist(self):
-        assert self.gp != NULL, 'Not an open group'
-        return [self.gp.var_namelist[i] for i in range(self.gp.vars_count)]
-
-    cpdef int attrs_count(self):
-        assert self.gp != NULL, 'Not an open group'
-        return self.gp.attrs_count;
-
-    cpdef attr_namelist(self):
-        assert self.gp != NULL, 'Not an open group'
-        return [self.gp.attr_namelist[i] for i in range(self.gp.attrs_count)]
-
-    cpdef int timestep(self):
-        assert self.gp != NULL, 'Not an open group'
-        return self.gp.timestep
-
-    cpdef int lasttimestep(self):
-        assert self.gp != NULL, 'Not an open group'
-        return self.gp.lasttimestep
-
-    cpdef AdiosVariable variable_byid(self, int varid):
-        assert self.gp != NULL, 'Not an open group'
-        cdef AdiosVariable var = AdiosVariable(self)
-        var.open_byid(varid)
-        return var
-
-    cpdef AdiosVariable variable(self, char * varname):
-        assert self.gp != NULL, 'Not an open group'
-        cdef AdiosVariable var = AdiosVariable(self)
-        var.open(varname)
-        return var
-
-    cpdef np.ndarray read_var_byid(self, int varid, tuple offset = (), tuple count = ()):
-        cdef AdiosVariable var = AdiosVariable(self)
-        var.open_byid(varid)
-        return var.read(offset, count)
-
-    cpdef np.ndarray read_var(self, char * varname, tuple offset = (), tuple count = ()):
-        cdef AdiosVariable var = AdiosVariable(self)
-        var.open(varname)
-        return var.read(offset, count)
+        if self.gp != NULL:
+            adios_gclose(self.gp)
 
     cpdef printself(self):
         assert self.gp != NULL, 'Not an open file'
         print '=== AdiosGroup ==='
         print '%15s : %lu' % ('gp', <unsigned long> self.gp)
         printAdiosGroup(self.gp)
-
+        
 cdef class AdiosVariable:
+    """ Private Memeber """
     cdef AdiosGroup group
     cdef ADIOS_VARINFO * vp
 
-    def __init__(self, AdiosGroup group):
+    """ Public Memeber """
+    cpdef public int varid
+    cpdef public type type
+    cpdef public int ndim
+    cpdef public tuple dims
+    cpdef public int timedim
+    cpdef public int characteristics_count
+    
+    def __init__(self, AdiosGroup group, char * name):
         self.group = group
         self.vp = NULL
 
-    def __del__(self):
-        self.close()
-
-    def open(self, char * name):
-        assert self.group is not None, 'AdiosGroup is not set'
-        assert self.group.gp != NULL, 'Not an open group'
         self.vp = adios_inq_var(self.group.gp, name)
-
-    def open_byid(self, int id):
-        assert self.group is not None, 'AdiosGroup is not set'
         assert self.group.gp != NULL, 'Not an open group'
-        self.vp = adios_inq_var_byid(self.group.gp, id)
 
-    cpdef close(self):
-        assert self.vp != NULL, 'Not an open variable'
-        adios_free_varinfo(self.vp)
-        self.group = None
-        self.vp = NULL
-    
-    cpdef int grpid(self):
-        assert self.vp != NULL, 'Not an open variable'
-        return self.vp.grpid
-
-    cpdef int varid(self):
-        assert self.vp != NULL, 'Not an open variable'
-        return self.vp.varid
-
-    cpdef ADIOS_DATATYPES type(self):
-        assert self.vp != NULL, 'Not an open variable'
-        return self.vp.type
-
-    cpdef int ndim(self):
-        assert self.vp != NULL, 'Not an open variable'
-        return self.vp.ndim
-
-    cpdef dims(self):
-        assert self.vp != NULL, 'Not an open variable'
-        return [ self.vp.dims[i] for i in range(self.vp.ndim)]        
-
-    cpdef int timedim(self):
-        assert self.vp != NULL, 'Not an open variable'
-        return self.vp.timedim
-
-    cpdef int characteristics_count(self):
-        assert self.vp != NULL, 'Not an open variable'
-        return self.vp.characteristics_count
+        self.varid                 = self.vp.varid                
+        self.type                  = adios2nptype(self.vp.type)
+        self.ndim                  = self.vp.ndim                 
+        self.timedim               = self.vp.timedim              
+        self.characteristics_count = self.vp.characteristics_count
+        
+        self.dims = tuple([self.vp.dims[i] for i in range(self.vp.ndim)])
+        
+    def __del__(self):
+        if self.vp != NULL:
+            adios_free_varinfo(self.vp)
 
     cpdef read(self, tuple offset = (), tuple count = ()):
         cdef type ntype = adios2nptype(self.vp.type)
