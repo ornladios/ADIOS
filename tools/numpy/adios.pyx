@@ -345,6 +345,7 @@ cdef class AdiosFile:
     cpdef ADIOS_FILE * fp
 
     """ Public Memeber """
+    cpdef public bytes name
     cpdef public int groups_count
     cpdef public int vars_count
     cpdef public int attrs_count
@@ -363,6 +364,7 @@ cdef class AdiosFile:
         self.fp = adios_fopen(fname, comm.ob_mpi)
         assert self.fp != NULL, 'Not an open file'
 
+        self.name         = fname.split('/')[-1]
         self.groups_count = self.fp.groups_count
         self.vars_count   = self.fp.vars_count  
         self.attrs_count  = self.fp.attrs_count 
@@ -400,6 +402,7 @@ cdef class AdiosGroup:
     cdef ADIOS_GROUP * gp
 
     """ Public Memeber """
+    cpdef public bytes name
     cpdef public int grpid
     cpdef public int vars_count
     cpdef public int attrs_count
@@ -415,6 +418,7 @@ cdef class AdiosGroup:
         self.gp = adios_gopen(self.file.fp, name)
         assert self.gp != NULL, 'Not an open group'
 
+        self.name         = name
         self.grpid        = self.gp.grpid        
         self.vars_count   = self.gp.vars_count   
         self.attrs_count  = self.gp.attrs_count  
@@ -448,6 +452,7 @@ cdef class AdiosVariable:
     cdef ADIOS_VARINFO * vp
 
     """ Public Memeber """
+    cpdef public bytes name
     cpdef public int varid
     cpdef public type type
     cpdef public int ndim
@@ -462,6 +467,7 @@ cdef class AdiosVariable:
         self.vp = adios_inq_var(self.group.gp, name)
         assert self.group.gp != NULL, 'Not an open group'
 
+        self.name                  = name.split('/')[-1]
         self.varid                 = self.vp.varid                
         self.type                  = adios2nptype(self.vp.type)
         self.ndim                  = self.vp.ndim                 
