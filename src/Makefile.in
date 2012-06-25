@@ -63,7 +63,8 @@ bin_PROGRAMS = $(am__EXEEXT_1)
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_21 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_22 = nssi/adios_nssi_config.c write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_23 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
-@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__append_24 = write/adios_mpi_stagger.c \
+@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_24 = adios_nssi_args.c adios_nssi_args.h
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__append_25 = write/adios_mpi_stagger.c \
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      write/adios_mpi_aggregate.c \
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      write/adios_provenance.c \
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      write/adios_mpi_cio.c \
@@ -71,7 +72,7 @@ bin_PROGRAMS = $(am__EXEEXT_1)
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      write/adios_mpi_amr1.c \
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                      write/adios_adaptive.c 
 
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__append_25 = write/adios_mpi_stagger.c \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@am__append_26 = write/adios_mpi_stagger.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                       write/adios_mpi_aggregate.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                       write/adios_provenance.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                       write/adios_mpi_cio.c \
@@ -79,50 +80,51 @@ bin_PROGRAMS = $(am__EXEEXT_1)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                       write/adios_mpi_amr1.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_TRUE@                       write/adios_adaptive.c 
 
-@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_26 = -DNO_RESEARCH_TRANSPORTS
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_27 = -DNO_RESEARCH_TRANSPORTS
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_28 = -DNO_RESEARCH_TRANSPORTS
-@HAVE_DATASPACES_TRUE@am__append_29 = read/read_dataspaces.c
-@HAVE_DIMES_TRUE@am__append_30 = read/read_dimes.c
-@HAVE_DATATAP_TRUE@am__append_31 = read/read_datatap.c
-@HAVE_NSSI_TRUE@am__append_32 = nssi/adios_nssi_config.c read/read_nssi.c
-@HAVE_NSSI_TRUE@am__append_33 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_29 = -DNO_RESEARCH_TRANSPORTS
+@HAVE_DATASPACES_TRUE@am__append_30 = read/read_dataspaces.c
+@HAVE_DIMES_TRUE@am__append_31 = read/read_dimes.c
+@HAVE_DATATAP_TRUE@am__append_32 = read/read_datatap.c
+@HAVE_NSSI_TRUE@am__append_33 = nssi/adios_nssi_config.c read/read_nssi.c
+@HAVE_NSSI_TRUE@am__append_34 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 #libadiosread_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # -DUSE_TIMERS
-@HAVE_NSSI_TRUE@am__append_34 = $(ADIOSLIB_CFLAGS) 
-@BUILD_FORTRAN_TRUE@am__append_35 = libadiosreadf.a libadiosreadf_v1.a
-@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__append_36 = read/read_dataspaces.c
-@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__append_37 = read/read_dimes.c
-@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__append_38 = read/read_datatap.c
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_39 = nssi/adios_nssi_config.c read/read_nssi.c
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_40 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_41 = $(ADIOSLIB_CFLAGS) 
-@BUILD_FORTRAN_TRUE@am__append_42 = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
-@HAVE_DATASPACES_TRUE@am__append_43 = read/read_dataspaces.c
-@HAVE_DIMES_TRUE@am__append_44 = read/read_dimes.c
-@HAVE_DATATAP_TRUE@am__append_45 = read/read_datatap.c
-@HAVE_NSSI_TRUE@am__append_46 = nssi/adios_nssi_config.c read/read_nssi.c
-@HAVE_NSSI_TRUE@am__append_47 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
-@HAVE_NSSI_TRUE@am__append_48 = $(ADIOSLIB_CFLAGS) 
+@HAVE_NSSI_TRUE@am__append_35 = $(ADIOSLIB_CFLAGS) 
+@BUILD_FORTRAN_TRUE@am__append_36 = libadiosreadf.a libadiosreadf_v1.a
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__append_37 = read/read_dataspaces.c
+@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__append_38 = read/read_dimes.c
+@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__append_39 = read/read_datatap.c
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_40 = nssi/adios_nssi_config.c read/read_nssi.c
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_41 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_42 = $(ADIOSLIB_CFLAGS) 
+@BUILD_FORTRAN_TRUE@am__append_43 = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@am__append_44 = adios_read.mod
+@HAVE_DATASPACES_TRUE@am__append_45 = read/read_dataspaces.c
+@HAVE_DIMES_TRUE@am__append_46 = read/read_dimes.c
+@HAVE_DATATAP_TRUE@am__append_47 = read/read_datatap.c
+@HAVE_NSSI_TRUE@am__append_48 = nssi/adios_nssi_config.c read/read_nssi.c
+@HAVE_NSSI_TRUE@am__append_49 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
+@HAVE_NSSI_TRUE@am__append_50 = $(ADIOSLIB_CFLAGS) 
 
 # Note: utils/adios_lint needs to link with adios_internals_mxml.o which depends
 #       on adios_internals.c, buffer.c and adios_transport_hooks.c. 
 #       We put these objects in libadiosread_nompi
 #       so we do not need to make another _nompi lib just for adios_lint
-@BUILD_FORTRAN_TRUE@am__append_49 = libadiosreadf_nompi.a libadiosreadf_nompi_v1.a
-@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__append_50 = read/read_dataspaces.c
-@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__append_51 = read/read_dimes.c
-@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__append_52 = read/read_datatap.c
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_53 = nssi/adios_nssi_config.c read/read_nssi.c
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_54 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL \
+@BUILD_FORTRAN_TRUE@am__append_51 = libadiosreadf_nompi.a libadiosreadf_nompi_v1.a
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__append_52 = read/read_dataspaces.c
+@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__append_53 = read/read_dimes.c
+@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__append_54 = read/read_datatap.c
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_55 = nssi/adios_nssi_config.c read/read_nssi.c
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_56 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL \
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@	-DPTL_IFACE_SERVER=CRAY_USER_NAL \
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@	$(ADIOSLIB_EXTRA_CPPFLAGS) \
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@	$(ADIOSLIB_CPPFLAGS) # \
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@	-DUSE_TIMERS
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_55 = $(ADIOSLIB_CFLAGS) 
-@BUILD_FORTRAN_TRUE@am__append_56 = -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_57 = $(ADIOSLIB_CFLAGS) 
+@BUILD_FORTRAN_TRUE@am__append_58 = -D_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 #Note: -DNOMPI chokes IBM's bgxlf compiler but it can pass -D_NOMPI. 
-@HAVE_DMALLOC_TRUE@am__append_57 = -DDMALLOC 
-@HAVE_DMALLOC_TRUE@am__append_58 = -DDMALLOC 
+@HAVE_DMALLOC_TRUE@am__append_59 = -DDMALLOC 
+@HAVE_DMALLOC_TRUE@am__append_60 = -DDMALLOC 
 subdir = src
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -156,7 +158,7 @@ am__vpath_adj = case $$p in \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
-	"$(DESTDIR)$(includedir)"
+	"$(DESTDIR)$(includedir)" "$(DESTDIR)$(includedir)"
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES) $(noinst_LIBRARIES)
 ARFLAGS = cru
@@ -553,7 +555,8 @@ am__libadiosreadf_a_SOURCES_DIST = core/adios_bp_v1.c \
 	core/adios_read_hooks.c core/adios_logger.c core/util.c \
 	read/read_bp.c read/read_bp_staged.c read/read_bp_staged1.c \
 	read/read_dataspaces.c read/read_dimes.c read/read_datatap.c \
-	nssi/adios_nssi_config.c read/read_nssi.c core/adiosf_read.c
+	nssi/adios_nssi_config.c read/read_nssi.c core/adiosf_read.c \
+	core/adiosf_read_mod.F90
 @BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_35 = libadiosreadf_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_36 = libadiosreadf_a-read_dimes.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_37 = libadiosreadf_a-read_datatap.$(OBJEXT)
@@ -576,7 +579,8 @@ am__libadiosreadf_a_SOURCES_DIST = core/adios_bp_v1.c \
 @BUILD_FORTRAN_TRUE@	$(am__objects_35) $(am__objects_36) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_37) $(am__objects_38)
 @BUILD_FORTRAN_TRUE@am_libadiosreadf_a_OBJECTS = $(am__objects_39) \
-@BUILD_FORTRAN_TRUE@	libadiosreadf_a-adiosf_read.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@	libadiosreadf_a-adiosf_read.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@	libadiosreadf_a-adiosf_read_mod.$(OBJEXT)
 am__dist_libadiosreadf_a_SOURCES_DIST = nssi/adios_nssi_args.x
 dist_libadiosreadf_a_OBJECTS =
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@nodist_libadiosreadf_a_OBJECTS = libadiosreadf_a-adios_nssi_args.$(OBJEXT)
@@ -710,6 +714,14 @@ nssi_staging_server_OBJECTS = $(am_nssi_staging_server_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
+PPFCCOMPILE = $(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS)
+LTPPFCCOMPILE = $(LIBTOOL) --mode=compile $(FC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_FCFLAGS) $(FCFLAGS)
+FCLD = $(FC)
+FCLINK = $(LIBTOOL) --mode=link $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
@@ -765,7 +777,8 @@ DIST_SOURCES = $(am__libadios_a_SOURCES_DIST) \
 	$(am__nssi_coupling_server_SOURCES_DIST) \
 	$(am__nssi_staging_server_SOURCES_DIST)
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
-HEADERS = $(include_HEADERS)
+nodist_includeHEADERS_INSTALL = $(INSTALL_HEADER)
+HEADERS = $(include_HEADERS) $(nodist_include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -1015,26 +1028,22 @@ METASOURCES = AUTO
 @HAVE_NSSI_TRUE@nssi_coupling_server_LDADD =  \
 @HAVE_NSSI_TRUE@	$(top_builddir)/src/libadios.a \
 @HAVE_NSSI_TRUE@	$(ADIOSLIB_LDADD) $(NSSI_SERVER_LIBS)
+CLEANFILES = $(am__append_24) $(am__append_44)
 include_HEADERS = public/adios.h public/adios_types.h \
 	public/adios_read.h public/adios_error.h public/mpidummy.h
-
-# adiosf_read.mod is not really usable, 
-# so it is not used and installed right now
-#libadiosread_a_SOURCES += adiosf_read_mod.F90
-#include_HEADERS += adiosf_read.mod 
 lib_LIBRARIES = $(am__append_2) $(am__append_3) libadiosread.a \
-	$(am__append_35) libadiosread_nompi.a $(am__append_49)
-libadiosread_a_CPPFLAGS = $(am__append_33) $(ADIOSLIB_EXTRA_CPPFLAGS) \
-	$(ADIOSREADLIB_CPPFLAGS) $(am__append_57)
-libadiosreadf_a_CPPFLAGS = $(am__append_40) $(am__append_42)
-libadiosread_nompi_a_CPPFLAGS = $(am__append_47) -D_NOMPI \
+	$(am__append_36) libadiosread_nompi.a $(am__append_51)
+libadiosread_a_CPPFLAGS = $(am__append_34) $(ADIOSLIB_EXTRA_CPPFLAGS) \
+	$(ADIOSREADLIB_CPPFLAGS) $(am__append_59)
+libadiosreadf_a_CPPFLAGS = $(am__append_41) $(am__append_43)
+libadiosread_nompi_a_CPPFLAGS = $(am__append_49) -D_NOMPI \
 	$(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS) \
-	$(am__append_58)
-libadiosreadf_nompi_a_CPPFLAGS = $(am__append_54) $(am__append_56)
-libadiosread_a_CFLAGS = $(am__append_34)
-libadiosreadf_a_CFLAGS = $(am__append_41)
-libadiosread_nompi_a_CFLAGS = $(am__append_48)
-libadiosreadf_nompi_a_CFLAGS = $(am__append_55)
+	$(am__append_60)
+libadiosreadf_nompi_a_CPPFLAGS = $(am__append_56) $(am__append_58)
+libadiosread_a_CFLAGS = $(am__append_35)
+libadiosreadf_a_CFLAGS = $(am__append_42)
+libadiosread_nompi_a_CFLAGS = $(am__append_50)
+libadiosreadf_nompi_a_CFLAGS = $(am__append_57)
 @BUILD_WRITE_TRUE@libadios_a_SOURCES = core/adios.c \
 @BUILD_WRITE_TRUE@	core/common_adios.c core/adios_internals.c \
 @BUILD_WRITE_TRUE@	core/adios_internals_mxml.c core/buffer.c \
@@ -1053,7 +1062,7 @@ libadiosreadf_nompi_a_CFLAGS = $(am__append_55)
 @BUILD_WRITE_TRUE@	write/adios_posix1.c $(am__append_4) \
 @BUILD_WRITE_TRUE@	$(am__append_7) $(am__append_10) \
 @BUILD_WRITE_TRUE@	$(am__append_13) $(am__append_18) \
-@BUILD_WRITE_TRUE@	$(am__append_20) $(am__append_24)
+@BUILD_WRITE_TRUE@	$(am__append_20) $(am__append_25)
 @BUILD_WRITE_TRUE@libadios_nompi_a_SOURCES = core/adios.c \
 @BUILD_WRITE_TRUE@	core/common_adios.c core/adios_internals.c \
 @BUILD_WRITE_TRUE@	core/adios_internals_mxml.c core/buffer.c \
@@ -1103,24 +1112,23 @@ libadiosreadf_nompi_a_CFLAGS = $(am__append_55)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_16) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_19) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_22) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_25)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_26)
 @BUILD_WRITE_TRUE@libadios_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_CPPFLAGS) $(am__append_15) \
-@BUILD_WRITE_TRUE@	$(am__append_21) $(am__append_26)
+@BUILD_WRITE_TRUE@	$(am__append_21) $(am__append_27)
 @BUILD_WRITE_TRUE@libadios_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
 @BUILD_WRITE_TRUE@libadios_nompi_a_CPPFLAGS = -D_NOMPI \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_EXTRA_CPPFLAGS) \
-@BUILD_WRITE_TRUE@	$(ADIOSLIB_SEQ_CPPFLAGS) $(am__append_27)
+@BUILD_WRITE_TRUE@	$(ADIOSLIB_SEQ_CPPFLAGS) $(am__append_28)
 @BUILD_WRITE_TRUE@libadios_nompi_a_CFLAGS = -D_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
 @BUILD_WRITE_TRUE@libadiosf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_CPPFLAGS) $(am__append_17) \
-@BUILD_WRITE_TRUE@	$(am__append_23) $(am__append_28)
+@BUILD_WRITE_TRUE@	$(am__append_23) $(am__append_29)
 @BUILD_WRITE_TRUE@libadiosf_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@dist_libadios_a_SOURCES = nssi/adios_nssi_args.x
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@nodist_libadios_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@nodist_libadiosf_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@dist_libadiosf_a_SOURCES = nssi/adios_nssi_args.x
-@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@CLEANFILES = adios_nssi_args.c adios_nssi_args.h
 
 # Build two different Fortran library, for the two read APIs
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@libadiosf_a_SOURCES = $(FortranLibSources) core/adiosf_read.c
@@ -1132,8 +1140,8 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c core/adios_endianness.c \
 	core/adios_read.c core/adios_read_v1.c core/common_read.c \
 	core/globals.c core/adios_read_hooks.c core/adios_logger.c \
 	core/util.c read/read_bp.c read/read_bp_staged.c \
-	read/read_bp_staged1.c $(am__append_29) $(am__append_30) \
-	$(am__append_31) $(am__append_32)
+	read/read_bp_staged1.c $(am__append_30) $(am__append_31) \
+	$(am__append_32) $(am__append_33)
 @HAVE_NSSI_TRUE@dist_libadiosread_a_SOURCES = nssi/adios_nssi_args.x
 @HAVE_NSSI_TRUE@nodist_libadiosread_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@FortranReadLibSource = core/adios_bp_v1.c \
@@ -1143,23 +1151,30 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c core/adios_endianness.c \
 @BUILD_FORTRAN_TRUE@	core/adios_read_hooks.c \
 @BUILD_FORTRAN_TRUE@	core/adios_logger.c core/util.c \
 @BUILD_FORTRAN_TRUE@	read/read_bp.c read/read_bp_staged.c \
-@BUILD_FORTRAN_TRUE@	read/read_bp_staged1.c $(am__append_36) \
-@BUILD_FORTRAN_TRUE@	$(am__append_37) $(am__append_38) \
-@BUILD_FORTRAN_TRUE@	$(am__append_39)
+@BUILD_FORTRAN_TRUE@	read/read_bp_staged1.c $(am__append_37) \
+@BUILD_FORTRAN_TRUE@	$(am__append_38) $(am__append_39) \
+@BUILD_FORTRAN_TRUE@	$(am__append_40)
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@dist_libadiosreadf_a_SOURCES = nssi/adios_nssi_args.x
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@nodist_libadiosreadf_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
-@BUILD_FORTRAN_TRUE@libadiosreadf_a_SOURCES = $(FortranReadLibSource) core/adiosf_read.c
+
+# adiosf_read.mod is not really usable, 
+# so it is not used and installed right now
+@BUILD_FORTRAN_TRUE@libadiosreadf_a_SOURCES = $(FortranReadLibSource) \
+@BUILD_FORTRAN_TRUE@	core/adiosf_read.c \
+@BUILD_FORTRAN_TRUE@	core/adiosf_read_mod.F90
 @BUILD_FORTRAN_TRUE@libadiosreadf_v1_a_SOURCES = $(FortranReadLibSource) core/adiosf_read_v1.c
 @BUILD_FORTRAN_TRUE@libadiosreadf_v1_a_CPPFLAGS = $(libadiosreadf_a_CPPFLAGS)
 @BUILD_FORTRAN_TRUE@libadiosreadf_v1_a_CFLAGS = $(libadiosreadf_a_CFLAGS)
+#nodist_libadiosreadf_a_SOURCES += adios_read.mod
+@BUILD_FORTRAN_TRUE@nodist_include_HEADERS = adios_read.mod 
 libadiosread_nompi_a_SOURCES = core/mpidummy.c core/adios_bp_v1.c \
 	core/adios_endianness.c core/bp_utils.c core/futils.c \
 	core/adios_error.c core/adios_read.c core/adios_read_v1.c \
 	core/common_read.c core/adios_internals.c core/adios_logger.c \
 	core/buffer.c core/globals.c core/adios_read_hooks.c \
 	core/adios_transport_hooks.c core/util.c read/read_bp.c \
-	$(am__append_43) $(am__append_44) $(am__append_45) \
-	$(am__append_46)
+	$(am__append_45) $(am__append_46) $(am__append_47) \
+	$(am__append_48)
 @HAVE_NSSI_TRUE@dist_libadiosread_nompi_a_SOURCES = nssi/adios_nssi_args.x
 @HAVE_NSSI_TRUE@nodist_libadiosread_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@FortranReadSeqLibSource = core/mpidummy.c \
@@ -1168,9 +1183,9 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c core/adios_bp_v1.c \
 @BUILD_FORTRAN_TRUE@	core/adios_error.c core/adios_logger.c \
 @BUILD_FORTRAN_TRUE@	core/common_read.c core/globals.c \
 @BUILD_FORTRAN_TRUE@	core/adios_read_hooks.c core/util.c \
-@BUILD_FORTRAN_TRUE@	read/read_bp.c $(am__append_50) \
-@BUILD_FORTRAN_TRUE@	$(am__append_51) $(am__append_52) \
-@BUILD_FORTRAN_TRUE@	$(am__append_53)
+@BUILD_FORTRAN_TRUE@	read/read_bp.c $(am__append_52) \
+@BUILD_FORTRAN_TRUE@	$(am__append_53) $(am__append_54) \
+@BUILD_FORTRAN_TRUE@	$(am__append_55)
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@dist_libadiosreadf_nompi_a_SOURCES = nssi/adios_nssi_args.x
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@nodist_libadiosreadf_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@libadiosreadf_nompi_a_SOURCES = $(FortranReadSeqLibSource) core/adiosf_read.c
@@ -1222,7 +1237,7 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .lo .o .obj
+.SUFFIXES: .F90 .c .cpp .lo .o .obj
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -1368,6 +1383,21 @@ mostlyclean-compile:
 
 distclean-compile:
 	-rm -f *.tab.c
+
+.F90.o:
+	$(PPFCCOMPILE) -c -o $@ $<
+
+.F90.obj:
+	$(PPFCCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+.F90.lo:
+	$(LTPPFCCOMPILE) -c -o $@ $<
+
+libadiosreadf_a-adiosf_read_mod.o: core/adiosf_read_mod.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o libadiosreadf_a-adiosf_read_mod.o `test -f 'core/adiosf_read_mod.F90' || echo '$(srcdir)/'`core/adiosf_read_mod.F90
+
+libadiosreadf_a-adiosf_read_mod.obj: core/adiosf_read_mod.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o libadiosreadf_a-adiosf_read_mod.obj `if test -f 'core/adiosf_read_mod.F90'; then $(CYGPATH_W) 'core/adiosf_read_mod.F90'; else $(CYGPATH_W) '$(srcdir)/core/adiosf_read_mod.F90'; fi`
 
 .c.o:
 	$(COMPILE) -c $<
@@ -3261,6 +3291,23 @@ uninstall-includeHEADERS:
 	  echo " rm -f '$(DESTDIR)$(includedir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(includedir)/$$f"; \
 	done
+install-nodist_includeHEADERS: $(nodist_include_HEADERS)
+	@$(NORMAL_INSTALL)
+	test -z "$(includedir)" || $(mkdir_p) "$(DESTDIR)$(includedir)"
+	@list='$(nodist_include_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(nodist_includeHEADERS_INSTALL) '$$d$$p' '$(DESTDIR)$(includedir)/$$f'"; \
+	  $(nodist_includeHEADERS_INSTALL) "$$d$$p" "$(DESTDIR)$(includedir)/$$f"; \
+	done
+
+uninstall-nodist_includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_include_HEADERS)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(includedir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(includedir)/$$f"; \
+	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -3342,7 +3389,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(HEADERS)
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -3390,7 +3437,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-includeHEADERS
+install-data-am: install-includeHEADERS install-nodist_includeHEADERS
 
 install-exec-am: install-binPROGRAMS install-libLIBRARIES
 
@@ -3418,7 +3465,8 @@ ps: ps-am
 ps-am:
 
 uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
-	uninstall-info-am uninstall-libLIBRARIES
+	uninstall-info-am uninstall-libLIBRARIES \
+	uninstall-nodist_includeHEADERS
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
 	clean-generic clean-libLIBRARIES clean-libtool \
@@ -3427,13 +3475,14 @@ uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
 	dvi-am html html-am info info-am install install-am \
 	install-binPROGRAMS install-data install-data-am install-exec \
 	install-exec-am install-includeHEADERS install-info \
-	install-info-am install-libLIBRARIES install-man install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+	install-info-am install-libLIBRARIES install-man \
+	install-nodist_includeHEADERS install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-binPROGRAMS \
 	uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLIBRARIES
+	uninstall-libLIBRARIES uninstall-nodist_includeHEADERS
 
 
 # The next line forces automake to build adios_nssi_args.[ch] before compiling adios_nssi_config.c
@@ -3458,6 +3507,9 @@ uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
 
                    #adios_read_hooks.h \
                    #io_timer.h
+
+@BUILD_FORTRAN_TRUE@adios_read.mod: core/adiosf_read_mod.F90
+@BUILD_FORTRAN_TRUE@	$(FC) -c core/adiosf_read_mod.F90
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

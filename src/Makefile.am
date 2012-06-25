@@ -26,6 +26,7 @@ nssi_coupling_server_LDADD += $(ADIOSLIB_LDADD) $(NSSI_SERVER_LIBS)
 
 endif # HAVE_NSSI
 
+CLEANFILES= 
 include_HEADERS=
 lib_LIBRARIES=
 
@@ -213,7 +214,7 @@ adios_nssi_args.c: adios_nssi_args.h
 	rpcgen -c $(srcdir)/nssi/adios_nssi_args.x \
 		| grep -v "include \"\.\." > adios_nssi_args.c
 
-CLEANFILES = adios_nssi_args.c adios_nssi_args.h
+CLEANFILES += adios_nssi_args.c adios_nssi_args.h
 
 endif # HAVE_NSSI
 
@@ -339,8 +340,14 @@ libadiosreadf_v1_a_CFLAGS = $(libadiosreadf_a_CFLAGS)
 
 # adiosf_read.mod is not really usable, 
 # so it is not used and installed right now
-#libadiosread_a_SOURCES += adiosf_read_mod.F90
-#include_HEADERS += adiosf_read.mod 
+libadiosreadf_a_SOURCES += core/adiosf_read_mod.F90
+#nodist_libadiosreadf_a_SOURCES += adios_read.mod
+nodist_include_HEADERS = adios_read.mod 
+CLEANFILES += adios_read.mod
+
+adios_read.mod: core/adiosf_read_mod.F90
+	$(FC) -c core/adiosf_read_mod.F90
+
 endif
 
 lib_LIBRARIES += libadiosread_nompi.a
