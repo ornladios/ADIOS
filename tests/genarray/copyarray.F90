@@ -189,12 +189,17 @@ subroutine readArray()
     use genarray_comm
     implicit none
     integer*8 adios_handle, adios_groupsize, adios_err
+!    ADIOS_FILE fp
+!    ADIOS_SELECTION s
     include 'mpif.h'
 
     call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
     cache_start_time = MPI_WTIME()
 
     group = "genarray"
+
+! TODO: Fix this to use the new read API
+
     call adios_open (adios_handle, group, inputfile, "r", group_comm, adios_err)
 #include "gread_genarray.fh"
     call MPI_BARRIER(MPI_COMM_WORLD,adios_err)

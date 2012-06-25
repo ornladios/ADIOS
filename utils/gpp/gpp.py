@@ -134,20 +134,24 @@ def get_c_write_statements (group):
 def get_fortran_read_statements (group):
 
     statements = ""
-    statements += 'uint64_t starts[64];\n'
-    statements += 'uint64_t counts[64];\n'
+    # Make a selection to capture writes done by the corresponding process in the writing application
+    #statements += 's = adios_selection_writeblock (rank);\n'
 
-    for item in group.get_vars():
-
+    for var in group.get_vars():
         if var.get_dimensions() == None:
             continue
-        i = 0
-        for dim in var.get_dimensions():
-            statements += ('starts[%d] = 0; counts[%d] = %s;\n' % (i,i,dim) )
-            i = i + 1
 
-        statements += 'adios_schedule_read (fp, "' + var.get_name() + '", starts, counts, ' + var.get_gwrite() + ');\n'
+        # The tricky bit here is deciding whether we need the & before the variable name.
+        # We omit it in two cases: 1) the variable type is string, or 2) the variable is not a scalar
+        #if (var.get_c_type() == 'string' or var.get_dimensions() != None):
+        #    var_prefix = ''
+        #else:
+        #    var_prefix = '&'
 
+        #statements += 'adios_schedule_read (fp, s, "' + var.get_name() + '", 1, 1, ' + var_prefix + var.get_gwrite() + ');\n'
+
+    #statements += 'adios_perform_reads (fp, 1);\n'
+    #statements += 'adios_selection_delete (s);\n'
     return statements
 
 
@@ -155,7 +159,7 @@ def get_c_read_statements (group):
 
     statements = ""
     # Make a selection to capture writes done by the corresponding process in the writing application
-    statements += 'ADIOS_SELECTION *s = adios_selection_writeblock (rank);\n'
+    statements += 's = adios_selection_writeblock (rank);\n'
     #statements += 'uint64_t counts[64];\n'
 
     for var in group.get_vars():
@@ -178,7 +182,6 @@ def get_c_read_statements (group):
 
 
 def generate_fortran (config):
-    #print "fortran"
 
     # Output a gwrite_*.fh file for each group in the config
     for group in config.get_groups():
@@ -199,14 +202,8 @@ def generate_fortran (config):
         # Open file - the filename is gread_<group>.fh
         grfile = open ('gread_' + group.get_name() + '.fh', 'w')
 
-        # Set groupsize
-        grfile.write ('adios_groupsize = 0\n')
-        grfile.write ('adios_totalsize = 0\n')
-        grfile.write ('call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)\n')
-
         # Read vars
-        
-
+        grfile.write (get_fortran_read_statements (group) )
 
         # Close file
         grfile.close()
@@ -234,14 +231,8 @@ def generate_c (config):
         # Open file - the filename is gread_<group>.ch
         grfile = open ('gread_' + group.get_name() + '.ch', 'w')
 
-        # Open group
-        #grfile.write ('ADIOS_GROUP * adios_group = adios_gopen (adios_handle, "' + group.get_name() + '");\n')
-
         # Read vars
         grfile.write (get_c_read_statements (group) )
-
-        # Close group
-        #grfile.write ('adios_gclose (adios_group);\n')
 
         # Close ch file
         grfile.close()
