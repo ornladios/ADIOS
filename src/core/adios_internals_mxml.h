@@ -8,7 +8,7 @@
 #ifndef ADIOS_INTERNALS_MXML_H
 #define ADIOS_INTERNALS_MXML_H
 
-int adios_parse_config (const char * config);
+int adios_parse_config (const char * config, MPI_Comm comm);
 int adios_local_config ();
 int adios_common_select_method (int priority, const char * method
                                ,const char * parameters, const char * group 

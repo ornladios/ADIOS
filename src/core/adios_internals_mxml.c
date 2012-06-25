@@ -2748,7 +2748,7 @@ static int parseBuffer (mxml_node_t * node)
     return 1;
 }
 
-int adios_parse_config (const char * config)
+int adios_parse_config (const char * config, MPI_Comm comm)
 {
     FILE * fp = 0;
     mxml_node_t * doc = NULL;
@@ -2768,7 +2768,7 @@ int adios_parse_config (const char * config)
 //#if HAVE_MPI
     int buffer_size = 0;
     int rank;
-    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+    MPI_Comm_rank (comm, &rank);
     if (rank == 0)
     {
 //#endif
@@ -2807,12 +2807,12 @@ int adios_parse_config (const char * config)
         fclose (fp);
 //#if HAVE_MPI
         buffer_size = s.st_size;
-        MPI_Bcast (&buffer_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
-        MPI_Bcast (buffer, buffer_size, MPI_BYTE, 0, MPI_COMM_WORLD);
+        MPI_Bcast (&buffer_size, 1, MPI_INT, 0, comm);
+        MPI_Bcast (buffer, buffer_size, MPI_BYTE, 0, comm);
     }
     else
     {
-        MPI_Bcast (&buffer_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast (&buffer_size, 1, MPI_INT, 0, comm);
         buffer = malloc (buffer_size + 1);
         if (!buffer)
         {
@@ -2822,7 +2822,7 @@ int adios_parse_config (const char * config)
 
             return 0;
         }
-        MPI_Bcast (buffer, buffer_size, MPI_BYTE, 0, MPI_COMM_WORLD);
+        MPI_Bcast (buffer, buffer_size, MPI_BYTE, 0, comm);
         buffer [buffer_size] = 0;
     }
 //#endif

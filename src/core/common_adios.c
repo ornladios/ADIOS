@@ -14,6 +14,14 @@
 #include <stdint.h>
 #include <sys/time.h> // gettimeofday
 
+#ifdef _NOMPI
+/* Sequential processes can use the library compiled with -D_NOMPI */
+#   include "public/mpidummy.h"
+#else
+/* Parallel applications should use MPI to communicate file info and slices of data */
+#   include "mpi.h"
+#endif
+
 // xml parser
 #include <mxml.h>
 
@@ -35,8 +43,9 @@ extern struct adios_transport_struct * adios_transports;
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_init (const char * config)
 {
+    MPI_Comm comm = MPI_COMM_WORLD; // FIXME: this should be an argument from app
     // parse the config file
-    return adios_parse_config (config);
+    return adios_parse_config (config, comm);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
