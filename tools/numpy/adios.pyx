@@ -364,7 +364,7 @@ cdef class AdiosFile:
         self.fp = adios_fopen(fname, comm.ob_mpi)
         assert self.fp != NULL, 'Not an open file'
 
-        self.name         = fname.split('/')[-1]
+        self.name         = fname.split('/')[-1]  ## basename
         self.groups_count = self.fp.groups_count
         self.vars_count   = self.fp.vars_count  
         self.attrs_count  = self.fp.attrs_count 
@@ -428,7 +428,7 @@ cdef class AdiosGroup:
         cdef AdiosVariable v
         for varname in [self.gp.var_namelist[i] for i in range(self.vars_count)]:
             v = AdiosVariable(self, varname)
-            self.var[varname[1:]] = v
+            self.var[varname] = v
 
     def __del__(self):
         self.close()
@@ -467,7 +467,7 @@ cdef class AdiosVariable:
         self.vp = adios_inq_var(self.group.gp, name)
         assert self.group.gp != NULL, 'Not an open group'
 
-        self.name                  = name.split('/')[-1]
+        self.name                  = name
         self.varid                 = self.vp.varid                
         self.type                  = adios2nptype(self.vp.type)
         self.ndim                  = self.vp.ndim                 

@@ -6,7 +6,7 @@ f = AdiosFile("adios_test.bp")
 f.printself()
 g = f.group["temperature"]
 g.printself()
-v = g.var["temperature"]
+v = g.var["/temperature"]
 v.printself()
 
 print v.read()
