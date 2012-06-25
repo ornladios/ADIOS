@@ -42,8 +42,11 @@ void adios_logger_open (char *logpath, int rank)
     
 void adios_logger_close() 
 { 
-    if (!adios_logf && adios_logf != stdout && adios_logf != stderr) 
+    if (adios_logf && adios_logf != stdout && adios_logf != stderr) 
+    {
         fclose(adios_logf); 
+        adios_logf = NULL;
+    }
 }
     
 /*
