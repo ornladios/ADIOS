@@ -135,23 +135,16 @@ def get_fortran_read_statements (group):
 
     statements = ""
     # Make a selection to capture writes done by the corresponding process in the writing application
-    #statements += 's = adios_selection_writeblock (rank);\n'
+    #statements += 'call adios_selection_writeblock (s, rank)\n'
 
     for var in group.get_vars():
         if var.get_dimensions() == None:
             continue
 
-        # The tricky bit here is deciding whether we need the & before the variable name.
-        # We omit it in two cases: 1) the variable type is string, or 2) the variable is not a scalar
-        #if (var.get_c_type() == 'string' or var.get_dimensions() != None):
-        #    var_prefix = ''
-        #else:
-        #    var_prefix = '&'
+        #statements += 'call adios_schedule_read (fp, s, "' + var.get_name() + '", 1, 1, ' + var.get_gwrite() + ', adios_err)\n'
 
-        #statements += 'adios_schedule_read (fp, s, "' + var.get_name() + '", 1, 1, ' + var_prefix + var.get_gwrite() + ');\n'
-
-    #statements += 'adios_perform_reads (fp, 1);\n'
-    #statements += 'adios_selection_delete (s);\n'
+    #statements += '\ncall adios_perform_reads (fp, adios_err)\n'
+    #statements += 'call adios_selection_delete (s, adios_err)\n'
     return statements
 
 
