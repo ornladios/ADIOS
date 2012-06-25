@@ -429,7 +429,7 @@ module adios_read
     !
     ! ADIOS_SCHEDULE_READ generic interface 
     !
-    ! Usage: call adios_schedule_read (fp, varname, sel, from_step, nsteps,  data, err)
+    ! Usage: call adios_schedule_read (fp, sel, varname, from_step, nsteps,  data, err)
     !
     interface adios_schedule_read
 

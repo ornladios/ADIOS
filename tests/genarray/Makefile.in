@@ -322,7 +322,8 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-INCLUDES = $(all_includes) -I$(top_builddir)/src
+INCLUDES = $(all_includes) -I$(top_builddir)/src \
+	-I$(top_builddir)/src/core/adiosf_read_mod.F90
 AUTOMAKE_OPTIONS = no-dependencies
 genarray_SOURCES = genarray.F90
 genarray_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)

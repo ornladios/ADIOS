@@ -187,10 +187,11 @@ end subroutine generateLocalArray
 !!***************************
 subroutine readArray()
     use genarray_comm
+    use adios_read
     implicit none
-    integer*8 adios_handle, adios_groupsize, adios_err
-!    ADIOS_FILE fp
-!    ADIOS_SELECTION s
+    integer*8 adios_handle, adios_groupsize
+    integer adios_err
+    integer*8 fp, s
     include 'mpif.h'
 
     call MPI_BARRIER(MPI_COMM_WORLD,adios_err)

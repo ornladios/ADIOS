@@ -135,16 +135,16 @@ def get_fortran_read_statements (group):
 
     statements = ""
     # Make a selection to capture writes done by the corresponding process in the writing application
-    #statements += 'call adios_selection_writeblock (s, rank)\n'
+    statements += 'call adios_selection_writeblock (s, rank)\n'
 
     for var in group.get_vars():
         if var.get_dimensions() == None:
             continue
 
-        #statements += 'call adios_schedule_read (fp, s, "' + var.get_name() + '", 1, 1, ' + var.get_gwrite() + ', adios_err)\n'
+        statements += 'call adios_schedule_read (fp, s, "' + var.get_name() + '", 1, 1, ' + var.get_gwrite() + ', adios_err)\n'
 
-    #statements += '\ncall adios_perform_reads (fp, adios_err)\n'
-    #statements += 'call adios_selection_delete (s, adios_err)\n'
+    statements += '\ncall adios_perform_reads (fp, adios_err)\n'
+    statements += 'call adios_selection_delete (s)\n'
     return statements
 
 
