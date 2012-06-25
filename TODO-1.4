@@ -1,14 +1,19 @@
 WRITE
 =====
 
-- write attributes only from rank 0; keep all as special flag in XML?
-- add special attributes to output:
-   - adios version numbers (major,minor,revision)
-   - create time
-   - modification time
+- init method parameter: abort_on_error (good for debugging, request by Numeca)
+   - change fprintf()s to error logging
+   + done for mpi_amr method only
++ write attributes only from rank 0; keep all as special flag in XML?
++ add special attributes to output:
+   + adios version numbers (as string) - (major,minor,revision)
+   + create time
+   - modification time ???
    - undef value (also func: adios_undef_get(), adios_undef_set())
 - bring back "write=no" into XML tag to skip some variables
-- time-reset function for appending data to the same timestep
+- time-reset function for appending data to the same timestep ("extend" mode)
+- each method should process parameters from PairStruct, not from string
+- adios_init() should have a communicator parameter
 
 READ
 ====
@@ -23,6 +28,16 @@ READ
   - modify manual 
   - test the heck out of this best, complex type data too
 
+BUILD
+=====
+- config macro for GNI and InfiniBand
+- DataSpaces dependency on GNI/Infiniband handled in ac_dataspaces.m4
+- same for Dimes
+- shared libraries (request by Numeca)
+
+MANUAL
+=====
+- latex manual
 
 SKEL
 ===
@@ -43,7 +58,8 @@ JAVA WRAPPER
 - example codes
 - add to manual
 
-
+OTHER
+=====
 
 
 
