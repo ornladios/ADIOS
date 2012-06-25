@@ -96,7 +96,7 @@ AC_LANG(C)
 AM_CONDITIONAL([HAVE_DATATAP], [test x$datatap != xdisable])
 
 AC_ARG_ENABLE(write,
-    [AS_HELP_STRING([--disable-write],[disable building the write methods in ADIOS. Must be used on MacOSX])])
+    [AS_HELP_STRING([--disable-write],[disable building the write methods in ADIOS.])])
 AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
 
 dnl CC="$MPICC"
