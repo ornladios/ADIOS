@@ -10,6 +10,7 @@
 /* Read method for BP files */
 /****************************/
 
+//FIXME: timestep always starts with 0
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -186,9 +187,160 @@ void close_all_BP_files (struct BP_file_handle * l)
                       );                                                                    \
         fh->b->offset = 0;                                                                  \
 
+
+static int get_step (ADIOS_FILE *fp, int step, float timeout_sec)
+{
+#if 0
+    /* Try to get variable with fname. If it does not exists, we get an error, which means
+       the data does not exist. So we return an error just like with real files */
+    struct dataspaces_data_struct * ds = (struct dataspaces_data_struct *) fp->fh;
+    int offset[] = {0,0,0}, readsize[3] = {1,1,1};
+    char file_info_buf[FILEINFO_BUFLEN];
+    int version_info_buf[2]; // 0: last version, 1: terminated?
+    int err, i;
+    char ds_vname[MAX_DS_NAMELEN];
+    char ds_fname[MAX_DS_NAMELEN];
+    double t1 = adios_gettime();
+    enum STEP_STATUS step_status = STEP_OK;
+
+    snprintf(ds_vname, MAX_DS_NAMELEN, "VERSION@%s",fp->path);
+    snprintf(ds_fname, MAX_DS_NAMELEN, "FILE@%s",fp->path);
+    //log_debug("-- %s, rank %d: Get variable %s\n", __func__, ds->mpi_rank, ds_fname);
+    ds->freed_mem = 0;
+
+    /* While loop for handling timeout
+       timeout > 0: wait up to this long to open the stream
+       timeout = 0: wait forever
+       timeout < 0: return immediately
+    */
+    int stay_in_poll_loop = 1;
+    int found_stream = 0;
+    int nversions, *versions;
+    while (stay_in_poll_loop)
+    {
+        lock_file (fp, ds);
+        step_status = STEP_OK;
+
+        log_debug("   rank %d: dart_get %s\n", ds->mpi_rank, ds_vname);
+        readsize[0] = 2; //*sizeof(int); // VERSION%name is 2 integers only
+        err = adios_read_dataspaces_get (ds_vname, adios_integer, 0, ds->mpi_rank, 1, 0,
+                                         offset, readsize, version_info_buf);
+
+        if (!err) {
+            int last_version = version_info_buf[0];
+            int terminated = version_info_buf[1];
+            log_debug("   rank %d: version info: last=%d, terminated=%d\n",
+                      ds->mpi_rank, last_version, terminated);
+
+            if (last_version < step) {
+                // we have no more new steps
+                if (terminated) {
+                    // stream is gone, we read everything 
+                    step_status = STEP_STREAMTERMINATED;
+                    stay_in_poll_loop = 0;
+                } else {
+                    // a next step may come 
+                    step_status = STEP_STEPNOTREADY;
+                    // we may stay in poll loop
+                }
+            } else {
+                // Try to get the version the user wants
+                if (which_version == LAST_VERSION)
+                    step = last_version;
+                readsize[0] = FILEINFO_BUFLEN; // FILE%name is FILEINFO_BUFLEN bytes long
+
+                int max_check_version = last_version;
+                if (which_version == NEXT_VERSION)
+                    max_check_version = step;
+
+                // Loop until we find what we need or go past the last version
+                do {
+                    log_debug("   rank %d: dart_get %s\n", ds->mpi_rank, ds_fname);
+                    err = adios_read_dataspaces_get (ds_fname, adios_byte, step, ds->mpi_rank,
+                                                     1, 0, offset, readsize, file_info_buf);
+                    step++; // value will go over the target with 1
+                } while (err && step <= max_check_version);
+
+                if (!err) {
+                    /* Found object with this access version */
+                    step--; // undo the last increment above
+                    ds->current_step = step;
+                    stay_in_poll_loop = 0;
+                    log_debug("   rank %d: step %d of '%s' exists\n",
+                            ds->mpi_rank, ds->current_step, ds_fname);
+
+                    err = ds_unpack_file_info (fp, file_info_buf, FILEINFO_BUFLEN);
+                    if (!err) {
+                        found_stream = 1;
+                        fp->current_step = ds->current_step;
+                        fp->last_step = last_version;
+
+                        /* Get the variables and attributes the (only) group separately */
+                        err = get_groupdata (fp);
+                        if (err) {
+                            // something went wrong with the group(s)
+                            step_status = STEP_OTHERERROR;
+                        }
+                    } else {
+                        // something went wrong with the file metadata
+                        step_status = STEP_OTHERERROR;
+                    }
+
+                } else {
+                    if (which_version == NEXT_VERSION)
+                    {
+                        if (step < last_version) {
+                            step_status = STEP_STEPDISAPPEARED;
+                            stay_in_poll_loop = 0;
+                        } else {
+                            step_status = STEP_STEPNOTREADY;
+                            // we may stay in poll loop
+                        }
+                    }
+                    else if (which_version == LAST_VERSION ||
+                             which_version == NEXT_AVAILABLE_VERSION)
+                    {
+                        step_status = STEP_OTHERERROR;
+                        stay_in_poll_loop = 0;
+                        log_warn ("DATASPACES method: Unexpected state: found last version %d"
+                                "of dataset but then could not read it.\n", step);
+                    }
+                }
+            }
+
+        } else {
+            // This stream does not exist yet
+            log_info ("Data of '%s' does not exist (yet) in DataSpaces\n", fp->path);
+            step_status = STEP_STREAMNOTFOUND;
+        }
+
+        if (step_status != STEP_OK)
+            unlock_file (fp, ds);
+
+
+        // check if we need to stay in loop 
+        if (stay_in_poll_loop)
+        {
+            if (timeout_sec < 0.0)
+            {
+                stay_in_poll_loop = 0;
+            }
+            else if (timeout_sec > 0.0 && (adios_gettime()-t1 > timeout_sec))
+            {
+                stay_in_poll_loop = 0;
+            }
+            else
+            {
+                adios_nanosleep (0, 1000000); // sleep for 1 msec
+            }
+        }
+
+    } // while (stay_in_poll_loop)
+#endif
+}
+
 /* This routine processes an read request and returns data in ADIOS_VARCHUNK.
    If the selection type is not bounding box, convert it.
-   FIXME: block reading.
 */
 static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 {
@@ -260,7 +412,10 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
     }
 }
 
-/* This routines read in data for bounding box selection */
+/* This routines read in data for bounding box selection.
+   If the selection is not bounding box, it should be converted to it.
+   The data read in should be saved in ADIOS_VARCHUNK.
+ */
 static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 {
     BP_PROC * p;
@@ -275,9 +430,8 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     uint64_t datasize, dset_stride,var_stride, total_size=0, items_read;
     uint64_t * count, * start;
     void * data;
-    int dummy = -1, temp_timedim, is_global = 0, size_of_type;
+    int dummy = -1, is_global = 0, size_of_type;
     uint64_t slice_offset, slice_size;
-    uint64_t datatimeoffset = 0; // offset in data to write a given timestep
     MPI_Status status;
     ADIOS_VARCHUNK * chunk;
 
@@ -332,10 +486,12 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
         if (ndim == 0)
         {
             /* READ A SCALAR VARIABLE */
-            /* Prepare slice_offset, slice_size and idx for the later macro */
+            /* Prepare slice_offset, slice_size and idx for the later macro:
+               MPI_FILE_READ_OPS1 and MPI_FILE_READ_OPS2 
+            */
+            idx = 0;
             slice_offset = v->characteristics[start_idx + idx].payload_offset;
             slice_size = size_of_type;
-            idx = 0;
 
             if (v->type == adios_string)
             {
@@ -353,11 +509,11 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 MPI_FILE_READ_OPS2
             }
 
-            memcpy ((char *)data + total_size, fh->b->buff + fh->b->offset, size_of_type);
+            memcpy ((char *)data, fh->b->buff + fh->b->offset, size_of_type);
 
             if (fh->mfooter.change_endianness == adios_flag_yes)
             {
-                change_endianness ((char *)data + total_size, size_of_type, v->type);
+                change_endianness ((char *)data, size_of_type, v->type);
             }
 
             if (v->type == adios_string)
@@ -365,60 +521,53 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 // add \0 to the end of string
                 // size_of_type here is the length of string
                 // FIXME: how would this work for strings written over time?
-                ((char*)data + total_size)[size_of_type] = '\0';
+                ((char*)data)[size_of_type] = '\0';
             }
 
-            total_size += size_of_type;
-            //FIXME 
-/*
-            if (timedim == -1)
-                break;
-            else
-                continue;
-*/
+            data += (v->type == adios_string)?  size_of_type + 1 : size_of_type;
         }
-
-         /* READ AN ARRAY VARIABLE */
-        int * idx_table = (int *) malloc (sizeof (int) * (stop_idx - start_idx + 1));
-
-        uint64_t write_offset = 0;
-
-        // loop over the list of pgs to read from one-by-one
-        for (idx = 0; idx < stop_idx - start_idx + 1; idx++)
+        else
         {
-            int flag;
-            datasize = 1;
-            var_stride = 1;
-            dset_stride = 1;
-            idx_table[idx] = 1;
-            uint64_t payload_size = size_of_type;
-    
-            /* Each pg can have a different sized array, so we need the actual dimensions from it */
-            is_global = bp_get_dimension_characteristics(&(v->characteristics[start_idx + idx]),
-                                                        ldims, gdims, offsets);
-            if (!is_global)
-            {
-                // we use gdims below, which is 0 for a local array; set to ldims here
-                for (j = 0; j < ndim; j++)
-                {
-                    gdims[j]=ldims[j];
-                }
-                // we need to read only the first PG, not all, so let's prevent a second loop
-                stop_idx = start_idx;
-            }
+            /* READ AN ARRAY VARIABLE */
+            int * idx_table = (int *) malloc (sizeof (int) * (stop_idx - start_idx + 1));
+            uint64_t write_offset = 0;
 
-            /* Again, a Fortran written file has the dimensions in Fortran order we need to swap here */
-            if (file_is_fortran)
+            // loop over the list of pgs to read from one-by-one
+            for (idx = 0; idx < stop_idx - start_idx + 1; idx++)
             {
-                swap_order (ndim, gdims, &dummy);
-                swap_order (ndim, ldims, &dummy);
-                swap_order (ndim, offsets, &dummy);
-            }
+                int flag;
+                datasize = 1;
+                var_stride = 1;
+                dset_stride = 1;
+                idx_table[idx] = 1;
+                uint64_t payload_size = size_of_type;
+    
+                /* Each pg can have a different sized array, so we need the actual dimensions from it */
+                is_global = bp_get_dimension_characteristics(&(v->characteristics[start_idx + idx]),
+                                                            ldims, gdims, offsets);
+                if (!is_global)
+                {
+                    // we use gdims below, which is 0 for a local array; set to ldims here
+                    for (j = 0; j < ndim; j++)
+                    {
+                        gdims[j]=ldims[j];
+                    }
+                    // we need to read only the first PG, not all, so let's prevent a second loop
+                    stop_idx = start_idx;
+                }
+
+                /* Again, a Fortran written file has the dimensions in Fortran order we need to swap here */
+                if (file_is_fortran)
+                {
+                    swap_order (ndim, gdims, &dummy);
+                    swap_order (ndim, ldims, &dummy);
+                    swap_order (ndim, offsets, &dummy);
+                }
             
-            /* take out the time dimension */
-            /* For C, gdims and offset are one size shorter because the timedim part is missing,
-               so we take it out only for fortran files
-            */
+                /* take out the time dimension */
+                /* For C, gdims and offset are one size shorter because the timedim part is missing,
+                   so we take it out only for fortran files
+                */
 //FIXME
 /*
             if (timedim > -1) {
@@ -439,108 +588,59 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
             printf("start_notime   = "); for (j = 0; j<ndim_notime; j++) printf("%d ",start_notime[j]); printf("\n");
             */ 
                 
-            for (j = 0; j < ndim; j++)
-            {
-    
-                payload_size *= ldims [j];
-    
-                if ( (count[j] > gdims[j]) 
-                  || (start[j] > gdims[j]) 
-                  || (start[j] + count[j] > gdims[j]))
+                for (j = 0; j < ndim; j++)
                 {
-                    adios_error ( err_out_of_bound, "Error: Variable (id=%d) out of bound 1("
-                        "the data in dimension %d to read is %llu elements from index %llu"
-                        " but the actual data is [0,%llu])",
-                        r->varid, j + 1, count[j], start[j], gdims[j] - 1);
-                    return 0;
-                }
+                    payload_size *= ldims [j];
     
-                /* check if there is any data in this pg and this dimension to read in */
-                flag = (offsets[j] >= start[j] 
-                        && offsets[j] < start[j] + count[j])
-                    || (offsets[j] < start[j]
-                        && offsets[j] + ldims[j] > start[j] + count[j]) 
-                    || (offsets[j] + ldims[j] > start[j] 
-                        && offsets[j] + ldims[j] <= start[j] + count[j]);
-                idx_table [idx] = idx_table[idx] && flag;
-            }
-
-            if ( !idx_table[idx] ) {
-                continue;
-            }
-    
-            /* determined how many (fastest changing) dimensions can we read in in one read */
-            int hole_break; 
-            for (i = ndim - 1; i > -1; i--)
-            {
-                if (offsets[i] == start[i] && ldims[i] == count[i]) {
-                    datasize *= ldims[i];
-                }
-                else
-                    break;
-            }
-    
-            hole_break = i;
-            slice_offset = 0;
-            slice_size = 0;
-            if (hole_break == -1) {
-                /* The complete read happens to be exactly one pg, and the entire pg */
-                /* This means we enter this only once, and npg=1 at the end */
-                /* This is a rare case. FIXME: cannot eliminate this? */
-                slice_size = payload_size;
-    
-                slice_offset = v->characteristics[start_idx + idx].payload_offset;
-                if (!has_subfile) {
-                    MPI_FILE_READ_OPS1
-                } else {
-                    MPI_FILE_READ_OPS2
-                }
-    
-                memcpy ((char *)data, fh->b->buff + fh->b->offset, slice_size);
-                if (fh->mfooter.change_endianness == adios_flag_yes)
-                {
-                    change_endianness (data, slice_size, v->type);
-                }
-            }
-            else if (hole_break == 0) 
-            {
-                /* The slowest changing dimensions should not be read completely but
-                   we still need to read only one block */
-                int isize;
-                uint64_t size_in_dset = 0;
-                uint64_t offset_in_dset = 0;
-                uint64_t offset_in_var = 0;
-    
-                isize = offsets[0] + ldims[0];
-                if (start[0] >= offsets[0]) {
-                    // head is in
-                    if (start[0]<isize) {
-                        if (start[0] + count[0] > isize)
-                            size_in_dset = isize - start[0];
-                        else
-                            size_in_dset = count[0];
-                        offset_in_dset = start[0] - offsets[0];
-                        offset_in_var = 0;
+                    if ( (count[j] > gdims[j]) 
+                      || (start[j] > gdims[j]) 
+                      || (start[j] + count[j] > gdims[j]))
+                    {
+                        adios_error ( err_out_of_bound, "Error: Variable (id=%d) out of bound 1("
+                            "the data in dimension %d to read is %llu elements from index %llu"
+                            " but the actual data is [0,%llu])",
+                            r->varid, j + 1, count[j], start[j], gdims[j] - 1);
+                        return 0;
                     }
+    
+                    /* check if there is any data in this pg and this dimension to read in */
+                    flag = (offsets[j] >= start[j] 
+                            && offsets[j] < start[j] + count[j])
+                        || (offsets[j] < start[j]
+                            && offsets[j] + ldims[j] > start[j] + count[j]) 
+                        || (offsets[j] + ldims[j] > start[j] 
+                            && offsets[j] + ldims[j] <= start[j] + count[j]);
+                    idx_table [idx] = idx_table[idx] && flag;
                 }
-                else {
-                    // middle is in
-                    if (isize < start[0] + count[0])
-                        size_in_dset = ldims[0];
-                    else
-                    // tail is in
-                        size_in_dset = count[0] + start[0] - offsets[0];
-                    offset_in_dset = 0;
-                    offset_in_var = offsets[0] - start[0];
+
+                if (!idx_table[idx])
+                {
+                    continue;
                 }
     
-                slice_size = size_in_dset * datasize * size_of_type;
-                write_offset = offset_in_var * datasize * size_of_type;
- 
-                if (v->characteristics[start_idx + idx].payload_offset > 0)
+                /* determined how many (fastest changing) dimensions can we read in in one read */
+                int hole_break; 
+                for (i = ndim - 1; i > -1; i--)
                 {
-                    slice_offset = v->characteristics[start_idx + idx].payload_offset 
-                                 + offset_in_dset * datasize * size_of_type;
+                    if (offsets[i] == start[i] && ldims[i] == count[i])
+                    {
+                        datasize *= ldims[i];
+                    }
+                    else
+                        break;
+                }
+    
+                hole_break = i;
+                slice_offset = 0;
+                slice_size = 0;
+                if (hole_break == -1)
+                {
+                    /* The complete read happens to be exactly one pg, and the entire pg */
+                    /* This means we enter this only once, and npg=1 at the end */
+                    /* This is a rare case. FIXME: cannot eliminate this? */
+                    slice_size = payload_size;
+    
+                    slice_offset = v->characteristics[start_idx + idx].payload_offset;
                     if (!has_subfile)
                     {
                         MPI_FILE_READ_OPS1
@@ -549,52 +649,106 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     {
                         MPI_FILE_READ_OPS2
                     }
-                }
     
-                memcpy ((char *)data + write_offset, fh->b->buff + fh->b->offset, slice_size);
-                if (fh->mfooter.change_endianness == adios_flag_yes)
-                {
-                    change_endianness((char *)data + write_offset, slice_size, v->type);
+                    memcpy ((char *)data, fh->b->buff + fh->b->offset, slice_size);
+                    if (fh->mfooter.change_endianness == adios_flag_yes)
+                    {
+                        change_endianness (data, slice_size, v->type);
+                    }
                 }
-    
-                //write_offset +=  slice_size;
-            }
-            else 
-            {
-                uint64_t stride_offset = 0;
-                int isize;
-                uint64_t size_in_dset[10];
-                uint64_t offset_in_dset[10];
-                uint64_t offset_in_var[10];
-
-                memset(size_in_dset, 0 , 10 * 8);
-                memset(offset_in_dset, 0 , 10 * 8);
-                memset(offset_in_var, 0 , 10 * 8);
-
-                int hit = 0;
-                for (i = 0; i < ndim; i++)
+                else if (hole_break == 0) 
                 {
-                    isize = offsets[i] + ldims[i];
-                    if (start[i] >= offsets[i])
+                    /* The slowest changing dimensions should not be read completely but
+                       we still need to read only one block */
+                    int isize;
+                    uint64_t size_in_dset = 0;
+                    uint64_t offset_in_dset = 0;
+                    uint64_t offset_in_var = 0;
+    
+                    isize = offsets[0] + ldims[0];
+                    if (start[0] >= offsets[0])
                     {
                         // head is in
-                        if (start[i]<isize)
+                        if (start[0]<isize)
                         {
-                            if (start[i] + count[i] > isize)
-                                size_in_dset[i] = isize - start[i];
+                            if (start[0] + count[0] > isize)
+                                size_in_dset = isize - start[0];
                             else
-                                size_in_dset[i] = count[i];
-                            offset_in_dset[i] = start[i] - offsets[i];
-                            offset_in_var[i] = 0;
-                            hit = 1 + hit * 10;
-                        }
-                        else
-                        {
-                            hit = -1;
+                                size_in_dset = count[0];
+                            offset_in_dset = start[0] - offsets[0];
+                            offset_in_var = 0;
                         }
                     }
                     else
                     {
+                        // middle is in
+                        if (isize < start[0] + count[0])
+                            size_in_dset = ldims[0];
+                        else
+                        // tail is in
+                            size_in_dset = count[0] + start[0] - offsets[0];
+                        offset_in_dset = 0;
+                        offset_in_var = offsets[0] - start[0];
+                    }
+    
+                    slice_size = size_in_dset * datasize * size_of_type;
+                    write_offset = offset_in_var * datasize * size_of_type;
+ 
+                    if (v->characteristics[start_idx + idx].payload_offset > 0)
+                    {
+                        slice_offset = v->characteristics[start_idx + idx].payload_offset 
+                                     + offset_in_dset * datasize * size_of_type;
+                        if (!has_subfile)
+                        {
+                            MPI_FILE_READ_OPS1
+                        }
+                        else
+                        {
+                            MPI_FILE_READ_OPS2
+                        }
+                    }
+    
+                    memcpy ((char *)data + write_offset, fh->b->buff + fh->b->offset, slice_size);
+                    if (fh->mfooter.change_endianness == adios_flag_yes)
+                    {
+                        change_endianness((char *)data + write_offset, slice_size, v->type);
+                    }
+    
+                    //write_offset +=  slice_size;
+                }
+                else 
+                {
+                    uint64_t stride_offset = 0;
+                    int isize;
+                    uint64_t size_in_dset[10];
+                    uint64_t offset_in_dset[10];
+                    uint64_t offset_in_var[10];
+
+                    memset(size_in_dset, 0 , 10 * 8);
+                    memset(offset_in_dset, 0 , 10 * 8);
+                    memset(offset_in_var, 0 , 10 * 8);
+
+                    for (i = 0; i < ndim; i++)
+                    {
+                        isize = offsets[i] + ldims[i];
+                        if (start[i] >= offsets[i])
+                        {
+                            // head is in
+                            if (start[i]<isize)
+                            {
+                                if (start[i] + count[i] > isize)
+                                    size_in_dset[i] = isize - start[i];
+                                else
+                                    size_in_dset[i] = count[i];
+                                offset_in_dset[i] = start[i] - offsets[i];
+                                offset_in_var[i] = 0;
+                            }
+                            else
+                            {
+                            }
+                        }
+                        else
+                        {
                         // middle is in
                         if (isize < start[i] + count[i])
                         {
@@ -607,82 +761,82 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                         }
                         offset_in_dset[i] = 0;
                         offset_in_var[i] = offsets[i] - start[i];
+                        }
                     }
-                }
-                datasize = 1;
-                var_stride = 1;
+                    datasize = 1;
+                    var_stride = 1;
     
-                for (i = ndim - 1; i >= hole_break; i--)
-                {
-                    datasize *= size_in_dset[i];
-                    dset_stride *= ldims[i];
-                    var_stride *= count[i];
-                }
+                    for (i = ndim - 1; i >= hole_break; i--)
+                    {
+                        datasize *= size_in_dset[i];
+                        dset_stride *= ldims[i];
+                        var_stride *= count[i];
+                    }
     
-                uint64_t start_in_payload = 0, end_in_payload = 0, s = 1;
-                for (i = ndim - 1; i > -1; i--)
-                {
-                    start_in_payload += s * offset_in_dset[i] * size_of_type;
-                    end_in_payload += s * (offset_in_dset[i] + size_in_dset[i] - 1) * size_of_type;
-                    s *= ldims[i];
-                }
+                    uint64_t start_in_payload = 0, end_in_payload = 0, s = 1;
+                    for (i = ndim - 1; i > -1; i--)
+                    {
+                        start_in_payload += s * offset_in_dset[i] * size_of_type;
+                        end_in_payload += s * (offset_in_dset[i] + size_in_dset[i] - 1) * size_of_type;
+                        s *= ldims[i];
+                    }
     
-                slice_size = end_in_payload - start_in_payload + 1 * size_of_type;
+                    slice_size = end_in_payload - start_in_payload + 1 * size_of_type;
     
-                slice_offset =  v->characteristics[start_idx + idx].payload_offset
-                              + start_in_payload;
-                if (!has_subfile)
-                {
-                    MPI_FILE_READ_OPS1
-                }
-                else
-                {
-                    MPI_FILE_READ_OPS2
-                }
+                    slice_offset =  v->characteristics[start_idx + idx].payload_offset
+                                  + start_in_payload;
+                    if (!has_subfile)
+                    {
+                        MPI_FILE_READ_OPS1
+                    }
+                    else
+                    {
+                       MPI_FILE_READ_OPS2
+                    }
  
-                for ( i = 0; i < ndim; i++)
-                {
-                    offset_in_dset[i] = 0;
-                }
+                    for ( i = 0; i < ndim; i++)
+                    {
+                        offset_in_dset[i] = 0;
+                    }
 
+                    uint64_t var_offset = 0;
+                    uint64_t dset_offset = 0;
     
-                uint64_t var_offset = 0;
-                uint64_t dset_offset = 0;
+                    for ( i = 0; i < ndim; i++)
+                    {
+                        var_offset = offset_in_var[i] + var_offset * count[i];
+                        dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
+                    }
     
-                for ( i = 0; i < ndim; i++)
-                {
-                    var_offset = offset_in_var[i] + var_offset * count[i];
-                    dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
+                    copy_data (data
+                              ,fh->b->buff + fh->b->offset
+                              ,0
+                              ,hole_break
+                              ,size_in_dset
+                              ,ldims
+                              ,count
+                              ,var_stride
+                              ,dset_stride
+                              ,var_offset
+                              ,dset_offset
+                              ,datasize
+                              ,size_of_type 
+                              );
                 }
+            }  // end for (idx ... loop over pgs
     
-                copy_data (data
-                          ,fh->b->buff + fh->b->offset
-                          ,0
-                          ,hole_break
-                          ,size_in_dset
-                          ,ldims
-                          ,count
-                          ,var_stride
-                          ,dset_stride
-                          ,var_offset
-                          ,dset_offset
-                          ,datasize
-                          ,size_of_type 
-                          );
-            }
-        }  // end for (idx ... loop over pgs
+            free (idx_table);
     
-        free (idx_table);
-    
-        total_size += items_read * size_of_type;
-        // shift target pointer for next read in
-        data = (char *)data + (items_read * size_of_type);
+            total_size += items_read * size_of_type;
+            // shift target pointer for next read in
+            data = (char *)data + (items_read * size_of_type);
 
 //FIXME
 /*
         if (timedim == -1)
             break;
 */
+            }
     } // end for (timestep ... loop over timesteps
 
     free (dims);
@@ -691,9 +845,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     assert (chunk);
 
     chunk->varid = r->varid;
-/*
-    chunk->type = r->type;
-*/
+    chunk->type = v->type;
     chunk->sel = copy_selection (r->sel);
     chunk->data = data;
 
@@ -733,12 +885,12 @@ int adios_read_bp_init_method (MPI_Comm comm, PairStruct * params)
             max_chunk_size = strtol(p->value, NULL, 10);
             if (max_chunk_size > 0)
             {
-                log_debug ("max_chunk_size set to %dMB for DATASPACES read method\n", max_chunk_size);
+                log_debug ("max_chunk_size set to %dMB for the read method\n", max_chunk_size);
                 chunk_buffer_size = max_chunk_size * 1024 * 1024;
             }
             else
             { 
-                log_error ("Invalid 'max_chunk_size' parameter given to the DATASPACES read method: '%s'\n", p->value);
+                log_error ("Invalid 'max_chunk_size' parameter given to the read method: '%s'\n", p->value);
             }
         }
 
@@ -753,7 +905,10 @@ int adios_read_bp_finalize_method ()
     return 0;
 }
 
-/* As opposed to open_file, open_stream opens one step only. */
+/* As opposed to open_file, open_stream opens one step only.
+   The lock_mode for file reading is ignored.
+*/
+//FIXME: timeout_sec
 ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
 {
     int i, rank;
@@ -794,6 +949,7 @@ ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum 
     fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
 
     /* Seek to the initial step. */
+    /* Note: streams starts with step 0. However, in ADIOS-BP, time index always starts with 1 */
     bp_seek_to_step (fp, 1);
 
     /* For file, the last step is tidx_stop */
@@ -834,48 +990,7 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
 
     fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
     assert (fp);
-#if 0
-    adios_buffer_struct_init (fh->b);
 
-    if (bp_read_open (fname, comm, fh))
-    {
-        return NULL;
-    }
-
-    /* Only rank 0 reads the footer and it broadcasts to all other processes */
-    if (rank == 0)
-    {
-        if (bp_read_minifooter (fh))
-        {
-            return NULL;
-        }
-    }
-
-    /* Broadcast to all other processors */
-    MPI_Bcast (&fh->mfooter, sizeof (struct bp_minifooter), MPI_BYTE, 0, comm);
-    
-    header_size = fh->mfooter.file_size-fh->mfooter.pgs_index_offset;
-
-    if (rank != 0)
-    {
-        if (!fh->b->buff)
-        {
-            bp_alloc_aligned (fh->b, header_size);
-            assert (fh->b->buff);
-
-            memset (fh->b->buff, 0, header_size);
-            fh->b->offset = 0;
-        }
-    }
-
-    MPI_Barrier (comm);
-    MPI_Bcast (fh->b->buff, fh->mfooter.file_size-fh->mfooter.pgs_index_offset, MPI_BYTE, 0, comm);
-
-    /* Everyone parses the index on its own */
-    bp_parse_pgs (fh);
-    bp_parse_vars (fh);
-    bp_parse_attrs (fh);
-#endif
     bp_open (fname, comm, fh);
 
     /* fill out ADIOS_FILE struct */
@@ -1076,6 +1191,7 @@ int adios_read_bp_close (ADIOS_FILE *fp)
     return 0;
 }
 
+//FIXME: timeout_sec
 int adios_read_bp_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
 {
     if (fp->current_step >= fp->last_step)
@@ -1110,24 +1226,24 @@ void adios_read_bp_release_step (ADIOS_FILE *fp)
 
 ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 {
-    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
+    struct BP_PROC * p;
     BP_FILE * fh;
     ADIOS_VARINFO * varinfo;
     int file_is_fortran, i, k, timedim, size;
-    struct adios_index_var_struct_v1 * var_root;
+    struct adios_index_var_struct_v1 * v;
 
     adios_errno = 0;
 
-    assert (fp);
-
+    p = (struct BP_PROC *) fp->fh;
     fh = (BP_FILE *)p->fh;
-    assert (fh);
 
     if (varid < 0 || varid >= fp->nvars)
     {
         adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, fp->nvars);
         return NULL;
     }
+
+    v = bp_find_var_byid (fh, varid);
 
     varinfo = (ADIOS_VARINFO *) malloc (sizeof (ADIOS_VARINFO));
     assert (varinfo);
@@ -1136,44 +1252,37 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
        Common read layer should convert it to the perceived id after the read method returns.
     */
     varinfo->varid = varid;
-    varinfo->type = var_root->type;
+    varinfo->type = v->type;
     file_is_fortran = is_fortran_file (fh);
     
-    var_root = fh->vars_root;
-    for (i = 0; i < varid && var_root; i++)
-    {
-        var_root = var_root->next;
-    }
+    assert (v->characteristics_count);
 
-    assert (i == varid);
-    assert (var_root->characteristics_count);
-
-    bp_get_and_swap_dimensions (var_root, file_is_fortran, 
+    bp_get_and_swap_dimensions (v, file_is_fortran, 
                                 &(varinfo->ndim), &(varinfo->dims),
                                 file_is_fortran != futils_is_called_from_fortran()
                                );
 
-    varinfo->nsteps = get_var_nsteps (var_root);
+    varinfo->nsteps = get_var_nsteps (v);
  
-    // set value for scalars
-    if (var_root->characteristics [0].value)
+    // set value for scalar
+    if (v->characteristics [0].value)
     {
-        size = bp_get_type_size (var_root->type, var_root->characteristics [0].value);
+        size = bp_get_type_size (v->type, v->characteristics [0].value);
         varinfo->value = (void *) malloc (size);
         assert (varinfo->value);
 
-        memcpy (varinfo->value, var_root->characteristics [0].value, size);
+        memcpy (varinfo->value, v->characteristics [0].value, size);
     }
     else
     {
         varinfo->value = NULL;
     }
     
-    varinfo->global = is_global_array (&(var_root->characteristics[0]));
-    varinfo->nblocks = get_var_nblocks (var_root, varinfo->nsteps);
+    varinfo->global = is_global_array (&(v->characteristics[0]));
+    varinfo->nblocks = get_var_nblocks (v, varinfo->nsteps);
     assert (varinfo->nblocks);
 
-    varinfo->sum_nblocks = var_root->characteristics_count;
+    varinfo->sum_nblocks = v->characteristics_count;
     varinfo->statistics = 0;
     varinfo->blockinfo = 0;
 
@@ -1368,19 +1477,33 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
 {
     BP_PROC * p;
     read_request * r;
-
+    ADIOS_VARCHUNK * varchunk;
+#if 0
+ *  RETURN:         0: all chunks have been returned previously, 
+ *                     no need to call again (chunk is NULL, too)
+ *                  1: some chunks are/will be available, call again
+ *                  <0 on error, sets adios_errno too
+#endif
     p = (struct BP_PROC *) fp->fh;
 
     if (p->local_read_request_list)
     {
-        chunk = read_var (fp, p->local_read_request_list);
+        varchunk = read_var (fp, p->local_read_request_list);
 
-        // remove head from list
-        r = p->local_read_request_list;
-        p->local_read_request_list = p->local_read_request_list->next;
-        free(r);
+        if (varchunk)
+        {
+            // remove head from list
+            r = p->local_read_request_list;
+            p->local_read_request_list = p->local_read_request_list->next;
+            free(r);
 
-        common_read_free_chunk (chunk);
+            * chunk = varchunk;
+            return 1;
+        }
+        else
+        {
+            return adios_errno;
+        }
     }
 
     return 0;
@@ -1398,7 +1521,33 @@ void adios_read_bp_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 
 void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group)
 {
+    BP_PROC * p;
+    BP_FILE * fh;
+    int i;
 
+    p = (BP_PROC *) fp->fh;
+    fh = (BP_FILE *) p->fh;
+
+    * ngroups = fh->gvar_h->group_count;
+
+    alloc_namelist (group_namelist, fh->gvar_h->group_count);
+    for (i = 0; i < fh->gvar_h->group_count; i++)
+    {
+        (*group_namelist)[i] = malloc (strlen (fh->gvar_h->namelist[i]) + 1);
+        assert ((*group_namelist)[i]);
+
+        memcpy ((*group_namelist)[i], fh->gvar_h->namelist[i], strlen (fh->gvar_h->namelist[i]) + 1);
+    }
+
+    * nvars_per_group = (int *) malloc (fh->gvar_h->group_count * sizeof (int));
+    assert (* nvars_per_group);
+    memcpy (* nvars_per_group, fh->gvar_h->var_counts_per_group, fh->gvar_h->group_count * sizeof (int));
+
+    * nattrs_per_group = (int *) malloc (fh->gattr_h->group_count * sizeof (int));
+    assert (* nattrs_per_group);
+    memcpy (* nattrs_per_group, fh->gattr_h->attr_counts_per_group, fh->gattr_h->group_count * sizeof (int));
+
+    return;
 }
 
 
