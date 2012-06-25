@@ -90,6 +90,13 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
             adios_verbose_level = 0; //don't print errors
             removeit = 1;
         }
+        else if (!strcasecmp (p->name, "logfile")) 
+        {
+            if (p->value) {
+                adios_logger_open (p->value, -1);
+            }
+            removeit = 1;
+        }
         else if (!strcasecmp (p->name, "abort_on_error")) 
         {
             adios_abort_on_error = 1;

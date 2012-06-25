@@ -13,14 +13,6 @@
 // xml parser
 #include <mxml.h>
 
-#ifdef _NOMPI
-    /* Sequential processes can use the library compiled with -D_NOMPI */
-#   include "public/mpidummy.h"
-#else
-    /* Parallel applications should use MPI to communicate  */
-#   include "mpi.h"
-#endif
-
 #include "public/adios.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
@@ -3052,10 +3044,17 @@ static PairStruct * get_and_preprocess_params (const char * parameters)
 
     params = text_to_name_value_pairs (parameters);
 
+    /*
     p = params;
-    prev_p = NULL;
     while (p) {
-        //fprintf(stderr, "Parameter    name = %s  value = %s\n", p->name, p->value);
+        fprintf(stderr, "-------  Param    name = %s  value = %s\n", p->name, p->value);
+        p = p->next;
+    }
+    */
+    prev_p = NULL;
+    p = params;
+    while (p) {
+        /*fprintf(stderr, "Parameter    name = %s  value = %s\n", p->name, p->value);*/
         removeit = 0;
         if (!strcasecmp (p->name, "verbose"))
         {
@@ -3075,6 +3074,14 @@ static PairStruct * get_and_preprocess_params (const char * parameters)
         else if (!strcasecmp (p->name, "quiet"))
         {
             adios_verbose_level = 0; //don't print errors
+            removeit = 1;
+        }
+        else if (!strcasecmp (p->name, "logfile")) 
+        {
+            /*fprintf (stderr,"****************** logfile = %s\n", p->value);*/
+            if (p->value) {
+                adios_logger_open (p->value, -1);
+            }
             removeit = 1;
         }
         else if (!strcasecmp (p->name, "abort_on_error"))
