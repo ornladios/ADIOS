@@ -20,17 +20,11 @@
 #include "core/adios_internals_mxml.h"
 #include "core/util.h"
 #include "core/ds_metadata.h"
+#include "core/adios_logger.h"
 
 #include "dart_interface.h"
 
 /*#define DATASPACES_NO_VERSIONING  define it at configure as -DDATASPACES_NO_VERSIONING in CFLAGS */
-
-#define adios_logger(verbose_level, ...) if (adios_dataspaces_verbose >= verbose_level) fprintf (stderr, __VA_ARGS__); 
-
-#define log_error(...) adios_logger(0, __VA_ARGS__)
-#define log_warn(...) adios_logger(1, __VA_ARGS__)
-#define log_info(...) adios_logger(2, __VA_ARGS__)
-#define log_debug(...) adios_logger(3, __VA_ARGS__)
 
 static int adios_dataspaces_initialized = 0;
 #define MAX_DS_NAMELEN 128
@@ -803,9 +797,9 @@ void ds_pack_group_info (struct adios_file_struct *fd
     b = *buffer;
     for (i=0; i<*buffer_size; i+=16) {
         for (j=0; j<4; j++) {
-            log_debug("%3.3d %3.3d %3.3d %3.3d    ", b[i+4*j], b[i+4*j+1], b[i+4*j+2], b[i+4*j+3]);
+            log_debug_cont("%3.3d %3.3d %3.3d %3.3d    ", b[i+4*j], b[i+4*j+1], b[i+4*j+2], b[i+4*j+3]);
         }
-        log_debug("\n");
+        log_debug_cont("\n");
     }
     
 
