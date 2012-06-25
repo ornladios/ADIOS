@@ -8,6 +8,14 @@
 #ifndef ADIOS_INTERNALS_MXML_H
 #define ADIOS_INTERNALS_MXML_H
 
+#ifdef _NOMPI
+    /* Sequential processes can use the library compiled with -D_NOMPI */
+#   include "public/mpidummy.h"
+#else
+    /* Parallel applications should use MPI to communicate  */
+#   include "mpi.h"
+#endif
+
 int adios_parse_config (const char * config, MPI_Comm comm);
 int adios_local_config ();
 int adios_common_select_method (int priority, const char * method
