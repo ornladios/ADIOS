@@ -23,8 +23,14 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
+/* Define if you have CRAY_PMI. */
+#undef HAVE_CRAY_PMI
+
 /* Define if you have Cray Portals. */
 #undef HAVE_CRAY_PORTALS
+
+/* Define if you have CRAY_UGNI. */
+#undef HAVE_CRAY_UGNI
 
 /* Define to 1 if you have the <dart_interface.h> header file. */
 #undef HAVE_DART_INTERFACE_H

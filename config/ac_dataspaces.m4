@@ -16,6 +16,11 @@ dnl @author Norbert Podhorszki, pnorbert@ornl.gov
 dnl
 AC_DEFUN([AC_PROG_DATASPACES],[
 
+AC_REQUIRE([AC_INFINIBAND])
+dnl AC_REQUIRE([AC_PORTALS])
+dnl AC_REQUIRE([AC_GNI])
+
+
 AM_CONDITIONAL(HAVE_DATASPACES,true)
 
 AC_ARG_WITH(dataspaces,
@@ -79,8 +84,13 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-#    LIBS="$LIBS -ldart2 -lspaces"
-    LIBS="$LIBS -ldart -ldataspaces"
+    if test "x${ac_infiniband_lib_ok}" == "xyes"; then 
+        LIBS="$LIBS -ldart -ldataspaces"
+    elif test "x${ac_portals_lib_ok}" == "xyes"; then 
+        LIBS="$LIBS -ldart2 -lspaces"
+    else
+        LIBS="$LIBS -ldspaces -ldscommon -ldart"
+    fi
     LDFLAGS="$LDFLAGS $DATASPACES_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $DATASPACES_CPPFLAGS"
     
@@ -91,16 +101,26 @@ else
                     [AM_CONDITIONAL(HAVE_DATASPACES,false)])
     fi
     
-    # Check for the Mini-XML library and headers
-#    AC_TRY_COMPILE([#include "dataspaces.h"],
-#            [int err; err = dataspaces_init(1,1);],
-#            [DATASPACES_LIBS="-ldart2 -lspaces"],
-#            [AM_CONDITIONAL(HAVE_DATASPACES,false)])
-    AC_TRY_COMPILE([#include "dart_interface.h"],
-            [int err; err = dart_init(1,1);],
-            [DATASPACES_LIBS="-ldart -ldataspaces -lrdmacm -libverbs"],
-            [AM_CONDITIONAL(HAVE_DATASPACES,false)])
-    
+    # Check for the DataSpaces library and headers
+    if test "x${ac_portals_lib_ok}" == "xyes"; then 
+        AC_TRY_COMPILE([#include "dataspaces.h"],
+                [int err; err = dataspaces_init(1,1);],
+                [DATASPACES_LIBS="-ldart2 -lspaces"],
+                [AM_CONDITIONAL(HAVE_DATASPACES,false)])
+    elif test "x${ac_infiniband_lib_ok}" == "xyes"; then 
+        AC_TRY_COMPILE([#include "dart_interface.h"],
+                [int err; err = dart_init(1,1);],
+                [DATASPACES_LIBS="-ldart -ldataspaces -lrdmacm"],
+                [AM_CONDITIONAL(HAVE_DATASPACES,false)])
+    elif test -z "${HAVE_CRAY_PMI_TRUE}" -a -z "${HAVE_CRAY_UGNI_TRUE}"; then 
+        AC_TRY_COMPILE([#include "dart_interface.h"],
+                [int err; err = dart_init(1,1);],
+                [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
+                [AM_CONDITIONAL(HAVE_DATASPACES,false)])
+    else
+        AM_CONDITIONAL(HAVE_DATASPACES,false)
+    fi
+
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"
     CPPFLAGS="$save_CPPFLAGS"

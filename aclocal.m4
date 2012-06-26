@@ -7275,6 +7275,8 @@ AC_SUBST([am__tar])
 AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
+m4_include([config/ac_cray_pmi.m4])
+m4_include([config/ac_cray_ugni.m4])
 m4_include([config/ac_dataspaces.m4])
 m4_include([config/ac_datatap.m4])
 m4_include([config/ac_dimes.m4])

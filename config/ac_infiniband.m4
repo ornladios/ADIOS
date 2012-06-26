@@ -66,6 +66,7 @@ if test x"$ac_with_infiniband" = xyes; then
 
         dnl Look for Infiniband header files
         save_CPPFLAGS=$CPPFLAGS;
+        save_LDFLAGS=$LDFLAGS;
         CPPFLAGS="$CPPFLAGS $INFINIBAND_CPPFLAGS"
         LDFLAGS="$LDFLAGS $INFINIBAND_LDFLAGS"
 
@@ -109,12 +110,13 @@ if test x"$ac_with_infiniband" = xyes; then
             AM_CONDITIONAL(HAVE_INFINIBAND,true)
         fi
 
+        CPPFLAGS=$save_CPPFLAGS;
+        LDFLAGS=$save_LDFLAGS;
 
         AC_SUBST(INFINIBAND_CPPFLAGS)
         AC_SUBST(INFINIBAND_CFLAGS)
         AC_SUBST(INFINIBAND_LDFLAGS)
         AC_SUBST(INFINIBAND_LIBS)
-        AC_SUBST(INFINIBAND_HEADER)
 
 
         # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
