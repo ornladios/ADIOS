@@ -1,9 +1,10 @@
 WRITE
 =====
 
-- init method parameter: abort_on_error (good for debugging, request by Numeca)
-   - change fprintf()s to error logging
++ init method parameter: abort_on_error (good for debugging, request by Numeca)
+- change fprintf()s to error logging
    + done for mpi_amr method only
+   - core/ files should be changed too
 + write attributes only from rank 0; keep all as special flag in XML?
 + add special attributes to output:
    + adios version numbers (as string) - (major,minor,revision)
@@ -17,10 +18,14 @@ WRITE
 
 READ
 ====
-- new read API
++ new read API
+   - stream: + simple file, + dataspaces
+   - non-blocking: + simple file, + dataspaces
+   - chunking: -
 - hide special attributes from attribute list
+   - have init parameter to show them
 - missing data blocks if read should contain undef values
-- init method parameter: abort_on_error (good for debugging)
++ init method parameter: abort_on_error (good for debugging)
 
 - statistics
   - check if void** or void* arrays should be the per-step stats
@@ -30,8 +35,8 @@ READ
 
 BUILD
 =====
-- config macro for GNI and InfiniBand
-- DataSpaces dependency on GNI/Infiniband handled in ac_dataspaces.m4
++ config macro for GNI and InfiniBand
++ DataSpaces dependency on GNI/Infiniband handled in ac_dataspaces.m4
 - same for Dimes
 - shared libraries (request by Numeca)
 
