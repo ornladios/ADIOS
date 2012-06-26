@@ -1,3 +1,15 @@
+1.4.0pre1 Release July 2012
+    - new read API for staging method with step-by-step processing, 
+       also with non-blocking and chunking APIs
+    - visualization schema added to ADIOS XML format
+    - I/O skeleton generator and evaluation tools
+    - unified error/debug logging
+    - attributes written from only 1 processor to save on metadata
+    - ADIOS version identifier in ADIOS-BP format
+    - extra hidden attributes (version, create/update times) 
+    - Java and Python bindings
+
+
 1.3.1 Released Nov 2011
     - fix: non-compliant MPI collective calls
     - fix: MPI_AMR method caused MPI_Finalize issues on some clusters
