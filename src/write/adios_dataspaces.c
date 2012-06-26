@@ -963,6 +963,12 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
     int lb[3], ub[3], didx[3]; // for reordering DS dimensions
     int value[2] = {0, 1}; // integer to be written to space (terminated=1)
 
+/*
+#if HAVE_MPI
+    log_debug ("%s: call 1st MPI_barrier(), rank=%d\n", __func__,mype);
+    MPI_Barrier (p->mpi_comm);
+#endif
+*/
     if (p->rank == 0) {
         // tell the readers which files are finalized
         //lb[0] = sizeof(int); lb[1] = 0; lb[2] = 0;
@@ -978,20 +984,25 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
             snprintf(ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", p->fnames[i]);
             log_debug ("%s: update %s in the space [%d, %d]\n", 
                         __func__, ds_var_name, value[0], value[1] );
-            log_debug("%s: call dart_lock_on_write(%s)\n", __func__, p->fnames[i]);
-            dart_lock_on_write(p->fnames[i]);
+            //log_debug("%s: call dart_lock_on_write(%s)\n", __func__, p->fnames[i]);
+            //dart_lock_on_write(p->fnames[i]);
             dart_put(ds_var_name, 0, sizeof(int),   
                      lb[didx[0]], lb[didx[1]], lb[didx[2]], 
                      ub[didx[0]], ub[didx[1]], ub[didx[2]],  
                      &value); 
             log_debug("%s: call dart_put_sync()\n", __func__);
             dart_put_sync();
-            log_debug("%s: call dart_unlock_on_write(%s)\n", __func__, p->fnames[i]);
-            dart_unlock_on_write(p->fnames[i]);
+            //log_debug("%s: call dart_unlock_on_write(%s)\n", __func__, p->fnames[i]);
+            //dart_unlock_on_write(p->fnames[i]);
             free (p->fnames[i]);
         }
     }
-
+/*
+#if HAVE_MPI
+    log_debug ("%s: call 2nd MPI_barrier(), rank=%d\n", __func__,mype);
+    MPI_Barrier (p->mpi_comm);
+#endif
+*/
     // disconnect from dataspaces if we are connected from writer but not anymore from reader
     if (globals_adios_is_dataspaces_connected_from_writer() && 
             !globals_adios_is_dataspaces_connected_from_both())
