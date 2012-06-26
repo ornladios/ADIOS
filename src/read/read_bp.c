@@ -471,6 +471,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
     size_of_type = bp_get_type_size (v->type, v->characteristics [0].value);
 
+    printf ("read_var_bb: from_steps = %d, nsteps = %d\n", r->from_steps, r->nsteps);
     for (t = r->from_steps; t < r->from_steps + r->nsteps; t++)
     {
         start_idx = get_var_start_index (v, t);
@@ -542,51 +543,24 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 idx_table[idx] = 1;
                 uint64_t payload_size = size_of_type;
     
-                /* Each pg can have a different sized array, so we need the actual dimensions from it */
-                is_global = bp_get_dimension_characteristics(&(v->characteristics[start_idx + idx]),
-                                                            ldims, gdims, offsets);
+                is_global = bp_get_dimension_characteristics_notime (&(v->characteristics[start_idx + idx]),
+                                                                    ldims, gdims, offsets, file_is_fortran);
                 if (!is_global)
                 {
                     // we use gdims below, which is 0 for a local array; set to ldims here
                     for (j = 0; j < ndim; j++)
                     {
-                        gdims[j]=ldims[j];
+                        gdims[j] = ldims[j];
                     }
                     // we need to read only the first PG, not all, so let's prevent a second loop
                     stop_idx = start_idx;
                 }
 
-                /* Again, a Fortran written file has the dimensions in Fortran order we need to swap here */
-                if (file_is_fortran)
-                {
-                    swap_order (ndim, gdims, &dummy);
-                    swap_order (ndim, ldims, &dummy);
-                    swap_order (ndim, offsets, &dummy);
-                }
-            
-                /* take out the time dimension */
-                /* For C, gdims and offset are one size shorter because the timedim part is missing,
-                   so we take it out only for fortran files
-                */
-//FIXME
-/*
-            if (timedim > -1) {
-                for (i = timedim; i < ndim-1; i++) {
-                    ldims[i] = ldims[i+1];
-                    if (file_is_fortran) {
-                        gdims[i] = gdims[i+1];
-                        offsets[i] = offsets[i+1];
-                    }
-                }
-            }
-*/
-            /*
-            printf("ldims   = "); for (j = 0; j<ndim; j++) printf("%d ",ldims[j]); printf("\n");
-            printf("gdims   = "); for (j = 0; j<ndim; j++) printf("%d ",gdims[j]); printf("\n");
-            printf("offsets = "); for (j = 0; j<ndim; j++) printf("%d ",offsets[j]); printf("\n");
-            printf("count_notime   = "); for (j = 0; j<ndim_notime; j++) printf("%d ",count_notime[j]); printf("\n");
-            printf("start_notime   = "); for (j = 0; j<ndim_notime; j++) printf("%d ",start_notime[j]); printf("\n");
-            */ 
+                log_debug ("ldims   = "); for (j = 0; j<ndim; j++) log_debug_cont ("%d ",ldims[j]); log_debug_cont ("\n");
+                log_debug ("gdims   = "); for (j = 0; j<ndim; j++) log_debug_cont ("%d ",gdims[j]); log_debug_cont ("\n");
+                log_debug ("offsets = "); for (j = 0; j<ndim; j++) log_debug_cont ("%d ",offsets[j]); log_debug_cont ("\n");
+                log_debug ("count   = "); for (j = 0; j<ndim; j++) log_debug_cont ("%d ",count[j]); log_debug_cont ("\n");
+                log_debug ("start   = "); for (j = 0; j<ndim; j++) log_debug_cont ("%d ",start[j]); log_debug_cont ("\n");
                 
                 for (j = 0; j < ndim; j++)
                 {
@@ -633,6 +607,9 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 hole_break = i;
                 slice_offset = 0;
                 slice_size = 0;
+
+                log_debug ("hole_break = %d\n", hole_break);
+
                 if (hole_break == -1)
                 {
                     /* The complete read happens to be exactly one pg, and the entire pg */
@@ -749,18 +726,18 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                         }
                         else
                         {
-                        // middle is in
-                        if (isize < start[i] + count[i])
-                        {
-                            size_in_dset[i] = ldims[i];
-                        }
-                        else
-                        {
-                            // tail is in
-                            size_in_dset[i] = count[i] + start[i] - offsets[i];
-                        }
-                        offset_in_dset[i] = 0;
-                        offset_in_var[i] = offsets[i] - start[i];
+                            // middle is in
+                            if (isize < start[i] + count[i])
+                            {
+                                size_in_dset[i] = ldims[i];
+                            }
+                            else
+                            {
+                                // tail is in
+                                size_in_dset[i] = count[i] + start[i] - offsets[i];
+                            }
+                            offset_in_dset[i] = 0;
+                            offset_in_var[i] = offsets[i] - start[i];
                         }
                     }
                     datasize = 1;
@@ -794,7 +771,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                        MPI_FILE_READ_OPS2
                     }
  
-                    for ( i = 0; i < ndim; i++)
+                    for (i = 0; i < ndim; i++)
                     {
                         offset_in_dset[i] = 0;
                     }
@@ -802,7 +779,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     uint64_t var_offset = 0;
                     uint64_t dset_offset = 0;
     
-                    for ( i = 0; i < ndim; i++)
+                    for (i = 0; i < ndim; i++)
                     {
                         var_offset = offset_in_var[i] + var_offset * count[i];
                         dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
@@ -836,7 +813,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
         if (timedim == -1)
             break;
 */
-            }
+        }
     } // end for (timestep ... loop over timesteps
 
     free (dims);
@@ -2834,7 +2811,6 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (ADIOS_GROUP *gp, int varid)
     vi->characteristics_count = var_root->characteristics_count;
 
     /* Get value or min/max */
-
     adios_read_bp_get_dimensions (var_root, fh->tidx_stop - fh->tidx_start + 1, file_is_fortran, 
                           &(vi->ndim), &(vi->dims), &(vi->timedim));
     

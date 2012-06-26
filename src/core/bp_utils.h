@@ -45,6 +45,9 @@ const char * bp_value_to_string (enum ADIOS_DATATYPES type, void * data);
 int bp_get_type_size (enum ADIOS_DATATYPES type, void * var);
 int bp_get_dimensioncharacteristics(struct adios_index_characteristic_struct_v1 *ch,
                                     uint64_t *ldims, uint64_t *gdims, uint64_t *offsets);
+int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_struct_v1 *ch,
+                                            uint64_t *ldims, uint64_t *gdims, uint64_t *offsets,
+                                            int file_is_fortran);
 void bp_get_dimensions (struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
                         int *ndim, uint64_t **dims);
 void bp_get_and_swap_dimensions (struct adios_index_var_struct_v1 *var_root, int file_is_fortran,

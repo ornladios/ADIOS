@@ -103,7 +103,7 @@ int bp_read_open (const char * filename,
     // open a file by the multiple processors within the same
     // communicator
     err = MPI_File_open (comm, (char *) filename, MPI_MODE_RDONLY, 
-            MPI_INFO_NULL, &(fh->mpi_fh));
+            (MPI_Info) MPI_INFO_NULL, &(fh->mpi_fh));
     if (err != MPI_SUCCESS) {
         char e [MPI_MAX_ERROR_STRING];
         int len = 0;
@@ -1146,6 +1146,79 @@ int bp_get_dimension_characteristics(struct adios_index_characteristic_struct_v1
         gdims[k] = ch->dims.dims[k * 3 + 1];
         offsets[k] = ch->dims.dims[k * 3 + 2];
         is_global = is_global || gdims[k];
+    }
+
+    return is_global;
+}
+
+/* As opposed to bp_get_dimension_characteristics, this routine returns
+   ldims/gdims/offsets with 'time' extracted. */
+int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_struct_v1 *ch,
+                                            uint64_t *ldims, uint64_t *gdims, uint64_t *offsets,
+                                            int file_is_fortran)
+{
+    int is_global = 0, dummy = 0;
+    int ndim = ch->dims.count; //ndim possibly has 'time' dimension
+    int k;
+
+    for (k = 0; k < ndim; k++)
+    {
+        ldims[k] = ch->dims.dims[k * 3];
+        gdims[k] = ch->dims.dims[k * 3 + 1];
+        offsets[k] = ch->dims.dims[k * 3 + 2];
+        is_global = is_global || gdims[k];
+    }
+
+    if (file_is_fortran)
+    {
+        swap_order (ndim, gdims, &dummy);
+        swap_order (ndim, ldims, &dummy);
+        swap_order (ndim, offsets, &dummy);
+    }
+
+    if (gdims[ndim - 1] == 0) // with time
+    {
+        if (!file_is_fortran)
+        {
+            /* first dimension is the time (C array)
+             * ldims[0] = 1 but gdims does not contain time info and 
+             * gdims[0] is 1st data dimension and 
+             * gdims is shorter by one value than ldims in case of C.
+             * Therefore, gdims[*ndim-1] = 0 if there is a time dimension. 
+             */
+            // error check
+            if (ndim > 1 && ldims[0] != 1)
+            {
+                fprintf(stderr,"ADIOS Error: this is a BP file with C ordering but we didn't find"
+                        "an array to have time dimension in the first dimension. l:g:o = (");
+                for (k = 0; k < ndim; k++)
+                {
+                    fprintf (stderr,"%llu:%llu:%llu%s", ldims[k], gdims[k], offsets[k], (k<ndim-1 ? ", " : "") );
+                }
+
+                fprintf(stderr, ")\n");
+            }
+
+            for (k = 0; k < ndim - 1; k++)
+            {
+                ldims[k] = ldims[k + 1];
+            }
+        }
+        else
+        {
+            // last dimension is the time (Fortran array)
+            if (ndim > 1 && ldims[ndim - 1] != 1)
+            {
+                fprintf(stderr,"ADIOS Error: this is a BP file with Fortran array ordering but we didn't find"
+                        "an array to have time dimension in the last dimension. l:g:o = (");
+                for (k = 0; k < ndim; k++)
+                {
+                    fprintf (stderr,"%llu:%llu:%llu%s", ldims[k], gdims[k], offsets[k], (k<ndim-1 ? ", " : "") );
+                }
+
+                fprintf (stderr, ")\n");
+            }
+        }
     }
 
     return is_global;
