@@ -64,4 +64,5 @@ int is_fortran_file (struct BP_FILE * fh);
 int has_subfiles (struct BP_FILE * fh);
 struct adios_index_var_struct_v1 * bp_find_var_byid (struct BP_FILE * fh, int varid);
 int is_global_array (struct adios_index_characteristic_struct_v1 * ch);
+int check_bp_validity (const char * fname, MPI_Comm comm);
 #endif

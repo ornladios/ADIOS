@@ -10,7 +10,7 @@
 /* Read method for BP files */
 /****************************/
 
-//FIXME: timestep always starts with 0
+//FIXME: time_out related issues
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -187,26 +187,18 @@ void close_all_BP_files (struct BP_file_handle * l)
                       );                                                                    \
         fh->b->offset = 0;                                                                  \
 
-
-static int get_step (ADIOS_FILE *fp, int step, float timeout_sec)
+/*
+ *       timeout_sec  >=0.0: block until the stream becomes available but 
+ *                           for max 'timeout_sec' seconds.
+ *                           0.0 means forwever. 
+ *                     <0.0: return immediately if stream is not available
+ *                     Note: 0 = does not ever return with err_file_not_found error, which is dangerous
+ **                       if the stream name is simply mistyped in the code.
+ */
+static int get_step (const char * fname, MPI_Comm comm, int step, float timeout_sec)
 {
-#if 0
-    /* Try to get variable with fname. If it does not exists, we get an error, which means
-       the data does not exist. So we return an error just like with real files */
-    struct dataspaces_data_struct * ds = (struct dataspaces_data_struct *) fp->fh;
-    int offset[] = {0,0,0}, readsize[3] = {1,1,1};
-    char file_info_buf[FILEINFO_BUFLEN];
-    int version_info_buf[2]; // 0: last version, 1: terminated?
     int err, i;
-    char ds_vname[MAX_DS_NAMELEN];
-    char ds_fname[MAX_DS_NAMELEN];
     double t1 = adios_gettime();
-    enum STEP_STATUS step_status = STEP_OK;
-
-    snprintf(ds_vname, MAX_DS_NAMELEN, "VERSION@%s",fp->path);
-    snprintf(ds_fname, MAX_DS_NAMELEN, "FILE@%s",fp->path);
-    //log_debug("-- %s, rank %d: Get variable %s\n", __func__, ds->mpi_rank, ds_fname);
-    ds->freed_mem = 0;
 
     /* While loop for handling timeout
        timeout > 0: wait up to this long to open the stream
@@ -215,108 +207,16 @@ static int get_step (ADIOS_FILE *fp, int step, float timeout_sec)
     */
     int stay_in_poll_loop = 1;
     int found_stream = 0;
-    int nversions, *versions;
+
     while (stay_in_poll_loop)
     {
-        lock_file (fp, ds);
-        step_status = STEP_OK;
-
-        log_debug("   rank %d: dart_get %s\n", ds->mpi_rank, ds_vname);
-        readsize[0] = 2; //*sizeof(int); // VERSION%name is 2 integers only
-        err = adios_read_dataspaces_get (ds_vname, adios_integer, 0, ds->mpi_rank, 1, 0,
-                                         offset, readsize, version_info_buf);
-
-        if (!err) {
-            int last_version = version_info_buf[0];
-            int terminated = version_info_buf[1];
-            log_debug("   rank %d: version info: last=%d, terminated=%d\n",
-                      ds->mpi_rank, last_version, terminated);
-
-            if (last_version < step) {
-                // we have no more new steps
-                if (terminated) {
-                    // stream is gone, we read everything 
-                    step_status = STEP_STREAMTERMINATED;
-                    stay_in_poll_loop = 0;
-                } else {
-                    // a next step may come 
-                    step_status = STEP_STEPNOTREADY;
-                    // we may stay in poll loop
-                }
-            } else {
-                // Try to get the version the user wants
-                if (which_version == LAST_VERSION)
-                    step = last_version;
-                readsize[0] = FILEINFO_BUFLEN; // FILE%name is FILEINFO_BUFLEN bytes long
-
-                int max_check_version = last_version;
-                if (which_version == NEXT_VERSION)
-                    max_check_version = step;
-
-                // Loop until we find what we need or go past the last version
-                do {
-                    log_debug("   rank %d: dart_get %s\n", ds->mpi_rank, ds_fname);
-                    err = adios_read_dataspaces_get (ds_fname, adios_byte, step, ds->mpi_rank,
-                                                     1, 0, offset, readsize, file_info_buf);
-                    step++; // value will go over the target with 1
-                } while (err && step <= max_check_version);
-
-                if (!err) {
-                    /* Found object with this access version */
-                    step--; // undo the last increment above
-                    ds->current_step = step;
-                    stay_in_poll_loop = 0;
-                    log_debug("   rank %d: step %d of '%s' exists\n",
-                            ds->mpi_rank, ds->current_step, ds_fname);
-
-                    err = ds_unpack_file_info (fp, file_info_buf, FILEINFO_BUFLEN);
-                    if (!err) {
-                        found_stream = 1;
-                        fp->current_step = ds->current_step;
-                        fp->last_step = last_version;
-
-                        /* Get the variables and attributes the (only) group separately */
-                        err = get_groupdata (fp);
-                        if (err) {
-                            // something went wrong with the group(s)
-                            step_status = STEP_OTHERERROR;
-                        }
-                    } else {
-                        // something went wrong with the file metadata
-                        step_status = STEP_OTHERERROR;
-                    }
-
-                } else {
-                    if (which_version == NEXT_VERSION)
-                    {
-                        if (step < last_version) {
-                            step_status = STEP_STEPDISAPPEARED;
-                            stay_in_poll_loop = 0;
-                        } else {
-                            step_status = STEP_STEPNOTREADY;
-                            // we may stay in poll loop
-                        }
-                    }
-                    else if (which_version == LAST_VERSION ||
-                             which_version == NEXT_AVAILABLE_VERSION)
-                    {
-                        step_status = STEP_OTHERERROR;
-                        stay_in_poll_loop = 0;
-                        log_warn ("DATASPACES method: Unexpected state: found last version %d"
-                                "of dataset but then could not read it.\n", step);
-                    }
-                }
-            }
-
-        } else {
-            // This stream does not exist yet
-            log_info ("Data of '%s' does not exist (yet) in DataSpaces\n", fp->path);
-            step_status = STEP_STREAMNOTFOUND;
+        if (!err)
+        {
         }
-
-        if (step_status != STEP_OK)
-            unlock_file (fp, ds);
-
+        else
+        {
+            // This stream does not exist yet
+        }
 
         // check if we need to stay in loop 
         if (stay_in_poll_loop)
@@ -325,22 +225,22 @@ static int get_step (ADIOS_FILE *fp, int step, float timeout_sec)
             {
                 stay_in_poll_loop = 0;
             }
-            else if (timeout_sec > 0.0 && (adios_gettime()-t1 > timeout_sec))
+            else if (timeout_sec > 0.0 && (adios_gettime () - t1 > timeout_sec))
             {
                 stay_in_poll_loop = 0;
             }
             else
             {
-                adios_nanosleep (0, 1000000); // sleep for 1 msec
+                adios_nanosleep (1, 0); // sleep for 1 sec
             }
         }
 
     } // while (stay_in_poll_loop)
-#endif
 }
 
-/* This routine processes an read request and returns data in ADIOS_VARCHUNK.
-   If the selection type is not bounding box, convert it.
+/* This routine processes a read request and returns data in ADIOS_VARCHUNK.
+   If the selection type is not bounding box, convert it. The basic file reading
+   functionality is implemented in read_var_bb() routine.
 */
 static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 {
@@ -414,7 +314,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 
 /* This routines read in data for bounding box selection.
    If the selection is not bounding box, it should be converted to it.
-   The data read in should be saved in ADIOS_VARCHUNK.
+   The data returned is saved in ADIOS_VARCHUNK.
  */
 static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 {
@@ -471,8 +371,8 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
     size_of_type = bp_get_type_size (v->type, v->characteristics [0].value);
 
-    printf ("read_var_bb: from_steps = %d, nsteps = %d\n", r->from_steps, r->nsteps);
-    for (t = r->from_steps; t < r->from_steps + r->nsteps; t++)
+    log_debug ("read_var_bb: from_steps = %d, nsteps = %d\n", r->from_steps, r->nsteps);
+    for (t = r->from_steps + 1; t < r->from_steps + 1 + r->nsteps; t++)
     {
         start_idx = get_var_start_index (v, t);
         stop_idx = get_var_stop_index (v, t);
@@ -814,7 +714,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
             break;
 */
         }
-    } // end for (timestep ... loop over timesteps
+    } // end for t
 
     free (dims);
 
@@ -853,8 +753,8 @@ static int adios_read_bp_get_endianness( uint32_t change_endianness )
 int adios_read_bp_init_method (MPI_Comm comm, PairStruct * params)
 {
     int  max_chunk_size;
+    PairStruct * p = params;
 
-    PairStruct *p = params;
     while (p)
     {
         if (!strcasecmp (p->name, "max_chunk_size"))
@@ -882,19 +782,23 @@ int adios_read_bp_finalize_method ()
     return 0;
 }
 
-/* As opposed to open_file, open_stream opens one step only.
+/* As opposed to open_file, open_stream opens the first step in the file only.
    The lock_mode for file reading is ignored.
 */
 //FIXME: timeout_sec
 ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
 {
-    int i, rank;
+    int i, rank, ret;
     struct BP_PROC * p;
     BP_FILE * fh;
     ADIOS_FILE * fp;
-    uint64_t header_size;
 
     MPI_Comm_rank (comm, &rank);
+    // We need to first check if this is a valid ADIOS-BP file. This is done by
+    // check whether there is 'ADIOS-BP' string written before the 28-bytes minifooter. 
+    // If it is valid, we will proceed with bp_open(). The potential issue is that before
+    // calling bp_open, the next step could start writing and the footer will be corrupted. Q.Liu
+    check_bp_validity (fname, comm);
 
     fh = (BP_FILE *) malloc (sizeof (BP_FILE));
     assert (fh);
@@ -919,6 +823,7 @@ ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum 
     fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
     assert (fp);
 
+    /* BP file open and gp/var/att parsing */
     bp_open (fname, comm, fh);
 
     fp->file_size = fh->mfooter.file_size;
@@ -926,11 +831,10 @@ ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum 
     fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
 
     /* Seek to the initial step. */
-    /* Note: streams starts with step 0. However, in ADIOS-BP, time index always starts with 1 */
-    bp_seek_to_step (fp, 1);
+    bp_seek_to_step (fp, 0);
 
     /* For file, the last step is tidx_stop */
-    fp->last_step = fh->tidx_stop;
+    fp->last_step = fh->tidx_stop - 1;
 
     return fp;
 }

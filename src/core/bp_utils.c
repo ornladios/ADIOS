@@ -1007,13 +1007,15 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 /* Seek to the specified step and prepare related fields in ADIOS_FILE structure */
 int bp_seek_to_step (ADIOS_FILE * fp, int tostep)
 {
-    int i, j;
+    int i, j, t;
     struct BP_PROC * p = (struct BP_PROC *) fp->fh;
     struct BP_FILE * fh = p->fh;
     struct adios_index_var_struct_v1 * var_root;
     struct adios_index_attribute_struct_v1 * attr_root;
 
-    if (tostep < fh->tidx_start || tostep > fh->tidx_stop)
+    /* Streaming starts with step 0. However, time index in BP file starts with 1 */
+    t = tostep + 1;
+    if (t < fh->tidx_start || t > fh->tidx_stop)
     {
         adios_error (err_invalid_timestep, "Invalid step: %d\n", tostep);
         return -1;
@@ -1027,7 +1029,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep)
     {
         for (i = 0; i < var_root->characteristics_count; i++)
         {
-            if (var_root->characteristics[i].time_index == tostep)
+            if (var_root->characteristics[i].time_index == t)
             {
                 fp->nvars++;
                 break;    
@@ -1045,7 +1047,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep)
     {
         for (i = 0; i < var_root->characteristics_count; i++)
         {
-            if (var_root->characteristics[i].time_index == tostep)
+            if (var_root->characteristics[i].time_index == t)
             {
                 if (strcmp (var_root->var_path,"/"))
                 {
@@ -1080,7 +1082,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep)
     {
         for (i = 0; i < attr_root->characteristics_count; i++)
         {
-            if (attr_root->characteristics[i].time_index == tostep)
+            if (attr_root->characteristics[i].time_index == t)
             {
                 fp->nattrs++;
                 break;
@@ -1098,7 +1100,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep)
     {
         for (i = 0; i < attr_root->characteristics_count; i++)
         {
-            if (attr_root->characteristics[i].time_index == tostep)
+            if (attr_root->characteristics[i].time_index == t)
             {
                 if (strcmp (attr_root->attr_path,"/"))
                 {
@@ -1125,7 +1127,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep)
         attr_root = attr_root->next;
     }
 
-    fp->current_step = tostep;
+    fp->current_step = t;
 
     return 0;
 }
@@ -2041,4 +2043,52 @@ double bp_value_to_double (enum ADIOS_DATATYPES type, void * data)
         case adios_real:
             return * ((float *) data);
     }
+}
+
+/* This routine checks whether the file is a valid ADIOS-BP file.
+ * This is done by check whether the 'ADIOS-BP' string has been written
+ * before minifooter.
+ */
+int check_bp_validity (const char * fname, MPI_Comm comm)
+{
+    int  err, rank, flag;
+    MPI_File fh;
+    MPI_Offset  file_size;
+    MPI_Status status;
+    char str[9];
+
+    MPI_Comm_rank (comm, &rank);
+
+    if (rank == 0)
+    {
+        err = MPI_File_open (comm, (char *) fname, MPI_MODE_RDONLY,
+                            (MPI_Info) MPI_INFO_NULL, &fh);
+        if (err != MPI_SUCCESS)
+        {
+            char e [MPI_MAX_ERROR_STRING];
+            int len = 0;
+            memset (e, 0, MPI_MAX_ERROR_STRING);
+            MPI_Error_string (err, e, &len);
+            adios_error (err_file_open_error, "MPI open failed for %s: '%s'\n", fname, e);
+            return 0;
+        }
+
+        MPI_File_get_size (fh, &file_size);
+        // Since 1.4, there is an additional 28 bytes written ahead of minifooter.
+        MPI_File_seek (fh, (MPI_Offset) file_size - MINIFOOTER_SIZE, MPI_SEEK_SET - 28);
+
+        MPI_File_read (fh, str, 8, MPI_BYTE, &status);
+        str[8] = '\0';
+
+        flag = (strcmp (str, "ADIOS-BP") == 0 ) ? 1 : 0; 
+        MPI_Bcast (&flag, 1, MPI_BYTE, 0, comm);
+    }
+    else
+    {
+        MPI_Bcast (&flag, 1, MPI_BYTE, 0, comm);
+    }
+
+    printf ("check_bp_validity: %s\n", str);
+
+    return flag;
 }

@@ -56,20 +56,9 @@ int main (int argc, char ** argv)
     vi = adios_inq_var (fp, "temperature"); 
     adios_inq_var_blockinfo (fp, vi);
 
-    
-    for (i = 0; i < vi->ndim; i++)
-    {
-        printf ("[%ld]", vi->dims[i]);
-    }
-
-    printf ("\n");
-    
-printf ("vi->sum_nblocks = %d\n", vi->sum_nblocks);
-printf ("vi->nsteps = %d\n", vi->nsteps);
-
     uint64_t slice_size = vi->dims[1]/size;
     start[0] = 0;
-//printf ("slice_size = %llu\n", slice_size);
+
     if (rank == size-1)
         slice_size = slice_size + vi->dims[1]%size;
 
@@ -108,7 +97,12 @@ printf ("vi->nsteps = %d\n", vi->nsteps);
         sel.u.points.points[i * vi->ndim + 1] = i;
     }
 #endif
+    sel.u.bb.ndim = 0;
+    adios_schedule_read (fp, &sel, "NX", 1, 1, data);
+
+    sel.u.bb.ndim = vi->ndim;
     adios_schedule_read (fp, &sel, "temperature", 1, 1, data);
+
     adios_perform_reads (fp, 1);
 
 #if BB
