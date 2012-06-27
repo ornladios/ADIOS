@@ -58,7 +58,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     adios_errno = err_no_error;
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
-            "Invalid read method (=%d) passed to adios_read_init_method().", (int)method);
+            "Invalid read method (=%d) passed to adios_read_init_method().\n", (int)method);
         return err_invalid_read_method;
     } 
     // init the adios_read_hooks_struct if not yet initialized  
@@ -138,7 +138,7 @@ int common_read_finalize_method(enum ADIOS_READ_METHOD method)
     adios_errno = err_no_error;
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
-            "Invalid read method (=%d) passed to adios_read_finalize_method().", (int)method);
+            "Invalid read method (=%d) passed to adios_read_finalize_method().\n", (int)method);
         return err_invalid_read_method;
     } 
 
@@ -157,7 +157,7 @@ ADIOS_FILE * common_read_open_stream (const char * fname,
 
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
-            "Invalid read method (=%d) passed to adios_read_open_stream().", (int)method);
+            "Invalid read method (=%d) passed to adios_read_open_stream().\n", (int)method);
         return NULL;
     } 
 
@@ -196,7 +196,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
-            "Invalid read method (=%d) passed to adios_read_open_file().", (int)method);
+            "Invalid read method (=%d) passed to adios_read_open_file().\n", (int)method);
         return NULL;
     } 
 
@@ -239,7 +239,7 @@ int common_read_close (ADIOS_FILE *fp)
         free (internals->nattrs_per_group);
         free (internals);
     } else {
-        adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_read_close()");
+        adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_read_close()\n");
         retval = err_invalid_file_pointer;
     }
     return retval;
@@ -254,7 +254,7 @@ void common_read_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
         internals = (struct common_read_internals_struct *) fp->internal_data;
         internals->read_hooks[internals->method].adios_reset_dimension_order_fn (fp, is_fortran);
     } else {
-        adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_reset_dimension_order()");
+        adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_reset_dimension_order()\n");
     }
 }
 
@@ -281,7 +281,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
             }
         }
     } else {
-        adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_advance_step()");
+        adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_advance_step()\n");
         retval = err_invalid_file_pointer;
     }
     return retval;
@@ -297,7 +297,7 @@ void common_read_release_step (ADIOS_FILE *fp)
         internals = (struct common_read_internals_struct *) fp->internal_data;
         internals->read_hooks[internals->method].adios_release_step_fn (fp);
     } else {
-        adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_reset_dimension_order()");
+        adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_reset_dimension_order()\n");
     }
 }
 
@@ -316,7 +316,7 @@ static int common_read_find_name (int n, char ** namelist, const char *name, int
     int roleerror[2] = { err_invalid_varname, err_invalid_attrname };
 
     if (!name) {
-        adios_error (roleerror[role!=0], "Null pointer passed as %s name!", rolename[role!=0]);
+        adios_error (roleerror[role!=0], "Null pointer passed as %s name!\n", rolename[role!=0]);
         return -1;
     }
 
@@ -336,7 +336,7 @@ static int common_read_find_name (int n, char ** namelist, const char *name, int
         adios_error (roleerror[role!=0], "%s '%s' is not found! One "
                 "possible error is to set the view to a specific group and "
                 "then try to read a %s of another group. In this case, "
-                "reset the group view with adios_group_view(fp,-1).", 
+                "reset the group view with adios_group_view(fp,-1).\n", 
                 rolename[role!=0], name, rolename[role!=0]);
         return -1;
     }
@@ -359,7 +359,7 @@ ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname)
             retval = NULL;
         }
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var()");
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var()\n");
         retval = NULL;
     }
     return retval;
@@ -385,11 +385,11 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
         } else {
             adios_error (err_invalid_varid, 
                          "Variable ID %d is not valid adios_inq_var_byid(). "
-                         "Available 0..%d", varid, fp->nvars-1);
+                         "Available 0..%d\n", varid, fp->nvars-1);
             retval = NULL;
         }
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_byid()");
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_byid()\n");
         retval = NULL;
     }
     return retval;
@@ -415,7 +415,7 @@ int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
         /* Translate back real varid to the group varid presented to the user */
         varinfo->varid = group_varid;
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_stat()");
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_stat()\n");
         retval = err_invalid_file_pointer;
     }
     return retval;
@@ -439,7 +439,7 @@ int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo
         /* Translate back real varid to the group varid presented to the user */
         varinfo->varid = group_varid;
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_blockinfo()");
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_inq_var_blockinfo()\n");
         retval = err_invalid_file_pointer;
     }
     return retval;
@@ -523,7 +523,7 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
             retval = adios_errno; // adios_errno was set in common_read_find_name
         }
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_schedule_read()");
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_schedule_read()\n");
         retval = err_invalid_file_pointer;
     }
     return retval;
@@ -549,11 +549,11 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
         } else {
             adios_error (err_invalid_varid, 
                          "Variable ID %d is not valid in adios_schedule_read_byid(). "
-                         "Available 0..%d", varid, fp->nvars-1);
+                         "Available 0..%d\n", varid, fp->nvars-1);
             retval = err_invalid_varid;
         }
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_schedule_read_byid()");
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_schedule_read_byid()\n");
         retval = err_invalid_file_pointer;
     }
     return retval;
@@ -570,7 +570,7 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_perform_reads_fn (fp, blocking);
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_perform_reads()");
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_perform_reads()\n");
         retval = err_invalid_file_pointer;
     }
     return retval;
@@ -587,7 +587,7 @@ int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_check_reads_fn (fp, chunk);
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_check_reads()");
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_check_reads()\n");
         retval = err_invalid_file_pointer;
     }
     return retval;
@@ -630,7 +630,7 @@ int common_read_get_attr (const ADIOS_FILE * fp,
             retval = adios_errno; // adios_errno was set in common_read_find_name
         }
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_read_get_attr()");
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_read_get_attr()\n");
         retval = err_invalid_file_pointer;
     }
     return retval;
@@ -654,11 +654,11 @@ int common_read_get_attr_byid (const ADIOS_FILE * fp,
         } else {
             adios_error (err_invalid_attrid, 
                          "Attribute ID %d is not valid in adios_get_attr_byid(). "
-                         "Available 0..%d", attrid, fp->nattrs-1);
+                         "Available 0..%d\n", attrid, fp->nattrs-1);
             retval = err_invalid_attrid;
         }
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_read_get_attr_byid()");
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_read_get_attr_byid()\n");
         retval = err_invalid_file_pointer;
     }
     return retval;
@@ -714,7 +714,7 @@ int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist)
         retval = internals->ngroups;
         *group_namelist = internals->group_namelist;
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_get_grouplist()");
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_get_grouplist()\n");
         retval = err_invalid_file_pointer;
     }
     return retval;
@@ -767,11 +767,11 @@ int common_read_group_view (ADIOS_FILE  *fp, int groupid)
             internals->group_in_view = -1;
             retval = 0;
         } else {
-            adios_error (err_invalid_group, "Invalid group ID in adios_group_view()");
+            adios_error (err_invalid_group, "Invalid group ID in adios_group_view()\n");
             retval = err_invalid_group;
         }
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_group_view()");
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_group_view()\n");
         retval = err_invalid_file_pointer;
     }
     return retval;
@@ -790,7 +790,7 @@ int common_read_is_var_timed (const ADIOS_FILE *fp, int varid)
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_is_var_timed_fn (fp, varid+internals->group_varid_offset);
     } else {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to common_read_is_var_timed()");
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to common_read_is_var_timed()\n");
         retval = err_invalid_file_pointer;
     }
     return retval;
@@ -856,7 +856,7 @@ ADIOS_SELECTION * common_read_selection_boundingbox (uint64_t ndim, const uint64
         sel->u.bb.start = (uint64_t *)start;
         sel->u.bb.count = (uint64_t *)count;
     } else {
-        adios_error(err_no_memory, "Cannot allocate memory for bounding box selection");
+        adios_error(err_no_memory, "Cannot allocate memory for bounding box selection\n");
     }
     return sel;
 }
@@ -872,7 +872,7 @@ ADIOS_SELECTION * common_read_selection_points (uint64_t ndim, uint64_t npoints,
         sel->u.points.npoints = npoints;
         sel->u.points.points = (uint64_t *) points;
     } else {
-        adios_error(err_no_memory, "Cannot allocate memory for points selection");
+        adios_error(err_no_memory, "Cannot allocate memory for points selection\n");
     }
     return sel;
 }
@@ -885,7 +885,7 @@ ADIOS_SELECTION * common_read_selection_writeblock (int index)
         sel->type = ADIOS_SELECTION_WRITEBLOCK;
         sel->u.block.index = index;
     } else {
-        adios_error(err_no_memory, "Cannot allocate memory for writeblock selection");
+        adios_error(err_no_memory, "Cannot allocate memory for writeblock selection\n");
     }
     return sel;
 }
@@ -898,7 +898,7 @@ ADIOS_SELECTION * common_read_selection_auto (char *hints)
         sel->type = ADIOS_SELECTION_AUTO;
         sel->u.autosel.hints = hints;
     } else {
-        adios_error(err_no_memory, "Cannot allocate memory for auto selection");
+        adios_error(err_no_memory, "Cannot allocate memory for auto selection\n");
     }
     return sel;
 }
