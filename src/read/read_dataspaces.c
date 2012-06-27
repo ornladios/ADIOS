@@ -317,7 +317,7 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
     log_debug("   %s: buffer length = %d, content:\n", __func__, buf_len);
     for (i=0; i<buf_len; i+=16) {
         for (j=0; j<4; j++) {
-            log_debug_cont("%3.3d %3.3d %3.3d %3.3d    ", 
+            log_debug_cont("%3.3hhu %3.3hhu %3.3hhu %3.3hhu    ", 
                     b[i+4*j], b[i+4*j+1], b[i+4*j+2], b[i+4*j+3]);
         }
         log_debug_cont("\n");
