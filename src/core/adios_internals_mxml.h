@@ -26,6 +26,15 @@ int adios_common_select_method_by_group_id (int priority, const char * method
                                            ,const char * parameters, int64_t group_id
                                            ,const char * base_path, int iters
                                            );
+//ADIOS Schema
+struct adios_mesh_struct * adios_find_mesh_by_name (struct adios_mesh_struct * root
+                                                   ,const char * name
+                                                   );
+struct adios_mesh_struct * adios_common_define_mesh (
+        int64_t group_id, const char * name,
+        enum ADIOS_FLAG time_varying,
+        enum ADIOS_MESH_TYPE type);
+
 void adios_cleanup ();
 
 int adios_set_buffer_size (void);

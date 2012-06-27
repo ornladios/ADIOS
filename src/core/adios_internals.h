@@ -27,6 +27,8 @@ enum ADIOS_METHOD_MODE {adios_mode_write  = 1
 
 struct adios_dimension_struct;
 struct adios_var_struct;
+// ADIOS Schema: modifying mesh struct
+struct adios_mesh_struct;
 
 // NCSU - Generic data for statistics
 struct adios_stat_struct 
@@ -42,6 +44,8 @@ struct adios_var_struct
 
     char * name;
     char * path;
+    // ADIOS Schema: adding a mesh XML attribute to variable tag
+    // char * mesh;
     enum ADIOS_DATATYPES type;
     struct adios_dimension_struct * dimensions;
     enum ADIOS_FLAG got_buffer;
@@ -109,6 +113,19 @@ enum ADIOS_MESH_TYPE
     ,ADIOS_MESH_UNSTRUCTURED = 4
 };
 
+// ADIOS Schema: supported cell types
+enum ADIOS_CELL_TYPE
+{
+     ADIOS_CELL_PT         = 1
+    ,ADIOS_CELL_LINE       = 2
+    ,ADIOS_CELL_TRI        = 3
+    ,ADIOS_CELL_QUAD       = 4
+    ,ADIOS_CELL_HEX        = 5
+    ,ADIOS_CELL_PRI        = 6
+    ,ADIOS_CELL_TET        = 7
+    ,ADIOS_CELL_PYR        = 8
+};
+
 struct adios_mesh_uniform_struct;
 struct adios_mesh_rectilinear_struct;
 struct adios_mesh_structured_struct;
@@ -116,6 +133,9 @@ struct adios_mesh_unstructured_struct;
 
 struct adios_mesh_struct
 {
+    // ADIOS Schema: adding mesh names 
+    // Groups can have multiple meshes
+    char * name;
     enum ADIOS_FLAG time_varying;
     enum ADIOS_MESH_TYPE type;
     union 
@@ -125,6 +145,7 @@ struct adios_mesh_struct
         struct adios_mesh_structured_struct * structured;
         struct adios_mesh_unstructured_struct * unstructured;
     };
+    struct adios_mesh_struct * next;
 };
 
 struct adios_group_struct
@@ -149,8 +170,10 @@ struct adios_group_struct
 
     struct adios_method_list_struct * methods;
 
-    struct adios_mesh_struct * mesh;
-
+    struct adios_mesh_struct * meshs;
+    int mesh_count;
+    enum ADIOS_FLAG all_unique_mesh_names;
+   
     int attrid_update_epoch; // ID of special attribute "/__adios__/update_time_epoch" to find it fast
 };
 
@@ -316,6 +339,9 @@ struct adios_mesh_uniform_struct
     struct adios_mesh_item_list_struct * dimensions;
     struct adios_mesh_item_list_struct * origin;
     struct adios_mesh_item_list_struct * spacing;
+    // ADIOS Schema: adding option to provide origin and maximum
+    // instead restricting users to origin and spacing
+    struct adios_mesh_item_list_struct * maximum;
 };
 
 struct adios_mesh_rectilinear_struct
@@ -335,10 +361,15 @@ struct adios_mesh_structured_struct
 
 struct adios_mesh_unstructured_struct
 {
-    struct adios_mesh_item_struct * components;
+    // ADIOS Schema: adding single/multi points option
+    // adding nspace to allow 2D mesh in 3D for example,
+    // finally adding the concept of cellset/cellsetcount
+    enum ADIOS_FLAG points_single_var;
+    struct adios_mesh_item_struct * nspace;
+    struct adios_mesh_var_list_struct * points;
     struct adios_mesh_item_struct * points_count;
-    struct adios_var_struct * points;
     struct adios_mesh_cell_list_list_struct * cell_list;
+    struct adios_mesh_item_struct * cell_set_count;
 };
 
 //////////////////////////////////////////////////////////////////////////////

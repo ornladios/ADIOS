@@ -36,6 +36,7 @@ int adios_int_is_var (const char * temp) // 1 == yes, 0 == no
 
     if (*temp == '-' || isdigit (*temp))
     {
+        temp++;
         while (*temp)
         {
             if (isdigit (*temp))
@@ -1142,6 +1143,8 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->name = strdup (name);
     g->adios_host_language_fortran = host_language_fortran;
     g->all_unique_var_names = adios_flag_yes;
+    // ADIOS Schema: adding similar var for meshes
+    g->all_unique_mesh_names = adios_flag_yes;
     g->id = 0; // will be set in adios_append_group
     g->member_count = 0; // will be set in adios_append_group
     g->var_count = 0;
@@ -1155,7 +1158,9 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->stats_on = stats;
     g->process_id = 0;
     g->methods = 0;
-    g->mesh = 0;
+    // ADIOS Schema
+    g->meshs = 0;
+    g->mesh_count = 0;
 
     *id = (int64_t) g;
 
