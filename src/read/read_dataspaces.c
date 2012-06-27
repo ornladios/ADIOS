@@ -85,7 +85,7 @@ static inline double time_get()
 static int chunk_buffer_size = 1024*1024*16; // 16MB default size for reading in data in chunking mode
 static char *chunk_buffer = 0;
 
-static int poll_freq_msec = 10; // how much to wait between polls when timeout is used
+static int poll_interval_msec = 10; // how much to wait between polls when timeout is used
 
 struct dataspaces_fileversions_struct { // current opened version of each stream/file
     char      * filename[MAXNFILE];
@@ -164,7 +164,7 @@ int adios_read_dataspaces_init_method (MPI_Comm comm, PairStruct * params)
 { 
     int  nproc, drank, dpeers;
     int  rank, err;
-    int  appid, max_chunk_size, pollfreq, was_set;
+    int  appid, max_chunk_size, pollinterval, was_set;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &nproc);
 
@@ -192,15 +192,15 @@ int adios_read_dataspaces_init_method (MPI_Comm comm, PairStruct * params)
                 log_error ("Invalid 'max_chunk_size' parameter given to the DATASPACES "
                             "read method: '%s'\n", p->value);
             }
-        } else if (!strcasecmp (p->name, "poll_frequency")) {
+        } else if (!strcasecmp (p->name, "poll_interval")) {
             errno = 0;
-            pollfreq = strtol(p->value, NULL, 10);
-            if (pollfreq > 0 && !errno) {
-                log_debug ("poll_frequency set to %d millisecs for DATASPACES read method\n", 
-                            pollfreq);
-                poll_freq_msec = pollfreq;
+            pollinterval = strtol(p->value, NULL, 10);
+            if (pollinterval > 0 && !errno) {
+                log_debug ("poll_interval set to %d millisecs for DATASPACES read method\n", 
+                            pollinterval);
+                poll_interval_msec = pollinterval;
             } else {
-                log_error ("Invalid 'poll_frequency' parameter given to the DATASPACES "
+                log_error ("Invalid 'poll_interval' parameter given to the DATASPACES "
                             "read method: '%s'\n", p->value);
             }
         } else {
@@ -689,7 +689,7 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
             if (timeout_sec >= 0.0 && (adios_gettime()-t1 > timeout_sec))
                 stay_in_poll_loop = 0;
             else
-                adios_nanosleep (0, poll_freq_msec * 1000000); // sleep for poll_freq_msec msecs
+                adios_nanosleep (0, poll_interval_msec * 1000000); 
         }
 
     } // while (stay_in_poll_loop)
