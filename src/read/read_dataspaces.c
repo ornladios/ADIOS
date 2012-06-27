@@ -577,9 +577,8 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
     ds->freed_mem = 0;
 
     /* While loop for handling timeout
-       timeout > 0: wait up to this long to open the stream
-       timeout = 0: wait forever
-       timeout < 0: return immediately
+       timeout >= 0: wait up to this long to open the stream
+       timeout <  0: wait forever
     */
     int stay_in_poll_loop = 1;
     int found_stream = 0;
@@ -687,9 +686,7 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
 
         // check if we need to stay in loop 
         if (stay_in_poll_loop) {
-            if (timeout_sec < 0.0) 
-                stay_in_poll_loop = 0;
-            else if (timeout_sec > 0.0 && (adios_gettime()-t1 > timeout_sec))
+            if (timeout_sec >= 0.0 && (adios_gettime()-t1 > timeout_sec))
                 stay_in_poll_loop = 0;
             else
                 adios_nanosleep (0, poll_freq_msec * 1000000); // sleep for poll_freq_msec msecs

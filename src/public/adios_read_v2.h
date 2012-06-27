@@ -215,10 +215,10 @@ int adios_read_finalize_method(enum ADIOS_READ_METHOD method);
  *                      to read all data of the step completely.
  *       timeout_sec  >=0.0: block until the stream becomes available but 
  *                           for max 'timeout_sec' seconds.
- *                           0.0 means forwever. 
- *                     <0.0: return immediately if stream is not available
- *                     Note: 0 = does not ever return with err_file_not_found error, which is dangerous
- **                       if the stream name is simply mistyped in the code.
+ *                           0.0 means return immediately if stream is not available
+ *                     <0.0: block possibly forever
+ *                     Note: <0.0 does not ever return with err_file_not_found error, 
+ *                        which is dangerous if the stream name is simply mistyped in the code.
  *  RETURN:       pointer to an ADIOS_FILE struct, NULL on error (sets adios_errno)
  *
  *  Note: the current_step field of the returned struct indicates which step the stream is at.
@@ -272,8 +272,8 @@ int adios_read_close (ADIOS_FILE *fp);
  *        last     0: next available step, !=0: newest available step 
  *        timeout_sec  >=0.0: block until the next step becomes available but 
  *                            for max 'timeout_sec' seconds.
- *                            0.0 means forwever. 
- *                 <0.0: return immediately if step is not available
+ *                            0.0 means return immediately if step is not available
+ *                 <0.0: block forever if necessary
  *  RETURN: 0 OK, !=0 on error (also sets adios_errno)
  *      
  *  Possible errors (adios_errno values):
