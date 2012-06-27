@@ -2049,46 +2049,36 @@ double bp_value_to_double (enum ADIOS_DATATYPES type, void * data)
  * This is done by check whether the 'ADIOS-BP' string has been written
  * before minifooter.
  */
-int check_bp_validity (const char * fname, MPI_Comm comm)
+int check_bp_validity (const char * fname)
 {
-    int  err, rank, flag;
+    int  err, flag;
     MPI_File fh;
     MPI_Offset  file_size;
     MPI_Status status;
     char str[9];
 
-    MPI_Comm_rank (comm, &rank);
-
-    if (rank == 0)
+    err = MPI_File_open (MPI_COMM_SELF, (char *) fname, MPI_MODE_RDONLY,
+                        (MPI_Info) MPI_INFO_NULL, &fh);
+    if (err != MPI_SUCCESS)
     {
-        err = MPI_File_open (comm, (char *) fname, MPI_MODE_RDONLY,
-                            (MPI_Info) MPI_INFO_NULL, &fh);
-        if (err != MPI_SUCCESS)
-        {
-            char e [MPI_MAX_ERROR_STRING];
-            int len = 0;
-            memset (e, 0, MPI_MAX_ERROR_STRING);
-            MPI_Error_string (err, e, &len);
-            adios_error (err_file_open_error, "MPI open failed for %s: '%s'\n", fname, e);
-            return 0;
-        }
+        char e [MPI_MAX_ERROR_STRING];
+        int len = 0;
+        memset (e, 0, MPI_MAX_ERROR_STRING);
+        MPI_Error_string (err, e, &len);
+        adios_error (err_file_open_error, "MPI open failed for %s: '%s'\n", fname, e);
+        return 0;
+    }
 
-        MPI_File_get_size (fh, &file_size);
-        // Since 1.4, there is an additional 28 bytes written ahead of minifooter.
-        MPI_File_seek (fh, (MPI_Offset) file_size - MINIFOOTER_SIZE - 28, MPI_SEEK_SET);
-        MPI_File_read (fh, str, 8, MPI_BYTE, &status);
-        MPI_File_close (&fh);
+    MPI_File_get_size (fh, &file_size);
+    // Since 1.4, there is an additional 28 bytes written ahead of minifooter.
+    MPI_File_seek (fh, (MPI_Offset) file_size - MINIFOOTER_SIZE - 28, MPI_SEEK_SET);
+    MPI_File_read (fh, str, 8, MPI_BYTE, &status);
+    MPI_File_close (&fh);
           
-        //printf ("check_bp_validity: %s\n", str);
-        str[8] = '\0';
+    //printf ("check_bp_validity: %s\n", str);
+    str[8] = '\0';
 
-        flag = (strcmp (str, "ADIOS-BP") == 0 ) ? 1 : 0; 
-        MPI_Bcast (&flag, 1, MPI_BYTE, 0, comm);
-    }
-    else
-    {
-        MPI_Bcast (&flag, 1, MPI_BYTE, 0, comm);
-    }
+    flag = (strcmp (str, "ADIOS-BP") == 0 ) ? 1 : 0; 
 
     return flag;
 }

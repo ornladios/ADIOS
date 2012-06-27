@@ -15,6 +15,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <errno.h>
 #include "public/adios_read.h"
 #include "public/adios_error.h"
 #include "public/adios_types.h"
@@ -31,8 +32,9 @@
 #endif
 
 static int chunk_buffer_size = 1024*1024*16;
+static int poll_interval = 1; // 1 sec by default
 
-static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r);
+static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE * fp, read_request * r);
 
 // Search for the start var index.
 static int get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
@@ -770,6 +772,21 @@ int adios_read_bp_init_method (MPI_Comm comm, PairStruct * params)
                 log_error ("Invalid 'max_chunk_size' parameter given to the read method: '%s'\n", p->value);
             }
         }
+        else if (!strcasecmp (p->name, "poll_interval"))
+        {
+            errno = 0;
+            poll_interval = strtol(p->value, NULL, 10);
+            if (poll_interval > 0 && !errno)
+            {
+                log_debug ("poll_interval set to %d secs for READ_BP read method\n",
+                            poll_interval);
+            }
+            else
+            {
+                log_error ("Invalid 'poll_interval' parameter given to the READ_BP "
+                            "read method: '%s'\n", p->value);
+            }
+        }
 
         p = p->next;
     }
@@ -785,20 +802,74 @@ int adios_read_bp_finalize_method ()
 /* As opposed to open_file, open_stream opens the first step in the file only.
    The lock_mode for file reading is ignored.
 */
-//FIXME: timeout_sec
 ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
 {
     int i, rank, ret;
     struct BP_PROC * p;
     BP_FILE * fh;
     ADIOS_FILE * fp;
+    int err, stay_in_poll_loop = 1;
+    int file_ok = 0;
+    double t1 = adios_gettime();
 
     MPI_Comm_rank (comm, &rank);
     // We need to first check if this is a valid ADIOS-BP file. This is done by
     // check whether there is 'ADIOS-BP' string written before the 28-bytes minifooter. 
     // If it is valid, we will proceed with bp_open(). The potential issue is that before
-    // calling bp_open, the next step could start writing and the footer will be corrupted. Q.Liu
-    if (!check_bp_validity (fname, comm))
+    // calling bp_open, the next step could start writing and the footer will be corrupted.
+    // This needs to be fixed later. Q. Liu, 06/2012
+    /* While loop for handling timeout
+       timeout > 0: wait up to this long to open the stream
+       timeout = 0: return immediately
+       timeout < 0: wait forever
+    */
+    if (rank == 0)
+    {
+        while (stay_in_poll_loop)
+        {
+            file_ok = check_bp_validity (fname);
+            if (!file_ok)
+            {
+                // This stream does not exist yet
+                log_debug ("file %s does not exsit!\n", fname);
+            }
+
+            if (stay_in_poll_loop)
+            {
+                // check if we need to stay in loop 
+                if (timeout_sec == 0.0)  //return immediately, which means check file once
+                {
+                    stay_in_poll_loop = 0;
+                }
+                else if (timeout_sec < 0.0) // check file until it arrives
+                {
+                    adios_nanosleep (poll_interval, 0);
+                    stay_in_poll_loop = 1;
+                }
+                else if (timeout_sec > 0.0 && (adios_gettime () - t1 > timeout_sec))
+                {
+                    stay_in_poll_loop = 0;
+                }
+                else
+                {
+                    adios_nanosleep (poll_interval, 0); // sleep for 1 sec
+                }
+            }
+        } // while (stay_in_poll_loop)
+
+        if (!file_ok)
+        {
+            adios_error (err_file_open_error, "File not found: %s\n", fname);
+        }
+
+        MPI_Bcast (&file_ok, 1, MPI_INT, 0, comm);
+    }
+    else
+    {
+        MPI_Bcast (&file_ok, 1, MPI_INT, 0, comm);
+    }
+
+    if (!file_ok)
     {
         return 0;
     }
