@@ -798,7 +798,10 @@ ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum 
     // check whether there is 'ADIOS-BP' string written before the 28-bytes minifooter. 
     // If it is valid, we will proceed with bp_open(). The potential issue is that before
     // calling bp_open, the next step could start writing and the footer will be corrupted. Q.Liu
-    check_bp_validity (fname, comm);
+    if (!check_bp_validity (fname, comm))
+    {
+        return 0;
+    }
 
     fh = (BP_FILE *) malloc (sizeof (BP_FILE));
     assert (fh);
@@ -826,6 +829,7 @@ ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum 
     /* BP file open and gp/var/att parsing */
     bp_open (fname, comm, fh);
 
+    fp->fh = (uint64_t) p;
     fp->file_size = fh->mfooter.file_size;
     fp->version = fh->mfooter.version;
     fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);

@@ -2075,9 +2075,11 @@ int check_bp_validity (const char * fname, MPI_Comm comm)
 
         MPI_File_get_size (fh, &file_size);
         // Since 1.4, there is an additional 28 bytes written ahead of minifooter.
-        MPI_File_seek (fh, (MPI_Offset) file_size - MINIFOOTER_SIZE, MPI_SEEK_SET - 28);
-
+        MPI_File_seek (fh, (MPI_Offset) file_size - MINIFOOTER_SIZE - 28, MPI_SEEK_SET);
         MPI_File_read (fh, str, 8, MPI_BYTE, &status);
+        MPI_File_close (&fh);
+          
+        //printf ("check_bp_validity: %s\n", str);
         str[8] = '\0';
 
         flag = (strcmp (str, "ADIOS-BP") == 0 ) ? 1 : 0; 
@@ -2087,8 +2089,6 @@ int check_bp_validity (const char * fname, MPI_Comm comm)
     {
         MPI_Bcast (&flag, 1, MPI_BYTE, 0, comm);
     }
-
-    printf ("check_bp_validity: %s\n", str);
 
     return flag;
 }
