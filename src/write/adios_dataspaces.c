@@ -672,6 +672,14 @@ void ds_pack_group_info (struct adios_file_struct *fd
         a = a->next;
     }
 
+    // Required for Cray Gemini: align buffer to 8 bytes boundaries
+    int align_bytes = 0; // number of extra bytes at the end
+    if (size % 8) {
+        align_bytes = 8 - (size % 8);
+        size += align_bytes;
+        log_debug (" after alignment, size = %d, align_bytes = %d\n", size, align_bytes);
+    }
+
     *buffer = (char *) malloc (size);
     *buffer_size = size;
 
@@ -782,6 +790,13 @@ void ds_pack_group_info (struct adios_file_struct *fd
         a = a->next;
     }
 
+    // alignment
+    if (align_bytes) {
+        uint64_t zero = 0;
+        memcpy (b, &zero, align_bytes); 
+        b += align_bytes;
+    }
+
     // sanity check
     if ( (int)(b-*buffer) > *buffer_size) {
         log_error ("ERROR in %s. Calculated group index buffer size as %d, but filled after that with %d bytes\n",
@@ -797,7 +812,8 @@ void ds_pack_group_info (struct adios_file_struct *fd
     b = *buffer;
     for (i=0; i<*buffer_size; i+=16) {
         for (j=0; j<4; j++) {
-            log_debug_cont("%3.3d %3.3d %3.3d %3.3d    ", b[i+4*j], b[i+4*j+1], b[i+4*j+2], b[i+4*j+3]);
+            log_debug_cont ("%3.3hhu %3.3hhu %3.3hhu %3.3hhu    ", 
+                            b[i+4*j], b[i+4*j+1], b[i+4*j+2], b[i+4*j+3]);
         }
         log_debug_cont("\n");
     }
