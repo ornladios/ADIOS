@@ -128,7 +128,7 @@ ADIOS_FILE_V1 * adios_fopen_v1 (const char * fname, MPI_Comm comm)
 
             fp1->internal_data = fp;
         } else {
-            adios_error ( err_no_memory, "Cannot allocate memory for file info.");
+            adios_error ( err_no_memory, "Cannot allocate memory for file info.\n");
         }
     }
     return fp1;
@@ -148,7 +148,7 @@ ADIOS_GROUP_V1 * adios_gopen_v1 (ADIOS_FILE_V1 *fp, const char * grpname)
             break;
     }
     if (grpid >= fp->groups_count) {
-        adios_error ( err_invalid_group, "Invalid group name %s", grpname);
+        adios_error ( err_invalid_group, "Invalid group name %s\n", grpname);
         return NULL;
     }
     return adios_gopen_byid_v1 (fp, grpid);
@@ -160,13 +160,13 @@ ADIOS_GROUP_V1 * adios_gopen_byid_v1 (ADIOS_FILE_V1 *fp, int grpid)
 
     adios_errno = 0;
     if (grpid < 0 || grpid >= fp->groups_count) {
-        adios_error ( err_invalid_group, "Invalid group index %d", grpid);
+        adios_error ( err_invalid_group, "Invalid group index %d\n", grpid);
         return NULL;
     }
 
     gp = (ADIOS_GROUP_V1 *) malloc(sizeof(ADIOS_GROUP_V1));
     if (!gp) {
-        adios_error ( err_no_memory, "Could not allocate memory for group info");
+        adios_error ( err_no_memory, "Could not allocate memory for group info\n");
         return NULL;
     }
 
