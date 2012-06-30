@@ -75,12 +75,12 @@ ADIOS_VARINFO * adios_read_bp_staged1_inq_var_byid (const ADIOS_FILE *gp, int va
     return 0;
 }
 
-int adios_read_bp_staged1_inq_var_stat (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo, int per_step_stat, int per_block_stat)
+int adios_read_bp_staged1_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo, int per_step_stat, int per_block_stat)
 {
     return 0;
 }
 
-int adios_read_bp_staged1_inq_var_blockinfo (const ADIOS_FILE *fp, const ADIOS_VARINFO * varinfo)
+int adios_read_bp_staged1_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 {
     return 0;
 }
@@ -113,6 +113,15 @@ void adios_read_bp_staged1_reset_dimension_order (const ADIOS_FILE *fp, int is_f
 void adios_read_bp_staged1_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group)
 {
 
+}
+
+int adios_read_bp_staged1_is_var_timed (const ADIOS_FILE *fp, int varid)
+{
+    int retval = 0;
+    /*
+        retval = this variable had time dimension at write
+    */
+    return retval;
 }
 
 #if 0

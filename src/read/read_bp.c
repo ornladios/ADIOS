@@ -1262,10 +1262,14 @@ int adios_read_bp_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo, i
     vs->avg = 0;
     vs->std_dev = 0;
 
+    vs->steps = 0;
+    vs->blocks = 0;
+    vs->histogram = 0;
+    
     return 0;
 }
 
-int adios_read_bp_inq_var_blockinfo (ADIOS_FILE * fp, ADIOS_VARINFO * varinfo)
+int adios_read_bp_inq_var_blockinfo (const ADIOS_FILE * fp, ADIOS_VARINFO * varinfo)
 {
     struct BP_PROC * p = (struct BP_PROC *) fp->fh;
     int i, file_is_fortran, timedim;
@@ -1506,6 +1510,24 @@ void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***gr
     return;
 }
 
+int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
+{
+    BP_PROC * p;
+    BP_FILE * fh;
+    struct adios_index_var_struct_v1 * v;
+    int retval = 0;
+
+    assert (fp);
+
+    p = (BP_PROC *) fp->fh;
+    fh = (BP_FILE *) p->fh;
+
+    v = bp_find_var_byid (fh, varid);
+    /*
+        retval = this variable had time dimension at write
+    */
+    return retval;
+}
 
 #if 0
 /* This function can be called if user places 
