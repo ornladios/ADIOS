@@ -430,6 +430,7 @@ between the data specified by vix, and vix shifted by 'lag' timesteps.  If viy
 is not NULL, lag is ignored.
 \end{itemize}
 
+
 \section{Read Fortran API description}
 \label{section:read_fortran_api}
 
@@ -438,6 +439,7 @@ several arguments in the function calls.  They are all implemented as subroutine
 like the write Fortran API and the last argument is an integer variable to store 
 the error code output of each function (0 meaning successful operation). 
 
+A Fortran90 module, \verb+adios_read.mod+ provides the available ADIOS subroutines. 
 An example code can be found in the source distribution as 
 \verb+tests/bp_read/bp_read_f.F90+.
 
@@ -445,29 +447,26 @@ The most important thing to note is that some functions need integer*8 (scalar
 or array) arguments. Passing an integer*4 array from your code leads to fatal errors. 
 Please, double check the arguments of the function calls. 
 
-Due to the lack of structures and because the Fortran API does not allocate memory 
-for them, you have to inquiry the file after opening it and to inquiry the group 
-after opening it. You also have to inquiry an attribute to determine the memory 
-size and allocate space for it before retrieving it. 
+In contrast to the C API, where the open function returns a structure filled with 
+a lot of information, the Fortran API only returns a handle. Therefore, 
+you have to inquiry the file after opening it.
+You also have to inquiry an attribute to determine the memory 
+size needed to store its value and allocate space for it before retrieving it. 
 
 Where the API function returns a list of names (inquiry file or inquiry group), 
 you have to provide enough space for them using the counts returned by the preceding 
 open call. 
 
-Here is the list of the Fortran subroutines. The GENERIC word indicates that you 
-can use that function with any data type at the indicated argument. Since Fortran90 
-does not allow defining functions that can take any type of argument, we do not 
-provide an F90 module for this API. The functions are actually defined in C and 
-due to the lack of compiler checking, you can pass any type of array or variable 
-where a GENERIC array is denoted. 
+From functionality point of view, the difference in C and Fortran is that the 
+Fortran API does not allow non-blocking reads in \verb+adios_perform_reads+, and thus
+chunking is not working either. Memory for all variables should be allocated in advance 
+to store the data.
 
-\textbf{Note about changes from version 1.2}: the adios\_inq\_group() function 
-has two more output variables since 1.3. To support experimental streaming methods, 
-which has access to only one timestep (or a subset of timesteps) in contrast to 
-all timesteps in a time-indexed BP file, the current timestep and last available 
-timestep is returned. These values have no use for file reading right now but you 
-have to use dummy integer variables in the call otherwise your code will abort 
-with a segmentation fault. 
+Here is the list of the Fortran90 subroutines from \verb+adios_read.mod+. 
+In the list below \verb+GENERIC+ word indicates that you 
+can use that function with any data type at the indicated argument; it is not
+a Fortran90 keyword. The actual module source defines all possible combinations 
+of type and dimensionality for such subroutines. 
 
 \begin{lstlisting}[language=ADIOS,alsolanguage=Fortran]
 subroutine adios_errmsg (msg)
