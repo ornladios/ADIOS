@@ -224,7 +224,7 @@ static int parseMeshUniformDimensions (const char * dimensions
     char * dim_att_nam = 0; // dimensions attribute name
     char * getdimsfrom = 0; // dimensions attribute that is a var
     int counter = 0;        // used to create dimX attributes
-    char counterstr[5] = 0; // used to create dimX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create dimX attributes
 
     if (!dimensions)
     {
@@ -332,7 +332,7 @@ static int parseMeshUniformMaxima (const char * maximum
     char * max_att_nam = 0; // maxima attribute name   
     char * getmaxafrom = 0; // maxima attribute name that is a var
     int counter = 0;        // used to create maxX attributes
-    char counterstr[5] = 0; // used to create maxX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create maxX attributes
 
     if (!maximum)
     {
@@ -436,7 +436,7 @@ static int parseMeshUniformOrigin (const char * origin
     char * org_att_nam = 0; // origins attribute name   
     char * getorgsfrom = 0; // origins attribute name that is a var
     int counter = 0;        // used to create orgX attributes
-    char counterstr[5] = 0; // used to create orgX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create orgX attributes
 
     if (!origin)
     {
@@ -539,7 +539,7 @@ static int parseMeshUniformSpacing (const char * spacing
     char * spa_att_nam = 0; // spacings attribute name   
     char * getspasfrom = 0; // spacings attribute name that is a var
     int counter = 0;        // used to create spaX attributes
-    char counterstr[5] = 0; // used to create spaX attributes if (!spacing)
+    char counterstr[5] = {0,0,0,0,0}; // used to create spaX attributes if (!spacing)
 
     if (!spacing)
     {
@@ -642,7 +642,7 @@ static int parseMeshRectilinearDimensions (const char * dimensions
     char * dim_att_nam = 0; // dimensions attribute name
     char * getdimsfrom = 0; // dimensions attribute name that is a var
     int counter = 0;        // used to create dimX attributes
-    char counterstr[5] = 0; // used to create dimX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create dimX attributes
 
     if (!dimensions)
     {
@@ -748,7 +748,7 @@ static int parseMeshRectilinearCoordinatesMultiVar (const char * coordinates
     int64_t      p_new_group = (int64_t) new_group;
     char * coo_att_nam = 0; // coordinates attribute name
     int counter = 0;        // used to create ptsX attributes
-    char counterstr[5] = 0; // used to create ptsX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create ptsX attributes
 
     if (!coordinates)
     {
@@ -1013,7 +1013,7 @@ static int parseMeshStructuredDimensions (const char * dimensions
     char * dim_att_nam = 0; // dimensions attribute name
     char * getdimsfrom = 0; // dimensions attribute name that is a var
     int counter = 0;        // used to create dimX attributes
-    char counterstr[5] = 0; // used to create dimX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create dimX attributes
 
     if (!dimensions)
     {
@@ -1121,7 +1121,7 @@ static int parseMeshStructuredPointsMultiVar (const char * points
     int64_t      p_new_group = (int64_t) new_group;
     char * pts_att_nam = 0; // pointss attribute name
     int counter = 0;        // used to create ptsX attributes
-    char counterstr[5] = 0; // used to create ptsX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create ptsX attributes
 
     if (!points)
     {
@@ -1466,7 +1466,7 @@ static int parseMeshUnstructuredPointsMultiVar (const char * points
     int64_t      p_new_group = (int64_t) new_group;
     char * pts_att_nam = 0; // pointss attribute name
     int counter = 0;        // used to create ptsX attributes
-    char counterstr[5] = 0; // used to create ptsX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create ptsX attributes
 
     if (!points)
     {
@@ -1922,7 +1922,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
     struct adios_mesh_cell_list_list_struct * cell_list = 0;
     struct adios_mesh_item_struct * item = 0;
     int counter = 0;        // used to create countX, typeX, dataX? attributes
-    char counterstr[5] = 0; // used to create countX, typeX, dataX? attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create countX, typeX, dataX? attributes
     int64_t      p_new_group = (int64_t) new_group;
     char * ncellset_att_nam = 0;  // ncellset attribute
     char * ccounts_att_nam = 0;   // ccountX attributes
