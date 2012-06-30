@@ -12,7 +12,9 @@
 #include <string.h>
 #include <assert.h>
 #include "mpi.h"
-#include "adios_read.h"
+
+#define ADIOS_USE_READ_API_1
+#include "public/adios_read.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"

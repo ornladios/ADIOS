@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "mpi.h"
-#include "adios.h"
+#include "public/adios.h"
 int main (int argc, char ** argv) 
 {
     char        filename [256];

@@ -18,7 +18,7 @@
 
 /* ADIOS include files */
 //#include "mpi.h"
-#include "adios.h"
+#include "public/adios.h"
 
 /* ------------------ Global variables (for main.c only) ------------------ */
 // Simulation Variables
