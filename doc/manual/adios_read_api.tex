@@ -44,13 +44,13 @@ option. There is no difference in performance or functionality in the two versio
 
 Note that the write API contains the adios\_read() function, which is useful to 
 read in data from the same number of processors as the data was written from, like 
-handling checkpoint/restart data (see Section 3.1.2.5.). However, if you need to 
+handling checkpoint/restart data (see Section \ref{section:adios_read}). However, if you need to 
 read in from a different number of processors or to read in only a subset of an 
-array variable, you need to use this read API.\label{HToc182553398}
+array variable, you need to use this read API.
 
 \section{Read C API description}
 
-Note: for Fortran, please read section 7.4 on page \pageref{HRef144348801}.
+Note: for Fortran, please read section \ref{section:read_fortran_api} on page \pageref{section:read_fortran_api}.
 
 The sequence of reading in a variable from the BP file is
 
@@ -79,7 +79,7 @@ Example codes using the C API are
 \renewcommand{\labelitemi}{$-$}
 \item examples/C/read\_all/read\_all.c
 
-\item examples/C/global-array/adios\_read\_global\label{HToc182553399}
+\item examples/C/global-array/adios\_read\_global
 \end{itemize}
 
 \subsection{adios\_errmsg / adios\_errno}
@@ -97,7 +97,7 @@ buffer, which can be retrieved by adios\_errmsg().
 
 Note that adios\_errmsg() returns the pointer to the internal buffer instead of 
 duplicating the string, so refrain from writing anything into it. Also, only the 
-last error message is available at any time.\label{HToc182553400}
+last error message is available at any time.
 
 \subsection{adios\_set\_read\_method}
 \begin{lstlisting}[]
@@ -136,7 +136,7 @@ in for each read request.
 \begin{lstlisting}[]
 export num_aggregators=1
 export chunk_size=16
-\end{lstlisting}\label{HToc182553401}
+\end{lstlisting}
 
 \subsection{adios\_fopen }
 
@@ -169,7 +169,7 @@ If you use the MPI version of the library, pass the communicator, which is the
 communicator of all processes that call the open function. Rank=0 process broadcasts 
 the metadata to the other processes so that we avoid opening the file from many 
 processes at once.  If you use the non-MPI version of the library, just pass on 
-an arbitrary integer value, which is not used at all. \label{HToc182553402}
+an arbitrary integer value, which is not used at all. 
 
 \subsection{adios\_fclose}
 
@@ -178,7 +178,7 @@ int adios_fclose (ADIOS\_FILE *fp)
 \end{lstlisting}
 
 You are expected to close a file when you do not need it anymore. This function 
-releases a lot of internal memory structures.\label{HToc182553403}
+releases a lot of internal memory structures.
 
 \subsection{adios\_gopen / adios\_gopen\_byid}
 
@@ -214,7 +214,7 @@ Note that one can modify the ADIOS\_GROUP's namelists because they are not used
 in the discovery of the variables. However, in index-based queries below, the index 
 of the variable is the index of the variable's position in the original order of 
 the list. If one sorts this list for ordered printouts, one need to remember the 
-original indices of the variables or to identify the variables by name. \label{HToc182553404}
+original indices of the variables or to identify the variables by name. 
 
 \subsection{adios\_gclose}
 
@@ -222,9 +222,10 @@ original indices of the variables or to identify the variables by name. \label{H
 int adios_gclose (ADIOS_GROUP *gp)
 \end{lstlisting}
 
-You need to close the group when you do not need it anymore. \label{HRef140808163}\label{HToc182553405}
+You need to close the group when you do not need it anymore. 
 
 \subsection{adios\_inq\_var / adios\_inq\_var\_byid}
+\label{section:read_api_adios_inq_var}
 
 \begin{lstlisting}[]
 ADIOS_VARINFO * adios_inq_var (ADIOS_GROUP *gp, const char * varname)
@@ -277,7 +278,7 @@ etc, are of base type double. They also have an additional dimension that stores
 the statistics for the magnitude, the real part, and the imaginary part of the 
 complex number, individually. For example, gmin[0] holds the overall minimum value 
 of the magnitude of the complex numbers. gmin[1] and gmin [2] contain the global 
-minimums for the real and the imaginary parts, respectively. \label{HToc182553406}
+minimums for the real and the imaginary parts, respectively. 
 
 \subsection{adios\_free\_varinfo}
 
@@ -285,7 +286,7 @@ minimums for the real and the imaginary parts, respectively. \label{HToc18255340
 void adios\_free\_varinfo (ADIOS\_VARINFO *cp)
 \end{lstlisting}
 
-Frees up the ADIOS\_VARINFO* structure returned by adios\_inq\_var().\label{HToc182553407}
+Frees up the ADIOS\_VARINFO* structure returned by adios\_inq\_var().
 
 \subsection{adios\_read\_var / adios\_read\_var\_byid}
 
@@ -318,7 +319,7 @@ in each dimension, not the number of bytes needed for storage. When allocating
 the data array, multiply the total number of elements with the size of one element. 
 If you need to be generic in this calculation, you can use the adios\_type\_size() 
 function to get the size of one element of a given type (cf. ADIOS\_VARINFO.type). 
-\label{HToc182553408}
+
 
 \subsection{adios\_get\_attr / adios\_get\_attr\_byid}
 
@@ -344,7 +345,7 @@ This function does not read the file usually. The attribute's value is stored in
 the footer and is already in the memory after the file is opened. However, an attribute 
 can refer to a scalar (or string) variable too. In this case, this function calls 
 adios\_read\_var internally, so the file will be accessed to read in that scalar. 
-\label{HToc182553409}
+
 
 \subsection{adios\_type\_to\_string}
 
@@ -352,7 +353,7 @@ adios\_read\_var internally, so the file will be accessed to read in that scalar
 const char * adios_type_to_string (enum ADIOS_DATATYPES type)
 \end{lstlisting}
 
-This function returns the name of a given type.\label{HToc182553410}
+This function returns the name of a given type.
 
 \subsection{adios\_type\_size}
 
@@ -363,16 +364,16 @@ int adios_type_size(enum ADIOS_DATATYPES type, void *data)
 This function returns the memory size of one data element of an adios type. If 
 the type is adios\_string, and the second argument is the string itself, it returns 
 strlen(data)+1. For other types, \textit{data} is not used and the function returns 
-the size occupied by one element.\label{HToc182553411}
+the size occupied by one element.
 
 \section{Time series analysis API Description}
 
 ADIOS provides APIs to perform time-series analysis like correlation and covariance 
-on statistics collected in the BP file. As described in Section 7.2.7, adios\_inq\_var 
+on statistics collected in the BP file. As described in Section \ref{section:read_api_adios_inq_var}, \verb+adios_inq_var+ 
 populates characteristics, such as minimum, maximum, average, standard deviation 
 values for an array for each timestep. The following analysis function can be used 
-with ADIOS\_VARINFO objects previously defined. This can be performed only for 
-a variable that has a time index.\label{HToc182553412}
+with \verb+ADIOS_VARINFO+ objects previously defined. This can be performed only for 
+a variable that has a time index.
 
 \subsection{adios\_stat\_cor / adios\_stat\_cov}
 
@@ -426,17 +427,19 @@ In this case, vix and viy should have the same number of timesteps.
 
 \item lag - if viy is NULL, and if lag is given, correlation is performed 
 between the data specified by vix, and vix shifted by 'lag' timesteps.  If viy 
-is not NULL, lag is ignored.\label{HRef144348794}\label{HRef144348801}\label{HToc182553413}
+is not NULL, lag is ignored.
 \end{itemize}
 
 \section{Read Fortran API description}
+\label{section:read_fortran_api}
 
 The Fortran API does not deal with the structures of the C api rather it requires 
 several arguments in the function calls.  They are all implemented as subroutines 
 like the write Fortran API and the last argument is an integer variable to store 
 the error code output of each function (0 meaning successful operation). 
 
-An example code can be found in the source distribution as tests/bp\_read/bp\_read\_f.F90.
+An example code can be found in the source distribution as 
+\verb+tests/bp_read/bp_read_f.F90+.
 
 The most important thing to note is that some functions need integer*8 (scalar 
 or array) arguments. Passing an integer*4 array from your code leads to fatal errors. 
@@ -466,126 +469,200 @@ timestep is returned. These values have no use for file reading right now but yo
 have to use dummy integer variables in the call otherwise your code will abort 
 with a segmentation fault. 
 
-\begin{lstlisting}[language=Fortran]
+\begin{lstlisting}[language=ADIOS,alsolanguage=Fortran]
 subroutine adios_errmsg (msg)
     character(*),   intent(out) :: msg
 end subroutine
 
-subroutine adios_fopen (fp, fname, comm, groups_count, err)
+subroutine adios_read_init_method (method, comm, parameters, err)
+    integer,        intent(in)  :: method
+    integer,        intent(in)  :: comm
+    character(*),   intent(in)  :: parameters
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_read_finalize_method (method, err)
+    integer,        intent(in)  :: method
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_read_open_stream (fp, fname, method, comm, lockmode, 
+                                   timeout_msec, err)
     integer*8,      intent(out) :: fp
     character(*),   intent(in)  :: fname
+    integer,        intent(in)  :: method
     integer,        intent(in)  :: comm
+    integer,        intent(in)  :: lockmode
+    integer,        intent(in)  :: timeout_msec
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_read_open_file (fp, fname, method, comm, err)
+    integer*8,      intent(out) :: fp
+    character(*),   intent(in)  :: fname
+    integer,        intent(in)  :: method
+    integer,        intent(in)  :: comm
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_reset_dimension_order (fp, flag)
+    integer*8,      intent(in)  :: fp
+    integer,        intent(in)  :: flag
+end subroutine
+
+subroutine adios_read_close (fp, err)
+    integer*8,      intent(in)  :: fp
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_inq_ngroups (fp, groups_count, err)
+    integer*8,      intent(in)  :: fp
     integer,        intent(out) :: groups_count
     integer,        intent(out) :: err
 end subroutine
 
-subroutine adios_fclose (fp, err)
+subroutine adios_inq_groupnames (fp, gnamelist, err)
     integer*8,      intent(in)  :: fp
-    integer,        intent(out) :: err
-end subroutine
-
-subroutine adios_inq_file (fp, vars_count, 
-             attrs_count, tstart, ntsteps, 
-                           gnamelist, err)
-    integer*8,      intent(in)  :: fp
-    integer,        intent(out) :: vars_count
-    integer,        intent(out) :: attrs_count
-    integer,        intent(out) :: tstart
-    integer,        intent(out) :: ntsteps
     character(*), dimension(*), intent(inout) :: gnamelist
     integer,        intent(out) :: err
 end subroutine
 
-subroutine adios_gopen (fp, gp, grpname, vars_count, 
-                                   attrs_count, err)
+subroutine adios_group_view (fp, groupid, err)
     integer*8,      intent(in)  :: fp
-    integer*8,      intent(out) :: gp
-    character(*),   intent(in)  :: grpname
+    integer,        intent(in)  :: groupid
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_inq_file (fp, vars_count, attrs_count, 
+                           current_step, last_step, err)
+    integer*8,      intent(in)  :: fp
     integer,        intent(out) :: vars_count
     integer,        intent(out) :: attrs_count
+    integer,        intent(out) :: current_step
+    integer,        intent(out) :: last_step
     integer,        intent(out) :: err
 end subroutine
 
-subroutine adios_gclose (gp, err)
-    integer*8,      intent(in)  :: gp
-    integer,        intent(out) :: err
-end subroutine
-
-subroutine adios_inq_group (gp, vnamelist, anamelist, err)
-    integer*8,      intent(in)  :: gp
+subroutine adios_inq_varnames (fp, vnamelist, err)
+    integer*8,      intent(in)  :: fp
     character(*), dimension(*), intent(inout) :: vnamelist
-    character(*), dimension(*), intent(inout) :: anamelist
-    integer,        intent(out) :: timestep
-    integer,        intent(out) :: lasttimestep
     integer,        intent(out) :: err
 end subroutine
 
-subroutine adios_inq_var (gp, varname, vartype, ndim, 
-                                  dims, timedim, err)
-    integer*8,      intent(in)  :: gp
+subroutine adios_inq_attrnames (fp, anamelist, err)
+    integer*8,      intent(in)  :: fp
+    character(*), dimension(*), intent(inout) :: anamelist
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_inq_var (fp, varname, vartype, nsteps, ndim, dims, err)
+    integer*8,      intent(in)  :: fp
     character(*),   intent(in)  :: varname
     integer,        intent(out) :: vartype
+    integer,        intent(out) :: nsteps
     integer,        intent(out) :: ndim
     integer*8, dimension(*), intent(out) :: dims
-    integer,        intent(out) :: timedim
     integer,        intent(out) :: err
 end subroutine
 
-subroutine adios_read_var (gp, varname, start, count,
-                                   data, read_bytes)
-    integer*8,      intent(in)  :: gp
-    character(*),   intent(in)  :: varname
-    integer*8, dimension(*), intent(in) :: start
-    integer*8, dimension(*), intent(in) :: count
-    GENERIC, dimension(*), intent(inout) :: data
-    integer*8,      intent(out) :: read_bytes
-    ! read_bytes < 0 indicates error
-end subroutine
-
-subroutine adios_get_varminmax (gp, varname, value, gmin, 
-                                   gmax, mins, maxs, err)
-    integer*8,      intent(in)  :: gp
-    character(*),   intent(in)  :: varname
-    GENERIC,        intent(out) :: value
-    GENERIC,        intent(out) :: gmin
-    GENERIC,        intent(out) :: gmax
-    GENERIC, dimension(*), intent(inout) :: mins
-    GENERIC, dimension(*), intent(inout) :: maxs
-    integer,        intent(out) :: err
-end subroutine
-
-subroutine adios_inq_attr (gp, attrname, attrtype, 
-                                    attrsize, err)
-    integer*8,      intent(in) :: gp
+subroutine adios_inq_attr (fp, attrname, attrtype, attrsize, err)
+    integer*8,      intent(in) :: fp
     character(*),   intent(in)  :: attrname
     integer,        intent(out) :: attrtype
     integer,        intent(out) :: attrsize
     integer,        intent(out) :: err
 end subroutine
 
-subroutine adios_get_attr_int1 (gp, attrname, attr, err)
+subroutine adios_perform_reads (fp, err)
+    integer*8,      intent(in)  :: fp
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_selection_boundingbox (sel, ndim, start, count)
+    integer*8,      intent(out)          :: sel
+    integer,        intent(in)           :: ndim
+    integer*8, dimension(*), intent(in)  :: start
+    integer*8, dimension(*), intent(in)  :: count
+end subroutine
+
+subroutine adios_selection_points (sel, ndim, npoints, points)
+    integer*8,      intent(out)          :: sel
+    integer,        intent(in)           :: ndim
+    integer*8,      intent(in)           :: npoints
+    integer*8, dimension(*), intent(in)  :: points
+end subroutine
+
+subroutine adios_selection_writeblock (sel, index)
+    integer*8,      intent(out)          :: sel
+    integer,        intent(in)           :: index
+end subroutine
+
+subroutine adios_selection_auto (sel, hints)
+    integer*8,      intent(out)          :: sel
+    character(*),   intent(in)           :: hints
+end subroutine
+
+subroutine adios_selection_delete (sel)
+    integer*8,      intent(out)          :: sel
+end subroutine
+
+subroutine adios_get_scalar (fp, varname, data, err)
+    integer*8,      intent(in)  :: fp
+    character(*),   intent(in)  :: varname
+    GENERIC,        intent(out) :: data
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_get_attr (gp, attrname, attr, err)
     integer*8,      intent(in)  :: gp
     character(*),   intent(in)  :: attrname
-    GENERIC, dimension(*), intent(inout) :: attr
-    integer,        intent(out) :: err 
+    GENERIC,        intent(inout) :: attr
+    integer,        intent(out) :: err
 end subroutine
-\end{lstlisting}\label{HToc182553414}
+
+subroutine adios_schedule_read (fp, sel, varname, from_step, nsteps, data, err)
+    integer*8,      intent(in)  :: fp
+    integer*8,      intent(in)  :: sel
+    character(*),   intent(in)  :: varname
+    integer,        intent(in)  :: from_step
+    integer,        intent(in)  :: nsteps
+    GENERIC, GENERIC_DIMENSIONS, intent(inout) :: data
+    integer,        intent(in)  :: err
+end subroutine
+
+subroutine adios_get_statistics (gp, varname, value, gmin, gmax, gavg, 
+                                 gstd_dev, mins, maxs, avgs, std_devs, err)
+    integer*8,      intent(in)  :: gp
+    character(*),   intent(in)  :: varname
+    GENERIC,        intent(out) :: value
+    GENERIC,        intent(out) :: gmin
+    GENERIC,        intent(out) :: gmax
+    real*8,         intent(out) :: gavg
+    real*8,         intent(out) :: gstd_dev
+    GENERIC, dimension(*), intent(inout) :: mins
+    GENERIC, dimension(*), intent(inout) :: maxs
+    real*8, dimension(*), intent(inout) :: avgs
+    real*8, dimension(*), intent(out) :: std_devs
+    integer,dimension(*), intent(out) :: err
+end subroutine
+\end{lstlisting}
 
 \section{Compiling and linking applications}
 
-In a C code, include the adios\_read.h header file. 
+In a C code, include the \verb+adios_read.h+ header file. 
 
-In a Fortran 90 code, you do not need to include anything. It is strongly recommended 
-to double check the integer parameters because the read API expects integer*8 arguments 
+In a Fortran 90 code, you do not need to include anything but you can use the module 
+\verb+adios_read+. It is strongly recommended to use it to double check the integer 
+parameters because the read API expects \verb+integer*8+ arguments 
 at several places and providing an integer will break your code and then debugging 
 it proves to be very difficult.
 
 If you want to use the MPI version of the library, then link your (C or Fortran) 
-application with \-{}ladiosread.
+application with \verb+-ladiosread+.
 
 If you want to use the non-MPI version of the library, you need to compile your 
-code with the -D\_NOMPI option and link your application with \-{}ladiosread\_nompi.
+code with the \verb+-D_NOMPI+ option and link your application with \verb+-ladiosread_nompi+.
 
 It is encouraged to use the utility to get the compile and link options for your 
 need, using -f option to get the Fortran options, -c for compile, -l for linking, 
--s for non-MPI applications (see Section 2.5). \label{HToc182553415}
+-s for non-MPI applications (see Section \ref{section:installation_compiling_apps}. 
