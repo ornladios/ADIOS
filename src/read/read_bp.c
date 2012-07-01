@@ -32,9 +32,11 @@
 #endif
 
 static int chunk_buffer_size = 1024*1024*16;
-static int poll_interval = 1; // 1 sec by default
+static int poll_interval = 10; // 10 secs by default
 
 static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE * fp, read_request * r);
+static int bp_close (BP_FILE * fh);
+static int adios_read_bp_get_endianness( uint32_t change_endianness);
 
 // Search for the start var index.
 static int get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
@@ -189,7 +191,82 @@ void close_all_BP_files (struct BP_file_handle * l)
                       );                                                                    \
         fh->b->offset = 0;                                                                  \
 
-/*
+/* This routin open a ADIOS-BP file with no timeout.
+ * It first checks whether this is a valid BP file. This is done by
+ * checking the validity on rank 0 and communicating to other ranks.
+ * If the file is ok, then go ahead get the metadata.
+ */
+static BP_FILE * open_file (const char * fname, MPI_Comm comm)
+{
+    int i, rank, file_ok;
+    BP_FILE * fh;
+
+    MPI_Comm_rank (comm, &rank);
+
+    if (rank == 0)
+    {
+        file_ok = check_bp_validity (fname);
+
+        MPI_Bcast (&file_ok, 1, MPI_INT, 0, comm);
+    }
+    else
+    {
+        MPI_Bcast (&file_ok, 1, MPI_INT, 0, comm);
+    }
+
+    if (!file_ok)
+    {
+        return 0;
+    }
+
+    fh = (BP_FILE *) malloc (sizeof (BP_FILE));
+    assert (fh);
+
+    fh->fname = (fname ? strdup (fname) : 0L);
+    fh->sfh = 0;
+    fh->comm = comm;
+    fh->gvar_h = 0;
+    fh->pgs_root = 0;
+    fh->vars_root = 0;
+    fh->attrs_root = 0;
+    fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
+    assert (fh->b);
+
+    bp_open (fname, comm, fh);
+
+    return fh;
+}
+
+/* This routine set ADIOS_FILE fields according to fh */
+int build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
+{
+    BP_PROC * p;
+    int rank;
+
+    log_debug ("build_ADIOS_FILE_struct is called\n");
+    MPI_Comm_rank (fh->comm, &rank);
+
+    p = (struct BP_PROC *) malloc (sizeof (struct BP_PROC));
+    assert (p);
+    p->rank = rank;
+    p->fh = fh;
+    p->local_read_request_list = 0;
+    p->priv = 0;
+
+    fp->fh = (uint64_t) p;
+    fp->file_size = fh->mfooter.file_size;
+    fp->version = fh->mfooter.version;
+    fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
+    fp->last_step = fh->tidx_stop - 1;
+
+    /* Seek to the initial step. */
+    bp_seek_to_step (fp, 0);
+
+    /* For file, the last step is tidx_stop */
+    fp->last_step = fh->tidx_stop - 1;
+}
+
+/*  last_step is the last step that the previous file has.
  *       timeout_sec  >=0.0: block until the stream becomes available but 
  *                           for max 'timeout_sec' seconds.
  *                           0.0 means forwever. 
@@ -197,47 +274,64 @@ void close_all_BP_files (struct BP_file_handle * l)
  *                     Note: 0 = does not ever return with err_file_not_found error, which is dangerous
  **                       if the stream name is simply mistyped in the code.
  */
-static int get_step (const char * fname, MPI_Comm comm, int step, float timeout_sec)
+static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int last_step, float timeout_sec)
 {
     int err, i;
+    BP_FILE * fh;
     double t1 = adios_gettime();
 
+    log_debug ("enter get_new_step\n");
+    /* First check if the file has been updated with more steps. */
     /* While loop for handling timeout
        timeout > 0: wait up to this long to open the stream
-       timeout = 0: wait forever
-       timeout < 0: return immediately
+       timeout = 0: return immediately
+       timeout < 0: wait forever
     */
     int stay_in_poll_loop = 1;
     int found_stream = 0;
 
     while (stay_in_poll_loop)
     {
-        if (!err)
+        /* Re-open the file */
+        fh = open_file (fname, comm);
+        if (!fh)
         {
+            // file is bad so keeps polling.
+            stay_in_poll_loop = 1;
+        }
+        else if (fh && (fh->tidx_stop - 1 == last_step))
+        {
+            // file is good but no new steps in it. Continue polling.
+            bp_close (fh);
+            stay_in_poll_loop = 1;
         }
         else
         {
-            // This stream does not exist yet
+            // the file looks good and there are new steps written.
+            build_ADIOS_FILE_struct (fp, fh);
+            stay_in_poll_loop = 0;
         }
-
         // check if we need to stay in loop 
         if (stay_in_poll_loop)
         {
             if (timeout_sec < 0.0)
             {
-                stay_in_poll_loop = 0;
+                stay_in_poll_loop = 1;
             }
             else if (timeout_sec > 0.0 && (adios_gettime () - t1 > timeout_sec))
             {
+                log_debug ("Time is out in get_new_step()\n");
                 stay_in_poll_loop = 0;
             }
             else
             {
-                adios_nanosleep (1, 0); // sleep for 1 sec
+                adios_nanosleep (poll_interval, 0);
             }
         }
 
     } // while (stay_in_poll_loop)
+
+    log_debug ("exit get_new_step\n");
 }
 
 /* This routine processes a read request and returns data in ADIOS_VARCHUNK.
@@ -799,15 +893,13 @@ int adios_read_bp_finalize_method ()
     return 0;
 }
 
-/* As opposed to open_file, open_stream opens the first step in the file only.
-   The lock_mode for file reading is ignored.
-*/
-ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
+static int open_stream (ADIOS_FILE * fp, const char * fname, 
+                        MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, 
+                        float timeout_sec)
 {
     int i, rank, ret;
     struct BP_PROC * p;
     BP_FILE * fh;
-    ADIOS_FILE * fp;
     int err, stay_in_poll_loop = 1;
     int file_ok = 0;
     double t1 = adios_gettime();
@@ -823,6 +915,8 @@ ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum 
        timeout = 0: return immediately
        timeout < 0: wait forever
     */
+
+    // Only rank 0 does the poll
     if (rank == 0)
     {
         while (stay_in_poll_loop)
@@ -831,7 +925,7 @@ ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum 
             if (!file_ok)
             {
                 // This stream does not exist yet
-                log_debug ("file %s does not exsit!\n", fname);
+                log_debug ("Warning: file %s does not exsit!\n", fname);
             }
 
             if (stay_in_poll_loop)
@@ -852,7 +946,7 @@ ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum 
                 }
                 else
                 {
-                    adios_nanosleep (poll_interval, 0); // sleep for 1 sec
+                    adios_nanosleep (poll_interval, 0);
                 }
             }
         } // while (stay_in_poll_loop)
@@ -871,7 +965,7 @@ ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum 
 
     if (!file_ok)
     {
-        return 0;
+        return err_file_not_found;
     }
 
     fh = (BP_FILE *) malloc (sizeof (BP_FILE));
@@ -894,9 +988,6 @@ ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum 
     p->local_read_request_list = 0;
     p->priv = 0;
 
-    fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
-    assert (fp);
-
     /* BP file open and gp/var/att parsing */
     bp_open (fname, comm, fh);
 
@@ -911,6 +1002,24 @@ ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum 
     /* For file, the last step is tidx_stop */
     fp->last_step = fh->tidx_stop - 1;
 
+    return 0;
+}
+
+/* As opposed to open_file, open_stream opens the first step in the file only.
+   The lock_mode for file reading is ignored.
+*/
+ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
+{
+    log_debug ("adios_read_bp_open_stream\n");
+    ADIOS_FILE * fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
+    assert (fp);
+
+    if (open_stream (fp, fname, comm, lock_mode, timeout_sec) < 0)
+    {
+        free (fp);
+        fp = 0;
+    }
+
     return fp;
 }
 
@@ -920,7 +1029,6 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
     struct BP_PROC * p;
     BP_FILE * fh;
     ADIOS_FILE * fp;
-    uint64_t header_size;
 
     MPI_Comm_rank (comm, &rank);
 
@@ -962,11 +1070,21 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
     return fp;
 }
 
-int adios_read_bp_close (ADIOS_FILE *fp)
+int adios_read_bp_close (ADIOS_FILE * fp)
 {
-    //FIXME: free BP_PROC properly
     struct BP_PROC * p = (struct BP_PROC *) fp->fh;
     BP_FILE * fh = p->fh;
+
+    bp_close (fh);
+
+    //FIXME
+    free (fp);
+
+    return 0;
+}
+
+int bp_close (BP_FILE * fh)
+{
     struct BP_GROUP_VAR * gh = fh->gvar_h;
     struct BP_GROUP_ATTR * ah = fh->gattr_h;
     struct adios_index_var_struct_v1 * vars_root = fh->vars_root, *vr;
@@ -1142,33 +1260,79 @@ int adios_read_bp_close (ADIOS_FILE *fp)
     if (fh)
         free (fh);    
 
-    free(fp);
-
     return 0;
 }
 
-//FIXME: timeout_sec
-int adios_read_bp_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
+/* Since we have no way to know that the end of the stream has been reached, we cannot
+ * block the call and expect new step will arrive. Therefore, if last == 0, we simply sleep
+ * for a specified period of time and re-open the file to see if there is any new steps came in.
+ * The trick is that when step is being advanced, it is likely that file has
+ * already being appended with new steps. Therefore, we have to close and reopen 
+ * the file if the expected step is not found.
+ * last - 0: next available step, !=0: newest available step 
+ *  RETURN: 0 OK, !=0 on error (also sets adios_errno)
+ *      
+ *  Possible errors (adios_errno values):
+ *       err_end_of_stream    Stream has ended, no more steps should be expected
+ *       err_step_notready    The requested step is not yet available
+ *       err_step_disappeared The requested step is not available anymore
+
+ */
+int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
 {
-    if (fp->current_step >= fp->last_step)
-    {
-        adios_error (err_end_of_stream, "Step %d doesn't exist\n", last);
-        return adios_errno;
-    }
+    BP_PROC * p = (BP_PROC *) fp->fh;
+    BP_FILE * fh = (BP_FILE *) p->fh;
+    int last_step;
+    MPI_Comm comm;
+    char * fname;
 
-    adios_read_bp_release_step (fp);
+    log_debug ("adios_read_bp_advance_step\n");
 
-    if (last == 0) //next step
+    adios_errno = 0;
+    if (last == 0) // read in the next step
     {
-        bp_seek_to_step (fp, fp->current_step++);
+        if (fp->current_step < fp->last_step) // no need to re-open file. The next step is already in.
+        {
+            adios_read_bp_release_step (fp);
+            bp_seek_to_step (fp, ++fp->current_step);
+        }
+        else // re-open to read in footer again. We should keep polling until there are new steps in OR 
+             // time out.
+        {
+            last_step = fp->last_step;
+            fname = (char *) malloc (strlen (fh->fname) + 1);
+            assert (fname);
+            strcpy (fname, fh->fname);
+            comm = fh->comm;
+
+            bp_close (fh);
+
+            get_new_step (fp, fname, comm, last_step, timeout_sec);
+
+            free (fname); 
+            log_debug ("Seek from step %d to step %d\n", last_step, last_step + 1);
+            bp_seek_to_step (fp, last_step + 1);
+            fp->current_step = last_step + 1;
+        }
     }
-    else
+    else // read in newest step. Re-open no matter whether current_step < last_step
     {
+        last_step = fp->last_step;
+        fname = (char *) malloc (strlen (fh->fname) + 1);
+        assert (fname);
+        strcpy (fname, fh->fname);
+        comm = fh->comm;
+
+        bp_close (fh);
+
+        // lockmode is currently not supported.
+        get_new_step (fp, fh->fname, fh->comm, last_step, timeout_sec);
+
         bp_seek_to_step (fp, fp->last_step);
         fp->current_step = fp->last_step;
     }
 
-    return 0;
+    return adios_errno;
 }
 
 void adios_read_bp_release_step (ADIOS_FILE *fp)

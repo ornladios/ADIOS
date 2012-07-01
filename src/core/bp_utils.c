@@ -1017,7 +1017,8 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep)
     t = tostep + 1;
     if (t < fh->tidx_start || t > fh->tidx_stop)
     {
-        adios_error (err_invalid_timestep, "Invalid step: %d\n", tostep);
+        adios_error (err_invalid_timestep, "Invalid step: %d. It should be between [%d,%d]\n",
+                     tostep, fh->tidx_start - 1, fh->tidx_stop - 1);
         return -1;
     }
 
