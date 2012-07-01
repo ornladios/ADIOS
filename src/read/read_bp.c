@@ -1679,17 +1679,39 @@ int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
     BP_PROC * p;
     BP_FILE * fh;
     struct adios_index_var_struct_v1 * v;
-    int retval = 0;
-
-    assert (fp);
+    struct adios_index_characteristic_struct_v1 ch;
+    int retval = 0, ndim, k, dummy, file_is_fortran;
+    uint64_t gdims[32];
 
     p = (BP_PROC *) fp->fh;
     fh = (BP_FILE *) p->fh;
 
     v = bp_find_var_byid (fh, varid);
-    /*
-        retval = this variable had time dimension at write
-    */
+    ch = v->characteristics[0];
+    ndim = ch.dims.count; //ndim possibly has 'time' dimension
+
+    log_debug ("adios_read_bp_is_var_timed: varid = %d, ndim = %d\n", varid, ndim);
+
+    if (ndim == 0)
+    {
+        return 0;
+    }
+
+    for (k = 0; k < ndim; k++)
+    {
+        gdims[k] = ch.dims.dims[k * 3 + 1];
+    }
+
+    if (is_fortran_file (fh))
+    {
+        swap_order (ndim, gdims, &dummy);
+    }
+
+    if (gdims[ndim - 1] == 0) // with time
+    {
+        retval = 1;
+    }
+
     return retval;
 }
 
