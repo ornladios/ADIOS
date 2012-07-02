@@ -281,6 +281,17 @@ cpdef type adios2nptype(ADIOS_DATATYPES t):
 
     return ntype
 
+"""
+cpdef int np2adiostype(np.dtype t):
+    cdef int atype = -1
+    if t.type == np.float64:
+        atype = DATATYPE.double
+    else:
+        atype = -1
+
+    return atype
+"""
+
 cdef printAdiosFile(ADIOS_FILE * f):
     print '%15s : %lu' % ('fh', f.fh)
     print '%15s : %d' % ('groups_count', f.groups_count)
