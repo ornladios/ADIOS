@@ -44,13 +44,19 @@ rm -rf adios-$VERSION
 tar zxf adios-$VERSION.tar.gz
 
 echo "Remove research transport methods"
-rm -f adios-$VERSION/src/adios_adaptive.c
-rm -f adios-$VERSION/src/adios_mpi_stripe.c
-rm -f adios-$VERSION/src/adios_mpi_cio.c
-rm -f adios-$VERSION/src/adios_mpi_stagger.c
-rm -f adios-$VERSION/src/adios_mpi_aggregate.c
-rm -f adios-$VERSION/src/adios_mpi_amr1.c
-rm -f adios-$VERSION/src/adios_provenance.c
+rm -f adios-$VERSION/src/write/adios_adaptive.c
+rm -f adios-$VERSION/src/write/adios_mpi_stripe.c
+rm -f adios-$VERSION/src/write/adios_mpi_cio.c
+rm -f adios-$VERSION/src/write/adios_mpi_stagger.c
+rm -f adios-$VERSION/src/write/adios_mpi_aggregate.c
+rm -f adios-$VERSION/src/write/adios_mpi_amr1.c
+rm -f adios-$VERSION/src/write/adios_provenance.c
+
+echo "Add language wrappers"
+#cp -rpP wrappers adios-$VERSION
+#tar rf adios-$VERSION.tar --exclude .svn wrappers
+#find wrappers | grep -v \.svn | cp  adios-$VERSION 
+tar -cO wrappers --exclude "\.svn" | tar -x -C adios-$VERSION
 
 echo "Repack adios-$VERSION.tar.gz"
 rm -rf adios-$VERSION.tar.gz

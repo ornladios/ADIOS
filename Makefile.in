@@ -337,18 +337,19 @@ SUBDIRS = src utils tests examples
 EXTRA_DIST = runconf \
              KNOWN_BUGS \
              adios_config \
-             tools/matlab/Makefile \
-             tools/matlab/adios.m \
-             tools/matlab/adiosclose.m \
-             tools/matlab/adiosopen.m \
-             tools/matlab/adiosread.m \
-             tools/matlab/adiosclosec.c \
-             tools/matlab/adiosopenc.c \
-             tools/matlab/adiosreadc.c \
              scripts/create.nssi.config.sh \
              scripts/kill.nssi.staging.sh \
              scripts/start.nssi.staging.sh
 
+
+#             wrappers/matlab/Makefile \
+#             wrappers/matlab/adios.m \
+#             wrappers/matlab/adiosclose.m \
+#             wrappers/matlab/adiosopen.m \
+#             wrappers/matlab/adiosread.m \
+#             wrappers/matlab/adiosclosec.c \
+#             wrappers/matlab/adiosopenc.c \
+#             wrappers/matlab/adiosreadc.c 
 bin_SCRIPTS = adios_config $(am__append_1)
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
@@ -571,7 +572,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/scripts $(distdir)/tools/matlab
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/scripts
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

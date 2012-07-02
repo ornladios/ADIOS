@@ -3,17 +3,18 @@ SUBDIRS=src utils tests examples
 EXTRA_DIST = runconf \
              KNOWN_BUGS \
              adios_config \
-             tools/matlab/Makefile \
-             tools/matlab/adios.m \
-             tools/matlab/adiosclose.m \
-             tools/matlab/adiosopen.m \
-             tools/matlab/adiosread.m \
-             tools/matlab/adiosclosec.c \
-             tools/matlab/adiosopenc.c \
-             tools/matlab/adiosreadc.c \
              scripts/create.nssi.config.sh \
              scripts/kill.nssi.staging.sh \
              scripts/start.nssi.staging.sh
+
+#             wrappers/matlab/Makefile \
+#             wrappers/matlab/adios.m \
+#             wrappers/matlab/adiosclose.m \
+#             wrappers/matlab/adiosopen.m \
+#             wrappers/matlab/adiosread.m \
+#             wrappers/matlab/adiosclosec.c \
+#             wrappers/matlab/adiosopenc.c \
+#             wrappers/matlab/adiosreadc.c 
 
 bin_SCRIPTS = adios_config 
 
