@@ -1750,7 +1750,7 @@ static int parseMeshUnstructuredUniformCells (const char * count
             return 0;
         } else
         {
-           conca_att_nam(&cellcount_att_nam, name, "ncell");
+           conca_att_nam(&cellcount_att_nam, name, "ccount");
            adios_common_define_attribute (p_new_group,cellcount_att_nam,"/",adios_string,cell_list->cell_list.count.var->name,"");
            free (cellcount_att_nam);
         }
@@ -1759,7 +1759,7 @@ static int parseMeshUnstructuredUniformCells (const char * count
     {
         cell_list->cell_list.count.var = 0;
         cell_list->cell_list.count.rank = strtod (d1, 0);
-        conca_att_nam(&cellcount_att_nam, name, "ncell");
+        conca_att_nam(&cellcount_att_nam, name, "ccount");
         adios_common_define_attribute (p_new_group,cellcount_att_nam,"/",adios_double,d1,"");
         free (cellcount_att_nam);
     }
