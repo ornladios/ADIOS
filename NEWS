@@ -2,7 +2,7 @@
     - new read API for staging method with step-by-step processing, 
        also with non-blocking and chunking APIs
     - visualization schema added to ADIOS XML format
-    - I/O skeleton generator and evaluation tools
+    - skel: I/O skeleton generator and evaluation tools
     - unified error/debug logging
     - attributes written from only 1 processor to save on metadata
     - ADIOS version identifier in ADIOS-BP format

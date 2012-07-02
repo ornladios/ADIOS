@@ -15,6 +15,7 @@ WRITE
 - time-reset function for appending data to the same timestep ("extend" mode)
 - each method should process parameters from PairStruct, not from string
 - adios_init() should have a communicator parameter
+- F90 module
 
 READ
 ====
@@ -26,12 +27,13 @@ READ
    - have init parameter to show them
 - missing data blocks if read should contain undef values
 + init method parameter: abort_on_error (good for debugging)
++ F90 module
 
 - statistics
   - check if void** or void* arrays should be the per-step stats
   - modify fortran read functions accordingly
   - modify manual 
-  - test the heck out of this best, complex type data too
+  - test the heck out of this beast, complex type data too
 
 BUILD
 =====
