@@ -277,7 +277,6 @@ static int ds_unpack_file_info (ADIOS_FILE *fp, char * buf, int buf_len)
     b += sizeof(int);
 
     fp->nsubfiles = 1; /* FIXME: get the number of DataSpaces servers here */
-    fp->nwriters = 1; /* FIXME: get the number of writers into the packed into */
     fp->file_size = 0;
     fp->version = 1;
     fp->endianness = 0; // FIXME: not always Little Endian. Does it matter? 

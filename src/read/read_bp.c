@@ -1106,7 +1106,7 @@ typedef struct {
     fp->last_step = fh->tidx_stop - 1;
 
     fp->path = strdup (fh->fname);
-    fp->nsubfiles = 
+    fp->nsubfiles = 1;
     fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
     fp->version = fh->mfooter.version;
     fp->file_size = fh->mfooter.file_size;
