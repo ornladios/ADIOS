@@ -441,6 +441,7 @@ AC_CONFIG_FILES([Makefile
                  examples/C/global-array-time/Makefile
                  examples/C/stat/Makefile
                  examples/C/read_all/Makefile
+                 examples/C/schema/Makefile
                  examples/Fortran/Makefile
                  examples/Fortran/scalars/Makefile
                  examples/Fortran/arrays/Makefile

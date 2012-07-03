@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+    <adios-group name="schema" coordination-communicator="comm">
+    <var name="NX"   type="integer"/>
+    <var name="size" type="integer"/>
+    <var name="rank" type="integer"/>
+    <var name="mean" type="double"/>
+    <var name="date" type="string" gwrite="str"/>
+    <var name="D0" type="double"/>
+    <var name="D1" type="double"/>
+    <var name="D2" type="double"/>
+    <var name="X1" type="double"/>
+    <var name="Y1" type="double"/>
+    <var name="Y2" type="double"/>
+    <var name="XYZ" type="double"/>
+    <global-bounds  dimensions="size,NX" offsets="rank,0">
+        <var name="temperature" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
+    </global-bounds>
+    <!-- Mesh1 is correct  -->
+    <mesh name="mesh1" type="rectilinear" time-varying="no">
+        <dimensions value="D0,D1,D2" />
+        <coordinates-single-var value="XYZ" />
+    </mesh>
+    <!-- Mesh1error: variable XY does not exist -->
+    <mesh name="mesh1error" type="rectilinear" time-varying="no">
+        <dimensions value="36,81" />
+        <coordinates-single-var value="XY" />
+    </mesh>
+    <!-- Mesh2 is correct -->
+    <mesh name="mesh2" type="rectilinear" time-varying="no">
+        <dimensions value="30,D2"/>
+        <coordinates-multi-var value="X1,Y1" />
+    </mesh>
+    <!-- Mesh2error: coordinates should point to a var     -->
+    <mesh name="mesh2error" type="rectilinear" time-varying="no">
+        <dimensions value="D1,D2"/>
+        <coordinates-multi-var value="2,Y2" />
+    </mesh>
+    <!-- Mesh2error2: multi coordinates tag, expects 2 vars -->
+    <mesh name="mesh2err2" type="rectilinear" time-varying="no">
+        <dimensions value="D1,D2"/>
+        <coordinates-multi-var value="Y2" />
+    </mesh>
+</adios-group>
+
+<method group="schema" method="MPI"/>
+<buffer size-MB="5" allocate-time="now"/>
+</adios-config>

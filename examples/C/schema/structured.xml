@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+    <adios-group name="schema" coordination-communicator="comm">
+    <var name="NX"   type="integer"/>
+    <var name="size" type="integer"/>
+    <var name="rank" type="integer"/>
+    <var name="mean" type="double"/>
+    <var name="date" type="string" gwrite="str"/>
+    <var name="D0" type="double"/>
+    <var name="D1" type="double"/>
+    <var name="D2" type="double"/>
+    <var name="X1" type="double"/>
+    <var name="X2" type="double"/>
+    <var name="Y1" type="double"/>
+    <var name="Y2" type="double"/>
+    <var name="Z" type="double"/>
+    <global-bounds  dimensions="size,NX" offsets="rank,0">
+        <var name="temperature" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
+    </global-bounds>
+    <!-- Mesh1 is correct -->
+    <mesh name="mesh1" type="structured" time-varying="no">
+        <dimensions value="D1,D2"/>
+        <nspace value="2" />
+        <points-multi-var value="X1,Y1" />
+    </mesh>
+    <!-- Mesh1error: Points need to be variables -->
+    <mesh name="mesh1error" type="structured" time-varying="no">
+        <dimensions value="D1,D2"/>
+        <nspace value="2" />
+        <points-multi-var value="X1,50" />
+    </mesh>
+    <!-- Mesh2 is correct -->
+    <mesh name="mesh2" type="structured" time-varying="no">
+        <dimensions value="30,D2"/>
+        <nspace value="D0" />
+        <points-single-var value="Z" />
+    </mesh>
+    <!-- Mesh2error: Variable Z0 does not exist -->
+    <mesh name="mesh2error" type="structured" time-varying="no">
+        <dimensions value="30,D2" />
+        <nspace value="3" />
+        <points-single-var value="Z0" />
+    </mesh>
+    <!-- Mesh3 is correct -->
+    <mesh name="mesh3" type="structured" time-varying="no">
+        <dimensions value="30,D2"/>
+        <nspace value="D0" />
+        <points-multi-var value="X2,Y2" />
+    </mesh>
+    <!-- Mesh3error: points-multi-var expects 2 variables -->
+    <mesh name="mesh3error" type="structured" time-varying="no">
+        <dimensions value="3,6" />
+        <nspace value="3" />
+        <points-multi-var value="Z" />
+    </mesh>
+    <!-- Mesh 4 is correct -->
+    <mesh name="mesh4" type="structured" time-varying="no">
+        <dimensions value="D1" />
+        <nspace value="1" />
+        <points-single-var value="Y2" />
+    </mesh>
+    <!-- Mesh4error: points-single-var requires nspace  -->
+    <mesh name="mesh4error" type="structured" time-varying="no">
+        <dimensions value="3,6" />
+        <points-single-var value="Z" />
+    </mesh>
+    <!-- Mesh5 is corrent: points-multi-var does not require nspace -->
+    <mesh name="mesh5" type="structured" time-varying="no">
+        <dimensions value="D1,D2"/>
+        <points-multi-var value="X1,Y1" />
+    </mesh>
+    <!-- Mesh5error: structured mesh requires a least dimensiosn and points -->
+    <mesh name="mesh5error" type="structured" time-varying="no">
+    </mesh>
+</adios-group>
+
+<method group="schema" method="MPI"/>
+<buffer size-MB="5" allocate-time="now"/>
+</adios-config>

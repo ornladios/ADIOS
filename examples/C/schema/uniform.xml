@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+    <adios-group name="schema" coordination-communicator="comm">
+    <var name="NX"   type="integer"/>
+    <var name="size" type="integer"/>
+    <var name="rank" type="integer"/>
+    <var name="mean" type="double"/>
+    <var name="date" type="string" gwrite="str"/>
+    <var name="D0" type="double"/>
+    <var name="D1" type="double"/>
+    <var name="O1" type="integer"/>
+    <var name="O2" type="integer"/>
+    <var name="S1" type="integer"/>
+    <var name="M2" type="integer"/>
+    <global-bounds  dimensions="size,NX" offsets="rank,0">
+        <var name="temperature" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
+    </global-bounds>
+    <!-- meshes -->
+    <!-- Mesh1 is correct: Reader will assume 0, origning
+         unit spacing, and extract dimensions from vars --> 
+    <mesh name="mesh1" type="uniform" time-varying="no">
+    </mesh>
+    <!-- Mesh 2 is correct -->
+    <mesh name="mesh2" type="uniform" time-varying="no">
+        <dimensions value="D0" />
+        <origin value="O1" />
+        <spacing value="S1" />
+    </mesh>
+    <!-- Mesh2error: variable D9 does not exist -->
+    <mesh name="mesh2error" type="uniform" time-varying="no">
+        <dimensions value="D9" />
+        <origin value="O1" />
+        <spacing value="S1" />
+    </mesh>
+    <!-- Mesh3 is correct: values can be numbers or variables 
+         Note: Dimensions, origin, spacing and maximum coordinates
+         should match. Ex: 2D ==> 2 values (x,y) for orgs and max
+         However this will be done in the reader when accessing
+         variables dimensions and data                         -->
+    <mesh name="mesh3" type="uniform" time-varying="no">
+        <dimensions value="D1,50" />
+        <origin value="-2,O2" />
+        <spacing value="S1,6" />
+    </mesh>
+    <!-- Mesh 4 is correct and using origin and maximum instead
+         of origin and spacing                              -->
+    <mesh name="mesh4" type="uniform" time-varying="no">
+        <dimensions value="40,60" />
+        <origin value="-2,-1" />
+        <maximum value="400,M2" />
+    </mesh>
+</adios-group>
+
+<method group="schema" method="MPI"/>
+<buffer size-MB="5" allocate-time="now"/>
+</adios-config>
