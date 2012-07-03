@@ -39,7 +39,7 @@ int bp_read_minifooter (struct BP_FILE * bp_struct);
 int bp_parse_pgs (struct BP_FILE * fh);
 int bp_parse_attrs (struct BP_FILE * fh);
 int bp_parse_vars (struct BP_FILE * fh);
-int bp_seek_to_step (ADIOS_FILE * fp, int tostep);
+int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs);
 
 const char * bp_value_to_string (enum ADIOS_DATATYPES type, void * data);
 int bp_get_type_size (enum ADIOS_DATATYPES type, void * var);

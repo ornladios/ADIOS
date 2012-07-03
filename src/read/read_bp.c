@@ -261,7 +261,7 @@ int build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
     fp->last_step = fh->tidx_stop - 1;
 
     /* Seek to the initial step. */
-    bp_seek_to_step (fp, 0);
+    bp_seek_to_step (fp, 0, show_hidden_attrs);
 
     /* For file, the last step is tidx_stop */
     fp->last_step = fh->tidx_stop - 1;
@@ -1002,7 +1002,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
     fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
 
     /* Seek to the initial step. */
-    bp_seek_to_step (fp, 0);
+    bp_seek_to_step (fp, 0, show_hidden_attrs);
 
     /* For file, the last step is tidx_stop */
     fp->last_step = fh->tidx_stop - 1;
@@ -1091,10 +1091,15 @@ typedef struct {
 
     /* fill out ADIOS_FILE struct */
     fp->fh = (uint64_t) p;
+
+/*
     fp->nvars = fh->mfooter.vars_count;
     fp->var_namelist = fh->gvar_h->var_namelist;
     fp->nattrs = fh->mfooter.attrs_count;
     fp->attr_namelist = fh->gattr_h->attr_namelist;
+*/
+    bp_seek_to_step (fp, fh->tidx_stop - 1, show_hidden_attrs);
+
     /* It was agreed that, for file open the current step should be the start time,
      * instead of the stop time. However, the var_namelist and attr_namelist should
      * consist of all steps. For stream open, this is done differently.
@@ -1338,15 +1343,13 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
         if (fp->current_step < fp->last_step) // no need to re-open file. The next step is already in.
         {
             adios_read_bp_release_step (fp);
-            bp_seek_to_step (fp, ++fp->current_step);
+            bp_seek_to_step (fp, ++fp->current_step, show_hidden_attrs);
         }
         else // re-open to read in footer again. We should keep polling until there are new steps in OR 
              // time out.
         {
             last_step = fp->last_step;
-            fname = (char *) malloc (strlen (fh->fname) + 1);
-            assert (fname);
-            strcpy (fname, fh->fname);
+            fname = strdup (fh->fname);
             comm = fh->comm;
 
             bp_close (fh);
@@ -1355,7 +1358,7 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
 
             free (fname); 
             log_debug ("Seek from step %d to step %d\n", last_step, last_step + 1);
-            bp_seek_to_step (fp, last_step + 1);
+            bp_seek_to_step (fp, last_step + 1, show_hidden_attrs);
             fp->current_step = last_step + 1;
         }
     }
@@ -1372,7 +1375,7 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
         // lockmode is currently not supported.
         get_new_step (fp, fh->fname, fh->comm, last_step, timeout_sec);
 
-        bp_seek_to_step (fp, fp->last_step);
+        bp_seek_to_step (fp, fp->last_step, show_hidden_attrs);
         fp->current_step = fp->last_step;
     }
 

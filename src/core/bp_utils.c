@@ -1005,7 +1005,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 }
 
 /* Seek to the specified step and prepare related fields in ADIOS_FILE structure */
-int bp_seek_to_step (ADIOS_FILE * fp, int tostep)
+int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
 {
     int i, j, t;
     struct BP_PROC * p = (struct BP_PROC *) fp->fh;
@@ -1081,12 +1081,18 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep)
 
     while (attr_root)
     {
-        for (i = 0; i < attr_root->characteristics_count; i++)
+        if (!show_hidden_attrs && strstr (attr_root->attr_path, "__adios__"))
         {
-            if (attr_root->characteristics[i].time_index == t)
+        }
+        else
+        {
+            for (i = 0; i < attr_root->characteristics_count; i++)
             {
-                fp->nattrs++;
-                break;
+                if (attr_root->characteristics[i].time_index == t)
+                {
+                    fp->nattrs++;
+                    break;
+                }
             }
         }
 
@@ -1099,29 +1105,35 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep)
     j = 0;
     while (attr_root)
     {
-        for (i = 0; i < attr_root->characteristics_count; i++)
+        if (!show_hidden_attrs && strstr (attr_root->attr_path, "__adios__"))
         {
-            if (attr_root->characteristics[i].time_index == t)
+        }
+        else
+        {
+            for (i = 0; i < attr_root->characteristics_count; i++)
             {
-                if (strcmp (attr_root->attr_path,"/"))
+                if (attr_root->characteristics[i].time_index == t)
                 {
-                    fp->attr_namelist[j] = (char *)malloc (strlen((attr_root)->attr_name)
-                                          + strlen (attr_root->attr_path) + 1 + 1   // extra / and ending \0
-                                          );
-                    strcpy (fp->attr_namelist[j], attr_root->attr_path);
+                    if (strcmp (attr_root->attr_path,"/"))
+                    {
+                        fp->attr_namelist[j] = (char *)malloc (strlen((attr_root)->attr_name)
+                                              + strlen (attr_root->attr_path) + 1 + 1   // extra / and ending \0
+                                              );
+                        strcpy (fp->attr_namelist[j], attr_root->attr_path);
+                    }
+                    else
+                    {
+                        fp->attr_namelist[j] = (char *) malloc (strlen (attr_root->attr_name) + 1 + 1);
+                        fp->attr_namelist[j][0] = '\0';
+                    }
+
+                    strcat (fp->attr_namelist[j], "/");
+                    strcat (fp->attr_namelist[j], attr_root->attr_name);
+
+                    j++;
+
+                    break;
                 }
-                else
-                {
-                    fp->attr_namelist[j] = (char *) malloc (strlen (attr_root->attr_name) + 1 + 1);
-                    fp->attr_namelist[j][0] = '\0';
-                }
-
-                strcat (fp->attr_namelist[j], "/");
-                strcat (fp->attr_namelist[j], attr_root->attr_name);
-
-                j++;
-
-                break;
             }
         }
 
