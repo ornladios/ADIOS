@@ -65,6 +65,7 @@ bool timestep;
 bool noindex;              // do no print array indices with data
 bool printByteAsChar;      // print 8 bit integer arrays as string
 bool plot;                 // dump histogram related information
+bool hidden_attrs;         // show hidden attrs in BP file
 
 // other global variables
 char *prgname; /* argv[0] */
@@ -89,7 +90,7 @@ struct option options[] = {
     {"start",                required_argument,    NULL,    's'}, 
     {"count",                required_argument,    NULL,    'c'}, 
     {"noindex",              no_argument,          NULL,    'y'},
-    {"sort",                 no_argument,          NULL,    'r'},
+//    {"sort",                 no_argument,          NULL,    'r'},
     {"timestep",             no_argument,          NULL,    't'},
     {"attrs",                no_argument,          NULL,    'a'},
     {"attrsonly",            no_argument,          NULL,    'A'},
@@ -97,6 +98,7 @@ struct option options[] = {
     {"string",               no_argument,          NULL,    'S'},
     {"columns",              required_argument,    NULL,    'n'}, 
     {"format",               required_argument,    NULL,    'f'}, 
+    {"hidden_attrs",         no_argument,          &hidden_attrs,    true}, 
     //    {"time",                 required_argument,    NULL,    't'}, 
     {NULL,                   0,                    NULL,    0}
 };
@@ -117,7 +119,9 @@ void display_help() {
             "                               min/max values of arrays (no overhead to get them!)\n"
             "  --attrs     | -a           List/match attributes too\n"
             "  --attrsonly | -A           List attributes only\n"
+            /*
             "  --sort      | -r           Sort names before listing\n"
+            */
             "  --timestep  | -t           Print values of timestep elements\n"
             "  --group     | -g <mask>    List/dump groups matching the mask only\n"
             "  --dump      | -d           Dump matched variables/attributes\n"
@@ -139,6 +143,7 @@ void display_help() {
             "  --columns   | -n \"cols\"    Number of data elements per row to print\n"
             "  --format    | -f \"str\"     Format string to use for one data item in print\n"
             "                               instead of the default. E.g. \"%%6.3f\"\n"
+            "  --hidden_attrs             Show hidden ADIOS attributes in the file\n"
             /*
                "  --time    | -t N [M]      # print data for timesteps N..M only (or only N)\n"
                "                              default is to print all available timesteps\n"
@@ -200,7 +205,7 @@ int main( int argc, char *argv[] ) {
                 display_help();
                 return 0;
             case 'r':
-                sortnames = true;
+                //sortnames = true;
                 break;
             case 'l':
                 longopt = true;
@@ -251,6 +256,10 @@ int main( int argc, char *argv[] ) {
                    lastopt = 't';  // maybe there is a a 2nd arg too
                    break;
                  */
+
+            //case 200:
+            //    hidden_attrs = true;
+            //    break;
 
             case 1:
                 /* This means a field is unknown, or could be multiple arg or bad arg*/
@@ -353,6 +362,7 @@ void init_globals(void) {
     //timeto               = -1;
     use_regexp           = false;
     plot                 = false;
+    hidden_attrs         = false;
     formatgiven          = false;
     printByteAsChar      = false;
     for (i=0; i<MAX_DIMS; i++) {
@@ -402,13 +412,13 @@ void printSettings(void) {
         printf("      -f : dump using printf format \"%s\"\n", format);
     if (output_xml)
         printf("      -x : output data in XML format\n");
+    if (hidden_attrs)
+        printf("         : show hidden attributes in the file\n");
 }
 
-    void bpexit(int code, ADIOS_FILE *fp, ADIOS_GROUP *gp) {
-        if (gp > 0)
-            adios_gclose (gp);
+    void bpexit(int code, ADIOS_FILE *fp) {
         if (fp > 0)
-            adios_fclose (fp);
+            adios_read_close (fp);
         exit(code);
     }
 
@@ -433,46 +443,292 @@ void print_file_size(uint64_t size)
 int print_data_hist(ADIOS_VARINFO * vi, char * varname);
 int print_data_characteristics(void * min, void * max, double * avg, double * std_dev, enum ADIOS_DATATYPES adiosvartype, bool allowformat);
 
-int doList(const char *path) {
-    //int     ntsteps;
+int     nVarsMatched=0;
 
-    ADIOS_FILE  *fp;
-    ADIOS_GROUP *gp; // reused for each group
+int doList_group (ADIOS_FILE *fp)
+{
     ADIOS_VARINFO *vi; 
     enum ADIOS_DATATYPES vartype;
-    int     grpid, i, j, n;             // loop vars
+    int     i, j, n;             // loop vars
     int     status;
     int     attrsize;                       // info about one attribute
     int     mpi_comm_dummy=0;
     bool    matches;
     int     len, maxlen;
-    int     nVarsMatched=0;
-    int     nGroupsMatched=0;
     int     retval;
     char  **names;  // vars and attrs together, sorted or unsorted
     bool   *isVar;  // true for each var, false for each attr
     int     nNames; // number of vars + attrs
     void   *value;  // scalar value is returned by get_attr
+    bool    timed;  // variable has multiple timesteps
+
+
+    if (attrsonly)
+        nNames = fp->nattrs;
+    else if (listattrs)
+        nNames = fp->nvars + fp->nattrs;
+    else 
+        nNames = fp->nvars;
+
+    /*
+       if (sortnames) {
+       if (!attrsonly)
+       qsort(gp->var_namelist, gp->vars_count, sizeof(char *), cmpstringp);
+       if (listattrs)
+       qsort(gp->attr_namelist, gp->attrs_count, sizeof(char *), cmpstringp);
+       }
+     */
+
+    names = (char **) malloc (nNames * sizeof (char*)); // store only pointers
+    isVar = (bool *) malloc (nNames * sizeof (bool));
+    if (names == NULL || isVar == NULL) {
+        fprintf(stderr, "Error: could not allocate char* and bool arrays of %d elements\n", nNames);
+        return 5;
+    }
+    mergeLists(fp->nvars, fp->var_namelist, fp->nattrs, fp->attr_namelist, names, isVar);
+
+    // calculate max length of variable names in the first round
+    maxlen = 4;
+    for (n=0; n<nNames; n++) {
+        len = strlen(names[n]);
+        if (len > maxlen) maxlen = len;
+    }
+
+    /* VARIABLES */
+    for (n=0; n<nNames; n++) {
+        matches = false;
+        if (isVar[n])  {
+            vi = adios_inq_var (fp, names[n]);
+            if (!vi) {
+                fprintf(stderr, "Error: %s\n", adios_errmsg());
+            }
+            vartype = vi->type;
+            timed = adios_read_bp_is_var_timed(fp, vi->varid);
+        } else {
+            retval = adios_get_attr (fp, names[n], &vartype, &attrsize, &value);
+            if (retval) {
+                fprintf(stderr, "Error: %s\n", adios_errmsg());
+            }
+        }
+
+        matches = matchesAMask(names[n]);
+
+        if (matches) {
+            nVarsMatched++;
+
+            // print definition of variable
+            fprintf(outf,"%c %-*s  %-*s", commentchar, 9, adios_type_to_string(vartype), maxlen, names[n]); 
+            if (!isVar[n]) {
+                // list (and print) attribute
+                if (readattrs || dump) {
+                    fprintf(outf,"  attr   = ");
+                    print_data(value, 0, vartype, false); 
+                    fprintf(outf,"\n");
+                    matches = false; // already printed
+                } else {
+                    fprintf(outf,"  attr\n");
+                }
+            } else if (!vi) { 
+                // after error
+                fprintf(outf, "\n");
+            } else if (vi->ndim > 0 || timed) {
+                // array
+                //fprintf(outf,"  {%s%d", (vi->timedim==0 ? "T-": ""),vi->dims[0]);
+
+                fprintf(outf,"  ");
+                if (timed) 
+                    fprintf(outf, "%dx", vi->nsteps);
+                if (vi->ndim > 0) {
+                    fprintf(outf,"{%lld", vi->dims[0]);
+                    for (j=1; j < vi->ndim; j++) {
+                        fprintf(outf,", %lld", vi->dims[j]);
+                    }
+                    fprintf(outf,"}");
+                } else {
+                    fprintf(outf,"scalar");
+                }
+
+                if (longopt || plot) {
+                    status = adios_inq_var_stat (fp, vi, timestep && timed, 0);
+                }
+
+                if (plot && vi->statistics && vi->statistics->histogram) {
+                    print_data_hist(vi, &names[n][1]);
+                }
+
+
+                if (longopt && vi->statistics) {
+
+                    if(timestep == false || timed == false ) {
+
+                        fprintf(outf," = ");
+                        print_data(vi->statistics->min, 0, vartype, false); 
+
+                        fprintf(outf,"/ ");
+                        print_data(vi->statistics->max, 0, vartype, false); 
+
+                        if(vartype == adios_complex || vartype == adios_double_complex) {
+
+                            fprintf(outf,"/ ");
+                            print_data(vi->statistics->avg, 0, adios_double_complex, false);
+                        } else {
+
+                            fprintf(outf,"/ ");
+                            print_data(vi->statistics->avg, 0, adios_double, false);
+                        }
+
+                        if(vartype == adios_complex || vartype == adios_double_complex) {
+
+                            fprintf(outf,"/ ");
+                            print_data(vi->statistics->std_dev, 0, adios_double_complex, false);
+                        } else {
+
+                            fprintf(outf,"/ ");
+                            print_data(vi->statistics->std_dev, 0, adios_double, false);
+                        }
+
+                        //fprintf(outf," {MIN / MAX / AVG / STD_DEV} ");
+                    } else {
+                        int time_start = 0, time_end = vi->nsteps;
+
+                        if (start != NULL) {
+                            if (istart[0] >= 0)
+                                time_start = istart[0];
+                            else
+                                time_start = vi->nsteps - 1 + istart[0];
+                        }
+
+                        if (count != NULL) {
+                            if(icount[0] > 0)
+                                time_end = time_start + icount[0];
+                            else
+                                time_end = vi->nsteps + icount[0] + 1;
+                        }
+
+                        if (time_start < 0 || time_start >= vi->nsteps) {
+                            fprintf (stderr, "Error when reading variable %s. errno=%d : Variable (id=%d) has no data at %d time step\n", names[n], 15, vi->varid, time_start);
+                            bpexit(15,fp);
+                        }
+
+                        if (time_end < 0 || time_end > vi->nsteps) {
+                            fprintf (stderr, "Error when reading variable %s. errno=%d : Variable (id=%d) has no data at %d time step\n", names[n], 15, vi->varid, time_end);
+                            bpexit(16,fp);
+                        }
+
+                        static char *indent_char = " ";
+                        int indent_len=11;
+
+                        /* Start - Print the headers of statistics first */
+                        fprintf(outf, "\n%-*s", indent_len+7, indent_char);
+                        fprintf(outf, "%10s  ", "MIN");
+                        fprintf(outf, "%10s  ", "MAX");
+                        fprintf(outf, "%10s  ", "AVG");
+                        fprintf(outf, "%10s  ", "STD DEV");
+
+                        /* End - Print the headers of statistics first */
+
+                        void *min, *max, *avg, *std_dev;
+                        enum ADIOS_DATATYPES vt = vartype;
+                        struct ADIOS_STAT_STEP *s = vi->statistics->steps;
+                        if (vi->type == adios_complex || vi->type == adios_double_complex)
+                            vt = adios_double;
+                        fprintf(outf, "\n%-*sglobal:", indent_len, indent_char);
+                        print_data_characteristics (vi->statistics->min, 
+                                vi->statistics->max, 
+                                vi->statistics->avg, 
+                                vi->statistics->std_dev, 
+                                vt, false);
+
+                        for(i = time_start; i < time_end; i++) {
+                            min = max = avg = std_dev = 0;
+                            if (s->maxs && s->maxs[i]) max = s->maxs[i];
+                            if (s->mins && s->mins[i]) min = s->mins[i];
+                            if (s->avgs && s->avgs[i]) avg = s->avgs[i];
+                            if (s->std_devs && s->std_devs[i]) std_dev = s->std_devs[i];
+
+                            // Align the output, previous lines has atleast (maxlen + strlen(names[n])) characters
+                            // Better way to printf N spaces?
+                            fprintf(outf, "\n%-*st%-5d:", indent_len, indent_char, i);
+                            print_data_characteristics(min, max, avg, std_dev, vt, false);
+                        }
+                        fprintf(outf, "\n");
+                    }
+                } // longopt && vi->statistics 
+                fprintf(outf,"\n");
+            } else {
+                // scalar
+                fprintf(outf,"  scalar");
+                if (longopt && vi->value) {
+                    fprintf(outf," = ");
+                    print_data(vi->value, 0, vartype, false); 
+                    matches = false; // already printed
+                }
+                fprintf(outf,"\n");
+            }
+        }
+
+        if (matches && dump) {
+            // print variable content 
+            if (isVar[n])
+                retval = readVar(fp, vi, names[n], timed);
+            if (retval && retval != 10) // do not return after unsupported type
+                return retval;
+            fprintf(outf,"\n");
+        }
+
+        if (isVar[n])
+            adios_free_varinfo(vi);
+        else
+            free(value);
+    }
+    free(names);
+    free(isVar);
+    return 0;
+}                
+
+
+int doList(const char *path) {
+    ADIOS_FILE  *fp;
+    int     grpid;     // loop vars
+    int     status;
+    int     mpi_comm_dummy=0;
+    int     nGroupsMatched=0;
+    int     nGroups; // number of groups
+    char  **group_namelist;
+    char    init_params[128];
 
     if (verbose>1) printf("\nADIOS BP open: read header info from %s\n", path);
 
-    // open the BP file
-    fp = adios_fopen (path, mpi_comm_dummy); 
-    if (fp == NULL) {
+    // initialize BP reader
+    strcpy (init_params, "verbose=2");
+    if (hidden_attrs)
+        strcat (init_params, ";show_hidden_attrs");
+    status = adios_read_init_method (ADIOS_READ_METHOD_BP, mpi_comm_dummy, init_params);
+    if (status) {
         fprintf(stderr, "Error: %s\n", adios_errmsg());
-        bpexit(7, 0, 0);
+        bpexit(6, 0);
     }
 
-    // get number of groups, variables, timesteps, and attributes 
+    // open the BP file
+    fp = adios_read_open_file (path, ADIOS_READ_METHOD_BP, mpi_comm_dummy); 
+    if (fp == NULL) {
+        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        bpexit(7, 0);
+    }
+
+    // get number of groups
+    nGroups = adios_get_grouplist (fp, &group_namelist);
+
+    //, variables, timesteps, and attributes 
     // all parameters are integers, 
     // besides the last parameter, which is an array of strings for holding the list of group names
     //ntsteps = fp->tidx_stop - fp->tidx_start + 1;
     if (verbose) {
         printf ("File info:\n");
-        printf ("  of groups:     %d\n", fp->groups_count);
-        printf ("  of variables:  %d\n", fp->vars_count);
-        printf ("  of attributes: %d\n", fp->attrs_count);
-        printf ("  time steps:    %d starting from %d\n", fp->ntimesteps, fp->tidx_start);
+        printf ("  of groups:     %d\n", nGroups);
+        printf ("  of variables:  %d\n", fp->nvars);
+        printf ("  of attributes: %d\n", fp->nattrs);
+        printf ("  time steps:    %d - %d\n", fp->current_step, fp->last_step);
         print_file_size(fp->file_size);
         printf ("  bp version:    %d\n", fp->version);
         printf ("  endianness:    %s\n", (fp->endianness ? "Big Endian" : "Little Endian"));
@@ -482,217 +738,25 @@ int doList(const char *path) {
     }
 
 
-    // each group has to be handled separately
-    for (grpid=0; grpid < fp->groups_count; grpid++) {
-        if (!grpMatchesMask(fp->group_namelist[grpid]))
-            continue;
-        nGroupsMatched++;
-        if (!dump) fprintf(outf, "Group %s:\n", fp->group_namelist[grpid]);
-        gp = adios_gopen_byid (fp, grpid);
-        if (gp == NULL) {
-            fprintf(stderr, "Error: %s\n", adios_errmsg());
-            bpexit(8, fp, 0);
-        }
-
-        if (sortnames) {
-            if (!attrsonly)
-                qsort(gp->var_namelist, gp->vars_count, sizeof(char *), cmpstringp);
-            if (listattrs)
-                qsort(gp->attr_namelist, gp->attrs_count, sizeof(char *), cmpstringp);
-        }
-
-        if (attrsonly)
-            nNames = gp->attrs_count;
-        else if (listattrs)
-            nNames = gp->vars_count + gp->attrs_count;
-        else 
-            nNames = gp->vars_count;
-        names = (char **) malloc (nNames * sizeof (char*)); // store only pointers
-        isVar = (bool *) malloc (nNames * sizeof (bool));
-        if (names == NULL || isVar == NULL) {
-            fprintf(stderr, "Error: could not allocate char* and bool arrays of %d elements\n", nNames);
-            return 5;
-        }
-        mergeLists(gp->vars_count, gp->var_namelist, gp->attrs_count, gp->attr_namelist,
-                names, isVar);
-
-        // calculate max length of variable names in the first round
-        maxlen = 4;
-        for (n=0; n<nNames; n++) {
-            len = strlen(names[n]);
-            if (len > maxlen) maxlen = len;
-        }
-
-        /* VARIABLES */
-        for (n=0; n<nNames; n++) {
-            matches = false;
-            if (isVar[n])  {
-                vi = adios_inq_var (gp, names[n]);
-                if (!vi) {
-                    fprintf(stderr, "Error: %s\n", adios_errmsg());
-                }
-                vartype = vi->type;
-            } else {
-                retval = adios_get_attr (gp, names[n], &vartype, &attrsize, &value);
-                if (retval) {
-                    fprintf(stderr, "Error: %s\n", adios_errmsg());
-                }
+    if (grpmask) {
+        // each group has to be handled separately
+        for (grpid=0; grpid < nGroups; grpid++) {
+            if (!grpMatchesMask(group_namelist[grpid]))
+                continue;
+            nGroupsMatched++;
+            if (!dump) fprintf(outf, "Group %s:\n", group_namelist[grpid]);
+            status = adios_group_view (fp, grpid);
+            if (status) {
+                fprintf(stderr, "Error: %s\n", adios_errmsg());
+                bpexit(8, fp);
             }
 
-            matches = matchesAMask(names[n]);
+            doList_group (fp);
 
-            if (matches) {
-                nVarsMatched++;
-                // print definition of variable
-                fprintf(outf,"%c %-*s  %-*s", commentchar, 9, adios_type_to_string(vartype), maxlen, names[n]); 
-                if (!isVar[n]) {
-                    // list (and print) attribute
-                    if (readattrs || dump) {
-                        fprintf(outf,"  attr   = ");
-                        print_data(value, 0, vartype, false); 
-                        fprintf(outf,"\n");
-                        matches = false; // already printed
-                    } else {
-                        fprintf(outf,"  attr\n");
-                    }
-                } else if (!vi) { 
-                    // after error
-                    fprintf(outf, "\n");
-                } else if (vi->ndim > 0) {
-                    // array
-                    //fprintf(outf,"  {%s%d", (vi->timedim==0 ? "T-": ""),vi->dims[0]);
-                    fprintf(outf,"  {%lld", vi->dims[0]);
-                    for (j=1; j < vi->ndim; j++) {
-                        fprintf(outf,", %lld", vi->dims[j]);
-                    }
-                    fprintf(outf,"}");
-
-                    if (vi->hist && plot) {
-                        print_data_hist(vi, &names[n][1]);
-                    }
-
-                    if (longopt && vi->gmin && vi->gmax) {
-
-                        if(timestep == false || (vi->timedim < 0)) {    
-
-                            fprintf(outf," = ");
-                            print_data(vi->gmin, 0, vartype, false); 
-
-                            fprintf(outf,"/ ");
-                            print_data(vi->gmax, 0, vartype, false); 
-
-                            if(vartype == adios_complex || vartype == adios_double_complex) {
-
-                                fprintf(outf,"/ ");
-                                print_data(vi->gavg, 0, adios_double_complex, false);
-                            } else {
-
-                                fprintf(outf,"/ ");
-                                print_data(vi->gavg, 0, adios_double, false);
-                            }
-
-                            if(vartype == adios_complex || vartype == adios_double_complex) {
-
-                                fprintf(outf,"/ ");
-                                print_data(vi->gstd_dev, 0, adios_double_complex, false);
-                            } else {
-
-                                fprintf(outf,"/ ");
-                                print_data(vi->gstd_dev, 0, adios_double, false);
-                            }
-
-                            //fprintf(outf," {MIN / MAX / AVG / STD_DEV} ");
-                        } else {
-                            int time_start = 0, time_end = vi->dims[0];
-
-                            if (start != NULL) {
-                                if (istart[0] >= 0)
-                                    time_start = istart[0];
-                                else
-                                    time_start = vi->dims[0] - 1 + istart[0];
-                            }
-
-                            if (count != NULL) {
-                                if(icount[0] > 0)
-                                    time_end = time_start + icount[0];
-                                else
-                                    time_end = vi->dims[0] + icount[0] + 1;
-                            }
-
-                            if (time_start < 0 || time_start >= vi->dims[0]) {
-                                fprintf (stderr, "Error when reading variable %s. errno=%d : Variable (id=%d) has no data at %d time step\n", names[n], 15, vi->varid, time_start);
-                                return 15;
-                            }
-
-                            if (time_end < 0 || time_end > vi->dims[0]) {
-                                fprintf (stderr, "Error when reading variable %s. errno=%d : Variable (id=%d) has no data at %d time step\n", names[n], 15, vi->varid, time_end);
-                                return 15;
-                            }
-
-                            static char *indent_char = " ";
-                            int indent_len=11;
-
-                            /* Start - Print the headers of statistics first */
-                            fprintf(outf, "\n%-*s", indent_len+7, indent_char);
-                            fprintf(outf, "%10s  ", "MIN");
-                            fprintf(outf, "%10s  ", "MAX");
-                            fprintf(outf, "%10s  ", "AVG");
-                            fprintf(outf, "%10s  ", "STD DEV");
-
-                            /* End - Print the headers of statistics first */
-
-                            void *min, *max, *avg, *std_dev;
-                            enum ADIOS_DATATYPES vt = vartype;
-                            if (vi->type == adios_complex || vi->type == adios_double_complex)
-                                vt = adios_double;
-                            fprintf(outf, "\n%-*sglobal:", indent_len, indent_char);
-                            print_data_characteristics(vi->gmin, vi->gmax, vi->gavg, vi->gstd_dev, vt, false);
-
-                            for(i = time_start; i < time_end; i++) {
-                                min = max = avg = std_dev = 0;
-                                if (vi->maxs && vi->maxs[i]) max = vi->maxs[i];
-                                if (vi->mins && vi->mins[i]) min = vi->mins[i];
-                                if (vi->avgs && vi->avgs[i]) avg = vi->avgs[i];
-                                if (vi->std_devs && vi->std_devs[i]) std_dev = vi->std_devs[i];
-
-                                // Align the output, previous lines has atleast (maxlen + strlen(names[n])) characters
-                                // Better way to printf N spaces?
-                                fprintf(outf, "\n%-*st%-5d:", indent_len, indent_char, i);
-                                print_data_characteristics(min, max, avg, std_dev, vt, false);
-                            }
-                            fprintf(outf, "\n");
-                        }
-                    }
-                    fprintf(outf,"\n");
-                } else {
-                    // scalar
-                    fprintf(outf,"  scalar");
-                    if (longopt && vi->value) {
-                        fprintf(outf," = ");
-                        print_data(vi->value, 0, vartype, false); 
-                        matches = false; // already printed
-                    }
-                    fprintf(outf,"\n");
-                }
-            }
-
-            if (matches && dump) {
-                // print variable content 
-                if (isVar[n])
-                    retval = readVar(gp, vi, names[n]);
-                if (retval && retval != 10) // do not return after unsupported type
-                    return retval;
-                fprintf(outf,"\n");
-            }
-
-            if (isVar[n])
-                adios_free_varinfo(vi);
-            else
-                free(value);
+            adios_group_view (fp, -1); // reset full view (for next group view)
         }
-        adios_gclose (gp);
-        free(names);
-        free(isVar);
+    } else {
+        doList_group (fp);
     }
 
     if (grpmask != NULL && nGroupsMatched == 0) {
@@ -703,9 +767,11 @@ int doList(const char *path) {
         fprintf(stderr, "\nError: None of the variables matched any name/regexp you provided\n");
         return 4;
     }
-    adios_fclose (fp);
+    adios_read_close (fp);
     return 0;
-}                
+}
+
+
 
 int print_data_hist(ADIOS_VARINFO * vi, char * varname)
 {
@@ -713,6 +779,7 @@ int print_data_hist(ADIOS_VARINFO * vi, char * varname)
     int i;
     char xtics[512], str[512];
     FILE * out_hist, * out_plot;
+    struct ADIOS_HIST *h = vi->statistics->histogram;
 
     memcpy(hist_file,  varname, strlen(varname) + 1);    
     strcat(hist_file, ".hist");
@@ -734,21 +801,21 @@ int print_data_hist(ADIOS_VARINFO * vi, char * varname)
 
     xtics[0] = '\0';
     strcat(xtics, "set xtics offset start axis (");
-    for (i = 0; i <= vi->hist->num_breaks; i++)
+    for (i = 0; i <= h->num_breaks; i++)
     {
         if (i == 0)
         {
-            fprintf(out_hist, "-Inf %.2lf %u\n", vi->hist->breaks[i], vi->hist->gfrequencies[i]);
+            fprintf(out_hist, "-Inf %.2lf %u\n", h->breaks[i], h->gfrequencies[i]);
             sprintf(str, "\"-Inf\" pos(%d)", i); 
         }
-        else if (i < vi->hist->num_breaks)
+        else if (i < h->num_breaks)
         {
-            fprintf(out_hist, "%.2lf %.2lf %u\n", vi->hist->breaks[i - 1], vi->hist->breaks[i], vi->hist->gfrequencies[i]);
-            sprintf(str, ", \"%.2lf\" pos(%d)", vi->hist->breaks[i - 1], i); 
+            fprintf(out_hist, "%.2lf %.2lf %u\n", h->breaks[i - 1], h->breaks[i], h->gfrequencies[i]);
+            sprintf(str, ", \"%.2lf\" pos(%d)", h->breaks[i - 1], i); 
         }
         else     
         {
-            fprintf(out_hist, "%.2lf Inf %u\n", vi->hist->breaks[i], vi->hist->gfrequencies[i]);
+            fprintf(out_hist, "%.2lf Inf %u\n", h->breaks[i], h->gfrequencies[i]);
             sprintf(str, ", \"Inf\" pos(%d)", i); 
         }
         strcat(xtics, str);
@@ -872,11 +939,13 @@ int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize)
 /** Read data of a variable and print 
  * Return: 0: ok, != 0 on error
  */
-int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char * name)
+int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
 {
     int i,j;
     uint64_t start_t[MAX_DIMS], count_t[MAX_DIMS]; // processed <0 values in start/count
     uint64_t s[MAX_DIMS], c[MAX_DIMS]; // for block reading of smaller chunks
+    int tdims;               // number of dimensions including time
+    int tidx;                // 0 or 1 to account for time dimension
     uint64_t nelems;         // number of elements to read
     int elemsize;            // size in bytes of one element
     uint64_t st, ct;
@@ -885,8 +954,9 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char * name)
     int  maxreadn;          // max number of elements to read once up to a limit (10MB of data)
     int  actualreadn;       // our decision how much to read at once
     int  readn[MAX_DIMS];   // how big chunk to read in in each dimension?
-    int64_t bytes_read;     // retval from adios_get_var()
+    int  status;            
     bool incdim;            // used in incremental reading in
+    ADIOS_SELECTION * sel;  // boundnig box to read
 
     if (getTypeInfo(vi->type, &elemsize)) {
         fprintf(stderr, "Adios type %d (%s) not supported in bpls. var=%s\n", 
@@ -898,31 +968,58 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char * name)
     // transfer start and count arrays to format dependent arrays
 
     nelems = 1;
-    for (j=0; j<vi->ndim; j++) {
-        if (istart[j] < 0)  // negative index means last-|index|
-            st = vi->dims[j]+istart[j];
+    tidx = 0;
+
+    if (timed) {
+        if (istart[0] < 0)  // negative index means last-|index|
+            st = vi->nsteps+istart[0];
         else
-            st = istart[j];
-        if (icount[j] < 0)  // negative index means last-|index|+1-start
-            ct = vi->dims[j]+icount[j]+1-st;
+            st = istart[0];
+        if (icount[0] < 0)  // negative index means last-|index|+1-start
+            ct = vi->nsteps+icount[0]+1-st;
         else
-            ct = icount[j];
+            ct = icount[0];
 
         if (verbose>2) 
-            printf("    j=%d, st=%llu ct=%llu\n", j, st, ct);
+            printf("    j=0, st=%llu ct=%llu\n", st, ct);
 
-        start_t[j] = st;
-        count_t[j] = ct;
+        start_t[0] = st;
+        count_t[0] = ct;
         nelems *= ct;
         if (verbose>1) 
-            printf("    s[%d]=%llu, c[%d]=%llu, n=%llu\n", j, start_t[j], j, count_t[j], nelems);
+            printf("    s[0]=%llu, c[0]=%llu, n=%llu\n", 
+                    start_t[0], count_t[0], nelems);
+        
+        tidx = 1;
+    }
+    tdims = vi->ndim + tidx;
+
+    for (j=0; j<vi->ndim; j++) {
+        if (istart[j+tidx] < 0)  // negative index means last-|index|
+            st = vi->dims[j]+istart[j+tidx];
+        else
+            st = istart[j+tidx];
+        if (icount[j] < 0)  // negative index means last-|index|+1-start
+            ct = vi->dims[j]+icount[j+tidx]+1-st;
+        else
+            ct = icount[j+tidx];
+
+        if (verbose>2) 
+            printf("    j=%d, st=%llu ct=%llu\n", j+tidx, st, ct);
+
+        start_t[j+tidx] = st;
+        count_t[j+tidx] = ct;
+        nelems *= ct;
+        if (verbose>1) 
+            printf("    s[%d]=%llu, c[%d]=%llu, n=%llu\n", 
+                    j+tidx, start_t[j+tidx], j+tidx, count_t[j+tidx], nelems);
     }
 
     if (verbose>1) {
         printf(" total size of data to read = %llu\n", nelems*elemsize);
     }
 
-    print_slice_info(vi->ndim, vi->dims, start_t, count_t);
+    print_slice_info(vi->ndim, vi->dims, timed, vi->nsteps, start_t, count_t);
 
     maxreadn = MAX_BUFFERSIZE/elemsize;
     if (nelems < maxreadn)
@@ -946,7 +1043,7 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char * name)
     if (verbose>1) printf("Read size strategy:\n");
     sum = (uint64_t) 1;
     actualreadn = (uint64_t) 1;
-    for (i=vi->ndim-1; i>=0; i--) {
+    for (i=tdims-1; i>=0; i--) {
         if (sum >= (uint64_t) maxreadn) {
             readn[i] = 1;
         } else {
@@ -963,7 +1060,7 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char * name)
 
 
     // init s and c
-    for (j=0; j<vi->ndim; j++) {
+    for (j=0; j<tdims; j++) {
         s[j]=start_t[j];
         c[j]=readn[j];
     }
@@ -974,34 +1071,46 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char * name)
 
         // how many elements do we read in next?
         actualreadn = 1;
-        for (j=0; j<vi->ndim; j++) 
+        for (j=0; j<tdims; j++) 
             actualreadn *= c[j];
 
         if (verbose>2) {
             printf("adios_read_var name=%s ", name);
-            PRINT_DIMS("  start", s, vi->ndim, j); 
-            PRINT_DIMS("  count", c, vi->ndim, j); 
+            PRINT_DIMS("  start", s, tdims, j); 
+            PRINT_DIMS("  count", c, tdims, j); 
             printf("  read %d elems\n", actualreadn);
         }
 
         // read a slice finally
-        bytes_read = adios_read_var_byid (gp, vi->varid, s, c, data); 
+        sel = adios_selection_boundingbox (vi->ndim, s+tidx, c+tidx);
+        if (timed) {
+            status = adios_schedule_read_byid (fp, sel, vi->varid, s[0], c[0], data); 
+        } else {
+            status = adios_schedule_read_byid (fp, sel, vi->varid, 0, 1, data); 
+        }
 
-        if (bytes_read < 0) {
+        if (status < 0) {
+            fprintf(stderr, "Error when scheduling variable %s for reading. errno=%d : %s \n", name, adios_errno, adios_errmsg());
+            free(data);
+            return 11;
+        }
+
+        status = adios_perform_reads (fp, 1); // blocking read performed here
+        if (status < 0) {
             fprintf(stderr, "Error when reading variable %s. errno=%d : %s \n", name, adios_errno, adios_errmsg());
             free(data);
             return 11;
         }
 
-        if (verbose>2) printf("  read %lld bytes\n", bytes_read);
+        //if (verbose>2) printf("  read %lld bytes\n", bytes_read);
 
         // print slice
-        print_dataset(data, vi->type, s, c, vi->ndim, vi->dims); 
+        print_dataset(data, vi->type, s, c, tdims); 
 
         // prepare for next read
         sum += actualreadn;
         incdim=true; // largest dim should be increased 
-        for (j=vi->ndim-1; j>=0; j--) {
+        for (j=tdims-1; j>=0; j--) {
             if (incdim) {
                 if (s[j]+c[j] == start_t[j]+count_t[j]) {
                     // reached the end of this dimension
@@ -1120,19 +1229,25 @@ void print_stop() {
 
 static int nextcol=0;  // column index to start with (can have lines split in two calls)
 
-void print_slice_info(int ndim, uint64_t *dims, uint64_t *s, uint64_t *c)
+void print_slice_info(int ndim, uint64_t *dims, int timed, int nsteps, uint64_t *s, uint64_t *c)
 {
     // print the slice info in indexing is on and 
     // not the complete variable is read
     int i;
     bool isaslice = false;
+    int tidx = (timed == true);
+    int tdim = ndim + tidx;
+    if (timed) {
+        if (c[0] < nsteps) 
+            isaslice = true;
+    }
     for (i=0; i<ndim; i++) {
-        if (c[i] < dims[i])
+        if (c[i+tidx] < dims[i])
             isaslice = true;
     }
     if (isaslice) {
         fprintf(outf,"%c   slice (%lld:%lld", commentchar, s[0], s[0]+c[0]-1);
-        for (i=1; i<ndim; i++) {
+        for (i=1; i<tdim; i++) {
             fprintf(outf,", %lld:%lld", s[i], s[i]+c[i]-1);
         }
         fprintf(outf,")\n");
@@ -1367,7 +1482,7 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
 }
 
 int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype, 
-        uint64_t *s, uint64_t *c, int ndim, uint64_t *dims)
+        uint64_t *s, uint64_t *c, int tdims)
 {
     int i,item, steps;
     char idxstr[128], vstr[128], buf[16];
@@ -1376,7 +1491,7 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
 
     // init current indices
     steps = 1;
-    for (i=0; i<ndim; i++) {
+    for (i=0; i<tdims; i++) {
         ids[i] = s[i];
         steps *= c[i];
     }
@@ -1388,9 +1503,9 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
         // print indices if needed into idxstr;
         idxstr[0] = '\0'; // empty idx string
         if (nextcol == 0) {
-            if (!noindex && ndim > 0) {
+            if (!noindex && tdims > 0) {
                 sprintf(idxstr,"    (%lld",ids[0]);
-                for (i=1; i<ndim; i++) {
+                for (i=1; i<tdims; i++) {
                     sprintf(buf,",%lld",ids[i]);
                     strcat(idxstr, buf);
                 }
@@ -1402,12 +1517,12 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
         fprintf(outf, "%s", idxstr);
         if (printByteAsChar && (adiosvartype == adios_byte || adiosvartype == adios_unsigned_byte)) {
             /* special case: k-D byte array printed as (k-1)D array of strings */
-            if (ndim == 0) {
+            if (tdims == 0) {
                 print_data_as_string(data, steps, adiosvartype);
             } else {
-                print_data_as_string(data+item, c[ndim-1], adiosvartype); // print data of last dim as string
-                item += c[ndim-1]-1; // will be ++-ed once below
-                ids[ndim-1] = s[ndim-1]+c[ndim-1]-1; // will be rolled below
+                print_data_as_string(data+item, c[tdims-1], adiosvartype); // print data of last dim as string
+                item += c[tdims-1]-1; // will be ++-ed once below
+                ids[tdims-1] = s[tdims-1]+c[tdims-1]-1; // will be rolled below
             }
             nextcol = ncols-1; // force new line, will be ++-ed once below
         } else {
@@ -1424,7 +1539,7 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
         // increment indices
         item++;
         roll = true;
-        for (i=ndim-1; i>=0; i--) {
+        for (i=tdims-1; i>=0; i--) {
             if (roll) {
                 if (ids[i] == s[i]+c[i]-1 ) {
                     // last index in this dimension, roll upward
