@@ -13,7 +13,7 @@
     <var name="S1" type="integer"/>
     <var name="M2" type="integer"/>
     <global-bounds  dimensions="size,NX" offsets="rank,0">
-        <var name="temperature" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
+        <var name="temperature" mesh="mesh3" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
     </global-bounds>
     <!-- meshes -->
     <!-- Mesh1 is correct: Reader will assume 0, origning

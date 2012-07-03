@@ -16,7 +16,7 @@
     <var name="Y1" type="double"/>
     <var name="XYZ" type="double"/>
     <global-bounds  dimensions="size,NX" offsets="rank,0">
-        <var name="temperature" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
+        <var name="temperature" mesh="mesh1" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
     </global-bounds>
     <!-- Mesh1 is correct -->
     <mesh name="mesh1" type="unstructured" time-varying="no">
