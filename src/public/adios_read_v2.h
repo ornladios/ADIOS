@@ -45,7 +45,6 @@ typedef struct {
 
         /* Information about file/stream */
         char     *path;             /* Full path file name (as passed at open)                        */
-        int      nsubfiles;         /* Number of sub-files for certain output formats                 */
         int      endianness;        /* 0: little endian, 1: big endian                                */
                                     /*   the read API takes care of conversion automatically          */
         int      version;           /* Version of ADIOS-BP format                                     */

@@ -2083,3 +2083,28 @@ int check_bp_validity (const char * fname)
 
     return flag;
 }
+
+int get_num_subfiles (struct BP_FILE * fh)
+{
+    struct adios_bp_buffer_struct_v1 * b = fh->b;
+    struct adios_index_var_struct_v1 ** vars_root = &(fh->vars_root);
+    struct bp_minifooter * mh = &(fh->mfooter);
+    struct adios_index_var_struct_v1 ** root;
+    int i, j, n = 0;
+
+    root = vars_root;
+    for (i = 0; i < mh->vars_count; i++)
+    {
+        for (j = 0; j < (*root)->characteristics_count; j++)
+        {
+            if ((*root)->characteristics [j].file_index > n)
+            {
+                n = (*root)->characteristics [j].file_index;
+            }
+        }
+    }
+
+    return n + 1;
+}
+
+

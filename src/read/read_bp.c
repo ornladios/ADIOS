@@ -1075,8 +1075,6 @@ typedef struct {
 
         /* Information about file/stream */
         char     *path;             /* Full path file name (as passed at open)                        */
-        int      nsubfiles;         /* Number of sub-files for certain output formats                 */
-        int      nwriters;          /* Number of processes that created the file/stream               */
         int      endianness;        /* 0: little endian, 1: big endian                                */
                                     /*   the read API takes care of conversion automatically          */
         int      version;           /* Version of ADIOS-BP format                                     */
@@ -1106,7 +1104,6 @@ typedef struct {
     fp->last_step = fh->tidx_stop - 1;
 
     fp->path = strdup (fh->fname);
-    fp->nsubfiles = 1;
     fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
     fp->version = fh->mfooter.version;
     fp->file_size = fh->mfooter.file_size;

@@ -276,7 +276,6 @@ static int ds_unpack_file_info (ADIOS_FILE *fp, char * buf, int buf_len)
     glen = *(int*)b; // length of (only) group name
     b += sizeof(int);
 
-    fp->nsubfiles = 1; /* FIXME: get the number of DataSpaces servers here */
     fp->file_size = 0;
     fp->version = 1;
     fp->endianness = 0; // FIXME: not always Little Endian. Does it matter? 
