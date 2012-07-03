@@ -1004,7 +1004,11 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
     return 0;
 }
 
-/* Seek to the specified step and prepare related fields in ADIOS_FILE structure */
+/* Seek to the specified step and prepare a few fields
+ * in ADIOS_FILE structure, i.e., nvars, var_namelist,
+ * nattrs, attr_namelist. This routine also sets the
+ * current_step in ADIOS_FILE.
+ */
 int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
 {
     int i, j, t;
@@ -1081,7 +1085,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
 
     while (attr_root)
     {
-        if (!show_hidden_attrs && strstr (attr_root->attr_path, "__adios__"))
+        if (!show_hidden_attrs && !strstr (attr_root->attr_path, "__adios__"))
         {
         }
         else
@@ -1105,7 +1109,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     j = 0;
     while (attr_root)
     {
-        if (!show_hidden_attrs && strstr (attr_root->attr_path, "__adios__"))
+        if (!show_hidden_attrs && !strstr (attr_root->attr_path, "__adios__"))
         {
         }
         else

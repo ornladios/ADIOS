@@ -238,13 +238,14 @@ static BP_FILE * open_file (const char * fname, MPI_Comm comm)
     return fh;
 }
 
-/* This routine set ADIOS_FILE fields according to fh */
+/* This routine set ADIOS_FILE fields from fh */
 int build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
 {
     BP_PROC * p;
     int rank;
 
     log_debug ("build_ADIOS_FILE_struct is called\n");
+
     MPI_Comm_rank (fh->comm, &rank);
 
     p = (struct BP_PROC *) malloc (sizeof (struct BP_PROC));
@@ -552,13 +553,13 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     // we need to read only the first PG, not all, so let's prevent a second loop
                     stop_idx = start_idx;
                 }
-
+/*
                 log_debug ("ldims   = "); for (j = 0; j<ndim; j++) log_debug_cont ("%d ",ldims[j]); log_debug_cont ("\n");
                 log_debug ("gdims   = "); for (j = 0; j<ndim; j++) log_debug_cont ("%d ",gdims[j]); log_debug_cont ("\n");
                 log_debug ("offsets = "); for (j = 0; j<ndim; j++) log_debug_cont ("%d ",offsets[j]); log_debug_cont ("\n");
                 log_debug ("count   = "); for (j = 0; j<ndim; j++) log_debug_cont ("%d ",count[j]); log_debug_cont ("\n");
                 log_debug ("start   = "); for (j = 0; j<ndim; j++) log_debug_cont ("%d ",start[j]); log_debug_cont ("\n");
-                
+*/                
                 for (j = 0; j < ndim; j++)
                 {
                     payload_size *= ldims [j];
@@ -604,9 +605,9 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 hole_break = i;
                 slice_offset = 0;
                 slice_size = 0;
-
+/*
                 log_debug ("hole_break = %d\n", hole_break);
-
+*/
                 if (hole_break == -1)
                 {
                     /* The complete read happens to be exactly one pg, and the entire pg */
@@ -885,6 +886,8 @@ int adios_read_bp_init_method (MPI_Comm comm, PairStruct * params)
         else if (!strcasecmp (p->name, "show_hidden_attrs"))
         {
             show_hidden_attrs = 1;
+
+            log_debug ("show_hidden_attrs is set\n");
         }
 
         p = p->next;
@@ -895,12 +898,16 @@ int adios_read_bp_init_method (MPI_Comm comm, PairStruct * params)
 
 int adios_read_bp_finalize_method ()
 {
+    /* Set these back to default */
+    chunk_buffer_size = 1024*1024*16;
+    poll_interval = 10; // 10 secs by default
+    show_hidden_attrs = 0; // don't show hidden attr by default
+
     return 0;
 }
 
 static int open_stream (ADIOS_FILE * fp, const char * fname, 
-                        MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, 
-                        float timeout_sec)
+                        MPI_Comm comm, float timeout_sec)
 {
     int i, rank, ret;
     struct BP_PROC * p;
@@ -1011,8 +1018,8 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
 }
 
 /* As opposed to open_file, open_stream opens the first step in the file only.
-   The lock_mode for file reading is ignored.
-*/
+ * The lock_mode for file reading is ignored for now.
+ */
 ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
 {
     log_debug ("adios_read_bp_open_stream\n");
@@ -1020,7 +1027,7 @@ ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum 
     ADIOS_FILE * fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
     assert (fp);
 
-    if (open_stream (fp, fname, comm, lock_mode, timeout_sec) < 0)
+    if (open_stream (fp, fname, comm, timeout_sec) < 0)
     {
         free (fp);
         fp = 0;
@@ -1092,12 +1099,7 @@ typedef struct {
     /* fill out ADIOS_FILE struct */
     fp->fh = (uint64_t) p;
 
-/*
-    fp->nvars = fh->mfooter.vars_count;
-    fp->var_namelist = fh->gvar_h->var_namelist;
-    fp->nattrs = fh->mfooter.attrs_count;
-    fp->attr_namelist = fh->gattr_h->attr_namelist;
-*/
+    /* This will seek to the last step. So we need to set current_step back properly */
     bp_seek_to_step (fp, fh->tidx_stop - 1, show_hidden_attrs);
 
     /* It was agreed that, for file open the current step should be the start time,
@@ -1357,7 +1359,9 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
             get_new_step (fp, fname, comm, last_step, timeout_sec);
 
             free (fname); 
+
             log_debug ("Seek from step %d to step %d\n", last_step, last_step + 1);
+
             bp_seek_to_step (fp, last_step + 1, show_hidden_attrs);
             fp->current_step = last_step + 1;
         }
