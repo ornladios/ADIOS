@@ -3273,9 +3273,9 @@ static int parseGroup (mxml_node_t * node)
                 // Successfully define a variable, so now 
                 // an attribute for the mesh if it exists.
                 if (strcmp(mesh,"")){
-                    mpath = malloc(strlen("/__mesh")+strlen(name)+1);
+                    mpath = malloc(strlen("/adios_schema")+strlen(name)+1);
                     strcpy(mpath,name);
-                    strcat(mpath,"/__mesh");
+                    strcat(mpath,"/adios_schema");
                     adios_common_define_attribute (ptr_new_group,mpath,path,adios_string,mesh,"");
                 }
             }
@@ -3418,9 +3418,9 @@ static int parseGroup (mxml_node_t * node)
                         // Successfully define a variable, so now 
                         // an attribute for the mesh if it exists.
                         if (strcmp(mesh,"")){
-                            mpath = malloc(strlen("/__mesh")+strlen(name)+1);
+                            mpath = malloc(strlen("/adios_schema")+strlen(name)+1);
                             strcpy(mpath,name);
-                            strcat(mpath,"/__mesh");
+                            strcat(mpath,"/adios_schema");
                             adios_common_define_attribute (ptr_new_group,mpath,path,adios_string,mesh,"");
                          }
                     }
@@ -3709,8 +3709,8 @@ static int parseGroup (mxml_node_t * node)
 
 // concat numbered attribute name strings
 void conca_numb_att_nam(char ** returnstr, const char * meshname, char * att_nam, char counterstr[5]) {
-    *returnstr = malloc (strlen("__mesh/") + strlen(meshname) + strlen(att_nam) + strlen(counterstr) + 3);
-    strcpy(*returnstr,"__mesh");
+    *returnstr = malloc (strlen("adios_schema/") + strlen(meshname) + strlen(att_nam) + strlen(counterstr) + 3);
+    strcpy(*returnstr,"adios_schema");
     strcat(*returnstr,"/");
     strcat(*returnstr,meshname);
     strcat(*returnstr,"/");
@@ -3721,7 +3721,7 @@ void conca_numb_att_nam(char ** returnstr, const char * meshname, char * att_nam
 // concat attribute name strings
 void conca_att_nam(char ** returnstr, const char * meshname, char * att_nam) {
     int slength = 0;
-    slength = strlen("__mesh/");
+    slength = strlen("adios_schema/");
     slength = slength + strlen(meshname);
     slength = slength + 1;
     slength = slength + 1;
@@ -3729,7 +3729,7 @@ void conca_att_nam(char ** returnstr, const char * meshname, char * att_nam) {
 
     *returnstr = malloc (slength);
 
-    strcpy(*returnstr,"__mesh/");
+    strcpy(*returnstr,"adios_schema/");
     strcat(*returnstr,meshname);
     strcat(*returnstr,"/");
     strcat(*returnstr,att_nam);
