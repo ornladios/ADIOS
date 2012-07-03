@@ -82,289 +82,761 @@ Example codes using the C API are
 \item examples/C/global-array/adios\_read\_global
 \end{itemize}
 
-\subsection{adios\_errmsg / adios\_errno}
+\subsubsection*{adios\_read\_init\_method}
+Initialize a reading method before opening a file/stream with using 
+the method.
+Initialization is required for the staging methods, where init/finalize 
+perform the connection/disconnection to the staging server once.
+The ADIOS\_READ\_METHOD\_BP does not need to be initialized/finalized. 
 
-\begin{lstlisting}[]
-int    adios_errno
-char * adios_errmsg()
+\begin{itemize}
+\item{\bf method} Read method to use.
+\item{\bf comm} MPI communicator of all processes participating in a file/stream operation
+\item{\bf parameters} A series of name=value pairs separated by ";".  E.g. "max\_memory=200; app\_id = 1"
+List of parameters is documented for each method separately. 
+\end{itemize}
+
+The function returns 0 on success, $<0$ on an error.
+
+\begin{lstlisting}[language=C,caption=Initialize for reading]
+
+int adios_read_init_method (enum ADIOS_READ_METHOD method, 
+                            MPI_Comm comm, 
+                            const char * parameters);
+
 \end{lstlisting}
 
-If an error occurrs during the call of a C api function, it either returns NULL 
-(instead of a pointer to an allocated structure) or a negative number. It also 
-sets the integer adios\_errno variable (the negative return value is actually -1 
-times the errno value). Moreover, it prints the error message into an internal 
-buffer, which can be retrieved by adios\_errmsg(). 
+\subsubsection*{adios\_read\_finalize\_method}
 
-Note that adios\_errmsg() returns the pointer to the internal buffer instead of 
-duplicating the string, so refrain from writing anything into it. Also, only the 
-last error message is available at any time.
+Finalize the selected method. Required for all methods that are initialized. 
+\begin{itemize}
+\item{\bf method} Read method to finalize. 
+\end{itemize}
 
-\subsection{adios\_set\_read\_method}
-\begin{lstlisting}[]
-/** Set the reading method for the next adios_fopen.
-  *  IN:  method   read method to use
-  *  RETURN:       0 if accepted, <0 on error
-  *  It is optional to use it before calling adios_fopen. 
-  *  Default is ADIOS_READ_METHOD_BP.
-  */
-int adios_set_read_method (enum ADIOS_READ_METHOD method);
+\begin{lstlisting}[language=C,caption=Finalize a read method.]
+
+int adios_read_finalize_method(enum ADIOS_READ_METHOD method);
 \end{lstlisting}
 
-This API sets the reading method for the subsequent adios\_fopen. The methods supported 
-as of ADIOS 1.3 include
+\subsubsection*{adios\_read\_open\_stream}
+Open an adios file/stream as a stream.
+Only one step at a time can be read. The list of variables will change when
+advancing the step if the writing application writes different variables at
+different times. 
 
-\begin{lstlisting}[]
-enum ADIOS_READ_METHOD {
-  ADIOS_READ_METHOD_BP = 0,    /* Read from ADIOS BP file (written by POSIX,
-                                   MPI etc methods) */
-  ADIOS_READ_METHOD_BP_STAGED = 1,    /* Read from ADIOS BP file (written by
-                                         POSIX, MPI_AMR etc methods) */
-  ADIOS_READ_METHOD_HDF5 = 2,    /* Read from HDF5 file (written by PHDF5 method) */
-  ADIOS_READ_METHOD_DART = 3,    /* Read from memory written by DART method */
-  ADIOS_READ_METHOD_DIMES = 4,    /* Read from memory written by DIMES method */
-  ADIOS_READ_METHOD_NSSI = 5,    /* Read from memory written by NSSI method */
-  ADIOS_READ_METHOD_DATATAP = 6    /* Read from memory written by DATATAP method */
-};
+\begin{itemize}
+\item{\bf fname}  Pathname of file/stream to be opened.
+\item{\bf method}  Read method to use for this particular stream.
+\item{\bf comm}    The MPI communicator of all processes that want to read data from the stream.
+If compiled with -D\_NOMPI, pass any integer here.
+\item{\bf lock\_mode} In case of real streams, a step may need to be locked in memory to be able
+to read all data of the step completely.
+\item{\bf timeout\_sec}  $>=0.0$: block until the stream becomes available but 
+for max 'timeout\_sec' seconds.\\
+$0.0$: return immediately if stream is not available\\
+$<0.0$: block possibly forever.\\
+Note: $<0.0$ does not ever return with err\_file\_not\_found error, 
+which is dangerous if the stream name is simply mistyped in the code.
+\end{itemize}
+The function returns a pointer to an ADIOS\_FILE struct on success, NULL on error with setting adios\_errno. 
+Possible errors (adios\_errno values)
+\begin{itemize}
+\item{\bf err\_file\_not\_found\_error}  File/stream does not exist / not yet available.
+\item{\bf err\_end\_of\_stream}  Stream has ended, nothing is available and no more steps should be expected.
+\end{itemize}
+
+
+\begin{lstlisting}[language=ADIOS]
+ADIOS_FILE * adios_read_open_stream (const char * fname, 
+                                     enum ADIOS_READ_METHOD method, 
+                                     MPI_Comm comm, 
+                                     enum ADIOS_LOCKMODE lock_mode,
+                                     float timeout_sec);
 \end{lstlisting}
 
-It is optional to use before calling adios\_fopen. The default is ADIOS\_READ\_METHOD\_BP. 
-Note for ADIOS\_READ\_METHOD\_BP\_STAGED method, two shell environment variables 
-must be set before executing, namely, num\_aggregators, which specifies the number 
-of readers to use, and chunk\_size, which specifies the size of the chunk to read 
-in for each read request.
+\subsubsection*{adios\_read\_open\_file}
+Open an adios file as a file.
 
-\begin{lstlisting}[]
-export num_aggregators=1
-export chunk_size=16
+Each variable can have different number of steps. Arbitrary steps of a variable
+can be read at any time. The number of steps is reported in the last\_step 
+field of the returned ADIOS\_FILE struct, while current\_step is always 1.
+
+\begin{itemize}
+\item{\bf fname}    Pathname of file to be opened.
+\item{\bf method}   Read method to use for this particular file.
+\item{\bf comm}     The MPI communicator of all processes that want to read data from the file. If compiled with -D\_NOMPI, pass any integer here.
+\end{itemize}
+
+The function returns a pointer to an ADIOS\_FILE struct, NULL on error (sets adios\_errno). 
+
+Possible errors (adios\_errno values)
+\begin{itemize}
+\item{\bf err\_file\_not\_found\_error}  File does not exist. 
+\end{itemize}
+
+\begin{lstlisting}[language=ADIOS]
+ADIOS_FILE * adios_read_open_file (const char * fname, enum ADIOS_READ_METHOD method, MPI_Comm comm);
 \end{lstlisting}
 
-\subsection{adios\_fopen }
+\subsubsection*{adios\_read\_close}
+Close an adios file. It will free the content of the underlying data structures and the fp pointer itself.
 
-\begin{lstlisting}[]
-ADIOS\_FILE * adios_fopen (const char * fname, MPI_Comm comm)
+\begin{itemize}
+\item{\bf fname}    Pathname of file to be opened.
+\item{\bf method} Read method to use for this particular file.
+\item{\bf comm}  The MPI communicator of all processes that want to read data from the file. 
+	If compiled with -D\_NOMPI, pass any integer here.
+\end{itemize}
+
+The function returns 0 on success, $!=0$ on error (also sets adios\_errno).
+
+\begin{lstlisting}[language=ADIOS]
+int adios_read_close (ADIOS_FILE *fp);
+
 \end{lstlisting}
 
-ADIOS FILE is a struct of
+\subsubsection*{adios\_advance\_step}
+Advance the current step of a stream.
+In case of streams, 
+\begin{enumerate}
+\item An error should be expected for any step, 
+since that might not yet be available 
+\item Also, only the current step can be read.
+\item Seeking to step N informs the read method that all steps 
+before N can be removed if space is needed.
+\end{enumerate}
+For files opened as file, stepping has no effect.
 
-\begin{lstlisting}[]
-uint64_t fh;            /*File handler*/
-int groups_count;       /*Number of adios groups in file*/      
-int vars_count;         /*Number of variables in all groups*/  
-int attrs_count;        /*Number of attributes in all groups*/
-int tidx_start;         /*First timestep in file, usually 1*/
-int ntimesteps;         /*Number of timesteps in file.*/ 
-                        /*There is always at least one timestep*/
-int version;            /*ADIOS BP version of file format*/  
-uint64_t file_size;     /*Size of file in bytes*/ 
-int  endianness;        /*0: little endian, 1: big endian*/ 
-                        /*You do not need to care about this.*/
-char ** group_namelist; /*Names of the adios groups in
-                          the file (cf. groups_count)*/
+\begin{itemize}
+\item{\bf fp}       Pointer to an ADIOS\_FILE struct.
+\item{\bf last}     $0$: next available step, $!=0$: newest available step 
+ \item{bf timeout\_sec}  $>=0.0$: block until the next step becomes available but 
+for max 'timeout\_sec' seconds.\\
+$0.0$ means return immediately if step is not available.\\
+$<0.0$: block forever if necessary.
+\end{itemize}
+
+Function returns 0 on success, $!=0$ on error (also sets adios\_errno).
+
+Possible errors (adios\_errno values):
+\begin{itemize}
+\item{err\_end\_of\_stream}    Stream has ended, no more steps should be expected
+\item{\bf err\_step\_notready}    The requested step is not yet available.
+\item{\bf err\_step\_disappeared} The requested step is not available anymore.
+\end{itemize}
+
+\begin{lstlisting}[language=ADIOS]
+int adios_advance_step (ADIOS_FILE *fp, int last, float timeout_sec); 
 \end{lstlisting}
 
-The array for the list of group names is allocated in the function and is freed 
-in the close function.
+\subsubsection*{adios\_release\_step}
+Release a step in a stream without seeking to the next step.
+This function is to inform the read method that the current step is
+no longer needed, but the reader does not yet want to read another step.
+This function releases the lock on the step only. The current step is not
+changed in the ADIOS\_FILE struct, but reading any variable may fail due to
+removal. If no locking is requested at open time, this function has no
+effect at all.
+\verb+adios_advance_step()+ also releases the step from which one advances 
+forward so it is not necessary to call this function.
 
-If you use the MPI version of the library, pass the communicator, which is the 
-communicator of all processes that call the open function. Rank=0 process broadcasts 
-the metadata to the other processes so that we avoid opening the file from many 
-processes at once.  If you use the non-MPI version of the library, just pass on 
-an arbitrary integer value, which is not used at all. 
-
-\subsection{adios\_fclose}
-
-\begin{lstlisting}[]
-int adios_fclose (ADIOS\_FILE *fp)
+\begin{lstlisting}[language=ADIOS]
+void adios_release_step (ADIOS_FILE *fp);
 \end{lstlisting}
 
-You are expected to close a file when you do not need it anymore. This function 
-releases a lot of internal memory structures.
+\subsubsection*{adios\_inq\_var}
+Inquires about a variable.
+This function does not read anything from the file but processes info
+already in memory after fopen.
+It allocates memory for the ADIOS\_VARINFO struct and content, so
+you need to free resources later with adios\_free\_varinfo().
 
-\subsection{adios\_gopen / adios\_gopen\_byid}
+Note that you can get a scalar variable's value (including strings)
+with this operation without touching the file/stream.
+The 'stats' element will be NULL after this call. To get the statistics, 
+another call must be made after this: adios\_inq\_var\_stat().
+The 'blocks' element will be NULL after this call. To get the decomposition
+of a variable in the file/stream, another call must be made after this: 
+adios\_inq\_var\_blockinfo().
 
-\begin{lstlisting}[]
-ADIOS_GROUP * adios_gopen (ADIOS_FILE *fp, const char * grpname)
+\begin{itemize}
+ \item{\bf fp} Pointer to an (opened) ADIOS\_FILE struct.
+\item{\bf varname}  Name of the variable.
+\end{itemize}
+Function returns a pointer to an ADIOS\_VARINFO struct, NULL on error (sets adios\_errno).
 
-ADIOS_GROUP * adios_gopen_byid (ADIOS_FILE *fp, int grpid)
+\begin{lstlisting}[language=ADIOS]
+ADIOS_VARINFO * adios_inq_var (ADIOS_FILE *fp, const char * varname);
+
 \end{lstlisting}
 
-You need to open a group to get access to its variables and attributes. You can 
-open a group either by its name returned in the ADIOS\_FILE struct's group\_namelist 
-list of strings or by its index, which is the index of its name in this list of 
-names. 
+\subsubsection*{adios\_inq\_var\_byid}
+This function is the same as adios\_inq\_var but uses a numerical index instead of a name to reference the variable. 
 
-You \textit{can} have several groups open at the same time.
+\begin{itemize}
+\item{\bf varid}    index of variable (0..fp->nvars-1)
+in fp->vars\_namelist of ADIOS\_FILE struct
+\end{itemize}
+Function returns a pointer to an  ADIOS\_VARINFO struct, NULL on error (sets adios\_errno).
 
-ADIOS\_GROUP is a struct of
-
-\begin{lstlisting}[]
-uint64_t gh;           /*Group handler*/
-int grpid;             /*group index (0..ADIOS\_FILE.groups\_count-1)*/
-int vars_count;        /*Number of variables in this adios group*/
-char ** var_namelist;  /*Variable names in a char* array*/ 
-int attrs_count;       /*Number of attributes in this adios group*/
-char ** attr_namelist; /*Attribute names in a char* array*/ 
-ADIOS_FILE * fp;       /*pointer to the parent ADIOS\_FILE struct*/  
+\begin{lstlisting}[language=ADIOS]
+ADIOS_VARINFO * adios_inq_var_byid (ADIOS_FILE *fp, int varid);
 \end{lstlisting}
 
-The arrays for the list of variable names and attribute name are allocated in the 
-function and are freed in the group close function.
+\subsubsection*{adios\_free\_varinfo}
+Free memory used by an ADIOS\_VARINFO struct. 
+\begin{itemize}
+\item{\bf cp} The ADIOS\_VARINFO struct that needs to be free'd. 
+\end{itemize}
+Function does not return any value.
 
-Note that one can modify the ADIOS\_GROUP's namelists because they are not used 
-in the discovery of the variables. However, in index-based queries below, the index 
-of the variable is the index of the variable's position in the original order of 
-the list. If one sorts this list for ordered printouts, one need to remember the 
-original indices of the variables or to identify the variables by name. 
-
-\subsection{adios\_gclose}
-
-\begin{lstlisting}[]
-int adios_gclose (ADIOS_GROUP *gp)
+\begin{lstlisting}[language=ADIOS]
+void adios_free_varinfo (ADIOS_VARINFO *cp);
 \end{lstlisting}
 
-You need to close the group when you do not need it anymore. 
+\subsubsection*{adios\_inq\_var\_stat}
+Get statistics recorded about a variable. The information to calculate the statistics are recorded in the metadata,
+so no extra file access is necessary after adios\_fopen() for this operation.
+The result is stored in the ADIOS\_VARSTAT struct under varinfo.stats. 
+adios\_free\_varinfo() will free the extra memory allocated in this call.
+\begin{itemize}
+\item{\bf fp}  Pointer to an (opened) ADIOS\_FILE struct.
+\item{\bf  varinfo}        Result of adios\_inq\_var(). 
+\item{\bf per\_step\_stat}  $!=0$: return statistics also per step
+\item{\bf per\_block\_stat} $!=0$: return statistics also per writer block 
+\end{itemize}
+Function returns 0 on success, $!=0$ on error (also sets adios\_errno). 
 
-\subsection{adios\_inq\_var / adios\_inq\_var\_byid}
-\label{section:read_api_adios_inq_var}
-
-\begin{lstlisting}[]
-ADIOS_VARINFO * adios_inq_var (ADIOS_GROUP *gp, const char * varname)
-ADIOS_VARINFO * adios_inq_var_byid (ADIOS_GROUP *gp, int varid)
+\begin{lstlisting}[language=ADIOS]
+int adios_inq_var_stat (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
+                        int per_step_stat, int per_block_stat);
 \end{lstlisting}
 
-This function should be used if you want to discover the type and dimensionality 
-of a variable or want to get the minimum/maximum/average/standard\_deviation values 
-without reading in the data. You can refer to the variable with its name (full 
-path) in the ADIOS\_GROUP struct's var\_namelist or by the index in that list. 
+\subsubsection*{adios\_inq\_var\_blockinfo}
+Get the block-decomposition of the variable about how it is stored in 
+the file or stream. The decomposition information are recorded in the
+metadata, so no extra file access is necessary after adios\_fopen() for 
+this operation. The result is stored in the array of 
+ADIOS\_VARBLOCK structs under varinfo.blocks. 
 
-ADIOS\_VARINFO structure is allocated in the function but there is no corresponding 
-closing function, therefore user has to free the ADIOS\_VARINFO* pointer yourself 
-when you do not need it anymore by using the adios\_free\_varinfo() function.
+adios\_free\_varinfo() will free the extra memory allocated in this call.
+\begin{itemize} 
+\item{\bf fp}       Pointer to an (opened) ADIOS\_FILE struct.
+\item{\bf varinfo}  Result of adios\_inq\_var(). 
+\end{itemize}
+Function returns 0 on success, $!=0$ on error (also sets adios\_errno).
 
-ADIOS\_VARINFO is a struct of 
-
-\begin{lstlisting}[]
-int  grpid;     /*group index (0..ADIOS\_FILE.groups\_count-1)*/
-int  varid;     /*variable index (0..ADIOS\_GROUP.var\_count-1)*/
-enum ADIOS_DATATYPES type;   /*type of variable*/
-int ndim;       /*number of dimensions, 0 for scalars*/ 
-uint64_t * dims;/*size of each dimension*/ 
-int timedim;    /* -1: variable has no timesteps in file.
-                  >=0: which dimension is time*/
-void * value;   /*value of a scalar variable, NULL for array.*/
-void * gmin;    /*minimum value in an array variable.*/ 
-void * gmax;    /*maximum value of an array variable*/ 
-void * gavg;    /*average value of an array variable*/
-void * gstd_dev;/*standard deviation value of an array variable
-                  (over all timesteps, for scalars they are = value)*/
-void * mins;    /*minimum per each timestep*/ 
-void * maxs;    /*maximum per each timestep*/
-void * avgs;    /*average per each timestep*/
-void * std_dev; /*standard deviation per each timestep
-                  (array of timestep elements)*/
-struct ADIOS_HIST {
-    uint32\_t num_breaks;  /*number of break points of the histogram*/
-    double min;            /*minimum of binning boundary*/ 
-    double max;            /*maximum of binning boundary*/ 
-    double * breaks;       /*break points of the histogram*/
-    uint32_t **frequencies;/*histogram values per timestep*/
-    uint32_t *gfrequencies;/*histogram values for all timesteps*/
-} *hist;        /*NULL if histogram binning interval was not 
-                  formed correctly at write time*/
+\begin{lstlisting}[language=ADIOS]
+int adios_inq_var_blockinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
 \end{lstlisting}
 
-For complex numbers, the statistics in ADIOS\_VARINFO, like gmin, gavg, std\_devs 
-etc, are of base type double. They also have an additional dimension that stores 
-the statistics for the magnitude, the real part, and the imaginary part of the 
-complex number, individually. For example, gmin[0] holds the overall minimum value 
-of the magnitude of the complex numbers. gmin[1] and gmin [2] contain the global 
-minimums for the real and the imaginary parts, respectively. 
+\subsubsection*{adios\_schedule\_read}
+Schedule reading a variable (slice) from the file.
+You need to allocate the memory for the data and call adios\_perform\_reads() to 
+complete the reading of the variables.
 
-\subsection{adios\_free\_varinfo}
+\begin{itemize}
+\item{\bf  fp}         Pointer to an (opened) ADIOS\_FILE struct.
+\item{\bf  sel}        Selection created beforehand with adios\_selection...().
+                 sel=NULL means global selection (whole variable)
+\item{\bf  varname}    Name of the variable.
+\item{\bf  from\_step}  Read the 'nsteps' consecutive steps from this 
+step of a file variable, instead of from the current (global) step of the file.
+\item{\bf nsteps}     Read 'nsteps' consecutive steps from current step. Must be 1 for a stream. 
+\item{\bf data} Pointer to the memory to hold data of the variable. 
+In blocking read mode, the memory should be 
+pre-allocated. In non-blocking mode, memory can be
+allocated or not, and that changes the behavior of
+the chunked read. If memory is allocated, 
+adios\_check\_read() returns a variable if it is completed.
+If memory is not allocated, the check returns any chunk
+already available of a variable (in ADIOS own memory)
+and the application has to rearrange the data. The user
+has to process/copy the data before getting new chunks.
+\end{itemize}
+Function returns 0 on success, $!=0$ on error (also sets adios\_errno).
 
-\begin{lstlisting}[]
-void adios\_free\_varinfo (ADIOS\_VARINFO *cp)
+\begin{lstlisting}[language=ADIOS]
+int adios_schedule_read (const ADIOS_FILE * fp,
+                         const ADIOS_SELECTION * sel,
+                         const char            * varname,
+                         int                     from_steps,
+                         int                     nsteps,
+                         void                  * data);
 \end{lstlisting}
 
-Frees up the ADIOS\_VARINFO* structure returned by adios\_inq\_var().
+\subsubsection*{adios\_schedule\_read\_byid}
+This function is the same as adios\_schedule\_read but uses a numerical index instead of a name to reference the variable. 
+\begin{itemize}
+\item{\bf attrid} Index of attribute (0..fp->nattrs-1) in fp->attr\_namelist of ADIOS\_FILE struct. 
+\end{itemize}
 
-\subsection{adios\_read\_var / adios\_read\_var\_byid}
-
-\begin{lstlisting}[]
-int64_t adios_read_var (ADIOS_GROUP * gp, 
-    const char   * varname,
-    const uint64_t * start,
-    const uint64_t * count,
-    void           * data)
-
-int64_t adios_read_var_byid (ADIOS_GROUP * gp, 
-    int varid,
-    const uint64_t * start, 
-    const uint64_t * count,
-    void * data)
+\begin{lstlisting}[language=ADIOS]
+int adios_schedule_read_byid (const ADIOS_FILE * fp, 
+                              const ADIOS_SELECTION * sel,
+                              int                     varid,
+                              int                     from_steps,
+                              int                     nsteps,
+                              void                  * data);
 \end{lstlisting}
 
-This function is used to read in the content of a variable, or a subset of it. 
-You need to allocate memory for receiving the data before calling this function. 
-The subset (or the entire set) is defined by the \textit{start} and \textit{count} 
-in each dimension. The \textit{start} and \textit{count} arrays must have as many 
-elements as many dimensions the variable has (i.e. ADIOS\_VARINFO.ndim). \textit{Start 
-}contains the starting offsets for each dimension and \textit{count }contains the 
-number of elements to read in a given dimension. If you want to read in the entire 
-variable, \textit{start} should be an array of zeros and \textit{count} should 
-equal to the dimensions of the variable. 
+\subsubsection*{adios\_perform\_reads}
+Once adios\_schedule\_read command has been issued for all the variables needed by the reading application, the adios\_perform\_reads 
+is called to start performing the reads. 
+\begin{itemize}
+\item{\bf blocking} If non-zero, return only when all reads are completed.
+If zero, return immediately and report partial completions
+through adios\_check\_reads(). 
+\end{itemize}
 
-Note that \textit{start} and \textit{count} is related to the number of elements 
-in each dimension, not the number of bytes needed for storage. When allocating 
-the data array, multiply the total number of elements with the size of one element. 
-If you need to be generic in this calculation, you can use the adios\_type\_size() 
-function to get the size of one element of a given type (cf. ADIOS\_VARINFO.type). 
-
-
-\subsection{adios\_get\_attr / adios\_get\_attr\_byid}
-
-\begin{lstlisting}[]
-int adios_get_attr (ADIOS_GROUP * gp,
-    const char            * attrname,
-    enum ADIOS_DATATYPES      * type,
-    int                       * size,
-    void                     ** data)
-
-int adios_get_attr_byid (ADIOS_GROUP * gp,
-    int                            attrid,
-    enum ADIOS_DATATYPES           * type,
-    int                            * size,
-    void                          ** data)
+\begin{lstlisting}[language=ADIOS]
+int adios_perform_reads (const ADIOS_FILE *fp, int blocking);
 \end{lstlisting}
 
-This function retrieves an attribute including its type, memory size and its value. 
-An attribute can only be a scalar value or a string. Memory is allocated in the 
-function to store the value. The allocated size is returned in the size argument. 
+\subsubsection*{adios\_check\_reads}
+Get a chunk of completed read(s) in a chunking read scenario.
+Note that a selection of an array specified in a read may be completed in
+multiple chunks (usually when they come from multiple sources, like
+different disks or different application processes). 
+This function should be called in a loop until all chunks are processed. 
+That is indicated by a 0 return value. A NULL result for chunk only
+indicates that no chunk is available at the time of call. 
 
-This function does not read the file usually. The attribute's value is stored in 
-the footer and is already in the memory after the file is opened. However, an attribute 
-can refer to a scalar (or string) variable too. In this case, this function calls 
-adios\_read\_var internally, so the file will be accessed to read in that scalar. 
+\begin{itemize}
+\item{\bf fp} Handler to file or stream.
+\item{\bf chunk} A chunk completed by the time of calling this function.
+It is NULL if no chunk is returned.
+\end{itemize}
+This function returns 
+\begin{itemize}
+\item $0$: All chunks have been returned previously, 
+                no need to call again (chunk is NULL, too).
+\item $1$: Some chunks are/will be available, call again. 
+\item $<0$: On error (also sets adios\_errno).
+\end{itemize}
 
-
-\subsection{adios\_type\_to\_string}
-
-\begin{lstlisting}[]
-const char * adios_type_to_string (enum ADIOS_DATATYPES type)
+\begin{lstlisting}[language=ADIOS]
+int adios_check_reads (const ADIOS_FILE  * fp, 
+                       ADIOS_VARCHUNK   ** chunk);
 \end{lstlisting}
 
-This function returns the name of a given type.
+\subsubsection*{adios\_free\_chunk}
+Free the memory of a chunk allocated inside adios\_check\_reads().
+It only frees the ADIOS\_VARCHUNK struct and the ADIOS\_SELECTION struct
+pointed by the chunk. The data pointer should never be freed since
+that memory belongs to the reading method.
 
-\subsection{adios\_type\_size}
-
-\begin{lstlisting}[]
-int adios_type_size(enum ADIOS_DATATYPES type, void *data)
+\begin{lstlisting}[language=ADIOS]
+void adios_free_chunk (ADIOS_VARCHUNK *chunk);
 \end{lstlisting}
 
-This function returns the memory size of one data element of an adios type. If 
-the type is adios\_string, and the second argument is the string itself, it returns 
-strlen(data)+1. For other types, \textit{data} is not used and the function returns 
+\subsubsection*{adios\_get\_attr}
+Get an attribute in a group.
+This function does not read anything from the file but processes info
+already in memory after fopen.
+The memory for the data is allocated within the library.
+You can use free() to free the memory after use.
+\begin{itemize}
+\item{\bf fp}       Pointer to an (opened) ADIOS\_FILE struct.
+\item{\bf attrname} Name of the attribute.
+\item{\bf type}    ADIOS type of attribute (see enum ADIOS\_DATATYPES in adios\_types.h) filled in by the call. 
+\item{\bf size}     Memory size of value (n+1 for a string of n characters) filled in by the call. 
+\item{\bf data}    Pointer to the value filled in by the call. You need to cast it afterward according to the type.
+\end{itemize}
+
+Function returns 0 on success, $!=0$ on error (also sets adios\_errno).
+
+\begin{lstlisting}[language=ADIOS]
+int adios_get_attr (ADIOS_FILE            * fp,
+                    const char            * attrname,
+                    enum ADIOS_DATATYPES  * type,
+                    int                   * size,
+                    void                 ** data);
+
+\end{lstlisting}
+
+\subsubsection*{adios\_get\_attr\_byid}
+This function is the same as adios\_get\_attr but uses a numerical index instead of a name to reference the variable. 
+\begin{itemize}
+\item{\bf attrid} Index of attribute (0..fp->nattrs-1) in fp->attr\_namelist of ADIOS\_FILE struct. 
+\end{itemize}
+\begin{lstlisting}[language=ADIOS]
+int adios_get_attr_byid (ADIOS_FILE  * fp, int attrid, 
+                         enum ADIOS_DATATYPES * type,
+                         int * size, void ** data);
+\end{lstlisting}
+
+\subsubsection*{adios\_type\_to\_string}
+ Return the name of an adios type. 
+
+\begin{lstlisting}[language=ADIOS]
+const char * adios_type_to_string (enum ADIOS_DATATYPES type);
+\end{lstlisting}
+
+\subsubsection*{adios\_type\_size}
+Return the memory size of one data element of an adios type.
+If the type is adios\_string, and the second argument is
+the string itself, it returns strlen(data)+1. 
+For other types, it does not care about data and returns
 the size occupied by one element.
+
+\begin{lstlisting}[language=ADIOS]
+int adios_type_size(enum ADIOS_DATATYPES type, 
+			void *data);
+\end{lstlisting}
+
+\subsubsection*{adios\_get\_grouplist}
+Return the list of groups (names) that are written into
+the file. There is always at least one group there.
+
+\begin{itemize}
+\item{\bf groupid} Pointer to an (opened) ADIOS\_FILE struct
+\item{\bf fp} List of strings. This list is created and filled in by the function call. 
+\end{itemize}
+
+Function returns 0 on success, $!=0$ on error (also sets adios\_errno).
+
+\begin{lstlisting}[language=ADIOS]
+int adios_get_grouplist (ADIOS_FILE  *fp, 
+				char ***group_namelist);
+\end{lstlisting}
+
+\subsubsection*{adios\_group\_view}
+Restrict the view of variables/attributes to a certain group.
+The provided ADIOS\_FILE structure is directly modified but
+another calls can change to a different group view, or reset
+back to full view.
+
+\begin{itemize}
+\item{\bf groupid} Id of the selected group (0..\# of groups-1) use -1 to reset to the complete list.
+\item{\bf fp} Pointer to an (opened) ADIOS\_FILE struct nvars, var\_namelist, nattrs, and attr\_namelist will be modified.
+\end{itemize}
+
+Function returns 0 on success, $!=0$ on error (also sets adios\_errno).
+
+Note: A stream does not have groups, only a file can have multiple groups 
+(from separate adios\_open/adios\_close operations). 
+
+\begin{lstlisting}[language=ADIOS]
+int adios_group_view (ADIOS_FILE  *fp, 
+				int groupid);
+\end{lstlisting}
+
+% \subsubsection*{adios\_stat\_cor}
+
+% \begin{lstlisting}[language=ADIOS]
+% double adios_stat_cor (ADIOS_VARINFO * vix, 
+% 				ADIOS_VARINFO * viy, 
+% 				char * characteristic, 
+% 				uint32_t time_start, 
+% 				uint32_t time_end, 
+% 				uint32_t lag);
+% \end{lstlisting}
+
+% \subsubsection*{adios\_stat\_cov}
+% \begin{lstlisting}[language=ADIOS]
+% double adios_stat_cov (ADIOS_VARINFO * vix, 
+% 				ADIOS_VARINFO * viy, 
+% 				char * characteristic, 
+% 				uint32_t time_start, 
+% 				uint32_t time_end, 
+% 				uint32_t lag);
+% \end{lstlisting}
+
+\subsubsection*{adios\_reset\_dimension\_order}
+This function can be called if user defines the sequences of 
+dimensions in reversed order for a variable in the ADIOS XML 
+definition to view the variable with the correct order of 
+dimensions. Call this before reading variables.
+\begin{lstlisting}[language=ADIOS]
+void adios_reset_dimension_order (ADIOS_FILE *fp, 
+				int is_fortran);
+\end{lstlisting}
+
+
+% \subsection{adios\_errmsg / adios\_errno}
+
+% \begin{lstlisting}[]
+% int    adios_errno
+% char * adios_errmsg()
+% \end{lstlisting}
+
+% If an error occurrs during the call of a C api function, it either returns NULL 
+% (instead of a pointer to an allocated structure) or a negative number. It also 
+% sets the integer adios\_errno variable (the negative return value is actually -1 
+% times the errno value). Moreover, it prints the error message into an internal 
+% buffer, which can be retrieved by adios\_errmsg(). 
+
+% Note that adios\_errmsg() returns the pointer to the internal buffer instead of 
+% duplicating the string, so refrain from writing anything into it. Also, only the 
+% last error message is available at any time.
+
+% \subsection{adios\_set\_read\_method}
+% \begin{lstlisting}[]
+% /** Set the reading method for the next adios_fopen.
+%   *  IN:  method   read method to use
+%   *  RETURN:       0 if accepted, <0 on error
+%   *  It is optional to use it before calling adios_fopen. 
+%   *  Default is ADIOS_READ_METHOD_BP.
+%   */
+% int adios_set_read_method (enum ADIOS_READ_METHOD method);
+% \end{lstlisting}
+
+% This API sets the reading method for the subsequent adios\_fopen. The methods supported 
+% as of ADIOS 1.3 include
+
+% \begin{lstlisting}[]
+% enum ADIOS_READ_METHOD {
+%   ADIOS_READ_METHOD_BP = 0,    /* Read from ADIOS BP file (written by POSIX,
+%                                    MPI etc methods) */
+%   ADIOS_READ_METHOD_BP_STAGED = 1,    /* Read from ADIOS BP file (written by
+%                                          POSIX, MPI_AMR etc methods) */
+%   ADIOS_READ_METHOD_HDF5 = 2,    /* Read from HDF5 file (written by PHDF5 method) */
+%   ADIOS_READ_METHOD_DART = 3,    /* Read from memory written by DART method */
+%   ADIOS_READ_METHOD_DIMES = 4,    /* Read from memory written by DIMES method */
+%   ADIOS_READ_METHOD_NSSI = 5,    /* Read from memory written by NSSI method */
+%   ADIOS_READ_METHOD_DATATAP = 6    /* Read from memory written by DATATAP method */
+% };
+% \end{lstlisting}
+
+% It is optional to use before calling adios\_fopen. The default is ADIOS\_READ\_METHOD\_BP. 
+% Note for ADIOS\_READ\_METHOD\_BP\_STAGED method, two shell environment variables 
+% must be set before executing, namely, num\_aggregators, which specifies the number 
+% of readers to use, and chunk\_size, which specifies the size of the chunk to read 
+% in for each read request.
+
+% \begin{lstlisting}[]
+% export num_aggregators=1
+% export chunk_size=16
+% \end{lstlisting}
+
+% \subsection{adios\_fopen }
+
+% \begin{lstlisting}[]
+% ADIOS\_FILE * adios_fopen (const char * fname, MPI_Comm comm)
+% \end{lstlisting}
+
+% ADIOS FILE is a struct of
+
+% \begin{lstlisting}[]
+% uint64_t fh;            /*File handler*/
+% int groups_count;       /*Number of adios groups in file*/      
+% int vars_count;         /*Number of variables in all groups*/  
+% int attrs_count;        /*Number of attributes in all groups*/
+% int tidx_start;         /*First timestep in file, usually 1*/
+% int ntimesteps;         /*Number of timesteps in file.*/ 
+%                         /*There is always at least one timestep*/
+% int version;            /*ADIOS BP version of file format*/  
+% uint64_t file_size;     /*Size of file in bytes*/ 
+% int  endianness;        /*0: little endian, 1: big endian*/ 
+%                         /*You do not need to care about this.*/
+% char ** group_namelist; /*Names of the adios groups in
+%                           the file (cf. groups_count)*/
+% \end{lstlisting}
+
+% The array for the list of group names is allocated in the function and is freed 
+% in the close function.
+
+% If you use the MPI version of the library, pass the communicator, which is the 
+% communicator of all processes that call the open function. Rank=0 process broadcasts 
+% the metadata to the other processes so that we avoid opening the file from many 
+% processes at once.  If you use the non-MPI version of the library, just pass on 
+% an arbitrary integer value, which is not used at all. 
+
+% \subsection{adios\_fclose}
+
+% \begin{lstlisting}[]
+% int adios_fclose (ADIOS\_FILE *fp)
+% \end{lstlisting}
+
+% You are expected to close a file when you do not need it anymore. This function 
+% releases a lot of internal memory structures.
+
+% \subsection{adios\_gopen / adios\_gopen\_byid}
+
+% \begin{lstlisting}[]
+% ADIOS_GROUP * adios_gopen (ADIOS_FILE *fp, const char * grpname)
+
+% ADIOS_GROUP * adios_gopen_byid (ADIOS_FILE *fp, int grpid)
+% \end{lstlisting}
+
+% You need to open a group to get access to its variables and attributes. You can 
+% open a group either by its name returned in the ADIOS\_FILE struct's group\_namelist 
+% list of strings or by its index, which is the index of its name in this list of 
+% names. 
+
+% You \textit{can} have several groups open at the same time.
+
+% ADIOS\_GROUP is a struct of
+
+% \begin{lstlisting}[]
+% uint64_t gh;           /*Group handler*/
+% int grpid;             /*group index (0..ADIOS\_FILE.groups\_count-1)*/
+% int vars_count;        /*Number of variables in this adios group*/
+% char ** var_namelist;  /*Variable names in a char* array*/ 
+% int attrs_count;       /*Number of attributes in this adios group*/
+% char ** attr_namelist; /*Attribute names in a char* array*/ 
+% ADIOS_FILE * fp;       /*pointer to the parent ADIOS\_FILE struct*/  
+% \end{lstlisting}
+
+% The arrays for the list of variable names and attribute name are allocated in the 
+% function and are freed in the group close function.
+
+% Note that one can modify the ADIOS\_GROUP's namelists because they are not used 
+% in the discovery of the variables. However, in index-based queries below, the index 
+% of the variable is the index of the variable's position in the original order of 
+% the list. If one sorts this list for ordered printouts, one need to remember the 
+% original indices of the variables or to identify the variables by name. 
+
+% \subsection{adios\_gclose}
+
+% \begin{lstlisting}[]
+% int adios_gclose (ADIOS_GROUP *gp)
+% \end{lstlisting}
+
+% You need to close the group when you do not need it anymore. 
+
+% \subsection{adios\_inq\_var / adios\_inq\_var\_byid}
+% \label{section:read_api_adios_inq_var}
+
+% \begin{lstlisting}[]
+% ADIOS_VARINFO * adios_inq_var (ADIOS_GROUP *gp, const char * varname)
+% ADIOS_VARINFO * adios_inq_var_byid (ADIOS_GROUP *gp, int varid)
+% \end{lstlisting}
+
+% This function should be used if you want to discover the type and dimensionality 
+% of a variable or want to get the minimum/maximum/average/standard\_deviation values 
+% without reading in the data. You can refer to the variable with its name (full 
+% path) in the ADIOS\_GROUP struct's var\_namelist or by the index in that list. 
+
+% ADIOS\_VARINFO structure is allocated in the function but there is no corresponding 
+% closing function, therefore user has to free the ADIOS\_VARINFO* pointer yourself 
+% when you do not need it anymore by using the adios\_free\_varinfo() function.
+
+% ADIOS\_VARINFO is a struct of 
+
+% \begin{lstlisting}[]
+% int  grpid;     /*group index (0..ADIOS\_FILE.groups\_count-1)*/
+% int  varid;     /*variable index (0..ADIOS\_GROUP.var\_count-1)*/
+% enum ADIOS_DATATYPES type;   /*type of variable*/
+% int ndim;       /*number of dimensions, 0 for scalars*/ 
+% uint64_t * dims;/*size of each dimension*/ 
+% int timedim;    /* -1: variable has no timesteps in file.
+%                   >=0: which dimension is time*/
+% void * value;   /*value of a scalar variable, NULL for array.*/
+% void * gmin;    /*minimum value in an array variable.*/ 
+% void * gmax;    /*maximum value of an array variable*/ 
+% void * gavg;    /*average value of an array variable*/
+% void * gstd_dev;/*standard deviation value of an array variable
+%                   (over all timesteps, for scalars they are = value)*/
+% void * mins;    /*minimum per each timestep*/ 
+% void * maxs;    /*maximum per each timestep*/
+% void * avgs;    /*average per each timestep*/
+% void * std_dev; /*standard deviation per each timestep
+%                   (array of timestep elements)*/
+% struct ADIOS_HIST {
+%     uint32\_t num_breaks;  /*number of break points of the histogram*/
+%     double min;            /*minimum of binning boundary*/ 
+%     double max;            /*maximum of binning boundary*/ 
+%     double * breaks;       /*break points of the histogram*/
+%     uint32_t **frequencies;/*histogram values per timestep*/
+%     uint32_t *gfrequencies;/*histogram values for all timesteps*/
+% } *hist;        /*NULL if histogram binning interval was not 
+%                   formed correctly at write time*/
+% \end{lstlisting}
+
+% For complex numbers, the statistics in ADIOS\_VARINFO, like gmin, gavg, std\_devs 
+% etc, are of base type double. They also have an additional dimension that stores 
+% the statistics for the magnitude, the real part, and the imaginary part of the 
+% complex number, individually. For example, gmin[0] holds the overall minimum value 
+% of the magnitude of the complex numbers. gmin[1] and gmin [2] contain the global 
+% minimums for the real and the imaginary parts, respectively. 
+
+% \subsection{adios\_free\_varinfo}
+
+% \begin{lstlisting}[]
+% void adios\_free\_varinfo (ADIOS\_VARINFO *cp)
+% \end{lstlisting}
+
+% Frees up the ADIOS\_VARINFO* structure returned by adios\_inq\_var().
+
+% \subsection{adios\_read\_var / adios\_read\_var\_byid}
+
+% \begin{lstlisting}[]
+% int64_t adios_read_var (ADIOS_GROUP * gp, 
+%     const char   * varname,
+%     const uint64_t * start,
+%     const uint64_t * count,
+%     void           * data)
+
+% int64_t adios_read_var_byid (ADIOS_GROUP * gp, 
+%     int varid,
+%     const uint64_t * start, 
+%     const uint64_t * count,
+%     void * data)
+% \end{lstlisting}
+
+% This function is used to read in the content of a variable, or a subset of it. 
+% You need to allocate memory for receiving the data before calling this function. 
+% The subset (or the entire set) is defined by the \textit{start} and \textit{count} 
+% in each dimension. The \textit{start} and \textit{count} arrays must have as many 
+% elements as many dimensions the variable has (i.e. ADIOS\_VARINFO.ndim). \textit{Start 
+% }contains the starting offsets for each dimension and \textit{count }contains the 
+% number of elements to read in a given dimension. If you want to read in the entire 
+% variable, \textit{start} should be an array of zeros and \textit{count} should 
+% equal to the dimensions of the variable. 
+
+% Note that \textit{start} and \textit{count} is related to the number of elements 
+% in each dimension, not the number of bytes needed for storage. When allocating 
+% the data array, multiply the total number of elements with the size of one element. 
+% If you need to be generic in this calculation, you can use the adios\_type\_size() 
+% function to get the size of one element of a given type (cf. ADIOS\_VARINFO.type). 
+
+
+% \subsection{adios\_get\_attr / adios\_get\_attr\_byid}
+
+% \begin{lstlisting}[]
+% int adios_get_attr (ADIOS_GROUP * gp,
+%     const char            * attrname,
+%     enum ADIOS_DATATYPES      * type,
+%     int                       * size,
+%     void                     ** data)
+
+% int adios_get_attr_byid (ADIOS_GROUP * gp,
+%     int                            attrid,
+%     enum ADIOS_DATATYPES           * type,
+%     int                            * size,
+%     void                          ** data)
+% \end{lstlisting}
+
+% This function retrieves an attribute including its type, memory size and its value. 
+% An attribute can only be a scalar value or a string. Memory is allocated in the 
+% function to store the value. The allocated size is returned in the size argument. 
+
+% This function does not read the file usually. The attribute's value is stored in 
+% the footer and is already in the memory after the file is opened. However, an attribute 
+% can refer to a scalar (or string) variable too. In this case, this function calls 
+% adios\_read\_var internally, so the file will be accessed to read in that scalar. 
+
+
+% \subsection{adios\_type\_to\_string}
+
+% \begin{lstlisting}[]
+% const char * adios_type_to_string (enum ADIOS_DATATYPES type)
+% \end{lstlisting}
+
+% This function returns the name of a given type.
+
+% \subsection{adios\_type\_size}
+
+% \begin{lstlisting}[]
+% int adios_type_size(enum ADIOS_DATATYPES type, void *data)
+% \end{lstlisting}
+
+% This function returns the memory size of one data element of an adios type. If 
+% the type is adios\_string, and the second argument is the string itself, it returns 
+% strlen(data)+1. For other types, \textit{data} is not used and the function returns 
+% the size occupied by one element.
 
 \section{Time series analysis API Description}
 
@@ -665,3 +1137,378 @@ code with the \verb+-D_NOMPI+ option and link your application with \verb+-ladio
 It is encouraged to use the utility to get the compile and link options for your 
 need, using -f option to get the Fortran options, -c for compile, -l for linking, 
 -s for non-MPI applications (see Section \ref{section:installation_compiling_apps}. 
+
+\section{Supported scenarios and samples}
+
+For all C examples the following variables are assumed to be defined:
+\begin{lstlisting}[frame=none]
+MPI_Comm comm;     // group communicator
+ADIOS_FILE *fp;    // file handler
+ADIOS_VARINFO *vi; // information about one variable
+double *P;         // array to store variable "P"
+\end{lstlisting}
+
+
+\section{Reading a file as file}
+If a file is opened as a "file" (and not as a stream) than the followings are true:
+
+  \begin{itemize}
+  \item All steps in the file are available for reading; there is no "current step" from which to read and therefore, there is no need to advance the step.
+  \item Variables have their own counter for steps. Different variables can have different steps available.
+  \item Multiple consecutive steps of a variable can be read at once, starting from an arbitrary step.
+  \item Multiple groups are allowed to exist in the file.This leads to the separate step counting of variables.
+  \end{itemize}
+
+
+\subsection{Discover and read in a complete variable}
+Assume we have a file called \verb+mydata.bp+ and a 3D array variable \verb+P+ of double type in it. We open the file, determine the size of the array, allocate memory for it and then read it in a blocking way. After \verb+adios_perform_reads()+,  the data is going to be stored in the allocated memory:
+
+\begin{lstlisting}[numbers=left, numberstyle=\color{gray}, stepnumber=2,
+                             caption={Read a complete array from a file}, label=code:file_read_var]
+fp = adios_read_open_file ("myfile.bp", ADIOS_READ_METHOD_BP, comm);
+vi = adios_inq_var (fp, "P");
+// vi->ndim tells the number of dimensions
+P = (double*) malloc (sizeof(double) * 
+                           vi->dims[0] * vi->dims[1] * vi->dims[2]);
+adios_schedule_read (fp, NULL, "P", 1, 1, P);
+adios_perform_reads (fp, 1);   
+// P contains the data at this point
+...
+// free ADIOS resources
+adios_free_varinfo (vi); 
+adios_read_close (fp);
+\end{lstlisting}
+
+
+\subsection{Multiple steps of a variable}
+ If the file contains more than one step, the array P can have multiple steps too. In case of files, each variable has its own number of steps, provided by \verb+adios_inq_var()+, in the \verb+nsteps+ field of the \verb+ADIOS_VARINFO+ struct. The example in \lstlistingname~\ref{code:file_read_var} still works but only reads in the first step of P. To read all steps at once, we have to allocate a big enough array for it, and request a read for all steps:
+
+\begin{lstlisting}[frame=no, emph={nsteps}, emphstyle={\color{red}\large\bf},
+                             numbers=left, numberstyle=\color{gray}, stepnumber=2,firstnumber=3]
+...
+// vi->nsteps tells the number of steps
+P = (double*) malloc (sizeof(double) * 
+               vi->nsteps * vi->dims[0] * vi->dims[1] * vi->dims[2]);
+adios_schedule_read (fp, NULL, "P", 1, vi->nsteps, P);
+...
+\end{lstlisting}
+
+
+\subsection{Read a bounding box subset of a variable}
+In parallel codes, a process usually wants to read only a subset of the whole array. If we want to read a rectangular subset from the array, we have to create a boundingbox selection first with \verb+adios_query_boundingbox()+, then pass it as an argument at reading. Let's read a 10x10x10 box from the offset (5,5,5). 
+
+
+\begin{lstlisting}[numbers=none,
+                             caption={Read a bounding box of a variable},  label=code:boundingbox]
+fp = adios_read_open_file ("myfile.bp", ADIOS_READ_METHOD_BP, comm);
+vi = adios_inq_var (fp, "P");
+int count[] = {10,10,10};
+int offs[] = {5,5,5};
+P = (double*) malloc (sizeof(double) * count[0] * count[1] * count[2]);
+ADIOS_SELECTION *s = adios_selection_boundingbox (3, offs, count);
+adios_schedule_read (fp, s, "P", 1, 1, P);
+adios_perform_reads (fp, 1, NULL);   
+// P contains the data at this point
+...
+// free ADIOS resources
+adios_free_varinfo (vi); 
+adios_selection_delete (s); 
+adios_read_close (fp);
+\end{lstlisting}
+
+
+\subsection{Reading non-global variables written by multiple processes}
+\label {section:non_global_vars}
+ADIOS allows for writing an array from several processes with different sizes, that does not constitute a global array view for reading. A reader still has access to each array in the file although they are named the same. \verb+adios_inq_var()+ returns the number of blocks and a flag whether the variable has a global view in the \verb+ADIOS_VARINFO+ struct. If each process writes only one block of the variable, the MPI rank of the writing process identifies each block.  If multiple steps are stored in a file, the second step's indexing starts from 0 again. For stream reading, of course, in each step the block numbering starts from 0. In the most complicated scenario, writers may output multiple blocks per process. In this case, the numbering is continuous for each process, i.e., writer with rank 0 produces block 0, 1, ..., and rank 1 produces the next blocks. 
+
+ A special query is supported for this kind of reading, which selects one of the writing processes:
+
+\begin{lstlisting}[frame=none]
+ADIOS_SELECTION *s = adios_selection_writeblock(5);  // read block 5 
+\end{lstlisting}
+ 
+This special query still allows the Reader for providing an allocated memory to use blocking read. Usually, applications that read checkpoint files, know the size of each piece in advance from their own configuration file. If not, one can get the size of each block by calling \verb+adios_inq_var()+ and then \verb+adios_inq_var_blockinfo()+. Another way is to read the scalar variables that defined the array size in the writer, using this writeblock selection and use those values. Note that \verb+adios_inq_var()+ provides a scalar variable's value written by one of the writer processes only, so it cannot be used here. To get the scalar value written by a specific process, this rank selection and \verb+adios_schedule_read()+ should be used.
+
+\begin{lstlisting}[numbers=none, 
+                             caption={Read an array written by one specific process, with first reading the scalars that define the size of the array},  label=code:localread]
+/* first read the scalars that define the size of the array written
+    by a given process */
+int lx, ly, lz;
+adios_schedule_read (fp, s, "lx", 1, 1, &lx);
+adios_schedule_read (fp, s, "ly", 1, 1, &ly);
+adios_schedule_read (fp, s, "lz", 1, 1, &lz);
+adios_perform_reads (fp, 1); 
+// allocate memory to read in the array
+P = (double*) malloc (sizeof(double) * lx * ly * lz);
+adios_schedule_read (fp, s, "P", 1, 1, P);
+adios_perform_reads (fp, 1);  
+\end{lstlisting}
+
+
+\begin{lstlisting}[numbers=none, 
+                             caption={Read an array written by one specific process, with first checking the size},  
+                             label=code:localread2]
+/* first inquire the variable to check the size of the array written
+    by a given process */
+int lx, ly, lz;
+ADIOS_VARINFO * vi = adios_inq_var (fp, "P");
+// vi->nblocks[0] tells us how many write blocks are there
+// now get per-block size information
+adios_inq_var_blockinfo (fp, vi);
+lx = vi->blockinfo[5].count[0]; // 5 is block index here
+ly = vi->blockinfo[5].count[1];
+lz = vi->blockinfo[5].count[2];
+// allocate memory to read in the array
+P = (double*) malloc (sizeof(double) * lx * ly * lz);
+adios_schedule_read (fp, s, "P", 1, 1, P);
+adios_perform_reads (fp, 1);  
+\end{lstlisting}
+
+\begin{lstlisting}[numbers=none, 
+                             caption={Read an array written by one specific process, when multiple steps are in a file},  
+                             label=code:localread2]
+int step = 3; // read step 3 (steps start from 0)
+int block = 5; // read block 5 from step 3 (blocks start from 0)
+ADIOS_SELECTION *s = adios_selection_writeblock(`\color{red}{\bf block}`); 
+/* first inquire the variable to check the size of the array written
+    by a given process */
+int lx, ly, lz;
+ADIOS_VARINFO * vi = adios_inq_var (fp, "P");
+// vi->nblocks[] tells us how many write blocks are there per step
+// vi->sum_nblocks is the total number of blocks for all steps
+// now get per-block size information
+adios_inq_var_blockinfo (fp, vi);
+int i, gblock =  block; // gblock to hold global block index
+for (i=0; i<step; i++)
+    gblock += vi->nblocks[i];
+lx = vi->blockinfo[gblock].count[0];
+ly = vi->blockinfo[gblock].count[1];
+lz = vi->blockinfo[gblock].count[2];
+// allocate memory to read in the array
+P = (double*) malloc (sizeof(double) * lx * ly * lz);
+adios_schedule_read (fp, s, "P", `\color{red}{\bf step}`, 1, P);
+adios_perform_reads (fp, 1);  
+\end{lstlisting}
+
+
+Of course, a global variable can be read this way, too. A global variable in ADIOS is nothing else than the collection of these individual pieces where metadata is available to tell ADIOS the global dimensions and the offsets of these pieces.
+
+
+
+
+%   Stream examples
+
+\section{Reading streams}
+A file on disk (containing multiple steps) or a stream provided by a staging method can be opened as a stream. In contrast to files opened as files, the following rules apply here:
+
+  \begin{itemize}
+  \item Only one step is accessible.
+  \item To read another step, one has to "advance" the step in the stream.
+  \item There is no moving back in the stream, only forward.
+  \item The file open or the advance operations can fail if data is not available any more.
+  \item The end of a stream (last step consumed) is signaled by a different error return value.
+  \end{itemize}
+
+The basic read structure is to open a stream, read the first step then advance the step until an error (\verb+err_end_of_stream+) says there is not going to be any more steps. Also, at each advancement, an error may occur if the next step is not available yet (\verb+err_step_notready+) or anymore (\verb+err_step_deleted+).
+
+
+\subsection{Opening a stream}
+The opening of a stream has to be repeated in case the stream is not yet available. Note, that there is no distinction of the situations where a stream is not yet available vs. the named stream will never exist.
+
+\begin{lstlisting}[numbers=left, numberstyle=\color{gray}, stepnumber=2,
+                             caption={While loop to open a stream},  label=code:open_stream]
+fp = adios_read_open_stream ("myfile.bp", ADIOS_READ_METHOD_BP, comm, 
+                             ADIOS_LOCKMODE_CURRENT, timeout_msec);
+while (adios_errno == err_file_not_found) {
+    fprintf (stderr, "rank %d: Wait on stream: %s\n", rank, adios_errmsg());
+    sleep(1);
+    fp = adios_read_open_stream ("myfile.bp", comm, 
+                                     ADIOS_LOCKMODE_CURRENT, timeout_msec);
+}
+if (adios_errno == err_end_of_stream) {
+    // stream has been gone before we tried to open
+    fprintf (stderr, "rank %d: Stream terminated before open. %s\n",
+           rank, adios_errmsg());
+} else if (fp == NULL) {
+    // some other error happened
+    fprintf (stderr, "rank %d: Error at opening: %s\n",
+           rank, adios_errmsg());
+
+} else {
+    // process steps here... see `\color{javagreen}{\lstlistingname~\ref{code:stream_stepbystep}}`
+    ...
+}
+adios_read_close (fp);
+\end{lstlisting}
+
+
+\subsection{Reading one step at a time, blocking if a new step is late}
+In the conditional branch of \lstlistingname~\ref{code:open_stream} from line 17 is where we can read steps in a loop. Let's assume we read variable P, of which we already know the size and we have allocated the memory before.
+
+\begin{lstlisting}[numbers=left, numberstyle=\color{gray}, stepnumber=2,firstnumber=18,
+                             caption={Read a bounding box of a variable},  label=code:stream_stepbystep]
+while (adios_errno != err_end_of_stream) {
+    // fp->current_step  contains the step we are at
+    adios_schedule_read (fp, NULL, "P", 1, 1, P);
+    adios_perform_reads (fp, 1);   
+    adios_release_step (fp); // this step is no longer needed (optional call)
+    // ... process P, then advance the step
+    // 1) blocking wait for the 2) next available step 
+    adios_advance_step (fp, 0, 1);
+}
+\end{lstlisting}
+
+In the above code snippet we advance to the next available step (second argument in \verb+adios_advance_step()+), possibly skipping other steps if they have appeared and disappeared while we were processing (we asked for locking of only the current step when opening the file). Also we let ADIOS block until a new step becomes available or the stream ends (third parameter in \verb+adios_advance_step()+ equals 1). The \verb+fp->current_step+ informs us of the step we advanced to.
+
+
+\subsection{Locking and step advancing scenarios}
+  \begin{enumerate}  
+  \item ADIOS\_LOCKMODE\_ALL + next step: Read all steps one by one, ensure they are not lost. 
+  \item ADIOS\_LOCKMODE\_CURRENT + next step: Read each step which is available. 
+  \item last step: Read always the last (newest) step available.
+  \item ADIOS\_LOCKMODE\_NONE: reader assumes nothing, even current step can disappear between reads.
+  \end{enumerate}
+
+If the reader needs to ensure it can process all steps without skipping any, it has to use the strictest locking mode: \verb+ADIOS_LOCKMODE_ALL+, which gives priority to the reader over the performance of the writer. No step will be removed to make space for incoming steps until the reader advances from that step. This may block the writer, so use it only if really needed. Also, when advancing we should ask for the next, and not for the last, step. 
+
+If we ask for the last available step, there is no point of locking all steps and thus potentially slowing down the writer. 
+
+If we lock nothing at read, the current step can be removed by a staging method if the writer has new data. It is the reader's responsibility to handle errors and ensure its consistent state. 
+
+\subsection{Handling errors due to missing steps}
+The \verb+adios_advance_step()+ gets the next or last available step. In all cases, the \verb+fp->current_step+ informs us about the new step. One has to save the previous value and compare with the new one to check if some steps were skipped. This function returns two possible errors. If the writer has terminated the stream and the reader is already at the very last step, an \verb+err_end_of_stream+ error will be the result of advancing. This condition should be used to determine when to stop processing the stream. The reader still needs to call \verb+adios_read_close()+ to free up resources. On the other hand, if the reader is at the currently latest step and the staging method has not yet received a newer step from the writer, and we try to advance without blocking, an \verb+err_step_notready+ error will be returned.  
+
+
+
+% Non-blocking reads
+
+\section{Non-blocking reads}
+
+\subsection{Read into user-allocated buffers}
+\emph{Note that this is not going to be implemented for the first release of the API}
+
+\subsection{Chunk reads: read without pre-allocating buffers}
+\emph{Note that this is going to be implemented for the auto-selection only in the first release of the API}
+
+%An ADIOS read method can deliver the data in chunks, in its own working memory. The application has to process that data before checking for new chunks. Reader methods are (usually) not using another thread to perform I/O while the application is doing something else, therefore, the application has to regularly check for chunks until there is one. In this call will the reader method actually perform its work. Except for data transfers initiated with RDMA (Remote Direct Memory Access) networking operations, that are executed by the computing system independently from the application thread. 
+%
+%\emph{First}, we need to tell the reading method how much maximum memory it can use for storing data. If we don't provide this, the method will use as much as needed and it might run out of memory. The allowed amount should be enough to store the largest piece of any variable written by any individual process. Reading methods usually do not work with a finer granulation than this size, unless explicitly documented for a given method. \emph{Second}, we should not provide pointers for storing data when scheduling the reads. Instead, provide NULL pointers in the call, so that the method knows it has to return the data in chunks. 
+
+The special selection {\bf auto} tells the read method to deliver to each read process what it finds appropriate. It will deliver data in writeblocks, but it is not known in advance, which ones and how many of them to each reader. The data is thus received in chunks and a non-blocking read should be performed. 
+
+First, we need to tell the reading method how much maximum memory it can use for storing data. If we don't provide this, the method will use as much as needed and it might run out of memory. The allowed amount should be enough to store the largest piece of any variable written by any individual process. Reading methods usually do not work with a finer granulation than this size, unless explicitly documented for a given method. 
+
+\begin{lstlisting}[numbers=left, numberstyle=\color{gray}, stepnumber=2,
+                             caption={Read variable with auto selection in chunks from a stream}, label=code:auto_read_chunks]
+adios_read_init_method (ADIOS_READ_METHOD_DATASPACES, comm, 
+                        "max_memory=100"); // 100 MB 
+fp = adios_read_open_stream ("myfile.bp", ADIOS_READ_METHOD_BP, comm,
+                             ADIOS_LOCKMODE_CURRENT, 0); // 0: wait forever
+ADIOS_SELECTION *s = adios_selection_auto("ordered"); // auto selection with a hint
+vi = adios_inq_var (fp, "P");
+adios_schedule_read (fp, s, "P", 1, 1, `\color{red}{\bf NULL}`);
+adios_perform_reads (fp, `\color{red}{\bf 0}`);   
+// Loop to get chunks
+int ck;
+ADIOS_VARCHUNK * chunk;
+while ( (ck = adios_check_reads (fp, &chunk)) > 0) {
+    if (chunk) {
+        // process the chunk first, see `\color{javagreen}{\lstlistingname~\ref{code:process_chunk}}`
+        ... 
+        // free memory of chunk (not the data!)
+        adios_free_chunk (chunk);
+    } else {
+        // no chunk was returned, slow down a little
+        sleep(1);
+    }
+}  
+if (ck < 0) {
+    // some error happened
+    fprintf (stderr, "rank %d: Error during chunk reads: %s\n",
+             rank, adios_errmsg());
+}
+adios_free_varinfo (vi); 
+adios_read_close (fp);
+adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+\end{lstlisting}
+
+A returned chunk contains the integer \emph{id} of the variable (variable name is \verb+fp->varnamelist[chunk->varid]+), its type, a pointer to the data and a pointer to an \verb+ADIOS_SUBSET+ struct, which describes what subset of a variable is returned. ADIOS supports two basic selection types, which can be returned: a single bounding box or a list of points. If the original query results in a (list of) bounding box(es) then each chunk will be also a boundingbox representing a subset of one of those bounding boxes. Note that these chunk boxes can be smaller than the bounding boxes of a query. A chunk is mostly one writer process' output of the given variable. In case of list of points, each chunk will be a list of points too. 
+
+\begin{lstlisting}[numbers=left, numberstyle=\color{gray}, stepnumber=2,firstnumber=13,
+                             caption={Processing chunks from a file}, label=code:process_chunk]
+      ADIOS_SUBSET * s = chunk->chunk_subset;
+      printf ("Variable %s:\n", fp->varnamelist[chunk->varid]);
+      switch(s->type) {
+      case ADIOS_SUBSET_BOUNDINGBOX:
+          printf ("%d-D Bounding Box offset=(%d %d %d) size=(%d %d %d)\n",
+              s->u.bb.ndim;
+              s->u.bb.start[0], s->u.bb.start[1], s->u.bb.start[2],
+              s->u.bb.count[0], s->u.bb.count[1], s->u.bb.count[2]);
+          break;
+     case ADIOS_SUBSET_POINTS:
+          int n;
+          for (n=0; n<s->npoints; n++) {
+               // One point in 3D is three consecutive values
+               //   s->u.points.points[3*n]
+               //   s->u.points.points[3*n+1]
+               //   s->u.points.points[3*n+2]
+          }
+          break;
+     default:
+         fprintf (stderr, "rank %d: Error: unexpected chunk type: %d\n",
+                 rank, s->type);
+     }  
+ \end{lstlisting}
+
+
+
+\section {More esoteric scenarios}
+
+
+\subsection{In situ read: read data locally available on the node}
+A special scenario for reading is when the reader application processes data in situ with the writer application, using some of the computing cores of each compute node. Naturally, to avoid cross-node communication, readers want to get data from the writers located on the same node. In Section \ref {section:non_global_vars}, we used a rank-based selection to specify from which writer processes we do want to get data. ADIOS does not support providing location based rank information of the writers to the readers, but the writer itself can write such data into the stream and then rank based reading can be applied. 
+
+A similar scenario is a file stored on a parallel file system. The best transfer bandwidth can be achieved by the file reading method, if it can decide which piece on what disk goes to which reader. In this case, the writer does not know then what information should be shared with the reader. 
+
+Therefore, a special query is defined that lets every staging method to deliver what is considered optimal for that particular method. \lstinline+adios_query_auto()+ lets the reading method to choose which writers' data it will return (in chunks). A staging method will deliver data from those writers that belong to that particular staging process. An in situ method will deliver data from writers that are located on the same compute node that the reader is. Each method has to document how this special case is handled. 
+
+{\color{red}Question: How does this work if more than one reader process per node is reading???}
+
+
+\label {label_section_variable_stepping}
+\subsection {Variable stepping of variables in a stream}
+Usually the number of steps in a file is a global value for all variables and attributes. However, someone may write different variables with different frequencies into a stream. This means that each variable has a different logical step, while in ADIOS the step is the feature of the stream, not of the individual variables. In case of files opened as files, this is straightforward since all read operations use the individual variable's stepping for reading. 
+
+In case of streams, however, those individual counters always equal 1. At each advance, the list of variables is updated, which can be used by the application itself to count how many times a given variable has occurred in the steps before that the reader has advanced to. 
+
+Let's assume \verb+P+ and \verb+Q+ are variables written with different frequencies, and \verb+t+ is a single real value at each step depicting the simulation time. Here is how we can keep track P and Q, with the extension of  \lstlistingname~\ref{code:stream_stepbystep}.
+
+\begin{lstlisting}[numbers=left, numberstyle=\color{gray}, stepnumber=2,firstnumber=18,
+                             caption={Processing varying set of variables in a stream},  label=code:stream_stepbystep]
+int varid;
+int varid_P, varid_Q;
+int count_P = 0, count_Q = 0;
+while (adios_errno != err_end_of_stream) {
+    // fp->current_step  contains the step we are at
+    vi = adios_inq_var (fp, "t");  // get simulation time at this step
+    varid_P = varid_Q = -1; 
+    for (varid=0; varid < fp->nvars) {
+        if (!strcmp("P", fp->var_namelist[varid])) {
+            adios_schedule_read_byid (fp, NULL, varid, 1, 1, P);
+            count_P++;
+            varid_P = varid;
+        } else if (!strcmp("Q", fp->var_namelist[varid])) {
+            adios_schedule_read_byid (fp, NULL, varid, 1, 1, Q);
+            count_Q++;
+            varid_Q = varid;
+        }
+        adios_perform_reads (fp, 1);   
+        adios_release_step (fp); // this step is no longer needed (optional call)
+    // ... process P, Q, then advance the step
+    // varid_P and varid_Q are
+
+    // 1) blocking wait for the 2) next available step 
+    adios_advance_step (fp, 0, 1);
+}
+\end{lstlisting}
+
