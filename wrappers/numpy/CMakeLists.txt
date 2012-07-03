@@ -17,6 +17,7 @@ option (ADIOS_USE_MPI "Use parallel ADIOS" ON)
 
 find_package (ADIOS REQUIRED)
 add_definitions (${ADIOS_COMPILE_FLAGS})  
+add_definitions (-DADIOS_USE_READ_API_1)
 include_directories (${ADIOS_INCLUDE_PATH})
 
 find_package (MPI REQUIRED)
