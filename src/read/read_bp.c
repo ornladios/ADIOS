@@ -33,6 +33,7 @@
 
 static int chunk_buffer_size = 1024*1024*16;
 static int poll_interval = 10; // 10 secs by default
+static int show_hidden_attrs = 0; // don't show hidden attr by default
 
 static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE * fp, read_request * r);
 static int bp_close (BP_FILE * fh);
@@ -881,6 +882,10 @@ int adios_read_bp_init_method (MPI_Comm comm, PairStruct * params)
                             "read method: '%s'\n", p->value);
             }
         }
+        else if (!strcasecmp (p->name, "show_hidden_attrs"))
+        {
+            show_hidden_attrs = 1;
+        }
 
         p = p->next;
     }
@@ -1011,6 +1016,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
 ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
 {
     log_debug ("adios_read_bp_open_stream\n");
+
     ADIOS_FILE * fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
     assert (fp);
 
@@ -1029,6 +1035,8 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
     struct BP_PROC * p;
     BP_FILE * fh;
     ADIOS_FILE * fp;
+
+    log_debug ("adios_read_bp_open_file\n");
 
     MPI_Comm_rank (comm, &rank);
 
@@ -1052,6 +1060,32 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
     p->local_read_request_list = 0;
     p->priv = 0;
 
+    /* The ADIOS_FILE struct looks like the following */
+#if 0
+typedef struct {
+        uint64_t fh;                /* File handler                                                   */
+        int      nvars;             /* Number of variables in all groups (with full path)             */
+        char     ** var_namelist;   /* Variable names in a char* array                                */
+        int      nattrs;            /* Number of attributes in all groups                             */
+        char     ** attr_namelist;  /* Attribute names in a char* array                               */
+
+        /* Step */
+        int      current_step;      /* The current step                                               */
+        int      last_step;         /* The currently available latest step in the stream/file         */
+
+        /* Information about file/stream */
+        char     *path;             /* Full path file name (as passed at open)                        */
+        int      nsubfiles;         /* Number of sub-files for certain output formats                 */
+        int      nwriters;          /* Number of processes that created the file/stream               */
+        int      endianness;        /* 0: little endian, 1: big endian                                */
+                                    /*   the read API takes care of conversion automatically          */
+        int      version;           /* Version of ADIOS-BP format                                     */
+        uint64_t file_size;         /* Size of file in bytes not including subfiles                   */
+
+        /* Internals */
+        void     * internal_data;   /* Data for internal use                                          */
+} ADIOS_FILE;
+#endif
     fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
     assert (fp);
 
@@ -1063,9 +1097,19 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
     fp->var_namelist = fh->gvar_h->var_namelist;
     fp->nattrs = fh->mfooter.attrs_count;
     fp->attr_namelist = fh->gattr_h->attr_namelist;
-    fp->file_size = fh->mfooter.file_size;
-    fp->version = fh->mfooter.version;
+    /* It was agreed that, for file open the current step should be the start time,
+     * instead of the stop time. However, the var_namelist and attr_namelist should
+     * consist of all steps. For stream open, this is done differently.
+     * 07/2012 - Q.Liu
+     */
+    fp->current_step = fh->tidx_start - 1;
+    fp->last_step = fh->tidx_stop - 1;
+
+    fp->path = strdup (fh->fname);
+    fp->nsubfiles = 
     fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
+    fp->version = fh->mfooter.version;
+    fp->file_size = fh->mfooter.file_size;
 
     return fp;
 }
@@ -1076,6 +1120,9 @@ int adios_read_bp_close (ADIOS_FILE * fp)
     BP_FILE * fh = p->fh;
 
     bp_close (fh);
+    fh = 0;
+
+    free (p);
 
     //FIXME
     free (fp);
@@ -1635,6 +1682,232 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
 
 int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data)
 {
+    int i, offset, count;
+    struct BP_GROUP * gh;
+    BP_PROC * p = (BP_PROC *) fp->fh;
+    BP_FILE * fh = (BP_FILE *) p->fh;
+    struct adios_index_attribute_struct_v1 * attr_root;
+    struct adios_index_var_struct_v1 * var_root;
+    int file_is_fortran, last_step = fp->last_step;
+    uint64_t k, attr_c_index, var_c_index;
+
+    adios_errno = 0;
+
+    attr_root = fh->attrs_root; /* need to traverse the attribute list of the group */
+    for (i = 0; i < attrid && attr_root; i++)
+    {
+        attr_root = attr_root->next;
+    }
+
+    if (i != attrid)
+    {
+        adios_error (err_corrupted_attribute, "Attribute id=%d is valid but was not found in internal data structures!",attrid);
+        return adios_errno;
+    }
+
+    /* Look for the last step because some of the hidden attributes, such as last update time,
+     * make sense for the most recent value. 07/2011 - Q.Liu
+     */
+
+    attr_c_index = -1;
+    for (k = 0; k < attr_root->characteristics_count; k++)
+    {
+        if (attr_root->characteristics[k].time_index - 1 == last_step)
+        {
+            attr_c_index = k;
+            break;
+        } 
+    }
+
+    if (attr_c_index == -1)
+    {
+        log_debug ("adios_read_bp_get_attr_byid: cannot find step : %d\n", last_step);
+        attr_c_index = 0;
+    }
+
+    file_is_fortran = is_fortran_file (fh);
+
+    // check the last version
+    if (attr_root->characteristics[attr_c_index].value)
+    {
+        /* Attribute has its own value */
+        *size = bp_get_type_size (attr_root->type, attr_root->characteristics[attr_c_index].value);
+        *type = attr_root->type;
+        *data = (void *) malloc (*size);
+        assert (*data);
+       
+        memcpy(*data, attr_root->characteristics[attr_c_index].value, *size);
+    }
+    else if (attr_root->characteristics[attr_c_index].var_id)
+    {
+        /* Attribute is a reference to a variable */
+        /* FIXME: var ids are not unique in BP. If a group of variables are written several
+           times under different path using adios_set_path(), the id of a variable is always
+           the same (should be different). As a temporary fix, we look first for a matching
+           id plus path between an attribute and a variable. If not found, then we look for
+           a match on the ids only.*/
+        var_root = fh->vars_root;
+        while (var_root)
+        {
+            if (var_root->id == attr_root->characteristics[attr_c_index].var_id
+               && !strcmp(var_root->var_path, attr_root->attr_path)
+               )
+                break;
+            var_root = var_root->next;
+        }
+        if (!var_root)
+        {
+            var_root = fh->vars_root;
+            while (var_root)
+            {
+                if (var_root->id == attr_root->characteristics[attr_c_index].var_id)
+                    break;
+                var_root = var_root->next;
+            }
+        }
+
+        if (!var_root)
+        { 
+            adios_error (err_invalid_attribute_reference,
+                   "Attribute %s/%s in group %s is a reference to variable ID %d, which is not found",
+                   attr_root->attr_path, attr_root->attr_name, attr_root->group_name,
+                   attr_root->characteristics[attr_c_index].var_id);
+            return adios_errno;
+        }
+
+        /* default values in case of error */
+        *data = NULL;
+        *size = 0;
+        *type = attr_root->type;
+
+        var_c_index = -1;
+        for (k = 0; k < var_root->characteristics_count; k++)
+        {
+            if (var_root->characteristics[k].time_index - 1 == last_step)
+            {
+                var_c_index = k;
+                break;
+            }
+        }
+
+        if (var_c_index == -1)
+        {
+            var_c_index = 0;
+            log_debug ("adios_read_bp_get_attr_byid: cannot find step : %d\n", last_step);
+        }
+        /* FIXME: variable and attribute type may not match, then a conversion is needed. */
+        /* Cases:
+                1. attr has no type, var is byte array     ==> string
+                2. attr has no type, var is not byte array ==> var type
+                3. attr is string, var is byte array       ==> string
+                4. attr type == var type                   ==> var type 
+                5. attr type != var type                   ==> attr type and conversion needed 
+        */
+        /* Error check: attr cannot reference an array in general */
+        if (var_root->characteristics[var_c_index].dims.count > 0)
+        {
+            if ( (var_root->type == adios_byte || var_root->type == adios_unsigned_byte) &&
+                 (attr_root->type == adios_unknown || attr_root->type == adios_string) &&
+                 (var_root->characteristics[var_c_index].dims.count == 1))
+            {
+                 ; // this conversions are allowed
+            }
+            else
+            {
+                adios_error (err_invalid_attribute_reference,
+                    "Attribute %s/%s in group %s, typeid=%d is a reference to an %d-dimensional array variable "
+                    "%s/%s of type %s, which is not supported in ADIOS",
+                    attr_root->attr_path, attr_root->attr_name, attr_root->group_name, attr_root->type,
+                    var_root->characteristics[var_c_index].dims.count,
+                    var_root->var_path, var_root->var_name, common_read_type_to_string(var_root->type));
+                return adios_errno;
+            }
+        }
+
+        if ( (attr_root->type == adios_unknown || attr_root->type == adios_string) &&
+             (var_root->type == adios_byte || var_root->type == adios_unsigned_byte) &&
+             (var_root->characteristics[var_c_index].dims.count == 1) )
+        {
+            /* 1D byte arrays are converted to string */
+            /* 1. read in variable */
+            char varname[512];
+            char *tmpdata;
+            ADIOS_VARCHUNK *vc;
+            read_request * r;
+            uint64_t start, count;
+            int status;
+
+            start = 0;
+            count = var_root->characteristics[var_c_index].dims.dims[0];
+            snprintf(varname, 512, "%s/%s", var_root->var_path, var_root->var_name);
+            tmpdata = (char *) malloc (count+1);
+            assert (tmpdata);
+
+            r = (read_request *) malloc (sizeof (read_request));
+            assert (r);
+
+            r->rank = p->rank;
+            r->sel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
+            r->sel->type = ADIOS_SELECTION_BOUNDINGBOX;
+            r->sel->u.bb.ndim = 1;
+            r->sel->u.bb.start = &start;
+            r->sel->u.bb.count = &count;
+            r->varid = var_root->id;
+            r->from_steps = fp->last_step;
+            r->nsteps = 1;
+            r->data = tmpdata;
+            r->datasize = count;
+            r->priv = 0;
+            r->next = 0;
+
+            vc = read_var_bb (fp, r);
+
+            free (r->sel);
+            free (r);
+      
+            if (vc == 0)
+            {
+                char *msg = strdup(adios_get_last_errmsg());
+                adios_error ((enum ADIOS_ERRCODES) status,
+                      "Cannot read data of variable %s/%s for attribute %s/%s of group %s: %s",
+                      var_root->var_path, var_root->var_name,
+                      attr_root->attr_path, attr_root->attr_name, attr_root->group_name,
+                      msg);
+                free(tmpdata);
+                free(msg);
+                return status;
+            }
+
+            *type = adios_string;
+            if (file_is_fortran)
+            {
+                /* Fortran byte array to C string */
+                *data = futils_fstr_to_cstr( tmpdata, (int)count); /* FIXME: supports only 2GB strings... */
+                *size = strlen( (char *)data );
+                free(tmpdata);
+            }
+            else
+            {
+                /* C array to C string */
+                tmpdata[count] = '\0';
+                *size = count+1;
+                *data = tmpdata;
+            }
+ 
+            free (vc->sel);
+            free (vc);
+        }
+        else
+        {
+            /* other types are inherited */
+            *type = var_root->type;
+            *size = bp_get_type_size (var_root->type, var_root->characteristics[var_c_index].value);
+            *data = (void *) malloc (*size);
+            assert (*data);
+            memcpy(*data, var_root->characteristics[var_c_index].value, *size);
+        }
+    }
+
     return 0;
 }
 

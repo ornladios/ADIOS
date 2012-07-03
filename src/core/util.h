@@ -16,16 +16,6 @@ typedef struct read_request
     uint64_t datasize; // size of selection to hold data
 // above is the common fields that all read method will use
     void * priv; // private structure for each read method
-/*
-    int ndims;
-    uint64_t * start;
-    uint64_t * count;
-    void * data;
-    uint64_t size;
-    int file_idx;
-    uint64_t offset;
-    void * parent;
-*/
     struct read_request * next;
 } read_request;
 
