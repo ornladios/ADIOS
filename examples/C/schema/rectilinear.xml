@@ -22,25 +22,25 @@
         <coordinates-single-var value="XYZ" />
     </mesh>
     <!-- Mesh1error: variable XY does not exist -->
-    <mesh name="mesh1error" type="rectilinear" time-varying="no">
+    <!--<mesh name="mesh1error" type="rectilinear" time-varying="no">
         <dimensions value="36,81" />
         <coordinates-single-var value="XY" />
-    </mesh>
+    </mesh>-->
     <!-- Mesh2 is correct -->
     <mesh name="mesh2" type="rectilinear" time-varying="no">
         <dimensions value="30,D2"/>
         <coordinates-multi-var value="X1,Y1" />
     </mesh>
     <!-- Mesh2error: coordinates should point to a var     -->
-    <mesh name="mesh2error" type="rectilinear" time-varying="no">
+    <!--<mesh name="mesh2error" type="rectilinear" time-varying="no">
         <dimensions value="D1,D2"/>
         <coordinates-multi-var value="2,Y2" />
-    </mesh>
+    </mesh>-->
     <!-- Mesh2error2: multi coordinates tag, expects 2 vars -->
-    <mesh name="mesh2err2" type="rectilinear" time-varying="no">
+    <!--<mesh name="mesh2err2" type="rectilinear" time-varying="no">
         <dimensions value="D1,D2"/>
         <coordinates-multi-var value="Y2" />
-    </mesh>
+    </mesh>-->
 </adios-group>
 
 <method group="schema" method="MPI"/>

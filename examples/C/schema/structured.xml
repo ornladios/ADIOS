@@ -24,11 +24,11 @@
         <points-multi-var value="X1,Y1" />
     </mesh>
     <!-- Mesh1error: Points need to be variables -->
-    <mesh name="mesh1error" type="structured" time-varying="no">
+    <!--<mesh name="mesh1error" type="structured" time-varying="no">
         <dimensions value="D1,D2"/>
         <nspace value="2" />
         <points-multi-var value="X1,50" />
-    </mesh>
+    </mesh>-->
     <!-- Mesh2 is correct -->
     <mesh name="mesh2" type="structured" time-varying="no">
         <dimensions value="30,D2"/>
@@ -36,11 +36,11 @@
         <points-single-var value="Z" />
     </mesh>
     <!-- Mesh2error: Variable Z0 does not exist -->
-    <mesh name="mesh2error" type="structured" time-varying="no">
+    <!--<mesh name="mesh2error" type="structured" time-varying="no">
         <dimensions value="30,D2" />
         <nspace value="3" />
         <points-single-var value="Z0" />
-    </mesh>
+    </mesh>-->
     <!-- Mesh3 is correct -->
     <mesh name="mesh3" type="structured" time-varying="no">
         <dimensions value="30,D2"/>
@@ -48,11 +48,11 @@
         <points-multi-var value="X2,Y2" />
     </mesh>
     <!-- Mesh3error: points-multi-var expects 2 variables -->
-    <mesh name="mesh3error" type="structured" time-varying="no">
+    <!--<mesh name="mesh3error" type="structured" time-varying="no">
         <dimensions value="3,6" />
         <nspace value="3" />
         <points-multi-var value="Z" />
-    </mesh>
+    </mesh>-->
     <!-- Mesh 4 is correct -->
     <mesh name="mesh4" type="structured" time-varying="no">
         <dimensions value="D1" />
@@ -60,18 +60,18 @@
         <points-single-var value="Y2" />
     </mesh>
     <!-- Mesh4error: points-single-var requires nspace  -->
-    <mesh name="mesh4error" type="structured" time-varying="no">
+    <!--<mesh name="mesh4error" type="structured" time-varying="no">
         <dimensions value="3,6" />
         <points-single-var value="Z" />
-    </mesh>
-    <!-- Mesh5 is corrent: points-multi-var does not require nspace -->
+    </mesh>-->
+    <!-- Mesh5 is correct: points-multi-var does not require nspace -->
     <mesh name="mesh5" type="structured" time-varying="no">
         <dimensions value="D1,D2"/>
         <points-multi-var value="X1,Y1" />
     </mesh>
     <!-- Mesh5error: structured mesh requires a least dimensiosn and points -->
-    <mesh name="mesh5error" type="structured" time-varying="no">
-    </mesh>
+    <!--<mesh name="mesh5error" type="structured" time-varying="no">
+    </mesh>-->
 </adios-group>
 
 <method group="schema" method="MPI"/>

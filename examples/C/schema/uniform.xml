@@ -27,11 +27,11 @@
         <spacing value="S1" />
     </mesh>
     <!-- Mesh2error: variable D9 does not exist -->
-    <mesh name="mesh2error" type="uniform" time-varying="no">
+    <!--<mesh name="mesh2error" type="uniform" time-varying="no">
         <dimensions value="D9" />
         <origin value="O1" />
         <spacing value="S1" />
-    </mesh>
+    </mesh>-->
     <!-- Mesh3 is correct: values can be numbers or variables 
          Note: Dimensions, origin, spacing and maximum coordinates
          should match. Ex: 2D ==> 2 values (x,y) for orgs and max
