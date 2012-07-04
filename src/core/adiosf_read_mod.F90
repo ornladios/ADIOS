@@ -302,124 +302,124 @@ module adios_read_mod
     !
     ! ADIOS_GET_ATTR generic interface 
     !
-    ! Usage: call adios_get_attr (gp, varname, attr, err)
+    ! Usage: call adios_get_attr (fp, varname, attr, err)
     !
     interface adios_get_attr
 
         ! INTEGER*1
-        subroutine adios_get_attr_int1 (gp, attrname, attr, err)
+        subroutine adios_get_attr_int1 (fp, attrname, attr, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
-            integer*1,      intent(inout) :: attr
+            integer*1,      intent(out) :: attr
             integer,        intent(out) :: err 
         end subroutine
 
         ! INTEGER*2
-        subroutine adios_get_attr_int2 (gp, attrname, attr, err)
+        subroutine adios_get_attr_int2 (fp, attrname, attr, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
-            integer*2,      intent(inout) :: attr
+            integer*2,      intent(out) :: attr
             integer,        intent(out) :: err 
         end subroutine
 
         ! INTEGER*4
-        subroutine adios_get_attr_int4 (gp, attrname, attr, err)
+        subroutine adios_get_attr_int4 (fp, attrname, attr, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
-            integer*4,      intent(inout) :: attr
+            integer*4,      intent(out) :: attr
             integer,        intent(out) :: err 
         end subroutine
 
         ! INTEGER*8
-        subroutine adios_get_attr_int8 (gp, attrname, attr, err)
+        subroutine adios_get_attr_int8 (fp, attrname, attr, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
-            integer*8,      intent(inout) :: attr
+            integer*8,      intent(out) :: attr
             integer,        intent(out) :: err 
         end subroutine
 
         ! REAL*4
-        subroutine adios_get_attr_real4 (gp, attrname, attr, err)
+        subroutine adios_get_attr_real4 (fp, attrname, attr, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
-            real*4,         intent(inout) :: attr
+            real*4,         intent(out) :: attr
             integer,        intent(out) :: err 
         end subroutine
 
         ! REAL*8
-        subroutine adios_get_attr_real8 (gp, attrname, attr, err)
+        subroutine adios_get_attr_real8 (fp, attrname, attr, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
-            real*8,         intent(inout) :: attr
+            real*8,         intent(out) :: attr
             integer,        intent(out) :: err 
         end subroutine
 
         ! COMPLEX*8
-        subroutine adios_get_attr_complex8 (gp, attrname, attr, err)
+        subroutine adios_get_attr_complex8 (fp, attrname, attr, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
-            complex,        intent(inout) :: attr
+            complex,        intent(out) :: attr
             integer,        intent(out) :: err 
         end subroutine
 
         ! COMPLEX*16
-        subroutine adios_get_attr_complex16 (gp, attrname, attr, err)
+        subroutine adios_get_attr_complex16 (fp, attrname, attr, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
-            complex*16,     intent(inout) :: attr
+            complex*16,     intent(out) :: attr
             integer,        intent(out) :: err 
         end subroutine
 
         ! CHARACTER(*)
-        subroutine adios_get_attr_char (gp, attrname, attr, err)
+        subroutine adios_get_attr_char (fp, attrname, attr, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
-            character(*),   intent(inout) :: attr
+            character(*),   intent(out) :: attr
             integer,        intent(out) :: err 
         end subroutine
 
         ! LOGICAL*1
-        subroutine adios_get_attr_logical1 (gp, attrname, attr, err)
+        subroutine adios_get_attr_logical1 (fp, attrname, attr, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
-            logical*1,      intent(inout) :: attr
+            logical*1,      intent(out) :: attr
             integer,        intent(out) :: err 
         end subroutine
 
         ! LOGICAL*2
-        subroutine adios_get_attr_logical2 (gp, attrname, attr, err)
+        subroutine adios_get_attr_logical2 (fp, attrname, attr, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
-            logical*2,      intent(inout) :: attr
+            logical*2,      intent(out) :: attr
             integer,        intent(out) :: err 
         end subroutine
 
         ! LOGICAL*4
-        subroutine adios_get_attr_logical4 (gp, attrname, attr, err)
+        subroutine adios_get_attr_logical4 (fp, attrname, attr, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
-            logical*4,      intent(inout) :: attr
+            logical*4,      intent(out) :: attr
             integer,        intent(out) :: err 
         end subroutine
 
         ! LOGICAL*8
-        subroutine adios_get_attr_logical8 (gp, attrname, attr, err)
+        subroutine adios_get_attr_logical8 (fp, attrname, attr, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
-            logical*8,      intent(inout) :: attr
+            logical*8,      intent(out) :: attr
             integer,        intent(out) :: err 
         end subroutine
 
@@ -434,6 +434,166 @@ module adios_read_mod
     interface adios_schedule_read
 
         !
+        ! scalars
+        !
+
+        ! INTEGER*1 scalar
+        subroutine adios_schedule_read_int1_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*1,      intent(out) :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! INTEGER*2 scalar
+        subroutine adios_schedule_read_int2_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*2,      intent(out) :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! INTEGER*4 scalar
+        subroutine adios_schedule_read_int4_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*4,      intent(out) :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! INTEGER*8 scalar
+        subroutine adios_schedule_read_int8_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*8,      intent(out) :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! REAL*4 scalar
+        subroutine adios_schedule_read_real4_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*4,         intent(out) :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! REAL*8 scalar
+        subroutine adios_schedule_read_real8_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*8,        intent(out) :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! COMPLEX (*8) scalar
+        subroutine adios_schedule_read_complex8_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex,        intent(out) :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! DOUBLE-COMPLEX scalar
+        subroutine adios_schedule_read_complex16_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex*16,     intent(out) :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! CHARACTER scalar
+        !subroutine adios_schedule_read_char_d0 (fp, sel, varname, from_step, nsteps, data, err)
+        !    implicit none
+        !    integer*8,      intent(in)  :: fp
+        !    integer*8,      intent(in)  :: sel
+        !    character(*),   intent(in)  :: varname
+        !    integer,        intent(in)  :: from_step
+        !    integer,        intent(in)  :: nsteps
+        !    character(*),   intent(out) :: data
+        !    integer,        intent(in)  :: err 
+        !end subroutine
+
+        ! LOGICAL*1 scalar
+        subroutine adios_schedule_read_logical1_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*1,      intent(out) :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! LOGICAL*2 scalar
+        subroutine adios_schedule_read_logical2_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*2,      intent(out) :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! LOGICAL*4 scalar
+        subroutine adios_schedule_read_logical4_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*4,      intent(out) :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! LOGICAL*8 scalar
+        subroutine adios_schedule_read_logical8_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*8,      intent(out) :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        !
         ! 1D data
         !
 
@@ -445,7 +605,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*1, dimension(*), intent(inout) :: data
+            integer*1, dimension(*), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -457,7 +617,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*2, dimension(*), intent(inout) :: data
+            integer*2, dimension(*), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -469,7 +629,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*4, dimension(*), intent(inout) :: data
+            integer*4, dimension(*), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -481,7 +641,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*8, dimension(*), intent(inout) :: data
+            integer*8, dimension(*), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -505,7 +665,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            real*8,   dimension(*), intent(inout) :: data
+            real*8,   dimension(*), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -517,7 +677,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            complex,   dimension(*), intent(inout) :: data
+            complex,   dimension(*), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -529,7 +689,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            complex*16,dimension(*), intent(inout) :: data
+            complex*16,dimension(*), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -541,7 +701,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            character(*),   intent(inout) :: data
+            character(*),   intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -553,7 +713,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*1, dimension(*), intent(inout) :: data
+            logical*1, dimension(*), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -565,7 +725,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*2, dimension(*), intent(inout) :: data
+            logical*2, dimension(*), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -577,7 +737,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*4, dimension(*), intent(inout) :: data
+            logical*4, dimension(*), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -589,7 +749,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*8, dimension(*), intent(inout) :: data
+            logical*8, dimension(*), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -605,7 +765,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*1, dimension(:,:), intent(inout) :: data
+            integer*1, dimension(:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -617,7 +777,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*2, dimension(:,:), intent(inout) :: data
+            integer*2, dimension(:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -629,7 +789,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*4, dimension(:,:), intent(inout) :: data
+            integer*4, dimension(:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -641,7 +801,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*8, dimension(:,:), intent(inout) :: data
+            integer*8, dimension(:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -653,7 +813,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            real*4,    dimension(:,:), intent(inout) :: data
+            real*4,    dimension(:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -665,7 +825,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            real*8,   dimension(:,:), intent(inout) :: data
+            real*8,   dimension(:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -677,7 +837,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            complex,   dimension(:,:), intent(inout) :: data
+            complex,   dimension(:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -689,7 +849,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            complex*16,dimension(:,:), intent(inout) :: data
+            complex*16,dimension(:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -701,7 +861,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            character(*),dimension(*), intent(inout) :: data
+            character(*),dimension(*), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -713,7 +873,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*1, dimension(:,:), intent(inout) :: data
+            logical*1, dimension(:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -725,7 +885,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*2, dimension(:,:), intent(inout) :: data
+            logical*2, dimension(:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -737,7 +897,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*4, dimension(:,:), intent(inout) :: data
+            logical*4, dimension(:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -749,7 +909,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*8, dimension(:,:), intent(inout) :: data
+            logical*8, dimension(:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -765,7 +925,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*1, dimension(:,:,:), intent(inout) :: data
+            integer*1, dimension(:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -777,7 +937,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*2, dimension(:,:,:), intent(inout) :: data
+            integer*2, dimension(:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -789,7 +949,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*4, dimension(:,:,:), intent(inout) :: data
+            integer*4, dimension(:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -801,7 +961,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*8, dimension(:,:,:), intent(inout) :: data
+            integer*8, dimension(:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -813,7 +973,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            real*4,    dimension(:,:,:), intent(inout) :: data
+            real*4,    dimension(:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -825,7 +985,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            real*8,   dimension(:,:,:), intent(inout) :: data
+            real*8,   dimension(:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -837,7 +997,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            complex,   dimension(:,:,:), intent(inout) :: data
+            complex,   dimension(:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -849,7 +1009,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            complex*16,dimension(:,:,:), intent(inout) :: data
+            complex*16,dimension(:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -861,7 +1021,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            character(*),dimension(:,:),  intent(inout) :: data
+            character(*),dimension(:,:),  intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -873,7 +1033,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*1, dimension(:,:,:), intent(inout) :: data
+            logical*1, dimension(:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -885,7 +1045,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*2, dimension(:,:,:), intent(inout) :: data
+            logical*2, dimension(:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -897,7 +1057,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*4, dimension(:,:,:), intent(inout) :: data
+            logical*4, dimension(:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -909,7 +1069,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*8, dimension(:,:,:), intent(inout) :: data
+            logical*8, dimension(:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -925,7 +1085,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*1, dimension(:,:,:,:), intent(inout) :: data
+            integer*1, dimension(:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -937,7 +1097,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*2, dimension(:,:,:,:), intent(inout) :: data
+            integer*2, dimension(:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -949,7 +1109,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*4, dimension(:,:,:,:), intent(inout) :: data
+            integer*4, dimension(:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -961,7 +1121,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*8, dimension(:,:,:,:), intent(inout) :: data
+            integer*8, dimension(:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -973,7 +1133,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            real*4,    dimension(:,:,:,:), intent(inout) :: data
+            real*4,    dimension(:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -985,7 +1145,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            real*8,   dimension(:,:,:,:), intent(inout) :: data
+            real*8,   dimension(:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -997,7 +1157,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            complex,   dimension(:,:,:,:), intent(inout) :: data
+            complex,   dimension(:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1009,7 +1169,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            complex*16,dimension(:,:,:,:), intent(inout) :: data
+            complex*16,dimension(:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1021,7 +1181,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            character(*),dimension(:,:,:), intent(inout) :: data
+            character(*),dimension(:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1033,7 +1193,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*1, dimension(:,:,:,:), intent(inout) :: data
+            logical*1, dimension(:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1045,7 +1205,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*2, dimension(:,:,:,:), intent(inout) :: data
+            logical*2, dimension(:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1057,7 +1217,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*4, dimension(:,:,:,:), intent(inout) :: data
+            logical*4, dimension(:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1069,7 +1229,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*8, dimension(:,:,:,:), intent(inout) :: data
+            logical*8, dimension(:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1085,7 +1245,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*1, dimension(:,:,:,:,:), intent(inout) :: data
+            integer*1, dimension(:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1097,7 +1257,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*2, dimension(:,:,:,:,:), intent(inout) :: data
+            integer*2, dimension(:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1109,7 +1269,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*4, dimension(:,:,:,:,:), intent(inout) :: data
+            integer*4, dimension(:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1121,7 +1281,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*8, dimension(:,:,:,:,:), intent(inout) :: data
+            integer*8, dimension(:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1133,7 +1293,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            real*4,    dimension(:,:,:,:,:), intent(inout) :: data
+            real*4,    dimension(:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1145,7 +1305,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            real*8,   dimension(:,:,:,:,:), intent(inout) :: data
+            real*8,   dimension(:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1157,7 +1317,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            complex,   dimension(:,:,:,:,:), intent(inout) :: data
+            complex,   dimension(:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1169,7 +1329,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            complex*16,dimension(:,:,:,:,:), intent(inout) :: data
+            complex*16,dimension(:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1181,7 +1341,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            character(*),dimension(:,:,:,:),intent(inout) :: data
+            character(*),dimension(:,:,:,:),intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1193,7 +1353,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*1, dimension(:,:,:,:,:), intent(inout) :: data
+            logical*1, dimension(:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1205,7 +1365,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*2, dimension(:,:,:,:,:), intent(inout) :: data
+            logical*2, dimension(:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1217,7 +1377,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*4, dimension(:,:,:,:,:), intent(inout) :: data
+            logical*4, dimension(:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1229,7 +1389,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*8, dimension(:,:,:,:,:), intent(inout) :: data
+            logical*8, dimension(:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1245,7 +1405,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*1, dimension(:,:,:,:,:,:), intent(inout) :: data
+            integer*1, dimension(:,:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1257,7 +1417,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*2, dimension(:,:,:,:,:,:), intent(inout) :: data
+            integer*2, dimension(:,:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1269,7 +1429,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*4, dimension(:,:,:,:,:,:), intent(inout) :: data
+            integer*4, dimension(:,:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1281,7 +1441,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            integer*8, dimension(:,:,:,:,:,:), intent(inout) :: data
+            integer*8, dimension(:,:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1293,7 +1453,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            real*4,    dimension(:,:,:,:,:,:), intent(inout) :: data
+            real*4,    dimension(:,:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1305,7 +1465,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            real*8,   dimension(:,:,:,:,:,:), intent(inout) :: data
+            real*8,   dimension(:,:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1317,7 +1477,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            complex,   dimension(:,:,:,:,:,:), intent(inout) :: data
+            complex,   dimension(:,:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1329,7 +1489,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            complex*16,dimension(:,:,:,:,:,:), intent(inout) :: data
+            complex*16,dimension(:,:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1341,7 +1501,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            character(*),dimension(:,:,:,:,:),intent(inout) :: data
+            character(*),dimension(:,:,:,:,:),intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1353,7 +1513,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*1, dimension(:,:,:,:,:,:), intent(inout) :: data
+            logical*1, dimension(:,:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1365,7 +1525,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*2, dimension(:,:,:,:,:,:), intent(inout) :: data
+            logical*2, dimension(:,:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1377,7 +1537,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*4, dimension(:,:,:,:,:,:), intent(inout) :: data
+            logical*4, dimension(:,:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1389,7 +1549,7 @@ module adios_read_mod
             character(*),   intent(in)  :: varname
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
-            logical*8, dimension(:,:,:,:,:,:), intent(inout) :: data
+            logical*8, dimension(:,:,:,:,:,:), intent(out) :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -1398,227 +1558,227 @@ module adios_read_mod
     !
     ! adios_GET_STATISTICS generic interface 
     !
-    ! Usage: call adios_get_statistics (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+    ! Usage: call adios_get_statistics (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
     !
     interface adios_get_statistics
 
         ! INTEGER*1 arrays
-        subroutine adios_get_statistics_int1 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+        subroutine adios_get_statistics_int1 (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
             integer*1,      intent(out) :: value
             integer*1,      intent(out) :: gmin
             integer*1,      intent(out) :: gmax
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
-            integer*1, dimension(*), intent(inout) :: mins
-            integer*1, dimension(*), intent(inout) :: maxs
-            real*8, dimension(*), intent(inout) :: avgs
+            integer*1, dimension(*), intent(out) :: mins
+            integer*1, dimension(*), intent(out) :: maxs
+            real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
             integer,dimension(*), intent(out) :: err 
         end subroutine
 
         ! INTEGER*2 arrays
-        subroutine adios_get_statistics_int2 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+        subroutine adios_get_statistics_int2 (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
             integer*2,      intent(out) :: value
             integer*2,      intent(out) :: gmin
             integer*2,      intent(out) :: gmax
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
-            integer*2, dimension(*), intent(inout) :: mins
-            integer*2, dimension(*), intent(inout) :: maxs
-            real*8, dimension(*), intent(inout) :: avgs
+            integer*2, dimension(*), intent(out) :: mins
+            integer*2, dimension(*), intent(out) :: maxs
+            real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! INTEGER*4 arrays
-        subroutine adios_get_statistics_int4 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+        subroutine adios_get_statistics_int4 (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
             integer*4,      intent(out) :: value
             integer*4,      intent(out) :: gmin
             integer*4,      intent(out) :: gmax
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
-            integer*4, dimension(*), intent(inout) :: mins
-            integer*1, dimension(*), intent(inout) :: maxs
-            real*8, dimension(*), intent(inout) :: avgs
+            integer*4, dimension(*), intent(out) :: mins
+            integer*1, dimension(*), intent(out) :: maxs
+            real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! INTEGER*8 arrays
-        subroutine adios_get_statistics_int8 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+        subroutine adios_get_statistics_int8 (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
             integer*8,      intent(out) :: value
             integer*8,      intent(out) :: gmin
             integer*8,      intent(out) :: gmax
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
-            integer*8, dimension(*), intent(inout) :: mins
-            integer*8, dimension(*), intent(inout) :: maxs
-            real*8, dimension(*), intent(inout) :: avgs
+            integer*8, dimension(*), intent(out) :: mins
+            integer*8, dimension(*), intent(out) :: maxs
+            real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! REAL*4 arrays
-        subroutine adios_get_statistics_real4 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+        subroutine adios_get_statistics_real4 (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
             real*4,         intent(out) :: value
             real*4,         intent(out) :: gmin
             real*4,         intent(out) :: gmax
-            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
-            real*4, dimension(*), intent(inout) :: mins
-            real*4, dimension(*), intent(inout) :: maxs
+            real*4, dimension(*), intent(out) :: mins
+            real*4, dimension(*), intent(out) :: maxs
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
             integer,        intent(out) :: err 
         end subroutine
 
         ! REAL*8 arrays
-        subroutine adios_get_statistics_real8 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+        subroutine adios_get_statistics_real8 (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
             real*8,         intent(out) :: value
             real*8,         intent(out) :: gmin
             real*8,         intent(out) :: gmax
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
-            real*8, dimension(*), intent(inout) :: mins
-            real*8, dimension(*), intent(inout) :: maxs
-            real*8, dimension(*), intent(inout) :: avgs
+            real*8, dimension(*), intent(out) :: mins
+            real*8, dimension(*), intent(out) :: maxs
+            real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! COMPLEX*8 arrays
-        subroutine adios_get_statistics_complex8 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+        subroutine adios_get_statistics_complex8 (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
             complex,        intent(out) :: value
             complex,        intent(out) :: gmin
             complex,        intent(out) :: gmax
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
-            complex, dimension(*), intent(inout) :: mins
-            complex, dimension(*), intent(inout) :: maxs
-            real*8, dimension(*), intent(inout) :: avgs
+            complex, dimension(*), intent(out) :: mins
+            complex, dimension(*), intent(out) :: maxs
+            real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! COMPLEX*16 arrays
-        subroutine adios_get_statistics_complex16 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+        subroutine adios_get_statistics_complex16 (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
             complex*16,     intent(out) :: value
             complex*16,     intent(out) :: gmin
             complex*16,     intent(out) :: gmax
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
-            complex*16, dimension(*), intent(inout) :: mins
-            complex*16, dimension(*), intent(inout) :: maxs
-            real*8, dimension(*), intent(inout) :: avgs
+            complex*16, dimension(*), intent(out) :: mins
+            complex*16, dimension(*), intent(out) :: maxs
+            real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! CHARACTER(*) arrays
-        subroutine adios_get_statistics_char (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+        subroutine adios_get_statistics_char (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
             character(*),   intent(out) :: value
             character(*),   intent(out) :: gmin
             character(*),   intent(out) :: gmax
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
-            character(*), dimension(*), intent(inout) :: mins
-            character(*), dimension(*), intent(inout) :: maxs
-            real*8, dimension(*), intent(inout) :: avgs
+            character(*), dimension(*), intent(out) :: mins
+            character(*), dimension(*), intent(out) :: maxs
+            real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! LOFICAL*1 arrays
-        subroutine adios_get_statistics_logical1 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+        subroutine adios_get_statistics_logical1 (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
             logical*1,      intent(out) :: value
             logical*1,      intent(out) :: gmin
             logical*1,      intent(out) :: gmax
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
-            logical*1, dimension(*), intent(inout) :: mins
-            logical*1, dimension(*), intent(inout) :: maxs
-            real*8, dimension(*), intent(inout) :: avgs
+            logical*1, dimension(*), intent(out) :: mins
+            logical*1, dimension(*), intent(out) :: maxs
+            real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! LOGICAL*2 arrays
-        subroutine adios_get_statistics_logical2 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+        subroutine adios_get_statistics_logical2 (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
             logical*2,      intent(out) :: value
             logical*2,      intent(out) :: gmin
             logical*2,      intent(out) :: gmax
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
-            logical*2, dimension(*), intent(inout) :: mins
-            logical*2, dimension(*), intent(inout) :: maxs
-            real*8, dimension(*), intent(inout) :: avgs
+            logical*2, dimension(*), intent(out) :: mins
+            logical*2, dimension(*), intent(out) :: maxs
+            real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! LOGICAL*4 arrays
-        subroutine adios_get_statistics_logical4 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+        subroutine adios_get_statistics_logical4 (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
             logical*4,      intent(out) :: value
             logical*4,      intent(out) :: gmin
             logical*4,      intent(out) :: gmax
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
-            logical*4, dimension(*), intent(inout) :: mins
-            logical*4, dimension(*), intent(inout) :: maxs
-            real*8, dimension(*), intent(inout) :: avgs
+            logical*4, dimension(*), intent(out) :: mins
+            logical*4, dimension(*), intent(out) :: maxs
+            real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
 
         ! LOGICAL*8 arrays
-        subroutine adios_get_statistics_logical8 (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
+        subroutine adios_get_statistics_logical8 (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
             implicit none
-            integer*8,      intent(in)  :: gp
+            integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
             logical*8,      intent(out) :: value
             logical*8,      intent(out) :: gmin
             logical*8,      intent(out) :: gmax
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
-            logical*8, dimension(*), intent(inout) :: mins
-            logical*8, dimension(*), intent(inout) :: maxs
-            real*8, dimension(*), intent(inout) :: avgs
+            logical*8, dimension(*), intent(out) :: mins
+            logical*8, dimension(*), intent(out) :: maxs
+            real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
             integer,        intent(out) :: err 
         end subroutine
