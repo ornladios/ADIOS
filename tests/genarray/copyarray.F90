@@ -187,7 +187,7 @@ end subroutine generateLocalArray
 !!***************************
 subroutine readArray()
     use genarray_comm
-    use adios_read
+    use adios_write_mod
     implicit none
     integer*8 adios_handle, adios_groupsize
     integer adios_err
