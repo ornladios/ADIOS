@@ -539,6 +539,22 @@ void FC_FUNC_(adios_select_method, ADIOS_SELECT_METHOD)
 /* 
     ADIOS_WRITE 
 */
+/* scalars */
+void FC_FUNC_(adios_write_int1_d0, ADIOS_WRITE_INT1_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
+void FC_FUNC_(adios_write_int2_d0, ADIOS_WRITE_INT2_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
+void FC_FUNC_(adios_write_int4_d0, ADIOS_WRITE_INT4_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
+void FC_FUNC_(adios_write_int8_d0, ADIOS_WRITE_INT8_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
+void FC_FUNC_(adios_write_real4_d0, ADIOS_WRITE_REAL4_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
+void FC_FUNC_(adios_write_real8_d0, ADIOS_WRITE_REAL8_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
+//void FC_FUNC_(adios_write_char_d0, ADIOS_WRITE_CHAR_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
+void FC_FUNC_(adios_write_complex8_d0, ADIOS_WRITE_COMPLEX8_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
+void FC_FUNC_(adios_write_complex16_d0, ADIOS_WRITE_COMPLEX16_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
+void FC_FUNC_(adios_write_logical1_d0, ADIOS_WRITE_LOGICAL1_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
+void FC_FUNC_(adios_write_logical2_d0, ADIOS_WRITE_LOGICAL2_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
+void FC_FUNC_(adios_write_logical4_d0, ADIOS_WRITE_LOGICAL4_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
+void FC_FUNC_(adios_write_logical8_d0, ADIOS_WRITE_LOGICAL8_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
+
+
 /* 1D */
 void FC_FUNC_(adios_write_int1_d1, ADIOS_WRITE_INT1_D1) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
 void FC_FUNC_(adios_write_int2_d1, ADIOS_WRITE_INT2_D1) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
@@ -639,6 +655,21 @@ void FC_FUNC_(adios_write_logical8_d6, ADIOS_WRITE_LOGICAL8_D6) (int64_t * fd_p,
 /* 
     ADIOS_READ 
 */
+/* scalars */
+void FC_FUNC_(adios_read_int1_d0, ADIOS_READ_INT1_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
+void FC_FUNC_(adios_read_int2_d0, ADIOS_READ_INT2_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
+void FC_FUNC_(adios_read_int4_d0, ADIOS_READ_INT4_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
+void FC_FUNC_(adios_read_int8_d0, ADIOS_READ_INT8_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
+void FC_FUNC_(adios_read_real4_d0, ADIOS_READ_REAL4_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
+void FC_FUNC_(adios_read_real8_d0, ADIOS_READ_REAL8_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
+//void FC_FUNC_(adios_read_char_d0, ADIOS_READ_CHAR_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
+void FC_FUNC_(adios_read_complex8_d0, ADIOS_READ_COMPLEX8_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
+void FC_FUNC_(adios_read_complex16_d0, ADIOS_READ_COMPLEX16_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
+void FC_FUNC_(adios_read_logical1_d0, ADIOS_READ_LOGICAL1_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
+void FC_FUNC_(adios_read_logical2_d0, ADIOS_READ_LOGICAL2_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
+void FC_FUNC_(adios_read_logical4_d0, ADIOS_READ_LOGICAL4_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
+void FC_FUNC_(adios_read_logical8_d0, ADIOS_READ_LOGICAL8_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
+
 /* 1D */
 void FC_FUNC_(adios_read_int1_d1, ADIOS_READ_INT1_D1) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
 void FC_FUNC_(adios_read_int2_d1, ADIOS_READ_INT2_D1) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }

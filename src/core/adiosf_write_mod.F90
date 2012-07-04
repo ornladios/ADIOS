@@ -156,6 +156,128 @@ module adios_write_mod
     interface adios_write
 
         !
+        ! scalars
+        !
+
+        ! INTEGER*1 scalar
+        subroutine adios_write_int1_d0 (fd, varname, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            integer*1,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! INTEGER*2 scalar
+        subroutine adios_write_int2_d0 (fd, varname, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            integer*2,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! INTEGER*4 scalar
+        subroutine adios_write_int4_d0 (fd, varname, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            integer*4,      intent(in) :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! INTEGER*8 scalar
+        subroutine adios_write_int8_d0 (fd, varname, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            integer*8,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! REAL*4 scalar
+        subroutine adios_write_real4_d0 (fd, varname, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            real*4,         intent(in)  :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! REAL*8 scalar
+        subroutine adios_write_real8_d0 (fd, varname, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            real*8,         intent(in)  :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! COMPLEX (*8) scalar
+        subroutine adios_write_complex8_d0 (fd, varname, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            complex,        intent(in)  :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! DOUBLE-COMPLEX scalar
+        subroutine adios_write_complex16_d0 (fd, varname, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            complex*16,     intent(in)  :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! CHARACTER scalar (Same as 1D?)
+        !subroutine adios_write_char_d0 (fd, varname, data, err)
+        !    implicit none
+        !    integer*8,      intent(in)  :: fd
+        !    character(*),   intent(in)  :: varname
+        !    character(*),   intent(inout) :: data
+        !    integer,        intent(in)  :: err 
+        !end subroutine
+
+        ! LOGICAL*1 scalar
+        subroutine adios_write_logical1_d0 (fd, varname, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            logical*1,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! LOGICAL*2 scalar
+        subroutine adios_write_logical2_d0 (fd, varname, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            logical*2,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! LOGICAL*4 scalar
+        subroutine adios_write_logical4_d0 (fd, varname, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            logical*4,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! LOGICAL*8 scalar
+        subroutine adios_write_logical8_d0 (fd, varname, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            logical*8,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+        end subroutine
+
+
+        !
         ! 1D data
         !
 
@@ -164,7 +286,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*1, dimension(*), intent(inout) :: data
+            integer*1, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -173,7 +295,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*2, dimension(*), intent(inout) :: data
+            integer*2, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -182,7 +304,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*4, dimension(*), intent(inout) :: data
+            integer*4, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -191,7 +313,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*8, dimension(*), intent(inout) :: data
+            integer*8, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -209,7 +331,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*8,   dimension(*), intent(inout) :: data
+            real*8,   dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -218,7 +340,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex,   dimension(*), intent(inout) :: data
+            complex,   dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -227,7 +349,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex*16,dimension(*), intent(inout) :: data
+            complex*16,dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -236,7 +358,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            character(*),   intent(inout) :: data
+            character(*),   intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -245,7 +367,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*1, dimension(*), intent(inout) :: data
+            logical*1, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -254,7 +376,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*2, dimension(*), intent(inout) :: data
+            logical*2, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -263,7 +385,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*4, dimension(*), intent(inout) :: data
+            logical*4, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -272,7 +394,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*8, dimension(*), intent(inout) :: data
+            logical*8, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -285,7 +407,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:), intent(inout) :: data
+            integer*1, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -294,7 +416,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:), intent(inout) :: data
+            integer*2, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -303,7 +425,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:), intent(inout) :: data
+            integer*4, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -312,7 +434,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:), intent(inout) :: data
+            integer*8, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -321,7 +443,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:), intent(inout) :: data
+            real*4,    dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -330,7 +452,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:), intent(inout) :: data
+            real*8,   dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -339,7 +461,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex,   dimension(:,:), intent(inout) :: data
+            complex,   dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -348,7 +470,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:), intent(inout) :: data
+            complex*16,dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -357,7 +479,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            character(*),dimension(*), intent(inout) :: data
+            character(*),dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -366,7 +488,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:), intent(inout) :: data
+            logical*1, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -375,7 +497,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:), intent(inout) :: data
+            logical*2, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -384,7 +506,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:), intent(inout) :: data
+            logical*4, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -393,7 +515,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:), intent(inout) :: data
+            logical*8, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -406,7 +528,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:), intent(inout) :: data
+            integer*1, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -415,7 +537,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:), intent(inout) :: data
+            integer*2, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -424,7 +546,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:), intent(inout) :: data
+            integer*4, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -433,7 +555,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:), intent(inout) :: data
+            integer*8, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -442,7 +564,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:), intent(inout) :: data
+            real*4,    dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -451,7 +573,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:), intent(inout) :: data
+            real*8,   dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -460,7 +582,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:), intent(inout) :: data
+            complex,   dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -469,7 +591,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:), intent(inout) :: data
+            complex*16,dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -478,7 +600,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            character(*),dimension(:,:),  intent(inout) :: data
+            character(*),dimension(:,:),  intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -487,7 +609,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:), intent(inout) :: data
+            logical*1, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -496,7 +618,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:), intent(inout) :: data
+            logical*2, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -505,7 +627,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:), intent(inout) :: data
+            logical*4, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -514,7 +636,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:), intent(inout) :: data
+            logical*8, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -527,7 +649,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:,:), intent(inout) :: data
+            integer*1, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -536,7 +658,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:,:), intent(inout) :: data
+            integer*2, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -545,7 +667,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:,:), intent(inout) :: data
+            integer*4, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -554,7 +676,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:,:), intent(inout) :: data
+            integer*8, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -563,7 +685,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:,:), intent(inout) :: data
+            real*4,    dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -572,7 +694,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:,:), intent(inout) :: data
+            real*8,   dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -581,7 +703,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:,:), intent(inout) :: data
+            complex,   dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -590,7 +712,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:,:), intent(inout) :: data
+            complex*16,dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -599,7 +721,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            character(*),dimension(:,:,:), intent(inout) :: data
+            character(*),dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -608,7 +730,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:,:), intent(inout) :: data
+            logical*1, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -617,7 +739,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:,:), intent(inout) :: data
+            logical*2, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -626,7 +748,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:,:), intent(inout) :: data
+            logical*4, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -635,7 +757,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:,:), intent(inout) :: data
+            logical*8, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -648,7 +770,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:,:,:), intent(inout) :: data
+            integer*1, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -657,7 +779,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:,:,:), intent(inout) :: data
+            integer*2, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -666,7 +788,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:,:,:), intent(inout) :: data
+            integer*4, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -675,7 +797,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:,:,:), intent(inout) :: data
+            integer*8, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -684,7 +806,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:,:,:), intent(inout) :: data
+            real*4,    dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -693,7 +815,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:,:,:), intent(inout) :: data
+            real*8,   dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -702,7 +824,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:,:,:), intent(inout) :: data
+            complex,   dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -711,7 +833,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:,:,:), intent(inout) :: data
+            complex*16,dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -720,7 +842,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            character(*),dimension(:,:,:,:),intent(inout) :: data
+            character(*),dimension(:,:,:,:),intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -729,7 +851,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:,:,:), intent(inout) :: data
+            logical*1, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -738,7 +860,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:,:,:), intent(inout) :: data
+            logical*2, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -747,7 +869,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:,:,:), intent(inout) :: data
+            logical*4, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -756,7 +878,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:,:,:), intent(inout) :: data
+            logical*8, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -769,7 +891,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:,:,:,:), intent(inout) :: data
+            integer*1, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -778,7 +900,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:,:,:,:), intent(inout) :: data
+            integer*2, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -787,7 +909,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:,:,:,:), intent(inout) :: data
+            integer*4, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -796,7 +918,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:,:,:,:), intent(inout) :: data
+            integer*8, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -805,7 +927,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:,:,:,:), intent(inout) :: data
+            real*4,    dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -814,7 +936,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:,:,:,:), intent(inout) :: data
+            real*8,   dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -823,7 +945,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:,:,:,:), intent(inout) :: data
+            complex,   dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -832,7 +954,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:,:,:,:), intent(inout) :: data
+            complex*16,dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -841,7 +963,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            character(*),dimension(:,:,:,:,:),intent(inout) :: data
+            character(*),dimension(:,:,:,:,:),intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -850,7 +972,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:,:,:,:), intent(inout) :: data
+            logical*1, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -859,7 +981,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:,:,:,:), intent(inout) :: data
+            logical*2, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -868,7 +990,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:,:,:,:), intent(inout) :: data
+            logical*4, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -877,7 +999,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:,:,:,:), intent(inout) :: data
+            logical*8, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
         end subroutine
 
@@ -896,6 +1018,141 @@ module adios_write_mod
     interface adios_read
 
         !
+        ! scalar data
+        !
+
+        ! INTEGER*1 scalar
+        subroutine adios_read_int1_d0 (fd, varname, buffer, buffer_size, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            integer*1,      intent(out) :: buffer
+            integer*8,      intent(in)  :: buffer_size 
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! INTEGER*2 scalar
+        subroutine adios_read_int2_d0 (fd, varname, buffer, buffer_size, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            integer*2,      intent(out) :: buffer
+            integer*8,      intent(in)  :: buffer_size 
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! INTEGER*4 scalar
+        subroutine adios_read_int4_d0 (fd, varname, buffer, buffer_size, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            integer*4,      intent(out) :: buffer
+            integer*8,      intent(in)  :: buffer_size 
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! INTEGER*8 scalar
+        subroutine adios_read_int8_d0 (fd, varname, buffer, buffer_size, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            integer*8,      intent(out) :: buffer
+            integer*8,      intent(in)  :: buffer_size 
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! REAL*4 scalar
+        subroutine adios_read_real4_d0 (fd, varname, buffer, buffer_size, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            real*4,         intent(out) :: buffer
+            integer*8,      intent(in)  :: buffer_size 
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! REAL*8 scalar
+        subroutine adios_read_real8_d0 (fd, varname, buffer, buffer_size, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            real*8,         intent(out) :: buffer
+            integer*8,      intent(in)  :: buffer_size 
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! COMPLEX (*8) scalar
+        subroutine adios_read_complex8_d0 (fd, varname, buffer, buffer_size, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            complex,        intent(out) :: buffer
+            integer*8,      intent(in)  :: buffer_size 
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! DOUBLE-COMPLEX scalar
+        subroutine adios_read_complex16_d0 (fd, varname, buffer, buffer_size, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            complex*16,     intent(out) :: buffer
+            integer*8,      intent(in)  :: buffer_size 
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! CHARACTER scalar
+        !subroutine adios_read_char_d0 (fd, varname, buffer, buffer_size, err)
+        !    implicit none
+        !    integer*8,      intent(in)  :: fd
+        !    character(*),   intent(in)  :: varname
+        !    character(*),   intent(out) :: buffer
+        !    integer*8,      intent(in)  :: buffer_size 
+        !    integer,        intent(in)  :: err 
+        !end subroutine
+
+        ! LOGICAL*1 scalar
+        subroutine adios_read_logical1_d0 (fd, varname, buffer, buffer_size, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            logical*1,      intent(out) :: buffer
+            integer*8,      intent(in)  :: buffer_size 
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! LOGICAL*2 scalar
+        subroutine adios_read_logical2_d0 (fd, varname, buffer, buffer_size, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            logical*2,      intent(out) :: buffer
+            integer*8,      intent(in)  :: buffer_size 
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! LOGICAL*4 scalar
+        subroutine adios_read_logical4_d0 (fd, varname, buffer, buffer_size, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            logical*4,      intent(out) :: buffer
+            integer*8,      intent(in)  :: buffer_size 
+            integer,        intent(in)  :: err 
+        end subroutine
+
+        ! LOGICAL*8 scalar
+        subroutine adios_read_logical8_d0 (fd, varname, buffer, buffer_size, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            character(*),   intent(in)  :: varname
+            logical*8,      intent(out) :: buffer
+            integer*8,      intent(in)  :: buffer_size 
+            integer,        intent(in)  :: err 
+        end subroutine
+
+
+        !
         ! 1D data
         !
 
@@ -904,7 +1161,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*1, dimension(*), intent(inout) :: buffer
+            integer*1, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -914,7 +1171,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*2, dimension(*), intent(inout) :: buffer
+            integer*2, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -924,7 +1181,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*4, dimension(*), intent(inout) :: buffer
+            integer*4, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -934,7 +1191,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*8, dimension(*), intent(inout) :: buffer
+            integer*8, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -954,7 +1211,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*8,   dimension(*), intent(inout) :: buffer
+            real*8,   dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -964,7 +1221,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex,   dimension(*), intent(inout) :: buffer
+            complex,   dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -974,7 +1231,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex*16,dimension(*), intent(inout) :: buffer
+            complex*16,dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -984,7 +1241,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            character(*),   intent(inout) :: buffer
+            character(*),   intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -994,7 +1251,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*1, dimension(*), intent(inout) :: buffer
+            logical*1, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1004,7 +1261,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*2, dimension(*), intent(inout) :: buffer
+            logical*2, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1014,7 +1271,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*4, dimension(*), intent(inout) :: buffer
+            logical*4, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1024,7 +1281,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*8, dimension(*), intent(inout) :: buffer
+            logical*8, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1038,7 +1295,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:), intent(inout) :: buffer
+            integer*1, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1048,7 +1305,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:), intent(inout) :: buffer
+            integer*2, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1058,7 +1315,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:), intent(inout) :: buffer
+            integer*4, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1068,7 +1325,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:), intent(inout) :: buffer
+            integer*8, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1078,7 +1335,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:), intent(inout) :: buffer
+            real*4,    dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1088,7 +1345,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:), intent(inout) :: buffer
+            real*8,   dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1098,7 +1355,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex,   dimension(:,:), intent(inout) :: buffer
+            complex,   dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1108,7 +1365,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:), intent(inout) :: buffer
+            complex*16,dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1118,7 +1375,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            character(*),dimension(*), intent(inout) :: buffer
+            character(*),dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1128,7 +1385,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:), intent(inout) :: buffer
+            logical*1, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1138,7 +1395,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:), intent(inout) :: buffer
+            logical*2, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1148,7 +1405,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:), intent(inout) :: buffer
+            logical*4, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1158,7 +1415,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:), intent(inout) :: buffer
+            logical*8, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1172,7 +1429,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:), intent(inout) :: buffer
+            integer*1, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1182,7 +1439,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:), intent(inout) :: buffer
+            integer*2, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1192,7 +1449,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:), intent(inout) :: buffer
+            integer*4, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1202,7 +1459,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:), intent(inout) :: buffer
+            integer*8, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1212,7 +1469,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:), intent(inout) :: buffer
+            real*4,    dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1222,7 +1479,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:), intent(inout) :: buffer
+            real*8,   dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1232,7 +1489,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:), intent(inout) :: buffer
+            complex,   dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1242,7 +1499,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:), intent(inout) :: buffer
+            complex*16,dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1252,7 +1509,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            character(*),dimension(:,:),  intent(inout) :: buffer
+            character(*),dimension(:,:),  intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1262,7 +1519,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:), intent(inout) :: buffer
+            logical*1, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1272,7 +1529,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:), intent(inout) :: buffer
+            logical*2, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1282,7 +1539,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:), intent(inout) :: buffer
+            logical*4, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1292,7 +1549,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:), intent(inout) :: buffer
+            logical*8, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1306,7 +1563,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:,:), intent(inout) :: buffer
+            integer*1, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1316,7 +1573,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:,:), intent(inout) :: buffer
+            integer*2, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1326,7 +1583,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:,:), intent(inout) :: buffer
+            integer*4, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1336,7 +1593,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:,:), intent(inout) :: buffer
+            integer*8, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1346,7 +1603,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:,:), intent(inout) :: buffer
+            real*4,    dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1356,7 +1613,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:,:), intent(inout) :: buffer
+            real*8,   dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1366,7 +1623,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:,:), intent(inout) :: buffer
+            complex,   dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1376,7 +1633,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:,:), intent(inout) :: buffer
+            complex*16,dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1386,7 +1643,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            character(*),dimension(:,:,:), intent(inout) :: buffer
+            character(*),dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1396,7 +1653,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:,:), intent(inout) :: buffer
+            logical*1, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1406,7 +1663,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:,:), intent(inout) :: buffer
+            logical*2, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1416,7 +1673,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:,:), intent(inout) :: buffer
+            logical*4, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1426,7 +1683,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:,:), intent(inout) :: buffer
+            logical*8, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1440,7 +1697,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:,:,:), intent(inout) :: buffer
+            integer*1, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1450,7 +1707,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:,:,:), intent(inout) :: buffer
+            integer*2, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1460,7 +1717,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:,:,:), intent(inout) :: buffer
+            integer*4, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1470,7 +1727,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:,:,:), intent(inout) :: buffer
+            integer*8, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1480,7 +1737,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:,:,:), intent(inout) :: buffer
+            real*4,    dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1490,7 +1747,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:,:,:), intent(inout) :: buffer
+            real*8,   dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1500,7 +1757,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:,:,:), intent(inout) :: buffer
+            complex,   dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1510,7 +1767,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:,:,:), intent(inout) :: buffer
+            complex*16,dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1520,7 +1777,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            character(*),dimension(:,:,:,:),intent(inout) :: buffer
+            character(*),dimension(:,:,:,:),intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1530,7 +1787,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:,:,:), intent(inout) :: buffer
+            logical*1, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1540,7 +1797,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:,:,:), intent(inout) :: buffer
+            logical*2, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1550,7 +1807,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:,:,:), intent(inout) :: buffer
+            logical*4, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1560,7 +1817,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:,:,:), intent(inout) :: buffer
+            logical*8, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1574,7 +1831,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*1, dimension(:,:,:,:,:,:), intent(inout) :: buffer
+            integer*1, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1584,7 +1841,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*2, dimension(:,:,:,:,:,:), intent(inout) :: buffer
+            integer*2, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1594,7 +1851,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*4, dimension(:,:,:,:,:,:), intent(inout) :: buffer
+            integer*4, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1604,7 +1861,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            integer*8, dimension(:,:,:,:,:,:), intent(inout) :: buffer
+            integer*8, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1614,7 +1871,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*4,    dimension(:,:,:,:,:,:), intent(inout) :: buffer
+            real*4,    dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1624,7 +1881,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            real*8,   dimension(:,:,:,:,:,:), intent(inout) :: buffer
+            real*8,   dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1634,7 +1891,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex,   dimension(:,:,:,:,:,:), intent(inout) :: buffer
+            complex,   dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1644,7 +1901,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            complex*16,dimension(:,:,:,:,:,:), intent(inout) :: buffer
+            complex*16,dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1654,7 +1911,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            character(*),dimension(:,:,:,:,:),intent(inout) :: buffer
+            character(*),dimension(:,:,:,:,:),intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1664,7 +1921,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*1, dimension(:,:,:,:,:,:), intent(inout) :: buffer
+            logical*1, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1674,7 +1931,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*2, dimension(:,:,:,:,:,:), intent(inout) :: buffer
+            logical*2, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1684,7 +1941,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*4, dimension(:,:,:,:,:,:), intent(inout) :: buffer
+            logical*4, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
@@ -1694,7 +1951,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
-            logical*8, dimension(:,:,:,:,:,:), intent(inout) :: buffer
+            logical*8, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
         end subroutine
