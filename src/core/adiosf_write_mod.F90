@@ -12,7 +12,7 @@
 ! you are calling the adios_* writing functions with
 ! the correct arguments
 !
-module adios_write
+module adios_write_mod
 
     interface
 

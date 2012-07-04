@@ -12,7 +12,7 @@
 ! you are calling the adios_* reading functions with
 ! the correct arguments
 !
-module adios_read
+module adios_read_mod
 
     interface
 
