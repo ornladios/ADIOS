@@ -421,7 +421,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     ADIOS_SELECTION * sel;
     struct adios_index_var_struct_v1 * v;
     int i, j, k, idx, t;
-    int start_idx, stop_idx;
+    int start_idx, stop_idx, nsteps;
     int ndim, has_subfile, file_is_fortran;
     uint64_t size, * dims;
     uint64_t ldims[32], gdims[32], offsets[32];
@@ -447,7 +447,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     
     /* Get dimensions and flip if caller != writer language */
     /* Note: ndim below does include time if there is any */
-    bp_get_and_swap_dimensions (v, file_is_fortran, &ndim, &dims, file_is_fortran);
+    bp_get_and_swap_dimensions (fh, v, file_is_fortran, &ndim, &dims, &nsteps, file_is_fortran);
  
     assert (ndim == sel->u.bb.ndim);
     ndim = sel->u.bb.ndim;
@@ -1428,13 +1428,14 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
     
     assert (v->characteristics_count);
 
-    bp_get_and_swap_dimensions (v, file_is_fortran, 
-                                &(varinfo->ndim), &(varinfo->dims),
+    bp_get_and_swap_dimensions (fh, v, file_is_fortran, 
+                                &varinfo->ndim, &varinfo->dims,
+                                &varinfo->nsteps,
                                 file_is_fortran != futils_is_called_from_fortran()
                                );
-
+/*
     varinfo->nsteps = get_var_nsteps (v);
- 
+ */
     // set value for scalar
     if (v->characteristics [0].value)
     {

@@ -1250,15 +1250,16 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
 /* Fill out ndim and dims for the variable.
    ndim and dims shouldn't include 'time' dimension.
 */
-void bp_get_dimensions (struct adios_index_var_struct_v1 * var_root, int file_is_fortran,
-                        int * ndim, uint64_t ** dims)
+void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_root, int file_is_fortran,
+                        int * ndim, uint64_t ** dims, int * nsteps)
 {
-    int i, j;
+    int i, j, has_time_index_characteristic;
     int is_global; // global array or just an array written by one process?
     uint64_t ldims[32];
     uint64_t gdims[32];
     uint64_t offsets[32];
 
+    has_time_index_characteristic = fh->mfooter.version & ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC;
     /* Get dimension information */
     * ndim = var_root->characteristics [0].dims.count;
     * dims = 0;
@@ -1275,6 +1276,9 @@ void bp_get_dimensions (struct adios_index_var_struct_v1 * var_root, int file_is
 
     is_global = bp_get_dimension_characteristics (&(var_root->characteristics[0]),
                                                   ldims, gdims, offsets);
+
+    * nsteps = (has_time_index_characteristic ?
+               get_var_nsteps (var_root) : fh->tidx_stop - fh->tidx_start + 1);
 
     if (!is_global)
     {
@@ -1354,12 +1358,12 @@ void bp_get_dimensions (struct adios_index_var_struct_v1 * var_root, int file_is
    ndim: has already taken time dimension out if there is any.
    dims: is local dims if local array. is global dims if global array.
 */
-void bp_get_and_swap_dimensions (struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
-                                 int *ndim, uint64_t **dims, int swap_flag)
+void bp_get_and_swap_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
+                                 int *ndim, uint64_t **dims, int *nsteps, int swap_flag)
 {
     int dummy = 0;
 
-    bp_get_dimensions (var_root, file_is_fortran, ndim, dims);
+    bp_get_dimensions (fh, var_root, file_is_fortran, ndim, dims, nsteps);
     if (swap_flag)
     {
         /* dummy timedim */

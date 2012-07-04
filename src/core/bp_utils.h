@@ -48,10 +48,10 @@ int bp_get_dimensioncharacteristics(struct adios_index_characteristic_struct_v1 
 int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_struct_v1 *ch,
                                             uint64_t *ldims, uint64_t *gdims, uint64_t *offsets,
                                             int file_is_fortran);
-void bp_get_dimensions (struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
-                        int *ndim, uint64_t **dims);
-void bp_get_and_swap_dimensions (struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
-                                 int *ndim, uint64_t **dims, int swap_flag);
+void bp_get_dimensions (BP_FILE *fh, struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
+                        int *ndim, uint64_t **dims, int *nsteps);
+void bp_get_and_swap_dimensions (BP_FILE *fh, struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
+                                 int *ndim, uint64_t **dims, int *nsteps, int swap_flag);
 int get_var_nsteps (struct adios_index_var_struct_v1 * var_root);
 int * get_var_nblocks (struct adios_index_var_struct_v1 * var_root, int nsteps);
 void print_process_group_index (
