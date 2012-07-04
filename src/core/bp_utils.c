@@ -1007,11 +1007,12 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 /* Seek to the specified step and prepare a few fields
  * in ADIOS_FILE structure, i.e., nvars, var_namelist,
  * nattrs, attr_namelist. This routine also sets the
- * current_step in ADIOS_FILE.
+ * current_step in ADIOS_FILE. 
+ * Note: in file mode, tostep should be given -1.
  */
 int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
 {
-    int j, t;
+    int j, t, allstep;
     struct BP_PROC * p = (struct BP_PROC *) fp->fh;
     struct BP_FILE * fh = p->fh;
     struct adios_index_var_struct_v1 * var_root;
@@ -1019,12 +1020,14 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     uint64_t i;
 
     /* Streaming starts with step 0. However, time index in BP file starts with 1 */
-    t = tostep + 1;
-    if (t < fh->tidx_start || t > fh->tidx_stop)
+    if (tostep == -1)
     {
-        adios_error (err_invalid_timestep, "Invalid step: %d. It should be between [%d,%d]\n",
-                     tostep, fh->tidx_start - 1, fh->tidx_stop - 1);
-        return -1;
+        allstep = 1;
+    }
+    else
+    {
+        allstep = 0;
+        t = tostep + 1;
     }
 
     /* Prepare vars */
@@ -1035,7 +1038,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     {
         for (i = 0; i < var_root->characteristics_count; i++)
         {
-            if (var_root->characteristics[i].time_index == t)
+            if (allstep || (!allstep && var_root->characteristics[i].time_index == t))
             {
                 fp->nvars++;
                 break;    
@@ -1053,7 +1056,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     {
         for (i = 0; i < var_root->characteristics_count; i++)
         {
-            if (var_root->characteristics[i].time_index == t)
+            if (allstep || (!allstep && var_root->characteristics[i].time_index == t))
             {
                 if (strcmp (var_root->var_path,"/"))
                 {
@@ -1093,7 +1096,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
         {
             for (i = 0; i < attr_root->characteristics_count; i++)
             {
-                if (attr_root->characteristics[i].time_index == t)
+                if (allstep || (!allstep && attr_root->characteristics[i].time_index == t))
                 {
                     fp->nattrs++;
                     break;
@@ -1117,7 +1120,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
         {
             for (i = 0; i < attr_root->characteristics_count; i++)
             {
-                if (attr_root->characteristics[i].time_index == t)
+                if (allstep || (!allstep && attr_root->characteristics[i].time_index == t))
                 {
                     if (strcmp (attr_root->attr_path,"/"))
                     {

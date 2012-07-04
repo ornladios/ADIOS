@@ -1100,7 +1100,7 @@ typedef struct {
     fp->fh = (uint64_t) p;
 
     /* This will seek to the last step. So we need to set current_step back properly */
-    bp_seek_to_step (fp, fh->tidx_stop - 1, show_hidden_attrs);
+    bp_seek_to_step (fp, -1, show_hidden_attrs);
 
     /* It was agreed that, for file open the current step should be the start time,
      * instead of the stop time. However, the var_namelist and attr_namelist should
