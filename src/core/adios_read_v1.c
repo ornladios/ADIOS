@@ -451,6 +451,7 @@ void adios_print_fileinfo_v1 (ADIOS_FILE_V1 *fp)
 }
 
 
+#include <math.h>
 
 // NCSU - Timer series analysis, correlation
 double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char * characteristic, uint32_t time_start, uint32_t time_end, uint32_t lag)
