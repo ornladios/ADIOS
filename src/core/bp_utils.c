@@ -1011,11 +1011,12 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
  */
 int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
 {
-    int i, j, t;
+    int j, t;
     struct BP_PROC * p = (struct BP_PROC *) fp->fh;
     struct BP_FILE * fh = p->fh;
     struct adios_index_var_struct_v1 * var_root;
     struct adios_index_attribute_struct_v1 * attr_root;
+    uint64_t i;
 
     /* Streaming starts with step 0. However, time index in BP file starts with 1 */
     t = tostep + 1;
@@ -1085,7 +1086,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
 
     while (attr_root)
     {
-        if (!show_hidden_attrs && !strstr (attr_root->attr_path, "__adios__"))
+        if (!show_hidden_attrs && strstr (attr_root->attr_path, "__adios__"))
         {
         }
         else
@@ -1109,7 +1110,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     j = 0;
     while (attr_root)
     {
-        if (!show_hidden_attrs && !strstr (attr_root->attr_path, "__adios__"))
+        if (!show_hidden_attrs && strstr (attr_root->attr_path, "__adios__"))
         {
         }
         else
