@@ -504,6 +504,7 @@ int doList_group (ADIOS_FILE *fp)
             }
             vartype = vi->type;
             timed = adios_read_bp_is_var_timed(fp, vi->varid);
+            //timed = (vi->nsteps > 1);
         } else {
             retval = adios_get_attr (fp, names[n], &vartype, &attrsize, &value);
             if (retval) {
@@ -537,7 +538,7 @@ int doList_group (ADIOS_FILE *fp)
 
                 fprintf(outf,"  ");
                 if (timed) 
-                    fprintf(outf, "%dx", vi->nsteps);
+                    fprintf(outf, "%d*", vi->nsteps);
                 if (vi->ndim > 0) {
                     fprintf(outf,"{%lld", vi->dims[0]);
                     for (j=1; j < vi->ndim; j++) {
