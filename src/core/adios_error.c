@@ -37,7 +37,7 @@ void adios_error (enum ADIOS_ERRCODES errcode, char *fmt, ...)
     va_start(ap, fmt);
     (void) vsnprintf(aerr, ERRMSG_MAXLEN, fmt, ap);
     va_end(ap);
-    log_error(aerr);
+    log_error("%s", aerr);
 }
 
 void adios_error_at_line (enum ADIOS_ERRCODES errcode, const char* filename, unsigned int linenum, char *fmt, ...)
@@ -47,6 +47,6 @@ void adios_error_at_line (enum ADIOS_ERRCODES errcode, const char* filename, uns
     va_start(ap, fmt);
     (void) vsnprintf(aerr, ERRMSG_MAXLEN, fmt, ap);
     va_end(ap);
-    log_error(aerr);
+    log_error("%s", aerr);
 }
 
