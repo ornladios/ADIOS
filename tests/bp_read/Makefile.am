@@ -4,7 +4,7 @@ INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/public
 AUTOMAKE_OPTIONS = no-dependencies
 
 if BUILD_FORTRAN
-noinst_PROGRAMS=genbp bp_read_f bp_read_c
+noinst_PROGRAMS=genbp bp_read_f bp_read_f_v1 bp_read_c
 else
 noinst_PROGRAMS=genbp bp_read_c
 endif
@@ -21,8 +21,14 @@ if BUILD_FORTRAN
 bp_read_f_SOURCES = bp_read_f.F90
 bp_read_f_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
 bp_read_f_CFLAGS = $(ADIOSLIB_CFLAGS)
-bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf_v1.a $(ADIOSREADLIB_LDADD)
+bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf.a $(ADIOSREADLIB_LDADD)
 bp_read_f_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
+
+bp_read_f_v1_SOURCES = bp_read_f_v1.F90
+bp_read_f_v1_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+bp_read_f_v1_CFLAGS = $(ADIOSLIB_CFLAGS)
+bp_read_f_v1_LDADD = $(top_builddir)/src/libadiosreadf_v1.a $(ADIOSREADLIB_LDADD)
+bp_read_f_v1_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
 endif
 
 bp_read_c_SOURCES = bp_read_c.c
