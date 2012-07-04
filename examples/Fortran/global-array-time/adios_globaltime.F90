@@ -14,6 +14,7 @@
 !
 
 program adios_global
+    use adios_write_mod
     implicit none
     include 'mpif.h'
     character(len=256)      :: filename = "adios_globaltime.bp"

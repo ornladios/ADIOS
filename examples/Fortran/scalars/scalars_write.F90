@@ -9,6 +9,7 @@
 !/*   Example of writing various types of variable in ADIOS   */
 !/*************************************************************/
 program scalars
+    use adios_write_mod
     implicit none
     include 'mpif.h'
 

@@ -9,6 +9,7 @@
 !/*   Example of reading various types of variable in ADIOS   */
 !/*************************************************************/
 program scalars_read
+    use adios_write_mod
     implicit none
     include 'mpif.h'
 

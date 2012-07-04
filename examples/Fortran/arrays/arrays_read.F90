@@ -12,6 +12,7 @@
 !/*     Similar example is ../../C/manual/2_adios_read.c       */
 !/**************************************************************/
 program arrays
+    use adios_write_mod
     implicit none
     include 'mpif.h'
 
