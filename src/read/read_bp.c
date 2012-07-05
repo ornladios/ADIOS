@@ -1433,9 +1433,7 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
                                 &varinfo->nsteps,
                                 file_is_fortran != futils_is_called_from_fortran()
                                );
-/*
-    varinfo->nsteps = get_var_nsteps (v);
- */
+
     // set value for scalar
     if (v->characteristics [0].value)
     {

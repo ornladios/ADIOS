@@ -1263,6 +1263,9 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
     /* Get dimension information */
     * ndim = var_root->characteristics [0].dims.count;
     * dims = 0;
+    * nsteps = (has_time_index_characteristic ?
+               get_var_nsteps (var_root) : fh->tidx_stop - fh->tidx_start + 1);
+
     if (* ndim == 0)
     {
         /* done with this scalar variable */
@@ -1276,9 +1279,6 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
 
     is_global = bp_get_dimension_characteristics (&(var_root->characteristics[0]),
                                                   ldims, gdims, offsets);
-
-    * nsteps = (has_time_index_characteristic ?
-               get_var_nsteps (var_root) : fh->tidx_stop - fh->tidx_start + 1);
 
     if (!is_global)
     {
@@ -1364,6 +1364,7 @@ void bp_get_and_swap_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 
     int dummy = 0;
 
     bp_get_dimensions (fh, var_root, file_is_fortran, ndim, dims, nsteps);
+
     if (swap_flag)
     {
         /* dummy timedim */
@@ -1378,6 +1379,9 @@ int get_var_nsteps (struct adios_index_var_struct_v1 * var_root)
     int nsteps = 0;
     int prev_step = -1;
 
+    /* This following loops, of course, assumes indices
+     * are sorted by time_index already.
+     */
     for (i = 0; i < var_root->characteristics_count; i++)
     {
         if (var_root->characteristics[i].time_index != prev_step)
