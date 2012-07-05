@@ -1952,6 +1952,9 @@ void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***gr
     return;
 }
 
+/* Check if a variable is timed. This is solely done by checking whether
+ * a variable is tagged with time in XML.
+ */
 int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
 {
     BP_PROC * p;
@@ -1985,10 +1988,12 @@ int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
         swap_order (ndim, gdims, &dummy);
     }
 
-    if (gdims[ndim - 1] == 0) // with time
+    if (gdims[0] == 0) // with time
     {
         retval = 1;
     }
+
+    log_debug ("%s is_var_timed: = %d\n", v->var_name, retval);
 
     return retval;
 }

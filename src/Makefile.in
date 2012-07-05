@@ -84,8 +84,8 @@ bin_PROGRAMS = $(am__EXEEXT_1)
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_28 = -DNO_RESEARCH_TRANSPORTS
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_29 = -DNO_RESEARCH_TRANSPORTS
 #nodist_libadiosreadf_a_SOURCES += adios_write.mod
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_30 = adios_write.mod 
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_31 = adios_write.mod
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_30 = adios_write_mod.mod 
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_31 = adios_write_mod.mod
 @HAVE_DATASPACES_TRUE@am__append_32 = read/read_dataspaces.c
 @HAVE_DIMES_TRUE@am__append_33 = read/read_dimes.c
 @HAVE_DATATAP_TRUE@am__append_34 = read/read_datatap.c
@@ -101,9 +101,9 @@ bin_PROGRAMS = $(am__EXEEXT_1)
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_43 = -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_44 = $(ADIOSLIB_CFLAGS) 
 @BUILD_FORTRAN_TRUE@am__append_45 = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
-#nodist_libadiosreadf_a_SOURCES += adios_read.mod
-@BUILD_FORTRAN_TRUE@am__append_46 = adios_read.mod 
-@BUILD_FORTRAN_TRUE@am__append_47 = adios_read.mod
+#nodist_libadiosreadf_a_SOURCES += adios_read_mod.mod
+@BUILD_FORTRAN_TRUE@am__append_46 = adios_read_mod.mod 
+@BUILD_FORTRAN_TRUE@am__append_47 = adios_read_mod.mod
 @HAVE_DATASPACES_TRUE@am__append_48 = read/read_dataspaces.c
 @HAVE_DIMES_TRUE@am__append_49 = read/read_dimes.c
 @HAVE_DATATAP_TRUE@am__append_50 = read/read_datatap.c
@@ -336,7 +336,7 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	write/adios_provenance.c write/adios_mpi_cio.c \
 	write/adios_mpi_stripe.c write/adios_mpi_amr1.c \
 	write/adios_adaptive.c core/adiosf_read.c \
-	core/adiosf_write_mod.F90
+	core/adiosf_write_mod.F90 core/adiosf_read_mod.F90
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_11 = libadiosf_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadiosf_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_12 = libadiosf_a-adios_dimes.$(OBJEXT) \
@@ -392,7 +392,8 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am_libadiosf_a_OBJECTS =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_18) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adiosf_read.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adiosf_write_mod.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adiosf_write_mod.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adiosf_read_mod.$(OBJEXT)
 am__dist_libadiosf_a_SOURCES_DIST = nssi/adios_nssi_args.x
 dist_libadiosf_a_OBJECTS =
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@nodist_libadiosf_a_OBJECTS = libadiosf_a-adios_nssi_args.$(OBJEXT)
@@ -1153,7 +1154,8 @@ libadiosreadf_nompi_a_CFLAGS = $(am__append_60)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@libadiosf_a_SOURCES =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(FortranLibSources) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/adiosf_read.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/adiosf_write_mod.F90
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/adiosf_write_mod.F90 \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/adiosf_read_mod.F90
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@libadiosf_v1_a_SOURCES = $(FortranLibSources) core/adiosf_read_v1.c
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@libadiosf_v1_a_CPPFLAGS = $(libadiosf_a_CPPFLAGS) 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@libadiosf_v1_a_CFLAGS = $(libadiosf_a_CFLAGS) 
@@ -1415,6 +1417,12 @@ libadiosf_a-adiosf_write_mod.o: core/adiosf_write_mod.F90
 
 libadiosf_a-adiosf_write_mod.obj: core/adiosf_write_mod.F90
 	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o libadiosf_a-adiosf_write_mod.obj `if test -f 'core/adiosf_write_mod.F90'; then $(CYGPATH_W) 'core/adiosf_write_mod.F90'; else $(CYGPATH_W) '$(srcdir)/core/adiosf_write_mod.F90'; fi`
+
+libadiosf_a-adiosf_read_mod.o: core/adiosf_read_mod.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o libadiosf_a-adiosf_read_mod.o `test -f 'core/adiosf_read_mod.F90' || echo '$(srcdir)/'`core/adiosf_read_mod.F90
+
+libadiosf_a-adiosf_read_mod.obj: core/adiosf_read_mod.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o libadiosf_a-adiosf_read_mod.obj `if test -f 'core/adiosf_read_mod.F90'; then $(CYGPATH_W) 'core/adiosf_read_mod.F90'; else $(CYGPATH_W) '$(srcdir)/core/adiosf_read_mod.F90'; fi`
 
 libadiosreadf_a-adiosf_read_mod.o: core/adiosf_read_mod.F90
 	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o libadiosreadf_a-adiosf_read_mod.o `test -f 'core/adiosf_read_mod.F90' || echo '$(srcdir)/'`core/adiosf_read_mod.F90
@@ -3528,13 +3536,13 @@ uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	rpcgen -c $(srcdir)/nssi/adios_nssi_args.x \
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@		| grep -v "include \"\.\." > adios_nssi_args.c
 
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@adios_write.mod: core/adiosf_write_mod.F90
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@adios_write_mod.mod: core/adiosf_write_mod.F90
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(FC) -c core/adiosf_write_mod.F90
 
                    #adios_read_hooks.h \
                    #io_timer.h
 
-@BUILD_FORTRAN_TRUE@adios_read.mod: core/adiosf_read_mod.F90
+@BUILD_FORTRAN_TRUE@adios_read_mod.mod: core/adiosf_read_mod.F90
 @BUILD_FORTRAN_TRUE@	$(FC) -c core/adiosf_read_mod.F90
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
