@@ -448,13 +448,14 @@ int     nVarsMatched=0;
 int doList_group (ADIOS_FILE *fp)
 {
     ADIOS_VARINFO *vi; 
+    ADIOS_VARINFO **vis; 
     enum ADIOS_DATATYPES vartype;
     int     i, j, n;             // loop vars
     int     status;
     int     attrsize;                       // info about one attribute
     int     mpi_comm_dummy=0;
     bool    matches;
-    int     len, maxlen;
+    int     len, maxlen, maxtypelen;
     int     retval;
     char  **names;  // vars and attrs together, sorted or unsorted
     bool   *isVar;  // true for each var, false for each attr
@@ -481,7 +482,8 @@ int doList_group (ADIOS_FILE *fp)
 
     names = (char **) malloc (nNames * sizeof (char*)); // store only pointers
     isVar = (bool *) malloc (nNames * sizeof (bool));
-    if (names == NULL || isVar == NULL) {
+    vis   = (ADIOS_VARINFO **) malloc (nNames * sizeof (ADIOS_VARINFO*));
+    if (names == NULL || isVar == NULL || vis == NULL) {
         fprintf(stderr, "Error: could not allocate char* and bool arrays of %d elements\n", nNames);
         return 5;
     }
@@ -494,17 +496,33 @@ int doList_group (ADIOS_FILE *fp)
         if (len > maxlen) maxlen = len;
     }
 
+    // Get VARINFO's and attr types and calculate max length of type names 
+    maxtypelen = 7;
+    for (n=0; n<nNames; n++) {
+        if (isVar[n])  {
+            vis[n] = adios_inq_var (fp, names[n]);
+            if (!vis[n]) {
+                fprintf(stderr, "Error: %s\n", adios_errmsg());
+            }
+            vartype = vis[n]->type;
+        } else {
+            retval = adios_get_attr (fp, names[n], &vartype, &attrsize, &value);
+            if (retval) {
+                fprintf(stderr, "Error: %s\n", adios_errmsg());
+            }
+        }
+        len = strlen(adios_type_to_string(vartype));
+        if (len > maxtypelen) maxtypelen = len;
+    }
+
     /* VARIABLES */
     for (n=0; n<nNames; n++) {
         matches = false;
         if (isVar[n])  {
-            vi = adios_inq_var (fp, names[n]);
-            if (!vi) {
-                fprintf(stderr, "Error: %s\n", adios_errmsg());
-            }
+            vi = vis[n];
             vartype = vi->type;
-            timed = adios_read_bp_is_var_timed(fp, vi->varid);
-            //timed = (vi->nsteps > 1);
+            //timed = adios_read_bp_is_var_timed(fp, vi->varid);
+            timed = (vi->nsteps > 1);
         } else {
             retval = adios_get_attr (fp, names[n], &vartype, &attrsize, &value);
             if (retval) {
@@ -518,7 +536,8 @@ int doList_group (ADIOS_FILE *fp)
             nVarsMatched++;
 
             // print definition of variable
-            fprintf(outf,"%c %-*s  %-*s", commentchar, 9, adios_type_to_string(vartype), maxlen, names[n]); 
+            fprintf(outf,"%c %-*s  %-*s", commentchar, maxtypelen, 
+                    adios_type_to_string(vartype), maxlen, names[n]); 
             if (!isVar[n]) {
                 // list (and print) attribute
                 if (readattrs || dump) {
@@ -677,10 +696,17 @@ int doList_group (ADIOS_FILE *fp)
             fprintf(outf,"\n");
         }
 
-        if (isVar[n])
-            adios_free_varinfo(vi);
-        else
+        //if (isVar[n])
+        //    adios_free_varinfo(vi);
+        //else
+        if (!isVar[n])
             free(value);
+    }
+    /* Free ADIOS_VARINFOs */
+    for (n=0; n<nNames; n++) {
+        if (isVar[n])  {
+            adios_free_varinfo(vis[n]);
+        }
     }
     free(names);
     free(isVar);
