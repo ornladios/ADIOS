@@ -39,7 +39,8 @@ host_triplet = @host@
 @BUILD_FORTRAN_FALSE@noinst_PROGRAMS = genbp$(EXEEXT) \
 @BUILD_FORTRAN_FALSE@	bp_read_c$(EXEEXT)
 @BUILD_FORTRAN_TRUE@noinst_PROGRAMS = genbp$(EXEEXT) \
-@BUILD_FORTRAN_TRUE@	bp_read_f$(EXEEXT) bp_read_c$(EXEEXT)
+@BUILD_FORTRAN_TRUE@	bp_read_f$(EXEEXT) bp_read_f_v1$(EXEEXT) \
+@BUILD_FORTRAN_TRUE@	bp_read_c$(EXEEXT)
 subdir = tests/bp_read
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -78,6 +79,13 @@ am__bp_read_f_SOURCES_DIST = bp_read_f.F90
 @BUILD_FORTRAN_TRUE@	bp_read_f-bp_read_f.$(OBJEXT)
 bp_read_f_OBJECTS = $(am_bp_read_f_OBJECTS)
 @BUILD_FORTRAN_TRUE@bp_read_f_DEPENDENCIES =  \
+@BUILD_FORTRAN_TRUE@	$(top_builddir)/src/libadiosreadf.a \
+@BUILD_FORTRAN_TRUE@	$(am__DEPENDENCIES_1)
+am__bp_read_f_v1_SOURCES_DIST = bp_read_f_v1.F90
+@BUILD_FORTRAN_TRUE@am_bp_read_f_v1_OBJECTS =  \
+@BUILD_FORTRAN_TRUE@	bp_read_f_v1-bp_read_f_v1.$(OBJEXT)
+bp_read_f_v1_OBJECTS = $(am_bp_read_f_v1_OBJECTS)
+@BUILD_FORTRAN_TRUE@bp_read_f_v1_DEPENDENCIES =  \
 @BUILD_FORTRAN_TRUE@	$(top_builddir)/src/libadiosreadf_v1.a \
 @BUILD_FORTRAN_TRUE@	$(am__DEPENDENCIES_1)
 am_genbp_OBJECTS = genbp-genbp.$(OBJEXT)
@@ -101,9 +109,10 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(bp_read_c_SOURCES) $(bp_read_f_SOURCES) $(genbp_SOURCES)
+SOURCES = $(bp_read_c_SOURCES) $(bp_read_f_SOURCES) \
+	$(bp_read_f_v1_SOURCES) $(genbp_SOURCES)
 DIST_SOURCES = $(bp_read_c_SOURCES) $(am__bp_read_f_SOURCES_DIST) \
-	$(genbp_SOURCES)
+	$(am__bp_read_f_v1_SOURCES_DIST) $(genbp_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -354,8 +363,13 @@ genbp_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 @BUILD_FORTRAN_TRUE@bp_read_f_SOURCES = bp_read_f.F90
 @BUILD_FORTRAN_TRUE@bp_read_f_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
 @BUILD_FORTRAN_TRUE@bp_read_f_CFLAGS = $(ADIOSLIB_CFLAGS)
-@BUILD_FORTRAN_TRUE@bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf_v1.a $(ADIOSREADLIB_LDADD)
+@BUILD_FORTRAN_TRUE@bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf.a $(ADIOSREADLIB_LDADD)
 @BUILD_FORTRAN_TRUE@bp_read_f_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
+@BUILD_FORTRAN_TRUE@bp_read_f_v1_SOURCES = bp_read_f_v1.F90
+@BUILD_FORTRAN_TRUE@bp_read_f_v1_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@bp_read_f_v1_CFLAGS = $(ADIOSLIB_CFLAGS)
+@BUILD_FORTRAN_TRUE@bp_read_f_v1_LDADD = $(top_builddir)/src/libadiosreadf_v1.a $(ADIOSREADLIB_LDADD)
+@BUILD_FORTRAN_TRUE@bp_read_f_v1_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
 bp_read_c_SOURCES = bp_read_c.c
 bp_read_c_CPPFLAGS = -DADIOS_USE_READ_API_1 $(ADIOSLIB_CPPFLAGS)
 bp_read_c_CFLAGS = $(ADIOSLIB_CFLAGS)
@@ -413,6 +427,9 @@ bp_read_c$(EXEEXT): $(bp_read_c_OBJECTS) $(bp_read_c_DEPENDENCIES)
 bp_read_f$(EXEEXT): $(bp_read_f_OBJECTS) $(bp_read_f_DEPENDENCIES) 
 	@rm -f bp_read_f$(EXEEXT)
 	$(FCLINK) $(bp_read_f_LDFLAGS) $(bp_read_f_OBJECTS) $(bp_read_f_LDADD) $(LIBS)
+bp_read_f_v1$(EXEEXT): $(bp_read_f_v1_OBJECTS) $(bp_read_f_v1_DEPENDENCIES) 
+	@rm -f bp_read_f_v1$(EXEEXT)
+	$(FCLINK) $(bp_read_f_v1_LDFLAGS) $(bp_read_f_v1_OBJECTS) $(bp_read_f_v1_LDADD) $(LIBS)
 genbp$(EXEEXT): $(genbp_OBJECTS) $(genbp_DEPENDENCIES) 
 	@rm -f genbp$(EXEEXT)
 	$(LINK) $(genbp_LDFLAGS) $(genbp_OBJECTS) $(genbp_LDADD) $(LIBS)
@@ -437,6 +454,12 @@ bp_read_f-bp_read_f.o: bp_read_f.F90
 
 bp_read_f-bp_read_f.obj: bp_read_f.F90
 	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp_read_f_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o bp_read_f-bp_read_f.obj `if test -f 'bp_read_f.F90'; then $(CYGPATH_W) 'bp_read_f.F90'; else $(CYGPATH_W) '$(srcdir)/bp_read_f.F90'; fi`
+
+bp_read_f_v1-bp_read_f_v1.o: bp_read_f_v1.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp_read_f_v1_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o bp_read_f_v1-bp_read_f_v1.o `test -f 'bp_read_f_v1.F90' || echo '$(srcdir)/'`bp_read_f_v1.F90
+
+bp_read_f_v1-bp_read_f_v1.obj: bp_read_f_v1.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(bp_read_f_v1_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o bp_read_f_v1-bp_read_f_v1.obj `if test -f 'bp_read_f_v1.F90'; then $(CYGPATH_W) 'bp_read_f_v1.F90'; else $(CYGPATH_W) '$(srcdir)/bp_read_f_v1.F90'; fi`
 
 .c.o:
 	$(COMPILE) -c $<
