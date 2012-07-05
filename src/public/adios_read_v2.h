@@ -362,8 +362,8 @@ int adios_inq_var_blockinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
  *                  sel=NULL means global selection (whole variable)
  *       varname    name of the variable
  *       from_step  Read the 'nsteps' consecutive steps from this
- *                  step of a file variable, instead of from the 
- *                  current (global) step of the file.
+ *                  step of a file variable.
+                    It is not used in case of a stream.
  *       nsteps     Read 'nsteps' consecutive steps from current step.
  *                  Must be 1 for a stream. 
  *  OUT: data       pointer to the memory to hold data of the variable
