@@ -1289,6 +1289,7 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
             /* size of time dimension is always registered as 1 for an array */
             if (ldims[i] == 1 && var_root->characteristics_count > 1)
             {
+                * ndim = * ndim - 1;
             }
             else
             {

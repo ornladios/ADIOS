@@ -1551,7 +1551,33 @@ int adios_read_bp_inq_var_blockinfo (const ADIOS_FILE * fp, ADIOS_VARINFO * vari
 
 
 /* Note: the varid isn't the perceived varid from the user */
-int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel, int varid, int from_steps, int nsteps, void * data)
+/** Schedule reading a variable (slice) from the file.
+ *  You need to allocate the memory for the data.
+ *  You need to call adios_perform_reads() to do the reading of
+ *  variables.
+ *  IN:  fp         pointer to an (opened) ADIOS_FILE struct
+ *       sel        selection created beforehand with adios_selection...().
+ *                  sel=NULL means global selection (whole variable)
+ *       varname    name of the variable
+ *       from_step  Read the 'nsteps' consecutive steps from this
+ *                  step of a file variable.
+                    It is not used in case of a stream.
+ *       nsteps     Read 'nsteps' consecutive steps from current step.
+ *                  Must be 1 for a stream. 
+ *  OUT: data       pointer to the memory to hold data of the variable
+ *                  In blocking read mode, the memory should be 
+ *                  pre-allocated. In non-blocking mode, memory can be
+ *                  allocated or not, and that changes the behavior of
+ *                  the chunked read. If memory is allocated, 
+ *                  adios_check_read() returns a variable if it is completed.
+ *                  If memory is not allocated, the check returns any chunk
+ *                  already available of a variable (in ADIOS own memory)
+ *                  and the application has to rearrange the data. The user
+ *                  has to process/copy the data before getting new chunks.
+ *  RETURN: 0 OK, !=0 on error, sets adios_errno too
+ */
+int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel,
+                                      int varid, int from_steps, int nsteps, void * data)
 {
     BP_PROC * p;
     BP_FILE * fh;
@@ -1560,7 +1586,7 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
     uint64_t datasize;
     int i, type_size;
 
-    assert (fp && sel);
+    assert (fp);
 
     p = (BP_PROC *) fp->fh;
     fh = (BP_FILE *) p->fh;
