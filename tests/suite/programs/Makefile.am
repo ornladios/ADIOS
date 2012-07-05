@@ -9,7 +9,7 @@
 # 5. add to EXTRA_DIST any non-source files that should go with the distribution
 check_readonly_C=
 if BUILD_WRITE
-check_C=local_array_time adios_amr_write adios_amr_write_2vars adios_staged_read adios_staged_read_2vars
+check_C=local_array_time adios_amr_write adios_amr_write_2vars adios_staged_read adios_staged_read_2vars write_read
 endif
 
 if BUILD_FORTRAN
@@ -55,14 +55,19 @@ adios_amr_write_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 adios_amr_write_2vars.o: adios_amr_write_2vars.c
 
 adios_staged_read_SOURCES=adios_staged_read.c
-adios_staged_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
-adios_staged_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+adios_staged_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
+adios_staged_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 adios_staged_read.o: adios_staged_read.c
 
 adios_staged_read_2vars_SOURCES=adios_staged_read_2vars.c
-adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
-adios_staged_read_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
+adios_staged_read_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 adios_staged_read_2vars.o: adios_staged_read_2vars.c
+
+write_read_SOURCES=write_read.c
+write_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+write_read.o: write_read.c
 
 EXTRA_DIST = posix_method.xml local_array_time.xml
 
