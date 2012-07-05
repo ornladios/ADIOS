@@ -477,7 +477,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
         if (start_idx < 0 || stop_idx < 0)
         {
-            adios_error (err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step",
+            adios_error (err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step\n",
                          r->varid, t);
             continue;
         }
@@ -570,7 +570,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     {
                         adios_error ( err_out_of_bound, "Error: Variable (id=%d) out of bound 1("
                             "the data in dimension %d to read is %llu elements from index %llu"
-                            " but the actual data is [0,%llu])",
+                            " but the actual data is [0,%llu])\n",
                             r->varid, j + 1, count[j], start[j], gdims[j] - 1);
                         return 0;
                     }
@@ -1410,7 +1410,7 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 
     if (varid < 0 || varid >= fp->nvars)
     {
-        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, fp->nvars);
+        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)\n", varid, fp->nvars);
         return NULL;
     }
 
@@ -1582,26 +1582,58 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
     BP_PROC * p;
     BP_FILE * fh;
     read_request * r;
+    ADIOS_SELECTION * nullsel = 0;
     struct adios_index_var_struct_v1 * v;
     uint64_t datasize;
-    int i, type_size;
+    int i, type_size, ndim, ns, file_is_fortran;
+    uint64_t * dims = 0;
 
     assert (fp);
 
     p = (BP_PROC *) fp->fh;
     fh = (BP_FILE *) p->fh;
+    v = bp_find_var_byid (fh, varid);
+    file_is_fortran = is_fortran_file (fh);
 
     r = (read_request *) malloc (sizeof (read_request));
     assert (r);
 
+    if (!sel)
+    {
+        bp_get_and_swap_dimensions (fh, v, file_is_fortran,
+                                    &ndim, &dims,
+                                    &ns,
+                                    file_is_fortran != futils_is_called_from_fortran()
+                                    );
+
+        nullsel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
+        assert (nullsel);
+
+        nullsel->type == ADIOS_SELECTION_BOUNDINGBOX;
+        nullsel->u.bb.ndim = ndim;
+        nullsel->u.bb.start = (uint64_t *) malloc (nullsel->u.bb.ndim * 8);
+        assert (nullsel->u.bb.start);
+        nullsel->u.bb.count = (uint64_t *) malloc (nullsel->u.bb.ndim * 8);
+        assert (nullsel->u.bb.count);
+
+        for (i = 0; i < nullsel->u.bb.ndim; i++)
+        {
+            nullsel->u.bb.start[i] = 0;
+            nullsel->u.bb.count[i] = dims[i];
+        }
+
+        free (dims);
+    }
+
     r->rank = p->rank;
-    r->sel = copy_selection (sel);
+    /* copy selection since we don't want to operate on user memory.
+     */
+    r->sel = (!nullsel ? copy_selection (sel) : nullsel);
     r->varid = varid;
     r->from_steps = from_steps;
     r->nsteps = nsteps;
     r->data = data;
     //FIXME
-    v = bp_find_var_byid (fh, varid);
     type_size = bp_get_type_size (v->type, 0);;
 
     if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
@@ -1730,7 +1762,7 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
 
     if (i != attrid)
     {
-        adios_error (err_corrupted_attribute, "Attribute id=%d is valid but was not found in internal data structures!",attrid);
+        adios_error (err_corrupted_attribute, "Attribute id=%d is valid but was not found in internal data structures!\n",attrid);
         return adios_errno;
     }
 
@@ -1798,7 +1830,7 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
         if (!var_root)
         { 
             adios_error (err_invalid_attribute_reference,
-                   "Attribute %s/%s in group %s is a reference to variable ID %d, which is not found",
+                   "Attribute %s/%s in group %s is a reference to variable ID %d, which is not found\n",
                    attr_root->attr_path, attr_root->attr_name, attr_root->group_name,
                    attr_root->characteristics[attr_c_index].var_id);
             return adios_errno;
@@ -1845,7 +1877,7 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
             {
                 adios_error (err_invalid_attribute_reference,
                     "Attribute %s/%s in group %s, typeid=%d is a reference to an %d-dimensional array variable "
-                    "%s/%s of type %s, which is not supported in ADIOS",
+                    "%s/%s of type %s, which is not supported in ADIOS\n",
                     attr_root->attr_path, attr_root->attr_name, attr_root->group_name, attr_root->type,
                     var_root->characteristics[var_c_index].dims.count,
                     var_root->var_path, var_root->var_name, common_read_type_to_string(var_root->type));
@@ -1898,7 +1930,7 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
             {
                 char *msg = strdup(adios_get_last_errmsg());
                 adios_error ((enum ADIOS_ERRCODES) status,
-                      "Cannot read data of variable %s/%s for attribute %s/%s of group %s: %s",
+                      "Cannot read data of variable %s/%s for attribute %s/%s of group %s: %s\n",
                       var_root->var_path, var_root->var_name,
                       attr_root->attr_path, attr_root->attr_name, attr_root->group_name,
                       msg);
@@ -4133,7 +4165,7 @@ printf ("pgcount = %lld\n", pgcount);
         }
 
         if (start_idx<0) {
-            adios_error (err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step",
+            adios_error (err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step\n",
                 varid, timestep);
             return -adios_errno;
         }
@@ -4604,7 +4636,7 @@ int64_t adios_read_bp_read_var_byid2 (ADIOS_GROUP    * gp,
         stop_idx = get_var_stop_index(var_root, t);
 
         if (start_idx < 0 || stop_idx < 0) {
-            adios_error (err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step",
+            adios_error (err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step\n",
                 varid, t);
 //            return -adios_errno;
             continue;
