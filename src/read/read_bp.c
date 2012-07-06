@@ -192,6 +192,18 @@ void close_all_BP_files (struct BP_file_handle * l)
                       );                                                                    \
         fh->b->offset = 0;                                                                  \
 
+/* This routine release one step. It only frees the var/attr namelist. */
+static void release_step (ADIOS_FILE *fp)
+{
+    free_namelist (fp->var_namelist, fp->nvars);
+    fp->var_namelist = 0;
+    fp->nvars = 0;
+
+    free_namelist (fp->attr_namelist, fp->nattrs);
+    fp->attr_namelist = 0;
+    fp->nattrs = 0;
+}
+
 /* This routin open a ADIOS-BP file with no timeout.
  * It first checks whether this is a valid BP file. This is done by
  * checking the validity on rank 0 and communicating to other ranks.
@@ -1124,11 +1136,15 @@ int adios_read_bp_close (ADIOS_FILE * fp)
     BP_FILE * fh = p->fh;
 
     bp_close (fh);
-    fh = 0;
+    p->fh = 0;
 
     free (p);
+    p->fh = 0;
 
-    //FIXME
+    free_namelist (fp->var_namelist, fp->nvars);
+    free_namelist (fp->attr_namelist, fp->nattrs);
+    free (fp->path);
+    // internal_data field is taken care of by common layer
     free (fp);
 
     return 0;
@@ -1344,7 +1360,7 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
     {
         if (fp->current_step < fp->last_step) // no need to re-open file. The next step is already in.
         {
-            adios_read_bp_release_step (fp);
+            release_step (fp);
             bp_seek_to_step (fp, ++fp->current_step, show_hidden_attrs);
         }
         else // re-open to read in footer again. We should keep polling until there are new steps in OR 
@@ -1386,13 +1402,9 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
     return adios_errno;
 }
 
+/* Right now, this function does nothing. Since locking hasn't been implemented yet */
 void adios_read_bp_release_step (ADIOS_FILE *fp)
 {
-    free_namelist (fp->var_namelist, fp->nvars);
-    fp->var_namelist = 0;
-
-    free_namelist (fp->attr_namelist, fp->nattrs);
-    fp->attr_namelist = 0;
 }
 
 ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
