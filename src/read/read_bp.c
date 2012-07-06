@@ -1114,13 +1114,13 @@ typedef struct {
     /* This will seek to the last step. So we need to set current_step back properly */
     bp_seek_to_step (fp, -1, show_hidden_attrs);
 
-    /* It was agreed that, for file open the current step should be the start time,
-     * instead of the stop time. However, the var_namelist and attr_namelist should
+    /* It was agreed that, for file open the current step should be set to 0,
+     * instead of the start time. The var_namelist and attr_namelist should
      * consist of all steps. For stream open, this is done differently.
      * 07/2012 - Q.Liu
      */
-    fp->current_step = fh->tidx_start - 1;
-    fp->last_step = fh->tidx_stop - 1;
+    fp->current_step = 0;
+    fp->last_step = fh->tidx_stop - fh->tidx_start;
 
     fp->path = strdup (fh->fname);
     fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
@@ -1402,7 +1402,7 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
     return adios_errno;
 }
 
-/* Right now, this function does nothing. Since locking hasn't been implemented yet */
+/* Right now, this function does nothing, since locking hasn't been implemented yet */
 void adios_read_bp_release_step (ADIOS_FILE *fp)
 {
 }
@@ -1473,6 +1473,41 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 
 int adios_read_bp_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo, int per_step_stat, int per_block_stat)
 {
+#if 0
+typedef struct {
+        void     * min;            /* minimum value in an array variable, = value for a scalar       */
+        void     * max;            /* maximum value of an array variable (over all steps)            */
+        double   * avg;            /* average value of an array variable (over all steps)            */
+        double   * std_dev;        /* standard deviation value of an array variable (over all steps) */
+
+        struct ADIOS_STAT_STEP     /* per step statistics (if requested and recorded at writing) */
+        {
+            void     ** mins;      /* minimum per each step (array of 'nsteps' elements)             */
+            void     ** maxs;      /* maximum per each step (array of 'nsteps' elements)             */
+            double   ** avgs;      /* average per each step (array of 'nsteps' elements)             */
+            double   ** std_devs;  /* standard deviation per each step (array of 'nsteps' elements)  */
+        } *steps;
+
+        struct ADIOS_STAT_BLOCK    /* per block statistics (if requested and recorded at writing) */
+        {
+            void     ** mins;      /* minimum per each block (array of 'nblocks' elements)         */
+            void     ** maxs;      /* maximum per each block (array of 'nblocks' elements)         */
+            double   ** avgs;      /* average per each block (array of 'nblocks' elements)         */
+            double   ** std_devs;  /* std deviation per each block (array of 'nblocks' elements)   */
+        } *blocks;
+
+        struct ADIOS_HIST           /* Histogram if recorded at writing */
+        {
+            uint32_t    num_breaks;
+            double      max;
+            double      min;
+            double *    breaks;
+            uint32_t ** frequencies;
+            uint32_t *  gfrequencies;
+        } *histogram;
+
+} ADIOS_VARSTAT;
+#endif
     int i, j, c, count = 1, npgs, timestep, ntimes = -1;
     int size, sum_size, sum_type;
     ADIOS_VARSTAT * vs;
