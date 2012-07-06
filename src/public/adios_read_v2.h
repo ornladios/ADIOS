@@ -39,9 +39,9 @@ typedef struct {
         int      nattrs;            /* Number of attributes in all groups                             */
         char     ** attr_namelist;  /* Attribute names in a char* array                               */
 
-        /* Step */
-        int      current_step;      /* The current step                                               */
-        int      last_step;         /* The currently available latest step in the stream/file         */
+        /* Stream step information */
+        int      current_step;      /* The current step in a stream. For a file, it is always 0.      */
+        int      last_step;         /* The currently available latest step in the stream/file.        */
 
         /* Information about file/stream */
         char     *path;             /* Full path file name (as passed at open)                        */
@@ -220,7 +220,7 @@ int adios_read_finalize_method(enum ADIOS_READ_METHOD method);
  *  RETURN:       pointer to an ADIOS_FILE struct, NULL on error (sets adios_errno)
  *
  *  Note: the current_step field of the returned struct indicates which step the stream is at.
- *        Steps start from 1.
+ *        Steps start from 0.
  *
  *  Possible errors (adios_errno values):
  *       err_file_not_found_error  File/stream does not exist / not yet available
@@ -234,9 +234,13 @@ ADIOS_FILE * adios_read_open_stream (const char * fname,
                                      float timeout_sec);
 
 /** Open an adios file as a file.
- *  Each variable can have different number of steps. Arbitrary steps of a variable
- *  can be read at any time. The number of steps is reported in the last_step 
- *  field of the returned ADIOS_FILE struct, while current_step is always 1.
+ *  Each variable can have different number of steps, which is reported in adios_inq_var(). 
+ *  Arbitrary steps of a variable can be read at any time. 
+ *  In general, the 'last_step' field of the returned ADIOS_FILE struct indicates
+ *  the number of open-write-close cycles of the writing application, while 
+ *  'current_step' is always 0. If all variables have been written at each writing step, 
+ *  'last_step' equals the 'nsteps' available for each variable reported by adios_inq_var().
+ *  
  *
  *  IN:  fname    pathname of file to be opened
  *       method   read method to use for this particular file
@@ -247,7 +251,9 @@ ADIOS_FILE * adios_read_open_stream (const char * fname,
  *  Possible errors (adios_errno values):
  *       err_file_not_found_error  File does not exist 
  */
-ADIOS_FILE * adios_read_open_file (const char * fname, enum ADIOS_READ_METHOD method, MPI_Comm comm);
+ADIOS_FILE * adios_read_open_file (const char * fname, 
+                                   enum ADIOS_READ_METHOD method, 
+                                   MPI_Comm comm);
 
 /** Close an adios file.
  *  It will free the content of the underlying data structures and the fp pointer itself.
@@ -354,17 +360,16 @@ int adios_inq_var_stat (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
 int adios_inq_var_blockinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
 
 /** Schedule reading a variable (slice) from the file.
- *  You need to allocate the memory for the data.
  *  You need to call adios_perform_reads() to do the reading of
  *  variables.
  *  IN:  fp         pointer to an (opened) ADIOS_FILE struct
  *       sel        selection created beforehand with adios_selection...().
  *                  sel=NULL means global selection (whole variable)
  *       varname    name of the variable
- *       from_step  Read the 'nsteps' consecutive steps from this
- *                  step of a file variable.
-                    It is not used in case of a stream.
- *       nsteps     Read 'nsteps' consecutive steps from current step.
+ *       from_step  File mode only: read the 'nsteps' consecutive steps
+ *                  of a variable from 'from_step'.
+ *                  It is not used in case of a stream.
+ *       nsteps     Read 'nsteps' consecutive steps of a variable.
  *                  Must be 1 for a stream. 
  *  OUT: data       pointer to the memory to hold data of the variable
  *                  In blocking read mode, the memory should be 
