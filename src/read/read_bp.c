@@ -470,7 +470,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     size_of_type = bp_get_type_size (v->type, v->characteristics [0].value);
 
     log_debug ("read_var_bb: from_steps = %d, nsteps = %d\n", r->from_steps, r->nsteps);
-    for (t = r->from_steps + 1; t < r->from_steps + 1 + r->nsteps; t++)
+    for (t = fp->current_step + r->from_steps + 1; t < fp->current_step + r->from_steps + r->nsteps + 1; t++)
     {
         start_idx = get_var_start_index (v, t);
         stop_idx = get_var_stop_index (v, t);
