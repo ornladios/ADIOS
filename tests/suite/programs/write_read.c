@@ -620,7 +620,6 @@ int read_file (char *fname)
     ADIOS_FILE * f;
     ADIOS_VARINFO * vi;
     int err=0,i,n;
-    int from_step; // which step to read
 
     uint64_t start[6] = {offs1,offs2,offs3,offs4,offs5,offs6};
     uint64_t count[6] = {ldim1,ldim2,ldim3,ldim4,ldim5,ldim6};
@@ -634,9 +633,6 @@ int read_file (char *fname)
         printE ("Error at opening file: %s\n", rank, adios_errmsg());
         return 1;
     }
-
-    //from_step = 0;
-    from_step = f->current_step;
 
     log ("  Scalars... %s\n", fname);
     CHECK_SCALAR ("/scalars/scalar_byte",   scalar_byte,  int8_t)
@@ -677,18 +673,18 @@ int read_file (char *fname)
     log ("  1D arrays... %s\n", fname);
     n = ldim1;
     sel = adios_selection_boundingbox (1, start, count); 
-    adios_schedule_read (f, sel, "1D/a1_byte", from_step, 1, r1_byte);
-    adios_schedule_read (f, sel, "1D/a1_short", from_step, 1, r1_short);
-    adios_schedule_read (f, sel, "1D/a1_int", from_step, 1, r1_int);
-    adios_schedule_read (f, sel, "1D/a1_long", from_step, 1, r1_long);
-    adios_schedule_read (f, sel, "1D/a1_ubyte", from_step, 1, r1_ubyte);
-    adios_schedule_read (f, sel, "1D/a1_ushort", from_step, 1, r1_ushort);
-    adios_schedule_read (f, sel, "1D/a1_uint", from_step, 1, r1_uint);
-    adios_schedule_read (f, sel, "1D/a1_ulong", from_step, 1, r1_ulong);
-    adios_schedule_read (f, sel, "1D/a1_float", from_step, 1, r1_float);
-    adios_schedule_read (f, sel, "1D/a1_double", from_step, 1, r1_double);
-    adios_schedule_read (f, sel, "1D/a1_complex", from_step, 1, r1_complex);
-    adios_schedule_read (f, sel, "1D/a1_double_complex", from_step, 1, r1_double_complex);
+    adios_schedule_read (f, sel, "1D/a1_byte", 0, 1, r1_byte);
+    adios_schedule_read (f, sel, "1D/a1_short", 0, 1, r1_short);
+    adios_schedule_read (f, sel, "1D/a1_int", 0, 1, r1_int);
+    adios_schedule_read (f, sel, "1D/a1_long", 0, 1, r1_long);
+    adios_schedule_read (f, sel, "1D/a1_ubyte", 0, 1, r1_ubyte);
+    adios_schedule_read (f, sel, "1D/a1_ushort", 0, 1, r1_ushort);
+    adios_schedule_read (f, sel, "1D/a1_uint", 0, 1, r1_uint);
+    adios_schedule_read (f, sel, "1D/a1_ulong", 0, 1, r1_ulong);
+    adios_schedule_read (f, sel, "1D/a1_float", 0, 1, r1_float);
+    adios_schedule_read (f, sel, "1D/a1_double", 0, 1, r1_double);
+    adios_schedule_read (f, sel, "1D/a1_complex", 0, 1, r1_complex);
+    adios_schedule_read (f, sel, "1D/a1_double_complex", 0, 1, r1_double_complex);
     adios_perform_reads (f, 1);
 
     CHECK_ARRAY (a1_byte,   r1_byte)
@@ -719,18 +715,18 @@ int read_file (char *fname)
     log ("  2D arrays... %s\n", fname);
     n = ldim1 * ldim2;
     sel = adios_selection_boundingbox (2, start, count); 
-    adios_schedule_read (f, sel, "2D/a2_byte", from_step, 1, r2_byte);
-    adios_schedule_read (f, sel, "2D/a2_short", from_step, 1, r2_short);
-    adios_schedule_read (f, sel, "2D/a2_int", from_step, 1, r2_int);
-    adios_schedule_read (f, sel, "2D/a2_long", from_step, 1, r2_long);
-    adios_schedule_read (f, sel, "2D/a2_ubyte", from_step, 1, r2_ubyte);
-    adios_schedule_read (f, sel, "2D/a2_ushort", from_step, 1, r2_ushort);
-    adios_schedule_read (f, sel, "2D/a2_uint", from_step, 1, r2_uint);
-    adios_schedule_read (f, sel, "2D/a2_ulong", from_step, 1, r2_ulong);
-    adios_schedule_read (f, sel, "2D/a2_float", from_step, 1, r2_float);
-    adios_schedule_read (f, sel, "2D/a2_double", from_step, 1, r2_double);
-    adios_schedule_read (f, sel, "2D/a2_complex", from_step, 1, r2_complex);
-    adios_schedule_read (f, sel, "2D/a2_double_complex", from_step, 1, r2_double_complex);
+    adios_schedule_read (f, sel, "2D/a2_byte", 0, 1, r2_byte);
+    adios_schedule_read (f, sel, "2D/a2_short", 0, 1, r2_short);
+    adios_schedule_read (f, sel, "2D/a2_int", 0, 1, r2_int);
+    adios_schedule_read (f, sel, "2D/a2_long", 0, 1, r2_long);
+    adios_schedule_read (f, sel, "2D/a2_ubyte", 0, 1, r2_ubyte);
+    adios_schedule_read (f, sel, "2D/a2_ushort", 0, 1, r2_ushort);
+    adios_schedule_read (f, sel, "2D/a2_uint", 0, 1, r2_uint);
+    adios_schedule_read (f, sel, "2D/a2_ulong", 0, 1, r2_ulong);
+    adios_schedule_read (f, sel, "2D/a2_float", 0, 1, r2_float);
+    adios_schedule_read (f, sel, "2D/a2_double", 0, 1, r2_double);
+    adios_schedule_read (f, sel, "2D/a2_complex", 0, 1, r2_complex);
+    adios_schedule_read (f, sel, "2D/a2_double_complex", 0, 1, r2_double_complex);
     adios_perform_reads (f, 1);
 
     CHECK_ARRAY (a2_byte,   r2_byte)
@@ -762,18 +758,18 @@ int read_file (char *fname)
     log ("  3D arrays... %s\n", fname);
     n = ldim1 * ldim2 * ldim3;
     sel = adios_selection_boundingbox (3, start, count); 
-    adios_schedule_read (f, sel, "3D/a3_byte", from_step, 1, r3_byte);
-    adios_schedule_read (f, sel, "3D/a3_short", from_step, 1, r3_short);
-    adios_schedule_read (f, sel, "3D/a3_int", from_step, 1, r3_int);
-    adios_schedule_read (f, sel, "3D/a3_long", from_step, 1, r3_long);
-    adios_schedule_read (f, sel, "3D/a3_ubyte", from_step, 1, r3_ubyte);
-    adios_schedule_read (f, sel, "3D/a3_ushort", from_step, 1, r3_ushort);
-    adios_schedule_read (f, sel, "3D/a3_uint", from_step, 1, r3_uint);
-    adios_schedule_read (f, sel, "3D/a3_ulong", from_step, 1, r3_ulong);
-    adios_schedule_read (f, sel, "3D/a3_float", from_step, 1, r3_float);
-    adios_schedule_read (f, sel, "3D/a3_double", from_step, 1, r3_double);
-    adios_schedule_read (f, sel, "3D/a3_complex", from_step, 1, r3_complex);
-    adios_schedule_read (f, sel, "3D/a3_double_complex", from_step, 1, r3_double_complex);
+    adios_schedule_read (f, sel, "3D/a3_byte", 0, 1, r3_byte);
+    adios_schedule_read (f, sel, "3D/a3_short", 0, 1, r3_short);
+    adios_schedule_read (f, sel, "3D/a3_int", 0, 1, r3_int);
+    adios_schedule_read (f, sel, "3D/a3_long", 0, 1, r3_long);
+    adios_schedule_read (f, sel, "3D/a3_ubyte", 0, 1, r3_ubyte);
+    adios_schedule_read (f, sel, "3D/a3_ushort", 0, 1, r3_ushort);
+    adios_schedule_read (f, sel, "3D/a3_uint", 0, 1, r3_uint);
+    adios_schedule_read (f, sel, "3D/a3_ulong", 0, 1, r3_ulong);
+    adios_schedule_read (f, sel, "3D/a3_float", 0, 1, r3_float);
+    adios_schedule_read (f, sel, "3D/a3_double", 0, 1, r3_double);
+    adios_schedule_read (f, sel, "3D/a3_complex", 0, 1, r3_complex);
+    adios_schedule_read (f, sel, "3D/a3_double_complex", 0, 1, r3_double_complex);
     adios_perform_reads (f, 1);
 
     CHECK_ARRAY (a3_byte,   r3_byte)
@@ -805,18 +801,18 @@ int read_file (char *fname)
     log ("  6D arrays... %s\n", fname);
     n = ldim1 * ldim2 * ldim3 * ldim4 * ldim5 * ldim6;
     sel = adios_selection_boundingbox (6, start, count); 
-    adios_schedule_read (f, sel, "6D/a6_byte", from_step, 1, r6_byte);
-    adios_schedule_read (f, sel, "6D/a6_short", from_step, 1, r6_short);
-    adios_schedule_read (f, sel, "6D/a6_int", from_step, 1, r6_int);
-    adios_schedule_read (f, sel, "6D/a6_long", from_step, 1, r6_long);
-    adios_schedule_read (f, sel, "6D/a6_ubyte", from_step, 1, r6_ubyte);
-    adios_schedule_read (f, sel, "6D/a6_ushort", from_step, 1, r6_ushort);
-    adios_schedule_read (f, sel, "6D/a6_uint", from_step, 1, r6_uint);
-    adios_schedule_read (f, sel, "6D/a6_ulong", from_step, 1, r6_ulong);
-    adios_schedule_read (f, sel, "6D/a6_float", from_step, 1, r6_float);
-    adios_schedule_read (f, sel, "6D/a6_double", from_step, 1, r6_double);
-    adios_schedule_read (f, sel, "6D/a6_complex", from_step, 1, r6_complex);
-    adios_schedule_read (f, sel, "6D/a6_double_complex", from_step, 1, r6_double_complex);
+    adios_schedule_read (f, sel, "6D/a6_byte", 0, 1, r6_byte);
+    adios_schedule_read (f, sel, "6D/a6_short", 0, 1, r6_short);
+    adios_schedule_read (f, sel, "6D/a6_int", 0, 1, r6_int);
+    adios_schedule_read (f, sel, "6D/a6_long", 0, 1, r6_long);
+    adios_schedule_read (f, sel, "6D/a6_ubyte", 0, 1, r6_ubyte);
+    adios_schedule_read (f, sel, "6D/a6_ushort", 0, 1, r6_ushort);
+    adios_schedule_read (f, sel, "6D/a6_uint", 0, 1, r6_uint);
+    adios_schedule_read (f, sel, "6D/a6_ulong", 0, 1, r6_ulong);
+    adios_schedule_read (f, sel, "6D/a6_float", 0, 1, r6_float);
+    adios_schedule_read (f, sel, "6D/a6_double", 0, 1, r6_double);
+    adios_schedule_read (f, sel, "6D/a6_complex", 0, 1, r6_complex);
+    adios_schedule_read (f, sel, "6D/a6_double_complex", 0, 1, r6_double_complex);
     adios_perform_reads (f, 1);
 
     CHECK_ARRAY (a6_byte,   r6_byte)
