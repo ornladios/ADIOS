@@ -20,20 +20,30 @@ WRITE
 READ
 ====
 + new read API
-   - stream: + simple file, + dataspaces
-   - non-blocking: + simple file, + dataspaces
+   + stream: + simple file, + dataspaces
+   + non-blocking: + simple file, + dataspaces
    - chunking: -
+     - support memory limit
 - hide special attributes from attribute list
    - have init parameter to show them
 - missing data blocks if read should contain undef values
 + init method parameter: abort_on_error (good for debugging)
 + F90 module
 
+- simple BP reader
+    - statistics
+    - PG block selection read
+    - auto selection read
+
 - statistics
+  - return it!!! BP and DataSpaces method does not support it yet
   - check if void** or void* arrays should be the per-step stats
   - modify fortran read functions accordingly
   - modify manual 
   - test the heck out of this beast, complex type data too
+
+- staged reads
+
 
 BUILD
 =====
