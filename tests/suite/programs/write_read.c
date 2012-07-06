@@ -548,7 +548,7 @@ int write_file (char *fname)
 #define CHECK_ARRAY(A,R) \
     for (i=0;i<n;i++) \
         if (A[i] != R[i]) { \
-            printE ("Variable %s does not equal in written and read values at position %d\n", "##A##",i);\
+            printE ("Variable " #A " does not equal in written and read values at position %d\n", i);\
             err = 103; \
             goto endread;\
         }
@@ -686,6 +686,7 @@ int read_file (char *fname)
     adios_schedule_read (f, sel, "1D/a1_complex", 0, 1, r1_complex);
     adios_schedule_read (f, sel, "1D/a1_double_complex", 0, 1, r1_double_complex);
     adios_perform_reads (f, 1);
+    adios_selection_delete (sel);
 
     CHECK_ARRAY (a1_byte,   r1_byte)
     CHECK_ARRAY (a1_short,  r1_short)
@@ -728,6 +729,7 @@ int read_file (char *fname)
     adios_schedule_read (f, sel, "2D/a2_complex", 0, 1, r2_complex);
     adios_schedule_read (f, sel, "2D/a2_double_complex", 0, 1, r2_double_complex);
     adios_perform_reads (f, 1);
+    adios_selection_delete (sel);
 
     CHECK_ARRAY (a2_byte,   r2_byte)
     CHECK_ARRAY (a2_short,  r2_short)
@@ -771,6 +773,7 @@ int read_file (char *fname)
     adios_schedule_read (f, sel, "3D/a3_complex", 0, 1, r3_complex);
     adios_schedule_read (f, sel, "3D/a3_double_complex", 0, 1, r3_double_complex);
     adios_perform_reads (f, 1);
+    adios_selection_delete (sel);
 
     CHECK_ARRAY (a3_byte,   r3_byte)
     CHECK_ARRAY (a3_short,  r3_short)
@@ -814,6 +817,7 @@ int read_file (char *fname)
     adios_schedule_read (f, sel, "6D/a6_complex", 0, 1, r6_complex);
     adios_schedule_read (f, sel, "6D/a6_double_complex", 0, 1, r6_double_complex);
     adios_perform_reads (f, 1);
+    adios_selection_delete (sel);
 
     CHECK_ARRAY (a6_byte,   r6_byte)
     CHECK_ARRAY (a6_short,  r6_short)
