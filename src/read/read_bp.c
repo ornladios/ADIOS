@@ -1157,7 +1157,11 @@ typedef struct {
     fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
     assert (fp);
 
-    bp_open (fname, comm, fh);
+    if (bp_open (fname, comm, fh) < 0)
+    {
+        adios_error (err_file_open_error, "File open failed: %s", fname);
+        return 0;
+    }
 
     /* fill out ADIOS_FILE struct */
     fp->fh = (uint64_t) p;
@@ -1196,7 +1200,7 @@ int adios_read_bp_close (ADIOS_FILE * fp)
     free_namelist (fp->var_namelist, fp->nvars);
     free_namelist (fp->attr_namelist, fp->nattrs);
     free (fp->path);
-    // internal_data field is taken care of by common layer
+    // internal_data field is taken care of by common reader layer
     free (fp);
 
     return 0;
@@ -1475,7 +1479,7 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
     if (varid < 0 || varid >= fp->nvars)
     {
         adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)\n", varid, fp->nvars);
-        return NULL;
+        return 0;
     }
 
     v = bp_find_var_byid (fh, varid);
@@ -1565,8 +1569,6 @@ typedef struct {
 
 } ADIOS_VARSTAT;
 #endif
-
-#if 1
     int i, j, c, count = 1, timestep;
     int size, sum_size, sum_type, nsteps, prev_timestep;
     BP_PROC * p = (BP_PROC *) fp->fh;
@@ -2098,7 +2100,7 @@ typedef struct {
         free (sum_squares);
         free (gsum_square);
     }
-#endif
+
     return 0;
 }
 
