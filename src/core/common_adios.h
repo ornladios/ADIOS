@@ -64,33 +64,4 @@ int common_adios_stop_calculation (void);
 
 int common_adios_close (int64_t fd_p);
 
-// Generally internal use called when parsing the XML file
-int common_adios_declare_group (int64_t * id, const char * name
-                        ,const char * coordination_comm
-                        ,const char * coordination_var
-                        ,const char * time_index
-                        );
-
-int common_adios_define_var (int64_t group_id, const char * name
-                     ,const char * path, int type
-                     ,const char * dimensions
-                     ,const char * global_dimensions
-                     ,const char * local_offsets
-                     );
-
-int common_adios_define_attribute (int64_t group, const char * name
-                           ,const char * path, enum ADIOS_DATATYPES type
-                           ,const char * value, const char * var
-                           );
-
-int common_adios_select_method (int priority, const char * method
-                        ,const char * parameters, const char * type
-                        ,const char * base_path, int iters
-                        );
-
-int common_adios_select_method (int priority, const char * method
-                        ,const char * parameters, const char * type
-                        ,const char * base_path, int iters
-                        );
-
 #endif
