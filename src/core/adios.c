@@ -343,14 +343,15 @@ int adios_free_group (int64_t id)
 
 // declare a single var as an entry in a group
 int adios_define_var (int64_t group_id, const char * name
-                     ,const char * path, int type
+                     ,const char * path
+                     ,enum ADIOS_DATATYPES type
                      ,const char * dimensions
                      ,const char * global_dimensions
                      ,const char * local_offsets
                      )
 {
     return adios_common_define_var (group_id, name, path
-                                   ,(enum ADIOS_DATATYPES) type
+                                   ,type
                                    ,dimensions
                                    ,global_dimensions, local_offsets
                                    );
