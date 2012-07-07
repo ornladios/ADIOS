@@ -45,7 +45,7 @@ static int adios_read_bp_get_endianness( uint32_t change_endianness);
     var = calloc (num, sz); \
     if (!var)    {\
         adios_error_at_line (err_no_memory, __FILE__, __LINE__, "Could not allocate memory for ", comment, " in common_read_get_characteristics"); \
-        return; \
+        return 0; \
     }\
 }
 
@@ -54,7 +54,7 @@ static int adios_read_bp_get_endianness( uint32_t change_endianness);
     var = malloc (sz); \
     if (!var)    {\
         adios_error_at_line (err_no_memory, __FILE__, __LINE__, "Could not allocate memory for ", comment, " in common_read_get_characteristics"); \
-        return; \
+        return 0; \
     }\
 }\
 
@@ -161,6 +161,7 @@ void close_all_BP_files (struct BP_file_handle * l)
         {                                                                                   \
             int err;                                                                        \
             char * ch, * name_no_path, * name;                                              \
+            MPI_Info info;                                                                  \
             struct BP_file_handle * new_h =                                                 \
                   (struct BP_file_handle *) malloc (sizeof (struct BP_file_handle));        \
             new_h->file_index = v->characteristics[start_idx + idx].file_index;             \
@@ -178,13 +179,13 @@ void close_all_BP_files (struct BP_file_handle * l)
                                                                                             \
             name = (char *) malloc (strlen (fh->fname) + 5 + strlen (name_no_path) + 1 + 10 + 1); \
             sprintf (name, "%s.dir/%s.%d", fh->fname, name_no_path, new_h->file_index);     \
-                                                                                            \
             err = MPI_File_open (fh->comm                                                   \
                                 ,name                                                       \
                                 ,MPI_MODE_RDONLY                                            \
-                                ,(MPI_Info)MPI_INFO_NULL                                    \
+                                ,info                                                       \
                                 ,&new_h->fh                                                 \
                                 );                                                          \
+                                                                                            \
            if (err)                                                                         \
            {                                                                                \
                fprintf (stderr, "can not open file %s\n", name);                            \
@@ -270,7 +271,7 @@ static BP_FILE * open_file (const char * fname, MPI_Comm comm)
 }
 
 /* This routine set ADIOS_FILE fields from fh */
-int build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
+void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
 {
     BP_PROC * p;
     int rank;
@@ -297,6 +298,8 @@ int build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
 
     /* For file, the last step is tidx_stop */
     fp->last_step = fh->tidx_stop - 1;
+
+    return;
 }
 
 /*  last_step is the last step that the previous file has.
@@ -365,6 +368,8 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
     } // while (stay_in_poll_loop)
 
     log_debug ("exit get_new_step\n");
+
+    return 0;
 }
 
 /* This routine processes a read request and returns data in ADIOS_VARCHUNK.
@@ -391,7 +396,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
     switch (sel->type)
     {
         case ADIOS_SELECTION_BOUNDINGBOX:
-            return read_var_bb (fp, r);
+            chunk = read_var_bb (fp, r);
             break;
         case ADIOS_SELECTION_POINTS:
             /* The idea is we convert a point selection to bounding box section. */
@@ -427,18 +432,19 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
                 memcpy (nsel->u.bb.start, sel->u.points.points + i * sel->u.points.ndim, sel->u.points.ndim * 8);
 
                 chunk = read_var_bb (fp, nr);
-                nr->data += size_of_type;
+                nr->data = (char *) nr->data + size_of_type;
             }
 
             free_selection (nsel);
             free (nr);
-
             break;
         case ADIOS_SELECTION_WRITEBLOCK:
             break;
         case ADIOS_SELECTION_AUTO:
             break;
     }
+
+    return chunk;
 }
 
 /* Convert 'step' to time, which is used in ADIOS internals.
@@ -475,7 +481,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     ADIOS_SELECTION * sel;
     struct adios_index_var_struct_v1 * v;
     int i, j, k, t, time, nsteps;
-    uint64_t start_idx, stop_idx, idx;
+    int64_t start_idx, stop_idx, idx;
     int ndim, has_subfile, file_is_fortran;
     uint64_t size, * dims;
     uint64_t ldims[32], gdims[32], offsets[32];
@@ -580,7 +586,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 ((char*)data)[size_of_type] = '\0';
             }
 
-            data += (v->type == adios_string)?  size_of_type + 1 : size_of_type;
+            data = (char *)data + (v->type == adios_string?  size_of_type + 1 : size_of_type);
         }
         else
         {
@@ -1724,7 +1730,7 @@ typedef struct {
             {
                 double data[3];
                 for (c = 0; c < count; c ++)
-                    data[c] = bp_value_to_double(type, stats[c][map[adios_statistic_min]].data);
+                    data[c] = bp_value_to_double((enum ADIOS_DATATYPES)type, stats[c][map[adios_statistic_min]].data);
 
                 if(!vs->min)
                 {
@@ -1764,7 +1770,7 @@ typedef struct {
             {
                 double data[3];
                 for (c = 0; c < count; c ++)
-                    data[c] = bp_value_to_double(type, stats[c][map[adios_statistic_max]].data);
+                    data[c] = bp_value_to_double((enum ADIOS_DATATYPES)type, stats[c][map[adios_statistic_max]].data);
 
                 if(!vs->max) {
                     MALLOC (vs->max, count * size, "global minimum")
@@ -1793,7 +1799,7 @@ typedef struct {
             {
                 double data[3];
                 for (c = 0; c < count; c ++)
-                    data[c] = bp_value_to_double(type, stats[c][map[adios_statistic_sum]].data);
+                    data[c] = bp_value_to_double((enum ADIOS_DATATYPES)type, stats[c][map[adios_statistic_sum]].data);
 
                 if(!gsum) {
                     MALLOC(gsum, count * sum_size, "global summation")
@@ -1820,7 +1826,7 @@ typedef struct {
             {
                 double data[3];
                 for (c = 0; c < count; c ++)
-                    data[c] = bp_value_to_double(type, stats[c][map[adios_statistic_sum_square]].data);
+                    data[c] = bp_value_to_double((enum ADIOS_DATATYPES)type, stats[c][map[adios_statistic_sum_square]].data);
 
                 if(!gsum_square) {
                     MALLOC(gsum_square, count * sum_size, "global summation of squares")
@@ -2542,14 +2548,14 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
             if (vc == 0)
             {
                 char *msg = strdup(adios_get_last_errmsg());
-                adios_error ((enum ADIOS_ERRCODES) status,
+                adios_error ((enum ADIOS_ERRCODES) adios_errno,
                       "Cannot read data of variable %s/%s for attribute %s/%s of group %s: %s\n",
                       var_root->var_path, var_root->var_name,
                       attr_root->attr_path, attr_root->attr_name, attr_root->group_name,
                       msg);
                 free(tmpdata);
                 free(msg);
-                return status;
+                return adios_errno;
             }
 
             *type = adios_string;
@@ -3471,7 +3477,7 @@ static void adios_read_bp_get_characteristics (struct adios_index_var_struct_v1 
             {
                 double data[3];
                 for (c = 0; c < count; c ++)
-                    data[c] = bp_value_to_double(type, stats[c][map[adios_statistic_min]].data);
+                    data[c] = bp_value_to_double((enum ADIOS_DATATYPES)type, stats[c][map[adios_statistic_min]].data);
 
                 if(!vi->gmin) {
                     MALLOC (vi->gmin, count * size, "global minimum")
@@ -3502,7 +3508,7 @@ static void adios_read_bp_get_characteristics (struct adios_index_var_struct_v1 
             {
                 double data[3];
                 for (c = 0; c < count; c ++)
-                    data[c] = bp_value_to_double(type, stats[c][map[adios_statistic_max]].data);
+                    data[c] = bp_value_to_double((enum ADIOS_DATATYPES)type, stats[c][map[adios_statistic_max]].data);
 
                 if(!vi->gmax) {
                     MALLOC (vi->gmax, count * size, "global minimum")
@@ -3533,7 +3539,7 @@ static void adios_read_bp_get_characteristics (struct adios_index_var_struct_v1 
             {    
                 double data[3];
                 for (c = 0; c < count; c ++)
-                    data[c] = bp_value_to_double(type, stats[c][map[adios_statistic_sum]].data);
+                    data[c] = bp_value_to_double((enum ADIOS_DATATYPES)type, stats[c][map[adios_statistic_sum]].data);
 
                 if(!gsum) {
                     MALLOC(gsum, count * sum_size, "global summation")
@@ -3562,7 +3568,7 @@ static void adios_read_bp_get_characteristics (struct adios_index_var_struct_v1 
             {
                 double data[3];
                 for (c = 0; c < count; c ++)
-                    data[c] = bp_value_to_double(type, stats[c][map[adios_statistic_sum_square]].data);
+                    data[c] = bp_value_to_double((enum ADIOS_DATATYPES)type, stats[c][map[adios_statistic_sum_square]].data);
 
                 if(!gsum_square) {
                     MALLOC(gsum_square, count * sum_size, "global summation of squares")
