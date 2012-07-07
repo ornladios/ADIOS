@@ -39,10 +39,29 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE * fp, read_request * r);
 static int bp_close (BP_FILE * fh);
 static int adios_read_bp_get_endianness( uint32_t change_endianness);
 
+// NCSU - For custom memory allocation 
+#define CALLOC(var, num, sz, comment)\
+{\
+    var = calloc (num, sz); \
+    if (!var)    {\
+        adios_error_at_line (err_no_memory, __FILE__, __LINE__, "Could not allocate memory for ", comment, " in common_read_get_characteristics"); \
+        return; \
+    }\
+}
+
+#define MALLOC(var,sz,comment)\
+{\
+    var = malloc (sz); \
+    if (!var)    {\
+        adios_error_at_line (err_no_memory, __FILE__, __LINE__, "Could not allocate memory for ", comment, " in common_read_get_characteristics"); \
+        return; \
+    }\
+}\
+
 // Search for the start var index.
-static int get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
+static int64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
 {
-    int i = 0;
+    int64_t i = 0;
 
     while (i < v->characteristics_count) {
         if (v->characteristics[i].time_index == t) {
@@ -56,9 +75,9 @@ static int get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
 }
 
 // Search for the stop var index
-static int get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
+static int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
 {
-    int i = v->characteristics_count - 1;
+    int64_t i = v->characteristics_count - 1;
 
     while (i > -1) {
         if (v->characteristics[i].time_index == t) {
@@ -422,6 +441,29 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
     }
 }
 
+/* Convert 'step' to time, which is used in ADIOS internals.
+ * 'step' should start from 0.
+ */
+static int get_time (struct adios_index_var_struct_v1 * v, int step)
+{
+    uint64_t i = 0;
+    int prev_ti = -1, counter = 0;
+
+    while (i < v->characteristics_count) {
+        if (v->characteristics[i].time_index != prev_ti) {
+            if (counter++ == step)
+                return v->characteristics[i].time_index;
+
+            prev_ti = v->characteristics[i].time_index;
+        }
+
+        i++;
+    }
+
+    return -1;
+
+}
+
 /* This routines read in data for bounding box selection.
    If the selection is not bounding box, it should be converted to it.
    The data returned is saved in ADIOS_VARCHUNK.
@@ -432,8 +474,8 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     BP_FILE * fh;
     ADIOS_SELECTION * sel;
     struct adios_index_var_struct_v1 * v;
-    int i, j, k, idx, t;
-    int start_idx, stop_idx, nsteps;
+    int i, j, k, t, nsteps;
+    uint64_t start_idx, stop_idx, idx;
     int ndim, has_subfile, file_is_fortran;
     uint64_t size, * dims;
     uint64_t ldims[32], gdims[32], offsets[32];
@@ -482,10 +524,12 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     size_of_type = bp_get_type_size (v->type, v->characteristics [0].value);
 
     log_debug ("read_var_bb: from_steps = %d, nsteps = %d\n", r->from_steps, r->nsteps);
-    for (t = fp->current_step + r->from_steps + 1; t < fp->current_step + r->from_steps + r->nsteps + 1; t++)
+
+    /* Note fp->current_step is always 0. */
+    for (t = r->from_steps; t < r->from_steps + r->nsteps; t++)
     {
-        start_idx = get_var_start_index (v, t);
-        stop_idx = get_var_stop_index (v, t);
+        start_idx = get_var_start_index (v, get_time (v, t));
+        stop_idx = get_var_stop_index (v, get_time (v, t));
 
         if (start_idx < 0 || stop_idx < 0)
         {
@@ -1508,8 +1552,10 @@ typedef struct {
 
 } ADIOS_VARSTAT;
 #endif
+
+#if 0
     int i, j, c, count = 1, npgs, timestep, ntimes = -1;
-    int size, sum_size, sum_type;
+    int size, sum_size, sum_type, nsteps;
     ADIOS_VARSTAT * vs;
     struct adios_index_var_struct_v1 * var_root;
  
@@ -1523,10 +1569,509 @@ typedef struct {
     vs->avg = 0;
     vs->std_dev = 0;
 
-    vs->steps = 0;
+    vs->steps = (struct ADIOS_STAT_STEP *) malloc (sizeof (struct ADIOS_STAT_STEP));
+    assert (vs->steps);
+    vs->steps->mins = 0;
+    vs->steps->maxs = 0;
+    vs->steps->avgs = 0;
+    vs->steps->std_devs = 0;
+
+    //TODO
     vs->blocks = 0;
     vs->histogram = 0;
-    
+
+    npgs = var_root->characteristics_count, timestep, ntimes = -1;
+    uint64_t gcnt = 0, * cnts;
+
+    double *gsum = NULL, *gsum_square = NULL;
+    double **sums = NULL, **sum_squares = NULL;
+
+    int16_t map[32];
+    memset (map, -1, sizeof(map));
+
+    // Bitmap shows which statistical information has been calculated
+    i = j = 0;
+    while (var_root->characteristics[0].bitmap >> j)
+    {
+        if ((var_root->characteristics[0].bitmap >> j) & 1)
+        {
+            map [j] = i ++;
+        }
+
+        j ++;
+    }
+
+    nsteps = varinfo->nsteps;
+
+    if (map[adios_statistic_min] != -1)
+    {
+        MALLOC(vs->steps->mins, nsteps * sizeof(void *), "minimum per timestep");
+        for (i = 0; i < nsteps; i++)
+        {
+            vs->steps->mins[i] = 0;
+        }
+    }
+
+    if (map[adios_statistic_max] != -1)
+    {
+        MALLOC(vs->steps->maxs, nsteps * sizeof(void *), "maximum per timestep");
+        for (i = 0; i < ntimes; i++)
+        {
+            vs->steps->maxs[i] = 0;
+        }
+    }
+
+    if (map[adios_statistic_sum] != -1)
+    {
+        MALLOC(sums, nsteps * sizeof(double *), "summation per timestep");
+        MALLOC(vs->steps->avgs, nsteps * sizeof(double *), "average per timestep");
+
+        for (i = 0; i < nsteps; i++)
+        {
+            sums[i] = vs->steps->avgs[i] = 0;
+        }
+        CALLOC(cnts, nsteps, sizeof(uint64_t), "count of elements per timestep");
+    }
+
+    if (map[adios_statistic_sum_square] != -1)
+    {
+        MALLOC(sum_squares, nsteps * sizeof(double *), "summation per timestep");
+        MALLOC(vs->steps->std_devs, nsteps * sizeof(double *), "standard deviation per timestep");
+
+        for (i = 0; i < nsteps; i++)
+        {
+            vs->steps->std_devs[i] = sum_squares[i] = 0;
+        }
+    }
+/*
+    if (map[adios_statistic_hist] != -1 && (var_root->characteristics[0].stats[0][map[adios_statistic_hist]].data))
+    {
+        struct adios_index_characteristics_stat_struct * stats = var_root->characteristics[0].stats[0];
+        struct adios_index_characteristics_hist_struct * hist = stats[map[adios_statistic_hist]].data;
+        int num_breaks = hist->num_breaks;
+
+        MALLOC(vi->hist, sizeof(struct ADIOS_HIST), "histogram");
+        MALLOC(vi->hist->breaks, num_breaks * sizeof(double), "break points of histogram");
+        MALLOC(vi->hist->gfrequencies, (num_breaks + 1) * sizeof(uint32_t), "global frequencies of histogram");
+
+        vi->hist->num_breaks = hist->num_breaks;
+        vi->hist->min = hist->min;
+        vi->hist->max = hist->max;
+
+        memcpy(vi->hist->breaks, hist->breaks, num_breaks * sizeof(double));
+        CALLOC(vi->hist->gfrequencies, (num_breaks + 1), bp_get_type_size(adios_unsigned_integer, ""), "global frequency");
+
+        if (ntimes > 0)
+        {
+            MALLOC(vi->hist->frequenciess, (ntimes * sizeof(int32_t *)), "frequencies for timesteps");
+            for(i = 0; i < ntimes; i++)
+                CALLOC(vi->hist->frequenciess[i], (num_breaks + 1), bp_get_type_size(adios_unsigned_integer, ""), "frequency at timestep");
+        }
+    }
+*/
+    size = bp_get_type_size (var_root->type, "");
+    sum_size = bp_get_type_size (adios_double, "");
+
+    if (var_root->type == adios_complex || var_root->type == adios_double_complex)
+    {
+        int type;
+        count = 3;
+        timestep = 0;
+
+        if (var_root->type == adios_complex)
+        {
+            type = adios_double;
+        }
+        else
+        {
+            type = adios_long_double;
+        }
+
+        // Only a double precision returned for all complex values
+        size = bp_get_type_size (adios_double, "");
+
+        for (i = 0; i < var_root->characteristics_count; i++)
+        {
+            if (nsteps > 0)
+                timestep = var_root->characteristics[i].time_index - 1;
+
+            if (!var_root->characteristics[i].stats)
+                continue;
+
+            struct adios_index_characteristics_stat_struct ** stats = var_root->characteristics[i].stats;
+
+            if ((map[adios_statistic_finite] != -1) && (* ((uint8_t *) stats[0][map[adios_statistic_finite]].data) == 0))
+                continue;
+
+            if (map[adios_statistic_min] != -1 && stats[0][map[adios_statistic_min]].data)
+            {
+                double data[3];
+                for (c = 0; c < count; c ++)
+                    data[c] = bp_value_to_double(type, stats[c][map[adios_statistic_min]].data);
+
+                if(!vs->min)
+                {
+                    MALLOC (vs->min, count * size, "global minimum")
+                    for (c = 0; c < count; c ++)
+                           ((double * ) vs->min)[c] = data[c];
+
+                }
+                else
+                {
+                    for (c = 0; c < count; c ++)
+                        if (data[c] < ((double *) vs->min)[c])
+                               ((double * ) vs->min)[c] = data[c];
+                }
+
+                if(!vs->steps->mins[timestep])
+                {
+                    MALLOC (vs->steps->mins[timestep], count * size, "minimum per timestep")
+                    for (c = 0; c < count; c ++)
+                    {
+                        ((double **) vs->steps->mins)[timestep][c] = data[c];
+                    }
+                }
+                else
+                {
+                    for (c = 0; c < count; c ++)
+                    {
+                        if (data[c] < ((double **) vs->steps->mins)[timestep][c])
+                        {
+                            ((double **) vs->steps->mins)[timestep][c] = data[c];
+                        }
+                    }
+                }
+            }
+
+            if (map[adios_statistic_max] != -1 && stats[0][map[adios_statistic_max]].data)
+            {
+                double data[3];
+                for (c = 0; c < count; c ++)
+                    data[c] = bp_value_to_double(type, stats[c][map[adios_statistic_max]].data);
+
+                if(!vs->max) {
+                    MALLOC (vs->max, count * size, "global minimum")
+                    for (c = 0; c < count; c ++)
+                        ((double * ) vs->max)[c] = data[c];
+
+                } else {
+                    for (c = 0; c < count; c ++)
+                        if (data[c] > ((double *) vs->max)[c])
+                            ((double * ) vs->max)[c] = data[c];
+                }
+
+                if (ntimes > 0) {
+                    if(!vs->steps->maxs[timestep]) {
+                        MALLOC (vs->steps->maxs[timestep], count * size, "minimum per timestep")
+                        for (c = 0; c < count; c ++)
+                            ((double **) vs->steps->maxs)[timestep][c] = data[c];
+
+                    } else {
+                        for (c = 0; c < count; c ++)
+                            if (data[c] > ((double **) vs->steps->maxs)[timestep][c])
+                                ((double **) vs->steps->maxs)[timestep][c] = data[c];
+                    }
+                }
+            }
+
+            if (map[adios_statistic_sum] != -1 && stats[0][map[adios_statistic_sum]].data)
+            {
+                double data[3];
+                for (c = 0; c < count; c ++)
+                    data[c] = bp_value_to_double(type, stats[c][map[adios_statistic_sum]].data);
+
+                if(!gsum) {
+                    MALLOC(gsum, count * sum_size, "global summation")
+                    for (c = 0; c < count; c ++)
+                           gsum[c] = data[c];
+
+                } else {
+                    for (c = 0; c < count; c ++)
+                        gsum[c] = gsum[c] + data[c];
+                }
+
+                if (ntimes > 0) {
+                    if(!sums[timestep]) {
+                        MALLOC(sums[timestep], count * sum_size, "summation per timestep")
+                        for (c = 0; c < count; c ++)
+                            sums[timestep][c] = data[c];
+
+                    } else {
+                        for (c = 0; c < count; c ++)
+                            sums[timestep][c] = sums[timestep][c] + data[c];
+                    }
+                }
+            }
+
+            if (map[adios_statistic_sum_square] != -1 && stats[0][map[adios_statistic_sum_square]].data)
+            {
+                double data[3];
+                for (c = 0; c < count; c ++)
+                    data[c] = bp_value_to_double(type, stats[c][map[adios_statistic_sum_square]].data);
+
+                if(!gsum_square) {
+                    MALLOC(gsum_square, count * sum_size, "global summation of squares")
+                    for (c = 0; c < count; c ++)
+                        gsum_square[c] = data[c];
+
+                } else {
+                    for (c = 0; c < count; c ++)
+                           gsum_square[c] = gsum_square[c] + data[c];
+                }
+
+                if (ntimes > 0) {
+                    if(!sum_squares[timestep]) {
+                        MALLOC(sum_squares[timestep], count * sum_size, "summation of square per timestep")
+                        for (c = 0; c < count; c ++)
+                            sum_squares[timestep][c] = data[c];
+
+                    } else {
+                        for (c = 0; c < count; c ++)
+                            sum_squares[timestep][c] = sum_squares[timestep][c] + data[c];
+                    }
+                }
+            }
+
+            if (map[adios_statistic_cnt] != -1 && stats[0][map[adios_statistic_cnt]].data)
+            {
+                if (ntimes > 0)
+                    cnts[timestep] += * ((uint32_t *) stats[0][map[adios_statistic_cnt]].data);
+                gcnt += * (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
+            }
+        }
+
+        if(ntimes > 0 && vs->min && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1)) {
+            // min, max, summation exists only for arrays
+            // Calculate average / timestep
+
+            for(timestep = 0; timestep < ntimes; timestep ++) {
+                MALLOC(vs->steps->avgs[timestep], count * sum_size, "average per timestep")
+                for (c = 0; c < count; c ++)
+                    vs->steps->avgs[timestep][c] = sums[timestep][c] / cnts[timestep];
+
+                MALLOC(vs->steps->std_devs[timestep], count * sum_size, "standard deviation per timestep")
+                for (c = 0; c < count; c ++)
+                    vs->steps->std_devs[timestep][c] = sqrt((sum_squares[timestep][c] / cnts[timestep]) - (vs->steps->avgs[timestep][c] * vs->steps->avgs[timestep][c]));
+
+                free (sums[timestep]);
+                free (sum_squares[timestep]);
+            }
+        }
+
+        // Calculate global average
+        if(vs->min && gsum && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1)) {
+            MALLOC(vs->avg, count * sum_size, "global average")
+
+            if(gcnt > 0)
+                for (c = 0; c < count; c ++)
+                    vs->avg[c] = gsum[c] / gcnt;
+            else
+                for (c = 0; c < count; c ++)
+                    vs->avg[c] = gsum[c];
+
+            MALLOC(vs->std_dev, count * sum_size, "global average")
+            if(vs->avg && gcnt > 0)
+                for (c = 0; c < count; c ++)
+                    vs->std_dev[c] = sqrt(gsum_square[c] / gcnt - (vs->avg[c] * vs->avg[c]));
+            else
+                for (c = 0; c < count; c ++)
+                    vs->std_dev[c] = 0;
+        }
+    }
+    else
+    {
+        timestep = 0;
+        for (i = 0; i < var_root->characteristics_count; i++)
+        {
+            if (nsteps > 0)
+                timestep = var_root->characteristics[i].time_index - 1;
+                //timestep = i / (npgs / ntimes);
+
+            if (!var_root->characteristics[i].stats)
+                continue;
+
+            struct adios_index_characteristics_stat_struct * stats = var_root->characteristics[i].stats[0];
+            struct adios_index_characteristics_hist_struct * hist = stats[map[adios_statistic_hist]].data;
+
+            if (map[adios_statistic_finite] != -1 && (* ((uint8_t *) stats[map[adios_statistic_finite]].data) == 0))
+                continue;
+
+            if (map[adios_statistic_min] != -1 && stats[map[adios_statistic_min]].data)
+            {
+                if(!vs->min)
+                {
+                    MALLOC (vs->min, size, "global minimum")
+                    memcpy(vs->min, stats[map[adios_statistic_min]].data, size);
+
+                }
+                else if (adios_lt(var_root->type, stats[map[adios_statistic_min]].data, vs->min))
+                {
+                       memcpy(vs->min, stats[map[adios_statistic_min]].data, size);
+                }
+
+                if(!vs->steps->mins[timestep])
+                {
+                    MALLOC (vs->steps->mins[timestep], size, "minimum per timestep")
+                    memcpy(vs->steps->mins[timestep], stats[map[adios_statistic_min]].data, size);
+                }
+                else if (adios_lt(var_root->type, stats[map[adios_statistic_min]].data, vs->steps->mins[timestep]))
+                {
+                    memcpy(vs->steps->mins[timestep], stats[map[adios_statistic_min]].data, size);
+                }
+            }
+
+            if (map[adios_statistic_max] != -1 && stats[map[adios_statistic_max]].data)
+            {
+                if(!vs->max)
+                {
+                    MALLOC (vs->max, size, "global maximum")
+                    memcpy(vs->max, stats[map[adios_statistic_max]].data, size);
+
+                }
+                else if (adios_lt(var_root->type, vs->max, stats[map[adios_statistic_max]].data))
+                {
+                    memcpy(vs->max, stats[map[adios_statistic_max]].data, size);
+                }
+
+                if(!vs->steps->maxs[timestep])
+                {
+                    MALLOC (vs->steps->maxs[timestep], size, "maximum per timestep")
+                    memcpy(vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data, size);
+                }
+                else if (adios_lt(var_root->type, vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data))
+                {
+                    memcpy(vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data, size);
+                }
+            }
+
+            if (map[adios_statistic_sum] != -1 && stats[map[adios_statistic_sum]].data)
+            {
+                if(!gsum)
+                {
+                    MALLOC(gsum, sum_size, "global summation")
+                    memcpy(gsum, stats[map[adios_statistic_sum]].data, sum_size);
+                }
+                else
+                {
+                    *gsum = *gsum + * ((double *) stats[map[adios_statistic_sum]].data);
+                }
+
+                if(!sums[timestep])
+                {
+                    MALLOC(sums[timestep], sum_size, "summation per timestep")
+                    memcpy(sums[timestep], stats[map[adios_statistic_sum]].data, sum_size);
+                }
+                else
+                {
+                    *sums[timestep] = *sums[timestep] + * ((double *) stats[map[adios_statistic_sum]].data);
+                }
+            }
+
+            if (map[adios_statistic_sum_square] != -1 && stats[map[adios_statistic_sum_square]].data)
+            {
+                if(!gsum_square)
+                {
+                    MALLOC(gsum_square, sum_size, "global summation of squares")
+                    memcpy(gsum_square, stats[map[adios_statistic_sum_square]].data, sum_size);
+
+                }
+                else
+                {
+                    *gsum_square = *gsum_square + * ((double *) stats[map[adios_statistic_sum_square]].data);
+                }
+
+                if(!sum_squares[timestep])
+                {
+                    MALLOC(sum_squares[timestep], sum_size, "summation of square per timestep")
+                    memcpy(sum_squares[timestep], stats[map[adios_statistic_sum_square]].data, sum_size);
+                }
+                else
+                {
+                    *sum_squares[timestep] = *sum_squares[timestep] + * ((double *) stats[map[adios_statistic_sum_square]].data);
+                }
+            }
+/*
+            if(map[adios_statistic_hist] != -1 && stats[map[adios_statistic_hist]].data)
+            {
+                for(j = 0; j <= vi->hist->num_breaks; j++)
+                {
+                    uint32_t freq = hist->frequencies[j];
+                    vi->hist->gfrequencies[j] += freq;
+                    if (ntimes > 0)
+                        vi->hist->frequenciess[timestep][j] += freq;
+                }
+            }
+*/
+            if (map[adios_statistic_cnt] != -1 && stats[map[adios_statistic_cnt]].data)
+            {
+                if (ntimes > 0)
+                    cnts[timestep] += * (uint32_t *) stats[map[adios_statistic_cnt]].data;
+                gcnt += * (uint32_t *) stats[map[adios_statistic_cnt]].data;
+            }
+        }
+
+        if(ntimes > 0 && vs->min && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1))
+        {
+            // min, max, summation exists only for arrays
+            // Calculate average / timestep
+
+            for(timestep = 0; timestep < ntimes; timestep ++)
+            {
+                MALLOC(vs->steps->avgs[timestep], sum_size, "average per timestep")
+                *(vs->steps->avgs[timestep]) = *(sums[timestep]) / cnts[timestep];
+
+                MALLOC(vs->steps->std_devs[timestep], sum_size, "standard deviation per timestep")
+                *(vs->steps->std_devs[timestep]) = sqrt(*(sum_squares[timestep]) / cnts[timestep] - ((*(vs->steps->avgs[timestep]) * (*(vs->steps->avgs[timestep])))));
+
+                free (sums[timestep]);
+                free (sum_squares[timestep]);
+            }
+        }
+
+        // Calculate global average
+        if(vs->min && gsum && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1))
+        {
+            MALLOC(vs->avg, sum_size, "global average")
+            if(gcnt > 0)
+                *vs->avg = *gsum / gcnt;
+            else
+                vs->avg = gsum;
+
+            MALLOC(vs->std_dev, sum_size, "global average")
+            if(vs->avg && gcnt > 0)
+                *vs->std_dev = sqrt(*gsum_square / gcnt - ((*(vs->avg)) * (*(vs->avg))));
+            else
+                *vs->std_dev = 0;
+        }
+    }
+
+    if (!varinfo->value && vs->min)
+    {
+        varinfo->value = vs->min; // arrays have no value but we assign here the minimum
+    }
+
+    if(!vs->min)
+    {
+        vs->min = varinfo->value; // scalars have value but not min
+    }
+
+    if(!vs->max)
+    {
+        vs->max = varinfo->value; // scalars have value but not max
+    }
+
+    if (sums && gsum)
+    {
+        free (sums);
+        free (gsum);
+    }
+
+    if (sum_squares && gsum_square)
+    {
+        free (sum_squares);
+        free (gsum_square);
+    }
+#endif
     return 0;
 }
 
@@ -4544,9 +5089,9 @@ printf ("pgcount = %lld\n", pgcount);
 }
 
 // Search for the start var index.
-static int get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
+static uint64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
 {
-    int i = 0;
+    uint64_t i = 0;
 
     while (i < v->characteristics_count) {
         if (v->characteristics[i].time_index == t) {
@@ -4560,9 +5105,9 @@ static int get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
 }
 
 // Search for the stop var index
-static int get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
+static uint64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
 {
-    int i = v->characteristics_count - 1;
+    uint64_t i = v->characteristics_count - 1;
 
     while (i > -1) {
         if (v->characteristics[i].time_index == t) {
