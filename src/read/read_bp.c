@@ -474,7 +474,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     BP_FILE * fh;
     ADIOS_SELECTION * sel;
     struct adios_index_var_struct_v1 * v;
-    int i, j, k, t, nsteps;
+    int i, j, k, t, time, nsteps;
     uint64_t start_idx, stop_idx, idx;
     int ndim, has_subfile, file_is_fortran;
     uint64_t size, * dims;
@@ -528,8 +528,9 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     /* Note fp->current_step is always 0. */
     for (t = r->from_steps; t < r->from_steps + r->nsteps; t++)
     {
-        start_idx = get_var_start_index (v, get_time (v, t));
-        stop_idx = get_var_stop_index (v, get_time (v, t));
+        time = get_time (v, t);
+        start_idx = get_var_start_index (v, time);
+        stop_idx = get_var_stop_index (v, time);
 
         if (start_idx < 0 || stop_idx < 0)
         {
