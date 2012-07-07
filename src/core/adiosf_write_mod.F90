@@ -114,7 +114,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: group_id
             character(*),   intent(in)  :: varname
             character(*),   intent(in)  :: path
-            character(*),   intent(in)  :: vartype
+            integer,        intent(in)  :: vartype
             character(*),   intent(in)  :: dimensions
             character(*),   intent(in)  :: global_dimensions
             character(*),   intent(in)  :: local_offsets
@@ -126,7 +126,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: group_id
             character(*),   intent(in)  :: attrname
             character(*),   intent(in)  :: path
-            character(*),   intent(in)  :: attrtype
+            integer,        intent(in)  :: attrtype
             character(*),   intent(in)  :: value
             character(*),   intent(in)  :: varname
             integer,        intent(out) :: err
@@ -138,6 +138,13 @@ module adios_write_mod
             character(*),   intent(in)  :: method
             character(*),   intent(in)  :: parameters
             character(*),   intent(in)  :: base_path
+            integer,        intent(out) :: err
+        end subroutine
+
+        
+        subroutine adios_allocate_buffer (sizeMB, err)
+            implicit none
+            integer,        intent(in)  :: sizeMB
             integer,        intent(out) :: err
         end subroutine
 
