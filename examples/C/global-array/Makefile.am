@@ -27,6 +27,7 @@ adios_global_no_xml_LDADD = $(top_builddir)/src/libadios.a
 adios_global_no_xml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_global_no_xml_LDADD += $(ADIOSLIB_LDADD)
 adios_read_global_no_xml_SOURCES = adios_read_global_no_xml.c
+adios_read_global_no_xml_CPPFLAGS = -DADIOS_USE_READ_API_1
 adios_read_global_no_xml_LDADD = $(top_builddir)/src/libadiosread.a
 adios_read_global_no_xml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_global_no_xml_LDADD += $(ADIOSLIB_LDADD)

@@ -86,7 +86,7 @@ adios_read_global_OBJECTS = $(am_adios_read_global_OBJECTS)
 adios_read_global_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
 	$(am__DEPENDENCIES_1)
 am_adios_read_global_no_xml_OBJECTS =  \
-	adios_read_global_no_xml.$(OBJEXT)
+	adios_read_global_no_xml-adios_read_global_no_xml.$(OBJEXT)
 adios_read_global_no_xml_OBJECTS =  \
 	$(am_adios_read_global_no_xml_OBJECTS)
 adios_read_global_no_xml_DEPENDENCIES =  \
@@ -373,6 +373,7 @@ adios_global_no_xml_LDADD = $(top_builddir)/src/libadios.a \
 	$(ADIOSLIB_LDADD)
 adios_global_no_xml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_global_no_xml_SOURCES = adios_read_global_no_xml.c
+adios_read_global_no_xml_CPPFLAGS = -DADIOS_USE_READ_API_1
 adios_read_global_no_xml_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSLIB_LDADD)
 adios_read_global_no_xml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
@@ -457,6 +458,12 @@ adios_read_global-adios_read_global.o: adios_read_global.c
 
 adios_read_global-adios_read_global.obj: adios_read_global.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_global_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_global-adios_read_global.obj `if test -f 'adios_read_global.c'; then $(CYGPATH_W) 'adios_read_global.c'; else $(CYGPATH_W) '$(srcdir)/adios_read_global.c'; fi`
+
+adios_read_global_no_xml-adios_read_global_no_xml.o: adios_read_global_no_xml.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_global_no_xml_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_global_no_xml-adios_read_global_no_xml.o `test -f 'adios_read_global_no_xml.c' || echo '$(srcdir)/'`adios_read_global_no_xml.c
+
+adios_read_global_no_xml-adios_read_global_no_xml.obj: adios_read_global_no_xml.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_global_no_xml_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_global_no_xml-adios_read_global_no_xml.obj `if test -f 'adios_read_global_no_xml.c'; then $(CYGPATH_W) 'adios_read_global_no_xml.c'; else $(CYGPATH_W) '$(srcdir)/adios_read_global_no_xml.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
