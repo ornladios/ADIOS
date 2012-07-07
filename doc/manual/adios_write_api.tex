@@ -51,12 +51,17 @@ ADIOS in the Fortran or C applications.
 
 \subsubsection{adios\_init}
 
-This API is required only once in the program. It loads XML configuration file 
+This function is required only once during the program run. 
+It loads the XML configuration file 
 and establishes the execution environment. Before any ADIOS operation starts, adios\_init 
 is required to be called to create internal representations of various data types 
 and to define the transport methods used for writing. 
+For historical reasons, this function does not have an \verb+MPI_Comm comm+ 
+argument, it is using \verb+MPI_COMM_WORLD+ internally to ensure only one process
+is actually reading the XML file. Therefore, this function must be called from
+all application processes. 
 
-\begin{lstlisting}[language=C]
+\begin{lstlisting}[alsolanguage=C]
 int adios_init (const char * xml_fname)
 \end{lstlisting}
 
@@ -66,33 +71,31 @@ Input:
 \end{itemize}
 
 Fortran example: 
-\begin{lstlisting}[language=Fortran]
+\begin{lstlisting}[alsolanguage=Fortran]
 call adios_init ("config.xml", ierr)
 \end{lstlisting}
 
 \subsubsection{adios\_open}
 
-This API is called whenever a new output file is opened. adios\_open, corresponding 
-to fopen (not surprisingly), opens an adios-group given by group\_name\textit{ 
-}and associates it with one or a list of transport methods, which can be identified 
-in future operations by the File structure whose pointer is returned as\textit{ 
-}fd\_p. The group name should match the one defined in the XML file. The I/O handle 
-fd\_p prepares the data types for the subsequent calls to write data using the 
-io\_handle. The third argument, file\_name, is a string representing the name of 
-the file. As the last argument, mode is a string containing a file access mode. 
-It can be any of these three mode specifiers: ``r,'' ``w,'' or ``a.'' Currently, 
+This function is to open or to append to an output file. adios\_open
+opens an adios-group identified by \textit{group\_name}
+and associates it with one or a list of transport methods. 
+A pointer is returned as \textit{fd\_p} for subsequent operations. 
+The group name should match one of the groups defined in the XML file. The I/O handle 
+The third argument, \textit{file\_name}, is a string representing the name of 
+the file. 
+The last argument \textit{mode} is a string containing a file access mode. 
+It can be one of these three mode specifiers: ``r,'' ``w,'' or ``a.'' Currently, 
 ADIOS supports three access modes: ``write or create if file does not exist,'' 
-``read,'' and ``append file.'' The call opens the file only if no coordination 
-is needed among processes for transport methods that the users have chosen for 
-this adios\_group, such as POSIX method. Otherwise, the actual file will be opened 
-in adios\_group\_size based on the provided argument comm, which will be examined 
-in Sect. 4.1.2.3. As the last argument, we pass the pointer of coordination communicator 
-down to the transport method layer in ADIOS. This communicator is required in MPI-IO-based 
-methods such as collective and independent MPI-IO.
+``read,'' and ``append file.'' 
+The last argument is the MPI communicator \textit{comm} that includes all
+processes that write to the file. Individual writes can be called by individual processes, but \textit{adios\_group\_size} and \textit{adios\_close} are collective operations, that all processes under this communicator should call. 
 
-\begin{lstlisting}[language=C]
-int adios_open (int64_t * fd_p, const char * group_name 
-	,const char * file_name, const char * mode,void *comm)
+Note, that a file is not necessarily opened during this call. Some methods postpone the actual file open to \textit{adios\_group\_size}.
+
+\begin{lstlisting}[alsolanguage=C]
+int adios_open (int64_t * fd_p, const char * group_name,
+	        const char * file_name, const char * mode,void *comm)
 \end{lstlisting}
 
 Input: 
@@ -104,7 +107,8 @@ Input:
 \item comm--- communicator for multi-process coordination
 \end{itemize}
 
-\begin{lstlisting}[language=Fortran]
+Fortran example: 
+\begin{lstlisting}[alsolanguage=Fortran]
 call adios_open (handle, "restart", "restart.bp", "w", comm, ierr)
 \end{lstlisting}
 
@@ -112,14 +116,27 @@ call adios_open (handle, "restart", "restart.bp", "w", comm, ierr)
 This function passes the size of the group to the internal ADIOS transport structure 
 to facilitate the internal buffer management and to construct the group index table. 
 The first argument is the file handle. The second argument is the size of the payload 
-for the group opened in the adios\_open routine. This value can be calculated manually 
-or through our python script. It does not affect read operation because the size 
+(in bytes) for the group opened in the adios\_open routine that the specific process 
+is going to write into the file. 
+This value can be calculated manually, knowing the sizes of all variables to be written 
+or through our python script \verb+gpp.py+ that generates and puts this calculation 
+and \textit{adios\_group\_size} call along the write operations of all variables into 
+a text file. It does not affect read operation because the size 
 of the data can be retrieved from the file itself. The third argument is the returned 
-value for the total size of this group, including payload size and the metadata 
-overhead. The value can be used for performance benchmarks, such as I/O speed. 
+value for the total size of this group, which is the payload size increased with the 
+metadata overhead. The value can be used for performance benchmarks, such as I/O speed. 
 
-\begin{lstlisting}[language=C]
-int adios_group_size (int64_t * fd_p, uint64_t group_size, uint64_t * total_size)
+Note that in the XML file, you should specify a buffer size for ADIOS. The buffer is 
+used to collect all outputs between one adios\_open -- adios\_close cycle, and all data
+is written out during adios\_close. This maximizes the benefits of large I/O chunks and
+is one of the key contributors of the superior performance of ADIOS file I/O. 
+If the buffer is not sufficiently large enough to hold all data for the output,
+ADIOS methods fall back to write data to the target at each adios\_write, that will
+result in much worse write performance.
+
+\begin{lstlisting}[alsolanguage=C]
+int adios_group_size (int64_t * fd_p, uint64_t group_size, 
+                      uint64_t * total_size)
 \end{lstlisting}
 
 Input: 
@@ -136,27 +153,33 @@ type, dimensions and other metadata)
 \end{itemize}
 
 Fortran example: 
-\begin{lstlisting}[language=Fortran, caption={}]
+\begin{lstlisting}[alsolanguage=Fortran, caption={}]
 call adios_group_size (handle, groupsize, totalsize, ierr)
 \end{lstlisting}
 
 \subsubsection{adios\_write}
 The adios\_write routine submits a data element var for writing and associates 
-it with the given var\_name, which has been defined in the adios group opened by 
+it with the given var\_name, which has been defined in the XML definition of the 
+corresponding adios group opened by 
 adios\_open. If the ADIOS buffer is big enough to hold all the data that the adios 
 group needs to write, this API only copies the data to buffer. Otherwise, adios\_write 
-will write to disk without buffering. Currently, adios\_write supports only the 
-address of the contiguous block of memory to be written. In the case of a noncontiguous 
-array comprising a series of subcontiguous memory blocks, var should be given separately 
-for each piece.
+will write to disk without buffering. When the function returns, the memory pointed
+by \textit{var} can be reused by the application. 
+Adios\_write expects the address of the contiguous block of memory to be written. 
+A noncontiguous array, comprising a series of subcontiguous memory blocks, 
+should be given separately for each piece.
 
-In the next XML section, we will further explain that var\_name is the value of 
-attribute ``name'' while var is the value of attribute ``gwrite,'' both of which 
-are defined in the corresponding \texttt{<}var\texttt{>} element inside adios\_group 
-in the XML file. By default, it will be the same as the value of attribute ``name'' 
-if ``gwrite'' is not defined. 
+In the next chapter about the XML file, we will further explain that the var\_name
+argument of this function should correspond to the value of the
+attribute ``name'' in the variable definition. 
+Another attribute, ``gwrite,'' is used by \verb+gpp.py+ to generate the variable name in
+the application source code, that is passed as \textit{var} in this call. 
+See the \verb+<var>+ element inside the \verb+<adios_group>+ element 
+in the XML file. 
+If ``gwrite'' is not defined, it will be handled as if it were the same as the value of attribute ``name''.
 
-\begin{lstlisting}[language=C,caption={},label={}]
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
 int adios_write (int64_t fd_p, const char * var_name, void * var)
 \end{lstlisting}
 
@@ -168,7 +191,7 @@ Input:
 \end{itemize}
 
 Fortran example: 
-\begin{lstlisting}[language=Fortran,caption={},label={}]
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
 call adios_write (handle, "myvar", v, ierr)
 \end{lstlisting}
 
@@ -180,21 +203,23 @@ the same transport method and the xml config file to read in data. It works only
 on the same number of processes as the data was written out. Typically, checkpoint/restart 
 files are written and read on the same number of processors and this function is 
 the simplest way to read in data. However, if you need to read in on a different 
-number of processors, or you do not want to carry the xml config file with the 
+number of processors, use a transport method that does not support read (e.g. 
+the MPI\_AMR method) or you do not want to carry the xml config file with the 
 reading application, you should use the newer and more generic read API discussed 
 in Section 7.
 
-Similar to adios\_write, {\color{color01} adios\_read submits a buffer space var 
+Similar to adios\_write, adios\_read passes the buffer space in the \textit{var} argument 
 for reading a data element into. This does NOT actually perform the read. Actual 
 population of the buffer space will happen on the call to adios\_close. In other 
 words, the value(s) of var can only be utilized after adios\_close is performed. 
-Here, }var\_name corresponds to the value of attribute ``gread`` in the \texttt{<}var\texttt{>} 
+Here, var\_name corresponds to the value of attribute ``gread`` in the \verb+<var>+
 element declaration while var is mapped to the value of attribute ``name.'' By 
 default, it will be as same as the value of attribute ``name'' if ``gread'' is 
 not defined.
 
-\begin{lstlisting}[language=C,caption={},label={}]
-int adios_read (int64_t fd_p, const char * var_name, uint64_t read_size, void * var)
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_read (int64_t fd_p, const char * var_name, 
+                uint64_t read_size, void * var)
 \end{lstlisting}
 
 Input:
@@ -207,19 +232,19 @@ Input:
 \end{itemize}
 
 Fortran example: 
-\begin{lstlisting}[language=Fortran,caption={},label={}]
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
 call adios_read (handle, "myvar", 8, v, ierr)
 \end{lstlisting}
 
 \subsubsection{adios\_close}
 
-The adios\_close routine {\color{color01} commits the writing buffer to disk, closes 
+The adios\_close routine commits the writing buffer to disk, closes 
 the file, and releases the handle. At that point, all of the data that have been 
-copied during adios\_write will be sent as-is downstream. If the handle were opened 
-for read, it would fetch the data, parse it, and populate it into the provided 
-buffers. This is currently hard-coded to use posix I/O calls.}
+copied during adios\_write will be sent as-is downstream. If the file was opened 
+for read, this function fetches all data and populates it into the 
+buffers provided in the adios\_read calls. 
 
-\begin{lstlisting}[language=C,caption={},label={}]
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
 int adios_close (int64_t * fd_p);
 \end{lstlisting}
 
@@ -229,7 +254,7 @@ Input:
 \end{itemize}
 
 Fortran example: 
-\begin{lstlisting}[language=Fortran,caption={},label={}]
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
 call adios_close (handle, ierr)
 \end{lstlisting}
 
@@ -238,89 +263,259 @@ call adios_close (handle, ierr)
 The adios\_finalize routine releases all the resources allocated by ADIOS and guarantees 
 that all remaining ADIOS operations are finished before the code exits. The ADIOS 
 execution environment is terminated once the routine is fulfilled. The proc\_id 
-parameter provides users the opportunity to customize special operation on proc\_id---usually 
-the ID of the head node. 
+parameter provides developers of ADIOS transport methods the opportunity to customize 
+some special operations based on the proc\_id---usually on one process. 
 
-\begin{lstlisting}[language=C,caption={},label={}]
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
 int adios_finalize (int proc_id)
 \end{lstlisting}
 
 Input: 
 \begin{itemize}
-\item proc\_id - the rank of the processe in the communicator or the user-defined coordination 
-variable
+\item proc\_id - the rank of the process (in the MPI application)  
 \end{itemize}
 
 Fortran example: 
-\begin{lstlisting}[language=Fortran,caption={},label={}]
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
 call adios_finalize (rank, ierr)
 \end{lstlisting}
 
-call adios\_finalize (rank, ierr)\label{HToc84890237}\label{HToc212016613}\label{HToc212016855}\label{HToc182553351}
+call adios\_finalize (rank, ierr)
 
-\subsection{Nonblocking functions}
+\subsection{Asynchronous I/O support functions}
 
 \subsubsection{adios\_end\_iteration}
 
 The adios\_end\_iteration provides the pacing indicator. Based on the entry in 
 the XML file, it will tell the transport method how much time has elapsed in a 
-transfer.
+transfer. Applications usually perform computation in an iterative loop, and write
+data with a regular frequency (but not at every iteration). This function, if called
+at each iteration, can provide hints to the ADIOS layer about the progress of the 
+application and thus estimate the remaining time to the next output phase. Asynchronous
+I/O methods can use this estimate to trickle the data of the previous output as slow
+as possible to minimize interference with the application. 
 
 \subsubsection{adios\_start\_ calculation/ adios\_end\_calculation}
 
-Together, adios\_start\_calculation and adios\_end\_calculation indicate to the 
-scientific code when nonblocking methods should focus on engaging their I/O communication 
+Together, adios\_start\_calculation and adios\_end\_calculation indicate  
+to asynchronous methods when they should focus on engaging their I/O communication 
 efforts because the process is mainly performing intense, stand-alone computation. 
 Otherwise, the code is deemed likely to be communicating heavily for computation 
-coordination. Any attempts to write or read during those times will negatively 
-impact both the asynchronous I/O performance and the interprocess messaging.\label{HToc212016614}\label{HToc212016856}\label{HToc84890238}\label{HToc182553352}
+coordination. Any attempts to write or read during collective communication of 
+the application will negatively 
+impact both the asynchronous I/O performance and the interprocess messaging.
 
-\subsection{Other function}
+\subsection{Other functions}
 
 One of our design goals is to keep ADIOS APIs as simple as possible. In addition 
 to the basic I/O functions, we provide another routine listed below. 
 
-\subsubsection{adios\_get\_write\_buffer}
+%\subsubsection{adios\_get\_write\_buffer}
+%
+%  NOTE: We have no idea what this function is for, if anyone ever used it 
+%        and how it works in the actual methods.
+%
+%
+%The adios\_get\_write\_buffer function returns the buffer space allocated from 
+%the ADIOS buffer domain. In other words, instead of allocating memory from free 
+%memory space, users can directly use the allocated ADIOS buffer area and thus avoid 
+%copying memory from the ADIOS buffer to a user-defined buffer.
+%
+%\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+%int adios_get_write_buffer (int64_t fd_p, const char * var_name, 
+%	uint64_t * size, void ** buffer)
+%\end{lstlisting}
+%
+%Input: 
+%\begin{itemize}
+%\item fd\_p - pointer to the internal File structure
+%\item var\_name - name of the variable that will be read
+%\item size - size of the buffer to request
+%\end{itemize}
+%
+%Output: 
+%\begin{itemize}
+%\item buffer - initial address of read-in buffer for storing the data of var\_name
+%\end{itemize}
 
-The adios\_get\_write\_buffer function returns the buffer space allocated from 
-the ADIOS buffer domain. In other words, instead of allocating memory from free 
-memory space, users can directly use the allocated ADIOS buffer area and thus avoid 
-copying memory from the ADIOS buffer to a user-defined buffer.
 
-\begin{lstlisting}[language=C,caption={},label={}]
-int adios_get_write_buffer (int64_t fd_p, const char * var_name, 
-	uint64_t * size, void ** buffer)
+\section{Write Fortran API description}
+\label{section:write_fortran_api}
+
+A Fortran90 module, \verb+adios_write_mod.mod+ provides the ADIOS write 
+subroutines discussed above. 
+They are all interfaced to the C library. Their extra last argument 
+(compared to the corresponding C functions) is an integer variable to store 
+the error code output of each function (0 meaning successful operation). 
+
+Here is the list of the Fortran90 subroutines from \verb+adios_write_mod.mod+. 
+In the list below \verb+GENERIC+ word indicates that you 
+can use that function with any data type at the indicated argument; it is not
+a Fortran90 keyword. The actual module source defines all possible combinations 
+of type and dimensionality for such subroutines. 
+
+\begin{lstlisting}[language=ADIOS,alsolanguage=Fortran]
+subroutine adios_init (config, err)
+    character(*),   intent(in)  :: config
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_init_noxml (err)
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_finalize (mype, err)
+    integer,        intent(in)  :: mype
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_open (fd, group_name, filename, mode, comm, err)
+    integer*8,      intent(out) :: fd
+    character(*),   intent(in)  :: group_name
+    character(*),   intent(in)  :: filename
+    character(*),   intent(in)  :: mode
+    integer,        intent(in)  :: comm
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_group_size (fd, data_size, total_size, err)
+    integer*8,      intent(out) :: fd
+    integer*8,      intent(in)  :: data_size
+    integer*8,      intent(in)  :: total_size
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_write (fd, varname, data, err)
+    integer*8,      intent(in)  :: fd
+    character(*),   intent(in)  :: varname
+    GENERIC,        intent(in)  :: data
+    integer,        intent(in)  :: err 
+end subroutine
+
+subroutine adios_read (fd, varname, buffer, buffer_size, err)
+    integer*8,      intent(in)  :: fd
+    character(*),   intent(in)  :: varname
+    GENERIC,        intent(out) :: buffer
+    integer*8,      intent(in)  :: buffer_size 
+    integer,        intent(in)  :: err 
+end subroutine
+
+subroutine adios_set_path (fd, path, err)
+    integer*8,      intent(in)  :: fd
+    character(*),   intent(in)  :: path
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_set_path_var (fd, path, varname, err)
+    integer*8,      intent(in)  :: fd
+    character(*),   intent(in)  :: path
+    character(*),   intent(in)  :: varname
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_end_iteration (fd, err)
+    integer*8,      intent(in)  :: fd
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_start_calculation (fd, err)
+    integer*8,      intent(in)  :: fd
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_stop_calculation (fd, err)
+    integer*8,      intent(in)  :: fd
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_close (fd, err)
+    integer*8,      intent(in)  :: fd
+    integer,        intent(out) :: err
+end subroutine
+
+!
+! No-XML calls
+!
+subroutine adios_declare_group (id, groupname, time_index, stats_flag, err)
+    integer*8,      intent(out) :: id
+    character(*),   intent(in)  :: groupname
+    character(*),   intent(in)  :: time_index
+    integer,        intent(in)  :: stats_flag
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_define_var (group_id, varname, path, vartype, dimensions, global_dimensions, local_offsets, err)
+    integer*8,      intent(in)  :: group_id
+    character(*),   intent(in)  :: varname
+    character(*),   intent(in)  :: path
+    integer,        intent(in)  :: vartype
+    character(*),   intent(in)  :: dimensions
+    character(*),   intent(in)  :: global_dimensions
+    character(*),   intent(in)  :: local_offsets
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_define_attribute (group_id, attrname, path, attrtype, value, varname, err)
+    integer*8,      intent(in)  :: group_id
+    character(*),   intent(in)  :: attrname
+    character(*),   intent(in)  :: path
+    integer,        intent(in)  :: attrtype
+    character(*),   intent(in)  :: value
+    character(*),   intent(in)  :: varname
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_select_method (group_id, method, parameters, base_path, err)
+    integer*8,      intent(in)  :: group_id
+    character(*),   intent(in)  :: method
+    character(*),   intent(in)  :: parameters
+    character(*),   intent(in)  :: base_path
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_allocate_buffer (sizeMB, err)
+    integer,        intent(in)  :: sizeMB
+    integer,        intent(out) :: err
+end subroutine
 \end{lstlisting}
-
-Input: 
-\begin{itemize}
-\item fd\_p - pointer to the internal File structure
-\item var\_name - name of the variable that will be read
-\item size - size of the buffer to request
-\end{itemize}
-
-Output: 
-\begin{itemize}
-\item buffer - initial address of read-in buffer for storing the data of var\_name
-\end{itemize}
 
 \subsection{Create the first ADIOS program}
 
-Figure 1 is a programming example that illustrates how to write a double-precision 
-array t and a double-precision array with size of NX into file called ``test.bp,'' 
+Listing \ref{list-adios-prog-example} is a programming example that illustrates 
+how to write a double-precision 
+array \verb+t+ of size of \verb+NX+ into file called ``test.bp,'' 
 which is organized in BP, our native tagged binary file format. This format allows 
 users to include rich metadata associated with the block of binary data as well 
-the indexing mechanism for different blocks of data (see Chap. 5). 
+the indexing mechanism for different blocks of data (see Chapter \ref{chapter-xml}). 
 
-\begin{lstlisting}[language=C,caption={ADIOS programming example.},label={list-adios-prog-example}]
+\begin{lstlisting}[alsolanguage=C,caption={ADIOS programming example.},label={list-adios-prog-example}]
 /*example of parallel MPI write into a single file */ 
 #include <stdio.h> // ADIOS header file required 
-#include "adios.h"int main (int argc, char *argv[]){	int i, rank, NX; double t [NX];	// ADIOS variables declaration int64_t handle;	uint_64 total_size;	MPI_Comm comm = MPI_COMM_WORLD; 
-	
-	MPI_Init ( &argc, &argv);	MPI_Comm_rank (comm, &rank);	
-	// data initialization for ( i=0; i<NX; i++)	t [i] = i * (rank+1) + 0.1; // ADIOS routines 
-	adios_init ("config.xml");	adios_open (&handle, "temperature", "data.bp", "w",&comm); 
-	adios_group_size (handle, 4, total_size);	adios_write (handle, "NX", &NX);	adios_write (handle, "temperature", t); 
-	adios_close (handle);	adios_finalize (rank);	MPI_Finalize(); 
-	return 0;}
+#include "adios.h"
+int main (int argc, char *argv[])
+{    
+    int i, rank; 
+    int NX = 10;
+    double t [NX];
+    // ADIOS variables declaration int64_t handle;
+    uint_64 group_size, total_size;
+    MPI_Comm comm = MPI_COMM_WORLD; 
+    
+    MPI_Init ( &argc, &argv);
+    MPI_Comm_rank (comm, &rank);
+
+    // data initialization for ( i=0; i<NX; i++)
+    t [i] = i * (rank+1) + 0.1; // ADIOS routines 
+    adios_init ("config.xml");
+    adios_open (&handle, "temperature", "data.bp", "w",&comm); 
+    group_size = sizeof(int) \        // int NX
+               + sizeof(double) * NX; // double array t
+    adios_group_size (handle, 4, total_size);
+    adios_write (handle, "NX", &NX);
+    adios_write (handle, "temperature", t); 
+    adios_close (handle);
+    adios_finalize (rank);
+    MPI_Finalize(); 
+    return 0;
+}
 \end{lstlisting}

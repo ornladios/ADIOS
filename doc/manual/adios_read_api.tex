@@ -911,7 +911,7 @@ several arguments in the function calls.  They are all implemented as subroutine
 like the write Fortran API and the last argument is an integer variable to store 
 the error code output of each function (0 meaning successful operation). 
 
-A Fortran90 module, \verb+adios_read.mod+ provides the available ADIOS subroutines. 
+A Fortran90 module, \verb+adios_read_mod.mod+ provides the available ADIOS subroutines. 
 An example code can be found in the source distribution as 
 \verb+tests/bp_read/bp_read_f.F90+.
 
@@ -934,7 +934,7 @@ Fortran API does not allow non-blocking reads in \verb+adios_perform_reads+, and
 chunking is not working either. Memory for all variables should be allocated in advance 
 to store the data.
 
-Here is the list of the Fortran90 subroutines from \verb+adios_read.mod+. 
+Here is the list of the Fortran90 subroutines from \verb+adios_read_mod.mod+. 
 In the list below \verb+GENERIC+ word indicates that you 
 can use that function with any data type at the indicated argument; it is not
 a Fortran90 keyword. The actual module source defines all possible combinations 
@@ -1123,13 +1123,13 @@ end subroutine
 In a C code, include the \verb+adios_read.h+ header file. 
 
 In a Fortran 90 code, you do not need to include anything but you can use the module 
-\verb+adios_read+. It is strongly recommended to use it to double check the integer 
+\verb+adios_read_mod+. It is strongly recommended to use it to double check the integer 
 parameters because the read API expects \verb+integer*8+ arguments 
 at several places and providing an integer will break your code and then debugging 
 it proves to be very difficult.
 
-If you want to use the MPI version of the library, then link your (C or Fortran) 
-application with \verb+-ladiosread+.
+If you want to use the MPI version of the library, then link your C or Fortran 
+application with \verb+-ladiosread+ or \verb+-ladiosreadf+, respectively.
 
 If you want to use the non-MPI version of the library, you need to compile your 
 code with the \verb+-D_NOMPI+ option and link your application with \verb+-ladiosread_nompi+.

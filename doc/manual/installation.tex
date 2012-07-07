@@ -27,7 +27,7 @@ options for your system.
 
 \subsection{Linux cluster}
 
-The following is a snapshot of the batch scripts on Ewok, an Intel-based Infiniband 
+The following is a snapshot of the batch scripts on Sith, an Intel-based Infiniband 
 cluster running Linux:
 
 \begin{lstlisting}
@@ -136,16 +136,14 @@ when configuring ADIOS.
 \subsection{PHDF5 (optional)}
 
 The transport method writing files in the Parallel HDF5 format is built only if 
-a parallel version of the HDF5 library is (also) available. You need to use the 
-option \verb+--withh-phdf5=<path>+ to build this transport method. 
+a parallel version of the HDF5 library is available. You need to use the 
+option \verb+--with-phdf5=<path>+ to build this transport method. 
 
 If you define Parallel HDF5 and do not define serial HDF5, then bp2h5 will be built 
 with the parallel library. 
-
 Note that if you build this transport method, ADIOS will depend on PHDF5 when you 
-link any application with ADIOS even if you the application does not intend to 
+link any application with ADIOS even if your application does not intend to 
 use this method. 
-
 If you have problems compiling ADIOS with PHDF5 due to missing flags or libraries, 
 you can define them using 
 
@@ -159,17 +157,66 @@ you can define them using
 
 The NC4 transport method writes files using the NetCDF-4 library which in turn 
 is based on the parallel HDF5 library. You need to use the option 
-\verb+--with-nc4par=<path>+ to build this transport method. Also, 
-you need the parallel HDF5 library. 
+\verb+--with-nc4par=<path>+ to build this transport method. 
+You also need to provide the parallel HDF5 library. 
 
 \subsection{Lustreapi (optional)}
 
 The Lustreapi library is used internally by \verb+MPI_LUSTRE+ and \verb+MPI_AMR+ method to 
-figure out Lustre parameters such stripe count and stripe size.  Without giving 
+figure out Lustre parameters such as stripe count and stripe size.  Without giving 
 this option, users are expected to manually set Lustre parameters from ADIOS XML 
-configuration file (see \verb+MPI_LUSTRE+ and \verb+MPI_AMR+ method). Use the configuration option
+configuration file (see \verb+MPI_LUSTRE+ and \verb+MPI_AMR+ method). 
+Use the configuration option
 \verb+--with-lustre=<path>+ to define the path to this library.
 
+\subsection{Staging transport methods (optional)}
+
+In ADIOS 1.4.0, a transport method using the DataSpaces library (Rutgers University) 
+is available for memory-to-memory transfer (staging) of data between two 
+applications. 
+
+\subsubsection{Networking libraries for staging}
+
+Staging methods use Remote Direct Memory Access (RDMA) operations, supported by specific libraries 
+on various systems. 
+
+\vspace*{6pt}
+{\bf Infiniband. } 
+If you have an Infininband network with \verb+ibverbs+ and \verb+rdmacm+ libraries installed, you can configure ADIOS to use it for staging methods with the option
+\verb+--with-infiniband=DIR+  to define the path to the Infiniband libraries. 
+
+\vspace*{6pt}
+{\bf Cray Gemini network. }
+On newer Cray machines (XK6 and XE6) with the Gemini network, the \verb+PMI+ and \verb+uGNI+ libraries are used by the staging methods. Configure ADIOS with the options
+
+\begin{lstlisting}
+--with-cray-pmi=<location of CRAY_PMI installation>
+--with-cray-pmi-incdir=<location of CRAY_PMI includes>
+--with-cray-pmi-libdir=<location of CRAY_PMI library>
+--with-cray-pmi-libs=<linker flags besides -L<cray-pmi-libdir>, e.g. -lpmi
+--with-cray-ugni=<location of CRAY UGNI installation>
+--with-cray-ugni-incdir=<location of CRAY UGNI includes>
+--with-cray-ugni-libdir=<location of CRAY UGNI library>
+--with-cray-ugni-libs=<linker flags besides -L<cray-ugni-libdir>, e.g. -lugni
+\end{lstlisting}
+
+\vspace*{6pt}
+{\bf Portals. }
+Portals is an RDMA library from Sandia Labs, and it has been used on Cray XT5 machines with Seastar networks. Configure ADIOS with the option
+
+\verb+--with-portals=DIR      Location of Portals (yes/no/path_to_portals)+
+
+\subsubsection{DataSpaces staging methods}
+The DataSpaces model provides a separate server running on separate compute nodes, into/from which data can be written/read with a geometrical (3D) abstraction. It is an efficient way to stage data from one application to another in an asynchronous (and very fast) way. Multiple steps of data outputs can be stored, limited only by the available memory. Build the DataSpaces method with the option:
+
+\begin{lstlisting}
+--with-dataspaces=DIR  Build the DATASPACES transport method. Point to the
+                      DATASPACES installation.
+--with-dataspaces-incdir=<location of dataspaces includes>
+--with-dataspaces-libdir=<location of dataspaces library>
+\end{lstlisting}
+
+ 
 \subsection{Read-only installation}
 
 If you just want the read API to be compiled for reading BP files, use the \verb+--disable-write+ option.
@@ -183,6 +230,16 @@ configure to build ADIOS and its support utilities:
 --help              print the usage of ./configure command}
 --with-tags[=TAGS]  include additional configurations [automatic]
 --with-mxml=DIR     Location of Mini-XML library
+--with-infiniband=DIR      Location of Infiniband
+--with-portals=DIR      Location of Portals (yes/no/path_to_portals)
+--with-cray-pmi=<location of CRAY_PMI installation>
+--with-cray-pmi-incdir=<location of CRAY_PMI includes>
+--with-cray-pmi-libdir=<location of CRAY_PMI library>
+--with-cray-pmi-libs=<linker flags besides -L<cray-pmi-libdir>, e.g. -lpmi
+--with-cray-ugni=<location of CRAY UGNI installation>
+--with-cray-ugni-incdir=<location of CRAY UGNI includes>
+--with-cray-ugni-libdir=<location of CRAY UGNI library>
+--with-cray-ugni-libs=<linker flags besides -L<cray-ugni-libdir>, e.g. -lugni
 --with-hdf5=<location of HDF5 installation>
 --with-hdf5-incdir=<location of HDF5 includes>
 --with-hdf5-libdir=<location of HDF5 library>
@@ -196,6 +253,9 @@ configure to build ADIOS and its support utilities:
 --with-nc4par-incdir=<location of NetCDF 4 Parallel includes>
 --with-nc4par-libdir=<location of NetCDF 4 Parallel library>
 --with-nc4par-libs=<linker flags besides -L<nc4par_libdir>, e.g. -lnetcdf
+--with-dataspaces=<location of DataSpaces installation>
+--with-dataspaces-incdir=<location of DataSpaces includes>
+--with-dataspaces-libdir=<location of DataSpaces library>
 --with-lustre=<location of Lustreapi library>
 \end{lstlisting}
 
@@ -224,7 +284,7 @@ MPIFC     MPI Fortran compiler command
 \section{Compiling applications using ADIOS}
 \label{section:installation_compiling_apps}
 
-Adios configuration creates a text file that contains the flags and library dependencies 
+ADIOS configuration creates a text file that contains the flags and library dependencies 
 that should be used when compiling/linking user applications that use ADIOS. This 
 file is installed as \verb+bin/adios_config.flags+ under the installation directory by 
 make install. A script, named \verb+adios_config+ is also installed that can print out 
@@ -243,4 +303,37 @@ example.o : example.F90
 example: example.o
         ${FC} -g -o example example.o ${ADIOS_FLIB} 
 \end{lstlisting}
+
+The example above is for using write (and read) in a Fortran + MPI application. However, several libraries are built for specific uses:
+
+\begin{itemize}
+\item \verb+libadios.a            +   MPI + C/C++ using ADIOS to write and optionally read data
+\item \verb+libadiosf.a           +   MPI + Fortran using ADIOS to write and optionally read data
+\item \verb+libadios_nompi.a      +   C/C++ without MPI
+\item \verb+libadiosread.a        +   MPI + C/C++ using ADIOS to only read data
+\item \verb+libadiosreadf.a       +   MPI + Fortran using ADIOS to only read data
+\item \verb+libadiosread_nompi.a  +   C/C++ without MPI, using ADIOS to only read data
+\item \verb+libadiosreadf_nompi.a +   Fortran without MPI, using ADIOS to only read data
+\item \verb+libadiosf_v1.a        +   MPI + Fortran using ADIOS to write and, with the old read API to read data
+\item \verb+libadiosreadf_v1.a    +   MPI + Fortran using ADIOS old read API to read data
+\end{itemize}
+
+\subsection{Sequential applications}
+
+Use the \verb+-D_NOMPI+ pre-processor flag to compile your application 
+for a sequential build. ADIOS has a dummy MPI library, \verb+mpidummy.h+, that re-defines 
+all MPI constructs necessary to run ADIOS without MPI. You can declare
+
+\verb+MPI_Comm comm;+
+
+in your sequential code to pass it on to functions that require an \verb+MPI_Comm+ variable.
+
+If you want to write a C/C++ parallel code using MPI, but also want to provide it as a
+sequential tool on a login-node without modifying the source code, then write your 
+application as MPI, do not include \verb+mpi.h+ but include 
+\verb+adios.h+ or \verb+adios_read.h+.
+for the sequential build.
+\verb+adios.h+/\verb+adios_read.h+ include the appropriate header file 
+\verb+mpi.h+ or \verb+mpidummy.h+ 
+(the latter provided by ADIOS) depending on which version you want to build. 
 

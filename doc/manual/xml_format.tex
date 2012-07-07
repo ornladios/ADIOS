@@ -1,4 +1,5 @@
 \chapter{XML Config File Format}
+\label{chapter-xml}
 
 \section{Overview} 
 XML is designed to allow users to store as much metadata as they can in an external 
@@ -42,6 +43,8 @@ The main elements of the xml file format are of the format
 </adios-config>
 \end{lstlisting}
 
+
+
 \section{adios-group}
 The adios-group element represents a container for a list of variables that share 
 the common I/O pattern as stated in the basic concepts of ADIOS in the first chapter. 
@@ -49,7 +52,6 @@ In this case, the group domain division logically corresponds to the different
 functions of output in scientific applications, such as restart, diagnosis, and 
 snapshot. Depending on the different applications, adios-group can occur as many 
 times as is needed.
-
 
 \subsection{Declaration}
 
@@ -86,6 +88,7 @@ Optional:
 \end{itemize}
 
 \subsection{Variables}
+\label{section-xml-variables}
 The nested variable element ``var'' for adios\_group, which can be either an array 
 or a primitive data type, is determined by the dimension attribute provided. 
 
@@ -178,24 +181,13 @@ C or Fortran.
 \end{itemize}
 
 \subsection{Global arrays}
+\label{section-xml-global-arrays}
 The \textbf{global-bounds} element is an optional nested element for the adios-group. 
 It specifies the global space and offsets within that space for the enclosed variable 
 elements. In the case of writing to a shared file, the global-bounds information 
 is recorded in BP file and can be interpreted by converters or other postprocessing 
 tools or used to write out either HDF5 or NetCDF files by using PHDF5 or the PnetCDF 
 method.
-
-\subsection{Time-index}
-
-ADIOS allows a dataset to be expanded in the space domain given by global bounds 
-and in time domain. It is very common for scientific applications to write out 
-a monitoring file at regular intervals. The file usually contains a group of time-based 
-variables that have undetermined dimensional value on the time axis. ADIOS is Similar 
-to NetCDF in that it accumulates the time-index in terms of the number of records, 
-which theoretically can be added to infinity.
-
-If any of variables in an adios group are time based, they can be marked out by 
-adding the time-index variable as another dimension value. 
 
 \subsubsection{Declaration}
 \begin{lstlisting}[language=XML]
@@ -213,9 +205,25 @@ Required:
 Any variables used in the global-bounds element for dimensions or offsets declaration 
 need to be defined in the same adios-group as either variables or attributes. 
 
-For detailed global arrays use, see the example illustrated in Section 12.8.
+For detailed global arrays use, see the example illustrated in Section \ref{section-cprogramming-globalarrays}.
 
-\textbf{Changing I/O Without Changing Source:} The method element provides the 
+
+\subsection{Time-index}
+
+ADIOS allows a dataset to be expanded in the space domain given by global bounds 
+and in time domain. It is very common for scientific applications to write out 
+a monitoring file at regular intervals. The file usually contains a group of time-based 
+variables that have undetermined dimensional value on the time axis. ADIOS is Similar 
+to NetCDF in that it accumulates the time-index in terms of the number of records, 
+which theoretically can be added to infinity.
+
+If any of variables in an adios group are time based, they can be marked out by 
+adding the time-index variable as another dimension value. 
+
+
+\section{Transport method} 
+
+The method element provides the 
 hook between the adios-group and the transport methods. The user employs a different 
 transport method simply by changing the method attribute of the method element. 
 If more than one method element is provided for a given group, each element will 
@@ -254,7 +262,7 @@ quickly this data should be evacuated from the compute node
 
 \subsection{Methods list}
 As the componentization of the IO substrate, ADIOS supports a list of transport 
-methods, described in Section 6:
+methods, described in Chapter \ref{chapter-methods}:
 
 \begin{itemize}
 \item NULL
@@ -264,12 +272,13 @@ methods, described in Section 6:
 \item MPI-AMR
 \item PHDF5
 \item NC4 (NETCDF4)
-\item NSSI
-\item DATATAP 
-\item DART
+\item DATASPACES (DART)
 \end{itemize}
 
+
+
 \section{Buffer specification}
+\label{section-xml-buffers-pecification}
 The buffer element defines the attributes for internal buffer size and creating 
 time that apply to the whole application (Listing~\ref{list-example-xml}). The attribute allocate-time 
 is identified as being either{\small  ``}now'' or ``oncall'' to indicate when the 
