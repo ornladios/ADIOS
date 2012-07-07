@@ -1519,7 +1519,7 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 
 
 /* Note: most of the code of this routine is copied from previous 1.3.1 implementation
- * by NCSU. One of the things to fix is that characteristic index should be uint64_t,
+ * of NCSU. One thing to fix is that any counter related to characteristic index should be of uint64_t,
  * instead of int.
  */
 int adios_read_bp_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo, int per_step_stat, int per_block_stat)
@@ -2587,7 +2587,17 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
 
 void adios_read_bp_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
+    BP_PROC * p = (BP_PROC *) fp->fh;
+    BP_FILE * fh = (BP_FILE *)(p->fh);
+    struct bp_index_pg_struct_v1 ** root = &(fh->pgs_root);
+    struct bp_minifooter * mh = &(fh->mfooter);
+    uint64_t i;
 
+    for (i = 0; i < mh->pgs_count; i++) {
+        is_fortran ? ((*root)->adios_host_language_fortran = adios_flag_yes) 
+               : ((*root)->adios_host_language_fortran = adios_flag_no);
+        root = &(*root)->next;
+    }
 }
 
 void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group)
