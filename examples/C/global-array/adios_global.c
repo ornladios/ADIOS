@@ -15,13 +15,13 @@
 #include <stdio.h>
 #include <string.h>
 #include "mpi.h"
-#include "public/adios.h"
+#include "adios.h"
 int main (int argc, char ** argv) 
 {
 	char        filename [256];
 	int         rank, size, i;
-	int         NX = 4096; 
-	double      t[NX], t1, t2;
+	int         NX = 10; 
+	double      t[NX];
 	MPI_Comm    comm = MPI_COMM_WORLD;
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
@@ -38,20 +38,13 @@ int main (int argc, char ** argv)
 
 	strcpy (filename, "adios_global.bp");
 
-
 	adios_init ("adios_global.xml");
-//    MPI_Barrier(MPI_COMM_WORLD);
-//    t1=MPI_Wtime();
 
 	adios_open (&adios_handle, "temperature", filename, "w", &comm);
 	#include "gwrite_temperature.ch"
 	adios_close (adios_handle);
-    MPI_Barrier(MPI_COMM_WORLD);
-    t2=MPI_Wtime();
-/*
-    if (rank == 0)
-        printf ("%f\n", t2 - t1);
-*/
+
+        MPI_Barrier (comm);
 
 	adios_finalize (rank);
 
