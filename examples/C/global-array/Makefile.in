@@ -80,7 +80,8 @@ am_adios_global_no_xml_OBJECTS = adios_global_no_xml.$(OBJEXT)
 adios_global_no_xml_OBJECTS = $(am_adios_global_no_xml_OBJECTS)
 adios_global_no_xml_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1)
-am_adios_read_global_OBJECTS = adios_read_global.$(OBJEXT)
+am_adios_read_global_OBJECTS =  \
+	adios_read_global-adios_read_global.$(OBJEXT)
 adios_read_global_OBJECTS = $(am_adios_read_global_OBJECTS)
 adios_read_global_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
 	$(am__DEPENDENCIES_1)
@@ -359,6 +360,7 @@ adios_global_2files_LDADD = $(top_builddir)/src/libadios.a \
 	$(ADIOSLIB_LDADD)
 adios_global_2files_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_global_SOURCES = adios_read_global.c
+adios_read_global_CPPFLAGS = -DADIOS_USE_READ_API_1
 adios_read_global_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSLIB_LDADD)
 adios_read_global_LDFLAGS = $(ADIOSLIB_LDFLAGS)
@@ -449,6 +451,12 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
+
+adios_read_global-adios_read_global.o: adios_read_global.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_global_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_global-adios_read_global.o `test -f 'adios_read_global.c' || echo '$(srcdir)/'`adios_read_global.c
+
+adios_read_global-adios_read_global.obj: adios_read_global.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_global_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_global-adios_read_global.obj `if test -f 'adios_read_global.c'; then $(CYGPATH_W) 'adios_read_global.c'; else $(CYGPATH_W) '$(srcdir)/adios_read_global.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

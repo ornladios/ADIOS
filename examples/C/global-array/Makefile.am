@@ -14,6 +14,7 @@ adios_global_2files_LDADD = $(top_builddir)/src/libadios.a
 adios_global_2files_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_global_2files_LDADD += $(ADIOSLIB_LDADD)
 adios_read_global_SOURCES = adios_read_global.c
+adios_read_global_CPPFLAGS = -DADIOS_USE_READ_API_1
 adios_read_global_LDADD = $(top_builddir)/src/libadiosread.a 
 adios_read_global_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_global_LDADD += $(ADIOSLIB_LDADD)

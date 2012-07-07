@@ -1156,9 +1156,10 @@ typedef struct {
     /* fill out ADIOS_FILE struct */
     fp->fh = (uint64_t) p;
 
-    /* This will seek to the last step. So we need to set current_step back properly */
+    /* '-1' means that we want all steps. 
+     * This will seek to the last step. So we need to set current_step back properly
+     */
     bp_seek_to_step (fp, -1, show_hidden_attrs);
-
     /* It was agreed that, for file open the current step should be set to 0,
      * instead of the start time. The var_namelist and attr_namelist should
      * consist of all steps. For stream open, this is done differently.
@@ -1516,6 +1517,11 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
     return varinfo;
 }
 
+
+/* Note: most of the code of this routine is copied from previous 1.3.1 implementation
+ * by NCSU. One of the things to fix is that characteristic index should be uint64_t,
+ * instead of int.
+ */
 int adios_read_bp_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo, int per_step_stat, int per_block_stat)
 {
 #if 0
@@ -1554,9 +1560,11 @@ typedef struct {
 } ADIOS_VARSTAT;
 #endif
 
-#if 0
-    int i, j, c, count = 1, npgs, timestep, ntimes = -1;
-    int size, sum_size, sum_type, nsteps;
+#if 1
+    int i, j, c, count = 1, timestep;
+    int size, sum_size, sum_type, nsteps, prev_timestep;
+    BP_PROC * p = (BP_PROC *) fp->fh;
+    BP_FILE * fh = (BP_FILE *) p->fh;
     ADIOS_VARSTAT * vs;
     struct adios_index_var_struct_v1 * var_root;
  
@@ -1581,7 +1589,6 @@ typedef struct {
     vs->blocks = 0;
     vs->histogram = 0;
 
-    npgs = var_root->characteristics_count, timestep, ntimes = -1;
     uint64_t gcnt = 0, * cnts;
 
     double *gsum = NULL, *gsum_square = NULL;
@@ -1589,6 +1596,8 @@ typedef struct {
 
     int16_t map[32];
     memset (map, -1, sizeof(map));
+
+    var_root = bp_find_var_byid (fh, varinfo->varid);
 
     // Bitmap shows which statistical information has been calculated
     i = j = 0;
@@ -1616,7 +1625,7 @@ typedef struct {
     if (map[adios_statistic_max] != -1)
     {
         MALLOC(vs->steps->maxs, nsteps * sizeof(void *), "maximum per timestep");
-        for (i = 0; i < ntimes; i++)
+        for (i = 0; i < nsteps; i++)
         {
             vs->steps->maxs[i] = 0;
         }
@@ -1677,7 +1686,8 @@ typedef struct {
     {
         int type;
         count = 3;
-        timestep = 0;
+        timestep = -1;
+        prev_timestep = 0;
 
         if (var_root->type == adios_complex)
         {
@@ -1693,8 +1703,14 @@ typedef struct {
 
         for (i = 0; i < var_root->characteristics_count; i++)
         {
-            if (nsteps > 0)
-                timestep = var_root->characteristics[i].time_index - 1;
+            // changes for 1.4.x. Q. Liu
+            if (var_root->characteristics[i].time_index != prev_timestep)
+            {
+                timestep++;
+                prev_timestep = var_root->characteristics[i].time_index;
+            }
+
+            assert (timestep < nsteps);
 
             if (!var_root->characteristics[i].stats)
                 continue;
@@ -1761,17 +1777,15 @@ typedef struct {
                             ((double * ) vs->max)[c] = data[c];
                 }
 
-                if (ntimes > 0) {
-                    if(!vs->steps->maxs[timestep]) {
-                        MALLOC (vs->steps->maxs[timestep], count * size, "minimum per timestep")
-                        for (c = 0; c < count; c ++)
-                            ((double **) vs->steps->maxs)[timestep][c] = data[c];
+                if(!vs->steps->maxs[timestep]) {
+                    MALLOC (vs->steps->maxs[timestep], count * size, "minimum per timestep")
+                    for (c = 0; c < count; c ++)
+                        ((double **) vs->steps->maxs)[timestep][c] = data[c];
 
-                    } else {
-                        for (c = 0; c < count; c ++)
-                            if (data[c] > ((double **) vs->steps->maxs)[timestep][c])
-                                ((double **) vs->steps->maxs)[timestep][c] = data[c];
-                    }
+                } else {
+                    for (c = 0; c < count; c ++)
+                        if (data[c] > ((double **) vs->steps->maxs)[timestep][c])
+                            ((double **) vs->steps->maxs)[timestep][c] = data[c];
                 }
             }
 
@@ -1791,16 +1805,14 @@ typedef struct {
                         gsum[c] = gsum[c] + data[c];
                 }
 
-                if (ntimes > 0) {
-                    if(!sums[timestep]) {
-                        MALLOC(sums[timestep], count * sum_size, "summation per timestep")
-                        for (c = 0; c < count; c ++)
-                            sums[timestep][c] = data[c];
+                if(!sums[timestep]) {
+                    MALLOC(sums[timestep], count * sum_size, "summation per timestep")
+                    for (c = 0; c < count; c ++)
+                        sums[timestep][c] = data[c];
 
-                    } else {
-                        for (c = 0; c < count; c ++)
-                            sums[timestep][c] = sums[timestep][c] + data[c];
-                    }
+                } else {
+                    for (c = 0; c < count; c ++)
+                        sums[timestep][c] = sums[timestep][c] + data[c];
                 }
             }
 
@@ -1820,32 +1832,29 @@ typedef struct {
                            gsum_square[c] = gsum_square[c] + data[c];
                 }
 
-                if (ntimes > 0) {
-                    if(!sum_squares[timestep]) {
-                        MALLOC(sum_squares[timestep], count * sum_size, "summation of square per timestep")
-                        for (c = 0; c < count; c ++)
-                            sum_squares[timestep][c] = data[c];
+                if(!sum_squares[timestep]) {
+                    MALLOC(sum_squares[timestep], count * sum_size, "summation of square per timestep")
+                    for (c = 0; c < count; c ++)
+                        sum_squares[timestep][c] = data[c];
 
-                    } else {
-                        for (c = 0; c < count; c ++)
-                            sum_squares[timestep][c] = sum_squares[timestep][c] + data[c];
-                    }
+                } else {
+                    for (c = 0; c < count; c ++)
+                        sum_squares[timestep][c] = sum_squares[timestep][c] + data[c];
                 }
             }
 
             if (map[adios_statistic_cnt] != -1 && stats[0][map[adios_statistic_cnt]].data)
             {
-                if (ntimes > 0)
-                    cnts[timestep] += * ((uint32_t *) stats[0][map[adios_statistic_cnt]].data);
+                cnts[timestep] += * ((uint32_t *) stats[0][map[adios_statistic_cnt]].data);
                 gcnt += * (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
             }
         }
 
-        if(ntimes > 0 && vs->min && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1)) {
+        if(vs->min && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1)) {
             // min, max, summation exists only for arrays
             // Calculate average / timestep
 
-            for(timestep = 0; timestep < ntimes; timestep ++) {
+            for(timestep = 0; timestep < nsteps; timestep ++) {
                 MALLOC(vs->steps->avgs[timestep], count * sum_size, "average per timestep")
                 for (c = 0; c < count; c ++)
                     vs->steps->avgs[timestep][c] = sums[timestep][c] / cnts[timestep];
@@ -1881,15 +1890,24 @@ typedef struct {
     }
     else
     {
-        timestep = 0;
+        timestep = -1;
+        prev_timestep = 0;
+
         for (i = 0; i < var_root->characteristics_count; i++)
         {
-            if (nsteps > 0)
-                timestep = var_root->characteristics[i].time_index - 1;
-                //timestep = i / (npgs / ntimes);
+            // changes for 1.4.x. Q. Liu
+            if (var_root->characteristics[i].time_index != prev_timestep)
+            {
+                timestep++;
+                prev_timestep = var_root->characteristics[i].time_index;
+            }
+
+            assert (timestep < nsteps);
 
             if (!var_root->characteristics[i].stats)
+            {
                 continue;
+            }
 
             struct adios_index_characteristics_stat_struct * stats = var_root->characteristics[i].stats[0];
             struct adios_index_characteristics_hist_struct * hist = stats[map[adios_statistic_hist]].data;
@@ -1907,7 +1925,7 @@ typedef struct {
                 }
                 else if (adios_lt(var_root->type, stats[map[adios_statistic_min]].data, vs->min))
                 {
-                       memcpy(vs->min, stats[map[adios_statistic_min]].data, size);
+                    memcpy(vs->min, stats[map[adios_statistic_min]].data, size);
                 }
 
                 if(!vs->steps->mins[timestep])
@@ -1991,6 +2009,7 @@ typedef struct {
                     *sum_squares[timestep] = *sum_squares[timestep] + * ((double *) stats[map[adios_statistic_sum_square]].data);
                 }
             }
+//TODO
 /*
             if(map[adios_statistic_hist] != -1 && stats[map[adios_statistic_hist]].data)
             {
@@ -2005,12 +2024,13 @@ typedef struct {
 */
             if (map[adios_statistic_cnt] != -1 && stats[map[adios_statistic_cnt]].data)
             {
-                if (ntimes > 0)
-                    cnts[timestep] += * (uint32_t *) stats[map[adios_statistic_cnt]].data;
+                cnts[timestep] += * (uint32_t *) stats[map[adios_statistic_cnt]].data;
                 gcnt += * (uint32_t *) stats[map[adios_statistic_cnt]].data;
             }
         }
 
+//TODO
+#if 0
         if(ntimes > 0 && vs->min && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1))
         {
             // min, max, summation exists only for arrays
@@ -2028,7 +2048,7 @@ typedef struct {
                 free (sum_squares[timestep]);
             }
         }
-
+#endif
         // Calculate global average
         if(vs->min && gsum && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1))
         {
@@ -2574,7 +2594,7 @@ void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***gr
 {
     BP_PROC * p;
     BP_FILE * fh;
-    int i;
+    int i, j, k, offset;
 
     p = (BP_PROC *) fp->fh;
     fh = (BP_FILE *) p->fh;
@@ -2592,11 +2612,35 @@ void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***gr
 
     * nvars_per_group = (int *) malloc (fh->gvar_h->group_count * sizeof (int));
     assert (* nvars_per_group);
-    memcpy (* nvars_per_group, fh->gvar_h->var_counts_per_group, fh->gvar_h->group_count * sizeof (int));
+
+    for (i = 0; i < fh->gvar_h->group_count; i++)
+    {
+        (* nvars_per_group)[i] = fh->gvar_h->var_counts_per_group[i];
+    }
 
     * nattrs_per_group = (int *) malloc (fh->gattr_h->group_count * sizeof (int));
     assert (* nattrs_per_group);
-    memcpy (* nattrs_per_group, fh->gattr_h->attr_counts_per_group, fh->gattr_h->group_count * sizeof (int));
+
+    for (i = 0; i < fh->gvar_h->group_count; i++)
+    {
+        offset = 0;
+        for (j = 0; j < i; j++)
+        {
+            offset += fh->gattr_h->attr_counts_per_group[j];
+        }
+
+        (* nattrs_per_group)[i] = 0;
+        for (j = 0; j < fh->gattr_h->attr_counts_per_group[i]; j++)
+        {
+            if (!show_hidden_attrs && strstr (fh->gattr_h->attr_namelist[offset + j], "__adios__"))
+            {
+            }
+            else
+            {
+                (* nattrs_per_group)[i] ++;
+            }
+        }
+    }
 
     return;
 }
