@@ -50,22 +50,59 @@ cdef extern from "adios_types.h":
 cdef extern from "adios.h":
     ctypedef char* const_char_ptr "const char*"
     cdef int adios_init (char * config)
+    
     cdef int adios_finalize (int mype)
-    cdef int adios_open (int64_t * fd, char * group_name, char * name, 
-                         char * mode, void * comm)
-    cdef int adios_group_size (int64_t fd_p, uint64_t data_size,
+    
+    cdef int adios_open (int64_t * fd,
+                         char * group_name,
+                         char * name, 
+                         char * mode,
+                         void * comm)
+    
+    cdef int adios_group_size (int64_t fd_p,
+                               uint64_t data_size,
                                uint64_t * total_size)
-    cdef int adios_write (int64_t fd_p, char * name, void * var)
-    cdef int adios_read (int64_t fd_p, char * name, void * buffer, uint64_t buffer_size)
+    
+    cdef int adios_write (int64_t fd_p,
+                          char * name,
+                          void * var)
+    
+    cdef int adios_read (int64_t fd_p,
+                         char * name,
+                         void * buffer,
+                         uint64_t buffer_size)
 
     cdef int adios_close(int64_t fd_p)
     
     cdef int adios_init_noxml ()
-    cdef int adios_allocate_buffer (ADIOS_BUFFER_ALLOC_WHEN when, uint64_t buffer_size)
-    cdef int adios_declare_group (int64_t * id, char * name, char * time_index, ADIOS_FLAG stats)
-    cdef int adios_define_var (int64_t group_id, char * name, char * path, int type, char * dimensions, char * global_dimensions, char * local_offsets)
-    cdef int adios_define_attribute (int64_t group, char * name, char * path, ADIOS_DATATYPES type, char * value, char * var)
-    cdef int adios_select_method (int64_t group, char * method, char * parameters, char * base_path)
+    
+    cdef int adios_allocate_buffer (ADIOS_BUFFER_ALLOC_WHEN when,
+                                    uint64_t buffer_size)
+    
+    cdef int adios_declare_group (int64_t * id,
+                                  char * name,
+                                  char * time_index,
+                                  ADIOS_FLAG stats)
+    
+    cdef int adios_define_var (int64_t group_id,
+                               char * name,
+                               char * path,
+                               ADIOS_DATATYPES type,
+                               char * dimensions,
+                               char * global_dimensions,
+                               char * local_offsets)
+    
+    cdef int adios_define_attribute (int64_t group,
+                                     char * name,
+                                     char * path,
+                                     ADIOS_DATATYPES type,
+                                     char * value,
+                                     char * var)
+    
+    cdef int adios_select_method (int64_t group,
+                                  char * method,
+                                  char * parameters,
+                                  char * base_path)
 
 cdef extern from "adios_read.h":
     ctypedef struct MPI_Comm:
@@ -170,7 +207,10 @@ class BUFFER_ALLOC_WHEN(object):
 cpdef init(char * config):
     return adios_init(config)
 
-cpdef int64_t open(char * group_name, char * name, char * mode, MPI.Comm comm = MPI.COMM_WORLD):
+cpdef int64_t open(char * group_name,
+                   char * name,
+                   char * mode,
+                   MPI.Comm comm = MPI.COMM_WORLD):
     cdef int64_t fd
     cdef int result
     result = adios_open(&fd, group_name, name, mode, &comm.ob_mpi)
@@ -217,31 +257,56 @@ cpdef finalize(int mype = 0):
 cpdef int init_noxml():
     return adios_init_noxml()
 
-cpdef int allocate_buffer(int when, uint64_t buffer_size):
-    return adios_allocate_buffer(<ADIOS_BUFFER_ALLOC_WHEN> when, buffer_size)
+cpdef int allocate_buffer(int when,
+                          uint64_t buffer_size):
+    return adios_allocate_buffer(<ADIOS_BUFFER_ALLOC_WHEN> when,
+                                 buffer_size)
 
-cpdef int64_t declare_group(char * name, char * time_index, int stats):
+cpdef int64_t declare_group(char * name,
+                            char * time_index,
+                            int stats):
     cdef int64_t id = 0
-    adios_declare_group (&id, name, time_index, <ADIOS_FLAG> stats)
+    adios_declare_group (&id,
+                         name,
+                         time_index,
+                         <ADIOS_FLAG> stats)
     return id
 
-cpdef int define_var(int64_t group_id, char * name, char * path, int type,
+cpdef int define_var(int64_t group_id,
+                     char * name,
+                     char * path,
+                     int type,
                      char * dimensions,
                      char * global_dimensions,
                      char * local_offsets):
-    return adios_define_var(group_id, name, path, type,
-                            dimensions, global_dimensions, local_offsets)
+    return adios_define_var(group_id,
+                            name, path,
+                            <ADIOS_DATATYPES> type,
+                            dimensions,
+                            global_dimensions,
+                            local_offsets)
 
-cpdef int define_attribute (int64_t group, char * name, char * path,
-                            int type, char * value, char * var):
-    return adios_define_attribute (group, name, path,
-                                   <ADIOS_DATATYPES> type, value, var)
+cpdef int define_attribute (int64_t group,
+                            char * name,
+                            char * path,
+                            int type,
+                            char * value,
+                            char * var):
+    return adios_define_attribute (group,
+                                   name,
+                                   path,
+                                   <ADIOS_DATATYPES> type,
+                                   value,
+                                   var)
 
 cpdef int select_method (int64_t group,
                          char * method,
                          char * parameters,
                          char * base_path):
-    return adios_select_method (group, method, parameters, base_path)
+    return adios_select_method (group,
+                                method,
+                                parameters,
+                                base_path)
 
 
 ## ==========
