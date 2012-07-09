@@ -44,6 +44,14 @@
         WRITE_ARRAY(JTYPE, CTYPE);                                      \
     }
 
+#define STR_ALLOC(var) \
+    const char *str_##var = env->GetStringUTFChars(var, NULL); \
+    if (str_##var == NULL) return -1;
+
+#define STR_FREE(var) \
+    env->ReleaseStringUTFChars(var, str_##var);
+
+
 /*
  * Class:     gov_ornl_ccs_Adios
  * Method:    adios_init
@@ -54,27 +62,17 @@ Java_gov_ornl_ccs_Adios_adios_1init
 (JNIEnv *env, jclass cls, jstring xml_fname)
 {
     //std::cout << __FUNCTION__ << "..." << std::endl;
-    const char *str;
     int result;
     jboolean isCopy;
 
-    str = env->GetStringUTFChars(xml_fname, &isCopy);
-    if (str == NULL) {
-        return -1; /* OutOfMemoryError already thrown */
-    }
+    STR_ALLOC(xml_fname)
 
-    result = adios_init(str);
+    result = adios_init(str_xml_fname);
     //std::cout << "result = " << result << std::endl;
     
-    env->ReleaseStringUTFChars(xml_fname, str);
-    return result;
-}
+    STR_FREE(xml_fname)
 
-JNIEXPORT jint JNICALL 
-Java_gov_ornl_ccs_Adios_adios_1init_1noxml
-(JNIEnv *env, jclass cls)
-{
-    return adios_init_noxml();
+    return result;
 }
 
 /*
@@ -87,20 +85,12 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open
 {
     //std::cout << __FUNCTION__ << "..." << std::endl;
 
-    const char *str_group_name;
-    const char *str_file_name;
-    const char *str_mode;
     int result;
-    static int64_t fd_p = 0;
+    int64_t fd_p = 0;
 
-    str_group_name = env->GetStringUTFChars(group_name, NULL);
-    if (str_group_name == NULL) return -1;
-
-    str_file_name = env->GetStringUTFChars(file_name, NULL);
-    if (str_file_name == NULL) return -1;
-
-    str_mode = env->GetStringUTFChars(mode, NULL);
-    if (str_mode == NULL) return -1;
+    STR_ALLOC(group_name)
+    STR_ALLOC(file_name)
+    STR_ALLOC(mode)
 
     //std::cout << "[IN] fd_p = " << (int64_t) fd_p << std::endl;
     //std::cout << "[IN] str_group_name = " << str_group_name << std::endl;
@@ -111,9 +101,9 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open
     //std::cout << "[OUT] fd_p = " << fd_p << std::endl;
     //std::cout << "[OUT] result = " << result << std::endl;
 
-    env->ReleaseStringUTFChars(file_name, str_file_name);
-    env->ReleaseStringUTFChars(group_name, str_group_name);
-    env->ReleaseStringUTFChars(mode, str_mode);
+    STR_FREE(group_name)
+    STR_FREE(file_name)
+    STR_FREE(mode)
 
     /*
     uint64_t total_size;
@@ -331,20 +321,12 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open_1and_1set_1group_1si
 
     //std::cout << __FUNCTION__ << "..." << std::endl;
 
-    const char *str_group_name;
-    const char *str_file_name;
-    const char *str_mode;
     int result;
-    static int64_t fd_p = 0;
+    int64_t fd_p = 0;
 
-    str_group_name = env->GetStringUTFChars(group_name, NULL);
-    if (str_group_name == NULL) return -1;
-
-    str_file_name = env->GetStringUTFChars(file_name, NULL);
-    if (str_file_name == NULL) return -1;
-
-    str_mode = env->GetStringUTFChars(mode, NULL);
-    if (str_mode == NULL) return -1;
+    STR_ALLOC(group_name)
+    STR_ALLOC(file_name)
+    STR_ALLOC(mode)
 
     //std::cout << "[IN] fd_p = " << (int64_t) fd_p << std::endl;
     //std::cout << "[IN] str_group_name = " << str_group_name << std::endl;
@@ -355,9 +337,9 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open_1and_1set_1group_1si
     //std::cout << "[OUT] fd_p = " << fd_p << std::endl;
     //std::cout << "[OUT] result = " << result << std::endl;
 
-    env->ReleaseStringUTFChars(file_name, str_file_name);
-    env->ReleaseStringUTFChars(group_name, str_group_name);
-    env->ReleaseStringUTFChars(mode, str_mode);
+    STR_FREE(group_name)
+    STR_FREE(file_name)
+    STR_FREE(mode)
 
     uint64_t total_size;
     //std::cout << "[IN] fd_p = " << (int64_t) fd_p << std::endl;
@@ -365,4 +347,124 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open_1and_1set_1group_1si
     //std::cout << "[OUT] total size = " << total_size << std::endl;
 
     return (jlong) fd_p;
+}
+
+/*
+ * Class:     gov_ornl_ccs_Adios
+ * Method:    adios_init_noxml
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL 
+Java_gov_ornl_ccs_Adios_adios_1init_1noxml
+(JNIEnv *env, jclass cls)
+{
+    return adios_init_noxml();
+}
+
+/*
+ * Class:     gov_ornl_ccs_Adios
+ * Method:    adios_allocate_buffer
+ * Signature: (IJ)I
+ */
+JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1allocate_1buffer
+(JNIEnv * env, jclass cls, jint when, jlong size)
+{
+    return adios_allocate_buffer((ADIOS_BUFFER_ALLOC_WHEN) when, size);
+}
+
+/*
+ * Class:     gov_ornl_ccs_Adios
+ * Method:    adios_declare_group
+ * Signature: (Ljava/lang/String;Ljava/lang/String;I)J
+ */
+JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1declare_1group
+(JNIEnv * env, jclass cls, jstring name, jstring time_index, jint stats)
+{
+    int64_t id_p;
+    int result;
+
+    STR_ALLOC(name)
+    STR_ALLOC(time_index)
+
+    result = adios_declare_group(&id_p, str_name, str_time_index, (ADIOS_FLAG) stats);
+
+    STR_FREE(name)
+    STR_FREE(time_index)
+
+    return (jlong) id_p;
+}
+
+/*
+ * Class:     gov_ornl_ccs_Adios
+ * Method:    adios_define_var
+ * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1define_1var
+(JNIEnv * env, jclass cls, jlong group_id, jstring name, jstring path, jint type, jstring dimensions, jstring global_dimensions, jstring local_offsets)
+{
+    int result;
+
+    STR_ALLOC(name)
+    STR_ALLOC(path)
+    STR_ALLOC(dimensions)
+    STR_ALLOC(global_dimensions)
+    STR_ALLOC(local_offsets)
+
+    result = adios_define_var((int64_t) group_id, str_name, str_path, (ADIOS_DATATYPES) type, str_dimensions, str_global_dimensions, str_local_offsets);
+    
+    STR_FREE(name)
+    STR_FREE(path)
+    STR_FREE(dimensions)
+    STR_FREE(global_dimensions)
+    STR_FREE(local_offsets)
+
+    return result;
+}
+
+/*
+ * Class:     gov_ornl_ccs_Adios
+ * Method:    adios_define_attribute
+ * Signature: (JLjava/lang/String;Ljava/lang/String;ILjava/lang/String;Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1define_1attribute
+(JNIEnv * env, jclass cls, jlong group_id, jstring name, jstring path, jint type, jstring value, jstring var)
+{
+    int result;
+    
+    STR_ALLOC(name)
+    STR_ALLOC(path)
+    STR_ALLOC(value)
+    STR_ALLOC(var)
+    
+    result = adios_define_attribute((int64_t) group_id, str_name, str_path, (ADIOS_DATATYPES) type, str_value, str_var);
+
+    STR_FREE(name)
+    STR_FREE(path)
+    STR_FREE(value)
+    STR_FREE(var)
+
+    return result;
+}
+
+/*
+ * Class:     gov_ornl_ccs_Adios
+ * Method:    adios_select_method
+ * Signature: (JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1select_1method
+(JNIEnv * env, jclass cls, jlong group_id, jstring method, jstring parameters, jstring base_path)
+{
+    int result;
+    
+    STR_ALLOC(method)
+    STR_ALLOC(parameters)
+    STR_ALLOC(base_path)
+    
+        result = adios_select_method((int64_t) group_id, str_method, str_parameters, str_base_path);
+
+    STR_FREE(method)
+    STR_FREE(parameters)
+    STR_FREE(base_path)
+
+    return result;
 }

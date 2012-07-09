@@ -6,10 +6,8 @@ import java.nio.DoubleBuffer;
 
 public class Adios
 {
-
     // Declaration of the Native (C) function
     private static native int adios_init (String xml_fname);
-    private static native int adios_init_noxml();
 
     private static native long adios_open (String group_name, String file_name, String mode, long comm);
     private static native long adios_group_size (long fh, long group_size);
@@ -34,6 +32,13 @@ public class Adios
 
     private static native long adios_open_and_set_group_size (String group_name, String file_name, String mode, long group_size, long comm);
 
+    private static native int adios_init_noxml();
+    private static native int adios_allocate_buffer(int when, long size);
+    private static native long adios_declare_group(String name, String time_index, int stats);
+    private static native int adios_define_var(long group_id, String name, String path, int type, String dimensions, String global_dimensions, String local_offsets);
+    private static native int adios_define_attribute(long group_id, String name, String path, int type, String value, String var);
+    private static native int adios_select_method(long group_id, String method, String parameters, String base_path);
+
     static
     {
         // The runtime system executes a class's static
@@ -44,11 +49,6 @@ public class Adios
     public static int Init(String xml_fname)
     {
         return adios_init(xml_fname);
-    }
-    
-    public static int Init()
-    {
-        return adios_init_noxml();
     }
     
     public static long Open(String group_name, String file_name, String mode, long comm)
@@ -149,5 +149,36 @@ public class Adios
     public static long OpenAndSetGroupSize(String group_name, String file_name, String mode, long group_size, long comm)
     {
         return adios_open_and_set_group_size(group_name, file_name, mode, group_size, comm);
+    }
+
+    public static int Init_Noxml()
+    {
+        return adios_init_noxml();
+    }
+    
+    public static int AllocateBuffer(AdiosBufferAllocWhen when, long size)
+    {
+        return adios_allocate_buffer(when.getCode(), size);
+    }
+    
+
+    public static long DeclareGroup(String name, String time_index, AdiosFlag stats)
+    {
+        return adios_declare_group(name, time_index, stats.getCode());
+    }
+
+    public static int DefineVar(long group_id, String name, String path, AdiosDatatype type, String dimensions, String global_dimensions, String local_offsets)
+    {
+        return adios_define_var(group_id, name, path, type.getCode(), dimensions, global_dimensions, local_offsets);
+    }
+
+    public static int DefineVar(long group_id, String name, String path, AdiosDatatype type, String value, String var)
+    {
+        return adios_define_attribute(group_id, name, path, type.getCode(), value, var);
+    }
+
+    public static int SelectMethod(long group_id, String method, String parameters, String base_path)
+    {
+        return adios_select_method(group_id, method, parameters, base_path);
     }
 }

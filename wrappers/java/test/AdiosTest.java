@@ -31,12 +31,9 @@ public class AdiosTest
         long groupsize = 4 + 4 + 4 + 8 * (1) * (NX);
 
         
-        /*
-        // Don't know why. It doesn't work in this way.
-        long adios_handle = Adios.Open ("temperature", "adios_global.bp", "w", comm);
         long adios_totalsize = Adios.SetGroupSize(adios_handle, groupsize);
-        */
-        adios_handle = Adios.OpenAndSetGroupSize("temperature", "adios_global.bp", "w", groupsize, comm);
+
+        //adios_handle = Adios.OpenAndSetGroupSize("temperature", "adios_global.bp", "w", groupsize, comm);
 
         Adios.Write (adios_handle, "NX", NX);
         Adios.Write (adios_handle, "size", size);

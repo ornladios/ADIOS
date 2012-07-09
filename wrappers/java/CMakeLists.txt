@@ -28,6 +28,9 @@ else ()
 endif()
 
 set (SRC
+  gov_ornl_ccs_AdiosDatatype.cxx
+  gov_ornl_ccs_AdiosFlag.cxx
+  gov_ornl_ccs_AdiosBufferAllocWhen.cxx
   gov_ornl_ccs_Adios.cxx
   gov_ornl_ccs_AdiosFile.cxx
   gov_ornl_ccs_AdiosGroup.cxx
@@ -54,10 +57,10 @@ target_link_libraries (AdiosJava
 
 foreach (FILE ${HEADERS})
   string (REGEX REPLACE "_" "/" JAVA_FILE ${FILE})
-  string (REGEX REPLACE ".h" ".java" JAVA_FILE ${JAVA_FILE})
+  string (REGEX REPLACE "\\.h" ".java" JAVA_FILE ${JAVA_FILE})
 
   string (REGEX REPLACE "_" "." JAVA_OBJ ${FILE})
-  string (REGEX REPLACE ".h" "" JAVA_OBJ ${JAVA_OBJ})
+  string (REGEX REPLACE "\\.h" "" JAVA_OBJ ${JAVA_OBJ})
 
   add_custom_command (
     OUTPUT ${FILE}
@@ -70,7 +73,7 @@ endforeach ()
 
 foreach (FILE ${SRC})
   string (REGEX REPLACE "_" "/" FILE ${FILE})
-  string (REGEX REPLACE ".cxx" ".java" FILE ${FILE})
+  string (REGEX REPLACE "\\.cxx" ".java" FILE ${FILE})
   list (APPEND JAVA_SRC ${FILE})
 endforeach ()
 
@@ -89,4 +92,5 @@ install (FILES ${CMAKE_CURRENT_BINARY_DIR}/AdiosJava.jar DESTINATION lib)
 
 ENABLE_TESTING()
 add_test (test1 ${CMAKE_CURRENT_SOURCE_DIR}/test/test1.sh ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test AdiosTest)
+add_test (test2 ${CMAKE_CURRENT_SOURCE_DIR}/test/test2.sh ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/test AdiosNoxmlTest)
 
