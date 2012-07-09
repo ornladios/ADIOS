@@ -51,7 +51,8 @@ using MPI, while the compiler pointed by CC is used to build the sequential tool
 In practice, mpicc uses the compiler pointed by CC and adds the MPI library automatically. 
 On clusters, this makes no real difference, but on Bluegene, or Cray XT, parallel 
 codes are built for compute nodes, while the sequential tools are built for the 
-login nodes. The -fPIC compiler flag is needed only if you build the Matlab tools.
+login nodes. The -fPIC compiler flag is needed only if you build the 
+Matlab language bindings later.
 
 
 \subsection{Cray XT5}
@@ -67,20 +68,6 @@ export FC=ftn
             --with-mxml=<location of mini-xml installation>
             --with-hdf5=<location of HDF5 installation>
             --with-netcdf=<location of netCDF installation>
-\end{lstlisting}
-
-
-\subsection{Support for Matlab}
-
-Matlab requires ADIOS be built with the GNU C compiler. It also requires relocatable 
-codes, so you need to add the -fPIC flag to CFLAGS before configuring ADIOS. The 
-matlab reader is not built automatically at make and is not installed with ADIOS. 
-You need to compile it with Matlab's MEX compiler after the make and copy the files 
-manually to somewhere where Matlab can see them.
-
-\begin{lstlisting}
-cd tools/matlab
-make matlab
 \end{lstlisting}
 
 
@@ -336,4 +323,30 @@ for the sequential build.
 \verb+adios.h+/\verb+adios_read.h+ include the appropriate header file 
 \verb+mpi.h+ or \verb+mpidummy.h+ 
 (the latter provided by ADIOS) depending on which version you want to build. 
+
+
+\section{Language bindings}
+
+ADIOS comes with various bindings to languages, that are not built with the automake tools discussed above. After building ADIOS, these bindings have to be manually built.
+
+\subsection{Support for Matlab}
+\label{section-install-matlab}
+
+Matlab requires ADIOS be built with the GNU C compiler. It also requires relocatable 
+codes, so you need to add the -fPIC flag to CFLAGS before configuring ADIOS. 
+You need to compile it with Matlab's MEX compiler after the make and copy the files 
+manually to somewhere where Matlab can see them or set the \verb+MATLABPATH+ to this 
+directory to let Matlab know where to look for the bindings.
+
+\begin{lstlisting}
+cd wrappers/matlab
+make matlab
+\end{lstlisting}
+
+
+\subsection{Support for Java}
+\label{section-install-java}
+
+\subsection{Support for Numpy}
+\label{section-install-numpy}
 
