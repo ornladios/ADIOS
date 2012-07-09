@@ -74,171 +74,94 @@ adios\_define\_var (m\_adios\_group, \texttt{"}temperature\texttt{"}
 the sequence of calling adios\_write needs to be exactly the same as that of calling 
 adios\_define\_var.
 
-\#include \texttt{<}stdio.h\texttt{>}
+\begin{lstlisting}[alsolanguage=C]
+#include <stdio.h>
+#include <string.h>
+#include "mpi.h"
+#include "adios.h"
+#include "adios_types.h"
 
-\#include \texttt{<}string.h\texttt{>}
-
-\#include \texttt{"}mpi.h\texttt{"}
-
-\#include \texttt{"}adios.h\texttt{"}
-
-\#include \texttt{"}adios\_types.h\texttt{"}
-
-\#ifdef DMALLOC
-
-\#include \texttt{"}dmalloc.h\texttt{"}
-
-\#endif
+#ifdef DMALLOC
+#include "dmalloc.h"
+#endif
 
 int main (int argc, char ** argv)
+{
+    char        filename [256];
+    int         rank, size, i, block;
+    int         NX = 100, Global_bounds, Offsets;
+    double      t[NX];
+    int         sub_blocks = 3;
+    MPI_Comm    comm = MPI_COMM_WORLD;
 
-\{
+    /* ADIOS variables declarations for matching gwrite_temperature.ch */
+    int         adios_err;
+    uint64_t    adios_groupsize, adios_totalsize;
+    int64_t     adios_handle;
 
-\parindent=28pt
-char        filename [256];
+    MPI_Init (&argc, &argv);
+    MPI_Comm_rank (comm, &rank);
+    MPI_Comm_size (comm, &size);
 
-int         rank, size, i, block;
+    Global_bounds = sub_blocks * NX * size;
 
-\parindent=57pt
-int         NX = 100, Global\_bounds, Offsets;
+    strcpy (filename, "adios_global_no_xml.bp");
 
-\parindent=28pt
-double      t[NX];
+    adios_init_noxml ();
+    adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
 
-int         sub\_blocks = 3;
+    int64_t       m_adios_group;
+    int64_t       m_adios_file;
 
-\parindent=57pt
-MPI\_Comm    comm = MPI\_COMM\_WORLD;
+    adios_declare_group (&m_adios_group, "restart", "iter", adios_flag_yes);
+    adios_select_method (m_adios_group, "MPI", "", "");
+    adios_define_var (m_adios_group, "NX"
+                    ,"", adios_integer
+                    ,0, 0, 0);
 
-\parindent=28pt
-/* ADIOS variables declarations for matching gwrite\_temperature.ch */
+    adios_define_var (m_adios_group, "Global_bounds"
+                    ,"", adios_integer
+                    ,0, 0, 0);
 
-int         adios\_err;
+    for (i=0;i<sub_blocks;i++) {
 
-\parindent=57pt
-uint64\_t    adios\_groupsize, adios\_totalsize;
+       adios_define_var (m_adios_group, "Offsets"
+                    ,"", adios_integer
+                    ,0, 0, 0);
 
-\parindent=28pt
-int64\_t     adios\_handle;
+       adios_define_var (m_adios_group, "temperature"
+                    ,"", adios_double
+                    ,"NX", "Global_bounds", "Offsets");
+    }
 
-MPI\_Init (\&argc, \&argv);
+    adios_open (&m_adios_file, "restart", filename, "w", &comm);
 
-\parindent=57pt
-MPI\_Comm\_rank (comm, \&rank);
+    adios_groupsize = sub_blocks * (4 + 4 + 4 + NX * 8);
 
-\parindent=28pt
-MPI\_Comm\_size (comm, \&size);
+    adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
+    adios_write(m_adios_file, "NX", (void *) &NX);
+    adios_write(m_adios_file, "Global_bounds", (void *) &Global_bounds);
+       /* now we will write the data for each sub block */
+    for (block=0;block<sub_blocks;block++) {
 
-Global\_bounds = sub\_blocks * NX * size;
+       Offsets = rank * sub_blocks * NX + block*NX;
+       adios_write(m_adios_file, "Offsets", (void *) &Offsets);
 
-\parindent=57pt
-strcpy (filename, \texttt{"}adios\_global\_no\_xml.bp\texttt{"});
+       for (i = 0; i < NX; i++)
+           t[i] = Offsets + i;
 
-\parindent=28pt
-adios\_init\_noxml ();
+       adios_write(m_adios_file, "temperature", t);
+    }
 
-adios\_allocate\_buffer (ADIOS\_BUFFER\_ALLOC\_NOW, 10);
+    adios_close (m_adios_file);
 
-\parindent=57pt
-int64\_t       m\_adios\_group;
+    MPI_Barrier (comm);
 
-\parindent=28pt
-int64\_t       m\_adios\_file;
+    adios_finalize (rank);
 
-adios\_declare\_group (\&m\_adios\_group, \texttt{"}restart\texttt{"}, \texttt{"}iter\texttt{"}, 
-adios\_flag\_yes);
+    MPI_Finalize ();
+    return 0;
+}
 
-\parindent=57pt
-adios\_select\_method (m\_adios\_group, \texttt{"}MPI\texttt{"}, \texttt{"}\texttt{"}, 
-\texttt{"}\texttt{"});
+\end{lstlisting}
 
-\parindent=28pt
-adios\_define\_var (m\_adios\_group, \texttt{"}NX\texttt{"}
-
-\parindent=86pt
-,\texttt{"}\texttt{"}, adios\_integer
-
-,0, 0, 0);
-
-\parindent=115pt
-adios\_define\_var (m\_adios\_group, \texttt{"}Global\_bounds\texttt{"}
-
-\parindent=86pt
-,\texttt{"}\texttt{"}, adios\_integer
-
-,0, 0, 0);
-
-\parindent=115pt
-for (i=0;i\texttt{<}sub\_blocks;i++) \{
-
-\parindent=39pt
-adios\_define\_var (m\_adios\_group, \texttt{"}Offsets\texttt{"}
-
-\parindent=86pt
-,\texttt{"}\texttt{"}, adios\_integer
-
-,0, 0, 0);
-
-\parindent=126pt
-adios\_define\_var (m\_adios\_group, \texttt{"}temperature\texttt{"}
-
-\parindent=86pt
-,\texttt{"}\texttt{"}, adios\_double
-
-,\texttt{"}NX\texttt{"}, \texttt{"}Global\_bounds\texttt{"}, \texttt{"}Offsets\texttt{"});
-
-\parindent=115pt
-\}
-
-\parindent=28pt
-adios\_open (\&m\_adios\_file, \texttt{"}restart\texttt{"}, filename, \texttt{"}w\texttt{"}, 
-\&comm);
-
-adios\_groupsize = sub\_blocks * (4 + 4 + 4 + NX * 8);
-
-\parindent=57pt
-adios\_group\_size (m\_adios\_file, adios\_groupsize, \&adios\_totalsize);
-
-\parindent=28pt
-adios\_write(m\_adios\_file, \texttt{"}NX\texttt{"}, (void *) \&NX);
-
-adios\_write(m\_adios\_file, \texttt{"}Global\_bounds\texttt{"}, (void *) \&Global\_bounds);
-
-\parindent=54pt
-/* now we will write the data for each sub block */
-
-\parindent=28pt
-for (block=0;block\texttt{<}sub\_blocks;block++) \{
-
-\parindent=39pt
-Offsets = rank * sub\_blocks * NX + block*NX;
-
-adios\_write(m\_adios\_file, \texttt{"}Offsets\texttt{"}, (void *) \&Offsets);
-
-\parindent=79pt
-for (i = 0; i \texttt{<} NX; i++)
-
-\parindent=54pt
-t[i] = Offsets + i;
-
-\parindent=39pt
-adios\_write(m\_adios\_file, \texttt{"}temperature\texttt{"}, t);
-
-\parindent=28pt
-\}
-
-adios\_close (m\_adios\_file);
-
-\parindent=57pt
-MPI\_Barrier (comm);
-
-\parindent=28pt
-adios\_finalize (rank);
-
-MPI\_Finalize ();
-
-\parindent=57pt
-return 0;
-
-\parindent=0pt
-\}

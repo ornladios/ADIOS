@@ -29,20 +29,40 @@ element. The expected children in any order would be adios-group, method, and bu
 The main elements of the xml file format are of the format 
 
 \begin{lstlisting}
-<element-name attr1 attr2 ...>
+<element-name attr1=value1 attr2=value2 ...>
 \end{lstlisting}
 
 \begin{lstlisting}[language=XML, caption={Example XML configuration}, label=list-xml-conf-example]
+<?xml version="1.0"?>
 <adios-config> 
-	<adios-group>
-		<var />......
-		<attribute />...... 
-	</adios-group>... 
-	<method>...... 
-	<buffer>
+    <adios-group>
+        <var ... />
+        <attribute .../>
+    </adios-group>
+    <method ... />
+    <buffer ... />
 </adios-config>
 \end{lstlisting}
 
+\section{adios-config}
+The adios-config element is the container for all ADIOS elements, and thus practically
+all configuration file has one of these elements that contain everything. Multiple 
+elements are allowed, however, there is no know use for that. 
+
+The only attribute that adios-config has is the \verb+host-language+ attribute for 
+language declaration. Fortran or C should be chosen, according to the source 
+language that is going to use ADIOS. The only difference that it makes is for
+the use of \verb+time-index+ in a group (see \verb+adios_group+ below) when multiple output 
+steps are appended to the
+same file. In Fortran, the time index, as dimension declaration, should be the last
+dimension (the slowest one), while in C, it should be the first one (again, the slowest
+dimension).
+
+\begin{lstlisting}[language=XML]
+<adios-config host-language="Fortran">
+    ...
+</adios-config>
+\end{lstlisting}
 
 
 \section{adios-group}
@@ -69,9 +89,10 @@ file coordination.
 
 \begin{lstlisting}[language=XML]
 <adios-group name="restart"
-	host-language="C"	coordination-communicator="comm"
-	coordination-var="mype"
-	time-index="iter"/>
+             host-language="C"
+             coordination-communicator="comm"
+             coordination-var="mype"
+             time-index="iter"/>
 \end{lstlisting}
 
 Required:
@@ -96,11 +117,12 @@ or a primitive data type, is determined by the dimension attribute provided.
 
 The following is an example showing how to define a variable in the XML file. 
 \begin{lstlisting}[language=XML]
-<var name="z-plane ion particles"	gwrite="zion" 
-	gread="zion_read" 
-	type="adios_real" 
-	dimensions="7,mimax" 
-	read="yes"/>
+<var name="z-plane ion particles"
+     gwrite="zion" 
+     gread="zion_read" 
+     type="adios_real" 
+     dimensions="7,mimax" 
+     read="yes"/>
 \end{lstlisting}
 
 \subsubsection{Attribute list}
@@ -114,11 +136,15 @@ Required:
 
 Optional: 
 \begin{itemize}
-\item gwrite - the value will be used in the python scripts to generate adios\_write 
-routines; the default value will be the same as attribute \textit{name} if gwrite 
-is not defined.
+\item gwrite - the value will be used in the \verb+gpp.py+ python script as the 
+variable name in the source code to generate adios\_write 
+routines; the default value is the value of the attribute \textit{name} if gwrite 
+is not defined. Use it if the write code is automatically generated and the desired
+variable name in the output is different from the name that contains the data in the
+program. The value is substituted 'as is' into the generated code, so arbitrary
+Fortran/C expressions can be used. 
 \item gread - the value will be used in the python scripts to generate adios\_read routines' 
-the default value will be the same as attribute \textit{name} if  gread is not 
+the default value is the value of the attribute \textit{name} if  gread is not 
 defined.
 \item path - HDF-5-style path for the element or path to the HDF-5 group or data item 
 to which this attribute is attached.  The default value is ``/''.
@@ -133,20 +159,28 @@ will be yes.
 \subsection{Attributes}
 The attribute element for adios\_group provides the users with the ability to specify 
 more descriptive information about the variables or group. The attributes can be 
-defined in both static or dynamic fashions.
+defined in both static or dynamic fashions. ADIOS supports only scalar attributes, i.e, 
+no arrays or vectors are supported. Note that a string is considered a scalar in ADIOS. 
+From ADIOS 1.4.0, only the root process of the application writes the attribute into 
+the output, therefore, process-dependent information cannot be save as an attribute 
+(by definition, that is a variable information, which should be stored in a variable).
 
 \subsubsection{Declaration}
 
 The static type of attributes can be defined as follows:
 \begin{lstlisting}[language=XML]
-<attribute name="experimental date"	path="/zion"	value="Sep-19-2008" 
-	type="adios_real"/>
+<attribute name="experimental date"
+    path="/zion"
+    value="Sep-19-2008" 
+    type="adios_real"/>
 \end{lstlisting}
 
 If an attribute has dynamic value that is determined by the runtime execution of 
 the program, it can be specified as follows:
 \begin{lstlisting}[language=XML]
-<attribute name="experimental date"	path="/zion"	var="time"/>
+<attribute name="experimental date"
+    path="/zion"
+    var="time"/>
 \end{lstlisting}
 where var ``time'' need to be defined in the same adios-group.
 
@@ -166,11 +200,15 @@ Required:
 The element \texttt{<}Gwrite src=\texttt{"}...\texttt{"}\texttt{>} is unlike \texttt{<}var\texttt{>} 
 or \texttt{<}attribute\texttt{>}, which are parsed and stored in the internal file 
 structure in ADIOS. The element \texttt{<}gwrite\texttt{>} only affects the execution 
-of python scripts (see Chap. 10). Any content (usually comments, conditional statements, 
+of python scripts (see Chapter \ref{chapter-gpp}). 
+Any content (usually comments, conditional statements, 
 or loop statements) in the value of attribute ``src'' is copied identically into 
-generated pre-processing files. Declaration
+generated pre-processing files. This is the way to write a subset of variables optionally
+depending on a logical expression in the source-code. Declaration
 \begin{lstlisting}[language=XML]
-<gwrite src=" "/>
+<gwrite src="if (have_ions==1) then"/>
+    ...
+<gwrite src="endif"/>
 \end{lstlisting}
 
 Required:
@@ -192,7 +230,7 @@ method.
 \subsubsection{Declaration}
 \begin{lstlisting}[language=XML]
 <global-bounds dimensions="nx_g, ny_g" offsets="nx_o,0"/>
-	... variable declarations ... 
+    ... variable declarations ... 
 </global-bounds>
 \end{lstlisting}
 
@@ -205,7 +243,8 @@ Required:
 Any variables used in the global-bounds element for dimensions or offsets declaration 
 need to be defined in the same adios-group as either variables or attributes. 
 
-For detailed global arrays use, see the example illustrated in Section \ref{section-cprogramming-globalarrays}.
+For detailed global arrays use, see the example illustrated in 
+Section \ref{section-cprogramming-globalarrays}.
 
 
 \subsection{Time-index}
@@ -218,7 +257,11 @@ to NetCDF in that it accumulates the time-index in terms of the number of record
 which theoretically can be added to infinity.
 
 If any of variables in an adios group are time based, they can be marked out by 
-adding the time-index variable as another dimension value. 
+adding the time-index variable as another dimension value. Note, that with the new
+read API, time is not represented as an extra dimension at reading. If you write a
+2D variable over multiple steps, you will see it still as a 2D variable, which has
+multiple steps. Nevertheless, multiple, consecutive steps can be read at once into
+a contigous memory with one read request, if needed.
 
 
 \section{Transport method} 
@@ -237,12 +280,15 @@ any of these changes to the XML file.
 \subsection{Declaration}
 
 The transport element is used to specify the mapping of an I/O transport method, 
-including optional initialization parameters, to the respective adios-group. There 
-are two major attributes required for the method element: 
+including optional initialization parameters, to the respective adios-group. 
+Either the term \verb+transport+ or \verb+method+ can be used for this element. 
+There are two major attributes required for the method element: 
 \begin{lstlisting}[language=XML]
-<transport group="restart"	method="MPI"
-	priority="1" 
-	iteration="100"/>
+<transport group="restart"
+    method="MPI"
+    priority="1" 
+    base-path="/proj/proj034/simdata/run256" 
+    iteration="100"/>
 \end{lstlisting}
 
 Required:
@@ -270,9 +316,9 @@ methods, described in Chapter \ref{chapter-methods}:
 \item MPI
 \item MPI-LUSTRE
 \item MPI-AMR
-\item PHDF5
-\item NC4 (NETCDF4)
-\item DATASPACES (DART)
+\item PHDF5 (for Parallel HDF5)
+\item NC4PAR (for Parallel NetCDF4)
+\item DATASPACES (or DART)
 \end{itemize}
 
 
@@ -290,7 +336,7 @@ define the buffer size: MB and free-memory-percentage.
 \subsection{Declaration}
 \begin{lstlisting}[language=XML]
 <buffer size-MB="100"
-	allocate-time="now" />
+    allocate-time="now" />
 \end{lstlisting}
 
 Required:
@@ -318,13 +364,15 @@ The histogram binning intervals can be input in two ways via the XML file:
 \item By listing the break points as a list of comma separated values 
 in the parameter \texttt{"}break-points\texttt{"} 
 \begin{lstlisting}[language=XML]
-<analysis adios-group="temperature" var="temperature"	break-points="0, 100, 200, 300" />
+<analysis adios-group="temperature" var="temperature"
+    break-points="0, 100, 200, 300" />
 \end{lstlisting}
 
 \item By specifying the boundaries of the breaks, and the number 
 of intervals between variable's min and max values
 \begin{lstlisting}[language=XML]
-<analysis adios-group="temperature" var="temperature"	min="0" max="300" count="3"/>
+<analysis adios-group="temperature" var="temperature"
+    min="0" max="300" count="3"/>
 \end{lstlisting}
 \end{itemize}
 
@@ -357,16 +405,24 @@ are provided.
 \section{An Example XML file}
 
 \begin{lstlisting}[language=XML, caption={Example XML file.}, label=list-example-xml]
-<adios-config host-language="C">	<adios-group name="temperature" coordination-communicator="comm">		<var name="NX" type="integer"/>		<var name="t" type="double" dimensions="NX"/>
-		<attribute name="recorded date" path="/" value="Sep 19, 2008" 
-			type="string"/> 
-		
-		<!-- conditional writing of a variable -->
-		<gwrite src="if (want_x) {" />			<var name="x" type="integer" dimensions="NX"/>		<gwrite src="}" />	</adios-group>
-	
-	<method group=" temperature " method="MPI"/>
-	
-	<buffer size-MB="1" allocate-time="now"/>	<analysis adios-group="temperature" var="t" break-points="0, 100, 200, 300"/> 
+<adios-config host-language="C">
+    <adios-group name="temperature" coordination-communicator="comm">
+        <var name="NX" type="integer"/>
+        <var name="t" type="double" dimensions="NX"/>
+        <attribute name="recorded date" path="/" value="Sep 19, 2008" 
+            type="string"/> 
+        
+        <!-- conditional writing of a variable -->
+        <gwrite src="if (want_x) {" />
+            <var name="x" type="integer" dimensions="NX"/>
+        <gwrite src="}" />
+    </adios-group>
+
+    
+    <method group=" temperature " method="MPI"/>
+    
+    <buffer size-MB="1" allocate-time="now"/>
+    <analysis adios-group="temperature" var="t" break-points="0, 100, 200, 300"/> 
 </adios-config>
 \end{lstlisting}
 
