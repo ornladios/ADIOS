@@ -168,7 +168,7 @@ module adios_read_mod
 
         subroutine adios_selection_delete (sel)
             implicit none
-            integer*8,      intent(out)          :: sel
+            integer*8,      intent(in)           :: sel
         end subroutine
 
     end interface
