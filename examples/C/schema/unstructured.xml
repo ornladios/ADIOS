@@ -1,168 +1,33 @@
 <?xml version="1.0"?>
 <adios-config host-language="C">
-    <adios-group name="schema" coordination-communicator="comm">
-    <var name="NX"   type="integer"/>
-    <var name="size" type="integer"/>
-    <var name="rank" type="integer"/>
-    <var name="mean" type="double"/>
-    <var name="date" type="string" gwrite="str"/>
+    <adios-group name="channel" coordination-communicator="comm">
+    <attribute name="Reference" path="/" value="http://people.sc.fsu.edu/~jburkardt/m_src/twod_to_vtk/twod_to_vtk.html"/>
+
+    <var name="npoints" type="integer"/>
     <var name="num_cells" type="integer"/>
-    <var name="N" type="double"/>
-    <var name="myct" type="double"/>
-    <var name="C1" type="double"/>
-    <var name="C2" type="double"/>
-    <var name="X1" type="double"/>
-    <var name="X2" type="double"/>
-    <var name="Y1" type="double"/>
-    <var name="XYZ" type="double"/>
-    <global-bounds  dimensions="size,NX" offsets="rank,0">
-        <var name="temperature" mesh="mesh1" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
-    </global-bounds>
+
+    <var name="Nspace" type="integer"/>
+  
+    <var name="U" mesh="mesh1" type="double" dimensions="npoints"/>
+    <var name="V" mesh="mesh1" type="double" dimensions="npoints"/>
+    <var name="T" mesh="mesh1" type="double" dimensions="npoints"/>
+
+    <var name="cells" type="integer" dimensions="num_cells,3"/>
+    <var name="points" type="float" dimensions="npoints,2"/>
+
+    <var name="points_X" type="float" dimensions="npoints"/>
+    <var name="points_Y" type="float" dimensions="npoints"/>
+
+
     <!-- Mesh1 is correct -->
     <mesh name="mesh1" type="unstructured" time-varying="no">
-        <nspace value="N" /> 
-        <points-multi-var value="X1,Y1" />
-        <uniform-cells count="num_cells" data="C1" type="myct" />
+        <nspace value="Nspace" /> 
+        <points-multi-var value="points_X,points_Y" />
+        <uniform-cells count="num_cells" data="cells" type="triangle" />
     </mesh>
-    <!-- Testing points-multi-var: START -->
-    <!-- Mesh1error0: points-multi-var expects at least 2 vars -->
-    <!--<mesh name="mesh1err0" type="unstructured" time-varying="no">
-        <nspace value="N" /> 
-        <points-multi-var value="Y1" />
-        <uniform-cells value="1" count="100" data="Y1" type="myct" />
-    </mesh>-->
-    <!-- Mesh1error1: points-multi-var expects at least 2 vars -->
-    <!--<mesh name="mesh1err1" type="unstructured" time-varying="no">
-        <nspace value="N" /> 
-        <points-multi-var value="2,Y1" />
-        <uniform-cells value="1" count="100" data="Y1" type="myct" />
-    </mesh>-->
-    <!-- Testing points-multi-var: END -->
-    <!-- Mesh2 is correct -->
-    <mesh name="mesh2" type="unstructured" time-varying="no">
-        <nspace value="N" /> 
-        <points-single-var value="X1" />
-        <uniform-cells count="100" data="Y1" type="myct" />
-    </mesh>
-    <!-- Testing points-single-var: START -->
-    <!-- Mesh2error0: variable XY does not exist  -->
-    <!--<mesh name="mesh2err0" type="unstructured" time-varying="no">
-        <nspace value="2" />
-        <points-single-var value="XY" />
-        <uniform-cells count="100" data="Y1" type="range" />
-    </mesh>-->
-    <!-- Mesh2error1: 25 is not a variable name  -->
-    <!--<mesh name="mesh2err1" type="unstructured" time-varying="no">
-        <nspace value="N" /> 
-        <points-single-var value="25" />
-        <uniform-cells count="100" data="Y1" type="myct" />
-    </mesh>-->
-    <!-- Mesh2error2: points-single-var requires either nspace or
-         number-of-points child tag.-->
-    <!--<mesh name="mesh2er2" type="unstructured" time-varying="no">
-        <points-single-var value="X1" />
-        <uniform-cells count="100" data="Y1" type="myct" />
-    </mesh>-->
-    <!-- Testing points-single-var: END -->
-    <!-- Testing uniform-cell: START -->
-    <!-- Mesh 3 is correct -->
-    <mesh name="mesh3" type="unstructured" time-varying="no">
-        <nspace value="3" />
-        <points-single-var value="X1" />
-        <uniform-cells count="num_cells" data="X1" type="triangle" />
-    </mesh>
-    <!-- Testing uniform-cell (type) -->
-    <!-- Mesh3error0 cell type should be between 1 and 8 -->
-    <!--<mesh name="mesh3error0" type="unstructured" time-varying="no">
-        <nspace value="3" />
-        <points-single-var value="X1" />
-        <number-of-points value="Y1" />
-        <uniform-cells count="X1" data="Y1" type="9" />
-    </mesh>-->
-    <!-- Mesh3ok1 using number of points and no nspace -->
-    <!--<mesh name="mesh3ok1" type="unstructured" time-varying="no">
-        <points-single-var value="X1" />
-        <number-of-points value="Y1" />
-        <uniform-cells count="X1" data="Y1" type="myct" />
-    </mesh>-->
-    <!-- Mesh3error1 variable mycty does not exist -->
-    <!--<mesh name="mesh3error1" type="unstructured" time-varying="no">
-        <nspace value="3" />
-        <points-single-var value="X1" />
-        <number-of-points value="Y1" />
-        <uniform-cells count="X1" data="Y1" type="mycty" />
-    </mesh>-->
-    <!-- Mesh3error2 cell type is required -->
-    <!--<mesh name="mesh3error2" type="unstructured" time-varying="no">
-        <nspace value="3" />
-        <points-single-var value="X1" />
-        <number-of-points value="Y1" />
-        <uniform-cells count="X1" data="Y1" />
-    </mesh>-->
-    <!-- Testing uniform-cell (data) -->
-    <!-- Mesh3error3 data cannot be a number -->
-    <!--<mesh name="mesh3error3" type="unstructured" time-varying="no">
-        <nspace value="3" />
-        <points-single-var value="X1" />
-        <number-of-points value="Y1" />
-        <uniform-cells count="num_cells" data="100" type="triangle" />
-    </mesh>-->
-    <!-- Mesh3error4 sinu variable does not exists -->
-    <!--<mesh name="mesh3error4" type="unstructured" time-varying="no">
-        <nspace value="3" />
-        <points-single-var value="X1" />
-        <number-of-points value="Y1" />
-        <uniform-cells count="100" data="data" type="triangle" />
-    </mesh>-->
-    <!-- Testing uniform-cell (count) -->
-    <!-- Mesh3error5 myc variable does not exists -->
-    <!--<mesh name="mesh3error5" type="unstructured" time-varying="no">
-        <nspace value="3" />
-        <points-single-var value="X1" />
-        <number-of-points value="Y1" />
-        <uniform-cells count="myc" data="data" type="triangle" />
-    </mesh>-->
-    <!-- Testing uniform-cell: END -->
-    <!-- Testing mixed-cell: START -->
-    <!-- Mesh 4 is correct -->
-    <mesh name="mesh4" type="unstructured" time-varying="no">
-        <points-single-var value="X1" />
-        <number-of-points value="25" />
-        <mixed-cells count="100,num_cells" data="Y1,X1" type="4,hex" />
-    </mesh>
-    <!-- Mesh4error0: data cannot be a number -->
-    <!--<mesh name="mesh4error0" type="unstructured" time-varying="no">
-        <points-single-var value="X1" />
-        <number-of-points value="25" />
-        <mixed-cells count="100,num_cells" data="100,X1" type="4,hex" />
-    </mesh>-->
-    <!-- Mesh4error1: variable X1i does not exist -->
-    <!--<mesh name="mesh4error1" type="unstructured" time-varying="no">
-        <points-single-var value="X1" />
-        <number-of-points value="25" />
-        <mixed-cells count="100,num_cells" data="X1,X1" type="4,hex" />
-    </mesh>-->
-    <!-- Mesh4error2: cell type should be >1 & <8 -->
-    <!--<mesh name="mesh4error2" type="unstructured" time-varying="no">
-        <points-single-var value="X1" />
-        <number-of-points value="25" />
-        <mixed-cells count="100,num_cells" data="Y1,X1" type="10,hex" />
-    </mesh>-->
-    <!-- Mesh4error3: if cell_set_count is N, schema expects N data vars  -->
-    <!--<mesh name="mesh4er3" type="unstructured" time-varying="no">
-        <points-single-var value="X1" />
-        <number-of-points value="25" />
-        <mixed-cells count="100,num_cells" data="C1" type="tri,hex" />
-    </mesh>-->
-    <!-- Mesh4error4: if cell_set_count is N, schema expects N types values  -->
-    <!--<mesh name="mesh4error4" type="unstructured" time-varying="no">
-        <points-single-var value="X1" />
-        <number-of-points value="25" />
-        <mixed-cells count="100,num_cells" data="C1,C2" type="hex" />
-    </mesh>-->
-    <!-- Testing mixed-cell: END -->
+
 </adios-group>
 
-<method group="schema" method="MPI"/>
+<method group="channel" method="MPI"/>
 <buffer size-MB="5" allocate-time="now"/>
 </adios-config>
