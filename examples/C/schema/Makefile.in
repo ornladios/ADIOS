@@ -36,7 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = schema_write$(EXEEXT)
+noinst_PROGRAMS = schema_write$(EXEEXT) unstructured$(EXEEXT)
 subdir = examples/C/schema
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -70,6 +70,10 @@ schema_write_OBJECTS = $(am_schema_write_OBJECTS)
 am__DEPENDENCIES_1 =
 schema_write_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1)
+am_unstructured_OBJECTS = unstructured.$(OBJEXT)
+unstructured_OBJECTS = $(am_unstructured_OBJECTS)
+unstructured_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -81,8 +85,8 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(schema_write_SOURCES)
-DIST_SOURCES = $(schema_write_SOURCES)
+SOURCES = $(schema_write_SOURCES) $(unstructured_SOURCES)
+DIST_SOURCES = $(schema_write_SOURCES) $(unstructured_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -326,8 +330,11 @@ AUTOMAKE_OPTIONS = no-dependencies
 schema_write_SOURCES = schema_write.c
 schema_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 schema_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+unstructured_SOURCES = unstructured.c
+unstructured_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+unstructured_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
-EXTRA_DIST = uniform.xml structured.xml rectilinear.xml unstructured.xml gwrite_temperature.ch 
+EXTRA_DIST = uniform.xml structured.xml rectilinear.xml unstructured.xml gwrite_temperature.ch
 all: all-am
 
 .SUFFIXES:
@@ -371,6 +378,9 @@ clean-noinstPROGRAMS:
 schema_write$(EXEEXT): $(schema_write_OBJECTS) $(schema_write_DEPENDENCIES) 
 	@rm -f schema_write$(EXEEXT)
 	$(LINK) $(schema_write_LDFLAGS) $(schema_write_OBJECTS) $(schema_write_LDADD) $(LIBS)
+unstructured$(EXEEXT): $(unstructured_OBJECTS) $(unstructured_DEPENDENCIES) 
+	@rm -f unstructured$(EXEEXT)
+	$(LINK) $(unstructured_LDFLAGS) $(unstructured_OBJECTS) $(unstructured_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
