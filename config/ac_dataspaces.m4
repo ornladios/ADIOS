@@ -71,14 +71,14 @@ else
     if test -n "${DATASPACES_INCDIR}"; then
             DATASPACES_CPPFLAGS="-I${DATASPACES_INCDIR}"
     else
-            AM_CONDITIONAL(HAVE_DATASPACES,false)
+            ac_dataspaces_ok=no
     fi
 
     dnl Add "-L" to DATASPACES_LIBDIR.
     if test -n "${DATASPACES_LIBDIR}"; then
             DATASPACES_LDFLAGS="-L${DATASPACES_LIBDIR}"
     else
-            AM_CONDITIONAL(HAVE_DATASPACES,false)
+            ac_dataspaces_ok=no
     fi
 
     save_CPPFLAGS="$CPPFLAGS"
