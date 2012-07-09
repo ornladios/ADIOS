@@ -436,7 +436,7 @@ int adios_check_reads (const ADIOS_FILE  * fp,
 void adios_free_chunk (ADIOS_VARCHUNK *chunk);
 
 
-/** Get an attribute in a group.
+/** Get an attribute in a file.
  *  This function does not read anything from the file but processes info
  *  already in memory after fopen.
  *  The memory for the data is allocated within the library.
