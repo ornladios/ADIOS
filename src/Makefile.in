@@ -1049,7 +1049,9 @@ METASOURCES = AUTO
 @HAVE_NSSI_TRUE@	$(ADIOSLIB_LDADD) $(NSSI_SERVER_LIBS)
 CLEANFILES = $(am__append_24) $(am__append_31) $(am__append_47)
 include_HEADERS = public/adios.h public/adios_types.h \
-	public/adios_read.h public/adios_error.h public/mpidummy.h
+	public/adios_read.h public/adios_error.h public/mpidummy.h \
+	public/adios_read_v1.h public/adios_read_v1_defs.h \
+	public/adios_read_v2.h public/adios_selection.h
 nodist_include_HEADERS = $(am__append_30) $(am__append_46)
 lib_LIBRARIES = $(am__append_2) $(am__append_3) libadiosread.a \
 	$(am__append_38) libadiosread_nompi.a $(am__append_54)
@@ -1252,8 +1254,6 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/futils.h core/globals.h core/ds_metadata.h \
              core/util.h \
-             public/adios_error.h public/adios_read_v1.h public/adios_read_v1_defs.h \
-             public/adios_read_v2.h public/adios_selection.h \
              nssi/adios_nssi_config.h nssi/aggregation.h 
 
 all: all-am
@@ -3547,6 +3547,9 @@ uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
 
 @BUILD_FORTRAN_TRUE@adios_read_mod.mod: core/adiosf_read_mod.F90
 @BUILD_FORTRAN_TRUE@	$(FC) -c core/adiosf_read_mod.F90
+
+#             public/adios_error.h public/adios_read_v1.h public/adios_read_v1_defs.h \
+#             public/adios_read_v2.h public/adios_selection.h 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

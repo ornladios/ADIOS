@@ -267,7 +267,11 @@ include_HEADERS += public/adios.h \
                    public/adios_types.h \
                    public/adios_read.h \
                    public/adios_error.h \
-                   public/mpidummy.h 
+                   public/mpidummy.h \
+                   public/adios_read_v1.h \
+                   public/adios_read_v1_defs.h \
+                   public/adios_read_v2.h \
+                   public/adios_selection.h
 
                    #adios_read_hooks.h \
                    #io_timer.h
@@ -497,7 +501,8 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/futils.h core/globals.h core/ds_metadata.h \
              core/util.h \
-             public/adios_error.h public/adios_read_v1.h public/adios_read_v1_defs.h \
-             public/adios_read_v2.h public/adios_selection.h \
              nssi/adios_nssi_config.h nssi/aggregation.h 
+
+#             public/adios_error.h public/adios_read_v1.h public/adios_read_v1_defs.h \
+#             public/adios_read_v2.h public/adios_selection.h 
 
