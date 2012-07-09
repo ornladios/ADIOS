@@ -24,7 +24,7 @@ cat << EOF > config.xml
     <attribute name="description" path="/temperature" value="Global array written from 'size' processes" type="string"/>
 </adios-group>
 
-<method group="temperature" method="POSIX"/>
+<method group="temperature" method="MPI"/>
 
 <buffer size-MB="2" allocate-time="now"/>
 

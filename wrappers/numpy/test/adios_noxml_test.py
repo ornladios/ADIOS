@@ -5,7 +5,7 @@ import numpy as np
 init_noxml()
 allocate_buffer(BUFFER_ALLOC_WHEN.NOW, 10)
 gid = declare_group ("temperature", "", FLAG.YES)
-select_method (gid, "POSIX", "", "")
+select_method (gid, "MPI", "", "")
 define_var (gid, "NX", "", DATATYPE.integer, "", "", "")
 define_var (gid, "size", "", DATATYPE.integer, "", "", "")
 define_var (gid, "rank", "", DATATYPE.integer, "", "", "")
