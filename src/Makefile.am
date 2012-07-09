@@ -491,10 +491,13 @@ CXX=$(MPICXX)
 
 
 EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
-             core/adios_internals.h core/adios_internals_mxml.h core/adios_socket.h \
+             core/adios_internals.h core/adios_internals_mxml.h core/adios_logger.h \
+             core/adios_read_hooks.h core/adios_socket.h core/adios_timing.h \
+             core/adios_transport_hooks.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/futils.h core/globals.h core/ds_metadata.h \
-             core/adios_transport_hooks.h \
-             public/adios_error.h \
+             core/util.h \
+             public/adios_error.h public/adios_read_v1.h public/adios_read_v1_defs.h \
+             public/adios_read_v2.h public/adios_selection.h \
              nssi/adios_nssi_config.h nssi/aggregation.h 
 
