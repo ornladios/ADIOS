@@ -16,8 +16,8 @@ public class AdiosTest
         long comm = Adios.MPI_COMM_WORLD();
         int rank = Adios.MPI_Comm_rank(comm);
         int size = Adios.MPI_Comm_size(comm);
-        System.out.println("[DEBUG] MPI rank/size = " + rank + " / " + size);
-        System.out.println("[DEBUG] MPI &comm     = " + comm);
+        //System.out.println("[DEBUG] MPI rank/size = " + rank + " / " + size);
+        //System.out.println("[DEBUG] MPI &comm     = " + comm);
 
         Adios.Init("config.xml");
         long adios_handle = Adios.Open ("temperature", "adios_global.bp", "w", comm);
@@ -48,17 +48,21 @@ public class AdiosTest
         
         System.out.println(">>> ADIOS Read API ... ");
 
+        System.out.println(">>> AdiosFile.open ... ");
         AdiosFile file = new AdiosFile();
         file.open("adios_global.bp", comm);
         
+        System.out.println(">>> AdiosGroup.open ... ");
         AdiosGroup group = new AdiosGroup(file);
         group.open("temperature");
 
+        System.out.println(">>> AdiosVarinfo.inq ... ");
         AdiosVarinfo var = new AdiosVarinfo(group);
         var.inq("temperature");
 
         long[] start = {0, 0};
         long[] count = {1, 10};
+        System.out.println(">>> AdiosVarinfo.read ... ");
         double[] output = var.read(start, count);
 
         System.out.println("temperature.length = " + output.length);
@@ -66,6 +70,7 @@ public class AdiosTest
             System.out.println("temperature[" + i + "] = " + output[i]);
         }
 
+        System.out.println(">>> AdiosVarinfo.inq ... ");
         AdiosVarinfo var2 = new AdiosVarinfo(group);
         var2.inq("NX");
         System.out.println("NX = " + var2.read());

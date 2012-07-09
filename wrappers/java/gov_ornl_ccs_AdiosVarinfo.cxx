@@ -53,26 +53,14 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_AdiosVarinfo_adios_1inq_1var
     fid = env->GetFieldID(cls, "dims", "[J");
     env->SetObjectField(obj, fid, dims);
 
-    jbyteArray value = env->NewByteArray(8);
-    env->SetByteArrayRegion(value, 0, 8, (jbyte *) vp->value);
+    if (vp->ndim == 0) {
+        int size = adios_type_size(vp->type, NULL);
+        jbyteArray value = env->NewByteArray(size);
+        env->SetByteArrayRegion(value, 0, size, (jbyte *) vp->value);
 
-    /*
-    jbyte * p = (jbyte*) vp->value;
-    std::cout << (int) p[0] << std::endl;
-    std::cout << (int) p[1] << std::endl;
-    std::cout << (int) p[2] << std::endl;
-    std::cout << (int) p[3] << std::endl;
-    std::cout << *((int *) vp->value) << std::endl;
-
-    p = env->GetByteArrayElements(value, NULL);
-    std::cout << (int) p[0] << std::endl;
-    std::cout << (int) p[1] << std::endl;
-    std::cout << (int) p[2] << std::endl;
-    std::cout << (int) p[3] << std::endl;
-    */
-
-    fid = env->GetFieldID(cls, "value", "[B");
-    env->SetObjectField(obj, fid, value);
+        fid = env->GetFieldID(cls, "value", "[B");
+        env->SetObjectField(obj, fid, value);
+    } 
 
     return 0;
 }
