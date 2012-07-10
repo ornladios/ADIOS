@@ -36,7 +36,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = schema_write$(EXEEXT) unstructured$(EXEEXT)
+noinst_PROGRAMS = uniform$(EXEEXT) rectilinear$(EXEEXT) \
+	structured$(EXEEXT) unstructured$(EXEEXT)
 subdir = examples/C/schema
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -65,10 +66,18 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_schema_write_OBJECTS = schema_write.$(OBJEXT)
-schema_write_OBJECTS = $(am_schema_write_OBJECTS)
+am_rectilinear_OBJECTS = rectilinear.$(OBJEXT)
+rectilinear_OBJECTS = $(am_rectilinear_OBJECTS)
 am__DEPENDENCIES_1 =
-schema_write_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+rectilinear_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+am_structured_OBJECTS = structured.$(OBJEXT)
+structured_OBJECTS = $(am_structured_OBJECTS)
+structured_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+am_uniform_OBJECTS = uniform.$(OBJEXT)
+uniform_OBJECTS = $(am_uniform_OBJECTS)
+uniform_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1)
 am_unstructured_OBJECTS = unstructured.$(OBJEXT)
 unstructured_OBJECTS = $(am_unstructured_OBJECTS)
@@ -85,8 +94,10 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(schema_write_SOURCES) $(unstructured_SOURCES)
-DIST_SOURCES = $(schema_write_SOURCES) $(unstructured_SOURCES)
+SOURCES = $(rectilinear_SOURCES) $(structured_SOURCES) \
+	$(uniform_SOURCES) $(unstructured_SOURCES)
+DIST_SOURCES = $(rectilinear_SOURCES) $(structured_SOURCES) \
+	$(uniform_SOURCES) $(unstructured_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -327,14 +338,20 @@ target_alias = @target_alias@
 INCLUDES = $(all_includes) -I$(top_builddir)/src \
 	-I$(top_builddir)/src/public
 AUTOMAKE_OPTIONS = no-dependencies
-schema_write_SOURCES = schema_write.c
-schema_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-schema_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+uniform_SOURCES = uniform.c
+uniform_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+uniform_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+rectilinear_SOURCES = rectilinear.c
+rectilinear_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+rectilinear_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+structured_SOURCES = structured.c
+structured_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+structured_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 unstructured_SOURCES = unstructured.c
 unstructured_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 unstructured_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
-EXTRA_DIST = uniform.xml structured.xml rectilinear.xml unstructured.xml gwrite_temperature.ch
+EXTRA_DIST = uniform.xml structured.xml rectilinear.xml unstructured.xml 
 all: all-am
 
 .SUFFIXES:
@@ -375,9 +392,15 @@ clean-noinstPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-schema_write$(EXEEXT): $(schema_write_OBJECTS) $(schema_write_DEPENDENCIES) 
-	@rm -f schema_write$(EXEEXT)
-	$(LINK) $(schema_write_LDFLAGS) $(schema_write_OBJECTS) $(schema_write_LDADD) $(LIBS)
+rectilinear$(EXEEXT): $(rectilinear_OBJECTS) $(rectilinear_DEPENDENCIES) 
+	@rm -f rectilinear$(EXEEXT)
+	$(LINK) $(rectilinear_LDFLAGS) $(rectilinear_OBJECTS) $(rectilinear_LDADD) $(LIBS)
+structured$(EXEEXT): $(structured_OBJECTS) $(structured_DEPENDENCIES) 
+	@rm -f structured$(EXEEXT)
+	$(LINK) $(structured_LDFLAGS) $(structured_OBJECTS) $(structured_LDADD) $(LIBS)
+uniform$(EXEEXT): $(uniform_OBJECTS) $(uniform_DEPENDENCIES) 
+	@rm -f uniform$(EXEEXT)
+	$(LINK) $(uniform_LDFLAGS) $(uniform_OBJECTS) $(uniform_LDADD) $(LIBS)
 unstructured$(EXEEXT): $(unstructured_OBJECTS) $(unstructured_DEPENDENCIES) 
 	@rm -f unstructured$(EXEEXT)
 	$(LINK) $(unstructured_LDFLAGS) $(unstructured_OBJECTS) $(unstructured_LDADD) $(LIBS)

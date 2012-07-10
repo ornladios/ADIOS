@@ -3,12 +3,22 @@ INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-noinst_PROGRAMS = schema_write unstructured
+noinst_PROGRAMS = uniform rectilinear structured unstructured
 
-schema_write_SOURCES = schema_write.c
-schema_write_LDADD = $(top_builddir)/src/libadios.a 
-schema_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-schema_write_LDADD += $(ADIOSLIB_LDADD)
+uniform_SOURCES = uniform.c
+uniform_LDADD = $(top_builddir)/src/libadios.a 
+uniform_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+uniform_LDADD += $(ADIOSLIB_LDADD)
+
+rectilinear_SOURCES = rectilinear.c
+rectilinear_LDADD = $(top_builddir)/src/libadios.a 
+rectilinear_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+rectilinear_LDADD += $(ADIOSLIB_LDADD)
+
+structured_SOURCES = structured.c
+structured_LDADD = $(top_builddir)/src/libadios.a 
+structured_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+structured_LDADD += $(ADIOSLIB_LDADD)
 
 unstructured_SOURCES = unstructured.c
 unstructured_LDADD = $(top_builddir)/src/libadios.a 
@@ -17,5 +27,5 @@ unstructured_LDADD += $(ADIOSLIB_LDADD)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = uniform.xml structured.xml rectilinear.xml unstructured.xml gwrite_temperature.ch
+EXTRA_DIST = uniform.xml structured.xml rectilinear.xml unstructured.xml 
 

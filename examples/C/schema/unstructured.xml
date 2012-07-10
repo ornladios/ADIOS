@@ -19,7 +19,11 @@
     <var name="points_Y" type="float" dimensions="npoints"/>
 
 
-    <!-- Mesh1 is correct -->
+    <!-- Mesh1: 
+         - nspace
+         - points-multi-var
+         - uniform-cells
+    -->
     <mesh name="mesh1" type="unstructured" time-varying="no">
         <nspace value="Nspace" /> 
         <points-multi-var value="points_X,points_Y" />
