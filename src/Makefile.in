@@ -570,7 +570,7 @@ am__libadiosreadf_a_SOURCES_DIST = core/adios_bp_v1.c \
 	read/read_bp.c read/read_bp_staged.c read/read_bp_staged1.c \
 	read/read_dataspaces.c read/read_dimes.c read/read_datatap.c \
 	nssi/adios_nssi_config.c read/read_nssi.c core/adiosf_read.c \
-	core/adiosf_defs_mod.F90 core/adiosf_reads_mod.F90
+	core/adiosf_defs_mod.F90 core/adiosf_read_mod.F90
 @BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_35 = libadiosreadf_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_36 = libadiosreadf_a-read_dimes.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_37 = libadiosreadf_a-read_datatap.$(OBJEXT)
@@ -595,7 +595,7 @@ am__libadiosreadf_a_SOURCES_DIST = core/adios_bp_v1.c \
 @BUILD_FORTRAN_TRUE@am_libadiosreadf_a_OBJECTS = $(am__objects_39) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-adiosf_read.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-adiosf_defs_mod.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	libadiosreadf_a-adiosf_reads_mod.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@	libadiosreadf_a-adiosf_read_mod.$(OBJEXT)
 am__dist_libadiosreadf_a_SOURCES_DIST = nssi/adios_nssi_args.x
 dist_libadiosreadf_a_OBJECTS =
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@nodist_libadiosreadf_a_OBJECTS = libadiosreadf_a-adios_nssi_args.$(OBJEXT)
@@ -1191,7 +1191,7 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c core/adios_endianness.c \
 @BUILD_FORTRAN_TRUE@libadiosreadf_a_SOURCES = $(FortranReadLibSource) \
 @BUILD_FORTRAN_TRUE@	core/adiosf_read.c \
 @BUILD_FORTRAN_TRUE@	core/adiosf_defs_mod.F90 \
-@BUILD_FORTRAN_TRUE@	core/adiosf_reads_mod.F90
+@BUILD_FORTRAN_TRUE@	core/adiosf_read_mod.F90
 @BUILD_FORTRAN_TRUE@libadiosreadf_v1_a_SOURCES = $(FortranReadLibSource) core/adiosf_read_v1.c
 @BUILD_FORTRAN_TRUE@libadiosreadf_v1_a_CPPFLAGS = $(libadiosreadf_a_CPPFLAGS)
 @BUILD_FORTRAN_TRUE@libadiosreadf_v1_a_CFLAGS = $(libadiosreadf_a_CFLAGS)
@@ -1446,11 +1446,11 @@ libadiosreadf_a-adiosf_defs_mod.o: core/adiosf_defs_mod.F90
 libadiosreadf_a-adiosf_defs_mod.obj: core/adiosf_defs_mod.F90
 	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o libadiosreadf_a-adiosf_defs_mod.obj `if test -f 'core/adiosf_defs_mod.F90'; then $(CYGPATH_W) 'core/adiosf_defs_mod.F90'; else $(CYGPATH_W) '$(srcdir)/core/adiosf_defs_mod.F90'; fi`
 
-libadiosreadf_a-adiosf_reads_mod.o: core/adiosf_reads_mod.F90
-	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o libadiosreadf_a-adiosf_reads_mod.o `test -f 'core/adiosf_reads_mod.F90' || echo '$(srcdir)/'`core/adiosf_reads_mod.F90
+libadiosreadf_a-adiosf_read_mod.o: core/adiosf_read_mod.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o libadiosreadf_a-adiosf_read_mod.o `test -f 'core/adiosf_read_mod.F90' || echo '$(srcdir)/'`core/adiosf_read_mod.F90
 
-libadiosreadf_a-adiosf_reads_mod.obj: core/adiosf_reads_mod.F90
-	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o libadiosreadf_a-adiosf_reads_mod.obj `if test -f 'core/adiosf_reads_mod.F90'; then $(CYGPATH_W) 'core/adiosf_reads_mod.F90'; else $(CYGPATH_W) '$(srcdir)/core/adiosf_reads_mod.F90'; fi`
+libadiosreadf_a-adiosf_read_mod.obj: core/adiosf_read_mod.F90
+	$(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS) -c -o libadiosreadf_a-adiosf_read_mod.obj `if test -f 'core/adiosf_read_mod.F90'; then $(CYGPATH_W) 'core/adiosf_read_mod.F90'; else $(CYGPATH_W) '$(srcdir)/core/adiosf_read_mod.F90'; fi`
 
 .c.o:
 	$(COMPILE) -c $<

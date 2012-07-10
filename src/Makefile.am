@@ -356,7 +356,7 @@ libadiosreadf_v1_a_CPPFLAGS = $(libadiosreadf_a_CPPFLAGS)
 libadiosreadf_v1_a_CFLAGS = $(libadiosreadf_a_CFLAGS)
 
 libadiosreadf_a_SOURCES += core/adiosf_defs_mod.F90 \
-                           core/adiosf_reads_mod.F90
+                           core/adiosf_read_mod.F90
 
 #nodist_libadiosreadf_a_SOURCES += adios_read_mod.mod
 nodist_include_HEADERS += adios_read_mod.mod adios_defs_mod.mod
