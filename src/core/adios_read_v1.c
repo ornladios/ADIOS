@@ -464,14 +464,14 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
 
     if (vix == NULL)
     {
-        fprintf(stderr, "Variable not defined\n");
+	adios_error(err_invalid_argument, "Variable not defined\n");
         return 0;
     }
 
     // If the vix and viy are not time series objects, return.
     if ((vix->timedim < 0) && (viy->timedim < 0))
     {             
-        fprintf(stderr, "Covariance must involve timeseries data\n");
+        adios_error(err_invalid_argument, "Covariance must involve timeseries data\n");
         return 0;
     }                                                                    
 
@@ -482,7 +482,7 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
     if(time_start == 0 && time_end == 0) 
     { //global covariance
         if(viy == NULL) {
-            fprintf(stderr, "Must have two variables for global covariance\n");
+            adios_error(err_invalid_argument, "Must have two variables for global covariance\n");
             return 0;
         }                                                                          
 
@@ -500,7 +500,7 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
         {
             if(! (time_end+lag) > min)
             {                                                                        
-                fprintf(stderr, "Must leave enough timesteps for lag\n");
+                adios_error(err_invalid_timestep, "Must leave enough timesteps for lag\n");
                 return 0;
             }
 
@@ -574,7 +574,7 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
             }
             else
             {
-                fprintf (stderr, "Unknown characteristic\n");
+                adios_error(err_unknown_char, "Unknown characteristic\n");
                 return 0;
             }
             return cov / (sqrt (var_x) * sqrt (var_lag));
@@ -647,7 +647,7 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
             }
             else
             {
-                fprintf (stderr, "Unknown characteristic\n");
+                adios_error(err_unknown_char, "Unknown characteristic\n");
                 return 0;
             }
             return cov / (sqrt (var_x) * sqrt (var_y));
@@ -655,7 +655,7 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
     }
     else
     {
-        fprintf (stderr, "Time values out of bounds\n");
+        adios_error(err_invalid_timestep, "Time values out of bounds\n");
         return 0;
     }
 }
@@ -671,14 +671,14 @@ double adios_stat_cov_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
 
     if (vix == NULL)
     {
-        fprintf(stderr, "Variable not defined\n");
+        adios_error(err_invalid_argument, "Variable not defined\n");
         return 0;
     }
 
     // If the vix and viy are not time series objects, return.
     if ((vix->timedim < 0) && (viy->timedim < 0))
     {             
-        fprintf(stderr, "Covariance must involve timeseries data\n");
+        adios_error(err_invalid_argument, "Covariance must involve timeseries data\n");
         return 0;
     }                                                                    
 
@@ -689,7 +689,7 @@ double adios_stat_cov_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
     if(time_start == 0 && time_end == 0) 
     { //global covariance
         if(viy == NULL) {
-            fprintf(stderr, "Must have two variables for global covariance\n");
+            adios_error(err_invalid_argument, "Must have two variables for global covariance\n");
             return 0;
         }                                                                          
 
@@ -707,7 +707,7 @@ double adios_stat_cov_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
         {
             if(! (time_end+lag) > min)
             {                                                                        
-                fprintf(stderr, "Must leave enough timesteps for lag\n");
+                adios_error(err_invalid_timestep, "Must leave enough timesteps for lag\n");
                 return 0;
             }
 
@@ -757,7 +757,7 @@ double adios_stat_cov_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
             }
             else
             {
-                fprintf (stderr, "Unknown characteristic\n");
+                adios_error(err_unknown_char, "Unknown characteristic\n");
                 return 0;
             }
         }
@@ -813,14 +813,14 @@ double adios_stat_cov_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
             }
             else
             {
-                fprintf (stderr, "Unknown characteristic\n");
+                adios_error(err_unknown_char, "Unknown characteristic\n");
                 return 0;
             }
         }
     }
     else
     {
-        fprintf (stderr, "Time values out of bounds\n");
+        adios_error(err_invalid_timestep, "Time values out of bounds\n");
     }
     return cov;
 }
