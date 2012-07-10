@@ -42,6 +42,8 @@ enum ADIOS_ERRCODES {
     err_too_many_files                  = -24, /* some staging methods allow for using only
                                                   a fixed number of different filenames    */
 
+    err_unknown_char                    = -30,
+
     // XML parsing errors
     err_invalid_host_language           = 50,
     err_global_dim_required             = 51,
