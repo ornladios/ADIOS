@@ -53,7 +53,7 @@ if (!strcasecmp (n, attr->name)) {                           \
     }                                                        \
     else                                                     \
     {                                                        \
-        fprintf (stderr, "xml: duplicate attribute %s on %s (ignored)",n,en); \
+        log_warn ("xml: duplicate attribute %s on %s (ignored)",n,en); \
         continue;                                            \
     }                                                        \
 }
@@ -130,7 +130,7 @@ static enum ADIOS_DATATYPES parseType (const char * type, const char * name)
        )
         return adios_double_complex;
 
-    fprintf (stderr, "config.xml: invalid type: %s in var %s\n", type, name);
+    log_error ("config.xml: invalid type: %s in var %s\n", type, name);
 
     return adios_unknown;
 }
@@ -148,7 +148,7 @@ static enum ADIOS_FLAG parseFlag (const char * attr_name, const char * flag
     if (!strcasecmp (flag, "no"))
         return adios_flag_no;
 
-    fprintf (stderr, "config.xml: %s must have a value of 'yes' or 'no' "
+    log_error ("config.xml: %s must have a value of 'yes' or 'no' "
                      "not: %s\n", attr_name, flag
             );
 
@@ -228,7 +228,7 @@ static int parseMeshUniformDimensions (const char * dimensions
 
     if (!dimensions)
     {
-        fprintf (stderr, "config.xml: dimensions value required for"
+        log_warn ("config.xml: dimensions value required for"
                          "uniform mesh: %s\n"
                          ,name
                 );
@@ -248,7 +248,7 @@ static int parseMeshUniformDimensions (const char * dimensions
 
         if (!item)
         {
-            fprintf (stderr, "Out of memory parseMeshUniformDimensions of mesh: %s\n"
+            log_warn ("Out of memory parseMeshUniformDimensions of mesh: %s\n"
                              ,name
                     );
             free (d1);
@@ -265,7 +265,7 @@ static int parseMeshUniformDimensions (const char * dimensions
                                            );
             if (!item->item.var)
             {
-                fprintf (stderr, "config.xml: invalid variable %s\n"
+                log_warn ("config.xml: invalid variable %s\n"
                                  "for dimensions of mesh: %s\n"
                                  ,c
                                  ,name
@@ -336,7 +336,7 @@ static int parseMeshUniformMaxima (const char * maximum
 
     if (!maximum)
     {
-        fprintf (stderr, "config.xml: maximum value required"
+         log_warn ("config.xml: maximum value required"
                          "for uniform mesh: %s\n"
                          ,name
                 );
@@ -356,7 +356,7 @@ static int parseMeshUniformMaxima (const char * maximum
 
         if (!item)
         {
-            fprintf (stderr, "Out of memory parseMeshUniformMaxima of mesh: %s\n"
+            log_warn ("Out of memory parseMeshUniformMaxima of mesh: %s\n"
                              ,name
                     );
             free (d1);
@@ -372,7 +372,7 @@ static int parseMeshUniformMaxima (const char * maximum
                                            );
             if (!item->item.var)
             {
-                fprintf (stderr, "config.xml: invalid variable %s for maximum\n"
+                log_warn ("config.xml: invalid variable %s for maximum\n"
                                  "of mesh: %s\n"
                                  ,c
                                  ,name
@@ -440,7 +440,7 @@ static int parseMeshUniformOrigin (const char * origin
 
     if (!origin)
     {
-        fprintf (stderr, "config.xml: origin value required "
+        log_warn ("config.xml: origin value required "
                          "for uniform mesh: %s\n"
                          ,name
                 );
@@ -460,7 +460,7 @@ static int parseMeshUniformOrigin (const char * origin
 
         if (!item)
         {
-            fprintf (stderr, "Out of memory parseMeshUniformOrigin of mesh: %s\n", name);
+            log_warn ("Out of memory parseMeshUniformOrigin of mesh: %s\n", name);
             free (d1);
 
             return 0;
@@ -475,7 +475,7 @@ static int parseMeshUniformOrigin (const char * origin
                                            );
             if (!item->item.var)
             {
-                fprintf (stderr, "config.xml: invalid variable %s for origin\n"
+                log_warn ("config.xml: invalid variable %s for origin\n"
                         "of mesh: %s\n"
                         ,c
                         ,name
@@ -543,7 +543,7 @@ static int parseMeshUniformSpacing (const char * spacing
 
     if (!spacing)
     {
-        fprintf (stderr, "config.xml: mesh uniform spacing value "
+        log_warn ("config.xml: mesh uniform spacing value "
                 "required for mesh: %s\n"
                 ,name
                 );
@@ -562,7 +562,7 @@ static int parseMeshUniformSpacing (const char * spacing
 
         if (!item)
         {
-            fprintf (stderr, "Out of memory parseMeshUniformSpacing for mesh: %s\n", name);
+            log_warn ("Out of memory parseMeshUniformSpacing for mesh: %s\n", name);
             free (d1);
 
             return 0;
@@ -577,7 +577,7 @@ static int parseMeshUniformSpacing (const char * spacing
                                            );
             if (!item->item.var)
             {
-                fprintf (stderr, "config.xml: invalid variable: %s for spacing\n"
+                log_warn ("config.xml: invalid variable: %s for spacing\n"
                                  "of mesh: %s\n"
                                  ,c
                                  ,name
@@ -646,7 +646,7 @@ static int parseMeshRectilinearDimensions (const char * dimensions
 
     if (!dimensions)
     {
-        fprintf (stderr, "config.xml: dimensions value required"
+        log_warn ("config.xml: dimensions value required"
                          "for rectilinear mesh: %s\n"
                          ,name
                 );
@@ -666,7 +666,7 @@ static int parseMeshRectilinearDimensions (const char * dimensions
 
         if (!item)
         {
-            fprintf (stderr, "Out of memory parseMeshRectilinearDimensions for mesh: %s\n"
+            log_warn ("Out of memory parseMeshRectilinearDimensions for mesh: %s\n"
                              ,name
                              );
             free (d1);
@@ -683,7 +683,7 @@ static int parseMeshRectilinearDimensions (const char * dimensions
                                            );
             if (!item->item.var)
             {
-                fprintf (stderr, "config.xml: invalid variable: %s for dimensions\n"
+                log_warn ("config.xml: invalid variable: %s for dimensions\n"
                                  "of mesh: %s\n"
                                  ,c
                                  ,name
@@ -752,7 +752,7 @@ static int parseMeshRectilinearCoordinatesMultiVar (const char * coordinates
 
     if (!coordinates)
     {
-        fprintf (stderr, "config.xml: coordinates-multi-var value required"
+        log_warn ("config.xml: coordinates-multi-var value required"
                          "for rectilinear mesh: %s\n"
                          ,name
                 );
@@ -772,7 +772,7 @@ static int parseMeshRectilinearCoordinatesMultiVar (const char * coordinates
 
         if (!var)
         {
-            fprintf (stderr, "Out of memory parseMeshRectilinearCoordinatesMultiVar\n"
+            log_warn ("Out of memory parseMeshRectilinearCoordinatesMultiVar\n"
                              "for mesh: %s"
                              ,name
                     );
@@ -789,7 +789,7 @@ static int parseMeshRectilinearCoordinatesMultiVar (const char * coordinates
                                            );
             if (!var->var)
             {
-                fprintf (stderr, "config.xml: invalid variable: %s for coordinates\n"
+                log_warn ("config.xml: invalid variable: %s for coordinates\n"
                                  "of mesh: %s\n"
                                  ,c
                                  ,name
@@ -812,7 +812,7 @@ static int parseMeshRectilinearCoordinatesMultiVar (const char * coordinates
         else
         {
             var->var = 0;
-            fprintf (stderr, "config.xml: invalid variable: %s for coordinates"
+            log_warn ("config.xml: invalid variable: %s for coordinates"
                              "of rectilinear mesh: %s\n"
                              ,c
                              ,name
@@ -837,7 +837,7 @@ static int parseMeshRectilinearCoordinatesMultiVar (const char * coordinates
         free (coords);
     } else
     {
-        fprintf (stderr, "config.xml: coordinates-multi-var expects "
+        log_warn ("config.xml: coordinates-multi-var expects "
                          "at least 2 variables (%s)\n"
                          ,name
                 );
@@ -863,7 +863,7 @@ static int parseMeshRectilinearCoordinatesSingleVar (const char * coordinates
 
     if (!coordinates)
     {
-        fprintf (stderr, "config.xml: coordinates-single-var value required"
+        log_warn ("config.xml: coordinates-single-var value required"
                          "for rectilinear mesh: %s\n"
                          ,name
                 );
@@ -879,7 +879,7 @@ static int parseMeshRectilinearCoordinatesSingleVar (const char * coordinates
 
     if (!var)
     {
-        fprintf (stderr, "Out of memory parseMeschRectilinearCoordinatesSingleVar\n");
+        log_warn ("Out of memory parseMeschRectilinearCoordinatesSingleVar\n");
         free (d1);
 
         return 0;
@@ -893,7 +893,7 @@ static int parseMeshRectilinearCoordinatesSingleVar (const char * coordinates
                                       );
         if (!var->var)
         {
-            fprintf (stderr, "config.xml: invalid variable: %s for coordinates"
+            log_warn ("config.xml: invalid variable: %s for coordinates"
                              "of mesh: %s\n"
                              ,d1
                              ,name
@@ -912,7 +912,7 @@ static int parseMeshRectilinearCoordinatesSingleVar (const char * coordinates
     else
     {
         var->var = 0;
-        fprintf (stderr, "config.xml: invalid variable: %s for coordinates of mesh: %s\n"
+        log_warn ("config.xml: invalid variable: %s for coordinates of mesh: %s\n"
                                  ,d1
                                  ,name
                 );
@@ -940,7 +940,7 @@ static int parseMeshStructuredNspace (const char * nspace
 
     if (!nspace)
     {
-        fprintf (stderr, "config.xml: npsace value required "
+        log_warn ("config.xml: npsace value required "
                          "for structured mesh: %s\n"
                          ,name
                 );
@@ -955,7 +955,7 @@ static int parseMeshStructuredNspace (const char * nspace
 
     if (!item)
     {
-        fprintf (stderr, "Out of memory parseMeshStructuredNspace for mesh: %s\n", name);
+        log_warn ("Out of memory parseMeshStructuredNspace for mesh: %s\n", name);
         free (d1);
 
         return 0;
@@ -972,7 +972,7 @@ static int parseMeshStructuredNspace (const char * nspace
                                        );
         if (!item->var)
         {
-           fprintf (stderr, "config.xml: invalid variable: %s for nspace of mesh: %s\n"
+           log_warn ("config.xml: invalid variable: %s for nspace of mesh: %s\n"
                             ,nspace
                             ,name
                    );
@@ -1017,7 +1017,7 @@ static int parseMeshStructuredDimensions (const char * dimensions
 
     if (!dimensions)
     {
-        fprintf (stderr, "config.xml: dimensions value required"
+        log_warn ("config.xml: dimensions value required"
                          "for structured mesh: %s\n"
                          ,name
                 );
@@ -1037,7 +1037,7 @@ static int parseMeshStructuredDimensions (const char * dimensions
 
         if (!item)
         {
-            fprintf (stderr, "Out of memory parseMeshStructuredDimensions of mesh: %s\n"
+            log_warn ("Out of memory parseMeshStructuredDimensions of mesh: %s\n"
                              ,name
                     );
             free (d1);
@@ -1054,7 +1054,7 @@ static int parseMeshStructuredDimensions (const char * dimensions
                                            );
             if (!item->item.var)
             {
-                fprintf (stderr, "config.xml: invalid variable: %s for dimensions\n"
+                log_warn ("config.xml: invalid variable: %s for dimensions\n"
                                  "of mesh: %s\n"
                                  ,c
                                  ,name
@@ -1125,7 +1125,7 @@ static int parseMeshStructuredPointsMultiVar (const char * points
 
     if (!points)
     {
-        fprintf (stderr, "config.xml: points-multi-var value required"
+        log_warn ("config.xml: points-multi-var value required"
                          "for structured mesh: %s\n"
                          ,name
                 );
@@ -1145,7 +1145,7 @@ static int parseMeshStructuredPointsMultiVar (const char * points
 
         if (!var)
         {
-            fprintf (stderr, "Out of memory parseMeshStructuredPointsMultiVar"
+            log_warn ("Out of memory parseMeshStructuredPointsMultiVar"
                              "of mesh: %s\n"
                              ,name
                     );
@@ -1162,7 +1162,7 @@ static int parseMeshStructuredPointsMultiVar (const char * points
                                            );
             if (!var->var)
             {
-                fprintf (stderr, "config.xml: invalid variable: %s points of mesh: %s\n"
+                log_warn ("config.xml: invalid variable: %s points of mesh: %s\n"
                                  ,c
                                  ,name
                         );
@@ -1184,7 +1184,7 @@ static int parseMeshStructuredPointsMultiVar (const char * points
         else
         {
             var->var = 0;
-            fprintf (stderr, "config.xml: invalid variable: %s for points of mesh: %s\n"
+            log_warn ("config.xml: invalid variable: %s for points of mesh: %s\n"
                              ,c
                              ,name
                     );
@@ -1209,7 +1209,7 @@ static int parseMeshStructuredPointsMultiVar (const char * points
         free (pts);
     } else
     {
-            fprintf (stderr, "config.xml: points-multi-var tag for mesh: %s "
+            log_warn ("config.xml: points-multi-var tag for mesh: %s "
                              " expects at least 2 variables\n"
                              ,name
                     );
@@ -1237,7 +1237,7 @@ static int parseMeshStructuredPointsSingleVar (const char * points
 
     if (!points)
     {
-        fprintf (stderr, "config.xml: points-single-var value required"
+        log_warn ("config.xml: points-single-var value required"
                          "for structured mesh: %s\n"
                          ,name
                 );
@@ -1253,7 +1253,7 @@ static int parseMeshStructuredPointsSingleVar (const char * points
 
     if (!var)
     {
-        fprintf (stderr, "Out of memory parseMeshStructuredPointsSingleVar"
+        log_warn ("Out of memory parseMeshStructuredPointsSingleVar"
                          "for mesh: %s\n"
                          ,name
                 );
@@ -1270,7 +1270,7 @@ static int parseMeshStructuredPointsSingleVar (const char * points
                                       );
         if (!var->var)
         {
-            fprintf (stderr, "config.xml: invalid variable: %s for points of mesh: %s\n"
+            log_warn ("config.xml: invalid variable: %s for points of mesh: %s\n"
                              ,d1
                              ,name
                     );
@@ -1288,7 +1288,7 @@ static int parseMeshStructuredPointsSingleVar (const char * points
     else
     {
         var->var = 0;
-        fprintf (stderr, "config.xml: invalid variable: %s for points of mesh: %s\n"
+        log_warn ("config.xml: invalid variable: %s for points of mesh: %s\n"
                          ,d1
                          ,name
                 );
@@ -1317,7 +1317,7 @@ static int parseMeshUnstructuredNspace (const char * nspace
 
     if (!nspace)
     {
-        fprintf (stderr, "config.xml: nspace value required"
+        log_warn ("config.xml: nspace value required"
                          "for unstructured mesh: %s\n"
                          ,name
                 );
@@ -1332,7 +1332,7 @@ static int parseMeshUnstructuredNspace (const char * nspace
 
     if (!item)
     {
-        fprintf (stderr, "Out of memory parseMeshUnstructuredNspace for mesh: %s\n"
+        log_warn ("Out of memory parseMeshUnstructuredNspace for mesh: %s\n"
                          ,name
                 );
         free (d1);
@@ -1351,7 +1351,7 @@ static int parseMeshUnstructuredNspace (const char * nspace
                                        );
         if (!item->var)
         {
-           fprintf (stderr, "config.xml: invalid variable: %s for nspace of mesh: %s\n"
+           log_warn ("config.xml: invalid variable: %s for nspace of mesh: %s\n"
                             ,nspace
                             ,name
                    );
@@ -1392,7 +1392,7 @@ static int parseMeshUnstructuredNpoints (const char * npoints
 
     if (!npoints)
     {
-        fprintf (stderr, "config.xml: npoints value required"
+        log_warn ("config.xml: npoints value required"
                          "for unstructured mesh\n"
                          ,name
                 );
@@ -1407,7 +1407,7 @@ static int parseMeshUnstructuredNpoints (const char * npoints
 
     if (!item)
     {
-        fprintf (stderr, "Out of memory parseMeshUnstructuredNpoints for mesh: %s\n"
+        log_warn ("Out of memory parseMeshUnstructuredNpoints for mesh: %s\n"
                          ,name
                 );
         free (d1);
@@ -1426,7 +1426,7 @@ static int parseMeshUnstructuredNpoints (const char * npoints
                                        );
         if (!item->var)
         {
-           fprintf (stderr, "config.xml: invalid variable: %s for npoints of mesh: %s\n"
+           log_warn ("config.xml: invalid variable: %s for npoints of mesh: %s\n"
                    ,npoints
                    ,name
                    );
@@ -1470,7 +1470,7 @@ static int parseMeshUnstructuredPointsMultiVar (const char * points
 
     if (!points)
     {
-        fprintf (stderr, "config.xml: points-multi-var value required"
+        log_warn ("config.xml: points-multi-var value required"
                          "for unstructured mesh: %s\n"
                          ,name
                 );
@@ -1490,7 +1490,7 @@ static int parseMeshUnstructuredPointsMultiVar (const char * points
 
         if (!var)
         {
-            fprintf (stderr, "Out of memory parseMeshUnstructuredPointsMultiVar\n"
+            log_warn ("Out of memory parseMeshUnstructuredPointsMultiVar\n"
                              "for mesh: %s\n"
                              ,name
                     );
@@ -1507,7 +1507,7 @@ static int parseMeshUnstructuredPointsMultiVar (const char * points
                                            );
             if (!var->var)
             {
-                fprintf (stderr, "config.xml: invalid variable: %s for points of mesh: %s\n"
+                log_warn ("config.xml: invalid variable: %s for points of mesh: %s\n"
                         ,c
                         ,name
                         );
@@ -1529,7 +1529,7 @@ static int parseMeshUnstructuredPointsMultiVar (const char * points
         else
         {
             var->var = 0;
-            fprintf (stderr, "config.xml: invalid variable: %s for points of mesh: %s\n"
+            log_warn ("config.xml: invalid variable: %s for points of mesh: %s\n"
                              ,c
                              ,name
                     );
@@ -1553,7 +1553,7 @@ static int parseMeshUnstructuredPointsMultiVar (const char * points
         free (d1);
     } else
     {
-        fprintf (stderr, "config.xml: points-multi-var tag expects "
+        log_warn ("config.xml: points-multi-var tag expects "
                          " at least two variabels. (%s)\n"
                 ,name
                 );
@@ -1578,7 +1578,7 @@ static int parseMeshUnstructuredPointsSingleVar (const char * points
 
     if (!points)
     {
-        fprintf (stderr, "config.xml: points-single-var value required"
+        log_warn ("config.xml: points-single-var value required"
                          "for unstructured mesh: %s\n"
                          ,name
                 );
@@ -1594,7 +1594,7 @@ static int parseMeshUnstructuredPointsSingleVar (const char * points
 
     if (!var)
     {
-        fprintf (stderr, "Out of memory parseMeshUnstructuredPointsSingleVar"
+        log_warn ("Out of memory parseMeshUnstructuredPointsSingleVar"
                          "for mesh: %s\n"
                          ,name
                 );
@@ -1611,7 +1611,7 @@ static int parseMeshUnstructuredPointsSingleVar (const char * points
                                       );
         if (!var->var)
         {
-            fprintf (stderr, "config.xml: invalid variable: %s for points of mesh: %s\n"
+            log_warn ("config.xml: invalid variable: %s for points of mesh: %s\n"
                     ,d1
                     ,name
                     );
@@ -1629,7 +1629,7 @@ static int parseMeshUnstructuredPointsSingleVar (const char * points
     else
     {
         var->var = 0;
-        fprintf (stderr, "config.xml: invalid variable: %s "
+        log_warn ("config.xml: invalid variable: %s "
                          " for points-multi-var of mesh: %s\n"
                 ,d1
                 ,name
@@ -1668,7 +1668,7 @@ static int parseMeshUnstructuredUniformCells (const char * count
 
     if (!item)
     {
-        fprintf (stderr, "Out of memory parseMeshUnstructuredUniformCells of mesh: %s\n"
+        log_warn ("Out of memory parseMeshUnstructuredUniformCells of mesh: %s\n"
                          ,name
                 );
         free (d1);
@@ -1688,7 +1688,7 @@ static int parseMeshUnstructuredUniformCells (const char * count
 
     if (!count)
     {
-        fprintf (stderr, "config.xml: uniform-cells count value required"
+        log_warn ("config.xml: uniform-cells count value required"
                          "for unstructured mesh: %s\n"
                          ,name
                 );
@@ -1697,7 +1697,7 @@ static int parseMeshUnstructuredUniformCells (const char * count
     }
     if (!data)
     {
-        fprintf (stderr, "config.xml: uniform-cells data value required"
+        log_warn ("config.xml: uniform-cells data value required"
                          "for unstructured mesh: %s\n"
                          ,name
                 );
@@ -1706,7 +1706,7 @@ static int parseMeshUnstructuredUniformCells (const char * count
     }
     if (!type)
     {
-        fprintf (stderr, "config.xml: uniform-cells type value required"
+        log_warn ("config.xml: uniform-cells type value required"
                          "for unstructured mesh: %s\n"
                          ,name
                 );
@@ -1722,7 +1722,7 @@ static int parseMeshUnstructuredUniformCells (const char * count
 
     if (!cell_list)
     {
-        fprintf (stderr, "Out of memory parseMeshUnstructuredUniformCells"
+        log_warn ("Out of memory parseMeshUnstructuredUniformCells"
                          "of mesh: %s\n"
                          ,name
                 );
@@ -1740,7 +1740,7 @@ static int parseMeshUnstructuredUniformCells (const char * count
         cell_list->cell_list.count.rank = 0;
         if (!cell_list->cell_list.count.var)
         {
-            fprintf (stderr, "config.xml: invalid variable: %s for 'count' attribute\n"
+            log_warn ("config.xml: invalid variable: %s for 'count' attribute\n"
                              "of mesh: %s\n"
                              ,d1
                              ,name
@@ -1776,7 +1776,7 @@ static int parseMeshUnstructuredUniformCells (const char * count
                                     );
         if (!cell_list->cell_list.data)
         {
-            fprintf (stderr, "config.xml: invalid variable: %s for cell data\n"
+            log_warn ("config.xml: invalid variable: %s for cell data\n"
                              "of mesh: %s\n"
                              ,d1
                              ,name
@@ -1794,7 +1794,7 @@ static int parseMeshUnstructuredUniformCells (const char * count
     else
     {
         cell_list->cell_list.data = 0;
-        fprintf (stderr, "config.xml: invalid data dimension: %s of mesh: %s\n"
+        log_warn ("config.xml: invalid data dimension: %s of mesh: %s\n"
                          "Please provide a valid variable for cell data.\n"
                          ,d1
                          ,name
@@ -1866,7 +1866,7 @@ static int parseMeshUnstructuredUniformCells (const char * count
         cell_list->cell_list.type.rank = 0;
         if (!cell_list->cell_list.type.var)
         {
-            fprintf (stderr, "config.xml: invalid variable: %s for type attribute\n"
+            log_warn ("config.xml: invalid variable: %s for type attribute\n"
                              "of mesh: %s\n"
                              ,d1
                              ,name
@@ -1887,7 +1887,7 @@ static int parseMeshUnstructuredUniformCells (const char * count
         {
             adios_common_define_attribute (p_new_group,celltype_att_nam,"/",adios_double,d1,"");
         } else {
-            fprintf (stderr, "config.xml: invalid type attribute: %s of mesh: %s.\n"
+            log_warn ("config.xml: invalid type attribute: %s of mesh: %s.\n"
                              "Please select a number between 1 and 8 for cell types\n"
                              "or: pt, line, tri, quad, hex, pri, tet or pyr.\n"
                              ,d1
@@ -1934,7 +1934,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
 
     if (!item)
     {
-        fprintf (stderr, "Out of memory parseMeshUnstructuredMixedCells of mesh: %s\n"
+        log_warn ("Out of memory parseMeshUnstructuredMixedCells of mesh: %s\n"
                          ,name
                 );
         free (d1);
@@ -1944,7 +1944,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
 
     if (!count)
     {
-        fprintf (stderr, "config.xml: mixed-cells count value required"
+        log_warn ("config.xml: mixed-cells count value required"
                          "for unstructured mesh: %s\n"
                          ,name
                 );
@@ -1953,7 +1953,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
     }
     if (!data)
     {
-        fprintf (stderr, "config.xml: mixed-cells data value required"
+        log_warn ("config.xml: mixed-cells data value required"
                          "for unstructured mesh: %s\n"
                          ,name
                 );
@@ -1962,7 +1962,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
     }
     if (!types)
     {
-        fprintf (stderr, "config.xml: mixed-cellsi type value required "
+        log_warn ("config.xml: mixed-cellsi type value required "
                          "for unstructured mesh: %s\n"
                          ,name
                 );
@@ -1979,7 +1979,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
 
     if (!cell_list)
     {
-        fprintf (stderr, "Out of memory parseMeshUnstructuredMixedCells\n");
+        log_warn ("Out of memory parseMeshUnstructuredMixedCells\n");
         free (d1);
 
         return 0;
@@ -1996,7 +1996,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
             cell_list->cell_list.count.rank = 0;
             if (!cell_list->cell_list.count.var)
             {
-                fprintf (stderr, "config.xml: invalid variable: %s for cell count\n"
+                log_warn ("config.xml: invalid variable: %s for cell count\n"
                                  "of mesh: %s\n"
                         ,c, name
                         );
@@ -2032,7 +2032,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
 
     // We should have at least 2 cell sets, otherwise the cells are uniform
     if (counter <= 1){
-       fprintf (stderr, "config.xml: Please provide at least 2 cell counts of mesh: %s\n"
+       log_warn ("config.xml: Please provide at least 2 cell counts of mesh: %s\n"
                         "or use the 'uniform-cells' tag.\n"
                         ,name
                );
@@ -2064,7 +2064,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
                                           );
             if (!cell_list->cell_list.data)
             {
-                fprintf (stderr, "config.xml: invalid variable: %s for data of mesh: %s\n"
+                log_warn ("config.xml: invalid variable: %s for data of mesh: %s\n"
                                  ,c
                                  ,name
                         );
@@ -2085,7 +2085,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
         else
         {
             cell_list->cell_list.data = 0;
-            fprintf (stderr, "config.xml: invalid data: %s of mesh: %s\n"
+            log_warn ("config.xml: invalid data: %s of mesh: %s\n"
                              "Please provide a valid variable for cell data\n"
                     ,d1
                     ,name                    );
@@ -2100,7 +2100,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
     // If the number of data variables does not match the number of counts
     // Generate an error message
     if (counter != cell_set_count){
-       fprintf (stderr, "config.xml: Please provide at least %d cell data of mesh: %s\n"
+       log_warn ("config.xml: Please provide at least %d cell data of mesh: %s\n"
                         "or use the 'uniform-cells' tag\n"
                         ,cell_set_count
                         ,name
@@ -2178,7 +2178,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
             cell_list->cell_list.type.rank = 0;
             if (!cell_list->cell_list.type.var)
             {
-                fprintf (stderr, "config.xml: invalid var for type variable: %s\n"
+                log_warn ("config.xml: invalid var for type variable: %s\n"
                                  "of mesh: %s\n"
                                  ,c
                                  ,name
@@ -2199,7 +2199,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
             {
                 adios_common_define_attribute (p_new_group,celltype_att_nam,"/",adios_double,c,"");
             } else {
-                fprintf (stderr, "config.xml: invalid type attribute: %s of mesh: %s.\n"
+                log_warn ("config.xml: invalid type attribute: %s of mesh: %s.\n"
                                  "Please select a number between 1 and 8 for cell types\n"
                                  "or: pt, line, tri, quad, hex, pri, tet or pyr.\n"
                                  ,c
@@ -2221,7 +2221,7 @@ static int parseMeshUnstructuredMixedCells (const char * count
     // If the number of data variables does not match the number of counts
     // Generate an error message
     if (counter != cell_set_count){
-       fprintf (stderr, "config.xml: Please provide at least %d cell types of mesh: %s\n"
+       log_warn ("config.xml: Please provide at least %d cell types of mesh: %s\n"
                         "or use the 'uniform-cells' tag\n"
                         ,cell_set_count
                         ,name
@@ -2263,7 +2263,7 @@ static int parseMeshUniform (mxml_node_t * node
 
             if (saw_dimensions)
             {
-                fprintf (stderr, "config.xml: only one dimensions definition "
+                log_warn ("config.xml: only one dimensions definition "
                                  "allowed per mesh sructured-points (%s)\n"
                                  ,name
                         );
@@ -2276,7 +2276,7 @@ static int parseMeshUniform (mxml_node_t * node
 
             if (!dimensions)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "dimensions required (%s)\n"
                                  ,name
                         );
@@ -2292,7 +2292,7 @@ static int parseMeshUniform (mxml_node_t * node
 
             if (saw_origin)
             {
-                fprintf (stderr, "config.xml: only one origin definition "
+                log_warn ("config.xml: only one origin definition "
                                  "allowed per mesh uniform (%s)\n"
                                  ,name
                         );
@@ -2305,7 +2305,7 @@ static int parseMeshUniform (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "origin required (%s)\n"
                                  ,name
                         );
@@ -2322,7 +2322,7 @@ static int parseMeshUniform (mxml_node_t * node
 
             if (saw_spacing)
             {
-                fprintf (stderr, "config.xml: only one spacing "
+                log_warn ("config.xml: only one spacing "
                                  "definition allowed per mesh uniform (%s)\n"
                                  ,name
                         );
@@ -2335,7 +2335,7 @@ static int parseMeshUniform (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "spacing required (%s)\n"
                                  ,name
                         );
@@ -2352,7 +2352,7 @@ static int parseMeshUniform (mxml_node_t * node
 
             if (saw_maximum)
             {
-                fprintf (stderr, "config.xml: only one maximum "
+                log_warn ("config.xml: only one maximum "
                                  "definition allowed per mesh uniform (%s)\n"
                                  ,name
                         );
@@ -2365,7 +2365,7 @@ static int parseMeshUniform (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "max required (%s)\n"
                                  ,name
                         );
@@ -2426,7 +2426,7 @@ static int parseMeshRectilinear (mxml_node_t * node
 
             if (saw_dimensions)
             {
-                fprintf (stderr, "config.xml: only one dimensions "
+                log_warn ("config.xml: only one dimensions "
                                  "definition allowed per mesh rectilinear (%s)\n"
                                  ,name
                         );
@@ -2439,7 +2439,7 @@ static int parseMeshRectilinear (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "dimensions required (%s)\n"
                                  ,name
                         );
@@ -2456,7 +2456,7 @@ static int parseMeshRectilinear (mxml_node_t * node
 
             if (saw_coordinates_multi_var || saw_coordinates_single_var)
             {
-                fprintf (stderr, "config.xml: only one coordinates "
+                log_warn ("config.xml: only one coordinates "
                                  "definition allowed per mesh rectilinear (%s)\n"
                                  ,name
                         );
@@ -2469,7 +2469,7 @@ static int parseMeshRectilinear (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "coordinates-multi-var required (%s)\n"
                                  ,name
                         );
@@ -2487,7 +2487,7 @@ static int parseMeshRectilinear (mxml_node_t * node
 
             if (saw_coordinates_single_var || saw_coordinates_multi_var)
             {
-                fprintf (stderr, "config.xml: only one coordinates "
+                log_warn ("config.xml: only one coordinates "
                                  "definition allowed per mesh rectilinear (%s)\n"
                                  ,name
                         );
@@ -2499,7 +2499,7 @@ static int parseMeshRectilinear (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "coordinates-single-var required (%s)\n"
                                  ,name
                         );
@@ -2520,7 +2520,7 @@ static int parseMeshRectilinear (mxml_node_t * node
 
     if (!saw_dimensions)
     {
-        fprintf (stderr, "config.xml: dimensions required on mesh "
+        log_warn ("config.xml: dimensions required on mesh "
                          "type=rectilinear (%s)\n"
                          ,name
                 );
@@ -2528,7 +2528,7 @@ static int parseMeshRectilinear (mxml_node_t * node
     }
     if (!saw_coordinates_multi_var && !saw_coordinates_single_var)
     {
-        fprintf (stderr, "config.xml: coordinates-multi-var or "
+        log_warn ("config.xml: coordinates-multi-var or "
                          "coordinates-single-var required on mesh "
                          "type=rectilinear (%s)\n"
                          ,name
@@ -2568,7 +2568,7 @@ static int parseMeshStructured (mxml_node_t * node
 
             if (saw_nspace)
             {
-                fprintf (stderr, "config.xml: only one nspace "
+                log_warn ("config.xml: only one nspace "
                                  "definition allowed per mesh structured (%s)\n"
                                  ,name
                         );
@@ -2581,7 +2581,7 @@ static int parseMeshStructured (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "nspace required (%s)\n"
                                  ,name
                         );
@@ -2598,7 +2598,7 @@ static int parseMeshStructured (mxml_node_t * node
 
             if (saw_dimensions)
             {
-                fprintf (stderr, "config.xml: only one dimensions "
+                log_warn ("config.xml: only one dimensions "
                                  "definition allowed per mesh structured (%s)\n"
                                  ,name
                         );
@@ -2611,7 +2611,7 @@ static int parseMeshStructured (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "dimensions required (%s)\n"
                                  ,name
                         );
@@ -2628,7 +2628,7 @@ static int parseMeshStructured (mxml_node_t * node
 
             if (saw_points_multi_var || saw_points_single_var)
             {
-                fprintf (stderr, "config.xml: only one points "
+                log_warn ("config.xml: only one points "
                                  "definition allowed per mesh structured (%s)\n"
                                  ,name
                         );
@@ -2641,7 +2641,7 @@ static int parseMeshStructured (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "points-multi-var required (%s)\n"
                                  ,name
                         );
@@ -2659,7 +2659,7 @@ static int parseMeshStructured (mxml_node_t * node
 
             if (saw_points_multi_var || saw_points_single_var)
             {
-                fprintf (stderr, "config.xml: only one points "
+                log_warn ("config.xml: only one points "
                                  "definition allowed per mesh structured (%s)\n"
                                  ,name
                         );
@@ -2672,7 +2672,7 @@ static int parseMeshStructured (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "points-single-var required (%s)\n"
                                  ,name
                         );
@@ -2694,7 +2694,7 @@ static int parseMeshStructured (mxml_node_t * node
 
     if (!saw_dimensions)
     {
-        fprintf (stderr, "config.xml: dimensions required on mesh "
+        log_warn ("config.xml: dimensions required on mesh "
                          "type=structured (%s)\n"
                          ,name
                 );
@@ -2703,7 +2703,7 @@ static int parseMeshStructured (mxml_node_t * node
     }
     if (!saw_points_multi_var && !saw_points_single_var)
     {
-        fprintf (stderr, "config.xml: points-single-var or points-multi-var "
+        log_warn ("config.xml: points-single-var or points-multi-var "
                          "required on mesh type=structured (%s)\n"
                          ,name
                 );
@@ -2712,7 +2712,7 @@ static int parseMeshStructured (mxml_node_t * node
     }
     if (saw_points_single_var && !saw_nspace)
     {
-        fprintf (stderr, "config.xml: points-single-var and nspace "
+        log_warn ("config.xml: points-single-var and nspace "
                          "required on mesh type=structured (%s)\n"
                          ,name
                 );
@@ -2753,7 +2753,7 @@ static int parseMeshUnstructured (mxml_node_t * node
 
             if (saw_nspace)
             {
-                fprintf (stderr, "config.xml: only one nspace "
+                log_warn ("config.xml: only one nspace "
                                  "definition allowed per mesh structured (%s)\n"
                                  ,name
                         );
@@ -2766,7 +2766,7 @@ static int parseMeshUnstructured (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "nspace required (%s)\n"
                                  ,name
                         );
@@ -2783,7 +2783,7 @@ static int parseMeshUnstructured (mxml_node_t * node
 
             if (saw_number_of_points)
             {
-                fprintf (stderr, "config.xml: only one number-of-points "
+                log_warn ("config.xml: only one number-of-points "
                                  "definition allowed per mesh structured (%s)\n"
                                  ,name
                         );
@@ -2796,7 +2796,7 @@ static int parseMeshUnstructured (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "number-of-points required (%s)\n"
                                  ,name
                         );
@@ -2813,7 +2813,7 @@ static int parseMeshUnstructured (mxml_node_t * node
 
             if (saw_points_multi_var || saw_points_single_var)
             {
-                fprintf (stderr, "config.xml: only one points "
+                log_warn ("config.xml: only one points "
                                  "definition allowed per mesh unstructured (%s)\n"
                                  ,name
                         );
@@ -2826,7 +2826,7 @@ static int parseMeshUnstructured (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "points-multi-var required (%s)\n"
                                  ,name
                         );
@@ -2844,7 +2844,7 @@ static int parseMeshUnstructured (mxml_node_t * node
 
             if (saw_points_multi_var || saw_points_single_var)
             {
-                fprintf (stderr, "config.xml: only one points "
+                log_warn ("config.xml: only one points "
                                  "definition allowed per mesh unstructured (%s)\n"
                                  ,name
                         );
@@ -2857,7 +2857,7 @@ static int parseMeshUnstructured (mxml_node_t * node
 
             if (!value)
             {
-                fprintf (stderr, "config.xml: value attribute on "
+                log_warn ("config.xml: value attribute on "
                                  "points-single-var required (%s)\n"
                                  ,name
                         );
@@ -2882,7 +2882,7 @@ static int parseMeshUnstructured (mxml_node_t * node
 
             if (!count)
             {
-                fprintf (stderr, "config.xml: count attribute on "
+                log_warn ("config.xml: count attribute on "
                                  "uniform-cells required (%s)\n"
                                  ,name
                         );
@@ -2891,7 +2891,7 @@ static int parseMeshUnstructured (mxml_node_t * node
             }
             if (!data)
             {
-                fprintf (stderr, "config.xml: data attribute on "
+                log_warn ("config.xml: data attribute on "
                                  "uniform-cells required (%s)\n"
                                  ,name
                         );
@@ -2900,7 +2900,7 @@ static int parseMeshUnstructured (mxml_node_t * node
             }
             if (!type)
             {
-                fprintf (stderr, "config.xml: type attribute on "
+                log_warn ("config.xml: type attribute on "
                                  "uniform-cells required (%s)\n"
                                  ,name
                         );
@@ -2928,7 +2928,7 @@ static int parseMeshUnstructured (mxml_node_t * node
 
             if (!count)
             {
-                fprintf (stderr, "config.xml: count attribute on "
+                log_warn ("config.xml: count attribute on "
                                  "mixed-cells required (%s)\n"
                                  ,name
                         );
@@ -2937,7 +2937,7 @@ static int parseMeshUnstructured (mxml_node_t * node
             }
             if (!data)
             {
-                fprintf (stderr, "config.xml: data attribute on "
+                log_warn ("config.xml: data attribute on "
                                  "mixed-cells required (%s)\n"
                                  ,name
                         );
@@ -2946,7 +2946,7 @@ static int parseMeshUnstructured (mxml_node_t * node
             }
             if (!types)
             {
-                fprintf (stderr, "config.xml: types attribute on "
+                log_warn ("config.xml: types attribute on "
                                  "mixed-cells required (%s)\n"
                                  ,name
                         );
@@ -2971,7 +2971,7 @@ static int parseMeshUnstructured (mxml_node_t * node
 
     if (!saw_points_multi_var && !saw_points_single_var)
     {
-        fprintf (stderr, "config.xml: points-single-var or points-multi-var "
+        log_warn ("config.xml: points-single-var or points-multi-var "
                          "required on mesh type=unstructured (%s)\n"
                          ,name
                 );
@@ -2980,7 +2980,7 @@ static int parseMeshUnstructured (mxml_node_t * node
     }
     if (saw_points_single_var && !saw_nspace && !saw_number_of_points)
     {
-        fprintf (stderr, "config.xml: with points-single-var, nspace or number-of-points "
+        log_warn ("config.xml: with points-single-var, nspace or number-of-points "
                          "required on mesh type=unstructured (%s)\n"
                          ,name
                 );
@@ -2990,7 +2990,7 @@ static int parseMeshUnstructured (mxml_node_t * node
     }
     if (!saw_cell_set)
     {
-        fprintf (stderr, "config.xml: at least one cell-set required on "
+        log_warn ("config.xml: at least one cell-set required on "
                          "mesh type=unstructured (%s)\n"
                          ,name
                 );
@@ -3113,7 +3113,7 @@ static int parseGroup (mxml_node_t * node)
         GET_ATTR("host-language",attr,host_language,"adios-group")
         GET_ATTR("time-index",attr,time_index_name,"adios-group")
         GET_ATTR("stats",attr,stats,"adios-group")
-        fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+        log_warn ("config.xml: unknown attribute '%s' on %s "
                          "(ignored)\n"
                 ,attr->name
                 ,"adios-group"
@@ -3122,8 +3122,7 @@ static int parseGroup (mxml_node_t * node)
 
     if (!datagroup_name)
     {
-        fprintf (stderr,
-                 "config.xml: name attribute required on adios-group\n");
+        adios_error(err_invalid_attrname,"config.xml: name attribute required on adios-group\n");
 
         return 0;
     }
@@ -3145,7 +3144,7 @@ static int parseGroup (mxml_node_t * node)
             }
             else
             {
-                fprintf (stderr, "config.xml: invalid host-language %s"
+                adios_error (err_invalid_host_language, "config.xml: invalid host-language %s"
                         ,host_language
                         );
 
@@ -3170,7 +3169,7 @@ static int parseGroup (mxml_node_t * node)
         }
         else
         {
-            fprintf (stderr, "config.xml, invalid stats %s"
+            log_error ("config.xml, invalid stats %s"
                     ,stats
                     );
             return 0;
@@ -3231,7 +3230,7 @@ static int parseGroup (mxml_node_t * node)
                 GET_ATTR("gwrite",attr,gwrite,"var")
                 GET_ATTR("gread",attr,gread,"var")
                 GET_ATTR("read",attr,read_flag,"var")
-                fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+                log_warn ("config.xml: unknown attribute '%s' on %s "
                                  "(ignored)\n"
                         ,attr->name
                         ,"var"
@@ -3310,7 +3309,7 @@ static int parseGroup (mxml_node_t * node)
                 GET_ATTR("local-offsets",attr,local_offsets,"var")
                 GET_ATTR("local-offset",attr,local_offset,"var")
 
-                fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+                log_warn ("config.xml: unknown attribute '%s' on %s "
                                  "(ignored)\n"
                         ,attr->name
                         ,"global-bounds"
@@ -3323,7 +3322,7 @@ static int parseGroup (mxml_node_t * node)
                 dimensions = (dimensions ? dimensions : global_dimension);
                 if (!dimensions)
                 {
-                    fprintf (stderr, "config.xml: dimensions required on "
+                    adios_error (err_global_dim_required, "config.xml: dimensions required on "
                                      "global-bounds\n"
                             );
 
@@ -3334,7 +3333,7 @@ static int parseGroup (mxml_node_t * node)
             {
                 offsets = (offset ? offset : local_offsets);
                 offsets = (offsets ? offsets : local_offset);
-                fprintf (stderr, "config.xml: offsets required on "
+                adios_error (err_global_offset_required, "config.xml: offsets required on "
                                  "global-bounds\n"
                         );
 
@@ -3381,7 +3380,7 @@ static int parseGroup (mxml_node_t * node)
                         GET_ATTR("gwrite",attr,gwrite,"var")
                         GET_ATTR("gread",attr,gread,"var")
                         GET_ATTR("read",attr,read_flag,"var")
-                        fprintf (stderr, "config.xml: unknown attribute '%s' "
+                        log_warn ("config.xml: unknown attribute '%s' "
                                          "on %s (ignored)\n"
                                 ,attr->name
                                 ,"var"
@@ -3432,7 +3431,7 @@ static int parseGroup (mxml_node_t * node)
                     }
                     else
                     {
-                        fprintf (stderr, "config.xml: invalid xml element: "
+                        log_warn ("config.xml: invalid xml element: "
                                          "'%s'\n"
                                 ,n1->value.element.name
                                 );
@@ -3463,7 +3462,7 @@ static int parseGroup (mxml_node_t * node)
                 GET_ATTR("type",attr,type,"var")
                 GET_ATTR("value",attr,value,"var")
                 GET_ATTR("var",attr,var,"var")
-                fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+                log_warn ("config.xml: unknown attribute '%s' on %s "
                                  "(ignored)\n"
                         ,attr->name
                         ,"attribute"
@@ -3472,21 +3471,21 @@ static int parseGroup (mxml_node_t * node)
 
             if (!name)
             {
-                fprintf (stderr, "config.xml: attribute element requires "
+                log_warn ("config.xml: attribute element requires "
                                  "name\n");
 
                 return 0;
             }
             if (!path)
             {
-                fprintf (stderr, "config.xml: attribute element requires "
+                log_warn ("config.xml: attribute element requires "
                                  "path\n");
 
                 return 0;
             }
             if ((!value && !var) || (value && var))
             {
-                fprintf (stderr, "config.xml: attribute element '%s' "
+                log_warn ("config.xml: attribute element '%s' "
                                  "requires either value OR var\n"
                         ,name
                         );
@@ -3495,7 +3494,7 @@ static int parseGroup (mxml_node_t * node)
             }
             if (var && type)
             {
-                fprintf (stderr, "config.xml: attribute element '%s'. "
+                log_warn ("config.xml: attribute element '%s'. "
                                  "The type of an associated var is part "
                                  "of the associated var element and cannot "
                                  "be provided as part of the attribute "
@@ -3554,7 +3553,7 @@ static int parseGroup (mxml_node_t * node)
                 // If the user enters anything else than "yes" or "no" 
                 // Output a warning letting them no that the default ("no"
                 // will be use give instead of their value 
-                fprintf (stderr, "config.xml: the value of the time varying "
+                log_warn ("config.xml: the value of the time varying "
                         "attribute can only be 'yes' or 'no'. The "
                         "unrecognize value of '%s' is ignored and "
                         "replaced by 'no'."
@@ -3638,7 +3637,7 @@ static int parseGroup (mxml_node_t * node)
                 }
             } else
             {
-                fprintf (stderr, "config.xml: invalid mesh type: '%s'\n"
+                log_warn ("config.xml: invalid mesh type: '%s'\n"
                         ,type
                         );
 
@@ -3654,7 +3653,7 @@ static int parseGroup (mxml_node_t * node)
                 mxml_attr_t * attr = &n->value.element.attrs [i];
 
                 GET_ATTR("src",attr,src,"var")
-                fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+                log_warn ("config.xml: unknown attribute '%s' on %s "
                                  "(ignored)\n"
                         ,attr->name
                         ,"gwrite"
@@ -3662,7 +3661,7 @@ static int parseGroup (mxml_node_t * node)
             }
             if (!src)
             {
-                fprintf (stderr, "config.xml: gwrite element requires "
+                log_warn ("config.xml: gwrite element requires "
                                  "src\n");
 
                 return 0;
@@ -3675,7 +3674,7 @@ static int parseGroup (mxml_node_t * node)
             }
             else
             {
-                fprintf (stderr, "config.xml: invalid xml element: '%s'\n"
+                log_warn ("config.xml: invalid xml element: '%s'\n"
                         ,n->value.element.name
                         );
 
@@ -3791,7 +3790,7 @@ struct adios_mesh_struct * adios_common_define_mesh (
     flag = adios_append_mesh (&t->meshs, m, t->mesh_count);
     if (flag == adios_flag_no)
     {
-        fprintf (stderr, "config.xml: unique mesh names required; "
+        log_warn ("config.xml: unique mesh names required; "
                          "second mesh: %s will be ignored.\n"
                          ,name
                 );
@@ -3856,7 +3855,7 @@ static int parseAnalysis (mxml_node_t * node)
         GET_ATTR("min",attr,bin_min,"analysis")
         GET_ATTR("max",attr,bin_max,"analysis")
         GET_ATTR("count",attr,bin_count,"analysis")
-        fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+        log_warn ("config.xml: unknown attribute '%s' on %s "
                          "(ignored)\n"
                 ,attr->name
                 ,"method"
@@ -3865,13 +3864,13 @@ static int parseAnalysis (mxml_node_t * node)
 
     if (!var)
     {
-        fprintf (stderr, "config.xml: variable name must be given\n");
+        log_warn ("config.xml: variable name must be given\n");
         return 0;
     }
 
     if (!group)
     {
-        fprintf (stderr, "config.xml: adios-group name must be given\n");
+        log_warn ("config.xml: adios-group name must be given\n");
         return 0;
     }
 
@@ -3880,7 +3879,7 @@ static int parseAnalysis (mxml_node_t * node)
 
     if (!g)
     {
-        fprintf (stderr, "config.xml: Didn't find group %s for analysis\n", group);
+        log_warn ("config.xml: Didn't find group %s for analysis\n", group);
         return 0;
     }
     if(!adios_common_define_var_characteristics(g, var, bin_intervals, bin_min, bin_max, bin_count))
@@ -3912,7 +3911,7 @@ static int parseMethod (mxml_node_t * node)
         GET_ATTR("base-path",attr,base_path,"method")
         GET_ATTR("method",attr,method,"method")
         GET_ATTR("group",attr,group,"method")
-        fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+        log_warn ("config.xml: unknown attribute '%s' on %s "
                          "(ignored)\n"
                 ,attr->name
                 ,"method"
@@ -3947,7 +3946,7 @@ static int parseMethod (mxml_node_t * node)
         uint16_t len = strlen (base_path);
         if (len > 0 && base_path [len - 1] != '/')
         {
-            fprintf (stderr, "config.xml: method %s for group %s base-path "
+            adios_error (err_invalid_method, "config.xml: method %s for group %s base-path "
                              "must end with a '/' character\n"
                     ,method, group
                     );
@@ -3988,7 +3987,7 @@ static int parseBuffer (mxml_node_t * node)
         GET_ATTR("size-MB",attr,size_MB,"method")
         GET_ATTR("free-memory-percentage",attr,free_memory_percentage,"method")
         GET_ATTR("allocate-time",attr,allocate_time,"method")
-        fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+        log_warn ("config.xml: unknown attribute '%s' on %s "
                          "(ignored)\n"
                 ,attr->name
                 ,"buffer"
@@ -3999,7 +3998,7 @@ static int parseBuffer (mxml_node_t * node)
 
     if ((!size_MB && !free_memory_percentage) || !allocate_time)
     {
-        fprintf (stderr, "config.xml: must define allocate-time and either "
+        adios_error (err_invalid_buffer_size, "config.xml: must define allocate-time and either "
                          "size-MB or free-memory-percentage for "
                          "buffer element\n"
                 );
@@ -4020,7 +4019,7 @@ static int parseBuffer (mxml_node_t * node)
             }
             else
             {
-                fprintf (stderr, "config.xml: buffer allocate-time %s "
+                adios_error (err_invalid_buffer_size, "config.xml: buffer allocate-time %s "
                                  "invalid. ('now' or 'oncall')\n"
                         ,allocate_time
                         );
@@ -4035,7 +4034,7 @@ static int parseBuffer (mxml_node_t * node)
             size = atoi (size_MB);
             if (size_MB == 0)
             {
-                fprintf (stderr, "config.xml: buffer size-MB is either 0 or "
+                adios_error (err_invalid_buffer_size, "config.xml: buffer size-MB is either 0 or "
                                  "cannot be parsed: %s"
                         ,size_MB
                         );
@@ -4058,7 +4057,7 @@ static int parseBuffer (mxml_node_t * node)
             }
             else
             {
-                fprintf (stderr, "config.xml: buffer free-memory-percentage %s "
+                adios_error (err_invalid_buffer_size, "config.xml: buffer free-memory-percentage %s "
                                  "is not an integer between 1 and 100\n"
                         ,free_memory_percentage
                         );
@@ -4108,7 +4107,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
         fp = fopen (config, "r");
         if (!fp)
         {
-            fprintf (stderr, "missing config file %s\n", config);
+            adios_error (err_missing_config_file, "missing config file %s\n", config);
 
             return 0;
         }
@@ -4123,7 +4122,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
             size_t bytes_read = fread (buffer, 1, s.st_size, fp);
             if (bytes_read != s.st_size)
             {
-                fprintf (stderr, "error reading config file: %s. Expected %d Got %d\n"
+                adios_error (err_expected_read_size_mismatch, "error reading config file: %s. Expected %d Got %d\n"
                         ,config, s.st_size, bytes_read );
 
                 return 0;
@@ -4131,7 +4130,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
         }
         else
         {
-            fprintf (stderr, "error allocating %d for reading config.\n"
+            adios_error (err_allocating_buffer_size, "error allocating %d for reading config.\n"
                     ,s.st_size + 1
                     );
 
@@ -4149,7 +4148,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
         buffer = malloc (buffer_size + 1);
         if (!buffer)
         {
-            fprintf (stderr, "cannot allocate %d bytes to receive config file\n"
+            adios_error (err_allocating_buffer_size, "cannot allocate %d bytes to receive config file\n"
                     ,buffer_size + 1
                     );
 
@@ -4166,7 +4165,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
 
     if (!doc)
     {
-        fprintf (stderr, "config.xml: unknown error parsing XML "
+        adios_error (err_invalid_xml_doc, "config.xml: unknown error parsing XML "
                          "(probably structural)\n"
                          "Did you remember to start the file with\n"
                          "<?xml version=\"1.0\"?>\n");
@@ -4191,7 +4190,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
     {
         if (strncmp (root->value.element.name, "?xml", 4))
         {
-            fprintf (stderr, "config.xml: invalid root xml element: %s\n"
+            adios_error (err_invalid_xml_doc, "config.xml: invalid root xml element: %s\n"
                     ,root->value.element.name
                     );
 
@@ -4223,7 +4222,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
 
     if (strcasecmp (root->value.element.name, "adios-config"))
     {
-        fprintf (stderr, "config.xml: invalid root xml element: %s\n"
+        adios_error (err_invalid_xml_doc, "config.xml: invalid root xml element: %s\n"
                 ,root->value.element.name
                 );
 
@@ -4241,7 +4240,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
             mxml_attr_t * attr = &root->value.element.attrs [i];
 
             GET_ATTR("host-language",attr,host_language,"var")
-            fprintf (stderr, "config.xml: unknown attribute '%s' on %s "
+            log_warn ("config.xml: unknown attribute '%s' on %s "
                              "(ignored)\n"
                     ,attr->name
                     ,"adios-config"
@@ -4265,7 +4264,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
             }
             else
             {
-                fprintf (stderr, "config.xml: invalid host-language %s"
+                adios_error (err_invalid_host_language, "config.xml: invalid host-language %s"
                         ,host_language
                         );
 
@@ -4325,7 +4324,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                 	    }
                 	    else
                 	    {
-                	        fprintf (stderr, "config.xml: invalid element: %s\n"
+                	        log_warn ("config.xml: invalid element: %s\n"
                 	                ,node->value.element.name
                 	                );
 
@@ -4341,7 +4340,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
 
     if (!saw_datagroup)
     {
-        fprintf (stderr, "config.xml: must define at least 1 adios-group in "
+        adios_error (err_no_group_defined, "config.xml: must define at least 1 adios-group in "
                          "config.xml\n"
                 );
 
@@ -4349,7 +4348,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
     }
     if (!saw_method)
     {
-        fprintf (stderr, "config.xml: must define at least 1 method for "
+        adios_error (err_no_method_defined, "config.xml: must define at least 1 method for "
                          "the adios-group in config.xml\n"
                 );
 
@@ -4357,7 +4356,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
     }
     if (!saw_buffer)
     {
-        fprintf (stderr, "config.xml: must define the buffer element in "
+        adios_error (err_no_buffer_defined, "config.xml: must define the buffer element in "
                          "config.xml\n"
                 );
 
@@ -4499,7 +4498,7 @@ int adios_common_select_method (int priority, const char * method
     }
     else
     {
-        fprintf (stderr, "config.xml: invalid transport: %s\n", method);
+        adios_error (err_invalid_write_method, "config.xml: invalid transport: %s\n", method);
 
         free (new_method->base_path);
         free (new_method->method);
@@ -4513,7 +4512,7 @@ int adios_common_select_method (int priority, const char * method
     g = (struct adios_group_struct *) group_id;
     if (!g)
     {
-        fprintf (stderr, "config.xml: Didn't find group: %s for transport: %s\n"
+        adios_error (err_missing_invalid_group, "config.xml: Didn't find group: %s for transport: %s\n"
                 ,group, method
                 );
 
@@ -4592,7 +4591,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
     }
     else
     {
-        fprintf (stderr, "config.xml: invalid transport: %s\n", method);
+        adios_error (err_invalid_write_method, "config.xml: invalid transport: %s\n", method);
 
         free (new_method->base_path);
         free (new_method->method);
@@ -4605,7 +4604,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
     g = (struct adios_group_struct *) group_id;
     if (!g)
     {
-        fprintf (stderr, "config.xml: invalid group id: %llu for transport: %s\n"
+        adios_error (err_missing_invalid_group, "config.xml: invalid group id: %llu for transport: %s\n"
                 ,group_id, method
                 );
 
@@ -4620,7 +4619,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
     {
         if (requires_group_comm && !g->group_comm)
         {
-            fprintf (stderr, "config.xml: method %s for group %s.  Group does "
+            adios_error (err_group_method_mismatch, "config.xml: method %s for group %s.  Group does "
                              "not have the required coordination-communicator"
                              ".\n"
                     ,method, g->name

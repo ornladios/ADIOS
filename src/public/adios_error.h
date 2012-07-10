@@ -42,6 +42,22 @@ enum ADIOS_ERRCODES {
     err_too_many_files                  = -24, /* some staging methods allow for using only
                                                   a fixed number of different filenames    */
 
+    // XML parsing errors
+    err_invalid_host_language           = 50,
+    err_global_dim_required             = 51,
+    err_global_offset_required          = 52,
+    err_invalid_method                  = 53,
+    err_invalid_buffer_size             = 54,
+    err_missing_config_file             = 55,
+    err_expected_read_size_mismatch     = 56,
+    err_allocating_buffer_size          = 57,
+    err_invalid_xml_doc                 = 58,
+    err_no_group_defined                = 59,
+    err_no_method_defined               = 60,
+    err_no_buffer_defined               = 61,
+    err_missing_invalid_group           = 62,
+    err_group_method_mismatch           = 63,
+
     // Write method errors
     err_invalid_file_mode               = -100,
     err_invalid_file_version            = -101,
