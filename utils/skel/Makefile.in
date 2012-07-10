@@ -13,13 +13,15 @@
 # PARTICULAR PURPOSE.
 
 @SET_MAKE@
+
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ..
+top_builddir = ../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -35,11 +37,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@BUILD_WRITE_TRUE@am__append_1 = adios_lint bp2bp
-@HAVE_HDF5_TRUE@am__append_2 = bp2h5
-@HAVE_NETCDF_TRUE@am__append_3 = bp2ncd
-subdir = utils
-DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+subdir = utils/skel
+DIST_COMMON = $(dist_bin_SCRIPTS) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
@@ -65,6 +65,10 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pythonlibdir)" \
+	"$(DESTDIR)$(templatedir)"
+dist_binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
+SCRIPTS = $(dist_bin_SCRIPTS)
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -73,10 +77,18 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	install-recursive installcheck-recursive installdirs-recursive \
 	pdf-recursive ps-recursive uninstall-info-recursive \
 	uninstall-recursive
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
+pythonlibDATA_INSTALL = $(INSTALL_DATA)
+templateDATA_INSTALL = $(INSTALL_DATA)
+DATA = $(pythonlib_DATA) $(template_DATA)
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = gpp bpdump bp2ascii bpsplit bpls adios_lint bp2bp bp2h5 \
-	bp2ncd skel
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ADIOSLIB_CFLAGS = @ADIOSLIB_CFLAGS@
@@ -312,8 +324,29 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = gpp bpdump bp2ascii bpsplit bpls $(am__append_1) \
-	$(am__append_2) $(am__append_3) skel
+SUBDIRS = etc
+dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py
+pythonlibdir = @libdir@/python
+pythonlib_DATA = \
+    lib/adios.py \
+	lib/argparse.py \
+    lib/skel_cat.py \
+    lib/skel_install.py \
+    lib/skel_makefile.py \
+    lib/skel_params.py \
+    lib/skel_settings.py \
+    lib/skel_source.py \
+    lib/skel_submit.py \
+    lib/skel_xml.py \
+    lib/skelconf.py \
+    lib/typeMapper.py 
+
+templatedir = @prefix@/etc/skel/templates
+template_DATA = \
+    etc/templates/Makefile.default.tpl\
+	etc/templates/submit_sith.tpl\
+	etc/templates/submit_jaguar.tpl
+
 all: all-recursive
 
 .SUFFIXES:
@@ -326,9 +359,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  utils/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  utils/skel/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  utils/Makefile
+	  $(AUTOMAKE) --gnu  utils/skel/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -346,6 +379,25 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+install-dist_binSCRIPTS: $(dist_bin_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	test -z "$(bindir)" || $(mkdir_p) "$(DESTDIR)$(bindir)"
+	@list='$(dist_bin_SCRIPTS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f $$d$$p; then \
+	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	    echo " $(dist_binSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(bindir)/$$f'"; \
+	    $(dist_binSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(bindir)/$$f"; \
+	  else :; fi; \
+	done
+
+uninstall-dist_binSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_bin_SCRIPTS)'; for p in $$list; do \
+	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	  echo " rm -f '$(DESTDIR)$(bindir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(bindir)/$$f"; \
+	done
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -356,6 +408,40 @@ clean-libtool:
 distclean-libtool:
 	-rm -f libtool
 uninstall-info-am:
+install-pythonlibDATA: $(pythonlib_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(pythonlibdir)" || $(mkdir_p) "$(DESTDIR)$(pythonlibdir)"
+	@list='$(pythonlib_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(pythonlibDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(pythonlibdir)/$$f'"; \
+	  $(pythonlibDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(pythonlibdir)/$$f"; \
+	done
+
+uninstall-pythonlibDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(pythonlib_DATA)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(pythonlibdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(pythonlibdir)/$$f"; \
+	done
+install-templateDATA: $(template_DATA)
+	@$(NORMAL_INSTALL)
+	test -z "$(templatedir)" || $(mkdir_p) "$(DESTDIR)$(templatedir)"
+	@list='$(template_DATA)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f=$(am__strip_dir) \
+	  echo " $(templateDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(templatedir)/$$f'"; \
+	  $(templateDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(templatedir)/$$f"; \
+	done
+
+uninstall-templateDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(template_DATA)'; for p in $$list; do \
+	  f=$(am__strip_dir) \
+	  echo " rm -f '$(DESTDIR)$(templatedir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(templatedir)/$$f"; \
+	done
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.
@@ -490,6 +576,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/bin
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -533,9 +620,12 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile
+all-am: Makefile $(SCRIPTS) $(DATA)
 installdirs: installdirs-recursive
 installdirs-am:
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pythonlibdir)" "$(DESTDIR)$(templatedir)"; do \
+	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
+	done
 install: install-recursive
 install-exec: install-exec-recursive
 install-data: install-data-recursive
@@ -579,9 +669,9 @@ info: info-recursive
 
 info-am:
 
-install-data-am:
+install-data-am: install-pythonlibDATA install-templateDATA
 
-install-exec-am:
+install-exec-am: install-dist_binSCRIPTS
 
 install-info: install-info-recursive
 
@@ -605,7 +695,8 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-info-am
+uninstall-am: uninstall-dist_binSCRIPTS uninstall-info-am \
+	uninstall-pythonlibDATA uninstall-templateDATA
 
 uninstall-info: uninstall-info-recursive
 
@@ -614,13 +705,16 @@ uninstall-info: uninstall-info-recursive
 	ctags-recursive distclean distclean-generic distclean-libtool \
 	distclean-recursive distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic maintainer-clean-recursive \
-	mostlyclean mostlyclean-generic mostlyclean-libtool \
-	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
-	uninstall uninstall-am uninstall-info-am
+	install-data-am install-dist_binSCRIPTS install-exec \
+	install-exec-am install-info install-info-am install-man \
+	install-pythonlibDATA install-strip install-templateDATA \
+	installcheck installcheck-am installdirs installdirs-am \
+	maintainer-clean maintainer-clean-generic \
+	maintainer-clean-recursive mostlyclean mostlyclean-generic \
+	mostlyclean-libtool mostlyclean-recursive pdf pdf-am ps ps-am \
+	tags tags-recursive uninstall uninstall-am \
+	uninstall-dist_binSCRIPTS uninstall-info-am \
+	uninstall-pythonlibDATA uninstall-templateDATA
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
