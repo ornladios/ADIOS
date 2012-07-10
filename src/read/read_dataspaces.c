@@ -26,7 +26,7 @@
 #include "core/ds_metadata.h"
 #include "core/common_read.h" // common_read_selection_* functions
 
-#include "dart_interface.h"
+#include "dataspaces.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -218,14 +218,14 @@ int adios_read_dataspaces_init_method (MPI_Comm comm, PairStruct * params)
             appid = 2;
         log_debug("-- %s, rank %d: connect to dataspaces with nproc=%d and appid=%d\n", 
                     __func__, rank, nproc, appid);
-        err = dart_init(nproc, appid);
+        err = dspaces_init(nproc, appid);
         if (err < 0) {
             adios_error (err_connection_failed, "Failed to connect with DATASPACES\n");
             return err_connection_failed;
         }
 
-        //drank = dart_rank(dcg);
-        //dpeers = dart_peers(dcg);
+        //drank = dspaces_rank(dcg);
+        //dpeers = dspaces_peers(dcg);
     }
     globals_adios_set_dataspaces_connected_from_reader();
     n_filenames = 0;
@@ -239,7 +239,7 @@ int adios_read_dataspaces_finalize_method ()
     if (globals_adios_is_dataspaces_connected_from_reader() && 
         !globals_adios_is_dataspaces_connected_from_both()) 
     {
-        dart_finalize();
+        dspaces_finalize();
         log_info("Disconnected from DATASPACES\n");
     }
     globals_adios_set_dataspaces_disconnected_from_reader();
@@ -531,8 +531,8 @@ static int get_groupdata (ADIOS_FILE *fp)
 static void lock_file (ADIOS_FILE *fp, struct dataspaces_data_struct *ds)
 {
     if (!ds->locked_fname) {
-        log_debug("   rank %d: call dart_lock_on_read(%s)\n", ds->mpi_rank, fp->path);
-        dart_lock_on_read(fp->path);
+        log_debug("   rank %d: call dspaces_lock_on_read(%s)\n", ds->mpi_rank, fp->path);
+        dspaces_lock_on_read(fp->path);
         ds->locked_fname = 1;
     //} else {
     //    log_error("   rank %d: lock_file called with the lock already in place\n", ds->mpi_rank);
@@ -542,8 +542,8 @@ static void lock_file (ADIOS_FILE *fp, struct dataspaces_data_struct *ds)
 static void unlock_file (ADIOS_FILE *fp, struct dataspaces_data_struct *ds)
 {
     if (ds->locked_fname) {
-        log_debug("   rank %d: call dart_unlock_on_read(%s)\n", ds->mpi_rank, fp->path);
-        dart_unlock_on_read(fp->path);
+        log_debug("   rank %d: call dspaces_unlock_on_read(%s)\n", ds->mpi_rank, fp->path);
+        dspaces_unlock_on_read(fp->path);
         ds->locked_fname = 0;
     //} else {
     //    log_error("   rank %d: unlock_file called with the lock already released\n", ds->mpi_rank);
@@ -585,7 +585,7 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
         lock_file (fp, ds);
         step_status = STEP_OK;
 
-        log_debug("   rank %d: dart_get %s\n", ds->mpi_rank, ds_vname);
+        log_debug("   rank %d: dspaces_get %s\n", ds->mpi_rank, ds_vname);
         readsize[0] = 2; //*sizeof(int); // VERSION%name is 2 integers only
         err = adios_read_dataspaces_get (ds_vname, adios_integer, 0, ds->mpi_rank, 1, 0, 
                                          offset, readsize, version_info_buf);
@@ -619,7 +619,7 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
 
                 // Loop until we find what we need or go past the last version
                 do {
-                    log_debug("   rank %d: dart_get %s\n", ds->mpi_rank, ds_fname);
+                    log_debug("   rank %d: dspaces_get %s\n", ds->mpi_rank, ds_fname);
                     err = adios_read_dataspaces_get (ds_fname, adios_byte, step, ds->mpi_rank, 
                                                      1, 0, offset, readsize, file_info_buf);
                     step++; // value will go over the target with 1
@@ -1021,13 +1021,13 @@ static int adios_read_dataspaces_get (const char * varname, enum ADIOS_DATATYPES
         __func__, rank, varname, version, lb[0], lb[1], lb[2], 
         ub[0], ub[1], ub[2]);
 
-    err =  dart_get (varname, version, elemsize, 
+    err =  dspaces_get (varname, version, elemsize, 
                      lb[0], lb[1], lb[2],
                      ub[0], ub[1], ub[2],
                      data
                     );
     /*if (err == -ENOMEM) {
-        adios_error (err_no_memory, "Not enough memory for DATASPACES to perform dart_get()");  
+        adios_error (err_no_memory, "Not enough memory for DATASPACES to perform dspaces_get()");  
         return err_no_memory;
     } 
     else*/ if (err) {

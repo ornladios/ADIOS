@@ -84,18 +84,19 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    if test "x${ac_infiniband_lib_ok}" == "xyes"; then 
-        LIBS="$LIBS -ldart -ldataspaces"
-    elif test "x${ac_portals_lib_ok}" == "xyes"; then 
-        LIBS="$LIBS -ldart2 -lspaces"
-    else
-        LIBS="$LIBS -ldspaces -ldscommon -ldart"
-    fi
+    #if test "x${ac_infiniband_lib_ok}" == "xyes"; then 
+    #    LIBS="$LIBS -ldart -ldataspaces"
+    #elif test "x${ac_portals_lib_ok}" == "xyes"; then 
+    #    LIBS="$LIBS -ldart2 -lspaces"
+    #else
+    #    LIBS="$LIBS -ldspaces -ldscommon -ldart"
+    #fi
+    LIBS="$LIBS -ldspaces -ldscommon -ldart"
     LDFLAGS="$LDFLAGS $DATASPACES_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $DATASPACES_CPPFLAGS"
     
     if test -z "${HAVE_DATASPACES_TRUE}"; then
-            AC_CHECK_HEADERS(dart_interface.h,
+            AC_CHECK_HEADERS(dataspaces.h,
                     ,
                     [AM_CONDITIONAL(HAVE_DATASPACES,false)])
     fi
@@ -103,18 +104,18 @@ else
     if test -z "${HAVE_DATASPACES_TRUE}"; then
         # Check for the DataSpaces library and headers
         if test "x${ac_portals_lib_ok}" == "xyes"; then 
-            AC_TRY_COMPILE([#include "dart_interface.h"],
-                    [int err; err = dataspaces_init(1,1);],
-                    [DATASPACES_LIBS="-ldart2 -lspaces"],
+            AC_TRY_COMPILE([#include "dataspaces.h"],
+                    [int err; err = dspaces_init(1,1);],
+                    [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
                     [AM_CONDITIONAL(HAVE_DATASPACES,false)])
         elif test "x${ac_infiniband_lib_ok}" == "xyes"; then 
-            AC_TRY_COMPILE([#include "dart_interface.h"],
-                    [int err; err = dart_init(1,1);],
-                    [DATASPACES_LIBS="-ldart -ldataspaces -lrdmacm"],
+            AC_TRY_COMPILE([#include "dataspaces.h"],
+                    [int err; err = dspaces_init(1,1);],
+                    [DATASPACES_LIBS="-ldspaces -ldscommon -ldart -lrdmacm"],
                     [AM_CONDITIONAL(HAVE_DATASPACES,false)])
         elif test -z "${HAVE_CRAY_PMI_TRUE}" -a -z "${HAVE_CRAY_UGNI_TRUE}"; then 
-            AC_TRY_COMPILE([#include "dart_interface.h"],
-                    [int err; err = dart_init(1,1);],
+            AC_TRY_COMPILE([#include "dataspaces.h"],
+                    [int err; err = dspaces_init(1,1);],
                     [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
                     [AM_CONDITIONAL(HAVE_DATASPACES,false)])
         else

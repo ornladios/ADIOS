@@ -22,7 +22,7 @@
 #include "core/ds_metadata.h"
 #include "core/adios_logger.h"
 
-#include "dart_interface.h"
+#include "dataspaces.h"
 
 /*#define DATASPACES_NO_VERSIONING  define it at configure as -DDATASPACES_NO_VERSIONING in CFLAGS */
 
@@ -243,15 +243,15 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
                         p->rank, num_peers, p->appid);
 
         //Init the dart client
-        ret = dart_init (num_peers, p->appid);
+        ret = dspaces_init (num_peers, p->appid);
         if (ret) {
             log_error ("adios_dataspaces_open: rank=%d Failed to connect to DATASPACES: err=%d,  rank=%d\n", p->rank, ret);        
             return ret;
         }
 
 #if ! HAVE_MPI
-        dart_rank (&(p->rank));
-        dart_peers (&(p->peers));
+        dspaces_rank (&(p->rank));
+        dspaces_peers (&(p->peers));
 #endif
 
         log_debug ("adios_dataspaces_open: rank=%d connected to DATASPACES: peers=%d\n", p->rank, p->peers);        
@@ -261,12 +261,12 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
         log_debug ("adios_dataspaces_open: rank=%d call write lock...\n", p->rank);        
-        dart_lock_on_write (fd->name);  
+        dspaces_lock_on_write (fd->name);  
         log_debug ("adios_dataspaces_open: rank=%d got write lock\n", p->rank);        
     }
     else if (fd->mode == adios_mode_read)
     {
-        dart_lock_on_read (fd->name);
+        dspaces_lock_on_read (fd->name);
     } 
   
     return ret;
@@ -302,7 +302,7 @@ void adios_dataspaces_write (struct adios_file_struct * fd
     struct adios_group_struct *group = fd->group;
     //Get var size
     //  FIXME: type size of a string >2GB does not fit to int. 
-    //  adios_get_type_size returns uint64_t but dart_put handles only int
+    //  adios_get_type_size returns uint64_t but dspaces_put handles only int
     //  as element size
     int var_type_size = (int) adios_get_type_size(v->type, v->data);
     //Get var name
@@ -345,7 +345,7 @@ void adios_dataspaces_write (struct adios_file_struct * fd
     else 
         snprintf(ds_var_name, MAX_DS_NAMELEN, "%s/%s//%s", fd->name, fd->group->name, v->name);
 
-    //snprintf(dart_type_var_name, MAX_DS_NAMELEN, "TYPE@%s", ds_var_name);
+    //snprintf(dspaces_type_var_name, MAX_DS_NAMELEN, "TYPE@%s", ds_var_name);
     
     /* non-global variables are put in space ONLY by rank = 0 process */
     if (gdims[0] == 0 && p->rank != 0) {
@@ -375,13 +375,13 @@ void adios_dataspaces_write (struct adios_file_struct * fd
         return;
 
     /* Put type info as T<varname>, integer in 0,0,0,0,0,0 position */
-    //err = dart_put(dart_type_var_name, version, 4, 0,0,0,0,0,0, &(v->type)); 
+    //err = dspaces_put(dspaces_type_var_name, version, 4, 0,0,0,0,0,0, &(v->type)); 
 
     ds_dimension_ordering(ndims,
             group->adios_host_language_fortran == adios_flag_yes, 
             0 /*pack*/, didx);
 
-    dart_put(ds_var_name, version, var_type_size, 
+    dspaces_put(ds_var_name, version, var_type_size, 
              lb[didx[0]], lb[didx[1]], lb[didx[2]], 
              ub[didx[0]], ub[didx[1]], ub[didx[2]], 
              data);
@@ -479,11 +479,11 @@ void adios_dataspaces_read (struct adios_file_struct * fd
 
     version = p->time_index;
 
-    //dart_lock_on_read_();
+    //dspaces_lock_on_read_();
 
-    //dart_get
+    //dspaces_get
 
-    //dart_unlock_on_read_();
+    //dspaces_unlock_on_read_();
 }
 
 /* Gather var/attr indices from all processes to rank 0 */
@@ -897,7 +897,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
             log_debug ("%s: put %s with buf len %d into space\n", __func__, ds_var_name, indexlen);
             ub[0] = indexlen-1; ub[1] = 0; ub[2] = 0;
             ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
-            dart_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
+            dspaces_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
                      ub[didx[0]], ub[didx[1]], ub[didx[2]],  indexbuf); 
             free (indexbuf);
 
@@ -916,7 +916,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
             /* Flip 1st and 2nd dimension for DataSpaces representation for a 1D array*/
             ub[0] = file_info_buf_len-1; ub[1] = 0; ub[2] = 0;
             ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
-            dart_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
+            dspaces_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
                      ub[didx[0]], ub[didx[1]], ub[didx[2]], file_info_buf); 
 
             /* Create and put VERSION@fn version info into space */
@@ -927,7 +927,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
                        __func__, ds_var_name, version_buf[0], version_buf[1], version_buf_len);
             ub[0] = version_buf_len-1; ub[1] = 0; ub[2] = 0;
             ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
-            dart_put(ds_var_name, 0, sizeof(int),    0, 0, 0, /* lb 0..2 */
+            dspaces_put(ds_var_name, 0, sizeof(int),    0, 0, 0, /* lb 0..2 */
                      ub[didx[0]], ub[didx[1]], ub[didx[2]],  version_buf); 
             
         }
@@ -956,14 +956,14 @@ void adios_dataspaces_close (struct adios_file_struct * fd
         // free allocated index lists
         adios_clear_index_v1 (pg_root, vars_root, attrs_root);
 
-        log_debug("%s: call dart_put_sync()\n", __func__);
-        dart_put_sync();
-        log_debug("%s: call dart_unlock_on_write(%s)\n", __func__, fd->name);
-        dart_unlock_on_write(fd->name);
+        log_debug("%s: call dspaces_put_sync()\n", __func__);
+        dspaces_put_sync();
+        log_debug("%s: call dspaces_unlock_on_write(%s)\n", __func__, fd->name);
+        dspaces_unlock_on_write(fd->name);
     }
     else if( fd->mode == adios_mode_read )
     {
-        dart_unlock_on_read(fd->name);
+        dspaces_unlock_on_read(fd->name);
     } 
 
     /* Increment the time index */
@@ -988,22 +988,22 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
     ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
     for (i=0; i<p->num_of_files; i++) {
         /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
-        log_debug("%s: call dart_lock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
-        dart_lock_on_write(p->fnames[i]); // lock is global operation in DataSpaces
+        log_debug("%s: call dspaces_lock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
+        dspaces_lock_on_write(p->fnames[i]); // lock is global operation in DataSpaces
         if (p->rank == 0) {
             value[0] = p->fversions[i];
             snprintf(ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", p->fnames[i]);
             log_debug ("%s: update %s in the space [%d, %d]\n", 
                     __func__, ds_var_name, value[0], value[1] );
-            dart_put(ds_var_name, 0, sizeof(int),   
+            dspaces_put(ds_var_name, 0, sizeof(int),   
                     lb[didx[0]], lb[didx[1]], lb[didx[2]], 
                     ub[didx[0]], ub[didx[1]], ub[didx[2]],  
                     &value); 
-            log_debug("%s: call dart_put_sync()\n", __func__);
-            dart_put_sync();
+            log_debug("%s: call dspaces_put_sync()\n", __func__);
+            dspaces_put_sync();
         }
-        log_debug("%s: call dart_unlock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
-        dart_unlock_on_write(p->fnames[i]);
+        log_debug("%s: call dspaces_unlock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
+        dspaces_unlock_on_write(p->fnames[i]);
         free (p->fnames[i]);
     }
 
@@ -1011,10 +1011,10 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
     if (globals_adios_is_dataspaces_connected_from_writer() && 
             !globals_adios_is_dataspaces_connected_from_both())
     {
-        log_debug ("%s: call dart_barrier(), rank=%d\n", __func__,mype);
-        dart_barrier();
-        log_debug ("%s: call dart_finalize(), rank=%d\n", __func__,mype);
-        dart_finalize();
+        log_debug ("%s: call dspaces_barrier(), rank=%d\n", __func__,mype);
+        dspaces_barrier();
+        log_debug ("%s: call dspaces_finalize(), rank=%d\n", __func__,mype);
+        dspaces_finalize();
 
     }
     globals_adios_set_dataspaces_disconnected_from_writer();
