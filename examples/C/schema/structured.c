@@ -14,8 +14,6 @@
 int main (int argc, char * argv[] ) 
 {
     char        filename[]="structured.bp";
-    //char        meshname[]="structured";
-    char        xmlfilename[256];
     int         rank, size, i, j;
     int         NX = 10;  
     double      t[NX], mean = 0;
@@ -53,13 +51,6 @@ int main (int argc, char * argv[] )
     }
     mean /= NX;
 
-    //strcpy (meshname, "structured");
-
-    //strcpy (filename, "structured");
-    //strcat (filename, ".bp");
-
-    //strcpy (xmlfilename,meshname);
-    //strcat (xmlfilename,".xml");
     adios_init ("structured.xml");
 
     adios_open (&adios_handle, "schema", filename, "w", &comm);

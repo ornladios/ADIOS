@@ -5,23 +5,21 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-/* ADIOS C Example: write some attributes along with variables
+/* ADIOS C Example: write a variable along with uniform mesh 
 */
 #include <stdio.h>
 #include <string.h>
 #include "mpi.h"
 #include "adios.h"
-int main (int argc, char ** argv[] ) 
+int main (int argc, char * argv[] ) 
 {
-    char        filename [256];
-    char        meshname [256];
-    char        xmlfilename[256];
+    char        filename [] = "uniform.bp";
     int         rank, size, size2, i;
     int         O1=-1, O2=-2, S1=2;
     int         NX = 10;  
     double      t[NX], mean = 0;
     MPI_Comm    comm = MPI_COMM_WORLD;
-    const char * str = "Jul, 2012";
+    char * str = "Jul, 2012";
 
     int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
@@ -40,14 +38,7 @@ int main (int argc, char ** argv[] )
 
     mean /= NX;
 
-    strcpy (meshname, "uniform");
-
-    strcpy (filename, "uniform");
-    strcat (filename, ".bp");
-
-    strcpy (xmlfilename,meshname);
-    strcat (xmlfilename,".xml");
-    adios_init (xmlfilename);
+    adios_init ("uniform.xml");
 
     adios_open (&adios_handle, "schema", filename, "w", &comm);
 

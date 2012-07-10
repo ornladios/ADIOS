@@ -9,25 +9,17 @@
     <var name="date" type="string" gwrite="str"/>
     <var name="X" dimensions="size" type="float"/>
     <var name="Y" dimensions="NX" type="float"/>
-    <var name="XY" dimensions="xydim" type="float"/>
+    <!--<var name="XY" dimensions="xydim" type="float"/>-->
     <global-bounds  dimensions="size,NX" offsets="rank,0">
         <var name="temperature" mesh="mesh2" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
     </global-bounds>
     <!-- Rectilinear meshes to visualize temperature 2D array of size size*NX -->
 
-    <!-- Mesh1:   
-         - dimensions
-         - coordinates from a single variable
-    -->
-    <mesh name="mesh1" type="rectilinear" time-varying="no">
-        <dimensions value="size,NX" />
-        <coordinates-single-var value="XY" />
-    </mesh>
-    <!-- Mesh2: 
+    <!-- Mesh1: 
          - dimensions
          - coordinates from multiple variables
     -->
-    <mesh name="mesh2" type="rectilinear" time-varying="no">
+    <mesh name="mesh1" type="rectilinear" time-varying="no">
         <dimensions value="size,NX"/>
         <coordinates-multi-var value="X,Y" />
     </mesh>
