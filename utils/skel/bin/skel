@@ -1,0 +1,92 @@
+#!/usr/bin/env python
+
+import sys
+import os.path
+
+# Make sure that the skel modules are available
+os.path.dirname(sys.argv[0])
+sys.path.insert (0, os.path.dirname(sys.argv[0]) + '/../lib/python')
+
+import argparse
+
+import adios
+import skelconf
+import skel_settings
+import skel_install
+import skel_makefile
+import skel_params
+import skel_source
+import skel_submit
+import skel_xml
+
+def parse_command_line():
+
+    parser = argparse.ArgumentParser (
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description='''\
+Skel: Create, run and analyze skeletal I/O applications
+-------------------------------------------------------
+Available subcommands include:
+    skel install
+    skel makefile
+    skel params
+    skel source
+    skel submit
+    skel xml''')
+    parser.add_argument ('subcommand', metavar='subcommand', help='Skel command to execute')
+    parser.add_argument ('project', metavar='project', help='Name of the skel project')
+    parser.add_argument ('-g', '--group', help='adios group (only valid for skel params)')
+
+    return parser.parse_args()
+
+
+def main(argv=None):
+
+    skel_settings.create_settings_dir_if_needed()
+    
+    args = parse_command_line()
+
+    if args.subcommand == 'install':
+        return 0
+
+    if args.subcommand == 'xml':
+        skel_xml.create_skel_xml (args.project)
+        return 0
+
+    try:
+        config = adios.adiosConfig (args.project + '_skel.xml')
+    except (IOError):
+        print "Error reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
+        return 1
+
+    if args.subcommand == 'params':
+        outfilename = args.project + '_params.xml.default'
+        skel_params.generate_param_file (args.project, outfilename, config, args.group)
+        return 0
+
+    try:    
+        params = skelconf.skelConfig (args.project + '_params.xml')
+    except (IOError):
+        print "Error reading " + args.project + "_params.xml. Try running skel params " + args.project + " first, then copy the generated " + args.project + "_params.xml.default, and edit to suit your needs."
+        return 1
+
+    if args.subcommand == 'makefile':
+        skel_makefile.generate_makefiles (params, config)
+        return 0
+
+    if args.subcommand == 'source':
+        skel_source.create_sources (params, config, args.project)
+        return 0
+
+    if args.subcommand == 'submit':
+        skel_submit.generate_submit_scripts (params)
+        return 0
+
+    print 'Unknown subcommand, exiting.'
+
+
+if __name__ == "__main__":
+    main()
+
+
+

@@ -8,3 +8,5 @@ endif
 if HAVE_NETCDF
 SUBDIRS +=bp2ncd
 endif
+
+SUBDIRS +=skel

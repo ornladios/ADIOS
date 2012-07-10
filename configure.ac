@@ -422,6 +422,8 @@ AC_CONFIG_FILES([Makefile
                  tests/suite/Makefile
                  tests/suite/programs/Makefile
                  utils/Makefile
+                 utils/skel/Makefile
+                 utils/skel/etc/Makefile
                  utils/adios_lint/Makefile
                  utils/gpp/Makefile
                  utils/bpdump/Makefile
