@@ -1199,47 +1199,59 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
         swap_order (ndim, offsets, &dummy);
     }
 
-    if (gdims[ndim - 1] == 0) // with time
+//
+    if (!is_global)
     {
-        if (!file_is_fortran)
+        /* local array */
+        for (k =0; k < ndim; k++)
         {
-            /* first dimension is the time (C array)
-             * ldims[0] = 1 but gdims does not contain time info and 
-             * gdims[0] is 1st data dimension and 
-             * gdims is shorter by one value than ldims in case of C.
-             * Therefore, gdims[*ndim-1] = 0 if there is a time dimension. 
-             */
-            // error check
-            if (ndim > 1 && ldims[0] != 1)
-            {
-                fprintf(stderr,"ADIOS Error: this is a BP file with C ordering but we didn't find"
-                        "an array to have time dimension in the first dimension. l:g:o = (");
-                for (k = 0; k < ndim; k++)
-                {
-                    fprintf (stderr,"%llu:%llu:%llu%s", ldims[k], gdims[k], offsets[k], (k<ndim-1 ? ", " : "") );
-                }
-
-                fprintf(stderr, ")\n");
-            }
-
-            for (k = 0; k < ndim - 1; k++)
-            {
-                ldims[k] = ldims[k + 1];
-            }
+            gdims[k] = ldims[k];
         }
-        else
+    }
+    else
+    {
+        if (gdims[ndim - 1] == 0) // with time
         {
-            // last dimension is the time (Fortran array)
-            if (ndim > 1 && ldims[ndim - 1] != 1)
+            if (!file_is_fortran)
             {
-                fprintf(stderr,"ADIOS Error: this is a BP file with Fortran array ordering but we didn't find"
-                        "an array to have time dimension in the last dimension. l:g:o = (");
-                for (k = 0; k < ndim; k++)
+                /* first dimension is the time (C array)
+                 * ldims[0] = 1 but gdims does not contain time info and 
+                 * gdims[0] is 1st data dimension and 
+                 * gdims is shorter by one value than ldims in case of C.
+                 * Therefore, gdims[*ndim-1] = 0 if there is a time dimension. 
+                 */
+                // error check
+                if (ndim > 1 && ldims[0] != 1)
                 {
-                    fprintf (stderr,"%llu:%llu:%llu%s", ldims[k], gdims[k], offsets[k], (k<ndim-1 ? ", " : "") );
+                    fprintf(stderr,"ADIOS Error 1: this is a BP file with C ordering but we didn't find"
+                            "an array to have time dimension in the first dimension. l:g:o = (");
+                    for (k = 0; k < ndim; k++)
+                    {
+                        fprintf (stderr,"%llu:%llu:%llu%s", ldims[k], gdims[k], offsets[k], (k<ndim-1 ? ", " : "") );
+                    }
+
+                    fprintf(stderr, ")\n");
                 }
 
-                fprintf (stderr, ")\n");
+                for (k = 0; k < ndim - 1; k++)
+                {
+                    ldims[k] = ldims[k + 1];
+                }
+            }
+            else
+            {
+                // last dimension is the time (Fortran array)
+                if (ndim > 1 && ldims[ndim - 1] != 1)
+                {
+                    fprintf(stderr,"ADIOS Error: this is a BP file with Fortran array ordering but we didn't find"
+                            "an array to have time dimension in the last dimension. l:g:o = (");
+                    for (k = 0; k < ndim; k++)
+                    {
+                        fprintf (stderr,"%llu:%llu:%llu%s", ldims[k], gdims[k], offsets[k], (k<ndim-1 ? ", " : "") );
+                    }
+
+                    fprintf (stderr, ")\n");
+                }
             }
         }
     }
@@ -1318,7 +1330,7 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
                 // error check
                 if (* ndim > 1 && ldims[0] != 1)
                 {
-                    fprintf(stderr,"ADIOS Error: this is a BP file with C ordering but we didn't find"
+                    fprintf(stderr,"ADIOS Error 2: this is a BP file with C ordering but we didn't find"
                             "an array to have time dimension in the first dimension. l:g:o = (");
                     for (i = 0; i < * ndim; i++)
                     {
