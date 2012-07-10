@@ -43,7 +43,11 @@ Available subcommands include:
 def main(argv=None):
 
     skel_settings.create_settings_dir_if_needed()
-    
+
+    # install does not require a project, so let's just check for it directly
+    if sys.argv[1] == 'install':
+        return 0;
+
     args = parse_command_line()
 
     if args.subcommand == 'install':
@@ -67,7 +71,8 @@ def main(argv=None):
     try:    
         params = skelconf.skelConfig (args.project + '_params.xml')
     except (IOError):
-        print "Error reading " + args.project + "_params.xml. Try running skel params " + args.project + " first, then copy the generated " + args.project + "_params.xml.default, and edit to suit your needs."
+        print "Error reading " + args.project + "_params.xml. Try running skel params " + args.project + " first,"
+        print "then copy the generated " + args.project + "_params.xml.default, and edit to suit your needs."
         return 1
 
     if args.subcommand == 'makefile':

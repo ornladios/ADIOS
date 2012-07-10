@@ -22,7 +22,6 @@ def generate_makefiles (params, config):
 def generate_makefiles_fortran (params):
 
     platform = params.get_target()
-    print 'generating Makefile for target ' + platform
 
     settings = skel_settings.skel_settings()
 
@@ -63,7 +62,6 @@ def generate_makefiles_fortran (params):
 def generate_makefiles_c (params):
 
     platform = params.get_target()
-    print 'generating Makefile for target ' + platform
 
     settings = skel_settings.skel_settings()
 

@@ -1,5 +1,7 @@
 import xml.dom.minidom
 
+import skel_settings
+
 
 class skelConfig:
     def __init__ (self, infile):
