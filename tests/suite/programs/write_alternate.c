@@ -137,8 +137,8 @@ int main (int argc, char ** argv)
     if (!err)
         err = read_file (); 
 
-    //if (!err)
-    //    err = read_stream (); 
+    if (!err)
+        err = read_stream (); 
 
     adios_finalize (rank);
     fini_vars();
@@ -216,7 +216,7 @@ int write_file (int step)
     if (vi->nsteps != NSTEPS) { \
         printE ("Variable " VARNAME " has %d steps, but expected %d\n", vi->nsteps, NSTEPS); \
         err = 103; \
-        goto endread; \
+        /*goto endread; */\
     } \
     adios_free_varinfo (vi);
 
@@ -320,7 +320,7 @@ int read_file ()
         adios_perform_reads (f, 1);
 
         CHECK_SCALAR (c0,  r0,  v0, i) // scalar is from writer rank 0, not this rank!
-        CHECK_SCALAR (ct0, rt0, v0, i) // so value is 'i', not
+        CHECK_SCALAR (ct0, rt0, v0, i) // so value is v0 at step 'i', not v
         CHECK_ARRAY (c1,  r1,  ldim1, v, i, iMacro)
         CHECK_ARRAY (ct1, rt1, ldim1, v, i, iMacro)
         CHECK_ARRAY (c2,  r2,  ldim1*ldim2, v, i, iMacro)
@@ -369,6 +369,144 @@ int read_file ()
         CHECK_ARRAY (bt1, rt1, ldim1, v, i, iMacro)
         CHECK_ARRAY (b2,  r2,  ldim1*ldim2, v, i, iMacro)
         CHECK_ARRAY (b3,  r3,  ldim1*ldim2*ldim3, v, i, iMacro)
+    } 
+
+endread:
+
+    adios_selection_delete (sel0);
+    adios_selection_delete (sel1);
+    adios_selection_delete (sel2);
+    adios_selection_delete (sel3);
+
+    adios_read_close(f);
+    MPI_Barrier (comm);
+    return err;
+}
+
+
+
+
+
+int read_stream ()
+{
+    ADIOS_SELECTION *sel0,*sel1,*sel2,*sel3;
+    ADIOS_FILE * f;
+    ADIOS_VARINFO * vi;
+    int err=0,v,v0,i,n;
+    int nsteps_a, nsteps_b, nsteps_c;
+    int iMacro; // loop variable in macros
+
+    uint64_t start[3] = {offs1,offs2,offs3};
+    uint64_t count[3] = {ldim1,ldim2,ldim3};
+    uint64_t ndim;
+    
+    reset_readvars();
+
+    log ("Read as stream and check data in %s\n", FILENAME);
+    f = adios_read_open_stream (FILENAME, ADIOS_READ_METHOD_BP, comm,
+                                ADIOS_LOCKMODE_NONE, 0.0);
+    if (f == NULL) {
+        printE ("Error at opening file as stream: %s\n", rank, adios_errmsg());
+        return 1;
+    }
+
+    sel0 = adios_selection_boundingbox (0, start, count); 
+    sel1 = adios_selection_boundingbox (1, start, count); 
+    sel2 = adios_selection_boundingbox (2, start, count); 
+    sel3 = adios_selection_boundingbox (3, start, count); 
+
+    while (adios_errno != err_end_of_stream) {
+        n = f->current_step;
+        log ("  Step %d\n", n);
+
+        log ("    Check variable definitions... %s\n", FILENAME);
+        if (n%2 == 1) {
+            CHECK_VARINFO("a0", 0, 1)
+            CHECK_VARINFO("at0", 0, 1)
+            CHECK_VARINFO("a1", 1, 1)
+            CHECK_VARINFO("at1", 1, 1)
+            CHECK_VARINFO("a2", 2, 1)
+            CHECK_VARINFO("a3", 3, 1)
+        } else {
+            CHECK_VARINFO("b0", 0, 1)
+            CHECK_VARINFO("bt0", 0, 1)
+            CHECK_VARINFO("b1", 1, 1)
+            CHECK_VARINFO("bt1", 1, 1)
+            CHECK_VARINFO("b2", 2, 1)
+            CHECK_VARINFO("b3", 3, 1)
+        }
+        CHECK_VARINFO("c0", 0, 1)
+        CHECK_VARINFO("ct0", 0, 1)
+        CHECK_VARINFO("c1", 1, 1)
+        CHECK_VARINFO("ct1", 1, 1)
+        CHECK_VARINFO("c2", 2, 1)
+        CHECK_VARINFO("c3", 3, 1)
+
+
+        v = VALUE(rank,n);
+        v0 = VALUE0(n);
+        log ("    Check variables c0,ct0,c1,ct1,c2,c3... Step %d value %d\n", n, v);
+
+        adios_schedule_read (f, sel0, "c0",  0, 1, &r0);
+        adios_schedule_read (f, sel0, "ct0", 0, 1, &rt0);
+        adios_schedule_read (f, sel1, "c1",  0, 1, r1);
+        adios_schedule_read (f, sel1, "ct1", 0, 1, rt1);
+        adios_schedule_read (f, sel2, "c2",  0, 1, r2);
+        adios_schedule_read (f, sel3, "c3",  0, 1, r3);
+        adios_perform_reads (f, 1);
+
+        CHECK_SCALAR (c0,  r0,  v0, n) // scalar is from writer rank 0, not this rank!
+        CHECK_SCALAR (ct0, rt0, v0, n) // so value is v0 at 'n', not v
+        CHECK_ARRAY (c1,  r1,  ldim1, v, n, iMacro)
+        CHECK_ARRAY (ct1, rt1, ldim1, v, n, iMacro)
+        CHECK_ARRAY (c2,  r2,  ldim1*ldim2, v, n, iMacro)
+        CHECK_ARRAY (c3,  r3,  ldim1*ldim2*ldim3, v, n, iMacro)
+
+
+        if (n%2 == 0) {
+            v = VALUE(rank,n*2);
+            v0 = VALUE0(n*2);
+            log ("    Check variables a0,at0,a1,at1,a2,a3... Step %d value %d\n", n, v);
+
+            adios_schedule_read (f, sel0, "a0",  0, 1, &r0);
+            adios_schedule_read (f, sel0, "at0", 0, 1, &rt0);
+            adios_schedule_read (f, sel1, "a1",  0, 1, r1);
+            adios_schedule_read (f, sel1, "at1", 0, 1, rt1);
+            adios_schedule_read (f, sel2, "a2",  0, 1, r2);
+            adios_schedule_read (f, sel3, "a3",  0, 1, r3);
+            adios_perform_reads (f, 1);
+
+            CHECK_SCALAR (a0,  r0,  v0, n)
+            CHECK_SCALAR (at0, rt0, v0, n)
+            CHECK_ARRAY (a1,  r1,  ldim1, v, n, iMacro)
+            CHECK_ARRAY (at1, rt1, ldim1, v, n, iMacro)
+            CHECK_ARRAY (a2,  r2,  ldim1*ldim2, v, n, iMacro)
+            CHECK_ARRAY (a3,  r3,  ldim1*ldim2*ldim3, v, n, iMacro)
+        }
+
+
+        if (n%2 == 1) {
+            v = VALUE(rank,n*2)+1;
+            v0 = VALUE0(n*2)+1;
+            log ("    Check variables b0,bt0,b1,bt1,b2,b3... Step %d value %d\n", n, v);
+
+            adios_schedule_read (f, sel0, "b0",  0, 1, &r0);
+            adios_schedule_read (f, sel0, "bt0", 0, 1, &rt0);
+            adios_schedule_read (f, sel1, "b1",  0, 1, r1);
+            adios_schedule_read (f, sel1, "bt1", 0, 1, rt1);
+            adios_schedule_read (f, sel2, "b2",  0, 1, r2);
+            adios_schedule_read (f, sel3, "b3",  0, 1, r3);
+            adios_perform_reads (f, 1);
+
+            CHECK_SCALAR (b0,  r0,  v0, n)
+            CHECK_SCALAR (bt0, rt0, v0, n)
+            CHECK_ARRAY (b1,  r1,  ldim1, v, n, iMacro)
+            CHECK_ARRAY (bt1, rt1, ldim1, v, n, iMacro)
+            CHECK_ARRAY (b2,  r2,  ldim1*ldim2, v, n, iMacro)
+            CHECK_ARRAY (b3,  r3,  ldim1*ldim2*ldim3, v, n, iMacro)
+        }
+
+        adios_advance_step (f, 0, 0.0);
     } 
 
 endread:
