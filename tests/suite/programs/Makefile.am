@@ -74,7 +74,9 @@ write_alternate_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 write_alternate_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 write_alternate.o: write_alternate.c
 
-EXTRA_DIST = posix_method.xml local_array_time.xml
+EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
+             posix_method.xml local_array_time.xml  \
+             write_alternate.xml write_read.xml
 
 CLEANFILES = gwrite_posix_method.fh gread_posix_method.fh 
 
