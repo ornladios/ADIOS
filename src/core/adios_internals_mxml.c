@@ -2710,7 +2710,8 @@ static int parseMeshStructured (mxml_node_t * node
 
         return 0;
     }
-    if (saw_points_single_var && !saw_nspace)
+    // nspace should not be required since the single var could be multi-dim
+    /*if (saw_points_single_var && !saw_nspace)
     {
         log_warn ("config.xml: points-single-var and nspace "
                          "required on mesh type=structured (%s)\n"
@@ -2718,7 +2719,7 @@ static int parseMeshStructured (mxml_node_t * node
                 );
 
         return 0;
-    }
+    }*/
 
     return 1;
 }
@@ -2978,7 +2979,8 @@ static int parseMeshUnstructured (mxml_node_t * node
 
         return 0;
     }
-    if (saw_points_single_var && !saw_nspace && !saw_number_of_points)
+    // nspace should not be required since the single variable could be multi-dim
+    /*if (saw_points_single_var && !saw_nspace && !saw_number_of_points)
     {
         log_warn ("config.xml: with points-single-var, nspace or number-of-points "
                          "required on mesh type=unstructured (%s)\n"
@@ -2987,7 +2989,8 @@ static int parseMeshUnstructured (mxml_node_t * node
 
         return 0;
 
-    }
+    }*/
+
     if (!saw_cell_set)
     {
         log_warn ("config.xml: at least one cell-set required on "
