@@ -68,6 +68,16 @@ enum ADIOS_ERRCODES {
 
     //buffering errors
     err_invalid_buffer                  = -130,
+    err_invalid_buffer_version          = -131,
+    err_invalid_buffer_index            = -132,
+    err_invalid_buffer_group            = -133,
+    err_invalid_buffer_vars             = -134,
+    err_invalid_buffer_attrs            = -135,
+    
+    
+
+    //invalid argument to function
+    err_invalid_argument                = -140,
 
 
     err_unspecified                     = -200
