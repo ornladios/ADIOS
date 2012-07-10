@@ -9,7 +9,7 @@
 # 5. add to EXTRA_DIST any non-source files that should go with the distribution
 check_readonly_C=
 if BUILD_WRITE
-check_C=local_array_time adios_amr_write adios_amr_write_2vars adios_staged_read adios_staged_read_2vars write_read write_alternate
+check_C=local_array_time adios_amr_write adios_amr_write_2vars adios_staged_read adios_staged_read_2vars write_read write_alternate many_vars
 endif
 
 if BUILD_FORTRAN
@@ -73,6 +73,11 @@ write_alternate_SOURCES=write_alternate.c
 write_alternate_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 write_alternate_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 write_alternate.o: write_alternate.c
+
+many_vars_SOURCES=many_vars.c
+many_vars_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+many_vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+many_vars.o: many_vars.c
 
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \

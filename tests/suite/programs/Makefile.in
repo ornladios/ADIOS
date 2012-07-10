@@ -69,7 +69,8 @@ CONFIG_CLEAN_FILES =
 @BUILD_WRITE_TRUE@	adios_amr_write_2vars$(EXEEXT) \
 @BUILD_WRITE_TRUE@	adios_staged_read$(EXEEXT) \
 @BUILD_WRITE_TRUE@	adios_staged_read_2vars$(EXEEXT) \
-@BUILD_WRITE_TRUE@	write_read$(EXEEXT) write_alternate$(EXEEXT)
+@BUILD_WRITE_TRUE@	write_read$(EXEEXT) write_alternate$(EXEEXT) \
+@BUILD_WRITE_TRUE@	many_vars$(EXEEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
@@ -95,6 +96,10 @@ adios_staged_read_2vars_DEPENDENCIES =  \
 am_local_array_time_OBJECTS = local_array_time.$(OBJEXT)
 local_array_time_OBJECTS = $(am_local_array_time_OBJECTS)
 local_array_time_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+am_many_vars_OBJECTS = many_vars.$(OBJEXT)
+many_vars_OBJECTS = $(am_many_vars_OBJECTS)
+many_vars_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1)
 am_posix_method_OBJECTS = posix_method.$(OBJEXT)
 posix_method_OBJECTS = $(am_posix_method_OBJECTS)
@@ -128,13 +133,13 @@ LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) $(local_array_time_SOURCES) \
-	$(posix_method_SOURCES) $(write_alternate_SOURCES) \
-	$(write_read_SOURCES)
+	$(many_vars_SOURCES) $(posix_method_SOURCES) \
+	$(write_alternate_SOURCES) $(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) $(local_array_time_SOURCES) \
-	$(posix_method_SOURCES) $(write_alternate_SOURCES) \
-	$(write_read_SOURCES)
+	$(many_vars_SOURCES) $(posix_method_SOURCES) \
+	$(write_alternate_SOURCES) $(write_read_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -383,7 +388,7 @@ target_alias = @target_alias@
 # 4. add files to CLEANFILES that should be deleted at 'make clean'
 # 5. add to EXTRA_DIST any non-source files that should go with the distribution
 check_readonly_C = 
-@BUILD_WRITE_TRUE@check_C = local_array_time adios_amr_write adios_amr_write_2vars adios_staged_read adios_staged_read_2vars write_read write_alternate
+@BUILD_WRITE_TRUE@check_C = local_array_time adios_amr_write adios_amr_write_2vars adios_staged_read adios_staged_read_2vars write_read write_alternate many_vars
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
 
@@ -421,6 +426,9 @@ write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 write_alternate_SOURCES = write_alternate.c
 write_alternate_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 write_alternate_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+many_vars_SOURCES = many_vars.c
+many_vars_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+many_vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
              write_alternate.xml write_read.xml
@@ -485,6 +493,9 @@ adios_staged_read_2vars$(EXEEXT): $(adios_staged_read_2vars_OBJECTS) $(adios_sta
 local_array_time$(EXEEXT): $(local_array_time_OBJECTS) $(local_array_time_DEPENDENCIES) 
 	@rm -f local_array_time$(EXEEXT)
 	$(LINK) $(local_array_time_LDFLAGS) $(local_array_time_OBJECTS) $(local_array_time_LDADD) $(LIBS)
+many_vars$(EXEEXT): $(many_vars_OBJECTS) $(many_vars_DEPENDENCIES) 
+	@rm -f many_vars$(EXEEXT)
+	$(LINK) $(many_vars_LDFLAGS) $(many_vars_OBJECTS) $(many_vars_LDADD) $(LIBS)
 posix_method$(EXEEXT): $(posix_method_OBJECTS) $(posix_method_DEPENDENCIES) 
 	@rm -f posix_method$(EXEEXT)
 	$(FCLINK) $(posix_method_LDFLAGS) $(posix_method_OBJECTS) $(posix_method_LDADD) $(LIBS)
@@ -506,6 +517,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_2vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local_array_time.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/many_vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_alternate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_read.Po@am__quote@
 
@@ -800,6 +812,7 @@ adios_staged_read.o: adios_staged_read.c
 adios_staged_read_2vars.o: adios_staged_read_2vars.c
 write_read.o: write_read.c
 write_alternate.o: write_alternate.c
+many_vars.o: many_vars.c
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
