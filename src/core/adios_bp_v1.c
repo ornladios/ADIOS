@@ -398,7 +398,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
         (*root)->characteristics = malloc (characteristics_sets_count
                          * sizeof (struct adios_index_characteristic_struct_v1)
                         );
-        memset ((*root)->characteristics, characteristics_sets_count
+        memset ((*root)->characteristics, 0, characteristics_sets_count
                 * sizeof (struct adios_index_characteristic_struct_v1));
         for (j = 0; j < characteristics_sets_count; j++)
         {
@@ -466,7 +466,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                                 if (!data)
                                 {
 				    adios_error(err_no_memory, "cannot allocate"
-						"%d bytes to copy scalar %s\n"
+						"%d bytes to copy scalar %s\n",
 						data_size, (*root)->var_name);
 
                                     return 1;
@@ -507,7 +507,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                                 if (!data)
                                 {
 				    adios_error(err_no_memory, "cannot allocate"
-						"%d bytes to copy scalar %s\n"
+						"%d bytes to copy scalar %s\n",
 						data_size, (*root)->var_name);
                                     return 1;
                                 }
@@ -911,7 +911,7 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                         if (!data)
                         {
 			    adios_error(err_no_memory, "cannot allocate"
-					"%d bytes to copy scalar %s\n"
+					"%d bytes to copy scalar %s\n",
 					data_size, (*root)->attr_name);
 			    
                             return 1;
