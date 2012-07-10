@@ -117,7 +117,7 @@ int adios_parse_version (struct adios_bp_buffer_struct_v1 * b,
 
     if (b->length < 4)
     {
-	adios_error(err_invalid_buffer, "adios_parse_version requires"
+	adios_error(err_invalid_buffer_version, "adios_parse_version requires"
 		    "a buffer of at least "
 		    "4 bytes.  Only %llu were provided\n", b->length);
         return 1;
@@ -146,7 +146,7 @@ int adios_parse_index_offsets_v1 (struct adios_bp_buffer_struct_v1 * b)
 {
     if (b->length - b->offset < 24)
     {
-	adios_error(err_invalid_buffer, "adios_parse_index_offsets_v1"
+	adios_error(err_invalid_buffer_index, "adios_parse_index_offsets_v1"
 		    "requires a buffer of at least 24 bytes."
 		    "Only %llu were provided\n", b->length - b->offset);
         return 1;
@@ -196,7 +196,7 @@ int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b,
     struct adios_index_process_group_struct_v1 ** root;
     if (b->length - b->offset < 16)
     {
-	adios_error(err_invalid_buffer, "adios_parse_process_group_index_v1"
+	adios_error(err_invalid_buffer_group, "adios_parse_process_group_index_v1"
 		    "requires a buffer of at least 16 bytes."
 		    "Only %llu were provided\n", b->length - b->offset);
         return 1;
@@ -298,7 +298,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
     if (b->length - b->offset < 10)
     {
-	adios_error(err_invalid_buffer,	"adios_parse_vars_index_v1"
+	adios_error(err_invalid_buffer_vars, "adios_parse_vars_index_v1"
 		    "requires a buffer of at least 10 bytes."
 		    "Only %llu were provided\n", b->length - b->offset);
         return 1;
@@ -757,7 +757,7 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
     if (b->length - b->offset < 10)
     {
-	adios_error(err_invalid_buffer, "adios_parse_attributes_index_v1 "
+	adios_error(err_invalid_buffer_attrs, "adios_parse_attributes_index_v1 "
 		    "requires a buffer of at least 10 bytes."
 		    "Only %llu were provided\n", b->length - b->offset);
 
@@ -1069,7 +1069,7 @@ int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < 16)
     {
-	adios_error(err_invalid_buffer, "adios_parse_process_group_header_v1"
+	adios_error(err_invalid_buffer_group, "adios_parse_process_group_header_v1"
 		    "requires a buffer of at least 16 bytes. "
 		    "Only %llu were provided\n",b->length - b->offset);
         return 1;
@@ -1173,7 +1173,7 @@ int adios_parse_vars_header_v1 (struct adios_bp_buffer_struct_v1 * b
 
     if (b->length - b->offset < 10)
     {
-	adios_error(err_invalid_buffer, "adios_parse_vars_header_v1"
+	adios_error(err_invalid_buffer_vars, "adios_parse_vars_header_v1"
 		    "requires a buffer of at least 10 bytes. "
 		    "Only %llu were provided\n", b->length - b->offset);
 
@@ -1203,7 +1203,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < 21)
     {
-	adios_error(err_invalid_buffer, "adios_parse_var_data_header_v1"
+	adios_error(err_invalid_buffer_vars, "adios_parse_var_data_header_v1"
 		    "requires a buffer of at least 21 bytes."
 		    "Only %llu were provided\n", b->length - b->offset);
 
@@ -1732,7 +1732,7 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < var_header->payload_size)
     {
-	adios_error(err_invalid_buffer, "adios_parse_var_data_payload_v1"
+	adios_error(err_invalid_buffer_vars, "adios_parse_var_data_payload_v1"
 		    " for name %s path %s requires a buffer of at least "
 		    "%llu bytes. Only %llu were provided\n", var_header->name, 
 		    var_header->path, var_header->payload_size, 
@@ -1746,7 +1746,7 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
         && var_payload && var_payload->payload
        )
     {
-        adios_error(err_invalid_buffer, "reading var name %s path %s"
+        adios_error(err_invalid_buffer_vars, "reading var name %s path %s"
 		    "requires a buffer of at least %llu bytes.  "
 		    "Only %llu were provided\n" , var_header->name, 
 		    var_header->path, var_header->payload_size, 
@@ -1793,7 +1793,7 @@ int adios_parse_attributes_header_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < 10)
     {
-	adios_error(err_invalid_buffer, "adios_parse_attributes_header_v1"
+	adios_error(err_invalid_buffer_attrs, "adios_parse_attributes_header_v1"
 		    "requires a buffer of at least 10 bytes.  "
 		    "Only %llu were provided\n", b->length - b->offset);
 
@@ -1824,7 +1824,7 @@ int adios_parse_attribute_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < 15)
     {
-	adios_error(err_invalid_buffer, "adios_parse_attribute_data_payload_v1"
+	adios_error(err_invalid_buffer_attrs, "adios_parse_attribute_data_payload_v1"
 		    "requires a buffer of at least 15 bytes.  "
 		    "Only %llu were provided\n", b->length - b->offset);
 
