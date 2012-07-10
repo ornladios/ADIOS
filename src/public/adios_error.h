@@ -50,7 +50,8 @@ enum ADIOS_ERRCODES {
     err_too_many_variables              = -104,
     err_invalid_write_method            = -105,
 
-
+    //buffering errors
+    err_invalid_buffer                  = -130,
 
 
     err_unspecified                     = -200
