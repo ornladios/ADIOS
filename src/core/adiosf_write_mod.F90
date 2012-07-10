@@ -14,6 +14,8 @@
 !
 module adios_write_mod
 
+    use adios_defs_mod
+
     interface
 
         subroutine adios_init (config, err)
