@@ -44,7 +44,7 @@ int main (int argc, char ** argv[] )
     Y[0] = 0;
     for (i = 1; i< NX; i++)
     {
-        Y[i] = i + 2*Y[i-1];
+        Y[i] = i + Y[i-1];
     }
 
     for (i = 0; i< size+NX; i++)

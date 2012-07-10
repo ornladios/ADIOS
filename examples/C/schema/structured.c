@@ -48,6 +48,9 @@ int main (int argc, char * argv[] )
         }
     }
    
+    for (i = 0; i< NX; i++) {
+        t[i] = i+rank;
+    }
     mean /= NX;
 
     //strcpy (meshname, "structured");

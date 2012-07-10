@@ -17,7 +17,7 @@
     <!-- Mesh1: 
          - dimensions
          - points-multi-var
-         Note: dimensions (or nspace) are not required for points-multi-var since 
+         Note: nspace is not required for points-multi-var since 
          the number of coordinates per node can be deducted from the number of 
          variables provided to the points-multi-var tag
     -->
@@ -27,12 +27,12 @@
     </mesh>
     <!-- Mesh2:
          - dimensions
+         - nspace 
          - points-single-var
-         nspace is not required and will be equal to the number of dimensions
-         provided by default (nspace=2)
     -->
     <mesh name="mesh2" type="structured" time-varying="no">
         <dimensions value="size,NX"/>
+        <nspace value="2" />
         <points-single-var value="XY" />
     </mesh>
     <!-- Mesh3: 
