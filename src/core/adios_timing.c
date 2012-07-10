@@ -19,8 +19,9 @@
 /*
  * Dump the timing information to an XML file. 
  * The first process writes first, the last writes last, and the others are in unspecified order.
+ * Called both from C and Fortran API's (adios.c and adiosf.c)
 */
-void adios_timing_write_xml (int64_t fd_p, const char* filename)
+void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 {
 #ifdef SKEL_TIMING
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;

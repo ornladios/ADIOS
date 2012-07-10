@@ -382,3 +382,10 @@ int adios_select_method (int64_t group, const char * method
                                                   );
 }
 
+///////////////////////////////////////////////////////////////////////////////
+void adios_timing_write_xml (int64_t fd_p, const char* filename)
+{
+    // defined in adios_timing.c
+    adios_timing_write_xml_common (fd_p, filename);
+}
+

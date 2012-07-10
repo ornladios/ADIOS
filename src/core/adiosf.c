@@ -388,7 +388,8 @@ void FC_FUNC_(adios_timing_write_xml, ADIOS_TIMING_WRITE_XML) (int64_t * fd_p, c
     char * cfile = 0;
     cfile = futils_fstr_to_cstr (filename, filename_size);
 
-    adios_timing_write_xml (*fd_p, cfile);
+    // defined in adios_timing.c
+    adios_timing_write_xml_common (*fd_p, cfile);
 }
 
 
