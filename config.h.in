@@ -32,11 +32,11 @@
 /* Define if you have CRAY_UGNI. */
 #undef HAVE_CRAY_UGNI
 
-/* Define to 1 if you have the <dart_interface.h> header file. */
-#undef HAVE_DART_INTERFACE_H
-
 /* Define if you have the DATASPACES. */
 #undef HAVE_DATASPACES
+
+/* Define to 1 if you have the <dataspaces.h> header file. */
+#undef HAVE_DATASPACES_H
 
 /* Define if you have the DIMES. */
 #undef HAVE_DIMES

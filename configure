@@ -27840,7 +27840,7 @@ fi;
 
     if test -z "${HAVE_DATASPACES_TRUE}"; then
 
-for ac_header in dart_interface.h
+for ac_header in dataspaces.h
 do
 as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if eval "test \"\${$as_ac_Header+set}\" = set"; then
@@ -28011,7 +28011,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include "dart_interface.h"
+#include "dataspaces.h"
 #ifdef FC_DUMMY_MAIN
 #ifndef FC_DUMMY_MAIN_EQ_F77
 #  ifdef __cplusplus
@@ -28023,7 +28023,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; err = dataspaces_init(1,1);
+int err; err = dspaces_init(1,1);
   ;
   return 0;
 }
@@ -28074,7 +28074,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include "dart_interface.h"
+#include "dataspaces.h"
 #ifdef FC_DUMMY_MAIN
 #ifndef FC_DUMMY_MAIN_EQ_F77
 #  ifdef __cplusplus
@@ -28086,7 +28086,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; err = dart_init(1,1);
+int err; err = dspaces_init(1,1);
   ;
   return 0;
 }
@@ -28137,7 +28137,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include "dart_interface.h"
+#include "dataspaces.h"
 #ifdef FC_DUMMY_MAIN
 #ifndef FC_DUMMY_MAIN_EQ_F77
 #  ifdef __cplusplus
@@ -28149,7 +28149,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; err = dart_init(1,1);
+int err; err = dspaces_init(1,1);
   ;
   return 0;
 }
