@@ -347,6 +347,76 @@ make matlab
 \subsection{Support for Java}
 \label{section-install-java}
 
+ADIOS provides a Java language binding implemented by the Java Native Interface (JNI).
+The program can be built with CMake (\url{http://www.cmake.org/}) which will detect your ADIOS installation and related programs and libraries. With CMake, you can create a build directory and run cmake pointing the Java wrapper source directory (wrappers/java) containing CMakeLists.txt. For example, 
+\begin{lstlisting}
+cd wrappers/java
+mkdir build
+cd build
+cmake ..
+\end{lstlisting}
+
+CMake will search installed ADIOS libraries, Java, JNI, MPI libraries (if
+needed), etc. Once completed, type \verb+make+ to build. If you need verbose output, you type as follows:
+\begin{lstlisting}
+make VERBOSE=1
+\end{lstlisting}
+
+After successful building, you will see libAdiosJava.so (or
+libAdiosJava.dylib in Mac) and AdiosJava.jar. Those two files will be needed to use in Java. If you want to install those files, type the following:
+\begin{lstlisting}
+make install
+\end{lstlisting}
+
+The default installation directory is \verb+/usr/local+. You can change by
+specifying \verb+CMAKE_INSTALL_PREFIX+ value;
+\begin{lstlisting}
+cmake -DCMAKE_INSTALL_PREFIX=/path/to/install /dir/to/source
+\end{lstlisting}
+
+Or, you can use the \verb+ccmake+ command, the CMake curses interface. Please refer to the CMake documents for more detailed instructions.
+
+This program contains a few test programs. To run testing after building,
+type the following command:
+\begin{lstlisting}
+make test
+\end{lstlisting}
+
+If you need a verbose output, type the following
+\begin{lstlisting}
+ctest -V
+\end{lstlisting}
+
 \subsection{Support for Numpy}
 \label{section-install-numpy}
+
+ADIOS also provides a Python/Numpy language binding. The source code is located in \verb+wrappers/numpy+. This module is developed by Cython.
+
+Like the Java binding, this Python/Numpy wrapper can be built by using CMake (\url{http://www.cmake.org/}). You can create a build directory and run cmake by pointing the source directory. For example, 
+\begin{lstlisting}
+cd wrappers/numpy
+mkdir build
+cd build
+cmake ..
+\end{lstlisting}
+
+CMake will search installed ADIOS library and Python/Numpy. Once completed, type \verb+make+ to build or type the following for the verbose output.
+\begin{lstlisting}
+make VERBOSE=1
+\end{lstlisting}
+
+After successful building, you will see adios.so. This file can be
+loaded in Python.
+
+This program contains a few test programs. To run testing after building,
+type the following command:
+\begin{lstlisting}
+make test
+\end{lstlisting}
+
+If you need a verbose output, type the following
+\begin{lstlisting}
+ctest -V
+\end{lstlisting}
+
 
