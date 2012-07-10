@@ -8,14 +8,15 @@
 #include <stdint.h>
 #include <stdio.h>
 #include "public/adios_types.h"
+#include "core/adios_logger.h"
 
 void show_bytes(unsigned char * start, int len)
 {
     int i;
     for (i = 0; i < len; i ++) {
-        fprintf(stderr, " %.2x", start[i]);
+        log_info(" %.2x", start[i]);
     }
-    fprintf(stderr, "\n");
+    log_info("\n");
 }
 
 
