@@ -179,7 +179,7 @@ void close_all_BP_files (struct BP_file_handle * l)
                                                                                             \
             name = (char *) malloc (strlen (fh->fname) + 5 + strlen (name_no_path) + 1 + 10 + 1); \
             sprintf (name, "%s.dir/%s.%d", fh->fname, name_no_path, new_h->file_index);     \
-            err = MPI_File_open (fh->comm                                                   \
+            err = MPI_File_open (MPI_COMM_SELF                                                   \
                                 ,name                                                       \
                                 ,MPI_MODE_RDONLY                                            \
                                 ,info                                                       \
