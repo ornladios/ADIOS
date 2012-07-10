@@ -5,8 +5,8 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-/* ADIOS C Example: write some attributes along with variables
-*/
+/* ADIOS C Example: write variables along with an unstructured mesh. 
+ */
 #include <stdio.h>
 #include <string.h>
 #include "mpi.h"
