@@ -46,7 +46,7 @@ program read_bp_f
 
     call processArgs(path)
 
-    call adios_read_init_method (0, comm, "verbose=4", ierr);
+    call adios_read_init_method (ADIOS_READ_METHOD_BP, comm, "verbose=4", ierr);
     call adios_read_open_file (fh, path, 0, comm, ierr)
     if (ierr .ne. 0) then
         call exit(1)
@@ -106,21 +106,21 @@ program read_bp_f
             !! scalar variable
             sel = 0
             write (*,'(a,"    scalar: type=",i0," steps=",i0,$)') trim(vnamelist(i)), vtype, vrank
-            if (vtype == 2) then
+            if (vtype == adios_integer) then
                 !call adios_get_scalar (fh, vnamelist(i), an_int, ierr)
                 call adios_schedule_read (fh, sel, vnamelist(i), 0, 1,  an_int, ierr)
                 call adios_perform_reads (fh, ierr)
                 write(*,'("    = ",i0)') an_int
-            else if (vtype == 5) then 
+            else if (vtype == adios_real) then 
                 call adios_get_scalar (fh, vnamelist(i), a_real, ierr)
                 write(*,'("    = ",d20.10)') a_real
-            else if (vtype == 6) then 
+            else if (vtype == adios_double) then 
                 call adios_get_scalar (fh, vnamelist(i), a_double, ierr)
                 write(*,'("    = ",d20.10)') a_double
-            else if (vtype == 9) then
+            else if (vtype == adios_string) then
                 call adios_get_scalar (fh, vnamelist(i), a_string, ierr)
                 write(*,'("    = ",a)') trim(a_string)
-            else if (vtype == 10) then 
+            else if (vtype == adios_complex) then 
                 call adios_get_scalar (fh, vnamelist(i), a_complex, ierr)
                 write(*,'("    = (",d20.10,",",d20.10,")")') a_complex
             else
