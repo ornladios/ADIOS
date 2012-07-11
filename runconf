@@ -686,7 +686,7 @@ elif [ `hostname | cut -c 1-6` == "kraken" ]; then
         exit 1
     fi
     echo ""
-    echo "Configure for the $TARGET compiler"
+    echo "Configure KRAKEN for the $TARGET compiler"
     echo ""
     export CC=cc
     export FC=ftn
@@ -736,7 +736,7 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     export MPICC=/opt/local/bin/openmpicc
     export MPIFC=/opt/local/bin/openmpif90
     export MPICXX=/opt/local/bin/openmpicxx
-    CFLAGS="-DO_LARGEFILE=0 -fno-common" ./configure --prefix=/opt/adios \
+    CFLAGS="-g -DO_LARGEFILE=0 -fno-common" ./configure --prefix=/opt/adios \
         --with-mxml=/opt/mxml \
         --with-netcdf=/opt/netcdf \
         --with-phdf5=/opt/hdf5 \
