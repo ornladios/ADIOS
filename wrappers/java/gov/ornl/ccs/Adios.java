@@ -46,21 +46,25 @@ public class Adios
         System.loadLibrary("AdiosJava");
     }
 
+	/* Call adios_init */
     public static int Init(String xml_fname)
     {
         return adios_init(xml_fname);
     }
     
+	/* Call adios_open. Return a group handler */
     public static long Open(String group_name, String file_name, String mode, long comm)
     {
         return adios_open(group_name, file_name, mode, comm);
     }
 
+	/* Call adios_group_size and return the total size */
     public static long SetGroupSize(long fh, long group_size)
     {
         return adios_group_size (fh, group_size);
     }
 
+	/* Call adios_write and return the total size */
     public static long Write (long fh, String var_name, byte value)
     {
         return adios_write (fh, var_name, value);
@@ -111,36 +115,43 @@ public class Adios
         return adios_write (fh, var_name, value);
     }
 
+	/* Call adios_close */
     public static int Close (long fh)
     {
         return adios_close (fh);
     }
 
+	/* Call adios_finalize */
     public static int Finalize (int id)
     {
         return adios_finalize(id);
     }
 
+	/* Call MPI_Init */
     public static int MPI_Init(String[] args)
     {
         return adios_mpi_init(args);
     }
 
+ 	/* Call MPI_Comm_rank */
     public static int MPI_Comm_rank(long comm)
     {
         return adios_mpi_comm_rank(comm);
     }
 
+	/* Call MPI_Comm_size */
     public static int MPI_Comm_size(long comm)
     {
         return adios_mpi_comm_size(comm);
     }
 
+	/* Call MPI_Finalize */
     public static int MPI_Finalize()
     {
         return adios_mpi_finalize();
     }
 
+	/* Get MPI_COMM_WORLD */
     public static long MPI_COMM_WORLD()
     {
         return adios_mpi_comm_world();
@@ -151,32 +162,38 @@ public class Adios
         return adios_open_and_set_group_size(group_name, file_name, mode, group_size, comm);
     }
 
+	/* Call adios_init_noxml */
     public static int Init_Noxml()
     {
         return adios_init_noxml();
     }
     
+	/* Call adios_allocate_buffer */
     public static int AllocateBuffer(AdiosBufferAllocWhen when, long size)
     {
         return adios_allocate_buffer(when.getCode(), size);
     }
     
 
+	/* Call adios_declare_group */
     public static long DeclareGroup(String name, String time_index, AdiosFlag stats)
     {
         return adios_declare_group(name, time_index, stats.getCode());
     }
 
+	/* Call adios_define_var */
     public static int DefineVar(long group_id, String name, String path, AdiosDatatype type, String dimensions, String global_dimensions, String local_offsets)
     {
         return adios_define_var(group_id, name, path, type.getCode(), dimensions, global_dimensions, local_offsets);
     }
 
-    public static int DefineVar(long group_id, String name, String path, AdiosDatatype type, String value, String var)
+ 	/* Call adios_define_attribute */
+    public static int DefineAttribute(long group_id, String name, String path, AdiosDatatype type, String value, String var)
     {
         return adios_define_attribute(group_id, name, path, type.getCode(), value, var);
     }
 
+ 	/* Call adios_select_method */
     public static int SelectMethod(long group_id, String method, String parameters, String base_path)
     {
         return adios_select_method(group_id, method, parameters, base_path);
