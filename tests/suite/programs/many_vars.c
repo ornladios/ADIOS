@@ -83,13 +83,16 @@ void alloc_vars()
     printf ("varname[%d]=%s\n", NVARS-1, varnames[NVARS-1]);
 }
 
+void set_gdim()
+{
+    gdim1 = size*ldim1;
+    gdim2 = NBLOCKS*ldim2;
+}
+
 void set_vars(int step, int block)
 {
     int n, i;
     int v = VALUE(rank, step, block);
-
-    gdim1 = size*ldim1;
-    gdim2 = NBLOCKS*ldim2;
 
     offs1 = rank*ldim1;
     offs2 = block*ldim2;
@@ -161,6 +164,7 @@ int main (int argc, char ** argv)
 
 
     define_vars();
+    set_gdim();
     
     for (i=0; i<NSTEPS; i++) {
         if (!err) {
@@ -180,20 +184,23 @@ int main (int argc, char ** argv)
 
 void define_vars ()
 {
-    int i;
+    int i, block;
 
     adios_define_var (m_adios_group, "ldim1", "", adios_integer, 0, 0, 0);
     adios_define_var (m_adios_group, "ldim2", "", adios_integer, 0, 0, 0);
     adios_define_var (m_adios_group, "gdim1", "", adios_integer, 0, 0, 0);
     adios_define_var (m_adios_group, "gdim2", "", adios_integer, 0, 0, 0);
-    adios_define_var (m_adios_group, "offs1", "", adios_integer, 0, 0, 0);
-    adios_define_var (m_adios_group, "offs2", "", adios_integer, 0, 0, 0);
 
-    for (i=0; i<NVARS; i++) {
-        adios_define_var (m_adios_group, varnames[i], "", adios_integer, 
-                          "iter,ldim1,ldim2",
-                          "gdim1,gdim2",
-                          "offs1,offs2");
+    for (block=0; block<NBLOCKS; block++) {
+        adios_define_var (m_adios_group, "offs1", "", adios_integer, 0, 0, 0);
+        adios_define_var (m_adios_group, "offs2", "", adios_integer, 0, 0, 0);
+
+        for (i=0; i<NVARS; i++) {
+            adios_define_var (m_adios_group, varnames[i], "", adios_integer, 
+                    "iter,ldim1,ldim2",
+                    "gdim1,gdim2",
+                    "offs1,offs2");
+        }
     }
 }
 
@@ -206,22 +213,23 @@ int write_file (int step)
     log ("Write step %d to %s\n", step, FILENAME);
     adios_open (&fh, "multiblock", FILENAME, (step ? "a" : "w"), &comm);
     
-    groupsize  = NBLOCKS * 6 * sizeof(int);                 // dimensions 
+    groupsize  = (4 + NBLOCKS*2) * sizeof(int);             // dimensions 
     groupsize += NVARS * NBLOCKS * ldim1 * ldim2 * sizeof(int);     // 2D  blocks
     //groupsize +=1024;
 
     adios_group_size (fh, groupsize, &totalsize);
     log ("  groupsize %lld, totalsize %lld\n", groupsize, totalsize);
 
+    adios_write (fh, "gdim1", &gdim1);
+    adios_write (fh, "gdim2", &gdim2);
+    adios_write (fh, "ldim1", &ldim1);
+    adios_write (fh, "ldim2", &ldim2);
+
     for (block=0; block<NBLOCKS; block++) {
         v = VALUE(rank, step, block);
         log ("  Write block %d, value %d to %s\n", block, v, FILENAME);
         set_vars (step, block);
 
-        adios_write (fh, "gdim1", &gdim1);
-        adios_write (fh, "gdim2", &gdim2);
-        adios_write (fh, "ldim1", &ldim1);
-        adios_write (fh, "ldim2", &ldim2);
         adios_write (fh, "offs1", &offs1);
         adios_write (fh, "offs2", &offs2);
 
