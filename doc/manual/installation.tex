@@ -76,11 +76,7 @@ export FC=ftn
 \subsection{Mini-XML parser (required)}
 
 The Mini-XML library is used to parse XML configuration files. Mini-XML can be 
-downloaded from 
-
-\begin{lstlisting}[language={}]
-http://www.minixml.org/software.php
-\end{lstlisting}
+downloaded from \url{http://www.minixml.org/software.php}
 
 
 \subsection{MPI and MPI-IO (required)}
@@ -168,13 +164,13 @@ Staging methods use Remote Direct Memory Access (RDMA) operations, supported by 
 on various systems. 
 
 \vspace*{6pt}
-{\bf Infiniband. } 
+\noindent {\bf Infiniband. } 
 If you have an Infininband network with \verb+ibverbs+ and \verb+rdmacm+ libraries installed, you can configure ADIOS to use it for staging methods with the option
 \verb+--with-infiniband=DIR+  to define the path to the Infiniband libraries. 
 
 \vspace*{6pt}
-{\bf Cray Gemini network. }
-On newer Cray machines (XK6 and XE6) with the Gemini network, the \verb+PMI+ and \verb+uGNI+ libraries are used by the staging methods. Configure ADIOS with the options
+\noindent {\bf Cray Gemini network. }
+On newer Cray machines (XK6 and XE6) with the Gemini network, the \verb+PMI+ and \verb+uGNI+ libraries are used by the staging methods. ADIOS configure usually finds them automatically, but if not, configure ADIOS with the options
 
 \begin{lstlisting}
 --with-cray-pmi=<location of CRAY_PMI installation>
@@ -188,13 +184,15 @@ On newer Cray machines (XK6 and XE6) with the Gemini network, the \verb+PMI+ and
 \end{lstlisting}
 
 \vspace*{6pt}
-{\bf Portals. }
+\noindent {\bf Portals. }
 Portals is an RDMA library from Sandia Labs, and it has been used on Cray XT5 machines with Seastar networks. Configure ADIOS with the option
 
 \verb+--with-portals=DIR      Location of Portals (yes/no/path_to_portals)+
 
 \subsubsection{DataSpaces staging methods}
-The DataSpaces model provides a separate server running on separate compute nodes, into/from which data can be written/read with a geometrical (3D) abstraction. It is an efficient way to stage data from one application to another in an asynchronous (and very fast) way. Multiple steps of data outputs can be stored, limited only by the available memory. Build the DataSpaces method with the option:
+The DataSpaces model provides a separate server running on separate compute nodes, into/from which data can be written/read with a geometrical (3D) abstraction. It is an efficient way to stage data from one application to another in an asynchronous (and very fast) way. Multiple steps of data outputs can be stored, limited only by the available memory. DataSpaces can be downloaded from \url{http://www.dataspaces.org}
+
+\noindent Build the DataSpaces method with the option:
 
 \begin{lstlisting}
 --with-dataspaces=DIR  Build the DATASPACES transport method. Point to the
