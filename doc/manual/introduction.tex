@@ -107,7 +107,7 @@ Old codes can use the old read API too, for reading files but new users are defi
 Other new things in ADIOS:
 \begin{itemize}
 \item New read API. Files and streams can be processed step-by-step (or files with multiple steps at once). Multiple read requests are served at once, which enables for superior performance with some methods. Support for non-blocking and for chunked reads in memory-limited applications or for interleaving computation with data movement, although no current methods provide performance advantages in this release.  
-\item Fortran90 modules for write and read API. Finally, syntax can be checked by the Fortran compiler.
+\item Fortran90 modules for write and read API. Syntax of ADIOS calls can be checked by the Fortran compiler.
 \item Java and Numpy bindings available (they should be built separately).
 \item Visualization schema support in the XML configuration. Meshes can be described using output variables and data variables can be assigned to meshes. This will allow for automatic visualization from ADIOS-BP files with rich metadata, or to convey the developer's intentions to other users about how to visualize the data. A manual on the schema is separate from this Users' Manual and can be downloaded from the same web page. 
 \item \emph{Skel} I/O skeleton generator for automatic performance evaluation of different methods. The XML configuration, that describes the output of an application, is used to generate code that can be used to test out different methods and to choose the best. Skel is part of ADIOS but it's manual is separate from this Users' Manual and can be downloaded from the same web page. 
