@@ -26,16 +26,18 @@ if len(sys.argv) > 2:
 f = netcdf.netcdf_file(fname, 'r')
 
 ## Check dimension
-assert (all(map(lambda x: x is not None, [ val for k, val in f.dimensions.items() if k != tname])))
+assert (all(map(lambda x: x is not None,
+                [ val for k, val in f.dimensions.items()
+                  if k != tname])))
 
 ## Two types of variables : time-dependent or time-independent
-dimvar = { n:v for n,v in f.variables.items() if n in f.dimensions.keys() }
-var = { n:v for n,v in f.variables.items() if n not in f.dimensions.keys() }
-tdepvar = { n:v for n,v in var.items() if tname in v.dimensions }
-tindvar = { n:v for n,v in var.items() if tname not in v.dimensions }
+dimvar = {n:v for n,v in f.variables.items() if n in f.dimensions.keys()}
+var = {n:v for n,v in f.variables.items() if n not in f.dimensions.keys()}
+tdepvar = {n:v for n,v in var.items() if tname in v.dimensions}
+tindvar = {n:v for n,v in var.items() if tname not in v.dimensions}
 
 ## Time dimension
-assert (len(set([v.dimensions.index(tname) for v in tdepvar.values()])) == 1)
+assert (len(set([v.dimensions.index(tname) for v in tdepvar.values()]))==1)
 tdx = tdepvar.values()[0].dimensions.index(tname)
 
 assert (all([v.data.shape[tdx] for v in tdepvar.values()]))
@@ -84,7 +86,8 @@ for name, var in tdepvar.items():
     print "Variable : %s (%s)" % (name, ','.join(var.dimensions))
     define_var (gid, name, "", DATATYPE.double,
                 ','.join(var.dimensions),
-                ','.join([dname for dname in var.dimensions if dname != tname]),
+                ','.join([dname for dname in var.dimensions
+                          if dname != tname]),
                 "0,0,0")
     v2size += reduce(operator.mul, var.shape) / tdim * 8
 
@@ -109,7 +112,8 @@ for it in range(tdim):
         write_int(fd, name, val)
         
     for name, var in tdepvar.items():
-        arr = np.array(var.data.take([it], axis=tdx), dtype=np.float64)
+        arr = np.array(var.data.take([it], axis=tdx),
+                       dtype=np.float64)
         print "Variable writing : %s %s" % (name, arr.shape)
         write(fd, name, arr)
 

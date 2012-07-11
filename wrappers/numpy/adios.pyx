@@ -1,4 +1,4 @@
-"""
+A"""
  ADIOS is freely available under the terms of the BSD license described
  in the COPYING file in the top level directory of this source distribution.
 
@@ -599,6 +599,7 @@ cdef class AdiosVariable:
 
         return var
 
+    """ Print self """
     cpdef printself(self):
         assert self.vp != NULL, 'Not an open file'
         print '=== AdiosVariable ==='
