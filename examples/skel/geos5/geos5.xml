@@ -1,0 +1,301 @@
+<?xml version="1.0"?>
+<adios-config host-language="Fortran">
+  <adios-group name="geosgcm" coordination-communicator="agcm_comm">
+    <var name="nsteps" path="/info" type="integer"/>
+    <var name="gndx" path="/dimensions" type="integer"/>
+    <var name="gndy" path="/dimensions" type="integer"/>
+    <var name="gndz" path="/dimensions" type="integer"/>
+
+    <!-- Auxiliary variables for global array indexing -->
+    <var name="offx" path="/aux" type="integer"/>
+    <var name="offy" path="/aux" type="integer"/>
+    <var name="offz" path="/aux" type="integer"/>
+    <var name="ndx" path="/aux" type="integer"/>
+    <var name="ndy" path="/aux" type="integer"/>
+    <var name="ndz" path="/aux" type="integer"/>
+    <var name="npx" path="/aux" type="integer"/>
+    <var name="npy" path="/aux" type="integer"/>
+    <var name="npz" path="/aux" type="integer"/>
+
+    <global-bounds dimensions="gndx,gndy" offsets="offx,offy">
+        <var name="geosgcm_prog/PHIS" path="" type="real" dimensions="ndx,ndy"/>
+        <var name="geosgcm_prog/SLP" path="" type="real" dimensions="ndx,ndy"/>
+        <var name="geosgcm_prog/PS" path="" type="real" dimensions="ndx,ndy"/>
+        <var name="geosgcm_gwd/TAUOROX" path="" type="real" dimensions="ndx,ndy"/>
+        <var name="geosgcm_gwd/TAUOROY" path="" type="real" dimensions="ndx,ndy"/>
+        <var name="geosgcm_gwd/TAUBKGX" path="" type="real" dimensions="ndx,ndy"/>
+        <var name="geosgcm_gwd/TAUBKGY" path="" type="real" dimensions="ndx,ndy"/>
+        <var name="geosgcm_moist/PHIS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/PHIS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/PS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEDYN" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/PEDYN" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/TEDYN" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEPHY" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/PEPHY" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/TEPHY" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEANA" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/PEANA" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/TEANA" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEGEN" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEGWD" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KERAY" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEBKG" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEORO" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KETRB" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KESRF" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEINT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KETOP" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEMST" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KECDCOR" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/PECDCOR" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/TECDCOR" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEREMAP" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/PEREMAP" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/TEREMAP" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/CONVKE" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/CONVCPT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/CONVPHI" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/CONVTHV" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEADV" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEPG" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEDP" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/KEHOT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/DKERESIN" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/DKERESPG" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/QFIXER" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/DTHVDTREMAP" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_bud/DTHVDTCONSV" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/PHIS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SGH" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/VARFLT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TROPPV" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TROPPT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TROPPB" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TROPT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TROPQ" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/QVFILL" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/OXFILL" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TA" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/QA" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/US" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/VS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SPEED" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/PBLH" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/QS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/THAT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/QHAT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/RASTIME" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/RASPBLQ" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TPW" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/CNPRCP" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/LSPRCP" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/ANPRCP" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SNO" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/PLS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/PCU" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/LWP" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/CCWP" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TAUTT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TAULO" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TAUMD" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TAUHI" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TTAUDU" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TTAUSS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TTAUSO" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TTAUBC" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TTAUOC" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TDUST" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TSALT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TSO4" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TBC" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TOC" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/CLDTT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/CLDLO" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/CLDMD" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/CLDHI" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SPLAND" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SPWATR" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/RUNOFF" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/BASEFLOW" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/EMIS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/CT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/CQ" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/CN" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/CM" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/RISFC" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/LAI" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/GRN" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SNOMAS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/WET1" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TSOIL1" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/FRLAND" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/FRLANDICE" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/FRLAKE" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/FRSEAICE" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/FROCEAN" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/USTAR" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/Z0" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/Z0H" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/LHFX" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SHFX" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/EVAP" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TAUX" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TAUY" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/RHOS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/U2M" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/V2M" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/T2M" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/Q2M" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/U10N" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/V10N" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/U10M" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/V10M" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/T10M" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/Q10M" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/U50M" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/V50M" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/GUST" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/VENT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/ASNOW" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/RADSRF" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/FLNS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/FLNSC" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/FLNSCNA" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/OLR" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/OLRC" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/OLRCNA" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/LWS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/LWSC" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/LWSCNA" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SFCEM" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SWCLDTMP" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SWCLDPRS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/OSR" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/OSRCLR" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SWTNET" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SWTNETC" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SWTNETCNA" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SWTNETNA" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/RADSWT" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SLRSF" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SWGDWN" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SWGDWNC" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SWGNET" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SWGNETC" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SWGNETNA" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SWGNETCNA" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/ALBEDO" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/ALBVR" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/ALBVF" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/ALBNR" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/ALBNF" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/EVLAND" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/LHLAND" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SHLAND" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SWLAND" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/LWLAND" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/GHLAND" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/SMLAND" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TWLAND" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_surf/TELAND" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_turb/SRFDIS" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_turb/DBUOY" path="" type="real" dimensions="ndx,ndy"/>
+       <var name="geosgcm_turb/WERAD" path="" type="real" dimensions="ndx,ndy"/>
+    </global-bounds>
+
+    <!-- 3D array written by genarray with 1 timesteps -->
+    <global-bounds dimensions="gndx,gndy,gndz" offsets="offx,offy,offz">
+        <var name="geosgcm_prog/U" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_prog/V" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_prog/T" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_prog/H" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_prog/OMEGA" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_prog/QV" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_prog/QI" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_prog/QL" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_prog/RH" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_prog/O3" path="" type="real" dimensions="ndx,ndy,ndz"/>
+
+        <var name="geosgcm_gwd/DUDTORO" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_gwd/DVDTORO" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_gwd/DTDTORO" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_gwd/DUDTBKG" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_gwd/DVDTBKG" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_gwd/DTDTBKG" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_gwd/DUDTRAY" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_gwd/DVDTRAY" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_gwd/DTDTRAY" path="" type="real" dimensions="ndx,ndy,ndz"/>
+
+        <var name="geosgcm_moist/QL" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/QI" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/QR" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/RICE" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/RLIQ" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/RH1" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/CNVMF0" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/CNVMFD" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/CNVMFC" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/REVCN" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/REVAN" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/REVLS" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/RSUCN" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/RSUAN" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/RSULS" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/THIM" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/EVAPC" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/SUBLC" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/FCLD" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/CLCN" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/CLLS" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/QICN" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/QILS" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/QLCN" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_moist/QLLS" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_turb/INTDIS" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_turb/TOPDIS" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_turb/KH" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_turb/KM" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_turb/KHLS" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_turb/KMLS" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_turb/EKH" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_turb/EKM" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_turb/KHSFC" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_turb/KHRAD" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_turb/RI" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_turb/DU" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DUDTDYN" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DUDTTRB" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DUDTMST" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DUDTGWD" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DVDTDYN" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DVDTTRB" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DVDTMST" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DVDTGWD" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DTDTDYN" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DTDTMST" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DTDTTRB" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DTDTGWD" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DTDTLW" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DTDTLWC" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DTDTLWCNA" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DTDTSW" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DTDTSWC" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DTDTSWNA" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DTDTSWCNA" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DTDTFRI" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DQVDTDYN" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DQVDTMST" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DQVDTTRB" path="" type="real" dimensions="ndx,ndy,ndz"/>
+        <var name="geosgcm_tend/DQVDTCHM" path="" type="real" dimensions="ndx,ndy,ndz"/>
+    </global-bounds>
+
+    </adios-group>
+
+    <method group="geosgcm" method="MPI"/>
+    <!--method group="geosgcm" method="TIME_AGG">time_steps=10,step_break=10,io_method=MPI</method-->
+
+ <buffer size-MB="512" allocate-time="now"/>
+</adios-config>
+

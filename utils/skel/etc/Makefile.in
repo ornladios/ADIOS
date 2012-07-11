@@ -498,7 +498,7 @@ uninstall-am: uninstall-etcDATA uninstall-info-am
 all: compiler_fragment.mk
 
 compiler_fragment.mk: Makefile
-	grep -e'^CC\ =' -e'^FC\ =' -e'^CFLAGS\ =' -e'^LDFLAGS\ =' -e'^FCFLAGS\ =' -e'^FCLIBS\ =' < Makefile > compiler_fragment.mk
+	grep -e'^prefix\ =' -e'^CC\ =' -e'^FC\ =' -e'^CFLAGS\ =' -e'^LDFLAGS\ =' -e'^FCFLAGS\ =' -e'^FCLIBS\ =' < Makefile > compiler_fragment.mk
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

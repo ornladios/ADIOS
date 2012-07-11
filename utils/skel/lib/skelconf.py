@@ -187,16 +187,20 @@ class measure:
         return True
 
     def use_reduce (self):
-        val = self.settings_dict["reduce_times"]
-        if val =="no":
-            return False 
+        #val = self.settings_dict["reduce_times"]
+        #if val =="no":
+        #    return False 
+
+        # Only reduced output is available from skel. Use adios timing mechanism for more detailed results
 
         return True
 
     def report_all (self):
-        val = self.settings_dict["report_all"]
-        if val =="yes":
-            return True 
+        #val = self.settings_dict["report_all"]
+        #if val =="yes":
+        #    return True 
+
+        # Only reduced output is available from skel. Use adios timing mechanism for more detailed results
 
         return False
 

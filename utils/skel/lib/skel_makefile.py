@@ -79,7 +79,10 @@ def generate_makefiles_c (params):
         template_line = template_line.replace ('$$INCLUDE$$', include_statement)
         template_line = template_line.replace ('$$TARGET$$', platform)
         template_line = template_line.replace ('$$DEPLOY_DIR$$', settings.get_deploy_dir())
-        template_line = template_line.replace ('$$SKEL_HOME$$', settings.get_skel_home())
+
+        #skel_home makes no sense in ADIOS release
+        #template_line = template_line.replace ('$$SKEL_HOME$$', settings.get_skel_home())
+
         template_line = template_line.replace ('$$CORES_USED$$', '%d'%params.get_batches()[0].get_cores())
 
         if '$$FTESTS$$' in template_line:
