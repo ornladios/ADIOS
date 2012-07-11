@@ -171,6 +171,7 @@ int main (int argc, char ** argv)
     //if (!err)
     //    err = read_file (); 
 
+    adios_read_finalize_method (ADIOS_READ_METHOD_BP);
     adios_finalize (rank);
     fini_vars();
     MPI_Finalize ();
