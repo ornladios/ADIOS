@@ -1,19 +1,251 @@
 \chapter{Language bindings}
 
-ADIOS provides wrappers for various languages:
-
+ADIOS provides the following wrappers to support various programming environments; 
 \begin{itemize}
-\item{\bf Java}  Write and Read ADIOS-BP files, with old read API
-\item{\bf Numpy} Write and Read ADIOS-BP files, with old read API
+\item{\bf Java} -- Write and Read ADIOS-BP files, with old read API
+\item{\bf Python/Numpy} -- Write and Read ADIOS-BP files, with old read API
 %\item{\bf Matlab} Read ADIOS-BP files, with own matlab/ADIOS commands
 \end{itemize}
 
+In this chapter, we will describe how one can use ADIOS wrappers and provide a few example codes.
+
 \section{Java support}
 \label{section-bindings-java}
+The Java wrapper program consists of a set of Java classes defined with a single namespace, \verb+gov.ornl.ccs+. A list of classes is as follows:
+\begin{itemize}
+\item{\bf Adios} -- Provides functions to call init/free, write, and no-XML related APIs. All functions are static.
+\item{\bf AdiosFile} -- Related with Read APIs. Represents ADIOS file structure.
+\item{\bf AdiosGroup} -- Related with Read APIs. Represents ADIOS group structure. 
+\item{\bf AdiosVarinfo} -- Related with Read APIs. Represents ADIOS varinfo structure.
+\item{\bf AdiosDatatype} -- Enumeration class for ADIOS data types.
+\item{\bf AdiosFlag} -- Enumeration class for ADIOS flags.
+\item{\bf AdiosBufferAllocWhen} -- Enumeration class for ADIOS buffer allocation flags.
+\end{itemize}
 
+\subsection{Adios class}
+This class provides static functions for initialization, finalization, writing, and no-XML related APIs. The list of functions and signatures are as follows:
+\begin{lstlisting}[language=Java,frame=single, backgroundcolor=\color{gray85},caption={Member functions in the Adios class},label={}]
+    /* Call adios_init */
+    public static int Init(String xml_fname)
+
+    /* Call adios_open. Return a group handler */
+    public static long Open(String group_name, String file_name, 
+                            String mode, long comm)
+
+    /* Call adios_group_size and return the total size */
+    public static long SetGroupSize(long fh, long group_size)
+
+    /* Call adios_write and return the total size */
+    public static long Write (long fh, String var_name, byte value)
+    public static long Write (long fh, String var_name, int value)
+    public static long Write (long fh, String var_name, long value)
+    public static long Write (long fh, String var_name, float value)
+    public static long Write (long fh, String var_name, double value)
+    public static long Write (long fh, String var_name, byte[] value)
+    public static long Write (long fh, String var_name, int[] value)
+    public static long Write (long fh, String var_name, long[] value)
+    public static long Write (long fh, String var_name, float[] value)
+    public static long Write (long fh, String var_name, double[] value)
+
+    /* Call adios_close */
+    public static int Close (long fh)
+
+    /* Call adios_finalize */
+    public static int Finalize (int id)
+
+    /* Call MPI_Init */
+    public static int MPI_Init(String[] args)
+
+    /* Call MPI_Comm_rank */
+    public static int MPI_Comm_rank(long comm)
+
+    /* Call MPI_Comm_size */
+    public static int MPI_Comm_size(long comm)
+
+    /* Call MPI_Finalize */
+    public static int MPI_Finalize()
+
+    /* Get MPI_COMM_WORLD */
+    public static long MPI_COMM_WORLD()
+
+    /* Call adios_init_noxml */
+    public static int Init_Noxml()
+
+    /* Call adios_allocate_buffer */
+    public static int AllocateBuffer(AdiosBufferAllocWhen when, long size)
+
+    /* Call adios_declare_group */
+    public static long DeclareGroup(String name, String time_index, 
+                                    AdiosFlag stats)
+
+    /* Call adios_define_var */
+    public static int DefineVar(long group_id, String name, String path, 
+                                AdiosDatatype type, String dimensions, 
+                                String global_dimensions, 
+                                String local_offsets)
+
+    /* Call adios_define_attribute */
+    public static int DefineAttribute(long group_id, String name, 
+                                String path, AdiosDatatype type, 
+                                String value, String var)
+
+    /* Call adios_select_method */
+    public static int SelectMethod(long group_id, String method, 
+                                String parameters, String base_path)
+\end{lstlisting}
+
+\subsection{AdiosFile, AdiosGroup, and AdiosVarinfo classes}
+AdiosFile, AdiosGroup, and AdiosVarinfo classes represent \verb+ADIOS_FILE+, \verb+ADIOS_GROUP+, \verb+ADIOS_VARINFO+ structure, respectively, defined in \verb+adios_read_v1.h+. The following is a skeletal descriptions of those classes and member functions.
+
+\begin{lstlisting}[language=Java,frame=single, backgroundcolor=\color{gray85},caption={Class definitions of AdiosFile, AdiosGroup, and AdiosVarinfo},label={}]
+public class AdiosFile
+{
+    /* Call adios_fopen */
+    public int open(String path, long comm)
+    
+    /* Call adios_fclose */
+    public int close()
+	
+    /* Print contents for debugging purpose */
+    public String toString()
+}
+
+public class AdiosGroup
+{
+    /* Constructor. Need AdiosFile instance */
+    public AdiosGroup(AdiosFile file)
+    
+    /* Call adios_gopen */
+    public int open(String grpname)
+    
+    /* Call adios_gclose */
+    public int close()
+    
+    /* Print contents for debugging purpose */
+    public String toString()
+}
+
+public class AdiosVarinfo
+{
+    /* Constructor. Need AdiosGroup instance */
+    public AdiosVarinfo(AdiosGroup group)
+    
+    /* Call adios_inq_var */
+    public int inq(String varname)
+    
+    /* Call adios_free_varinfo */
+    public int close()
+    
+    /* Call adios_read_var */
+    public double[] read(long[] start, long[] count)
+    
+    /* Print contents for debugging purpose */
+    public String toString()
+}
+\end{lstlisting}
+
+\subsection{AdiosDatatype, AdiosFlag, and AdiosBufferAllocWhen classes}
+AdiosDatatype, AdiosFlag, and AdiosBufferAllocWhen are enumeration classes representing \verb+ADIOS_DATATYPES+, \verb+ADIOS_FLAG+, \verb+ADIOS_BUFFER_ALLOC_WHEN+ enum type, respectively, defined in \verb+adios_types.h+. The following is a skeletal descriptions of those classes and member functions.
+\begin{lstlisting}[language=Java,frame=single, backgroundcolor=\color{gray85},caption={Enum classes},label={}]
+public enum AdiosDatatype {
+    UNKNOWN(-1)             /* (SIZE) */
+    ,BYTE(0)                 /* (1) */
+    ,SHORT(1)                /* (2) */
+    ,INTEGER(2)              /* (4) */
+    ,LONG(4)                 /* (8) */
+    
+    ,UNSIGNED_BYTE(50)       /* (1) */
+    ,UNSIGNED_SHORT(51)      /* (2) */
+    ,UNSIGNED_INTEGER(52)    /* (4) */
+    ,UNSIGNED_LONG(54)       /* (8) */
+    
+    ,REAL(5)                 /* (4) */
+    ,DOUBLE(6)               /* (8) */
+    ,LONG_DOUBLE(7)          /* (16) */
+    
+    ,STRING(9)               /* (?) */
+    ,COMPLEX(10)             /* (8) */
+    ,DOUBLE_COMPLEX(11)      /* (16) */;
+}
+
+public enum AdiosFlag {
+    UNKNOWN (0),
+    YES (1), 
+    NO (2);
+}
+
+public enum AdiosBufferAllocWhen {
+    UNKNOWN (0),
+    NOW (1), 
+    LATER (2);
+
+}
+\end{lstlisting}
+
+
+\subsection{Example}
+An example of Java program to call ADIOS functions is as follows:
+\begin{lstlisting}[language=Java,frame=single, backgroundcolor=\color{gray85},caption={Example Java wrapper code},label={}]
+import gov.ornl.ccs.*;
+
+import java.nio.ByteBuffer;
+
+public class AdiosNoxmlExample
+{
+    // The main program
+    public static void main(String[] args)
+    {
+        Adios.MPI_Init(new String[0]);
+        long comm = Adios.MPI_COMM_WORLD();
+        int rank = Adios.MPI_Comm_rank(comm);
+        int size = Adios.MPI_Comm_size(comm);
+
+        Adios.Init_Noxml();
+        Adios.AllocateBuffer(AdiosBufferAllocWhen.NOW, 10);
+
+        long group_id = Adios.DeclareGroup("restart", "iter", 
+                                           AdiosFlag.YES);
+        Adios.SelectMethod(group_id, "MPI", "", "");
+        Adios.DefineVar(group_id, "NX", "", 
+                        AdiosDatatype.INTEGER, "", "", "");
+        Adios.DefineVar(group_id, "G", "", 
+                        AdiosDatatype.INTEGER, "", "", "");
+        Adios.DefineVar(group_id, "O", "", 
+                        AdiosDatatype.INTEGER, "", "", "");
+        Adios.DefineVar(group_id, "temperature", "", 
+                        AdiosDatatype.DOUBLE, "NX", "G", "O");
+
+        long adios_handle = Adios.Open("restart", "adios_noxml.bp", 
+                                       "w", comm);
+
+        int NX = 10; 
+        int G = NX * size;
+        int O = NX * rank;
+
+        double[] t = new double[NX];
+        for (int i = 0; i < NX; i++) {
+            t[i] = rank * NX + (double) i;
+        }
+
+        long groupsize = 4 + 4 + 4 + 8 * (1) * (NX);
+        
+        long adios_totalsize = Adios.SetGroupSize(adios_handle, groupsize);
+        
+        Adios.Write (adios_handle, "NX", NX);
+        Adios.Write (adios_handle, "G", G);
+        Adios.Write (adios_handle, "O", O);
+        Adios.Write (adios_handle, "temperature", t);
+        Adios.Close (adios_handle);
+        
+        Adios.Finalize (rank);        
+        Adios.MPI_Finalize();
+    }
+}
+\end{lstlisting}
 
 \section{Numpy support}
 \label{section-bindings-numpy}
+
 
 %\section{Matlab support}
 %\label{section-bindings-matlab}
