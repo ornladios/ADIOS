@@ -16,7 +16,7 @@ submit_target=sith
 
 # Measurement settings to steer the code generation
 sleep_before_open=no
-barrier_before_open=no
+barrier_before_open=yes
 barrier_before_access=no
 barrier_before_close=no
 barrier_after_close=no

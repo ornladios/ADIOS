@@ -26,7 +26,7 @@ def generate_c_write (outfile, config, params, test):
     outfile = outfile.replace ('.c', '_write.c')
     measure = test.get_measure()
 
-    print 'opening ' + outfile
+    #print 'opening ' + outfile
     c_file = open (outfile, 'w')
 
     # Look at all of the groups, Generate the code when we find the requested group
@@ -184,14 +184,28 @@ def generate_c_write (outfile, config, params, test):
 #            c_file.write ('\nskel_total_total = skel_total_timer;')
 
         if measure.report_all():
-            c_file.write ('\n    fprintf (stdout, "rank, %i, open: %f, access %f, close %f, total %f\\n", skel_mpi_rank, skel_open_timer, skel_access_timer, skel_close_timer, skel_total_timer);')
-            c_file.write ('\n    fprintf (stdout, "effective bandwidth %f, adios_groupsize %lli\\n", adios_groupsize * skel_mpi_size / (skel_total_total * (1024 * 1024 * 1024) ), adios_groupsize);')
+            pass
+            # Detailed reporting disabled, use adios timing instead.
+
+            #c_file.write ('\n    fprintf (stdout, "rank, %i, open: %f, access %f, close %f, total %f\\n", skel_mpi_rank, skel_open_timer, skel_access_timer, skel_close_timer, skel_total_timer);')
+            #c_file.write ('\n    fprintf (stdout, "effective bandwidth %f, adios_groupsize %lli\\n", adios_groupsize * skel_mpi_size / (skel_total_total * (1024 * 1024 * 1024) ), adios_groupsize);')
             
 
         c_file.write ('\nif (skel_mpi_rank == 0) {')
 
-        c_file.write ('\n    fprintf (stdout, "RRR rank, %i, open: %f, access %f, close %f, total %f\\n", skel_mpi_rank, skel_total_open, skel_total_access, skel_total_close, skel_total_total);')
-        c_file.write ('\n    fprintf (stdout, "RRR effective bandwidth %f, adios_groupsize %lli\\n", adios_groupsize * skel_mpi_size / (skel_total_total * (1024 * 1024 * 1024) ), adios_groupsize);')
+        #c_file.write ('\n    fprintf (stdout, "RRR rank, %i, open: %f, access %f, close %f, total %f\\n", skel_mpi_rank, skel_total_open, skel_total_access, skel_total_close, skel_total_total);')
+        #c_file.write ('\n    fprintf (stdout, "RRR effective bandwidth %f, adios_groupsize %lli\\n", adios_groupsize * skel_mpi_size / (skel_total_total * (1024 * 1024 * 1024) ), adios_groupsize);')
+
+        c_file.write ('\n    fprintf (stdout, "\\n");')
+        c_file.write ('\n    fprintf (stdout, "\\n*************************");')
+        c_file.write ('\n    fprintf (stdout, "\\n   Groupsize: %lli", adios_groupsize);')
+        c_file.write ('\n    fprintf (stdout, "\\n  Open Time: %f", skel_total_open);')
+        c_file.write ('\n    fprintf (stdout, "\\nAccess Time: %f", skel_total_access);')
+        c_file.write ('\n    fprintf (stdout, "\\n Close Time: %f", skel_total_close);')
+        c_file.write ('\n    fprintf (stdout, "\\n Total Time: %f", skel_total_total);')
+        c_file.write ('\n    fprintf (stdout, "\\n*************************");')
+        c_file.write ('\n    fprintf (stdout, "\\n");')
+
 
         c_file.write ('\n}')
         
@@ -416,19 +430,30 @@ def generate_fortran_write (outfile, config, params, test):
             f_file.write ('\n  skel_total_total = skel_total_timer')
 
         if measure.report_all():
+            pass
+            # All rank reporting disabled for skel, use ADIOS timing library instead.
+
             #f_file.write ('\n    fprintf (stdout, "rank, %i, open: %f, access %f, close %f, total %f\\n", skel_mpi_rank, skel_open_timer, skel_access_timer, skel_close_timer, skel_total_timer);')
-            f_file.write ("\n\n  write (*,'(a6,i7,a7,f15.8,a9,f15.8,a7,f15.8,a7,f15.8)') 'rank, ', skel_mpi_rank , ' open: ', skel_open_timer, ', access ', skel_access_timer, ' close ', skel_close_timer, ' total ', skel_total_timer")
+            #f_file.write ("\n\n  write (*,'(a6,i7,a7,f15.8,a9,f15.8,a7,f15.8,a7,f15.8)') 'rank, ', skel_mpi_rank , ' open: ', skel_open_timer, ', access ', skel_access_timer, ' close ', skel_close_timer, ' total ', skel_total_timer")
             #f_file.write ('\n    fprintf (stdout, "effective bandwidth %f, adios_groupsize %lli\\n", adios_groupsize * skel_mpi_size / (skel_total_total * (1024 * 1024 * 1024) ), adios_groupsize);')
-            f_file.write ("\n  write (*, '(a20,f15.8,a17,i9)') 'effective bandwidth ', adios_groupsize * skel_mpi_size / (skel_total_total * (1024 * 1024 * 1024) ), 'adios_groupsize: ', adios_groupsize")
+            #f_file.write ("\n  write (*, '(a20,f15.8,a17,i9)') 'effective bandwidth ', adios_groupsize * skel_mpi_size / (skel_total_total * (1024 * 1024 * 1024) ), 'adios_groupsize: ', adios_groupsize")
             
 
         f_file.write ('\n\n  if (skel_mpi_rank == 0) then')
 
-        #f_file.write ('\n    fprintf (stdout, "RRR rank, %i, open: %f, access %f, close %f, total %f\\n", skel_mpi_rank, skel_total_open, skel_total_access, skel_total_close, skel_total_total);')
-        f_file.write ("\n    write (*, '(a10,i9,a7,f15.8,a8,f15.8,a7,f15.8,a7,f15.8,a2)')  'RRR rank, ', skel_mpi_rank, ' open: ', skel_total_open, ' access ', skel_total_access, ' close ', skel_total_close, ' total ', skel_total_total, '\\n'")
+        f_file.write ("\n    write (*,*) '\\n'")
+        f_file.write ("\n    write (*,*) '**************************'")
+        f_file.write ("\n    write (*,*) '  Groupsize: ', adios_groupsize")
+        f_file.write ("\n    write (*,*) '  Open Time: ', skel_total_open")
+        f_file.write ("\n    write (*,*) 'Access Time: ', skel_total_access")
+        f_file.write ("\n    write (*,*) ' Close Time: ', skel_total_close")
+        f_file.write ("\n    write (*,*) ' Total Time: ', skel_total_total")
+        f_file.write ("\n    write (*,*) '**************************'")
+        f_file.write ("\n    write (*,*) '\\n'")
 
-        #f_file.write ('\n    fprintf (stdout, "RRR effective bandwidth %f, adios_groupsize %lli\\n", adios_groupsize * skel_mpi_size / (skel_total_total * (1024 * 1024 * 1024) ), adios_groupsize);')
-        f_file.write ("\n    write (*,'(a24,f15.8,a17,i9)') 'RRR effective bandwidth ', adios_groupsize * skel_mpi_size / (skel_total_total * (1024 * 1024 * 1024) ), 'adios_groupsize', adios_groupsize")
+        #f_file.write ("\n    write (*, '(a10,i9,a7,f15.8,a8,f15.8,a7,f15.8,a7,f15.8,a2)')  'RRR rank, ', skel_mpi_rank, ' open: ', skel_total_open, ' access ', skel_total_access, ' close ', skel_total_close, ' total ', skel_total_total, '\\n'")
+
+        #f_file.write ("\n    write (*,'(a24,f15.8,a17,i9)') 'RRR effective bandwidth ', adios_groupsize * skel_mpi_size / (skel_total_total * (1024 * 1024 * 1024) ), 'adios_groupsize', adios_groupsize")
 
         f_file.write ('\n  endif')
         
