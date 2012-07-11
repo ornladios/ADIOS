@@ -249,7 +249,7 @@ We developed a ADIOS python wrapper by using Cython. Numpy, a scientific module 
 
 \subsection{APIs for Writing and No-XML}
 The ADIOS python/numpy wrapper provides functions to call ADIOS write and no-XML related APIs as follows (defined in Cython syntax):
-\begin{lstlisting}[language=C,frame=single, backgroundcolor=\color{gray85},caption={Functions for writing and No-XML},label={},]
+\begin{lstlisting}[language=cython,frame=single, backgroundcolor=\color{gray85},caption={Functions for writing and No-XML},label={},]
 """ Call adios_init """
 cpdef init(char * config)
 
@@ -342,7 +342,7 @@ cpdef int select_method (int64_t group,
 
 \subsection{APIs for Reading}
 The ADIOS python/numpy wrapper provides ADIOS read related classes as follows (defined in Cython syntax):
-\begin{lstlisting}[language=C,frame=single, backgroundcolor=\color{gray85},caption={Write functions},label={},]
+\begin{lstlisting}[language=cython,frame=single, backgroundcolor=\color{gray85},caption={Write functions},label={},]
 """ Python class for ADIOS_FILE structure """
 cdef class AdiosFile:
     """ Private Memeber """
