@@ -3,8 +3,7 @@ Writing data
 ============
 
 1. If the size specified to the adios_group_size is too small, the output
-will be silently corrupt. Work around: make the size bigger. An error
-message will be added in later releases.
+will become corrupt. Work around: make the size bigger. 
 
 Reading data
 ============
