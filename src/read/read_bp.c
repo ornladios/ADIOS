@@ -215,6 +215,11 @@ void close_all_BP_files (struct BP_file_handle * l)
 /* This routine release one step. It only frees the var/attr namelist. */
 static void release_step (ADIOS_FILE *fp)
 {
+    BP_PROC * p = (BP_PROC *) fp->fh;
+    
+    free (p->varid_mapping);
+    p->varid_mapping = 0;
+
     free_namelist (fp->var_namelist, fp->nvars);
     fp->var_namelist = 0;
     fp->nvars = 0;
@@ -284,6 +289,7 @@ void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
     assert (p);
     p->rank = rank;
     p->fh = fh;
+    p->streaming = 1;
     p->local_read_request_list = 0;
     p->priv = 0;
 
@@ -312,6 +318,7 @@ void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
  */
 static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int last_step, float timeout_sec)
 {
+    BP_PROC * p = (BP_PROC *) fp->fh;
     int err, i;
     BP_FILE * fh;
     double t1 = adios_gettime();
@@ -346,11 +353,16 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
             // the file looks good and there are new steps written.
             build_ADIOS_FILE_struct (fp, fh);
             stay_in_poll_loop = 0;
+            found_stream = 1;
         }
         // check if we need to stay in loop 
         if (stay_in_poll_loop)
         {
-            if (timeout_sec < 0.0)
+            if (timeout_sec == 0.0)
+            {
+                stay_in_poll_loop = 0;
+            }
+            else if (timeout_sec < 0.0)
             {
                 stay_in_poll_loop = 1;
             }
@@ -369,7 +381,7 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
 
     log_debug ("exit get_new_step\n");
 
-    return 0;
+    return found_stream;
 }
 
 /* This routine processes a read request and returns data in ADIOS_VARCHUNK.
@@ -452,14 +464,24 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
  */
 static int get_time (struct adios_index_var_struct_v1 * v, int step)
 {
-    uint64_t i = 0;
-    int prev_ti = -1, counter = 0;
+    int i = 0;
+    int prev_ti = 0, counter = 0;
 
-    while (i < v->characteristics_count) {
-        if (v->characteristics[i].time_index != prev_ti) {
-            if (counter++ == step)
+/*
+printf ("%s, time_index[0] = %d\n", v->var_name,v->characteristics[0].time_index);
+printf ("%s, time_index[1] = %d\n", v->var_name,v->characteristics[1].time_index);
+printf ("%s, time_index[2] = %d\n", v->var_name,v->characteristics[2].time_index);
+*/
+    while (i < v->characteristics_count)
+    {
+        if (v->characteristics[i].time_index != prev_ti)
+        {
+            counter ++;
+            if (counter == (step + 1))
+            {
+//printf ("i = %d, time_index = %d\n", i, v->characteristics[i].time_index);
                 return v->characteristics[i].time_index;
-
+            }
             prev_ti = v->characteristics[i].time_index;
         }
 
@@ -531,17 +553,27 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
     log_debug ("read_var_bb: from_steps = %d, nsteps = %d\n", r->from_steps, r->nsteps);
 
-    /* Note fp->current_step is always 0. */
-    for (t = r->from_steps; t < r->from_steps + r->nsteps; t++)
+    /* Note fp->current_step is always 0 for files. */
+    for (t = fp->current_step + r->from_steps; t < fp->current_step + r->from_steps + r->nsteps; t++)
     {
-        time = get_time (v, t);
+
+        if (!p->streaming)
+        { 
+            time = get_time (v, t);
+        }
+        else
+        {
+            time = t + 1;
+        }
+//printf ("t = %d(%d,%d), time = %d\n", t, fp->current_step, r->from_steps, time);
+//printf ("c = %d, f = %d, time = %d\n", fp->current_step, r->from_steps, time);
         start_idx = get_var_start_index (v, time);
         stop_idx = get_var_stop_index (v, time);
 
         if (start_idx < 0 || stop_idx < 0)
         {
-            adios_error (err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step\n",
-                         r->varid, t);
+            adios_error (err_no_data_at_timestep,"Variable %s has no data at %d time step\n",
+                         v->var_name, t);
             continue;
         }
 
@@ -1060,6 +1092,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
     assert (p);
     p->rank = rank;
     p->fh = fh;
+    p->streaming = 1;
     p->local_read_request_list = 0;
     p->priv = 0;
 
@@ -1069,11 +1102,13 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
     fp->fh = (uint64_t) p;
     fp->file_size = fh->mfooter.file_size;
     fp->version = fh->mfooter.version;
+    fp->path = strdup (fh->fname);
     fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
 
     /* Seek to the initial step. */
     bp_seek_to_step (fp, 0, show_hidden_attrs);
 
+    fp->current_step = 0;
     /* For file, the last step is tidx_stop */
     fp->last_step = fh->tidx_stop - 1;
 
@@ -1127,6 +1162,8 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
     assert (p);
     p->rank = rank;
     p->fh = fh;
+    p->streaming = 0;
+    p->varid_mapping = 0; // maps perceived id to real id
     p->local_read_request_list = 0;
     p->priv = 0;
 
@@ -1191,11 +1228,15 @@ int adios_read_bp_close (ADIOS_FILE * fp)
     struct BP_PROC * p = (struct BP_PROC *) fp->fh;
     BP_FILE * fh = p->fh;
 
-    bp_close (fh);
-    p->fh = 0;
+    if (p->fh)
+    {
+        bp_close (fh);
+        p->fh = 0;
+    }
 
+    free (p->varid_mapping);
+    list_free_read_request (p->local_read_request_list);
     free (p);
-    p->fh = 0;
 
     free_namelist (fp->var_namelist, fp->nvars);
     free_namelist (fp->attr_namelist, fp->nattrs);
@@ -1284,6 +1325,8 @@ int bp_close (BP_FILE * fh)
         free(vr);
     }
 
+    fh->vars_root = 0;
+
     /* Free attributes structures */
     /* alloc in bp_utils.c bp_parse_attrs() */
     while (attrs_root) {
@@ -1304,6 +1347,7 @@ int bp_close (BP_FILE * fh)
         free(ar);
     }
 
+    fh->attrs_root = 0;
 
     /* Free process group structures */
     /* alloc in bp_utils.c bp_parse_pgs() first loop */
@@ -1318,6 +1362,8 @@ int bp_close (BP_FILE * fh)
             free(pr->time_index_name);
         free(pr);
     }
+
+    fh->pgs_root = 0;
 
     /* Free variable structures in BP_GROUP_VAR */
     if (gh) {
@@ -1359,6 +1405,8 @@ int bp_close (BP_FILE * fh)
         free (gh);
     }
 
+    fh->gvar_h = 0;
+
     /* Free attribute structures in BP_GROUP_ATTR */
     if (ah) {
         for (i = 0; i < fh->mfooter.attrs_count; i++) {
@@ -1377,9 +1425,14 @@ int bp_close (BP_FILE * fh)
         free(ah);
     }
 
+    fh->gattr_h = 0;
+ 
     if (fh->fname)
+    {
         free (fh->fname);
-        
+        fh->fname = 0;
+    }
+           
     if (fh)
         free (fh);    
 
@@ -1426,16 +1479,26 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
             fname = strdup (fh->fname);
             comm = fh->comm;
 
-            bp_close (fh);
+            if (p->fh)
+            {
+                bp_close (fh);
+                p->fh = 0;
+            }
 
-            get_new_step (fp, fname, comm, last_step, timeout_sec);
+            if (!get_new_step (fp, fname, comm, last_step, timeout_sec))
+            {
+                adios_errno = err_step_notready;
+            }
 
             free (fname); 
 
             log_debug ("Seek from step %d to step %d\n", last_step, last_step + 1);
 
-            bp_seek_to_step (fp, last_step + 1, show_hidden_attrs);
-            fp->current_step = last_step + 1;
+            if (adios_errno == 0)
+            {
+                bp_seek_to_step (fp, last_step + 1, show_hidden_attrs);
+                fp->current_step = last_step + 1;
+            }
         }
     }
     else // read in newest step. Re-open no matter whether current_step < last_step
@@ -1446,7 +1509,11 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
         strcpy (fname, fh->fname);
         comm = fh->comm;
 
-        bp_close (fh);
+        if (p->fh)
+        {
+            bp_close (fh);
+            p->fh = 0;
+        }
 
         // lockmode is currently not supported.
         get_new_step (fp, fh->fname, fh->comm, last_step, timeout_sec);
@@ -1501,6 +1568,11 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
                                 &varinfo->nsteps,
                                 file_is_fortran != futils_is_called_from_fortran()
                                );
+
+    if (p->streaming)
+    {
+        varinfo->nsteps = 1;
+    }
 
     // set value for scalar
     if (v->characteristics [0].value)
@@ -2206,14 +2278,16 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
     ADIOS_SELECTION * nullsel = 0;
     struct adios_index_var_struct_v1 * v;
     uint64_t datasize;
-    int i, type_size, ndim, ns, file_is_fortran;
+    int i, type_size, ndim, ns, file_is_fortran, mapped_varid;
     uint64_t * dims = 0;
 
     assert (fp);
 
     p = (BP_PROC *) fp->fh;
     fh = (BP_FILE *) p->fh;
-    v = bp_find_var_byid (fh, varid);
+
+    mapped_varid = p->varid_mapping[varid];
+    v = bp_find_var_byid (fh, mapped_varid);
     file_is_fortran = is_fortran_file (fh);
 
     r = (read_request *) malloc (sizeof (read_request));
@@ -2250,9 +2324,17 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
     /* copy selection since we don't want to operate on user memory.
      */
     r->sel = (!nullsel ? copy_selection (sel) : nullsel);
-    r->varid = varid;
-    r->from_steps = from_steps;
-    r->nsteps = nsteps;
+    r->varid = mapped_varid;
+    if (!p->streaming)
+    {
+        r->from_steps = from_steps;
+        r->nsteps = nsteps;
+    }
+    else
+    {
+        r->from_steps = 0;
+        r->nsteps = 1;
+    }
     r->data = data;
     //FIXME
     type_size = bp_get_type_size (v->type, 0);;

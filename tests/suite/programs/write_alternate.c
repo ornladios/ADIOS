@@ -415,12 +415,12 @@ int read_stream ()
     sel2 = adios_selection_boundingbox (2, start, count); 
     sel3 = adios_selection_boundingbox (3, start, count); 
 
-    while (adios_errno != err_end_of_stream) {
-        n = f->current_step;
+    n = 0;
+    while (n < NSTEPS && adios_errno != err_end_of_stream) {
         log ("  Step %d\n", n);
 
         log ("    Check variable definitions... %s\n", FILENAME);
-        if (n%2 == 1) {
+        if (n%2 == 0) {
             CHECK_VARINFO("a0", 0, 1)
             CHECK_VARINFO("at0", 0, 1)
             CHECK_VARINFO("a1", 1, 1)
@@ -464,8 +464,8 @@ int read_stream ()
 
 
         if (n%2 == 0) {
-            v = VALUE(rank,n*2);
-            v0 = VALUE0(n*2);
+            v = VALUE(rank,n);
+            v0 = VALUE0(n);
             log ("    Check variables a0,at0,a1,at1,a2,a3... Step %d value %d\n", n, v);
 
             adios_schedule_read (f, sel0, "a0",  0, 1, &r0);
@@ -486,8 +486,8 @@ int read_stream ()
 
 
         if (n%2 == 1) {
-            v = VALUE(rank,n*2)+1;
-            v0 = VALUE0(n*2)+1;
+            v = VALUE(rank,n);
+            v0 = VALUE0(n);
             log ("    Check variables b0,bt0,b1,bt1,b2,b3... Step %d value %d\n", n, v);
 
             adios_schedule_read (f, sel0, "b0",  0, 1, &r0);
@@ -506,7 +506,10 @@ int read_stream ()
             CHECK_ARRAY (b3,  r3,  ldim1*ldim2*ldim3, v, n, iMacro)
         }
 
-        adios_advance_step (f, 0, 0.0);
+        if (adios_advance_step (f, 0, 0.0) >= 0)
+            n = f->current_step;
+        else
+            n++; //just to end the loop
     } 
 
 endread:

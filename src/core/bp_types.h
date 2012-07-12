@@ -73,6 +73,8 @@ typedef struct BP_FILE {
 typedef struct BP_PROC {
     int rank;
     struct BP_FILE * fh;
+    int streaming;
+    int * varid_mapping;
     read_request * local_read_request_list;
     void * priv;
 } BP_PROC;

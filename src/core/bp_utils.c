@@ -1012,7 +1012,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
  */
 int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
 {
-    int j, t, allstep;
+    int j, k, t, allstep;
     struct BP_PROC * p = (struct BP_PROC *) fp->fh;
     struct BP_FILE * fh = p->fh;
     struct adios_index_var_struct_v1 * var_root;
@@ -1049,9 +1049,12 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     }
 
     alloc_namelist (&fp->var_namelist, fp->nvars);
-
+    p->varid_mapping = (int *) malloc (fp->nvars * 4);
+    assert (p->varid_mapping);
+    
     var_root = fh->vars_root;
     j = 0;
+    k = 0;
     while (var_root)
     {
         for (i = 0; i < var_root->characteristics_count; i++)
@@ -1073,6 +1076,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
 
                 strcat (fp->var_namelist[j], "/");
                 strcat (fp->var_namelist[j], var_root->var_name);
+                p->varid_mapping[j] = k;
 
                 j++;
 
@@ -1080,6 +1084,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
             }
         }
 
+        k++;
         var_root = var_root->next;
     }
 
@@ -1148,7 +1153,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
         attr_root = attr_root->next;
     }
 
-    fp->current_step = t;
+    fp->current_step = tostep;
 
     return 0;
 }

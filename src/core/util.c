@@ -230,7 +230,7 @@ void list_insert_read_request_next (read_request ** h, read_request * q)
     return;
 }
 
-/*
+
 void list_free_read_request (read_request * h)
 {
     read_request * n;
@@ -239,12 +239,12 @@ void list_free_read_request (read_request * h)
     {
         n = h->next;
 
-        free_selection (sel);
+        free_selection (h->sel);
         free (h);
         h = n;
     }
 }
-*/
+
 
 ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel)
 {
