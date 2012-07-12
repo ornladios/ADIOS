@@ -1,13 +1,26 @@
 \chapter{Transport Methods}
 \label{chapter-methods}
 
-Because of the time it can take to move data from one process to another or to 
-write and read data to and from a disk, it is often advantageous to arrange the 
-program so that some work can be done while the messages are in transit. So far, 
-we have used non-blocking operations to avoid waiting. Here we describe some details 
-for arranging a program so that computation and I/O can take place simultaneously.
+As described perviously, ADIOS provides a framework for the development and
+deployment of new techniques for data movement through the use of {\em
+  Transport Methods}. While the development of transport is not in the scope of
+this manual, the user is given the option to easily select a specific method for
+the needs of an application at run time. 
 
-\section{Synchronous methods}
+ADIOS includes two broad classes of transport method, viz. mainline methods and
+experimental methods. Mainline methods are supported methods that provide both
+high performance, reliability and usability. Experimental methods are
+under-development research techniques to explore new I/O techniques. While we
+encourage our users to experiment with all available methods, no explicit
+support is provided for these research methods. 
+
+%% Because of the time it can take to move data from one process to another or to 
+%% write and read data to and from a disk, it is often advantageous to arrange the 
+%% program so that some work can be done while the messages are in transit. So far, 
+%% we have used non-blocking operations to avoid waiting. Here we describe some details 
+%% for arranging a program so that computation and I/O can take place simultaneously.
+
+\section{Mainline Transport Methods}
 
 \subsection{NULL}
 
@@ -125,14 +138,17 @@ MPI\_LUSTRE sets the parameters automatically and therefore parameters in XML ar
 not required.  The method automatically calculates the data size from each processor 
 and sets the proper striping parameters. 
 
-\subsection{MPI\_AMR}
+\subsection{MPI\_AGGR}
 \label{section-method-mpiamr}
 
-The MPI\_AMR method is designed to maximize write performance for applications 
-such as adaptive mesh refinement (AMR) on the Lustre file system. In AMR-like applications, 
-each processor outputs varying amount of data and some can output very small size 
-data. Based upon MPI\_LUSTRE method, MPI\_AMR further improves the write speed 
-by 
+The MPI\_AGGR method is designed to maximize write performance for large scale
+applications (more than 10,000 cores) that write out data from a large subset of
+processors. 
+%such as adaptive mesh refinement (AMR) on the Lustre file system. 
+%In AMR-like applications, 
+%each processor outputs varying amount of data and some can output very small size 
+%data. 
+Based upon MPI\_LUSTRE method, MPI\_AGGR further improves the write speed by 
 
 \begin{enumerate}
 \item aggregating data from multiple MPI processors into large chunks. This effectively 
@@ -156,12 +172,12 @@ adios_close(..);
 Please refer to POSIX method on how to read data from subfiles.
 \end{enumerate}
 
-The following XML snippet shows how to use MPI\_AMR method in ADIOS.
+The following XML snippet shows how to use MPI\_AGGR method in ADIOS.
 
 There are two key parameters used in this method.
 
 \begin{lstlisting}[language=XML]
-<method group="tracers" method="MPI_AMR"> 
+<method group="tracers" method="MPI_AGGR"> 
 	num_aggregators=24;num_ost=672
 </method>
 \end{lstlisting}
@@ -178,16 +194,18 @@ For example, if you have an MPI job with 120,000 processors and the number of ag
 is set to 2400, then each aggregator will aggregate the data from 120,000/2400=50 
 processors.
 
-ADIOS MPI\_AMR method allocates stand-alone internal buffers for aggregating data. 
+ADIOS MPI\_AGGR method allocates stand-alone internal buffers for aggregating data. 
 As opposed to ADIOS buffer (the size of which is set from XML file), these buffers 
 are allocated separately and the total size (on one processor) is twice the ADIOS 
 group size. User needs to make sure each process has enough memory when using this 
 method.  
 
 Note that in 1.3 and later releases, with Lustreapi option enabled in configuration, 
-MPI\_AMR sets the parameters automatically and therefore parameters in XML are 
+MPI\_AGGR sets the parameters automatically and therefore parameters in XML are 
 not required. The method automatically calculates the data size from each processor 
-and sets the proper aggregation parameters.
+and sets the proper aggregation parameters. Also note that in previous versions
+of ADIOS (before 1.4), the MPI\_AGGR method was refered to as the MPI\_AMR
+method. 
 
 \subsection{PHDF5}
 
@@ -262,7 +280,95 @@ existing tools linked with NetCDF 3.x.  However, NetCDF4 provides a backward com
 API, so that these tools can be relinked with NetCDF4.  After relink, these tools 
 can open files in the ``netcdf-4 format''.
 
-\subsection{Other methods}
+\subsection{Dataspaces}
+
+Dataspaces is an asynchronous I/O transfer method within ADIOS that enables low-overhead, 
+high-throughput data extraction from a running simulation. Dataspaces consists of two 
+main components: (1) a client module using the ADIOS Dataspaces method, and (2)
+a dataspaces\_server module. Internally, 
+Dataspaces uses RDMA to implement the communication, coordination, and data transport 
+between the clients and the dataspaces\_server modules.
+
+The dataspaces clients use a light-weight library that provides the asynchronous
+I/O API to be used by ADIOS. It is integrated with the ADIOS layer and the
+functionality is exposed through the ADIOS write/read semantics. 
+%It integrates with the ADIOS layer by extending the generic ADIOS data transport 
+%hooks. 
+The ADIOS layer is used to collect and encode the data written 
+by the application into a local transport buffer. Once it has collected data from 
+an application, the transport method notifies the dataspaces\_server through a coordination channel 
+that it has data available to send out. At this point, the control is
+transferred back to the application, while the data is asynchronously extracted 
+by the dataspaces\_server.
+
+The dataspaces\_server module is a stand-alone service that runs independently of a simulation 
+on a set of dedicated nodes in the 
+{\em staging area}. It transfers data from the application through RDMA,  
+and can save it to local storage system, e.g., the Lustre file system, stream it to 
+remote sites, e.g., auxilliary clusters, or serve it directly from the staging area to 
+other applications. One instance of the dataspaces\_server can service multiple applications 
+ in parallel. Further, the server can run in cooperative mode (i.e., multiple 
+instances of the server cooperate to service the application in parallel and to balance 
+load). The dataspaces\_server receives notification messages from the transport method, schedules 
+the requests, and initiates the data transfers  in parallel. The 
+server schedules and prioritizes the data transfers while the simulation is computing 
+in order to overlap data transfers with computations, to maximize data throughput, 
+and to minimize the overhead on the application.
+
+Dataspaces is an asynchronous method available in ADIOS, that can be selected by specifying 
+the transport method in the external ADIOS XML configuration file as ``Dataspaces''.
+
+\begin{lstlisting}[language=XML, caption=Select Dataspaces as a transport method in the configuration file example.]
+<method priority="3" method="Dataspaces" group="fluxdiag"/>
+\end{lstlisting}
+
+To make use of the Dataspaces transport, an application job needs to also run the dataspaces\_server 
+component together with the application. The server should be configured and started 
+before the application as a separate job in the system. For example:
+
+\begin{lstlisting}[language=bash, caption=Start the server component in a job file first.]
+aprun -n $SPROC ./dataspaces_server -s $SPROC -c $PROC &> log.server &
+\end{lstlisting}
+
+The variable \$SPROC represents the number of server instances to run, and the 
+variable \$PROC represents the number of application processes. For example if 
+the job script runs a coupling scenario with two applications that run on 128 and 
+432 processors respectively, then the value of \$PROC is 560. The `\&' character 
+at the end of the line would place the `aprun' command in the background, and will 
+allow the job script to continue and run the other applications. The server processes 
+produce a configuration file, i.e., `conf' that is used by the application  
+to connect to the servers. This file contains identifying information of the 
+master server, which coordinates the client registration 
+and discovery process. The job script should wait for the servers to start-up and 
+produce the `conf' file before starting the client application processes. 
+%, which it can then export to environment variables, e.g., 
+%P2TNID, and P2TPID. 
+Once ADIOS is initialized in the application, this configuration file is parsed
+to provide the rendevouz information. 
+
+\begin{lstlisting}[language=C, caption=Wait for server start-up completion and export the configuration to environment variables.]
+while [ ! -f conf ]; do
+	echo "Waiting for servers to start-up"
+	sleep 2s
+done
+
+
+while read line; do
+	export set "${line}"
+done < conf
+\end{lstlisting}
+
+The server component will terminate automatically when the applications finish. 
+The clients  will send an unregister message to the server before 
+they finish execution, and the servers will exit after they receive \$PROC unregister 
+messages.
+
+%% The Dataspaces transport method is experimental and is not included with the public version 
+%% of the ADIOS source code in this release; however it is available for use on the 
+%% XT4 and XT5 machines at ORNL.
+
+
+\section{Research Methods}
 
 ADIOS provides an easy plug-in mechanism for users or developers to design their 
 own transport method. A step-by-step instruction for inserting a new I/O method 
@@ -270,8 +376,7 @@ is given in the Developer's manual. Users are likely to choose the best method f
 the supported or customized methods for the running their platforms, thus avoiding 
 the need to verify their source codes due to the switching of I/O methods.
 
-\section{Asynchronous methods}
-
+%% \section{Asynchronous methods}
 
 \subsection{Network Scalable Service Interface (NSSI)}
 
@@ -436,88 +541,8 @@ The DataTap transport method is experimental and is not included with the public
 version of the ADIOS source code in this release; however it is available for use 
 on the XT4 and XT5 machines at ORNL.
 
-\subsection{Decoupled and Asynchronous Remote Transfers (DART)}
 
-DART is an asynchronous I/O transfer method within ADIOS that enables low-overhead, 
-high-throughput data extraction from a running simulation. DART consists of two 
-main components: (1) a DARTClient module and (2) a DARTServer module. Internally, 
-DART uses RDMA to implement the communication, coordination, and data transport 
-between the DARTClient and the DARTServer modules.
-
-The DARTClient module is a light library that provides the asynchronous I/O API. 
-It integrates with the ADIOS layer by extending the generic ADIOS data transport 
-hooks. It uses the ADIOS layer features to collect and encode the data written 
-by the application into a local transport buffer. Once it has collected data from 
-a simulation, DARTClient notifies the DARTServer through a coordination channel 
-that it has data available to send out. DARTClient then returns and allows the 
-application to continue its computations while data are asynchronously extracted 
-by the DARTServer.
-
-The DARTServer module is a stand-alone service that runs independently of a simulation 
-on a set of dedicated nodes in the staging area. It transfers data from the DARTClient 
-and can save it to local storage system, e.g., Lustre file system, stream it to 
-remote sites, e.g., Ewok cluster, or serve it directly from the staging area to 
-other applications. One instance of the DARTServer can service multiple DARTClient 
-instances in parallel. Further, the server can run in cooperative mode (i.e., multiple 
-instances of the server cooperate to service the clients in parallel and to balance 
-load). The DARTServer receives notification messages from the clients, schedules 
-the requests, and initiates the data transfers from the clients in parallel. The 
-server schedules and prioritizes the data transfers while the simulation is computing 
-in order to overlap data transfers with computations, to maximize data throughput, 
-and to minimize the overhead on the simulation.
-
-DART is an asynchronous method available in ADIOS, that can be selected by specifying 
-the transport method in the external ADIOS XML configuration file as ``DART''.
-
-\begin{lstlisting}[language=XML, caption=Select DART as a transport method in the configuration file example.]
-<method priority="3" method="DART" group="fluxdiag"/>
-\end{lstlisting}
-
-To make use of the DART transport, an application job needs to also run the DARTServer 
-component together with the application. The server should be configured and started 
-before the application as a separate job in the system. For example:
-
-\begin{lstlisting}[language=bash, caption=Start the server component in a job file first.]
-aprun -n $SPROC ./dart_server -s $SPROC -c $PROC &> log.server &
-\end{lstlisting}
-
-The variable \$SPROC represents the number of server instances to run, and the 
-variable \$PROC represents the number of application processes. For example if 
-the job script runs a coupling scenario with two applications that run on 128 and 
-432 processors respectively, then the value of \$PROC is 560. The `\&' character 
-at the end of the line would place the `aprun' command in the background, and will 
-allow the job script to continue and run the other applications. The server processes 
-produce a configuration file, i.e., `conf' that is used by the DARTClient component 
-to connect to the servers. This file contains the `nid' (network identifier), and 
-`pid' (process identifier) of the master server, which coordinates the client registration 
-and discovery process. The job script should wait for the servers to start-up and 
-produce the `conf' file, which it can then export to environment variables, e.g., 
-P2TNID, and P2TPID. The clients can use these variables to connect to the server. 
-Exporting the master server identifier through environment variable prevents the 
-larger number of clients from accessing the file system at once.
-
-\begin{lstlisting}[language=C, caption=Wait for server start-up completion and export the configuration to environment variables.]
-while [ ! -f conf ]; do
-	echo "Waiting for servers to start-up"
-	sleep 2s
-done
-
-
-while read line; do
-	export set "${line}"
-done < conf
-\end{lstlisting}
-
-The server component will terminate automatically when the applications will finish. 
-The DARTClient components will send an unregister message to the server before 
-they finish execution, and the servers will exit after they receive \$PROC unregister 
-messages.
-
-The DART transport method is experimental and is not included with the public version 
-of the ADIOS source code in this release; however it is available for use on the 
-XT4 and XT5 machines at ORNL.
-
-\section{Other research methods at ORNL}
+%\section{Other research methods at ORNL}
 
 \subsection{MPI-CIO}
 
