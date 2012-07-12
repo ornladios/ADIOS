@@ -414,7 +414,7 @@ def generate_fortran_write (outfile, config, params, test):
         f_file.write ('\n\n! Output results')
 
         if measure.use_adios_timing():
-            f_file.write ('\n\n!  call adios_timing_write_xml (adios_handle, "' + params.get_application() + '_skel_time.xml")')
+            f_file.write ('\n\n  call adios_timing_write_xml (adios_handle, "' + params.get_application() + '_skel_time.xml")')
 
         if measure.use_reduce():
             f_file.write ('\n\n  call MPI_Reduce (skel_init_timer, skel_total_init, 1, MPI_DOUBLE_PRECISION, MPI_MAX, 0, MPI_COMM_WORLD, error)')
