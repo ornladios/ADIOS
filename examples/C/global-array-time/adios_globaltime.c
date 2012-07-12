@@ -7,7 +7,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include "mpi.h"
 #include "adios.h"
 int main (int argc, char ** argv) 
@@ -48,7 +47,6 @@ int main (int argc, char ** argv)
         	#include "gwrite_restart.ch"
         	adios_close (adios_handle);
 		MPI_Barrier (comm);
-                sleep (10);
                 //if (rank==0) printf("Timestep %d written\n", it+1);
  	}
 	MPI_Barrier (comm);

@@ -10,7 +10,6 @@
 /* Read method for BP files */
 /****************************/
 
-//FIXME: time_out related issues
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -240,7 +239,8 @@ static void release_step (ADIOS_FILE *fp)
 
 /* This routin open a ADIOS-BP file with no timeout.
  * It first checks whether this is a valid BP file. This is done by
- * checking the validity on rank 0 and communicating to other ranks.
+ * checking the validity on rank 0 and communicating to other ranks (avoiding
+ * the situation where every one kicks the tire.
  * If the file is ok, then go ahead get the metadata.
  */
 static BP_FILE * open_file (const char * fname, MPI_Comm comm)
@@ -284,7 +284,7 @@ static BP_FILE * open_file (const char * fname, MPI_Comm comm)
     return fh;
 }
 
-/* This routine set ADIOS_FILE fields from fh */
+/* This routine set ADIOS_FILE fields from BP_FILE struct */
 void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
 {
     BP_PROC * p;
@@ -318,14 +318,6 @@ void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
     return;
 }
 
-/*  last_step is the last step that the previous file has.
- *       timeout_sec  >=0.0: block until the stream becomes available but 
- *                           for max 'timeout_sec' seconds.
- *                           0.0 means forwever. 
- *                     <0.0: return immediately if stream is not available
- *                     Note: 0 = does not ever return with err_file_not_found error, which is dangerous
- **                       if the stream name is simply mistyped in the code.
- */
 static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int last_step, float timeout_sec)
 {
     BP_PROC * p = (BP_PROC *) fp->fh;
@@ -477,11 +469,6 @@ static int get_time (struct adios_index_var_struct_v1 * v, int step)
     int i = 0;
     int prev_ti = 0, counter = 0;
 
-/*
-printf ("%s, time_index[0] = %d\n", v->var_name,v->characteristics[0].time_index);
-printf ("%s, time_index[1] = %d\n", v->var_name,v->characteristics[1].time_index);
-printf ("%s, time_index[2] = %d\n", v->var_name,v->characteristics[2].time_index);
-*/
     while (i < v->characteristics_count)
     {
         if (v->characteristics[i].time_index != prev_ti)
@@ -489,7 +476,6 @@ printf ("%s, time_index[2] = %d\n", v->var_name,v->characteristics[2].time_index
             counter ++;
             if (counter == (step + 1))
             {
-//printf ("i = %d, time_index = %d\n", i, v->characteristics[i].time_index);
                 return v->characteristics[i].time_index;
             }
             prev_ti = v->characteristics[i].time_index;
@@ -1103,6 +1089,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
     p->rank = rank;
     p->fh = fh;
     p->streaming = 1;
+    p->varid_mapping = 0;
     p->local_read_request_list = 0;
     p->priv = 0;
 
@@ -1238,8 +1225,18 @@ typedef struct {
 
 int adios_read_bp_close (ADIOS_FILE * fp)
 {
-    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
-    BP_FILE * fh = p->fh;
+    struct BP_PROC * p;
+    BP_FILE * fh;
+
+    if (!fp)
+    {
+        return 0;
+    }
+
+    p = (struct BP_PROC *) fp->fh;
+    assert (p);
+
+    fh = p->fh;
 
     if (p->fh)
     {
@@ -1261,9 +1258,23 @@ int adios_read_bp_close (ADIOS_FILE * fp)
 
     free (p);
 
-    free_namelist (fp->var_namelist, fp->nvars);
-    free_namelist (fp->attr_namelist, fp->nattrs);
-    free (fp->path);
+    if (fp->var_namelist)
+    {
+        free_namelist (fp->var_namelist, fp->nvars);
+        fp->var_namelist = 0;
+    }
+
+    if (fp->attr_namelist)
+    {
+        free_namelist (fp->attr_namelist, fp->nattrs);
+        fp->attr_namelist = 0;
+    }
+  
+    if (fp->path)
+    {
+        free (fp->path);
+        fp->path = 0;
+    }
     // internal_data field is taken care of by common reader layer
     free (fp);
 
@@ -2808,13 +2819,13 @@ int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
     {
         gdims[k] = ch.dims.dims[k * 3 + 1];
     }
-
+/*
     if (is_fortran_file (fh))
     {
         swap_order (ndim, gdims, &dummy);
     }
-
-    if (gdims[0] == 0) // with time
+*/
+    if (gdims[ndim - 1] == 0) // with time
     {
         retval = 1;
     }
