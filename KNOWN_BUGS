@@ -1,15 +1,11 @@
 
-Writing data
-============
-
-1. If the size specified to the adios_group_size is too small, the output
-will become corrupt. Work around: make the size bigger. 
-
 Reading data
 ============
 
-1. The read API defines void *mins and void *maxs returned by the adios_inq_var() funtion to contain the min/max of an array per timestep. In the current release these pointers are NULL always. 
-Only the gmin and gmax single values as global min/max of an array over all timesteps are available. 
+- Statistics: scalars over time have no statistics calculated when queried with adios_inq_var_stat(). Only the value written by rank 0 at the first step is seen. 
+Work around: adios_inq_var_stat() returns per-step statistics too, and at each step min/max equals the value at that step, so one can calculate a global min/max over time from this list. 
+
+
 
 
 
