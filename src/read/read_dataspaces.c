@@ -931,7 +931,7 @@ void adios_read_dataspaces_release_step (ADIOS_FILE *fp)
 }
 
 
-ADIOS_VARINFO * adios_read_dataspaces_inq_var_byid (ADIOS_FILE *fp, int varid)
+ADIOS_VARINFO * adios_read_dataspaces_inq_var_byid (const ADIOS_FILE *fp, int varid)
 {
     struct dataspaces_data_struct * ds = (struct dataspaces_data_struct *) fp->fh;
     struct dataspaces_var_struct * vars = ds->vars;
@@ -1419,7 +1419,7 @@ void ds_dimension_ordering(int ndims, int is_app_fortran, int unpack, int *didx)
     }
 }
 
-int adios_read_dataspaces_get_attr_byid (ADIOS_FILE * fp, int attrid, 
+int adios_read_dataspaces_get_attr_byid (const ADIOS_FILE * fp, int attrid, 
                     enum ADIOS_DATATYPES * type, int * size, void ** data)
 {
     struct dataspaces_data_struct * ds = (struct dataspaces_data_struct *) fp->fh;
@@ -1444,7 +1444,7 @@ int adios_read_dataspaces_get_attr_byid (ADIOS_FILE * fp, int attrid,
     return 0; 
 }
 
-void adios_read_dataspaces_reset_dimension_order (ADIOS_FILE *fp, int is_fortran)
+void adios_read_dataspaces_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
     /* not implemented */
 }
