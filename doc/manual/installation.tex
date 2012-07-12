@@ -170,17 +170,12 @@ If you have an Infininband network with \verb+ibverbs+ and \verb+rdmacm+ librari
 
 \vspace*{6pt}
 \noindent {\bf Cray Gemini network. }
-On newer Cray machines (XK6 and XE6) with the Gemini network, the \verb+PMI+ and \verb+uGNI+ libraries are used by the staging methods. ADIOS configure usually finds them automatically, but if not, configure ADIOS with the options
+On newer Cray machines (XK6 and XE6) with the Gemini network, the \verb+PMI+ and \verb+uGNI+ libraries are used by the staging methods. Configure ADIOS with the options
 
 \begin{lstlisting}
---with-cray-pmi=<location of CRAY_PMI installation>
---with-cray-pmi-incdir=<location of CRAY_PMI includes>
---with-cray-pmi-libdir=<location of CRAY_PMI library>
---with-cray-pmi-libs=<linker flags besides -L<cray-pmi-libdir>, e.g. -lpmi
---with-cray-ugni=<location of CRAY UGNI installation>
---with-cray-ugni-incdir=<location of CRAY UGNI includes>
---with-cray-ugni-libdir=<location of CRAY UGNI library>
---with-cray-ugni-libs=<linker flags besides -L<cray-ugni-libdir>, e.g. -lugni
+--with-cray-pmi=/opt/cray/pmi/default \
+--with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
+--with-cray-ugni-libdir=/opt/cray/ugni/default/lib
 \end{lstlisting}
 
 \vspace*{6pt}
