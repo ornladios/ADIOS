@@ -298,7 +298,7 @@ int read_points ()
     ADIOS_SELECTION *sel0,*sel1,*sel2,*sel3;
     ADIOS_FILE * f;
     ADIOS_VARINFO * vi;
-    int err=0,n, i,j,k;
+    int err=0,n,n1, i,j,k;
     int nsteps_a, nsteps_b, nsteps_c;
     int v; 
 
@@ -374,8 +374,9 @@ int read_points ()
     }
 #endif
 
-
-    while (adios_errno != err_end_of_stream) {
+    n1=0;
+    while (n1 < NSTEPS && adios_errno != err_end_of_stream) {
+        n1++;
         log ("  Step %d\n", f->current_step);
 
 
@@ -465,7 +466,10 @@ int read_points ()
             }
         }
 
-        adios_advance_step (f, 0, -1.0);
+        if (n1 < NSTEPS)
+        {
+            adios_advance_step (f, 0, -1.0);
+        }
     }
 
 
