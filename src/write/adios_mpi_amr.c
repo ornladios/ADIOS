@@ -60,7 +60,7 @@ static int adios_mpi_amr_initialized = 0;
 #endif
 
 #ifdef SKEL_TIMING
-#define STOP_TIMER(t) adios_timing_go (fd->timing_obj, (t) )
+#define STOP_TIMER(t) adios_timing_stop (fd->timing_obj, (t) )
 #else
 #define STOP_TIMER(t) ;
 #endif
