@@ -1,12 +1,11 @@
 \chapter{Transport Methods}
 \label{chapter-methods}
 
-%\leftskip=0pt
 Because of the time it can take to move data from one process to another or to 
 write and read data to and from a disk, it is often advantageous to arrange the 
 program so that some work can be done while the messages are in transit. So far, 
 we have used non-blocking operations to avoid waiting. Here we describe some details 
-for arranging a program so that computation and I/O can take place simultaneously.%\label{HToc84890256}\label{HToc212016632}\label{HToc212016874}\label{HToc182553380}
+for arranging a program so that computation and I/O can take place simultaneously.
 
 \section{Synchronous methods}
 
@@ -17,7 +16,7 @@ the transport method to ``NULL,'' users can test the speed of the routine by tim
 the output against no I/O. This is especially useful when working with asynchronous 
 methods, which take an indeterminate amount of time.  Another useful feature of 
 this I/O is that it quickly allows users to test out the system and determine whether 
-bugs are caused by the I/O system or by other places in the codes.%\label{HToc84890258}\label{HToc212016634}\label{HToc212016876}\label{HToc182553382}
+bugs are caused by the I/O system or by other places in the codes.
 
 \subsection{POSIX}
 
@@ -34,7 +33,7 @@ Additional features may be added to the ADIOS POSIX transport method over time.
 A new transport method with a related name, such as POSIX-ASCII, may be provided 
 to perform I/O with additional features. The POSIX-ASCII example would write out 
 a text version of the data formatted nicely according to some parameters provided 
-in the XML file.%\label{HToc84890259}\label{HToc212016635}\label{HToc212016877}\label{HToc182553383}
+in the XML file.
 
 \subsection{MPI}
 
@@ -52,7 +51,7 @@ Lustre storage system.
 
 The adapted code takes full advantage of NxM grouping through the coordination-communicator. 
 This grouping generates one file per coordination-communicator with the data stored 
-sequentially based on the process rank within the communicator.  Figure~\ref{figure-fig009} presents 
+sequentially based on the process rank within the communicator.  Figure~\ref{fig:serialized-open} presents 
 in the example of GTC code, 32 processes in the same Toroidal zone write to one 
 integrated file. Additional serialization of the MPI\_File\_open calls is done 
 using this communicator as well because each process may have a different size 
@@ -69,9 +68,9 @@ pointer for file seek and other I/O operations.
 
 \begin{figure}[htbp]
 \begin{center}
-\includegraphics[width=290pt, height=185pt]{ADIOS-Manual-fig009.png}
+\includegraphics[width=290pt, height=185pt]{figures/mpi-method-serialized-opens.png}
 \caption{Server-friendly metadata approach: offset the create/open in time}
-\label{figure-fig009}
+\label{fig:serialized-open}
 \end{center}
 \end{figure}
 
@@ -85,7 +84,7 @@ impacting any of the scientific code.
 The MPI transport method is the most mature, fully featured, and well tested method 
 in ADIOS. We recommend to anyone creating a new transport method that they study 
 it as a model of full functionality and some of the advantages that can be made 
-through careful management of the storage resources.\label{HToc84890260}\label{HToc212016636}\label{HToc212016878}\label{HToc182553384}
+through careful management of the storage resources.
 
 \subsection{MPI\_LUSTRE}
 
@@ -123,7 +122,7 @@ one process to Lustre during the writing, then the block\_size should be 40MB.
 Note in 1.3 and later releases, with Lustreapi option enabled in configuration, 
 MPI\_LUSTRE sets the parameters automatically and therefore parameters in XML are 
 not required.  The method automatically calculates the data size from each processor 
-and sets the proper striping parameters. \label{HRef278374093}\label{HToc182553385}
+and sets the proper striping parameters. 
 
 \subsection{MPI\_AMR}
 \label{section-method-mpiamr}
@@ -186,7 +185,7 @@ method.
 Note that in 1.3 and later releases, with Lustreapi option enabled in configuration, 
 MPI\_AMR sets the parameters automatically and therefore parameters in XML are 
 not required. The method automatically calculates the data size from each processor 
-and sets the proper aggregation parameters.\label{HToc84890261}\label{HToc212016637}\label{HToc212016879}\label{HToc182553386}
+and sets the proper aggregation parameters.
 
 \subsection{PHDF5}
 
@@ -205,7 +204,7 @@ Currently, HDF5 supports two I/O modes: independent and Collective read or write
 which can use either the MPI or the POSIX driver by specifying the dataset transfer 
 property list in H5Dwrite function calls. In this release, only the MPI driver 
 is supported in ADIOS; later on, both I/O drivers will be supported by changing 
-the attribute information for PHDF5 method elements in XML. \label{HToc182553387}
+the attribute information for PHDF5 method elements in XML. 
 
 \subsection{NetCDF4}
 
@@ -252,7 +251,7 @@ same dimensions.  The example violates both of these expectations.
 Note: NetCDF4 files created in the new ``netcdf-4 format'' cannot be opened with 
 existing tools linked with NetCDF 3.x.  However, NetCDF4 provides a backward compatibility 
 API, so that these tools can be relinked with NetCDF4.  After relink, these tools 
-can open files in the ``netcdf-4 format''.\label{HToc182553388}
+can open files in the ``netcdf-4 format''.
 
 \subsection{Other methods}
 
@@ -260,10 +259,10 @@ ADIOS provides an easy plug-in mechanism for users or developers to design their
 own transport method. A step-by-step instruction for inserting a new I/O method 
 is given in Section 13.1. Users are likely to choose the best method from among 
 the supported or customized methods for the running their platforms, thus avoiding 
-the need to verify their source codes due to the switching of I/O methods.\label{HToc182553389}
+the need to verify their source codes due to the switching of I/O methods.
 
 \section{Asynchronous methods}
-\label{HToc182553390}
+
 
 \subsection{Network Scalable Service Interface (NSSI)}
 
@@ -378,7 +377,7 @@ staging services, add 192 cores to the job.
 
 The NSSI transport method is experimental and is not included with the public version 
 of the ADIOS source code in this release; however it is available for use on the 
-XT4 and XT5 machines at ORNL.\label{HToc84890266}\label{HToc212016642}\label{HToc212016884}\label{HToc182553391}
+XT4 and XT5 machines at ORNL.
 
 \subsection{DataTap}
 
@@ -388,13 +387,13 @@ service designed to bridge the order-of-magnitude difference between available
 memories on the I/O partition compared with the compute partition. We assume the 
 existence of a large number of compute nodes producing data (we refer to them as 
 ``\textit{DataTap }clients'') and a smaller number of I/O nodes receiving the data 
-(we refer to them as ``\textit{DataTap }servers'') (see Figure~\ref{figure-datatap}). 
+(we refer to them as ``\textit{DataTap }servers'') (see Figure~\ref{fig:datatap-arch}). 
 
 \begin{figure}[htbp]
 \begin{center}
-\includegraphics[width=222pt, height=97pt]{ADIOS-Manual-fig022.png}
+\includegraphics[width=222pt, height=97pt]{figures/datatap-architecture.png}
 \caption{DataTap architecture}
-\label{figure-datatap}
+\label{fig:datatap-arch}
 \end{center}
 \end{figure}
 
@@ -418,7 +417,7 @@ memory copy, thereby reducing the overhead of I/O in the application.
 
 The DataTap transport method is experimental and is not included with the public 
 version of the ADIOS source code in this release; however it is available for use 
-on the XT4 and XT5 machines at ORNL.\label{HToc84890267}\label{HToc212016643}\label{HToc212016885}\label{HToc182553392}
+on the XT4 and XT5 machines at ORNL.
 
 \subsection{Decoupled and Asynchronous Remote Transfers (DART)}
 
@@ -495,7 +494,7 @@ messages.
 
 The DART transport method is experimental and is not included with the public version 
 of the ADIOS source code in this release; however it is available for use on the 
-XT4 and XT5 machines at ORNL.\label{HToc182553393}
+XT4 and XT5 machines at ORNL.
 
 \section{Other research methods at ORNL}
 
@@ -535,13 +534,13 @@ one var is nested within the global-bounds, they share the declaration of the bo
 but are treated individually and independently for data storage purposes. 
 
 This research method is installed on Jaguar at ORNL only but is not part of the 
-public release.\label{HToc182553395}
+public release.
 
 \subsection{MPI-AIO}
 
 The initial implementation of the asynchronous MPI-IO method (MPI-AIO) is patterned 
 after the MPI-IO method. Scheduled metadata commands are performed with the same 
-serialization of MPI\_Open calls as given in Figure~\ref{figure-fig009}.
+serialization of MPI\_Open calls as given in Figure~\ref{fig:serialized-open}.
 
 The degree of I/O synchronicity depends on several factors. First, the ADIOS library 
 must be built with versions of MPI that are built with asynchronous I/O support 
@@ -563,4 +562,4 @@ data transport must be complete with intelligent placement of the adios\_close
 I/O between adios\_begin\_calculation and adios\_end\_calculation calls, and complete 
 I/O on adios\_end\_iteration calls.
 
-This research module is not released in ADIOS 1.4.\label{HRef118286941}\label{HToc84890268}\label{HToc212016644}\label{HToc212016886}\label{HToc182553396}
+This research module is not released in ADIOS 1.4.

@@ -1,11 +1,11 @@
 
 \vspace{24pt}
 \begin{flushright}
-\textbf{ORNL/TM-2009/100\label{OLEHLINK6}}
+{\color{color08} \textbf{ORNL/TM-2009/100\label{OLEHLINK6}}}
 \end{flushright}
 
 \vspace{60pt}
-{\huge \textbf{ADIOS 1.4.0 User's Manual}}
+{\huge \textbf{ADIOS 1.4.0 Developer's Manual}}
 
 \vspace{36pt}
 \textbf{July 2012\pagebreak{}}
@@ -98,12 +98,12 @@ of the United States Government or any agency thereof.}\end{minipage}\\
 
 \vspace{12pt}
 \begin{flushright}
-\textbf{ORNL/TM-2009/100}
+{\color{color08} \textbf{ORNL/TM-2009/100\label{HToc533553247}\label{HToc6041549}\label{HToc6042388}\label{HToc8548020}\label{HToc528144461}\label{HToc528743868}\label{HToc528745033}}}
 \end{flushright}
 
 %\vspace{36pt}
 \begin{center}
-{\Large \textbf{ADIOS 1.4.0 USER'S MANUAL}}
+{\Large \textbf{ADIOS 1.4.0 DEVELOPER'S MANUAL}}
 
 \vspace{60pt}
 Prepared for the
@@ -169,6 +169,7 @@ under contract DE-AC05-00OR22725
 
 \newpage
 
+
 \vspace{66pt}
 \textbf{Abbreviations}
 
@@ -197,50 +198,7 @@ under contract DE-AC05-00OR22725
 \end{center}
 
 \vspace{6pt}
-The Adaptive Input/Output (I/O) system (ADIOS) is a joint product of the National 
-Center of Computational Sciences (NCCS) at Oak Ridge National Laboratory (ORNL) 
-and the Center for Experimental Research in Computer Systems at the Georgia Institute 
-of Technology. This work is being led by Scott Klasky (ORNL); Jay Lofstead (Georgia 
-Tech, funded from Sandia Labs) is the main contributor. ADIOS has greatly benefited 
-from the efforts of the following ORNL staff: Steve Hodson, who gave tremendous 
-input and guidance; Chen Jin, who integrated ADIOS routines into multiple scientific 
-applications; Norbert Podhorszki, who integrated ADIOS with the Kepler workflow 
-system and worked with Qing Gary Liu on the read API. ADIOS also benefited from 
-the efforts of the Georgia Tech team, including Prof. Karsten Schwan, Prof. Matt 
-Wolf, Hassan Abbasi, and Fang Zheng. Wei Keng Liao, Northwestern University, and 
-Wang Di, SUN, have also been invaluable in our coding efforts of ADIOS, writing 
-several important code parts. Essentially, ADIOS is componentization of I/O transport 
-methods. Among the suite of transport methods, Decoupled and Asynchronous 
-Remote Transfers (DART) was developed by Prof. Manish Parashar and his student 
-Ciprian Docan of Rutgers University.
-
-\vspace{6pt}
-Without a scientific application, ADIOS would not have come this far. Special thanks 
-go to Stephane Ethier at the Princeton Plasma Physics Laboratory (GTS); Researcher 
-Yong Xiao and Prof. Zhihong Lin from the University of California, Irvine (GTC); 
-Julian Cummings at the California Institute of Technology; Seung-Hoe and Prof. 
-C. S. Chang at New York University (XGC); Jackie Chen and Ray Grout at Sandia (S3D); 
-and Luis Chacon at ORNL (Pixie3D). 
-
-\vspace{6pt}
 This project is sponsored by ORNL, Georgia Tech, The Scientific Data Management 
 Center (SDM) at Lawrence Berkeley National Laboratory, and the U.S. Department 
 of Defense. 
-
-%\vspace{24pt}
-%\pagebreak
-%{\Large \textbf{ADIOS contributors}}
-%
-%\vspace{6pt}
-%\begin{description}
-%\item[ANL]: Rob Ross
-%\item[Auburn University]: Weikuan Yu, Yuan Tian
-%\item[Georgia Tech]: Hasan Abbasi, Jay Lofstead, Karsten Schwan, Fang Zheng,
-%\item[NCSU]: Xiaosong Ma, Sriram Lakshminarasimhan, Abhijit Sachidananda, Michael Warren 
-%\item[Northwestern University]: Alok Choudhary, Wei Keng Liao, Chen Jin
-%\item[ORNL]: Steve Hodson, Scott Klasky, Qing Gary Liu, Jeremy Logan,
-%Norbert Podhorszki, Steve Poole, Nagiza Samatova, Matthew Wolf
-%\item[Sandia]: Todd Kordenbrock
-%\item[SUN]: Wang Di
-%\end{description}
 

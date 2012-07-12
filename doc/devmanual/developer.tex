@@ -1,0 +1,625 @@
+\chapter{Developer Manual}
+
+\section{Create New Transport Methods}
+
+One of ADIOS's important features is the componentization of transport methods. 
+Users can switch among the typical methods that we support or even create their 
+own methods, which can be easily plugged into our library. The following sections 
+provide the procedures for adding the new transport method called ``abc'' into 
+the ADIOS library. In this version of ADIOS, all the source files are located in 
+/trunk/src/; the core files in /trunk/src/core/, the write method in /trunk/src/write
+and the read method in /trunk/src/read.
+
+\subsection{Add the new method macros in adios\_transport\_hooks.h}
+
+The first file users need to examine is adios\_transport\_hooks.h, which basically 
+defines all the transport methods and interface functions between detailed transport 
+implementation and user APIs. In the file, we first find the line that defines 
+the enumeration type Adios\_IO\_methods\_datatype add the declaration of method 
+ID ADIOS\_METHOD\_ABC, and, because we add a new method, update total number of 
+transport methods ADIOS\_METHOD\_COUNT from 9 to 10.
+
+1. enum Adios\_IO\_methods datatype 
+\begin{lstlisting}[caption={Add a new write method, step 1}]
+
+enum ADIOS_IO_METHOD {
+    ADIOS_METHOD_UNKNOWN    = -2,
+    ADIOS_METHOD_NULL       = -1,
+    ADIOS_METHOD_MPI        = 0,
+    ...
+    ADIOS_METHOD_PROVENANCE = 8,
+
+    `\color{javapurple}{\bf ADIOS\_METHOD\_ABC        = 9,}`
+
+    ADIOS_METHOD_COUNT      = 10
+};
+\end{lstlisting}
+
+2. Next, we need to declare the transport APIs for method ``abc,'' including init/finalize, 
+open/close, should\_buffer, and read/write. Similar to the other methods, we need 
+to add 
+
+\begin{lstlisting}
+    FORWARD_DECLARE (abc)
+\end{lstlisting}
+
+3. Then, we add the mapping of the string name ``abc'' of the new transport method 
+to the method ID - ADIOS\_METHOD\_ABC, which has been already defined in enumeration 
+type Adios\_IO\_methods\_datatype. As the last parameter, ``1'' here means the 
+method requires communications, or ``0'' if not.
+
+\begin{lstlisting}
+    MATCH_STRING_TO_METHOD ("abc", ADIOS_METHOD_ABC, 1)     
+\end{lstlisting}
+        
+4. Lastly, we add the mapping of the string name needed in the initialization functions 
+to the method ID, which will be used by adios\_transport\_struct variables defined 
+in adios\_internals.h.
+
+\begin{lstlisting}
+    ASSIGN_FNS (abc, ADIOS_METHOD_ABC)
+\end{lstlisting}
+
+\subsection{Create adios\_abc.c}
+
+In this section, we demonstrate how to implement different transport APIs for method 
+``abc.'' In adios\_abc.c, we need to implement at least 11 required routines: 
+
+\begin{enumerate}
+\item ``adios\_abc\_init'' allocates the method\_data field in adios\_method\_struct 
+to the user-defined transport data structure, such as adios\_abc\_data\_struct, 
+and initializes this data structure. Before the function returns, the initialization 
+status can be set by statement ``adios\_abc\_initialized = 1.''
+
+\item ``adios\_abc\_open'' opens a file if there is only one processor writing to 
+the file. Otherwise, this function does nothing; instead, we use adios\_abc\_should\_buffer 
+to coordinate the file open operations.   
+
+\item ``adios\_abc\_should\_buffer,'' called by the ``common\_adios\_group\_size'' 
+function in adios.c, needs to include coordination of open operations if multiple 
+processes are writing to the same file. 
+
+\item ``adios\_abc\_write'', in the case of no buffering or overflow, writes data 
+directly to disk. Otherwise, it verifies whether the internally recorded memory 
+pointer is consistent with the vector variable's address passed in the function 
+parameter and frees that block of memory if it is not needed any more.  
+
+\item ``adios\_abc\_read'' associates the internal data structure's address to the 
+variable specified in the function parameter.
+
+\item ``adios\_abc\_close'' simply closes the file if no buffering scheme is used. 
+However, in general, this function performs most of the actual disk writing/reading 
+the buffers to/from the file by one or more processors in the same communicator 
+domain and then close the file. 
+
+\item ``adios\_abc\_finalize'' resets the initialization status back to 0 if it has 
+been set to 1 by adios\_abc\_init. 
+
+If you are developing asynchronous methods, the following functions need to be 
+implemented as well; otherwise you can leave them as empty implementation.
+
+\item adios\_abc\_get\_write\_buffer,
+
+\item ``adios\_abc\_end\_iteration`` is a tick counter for the I/O 
+routines to time how fast they are emptying the buffers. 
+
+\item ``adios\_abc\_start\_calculation'' indicates that it is now 
+an ideal time to do bulk data transfers because the code will not be performing 
+I/O for a while.
+
+\item ``adios\_abc\_stop\_calculation`` indicates that bulk data 
+transfers should cease because the code is about to start communicating with other 
+nodes.
+\end{enumerate}
+
+The following is One of the most important things that needs to be noted: 
+
+fd-\texttt{>}shared\_buffer = adios\_flag\_no,
+
+which means that the methods do not need a buffering scheme, such as PHDF5, and 
+that data write out occurs immediately once adios\_write returns.
+
+If fd-\texttt{>}shared\_buffer = adios\_flag\_yes, the users can employ the self-defined 
+buffering scheme to improve I/O performance.
+
+\subsection{A walk-through example}
+
+Now let's look at an example of adding an unbuffered POSIX method to ADIOS.  According 
+to the steps described above, we first open the header file --``adios\_transport\_hooks.h,'' 
+and add the following statements:
+
+\begin{lstlisting}[emph={ADIOS_METHOD_POSIX_ASCII_NB}, emphstyle={\color{red}\large\bf},
+                   caption={Example: add unbuffered POSIX method, step 1}]
+enum ADIOS_IO_METHOD {
+
+    ADIOS_METHOD_UNKNOWN        = -2,
+    ADIOS_METHOD_NULL           = -1,
+    ADIOS_METHOD_MPI            = 0,
+    ...
+    ADIOS_METHOD_PROVENANCE     = 8,
+    // method ID for binary transport method
+    ADIOS_METHOD_POSIX_ASCII_NB = 9, 
+    // total method number
+    ADIOS_METHOD_COUNT          = 10 
+};
+
+FORWARD_DECLARE (posix_ascii_nb);
+
+MATCH_STRING_TO_METHOD ("posix_ascii_nb", ADIOS_METHOD_POSIX_ASCII_NB, 0)
+
+ASSIGN_FNS (binary, ADIOS_METHOD_POSIX_ASCII_NB)
+\end{lstlisting}
+
+Next, we must create adios\_posix\_ascii\_nb,c, which defines all the required 
+routines listed in Sect. 12.1.2 The blue highlights below mark out the data structures 
+and required functions that developers need to implement in the source code. 
+
+\begin{lstlisting}[emph={ADIOS_METHOD_POSIX_ASCII_NB}, emphstyle={\color{red}\large\bf},
+                   caption={Example: add unbuffered POSIX method, C source of write method}]
+static int adios_posix_ascii_nb_initialized = 0;
+
+struct adios_POSIX_ASCII_UNBUFFERED_data_struct
+{
+    FILE *f;
+    uint64_t file_size;
+};
+
+void adios_posix_ascii_nb_init (const char *parameters, 
+                                struct adios_method_struct * method)
+{
+    struct adios_POSIX_ASCII_UNBUFFERED_data_struct * md;
+
+    if (!adios_posix_ascii_nb_initialized)
+    {
+        adios_posix_ascii_nb_initialized = 1;
+    }
+
+    method->method_data = malloc (
+            sizeof(struct adios_POSIX_ASCII_UNBUFFERED_data_struct));
+    md = (struct adios_POSIX_ASCII_UNBUFFERED_data_struct *) 
+            method->method_data;
+    md->f = 0;
+    md->file_size = 0;
+}
+
+int adios_posix_ascii_nb _open (struct adios_file_struct * fd, 
+                                struct adios_method_struct * method)
+{
+    char * name;
+    struct adios_POSIX_ASCII_UNBUFFERED_data_struct * p;
+    struct stat s;
+
+    p = (struct adios_POSIX_ASCII_UNBUFFERED_data_struct *) 
+            method->method_data;
+    name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
+    sprintf (name, "\%s\%s", method->base_path, fd->name);
+    if (stat (name, \&s) == 0)
+        p->file_size = s.st_size;
+
+    switch (fd->mode)
+    {
+        case adios_mode_read:
+        {
+            p->f = fopen (name, "r");
+            if (p->f <= 0)
+            {
+                fprintf (stderr, "ADIOS POSIX ASCII UNBUFFERED: "
+                        "file not found: \%s\n", fd->name);
+                free (name);
+                return 0;
+            }
+            break;
+        }
+
+        case adios_mode_write:
+        {
+            p->f = fopen (name, "w");
+            if (p->f <= 0)
+            {
+                fprintf (stderr, "adios_posix_ascii_nb_open " 
+                        "failed for base_path %s, name %s\n", 
+                        method->base_path, fd->name 
+                        );
+                free (name);
+                return 0;
+            }
+            break;
+        } 
+
+        case adios_mode_append:
+        {
+            int old_file = 1;
+            p->f = fopen (name, "a");
+            if (p->f <= 0)
+            {
+                fprintf (stderr, "adios_posix_ascii_nb_open"
+                        " failed for base_path \%s, name \%s\n"
+                        ,method->base_path, fd->name
+                        );
+                free (name);
+                return 0;
+            }
+            break;
+        }
+
+        default:
+        {
+            fprintf (stderr, "Unknown file mode: \%d\n", fd->mode);
+            free (name);
+            return 0;
+        }
+    }
+    free (name);
+    return 0;
+}
+
+enum ADIOS_FLAG adios_posix_ascii_nb_should_buffer(
+                            struct adios_file_struct * fd,
+                            struct adios_method_struct * method,
+                            void * comm) 
+{
+    //in this case, we don't use shared_buffer
+    return adios_flag_no;
+}
+
+void adios_posix_ascii_nb_write (struct adios_file_struct * fd,
+                                 struct adios_var_struct * v,
+                                 void * data,
+                                 struct adios_method_struct * method) 
+{
+    struct adios_POSIX_ASCII_UNBUFFERED_data_struct * p;
+    p = (struct adios_POSIX_ASCII_UNBUFFERED_data_struct *)
+            method->method_data;
+    if (!v->dimensions) {
+        switch (v->type)
+        {
+            case adios_byte:
+            case adios_unsigned_byte:
+                fprintf (p->f,"\%c\n", *((char *)data)); 
+                break;
+            case adios_short:
+            case adios_integer:
+            case adios_unsigned_short:
+            case adios_unsigned_integer:
+                fprintf (p->f,"\%d\n", *((int *)data)); 
+                break;
+            case adios_real:
+            case adios_double:
+            case adios_long_double:
+                fprintf (p->f,"\%f\n", *((double *)data)); 
+                break;
+            case adios_string:
+                fprintf (p->f,"\%s\n", (char *)data); 
+                break;
+            case adios_complex:
+                fprintf (p->f,"\%f+\%fi\n", 
+                         *((float *)data),*((float *)(data+4))); 
+                break;
+            case adios_double_complex:
+                fprintf (p->f,"\%f+\%fi\n", 
+                         *((double *)data),*((double *)(data+8))); 
+                break;
+            default:
+                break;
+        }
+    } 
+    else
+    {
+        uint64_t j;
+        int element_size = adios_get_type_size (v->type, v->data);
+        printf("element_size: \%d\n",element_size);
+        uint64_t var_size = adios_get_var_size (v, fd->group, v->data) /
+                                element_size;
+        switch (v->type)
+        {
+            case adios_byte:
+            case adios_unsigned_byte:
+                for (j = 0;j < var_size; j++)
+                    fprintf (p->f,"\%c ", *((char *)(data+j)));
+                printf("\n");
+                break;
+            case adios_short:
+            case adios_integer:
+            case adios_unsigned_short:
+            case adios_unsigned_integer:
+                for (j = 0;j < var_size; j++)
+                    fprintf (p->f,"\%d ", *((int *)(data+element_size*j)));
+                printf("\n");
+                break;
+            case adios_real:
+            case adios_double:
+            case adios_long_double:
+                for (j = 0;j < var_size; j++)
+                    fprintf (p->f,"\%f ", * ( (double *)(data+element_size*j)));
+                printf("\n");
+                break;
+            case adios_string:
+                for (j = 0;j < var_size; j++)
+                    fprintf (p->f,"\%s ", (char *)data);
+                printf("\n");
+                break;
+            case adios_complex:
+                for (j = 0;j < var_size; j++)
+                    fprintf (p->f, "\%f+\%fi ", *((float *)(data+element_size*j)),
+                            *((float *)(data+4+element_size*j)));
+                printf("\n");
+                break;
+            case adios_double_complex:
+                for (j = 0;j < var_size; j++)
+                    fprintf (p->f,"\%f+\%fi ", *((double *)(data+element_size*j)),
+                            *((double *)(data+element_size*j+8)));
+                printf("\n");
+                break;
+            default:
+                break;
+        } 
+    }
+}
+
+void adios_posix_ascii_nb_get_write_buffer (struct adios_file_struct * fd,
+                                            struct adios_var_struct * v,
+                                            uint64_t * size,
+                                            void ** buffer,
+                                            struct adios_method_struct * method)
+{
+*buffer = 0;
+}
+
+void adios_posix_ascii_nb_read (struct adios_file_struct * fd,
+                                struct adios_var_struct * v, 
+                                void * buffer,
+                                uint64_t buffer_size,
+                                struct adios_method_struct * method)
+{
+    v->data = buffer;
+    v->data_size = buffer_size; 
+}
+
+int adios_posix_ascii_nb_close (struct adios_file_struct * fd,
+                                struct adios_method_struct * method)
+{
+    struct adios_POSIX_ASCII_UNBUFFERED_data_struct * p;
+    p = (struct adios_POSIX_ASCII_UNBUFFERED_data_struct *)
+        method->method_data;
+    if (p->f <= 0)
+    {
+        fclose (p->f);
+    }
+    p->f = 0;
+    p->file_size = 0; 
+}
+
+void adios_posix_ascii_nb_finalize (int mype, 
+                                    struct adios_method_struct * method)} 
+{
+    if (adios_posix_ascii_nb_initialized)
+        adios_posix_ascii_nb_initialized = 0; 
+}
+
+\end{lstlisting}
+
+The binary transport method blocks methods for simplicity. Therefore,  no special 
+implementation for the three functions below is necessary and their function bodies 
+can be left empty:
+
+\begin{lstlisting}
+adios_posix_ascii_nb_end_iteration (struct adios_method_struct * method) {}
+adios_posix_ascii_nb_start_calculation (struct adios_method_struct * method) {}
+adios posix_ascii_nb stop_calculation (struct adios_method_struct * method) {}
+\end{lstlisting}
+
+Above, we have implemented the POSIX\_ASCII\_NB transport method. When users specify 
+POSIX\_ASCII\_NB method in xml file, the users' applications will generate ASCII 
+files by using common ADIOS APIs. However, in order to achieve better I/O performance, 
+a buffering scheme needs to be included into this example.
+
+\section{Profiling the Application and ADIOS}
+
+There are two ways to get profiling information of ADIOS I/O operations. One way 
+is for the user to explicitly insert a set of profiling API calls around ADIOS 
+API calls in the source code. The other way is to link the user code with a renamed 
+ADIOS library and an ADIOS API wrapper library. 
+
+\subsection{Use profiling API in source code}
+
+The profiling library called libadios\_timing.a implements a set of profiling API 
+calls. The user can use these API calls to wrap the ADIOS API calls in the source 
+code to get profiling information. 
+
+The adios-timing.h header file contains the declarations of those profiling functions. 
+
+\begin{lstlisting}[frame=single, backgroundcolor=\color{gray85}]
+/*
+ * initialize profiling 
+ *
+ * Fortran interface
+ */
+int init_prof_all_(char *prof_file_name, int prof_file_name_size);
+
+/*
+ * record open start time for specified group
+ *
+ * Fortran interface
+ */
+void open_start_for_group_ (int64_t *gp_prof_handle, char *group_name, 
+                            int *cycle, int *gp_name_size);
+
+/*
+ * record open end time for specified group
+ *
+ * Fortran interface
+ */
+void open_end_for_group_(int64_t *gp_prof_handle, int *cycle);
+
+/*
+ * record write start time for specified group
+ *
+ * Fortran interface
+ */
+void write_start_for_group_(int64_t *gp_prof_handle, int *cycle);
+
+/*
+ * record write end time for specified group
+ *
+ * Fortran interface
+ */
+void write_end_for_group_(int64_t *gp_prof_handle, int *cycle);
+
+/*
+ * record close start time for specified group
+*
+ * Fortran interface
+ */
+void close_start_for_group_(int64_t *gp_prof_handle, int *cycle);
+
+/*
+ * record close end time for specified group
+ *
+ * Fortran interface
+ */
+void close_end_for_group_(int64_t *gp_prof_handle, int *cycle);
+
+/*
+ * Report timing info for all groups
+ *
+ * Fortran interface  
+ */
+int finalize_prof_all_();
+
+/*
+ * record start time of a simulation cycle
+ *
+ * Fortran interface 
+ */
+void cycle_start_(int *cycle);
+
+/*
+ * record end time of a simulation cycle
+ *
+ * Fortran interface 
+ */
+void cycle_end_(int *cycle);
+
+\end{lstlisting}
+
+An example of using these functions is given below....
+
+\begin{lstlisting}[language=Fortran, frame=single, backgroundcolor=\color{gray85}]
+...
+! initialization ADIOS
+CALL adios_init ("config.xml"//char(0))
+! initialize profiling library; the parameter specifies the file where 
+! profiling information is written
+CALL init_prof_all("log"//char(0))
+...
+CALL MPI_Barrier(toroidal_comm, error )
+! record start time of open
+! group_prof_handle is an OUT parameter holding the handle for the 
+! group 'output3d.0'
+! istep is iteration no.
+CALL open_start_for_group(group_prof_handle, "output3d.0"//char(0),istep)
+
+CALL adios_open(adios_handle, "output3d.0"//char(0), "w"//char(0))
+
+! record end time of open
+CALL open_end_for_group(group_prof_handle,istep)
+
+! record start time of write
+CALL write_start_for_group(group_prof_handle,istep)
+
+#include "gwrite_output3d.0.fh"
+
+! record end time of write
+CALL write_end_for_group(group_prof_handle,istep)
+
+! record start time of close
+CALL cose_start_for_group(group_prof_handle,istep)
+
+CALL adios_close(adios_handle,adios_err)
+
+! record end time of close
+CALL close_end_for_group(group_prof_handle,istep)
+
+...
+CALL adios_finalize (myid)
+
+! finalize; profiling information are gathered and 
+! min/max/mean/var are calculated for each IO dump
+CALL finalize_prof()
+
+CALL MPI_FINALIZE(error)
+
+
+\end{lstlisting}
+
+When the code is run, profiling information will be saved to the file ''./log'' 
+(specified in init\_prof\_all ()). Below is an example.
+
+{\small 
+\begin{lstlisting}[language=Fortran, frame=single, backgroundcolor=\color{gray85}]
+Fri Aug 22 15:42:04 EDT 2008
+I/O Timing results
+Operations   : min                 max                 mean                var
+cycle no       3
+io count       0
+# Open       : 0.107671            0.108245            0.108032            0.000124
+# Open start : 1219434228.866144   1219434230.775268   1219434229.748614   0.588501
+# Open end   : 1219434228.974225   1219434230.883335   1219434229.856646   0.588486
+# Write      : 0.000170            0.000190            0.000179            0.000005
+# Write start: 1219434228.974226   1219434230.883336   1219434229.856647   0.588486
+# Write end  : 1219434228.974405   1219434230.883514   1219434229.856826   0.588484
+# Close      : 0.001608            0.001743            0.001656            0.000036
+# Close start: 1219434228.974405   1219434230.883514   1219434229.856826   0.588484
+# Close end  : 1219434228.976040   1219434230.885211   1219434229.858482   0.588489
+# Total      : 0.109484            0.110049            0.109868            0.000137
+cycle no       6
+io count       1
+# Open       : 0.000007            0.000011            0.000009            0.000001
+# Open start : 1219434240.098444   1219434242.007951   1219434240.981075   0.588556
+# Open end   : 1219434240.098452   1219434242.007962   1219434240.981083   0.588556
+# Write      : 0.000175            0.000196            0.000180            0.000004
+# Write start: 1219434240.098452   1219434242.007962   1219434240.981083   0.588557
+# Write end  : 1219434240.098631   1219434242.008158   1219434240.981264   0.588558
+# Close      : 0.000947            0.003603            0.001234            0.000466
+# Close start: 1219434240.098631   1219434242.008158   1219434240.981264   0.588558
+# Close end  : 1219434240.099665   1219434242.009620   1219434240.982498   0.588447
+# Total      : 0.001132            0.003789            0.001423            0.000466
+
+\end{lstlisting}
+}
+
+The script ``post\_script.sh'' extracts ``open time'', ``write time'', ``close 
+time'', and ``total time'' from the raw profiling results and saves them in separate 
+files: open, write, close, and total, respectively.
+
+To compile the code, one should link the code with the -\textit{ladios\_timing 
+-ladios} option. 
+
+\subsection{Use wrapper library}
+
+Another way to do profiling is to link the source code with a renamed ADIOS library 
+and a wrapper library. 
+
+The renamed ADIOS library implements ``real'' ADIOS routines, but all ADIOS public 
+functions are renamed with a prefix ``P''. For example, adios\_open() is renamed 
+as Padios\_open(). The routine for parsing config.xml file is also changed to parse 
+extra flags in config.xml file to turn profiling on or off.
+
+The wrapper library implements all adios pubic functions (e.g., adios\_open, adios\_write, 
+adios\_close) within each function. It calls the ``real'' function (Padios\_xxx()) 
+and measure the start and end time of the function call. 
+
+There is an example wrapper library called libadios\_profiling.a. Developers can 
+implement their own wrapper library to customize the profiling.
+
+To use the wrapper library, the user code should be linked with -\textit{ladios\_profiling 
+-ladios}. the wrapper library should precede the ``real'' ADIOS library. There 
+is no need to put additional profiling API calls in the source code. The user can 
+turn profiling on or off for each ADIOS group by setting a flag in the config.xml 
+file.
+
+\begin{lstlisting}
+<adios-group name="restart.model" profiling="yes|no">
+    ...
+</adios-group\>
+\end{lstlisting}
