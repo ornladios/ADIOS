@@ -24,7 +24,7 @@ The Java wrapper program consists of a set of Java classes defined with a single
 
 \subsection{Adios class}
 This class provides static functions for initialization, finalization, writing, and no-XML related APIs. The list of functions and signatures are as follows:
-\begin{lstlisting}[language=Java,frame=single, backgroundcolor=\color{gray85},caption={Member functions in the Adios class},label={}]
+\begin{lstlisting}[language=Java,caption={Member functions in the Adios class},label={}]
     /* Call adios_init */
     public static int Init(String xml_fname)
 
@@ -97,7 +97,7 @@ This class provides static functions for initialization, finalization, writing, 
 \subsection{AdiosFile, AdiosGroup, and AdiosVarinfo classes}
 AdiosFile, AdiosGroup, and AdiosVarinfo classes represent \verb+ADIOS_FILE+, \verb+ADIOS_GROUP+, \verb+ADIOS_VARINFO+ structure, respectively, defined in \verb+adios_read_v1.h+. The following is a skeletal descriptions of those classes and member functions.
 
-\begin{lstlisting}[language=Java,frame=single, backgroundcolor=\color{gray85},caption={Class definitions of AdiosFile, AdiosGroup, and AdiosVarinfo},label={}]
+\begin{lstlisting}[language=Java,caption={Class definitions of AdiosFile, AdiosGroup, and AdiosVarinfo},label={}]
 public class AdiosFile
 {
     /* Call adios_fopen */
@@ -146,38 +146,38 @@ public class AdiosVarinfo
 
 \subsection{AdiosDatatype, AdiosFlag, and AdiosBufferAllocWhen classes}
 AdiosDatatype, AdiosFlag, and AdiosBufferAllocWhen are enumeration classes representing \verb+ADIOS_DATATYPES+, \verb+ADIOS_FLAG+, \verb+ADIOS_BUFFER_ALLOC_WHEN+ enum type, respectively, defined in \verb+adios_types.h+. The following is a skeletal descriptions of those classes and member functions.
-\begin{lstlisting}[language=Java,frame=single, backgroundcolor=\color{gray85},caption={Enum classes},label={}]
+\begin{lstlisting}[language=Java,caption={Enum classes},label={}]
 public enum AdiosDatatype {
-    UNKNOWN(-1)             /* (SIZE) */
-    ,BYTE(0)                 /* (1) */
-    ,SHORT(1)                /* (2) */
-    ,INTEGER(2)              /* (4) */
-    ,LONG(4)                 /* (8) */
+    UNKNOWN(-1),             /* (SIZE) */
+    BYTE(0),                 /* (1) */
+    SHORT(1),                /* (2) */
+    INTEGER(2),              /* (4) */
+    LONG(4),                 /* (8) */
     
-    ,UNSIGNED_BYTE(50)       /* (1) */
-    ,UNSIGNED_SHORT(51)      /* (2) */
-    ,UNSIGNED_INTEGER(52)    /* (4) */
-    ,UNSIGNED_LONG(54)       /* (8) */
+    UNSIGNED_BYTE(50),       /* (1) */
+    UNSIGNED_SHORT(51),      /* (2) */
+    UNSIGNED_INTEGER(52),    /* (4) */
+    UNSIGNED_LONG(54),       /* (8) */
     
-    ,REAL(5)                 /* (4) */
-    ,DOUBLE(6)               /* (8) */
-    ,LONG_DOUBLE(7)          /* (16) */
+    REAL(5),                 /* (4) */
+    DOUBLE(6),               /* (8) */
+    LONG_DOUBLE(7),          /* (16) */
     
-    ,STRING(9)               /* (?) */
-    ,COMPLEX(10)             /* (8) */
-    ,DOUBLE_COMPLEX(11)      /* (16) */;
+    STRING(9),               /* (?) */
+    COMPLEX(10),             /* (8) */
+    DOUBLE_COMPLEX(11);      /* (16) */
 }
 
 public enum AdiosFlag {
-    UNKNOWN (0),
-    YES (1), 
-    NO (2);
+    UNKNOWN(0),
+    YES(1), 
+    NO(2);
 }
 
 public enum AdiosBufferAllocWhen {
-    UNKNOWN (0),
-    NOW (1), 
-    LATER (2);
+    UNKNOWN(0),
+    NOW(1), 
+    LATER(2);
 
 }
 \end{lstlisting}
@@ -185,9 +185,8 @@ public enum AdiosBufferAllocWhen {
 
 \subsection{Example}
 An example of Java program to call ADIOS functions is as follows:
-\begin{lstlisting}[language=Java,frame=single, backgroundcolor=\color{gray85},caption={Example Java wrapper code},label={}]
+\begin{lstlisting}[language=Java,caption={Example Java wrapper code},label={}]
 import gov.ornl.ccs.*;
-
 import java.nio.ByteBuffer;
 
 public class AdiosNoxmlExample
@@ -249,7 +248,7 @@ We developed a ADIOS python wrapper by using Cython. Numpy, a scientific module 
 
 \subsection{APIs for Writing and No-XML}
 The ADIOS python/numpy wrapper provides functions to call ADIOS write and no-XML related APIs as follows (defined in Cython syntax):
-\begin{lstlisting}[language=cython,frame=single, backgroundcolor=\color{gray85},caption={Functions for writing and No-XML},label={},]
+\begin{lstlisting}[language=cython,caption={Functions for writing and No-XML},label={},]
 """ Call adios_init """
 cpdef init(char * config)
 
@@ -342,7 +341,7 @@ cpdef int select_method (int64_t group,
 
 \subsection{APIs for Reading}
 The ADIOS python/numpy wrapper provides ADIOS read related classes as follows (defined in Cython syntax):
-\begin{lstlisting}[language=cython,frame=single, backgroundcolor=\color{gray85},caption={Write functions},label={},]
+\begin{lstlisting}[language=cython,caption={Write functions},label={},]
 """ Python class for ADIOS_FILE structure """
 cdef class AdiosFile:
     """ Private Memeber """
@@ -436,7 +435,7 @@ cdef class AdiosVariable:
 \subsection{Example}
 An example of Python program to call ADIOS functions is shown below. The example is a Python program for converting a NetCDF file to a ADIOS BP file. You can find the code in the source distribution: \verb+/wrapper/numpy/example/ncdf2bp.py+.
 
-\begin{lstlisting}[language=python,frame=single, backgroundcolor=\color{gray85},caption={ncdf2bp.py. An example Python/Numpy wrapper code for converting a NetCDF file to a ADIOS BP file},label={},]
+\begin{lstlisting}[language=ADIOS-python,caption={ncdf2bp.py. An example Python/Numpy wrapper code for converting a NetCDF file to a ADIOS BP file},label={},]
 #!/usr/bin/env python
 from adios import *
 from scipy.io import netcdf
@@ -446,7 +445,7 @@ import os
 import operator
 
 def usage():
-    print os.path.basename(sys.argv[0]), "netcdf_file"
+    print os.path.basename(sys.argv[0]),"netcdf_file","[time dimension name]"
 
 if len(sys.argv) < 2:
     usage()
@@ -537,6 +536,7 @@ finalize()
 
 print
 print "Done. Saved:", fout
+    
 \end{lstlisting}
 
 
