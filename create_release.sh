@@ -58,6 +58,9 @@ echo "Add language wrappers"
 #find wrappers | grep -v \.svn | cp  adios-$VERSION 
 tar -cO wrappers --exclude "\.svn" | tar -x -C adios-$VERSION
 
+echo "Add skel examples"
+tar -cO examples/skel --exclude "\.svn" | tar -x -C adios-$VERSION
+
 echo "Repack adios-$VERSION.tar.gz"
 rm -rf adios-$VERSION.tar.gz
 tar zcf adios-$VERSION.tar.gz adios-$VERSION

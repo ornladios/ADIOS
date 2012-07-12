@@ -4,7 +4,7 @@ dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py
 
 pythonlibdir=@libdir@/python
 
-pythonlib_DATA=\
+dist_pythonlib_DATA=\
     lib/adios.py \
 	lib/argparse.py \
     lib/skel_cat.py \
@@ -21,8 +21,12 @@ pythonlib_DATA=\
 
 templatedir=@prefix@/etc/skel/templates
 
-template_DATA=\
+dist_template_DATA=\
     etc/templates/Makefile.default.tpl\
 	etc/templates/submit_sith.tpl\
 	etc/templates/submit_jaguar.tpl
 
+EXTRA_DIST=etc/settings etc/compiler_fragment.mk \
+           etc/templates/Makefile.default.tpl \
+           etc/templates/submit_jaguar.tpl \
+           etc/templates/submit_sith.tpl 

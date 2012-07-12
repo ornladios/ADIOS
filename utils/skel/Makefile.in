@@ -38,7 +38,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 subdir = utils/skel
-DIST_COMMON = $(dist_bin_SCRIPTS) $(srcdir)/Makefile.am \
+DIST_COMMON = $(dist_bin_SCRIPTS) $(dist_pythonlib_DATA) \
+	$(dist_template_DATA) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
@@ -83,9 +84,9 @@ am__vpath_adj = case $$p in \
     *) f=$$p;; \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-pythonlibDATA_INSTALL = $(INSTALL_DATA)
-templateDATA_INSTALL = $(INSTALL_DATA)
-DATA = $(pythonlib_DATA) $(template_DATA)
+dist_pythonlibDATA_INSTALL = $(INSTALL_DATA)
+dist_templateDATA_INSTALL = $(INSTALL_DATA)
+DATA = $(dist_pythonlib_DATA) $(dist_template_DATA)
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = $(SUBDIRS)
@@ -327,7 +328,7 @@ target_alias = @target_alias@
 SUBDIRS = etc
 dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py
 pythonlibdir = @libdir@/python
-pythonlib_DATA = \
+dist_pythonlib_DATA = \
     lib/adios.py \
 	lib/argparse.py \
     lib/skel_cat.py \
@@ -342,10 +343,15 @@ pythonlib_DATA = \
     lib/typeMapper.py 
 
 templatedir = @prefix@/etc/skel/templates
-template_DATA = \
+dist_template_DATA = \
     etc/templates/Makefile.default.tpl\
 	etc/templates/submit_sith.tpl\
 	etc/templates/submit_jaguar.tpl
+
+EXTRA_DIST = etc/settings etc/compiler_fragment.mk \
+           etc/templates/Makefile.default.tpl \
+           etc/templates/submit_jaguar.tpl \
+           etc/templates/submit_sith.tpl 
 
 all: all-recursive
 
@@ -408,36 +414,36 @@ clean-libtool:
 distclean-libtool:
 	-rm -f libtool
 uninstall-info-am:
-install-pythonlibDATA: $(pythonlib_DATA)
+install-dist_pythonlibDATA: $(dist_pythonlib_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(pythonlibdir)" || $(mkdir_p) "$(DESTDIR)$(pythonlibdir)"
-	@list='$(pythonlib_DATA)'; for p in $$list; do \
+	@list='$(dist_pythonlib_DATA)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f=$(am__strip_dir) \
-	  echo " $(pythonlibDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(pythonlibdir)/$$f'"; \
-	  $(pythonlibDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(pythonlibdir)/$$f"; \
+	  echo " $(dist_pythonlibDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(pythonlibdir)/$$f'"; \
+	  $(dist_pythonlibDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(pythonlibdir)/$$f"; \
 	done
 
-uninstall-pythonlibDATA:
+uninstall-dist_pythonlibDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(pythonlib_DATA)'; for p in $$list; do \
+	@list='$(dist_pythonlib_DATA)'; for p in $$list; do \
 	  f=$(am__strip_dir) \
 	  echo " rm -f '$(DESTDIR)$(pythonlibdir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(pythonlibdir)/$$f"; \
 	done
-install-templateDATA: $(template_DATA)
+install-dist_templateDATA: $(dist_template_DATA)
 	@$(NORMAL_INSTALL)
 	test -z "$(templatedir)" || $(mkdir_p) "$(DESTDIR)$(templatedir)"
-	@list='$(template_DATA)'; for p in $$list; do \
+	@list='$(dist_template_DATA)'; for p in $$list; do \
 	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
 	  f=$(am__strip_dir) \
-	  echo " $(templateDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(templatedir)/$$f'"; \
-	  $(templateDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(templatedir)/$$f"; \
+	  echo " $(dist_templateDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(templatedir)/$$f'"; \
+	  $(dist_templateDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(templatedir)/$$f"; \
 	done
 
-uninstall-templateDATA:
+uninstall-dist_templateDATA:
 	@$(NORMAL_UNINSTALL)
-	@list='$(template_DATA)'; for p in $$list; do \
+	@list='$(dist_template_DATA)'; for p in $$list; do \
 	  f=$(am__strip_dir) \
 	  echo " rm -f '$(DESTDIR)$(templatedir)/$$f'"; \
 	  rm -f "$(DESTDIR)$(templatedir)/$$f"; \
@@ -576,7 +582,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/bin
+	$(mkdir_p) $(distdir)/bin $(distdir)/etc $(distdir)/etc/templates $(distdir)/lib
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -669,7 +675,7 @@ info: info-recursive
 
 info-am:
 
-install-data-am: install-pythonlibDATA install-templateDATA
+install-data-am: install-dist_pythonlibDATA install-dist_templateDATA
 
 install-exec-am: install-dist_binSCRIPTS
 
@@ -695,8 +701,8 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-dist_binSCRIPTS uninstall-info-am \
-	uninstall-pythonlibDATA uninstall-templateDATA
+uninstall-am: uninstall-dist_binSCRIPTS uninstall-dist_pythonlibDATA \
+	uninstall-dist_templateDATA uninstall-info-am
 
 uninstall-info: uninstall-info-recursive
 
@@ -705,16 +711,17 @@ uninstall-info: uninstall-info-recursive
 	ctags-recursive distclean distclean-generic distclean-libtool \
 	distclean-recursive distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
-	install-data-am install-dist_binSCRIPTS install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-pythonlibDATA install-strip install-templateDATA \
-	installcheck installcheck-am installdirs installdirs-am \
-	maintainer-clean maintainer-clean-generic \
-	maintainer-clean-recursive mostlyclean mostlyclean-generic \
-	mostlyclean-libtool mostlyclean-recursive pdf pdf-am ps ps-am \
-	tags tags-recursive uninstall uninstall-am \
-	uninstall-dist_binSCRIPTS uninstall-info-am \
-	uninstall-pythonlibDATA uninstall-templateDATA
+	install-data-am install-dist_binSCRIPTS \
+	install-dist_pythonlibDATA install-dist_templateDATA \
+	install-exec install-exec-am install-info install-info-am \
+	install-man install-strip installcheck installcheck-am \
+	installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic maintainer-clean-recursive \
+	mostlyclean mostlyclean-generic mostlyclean-libtool \
+	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
+	uninstall uninstall-am uninstall-dist_binSCRIPTS \
+	uninstall-dist_pythonlibDATA uninstall-dist_templateDATA \
+	uninstall-info-am
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
