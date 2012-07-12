@@ -101,7 +101,8 @@ file therefore carefully, to make the empty space as small as possible.
 
 The following XML snippet shows how to use the MPI\_LUSTRE method in ADIOS. 
 \begin{lstlisting}[language=XML]
-<method group="temperature" method="MPI_LUSTRE">	stripe_count=16,stripe_size=4194304,block_size=4194304 
+<method group="temperature" method="MPI_LUSTRE">
+	stripe_count=16,stripe_size=4194304,block_size=4194304 
 </method>
 \end{lstlisting}
 
@@ -161,7 +162,8 @@ There are two key parameters used in this method.
 
 \begin{lstlisting}[language=XML]
 <method group="tracers" method="MPI_AMR"> 
-	num_aggregators=24;num_ost=672</method>
+	num_aggregators=24;num_ost=672
+</method>
 \end{lstlisting}
 
 \begin{itemize}
@@ -226,17 +228,24 @@ add a unique prefix to the variable name.  A rank-based prefix is an example.
 
 \begin{lstlisting}[language=XML, caption=Example XML]
 <?xml version="1.0"?> 
-<adios-config host-language="C">	<adios-group name="atoms " coordination-communicator="comm"> 
-		<var name="nparam" type="integer"/>		<var name="ntracked" type="integer"/>		<var name="atoms " type="real" dimensions="nparam,ntracked"/> 
-	</adios-group>	<method group="atoms" method="NC4"/> 
+<adios-config host-language="C">
+	<adios-group name="atoms " coordination-communicator="comm"> 
+		<var name="nparam" type="integer"/>
+		<var name="ntracked" type="integer"/>
+		<var name="atoms " type="real" dimensions="nparam,ntracked"/> 
+	</adios-group>
+	<method group="atoms" method="NC4"/> 
 	<buffer size-MB="1" allocate-time="now"/> 
 </adios-config>
 \end{lstlisting}
 
 \begin{lstlisting}[language=C, caption=Example C source]
-char path[1024];adios_init ("config.xml");adios_open (&adios_handle, "atoms", filename, "w", &comm); 
+char path[1024];
+adios_init ("config.xml");
+adios_open (&adios_handle, "atoms", filename, "w", &comm); 
 sprintf(path, "node_%d_", myrank); 
-adios_set_path(adios_handle, path);#include "gwrite_atoms.ch" 
+adios_set_path(adios_handle, path);
+#include "gwrite_atoms.ch" 
 adios_close (adios_handle); 
 adios_finalize (myrank);
 \end{lstlisting}
@@ -257,7 +266,7 @@ can open files in the ``netcdf-4 format''.
 
 ADIOS provides an easy plug-in mechanism for users or developers to design their 
 own transport method. A step-by-step instruction for inserting a new I/O method 
-is given in Section 13.1. Users are likely to choose the best method from among 
+is given in the Developer's manual. Users are likely to choose the best method from among 
 the supported or customized methods for the running their platforms, thus avoiding 
 the need to verify their source codes due to the switching of I/O methods.
 
@@ -329,12 +338,20 @@ The kill.nssi.staging.sh script sends a kill request to the staging service.  ki
 info (ADIOS\_NSSI\_CONTACT\_INFO).  The staging service will gracefully terminate.
 
 \begin{lstlisting}[language=bash, caption={Example PBS script with NSSI Staging Service}, label=list-nssi-pbs-script]
-#!/bin/bash#PBS -l walltime=01:00:00,size=128
-export RUNTIME_PATH=/tmp/work/$USER/genarray3d.$PBS_JOBIDmkdir -p $RUNTIME_PATHcd $RUNTIME_PATH
+#!/bin/bash
+#PBS -l walltime=01:00:00,size=128
 
-export ADIOS_NSSI_CONTACT_INFO=$RUNTIME_PATH/nssi_contact.xmlexport ADIOS_NSSI_CONFIG_FILE=$RUNTIME_PATH/nssi_config.xml 
+export RUNTIME_PATH=/tmp/work/$USER/genarray3d.$PBS_JOBID
+mkdir -p $RUNTIME_PATH
+cd $RUNTIME_PATH
+
+
+export ADIOS_NSSI_CONTACT_INFO=$RUNTIME_PATH/nssi_contact.xml
+export ADIOS_NSSI_CONFIG_FILE=$RUNTIME_PATH/nssi_config.xml 
 $ADIOS_DIR/scripts/start.nssi.staging.sh 4 \
-	$RUNTIME_PATH/genarray3d.server.xml >server.log 2>&1 &sleep 3$ADIOS_DIR/scripts/create.nssi.config.sh \
+	$RUNTIME_PATH/genarray3d.server.xml >server.log 2>&1 &
+sleep 3
+$ADIOS_DIR/scripts/create.nssi.config.sh \
 	$ADIOS_NSSI_CONFIG_FILE $ADIOS_NSSI_CONTACT_INFO 
 
 aprun -n 64 $ADIOS_SRC_PATH/tests/genarray/genarray \
@@ -480,10 +497,14 @@ Exporting the master server identifier through environment variable prevents the
 larger number of clients from accessing the file system at once.
 
 \begin{lstlisting}[language=C, caption=Wait for server start-up completion and export the configuration to environment variables.]
-while [ ! -f conf ]; do	echo "Waiting for servers to start-up"
-	sleep 2sdone
+while [ ! -f conf ]; do
+	echo "Waiting for servers to start-up"
+	sleep 2s
+done
 
-while read line; do	export set "${line}"
+
+while read line; do
+	export set "${line}"
 done < conf
 \end{lstlisting}
 
