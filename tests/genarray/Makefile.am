@@ -1,6 +1,5 @@
 INCLUDES = $(all_includes)
 INCLUDES += -I$(top_builddir)/src
-INCLUDES += -I$(top_builddir)/src/core/adiosf_read_mod.F90
 
 AUTOMAKE_OPTIONS = no-dependencies
 
