@@ -53,6 +53,7 @@ end module genarray_comm
 
 program genarray
     use genarray_comm
+    use adios_write_mod
     implicit none
     include 'mpif.h'
 
@@ -163,6 +164,7 @@ end subroutine generateLocalArray
 !!***************************
 subroutine writeArray()
     use genarray_comm
+    use adios_write_mod
     implicit none
     integer*8 adios_handle, adios_groupsize
     integer adios_err
