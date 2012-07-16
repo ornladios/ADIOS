@@ -15,5 +15,5 @@ TARGET=$3
 
 rm -f adios_noxml.bp
 javac -classpath $ADIOSJAR -d . $SRCDIR/$TARGET.java
-java -classpath $ADIOSJAR:. $TARGET
+java -Djava.library.path=. -classpath $ADIOSJAR:. $TARGET
 exit $?
