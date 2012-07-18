@@ -4,11 +4,13 @@ WRITE
 - bring back "write=no" into XML tag to skip some variables
 - time-reset function for appending data to the same timestep ("extend" mode)
 - adios_init() should have a communicator parameter
+- complete error logging
 
 READ
 ====
 - chunking: 
   - support memory limit
+
 - missing data blocks when read should contain undef values
 
 - simple BP reader
@@ -23,9 +25,10 @@ READ
 
 BUILD
 =====
-- shared libraries 
+- shared libraries (request by Numeca)
 - cross-compile support
 - separate source from build 
+- add version defines into adios public header (request by Michele Martone)
 
 MANUAL
 =====
