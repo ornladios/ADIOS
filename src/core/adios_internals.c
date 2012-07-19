@@ -21,6 +21,7 @@
 #include "public/adios.h"
 #include "core/adios_internals.h"
 #include "core/adios_bp_v1.h"
+#include "core/adios_logger.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -212,7 +213,7 @@ int adios_parse_dimension (const char * dimension
 {
     if (!dimension)
     {
-        fprintf (stderr, "adios_parse_dimension: dimension not provided\n");
+        adios_error (err_dimension_required, "adios_parse_dimension: dimension not provided\n");
 
         return 0;
     }
@@ -244,9 +245,9 @@ int adios_parse_dimension (const char * dimension
                 }
                 else
                 {
-                    fprintf (stderr, "config.xml: invalid var dimension: %s\n"
-                            ,dimension
-                            );
+                    adios_error (err_invalid_dimension, 
+                                 "config.xml: invalid var dimension: %s\n", 
+                                 dimension);
 
                     return 0;
                 }
@@ -263,11 +264,13 @@ int adios_parse_dimension (const char * dimension
                         case adios_long_double:
                         case adios_complex:
                         case adios_double_complex:
-                            fprintf (stderr, "config.xml: var dimension %s "
-                                             "has an invalid type: %s\n"
-                                    ,attr->name
-                                    ,adios_type_to_string_int (attr->var->type)
-                                    );
+                            adios_error (err_invalid_var_as_dimension, 
+                                         "config.xml: dimension defining var %s "
+                                         "pointed by attribute %s "
+                                         "has an invalid type: %s\n",
+                                         attr->var->name,
+                                         attr->name,
+                                         adios_type_to_string_int (attr->var->type));
                             return 0;
 
                         default: // the integral numeric types are all fine
@@ -285,11 +288,13 @@ int adios_parse_dimension (const char * dimension
                         case adios_long_double:
                         case adios_complex:
                         case adios_double_complex:
-                            fprintf (stderr, "config.xml: var dimension %s "
-                                             "has an invalid type: %s\n"
-                                    ,attr->name
-                                    ,adios_type_to_string_int (attr->type)
-                                    );
+                            adios_error (err_invalid_var_as_dimension, 
+                                         "config.xml: dimension defining var %s "
+                                         "pointed by attribute %s "
+                                         "has an invalid type: %s\n",
+                                         attr->var->name,
+                                         attr->name,
+                                         adios_type_to_string_int (attr->type));
                             return 0;
 
                         default: // the integral numeric types are all fine
@@ -309,11 +314,11 @@ int adios_parse_dimension (const char * dimension
                 case adios_long_double:
                 case adios_complex:
                 case adios_double_complex:
-                    fprintf (stderr, "config.xml: var dimension %s "
-                                     "has an invalid type: %s\n"
-                            ,var->name
-                            ,adios_type_to_string_int (var->type)
-                            );
+                    adios_error (err_invalid_var_as_dimension, 
+                            "config.xml: dimension defining var %s "
+                            "has an invalid type: %s\n",
+                            var->name,
+                            adios_type_to_string_int (var->type));
                     return 0;
 
                 default: // the integral numeric types are all fine
@@ -332,9 +337,8 @@ int adios_parse_dimension (const char * dimension
 
     if (!global_dimension)
     {
-        fprintf (stderr, "adios_parse_dimension: global_dimension not "
-                         "provided\n"
-                );
+        adios_error (err_global_dim_required, 
+                "adios_parse_dimension: global_dimension not provided\n");
 
         return 0;
     }
@@ -363,10 +367,9 @@ int adios_parse_dimension (const char * dimension
                 }
                 else
                 {
-                    fprintf (stderr, "config.xml: invalid global-bounds "
-                                     "dimension: %s\n"
-                            ,global_dimension
-                            );
+                    adios_error (err_invalid_global_dimension, 
+                            "config.xml: invalid global-bounds dimension: %s\n",
+                            global_dimension);
 
                     return 0;
                 }
@@ -383,11 +386,13 @@ int adios_parse_dimension (const char * dimension
                         case adios_long_double:
                         case adios_complex:
                         case adios_double_complex:
-                            fprintf (stderr, "config.xml: var dimension %s "
-                                             "has an invalid type: %s\n"
-                                    ,attr->name
-                                    ,adios_type_to_string_int (attr->var->type)
-                                    );
+                            adios_error (err_invalid_var_as_dimension, 
+                                         "config.xml: global dimension defining var %s "
+                                         "pointed by attribute %s "
+                                         "has an invalid type: %s\n",
+                                         attr->var->name,
+                                         attr->name,
+                                         adios_type_to_string_int (attr->var->type));
                             return 0;
 
                         default: // the integral numeric types are all fine
@@ -405,11 +410,13 @@ int adios_parse_dimension (const char * dimension
                         case adios_long_double:
                         case adios_complex:
                         case adios_double_complex:
-                            fprintf (stderr, "config.xml: var dimension %s "
-                                             "has an invalid type: %s\n"
-                                    ,attr->name
-                                    ,adios_type_to_string_int (attr->type)
-                                    );
+                            adios_error (err_invalid_var_as_dimension, 
+                                         "config.xml: global dimension defining var %s "
+                                         "pointed by attribute %s "
+                                         "has an invalid type: %s\n",
+                                         attr->var->name,
+                                         attr->name,
+                                         adios_type_to_string_int (attr->var->type));
                             return 0;
 
                         default: // the integral numeric types are all fine
@@ -429,11 +436,11 @@ int adios_parse_dimension (const char * dimension
                 case adios_long_double:
                 case adios_complex:
                 case adios_double_complex:
-                    fprintf (stderr, "config.xml: var dimension %s "
-                                     "has an invalid type: %s\n"
-                            ,var->name
-                            ,adios_type_to_string_int (var->type)
-                            );
+                    adios_error (err_invalid_var_as_dimension, 
+                            "config.xml: global dimension defining var %s "
+                            "has an invalid type: %s\n",
+                            var->name,
+                            adios_type_to_string_int (var->type));
                     return 0;
 
                 default: // the integral numeric types are all fine
@@ -451,7 +458,7 @@ int adios_parse_dimension (const char * dimension
 
     if (!local_offset)
     {
-        fprintf (stderr, "adios_parse_dimension: local-offset not provided\n");
+        adios_error (err_offset_required, "adios_parse_dimension: local-offset not provided\n");
 
         return 0;
     }
@@ -480,10 +487,9 @@ int adios_parse_dimension (const char * dimension
                 }
                 else
                 {
-                    fprintf (stderr, "config.xml: invalid var local_offset: "
-                                     "%s\n"
-                            ,local_offset
-                            );
+                    adios_error (err_invalid_offset, 
+                                 "config.xml: invalid var local_offset: %s\n",
+                                 local_offset);
 
                     return 0;
                 }
@@ -500,11 +506,13 @@ int adios_parse_dimension (const char * dimension
                         case adios_long_double:
                         case adios_complex:
                         case adios_double_complex:
-                            fprintf (stderr, "config.xml: var dimension %s "
-                                             "has an invalid type: %s\n"
-                                    ,attr->name
-                                    ,adios_type_to_string_int (attr->var->type)
-                                    );
+                            adios_error (err_invalid_var_as_dimension, 
+                                         "config.xml: offset defining var %s "
+                                         "pointed by attribute %s "
+                                         "has an invalid type: %s\n",
+                                         attr->var->name,
+                                         attr->name,
+                                         adios_type_to_string_int (attr->var->type));
                             return 0;
 
                         default: // the integral numeric types are all fine
@@ -522,11 +530,13 @@ int adios_parse_dimension (const char * dimension
                         case adios_long_double:
                         case adios_complex:
                         case adios_double_complex:
-                            fprintf (stderr, "config.xml: var dimension %s "
-                                             "has an invalid type: %s\n"
-                                    ,attr->name
-                                    ,adios_type_to_string_int (attr->type)
-                                    );
+                            adios_error (err_invalid_var_as_dimension, 
+                                         "config.xml: offset defining var %s "
+                                         "pointed by attribute %s "
+                                         "has an invalid type: %s\n",
+                                         attr->var->name,
+                                         attr->name,
+                                         adios_type_to_string_int (attr->var->type));
                             return 0;
 
                         default: // the integral numeric types are all fine
@@ -546,11 +556,11 @@ int adios_parse_dimension (const char * dimension
                 case adios_long_double:
                 case adios_complex:
                 case adios_double_complex:
-                    fprintf (stderr, "config.xml: var dimension %s "
-                                     "has an invalid type: %s\n"
-                            ,var->name
-                            ,adios_type_to_string_int (var->type)
-                            );
+                    adios_error (err_invalid_var_as_dimension, 
+                            "config.xml: offset defining var %s "
+                            "has an invalid type: %s\n",
+                            var->name,
+                            adios_type_to_string_int (var->type));
                     return 0;
 
                 default: // the integral numeric types are all fine
@@ -580,9 +590,7 @@ struct adios_group_list_struct * adios_get_groups ()
 }
 
 
-int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
-                              ,void ** out
-                              )
+int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** out)
 {
     char * end;
 
@@ -596,10 +604,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             long t = strtol (value, &end, 10);
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
-                fprintf (stderr, "value: '%s' not valid integer\n"
-                        ,value
-                        );
-
+                adios_error (err_invalid_argument, 
+                             "value: '%s' not valid integer\n",value);
                 return 0;
             }
             else
@@ -609,11 +615,11 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                     case adios_byte:
                         if (t < SCHAR_MIN || t > SCHAR_MAX)
                         {
-                            fprintf (stderr, "type is %s, value "
-                                             "is out of range: '%s'\n"
-                                    ,adios_type_to_string_int (type), value
-                                    );
-
+                            adios_error (err_out_of_bound, 
+                                         "type is %s, value "
+                                         "is out of range: '%s'\n",
+                                         adios_type_to_string_int (type), 
+                                         value);
                             return 0;
                         }
                         else
@@ -626,11 +632,11 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                     case adios_short:
                         if (t < SHRT_MIN || t > SHRT_MAX)
                         {
-                            fprintf (stderr, "type is %s, value "
-                                             "is out of range: '%s'\n"
-                                    ,adios_type_to_string_int (type), value
-                                    );
-
+                            adios_error (err_out_of_bound, 
+                                         "type is %s, value "
+                                         "is out of range: '%s'\n",
+                                         adios_type_to_string_int (type), 
+                                         value);
                             return 0;
                         }
                         else
@@ -643,11 +649,11 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                     case adios_integer:
                         if (t < INT_MIN || t > INT_MAX)
                         {
-                            fprintf (stderr, "type is %s, value "
-                                             "is out of range: '%s'\n"
-                                    ,adios_type_to_string_int (type), value
-                                    );
-
+                            adios_error (err_out_of_bound, 
+                                         "type is %s, value "
+                                         "is out of range: '%s'\n",
+                                         adios_type_to_string_int (type), 
+                                         value);
                             return 0;
                         }
                         else
@@ -666,10 +672,11 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             int64_t t = strtoll (value, &end, 10);
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
-                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string_int (type), value
-                        );
-
+                adios_error (err_out_of_bound, 
+                        "type is %s, value "
+                        "is out of range: '%s'\n",
+                        adios_type_to_string_int (type), 
+                        value);
                 return 0;
             }
             else
@@ -688,10 +695,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             unsigned long t = strtoul (value, &end, 10);
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
-                fprintf (stderr, "value: '%s' not valid integer\n"
-                        ,value
-                        );
-
+                adios_error (err_invalid_argument, 
+                             "value: '%s' not valid integer\n", value);
                 return 0;
             }
             else
@@ -701,11 +706,11 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                     case adios_unsigned_byte:
                         if (t > UCHAR_MAX)
                         {
-                            fprintf (stderr, "type is %s, value "
-                                             "is out of range: '%s'\n"
-                                    ,adios_type_to_string_int (type), value
-                                    );
-
+                            adios_error (err_out_of_bound, 
+                                    "type is %s, value "
+                                    "is out of range: '%s'\n",
+                                    adios_type_to_string_int (type), 
+                                    value);
                             return 0;
                         }
                         else
@@ -718,11 +723,11 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                     case adios_unsigned_short:
                         if (t > USHRT_MAX)
                         {
-                            fprintf (stderr, "type is %s, value "
-                                             "is out of range: '%s'\n"
-                                    ,adios_type_to_string_int (type), value
-                                    );
-
+                            adios_error (err_out_of_bound, 
+                                    "type is %s, value "
+                                    "is out of range: '%s'\n",
+                                    adios_type_to_string_int (type), 
+                                    value);
                             return 0;
                         }
                         else
@@ -735,11 +740,11 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
                     case adios_unsigned_integer:
                         if (t > UINT_MAX)
                         {
-                            fprintf (stderr, "type is %s, value "
-                                             "is out of range: '%s'\n"
-                                    ,adios_type_to_string_int (type), value
-                                    );
-
+                            adios_error (err_out_of_bound, 
+                                    "type is %s, value "
+                                    "is out of range: '%s'\n",
+                                    adios_type_to_string_int (type), 
+                                    value);
                             return 0;
                         }
                         else
@@ -758,10 +763,11 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             uint64_t t = strtoull (value, &end, 10);
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
-                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string_int (type), value
-                        );
-
+                adios_error (err_out_of_bound, 
+                        "type is %s, value "
+                        "is out of range: '%s'\n",
+                        adios_type_to_string_int (type), 
+                        value);
                 return 0;
             }
             else
@@ -778,10 +784,11 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             float t = strtof (value, &end);
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
-                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string_int (type), value
-                        );
-
+                adios_error (err_out_of_bound, 
+                        "type is %s, value "
+                        "is out of range: '%s'\n",
+                        adios_type_to_string_int (type), 
+                        value);
                 return 0;
             }
             else
@@ -798,10 +805,11 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             double t = strtod (value, &end);
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
-                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string_int (type), value
-                        );
-
+                adios_error (err_out_of_bound, 
+                        "type is %s, value "
+                        "is out of range: '%s'\n",
+                        adios_type_to_string_int (type), 
+                        value);
                 return 0;
             }
             else
@@ -818,10 +826,11 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
             long double t = strtold (value, &end);
             if (errno != errno_save || (end != 0 && *end != '\0'))
             {
-                fprintf (stderr, "type is %s, value is out of range: '%s'\n"
-                        ,adios_type_to_string_int (type), value
-                        );
-
+                adios_error (err_out_of_bound, 
+                        "type is %s, value "
+                        "is out of range: '%s'\n",
+                        adios_type_to_string_int (type), 
+                        value);
                 return 0;
             }
             else
@@ -838,20 +847,23 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value
         }
         case adios_complex:
         {
-            fprintf (stderr, "adios_complex type validation needs to be "
-                             "implemented\n");
+            adios_error (err_unspecified, 
+                         "adios_parse_scalar_string: adios_complex type "
+                         "validation needs to be implemented\n");
             return 1;
         }
         case adios_double_complex:
         {
-            fprintf (stderr, "adios_double_complex type validation needs to "
-                             "be implemented\n");
+            adios_error (err_unspecified, 
+                         "adios_parse_scalar_string: adios_double_complex type "
+                         "validation needs to be implemented\n");
             return 1;
         }
 
         case adios_unknown:
         default:
-            fprintf (stderr, "unknown type cannot be validated\n");
+            adios_error (err_unspecified, 
+                         "adios_parse_scalar_string: unknown type cannot be validated\n");
 
             return 0;
     }
@@ -876,10 +888,10 @@ int adios_common_define_attribute (int64_t group, const char * name
     {
         if (type == adios_unknown)
         {
-            fprintf (stderr, "config.xml: attribute element %s has invalid "
-                             "type attribute\n"
-                    ,name
-                    );
+            adios_error (err_invalid_type_attr, 
+                         "config.xml: attribute element %s has invalid "
+                         "type attribute\n",
+                         name);
 
             free (attr->name);
             free (attr->path);
@@ -894,10 +906,10 @@ int adios_common_define_attribute (int64_t group, const char * name
         }
         else
         {
-            fprintf (stderr, "config.xml: attribute element %s has invalid "
-                             "value attribute: '%s'\n"
-                    ,name, value
-                    );
+            adios_error (err_invalid_value_attr, 
+                         "config.xml: attribute element %s has invalid "
+                         "value attribute: '%s'\n", 
+                         name, value);
 
             free (attr->value);
             free (attr->name);
@@ -917,10 +929,10 @@ int adios_common_define_attribute (int64_t group, const char * name
 
         if (attr->var == 0)
         {
-            fprintf (stderr, "config.xml: attribute element %s references "
-                             "var %s that has not been defined.\n"
-                    ,name, var
-                    );
+            adios_error (err_invalid_varname, 
+                         "config.xml: attribute element %s references "
+                         "var %s that has not been defined.\n",
+                         name, var);
 
             free (attr->name);
             free (attr->path);
@@ -980,7 +992,7 @@ void adios_append_method (struct adios_method_struct * method)
 
             if (!new_node)
             {
-                fprintf (stderr, "out of memory in adios_append_method\n");
+                adios_error (err_no_memory, "out of memory in adios_append_method\n");
             }
             new_node->method = method;
             new_node->next = 0;
@@ -1009,7 +1021,7 @@ void adios_add_method_to_group (struct adios_method_list_struct ** root
 
             if (!new_node)
             {
-                fprintf (stderr, "out of memory in adios_append_method\n");
+                adios_error (err_no_memory, "out of memory in adios_add_method_to_group\n");
             }
             new_node->method = method;
             new_node->next = 0;
@@ -1039,7 +1051,7 @@ void adios_append_group (struct adios_group_struct * group)
 
             if (!new_node)
             {
-                fprintf (stderr, "out of memory in adios_append_group\n");
+                adios_error (err_no_memory, "out of memory in adios_append_group\n");
             }
             group->id = id;
             new_node->group = group;
@@ -1177,7 +1189,7 @@ int adios_common_free_group (int64_t id)
 
     if (!root)
     {
-        fprintf (stderr, "Err in adios_common_free_group()\n");
+        adios_error (err_unspecified, "Err in adios_common_free_group()\n");
         return -1;
     }
     while (root && root->group->id != g->id)
@@ -1189,7 +1201,7 @@ int adios_common_free_group (int64_t id)
     if (!root)
     {
         // Didn't find the group
-        fprintf (stderr, "Err in adios_common_free_group()\n");
+        adios_error (err_unspecified, "Err in adios_common_free_group()\n");
         return -1;
     }
 
@@ -1368,7 +1380,9 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
 
     if (!var)
     {
-           fprintf (stderr, "config.xml: Didn't find the variable %s for analysis\n", var_name);
+        adios_error (err_invalid_varname, 
+                     "config.xml: Didn't find the variable %s for analysis\n",
+                     var_name);
         return 0;
     }
     else
@@ -1383,7 +1397,8 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
 
             if (!count)
             {
-                fprintf (stderr, "config.xml: unable to tokenize break points\n");
+                adios_error (err_histogram_error, 
+                             "config.xml: unable to tokenize break points\n");
                 return 0;
             }
 
@@ -1391,7 +1406,8 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
 
             if(!hist || !hist->breaks)
             {
-                fprintf (stderr, "config.xml: unable to allocate memory for histogram break points in "
+                adios_error (err_histogram_error, 
+                        "config.xml: unable to allocate memory for histogram break points in "
                         "adios_common_define_var_characteristics\n");
                 return 0;
             }
@@ -1401,8 +1417,9 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
                 hist->breaks[i] = atof(bin_tokens[i]);
                 if(i > 0 && (hist->breaks[i] <= hist->breaks[i-1]))
                 {
-                    fprintf (stderr, "config.xml: break points should be in increasing order "
-                        "adios_common_define_var_characteristics\n");
+                    adios_error (err_histogram_error, 
+                            "config.xml: break points should be in increasing order in "
+                            "adios_common_define_var_characteristics\n");
                     return 0;
                 }
             }
@@ -1421,7 +1438,8 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
         {
             if(!bin_max || !bin_min || !bin_count)
             {
-                fprintf (stderr, "config.xml: unable to generate break points\n");
+                adios_error (err_histogram_error, 
+                        "config.xml: unable to generate break points\n");
                 return 0;
             }
 
@@ -1429,7 +1447,8 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
 
             if (!count)
             {
-                fprintf (stderr, "config.xml: bin count is undefined\n");
+                adios_error (err_histogram_error, 
+                    "config.xml: bin count is undefined\n");
                 return 0;
             }
 
@@ -1440,14 +1459,16 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
 
             if(!hist || !hist->breaks)
             {
-                fprintf (stderr, "config.xml: unable to allocate memory for histogram break points in "
+                adios_error (err_no_memory, 
+                        "config.xml: unable to allocate memory for histogram break points in "
                         "adios_common_define_var_characteristics\n");
                 return 0;
             }
 
             if (hist->min >= hist->max)
             {
-                fprintf (stderr, "config.xml: minimum boundary value greater than maximum\n");
+                adios_error (err_histogram_error, 
+                    "config.xml: minimum boundary value greater than maximum\n");
                 return 0;
             }
 
@@ -1563,9 +1584,8 @@ int adios_common_define_var (int64_t group_id, const char * name
 
             if (!d)
             {
-                fprintf (stderr, "config.xml: out of memory in "
-                                 "adios_common_define_var\n"
-                        );
+                adios_error (err_no_memory, 
+                        "config.xml: out of memory in adios_common_define_var\n");
 
                 return 0;
             }
@@ -1639,9 +1659,9 @@ void adios_common_get_group (int64_t * group_id, const char * name)
         g = g->next;
     }
 
-    fprintf (stderr, "adios-group '%s' not found in configuration file\n"
-            ,name
-            );
+    adios_error (err_invalid_group, 
+            "adios-group '%s' not found in configuration file\n",
+            name);
 }
 
 // *****************************************************************************
@@ -1660,9 +1680,8 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
         }
         else
         {
-            fprintf (stderr, "Cannot allocate memory in buffer_write.  "
+            adios_error (err_no_memory, "Cannot allocate memory in buffer_write.  "
                              "Requested: %llu\n", *buffer_offset + size + 1000);
-
             return;
         }
     }
@@ -2024,10 +2043,8 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
                     }
                     else
                     {
-                        fprintf (stderr, "error allocating memory to build "
-                                         "var index.  Index aborted\n"
-                                );
-
+                        adios_error (err_no_memory, "error allocating memory to build "
+                                     "var index.  Index aborted\n");
                         return;
                     }
                 }
@@ -2096,10 +2113,8 @@ static void index_append_attribute_v1
                     }
                     else
                     {
-                        fprintf (stderr, "error allocating memory to build "
-                                         "attribute index.  Index aborted\n"
-                                );
-
+                        adios_error (err_no_memory, "error allocating memory to build "
+                                         "attribute index.  Index aborted\n");
                         return;
                     }
                 }
@@ -2445,9 +2460,9 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
 {
     if (!data)
     {
-        fprintf (stderr, "cannot write var since dim %s not provided\n"
-                ,parent_name
-                );
+        adios_error (err_unspecified, 
+                     "cannot write var since dim %s not provided\n",
+                     parent_name);
         return 0;
     }
 
@@ -2489,18 +2504,16 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
         case adios_string:
         case adios_complex:
         case adios_double_complex:
-            fprintf (stderr, "Cannot convert type %s to integer for var %s\n"
-                    ,adios_type_to_string_int (type), parent_name
-                    );
-
+            adios_error (err_unspecified, 
+                         "Cannot convert type %s to integer for var %s\n",
+                         adios_type_to_string_int (type), parent_name);
             return 0;
     }
     return 0;
 }
 
-static uint64_t get_value_for_dim (struct adios_file_struct * fd
-                                ,struct adios_dimension_item_struct * dimension
-                                )
+static uint64_t get_value_for_dim (struct adios_file_struct * fd,
+                                   struct adios_dimension_item_struct * dimension)
 {
     uint64_t dim = 0;
 
@@ -2517,7 +2530,7 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd
             }
             else
             {
-                fprintf (stderr, "array dimension data missing\n");
+                adios_error (err_dimension_required, "array dimension data missing\n");
             }
         }
         else
@@ -2539,7 +2552,7 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd
                     }
                     else
                     {
-                        fprintf (stderr, "array dimension data missing\n");
+                        adios_error (err_dimension_required, "array dimension data missing\n");
                     }
                 }
                 else
@@ -2551,9 +2564,9 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd
             }
             else
             {
-                fprintf (stderr, "invalid dimension member id: %d\n"
-                        ,dimension->id
-                        );
+                adios_error (err_invalid_dimension, 
+                             "invalid dimension member id: %d\n",
+                             dimension->id);
             }
         }
     }
@@ -4732,12 +4745,10 @@ static int adios_multiply_dimensions (uint64_t * size
             return 1;
 
         default:
-            fprintf (stderr, "Invalid datatype for array dimension on "
-                             "var %s: %s\n"
-                    ,var->name
-                    ,adios_type_to_string_int (type)
-                    );
-
+            adios_error (err_invalid_var_as_dimension, 
+                         "Invalid datatype for array dimension on var %s: %s\n",
+                         var->name,
+                         adios_type_to_string_int (type));
             return 0;
     }
 }
@@ -4776,13 +4787,12 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                         {
                             if (!attr->var->data)
                             {
-                                fprintf (stderr, "adios_get_var_size: "
-                                                 "sizing of %s failed because "
-                                                 "dimension component %s was "
-                                                 "not provided\n"
-                                        ,var->name, attr->var->name
-                                        );
-
+                                adios_error (err_invalid_var_as_dimension, 
+                                             "adios_get_var_size: "
+                                             "sizing of %s failed because "
+                                             "dimension component %s was "
+                                             "not provided\n",
+                                             var->name, attr->var->name);
                                 return 0;
                             }
                             else
@@ -4811,13 +4821,12 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                     }
                     else
                     {
-                        fprintf (stderr, "adios_get_var_size: "
-                                         "sizing of %s failed because "
-                                         "dimension component was not "
-                                         "provided\n"
-                                ,var->name
-                                );
-
+                        adios_error (err_invalid_var_as_dimension, 
+                                "adios_get_var_size: "
+                                "sizing of %s failed because "
+                                "dimension component %s was "
+                                "not provided\n",
+                                var->name);
                         return 0;
                     }
                 }
@@ -4825,13 +4834,12 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                 {
                     if (!dim_var->data)
                     {
-                        fprintf (stderr, "adios_get_var_size: "
-                                         "sizing of %s failed because "
-                                         "dimension component %s was not "
-                                         "provided\n"
-                                ,var->name, dim_var->name
-                                );
-
+                        adios_error (err_invalid_var_as_dimension, 
+                                "adios_get_var_size: "
+                                "sizing of %s failed because "
+                                "dimension component %s was "
+                                "not provided\n",
+                                var->name, dim_var->name);
                         return 0;
                     }
                     else

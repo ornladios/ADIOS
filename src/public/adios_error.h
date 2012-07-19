@@ -59,6 +59,15 @@ enum ADIOS_ERRCODES {
     err_no_buffer_defined               = -61,
     err_missing_invalid_group           = -62,
     err_group_method_mismatch           = -63,
+    err_dimension_required              = -64,
+    err_offset_required                 = -65,
+    err_invalid_dimension               = -66,
+    err_invalid_global_dimension        = -67,
+    err_invalid_offset                  = -68,
+    err_invalid_var_as_dimension        = -69,
+    err_invalid_type_attr               = -70,
+    err_invalid_value_attr              = -71,
+    err_histogram_error                 = -72,
 
     // Write method errors
     err_invalid_file_mode               = -100,
