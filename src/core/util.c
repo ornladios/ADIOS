@@ -7,7 +7,7 @@
 
 #include "../config.h"
 #include "core/util.h"
-//#include "core/adios_logger.h"
+#include "core/adios_logger.h"
 
 
 /* Reverse the order in an array in place.
@@ -36,10 +36,10 @@ void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES ty
     char *ptr = (char *) data;
 
     if (slice_size % size_of_type != 0) {
-        fprintf(stderr, "Adios error in bp_utils.c:change_endianness(): "
-                    "An array's endianness is to be converted but the size of array "
-                    "is not dividable by the size of the elements: "
-                    "size = %lld, element size = %d\n", slice_size, size_of_type);
+       log_error ("Adios error in bp_utils.c:change_endianness(): "
+                  "An array's endianness is to be converted but the size of array "
+                  "is not dividable by the size of the elements: "
+                  "size = %lld, element size = %d\n", slice_size, size_of_type);
     }
 
     switch (type)

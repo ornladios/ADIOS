@@ -14,7 +14,9 @@
 #	include <mach/mach.h>
 #endif
 
-#include "buffer.h"
+#include "core/buffer.h"
+#include "core/adios_logger.h"
+#include "public/adios_error.h"
 
 // buffer sizing may be problematic.  To get a more accurate picture, check:
 // http://chandrashekar.info/vault/linux-system-programs.html
@@ -54,7 +56,7 @@ static inline size_t adios_get_avphys_pages ()
                         HOST_VM_INFO,
                         (host_info_t)&host_info,
                         &host_info_outCnt) != KERN_SUCCESS ) {
-        fprintf (stderr, "adios_get_avphys_pages (): host_statistics failed.\n");
+        log_error("adios_get_avphys_pages (): host_statistics failed.\n");
         return 0;   // Best we can do
     }
 
@@ -98,13 +100,13 @@ int adios_set_buffer_size ()
             }
             else
             {
-                fprintf (stderr, "adios_allocate_buffer (): insufficient memory: "
-                                 "%llu requested, %llu available.  Using "
-                                 "available.\n"
-                        ,adios_buffer_size_requested
-                        ,(uint64_t)(((uint64_t) pagesize) * pages)
-                        );
-                 adios_buffer_size_max = (uint64_t)((uint64_t) pagesize) * pages;
+                adios_error (err_no_memory,
+                             "adios_allocate_buffer (): insufficient memory: "
+                             "%llu requested, %llu available.  Using "
+                             "available.\n",
+                             adios_buffer_size_requested,
+                             (uint64_t)(((uint64_t) pagesize) * pages));
+                adios_buffer_size_max = (uint64_t)((uint64_t) pagesize) * pages;
            }
         }
 
@@ -114,10 +116,7 @@ int adios_set_buffer_size ()
     }
     else
     {
-        fprintf (stderr, "adios_allocate_buffer already called. "
-                         "No changes made.\n"
-                );
-
+        log_error ("adios_allocate_buffer already called. No changes made.\n");
         return 0;
     }
 }
@@ -144,9 +143,9 @@ int adios_method_buffer_free (uint64_t size)
 {
     if (size + adios_buffer_size_remaining > adios_buffer_size_max)
     {
-        fprintf (stderr, "ERROR: attempt to return more bytes to buffer "
-                         "pool than were originally available\n"
-                );
+        adios_error (err_invalid_buffer, 
+                     "ERROR: attempt to return more bytes to buffer "
+                     "pool than were originally available\n");
 
         adios_buffer_size_remaining = adios_buffer_size_max;
 

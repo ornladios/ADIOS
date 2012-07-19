@@ -17,6 +17,7 @@
 #include "core/bp_utils.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_endianness.h"
+#include "core/adios_logger.h"
 #define BYTE_ALIGN 8
 #define MINIFOOTER_SIZE 28
 
@@ -494,11 +495,11 @@ int bp_parse_attrs (struct BP_FILE * fh)
     int i;
 
     if (b->length - b->offset < VARS_MINIHEADER_SIZE) {
-        fprintf (stderr, "adios_parse_attrs_index_v1 requires a buffer "
-                "of at least %d bytes.  Only %llu were provided\n"
-                ,VARS_MINIHEADER_SIZE
-                ,b->length - b->offset
-            );
+        adios_error (err_invalid_buffer, 
+                     "adios_parse_attrs_index_v1 requires a buffer "
+                     "of at least %d bytes.  Only %llu were provided\n",
+                     VARS_MINIHEADER_SIZE,
+                     b->length - b->offset);
 
         return 1;
     }
@@ -699,11 +700,11 @@ int bp_parse_vars (struct BP_FILE * fh)
     struct adios_index_var_struct_v1 ** root;
 
     if (b->length - b->offset < VARS_MINIHEADER_SIZE) {
-        fprintf (stderr, "adios_parse_vars_index_v1 requires a buffer "
-                "of at least %d bytes.  Only %llu were provided\n"
-                ,VARS_MINIHEADER_SIZE
-                ,b->length - b->offset
-            );
+        adios_error (err_invalid_buffer, 
+                     "bp_parse_vars requires a buffer "
+                     "of at least %d bytes.  Only %llu were provided\n",
+                     VARS_MINIHEADER_SIZE,
+                     b->length - b->offset);
 
         return 1;
     }
@@ -998,7 +999,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
         }
 
         default:
-            fprintf (stderr, "Unknown characteristic:%d. skipped.\n", c);
+            log_warn ("Unknown characteristic: %d. skipped.\n", c);
             break;
     }
     return 0;
@@ -1228,14 +1229,17 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
                 // error check
                 if (ndim > 1 && ldims[0] != 1)
                 {
-                    fprintf(stderr,"ADIOS Error 1: this is a BP file with C ordering but we didn't find"
-                            "an array to have time dimension in the first dimension. l:g:o = (");
+                    log_error ("ADIOS Error 1: this is a BP file with C ordering "
+                               "but we didn't find an array to have time dimension "
+                               "in the first dimension. l:g:o = (");
                     for (k = 0; k < ndim; k++)
                     {
-                        fprintf (stderr,"%llu:%llu:%llu%s", ldims[k], gdims[k], offsets[k], (k<ndim-1 ? ", " : "") );
+                        log_error_cont ("%llu:%llu:%llu%s", 
+                                   ldims[k], gdims[k], offsets[k], 
+                                   (k<ndim-1 ? ", " : "") );
                     }
 
-                    fprintf(stderr, ")\n");
+                    log_error_cont ("\n");
                 }
 
                 for (k = 0; k < ndim - 1; k++)
@@ -1248,14 +1252,17 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
                 // last dimension is the time (Fortran array)
                 if (ndim > 1 && ldims[ndim - 1] != 1)
                 {
-                    fprintf(stderr,"ADIOS Error: this is a BP file with Fortran array ordering but we didn't find"
-                            "an array to have time dimension in the last dimension. l:g:o = (");
+                    log_error ("ADIOS Error: this is a BP file with Fortran array "
+                               "ordering but we didn't find an array to have time "
+                               "dimension in the last dimension. l:g:o = (");
                     for (k = 0; k < ndim; k++)
                     {
-                        fprintf (stderr,"%llu:%llu:%llu%s", ldims[k], gdims[k], offsets[k], (k<ndim-1 ? ", " : "") );
+                        log_error_cont ("%llu:%llu:%llu%s", 
+                                        ldims[k], gdims[k], offsets[k], 
+                                        (k<ndim-1 ? ", " : "") );
                     }
 
-                    fprintf (stderr, ")\n");
+                    log_error_cont (")\n");
                 }
             }
         }
@@ -1335,14 +1342,17 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
                 // error check
                 if (* ndim > 1 && ldims[0] != 1)
                 {
-                    fprintf(stderr,"ADIOS Error 2: this is a BP file with C ordering but we didn't find"
-                            "an array to have time dimension in the first dimension. l:g:o = (");
+                    log_error ("ADIOS Error 2: this is a BP file with C ordering "
+                               "but we didn't find an array to have time dimension "
+                               "in the first dimension. l:g:o = (");
                     for (i = 0; i < * ndim; i++)
                     {
-                        fprintf (stderr,"%llu:%llu:%llu%s", ldims[i], gdims[i], offsets[i], (i<*ndim-1 ? ", " : "") );
+                        log_error_cont ("%llu:%llu:%llu%s", 
+                                        ldims[i], gdims[i], offsets[i], 
+                                        (i<*ndim-1 ? ", " : "") );
                     }
 
-                    fprintf(stderr, ")\n");
+                    log_error_cont(")\n");
                 }
             }
             else
@@ -1350,14 +1360,17 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
                 // last dimension is the time (Fortran array)
                 if (* ndim > 1 && ldims[* ndim - 1] != 1)
                 {
-                    fprintf(stderr,"ADIOS Error: this is a BP file with Fortran array ordering but we didn't find"
-                            "an array to have time dimension in the last dimension. l:g:o = (");
+                    log_error ("ADIOS Error: this is a BP file with Fortran array "
+                               "ordering but we didn't find an array to have time "
+                               "dimension in the last dimension. l:g:o = (");
                     for (i = 0; i < * ndim; i++)
                     {
-                        fprintf (stderr,"%llu:%llu:%llu%s", ldims[i], gdims[i], offsets[i], (i<*ndim-1 ? ", " : "") );
+                        log_error_cont ("%llu:%llu:%llu%s", 
+                                        ldims[i], gdims[i], offsets[i], 
+                                        (i<*ndim-1 ? ", " : "") );
                     }
 
-                    fprintf (stderr, ")\n");
+                    log_error_cont(")\n");
                 }
             }
 
@@ -1451,7 +1464,8 @@ void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_
     }
 
     if (!data) {
-        fprintf (stderr, "bp_read_data_from_buffer: cannot allocate %d bytes\n",data_size);
+        adios_error (err_no_memory, 
+                     "bp_read_data_from_buffer: cannot allocate %d bytes\n",data_size);
         return 0;
     }
 
@@ -1613,7 +1627,7 @@ int bp_read_pgs (struct BP_FILE * bp_struct)
         MPI_Get_count (&status, MPI_BYTE, &r);
     }
     if (r != b->pg_size)
-        fprintf (stderr, "could not read %llu bytes. read only: %llu\n",
+        log_error("could not read %llu bytes. read only: %llu\n",
                 b->pg_size, r);
 
     return 0;
@@ -1649,7 +1663,7 @@ int bp_read_vars (struct BP_FILE * bp_struct)
         MPI_Get_count (&status, MPI_BYTE, &r);
     }
     if (r != b->vars_size)
-        fprintf (stderr, "could not read %llu bytes. read only: %llu\n",
+        log_error ("could not read %llu bytes. read only: %llu\n",
                 b->vars_size, r);
 
     return 0;

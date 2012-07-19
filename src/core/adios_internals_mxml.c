@@ -14,6 +14,7 @@
 #include <mxml.h>
 
 #include "public/adios.h"
+#include "public/adios_error.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
@@ -2388,11 +2389,8 @@ static int parseMeshUniform (mxml_node_t * node
     // the dimensions of the variable, origin=0 and spacing=1
     /*if (!saw_dimensions)
     {
-        fprintf (stderr, "config.xml: dimensions required on mesh "
-                         "type=uniform (%s)\n"
-                         ,name
-                );
-
+        log_debug ("config.xml: dimensions required on mesh "
+                   "type=uniform (%s)\n",name);
         return 0;
     }*/
 
@@ -3694,13 +3692,9 @@ static int parseGroup (mxml_node_t * node)
     {
         if (!validatePath (new_group->vars, a->path))
         {
-/*
-            fprintf (stderr, "config.xml warning: attribute element '%s' "
-                             "has path '%s' that does not match "
-                             "any var path or name.\n"
-                    ,a->name, a->path
-                    );
-*/
+             log_warn ("config.xml warning: attribute element '%s' "
+                       "has path '%s' that does not match "
+                       "any var path or name.\n",a->name, a->path);
         }
 
         a = a->next;
