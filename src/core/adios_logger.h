@@ -32,6 +32,10 @@ void adios_logger_close();
 #define log_warn(...) adios_logger(2, 1, __VA_ARGS__)
 #define log_info(...) adios_logger(3, 1, __VA_ARGS__)
 #define log_debug(...) adios_logger(4, 1, __VA_ARGS__)
+
+#define log_error_cont(...) adios_logger(1, 0, __VA_ARGS__)
+#define log_warn_cont(...) adios_logger(2, 0, __VA_ARGS__)
+#define log_info_cont(...) adios_logger(3, 0, __VA_ARGS__)
 #define log_debug_cont(...) adios_logger(4, 0, __VA_ARGS__)
 
 #endif
