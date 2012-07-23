@@ -37,8 +37,8 @@ static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
     b->allocated_buff_ptr = malloc (size + BYTE_ALIGN - 1);
     if (!b->allocated_buff_ptr)
     {
-	adios_error(err_no_memory, "BP_V1: Cannot allocate %llu\n",
-		    size);
+    adios_error(err_no_memory, "BP_V1: Cannot allocate %llu\n",
+            size);
         b->buff = 0;
         b->length = 0;
 
@@ -58,8 +58,8 @@ static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b
                                     );
     if (!b->allocated_buff_ptr)
     {
-	adios_error(err_no_memory, "BP_V1: Cannot allocate %llu\n",
-		    size);
+    adios_error(err_no_memory, "BP_V1: Cannot allocate %llu\n",
+            size);
         b->buff = 0;
         b->length = 0;
 
@@ -117,17 +117,17 @@ int adios_parse_version (struct adios_bp_buffer_struct_v1 * b,
 
     if (b->length < 4)
     {
-	adios_error(err_invalid_buffer_version, "adios_parse_version requires"
-		    "a buffer of at least "
-		    "4 bytes.  Only %llu were provided\n", b->length);
+    adios_error(err_invalid_buffer_version, "adios_parse_version requires"
+            "a buffer of at least "
+            "4 bytes.  Only %llu were provided\n", b->length);
         return 1;
     }
 
     *version = ntohl (*(uint32_t *) (b->buff + b->offset));
     char *v = (char *) version;
     if (   (*v && !*(char *) &test)       // both writer and this machine are big endian
-	   || (!*(v+3) && *(char *) &test)   // both are little endian
-	)
+    || (!*(v+3) && *(char *) &test)   // both are little endian
+    )
     {
         b->change_endianness = adios_flag_no;//no need to change endiannness
     }
@@ -146,9 +146,9 @@ int adios_parse_index_offsets_v1 (struct adios_bp_buffer_struct_v1 * b)
 {
     if (b->length - b->offset < 24)
     {
-	adios_error(err_invalid_buffer_index, "adios_parse_index_offsets_v1"
-		    "requires a buffer of at least 24 bytes."
-		    "Only %llu were provided\n", b->length - b->offset);
+    adios_error(err_invalid_buffer_index, "adios_parse_index_offsets_v1"
+            "requires a buffer of at least 24 bytes."
+            "Only %llu were provided\n", b->length - b->offset);
         return 1;
     }
 
@@ -196,9 +196,9 @@ int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b,
     struct adios_index_process_group_struct_v1 ** root;
     if (b->length - b->offset < 16)
     {
-	adios_error(err_invalid_buffer_group, "adios_parse_process_group_index_v1"
-		    "requires a buffer of at least 16 bytes."
-		    "Only %llu were provided\n", b->length - b->offset);
+    adios_error(err_invalid_buffer_group, "adios_parse_process_group_index_v1"
+            "requires a buffer of at least 16 bytes."
+            "Only %llu were provided\n", b->length - b->offset);
         return 1;
     }
 
@@ -298,9 +298,9 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
     if (b->length - b->offset < 10)
     {
-	adios_error(err_invalid_buffer_vars, "adios_parse_vars_index_v1"
-		    "requires a buffer of at least 10 bytes."
-		    "Only %llu were provided\n", b->length - b->offset);
+    adios_error(err_invalid_buffer_vars, "adios_parse_vars_index_v1"
+            "requires a buffer of at least 10 bytes."
+            "Only %llu were provided\n", b->length - b->offset);
         return 1;
     }
 
@@ -406,7 +406,9 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
             uint32_t characteristic_set_length;
             uint8_t item = 0;
 
+            // NCSU - Clear stats structure (Drew: probably redundant with memset above, but leave it to be safe)
             (*root)->characteristics [j].stats = 0;
+
             characteristic_set_count = (uint8_t) *(b->buff + b->offset);
             b->offset += 1;
 
@@ -465,9 +467,9 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                                 if (!data)
                                 {
-				    adios_error(err_no_memory, "cannot allocate"
-						"%d bytes to copy scalar %s\n",
-						data_size, (*root)->var_name);
+                    adios_error(err_no_memory, "cannot allocate"
+                        "%d bytes to copy scalar %s\n",
+                        data_size, (*root)->var_name);
 
                                     return 1;
                                 }
@@ -506,9 +508,9 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                                 if (!data)
                                 {
-				    adios_error(err_no_memory, "cannot allocate"
-						"%d bytes to copy scalar %s\n",
-						data_size, (*root)->var_name);
+                    adios_error(err_no_memory, "cannot allocate"
+                        "%d bytes to copy scalar %s\n",
+                        data_size, (*root)->var_name);
                                     return 1;
                                 }
 
@@ -737,6 +739,14 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                             }
                         }
                         b->offset += dims_length;
+                        break;
+                    }
+
+                    // NCSU ALACRITY-ADIOS - Reading variable transformation type
+                    case adios_characteristic_transform_type:
+                    {
+                        adios_transform_deserialize_transform_characteristic(&(*root)->characteristics[j].transform, b);
+                        break;
                     }
                 }
                 item++;
@@ -757,9 +767,9 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
     if (b->length - b->offset < 10)
     {
-	adios_error(err_invalid_buffer_attrs, "adios_parse_attributes_index_v1 "
-		    "requires a buffer of at least 10 bytes."
-		    "Only %llu were provided\n", b->length - b->offset);
+    adios_error(err_invalid_buffer_attrs, "adios_parse_attributes_index_v1 "
+            "requires a buffer of at least 10 bytes."
+            "Only %llu were provided\n", b->length - b->offset);
 
         return 1;
     }
@@ -910,10 +920,10 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                         if (!data)
                         {
-			    adios_error(err_no_memory, "cannot allocate"
-					"%d bytes to copy scalar %s\n",
-					data_size, (*root)->attr_name);
-			    
+                adios_error(err_no_memory, "cannot allocate"
+                    "%d bytes to copy scalar %s\n",
+                    data_size, (*root)->attr_name);
+
                             return 1;
                         }
 
@@ -1052,6 +1062,18 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                         break;
                     }
+
+                    // NCSU ALACRITY-ADIOS - Deserialize transform characteristic
+                    case adios_characteristic_transform_type:
+                    {
+                        adios_transform_deserialize_transform_characteristic(&(*root)->characteristics[j].transform, b);
+                        /*
+                        (*root)->characteristics [j].transform_type =
+                                            *(uint8_t *) (b->buff + b->offset);
+                        b->offset += 1;
+                        */
+                        break;
+                    }
                 }
                 item++;
             }
@@ -1069,9 +1091,9 @@ int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < 16)
     {
-	adios_error(err_invalid_buffer_group, "adios_parse_process_group_header_v1"
-		    "requires a buffer of at least 16 bytes. "
-		    "Only %llu were provided\n",b->length - b->offset);
+    adios_error(err_invalid_buffer_group, "adios_parse_process_group_header_v1"
+            "requires a buffer of at least 16 bytes. "
+            "Only %llu were provided\n",b->length - b->offset);
         return 1;
     }
 
@@ -1173,9 +1195,9 @@ int adios_parse_vars_header_v1 (struct adios_bp_buffer_struct_v1 * b
 
     if (b->length - b->offset < 10)
     {
-	adios_error(err_invalid_buffer_vars, "adios_parse_vars_header_v1"
-		    "requires a buffer of at least 10 bytes. "
-		    "Only %llu were provided\n", b->length - b->offset);
+    adios_error(err_invalid_buffer_vars, "adios_parse_vars_header_v1"
+            "requires a buffer of at least 10 bytes. "
+            "Only %llu were provided\n", b->length - b->offset);
 
         vars_header->count = 0;
         vars_header->length = 0;
@@ -1203,9 +1225,9 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < 21)
     {
-	adios_error(err_invalid_buffer_vars, "adios_parse_var_data_header_v1"
-		    "requires a buffer of at least 21 bytes."
-		    "Only %llu were provided\n", b->length - b->offset);
+    adios_error(err_invalid_buffer_vars, "adios_parse_var_data_header_v1"
+            "requires a buffer of at least 21 bytes."
+            "Only %llu were provided\n", b->length - b->offset);
 
         return 1;
     }
@@ -1390,6 +1412,14 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
     var_header->characteristics.value = 0;
     var_header->characteristics.dims.count = 0;
     var_header->characteristics.dims.dims = 0;
+    // NCSU - Initialize statistics fields
+    var_header->characteristics.bitmap = 0;
+    var_header->characteristics.stats = 0;
+    // NCSU ALACRITY-ADIOS - Initialize transform field
+    adios_transform_init_transform_characteristic(&var_header->characteristics.transform);
+    //var_header->characteristics.transform_type = adios_transform_none;
+    //var_header->characteristics.pre_transform_type = adios_unknown;
+    //var_header->characteristics.pre_transform_dimensions = 0;
     for (i = 0; i < characteristics_count; i++)
     {
         uint8_t flag;
@@ -1417,6 +1447,11 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
                     swap_64(var_header->characteristics.payload_offset);
                 }
                 b->offset += 8;
+                break;
+
+            // NCSU ALACRITY-ADIOS - Read in transform type field
+            case adios_characteristic_transform_type:
+                adios_transform_deserialize_transform_characteristic(&var_header->characteristics.transform, b);
                 break;
 
             //NCSU - Read in bitmap
@@ -1686,17 +1721,17 @@ int adios_clear_var_header_v1 (struct adios_var_header_struct_v1 * var_header)
             if ((c->bitmap >> j) & 1)
             {
                 for (i = 0; i < count; i ++)
-				{
-					if (j == adios_statistic_hist)
-					{
-						struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct *) (c->stats[i][idx].data);
-						free (hist->breaks);
-						free (hist->frequencies);
-						free (hist);
-					}
-					else
-                    	free (c->stats[i][idx].data);
-				}
+                {
+                    if (j == adios_statistic_hist)
+                    {
+                        struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct *) (c->stats[i][idx].data);
+                        free (hist->breaks);
+                        free (hist->frequencies);
+                        free (hist);
+                    }
+                    else
+                        free (c->stats[i][idx].data);
+                }
                 idx ++;
             }
             j ++;
@@ -1707,7 +1742,9 @@ int adios_clear_var_header_v1 (struct adios_var_header_struct_v1 * var_header)
 
         free (c->stats);
         c->stats = 0;
+        c->bitmap = 0; // NCSU - Added by Drew Boyuka
     }
+
     if (c->dims.dims)
     {
         free (c->dims.dims);
@@ -1721,6 +1758,9 @@ int adios_clear_var_header_v1 (struct adios_var_header_struct_v1 * var_header)
     }
     c->var_id = 0;
 
+    // NCSU ALACRITY-ADIOS - Clear transform metadata
+    adios_transform_clear_transform_characteristic(&c->transform);
+
     return 0;
 }
 
@@ -1732,11 +1772,11 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < var_header->payload_size)
     {
-	adios_error(err_invalid_buffer_vars, "adios_parse_var_data_payload_v1"
-		    " for name %s path %s requires a buffer of at least "
-		    "%llu bytes. Only %llu were provided\n", var_header->name, 
-		    var_header->path, var_header->payload_size, 
-		    b->length - b->offset);
+    adios_error(err_invalid_buffer_vars, "adios_parse_var_data_payload_v1"
+            " for name %s path %s requires a buffer of at least "
+            "%llu bytes. Only %llu were provided\n", var_header->name,
+            var_header->path, var_header->payload_size,
+            b->length - b->offset);
 
         b->offset += var_header->payload_size;
 
@@ -1747,10 +1787,10 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
        )
     {
         adios_error(err_invalid_buffer_vars, "reading var name %s path %s"
-		    "requires a buffer of at least %llu bytes.  "
-		    "Only %llu were provided\n" , var_header->name, 
-		    var_header->path, var_header->payload_size, 
-		    payload_buffer_size);
+            "requires a buffer of at least %llu bytes.  "
+            "Only %llu were provided\n" , var_header->name,
+            var_header->path, var_header->payload_size,
+            payload_buffer_size);
 
         b->offset += var_header->payload_size;
 
@@ -1793,9 +1833,9 @@ int adios_parse_attributes_header_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < 10)
     {
-	adios_error(err_invalid_buffer_attrs, "adios_parse_attributes_header_v1"
-		    "requires a buffer of at least 10 bytes.  "
-		    "Only %llu were provided\n", b->length - b->offset);
+    adios_error(err_invalid_buffer_attrs, "adios_parse_attributes_header_v1"
+            "requires a buffer of at least 10 bytes.  "
+            "Only %llu were provided\n", b->length - b->offset);
 
         attrs_header->count = 0;
         attrs_header->length = 0;
@@ -1824,9 +1864,9 @@ int adios_parse_attribute_v1 (struct adios_bp_buffer_struct_v1 * b
 {
     if (b->length - b->offset < 15)
     {
-	adios_error(err_invalid_buffer_attrs, "adios_parse_attribute_data_payload_v1"
-		    "requires a buffer of at least 15 bytes.  "
-		    "Only %llu were provided\n", b->length - b->offset);
+    adios_error(err_invalid_buffer_attrs, "adios_parse_attribute_data_payload_v1"
+            "requires a buffer of at least 15 bytes.  "
+            "Only %llu were provided\n", b->length - b->offset);
 
         return 1;
     }
@@ -1957,8 +1997,8 @@ void * adios_dupe_data_scalar (enum ADIOS_DATATYPES type, void * in)
             d = malloc (element_size);
             if (!d)
             {
-		adios_error(err_no_memory, "cannot allocate %d "
-			    "bytes to copy scalar\n", element_size);
+        adios_error(err_no_memory, "cannot allocate %d "
+                "bytes to copy scalar\n", element_size);
 
                 return 0;
             }
@@ -1970,8 +2010,8 @@ void * adios_dupe_data_scalar (enum ADIOS_DATATYPES type, void * in)
             d = malloc (element_size + 1);
             if (!d)
             {
-		adios_error(err_no_memory, "cannot allocate %d "
-			    "bytes to copy scalar\n", element_size+1);
+        adios_error(err_no_memory, "cannot allocate %d "
+                "bytes to copy scalar\n", element_size+1);
 
                 return 0;
             }
@@ -2013,7 +2053,7 @@ void adios_posix_read_version (struct adios_bp_buffer_struct_v1 * b)
 
     r = read (b->f, b->buff, 28);
     if (r != 28)
-	log_warn("could not read 28 bytes. read only: %llu\n", r);
+    log_warn("could not read 28 bytes. read only: %llu\n", r);
 }
 
 void adios_init_buffer_read_index_offsets (struct adios_bp_buffer_struct_v1 * b)
@@ -2081,7 +2121,7 @@ void adios_posix_read_attributes_index (struct adios_bp_buffer_struct_v1 * b)
 
     if (r != b->attrs_size)
         log_warn("reading attributess_index: wanted %llu, read: %llu\n",
-		 b->attrs_size, r);
+        b->attrs_size, r);
 }
 
 void adios_init_buffer_read_process_group (struct adios_bp_buffer_struct_v1 * b)
@@ -2105,9 +2145,9 @@ uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b)
     if (pg_size != b->read_pg_size)
     {
         log_warn("adios_read_process_group: "
-		 "Tried to read: %llu, but only got: "
-		 "%llu error: %s\n", b->read_pg_size, 
-		 pg_size, strerror(errno));
+        "Tried to read: %llu, but only got: "
+        "%llu error: %s\n", b->read_pg_size,
+        pg_size, strerror(errno));
 
         pg_size = 0;
     }
@@ -2132,8 +2172,8 @@ int adios_posix_open_read_internal (const char * filename
     b->f = open (name, O_RDONLY | O_LARGEFILE);
     if (b->f == -1)
     {
-        adios_error(err_file_not_found, "ADIOS POSIX: file not found: %s\n", 
-		    name);
+        adios_error(err_file_not_found, "ADIOS POSIX: file not found: %s\n",
+            name);
 
         free (name);
 

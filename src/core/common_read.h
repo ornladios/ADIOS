@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -13,6 +13,7 @@
 
 #include "public/adios_types.h"
 #include "public/adios_read_v2.h"  /* C API's struct's are used here */
+#include "adios_read_transformed.h" // NCSU ALACRITY-ADIOS
 
 #ifdef _NOMPI
     /* Sequential processes can use the library compiled with -D_NOMPI */
@@ -24,8 +25,8 @@
 
 #include <stdint.h>
 
-int common_read_init_method (enum ADIOS_READ_METHOD method, 
-                             MPI_Comm comm, 
+int common_read_init_method (enum ADIOS_READ_METHOD method,
+                             MPI_Comm comm,
                              const char * parameters);
 
 int common_read_finalize_method(enum ADIOS_READ_METHOD method);
@@ -47,10 +48,14 @@ void common_read_release_step (ADIOS_FILE *fp);
 
 ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE  *fp, const char * varname);
 ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE  *fp, int varid);
+ADIOS_VARINFO * common_read_inq_var_raw_byid (const ADIOS_FILE  *fp, int varid);
+ADIOS_TRANSINFO * common_read_inq_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi);
 int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
                              int per_step_stat, int per_block_stat);
 int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
+void common_read_free_blockinfo(ADIOS_VARINFO *vp); // NCSU ALACRITY-ADIOS
 void common_read_free_varinfo (ADIOS_VARINFO *vp);
+void common_read_free_transinfo(const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti); // NCSU ALACRITY-ADIOS
 
 int common_read_schedule_read (const ADIOS_FILE      * fp,
                                const ADIOS_SELECTION * sel,
@@ -77,8 +82,8 @@ int common_read_get_attr (const ADIOS_FILE            * fp,
                     int                   * size,
                     void                 ** data);
 
-int common_read_get_attr_byid (const ADIOS_FILE  * fp, int attrid, enum ADIOS_DATATYPES * type, 
-                         int * size, void ** data); 
+int common_read_get_attr_byid (const ADIOS_FILE  * fp, int attrid, enum ADIOS_DATATYPES * type,
+                         int * size, void ** data);
 
 const char * common_read_type_to_string (enum ADIOS_DATATYPES type);
 int common_read_type_size(enum ADIOS_DATATYPES type, void *data);
@@ -87,14 +92,14 @@ int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist);
 int common_read_group_view (ADIOS_FILE  *fp, int groupid);
 
 /* internal function to support version 1 time-dimension reads
-   called from adios_read_v1.c and adiosf_read_v1.c 
+   called from adios_read_v1.c and adiosf_read_v1.c
 */
 int common_read_is_var_timed (const ADIOS_FILE *fp, int varid);
 
 void common_read_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran);
 void common_read_print_fileinfo (const ADIOS_FILE *fp);
 
-// selections 
+// selections
 ADIOS_SELECTION * common_read_selection_boundingbox (uint64_t ndim, const uint64_t *start, const uint64_t *count);
 ADIOS_SELECTION * common_read_selection_points (uint64_t ndim, uint64_t npoints, const uint64_t *points);
 ADIOS_SELECTION * common_read_selection_writeblock (int index);

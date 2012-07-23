@@ -4267,7 +4267,10 @@ int adios_read_bp_staged1_fclose (ADIOS_FILE *fp)
 
         }
 
-        if (vr->characteristics) 
+        // NCSU ALACRITY-ADIOS - Clear transform metadata
+        adios_transform_clear_transform_characteristic(&vr->characteristics[j]);
+
+        if (vr->characteristics)
             free (vr->characteristics);
         if (vr->group_name) 
             free (vr->group_name);

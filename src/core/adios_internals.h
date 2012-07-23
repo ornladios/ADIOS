@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -31,9 +31,9 @@ struct adios_var_struct;
 struct adios_mesh_struct;
 
 // NCSU - Generic data for statistics
-struct adios_stat_struct 
+struct adios_stat_struct
 {
-	void * data;
+    void * data;
 };
 
 
@@ -57,16 +57,23 @@ struct adios_var_struct
     void * data;                  // primarily used for reading
     uint64_t data_size;           // primarily used for reading
 
-	// NCSU - Adding stat related variables
-	struct adios_stat_struct ** stats; // 2D array. Complex numbers can contain upto 3 parts
-	uint32_t bitmap;
+    // NCSU - Adding stat related variables
+    struct adios_stat_struct ** stats; // 2D array. Complex numbers can contain upto 3 parts
+    uint32_t bitmap;
+
+    // NCSU ALACRITY-ADIOS - Adding transform-related fields
+    uint8_t transform_type;
+    enum ADIOS_DATATYPES pre_transform_type;
+    struct adios_dimension_struct *pre_transform_dimensions;
+    uint16_t transform_metadata_len;
+    void *transform_metadata;
 
     struct adios_var_struct * next;
 };
 
 // NCSU - structure for histogram
 struct adios_hist_struct
-{   
+{
     double min; //minimum value of histogram ** for when we use complex variables
     double max; //maximum value of histogram
     uint32_t num_breaks; //number of break points for the histogram
@@ -133,12 +140,12 @@ struct adios_mesh_unstructured_struct;
 
 struct adios_mesh_struct
 {
-    // ADIOS Schema: adding mesh names 
+    // ADIOS Schema: adding mesh names
     // Groups can have multiple meshes
     char * name;
     enum ADIOS_FLAG time_varying;
     enum ADIOS_MESH_TYPE type;
-    union 
+    union
     {
         struct adios_mesh_uniform_struct * uniform;
         struct adios_mesh_rectilinear_struct * rectilinear;
@@ -173,7 +180,7 @@ struct adios_group_struct
     struct adios_mesh_struct * meshs;
     int mesh_count;
     enum ADIOS_FLAG all_unique_mesh_names;
-   
+
     int attrid_update_epoch; // ID of special attribute "/__adios__/update_time_epoch" to find it fast
 };
 
@@ -461,20 +468,22 @@ int adios_common_define_var (int64_t group_id, const char * name
                             ,const char * dimensions
                             ,const char * global_dimensions
                             ,const char * local_offsets
+                            ,const char *transform_type_str // NCSU ALACRITY-ADIOS
                             );
 
 int adios_common_define_var_characteristcs  (struct adios_group_struct * g, const char * var_name
-                            				,const char * bin_interval 
-                            				,const char * bin_min
-                            				,const char * bin_max
-                            				,const char * bin_count
-                            				);
+                                            ,const char * bin_interval
+                                            ,const char * bin_min
+                                            ,const char * bin_max
+                                            ,const char * bin_count
+                                            );
 
 void adios_common_get_group (int64_t * group_id, const char * name);
 int adios_common_free_group (int64_t id);
 
 // ADIOS file format functions
 
+uint16_t adios_calc_var_characteristics_dims_overhead(struct adios_dimension_struct * d);
 uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v);
 uint32_t adios_calc_attribute_overhead_v1 (struct adios_attribute_struct * a);
 uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd);
@@ -534,7 +543,25 @@ void adios_clear_index_v1 (struct adios_index_process_group_struct_v1 * pg_root
                           ,struct adios_index_attribute_struct_v1 * attrs_root
                           );
 
+// NCSU ALACRITY-ADIOS - The next three functions were static, but are now needed in adios_transforms_*.c
+void adios_copy_var_written (struct adios_var_struct ** root
+                            ,struct adios_var_struct * var
+                            ,struct adios_file_struct * fd
+                            );
+
+uint8_t count_dimensions (const struct adios_dimension_struct * dimensions);
+uint64_t get_value_for_dim (struct adios_file_struct * fd
+                           ,struct adios_dimension_item_struct * dimension
+                            );
+// NCSU ALACRITY-ADIOS - End de-staticed functions
+
 uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var);
+// NCSU ALACRITY-ADIOS - added this for the sake of transform functions
+uint64_t adios_get_dimension_space_size (struct adios_var_struct * var
+                                        ,enum ADIOS_DATATYPES type
+                                        ,struct adios_dimension_struct * d
+                                        ,struct adios_group_struct * group, void * data
+                                        );
 uint64_t adios_get_var_size (struct adios_var_struct * var
                             ,struct adios_group_struct * group, void * data
                             );

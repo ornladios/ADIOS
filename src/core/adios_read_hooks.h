@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "public/adios_read.h"
+#include "core/adios_read_transformed.h" // NCSU ALACRITY-ADIOS
 #include "core/util.h" // PairStruct*
 
 #define FORWARD_DECLARE(a) \
@@ -32,6 +33,7 @@ int adios_read_##a##_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIO
 void adios_read_##a##_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran); \
 void adios_read_##a##_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group); \
 int adios_read_##a##_is_var_timed (const ADIOS_FILE *fp, int varid); \
+ADIOS_TRANSINFO * adios_read_##a##_inq_var_transinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi); /* NCSU ALACRITY-ADIOS */
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -65,7 +67,7 @@ FORWARD_DECLARE(datatap)
 
 typedef int  (* ADIOS_INIT_METHOD_FN) (MPI_Comm comm, PairStruct * params);
 typedef int  (* ADIOS_FINALIZE_METHOD_FN) ();
-typedef ADIOS_FILE * (* ADIOS_OPEN_STREAM_FN) (const char * fname, MPI_Comm comm, 
+typedef ADIOS_FILE * (* ADIOS_OPEN_STREAM_FN) (const char * fname, MPI_Comm comm,
                                  enum ADIOS_LOCKMODE lock_mode, float timeout_sec);
 typedef ADIOS_FILE * (* ADIOS_OPEN_FILE_FN) (const char * fname, MPI_Comm comm);
 typedef int  (* ADIOS_CLOSE_FN) (ADIOS_FILE *fp);
@@ -75,15 +77,16 @@ typedef ADIOS_VARINFO * (* ADIOS_INQ_VAR_BYID_FN) (const ADIOS_FILE *fp, int var
 typedef int  (* ADIOS_INQ_VAR_STAT_FN) (const ADIOS_FILE *fp, ADIOS_VARINFO *varinfo,
                                  int per_step_stat, int per_block_stat);
 typedef int  (* ADIOS_INQ_VAR_BLOCKINFO_FN) (const ADIOS_FILE *fp, ADIOS_VARINFO *varinfo);
-typedef int  (* ADIOS_SCHEDULE_READ_BYID_FN) (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel, 
+typedef int  (* ADIOS_SCHEDULE_READ_BYID_FN) (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel,
                                  int varid, int from_steps, int nsteps, void * data);
 typedef int  (* ADIOS_PERFORM_READS_FN) (const ADIOS_FILE *fp, int blocking);
 typedef int  (* ADIOS_CHECK_READS_FN) (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk);
-typedef int  (* ADIOS_GET_ATTR_BYID_FN) (const ADIOS_FILE * fp, int attrid, 
+typedef int  (* ADIOS_GET_ATTR_BYID_FN) (const ADIOS_FILE * fp, int attrid,
                                  enum ADIOS_DATATYPES * type, int * size, void ** data);
 typedef void (* ADIOS_RESET_DIMENSION_ORDER_FN) (const ADIOS_FILE *fp, int is_fortran);
-typedef void (* ADIOS_GET_GROUPINFO_FN) (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group); 
-typedef int  (* ADIOS_IS_VAR_TIMED_FN) (const ADIOS_FILE *fp, int varid); 
+typedef void (* ADIOS_GET_GROUPINFO_FN) (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group);
+typedef int  (* ADIOS_IS_VAR_TIMED_FN) (const ADIOS_FILE *fp, int varid);
+typedef ADIOS_TRANSINFO * (*ADIOS_READ_INQ_VAR_TRANSINFO)(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi); /* NCSU ALACRITY-ADIOS */
 
 struct adios_read_hooks_struct
 {
@@ -104,6 +107,7 @@ struct adios_read_hooks_struct
     ADIOS_RESET_DIMENSION_ORDER_FN  adios_reset_dimension_order_fn;
     ADIOS_GET_GROUPINFO_FN          adios_get_groupinfo_fn;
     ADIOS_IS_VAR_TIMED_FN           adios_is_var_timed_fn;
+    ADIOS_READ_INQ_VAR_TRANSINFO	adios_inq_var_transinfo_fn;
 };
 
 #undef FORWARD_DECLARE

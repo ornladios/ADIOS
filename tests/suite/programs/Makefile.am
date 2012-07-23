@@ -17,7 +17,8 @@ check_C=local_array_time \
         write_read \
         write_alternate \
         many_vars \
-        selections 
+        selections \
+        copy_subvolume
 endif
 
 if BUILD_FORTRAN
@@ -31,7 +32,7 @@ check_PROGRAMS=$(check_C) $(check_Fortran) $(check_readonly_C) $(check_readonly_
 
 # Sequential tests to be executed by "make check" can be defined right here in TESTS
 # Parallel tests should be defined in ../tests/*.sh and executed by ../test.sh
-TESTS= 
+TESTS= transforms copy_subvolume
 
 INCLUDES = $(all_includes)
 INCLUDES += -I$(top_builddir)/src
@@ -63,19 +64,20 @@ adios_amr_write_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 adios_amr_write_2vars.o: adios_amr_write_2vars.c
 
 adios_staged_read_SOURCES=adios_staged_read.c
-adios_staged_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
-adios_staged_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
+adios_staged_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+adios_staged_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 adios_staged_read.o: adios_staged_read.c
 
 adios_staged_read_2vars_SOURCES=adios_staged_read_2vars.c
-adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
-adios_staged_read_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
+adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+adios_staged_read_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 adios_staged_read_2vars.o: adios_staged_read_2vars.c
 
-write_read_SOURCES=write_read.c
-write_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
-write_read.o: write_read.c
+transforms_SOURCES=transforms.c
+transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
+transforms_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+#transforms.o: transforms.c
 
 write_alternate_SOURCES=write_alternate.c
 write_alternate_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
@@ -91,6 +93,16 @@ selections_SOURCES=selections.c
 selections_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 selections_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 selections.o: selections.c
+
+write_read_SOURCES=write_read.c
+write_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+write_read.o: write_read.c
+
+copy_subvolume_SOURCES=copy_subvolume.c
+copy_subvolume_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+copy_subvolume_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+copy_subvolume.o: copy_subvolume.c
 
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \

@@ -32,13 +32,14 @@ if (!strcasecmp (buf,b)) \
 (*t) [b].adios_reset_dimension_order_fn = adios_read_##a##_reset_dimension_order; \
 (*t) [b].adios_get_groupinfo_fn = adios_read_##a##_get_groupinfo; \
 (*t) [b].adios_is_var_timed_fn = adios_read_##a##_is_var_timed; \
+(*t) [b].adios_inq_var_transinfo_fn = adios_read_##a##_inq_var_transinfo;
 
 void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
 {
     static int did_init = 0;
     // we need to init only once in the lifetime of an application
-    // called from common_read.c/common_read_init_method() and 
-    // from common_read.c/common_read_open_*() 
+    // called from common_read.c/common_read_init_method() and
+    // from common_read.c/common_read_open_*()
     if (!did_init) {
         *t = (struct adios_read_hooks_struct *)
                calloc (ADIOS_READ_METHOD_COUNT, sizeof (struct adios_read_hooks_struct));

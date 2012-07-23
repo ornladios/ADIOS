@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -29,8 +29,8 @@
 
 static enum ADIOS_FLAG adios_host_language_fortran = adios_flag_yes;
 
-struct adios_method_list_struct * adios_methods = 0;
-struct adios_group_list_struct * adios_groups = 0;
+extern struct adios_method_list_struct * adios_methods;
+extern struct adios_group_list_struct * adios_groups;
 
 //extern struct adios_method_list_struct * adios_methods;
 //extern struct adios_group_list_struct * adios_groups;
@@ -330,7 +330,7 @@ static int parseMeshUniformMaxima (const char * maximum
     char * d1; // save of strdup
     struct adios_mesh_item_list_struct * item = 0;
     int64_t      p_new_group = (int64_t) new_group;
-    char * max_att_nam = 0; // maxima attribute name   
+    char * max_att_nam = 0; // maxima attribute name
     char * getmaxafrom = 0; // maxima attribute name that is a var
     int counter = 0;        // used to create maxX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create maxX attributes
@@ -404,7 +404,7 @@ static int parseMeshUniformMaxima (const char * maximum
             adios_common_define_attribute (p_new_group,max_att_nam,"/",adios_double,c,"");
             free (max_att_nam);
             item->item.var = 0;
-            counter++;        
+            counter++;
         }
 
         adios_append_mesh_item (&(mesh->maximum), item);
@@ -434,7 +434,7 @@ static int parseMeshUniformOrigin (const char * origin
     char * d1; // save of strdup
     struct adios_mesh_item_list_struct * item = 0;
     int64_t      p_new_group = (int64_t) new_group;
-    char * org_att_nam = 0; // origins attribute name   
+    char * org_att_nam = 0; // origins attribute name
     char * getorgsfrom = 0; // origins attribute name that is a var
     int counter = 0;        // used to create orgX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create orgX attributes
@@ -497,7 +497,7 @@ static int parseMeshUniformOrigin (const char * origin
         }
         else
         {
-            // Create attributes for each origin 
+            // Create attributes for each origin
             item->item.rank = strtod (c, 0);
             item->item.var = 0;
             counterstr[0] = '\0';
@@ -537,7 +537,7 @@ static int parseMeshUniformSpacing (const char * spacing
     char * d1; // save of strdup
     struct adios_mesh_item_list_struct * item = 0;
     int64_t      p_new_group = (int64_t) new_group;
-    char * spa_att_nam = 0; // spacings attribute name   
+    char * spa_att_nam = 0; // spacings attribute name
     char * getspasfrom = 0; // spacings attribute name that is a var
     int counter = 0;        // used to create spaX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create spaX attributes if (!spacing)
@@ -715,7 +715,7 @@ static int parseMeshRectilinearDimensions (const char * dimensions
             adios_common_define_attribute (p_new_group,dim_att_nam,"/",adios_double,c,"");
             free (dim_att_nam);
             item->item.var = 0;
-            counter++;        
+            counter++;
         }
 
         adios_append_mesh_item (&(mesh->dimensions), item);
@@ -724,13 +724,13 @@ static int parseMeshRectilinearDimensions (const char * dimensions
     }
 
     char * dims = 0;
-    counterstr[0] = '\0';    
+    counterstr[0] = '\0';
     snprintf(counterstr, 5, "%d", counter);
     dims = 0;
     conca_att_nam(&dims, name, "dims");
     adios_common_define_attribute (p_new_group,dims,"/",adios_double,counterstr,"");
 
-    free (dims); 
+    free (dims);
 
     free (d1);
 
@@ -2385,7 +2385,7 @@ static int parseMeshUniform (mxml_node_t * node
         }
     }
 
-    // If nothing is given, simply assume basic uniform plots using 
+    // If nothing is given, simply assume basic uniform plots using
     // the dimensions of the variable, origin=0 and spacing=1
     /*if (!saw_dimensions)
     {
@@ -3177,7 +3177,7 @@ static int parseGroup (mxml_node_t * node)
         }
     }
 
-// fix the bgp bugs 
+// fix the bgp bugs
 /*
     adios_common_declare_group ((int64_t *) &new_group, datagroup_name
                                ,host_language_fortran, coordination_comm
@@ -3215,6 +3215,7 @@ static int parseGroup (mxml_node_t * node)
             const char * gread = 0;
             const char * gwrite = 0;
             const char * read_flag = 0;
+            const char * transform_type = 0; // NCSU ALACRITY-ADIOS
             enum ADIOS_DATATYPES t1;
             char  * mpath = 0;
 
@@ -3231,6 +3232,7 @@ static int parseGroup (mxml_node_t * node)
                 GET_ATTR("gwrite",attr,gwrite,"var")
                 GET_ATTR("gread",attr,gread,"var")
                 GET_ATTR("read",attr,read_flag,"var")
+                GET_ATTR("transform",attr,transform_type,"var") // NCSU ALACRITY-ADIOS
                 log_warn ("config.xml: unknown attribute '%s' on %s "
                                  "(ignored)\n"
                         ,attr->name
@@ -3245,7 +3247,7 @@ static int parseGroup (mxml_node_t * node)
             if (!type)
                 type = ""; // this will catch the error
             if (!mesh)
-                mesh = "";  
+                mesh = "";
 
             t1 = parseType (type, name);
 
@@ -3265,12 +3267,13 @@ static int parseGroup (mxml_node_t * node)
                                          ,path, t1, dimensions
                                          ,gb_global_dimensions
                                          ,gb_local_offsets
+                                         ,transform_type // NCSU ALACRITY-ADIOS
                                          )
                )
             {
                 return 0;
             }else{
-                // Successfully define a variable, so now 
+                // Successfully define a variable, so now
                 // an attribute for the mesh if it exists.
                 if (strcmp(mesh,"")){
                     mpath = malloc(strlen("/adios_schema")+strlen(name)+1);
@@ -3365,6 +3368,7 @@ static int parseGroup (mxml_node_t * node)
                     const char * gwrite = 0;
                     const char * gread = 0;
                     const char * read_flag = 0;
+                    const char * transform_type = 0; // NCSU ALACRITY-ADIOS
                     enum ADIOS_DATATYPES t1;
                     char * mpath = 0;
 
@@ -3381,6 +3385,7 @@ static int parseGroup (mxml_node_t * node)
                         GET_ATTR("gwrite",attr,gwrite,"var")
                         GET_ATTR("gread",attr,gread,"var")
                         GET_ATTR("read",attr,read_flag,"var")
+                        GET_ATTR("transform",attr,transform_type,"var") // NCSU ALACRITY-ADIOS
                         log_warn ("config.xml: unknown attribute '%s' "
                                          "on %s (ignored)\n"
                                 ,attr->name
@@ -3395,7 +3400,7 @@ static int parseGroup (mxml_node_t * node)
                     if (!type)
                         type = ""; // this will catch the error
                     if (!mesh)
-                        mesh = ""; 
+                        mesh = "";
 
                     t1 = parseType (type, name);
                     if (!dimensions)
@@ -3410,12 +3415,13 @@ static int parseGroup (mxml_node_t * node)
                                                  ,path, t1, dimensions
                                                  ,gb_global_dimensions
                                                  ,gb_local_offsets
+                                                 ,transform_type // NCSU ALACRITY-ADIOS
                                                  )
                        )
                     {
                         return 0;
                     }else{
-                        // Successfully define a variable, so now 
+                        // Successfully define a variable, so now
                         // an attribute for the mesh if it exists.
                         if (strcmp(mesh,"")){
                             mpath = malloc(strlen("/adios_schema")+strlen(name)+1);
@@ -3551,7 +3557,7 @@ static int parseGroup (mxml_node_t * node)
                 t_varying = adios_flag_no;
             }else{
                 t_varying = adios_flag_no;
-                // If the user enters anything else than "yes" or "no" 
+                // If the user enters anything else than "yes" or "no"
                 // Output a warning letting them no that the default ("no"
                 // will be use give instead of their value 
                 log_warn ("config.xml: the value of the time varying "
@@ -3617,7 +3623,7 @@ static int parseGroup (mxml_node_t * node)
                     free (meshtime);
 
                     // Parse the uniform mesh tags
-                    parseMeshRectilinear (n, new_group, &mes->rectilinear, name);                
+                    parseMeshRectilinear (n, new_group, &mes->rectilinear, name);
                 }
             } else
             if (!strcasecmp (type, "unstructured"))
@@ -4092,6 +4098,8 @@ int adios_parse_config (const char * config, MPI_Comm comm)
         adios_transports_initialized = 1;
         adios_init_transports (&adios_transports);
     }
+    // NCSU ALACRITY-ADIOS - Initialize transform methods
+    adios_transform_init();
 
     char * buffer = NULL;
 //#if HAVE_MPI
@@ -4306,8 +4314,8 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                         break;
                     saw_buffer = 1;
                 }
-				else
-				{
+                else
+                {
                     if (!strcasecmp (node->value.element.name, "analysis"))
                     {
                         if (!parseAnalysis(node))
@@ -4325,9 +4333,9 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                 	                ,node->value.element.name
                 	                );
 
-                	        break;
-                	    }
-					}
+                            break;
+                        }
+                    }
                 }
             }
         }
@@ -4370,6 +4378,8 @@ int adios_local_config ()
         adios_transports_initialized = 1;
         adios_init_transports (&adios_transports);
     }
+    // NCSU ALACRITY-ADIOS - Initialize transform methods
+    adios_transform_init();
 
     return 1;
 }
@@ -4413,7 +4423,7 @@ static PairStruct * get_and_preprocess_params (const char * parameters)
             adios_verbose_level = 0; //don't print errors
             removeit = 1;
         }
-        else if (!strcasecmp (p->name, "logfile")) 
+        else if (!strcasecmp (p->name, "logfile"))
         {
             /*fprintf (stderr,"****************** logfile = %s\n", p->value);*/
             if (p->value) {
@@ -4434,7 +4444,7 @@ static PairStruct * get_and_preprocess_params (const char * parameters)
             if (p == params) {
                 // remove head
                 //fprintf(stderr, "  Remove HEAD  p = %x p->next = %x\n", p, p->next);
-                p = p->next; 
+                p = p->next;
                 params->next = NULL;
                 free_name_value_pairs (params);
                 params = p;
@@ -4468,7 +4478,7 @@ int adios_common_select_method (int priority, const char * method
 
     new_method = (struct adios_method_struct *)
                            malloc (sizeof (struct adios_method_struct));
-    
+
     new_method->m = ADIOS_METHOD_UNKNOWN;
     new_method->base_path = strdup (base_path);
     new_method->method = strdup (method);
@@ -4676,7 +4686,7 @@ void adios_cleanup ()
                 free (adios_groups->group->vars->name);
             if (adios_groups->group->vars->path)
                 free (adios_groups->group->vars->path);
-            // ADIOS Schema 
+            // ADIOS Schema
             // if (adios_groups->group->vars->mesh)
                 // free (adios_groups->group->vars->mesh);
 
@@ -4690,40 +4700,44 @@ void adios_cleanup ()
                 adios_groups->group->vars->dimensions = dimensions;
             }
 
-			// NCSU - Clean up stat
+            // NCSU - Clean up stat
             if (adios_groups->group->vars->stats)
-			{
-				int j, idx;
-				int c, count = 1;
+            {
+                int j, idx;
+                int c, count = 1;
 
-				if (adios_groups->group->vars->type == adios_complex || adios_groups->group->vars->type == adios_double_complex)
-					count = 3;
+                if (adios_groups->group->vars->type == adios_complex || adios_groups->group->vars->type == adios_double_complex)
+                    count = 3;
 
-				for (c = 0; c < count; c ++)
-				{
-					j = idx = 0;
-					while (adios_groups->group->vars->bitmap >> j)
-					{
-						if (adios_groups->group->vars->bitmap >> j & 1)
-						{
+                for (c = 0; c < count; c ++)
+                {
+                    j = idx = 0;
+                    while (adios_groups->group->vars->bitmap >> j)
+                    {
+                        if (adios_groups->group->vars->bitmap >> j & 1)
+                        {
                             if (j == adios_statistic_hist)
                             {
-								struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct *) adios_groups->group->vars->stats[c][idx].data;
-								free (hist->breaks);
-								free (hist->frequencies);
-								free (hist);
-							}
-						    else
-								free (adios_groups->group->vars->stats[c][idx].data);
-							idx ++;
-						}
-						j ++;
-					}
-					free (adios_groups->group->vars->stats[c]);
-				}
+                                struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct *) adios_groups->group->vars->stats[c][idx].data;
+                                free (hist->breaks);
+                                free (hist->frequencies);
+                                free (hist);
+                            }
+                            else
+                                free (adios_groups->group->vars->stats[c][idx].data);
+                            idx ++;
+                        }
+                        j ++;
+                    }
+                    free (adios_groups->group->vars->stats[c]);
+                }
 
                 free (adios_groups->group->vars->stats);
-			}
+            }
+
+            // NCSU ALACRITY-ADIOS - Clean transform metadata
+            adios_transform_clear_transform_var(adios_groups->group->vars);
+
             if (adios_groups->group->vars->data)
                 free (adios_groups->group->vars->data);
 
@@ -4765,7 +4779,7 @@ void adios_cleanup ()
         /*while (adios_groups->group->meshs)
         {
             struct adios_mesh_struct * meshs = adios_groups->group->meshs->next;
-                        
+
             if (adios_groups->group->meshs->name)
                 free (adios_groups->group->meshs->name);
 
@@ -4833,7 +4847,7 @@ void adios_cleanup ()
                     }
                     while (adios_groups->group->meshs->rectilinear->coordinates)
                     {
-                        v = adios_groups->group->meshs->rectilinear->coordinates->next;                        
+                        v = adios_groups->group->meshs->rectilinear->coordinates->next;
                         free (adios_groups->group->meshs->rectilinear->coordinates);
                         adios_groups->group->meshs->rectilinear->coordinates = v;
                     }

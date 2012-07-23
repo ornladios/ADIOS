@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -107,9 +107,9 @@ void FC_FUNC_(adios_group_size, ADIOS_GROUP_SIZE)
  * they call the same common_adios_write().
  * Difference: if the variable is string type then we need to convert
  * the void * var to a C string (add \0 to the end)
- * We rely on the assumption/fact that Fortran compilers pass on the 
+ * We rely on the assumption/fact that Fortran compilers pass on the
  * length of a character array in an extra integer argument, even if
- * the C function declares a void* array in the argument list. 
+ * the C function declares a void* array in the argument list.
  */
 void FC_FUNC_(adios_write, ADIOS_WRITE) 
     (int64_t * fd_p, const char * name, void * var, int * err
@@ -182,8 +182,9 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
     }
 
     // Q.L. 10-2010. To fix a memory leak problem.
+    // NCSU - Clear stats
     if (v->stats)
-    {   
+    {
         int j, idx;
         int c, count = 1;
 
@@ -191,14 +192,14 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
             count = 3;
 
         for (c = 0; c < count; c ++)
-        {   
+        {
             j = idx = 0;
             while (v->bitmap >> j)
-            {   
+            {
                 if (v->bitmap >> j & 1)
-                {   
+                {
                     if (j == adios_statistic_hist)
-                    {   
+                    {
                         struct adios_index_characteristics_hist_struct * hist =
                             (struct adios_index_characteristics_hist_struct *) v->stats[c][idx].data;
                         free (hist->breaks);
@@ -207,7 +208,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
                         v->stats[c][idx].data = 0;
                     }
                     else
-                    {   
+                    {
                         free (v->stats[c][idx].data);
                         v->stats[c][idx].data = 0;
                     }
@@ -217,6 +218,9 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
             }
         }
     }
+
+    // NCSU ALACRITY-ADIOS - Clear transform metadata
+    adios_transform_clear_transform_var(v);
 
     if (v->dimensions)
     {
@@ -244,7 +248,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
                 v->data = malloc (element_size);
                 if (!v->data)
                 {
-                    adios_error (err_no_memory, 
+                    adios_error (err_no_memory,
                                  "In adios_write, cannot allocate %lld bytes to copy scalar %s\n",
                                  element_size, v->name);
                     *err = 1;
@@ -258,7 +262,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
                 v->data = futils_fstr_to_cstr (var, var_size);
                 if (!v->data)
                 {
-                    adios_error (err_no_memory, 
+                    adios_error (err_no_memory,
                                  "In adios_write, cannot allocate %lld bytes to copy string %s\n",
                                  element_size, v->name);
                     *err = 1;
@@ -456,7 +460,7 @@ void FC_FUNC_(adios_define_var, ADIOS_DEFINE_VAR)
         *err = adios_common_define_var (*group_id, buf1, buf2
                                        ,(enum ADIOS_DATATYPES) *type
                                        ,buf3, buf4, buf5
-                                       );
+                                       ,NULL); // NCSU ALACRITY-ADIOS
 
         free (buf1);
         free (buf2);

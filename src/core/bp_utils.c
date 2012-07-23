@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -21,6 +21,7 @@
 #define BYTE_ALIGN 8
 #define MINIFOOTER_SIZE 28
 
+#include "core/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -52,7 +53,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b, struct adios
 
 void bp_alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
 {
-        
+
     b->allocated_buff_ptr =  malloc (size + BYTE_ALIGN - 1);
     if (!b->allocated_buff_ptr)
     {
@@ -98,12 +99,12 @@ int bp_read_open (const char * filename,
 
     MPI_Comm_rank (comm, &rank);
 
-    // variable definition 
+    // variable definition
     MPI_Offset  file_size;
 
     // open a file by the multiple processors within the same
     // communicator
-    err = MPI_File_open (comm, (char *) filename, MPI_MODE_RDONLY, 
+    err = MPI_File_open (comm, (char *) filename, MPI_MODE_RDONLY,
             (MPI_Info) MPI_INFO_NULL, &(fh->mpi_fh));
     if (err != MPI_SUCCESS) {
         char e [MPI_MAX_ERROR_STRING];
@@ -117,7 +118,7 @@ int bp_read_open (const char * filename,
     MPI_File_get_size (fh->mpi_fh, &file_size);
     fh->b->file_size = file_size;
     fh->mfooter.file_size = file_size;
-     
+
     return 0;
 }
 
@@ -197,17 +198,17 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     }
     MPI_File_seek (bp_struct->mpi_fh, (MPI_Offset) attrs_end, MPI_SEEK_SET);
     MPI_File_read (bp_struct->mpi_fh, b->buff, MINIFOOTER_SIZE, MPI_BYTE, &status);
-    
+
     /*memset (&mh->pgs_index_offset, 0, MINIFOOTER_SIZE);
     memcpy (&mh->pgs_index_offset, b->buff, MINIFOOTER_SIZE);*/
-    
+
     /* get version id. Needs the bp->offset be pointing to the last 4 bytes of the buffer,
        It also sets b->change_endianness */
     /* Note that b is not sent over to processes, only the minifooter and then b->buff (the footer) */
     b->offset = MINIFOOTER_SIZE - 4;
     adios_parse_version (b, &mh->version);
     mh->change_endianness = b->change_endianness;
-    b->offset = 0; // reset offset to beginning 
+    b->offset = 0; // reset offset to beginning
 
     BUFREAD64(b, b->pg_index_offset)
     mh->pgs_index_offset = b->pg_index_offset;
@@ -237,7 +238,7 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     MPI_Get_count (&status, MPI_BYTE, &r);
 
     // reset the pointer to the beginning of buffer
-    b->offset = 0;    
+    b->offset = 0;
     return 0;
 }
 
@@ -273,7 +274,7 @@ int bp_parse_pgs (struct BP_FILE * fh)
 
     for (i = 0; i < mh->pgs_count; i++) {
         uint16_t length_of_group;
-        namelist[i] = 0;    
+        namelist[i] = 0;
         // validate remaining length
         BUFREAD16(b, length_of_group)
 
@@ -291,9 +292,9 @@ int bp_parse_pgs (struct BP_FILE * fh)
         (*root)->group_name [length_of_name] = '\0';
         memcpy ((*root)->group_name, b->buff + b->offset, length_of_name);
         b->offset += length_of_name;
-        
-        
-        if ( group_count == 0 ) { 
+
+
+        if ( group_count == 0 ) {
             namelist[group_count] = (char *) malloc (length_of_name + 1);
             strcpy (namelist[group_count], (*root)->group_name);
             ++group_count;
@@ -311,11 +312,11 @@ int bp_parse_pgs (struct BP_FILE * fh)
                 ++group_count;
                 grpidlist[i] = group_count - 1;
             }
-            else 
+            else
                 grpidlist[i] = j;
-                    
+
         }
-            
+
         BUFREAD8(b, fortran_flag)
         (*root)->adios_host_language_fortran =
             (fortran_flag == 'y' ? adios_flag_yes : adios_flag_no);
@@ -350,30 +351,30 @@ int bp_parse_pgs (struct BP_FILE * fh)
     }
     */
 
-    uint64_t * pg_offsets = 0; 
-    uint32_t * pg_pids = 0; 
+    uint64_t * pg_offsets = 0;
+    uint32_t * pg_pids = 0;
     uint32_t *** time_index = 0;
-    pg_offsets = (uint64_t *) 
+    pg_offsets = (uint64_t *)
         malloc (sizeof(uint64_t)*mh->pgs_count);
     pg_pids = (uint32_t *)
         malloc (sizeof(uint32_t)*mh->pgs_count);
     // time_index[0]: record which pg to start from per timestep per group
-    // time_index[1]: record the # of pgs per timesteps per group 
+    // time_index[1]: record the # of pgs per timesteps per group
     time_index = (uint32_t ***) malloc (sizeof(uint32_t **)*2);
 
     for (j=0;j<2;j++) {
-        time_index[j] = (uint32_t **) 
+        time_index[j] = (uint32_t **)
             malloc (sizeof(uint32_t*)*group_count);
         //printf ("### time_index[%d]=%x  group_count=%d  #pgs=%d #ts=%d\n", j, time_index[j], group_count, mh->pgs_count,  mh->time_steps);
         for (i=0;i<group_count;i++) {
             if (mh->pgs_count < mh->time_steps) {
-                /* FIXME: when can this happen? 
+                /* FIXME: when can this happen?
                    pgs = time_steps * number of writers, if there is 1 group only
                 */
-                time_index[j][i] = (uint32_t *) 
+                time_index[j][i] = (uint32_t *)
                     malloc (sizeof(uint32_t)*mh->pgs_count);
             } else {
-                time_index[j][i] = (uint32_t *) 
+                time_index[j][i] = (uint32_t *)
                     malloc (sizeof(uint32_t)*mh->time_steps);
             }
         }
@@ -400,11 +401,11 @@ int bp_parse_pgs (struct BP_FILE * fh)
                 time_index [1][grpid][time_id-tidx_start] = pg_time_count;
                 //printf ("#-- time_index[0][%d][%d]=%d\n", grpid, time_id-tidx_start, first_pg);
                 //printf ("#   time_index[1][%d][%d]=%d\n", grpid, time_id-tidx_start, pg_time_count);
-                grpid = grpidlist [i];    
+                grpid = grpidlist [i];
                 pg_time_count = 1;
                 first_pg = i; // new group starts from this pg
             }
-        }    
+        }
         else {
             /* change in timestep */
             if (group_count == 1) {
@@ -415,7 +416,7 @@ int bp_parse_pgs (struct BP_FILE * fh)
                 //printf ("    time_index[1][%d][%d]=%d\n", grpid, time_id-tidx_start, pg_time_count);
                 first_pg = i;
             }
-            else {    
+            else {
                 if (grpid == grpidlist[i]) {
                     pg_time_count += 1;
                 } else {
@@ -423,7 +424,7 @@ int bp_parse_pgs (struct BP_FILE * fh)
                     time_index [1][grpid][time_id-tidx_start] = pg_time_count;
                     //printf ("#.. time_index[0][%d][%d]=%d\n", grpid, time_id-tidx_start, first_pg);
                     //printf ("    time_index[1][%d][%d]=%d\n", grpid, time_id-tidx_start, pg_time_count);
-                    grpid = grpidlist [i];    
+                    grpid = grpidlist [i];
                     first_pg = i;
                 }
             }
@@ -441,7 +442,7 @@ int bp_parse_pgs (struct BP_FILE * fh)
 
     /* Copy group_count strings from namelist and then free up namelist */
     char ** grp_namelist;
- 
+
     grp_namelist = (char **) malloc (sizeof(char*) * group_count);
     for (i=0;i<group_count;i++) {
         //grp_namelist[i] = (char *) malloc (strlen(namelist[i])+1);
@@ -449,7 +450,7 @@ int bp_parse_pgs (struct BP_FILE * fh)
         grp_namelist[i] = namelist[i];
     }
     free(namelist);
-    
+
     // here we need:
     //        grp_namelist [ngroup]
     //    time_index   [2][ngroup][nprocess]
@@ -460,8 +461,8 @@ int bp_parse_pgs (struct BP_FILE * fh)
     fh->gvar_h = (struct BP_GROUP_VAR *) malloc (sizeof(struct BP_GROUP_VAR));
     fh->gvar_h->group_count = group_count;
     fh->gvar_h->pg_offsets = pg_offsets;
-    fh->gvar_h->namelist = grp_namelist; 
-    fh->gvar_h->time_index = time_index; 
+    fh->gvar_h->namelist = grp_namelist;
+    fh->gvar_h->time_index = time_index;
     fh->gvar_h->group_id = 0;
     fh->gvar_h->var_offsets = 0;
     fh->gvar_h->var_namelist = 0;
@@ -475,8 +476,8 @@ int bp_parse_pgs (struct BP_FILE * fh)
     fh->gattr_h->attr_namelist = 0;
     fh->gattr_h->attr_counts_per_group = 0;
 
-    fh->tidx_start = tidx_start; 
-    fh->tidx_stop= tidx_stop; 
+    fh->tidx_start = tidx_start;
+    fh->tidx_stop= tidx_stop;
 
     free(grpidlist);
     return 0;
@@ -495,7 +496,7 @@ int bp_parse_attrs (struct BP_FILE * fh)
     int i;
 
     if (b->length - b->offset < VARS_MINIHEADER_SIZE) {
-        adios_error (err_invalid_buffer, 
+        adios_error (err_invalid_buffer,
                      "adios_parse_attrs_index_v1 requires a buffer "
                      "of at least %d bytes.  Only %llu were provided\n",
                      VARS_MINIHEADER_SIZE,
@@ -547,13 +548,13 @@ int bp_parse_attrs (struct BP_FILE * fh)
         (*root)->type = (enum ADIOS_DATATYPES) flag;
 
         type_size = bp_get_type_size ((*root)->type, "");
-        
+
         if (type_size == -1)
         {
             //type_size = 4;
             (*root)->type = adios_unknown;
         }
-        
+
 
         BUFREAD64(b, characteristics_sets_count)
         (*root)->characteristics_count = characteristics_sets_count;
@@ -617,9 +618,9 @@ int bp_parse_attrs (struct BP_FILE * fh)
                set it here automatically: j div # of pgs per timestep
                Assumed that in old BP files, all pgs write each variable in each timestep.*/
             if ((*root)->characteristics [j].time_index == 0) {
-                (*root)->characteristics [j].time_index = 
+                (*root)->characteristics [j].time_index =
                      j / (mh->pgs_count / (fh->tidx_stop - fh->tidx_start + 1)) + 1;
-                /*printf("OldBP: attr %s time_index set to %d\n", 
+                /*printf("OldBP: attr %s time_index set to %d\n",
                         (*root)->attr_name,
                         (*root)->characteristics [j].time_index);*/
             }
@@ -700,7 +701,7 @@ int bp_parse_vars (struct BP_FILE * fh)
     struct adios_index_var_struct_v1 ** root;
 
     if (b->length - b->offset < VARS_MINIHEADER_SIZE) {
-        adios_error (err_invalid_buffer, 
+        adios_error (err_invalid_buffer,
                      "bp_parse_vars requires a buffer "
                      "of at least %d bytes.  Only %llu were provided\n",
                      VARS_MINIHEADER_SIZE,
@@ -714,7 +715,7 @@ int bp_parse_vars (struct BP_FILE * fh)
     BUFREAD16(b, mh->vars_count)
     BUFREAD64(b, mh->vars_length)
 
-    // validate remaining length    
+    // validate remaining length
     int i;
     for (i = 0; i < mh->vars_count; i++) {
         if (!*root) {
@@ -757,7 +758,7 @@ int bp_parse_vars (struct BP_FILE * fh)
         (*root)->characteristics_count = characteristics_sets_count;
         (*root)->characteristics_allocated = characteristics_sets_count;
 
-        // validate remaining length: offsets_count * 
+        // validate remaining length: offsets_count *
         // (8 + 2 * (size of type))
         (*root)->characteristics = malloc (characteristics_sets_count
             * sizeof (struct adios_index_characteristic_struct_v1)
@@ -766,6 +767,8 @@ int bp_parse_vars (struct BP_FILE * fh)
             ,  characteristics_sets_count
             * sizeof (struct adios_index_characteristic_struct_v1)
                );
+        // NOTE: Above memset assumes that all 0's is a valid initialization.
+        //       This is true, currently, but be careful in the future.
 
         uint64_t j;
         for (j = 0; j < characteristics_sets_count; j++)
@@ -776,7 +779,7 @@ int bp_parse_vars (struct BP_FILE * fh)
 
             BUFREAD8(b, characteristic_set_count)
             BUFREAD32(b, characteristic_set_length)
-                
+
             while (item < characteristic_set_count) {
                 bp_parse_characteristics (b, root, j);
                 item++;
@@ -786,16 +789,16 @@ int bp_parse_vars (struct BP_FILE * fh)
                set it here automatically: j div # of pgs per timestep
                Assumed that in old BP files, all pgs write each variable in each timestep.*/
             if ((*root)->characteristics [j].time_index == 0) {
-                (*root)->characteristics [j].time_index = 
+                (*root)->characteristics [j].time_index =
                      j / (mh->pgs_count / (fh->tidx_stop - fh->tidx_start + 1)) + 1;
                 /*printf("OldBP: var %s time_index set to %d\n",
-                        (*root)->var_name, 
+                        (*root)->var_name,
                         (*root)->characteristics [j].time_index);*/
             }
         }
         root = &(*root)->next;
     }
-    
+
     root = vars_root;
     uint16_t * var_counts_per_group;
     uint16_t *  var_gids;
@@ -803,7 +806,7 @@ int bp_parse_vars (struct BP_FILE * fh)
     char ** var_namelist;
     int grpid, j,cnt;
 
-    var_counts_per_group = (uint16_t *) 
+    var_counts_per_group = (uint16_t *)
         malloc (sizeof(uint16_t)*fh->gvar_h->group_count);
     memset ( var_counts_per_group, 0, fh->gvar_h->group_count*sizeof(uint16_t));
     var_gids = (uint16_t *) malloc (sizeof(uint16_t )*mh->vars_count);
@@ -871,19 +874,19 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
             (*root)->characteristics [j].value = bp_read_data_from_buffer(b, (*root)->type);
             break;
 
-		// NCSU - Adding in backward compatibility
-		case adios_characteristic_max:
-		{
-			if (!((*root)->characteristics [j].stats))
-			{
-				(*root)->characteristics [j].stats = malloc (sizeof(struct adios_index_characteristics_stat_struct *));
-				(*root)->characteristics [j].stats[0] = malloc (2 * sizeof(struct adios_index_characteristics_stat_struct));
-				(*root)->characteristics [j].bitmap = 0;
-			}
-			(*root)->characteristics [j].bitmap |= (1 << adios_statistic_max);
-			(*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, (*root)->type);
-			break;
-		}
+        // NCSU - Adding in backward compatibility
+        case adios_characteristic_max:
+        {
+            if (!((*root)->characteristics [j].stats))
+            {
+                (*root)->characteristics [j].stats = malloc (sizeof(struct adios_index_characteristics_stat_struct *));
+                (*root)->characteristics [j].stats[0] = malloc (2 * sizeof(struct adios_index_characteristics_stat_struct));
+                (*root)->characteristics [j].bitmap = 0;
+            }
+            (*root)->characteristics [j].bitmap |= (1 << adios_statistic_max);
+            (*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, (*root)->type);
+            break;
+        }
 
         // NCSU - Adding in backward compatibility
         case adios_characteristic_min:
@@ -896,82 +899,88 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
             }
             (*root)->characteristics [j].bitmap |= (1 << adios_statistic_min);
             (*root)->characteristics [j].stats[0][adios_statistic_min].data = bp_read_data_from_buffer(b, (*root)->type);
-			break;
+            break;
         }
 
-		// NCSU - Parse the statistical information based in the bitmap
+        // NCSU - Parse the statistical information based in the bitmap
         case adios_characteristic_stat:
-		{
-			uint8_t i, c, idx; 
-			uint8_t count = adios_get_stat_set_count ((*root)->type);
-			uint16_t characteristic_size;
+        {
+            uint8_t i, c, idx;
+            uint8_t count = adios_get_stat_set_count ((*root)->type);
+            uint16_t characteristic_size;
 
-			(*root)->characteristics [j].stats = malloc (count * sizeof(struct adios_index_characteristics_stat_struct *));
+            (*root)->characteristics [j].stats = malloc (count * sizeof(struct adios_index_characteristics_stat_struct *));
 
-			for (c = 0; c < count; c ++)
-			{
-				i = idx = 0;
-				(*root)->characteristics [j].stats[c] = malloc (ADIOS_STAT_LENGTH * sizeof(struct adios_index_characteristics_stat_struct));
+            for (c = 0; c < count; c ++)
+            {
+                i = idx = 0;
+                (*root)->characteristics [j].stats[c] = malloc (ADIOS_STAT_LENGTH * sizeof(struct adios_index_characteristics_stat_struct));
 
-				while ((*root)->characteristics[j].bitmap >> i)
-				{
-					(*root)->characteristics [j].stats[c][i].data = 0;
-					if (((*root)->characteristics[j].bitmap >> i) & 1)
-					{
-						if (i == adios_statistic_hist)
-						{
-							uint32_t bi;
-							
-							(*root)->characteristics [j].stats[c][idx].data = malloc (sizeof(struct adios_index_characteristics_hist_struct));
-							struct adios_index_characteristics_hist_struct * hist = (*root)->characteristics [j].stats[c][idx].data; 
+                while ((*root)->characteristics[j].bitmap >> i)
+                {
+                    (*root)->characteristics [j].stats[c][i].data = 0;
+                    if (((*root)->characteristics[j].bitmap >> i) & 1)
+                    {
+                        if (i == adios_statistic_hist)
+                        {
+                            uint32_t bi;
 
-            				BUFREAD32(b, hist->num_breaks)
-            				hist->min = * (double *) bp_read_data_from_buffer(b, adios_double);
-            				hist->max = * (double *) bp_read_data_from_buffer(b, adios_double);
+                            (*root)->characteristics [j].stats[c][idx].data = malloc (sizeof(struct adios_index_characteristics_hist_struct));
+                            struct adios_index_characteristics_hist_struct * hist = (*root)->characteristics [j].stats[c][idx].data;
 
-            				hist->frequencies = malloc((hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
-            				for (bi = 0; bi <= hist->num_breaks; bi ++) {
-            				    BUFREAD32(b, hist->frequencies[bi])
-            				}
+                            BUFREAD32(b, hist->num_breaks)
+                            hist->min = * (double *) bp_read_data_from_buffer(b, adios_double);
+                            hist->max = * (double *) bp_read_data_from_buffer(b, adios_double);
 
-            				hist->breaks = malloc(hist->num_breaks * adios_get_type_size(adios_double, ""));
-            				for (bi = 0; bi < hist->num_breaks; bi ++) {
-            				    hist->breaks[bi] = * (double *) bp_read_data_from_buffer(b, adios_double);
-            				}
-						}
-						else
-						{
-							characteristic_size = adios_get_stat_size((*root)->characteristics [j].stats[c][idx].data
+                            hist->frequencies = malloc((hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+                            for (bi = 0; bi <= hist->num_breaks; bi ++) {
+                                BUFREAD32(b, hist->frequencies[bi])
+                            }
+
+                            hist->breaks = malloc(hist->num_breaks * adios_get_type_size(adios_double, ""));
+                            for (bi = 0; bi < hist->num_breaks; bi ++) {
+                                hist->breaks[bi] = * (double *) bp_read_data_from_buffer(b, adios_double);
+                            }
+                        }
+                        else
+                        {
+                            characteristic_size = adios_get_stat_size((*root)->characteristics [j].stats[c][idx].data
                                                                                                  ,(*root)->type
                                                                                                  ,(enum ADIOS_STAT)i
                                                                                                  );
-							(*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);
+                            (*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);
 
-							void * data = (*root)->characteristics [j].stats[c][idx].data;
-			            	memcpy (data, (b->buff + b->offset), characteristic_size);
-            				b->offset += characteristic_size;
+                            void * data = (*root)->characteristics [j].stats[c][idx].data;
+                            memcpy (data, (b->buff + b->offset), characteristic_size);
+                            b->offset += characteristic_size;
 
-            				if(b->change_endianness == adios_flag_yes) 
-                        		swap_ptr(data, characteristic_size * 8);
-						}
-						idx ++;
-					}
-					i ++;
-				}	
-			}	
-			break;
-		}
+                            if(b->change_endianness == adios_flag_yes)
+                                swap_ptr(data, characteristic_size * 8);
+                        }
+                        idx ++;
+                    }
+                    i ++;
+                }
+            }
+            break;
+        }
 
-		// NCSU - Statistics. Read the bitmap
-		case adios_characteristic_bitmap:
-			BUFREAD32(b, (*root)->characteristics [j].bitmap);
-			break;
+        // NCSU - Statistics. Read the bitmap
+        case adios_characteristic_bitmap:
+            BUFREAD32(b, (*root)->characteristics [j].bitmap);
+            break;
 
-        case adios_characteristic_offset: 
+        // NCSU ALACRITY-ADIOS - Read transform type field
+        case adios_characteristic_transform_type:
+            adios_transform_deserialize_transform_characteristic(&(*root)->characteristics[j].transform, b);
+            //BUFREAD8(b, (*root)->characteristics [j].transform_type);
+            break;
+
+        case adios_characteristic_offset:
             BUFREAD64(b, (*root)->characteristics [j].offset)
             break;
 
-        case adios_characteristic_payload_offset: 
+        case adios_characteristic_payload_offset:
             BUFREAD64(b, (*root)->characteristics [j].payload_offset)
             break;
 
@@ -1008,7 +1017,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 /* Seek to the specified step and prepare a few fields
  * in ADIOS_FILE structure, i.e., nvars, var_namelist,
  * nattrs, attr_namelist. This routine also sets the
- * current_step in ADIOS_FILE. 
+ * current_step in ADIOS_FILE.
  * Note: in file mode, tostep should be given -1.
  */
 int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
@@ -1042,17 +1051,17 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
             if (allstep || (!allstep && var_root->characteristics[i].time_index == t))
             {
                 fp->nvars++;
-                break;    
+                break;
             }
         }
-      
+
         var_root = var_root->next;
     }
 
     alloc_namelist (&fp->var_namelist, fp->nvars);
     p->varid_mapping = (int *) malloc (fp->nvars * 4);
     assert (p->varid_mapping);
-    
+
     var_root = fh->vars_root;
     j = 0;
     k = 0;
@@ -1159,44 +1168,67 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     return 0;
 }
 
-/* get local and global dimensions and offsets from a variable characteristics 
+// NCSU ALACRITY-ADIOS - Added a generic dimension-getter function
+/* get local and global dimensions and offsets from a variable characteristics
    return: 1 = it is a global array, 0 = local array
 */
-int bp_get_dimension_characteristics(struct adios_index_characteristic_struct_v1 *ch,
-                                    uint64_t *ldims, uint64_t *gdims, uint64_t *offsets)
+int bp_get_dimension_generic(const struct adios_index_characteristic_dims_struct_v1 *dims,
+                      uint64_t *ldims, uint64_t *gdims, uint64_t *offsets)
 {
     int is_global = 0; // global array or just an array written by one process?
-    int ndim = ch->dims.count;
     int k;
+
+    int ndim = dims->count;
 
     for (k = 0; k < ndim; k++)
     {
-        ldims[k] = ch->dims.dims[k * 3];
-        gdims[k] = ch->dims.dims[k * 3 + 1];
-        offsets[k] = ch->dims.dims[k * 3 + 2];
+        ldims[k] = dims->dims[k * 3];
+        gdims[k] = dims->dims[k * 3 + 1];
+        offsets[k] = dims->dims[k * 3 + 2];
         is_global = is_global || gdims[k];
     }
 
     return is_global;
 }
 
+// LAYERFIX
+// NCSU ALACRITY-ADIOS - Made to delegate to above function, passing a
+//   different dimension struct depending on the transform type
+/* get local and global dimensions and offsets from a variable characteristics
+   return: 1 = it is a global array, 0 = local array
+*/
+int bp_get_dimension_characteristics(struct adios_index_characteristic_struct_v1 *ch,
+                                    uint64_t *ldims, uint64_t *gdims, uint64_t *offsets)
+{
+    // NCSU ALACRITY-ADIOS - If the variable is transformed, use the pre-transform dimensions instead
+    //int is_transformed = (ch->transform.transform_type != adios_transform_none);
+    //const struct adios_index_characteristic_dims_struct_v1 *dims =
+    //    is_transformed ? &ch->transform.pre_transform_dimensions : &ch->dims;
+
+    return bp_get_dimension_generic(&ch->dims, ldims, gdims, offsets); // dims
+}
+
+// NCSU ALACRITY-ADIOS - Added a generic dimension-getter function
 /* As opposed to bp_get_dimension_characteristics, this routine returns
    ldims/gdims/offsets with 'time' extracted. */
-int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_struct_v1 *ch,
-                                            uint64_t *ldims, uint64_t *gdims, uint64_t *offsets,
-                                            int file_is_fortran)
+int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dims_struct_v1 *dims,
+                              uint64_t *ldims, uint64_t *gdims, uint64_t *offsets,
+                              int file_is_fortran)
 {
     int is_global = 0, dummy = 0;
-    int ndim = ch->dims.count; //ndim possibly has 'time' dimension
     int k;
 
+    is_global = bp_get_dimension_generic(dims, ldims, gdims, offsets);
+    int ndim = dims->count;
+    /*
     for (k = 0; k < ndim; k++)
     {
         ldims[k] = ch->dims.dims[k * 3];
         gdims[k] = ch->dims.dims[k * 3 + 1];
         offsets[k] = ch->dims.dims[k * 3 + 2];
         is_global = is_global || gdims[k];
-    }
+    }*/
+
 
     if (file_is_fortran)
     {
@@ -1221,10 +1253,10 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
             if (!file_is_fortran)
             {
                 /* first dimension is the time (C array)
-                 * ldims[0] = 1 but gdims does not contain time info and 
-                 * gdims[0] is 1st data dimension and 
+                 * ldims[0] = 1 but gdims does not contain time info and
+                 * gdims[0] is 1st data dimension and
                  * gdims is shorter by one value than ldims in case of C.
-                 * Therefore, gdims[*ndim-1] = 0 if there is a time dimension. 
+                 * Therefore, gdims[*ndim-1] = 0 if there is a time dimension.
                  */
                 // error check
                 if (ndim > 1 && ldims[0] != 1)
@@ -1234,8 +1266,8 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
                                "in the first dimension. l:g:o = (");
                     for (k = 0; k < ndim; k++)
                     {
-                        log_error_cont ("%llu:%llu:%llu%s", 
-                                   ldims[k], gdims[k], offsets[k], 
+                        log_error_cont ("%llu:%llu:%llu%s",
+                                   ldims[k], gdims[k], offsets[k],
                                    (k<ndim-1 ? ", " : "") );
                     }
 
@@ -1257,8 +1289,8 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
                                "dimension in the last dimension. l:g:o = (");
                     for (k = 0; k < ndim; k++)
                     {
-                        log_error_cont ("%llu:%llu:%llu%s", 
-                                        ldims[k], gdims[k], offsets[k], 
+                        log_error_cont ("%llu:%llu:%llu%s",
+                                        ldims[k], gdims[k], offsets[k],
                                         (k<ndim-1 ? ", " : "") );
                     }
 
@@ -1270,6 +1302,21 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
 
     return is_global;
 }
+
+// LAYERFIX
+// NCSU ALACRITY-ADIOS - Made this delegate to a generic function
+int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_struct_v1 *ch,
+                                            uint64_t *ldims, uint64_t *gdims, uint64_t *offsets,
+                                            int file_is_fortran) {
+
+    // NCSU ALACRITY-ADIOS - If the variable is transformed, use the pre-transform dimensions instead
+    //int is_transformed = (ch->transform.transform_type != adios_transform_none);
+    //const struct adios_index_characteristic_dims_struct_v1 *dims =
+    //    is_transformed ? &ch->transform.pre_transform_dimensions : &ch->dims;
+
+    return bp_get_dimension_generic_notime(&ch->dims, ldims, gdims, offsets, file_is_fortran); // dims
+}
+
 
 /* Fill out ndim and dims for the variable.
    ndim and dims shouldn't include 'time' dimension.
@@ -1285,7 +1332,7 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
 
     has_time_index_characteristic = fh->mfooter.version & ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC;
     /* Get dimension information */
-    * ndim = var_root->characteristics [0].dims.count;
+    * ndim = var_root->characteristics [0].dims.count; //adios_transform_get_var_original_num_dims(var_root); // LAYERFIX
     * dims = 0;
     * nsteps = (has_time_index_characteristic ?
                get_var_nsteps (var_root) : fh->tidx_stop - fh->tidx_start + 1);
@@ -1334,10 +1381,10 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
             if (!file_is_fortran)
             {
                 /* first dimension is the time (C array)
-                 * ldims[0] = 1 but gdims does not contain time info and 
-                 * gdims[0] is 1st data dimension and 
+                 * ldims[0] = 1 but gdims does not contain time info and
+                 * gdims[0] is 1st data dimension and
                  * gdims is shorter by one value than ldims in case of C.
-                 * Therefore, gdims[*ndim-1] = 0 if there is a time dimension. 
+                 * Therefore, gdims[*ndim-1] = 0 if there is a time dimension.
                  */
                 // error check
                 if (* ndim > 1 && ldims[0] != 1)
@@ -1347,8 +1394,8 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
                                "in the first dimension. l:g:o = (");
                     for (i = 0; i < * ndim; i++)
                     {
-                        log_error_cont ("%llu:%llu:%llu%s", 
-                                        ldims[i], gdims[i], offsets[i], 
+                        log_error_cont ("%llu:%llu:%llu%s",
+                                        ldims[i], gdims[i], offsets[i],
                                         (i<*ndim-1 ? ", " : "") );
                     }
 
@@ -1365,8 +1412,8 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
                                "dimension in the last dimension. l:g:o = (");
                     for (i = 0; i < * ndim; i++)
                     {
-                        log_error_cont ("%llu:%llu:%llu%s", 
-                                        ldims[i], gdims[i], offsets[i], 
+                        log_error_cont ("%llu:%llu:%llu%s",
+                                        ldims[i], gdims[i], offsets[i],
                                         (i<*ndim-1 ? ", " : "") );
                     }
 
@@ -1431,7 +1478,7 @@ int * get_var_nblocks (struct adios_index_var_struct_v1 * var_root, int nsteps)
     int i, j, prev_step = -1;
     int * nblocks = (int *) malloc (sizeof (int) * nsteps);
 
-    assert (nblocks); 
+    assert (nblocks);
 
     memset (nblocks, 0, sizeof (int) * nsteps);
 
@@ -1464,7 +1511,7 @@ void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_
     }
 
     if (!data) {
-        adios_error (err_no_memory, 
+        adios_error (err_no_memory,
                      "bp_read_data_from_buffer: cannot allocate %d bytes\n",data_size);
         return 0;
     }
@@ -1540,32 +1587,32 @@ void bp_grouping ( struct BP_FILE * fh_p,
 {
     struct BP_FILE * fh = (struct BP_FILE *) fh_p;
     struct bp_index_pg_struct_v1 * pg_root = fh->pgs_root;
-    struct bp_minifooter * mh = &fh->mfooter;    
-    int i, j; 
+    struct bp_minifooter * mh = &fh->mfooter;
+    int i, j;
     uint32_t time_id;
     uint64_t pg_time_count = 0;
-    uint64_t * pg_offsets = (uint64_t *) 
+    uint64_t * pg_offsets = (uint64_t *)
         malloc (sizeof(uint64_t)*mh->pgs_count);
-    uint32_t * pg_pids = (uint32_t *) 
+    uint32_t * pg_pids = (uint32_t *)
         malloc (sizeof(uint32_t)*mh->pgs_count);
-    uint64_t * time_index = (uint64_t *) 
+    uint64_t * time_index = (uint64_t *)
         malloc (sizeof(uint64_t)*mh->time_steps);
     time_id = pg_root->time_index;
 
     uint16_t group_count = 0;
-     
+
     for (i = 0; i < mh->pgs_count; i++) {
         pg_pids [i] = pg_root->process_id;
         pg_offsets [i] = pg_root->offset_in_file;
         if (pg_root->time_index == time_id) {
             pg_time_count += 1;
-        }    
+        }
         else {
             time_index [time_id-1] = pg_time_count;
             time_id = pg_root->time_index;
             pg_time_count = 1;
         }
-    
+
         pg_root = pg_root->next;
     }
 
@@ -1574,7 +1621,7 @@ void bp_grouping ( struct BP_FILE * fh_p,
     time_index [time_id-1] = pg_time_count;
     time_id = 0;
     for (i = 0; i < mh->time_steps; i++) {
-        if (i > 0) 
+        if (i > 0)
             time_id += time_index[i-1];
 
     }
@@ -1589,9 +1636,9 @@ void bp_grouping ( struct BP_FILE * fh_p,
                 vars->characteristics->var_id,
                 vars->id
                 );
-            ++vars_cnt;    
+            ++vars_cnt;
         }
-        vars = vars->next;    
+        vars = vars->next;
     }
      printf("cnt=%d \n",vars_cnt);
 
@@ -1608,21 +1655,21 @@ int bp_read_pgs (struct BP_FILE * bp_struct)
     bp_realloc_aligned (b, b->pg_size);
     b->offset = 0;
 
-    if (sizeof (char *) == 4) { 
-        MPI_File_seek (bp_struct->mpi_fh, 
-                (MPI_Offset) b->pg_index_offset, 
+    if (sizeof (char *) == 4) {
+        MPI_File_seek (bp_struct->mpi_fh,
+                (MPI_Offset) b->pg_index_offset,
                 MPI_SEEK_SET);
 
-        MPI_File_read (bp_struct->mpi_fh, b->buff, 
+        MPI_File_read (bp_struct->mpi_fh, b->buff,
                 b->pg_size, MPI_BYTE, &status);
         MPI_Get_count (&status, MPI_BYTE, &r);
     }
-    else { 
-        MPI_File_seek (bp_struct->mpi_fh, 
-                (MPI_Offset) b->pg_index_offset, 
+    else {
+        MPI_File_seek (bp_struct->mpi_fh,
+                (MPI_Offset) b->pg_index_offset,
                 MPI_SEEK_SET);
 
-        MPI_File_read (bp_struct->mpi_fh, b->buff, 
+        MPI_File_read (bp_struct->mpi_fh, b->buff,
                 b->pg_size, MPI_BYTE, &status);
         MPI_Get_count (&status, MPI_BYTE, &r);
     }
@@ -1644,21 +1691,21 @@ int bp_read_vars (struct BP_FILE * bp_struct)
     bp_realloc_aligned (b, b->vars_size);
     b->offset = 0;
 
-    if (sizeof (char *) == 4) { 
-        MPI_File_seek (bp_struct->mpi_fh, 
-                (MPI_Offset) b->vars_index_offset, 
+    if (sizeof (char *) == 4) {
+        MPI_File_seek (bp_struct->mpi_fh,
+                (MPI_Offset) b->vars_index_offset,
                 MPI_SEEK_SET);
 
-        MPI_File_read (bp_struct->mpi_fh, b->buff, 
+        MPI_File_read (bp_struct->mpi_fh, b->buff,
                 b->vars_size, MPI_BYTE, &status);
         MPI_Get_count (&status, MPI_BYTE, &r);
     }
-    else { 
+    else {
         MPI_File_seek (bp_struct->mpi_fh,
-                (MPI_Offset) b->vars_index_offset, 
+                (MPI_Offset) b->vars_index_offset,
                 MPI_SEEK_SET);
 
-        MPI_File_read (bp_struct->mpi_fh, b->buff, 
+        MPI_File_read (bp_struct->mpi_fh, b->buff,
                 b->vars_size, MPI_BYTE, &status);
         MPI_Get_count (&status, MPI_BYTE, &r);
     }
@@ -1673,14 +1720,14 @@ int bp_read_vars (struct BP_FILE * bp_struct)
 void print_pg_index (struct bp_index_pg_struct_v1 * pg_root,
         struct bp_minifooter * mh)
 {
-    int i, j; 
+    int i, j;
     uint32_t time_id;
     uint64_t pg_time_count = 0;
-    uint64_t * pg_offsets = (uint64_t *) 
+    uint64_t * pg_offsets = (uint64_t *)
         malloc (sizeof(uint64_t)*mh->pgs_count);
-    uint32_t * pg_pids = (uint32_t *) 
+    uint32_t * pg_pids = (uint32_t *)
         malloc (sizeof(uint32_t)*mh->pgs_count);
-    uint64_t * time_index = (uint64_t *) 
+    uint64_t * time_index = (uint64_t *)
         malloc (sizeof(uint64_t)*mh->time_steps);
     time_id = pg_root->time_index;
     for (i = 0; i < mh->pgs_count; i++)
@@ -1690,29 +1737,29 @@ void print_pg_index (struct bp_index_pg_struct_v1 * pg_root,
         if (pg_root->time_index == time_id)
         {
             pg_time_count += 1;
-        }    
+        }
         else {
             time_index [time_id-1] = pg_time_count;
             time_id = pg_root->time_index;
             pg_time_count = 1;
-        }    
+        }
         pg_root = pg_root->next;
     }
 
     time_index [time_id-1] = pg_time_count;
     time_id = 0;
     for (i = 0; i < mh->time_steps; i++) {
-        if (i > 0) 
+        if (i > 0)
             time_id += time_index[i-1];
     }
 }
 
 void print_vars_index_top (struct adios_index_var_struct_v1 * vars_root)
 {
-    printf("Variables (group) :\n");    
+    printf("Variables (group) :\n");
     while (vars_root) {
         if (!strcmp (vars_root->var_path, "/")) {
-            printf ("\t %s", 
+            printf ("\t %s",
                 vars_root->var_name
                 );
         }
@@ -1722,14 +1769,14 @@ void print_vars_index_top (struct adios_index_var_struct_v1 * vars_root)
                 vars_root->var_name
                 );
         }
-        
+
         int j, cnt;
         struct adios_index_characteristic_dims_struct_v1 * pdims;
         pdims = &vars_root->characteristics [0].dims;
         cnt = pdims->count;
         if (cnt != 0) {
             printf (" (");
-            for (j = 0; j < cnt; j++) { 
+            for (j = 0; j < cnt; j++) {
                 if (j>0)
                     printf (", ");
                 if (pdims->dims [j*3 + 1] != 0) {
@@ -1966,7 +2013,7 @@ int has_subfiles (struct BP_FILE * fh)
 }
 
 /****************************************************
-  Find the var associated with the given variable id 
+  Find the var associated with the given variable id
 *****************************************************/
 struct adios_index_var_struct_v1 * bp_find_var_byid (struct BP_FILE * fh, int varid)
 {
@@ -2007,11 +2054,11 @@ int is_global_array (struct adios_index_characteristic_struct_v1 *ch)
  *  If the type is adios_string, and the second argument is
  *  the string itself, it returns strlen(var)+1.
  *  For other types, it does not care about var and returns
- *  the size occupied by one element. 
+ *  the size occupied by one element.
  *
  *  Note that adios_internals:adios_get_type_size returns
- *  strlen(var) for strings. 
- */ 
+ *  strlen(var) for strings.
+ */
 int bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
 {
     switch (type)
@@ -2060,24 +2107,24 @@ int bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
 
 double bp_value_to_double (enum ADIOS_DATATYPES type, void * data)
 {
-	switch (type)
+    switch (type)
     {
         case adios_string:
             return 0;
 
         case adios_complex:
-			return * ((float *) data);
-		
+            return * ((float *) data);
+
         case adios_double_complex:
-			return * ((double *) data);
+            return * ((double *) data);
 
         case adios_double:
-			return * ((double *) data);
+            return * ((double *) data);
 
         case adios_long_double:
-			return * ((long double *) data);
+            return * ((long double *) data);
 
-		case adios_unsigned_byte:
+        case adios_unsigned_byte:
             return * ((uint8_t *) data);
 
         case adios_byte:
@@ -2135,11 +2182,11 @@ int check_bp_validity (const char * fname)
     MPI_File_seek (fh, (MPI_Offset) file_size - MINIFOOTER_SIZE - 28, MPI_SEEK_SET);
     MPI_File_read (fh, str, 8, MPI_BYTE, &status);
     MPI_File_close (&fh);
-          
+
     //printf ("check_bp_validity: %s\n", str);
     str[8] = '\0';
 
-    flag = (strcmp (str, "ADIOS-BP") == 0 ) ? 1 : 0; 
+    flag = (strcmp (str, "ADIOS-BP") == 0 ) ? 1 : 0;
 
     return flag;
 }

@@ -4,7 +4,7 @@
     <adios-group name="arrays" coordination-communicator="comm">
         <var name="NX" type="integer"/>
         <var name="NY" type="integer"/>
-        <var name="var_double_2Darray"  gwrite="t"  type="double"  dimensions="NX,NY"/>
+        <var name="var_double_2Darray"  gwrite="t"  type="double"  dimensions="NX,NY" transform="alacrity"/>
         <var name="var_int_1Darray"     gwrite="p"  type="integer" dimensions="NX"/>
     </adios-group>
 

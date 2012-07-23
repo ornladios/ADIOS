@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -12,6 +12,8 @@
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
 #include "bp_utils.h"
+#include "adios_transforms_common.h" // NCSU ALACRITY-ADIOS
+#include "adios_transforms_read.h" // NCSU ALACRITY-ADIOS
 //#include "adios_internals.h"
 
 #define DIVIDER "========================================================\n"
@@ -476,7 +478,7 @@ const char * value_to_string_ptr (enum ADIOS_DATATYPES type, void * data, uint64
 
     return s;
 }
-        
+
 void print_process_group_header (uint64_t num
                       ,struct adios_process_group_header_struct_v1 * pg_header
                       )
@@ -498,7 +500,7 @@ void print_process_group_header (uint64_t num
     {
         printf ("\t\tMethod ID: %d\n", m->id);
         printf ("\t\tMethod Parameters: %s\n", m->parameters);
- 
+
         m = m->next;
     }
 }
@@ -506,6 +508,30 @@ void print_process_group_header (uint64_t num
 void print_vars_header (struct adios_vars_header_struct_v1 * vars_header)
 {
     printf ("\tVars Count: %u\n", vars_header->count);
+}
+
+void print_characteristic_dims(struct adios_index_characteristic_dims_struct_v1 *dims) {
+    int j;
+
+    for (j = 0; j < dims->count; j++)
+    {
+        if (j != 0)
+            printf (",");
+        if (dims->dims [j * 3 + 1] != 0)
+        {
+            printf ("%llu:%llu:%llu"
+                   ,dims->dims [j * 3 + 0]
+                   ,dims->dims [j * 3 + 1]
+                   ,dims->dims [j * 3 + 2]
+                   );
+        }
+        else
+        {
+            printf ("%llu"
+                   ,dims->dims [j * 3 + 0]
+                   );
+        }
+    }
 }
 
 void print_var_header (struct adios_var_header_struct_v1 * var_header)
@@ -569,7 +595,7 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
                     else
                     {
                         printf (":R(%llu)\n", d->local_offset.rank);
-		    }
+            }
                 }
                 else
                 {
@@ -579,21 +605,21 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
             printf ("\n");
 
             d = d->next;
-	}
+    }
     }
     printf ("\t\tCharacteristics:\n");
     printf ("\t\t\tOffset(%llu)", var_header->characteristics.offset);
 
     /* NCSU - Print min, max */
 
-	if (var_header->type == adios_complex || var_header->type == adios_double_complex)
-	{
-		uint8_t type;
+    if (var_header->type == adios_complex || var_header->type == adios_double_complex)
+    {
+        uint8_t type;
 
-		if (var_header->type == adios_complex)
-			type = adios_double;
-		else
-			type = adios_long_double;
+        if (var_header->type == adios_complex)
+            type = adios_double;
+        else
+            type = adios_long_double;
 
         if (var_header->characteristics.stats && var_header->characteristics.stats[0][adios_statistic_min].data)
         {
@@ -610,26 +636,26 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
                    );
         }
 
-	}
-	else
-	{
-    	if (var_header->characteristics.stats && var_header->characteristics.stats[0][adios_statistic_min].data)
-    	{
-    	    printf ("\tMin(%s)", bp_value_to_string (var_header->type
-    	                               ,var_header->characteristics.stats[0][adios_statistic_min].data
-    	                               )
-    	           );
-    	}
-    	if (var_header->characteristics.stats && var_header->characteristics.stats[0][adios_statistic_max].data)
-    	{
-    	    printf ("\tMax(%s)", bp_value_to_string (var_header->type
-    	                               ,var_header->characteristics.stats[0][adios_statistic_max].data
-    	                               )
-    	           );
-    	}
-	}
-	
-    
+    }
+    else
+    {
+        if (var_header->characteristics.stats && var_header->characteristics.stats[0][adios_statistic_min].data)
+        {
+            printf ("\tMin(%s)", bp_value_to_string (var_header->type
+                                    ,var_header->characteristics.stats[0][adios_statistic_min].data
+                                    )
+                );
+        }
+        if (var_header->characteristics.stats && var_header->characteristics.stats[0][adios_statistic_max].data)
+        {
+            printf ("\tMax(%s)", bp_value_to_string (var_header->type
+                                    ,var_header->characteristics.stats[0][adios_statistic_max].data
+                                    )
+                );
+        }
+    }
+
+
 
     if (var_header->characteristics.value)
     {
@@ -640,30 +666,23 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
     }
     if (var_header->characteristics.dims.count != 0)
     {
-        int j;
-
         printf ("\t\t\tDims (l:g:o): (");
-        for (j = 0; j < var_header->characteristics.dims.count; j++)
-        {
-            if (j != 0)
-                printf (",");
-            if (var_header->characteristics.dims.dims [j * 3 + 1] != 0)
-            {
-                printf ("%llu:%llu:%llu"
-                       ,var_header->characteristics.dims.dims [j * 3 + 0]
-                       ,var_header->characteristics.dims.dims [j * 3 + 1]
-                       ,var_header->characteristics.dims.dims [j * 3 + 2]
-                       );
-            }
-            else
-            {
-                printf ("%llu"
-                       ,var_header->characteristics.dims.dims [j * 3 + 0]
-                       );
-            }
-        }
-        printf (")");
+        print_characteristic_dims(&var_header->characteristics.dims);
+        printf(")");
     }
+
+    // NCSU ALACRITY-ADIOS - Adding printing of transform type
+    printf ("\t\t\tTransform-ID(%d = %s)",
+            var_header->characteristics.transform.transform_type,
+            adios_transform_name_by_type(var_header->characteristics.transform.transform_type));
+    if (var_header->characteristics.transform.transform_type != adios_transform_none) {
+        printf ("\t\t\tPre-transform-datatype(%s)", adios_type_to_string_int(var_header->characteristics.transform.pre_transform_type));
+        printf ("\t\t\tPre-transform-dims(l:g:o = ");
+        print_characteristic_dims(&var_header->characteristics.transform.pre_transform_dimensions);
+        printf(")");
+        printf ("\t\t\tTransform-metadata-length(%hu)", var_header->characteristics.transform.transform_metadata_len);
+    }
+
     printf ("\n");
 }
 
@@ -730,15 +749,15 @@ int increment_dimension (enum ADIOS_FLAG host_language_fortran
 {
     int i;
     int done = 0;
-    
+
     if (element == 0)
     {
         for (i = 0; i < ranks; i++)
         {
             position [i] = 0;
-        }   
+        }
         done = 1;
-    }   
+    }
     else  // increment our position
     {
 //        if (host_language_fortran == adios_flag_yes)
@@ -927,7 +946,7 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
     }
     if (!var_header->dims)
     {
-        if (var_header->type != adios_string) 
+        if (var_header->type != adios_string)
             printf ("\t\t\tValue: %s\n", bp_value_to_string (var_header->type ,var_payload->payload));
         else
             printf ("\t\t\tValue: \"%s\"\n", bp_value_to_string (var_header->type ,var_payload->payload));
@@ -988,11 +1007,11 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                    );
         }
         else
-	{
+    {
             printf ("Var (Group) [ID]: %s/%s (%s) [%d]\n", vars_root->var_path
                    ,vars_root->var_name, vars_root->group_name, vars_root->id
                    );
-	}
+    }
         printf ("\tDatatype: %s\n", adios_type_to_string_int (vars_root->type));
         printf ("\tVars Characteristics: %llu\n"
                ,vars_root->characteristics_count
@@ -1005,50 +1024,50 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
             printf ("\tFile Index(%d)", vars_root->characteristics [i].file_index);
             printf ("\tTime Index(%d)", vars_root->characteristics [i].time_index);
 
-    		/* NCSU - Print min, max */
-			if (vars_root->type == adios_complex || vars_root->type == adios_double_complex)
-			{
-        		uint8_t type;
+            /* NCSU - Print min, max */
+            if (vars_root->type == adios_complex || vars_root->type == adios_double_complex)
+            {
+                uint8_t type;
 
-        		if (vars_root->type == adios_complex)
-        		    type = adios_double;
-        		else
-        		    type = adios_long_double;
+                if (vars_root->type == adios_complex)
+                    type = adios_double;
+                else
+                    type = adios_long_double;
 
 
-    			if (vars_root->characteristics [i].stats && vars_root->characteristics [i].stats[0][adios_statistic_min].data)
-    			{
-    			    printf ("\tMin(%s)", bp_value_to_string (type
-    			                               ,vars_root->characteristics [i].stats[0][adios_statistic_min].data
-    			                               )
-    			           );
-    			}
-    			if (vars_root->characteristics [i].stats && vars_root->characteristics [i].stats[0][adios_statistic_max].data)
-    			{
-    			    printf ("\tMax(%s)", bp_value_to_string (type
-    			                               ,vars_root->characteristics [i].stats[0][adios_statistic_max].data
-    			                               )
-    			           );
-    			}
-			}
-			else
-			{
-    			if (vars_root->characteristics [i].stats && vars_root->characteristics [i].stats[0][adios_statistic_min].data)
-    			{
-    			    printf ("\tMin(%s)", bp_value_to_string (vars_root->type
-    			                               ,vars_root->characteristics [i].stats[0][adios_statistic_min].data
-    			                               )
-    			           );
-    			}
-    			if (vars_root->characteristics [i].stats && vars_root->characteristics [i].stats[0][adios_statistic_max].data)
-    			{
-    			    printf ("\tMax(%s)", bp_value_to_string (vars_root->type
-    			                               ,vars_root->characteristics [i].stats[0][adios_statistic_max].data
-    			                               )
-    			           );
-    			}
-			}
-    		//*/
+                if (vars_root->characteristics [i].stats && vars_root->characteristics [i].stats[0][adios_statistic_min].data)
+                {
+                    printf ("\tMin(%s)", bp_value_to_string (type
+                                            ,vars_root->characteristics [i].stats[0][adios_statistic_min].data
+                                            )
+                        );
+                }
+                if (vars_root->characteristics [i].stats && vars_root->characteristics [i].stats[0][adios_statistic_max].data)
+                {
+                    printf ("\tMax(%s)", bp_value_to_string (type
+                                            ,vars_root->characteristics [i].stats[0][adios_statistic_max].data
+                                            )
+                        );
+                }
+            }
+            else
+            {
+                if (vars_root->characteristics [i].stats && vars_root->characteristics [i].stats[0][adios_statistic_min].data)
+                {
+                    printf ("\tMin(%s)", bp_value_to_string (vars_root->type
+                                            ,vars_root->characteristics [i].stats[0][adios_statistic_min].data
+                                            )
+                        );
+                }
+                if (vars_root->characteristics [i].stats && vars_root->characteristics [i].stats[0][adios_statistic_max].data)
+                {
+                    printf ("\tMax(%s)", bp_value_to_string (vars_root->type
+                                            ,vars_root->characteristics [i].stats[0][adios_statistic_max].data
+                                            )
+                        );
+                }
+            }
+            //*/
 
             if (vars_root->characteristics [i].value)
             {
@@ -1087,6 +1106,40 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                 }
                 printf (")");
             }
+
+            // NCSU ALACRITY-ADIOS - Print transform info
+            if (vars_root->characteristics[i].transform.transform_type != adios_transform_none) {
+                struct adios_index_characteristic_transform_struct *transform = &vars_root->characteristics[i].transform;
+                struct adios_index_characteristic_dims_struct_v1 *dims = &transform->pre_transform_dimensions;
+                int j;
+
+                printf ("\tTransform type: %s", adios_transform_name_by_type(transform->transform_type));
+                printf ("\tPre-transform datatype: %s", adios_type_to_string_int(transform->pre_transform_type));
+                printf ("\tPre-transform dims (l:g:o): (");
+                for (j = 0; j < dims->count; j++)
+                {
+                    if (j != 0)
+                        printf (",");
+                    if (  dims->dims [j * 3 + 1]
+                        != 0
+                       )
+                    {
+                        printf ("%llu:%llu:%llu"
+                         ,dims->dims [j * 3 + 0]
+                         ,dims->dims [j * 3 + 1]
+                         ,dims->dims [j * 3 + 2]
+                               );
+                    }
+                    else
+                    {
+                        printf ("%llu"
+                         ,dims->dims [j * 3 + 0]
+                               );
+                    }
+                }
+                printf (")");
+            }
+
             printf ("\n");
         }
 
@@ -1107,13 +1160,13 @@ void print_attributes_index
                    );
         }
         else
-	{
+    {
             printf ("Attribute (Group) [ID]: %s/%s (%s) [%d]\n"
                    ,attrs_root->attr_path
                    ,attrs_root->attr_name, attrs_root->group_name
                    ,attrs_root->id
                    );
-	}
+    }
         printf ("\tDatatype: %s\n", adios_type_to_string_int (attrs_root->type));
         printf ("\tAttribute Characteristics: %llu\n"
                ,attrs_root->characteristics_count
@@ -1126,14 +1179,14 @@ void print_attributes_index
             printf ("\t\tFile Index(%d)", attrs_root->characteristics [i].file_index);
             printf ("\t\tTime Index(%d)", attrs_root->characteristics [i].time_index);
 
-    		/* NCSU - Print min, max  */
-			if (attrs_root->type == adios_complex || attrs_root->type == adios_double_complex)
-			{
-				uint8_t type;
-				if (attrs_root->type == adios_complex)
-					type = adios_double;
-				else
-					type = adios_long_double;
+            /* NCSU - Print min, max  */
+            if (attrs_root->type == adios_complex || attrs_root->type == adios_double_complex)
+            {
+                uint8_t type;
+                if (attrs_root->type == adios_complex)
+                    type = adios_double;
+                else
+                    type = adios_long_double;
 
                 if (attrs_root->characteristics [i].stats && attrs_root->characteristics [i].stats[0][adios_statistic_min].data)
                 {
@@ -1149,24 +1202,24 @@ void print_attributes_index
                                                )
                            );
                 }
-			}
-			else
-			{
-    			if (attrs_root->characteristics [i].stats && attrs_root->characteristics [i].stats[0][adios_statistic_min].data)
-    			{
-    			    printf ("\tMin(%s)", bp_value_to_string (attrs_root->type
-    			                               ,attrs_root->characteristics [i].stats[0][adios_statistic_min].data
-    			                               )
-    			           );
-    			}
-    			if (attrs_root->characteristics [i].stats && attrs_root->characteristics [i].stats[0][adios_statistic_max].data)
-    			{
-    			    printf ("\tMax(%s)", bp_value_to_string (attrs_root->type
-    			                               ,attrs_root->characteristics [i].stats[0][adios_statistic_max].data
-    			                               )
-    			           );
-    			}
-			}
+            }
+            else
+            {
+                if (attrs_root->characteristics [i].stats && attrs_root->characteristics [i].stats[0][adios_statistic_min].data)
+                {
+                    printf ("\tMin(%s)", bp_value_to_string (attrs_root->type
+                                            ,attrs_root->characteristics [i].stats[0][adios_statistic_min].data
+                                            )
+                        );
+                }
+                if (attrs_root->characteristics [i].stats && attrs_root->characteristics [i].stats[0][adios_statistic_max].data)
+                {
+                    printf ("\tMax(%s)", bp_value_to_string (attrs_root->type
+                                            ,attrs_root->characteristics [i].stats[0][adios_statistic_max].data
+                                            )
+                        );
+                }
+            }
 
             if (attrs_root->characteristics [i].value)
             {

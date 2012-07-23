@@ -4,6 +4,7 @@
 # You can study it to figure out how to configure adios on your system
 #
 
+PREFIX=/home/daboyuka/build
 if [ `hostname | cut -c 1-4` == "sith" ]; then
 
     ########

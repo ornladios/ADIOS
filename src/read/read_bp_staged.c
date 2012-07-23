@@ -2489,6 +2489,8 @@ int adios_read_bp_staged_fclose (ADIOS_FILE *fp)
                 vr->characteristics[j].stats = 0;
             }
 
+            // NCSU ALACRITY-ADIOS - Clear transform metadata
+            adios_transform_clear_transform_characteristic(&vr->characteristics[j]);
         }
 
         if (vr->characteristics) 

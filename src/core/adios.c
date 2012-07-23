@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -161,7 +161,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
                 v->data = malloc (element_size);
                 if (!v->data)
                 {
-                    adios_error (err_no_memory, 
+                    adios_error (err_no_memory,
                                  "In adios_write, cannot allocate %lld bytes to copy scalar %s\n",
                                  element_size, v->name);
 
@@ -175,7 +175,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
                 v->data = malloc (element_size + 1);
                 if (!v->data)
                 {
-                    adios_error (err_no_memory, 
+                    adios_error (err_no_memory,
                                  "In adios_write, cannot allocate %lld bytes to copy string %s\n",
                                  element_size, v->name);
 
@@ -194,7 +194,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
     common_adios_write (fd, v, var);
     // v->data is set to NULL in the above call
 
-    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append) 
+    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
         adios_copy_var_written (&fd->group->vars_written, v, fd);
     }
@@ -266,21 +266,22 @@ int adios_close (int64_t fd_p)
     while (!v) {
         int j, idx;
         int c, count = 1;
-        if (v->stats) {   
-    
+        // NCSU - Clear stats
+        if (v->stats) {
+
             if (v->type == adios_complex || v->type == adios_double_complex)
                 count = 3;
-            else 
+            else
                 count = 1;
 
-            for (c = 0; c < count; c ++) {   
+            for (c = 0; c < count; c ++) {
                 j = idx = 0;
-                while (v->bitmap >> j) {   
-                    if (v->bitmap >> j & 1) {   
-                        if (j == adios_statistic_hist) {   
+                while (v->bitmap >> j) {
+                    if (v->bitmap >> j & 1) {
+                        if (j == adios_statistic_hist) {
                             struct adios_index_characteristics_hist_struct * hist =
                                 (struct adios_index_characteristics_hist_struct *) v->stats[c][idx].data;
-                            if (hist) {   
+                            if (hist) {
                                 free (hist->breaks);
                                 free (hist->frequencies);
                                 free (hist);
@@ -299,6 +300,9 @@ int adios_close (int64_t fd_p)
                 }
             }
         }
+
+        // NCSU ALACRITY-ADIOS - Clear transform metadata
+        adios_transform_clear_transform_var(v);
 
         v = v->next;
     }
@@ -354,6 +358,7 @@ int adios_define_var (int64_t group_id, const char * name
                                    ,type
                                    ,dimensions
                                    ,global_dimensions, local_offsets
+                                   ,NULL // NCSU ALACRITY-ADIOS
                                    );
 }
 

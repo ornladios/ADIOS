@@ -40,7 +40,8 @@ check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
 subdir = tests/suite/programs
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
+	$(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
 	$(top_srcdir)/config/ac_dataspaces.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
@@ -70,7 +71,8 @@ CONFIG_CLEAN_FILES =
 @BUILD_WRITE_TRUE@	adios_staged_read$(EXEEXT) \
 @BUILD_WRITE_TRUE@	adios_staged_read_2vars$(EXEEXT) \
 @BUILD_WRITE_TRUE@	write_read$(EXEEXT) write_alternate$(EXEEXT) \
-@BUILD_WRITE_TRUE@	many_vars$(EXEEXT) selections$(EXEEXT)
+@BUILD_WRITE_TRUE@	many_vars$(EXEEXT) selections$(EXEEXT) \
+@BUILD_WRITE_TRUE@	copy_subvolume$(EXEEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
@@ -93,6 +95,10 @@ adios_staged_read_2vars_OBJECTS =  \
 	$(am_adios_staged_read_2vars_OBJECTS)
 adios_staged_read_2vars_DEPENDENCIES =  \
 	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1)
+am_copy_subvolume_OBJECTS = copy_subvolume.$(OBJEXT)
+copy_subvolume_OBJECTS = $(am_copy_subvolume_OBJECTS)
+copy_subvolume_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
 am_local_array_time_OBJECTS = local_array_time.$(OBJEXT)
 local_array_time_OBJECTS = $(am_local_array_time_OBJECTS)
 local_array_time_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -136,16 +142,16 @@ LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(adios_staged_read_SOURCES) \
-	$(adios_staged_read_2vars_SOURCES) $(local_array_time_SOURCES) \
-	$(many_vars_SOURCES) $(posix_method_SOURCES) \
-	$(selections_SOURCES) $(write_alternate_SOURCES) \
-	$(write_read_SOURCES)
+	$(adios_staged_read_2vars_SOURCES) $(copy_subvolume_SOURCES) \
+	$(local_array_time_SOURCES) $(many_vars_SOURCES) \
+	$(posix_method_SOURCES) $(selections_SOURCES) \
+	$(write_alternate_SOURCES) $(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
-	$(adios_staged_read_2vars_SOURCES) $(local_array_time_SOURCES) \
-	$(many_vars_SOURCES) $(posix_method_SOURCES) \
-	$(selections_SOURCES) $(write_alternate_SOURCES) \
-	$(write_read_SOURCES)
+	$(adios_staged_read_2vars_SOURCES) $(copy_subvolume_SOURCES) \
+	$(local_array_time_SOURCES) $(many_vars_SOURCES) \
+	$(posix_method_SOURCES) $(selections_SOURCES) \
+	$(write_alternate_SOURCES) $(write_read_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -171,6 +177,9 @@ ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
 ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
 ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
 ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
+ALACRITY_CPPFLAGS = @ALACRITY_CPPFLAGS@
+ALACRITY_LDFLAGS = @ALACRITY_LDFLAGS@
+ALACRITY_LIBS = @ALACRITY_LIBS@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -225,6 +234,8 @@ FC = $(MPIFC)
 FCFLAGS = @FCFLAGS@
 FCLIBS = @FCLIBS@
 FFLAGS = @FFLAGS@
+HAVE_ALACRITY_FALSE = @HAVE_ALACRITY_FALSE@
+HAVE_ALACRITY_TRUE = @HAVE_ALACRITY_TRUE@
 HAVE_CRAY_PMI_FALSE = @HAVE_CRAY_PMI_FALSE@
 HAVE_CRAY_PMI_TRUE = @HAVE_CRAY_PMI_TRUE@
 HAVE_CRAY_UGNI_FALSE = @HAVE_CRAY_UGNI_FALSE@
@@ -402,14 +413,15 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@        write_read \
 @BUILD_WRITE_TRUE@        write_alternate \
 @BUILD_WRITE_TRUE@        many_vars \
-@BUILD_WRITE_TRUE@        selections 
+@BUILD_WRITE_TRUE@        selections \
+@BUILD_WRITE_TRUE@        copy_subvolume
 
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
 
 # Sequential tests to be executed by "make check" can be defined right here in TESTS
 # Parallel tests should be defined in ../tests/*.sh and executed by ../test.sh
-TESTS = 
+TESTS = transforms copy_subvolume
 INCLUDES = $(all_includes) -I$(top_builddir)/src
 
 #############################
@@ -430,14 +442,16 @@ adios_amr_write_2vars_SOURCES = adios_amr_write_2vars.c
 adios_amr_write_2vars_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 adios_amr_write_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 adios_staged_read_SOURCES = adios_staged_read.c
-adios_staged_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
-adios_staged_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
+adios_staged_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+adios_staged_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 adios_staged_read_2vars_SOURCES = adios_staged_read_2vars.c
-adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
-adios_staged_read_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
-write_read_SOURCES = write_read.c
-write_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+adios_staged_read_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+transforms_SOURCES = transforms.c
+transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
+transforms_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+#transforms.o: transforms.c
 write_alternate_SOURCES = write_alternate.c
 write_alternate_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 write_alternate_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
@@ -447,6 +461,12 @@ many_vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 selections_SOURCES = selections.c
 selections_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 selections_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+write_read_SOURCES = write_read.c
+write_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+copy_subvolume_SOURCES = copy_subvolume.c
+copy_subvolume_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+copy_subvolume_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
              write_alternate.xml write_read.xml
@@ -508,6 +528,9 @@ adios_staged_read$(EXEEXT): $(adios_staged_read_OBJECTS) $(adios_staged_read_DEP
 adios_staged_read_2vars$(EXEEXT): $(adios_staged_read_2vars_OBJECTS) $(adios_staged_read_2vars_DEPENDENCIES) 
 	@rm -f adios_staged_read_2vars$(EXEEXT)
 	$(LINK) $(adios_staged_read_2vars_LDFLAGS) $(adios_staged_read_2vars_OBJECTS) $(adios_staged_read_2vars_LDADD) $(LIBS)
+copy_subvolume$(EXEEXT): $(copy_subvolume_OBJECTS) $(copy_subvolume_DEPENDENCIES) 
+	@rm -f copy_subvolume$(EXEEXT)
+	$(LINK) $(copy_subvolume_LDFLAGS) $(copy_subvolume_OBJECTS) $(copy_subvolume_LDADD) $(LIBS)
 local_array_time$(EXEEXT): $(local_array_time_OBJECTS) $(local_array_time_DEPENDENCIES) 
 	@rm -f local_array_time$(EXEEXT)
 	$(LINK) $(local_array_time_LDFLAGS) $(local_array_time_OBJECTS) $(local_array_time_LDADD) $(LIBS)
@@ -537,6 +560,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_amr_write_2vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_2vars.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/copy_subvolume.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local_array_time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/many_vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/selections.Po@am__quote@
@@ -832,10 +856,11 @@ adios_amr_write.o: adios_amr_write.c
 adios_amr_write_2vars.o: adios_amr_write_2vars.c
 adios_staged_read.o: adios_staged_read.c
 adios_staged_read_2vars.o: adios_staged_read_2vars.c
-write_read.o: write_read.c
 write_alternate.o: write_alternate.c
 many_vars.o: many_vars.c
 selections.o: selections.c
+write_read.o: write_read.c
+copy_subvolume.o: copy_subvolume.c
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

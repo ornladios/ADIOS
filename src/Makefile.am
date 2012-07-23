@@ -47,6 +47,14 @@ libadios_a_SOURCES = core/adios.c \
                      core/common_adios.c \
                      core/adios_internals.c \
                      core/adios_internals_mxml.c \
+                     core/adios_transforms_common.c \
+                     core/adios_transforms_read.c \
+                     core/adios_transforms_write.c \
+                     core/adios_transforms_hooks.c \
+                     core/adios_transforms_hooks_write.c \
+                     core/adios_transform_alacrity.c \
+                     core/adios_transform_alacrity_write.c \
+                     core/adios_transforms_util.c \
                      core/buffer.c \
                      core/adios_bp_v1.c  \
                      core/adios_endianness.c \
@@ -77,6 +85,14 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/common_adios.c \
                      core/adios_internals.c \
                      core/adios_internals_mxml.c \
+                     core/adios_transforms_common.c \
+                     core/adios_transforms_read.c \
+                     core/adios_transforms_write.c \
+                     core/adios_transforms_hooks.c \
+                     core/adios_transforms_hooks_write.c \
+                     core/adios_transform_alacrity.c \
+                     core/adios_transform_alacrity_write.c \
+                     core/adios_transforms_util.c \
                      core/buffer.c \
                      core/adios_bp_v1.c  \
                      core/adios_endianness.c \
@@ -108,6 +124,14 @@ FortranLibSources = core/adiosf.c \
                      core/common_adios.c \
                      core/adios_internals.c \
                      core/adios_internals_mxml.c \
+                     core/adios_transforms_common.c \
+                     core/adios_transforms_read.c \
+                     core/adios_transforms_write.c \
+                     core/adios_transforms_hooks.c \
+                     core/adios_transforms_hooks_write.c \
+                     core/adios_transform_alacrity.c \
+                     core/adios_transform_alacrity_write.c \
+                     core/adios_transforms_util.c \
                      core/buffer.c \
                      core/adios_bp_v1.c  \
                      core/adios_endianness.c\
@@ -286,6 +310,11 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/adios_read.c \
                       core/adios_read_v1.c \
                       core/common_read.c \
+                      core/adios_transforms_common.c \
+                      core/adios_transforms_read.c \
+                      core/adios_transforms_hooks.c \
+                      core/adios_transform_alacrity.c \
+                      core/adios_transforms_util.c \
                       core/globals.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
@@ -321,6 +350,11 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       core/futils.c \
                       core/adios_error.c \
                       core/common_read.c \
+                      core/adios_transforms_common.c \
+                      core/adios_transforms_read.c \
+                      core/adios_transforms_hooks.c \
+                      core/adios_transform_alacrity.c \
+                      core/adios_transforms_util.c \
                       core/globals.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
@@ -379,6 +413,14 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/adios_read_v1.c \
                       core/common_read.c \
                       core/adios_internals.c \
+                      core/adios_transforms_common.c \
+                      core/adios_transforms_write.c \
+                      core/adios_transforms_read.c \
+                      core/adios_transforms_hooks.c \
+                      core/adios_transforms_hooks_write.c \
+                      core/adios_transform_alacrity.c \
+                      core/adios_transform_alacrity_write.c \
+                      core/adios_transforms_util.c \
                       core/adios_logger.c \
                       core/buffer.c \
                       core/globals.c \
@@ -419,6 +461,11 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/adios_error.c \
                           core/adios_logger.c \
                           core/common_read.c \
+                          core/adios_transforms_common.c \
+                          core/adios_transforms_read.c \
+                          core/adios_transforms_hooks.c \
+                          core/adios_transform_alacrity.c \
+                          core/adios_transforms_util.c \
                           core/globals.c \
                           core/adios_read_hooks.c \
                           core/util.c \
@@ -455,6 +502,14 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_endianness.c \
                                     core/bp_utils.c \
                                     core/adios_internals.c \
+                                    core/adios_transforms_common.c \
+                                    core/adios_transforms_read.c \
+                                    core/adios_transforms_write.c \
+                                    core/adios_transforms_hooks.c \
+                                    core/adios_transforms_hooks_write.c \
+                                    core/adios_transform_alacrity.c \
+                                    core/adios_transform_alacrity_write.c \
+                                    core/adios_transforms_util.c \
                                     core/buffer.c \
                                     core/adios_error.c \
                                     core/adios_logger.c \
@@ -504,6 +559,7 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/adios_internals.h core/adios_internals_mxml.h core/adios_logger.h \
              core/adios_read_hooks.h core/adios_socket.h core/adios_timing.h \
              core/adios_transport_hooks.h \
+             core/adios_socket.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/futils.h core/globals.h core/ds_metadata.h \
              core/util.h \

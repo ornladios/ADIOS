@@ -17,6 +17,9 @@
 /* Define to 1 if your Fortran compiler doesn't accept -c and -o together. */
 #undef FC_NO_MINUS_C_MINUS_O
 
+/* Define if you have ALACRITY. */
+#undef HAVE_ALACRITY
+
 /* Define to 1 if you have the <Attributes.h> header file. */
 #undef HAVE_ATTRIBUTES_H
 
