@@ -72,7 +72,7 @@ CONFIG_CLEAN_FILES =
 @BUILD_WRITE_TRUE@	adios_staged_read_2vars$(EXEEXT) \
 @BUILD_WRITE_TRUE@	write_read$(EXEEXT) write_alternate$(EXEEXT) \
 @BUILD_WRITE_TRUE@	many_vars$(EXEEXT) selections$(EXEEXT) \
-@BUILD_WRITE_TRUE@	copy_subvolume$(EXEEXT)
+@BUILD_WRITE_TRUE@	copy_subvolume$(EXEEXT) transforms$(EXEEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
@@ -115,6 +115,10 @@ am_selections_OBJECTS = selections.$(OBJEXT)
 selections_OBJECTS = $(am_selections_OBJECTS)
 selections_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1)
+am_transforms_OBJECTS = transforms-transforms.$(OBJEXT)
+transforms_OBJECTS = $(am_transforms_OBJECTS)
+transforms_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
 am_write_alternate_OBJECTS = write_alternate.$(OBJEXT)
 write_alternate_OBJECTS = $(am_write_alternate_OBJECTS)
 write_alternate_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -145,13 +149,15 @@ SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) $(copy_subvolume_SOURCES) \
 	$(local_array_time_SOURCES) $(many_vars_SOURCES) \
 	$(posix_method_SOURCES) $(selections_SOURCES) \
-	$(write_alternate_SOURCES) $(write_read_SOURCES)
+	$(transforms_SOURCES) $(write_alternate_SOURCES) \
+	$(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) $(copy_subvolume_SOURCES) \
 	$(local_array_time_SOURCES) $(many_vars_SOURCES) \
 	$(posix_method_SOURCES) $(selections_SOURCES) \
-	$(write_alternate_SOURCES) $(write_read_SOURCES)
+	$(transforms_SOURCES) $(write_alternate_SOURCES) \
+	$(write_read_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -414,7 +420,8 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@        write_alternate \
 @BUILD_WRITE_TRUE@        many_vars \
 @BUILD_WRITE_TRUE@        selections \
-@BUILD_WRITE_TRUE@        copy_subvolume
+@BUILD_WRITE_TRUE@        copy_subvolume \
+@BUILD_WRITE_TRUE@	transforms
 
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
@@ -543,6 +550,9 @@ posix_method$(EXEEXT): $(posix_method_OBJECTS) $(posix_method_DEPENDENCIES)
 selections$(EXEEXT): $(selections_OBJECTS) $(selections_DEPENDENCIES) 
 	@rm -f selections$(EXEEXT)
 	$(LINK) $(selections_LDFLAGS) $(selections_OBJECTS) $(selections_LDADD) $(LIBS)
+transforms$(EXEEXT): $(transforms_OBJECTS) $(transforms_DEPENDENCIES) 
+	@rm -f transforms$(EXEEXT)
+	$(LINK) $(transforms_LDFLAGS) $(transforms_OBJECTS) $(transforms_LDADD) $(LIBS)
 write_alternate$(EXEEXT): $(write_alternate_OBJECTS) $(write_alternate_DEPENDENCIES) 
 	@rm -f write_alternate$(EXEEXT)
 	$(LINK) $(write_alternate_LDFLAGS) $(write_alternate_OBJECTS) $(write_alternate_LDADD) $(LIBS)
@@ -564,6 +574,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local_array_time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/many_vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/selections.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms-transforms.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_alternate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_read.Po@am__quote@
 
@@ -596,6 +607,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+transforms-transforms.o: transforms.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT transforms-transforms.o -MD -MP -MF "$(DEPDIR)/transforms-transforms.Tpo" -c -o transforms-transforms.o `test -f 'transforms.c' || echo '$(srcdir)/'`transforms.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/transforms-transforms.Tpo" "$(DEPDIR)/transforms-transforms.Po"; else rm -f "$(DEPDIR)/transforms-transforms.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='transforms.c' object='transforms-transforms.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transforms-transforms.o `test -f 'transforms.c' || echo '$(srcdir)/'`transforms.c
+
+transforms-transforms.obj: transforms.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT transforms-transforms.obj -MD -MP -MF "$(DEPDIR)/transforms-transforms.Tpo" -c -o transforms-transforms.obj `if test -f 'transforms.c'; then $(CYGPATH_W) 'transforms.c'; else $(CYGPATH_W) '$(srcdir)/transforms.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/transforms-transforms.Tpo" "$(DEPDIR)/transforms-transforms.Po"; else rm -f "$(DEPDIR)/transforms-transforms.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='transforms.c' object='transforms-transforms.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transforms-transforms.obj `if test -f 'transforms.c'; then $(CYGPATH_W) 'transforms.c'; else $(CYGPATH_W) '$(srcdir)/transforms.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

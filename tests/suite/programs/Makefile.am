@@ -18,7 +18,8 @@ check_C=local_array_time \
         write_alternate \
         many_vars \
         selections \
-        copy_subvolume
+        copy_subvolume \
+	transforms
 endif
 
 if BUILD_FORTRAN

@@ -1318,11 +1318,18 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
 }
 
 
+// NCSU ALACRITY-ADIOS - Delegate to generic function
+void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_root, int file_is_fortran,
+                        int * ndim, uint64_t ** dims, int * nsteps) {
+    bp_get_dimensions_generic(fh, var_root, file_is_fortran, ndim, dims, nsteps, 0);
+}
+
+// NCSU ALACRITY-ADIOS - Factored out generic version of this function
 /* Fill out ndim and dims for the variable.
    ndim and dims shouldn't include 'time' dimension.
 */
-void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_root, int file_is_fortran,
-                        int * ndim, uint64_t ** dims, int * nsteps)
+void bp_get_dimensions_generic (BP_FILE * fh, struct adios_index_var_struct_v1 * var_root, int file_is_fortran,
+                        int * ndim, uint64_t ** dims, int * nsteps, int use_pretransform_dimensions)
 {
     int i, j, has_time_index_characteristic;
     int is_global; // global array or just an array written by one process?
@@ -1330,9 +1337,14 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
     uint64_t gdims[32];
     uint64_t offsets[32];
 
+    // NCSU ALACRITY-ADIOS - Use the correct dimension struct
+    struct adios_index_characteristic_dims_struct_v1 *var_dims =
+            use_pretransform_dimensions ? &var_root->characteristics[0].transform.pre_transform_dimensions
+                                        : &var_root->characteristics[0].dims;
+
     has_time_index_characteristic = fh->mfooter.version & ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC;
     /* Get dimension information */
-    * ndim = var_root->characteristics [0].dims.count; //adios_transform_get_var_original_num_dims(var_root); // LAYERFIX
+    * ndim = var_dims->count; //adios_transform_get_var_original_num_dims(var_root); // LAYERFIX
     * dims = 0;
     * nsteps = (has_time_index_characteristic ?
                get_var_nsteps (var_root) : fh->tidx_stop - fh->tidx_start + 1);
@@ -1348,8 +1360,8 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
 
     memset (*dims, 0, sizeof (uint64_t) * (* ndim));
 
-    is_global = bp_get_dimension_characteristics (&(var_root->characteristics[0]),
-                                                  ldims, gdims, offsets);
+    is_global = bp_get_dimension_generic(var_dims,//&(var_root->characteristics[0]),
+                                         ldims, gdims, offsets);
 
     if (!is_global)
     {
@@ -1432,16 +1444,23 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
     }
 }
 
+
+void bp_get_and_swap_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
+                                 int *ndim, uint64_t **dims, int *nsteps, int swap_flag) {
+    bp_get_and_swap_dimensions_generic(fh, var_root, file_is_fortran, ndim, dims, nsteps, swap_flag, 0);
+}
+
+// NCSU ALACRITY-ADIOS - Factored out a generic version of this function
 /* Get dimensions of a variable and flip them if swap_flag is set.
    ndim: has already taken time dimension out if there is any.
    dims: is local dims if local array. is global dims if global array.
 */
-void bp_get_and_swap_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
-                                 int *ndim, uint64_t **dims, int *nsteps, int swap_flag)
+void bp_get_and_swap_dimensions_generic (BP_FILE * fh, struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
+                                         int *ndim, uint64_t **dims, int *nsteps, int swap_flag, int use_pretransform_dimensions)
 {
     int dummy = 0;
 
-    bp_get_dimensions (fh, var_root, file_is_fortran, ndim, dims, nsteps);
+    bp_get_dimensions_generic(fh, var_root, file_is_fortran, ndim, dims, nsteps, use_pretransform_dimensions);
 
     if (swap_flag)
     {
@@ -2036,15 +2055,20 @@ struct adios_index_var_struct_v1 * bp_find_var_byid (struct BP_FILE * fh, int va
     return var_root;
 }
 
+int is_global_array (struct adios_index_characteristic_struct_v1 *ch) {
+    return is_global_array_generic(&ch->dims);
+}
+
+// NCSU ALACRITY-ADIOS - Factored out generic version of the function
 /* Check whether an array is global */
-int is_global_array (struct adios_index_characteristic_struct_v1 *ch)
+int is_global_array_generic (const struct adios_index_characteristic_dims_struct_v1 *dims)
 {
     int is_global = 0; // global array or just an array written by one process?
-    int ndim = ch->dims.count, k;
+    int ndim = dims->count, k;
 
     for (k = 0; k < ndim; k ++)
     {
-        is_global = is_global || ch->dims.dims[k*3 + 1];
+        is_global = is_global || dims->dims[k*3 + 1];
     }
 
     return is_global;
