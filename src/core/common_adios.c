@@ -379,7 +379,7 @@ int common_adios_group_size (int64_t fd_p
 
 static int common_adios_write_transform_helper(struct adios_file_struct * fd, struct adios_var_struct * v) {
     int use_shared_buffer = (fd->shared_buffer == adios_flag_yes);
-    int wrote_to_shared_buffer;
+    int wrote_to_shared_buffer = 0;
 
     // If we are using the shared buffer, transform the data directly into it
     if (use_shared_buffer) {
@@ -399,7 +399,7 @@ static int common_adios_write_transform_helper(struct adios_file_struct * fd, st
         //    v->free_data untouched, and return 1, OR
         // b) write to v->data, set v->data_size and v->free_data, and return 0
         //
-        int success = adios_transform_variable_data(fd, v, &use_shared_buffer, &wrote_to_shared_buffer);
+        int success = adios_transform_variable_data(fd, v, use_shared_buffer, &wrote_to_shared_buffer);
         if (!success) {
             fd->offset = header_offset;
             return 0;
@@ -440,8 +440,12 @@ static int common_adios_write_transform_helper(struct adios_file_struct * fd, st
         return 1;
     } else {
         // Else, transform the data into v->data and leave it at that
-        return adios_transform_variable_data(fd, v, &use_shared_buffer, &wrote_to_shared_buffer);
+        int ret = adios_transform_variable_data(fd, v, use_shared_buffer, &wrote_to_shared_buffer);
+
         assert(!wrote_to_shared_buffer);
+        assert(v->data);
+
+        return ret;
     }
 }
 

@@ -2562,7 +2562,7 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
 }
 
 uint64_t get_value_for_dim (struct adios_file_struct * fd
-                           ,struct adios_dimension_item_struct * dimension
+                           ,const struct adios_dimension_item_struct * dimension
                             )
 {
     uint64_t dim = 0;

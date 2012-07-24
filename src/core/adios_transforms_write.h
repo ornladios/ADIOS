@@ -39,10 +39,11 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
  * buffer correctly, using the buffer_write function call or similar to update
  * offsets and allocate memory as needed.
  *
- * use_shared_buffer will be updated according to whether the shared buffer was
- * actually used. If it was used, the transformed data will be in the shared
- * buffer; otherwise, it will be in var->data, with var->data_size and
- * var->free_data updated accordingly.
+ * If use_shared_buffer is true, this function will update
+ * wrote_to_shared_buffer to indicate whether the shared buffer was actually
+ * used. If not, the calling function must make the necessary copies from
+ * var->data. If use_shared_buffer is false, wrote_to_shared_buffer will
+ * not be changed.
  *
  * Note: var->free_data will be set to adios_flag_yes iff a new buffer is
  * malloced and should later be freed by ADIOS.
@@ -59,7 +60,7 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
  */
 int adios_transform_variable_data(struct adios_file_struct * fd,
                                   struct adios_var_struct *var,
-                                  int *use_shared_buffer,
+                                  int use_shared_buffer,
                                   int *wrote_to_shared_buffer);
 
 /*

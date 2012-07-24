@@ -328,6 +328,7 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/adios_transform_mloc.c \
                       core/adios_transform_compress.c \
                       core/adios_transform_alacrity.c \
+                      core/adios_transforms_util.c \
                       core/globals.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
@@ -369,6 +370,7 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       core/adios_transform_mloc.c \
                       core/adios_transform_compress.c \
                       core/adios_transform_alacrity.c \
+                      core/adios_transforms_util.c \
                       core/globals.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
@@ -527,7 +529,7 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_transforms_hooks.c \
                                     core/adios_transforms_hooks_write.c \
                                     core/adios_transform_mloc.c \
-                                    core/adios_transform_alacrity.c \									
+                                    core/adios_transform_alacrity.c \
                                     core/adios_transform_compress.c \
                                     core/adios_transform_mloc_write.c \
                                     core/adios_transform_compress_write.c \

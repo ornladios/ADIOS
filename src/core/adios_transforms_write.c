@@ -502,7 +502,7 @@ static uint64_t adios_transform_do_alacrity_transform(struct adios_group_struct 
 
 int adios_transform_variable_data(struct adios_file_struct * fd,
                                   struct adios_var_struct *var,
-                                  int *use_shared_buffer,
+                                  int use_shared_buffer,
                                   int *wrote_to_shared_buffer) {
     //printf("[TRANSFORM] Would be doing transform ID %d on variable %s here, if it were implemented\n", var->transform_type, var->name);
     //printf("[TRANSFORM] Apparent type of variable is %s, but was originally %s\n", adios_type_to_string_int(var->type), adios_type_to_string_int(var->pre_transform_type));
@@ -514,7 +514,7 @@ int adios_transform_variable_data(struct adios_file_struct * fd,
     if (var->transform_type == adios_transform_none) {
         // If no transform is required, do nothing, and delegate payload
         // writing to the caller by not using the shared buffer
-        *use_shared_buffer = 0;
+        *wrote_to_shared_buffer = 0;
         return 1;
     }
 

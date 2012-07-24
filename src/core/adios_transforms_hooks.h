@@ -27,7 +27,7 @@ typedef struct {
 
     int (*transform_apply)(
             struct adios_file_struct *fd, struct adios_var_struct *var,
-            uint64_t *transformed_len, int *use_shared_buffer, int *wrote_to_shared_buffer);
+            uint64_t *transformed_len, int use_shared_buffer, int *wrote_to_shared_buffer);
 
     enum ADIOS_ERRCODES (*transform_retrieve_subvolume)(
             struct adios_index_var_struct_v1 *var, void *global_out, int time_index,
@@ -53,7 +53,7 @@ uint64_t adios_transform_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE tr
 int adios_transform_apply(
         enum ADIOS_TRANSFORM_TYPE transform_type,
         struct adios_file_struct *fd, struct adios_var_struct *var,
-        uint64_t *transformed_len, int *use_shared_buffer, int *wrote_to_shared_buffer);
+        uint64_t *transformed_len, int use_shared_buffer, int *wrote_to_shared_buffer);
 
 enum ADIOS_ERRCODES adios_transform_retrieve_subvolume(
         enum ADIOS_TRANSFORM_TYPE transform_type,
@@ -68,7 +68,7 @@ enum ADIOS_ERRCODES adios_transform_retrieve_subvolume(
     uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(uint64_t orig_size, int num_vars);	\
     int adios_transform_##tmethod##_apply(struct adios_file_struct *fd, struct adios_var_struct *var,	\
                                           uint64_t *transformed_len,									\
-                                          int *use_shared_buffer, int *wrote_to_shared_buffer);			\
+                                          int use_shared_buffer, int *wrote_to_shared_buffer);			\
     enum ADIOS_ERRCODES adios_transform_##tmethod##_retrieve_subvolume(									\
             struct adios_index_var_struct_v1 *var, void *global_out, int time_index,					\
             const adios_subvolume_copy_spec *copy_spec,													\
@@ -101,7 +101,7 @@ void unimplemented_transform_function(const char *tmethod, const char *func);
         int adios_transform_##tmethod##_apply(struct adios_file_struct *fd,							\
                                               struct adios_var_struct *var,							\
                                               uint64_t *transformed_len,							\
-                                              int *use_shared_buffer, int *wrote_to_shared_buffer) {	\
+                                              int use_shared_buffer, int *wrote_to_shared_buffer) {	\
             unimplemented_transform_function(#tmethod, __FUNCTION__);								\
             return 0;																				\
         }																							\

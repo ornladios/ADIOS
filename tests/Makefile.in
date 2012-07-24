@@ -39,6 +39,7 @@ subdir = tests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
+	$(top_srcdir)/config/ac_compress.m4 \
 	$(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
 	$(top_srcdir)/config/ac_dataspaces.m4 \
@@ -48,6 +49,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
 	$(top_srcdir)/config/ac_lustre.m4 \
+	$(top_srcdir)/config/ac_mloc.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_nc4par.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
@@ -115,6 +117,9 @@ BUILD_WRITE_TRUE = @BUILD_WRITE_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+COMPRESS_CPPFLAGS = @COMPRESS_CPPFLAGS@
+COMPRESS_LDFLAGS = @COMPRESS_LDFLAGS@
+COMPRESS_LIBS = @COMPRESS_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CRAY_PMI_CPPFLAGS = @CRAY_PMI_CPPFLAGS@
@@ -156,6 +161,8 @@ FCLIBS = @FCLIBS@
 FFLAGS = @FFLAGS@
 HAVE_ALACRITY_FALSE = @HAVE_ALACRITY_FALSE@
 HAVE_ALACRITY_TRUE = @HAVE_ALACRITY_TRUE@
+HAVE_COMPRESS_FALSE = @HAVE_COMPRESS_FALSE@
+HAVE_COMPRESS_TRUE = @HAVE_COMPRESS_TRUE@
 HAVE_CRAY_PMI_FALSE = @HAVE_CRAY_PMI_FALSE@
 HAVE_CRAY_PMI_TRUE = @HAVE_CRAY_PMI_TRUE@
 HAVE_CRAY_UGNI_FALSE = @HAVE_CRAY_UGNI_FALSE@
@@ -174,6 +181,8 @@ HAVE_INFINIBAND_FALSE = @HAVE_INFINIBAND_FALSE@
 HAVE_INFINIBAND_TRUE = @HAVE_INFINIBAND_TRUE@
 HAVE_LUSTRE_FALSE = @HAVE_LUSTRE_FALSE@
 HAVE_LUSTRE_TRUE = @HAVE_LUSTRE_TRUE@
+HAVE_MLOC_FALSE = @HAVE_MLOC_FALSE@
+HAVE_MLOC_TRUE = @HAVE_MLOC_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_MXML_FALSE = @HAVE_MXML_FALSE@
@@ -211,6 +220,9 @@ LUSTRE_CPPFLAGS = @LUSTRE_CPPFLAGS@
 LUSTRE_LDFLAGS = @LUSTRE_LDFLAGS@
 LUSTRE_LIBS = @LUSTRE_LIBS@
 MAKEINFO = @MAKEINFO@
+MLOC_CPPFLAGS = @MLOC_CPPFLAGS@
+MLOC_LDFLAGS = @MLOC_LDFLAGS@
+MLOC_LIBS = @MLOC_LIBS@
 MPICC = @MPICC@
 MPICXX = @MPICXX@
 MPIFC = @MPIFC@

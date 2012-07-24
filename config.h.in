@@ -26,6 +26,9 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
+/* Define if you have COMPRESS. */
+#undef HAVE_COMPRESS
+
 /* Define if you have CRAY_PMI. */
 #undef HAVE_CRAY_PMI
 
@@ -85,6 +88,9 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define if you have MLOC. */
+#undef HAVE_MLOC
 
 /* Define if you have the MPI library. */
 #undef HAVE_MPI

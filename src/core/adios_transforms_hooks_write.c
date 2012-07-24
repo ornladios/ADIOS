@@ -37,7 +37,7 @@ uint16_t adios_transform_get_metadata_size(enum ADIOS_TRANSFORM_TYPE transform_t
 int adios_transform_apply(
         enum ADIOS_TRANSFORM_TYPE transform_type,
         struct adios_file_struct *fd, struct adios_var_struct *var,
-        uint64_t *transformed_len, int *use_shared_buffer, int *wrote_to_shared_buffer) {
+        uint64_t *transformed_len, int use_shared_buffer, int *wrote_to_shared_buffer) {
 
     assert(transform_type >= adios_transform_none && transform_type < num_adios_transform_types);
     return TRANSFORM_METHODS[transform_type].transform_apply(fd, var, transformed_len, use_shared_buffer, wrote_to_shared_buffer);
@@ -48,11 +48,11 @@ int adios_transform_apply(
 // (the other identity method hooks are in adios_transforms_hooks.c)
 
 uint16_t adios_transform_identity_get_metadata_size() {
-    return 0;
+    return 24;
 }
 
 int adios_transform_identity_apply(struct adios_file_struct *fd, struct adios_var_struct *var, uint64_t *transformed_len,
-                                   int *use_shared_buffer, int *wrote_to_shared_buffer) {
+                                   int use_shared_buffer, int *wrote_to_shared_buffer) {
     // Just use what is already in var->data; size remains the same, and no
     // shared buffer is used
     *transformed_len = adios_transform_get_pre_transform_var_size(fd->group, var);

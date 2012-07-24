@@ -551,7 +551,7 @@ void adios_copy_var_written (struct adios_var_struct ** root
 
 uint8_t count_dimensions (const struct adios_dimension_struct * dimensions);
 uint64_t get_value_for_dim (struct adios_file_struct * fd
-                           ,struct adios_dimension_item_struct * dimension
+                           ,const struct adios_dimension_item_struct * dimension
                             );
 // NCSU ALACRITY-ADIOS - End de-staticed functions
 
