@@ -24,7 +24,7 @@ AM_CONDITIONAL(HAVE_COMPRESS,true)
 AC_ARG_WITH(compress,
         [  --with-compress=DIR      Location of COMPRESS library],
         [COMPRESS_LDFLAGS="-L$withval/lib";
-         COMPRESS_LIBS="-lcompress -lbspline -lbz2 -lz";
+         COMPRESS_LIBS="-lcompress -lsz -lbz2 -lz";
          COMPRESS_CPPFLAGS="-I$withval/include";],
         [with_compress=no])
 
@@ -37,7 +37,7 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -lcompress -lbspline -lbz2 -lz"
+    LIBS="$LIBS -lcompress -lsz -lbz2 -lz"
     LDFLAGS="$LDFLAGS $COMPRESS_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $COMPRESS_CPPFLAGS"
 
@@ -50,7 +50,7 @@ else
     # Check for the COMPRESS library and headers
     dnl AC_TRY_COMPILE([struct obd_uuid {char uuid[40];};int fd, num_ost;struct obd_uuid uuids[1024];],
     dnl        [llapi_lov_get_uuids(fd, uuids, &num_ost);],
-    dnl        [COMPRESS_LIBS="-lcompress -lbspline -lbz2 -lz"],
+    dnl        [COMPRESS_LIBS="-lcompress -lsz -lbz2 -lz"],
     dnl        [AM_CONDITIONAL(HAVE_COMPRESS,false)])
 
     LIBS="$save_LIBS"
