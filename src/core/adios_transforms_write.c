@@ -286,7 +286,8 @@ static void adios_transform_convert_var_to_byte_array(struct adios_group_struct 
 ////////////////////////////////////////
 struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *orig_var_grp,
                                                      struct adios_var_struct *orig_var,
-                                                     enum ADIOS_TRANSFORM_TYPE transform_type) {
+                                                     enum ADIOS_TRANSFORM_TYPE transform_type,
+													 char* transform_param) {
     log_debug("Transforming variable %s with type %d\n", orig_var->name, transform_type);
 
     // Check for the simple and error cases
@@ -306,9 +307,22 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
 
     // Set transform type and allocate the metadata buffer
     orig_var->transform_type = transform_type;
-    orig_var->transform_metadata_len = adios_transform_get_metadata_size(transform_type);
-    if (orig_var->transform_metadata_len)
-        orig_var->transform_metadata = malloc(orig_var->transform_metadata_len);
+    // orig_var->transform_metadata_len = adios_transform_get_metadata_size(transform_type);
+    // if (orig_var->transform_metadata_len)
+        // orig_var->transform_metadata = malloc(orig_var->transform_metadata_len);
+	
+	// set the parameter string	
+	if(transform_param && transform_param[0] != '\0') 
+	{
+		size_t param_len = strlen(transform_param);
+		if(param_len > UINT16_MAX)
+		{
+			param_len = UINT16_MAX;
+		}
+		
+		orig_var->transform_metadata_len = (uint16_t)param_len;
+		orig_var->transform_metadata = strdup(transform_param);
+	}
 
     // Return the modified variable
     return orig_var;
