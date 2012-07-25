@@ -27,6 +27,68 @@ void adios_transform_read_init() {
     adios_transforms_initialized = 1;
 }
 
+
+// Read request group helper functions
+
+// NOTE: The user turns over ownership of 'sel' to this function (it will be
+//   freed). 'data' is still owned by the user
+adios_transform_read_subrequest * adios_transform_read_reqgroup_new_subreq(adios_transform_read_reqgroup *reqgroup, ADIOS_SELECTION *sel, void *data) {
+    adios_transform_read_subrequest *new_subreq = malloc(sizeof(adios_transform_read_subrequest));
+    new_subreq->id = reqgroup->next_subreq_id++;
+    new_subreq->sel = sel;
+    new_subreq->data = data;
+    new_subreq->next = 0;
+
+    adios_transform_read_subrequest *last_subreq = reqgroup->subreqs;
+
+    // Find the end of the list
+    while (last_subreq->next)
+        last_subreq = last_subreq->next;
+
+    // Append the subreq
+    last_subreq->next = new_subreq;
+    reqgroup->num_subreqs++;
+
+    return new_subreq;
+}
+
+adios_transform_read_subrequest * adios_transform_read_reqgroup_remove_subreq(adios_transform_read_reqgroup *reqgroup, int id) {
+    adios_transform_read_subrequest *prev = 0;
+    adios_transform_read_subrequest *cur = reqgroup->subreqs;
+
+    // Find the subreq with this ID
+    while (cur) {
+        if (cur->id == id)
+            break;
+
+        prev = cur;
+        cur = cur->next;
+    }
+
+    // If ID not found, return
+    if (!cur)
+        return 0;
+
+    // Unlink and return the subreq
+    prev->next = cur->next;
+    cur->next = 0;
+    reqgroup->num_subreqs--;
+    return cur;
+}
+
+// NOTE: MUST have removed the subrequest from the request group BEFORE calling this
+void adios_transform_read_reqgroup_free_subreq(adios_transform_read_subrequest *subreq) {
+    assert(!subreq->next); // Not a perfect check, but will catch many requests that are still linked
+
+    common_read_selection_delete(subreq->sel);
+    subreq->id = 0;
+    subreq->data = 0;
+    subreq->sel = 0;
+    subreq->next = 0;
+
+    free(subreq);
+}
+
 uint64_t adios_transform_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE transform_type, uint64_t orig_size, int num_vars) {
     assert(transform_type >= adios_transform_none && transform_type < num_adios_transform_types);
     return TRANSFORM_METHODS[transform_type].transform_calc_vars_transformed_size(orig_size, num_vars);

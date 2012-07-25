@@ -36,6 +36,31 @@ typedef struct {
             enum ADIOS_FLAG swap_endianness);
 } adios_transform_method;
 
+typedef struct _adios_transform_read_subrequest {
+    int 			id;
+    ADIOS_SELECTION *sel;
+    void 			*data;
+
+    struct _adios_transform_read_subrequest *next;
+} adios_transform_read_subrequest;
+
+typedef struct {
+    int64_t      			*fp; // TODO: This should be an ADIOS_FILE*, but can't do that due to conflicting typdefs in read_hooks.h and internals.h (appears in common_read.c); to fix: split hooks into read, write and common
+
+    int						varid;
+    int						from_steps;
+    int                     nsteps;
+
+    const ADIOS_SELECTION 	*orig_sel;
+    void                  	*orig_data;
+
+    int num_subreqs;
+    int next_subreq_id;
+    adios_transform_read_subrequest *subreqs;
+
+    void *transform_internal;
+} adios_transform_read_reqgroup;
+
 /*
  * The transform registry, containing all necessary function pointers for
  * each transform method.
@@ -46,6 +71,11 @@ extern adios_transform_method TRANSFORM_METHODS[num_adios_transform_types];
 void adios_transform_read_init();
 // Initialize the transform system for adios read/write libraries
 void adios_transform_init();
+
+// Read layer interface functions
+adios_transform_read_subrequest * adios_transform_read_reqgroup_new_subreq(adios_transform_read_reqgroup *reqgroup, ADIOS_SELECTION *sel, void *data);
+adios_transform_read_subrequest * adios_transform_read_reqgroup_remove_subreq(adios_transform_read_reqgroup *reqgroup, int id);
+void adios_transform_read_reqgroup_free_subreq(adios_transform_read_subrequest *subreq);
 
 // Delegation functions
 uint16_t adios_transform_get_metadata_size(enum ADIOS_TRANSFORM_TYPE transform_type);
@@ -61,6 +91,7 @@ enum ADIOS_ERRCODES adios_transform_retrieve_subvolume(
         const adios_subvolume_copy_spec *subv_spec,
         void *read_state, adios_transform_var_read_delegate read_delegate,
         enum ADIOS_FLAG swap_endianness);
+
 
 // Transport method function declaration/assignment macros
 #define FORWARD_DECLARE(tmethod) \

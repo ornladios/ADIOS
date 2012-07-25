@@ -2582,6 +2582,8 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
     r = (read_request *) malloc (sizeof (read_request));
     assert (r);
 
+    // If no selection was specified, generate a selection that includes the
+    // entire variable (Drew)
     if (!sel)
     {
         bp_get_and_swap_dimensions (fh, v, file_is_fortran,
@@ -2657,6 +2659,8 @@ int adios_read_bp_perform_reads (const ADIOS_FILE *fp, int blocking)
 
     p = (struct BP_PROC *) fp->fh;
 
+    // If blocking mode, ensure all read requests have a user memory buffer.
+    // Otherwise, do nothing and return immediately (Drew)
     /* 1. prepare all reads */
     // check if all user memory is provided for blocking read
     if (blocking)
@@ -2682,6 +2686,7 @@ int adios_read_bp_perform_reads (const ADIOS_FILE *fp, int blocking)
         return 0;
     }
 
+    // Issue all read requests (Drew)
     while (p->local_read_request_list)
     {
         chunk = read_var (fp, p->local_read_request_list);
