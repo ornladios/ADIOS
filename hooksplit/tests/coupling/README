@@ -1,0 +1,39 @@
+This directory is not automatically built. 
+Edit the Makefile for your env (adios, mxml and dart libs)
+
+
+Coupling scenarios
+==================
+
+1. coupling2D.xml
+   coupling_writer_2D.F90 and coupling_reader_2D.F90
+
+   Writer has a 2D array with 2D (block,block) decomposition.
+   It writes into writer_<timestep>.bp
+
+   Reader's each process reads in the whole 2D array.
+   One of the processes writes the whole array into reader_<timestep>.bp
+
+   Check: writer_<ts>.bp/var/xy should be the same as reader_<ts>/var/xy
+        $ bpls -d writer_3.bp var/xy  | grep -v double > w
+        $ bpls -d reader_3.bp var/xy  | grep -v double > r
+        $ diff -s w r
+        Files w and r are identical
+
+   Use job_2D.xt5 to run the demo. 
+   coupling2D.xml's method for writer2D group determines the way of coupling:
+   DART = memory to memory coupling
+   MPI  = file based coupling
+
+2. coupling_writer_2D_dart.F90 and coupling_reader_2D_dart.F90
+   Scenario 1 using DART directly for memory-to-memory coupling
+   (no writer_*.bp anymore).
+   Still needs adios and coupling2D.xml for the reader to write
+   reader_*.bp
+
+   Note: coupling_writer_2D_dart can be used with coupling_reader_2D together
+
+
+
+
+

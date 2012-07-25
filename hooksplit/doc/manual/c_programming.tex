@@ -1,0 +1,654 @@
+%\chapter*{{\Large \textbf{12 C Programming with ADIOS}}}
+\chapter{C Programming with ADIOS}
+
+This chapter focuses on how to integrate ADIOS into the users' source code in C 
+and how to write into separate files or a shared file from multiple processes in 
+the same communication domain. These examples can be found in the source distribution 
+under the examples/C/manual directory.
+
+In the following steps we will create programs that use ADIOS to write
+
+- a metadata-rich BP file per process
+
+- one large BP file with the arrays from all processes
+
+- N files from P processes, where $N<P$
+
+- the data of all processes as one global array into one file
+
+- a global-array over several timesteps into one file
+
+The strength of the componentization of I/O in ADIOS allows us to switch between 
+the first two modes by selecting a different transport method in a configuration 
+file and run the program without recompiling it. 
+
+\section{Non-ADIOS Program}
+
+The starting programming example, shown in Listing~\ref{c_programming:non-adios.c}, writes a double-precision 
+array t with size of NX into a separate file per process (the array is uninitialized 
+in the examples). 
+
+\begin{lstlisting}[alsolanguage=C,caption=Original program
+  (examples/C/manual/1\_nonadios\_example.c]
+
+#include <stdio.h>
+#include "mpi.h"
+#include "adios.h"
+
+int main (int argc, char ** argv) 
+{
+  char             filename [256];
+  int              rank;
+  int              NX=10;
+  double           t[NX];
+  FILE             * fp;
+
+  MPI_Init (&argc, &argv);
+
+  MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+
+  sprintf (filename, "restart_%5.5d.dat", rank);
+  fp = open (filename, "w");
+
+  fwrite (&NX, sizeof(int), 1, fp);
+  fwrite (t,  sizeof(double), NX, fp);
+  fclose (fp);
+
+  MPI_Finalize ();
+  return 0;
+}
+\end{lstlisting}\label{c_programming:non-adios.c}
+
+\begin{lstlisting}[]
+$ mpirun -np 4 1_nonadios_example
+$ ls restart_*
+restart_00000.dat  restart_00001.dat  restart_00002.dat  restart_00003.dat
+\end{lstlisting}
+
+\section{Construct an XML File}
+
+In the example above, the program is designed to write a file for each process. 
+There is a double-precision one-dimensional array called ``t''. We also need to 
+declare and write all variables that are used for dimensions (i.e. NX in our example). 
+Therefore, our configuration file is constructed as shown in Listing~\ref{c_programming:config.xml}.
+
+\begin{lstlisting}[language=XML,caption=Example config.xml]
+/* config.xml*/
+
+<?xml version="1.0"?>
+
+<adios-config host-language="C">
+    <adios-group name="temperature" coordination-communicator="comm">
+      <var name="NX" type="integer"/>
+      <var name="temperature" gwrite="t" type="double" dimensions="NX"/>
+      <attribute name="description" path="/temperature" type="string" value="Temperature array" />
+    </adios-group>
+
+<method group="temperature" method="POSIX"/>
+
+<buffer size-MB="1" allocate-time="now"/>
+
+</adios-config>
+\end{lstlisting}\label{c_programming:config.xml}
+
+\section{Generate .ch file (s)}
+
+The adios\_group\_size function and a set of adios\_write functions can be automatically 
+generated in gwrite\_temperature.ch file by using the following python command: 
+\\
+\texttt{gpp.py config.xml}
+\\
+
+The generated gwrite\_temperature.ch file is shown in Listing~\ref{c_programming:g_write_temperature.h}.
+
+\begin{lstlisting}[alsolanguage=C,caption=Example gwrite\_temperature.ch]
+/* gwrite\_temperature.ch */
+adios_groupsize = 4 \
+                + 8 * (NX);
+adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
+adios_write (adios_handle, "NX", &NX);
+adios_write (adios_handle, "temperature", t);
+\end{lstlisting}\label{c_programming:g_write_temperature.h}
+
+\section{POSIX transport method (P writers, P subfiles + 1 metadata file)}
+
+For our first program, we simply translate the program of
+Listing~\ref{c_programming:non-adios.c}, so that all of the I/O operations
+are done with ADIOS routines. The POSIX method can be used to write out
+separate files for each processor in
+Listing~\ref{c_programming:adios-write.c}. 
+The changes to the original
+example are highlighted. We need to use an MPI communicator in adios\_open()
+because the subprocesses need to know the rank to create unique subfile
+names.
+
+\begin{lstlisting}[alsolanguage=C,caption=Example adios program to write P files from 
+P processors (examples/C/manual/2\_adios\_write.c]
+/*write Separate file for each process by using POSIX*/
+
+#include <stdio.h>
+#include "mpi.h"
+#include "adios.h"
+int main (int argc, char ** argv) 
+{
+  char           filename [256];
+  int              rank;
+  int              NX = 10;
+  double      t[NX];
+
+  /* ADIOS variables declarations for matching gwrite_temperature.ch */
+  int                  adios_err;
+  uint64_t       adios_groupsize, adios_totalsize;
+  int64_t          adios_handle;
+  MPI_Comm  * comm =  MPI_COMM_WORLD;
+
+  MPI_Init (&argc, &argv);
+  MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+  sprintf (filename, "restart.bp");
+  adios_init ("config.xml");
+  adios_open (&adios_handle, "temperature", filename, "w", &comm);
+
+  #include "gwrite_temperature.ch"
+
+  adios_close (adios_handle);
+  adios_finalize (rank);
+  MPI_Finalize ();
+  return 0;
+}
+\end{lstlisting}\label{c_programming:adios-write.c}
+
+The POSIX method makes a directory to store all subfiles. As for the naming of 
+the directory, it appends ``.dir'' to the name the file, e.g., restart.bp.dir. 
+For each subfile, it appends the rank of the process (according to the supplied 
+communicators) to the name of the file (here restart.bp), so for example process 
+2 will write a file restart.bp.dir/restart.bp.2. To facilitate reading of subfiles, 
+the method also generates a global metadata file (restart.bp) which tracks all 
+the variables in each subfile. 
+
+\begin{lstlisting}[]
+\$ mpirun -np 4 2\_adios\_write
+\$ ls restart.bp
+
+restart.bp
+restart.bp.dir:
+restart.bp.0  restart.bp.1  restart.bp.2  restart.bp.3
+
+$ bpls -lad restart.bp.dir/restart.bp.2 -n 10
+ 
+  integer    /NX                       scalar = 10 
+  double     /temperature              {10} = 20 / 29 
+    (0)    20 21 22 23 24 25 26 27 28 29 
+  string     /temperature/description  attr   = "Temperature"
+\end{lstlisting}
+
+\section{MPI-IO transport method (P writers, 1 file)}
+
+Based on the same group description in the configure file and the header file (.ch) 
+generated by python script, we can switch among different transport methods without 
+changing or recompiling the source code.
+
+One entry change in the config.xml file can switch from POSIX to MPI:
+
+\begin{lstlisting}[language=XML]
+<method group="temperature" method="MPI">
+\end{lstlisting}
+
+The MPI communicator is passed as an argument of adios\_open(). Because it is defined 
+as MPI\_COMM\_WORLD in the posix example already, the program does not need to 
+be modified or recompiled.
+
+\begin{lstlisting}
+$ mpirun -np 4 2_adios_write
+$ ls restart.bp
+
+restart.bp
+$ bpls -l restart.bp
+
+Group temperature:
+    integer    /NX           scalar = 10 
+    double     /temperature  {10} = 0 / 39
+\end{lstlisting}
+
+There are several ways to verify the binary results. We can either choose bpdump 
+to display the content of the file or use one of the converters (bp2ncd, bp2h5, 
+or bp2ascii), to produce the user's preferred file format (NetCDF, HDF5 or ASCII, 
+respectively) and use its dump utility to output the content in the standard output. 
+Bpls cannot list the individual arrays written by the processes because the generic 
+read API it uses does not support this (it can see only one of them as the size 
+of /temperature suggest in the listing above). It is suggested to use global arrays 
+(see example below) to present the data written by many processes as one global 
+array, which then can be listed and any slice of it can be read/dumped. 
+
+This example, however, can be used for checkpoint/restart files where the application 
+would only read in data from the same number of processes as it was written (see 
+next example). The transparent switch between the POSIX and MPI methods allows 
+the user choose the better performing method for a particular system without changing 
+the source code. 
+
+\section{Reading data from the same number of processors}
+
+Now let's move to examples of how to read the data from BP or other files.  Assuming 
+that we still use the same configure file shown in Figure 24, the following steps 
+illustrate how to easily change the code and xml file to read a variable. 
+
+1. add another variable adios\_buf\_size specifying the size for read.
+
+2. call adios\_open with ``r'' (read only) mode.
+
+3. Insert \#include ``gread\_temperature.ch''
+
+\begin{lstlisting}[alsolanguage=C,caption=Example of a generated gread\_temperature.ch 
+file examples/C/manual/3\_adios\_read.c]
+/*Read in data on same number of processors */
+#include <stdio.h>
+#include "mpi.h"
+#include "adios.h"
+
+int main (int argc, char ** argv) 
+{
+    char           filename [256];
+    int              rank;
+    int              NX = 10;
+    double      t[NX];
+
+    /* ADIOS variables declarations for matching gread_temperature.ch */
+    int                  adios_err;
+    uint64_t       adios_groupsize, adios_totalsize, adios_buf_size;
+    int64_t          adios_handle;
+    MPI_Comm  comm =  MPI_COMM_WORLD;
+
+    MPI_Init (&argc, &argv);
+    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+    sprintf (filename, "restart.bp");
+    adios_init ("config.xml");
+    adios_open (&adios_handle, "temperature", filename, "r", &comm);
+#include "gread_temperature.ch"
+    adios_close (adios_handle);
+    adios_finalize (rank);
+    MPI_Finalize ();
+    return 0;
+}
+\end{lstlisting}
+
+The gread\_temperature.ch file generated by gpp.py is the following:
+
+\begin{lstlisting}[caption=Example of a generated gread\_temperature.ch 
+file]
+
+/* gread_temperature.ch */
+adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
+adios_buf_size = 4;
+adios_read (adios_handle, "NX", &NX, adios_buf_size);
+adios_buf_size = NX;
+adios_read (adios_handle, "temperature", t, adios_buf_size);
+\end{lstlisting}
+
+
+\section{Writing to Shared Files (P writers, N files)}
+
+As the number of processes increases to tens or hundreds of thousands, the amount 
+of files will increase by the same magnitude if we use the POSIX method or a single 
+shared file may be too large if we use the MPI method. In this example we address 
+a scenario in which multiple processes write to N files. In the following example 
+(Figure 29), we write out N files from P processes. This is achieved by creating 
+a separate communicator for N subsets of the processes using
+MPI\_Comm\_split(). 
+
+\begin{lstlisting}[alsolanguage=C,caption=Example ADIOS program writing N files
+  from P processors (N)]
+
+#include <stdio.h>
+#include "mpi.h"
+#include "adios.h"
+int main (int argc, char ** argv) 
+{
+  char           filename [256];
+  int              rank, size;
+  int              NX = 10; 
+  int              N = 3;
+  double      t[NX];
+  
+  /* ADIOS variables declarations for matching gwrite_temperature.ch */
+  int                 adios_err;
+  uint64_t      adios_groupsize, adios_totalsize;
+  int64_t     adios_handle;
+  MPI_Comm comm;
+
+  int              color, key;
+  MPI_Init (&argc, &argv);
+  MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+  MPI_Comm_size (MPI_COMM_WORLD, &size);
+  
+  /* MPI_Comm_split partitions the world group into N disjointed  subgroups, 
+  * the processes are ranked in terms of the argument key  
+  *  a new communicator comm is returned for this specific grid configuration
+  */
+  color = rank % N;
+  key = rank / N;
+  MPI_Comm_split (MPI_COMM_WORLD, color, key, &comm);
+  
+  /* every P/N processes write into the same file 
+  * there are N files generated. 
+  */
+  sprintf (filename, "restart_%5.5d.bp", color);
+  adios_init ("config.xml");
+  adios_open (&adios_handle, "temperature", filename, "w", &comm);
+  #include "gwrite_temperature.ch"
+  adios_close (adios_handle);
+  adios_finalize (rank);
+  MPI_Finalize ();
+  return 0;
+}
+\end{lstlisting}
+
+
+The reconstructed MPI communicator comm is passed as an argument of the adios\_open() 
+call. Therefore, in this example, each file is written by the processes in the 
+same communication domain.
+
+There is no need to change the XML file in this case because we are still using 
+the MPI method. 
+\section{Global Arrays}
+\label{section-cprogramming-globalarrays}
+
+If each process writes out a sub-array that belongs to the same global space, ADIOS 
+provides the way to write out global information so the generic read API can see 
+a single global array (and also the HDF5 or NetCDF file when using our converters). 
+This example demonstrates how to write global arrays, where the number of processes 
+becomes a separate dimension. Each process is writing the one dimensional temperature 
+array of size NX and the result is a two dimensional array of size PxNX. Figure 
+30 shows how to define a global array in the XML file. 
+
+\begin{lstlisting}[language=XML,caption=Config.xml for a global array 
+(examples/C/global-array/adios\_global.xml]
+
+<?xml version="1.0"?>
+<adios-config host-language="C">
+    <adios-group name="temperature" coordination-communicator="comm">
+        <var name="NX" type="integer"/>
+        <var name="size" type="integer"/>
+        <var name="rank" type="integer"/>
+        <global-bounds dimensions="size,NX" offsets="rank,0">
+             <var name="temperature" gwrite="t" type="double" dimensions="1,NX"/>
+        </global-bounds>
+        <attribute name="description" path="/temperature"
+                    value="Global array written from 'size' processes" type="string"/>
+    </adios-group>
+
+<method group="temperature" method="MPI"/>
+<buffer size-MB="2" allocate-time="now"/>
+
+</adios-config>
+\end{lstlisting}
+
+The variable is inserted into a \texttt{<}global-bounds\texttt{>}...\texttt{<}/global-bounds\texttt{>} 
+section. The global array's global dimension is defined by the variables size and 
+NX, available in all processes and all with the same value. The offset of a local 
+array written by a process is defined using the rank variable, which is different 
+on every process.
+
+The variable itself is defined as an 1xNX two dimensional array, although in the 
+C code it is still a one dimensional array. 
+
+The gwrite header file generated by gpp.py is the following:
+
+\begin{lstlisting}[alsolanguage=C,caption=gwrite header file generated from
+  config.xml]
+
+/* gwrite_temperature.ch */
+adios_groupsize = 4 \
+                                + 4 \
+                                + 4 \
+                                + 8 * (1) * (NX);
+adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
+adios_write (adios_handle, "NX", &NX);
+adios_write (adios_handle, "size", &size);
+adios_write (adios_handle, "rank", &rank);
+adios_write (adios_handle, "temperature", t);
+
+\end{lstlisting}
+
+The program code is not very different from the one used in the above example. 
+It needs to have the size and rank variables in the code defined (see examples/C/global-array/adios\_global.c) 
+
+\subsection{MPI-IO transport method (P writers, 1 file)}
+
+\begin{lstlisting}
+
+$ mpirun -np 4 ./adios_global
+$ ls adios_global.bp 
+adios_global.bp
+
+$  bpls -latd adios_global.bp -n 10
+  
+ integer    /NX                       scalar = 10
+ integer    /rank                     scalar = 0
+ integer    /size                     scalar = 4
+ double     /temperature              {4, 10} = 0 / 39 / 19.5 / 11.5434  {MIN / MAX / AVG / STD_DEV}
+    (0,0)    0 1 2 3 4 5 6 7 8 9
+    (1,0)    10 11 12 13 14 15 16 17 18 19
+    (2,0)    20 21 22 23 24 25 26 27 28 29
+    (3,0)    30 31 32 33 34 35 36 37 38 39
+
+  string     /temperature/description  attr   = "Global array written from 'size' processes"
+The bp2ncd utility can be used to convert the bp file to an NetCDF file:
+
+$ bp2ncd adios_global.bp
+$ ncdump adios_global.nc 
+netcdf adios_global {
+dimensions:
+        NX = 10 ;
+        size = 4 ;
+        rank = 1 ;
+variables:
+        double temperature(size, NX) ;
+                temperature:description = "Global array written from \'size\' processes" ;
+data:
+
+ temperature =
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+  10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+  20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+  30, 31, 32, 33, 34, 35, 36, 37, 38, 39 ;
+}
+\end{lstlisting}
+
+\subsection{POSIX transport method (P writers, P Subfiles + 1 Metadata file)}
+
+To list variables output from POSIX transport, user only needs to specify the global 
+metadata file (e.g., adios\_global.bp) as a parameter to bpls, not each individual 
+files (e.g., adios\_global.bp.dir/adios\_global.bp.0). The output of the POSIX 
+and the MPI methods are equivalent from reading point of view. 
+
+\begin{lstlisting}
+$ mpirun -np 4 ./adios_global
+$ ls adios_global.bp 
+adios_global.bp
+
+$  bpls -latd adios_global.bp -n 10
+  
+ integer    /NX                       scalar = 10
+ integer    /rank                     scalar = 0
+ integer    /size                     scalar = 4
+ double     /temperature              {4, 10} = 
+           0 / 39 / 19.5 / 11.5434  {MIN / MAX / AVG / STD_DEV}
+    (0,0)    0 1 2 3 4 5 6 7 8 9
+    (1,0)    10 11 12 13 14 15 16 17 18 19
+    (2,0)    20 21 22 23 24 25 26 27 28 29
+    (3,0)    30 31 32 33 34 35 36 37 38 39
+
+  string     /temperature/description  attr   = 
+           "Global array written from 'size' processes"
+
+\end{lstlisting}
+
+The examples/C/global-array/adios\_read\_global.c program shows how to use the 
+generic read API to read in the global array from arbitrary number of processes. 
+
+
+\section{Writing Time-Index into a Variable}
+
+The time-index allows the user to define a variable with an unlimited dimension, 
+along which the variable can grow in time. Let's suppose the user wants to write 
+out temperature after a certain number of iterations. First, we add the ``time-index'' 
+attribute to the adios-group with an arbitrary name, e.g. ``iter''. Next, we find 
+the (global) variable temperature in the adios-group and add ``iter'' as an extra 
+dimension for it; the record number for that variable will be stored every time 
+it gets written out. Note that we do not need to change the dimensions and offsets 
+in the global bounds, only the individual variable. Also note, that the time dimension 
+must be the slowest changing dimension, i.e. in C, the first one and in Fortran, 
+it must be the last one.
+
+\begin{lstlisting}[language=XML,caption=Config.xml for a global array with time
+(examples/C/global-array-time/adios\_globaltime.xml]
+
+/* config.xml*/
+<adios-config host-language="C">
+    <adios-group name="temperature" coordination-communicator="comm" time-index="iter">
+        <var name="NX" type="integer"/>
+        <var name="size" type="integer"/>
+        <var name="key" type="integer"/>
+        <global-bounds dimensions="size,NX" offsets="key,0">
+            <var name="temperature" gwrite="t" type="double" 
+                      dimensions="iter,1,NX"/>    (Note, for Fortran, "iter"
+                      needs to be put in the end, i.e., dimension="NX,1,iter") 
+        </global-bounds>
+        <attribute name="description" path="/temperature" 
+            value="Global array written from 'size' processes over several timesteps" 
+            type="string"/>
+    </adios-group>
+<method group="temperature" method="MPI"/>
+<buffer size-MB="1" allocate-time="now"/>
+</adios-config>
+\end{lstlisting}
+
+The examples/C/global-array-time/adios\_globaltime.c is similar to the previous 
+example adios\_global.c code. The only difference is that it has an iteration loop 
+where each process writes out the data in each of its 13 iterations.
+
+\begin{lstlisting}
+$ mpirun -np 4 ./adios_read_globaltime
+$ bpls -la adios_globaltime.bp 
+Group temperature:
+  integer    /NX                       scalar = 10
+  integer    /size                     scalar = 4
+  integer    /rank                     scalar = 0
+  double     /temperature              {13, 4, 10} = 100 / 1339 / 719.5 / 374.344  {MIN / MAX / AVG / STD_DEV}
+  string     /temperature/description  attr   = "Global array written from 'size' processes over several timesteps"
+
+A slice of two timesteps (6th and 7th), dumped with bpls:
+$ bpls adios_globaltime.bp -s "5,0,0" -c "2,-1,-1" -n 10 -d temperature
+  double     /temperature  {13, 4, 10}
+    slice (5:6, 0:3, 0:9)
+    
+    (5,0,0)    600 601 602 603 604 605 606 607 608 609
+    (5,1,0)    610 611 612 613 614 615 616 617 618 619
+    (5,2,0)    620 621 622 623 624 625 626 627 628 629
+    (5,3,0)    630 631 632 633 634 635 636 637 638 639
+    (6,0,0)    700 701 702 703 704 705 706 707 708 709
+    (6,1,0)    710 711 712 713 714 715 716 717 718 719
+    (6,2,0)    720 721 722 723 724 725 726 727 728 729
+    (6,3,0)    730 731 732 733 734 735 736 737 738 739 
+
+\end{lstlisting}
+
+\section{Reading statistics}
+
+In ADIOS, statistics like minimum, maximum, average and standard deviation can 
+be aggregated inexpensively. This section shows how these statistics can be accessed 
+from the BP file. The examples/C/stat/stat\_write.c is similar to the previous 
+example adios\_globaltime.c. It writes an additional variable ``complex'' of type 
+adios\_double\_complex along with ``temperature.''  It also has histogram enabled 
+for the variable ``temperature.''  Comparing it with the XML in the previous example, 
+stat.xml has the following additions:
+
+\begin{lstlisting}[language=XML,caption=Config.xml for creating histogram for an array variable
+(examples/C/stat/stat.xml)]
+
+Config.xml for creating histogram for an array variable
+(examples/C/stat/stat.xml)
+/* stat.xml*/
+
+<?xml version="1.0"?>
+<adios-config host-language="C">
+ 	<adios-group name="temperature" coordination-communicator="comm" 
+time-index="iter">
+ 		<var name="NX" type="integer"/>
+ 		<var name="rank" type="integer"/>
+ 		<var name="size" type="integer"/>
+ 		<global-bounds dimensions="size,NX" offsets="rank,0">
+ 			<var name="temperature" gwrite="t" type="double"
+ 				dimensions="iter,1,NX"/>
+ 	<var name="complex" gwrite="c" type="double complex"
+ 				dimensions="iter,1,NX"/>
+ 		</global-bounds>
+</adios-group>
+
+ 	<method group="temperature" method="MPI"/>
+ 	<buffer size-MB="5" allocate-time="now"/>
+ 	<analysis adios-group="temperature" var="temperature"
+ 		break-points="0, 100, 1000, 10000" />
+</adios-config>
+\end{lstlisting}
+
+To include histogram calculation, only the XML file needs to be updated, and no 
+change is required in the C code. The examples/C/stat/gwrite\_stat.ch requires 
+an additional {\color{color02} 8 * (2) * NX} to be added to adios\_groupsize and 
+an adios\_write (adios\_handle, \texttt{"}complex\texttt{"}, \&c) to handle the 
+complex numbers.
+
+\begin{lstlisting}
+$ mpirun -np 2 ./stat_write
+[1]: adios_stat.bp written successfully
+[0]: adios_stat.bp written successfully
+\end{lstlisting}
+
+
+The examples/C/stat/stat\_read.c shows how to read back the statistics from the 
+bp file. First, the statistics need to be populated into an ADIOS\_VARINFO object. 
+This is done with the following set of commands.
+
+\begin{lstlisting}[alsolanguage=C]
+ADIOS_FILE * f = adios_fopen ("adios_stat.bp", comm);
+ADIOS_GROUP * g = adios_gopen (f, "temperature");
+ADIOS_VARINFO * v = adios_inq_var (g, "temperature");
+\end{lstlisting}
+
+The object `v' now contains all the statistical information for the variable ``temperature.'' 
+To access the histogram for temperature, we need to access the ADIOS\_HIST data 
+structure inside the ADIOS\_VARINFO object. The code below prints the break points 
+and the interval frequencies for the global histogram. For `n' break points there 
+are `n + 1' intervals.
+
+\begin{lstlisting}
+/* Break points */
+for (j = 0; j < v->hist->num_breaks; j++)
+        printf ("%lf ", v->hist->breaks[j]);
+/* Frequencies */
+for (j = 0; j <= v->hist->num_breaks; j++)
+        printf ("%d\t", v->hist->gfrequencies[j]);
+adios_free_varinfo(v);
+\end{lstlisting}
+
+To access the statistics related to the variable ``complex,'' we need:
+\\
+\\
+\texttt{
+v = adios\_inq\_var (g, \texttt{"}complex\texttt{"});
+}
+\\
+\\
+The code below describes how to print the minimum values of the magnitude, real 
+and imaginary part of complex data at each timestep. For complex variables alone, 
+all statistics need to be typecasted into a double format.
+
+\begin{lstlisting}[alsolanguage=C]
+double ** Cmin = (double **) v->mins;
+printf ("\nMagnitude  Real  Imaginary\n");
+for (j = 0; v->ndim >= 0 &&  (j < v->dims[0]); j ++) 
+     printf ("%lf %lf %lf\n", 
+             Cmin[j][0], Cmin[j][1], Cmin[j][2]);
+adios_free_varinfo(v);
+\end{lstlisting}
+
+%todo: fix the references

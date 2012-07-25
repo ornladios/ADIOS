@@ -1,0 +1,76 @@
+Signs: 
+    +: DONE
+
+
+Packaging:
+    - make a 1.0 branch
+    + take out the methods that we do not want to distribute
+    + review what goes into the distribution and write a script to make the tar.gz
+        this is now create_release.sh
+
+New features:
+    CANCELLED: write an adiosf module for F90 like adiosf_read in src/adiosf_read_mod.F90
+
+Build:
+    - configure: test mxml version 2.5 or higher
+    + merge libadios_int into libadios_read
+    + merge adios_internals.c and adios_internals_nompi.c
+
+BUGS:
+    - configure: FC=mpif90 on ewok breaks configure (it checks if Fortran lib can link with a C main program)
+    + bpls: 4np.bp, dump of string variable /var_string is wrong (bpls -l shows correctly)
+            dump vs -l of var_complex, var_double_complex is wrong
+    - PGI doesn't support "long double" type.
+
+Testing:
+    - Install and run genarray and bp_read_f, bpls on
+        jaguar
+        bgp
+        ewok
+        a linux box
+        lens for a final test (relatively 'new' machine for us)
+    - Install and run bpls and bp_read_f on Mac
+    - Test Matlab that it can still read in BP files
+    - Endianness: genarray/bp_read_f on LE/BE and BE/LE (e.g. ewok and bgp)
+
+Example codes:
+    Both Fortran and C for each:
+        + write each type supported (including double complex and long double and strings)
+        + write attributes (scalars, strings and references to scalar vars and string vars + byte array vars)
+        + write global arrays and global arrays over time (C exists)
+        + read each type
+        + read attributes
+        - parallel code to read in global arrays (on different any number of processors)
+        - parallel code to read in global time arrays
+
+Doc:
+    Manual
+        - review write examples 
+        - review write api (Section 3)
+        - write Fortran write api for section 3 
+        - review XML doc (Section 4)
+        - review transport methods and remove undistributed ones (Section 5)
+        - do we need section 7 BP file format in the manual? review it
+        - Edit section 10 into section 3 (gwrite stuff)
+        - review C tutorial (which is only for writing) (Section 11)
+        - add tutorial on reading
+        - Section 12 is one page (Advanced programming)
+        - Section 14 FAQ is empty
+        - add note on not handling NaN values
+        - describe how to add a new transport method
+
+    + write INSTALL
+    + write README
+    - write AUTHORS
+
+
+Copyright
+    + define copyright
+    + add short copyright to each file
+
+Distribution (on adiosapi.org wiki)
+    - Put tar.gz on wiki
+    - review texts on wiki
+    - Can we ask some appl.scientist to publish their xml and some bp files on wiki?
+
++

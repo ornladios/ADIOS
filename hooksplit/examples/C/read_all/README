@@ -1,0 +1,12 @@
+C program to traverse a BP file and list all variables and attributes in all groups.
+Arrays less then 1KB are read in and their values printed (scalars, 1D and 2D arrays only).
+
+This code demonstrates the generic read API in a sequential program. 
+
+utils/bpls/bpls.c is basically the same, except for 
+- printing the min/max of variables
+- sorting the listing, 
+- dumping any slice of any variables 
+
+
+

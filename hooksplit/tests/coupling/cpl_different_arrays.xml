@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<adios-config host-language="Fortran">
+  <adios-group name="coupling" coordination-communicator="group_comm" time-index="steps">
+    <var name="ndx" path="/info" type="integer"/>
+    <var name="ndy" path="/info" type="integer"/>
+    <var name="ndz" path="/info" type="integer"/>
+
+    <var name="nproc" path="/info" type="integer"/>
+    <attribute name="description" path="/info/nproc" value="Number of writers"/>
+    <var name="npx"   path="/info" type="integer"/>
+    <attribute name="description" path="/info/npx" value="Number of processors in x dimension"/>
+    <var name="npy"   path="/info" type="integer"/>
+    <attribute name="description" path="/info/npy" value="Number of processors in y dimension"/>
+    <var name="npz"   path="/info" type="integer"/>
+    <attribute name="description" path="/info/npz" value="Number of processors in z dimension"/>
+
+
+    <!-- Auxiliary variables for global array indexing -->
+    <var name="offs_x_b"   path="/aux" type="integer"/>
+    <var name="dim_x_b"    path="/aux" type="integer"/>
+    
+    <var name="offs_x_bb"  path="/aux" type="integer"/>
+    <var name="offs_y_bb"  path="/aux" type="integer"/>
+    <var name="dim_x_bb"   path="/aux" type="integer"/>
+    <var name="dim_y_bb"   path="/aux" type="integer"/>
+
+    <var name="offs_x_bs"  path="/aux" type="integer"/>
+    <var name="dim_x_bs"   path="/aux" type="integer"/>
+
+    <var name="offs_x_bbb" path="/aux" type="integer"/>
+    <var name="offs_y_bbb" path="/aux" type="integer"/>
+    <var name="offs_z_bbb" path="/aux" type="integer"/>
+    <var name="dim_x_bbb"  path="/aux" type="integer"/>
+    <var name="dim_y_bbb"  path="/aux" type="integer"/>
+    <var name="dim_z_bbb"  path="/aux" type="integer"/>
+
+    <var name="offs_x_bss" path="/aux" type="integer"/>
+    <var name="dim_x_bss"  path="/aux" type="integer"/>
+
+    <!-- 1D array with block decomposition with multiple timesteps -->
+    <global-bounds dimensions="dim_x_b" offsets="offs_x_b">
+        <var name="x_b" path="/var" type="double" dimensions="ndx,steps"/>
+    </global-bounds>
+    <attribute name="description" path="/var/x_b" 
+               value="1D+t array with block decomposition"/>
+
+    <!-- 2D array with block,block decomposition with multiple timesteps -->
+    <global-bounds dimensions="dim_x_bb, dim_y_bb" offsets="offs_x_bb,offs_y_bb">
+        <var name="xy_bb" path="/var" type="double" dimensions="ndx,ndy,steps"/>
+    </global-bounds>
+    <attribute name="description" path="/var/xy_bb" 
+               value="2D+t array with block,block decomposition"/>
+
+    <!-- 2D array with block,* decomposition with multiple timesteps -->
+    <global-bounds dimensions="dim_x_bs,ndy" offsets="offs_x_bs,0">
+        <var name="xy_bs" path="/var" type="double" dimensions="ndx,ndy,steps"/>
+    </global-bounds>
+    <attribute name="description" path="/var/xy_bs" 
+               value="2D+t array with block,* decomposition"/>
+
+    <!-- 3D array with (block,block,block) decomposition with multiple timesteps -->
+    <global-bounds dimensions="dim_x_bbb, dim_y_bbb, dim_z_bbb" offsets="offs_x_bbb,offs_y_bbb,offs_z_bbb">
+        <var name="xyz_bbb" path="/var" type="double" dimensions="ndx,ndy,ndz,steps"/>
+    </global-bounds>
+    <attribute name="description" path="/var/xyz_bbb" 
+               value="3D+t array with block,block,block decomposition"/>
+
+    <!-- 3D array with (block,*,*) decomposition with multiple timesteps -->
+    <global-bounds dimensions="dim_x_bss,ndy,ndz" offsets="offs_x_bss,0,0">
+        <var name="xyz_bss" path="/var" type="double" dimensions="ndx,ndy,ndz,steps"/>
+    </global-bounds>
+    <attribute name="description" path="/var/xyz_bss" 
+               value="3D+t array with block,*,* decomposition"/>
+
+
+  </adios-group>
+
+  <method group="coupling" method="MPI"/>
+
+  <buffer size-MB="400" allocate-time="now"/>
+
+</adios-config>

@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+    <adios-group name="temperature" coordination-communicator="comm">
+        <var name="NX"   type="integer"/>
+        <var name="size" type="integer"/>
+        <var name="rank" type="integer"/>
+        <var name="mean" type="double"/>
+        <var name="date" type="string" gwrite="str"/>
+
+        <global-bounds dimensions="size,NX" offsets="rank,0">
+           <var name="temperature" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
+        </global-bounds>
+
+        <!-- an integer attribute set to 1 -->
+        <attribute name="number of levels" path="/temperature" 
+                   type="integer" value="1"/>
+
+        <!-- a string attribute -->
+        <attribute name="description" path="/temperature" 
+                   value="Global array written from 'size' processes" type="string"/>
+
+        <!-- attributes inheriting the type and value of the scalar variables -->
+        <attribute name="mean value"     path="/temperature" var="mean"/>
+        <attribute name="date of coding" path="/temperature" var="date"/>
+    </adios-group>
+
+<method group="temperature" method="MPI"/>
+
+<buffer size-MB="2" allocate-time="now"/>
+
+</adios-config>
+

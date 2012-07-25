@@ -1,0 +1,105 @@
+\vspace{10pt}
+\subsection*{
+\begin{longtable}{llll}
+\hline
+% ROW 1
+\multicolumn{1}{|p{1.540in}|}{\begin{minipage}[t]{1.540in}\raggedright
+Function  \label{HToc82064264}\end{minipage}} & \multicolumn{1}{p{2.856in}|}{\begin{minipage}[t]{2.856in}\raggedright
+\linebreak
+Purpose\end{minipage}}\\
+\hline
+% ROW 2
+\multicolumn{1}{p{0.052in}|}{\begin{minipage}[t]{0.052in}\raggedright
+\linebreak
+adios\_init\end{minipage}} & \multicolumn{1}{p{0.052in}|}{\begin{minipage}[t]{0.052in}\raggedright
+\linebreak
+{\color{color01} Load the XML configuration file creating internal representations 
+of the various data types and defining the methods used for writing.}\end{minipage}}\\
+\hline
+% ROW 3
+\multicolumn{1}{|p{1.540in}|}{\begin{minipage}[t]{1.540in}\raggedright
+\label{HToc82064261}adios\_finalize\end{minipage}} & \multicolumn{3}{p{2.960in}|}{\begin{minipage}[t]{2.960in}\raggedright
+\linebreak
+{\color{color01} Cleanup anything remaining before exiting the code}\end{minipage}}\\
+\hline
+% ROW 4
+\multicolumn{1}{p{0.052in}|}{\begin{minipage}[t]{0.052in}\raggedright
+\label{HToc82064262}adios\_open\end{minipage}} & \multicolumn{1}{p{0.052in}|}{\begin{minipage}[t]{0.052in}\raggedright
+\linebreak
+{\color{color01} Prepare a data type for subsequent calls to write data using the 
+io\_handle. Mode is one of ``r'' (read), ``w'' (write) and ``a'' (append).}\end{minipage}}\\
+\hline
+% ROW 5
+\multicolumn{1}{|p{1.540in}|}{\begin{minipage}[t]{1.540in}\raggedright
+\label{HToc82064263}adios\_close\end{minipage}} & \multicolumn{3}{p{2.960in}|}{\begin{minipage}[t]{2.960in}\raggedright
+\linebreak
+{\color{color01} Commit all the write to disk, close the file and release adios 
+file handle}\end{minipage}}\\
+\hline
+% ROW 6
+\multicolumn{1}{|p{1.540in}|}{\begin{minipage}[t]{1.540in}\raggedright
+adios\_group\_size\end{minipage}} & \multicolumn{3}{p{2.960in}|}{\begin{minipage}[t]{2.960in}\raggedright
+Passing the required buffer size to the transport layer and returned the total 
+size back to the source code\end{minipage}}\\
+\hline
+% ROW 7
+\multicolumn{1}{|p{1.540in}|}{\begin{minipage}[t]{1.540in}\raggedright
+\label{HToc82064265}adios\_write\end{minipage}} & \multicolumn{3}{p{2.960in}|}{\begin{minipage}[t]{2.960in}\raggedright
+\linebreak
+{\color{color01} Submit a data element for writing. This does NOT actually perform 
+the write in buffered mode. In the overflow case, this call writes to buffer directly. 
+}\end{minipage}}\\
+\hline
+% ROW 8
+\multicolumn{1}{|p{1.540in}|}{\begin{minipage}[t]{1.540in}\raggedright
+\label{HToc82064266}adios\_read\end{minipage}} & \multicolumn{3}{p{2.960in}|}{\begin{minipage}[t]{2.960in}\raggedright
+\linebreak
+{\color{color01} Submit a buffer space (var) for reading a data element into. This 
+does NOT actually perform the read. Actual population of the buffer space will 
+happen on the call to adios\_close}\end{minipage}}\\
+\hline
+% ROW 9
+\multicolumn{1}{|p{1.540in}|}{\begin{minipage}[t]{1.540in}\raggedright
+\label{HToc82064267}adios\_set\_path\end{minipage}} & \multicolumn{3}{p{2.960in}|}{\begin{minipage}[t]{2.960in}\raggedright
+\linebreak
+{\color{color01} Set the HDF5-style path for all variables in a adios-group. This 
+will reset whatever is specified in the XML file.}\end{minipage}}\\
+\hline
+% ROW 10
+\multicolumn{1}{|p{1.540in}|}{\begin{minipage}[t]{1.540in}\raggedright
+adios\_set\_path\_var\end{minipage}} & \multicolumn{3}{p{2.960in}|}{\begin{minipage}[t]{2.960in}\raggedright
+\linebreak
+{\color{color01} Set the HDF-5-style path for the specified var in the group. This 
+will reset whatever is specified in the XML file.}\end{minipage}}\\
+\hline
+% ROW 11
+\multicolumn{1}{|p{1.540in}|}{\begin{minipage}[t]{1.540in}\raggedright
+{\color{color01} adios\_get\_write\_buffer}\end{minipage}} & \multicolumn{3}{p{2.960in}|}{\begin{minipage}[t]{2.960in}\raggedright
+{\color{color01} For the given field, get a buffer that will be used at the transport 
+level for it of the given size. If size == 0, then auto calculate the size based 
+on what is known from the datatype in the XML file and any provided additional 
+elements (such as array dimension elements). To return this buffer, just do a normal 
+call to adios\_write using the same io\_handle, field\_name, and the returned buffer.}\end{minipage}}\\
+\hline
+% ROW 12
+\multicolumn{1}{|p{1.540in}|}{\begin{minipage}[t]{1.540in}\raggedright
+adios\_start\_calculation\end{minipage}} & \multicolumn{3}{p{2.960in}|}{\begin{minipage}[t]{2.960in}\raggedright
+{\color{color01} An indicator that it is now an ideal time to do bulk data transfers 
+as the code will not be performing IO for a while.}\end{minipage}}\\
+\hline
+% ROW 13
+\multicolumn{1}{|p{1.540in}|}{\begin{minipage}[t]{1.540in}\raggedright
+adios\_end\_ calculation\end{minipage}} & \multicolumn{3}{p{2.960in}|}{\begin{minipage}[t]{2.960in}\raggedright
+\linebreak
+{\color{color01} An indicator that it is no longer a good time to do bulk data 
+transfers as the code is about to start doing communication with other nodes causing 
+possible conflicts}\end{minipage}}\\
+\hline
+% ROW 14
+\multicolumn{1}{|p{1.540in}|}{\begin{minipage}[t]{1.540in}\raggedright
+adios\_end\_iteration\end{minipage}} & \multicolumn{3}{p{2.960in}|}{\begin{minipage}[t]{2.960in}\raggedright
+{\color{color01} A tick counter for the IO routines to time how fast they are emptying 
+the buffers.}\end{minipage}}
+%\\\hline
+\hspace*{\fill}\end{longtable}\hspace*{\fill}}
+%\label{HRef156282746}\label{HToc182553463}

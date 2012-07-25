@@ -1,0 +1,13 @@
+adios_groupsize = 4 &
+                + 4 &
+                + 4 &
+                + 4 &
+                + 8 * (NX) * (1) &
+                + 8 * (NY) * (1)
+call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
+call adios_write (adios_handle, "NX", NX, adios_err)
+call adios_write (adios_handle, "NY", NY, adios_err)
+call adios_write (adios_handle, "size", size, adios_err)
+call adios_write (adios_handle, "rank", rank, adios_err)
+call adios_write (adios_handle, "temperature", t, adios_err)
+call adios_write (adios_handle, "pressure", p, adios_err)

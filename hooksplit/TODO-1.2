@@ -1,0 +1,50 @@
+-  Make a utility for HPSS that will make an index only file
+
+-  fsck utility to fix files that were not fully completely created correctly.
+
+-  Is the Fortran module interface complete?
+
+-  Do we need the ADIOS_WRITE macros anymore? If so, we need to do this:
+
+#define ADIOS_WRITE(a,b) call adios_write(a,'b'//char(0),b)
+to
+#define ADIOS_WRITE(a,b) call adios_write(a,#b//char(0),b)
+
+-  Auto generate the index file intended for the auto-split output (POSIX).
+
+-  Formalize the resilience features of BP and add any features necessary.
+
+-  fix MPI_STRIPE method to not require the conditional compilation to work
+properly.
+
+-  Figure out why and fix append mode slowdown.
+
+-  Add write="no" back in. This will force any array dimensions that use this
+to be stored as absolute numbers rather than references to vars.
+
+-  Figure out how to use the same XML file for the app and staging. We need
+some flag to recognize and parse differently. The idea is that we will specify
+the transport for a group is the staging method, but add a parameter, for
+example, that states which method to actually use in the staging area to write
+the data to disk. There might be more changes necessary to make this work.
+
+-  Make the group_size optional. This would require making the buffer a
+maximum size and delaying the offset calculation until the close operation.
+There is also the issue of what to do if the buffer is exceeded. It probably
+only makes sense to abort. Otherwise, we'd have to do a big synch point that
+some processes might not be expecting. I don't think this is really a reasonable
+thing to do. Abort is about the only thing that can really work consistently.
+
+-  Consider refiniements to the free-memory-percentage to better address
+very dynamic memory usage.
+
+-  Add explicit support for "no values present" like NetCDF has.
+
+-  Add a checksum data characteristic to the writing so that we can validate
+the data on reading.
+
+-  fix the phdf5 method so that it uses the progressive assembly approach
+of the nc4 method.
+
+-  fix the tests/genarray so that the 2d and 3d XML files don't collide on
+the group name internally (gpp.py will overwrite one with the other).

@@ -1,0 +1,29 @@
+adios_groupsize = 0
+adios_totalsize = 0
+call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
+adios_buf_size = 1
+call adios_read (adios_handle, "var_byte", v1, adios_buf_size, adios_err)
+adios_buf_size = 2
+call adios_read (adios_handle, "var_short", v2, adios_buf_size, adios_err)
+adios_buf_size = 4
+call adios_read (adios_handle, "var_int", v3, adios_buf_size, adios_err)
+adios_buf_size = 8
+call adios_read (adios_handle, "var_long", v4, adios_buf_size, adios_err)
+adios_buf_size = 1
+call adios_read (adios_handle, "var_ubyte", v5, adios_buf_size, adios_err)
+adios_buf_size = 2
+call adios_read (adios_handle, "var_ushort", v6, adios_buf_size, adios_err)
+adios_buf_size = 4
+call adios_read (adios_handle, "var_uint", v7, adios_buf_size, adios_err)
+adios_buf_size = 8
+call adios_read (adios_handle, "var_ulong", v8, adios_buf_size, adios_err)
+adios_buf_size = 4
+call adios_read (adios_handle, "var_real", v9, adios_buf_size, adios_err)
+adios_buf_size = 8
+call adios_read (adios_handle, "var_double", v10, adios_buf_size, adios_err)
+adios_buf_size = len(v11)
+call adios_read (adios_handle, "var_string", v11, adios_buf_size, adios_err)
+adios_buf_size = 8
+call adios_read (adios_handle, "var_complex", v12, adios_buf_size, adios_err)
+adios_buf_size = 16
+call adios_read (adios_handle, "var_double_complex", v13, adios_buf_size, adios_err)

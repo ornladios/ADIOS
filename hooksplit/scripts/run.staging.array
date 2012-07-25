@@ -1,0 +1,29 @@
+#!/bin/bash
+#PBS -A CSC025ewk
+#PBS -l walltime=04:00:00,size=128
+
+export RUNTIME_PATH=/lustre/widow1/scratch/$USER/arrays
+export RUNTIME_PATH=/lustre/scr144/$USER/arrays
+export ADIOS_SRC_PATH=$HOME/projects/adios/src/adios
+
+export ADIOS_NSSI_CONTACT_INFO=$RUNTIME_PATH/nssi_contact.xml
+export ADIOS_NSSI_CONFIG_FILE=$RUNTIME_PATH/nssi_config.xml
+
+mkdir -p $RUNTIME_PATH
+cd $RUNTIME_PATH
+
+sed -e 's/MPI/NSSI/' $ADIOS_SRC_PATH/examples/Fortran/arrays/arrays.xml > $RUNTIME_PATH/arrays.xml
+sed -e 's@method="MPI"/>@method="NSSI_FILTER">submethod="NC4"</method>@' $ADIOS_SRC_PATH/examples/Fortran/arrays/arrays.xml > $RUNTIME_PATH/arrays.server.xml
+
+lfs setstripe $RUNTIME_PATH -s 1M -c 144
+
+$ADIOS_SRC_PATH/scripts/start.nssi.staging.sh 1 $RUNTIME_PATH/arrays.server.xml >server.log 2>&1 &
+sleep 3
+$ADIOS_SRC_PATH/scripts/create.nssi.config.sh $RUNTIME_PATH/nssi_config.xml $RUNTIME_PATH/nssi_contact.xml
+
+rm $RUNTIME_PATH/test.*
+rm $RUNTIME_PATH/*.bp
+
+time aprun -n 64 $ADIOS_SRC_PATH/examples/Fortran/arrays/arrays_write
+
+$ADIOS_SRC_PATH/scripts/kill.nssi.staging.sh $RUNTIME_PATH/nssi_contact.xml

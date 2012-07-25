@@ -1,0 +1,87 @@
+\chapter{Group Read/Write Process}
+\label{chapter-gpp}
+
+In ADIOS, we provide a python script, which takes a configuration file name as 
+an input argument and produces a series of preprocessing files corresponding to 
+the individual adios-group in the XML file. Depending on which language (C or FORTRAN) 
+is specified in XML, the python script either generates files gwrite\_groupname.ch 
+and gread\_groupname.ch for C or files with extension .fh for Fortran. These files 
+contain the size calculation for the group and automatically print adios\_write 
+calls for all the variables defined inside adios-group. One need to use only the 
+``\#include filename.ch'' statement in the source code between the pair of adios\_open 
+and adios\_close.
+
+Users either type the following command line or incorporate it into a Makefile:
+\\
+\\
+\verb+python gpp.py+
+
+\section{Gwrite/gread/read}
+
+Below are a few example of the mapping from var element to adios\_write/read:
+
+In adios-group ``weather'', we have a variable declared in the following forms:
+
+\begin{enumerate}
+\item \verb+<var name="temperature" gwrite="t" gread="t_read" type="adios_double" dimensions="NX"/>}+
+\\
+When the python command is executed, two files are produced, gwrite\_weather.ch 
+and gread\_weather.ch. The gwrite\_weather.ch command contains 
+\\
+\verb+adios_write (adios_handle, "temperature", t);+
+\\
+while gread\_weather.ch contains
+\\
+\verb+adios_read (adios_handle, "temperature", t_read);+
+
+\item \verb+<var name="temperature" gwrite="t" gread="t_read" type="adios_double" dimensions="NX" read="no"/>+
+\\
+In this case, only the adios\_write statement is generated in gwrite\_weather.ch. 
+The adios\_read statement is not generated because the value of attribute read 
+is set to ``no''. 
+
+\item \verb+<var name="temperature" gread="t_read" type="adios_double" dimensions="NX" />+
+\\
+\verb+adios_write (adios_handle, "temperature", temperature);+
+\\
+\verb+adios_read (adios_handle, "temperature", t_read)};+
+
+\item \verb+<var name="temperature" gwrite="t" type="adios_double" dimensions="NX" />+
+\\
+\verb+adios_write (adios_handle, "temperature", t);+
+\\
+\verb+adios_read (adios_handle, "temperature", temperature);+
+
+\end{enumerate}
+
+
+
+\section{Add conditional expression}
+
+Sometimes, the adios\_write routines are not perfectly written out one after another. 
+There might be some conditional expressions or loop statements. The following example 
+will show you how to address this type of issue via XML editing.
+
+\begin{lstlisting}[language=XML]
+<gwrite src="if (rank == 0) {"/>
+
+<var name="temperature" gwrite="t" gread="t_read" type="adios_double" dimensions="NX" read="no"/>
+
+<gwrite src="}"/>
+\end{lstlisting}
+
+Rerun the python command; the following statements will be generated in
+gwrite\_weather.ch,
+
+\begin{lstlisting}
+if (mype==0) {
+adios_write (adios_handle, "temperature", t)
+}
+\end{lstlisting}
+
+gread\_weather.ch has same condition expression added.
+
+\section*{Dependency in Makefile}
+
+Since we include the header files in the source, the users need to include the 
+header files as a part of dependency rules in the Makefile.

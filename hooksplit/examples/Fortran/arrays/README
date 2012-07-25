@@ -1,0 +1,28 @@
+The arrays_write.F90 example shows how to write out an array the simplest way 
+from a Fortran code. 
+
+Note that each process writes an array with the same name and dimension
+into the arrays.bp file if the MPI method is used. 
+Only one of them can be seen with the generic read API and tools based on 
+this API like bpls. 
+
+However, you can read each array in with the specific API on the same number
+of processors you write them out (see arrays_read.F90)
+
+How to build the code on your own:
+
+1. Generate the gwrite/gread include files from the XML file
+    $ gpp.py arrays.xml
+    $ ls *.fh
+    gread_arrays.fh  gwrite_arrays.fh
+
+2. Compile and link the code, with environment variables ADIOS_DIR pointing
+   to the ADIOS installation directory and MXML_DIR pointing to the MXML
+   installation directory (substitute mpif90 with your F90 compiler):
+   $ mpif90 -o arrays_write arrays_write.F90 -I${ADIOS_DIR}/include \
+            -L${ADIOS_DIR}/lib -ladiosf -L${MXML_DIR}/lib -lmxml
+   $ mpif90 -o arrays_read arrays_read.F90 -I${ADIOS_DIR}/include \
+            -L${ADIOS_DIR}/lib -ladiosf -L${MXML_DIR}/lib -lmxml
+ 
+
+

@@ -1,0 +1,31 @@
+#!/bin/sh
+#PBS -N coupling2D
+#PBS -j oe
+#PBS -l walltime=00:05:00,nodes=16:ppn=2
+
+cd $PBS_O_WORKDIR
+
+WNPX=4
+WNPY=4
+WNDX=7
+WNDY=9 
+WSTEPS=3
+RNPX=2
+RNPY=3
+RSTEPS=3
+
+let "WPROC=WNPX*WNPY"
+let "RPROC=RNPX*RNPY"
+
+cd $PBS_O_WORKDIR
+rm -f writer_*.bp
+rm -f reader_*.bp
+rm -f reader_*.txt
+rm -f log.*
+rm -f coupling2D.[oe][0-9]*
+echo "WPROC=$WPROC ($WNPX x $WNPY)   array size = $WNDX x $WNDY   steps = $WSTEPS" > log.job
+echo "RPROC=$RPROC ($RNPX x $RNPY)   steps = $RSTEPS" >> log.job
+mpirun -np $WPROC ./coupling_writer_2D writer $WNPX $WNPY $WNDX $WNDY $WSTEPS >& log.writer2D &
+mpirun -np $RPROC ./coupling_reader_2D writer $RNPX $RNPY 1 1 $RSTEPS >& log.reader2D &
+wait
+

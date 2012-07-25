@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+    <adios-group name="channel" coordination-communicator="comm">
+    <attribute name="Reference" path="/" value="http://people.sc.fsu.edu/~jburkardt/m_src/twod_to_vtk/twod_to_vtk.html"/>
+
+    <var name="npoints" type="integer"/>
+    <var name="num_cells" type="integer"/>
+
+    <var name="Nspace" type="integer"/>
+  
+    <var name="U" mesh="mesh1" type="double" dimensions="npoints"/>
+    <var name="V" mesh="mesh1" type="double" dimensions="npoints"/>
+    <var name="T" mesh="mesh1" type="double" dimensions="npoints"/>
+
+    <var name="cells" type="integer" dimensions="num_cells,3"/>
+    <var name="points" type="float" dimensions="npoints,2"/>
+
+    <var name="points_X" type="float" dimensions="npoints"/>
+    <var name="points_Y" type="float" dimensions="npoints"/>
+
+
+    <!-- Mesh1: 
+         - nspace
+         - points-multi-var
+         - uniform-cells
+    -->
+    <mesh name="mesh1" type="unstructured" time-varying="no">
+        <nspace value="Nspace" /> 
+        <points-multi-var value="points_X,points_Y" />
+        <uniform-cells count="num_cells" data="cells" type="triangle" />
+    </mesh>
+
+</adios-group>
+
+<method group="channel" method="MPI"/>
+<buffer size-MB="5" allocate-time="now"/>
+</adios-config>

@@ -1,0 +1,6 @@
+Towards 1.2 release
+- amr1 method does not compile
+- netcdf3 cannot be used because nc4 method fails to compile
+- print_metrics aborts on mac (in mpi related methods)
+- FIXED: buffer.c: 10.4 tiger vm_statistics struct does not have speculative_count field
+

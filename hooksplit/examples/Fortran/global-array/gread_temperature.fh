@@ -1,0 +1,11 @@
+adios_groupsize = 0
+adios_totalsize = 0
+call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
+adios_buf_size = 4
+call adios_read (adios_handle, "NX", NX, adios_buf_size, adios_err)
+adios_buf_size = 4
+call adios_read (adios_handle, "size", size, adios_buf_size, adios_err)
+adios_buf_size = 4
+call adios_read (adios_handle, "rank", rank, adios_buf_size, adios_err)
+adios_buf_size = 8 * (NX) * (1)
+call adios_read (adios_handle, "temperature", temperature, adios_buf_size, adios_err)

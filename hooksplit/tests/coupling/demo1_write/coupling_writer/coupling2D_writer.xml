@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<adios-config host-language="Fortran">
+  <adios-group name="writer2D" >
+    <var name="nx_global"  path="" type="integer"/>
+    <var name="ny_global"  path="" type="integer"/>
+
+    <var name="offs_x" path="/aux" type="integer"/>
+    <var name="offs_y" path="/aux" type="integer"/>
+    <var name="nx_local"  path="/aux" type="integer"/>
+    <var name="ny_local"  path="/aux" type="integer"/>
+
+    <global-bounds dimensions="nx_global,ny_global" offsets="offs_x,offs_y">
+        <var name="xy" type="real*8" dimensions="nx_local,ny_local"/>
+    </global-bounds>
+
+  </adios-group>
+
+  <transport group="writer2D" method="MPI"/>
+  <buffer size-MB="4" allocate-time="now"/>
+
+</adios-config>

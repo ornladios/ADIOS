@@ -1,0 +1,56 @@
+<?xml version="1.0"?>
+<adios-config host-language="Fortran">
+  <adios-group name="writer3D" coordination-communicator="group_comm">
+    <var name="ndx" path="/info" type="integer"/>
+    <var name="ndy" path="/info" type="integer"/>
+    <var name="ndz" path="/info" type="integer"/>
+
+    <var name="nproc" path="/info" type="integer"/>
+    <attribute name="description" path="/info/nproc" value="Number of writers"/>
+    <var name="npx"   path="/info" type="integer"/>
+    <attribute name="description" path="/info/npx" value="Number of processors in x dimension"/>
+    <var name="npy"   path="/info" type="integer"/>
+    <attribute name="description" path="/info/npy" value="Number of processors in y dimension"/>
+    <var name="npz"   path="/info" type="integer"/>
+    <attribute name="description" path="/info/npz" value="Number of processors in z dimension"/>
+
+    <var name="dim_x_global"  path="/info" type="integer"/>
+    <attribute name="description" path="/aux/dim_x_global" value="Global array size in x dimension"/>
+    <var name="dim_y_global"  path="/info" type="integer"/>
+    <attribute name="description" path="/aux/dim_y_global" value="Global array size in y dimension"/>
+    <var name="dim_z_global"  path="/info" type="integer"/>
+    <attribute name="description" path="/aux/dim_z_global" value="Global array size in z dimension"/>
+
+    <!-- Auxiliary variables for global array indexing -->
+    <var name="offs_x" path="/aux" type="integer"/>
+    <var name="offs_y" path="/aux" type="integer"/>
+    <var name="offs_z" path="/aux" type="integer"/>
+    <var name="dim_x_local"  path="/aux" type="integer"/>
+    <var name="dim_y_local"  path="/aux" type="integer"/>
+    <var name="dim_z_local"  path="/aux" type="integer"/>
+
+    <!-- 3D array to write with block,block,block decomposition -->
+    <global-bounds dimensions="dim_x_global,dim_y_global,dim_z_global" offsets="offs_x,offs_y,offs_z">
+        <var name="xyz" path="/var" type="double" dimensions="dim_x_local,dim_y_local,dim_z_local"/>
+    </global-bounds>
+    <attribute name="description" path="/var/xyz" 
+               value=">3D array with 3D decomposition"/>
+
+  </adios-group>
+
+
+  <!-- Group to write the whole array from a single processor -->
+  <adios-group name="reader3D" coordination-communicator="group_comm">
+    <var name="rank" path="/info" type="integer"/>
+    <var name="dim_x_local" path="/aux" type="integer"/>
+    <var name="dim_y_local" path="/aux" type="integer"/>
+    <var name="dim_z_local" path="/aux" type="integer"/>
+    <var name="xyz" path="/var" type="double" dimensions="dim_x_local,dim_y_local,dim_z_local"/>
+  </adios-group>
+
+  <method group="writer3D" method="MPI"/>
+  <method group="reader3D" method="MPI"/>
+
+  <buffer size-MB="400" allocate-time="now"/>
+
+</adios-config>

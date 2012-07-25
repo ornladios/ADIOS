@@ -1,0 +1,33 @@
+The scalars_write.F90 example shows how to write out scalar variables
+from a Fortran code. 
+
+Note that in ADIOS 1.0, a string is a scalar as seen in this example. 
+However, a character() array in Fortran can be written out as a byte
+array too.
+
+Note that each process writes an scalar with the same name into 
+the scalars.bp file if the MPI method is used. 
+Only one of them can be seen with the generic read API and tools based on 
+this API like bpls. 
+
+However, you can read each scalar from the separate processes with the 
+specific API on the same number of processors you write them out 
+(see scalars_read.F90)
+
+How to build the code on your own:
+
+1. Generate the gwrite/gread include files from the XML file
+    $ gpp.py scalars.xml
+    $ ls *.fh
+    gread_scalars.fh  gwrite_scalars.fh
+
+2. Compile and link the code, with environment variables ADIOS_DIR pointing
+   to the ADIOS installation directory and MXML_DIR pointing to the MXML
+   installation directory (substitute mpif90 with your F90 compiler):
+   $ mpif90 -o scalars_write scalars_write.F90 -I${ADIOS_DIR}/include \
+            -L${ADIOS_DIR}/lib -ladiosf -L${MXML_DIR}/lib -lmxml
+   $ mpif90 -o scalars_read scalars_read.F90 -I${ADIOS_DIR}/include \
+            -L${ADIOS_DIR}/lib -ladiosf -L${MXML_DIR}/lib -lmxml
+ 
+
+

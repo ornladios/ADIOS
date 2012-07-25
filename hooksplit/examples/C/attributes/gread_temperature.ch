@@ -1,0 +1,15 @@
+adios_groupsize = 0;
+adios_totalsize = 0;
+adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
+adios_buf_size = 4;
+adios_read (adios_handle, "NX", &NX, adios_buf_size);
+adios_buf_size = 4;
+adios_read (adios_handle, "size", &size, adios_buf_size);
+adios_buf_size = 4;
+adios_read (adios_handle, "rank", &rank, adios_buf_size);
+adios_buf_size = 8;
+adios_read (adios_handle, "mean", &mean, adios_buf_size);
+adios_buf_size = 2147483648;
+adios_read (adios_handle, "date", date, adios_buf_size);
+adios_buf_size = 8 * (1) * (NX);
+adios_read (adios_handle, "temperature", t, adios_buf_size);

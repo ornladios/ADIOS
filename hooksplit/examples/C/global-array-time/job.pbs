@@ -1,0 +1,7 @@
+#!/bin/sh
+#PBS -N test 
+#PBS -j oe
+#PBS -l walltime=00:05:00,nodes=3:ppn=2
+
+cd $PBS_O_WORKDIR
+mpirun -np 6 ./adios_globaltime >& result.dat

@@ -1,0 +1,82 @@
+<?xml version="1.0"?>
+<adios-config host-language="Fortran">
+<adios-group name="restart" coordination-communicator="comm">
+  <var name="mype" type="integer" read="no"/>
+  <var name="numberpe" type="integer" read="no"/>
+  <var name="istep" gread="istart" type="integer"/>
+  <var name="mgrid" type="integer" read="no"/>
+  <var name="mpsi" type="integer"  read="no"/>
+  <var name="nprobe" type="integer" read="no"/>
+  <var name="nrbin" type="integer" read="no"/>
+  <var name="nbin_a" type="integer" read="no"/>
+  <var name="mimax" type="integer" read="no"/>
+  <var name="mpsi+1" type="integer" read="no"/>
+  <var name="sprng_buffer_len" type="integer" read="no"/>
+  <global-bounds dimensions="numberpe" offsets="mype">
+     <var name="mi" type="integer" dimensions="1"/>
+     <var name="ntracer" type="integer" dimensions="1"/>
+     <var name="etracer_i0" type="double" dimensions="1"/>
+     <var name="misum" type="double" dimensions="1"/>
+     <var name="cloud_i" type="double" dimensions="1"/>
+     <var name="isize" type="integer"  dimensions="1"/>
+  </global-bounds>
+  <global-bounds dimensions="sprng_buffer_len,numberpe" offsets="0,mype">
+     <var name="buffer1" type="byte" dimensions="sprng_buffer_len,1"/>
+  </global-bounds>
+  <global-bounds dimensions="nprobe,numberpe" offsets="0,mype">
+     <var name="sn_box" type="double" dimensions="nprobe,1"/>
+  </global-bounds>
+  <global-bounds dimensions="nbin_a,numberpe" offsets="0,mype">
+     <var name="sn0" type="double" dimensions="nbin_a,1"/>
+  </global-bounds>
+  <global-bounds dimensions="nrbin,numberpe" offsets="0,mype">
+     <var name="rdtem0" type="double" dimensions="nrbin,1"/>
+     <var name="rtden" type="double" dimensions="nrbin,1"/>
+  </global-bounds>
+  <global-bounds dimensions="mpsi+1,numberpe" offsets="0,mype">
+     <var name="sn0_g" type="double" dimensions="mpsi+1,1"/>
+     <var name="pmarki" type="double" dimensions="mpsi+1,1"/>
+     <var name="ddT_da" type="double" dimensions="mpsi+1,1"/>
+  </global-bounds>
+  <global-bounds dimensions="mgrid,numberpe" offsets="0,mype">
+     <var name="markeri" type="double" dimensions="mgrid,1"/>
+  </global-bounds>
+  <global-bounds dimensions="2,mgrid,numberpe" offsets="0,0,mype">
+     <var name="phi" type="double" dimensions="2,mgrid,1"/>
+  </global-bounds>
+  <global-bounds dimensions="mimax,numberpe" offsets="0,mype">
+    <var name="zion0" gwrite="zion0(6,1:mimax)" gread="zion0_read" type="double" dimensions="mimax,1"/>
+  </global-bounds>
+  <global-bounds dimensions="7,mimax,numberpe" offsets="0,0,mype">
+    <var name="zion" type="double" dimensions="7,mimax,1"/>
+  </global-bounds>
+
+  <gwrite src="if(ifelectron==1) then"/>
+  <var name="memax" type="integer" read="no"/>
+  <global-bounds dimensions="numberpe" offsets="mype">
+     <var name="me" type="integer"  dimensions="1"/>
+     <var name="ntracer_e" type="integer"  dimensions="1"/>
+     <var name="etracer_e0" type="double" dimensions="1"/>
+     <var name="mesum" type="double"  dimensions="1"/>
+     <var name="cloud_e" type="double"  dimensions="1"/>
+  </global-bounds>
+  <global-bounds dimensions="mpsi+1,numberpe" offsets="0,mype">
+     <var name="pmarke" type="double" dimensions="mpsi+1,1"/>
+  </global-bounds>
+  <global-bounds dimensions="mgrid,numberpe" offsets="0,mype">
+     <var name="markere" type="double" dimensions="mgrid,1"/>
+  </global-bounds>
+  <global-bounds dimensions="memax,numberpe" offsets="0,mype">
+    <var name="zeon0" gwrite="zeon0(6,1:memax)" gread="zeon0_read" type="double" dimensions="memax,1"/>
+  </global-bounds>
+  <global-bounds dimensions="7,memax,numberpe" offsets="0,0,mype">
+    <var name="zeon" type="double" dimensions="7,memax,1"/>
+  </global-bounds>
+  <gwrite src="endif"/>
+</adios-group>
+
+
+<!-- method priority="3" method="MPI_AMR" iterations="100" group="restart"/ -->
+<method priority="3" method="POSIX" group="restart"/>
+<buffer size-MB="256" allocate-time="now" />
+</adios-config>

@@ -1,0 +1,41 @@
+executables:
+  adios_lint
+  -- check the XML file for correctness. No news is good news.
+  -- USAGE: ./adios_lint <config.xml>
+
+  bpdump
+  -- convert bp format to netcdf format
+  -- USAGE: ./bpdump [-d [var]|--dump [var]] <filename>
+
+  bp2h5
+  -- convert bp format to netcdf format
+  -- USAGE: ./bp2h5 XXXX.bp (XXXX.h5)
+
+  bp2ascii
+  -- convert bp format to netcdf format
+  -- USAGE: ./bp2ascii XXXX.bp -C[-c] col_name
+
+  bp2ncd
+  -- convert bp format to netcdf format
+  -- USAGE: ./bp2ncd XXXX.bp (XXXX.h5)
+   
+  bp2ncdphi
+  (gtc: RUNcoord.bp PHI_00000.bp)
+  -- convert bp format to netcdf format
+  -- merge the array with the same variable name
+  -- the array index is abstracted from "path_name"
+  -- USAGE: bp2ncdphi XXXX.bp (XXXX.h5)
+
+  bp2ncdxgc
+  (xgc: flowdiag.bp fluxdiag.bp)
+  -- convert bp format to netcdf format
+  -- merge the array with the same variable name
+  -- the array index is abstracted from "istep" scalar var
+  -- USAGE: bp2ncdxgc XXXX.bp (XXXX.h5)
+
+FOLDER  gwrite
+  -- gwrite.py and xmlparser.py
+  -- example of how to modify makefile
+  -- save the expanded version of source codes in the current folder to the user-defined folder name 
+  -- USAGE: python gwrite.py folder_name
+   

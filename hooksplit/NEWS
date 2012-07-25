@@ -1,0 +1,54 @@
+1.4.0 Release July 2012
+    - new read API for staging method with step-by-step processing, 
+       also with non-blocking and chunking APIs
+    - visualization schema added to ADIOS XML format
+    - skel: I/O skeleton generator and evaluation tools
+    - unified error/debug logging
+    - attributes written from only 1 processor to save on metadata
+    - ADIOS version identifier in ADIOS-BP format
+    - extra hidden attributes (version, create/update times) 
+    - Java and Python bindings
+    - F90 modules adios_write_mod and adios_read_mod 
+          to check syntax at compile time
+
+
+1.3.1 Released Nov 2011
+    - fix: non-compliant MPI collective calls
+    - fix: MPI_AMR method caused MPI_Finalize issues on some clusters
+    - fix: histogram calculation: freeing memory too early
+
+1.3 Released July 12, 2011
+    - New read method BP_STAGED for reading files with improved performance
+    - Changes in MPI_AMR and MPI_LUSTRE to support default parameters. 
+      Parameters for MPI_LUSTRE and MPI_AMR in XML file are not mandatory 
+      any more.
+
+1.2.1 Released Aug 25, 2010
+    - Bug fix in read API (arrays written every timestep but without time 
+      dimension caused aborts)
+    - DIMES method from Rutgers
+
+1.2 Released July 15, 2010
+    - XML and non-XML write APIs are available
+    - More statistics (min/max/avg/std.dev) available without
+      overhead in write performance
+    - Added MPI_AMR method for advanced mesh refinement codes and
+      for aggregated writing (N procs to P writers to M disks)
+    - Added support for subfiles
+      - POSIX method many-file output can be read as one file
+      - MPI_AMR method uses subfiles to improve write performance
+    - Added NetCDF-4 transport method
+    - Asynchronous, staging methods on Jaguar XT5 at ORNL
+      - DataTap from Georgia Tech
+      - DataSpaces from Rutgers
+      - NSSI from Sandia
+    - MPI_LUSTRE method for best performance on Lustre file system
+
+
+1.0.1  Released on Dec 9, 2009
+    - fix: builds read API on Mac (was broken at utils/bpdump)
+    - fix: Fortran written BP files are correctly read by Fortran readers
+    - added adios_mpi_stripe2 method for improved performance on Lustre 
+      file system
+
+1.0  Released on Nov 18, 2009

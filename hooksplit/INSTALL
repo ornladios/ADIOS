@@ -1,0 +1,190 @@
+Installation Instructions for ADIOS Software
+==================================================
+
+This file provides instructions for installing the ADIOS software.
+If you have any problems with the installation, please see the 
+ADIOS support page at the following location:
+
+    http://www.nccs.gov/user-support/adios
+
+Obtaining ADIOS
+===============
+
+    You can download the latest ADIOS source package from the ADIOS 
+    home page.
+
+Requirements and optional features
+==================================
+
+ - ADIOS requires MPI and MPI-IO. 
+
+ - ADIOS requires a version 2.5 or higher of Mini-XML.
+   The Mini-XML library is used to parse XML configuration files. 
+   It can be downloaded from 
+      http://www.minixml.org/software.php
+
+ - A Fortran 90 compiler is optional.
+   The Fortran API is built only if a Fortran 90 compiler is available.
+   Use --disable-fortran at configuration time to disable this feature. 
+
+ - NetCDF-3 is optional.
+   The bp2ncd converter utility to NetCDF format is built only if NetCDF
+   is available. Currently ADIOS uses the NetCDF-3 library. Use the option
+   --with netcdf=<path> or ensure that the NETCDF_DIR environment variable 
+   is set before configuring ADIOS. 
+   
+   NetCDF version 3.6.2 can be downloaded from
+       http://www.unidata.ucar.edu/downloads/netcdf
+
+ - HDF5 is optional.
+   The bp2h5 converter utility to HDF5 format is built only if a HDF5 
+   library is available. Currently ADIOS uses the 1.6 version of the HDF5 
+   API but it can be built and used with the 1.8.x version of the HDF5 
+   library too. Use the option --with hdf5=<path> to configure ADIOS.
+
+   HDF5 can be downloaded from
+       http://www.hdfgroup.org/downloads
+
+ - Parallel HDF5 is optional.
+   The transport method writing files in the Parallel HDF5 format is built 
+   only if a parallel version of the HDF5 library is (also) available. You
+   need to use the option   with phdf5=<path> to build this transport method.
+
+   If you define Parallel HDF5 and do not define serial HDF5, then bp2h5 will
+   be built with the parallel library. 
+   
+   Note that if you build this transport method, ADIOS will depend on PHDF5 
+   when you link any application with ADIOS even if you the application does 
+   not intend to use this method. 
+
+   If you have problems compiling ADIOS with PHDF5 due to missing flags or 
+   libraries, you can define them using 
+   --with-phdf5-incdir=<path>,
+   --with-phdf5-libdir=<path> and 
+   --with-phdf5-libs=<link time flags and libraries>
+
+ - NetCDF-4 Parallel is optional.
+   The NC4 transport method writes files using the NetCDF-4 library which in 
+   turn is based on the parallel HDF5 library. You need to use the option 
+   -- with nc4par=<path> to build this transport method. Also, you need the
+   parallel HDF5 library. 
+
+   NetCDF version 4.0.1 can be downloaded from
+       http://www.unidata.ucar.edu/downloads/netcdf
+
+   You need to build NetCDF-4 with a parallel HDF5 library as described at
+   http://www.unidata.ucar.edu/software/netcdf/docs/netcdf-install/parallel.html
+
+ - Matlab is optional.
+   If you have Matlab, you can build the ADIOS reader for Matlab separatly
+   after building ADIOS. See details below in the Matlab section but before
+   configuring ADIOS.
+
+
+Quick Installation
+==================
+
+   The following steps are needed to configure, build and install ADIOS.
+   For example, to install ADIOS to /usr/local/adios on a machine where
+   mpicc and mpif90 are the compilers:
+
+   $ tar zxf adios-1.0.tar.gz
+   $ cd adios-1.0
+   $ CC=mpicc FC=mpif90 ./configure --prefix=/usr/local/adios 
+       --with-mxml=<location of mini-xml installation>
+       --with-hdf5=<location of HDF5 installation>
+       --with-netcdf=<location of netCDF installation>
+   $ make
+   $ make install
+
+
+Full installation instructions
+==============================
+
+Architectures and compilers
+---------------------------
+
+   Cray XT machines
+   ----------------
+   Use "CC=cc CXX=CC FC=ftn" for the configure command. 
+   These wrappers should be using the actual C, C++ and Fortran compilers on 
+   such machines. ADIOS can be compiled with GNU, PGI and Intel compilers
+   but it does not compile with the Cray compiler. If you are using the
+   Cray compilers to build your application build the ADIOS library with 
+   the GNU compiler.
+
+   BlueGene machines
+   -----------------
+   Use the following compiler settings for the configure command:
+     MPICC=mpixlc_r MPIFC=mpixlf90_r CC=xlc_r FC=xlf90_r
+
+   Mac OSX
+   -------
+   Use separate MPICC/MPIFC and CC/FC compilers
+   Add 
+     export CFLAGS="-DO_LARGEFILE=0 -fno-common"
+   before configuring adios. 
+   If you do not want to install a fortran compiler on Mac, use
+   --disable-fortran at configure.
+
+   We have built ADIOS on OS X 10.6 using MacPorts and GCC4.4 
+   and OpenMPI 1.4.2 ports. GCC4.4 contains the gfortran compiler too. 
+   
+   Linux
+   -----
+   ADIOS should configure and build fine on Linux. One possible issue
+   is that configure may break in one of the tests for the fortran compiler
+   test with mpif90. If you have set FC=mpif90 before configure, try to 
+   configure without setting it. Then configure will test the default
+   f90 compiler (gfortran most likely) and pass but still will use mpif90 to 
+   build ADIOS. Or try MPIFC=mpif90 and FC=<whatever fortran compiler you have>
+
+Configuring
+-----------
+   Hint: look at the runconf script in the distribution directory. This 
+   script is used to configure ADIOS on our systems. It may help you 
+   in configuring ADIOS for your system. 
+
+   ./configure --help 
+   lists the options that you can use. 
+
+Matlab
+------
+   Matlab MEX compiler uses GNU gcc to compile codes so you need to build
+   ADIOS with gcc. It also requires relocatable code, therefore you need to
+   specify -fPIC in your C compiler flags when configuring ADIOS:
+
+   $ CFLAGS="-fPIC" ./configure
+   $ make
+
+   After building ADIOS, you can build the reader for Matlab. Ensure that 
+   the MEX compiler 'mex' is in the path:
+
+   $ cd tools/matlab
+   $ make matlab
+
+   You need to install the ADIOS M and MEX files in tools/matlab manually
+   to a directory where Matlab can find them (you can tell Matlab where to 
+   look for them by setting the MATLABPATH environment variable).
+    
+HDF5
+----
+   If you have parallel HDF5 installed and use it with --with-phdf5 and you
+   do not specify a serial HDF5 library with --with-hdf5, then configure
+   will use the parallel library for both HDF5 and PHDF5. This may or 
+   may not work to build utils/bp2h5. If not, you need to use a serial
+   version of HDF5 to build bp2h5. Use the --with-hdf5 option to tell 
+   configure where to look for the serial HDF5 library.
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,27 @@
+# Welcome to the skel settings file. 
+
+# Each line should contain either a comment (like this one) starting with #,
+# Or a name=value pair
+
+
+# The working directoy under which skel executables should be placed
+# This should be on a filesystem visible to the compute nodes
+deploy_dir=~/skel-deploy-dir
+
+
+# The submission script template to use, currently jaguar and sith are supported
+# See the skel manual for information about adding a new target platform
+submit_target=sith
+
+
+# Measurement settings to steer the code generation
+sleep_before_open=no
+barrier_before_open=yes
+barrier_before_access=no
+barrier_before_close=no
+barrier_after_close=no
+barrier_after_steps=no
+use_adios_timing=no
+
+
+

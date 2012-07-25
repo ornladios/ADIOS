@@ -1,0 +1,68 @@
+#!/bin/bash
+#PBS -N cpl3ddart
+#PBS -A stf006
+#PBS -j oe
+#PBS -q debug
+#PBS -l walltime=00:15:00,size=12
+
+WNPX=2
+WNPY=2
+WNPZ=2
+WNDX=7
+WNDY=9
+WNDZ=5
+WSTEPS=3
+
+RNPX=3
+RNPY=1
+RNPZ=1
+RSTEPS=3
+
+SPROC=2
+let "WPROC=WNPX*WNPY*WNPZ"
+let "RPROC=RNPX*RNPY*RNPZ"
+let "PROCALL=WPROC+RPROC"
+
+cd $PBS_O_WORKDIR
+rm -f writer_*.bp
+rm -f reader_*.bp
+rm -f reader_*.txt
+rm -f log.*
+rm -f cpl3ddart.[oe][0-9]*
+
+ulimit -c unlimited
+
+## Run the DARTServer on the staging nodes
+rm -f conf
+echo "start server on SPROC=$SPROC, -S$SPROC -c$PROCALL"
+aprun -n $SPROC ./server -s$SPROC -c$PROCALL &> log.server &
+
+## Give some time for the servers to load and startup
+sleep 5s
+while [ ! -f conf ]; do
+    echo "-- File conf is not yet available from server. Sleep more"
+    sleep 2s
+done
+sleep 1s  # wait server to fill up the conf file
+
+## Export the main server config to the environment
+while read line; do 
+  export set "${line}"
+done < conf
+
+echo -- P2TNID = $P2TNID   P2TPID = $P2TPID
+
+## Run the "writer" application
+echo "start writer on WPROC=$WPROC ($WNPX x $WNPY x $WNPZ)   array size = $WNDX x $WNDY x $WNDZ   steps = $RSTEPS" 
+aprun -n $WPROC ./coupling_writer_3D_dart writer $WNPX $WNPY $WNPZ $WNDX $WNDY $WNDZ $WSTEPS >& log.writer3D &
+
+#sleep 2s
+
+## Run the "reader" application
+echo "start reader on RPROC=$RPROC ($RNPX x $RNPY x $RNPZ)   steps = $RSTEPS" 
+aprun -n $RPROC ./coupling_reader_3D_dart writer $RNPX $RNPY $RNPZ 1 1 1 $RSTEPS >& log.reader3D &
+
+wait
+
+rm -f conf
+

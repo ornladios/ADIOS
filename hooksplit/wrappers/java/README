@@ -1,0 +1,49 @@
+ADIOS Java wrapper
+-----------------
+
+This directory contains the codes for the ADIOS java wrapper, a Java
+Native Interface (JNI) program to call the native ADIOS library.
+
+
+== Build == 
+
+This program can be built with CMake (http://www.cmake.org/). You may
+want to a build directory and run cmake pointing the source directory
+containing CMakeLists.txt (this directory). For example, 
+
+$ mkdir build; cd build
+$ cmake /dir/to/source
+
+CMake will search installed ADIOS library, Java, JNI, MPI library (if
+needed), etc. Once completed, type make to build:
+
+$ make
+
+If you need verbose output, you may add an option:
+$ make VERBOSE=1
+
+After successful building, you can see libAdiosJava.so (or
+libAdiosJava.dylib in Mac) and AdiosJava.jar. Those two files are
+needed to call in Java.
+
+Then, you can install the library by,
+$ make install
+
+The default install directory is /usr/local. You can change by
+specifying CMAKE_INSTALL_PREFIX value;
+
+$ cmake -DCMAKE_INSTALL_PREFIX=/path/to/install /dir/to/source
+
+Or, you can use the ccmake command, the CMake curses interface. Refer
+to the CMake documentation for more detailed instructions.
+
+== Test == 
+
+This program contains a test program. To run testing after building,
+type the following command:
+
+$ make test
+
+If you need a verbose output, type the following
+
+$ ctest -V

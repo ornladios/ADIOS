@@ -1,0 +1,126 @@
+%\chapter*{{\Large \textbf{9 Utilities\label{HToc82067528}}}}
+\chapter{Utilities}
+
+\section{adios\_lint}
+
+We provide a verification tool, called adios\_lint, which comes with ADIOS. It 
+can help users to eliminate unnecessary semantic errors and to verify the integrity 
+of the XML file. Use of adios\_lint is very straightforward; enter the adios\_lint 
+command followed by the config file name.\label{HToc82067529}\label{HToc84890280}\label{HToc212016656}\label{HToc212016898}\label{HToc182553427}
+
+\section{adios\_config}
+
+This script provides the necessary compile and linking flags to use ADIOS in your 
+application and the version information of the ADIOS installation.  See Section 
+2.5 for how to use it or run \texttt{"}adios\_config -h\texttt{"} to see the options. 
+\label{HToc182553428}
+
+\section{bpls}
+
+The bpls utility is used to list the content of a BP file or to dump arbitrary 
+subarrays of a variable. By default, it lists the variables in the file including 
+the type, name, and dimensionality. Here is the description of additional options 
+(use bpls \-{}h to print help on all options for this utility).
+
+\begin{itemize}
+\item[-l]  Displays the global statistics associated with each array (minimum, maximum, 
+average and standard deviation) and the value of each scalar. Note that the detailed 
+listing does not have extra overhead of processing since this information is available 
+in the footer of the BP file. 
+
+\item[-t]  When added to the -l option, displays the statistics associated with the variables 
+for every timestep. 
+
+\item[-p] Dumps the histogram binning intervals and their corresponding frequencies, if 
+histograms were enabled while writing the bp file. This option generates a ``\texttt{<}variable-name\texttt{>}.gpl'' 
+file that can be given to the `gnuplot' program as input. 
+
+\item[-a] Lists attributes besides the variables
+
+\item[-A] Lists only the attributes
+
+\item[-r] Sorts the full listing by names. Name masks to list only a subset of the variables/attributes 
+can be given like with the -ls command or as regular expressions (with -e option).
+
+\item[-v] Verbose. It prints some information about the file in the beginning before listing 
+the variables. 
+
+\item[-S] Dump byte arrays as strings instead of with the default numerical listing. 2D 
+byte arrays are printed as a series of strings. 
+\end{itemize}
+
+Since bpls is written in C, the order of dimensions is reported with row-major 
+ordering, i.e., if Fortran application wrote an NxM 2D variable, bpls reports it 
+as an MxN variable. 
+
+\begin{itemize}
+\item[-d] Dumps the values of the variables. A subset of a variable can be dumped by using 
+start and count values for each dimension with -s and -c option, e.g., -s ``10,20,30'' 
+-c ``10,10,10'' reads in a 10x10x10 sub-array of a variable starting from the (10,20,30) 
+element. Indices start from 0. As in Python, \-{}1 denotes the last element of 
+an array and negative values are handled as counts from backward. Thus, -s ``-1,-1'' 
+-c ``1,1'' reads in the very last element of a 2D array, or -s ``0,0'' -c ``1,-1'' 
+reads in one row of a 2D array. Or -s ``1,1'' -c ``-2,-2'' reads in the variable 
+without the edge elements (row 0, colum 0, last row and last column).
+\end{itemize}
+
+Time is handled as an additional dimension, i.e., if a 2D variable is written several 
+times into the same BP file, bpls lists it as a 3D array with the time dimension 
+being the first (slowest changing) dimension. 
+
+In the example below, a 4 process application wrote a 4x4 array (each process wrote 
+a 2x2 subset) with values from 0 to 15 once under the name /var/int\_xy and 3 times 
+under the name /var/int\_xyt. 
+
+\begin{lstlisting}[language=bash,caption={bpls utility},label={}]
+$ bpls -latv g_2x2_2x2_t3.bp 
+File info:  of groups: 1  of variables: 11  of attributes: 7  time steps: 3 starting from 1 file size: 779 KB  bp version: 1  endianness: Little EndianGroup genarray:  integer /dimensions/X scalar = 4  integer /dimensions/Y scalar = 4  integer /info/nproc scalar = 4  string /info/nproc/description attr = "Number of writers"  integer /info/npx scalar = 2  string /info/npx/description attr = "Number of processors in x dimension"  integer /info/npy scalar = 2  string /info/npy/description attr = "Number of processors in y dimension"  integer /var/int_xy {4, 4} = 0 / 15  string /var/int_xy/description attr = "2D array with 2D decomposition"  integer /var/int_xyt {3, 4, 4} = 0 / 15  string /var/int_xyt/description attr = "3D array with 2D decomposition with time in 3rd dimension"
+\end{lstlisting}
+
+The content of /var/int\_xy can be dumped with
+\begin{lstlisting}[language=bash,caption={},label={}]
+$ bpls g_2x2_2x2_t3.bp -d -n 4 var/int_xy  integer /var/int_xy {4, 4} 
+    (0,0) 0 1 2 3    (1,0) 4 5 6 7    (2,0) 8 9 10 11    (3,0) 12 13 14 15
+\end{lstlisting}
+
+The ``central'' 2x2 subset of /var/int\_xy can be dumped with
+\begin{lstlisting}[language=bash,caption={},label={}]
+$ bpls g_2x2_2x2_t3.bp -d -s "1,1" -c "2,2" -n 2 var/int_xy  integer /var/int_xy {4, 4} 
+    slice (1:2, 1:2)    (1,1) 5 6    (2,1) 9 10
+\end{lstlisting}
+
+The last element of /var/int\_xyt for each timestep can be dumped with
+\begin{lstlisting}[language=C,caption={},label={}]
+$ bpls g_2x2_2x2_t3.bp -d -s "0,-1,-1" -c "-1,1,1" -n 1 var/int_xyt  integer /var/int_xyt {3, 4, 4} 
+    slice (0:2, 3:3, 3:3)    (0,3,3) 15    (1,3,3) 15    (2,3,3) 15
+\end{lstlisting}
+
+\section{bpdump}
+
+The bpdump utility enables users to examine the contents of a bp file more closely 
+to the actual BP format than with bpls and to display all the contents or selected 
+variables in the format on the standard output. Each writing process' output is 
+printed separately. 
+
+It dumps the bp file content, including the indexes for all the process groups, 
+variables, and attributes, followed by the variables and attributes list of individual 
+process groups (see Listing~\ref{list-bpdump}).
+
+\begin{lstlisting}[language=bash,caption={bpdump utility},label={list-bpdump}]
+bpdump [-d var | -dump var ] <filename>
+======================================================== 
+Process Groups Index:Group: temperature    Process ID: 0 
+    Time Name:    Time: 1 
+    Offset in File: 0========================================================
+Vars Index:Var (Group) [ID]: /NX (temperature) [1]    Datatype: integer    Vars Characteristics: 20
+    Offset(46) Value(10)Var (Group) [ID]: /size (temperature) [2] 
+    Datatype: integer    Vars Characteristics: 20 
+    Offset(77) Value(20)
+...Var (Group) [ID]: /rank (temperature) [3] 
+    Datatype: integer    Vars Characteristics: 20 
+    Offset(110) Value(0)
+...Var (Group) [ID]: /temperature (temperature) [4] 
+    Datatype: double    Vars Characteristics: 20    Offset(143) Min(1.000000e-01) Max(9.100000e+00) Dims (l:g:o): (1:20:0,10:10:0)
+...========================================================
+\end{lstlisting}
+
