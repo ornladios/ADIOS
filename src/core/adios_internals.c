@@ -1496,7 +1496,7 @@ int adios_common_define_var (int64_t group_id, const char * name
                             ,const char * dimensions
                             ,const char * global_dimensions
                             ,const char * local_offsets
-                            ,const char *transform_type_str // NCSU ALACRITY-ADIOS
+                            ,char *transform_type_str // NCSU ALACRITY-ADIOS
                             )
 {
     struct adios_group_struct * t = (struct adios_group_struct *) group_id;
@@ -1647,18 +1647,39 @@ int adios_common_define_var (int64_t group_id, const char * name
     // NCSU ALACRITY-ADIOS - parse transform type string
     // If we are given a transform type string, and it is not the empty string, parse it
     // Else, default to no transform
-    if (transform_type_str && transform_type_str[0] != '\0') {
-        // TODO: Break transform_type_str into "type" and "args" sections for parameterized transformations
-        enum ADIOS_TRANSFORM_TYPE transform_type = adios_transform_type_by_name(transform_type_str);
+	
+	char sep = ':';
+    if (transform_type_str && transform_type_str[0] != '\0' && transform_type_str[0] != sep) {
+        // Break transform_type_str into "type" and "args" sections for parameterized transformations
+				
+		char * pch;
+		
+		char* transform_method_str = NULL;
+		char* transform_param_str = NULL;
+		
+		pch = strchr(transform_type_str, sep);		
+		
+		if(pch)
+		{ 			
+			transform_type_str[pch-transform_type_str] = '\0';
+			transform_method_str = (char*)transform_type_str;
+			transform_param_str = pch + 1;
+		}
+		else
+		{
+			transform_method_str = (char*)transform_type_str;
+		}
+				
+        enum ADIOS_TRANSFORM_TYPE transform_type = adios_transform_type_by_name(transform_method_str);
 
         if (transform_type == adios_transform_unknown) {
             log_error("Unknown transform type \"%s\" specified for variable \"%s\", ignoring it...\n",
-                      transform_type_str, v->name);
+                      transform_method_str, v->name);
             transform_type = adios_transform_none;
         } else if (transform_type == adios_transform_none) {
             v->transform_type = adios_transform_none;
         } else {
-            v = adios_transform_define_var(t, v, transform_type); // This function sets the transform_type field
+            v = adios_transform_define_var(t, v, transform_type, transform_param_str); // This function sets the transform_type field
         }
     } else {
         v->transform_type = adios_transform_none;

@@ -468,7 +468,7 @@ int adios_common_define_var (int64_t group_id, const char * name
                             ,const char * dimensions
                             ,const char * global_dimensions
                             ,const char * local_offsets
-                            ,const char *transform_type_str // NCSU ALACRITY-ADIOS
+                            ,char *transform_type_str // NCSU ALACRITY-ADIOS
                             );
 
 int adios_common_define_var_characteristcs  (struct adios_group_struct * g, const char * var_name

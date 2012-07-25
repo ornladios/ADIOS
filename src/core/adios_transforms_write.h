@@ -29,7 +29,8 @@ uint64_t adios_transform_get_pre_transform_var_size(struct adios_group_struct *g
  */
 struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *orig_var_grp,
                                                      struct adios_var_struct *orig_var,
-                                                     enum ADIOS_TRANSFORM_TYPE transform_type);
+                                                     enum ADIOS_TRANSFORM_TYPE transform_type,
+													 char* transform_param);
 
 /*
  * Transforms a given variable orig_var via the given transform type.
