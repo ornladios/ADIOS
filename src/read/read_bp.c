@@ -2383,17 +2383,17 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
     //FIXME
     type_size = bp_get_type_size (v->type, 0);;
 
-    if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
+    if (r->sel->type == ADIOS_SELECTION_BOUNDINGBOX)
     {
         datasize = type_size;
-        for (i = 0; i < sel->u.bb.ndim; i++)
+        for (i = 0; i < r->sel->u.bb.ndim; i++)
         {
-            datasize *=  sel->u.bb.count[i];
+            datasize *=  r->sel->u.bb.count[i];
         }
     }
-    else if (sel->type == ADIOS_SELECTION_POINTS)
+    else if (r->sel->type == ADIOS_SELECTION_POINTS)
     {
-        datasize = type_size * sel->u.points.npoints;
+        datasize = type_size * r->sel->u.points.npoints;
     }
     
     r->priv = 0;
