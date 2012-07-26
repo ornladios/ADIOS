@@ -1,3 +1,6 @@
+
+#ifdef COMPRESS
+
 #include <stdint.h>
 #include <assert.h>
 
@@ -8,19 +11,10 @@
 #include "adios_transforms_write.h"
 #include "public/adios_error.h"
 
-#ifdef COMPRESS
 #include "compress.h"
 
-#define MAX_POSSIBLE_BINS 65536
-static const int MAX_PART_METADATA_SIZE =
-    sizeof(uint64_t) +
-    sizeof(unsigned short int) +
-    MAX_POSSIBLE_BINS * ( sizeof(unsigned short int) +  2 * sizeof(uint64_t) + sizeof(unsigned char) );
-
-
-uint64_t adios_transform_compress_vars_size(uint64_t orig_size, int num_vars) {
-    return num_vars * MAX_PART_METADATA_SIZE +	// For the metadata
-           orig_size * 5/4;						// For the index + data
+uint64_t adios_transform_compress_calc_vars_transformed_size(uint64_t orig_size, int num_vars) {
+    return EXPAND_SIZE(orig_size);
 }
 
 // *apply function is in adios_transform_compress_write.c, since it requires
@@ -35,14 +29,14 @@ typedef enum {
 } bb_intersetion_type;
 
 enum ADIOS_ERRCODES adios_transform_compress_retrieve_subvolume(
-                    struct adios_index_var_struct_v1 *var, void *out,
-                    uint64_t *out_size, void *read_state,
-                    adios_transform_var_read_delegate read_delegate,
-                    ADIOS_SELECTION *sel, int time_index) {
+                    struct adios_index_var_struct_v1 *var, void *global_out, int time_index,
+                    const adios_subvolume_copy_spec *copy_spec,
+                    void *read_state, adios_transform_var_read_delegate read_delegate,
+                    enum ADIOS_FLAG swap_endianness) {
 
-    assert(var->characteristics[time_index].transform_type == adios_transform_compress);
-    struct adios_index_characteristic_dims_struct_v1 *orig_dims =
-            &var->characteristics[time_index].pre_transform_dimensions;
+    assert(var->characteristics[time_index].transform.transform_type == adios_transform_compress);
+    // struct adios_index_characteristic_dims_struct_v1 *orig_dims =
+            // &var->characteristics[time_index].pre_transform_dimensions;
 
  
     return 0;
@@ -54,6 +48,7 @@ enum ADIOS_ERRCODES adios_transform_compress_retrieve_subvolume(
 
 
 #else
+
 DEFINE_FNS_UNIMPL(compress);
 
 #endif

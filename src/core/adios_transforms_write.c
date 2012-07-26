@@ -307,9 +307,9 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
 
     // Set transform type and allocate the metadata buffer
     orig_var->transform_type = transform_type;
-    // orig_var->transform_metadata_len = adios_transform_get_metadata_size(transform_type);
-    // if (orig_var->transform_metadata_len)
-        // orig_var->transform_metadata = malloc(orig_var->transform_metadata_len);
+    orig_var->transform_metadata_len = adios_transform_get_metadata_size(transform_type);
+    if (orig_var->transform_metadata_len)
+        orig_var->transform_metadata = malloc(orig_var->transform_metadata_len);
 	
 	// set the parameter string	
 	if(transform_param && transform_param[0] != '\0') 
