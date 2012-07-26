@@ -32058,7 +32058,7 @@ fi
 if test "${with_compress+set}" = set; then
   withval="$with_compress"
   COMPRESS_LDFLAGS="-L$withval/lib";
-         COMPRESS_LIBS="-lcompress -lsz -lbz2 -lz";
+         COMPRESS_LIBS="-lcompress -lbspline -lbz2 -lz";
          COMPRESS_CPPFLAGS="-I$withval/include";
 else
   with_compress=no
@@ -32082,7 +32082,7 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -lcompress -lsz -lbz2 -lz"
+    LIBS="$LIBS -lcompress -lbspline -lbz2 -lz"
     LDFLAGS="$LDFLAGS $COMPRESS_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $COMPRESS_CPPFLAGS"
 
