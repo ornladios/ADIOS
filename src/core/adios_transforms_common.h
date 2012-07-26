@@ -19,7 +19,9 @@ enum ADIOS_TRANSFORM_TYPE
     ,adios_transform_none			= 0
     ,adios_transform_identity		= 1
     ,adios_transform_alacrity		= 2
-    ,num_adios_transform_types		= 3 // Not counting unknown; KEEP THIS UPDATED
+    ,adios_transform_compress		= 3
+    ,adios_transform_mloc			= 4
+    ,num_adios_transform_types		= 5 // Not counting unknown; KEEP THIS UPDATED
 };
 
 /*

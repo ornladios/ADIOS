@@ -5,7 +5,7 @@
 #include <assert.h>
 
 #include "public/adios_types.h"
-#include "core/adios_transforms_util.h"
+#include "core/adios_subvolume.h"
 
 #define SHIFT argv++; argc--;
 #define SHIFT_N(n) argv += n; argc -= n;

@@ -10,7 +10,7 @@
 #include "adios_internals.h"
 #include "public/adios_types.h"
 
-#include "adios_transforms_hooks.h"
+#include "adios_transforms_hooks_write.h"
 #include "adios_transforms_common.h"
 #include "adios_transforms_write.h"
 
@@ -287,7 +287,7 @@ static void adios_transform_convert_var_to_byte_array(struct adios_group_struct 
 struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *orig_var_grp,
                                                      struct adios_var_struct *orig_var,
                                                      enum ADIOS_TRANSFORM_TYPE transform_type,
-													 char* transform_param) {
+                                                    char* transform_param) {
     log_debug("Transforming variable %s with type %d\n", orig_var->name, transform_type);
 
     // Check for the simple and error cases
@@ -310,19 +310,19 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
     orig_var->transform_metadata_len = adios_transform_get_metadata_size(transform_type);
     if (orig_var->transform_metadata_len)
         orig_var->transform_metadata = malloc(orig_var->transform_metadata_len);
-	
-	// set the parameter string	
-	if(transform_param && transform_param[0] != '\0') 
-	{
-		size_t param_len = strlen(transform_param);
-		if(param_len > UINT16_MAX)
-		{
-			param_len = UINT16_MAX;
-		}
-		
-		orig_var->transform_type_param_len = (uint16_t)param_len;
-		orig_var->transform_type_param = strdup(transform_param);		
-	}
+
+    // set the parameter string
+    if(transform_param && transform_param[0] != '\0')
+    {
+        size_t param_len = strlen(transform_param);
+        if(param_len > UINT16_MAX)
+        {
+            param_len = UINT16_MAX;
+        }
+
+        orig_var->transform_type_param_len = (uint16_t)param_len;
+        orig_var->transform_type_param = strdup(transform_param);
+    }
 
     // Return the modified variable
     return orig_var;
@@ -752,17 +752,16 @@ int adios_transform_copy_var_transform(struct adios_file_struct *fd, struct adio
     dst_var->pre_transform_type = src_var->pre_transform_type;
 
     adios_transform_dereference_dimensions_var(fd, &dst_var->pre_transform_dimensions, src_var->pre_transform_dimensions);
-	
-	// for parameter	
-	dst_var->transform_type_param_len = src_var->transform_type_param_len;
+
+    // for parameter
+    dst_var->transform_type_param_len = src_var->transform_type_param_len;
     if (src_var->transform_type_param_len) {
         dst_var->transform_type_param = malloc(src_var->transform_type_param_len);
         memcpy(dst_var->transform_type_param, src_var->transform_type_param, src_var->transform_type_param_len);
     } else {
         dst_var->transform_type_param = 0;
     }
-	
-	
+
     dst_var->transform_metadata_len = src_var->transform_metadata_len;
     if (src_var->transform_metadata_len) {
         dst_var->transform_metadata = malloc(src_var->transform_metadata_len);

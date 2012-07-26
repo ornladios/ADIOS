@@ -174,10 +174,6 @@ const struct {
 
     ,{ "alacrity"	, adios_transform_alacrity }
     ,{ "indexed"	, adios_transform_alacrity }
-	
-	,{ "compress"	, adios_transform_compress }
-	
-	,{ "mloc"	, adios_transform_mloc }
 };
 const int NUM_ADIOS_TRANSFORM_NAMES = sizeof(ADIOS_TRANSFORM_NAMES)/sizeof(ADIOS_TRANSFORM_NAMES[0]);
 
@@ -326,8 +322,6 @@ int adios_transform_init_transform_var(struct adios_var_struct *var) {
     var->transform_type = adios_transform_none;
     var->pre_transform_dimensions = 0;
     var->pre_transform_type = adios_unknown;
-	var->transform_type_param_len = 0;
-	var->transform_type_param = 0;
     var->transform_metadata_len = 0;
     var->transform_metadata = 0;
     return 1;
@@ -356,7 +350,7 @@ int adios_transform_deserialize_transform_characteristic(struct adios_index_char
     for (i = 0; i < 3 * transform->pre_transform_dimensions.count; i++) {
         BUFREAD64(b, transform->pre_transform_dimensions.dims[i]);
     }
-	
+
     BUFREAD16(b, meta_len);
 
     if (meta_len) {
@@ -380,7 +374,7 @@ int adios_transform_clear_transform_characteristic(struct adios_index_characteri
     if (transform->pre_transform_dimensions.dims)
         free(transform->pre_transform_dimensions.dims);
     transform->pre_transform_dimensions.dims = 0;
-	
+
     transform->transform_metadata_len = 0;
     if (transform->transform_metadata)
         free(transform->transform_metadata);
@@ -401,13 +395,7 @@ int adios_transform_clear_transform_var(struct adios_var_struct *var) {
         free(var->pre_transform_dimensions);
         var->pre_transform_dimensions = dimensions;
     }
-	
-	// free transform type parameters
-	// var->transform_type_param_len = 0;
-    // if (var->transform_type_param)
-        // free(var->transform_type_param);
-    // var->transform_type_param = 0;
-	
+
     var->transform_metadata_len = 0;
     if (var->transform_metadata)
         free(var->transform_metadata);

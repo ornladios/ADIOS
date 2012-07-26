@@ -1,14 +1,13 @@
+#ifdef MLOC
 #include <stdint.h>
 #include <assert.h>
 
 #include "adios_logger.h"
-#include "adios_transforms_hooks.h"
+#include "adios_transforms_hooks_read.h"
 #include "adios_transforms_common.h"
 #include "adios_transforms_read.h"
-#include "adios_transforms_write.h"
 #include "public/adios_error.h"
 
-#ifdef MLOC
 #include "mloc.h"
 
 #define MAX_POSSIBLE_BINS 65536

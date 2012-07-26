@@ -2,27 +2,14 @@
 #include <assert.h>
 
 #include "adios_logger.h"
-#include "adios_transforms_hooks.h"
 #include "adios_transforms_common.h"
 #include "adios_transforms_read.h"
 #include "adios_transforms_write.h"
-#include "adios_transforms_util.h"
+#include "adios_subvolume.h"
 #include "public/adios_error.h"
 
 #ifdef ALACRITY
 #include "alacrity.h"
-
-#define MAX_POSSIBLE_BINS 65536
-static const int MAX_PART_METADATA_SIZE =
-    sizeof(uint64_t) +
-    sizeof(unsigned short int) +
-    MAX_POSSIBLE_BINS * ( sizeof(unsigned short int) +  2 * sizeof(uint64_t) + sizeof(unsigned char) );
-
-
-uint64_t adios_transform_alacrity_calc_vars_transformed_size(uint64_t orig_size, int num_vars) {
-    return num_vars * MAX_PART_METADATA_SIZE +	// For the metadata
-           orig_size * 5/4;						// For the index + data
-}
 
 // *apply function is in adios_transform_alacrity_write.c, since it requires
 // access to functions from adios_internals.c, and therefore cannot link in
