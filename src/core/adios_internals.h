@@ -63,6 +63,9 @@ struct adios_var_struct
 
     // NCSU ALACRITY-ADIOS - Adding transform-related fields
     uint8_t transform_type;
+	uint16_t transform_type_param_len;
+	char* transform_type_param;
+	
     enum ADIOS_DATATYPES pre_transform_type;
     struct adios_dimension_struct *pre_transform_dimensions;
     uint16_t transform_metadata_len;

@@ -320,8 +320,8 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
 			param_len = UINT16_MAX;
 		}
 		
-		orig_var->transform_metadata_len = (uint16_t)param_len;
-		orig_var->transform_metadata = strdup(transform_param);
+		orig_var->transform_type_param_len = (uint16_t)param_len;
+		orig_var->transform_type_param = strdup(transform_param);		
 	}
 
     // Return the modified variable
@@ -752,7 +752,17 @@ int adios_transform_copy_var_transform(struct adios_file_struct *fd, struct adio
     dst_var->pre_transform_type = src_var->pre_transform_type;
 
     adios_transform_dereference_dimensions_var(fd, &dst_var->pre_transform_dimensions, src_var->pre_transform_dimensions);
-
+	
+	// for parameter	
+	dst_var->transform_type_param_len = src_var->transform_type_param_len;
+    if (src_var->transform_type_param_len) {
+        dst_var->transform_type_param = malloc(src_var->transform_type_param_len);
+        memcpy(dst_var->transform_type_param, src_var->transform_type_param, src_var->transform_type_param_len);
+    } else {
+        dst_var->transform_type_param = 0;
+    }
+	
+	
     dst_var->transform_metadata_len = src_var->transform_metadata_len;
     if (src_var->transform_metadata_len) {
         dst_var->transform_metadata = malloc(src_var->transform_metadata_len);
