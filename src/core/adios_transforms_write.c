@@ -14,10 +14,6 @@
 #include "adios_transforms_common.h"
 #include "adios_transforms_write.h"
 
-// If defined, use explicit dimensions (stored in dimension.rank)
-// If undefined, use variable-based dimensions (linked via dimension.id)
-#define USE_LITERAL_DIMENSIONS
-
 typedef char bool;
 
 ////////////////////////////////////////
@@ -76,140 +72,8 @@ uint64_t adios_transform_worst_case_transformed_group_size(uint64_t group_size, 
 }
 
 ////////////////////////////////////////
-// Dimension variable creation
-////////////////////////////////////////
-#ifndef USE_LITERAL_DIMENSIONS
-/*
- * An implementation of adios_transform_create_length_var. See that function
- * for a description of arguments/return value.
- *
- * This implementation uses code taken directly from adios_internals.c, and
- * while much more efficient than the other implementation in this file, may
- * be hard to maintain.
- */
-static struct adios_var_struct * adios_transform_create_length_var_internal_impl(struct adios_group_struct *grp, char *name, char *path) {
-    struct adios_var_struct *v = (struct adios_var_struct *)malloc(sizeof(struct adios_var_struct));
-    enum ADIOS_FLAG flag;
-    uint8_t i;
-
-    v->name = strdup(name);
-    v->path = strdup(path);
-    v->type = adios_unsigned_long;
-    v->dimensions = 0;
-    v->is_dim = adios_flag_yes;
-    v->got_buffer = adios_flag_no;
-    v->free_data = adios_flag_no;
-
-    v->data = 0;
-    v->write_offset = 0;
-    v->data_size = 0;
-    v->next = 0;
-
-    // NCSU - Initializing stat related info
-    v->stats = 0;
-    v->bitmap = 0;
-    // NCSU ALACRITY-ADIOS - Initialize transform type
-    v->transform_type = adios_transform_none;
-
-    // Q.L. - Check whether stats are disabled or not
-    if (grp->stats_on == adios_flag_yes)
-    {
-        // '1' at the bit location of stat id in adios_bp_v1.h, enables calculation of statistic.
-        for (i = 0; i < ADIOS_STAT_LENGTH; i++)
-            v->bitmap |= (1 << i);
-
-        // Default values for histogram not yet implemented. Disabling it.
-        v->bitmap ^= (1 << adios_statistic_hist);
-
-        // For complex numbers, the set of statistics occur thrice: stat[0] - magnitude, stat[1] - real, stat[2] - imaginary
-        if (v->type == adios_complex || v->type == adios_double_complex)
-        {
-            uint8_t c;
-            v->stats = malloc (3 * sizeof(struct adios_stat_struct *));
-
-            for (c = 0; c < 3; c ++)
-                v->stats[c] = calloc (ADIOS_STAT_LENGTH, sizeof(struct adios_stat_struct));
-        }
-        else
-        {
-            v->stats = malloc (sizeof(struct adios_stat_struct *));
-            v->stats[0] = calloc (ADIOS_STAT_LENGTH, sizeof(struct adios_stat_struct));
-        }
-    }
-
-    // NCSU - End of initializing stat related info
-    flag = adios_append_var(&grp->vars, v, ++grp->member_count);
-    if (flag == adios_flag_no)
-    {
-        grp->all_unique_var_names = adios_flag_no;
-    }
-    grp->var_count++;
-
-    return v;
-}
-
-/*
- * An implementation of adios_transform_create_length_var. See that function
- * for a description of arguments/return value.
- *
- * This implementation calls into the existing ADIOS API, but is not very
- * efficient. This is probably a reasonable tradeoff, though, for easier
- * maintainability.
- */
-static struct adios_var_struct * adios_transform_create_length_var_adios_impl(struct adios_group_struct *grp, const char *name, const char *path) {
-    int success = adios_common_define_var ((int64_t)grp			// Group ID
-                                          ,name					// Var name
-                                          ,path					// Var path
-                                          ,adios_unsigned_long	// Type
-                                          ,0					// Dimensions (none; scalar)
-                                          ,0					// Global dimensions
-                                          ,0					// Local offset
-                                          ,0					// NCSU ALACRITY-ADIOS - transform type
-                                          );
-    struct adios_var_struct *var = adios_find_var_by_name(grp->vars, name, grp->all_unique_var_names);
-    return var;
-}
-
-static struct adios_var_struct * adios_transform_create_length_var(struct adios_group_struct *grp, const char *name, const char *path) {
-    struct adios_var_struct *len_var = adios_transform_create_length_var_adios_impl(grp, name, path);
-    len_var->is_dim = adios_flag_yes;
-    return len_var;
-}
-#endif
-
-////////////////////////////////////////
 // Variable conversion to byte array (preparation for transform)
 ////////////////////////////////////////
-#ifndef USE_LITERAL_DIMENSIONS
-static void adios_transform_attach_byte_array_dimension_var_impl(struct adios_group_struct *grp, struct adios_var_struct *var) {
-    // Make up a name for the new dimension variable
-    char *len_var_name = malloc(strlen(var->name) + strlen("-len") + 1);
-    strcpy(len_var_name, var->name);
-    strcat(len_var_name, "-len");
-
-    // Create the dimension variable
-    struct adios_var_struct *len_var = adios_transform_create_length_var(grp, len_var_name, var->path);
-    free(len_var_name);
-
-    log_debug("Created length variable %s\n", len_var->name);
-
-    // Attach the dimension variable to this byte array variable
-    // TODO: Add time dimension, if it existed
-    struct adios_dimension_struct *dim = (struct adios_dimension_struct *)malloc(sizeof(struct adios_dimension_struct));
-    dim->dimension.rank = 0;
-    dim->dimension.id = len_var->id;
-    dim->dimension.time_index = adios_flag_no;
-    dim->global_dimension.rank = 0;
-    dim->global_dimension.id = 0;
-    dim->global_dimension.time_index = adios_flag_no;
-    dim->local_offset.rank = 0;
-    dim->local_offset.id = 0;
-    dim->local_offset.time_index = adios_flag_no;
-    dim->next = 0;
-    adios_append_dimension(&var->dimensions, dim);
-}
-#endif
-
 static struct adios_dimension_struct * new_dimension() {
     struct adios_dimension_struct *dim = (struct adios_dimension_struct *)malloc(sizeof(struct adios_dimension_struct));
     dim->dimension.rank = 0;
@@ -243,7 +107,7 @@ static int get_time_dimension_position(struct adios_var_struct *var) {
     return -1;
 }
 
-static void adios_transform_attach_byte_array_dimension_explicit_impl(struct adios_group_struct *grp, struct adios_var_struct *var) {
+static void adios_transform_attach_byte_array_dimension(struct adios_group_struct *grp, struct adios_var_struct *var) {
     // Create dimensions for the byte array (including a time dimension, if one
     // existed before).
     int ndim = count_dimensions(var->pre_transform_dimensions);
@@ -274,11 +138,7 @@ static void adios_transform_convert_var_to_byte_array(struct adios_group_struct 
     var->dimensions = 0;
 
     // Attach the new 1D dimension to the variable
-#ifdef USE_LITERAL_DIMENSIONS
-    adios_transform_attach_byte_array_dimension_explicit_impl(grp, var);
-#else
-    adios_transform_attach_byte_array_dimension_var_impl(grp, var);
-#endif
+    adios_transform_attach_byte_array_dimension(grp, var);
 }
 
 ////////////////////////////////////////
@@ -344,174 +204,13 @@ uint64_t adios_transform_get_pre_transform_var_size(struct adios_group_struct *g
                                           NULL); // NULL because it's not a string, so unneeded
 }
 
-#ifndef USE_LITERAL_DIMENSIONS
-extern struct adios_transport_struct * adios_transports; // Needed in the below function
-// NOTE:
-// This code is copied from common_adios_write/adios_write
-// This is necessary because common_adios_write is in library
-// common_adios or something, whereas this code should be in
-// adios_internals, since it is always needed. Sometimes
-// adios_internals is used without the other, so it needs to
-// be self-contained.
-static void adios_transform_write_scalar_var(struct adios_file_struct * fd,
-                                             struct adios_var_struct *v,
-                                             void *var) {
-    assert(!v->dimensions);
-
-    // This part is from common_adios_write
-    struct adios_method_list_struct * m = fd->group->methods;
-
-    if (fd->shared_buffer == adios_flag_yes)
-    {
-        // var payload sent for sizing information
-        adios_write_var_header_v1 (fd, v);
-
-        // write payload
-        adios_write_var_payload_v1 (fd, v);
-    }
-
-    // now tell each transport attached that it is being written
-    while (m)
-    {
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-                && m->method->m != ADIOS_METHOD_NULL
-                && adios_transports [m->method->m].adios_write_fn
-        )
-        {
-            adios_transports [m->method->m].adios_write_fn
-            (fd, v, var, m->method);
-        }
-
-        m = m->next;
-    }
-
-    // Removed check on v->dimensions, because it's always false
-
-    // This part is from adios_write
-    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
-    {
-        adios_copy_var_written (&fd->group->vars_written, v, fd);
-    }
-}
-
-static int adios_transform_store_transformed_length_dim_var(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t len) {
-    struct adios_var_struct *len_var = adios_find_var_by_id(fd->group->vars, var->dimensions->dimension.id);
-    assert(len_var);
-    assert(len_var->dimensions == 0);
-
-    uint64_t dim_element_size = adios_get_type_size(len_var->type, len_var);
-    if (len_var->data) {
-        free(len_var->data);
-        len_var->data = 0;
-    }
-
-    len_var->data = malloc (dim_element_size);
-    if (!len_var->data)
-    {
-        adios_error (err_no_memory,
-                "In adios_write, cannot allocate %lld bytes to copy scalar %s\n",
-                dim_element_size, len_var->name);
-        return 0;
-    }
-
-    // Assumes type is uint64_t, which is currently true, as we control this.
-    // May want to change this later, but can't think of a reason to do so right now.
-    // Use original size for now, since we're not actually doing anything to the data or buffer
-    *(uint64_t*)len_var->data = len; //adios_transform_calc_buffer_size(orig_var, orig_group, orig_var->transform_type);
-    //////////
-
-    // Write the dimension out
-    adios_transform_write_scalar_var(fd, len_var, len_var->data);
-    return 1;
-}
-#endif
-
-static int adios_transform_store_transformed_length_explicit(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t len) {
+static int adios_transform_store_transformed_length(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t len) {
     // Assume a single dimension, since this has been converted to a byte array
     assert(var->dimensions);
     assert(var->dimensions->next == 0);
 
     var->dimensions->dimension.rank = len;
     return 1;
-}
-
-static int adios_transform_store_transformed_length(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t len) {
-    // Assume a single dimension, since this has been converted to a byte array
-    assert(var->dimensions);
-    assert(var->dimensions->next == 0);
-
-    // NOTE: Switching to conditional compilation because some code for
-    //       dimension variable management was causing linking problems
-    // If this is a variable-based dimension
-    //if (var->dimensions->dimension.id != 0)
-    //{
-#ifndef USE_LITERAL_DIMENSIONS
-        return adios_transform_store_transformed_length_dim_var(fd, var, len);
-    //}
-    // Else this is an explicit dimension
-    //else
-    //{
-#else
-        return adios_transform_store_transformed_length_explicit(fd, var, len);
-    //}
-#endif
-}
-
-static uint64_t adios_transform_do_alacrity_transform(struct adios_group_struct *group, struct adios_var_struct *var) {
-    // Assume this function is only called for ALACRITY transform type
-    assert(var->transform_type == adios_transform_alacrity);
-
-    // Get the input data and data length
-    uint64_t input_size = adios_transform_get_pre_transform_var_size(group, var);
-    void *input = var->data;
-
-    // Allocate a buffer for the output; fail if not available
-    uint64_t max_output_size = adios_transform_calc_vars_transformed_size(adios_transform_alacrity, input_size, 1);
-    void *output;
-    uint64_t mem_allowed = adios_method_buffer_alloc(max_output_size);
-    if (mem_allowed == max_output_size)
-    {
-        output = malloc(max_output_size);
-        if (!output) {
-            adios_method_buffer_free(mem_allowed);
-            fprintf (stderr, "Out of memory allocating %llu bytes for %s\n", max_output_size, var->name);
-            return 0;
-        }
-    }
-    else
-    {
-        adios_method_buffer_free(mem_allowed);
-        fprintf(stderr, "OVERFLOW: Cannot allocate requested buffer of %llu "
-                         "bytes for %s\n"
-                      ,max_output_size, var->name);
-        return 0;
-    }
-
-    uint64_t actual_output_size = max_output_size * 99 / 100;  // Simulate slight overestimate
-
-    // --- Temporary for testing: ---
-    // Copy the original contents, then fill the extra with the byte '123' repeated
-    if (actual_output_size > input_size) {
-        memcpy(output, input, input_size);
-        memset((char*)output + input_size, 123, actual_output_size - input_size);
-    } else {
-        memcpy(output, input, actual_output_size);
-    }
-
-    // Put the data back into the variable
-    //if (var->data) // Apparently we shouldn't free this buffer?
-    //{
-    //    free(var->data);
-    //}
-    var->data = output;
-    var->data_size = actual_output_size;
-    // Set this because it's also set in get_write_buffer, which we'd like to
-    // call, but can't because it's not in adios_internal.a. Not sure what it
-    // does, though.
-    var->free_data = adios_flag_yes;
-
-    // Return the size of the data buffer
-    return actual_output_size;
 }
 
 int adios_transform_variable_data(struct adios_file_struct * fd,
