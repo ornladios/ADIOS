@@ -11,7 +11,7 @@
 #include "public/adios_error.h"
 #include "public/adios_types.h"
 #include "adios_transforms_common.h"
-#include "adios_transforms_util.h"
+#include "adios_subvolume.h"
 
 /*
  * A read delegate function that can be called by

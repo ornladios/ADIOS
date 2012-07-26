@@ -14,7 +14,7 @@
 #include "core/common_read.h"
 #include "core/adios_read_transformed.h"
 #include "core/adios_read_hooks.h"
-#include "core/adios_transforms_hooks.h"
+#include "core/adios_transforms_hooks_read.h"
 #include "core/futils.h"
 #include "core/bp_utils.h" // struct namelists_struct
 #define BYTE_ALIGN 8
@@ -48,7 +48,7 @@ struct common_read_internals_struct {
     char ** full_attrnamelist;   /* fp->attr_namelist to save here if one group is viewed */
 
     // NCSU ALACRITY-ADIOS - Table of sub-requests issued by transform method
-    adios_transform_read_reqgroup *subrequests;
+    adios_transform_read_reqgroup *transform_reqgroups;
 };
 
 
@@ -639,8 +639,35 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
     adios_errno = err_no_error;
     if (fp) {
         if (varid >=0 && varid < fp->nvars) {
-            internals = (struct common_read_internals_struct *) fp->internal_data;
-            retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
+            // NCSU ALACRITY-ADIOS - If the variable is transformed, intercept
+            //   the read scheduling and schedule our own reads
+            ADIOS_VARINFO *vi = common_read_inq_var_byid(fp, varid);
+            ADIOS_TRANSINFO *ti = common_read_inq_transinfo(fp, vi);
+            //assert(vi);
+            //assert(ti);
+
+            // If this variable is transformed, delegate to the transform
+            // method to generate subrequests
+            // Else, do the normal thing
+            if (ti->transform_type != adios_transform_none) {
+                adios_transform_read_subrequest *subreq;
+                adios_transform_read_reqgroup *new_reqgroup =
+                    adios_transform_new_read_reqgroup(&internals->transform_reqgroups, fp, sel, varid, from_steps, nsteps, data);
+
+                //adios_transform_generate_read_subrequests(vi, ti, new_reqgroup);
+
+                retval = 0;
+                // Now schedule all of the subrequests
+                internals = (struct common_read_internals_struct *) fp->internal_data;
+                for (subreq = new_reqgroup->subreqs; subreq; subreq = subreq->next) {
+                    retval |= internals->read_hooks[internals->method].adios_schedule_read_byid_fn(
+                                fp, subreq->sel, varid+internals->group_varid_offset, from_steps, nsteps, subreq->data);
+                }
+            } else {
+                // Old functionality
+                internals = (struct common_read_internals_struct *) fp->internal_data;
+                retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
+            }
         } else {
             adios_error (err_invalid_varid,
                          "Variable ID %d is not valid in adios_schedule_read_byid(). "
@@ -664,6 +691,10 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_perform_reads_fn (fp, blocking);
+
+        // NCSU ALACRITY-ADIOS - If this was a blocking call, consider all read
+        //   request groups completed, and reassemble via the transform method
+        // TODO
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_perform_reads()\n");
         retval = err_invalid_file_pointer;
@@ -681,6 +712,10 @@ int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_check_reads_fn (fp, chunk);
+
+        // NCSU ALACRITY-ADIOS - If the varchunk returned belongs to a
+        //   subrequest, tell the transform method
+        // TODO
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_check_reads()\n");
         retval = err_invalid_file_pointer;

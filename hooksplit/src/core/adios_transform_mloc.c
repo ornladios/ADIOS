@@ -1,14 +1,15 @@
+#ifdef MLOC
+
 #include <stdint.h>
 #include <assert.h>
 
 #include "adios_logger.h"
-#include "adios_transforms_hooks.h"
+#include "adios_transforms_hooks_read.h"
 #include "adios_transforms_common.h"
 #include "adios_transforms_read.h"
 #include "adios_transforms_write.h"
 #include "public/adios_error.h"
 
-#ifdef MLOC
 #include "mloc.h"
 
 #define MAX_POSSIBLE_BINS 65536
@@ -44,7 +45,7 @@ enum ADIOS_ERRCODES adios_transform_mloc_retrieve_subvolume(
     struct adios_index_characteristic_dims_struct_v1 *orig_dims =
             &var->characteristics[time_index].pre_transform_dimensions;
 
- 
+
     return 0;
 }
 

@@ -10,7 +10,7 @@
 #include "adios_internals.h"
 #include "public/adios_types.h"
 
-#include "adios_transforms_hooks.h"
+#include "adios_transforms_hooks_write.h"
 #include "adios_transforms_common.h"
 #include "adios_transforms_write.h"
 
