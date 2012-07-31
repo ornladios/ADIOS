@@ -195,6 +195,7 @@ am__libadios_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	core/transforms/adios_transforms_write.c \
 	core/transforms/adios_transforms_hooks_write.c \
 	core/transforms/adios_transforms_util.c \
+	transforms/adios_transform_identity_write.c \
 	transforms/adios_transform_mloc_write.c \
 	transforms/adios_transform_compress_write.c \
 	transforms/adios_transform_alacrity_write.c read/read_bp.c \
@@ -221,7 +222,8 @@ am__objects_3 = $(am__objects_1) \
 	libadios_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadios_a-adios_transforms_reqgroup.$(OBJEXT) \
 	$(am__objects_2)
-am__objects_4 = libadios_a-adios_transform_mloc_write.$(OBJEXT) \
+am__objects_4 = libadios_a-adios_transform_identity_write.$(OBJEXT) \
+	libadios_a-adios_transform_mloc_write.$(OBJEXT) \
 	libadios_a-adios_transform_compress_write.$(OBJEXT) \
 	libadios_a-adios_transform_alacrity_write.$(OBJEXT)
 am__objects_5 = $(am__objects_3) \
@@ -298,7 +300,8 @@ am__objects_15 = $(am__objects_13) \
 	libadios_internal_nompi_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transforms_reqgroup.$(OBJEXT) \
 	$(am__objects_14)
-am__objects_16 = libadios_internal_nompi_a-adios_transform_mloc_write.$(OBJEXT) \
+am__objects_16 = libadios_internal_nompi_a-adios_transform_identity_write.$(OBJEXT) \
+	libadios_internal_nompi_a-adios_transform_mloc_write.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transform_compress_write.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transform_alacrity_write.$(OBJEXT)
 am__objects_17 = $(am__objects_15) \
@@ -336,6 +339,7 @@ am__libadios_nompi_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	core/transforms/adios_transforms_write.c \
 	core/transforms/adios_transforms_hooks_write.c \
 	core/transforms/adios_transforms_util.c \
+	transforms/adios_transform_identity_write.c \
 	transforms/adios_transform_mloc_write.c \
 	transforms/adios_transform_compress_write.c \
 	transforms/adios_transform_alacrity_write.c core/buffer.c \
@@ -363,6 +367,7 @@ am__objects_20 = $(am__objects_18) \
 	libadios_nompi_a-adios_transforms_reqgroup.$(OBJEXT) \
 	$(am__objects_19)
 am__objects_21 =  \
+	libadios_nompi_a-adios_transform_identity_write.$(OBJEXT) \
 	libadios_nompi_a-adios_transform_mloc_write.$(OBJEXT) \
 	libadios_nompi_a-adios_transform_compress_write.$(OBJEXT) \
 	libadios_nompi_a-adios_transform_alacrity_write.$(OBJEXT)
@@ -423,6 +428,7 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/transforms/adios_transforms_write.c \
 	core/transforms/adios_transforms_hooks_write.c \
 	core/transforms/adios_transforms_util.c \
+	transforms/adios_transform_identity_write.c \
 	transforms/adios_transform_mloc_write.c \
 	transforms/adios_transform_compress_write.c \
 	transforms/adios_transform_alacrity_write.c core/buffer.c \
@@ -456,7 +462,8 @@ am__objects_28 = $(am__objects_26) \
 	libadiosf_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadiosf_a-adios_transforms_reqgroup.$(OBJEXT) \
 	$(am__objects_27)
-am__objects_29 = libadiosf_a-adios_transform_mloc_write.$(OBJEXT) \
+am__objects_29 = libadiosf_a-adios_transform_identity_write.$(OBJEXT) \
+	libadiosf_a-adios_transform_mloc_write.$(OBJEXT) \
 	libadiosf_a-adios_transform_compress_write.$(OBJEXT) \
 	libadiosf_a-adios_transform_alacrity_write.$(OBJEXT)
 am__objects_30 = $(am__objects_28) \
@@ -542,6 +549,7 @@ am__libadiosf_v1_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/transforms/adios_transforms_write.c \
 	core/transforms/adios_transforms_hooks_write.c \
 	core/transforms/adios_transforms_util.c \
+	transforms/adios_transform_identity_write.c \
 	transforms/adios_transform_mloc_write.c \
 	transforms/adios_transform_compress_write.c \
 	transforms/adios_transform_alacrity_write.c core/buffer.c \
@@ -574,7 +582,9 @@ am__objects_41 = $(am__objects_39) \
 	libadiosf_v1_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadiosf_v1_a-adios_transforms_reqgroup.$(OBJEXT) \
 	$(am__objects_40)
-am__objects_42 = libadiosf_v1_a-adios_transform_mloc_write.$(OBJEXT) \
+am__objects_42 =  \
+	libadiosf_v1_a-adios_transform_identity_write.$(OBJEXT) \
+	libadiosf_v1_a-adios_transform_mloc_write.$(OBJEXT) \
 	libadiosf_v1_a-adios_transform_compress_write.$(OBJEXT) \
 	libadiosf_v1_a-adios_transform_alacrity_write.$(OBJEXT)
 am__objects_43 = $(am__objects_41) \
@@ -1376,7 +1386,8 @@ transforms_read_method_SOURCES = transforms/adios_transform_identity_read.c \
                                  transforms/adios_transform_compress_read.c \
                                  transforms/adios_transform_alacrity_read.c
 
-transforms_write_method_SOURCES = transforms/adios_transform_mloc_write.c \
+transforms_write_method_SOURCES = transforms/adios_transform_identity_write.c \
+                                  transforms/adios_transform_mloc_write.c \
                                   transforms/adios_transform_compress_write.c \
                                   transforms/adios_transform_alacrity_write.c
 
@@ -1986,6 +1997,12 @@ libadios_a-adios_transforms_util.o: core/transforms/adios_transforms_util.c
 libadios_a-adios_transforms_util.obj: core/transforms/adios_transforms_util.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_transforms_util.obj `if test -f 'core/transforms/adios_transforms_util.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_util.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_util.c'; fi`
 
+libadios_a-adios_transform_identity_write.o: transforms/adios_transform_identity_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_transform_identity_write.o `test -f 'transforms/adios_transform_identity_write.c' || echo '$(srcdir)/'`transforms/adios_transform_identity_write.c
+
+libadios_a-adios_transform_identity_write.obj: transforms/adios_transform_identity_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_transform_identity_write.obj `if test -f 'transforms/adios_transform_identity_write.c'; then $(CYGPATH_W) 'transforms/adios_transform_identity_write.c'; else $(CYGPATH_W) '$(srcdir)/transforms/adios_transform_identity_write.c'; fi`
+
 libadios_a-adios_transform_mloc_write.o: transforms/adios_transform_mloc_write.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_transform_mloc_write.o `test -f 'transforms/adios_transform_mloc_write.c' || echo '$(srcdir)/'`transforms/adios_transform_mloc_write.c
 
@@ -2274,6 +2291,12 @@ libadios_internal_nompi_a-adios_transforms_util.o: core/transforms/adios_transfo
 libadios_internal_nompi_a-adios_transforms_util.obj: core/transforms/adios_transforms_util.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_transforms_util.obj `if test -f 'core/transforms/adios_transforms_util.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_util.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_util.c'; fi`
 
+libadios_internal_nompi_a-adios_transform_identity_write.o: transforms/adios_transform_identity_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_transform_identity_write.o `test -f 'transforms/adios_transform_identity_write.c' || echo '$(srcdir)/'`transforms/adios_transform_identity_write.c
+
+libadios_internal_nompi_a-adios_transform_identity_write.obj: transforms/adios_transform_identity_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_transform_identity_write.obj `if test -f 'transforms/adios_transform_identity_write.c'; then $(CYGPATH_W) 'transforms/adios_transform_identity_write.c'; else $(CYGPATH_W) '$(srcdir)/transforms/adios_transform_identity_write.c'; fi`
+
 libadios_internal_nompi_a-adios_transform_mloc_write.o: transforms/adios_transform_mloc_write.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_transform_mloc_write.o `test -f 'transforms/adios_transform_mloc_write.c' || echo '$(srcdir)/'`transforms/adios_transform_mloc_write.c
 
@@ -2429,6 +2452,12 @@ libadios_nompi_a-adios_transforms_util.o: core/transforms/adios_transforms_util.
 
 libadios_nompi_a-adios_transforms_util.obj: core/transforms/adios_transforms_util.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_transforms_util.obj `if test -f 'core/transforms/adios_transforms_util.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_util.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_util.c'; fi`
+
+libadios_nompi_a-adios_transform_identity_write.o: transforms/adios_transform_identity_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_transform_identity_write.o `test -f 'transforms/adios_transform_identity_write.c' || echo '$(srcdir)/'`transforms/adios_transform_identity_write.c
+
+libadios_nompi_a-adios_transform_identity_write.obj: transforms/adios_transform_identity_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_transform_identity_write.obj `if test -f 'transforms/adios_transform_identity_write.c'; then $(CYGPATH_W) 'transforms/adios_transform_identity_write.c'; else $(CYGPATH_W) '$(srcdir)/transforms/adios_transform_identity_write.c'; fi`
 
 libadios_nompi_a-adios_transform_mloc_write.o: transforms/adios_transform_mloc_write.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_transform_mloc_write.o `test -f 'transforms/adios_transform_mloc_write.c' || echo '$(srcdir)/'`transforms/adios_transform_mloc_write.c
@@ -2711,6 +2740,12 @@ libadiosf_a-adios_transforms_util.o: core/transforms/adios_transforms_util.c
 
 libadiosf_a-adios_transforms_util.obj: core/transforms/adios_transforms_util.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_transforms_util.obj `if test -f 'core/transforms/adios_transforms_util.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_util.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_util.c'; fi`
+
+libadiosf_a-adios_transform_identity_write.o: transforms/adios_transform_identity_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_transform_identity_write.o `test -f 'transforms/adios_transform_identity_write.c' || echo '$(srcdir)/'`transforms/adios_transform_identity_write.c
+
+libadiosf_a-adios_transform_identity_write.obj: transforms/adios_transform_identity_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_transform_identity_write.obj `if test -f 'transforms/adios_transform_identity_write.c'; then $(CYGPATH_W) 'transforms/adios_transform_identity_write.c'; else $(CYGPATH_W) '$(srcdir)/transforms/adios_transform_identity_write.c'; fi`
 
 libadiosf_a-adios_transform_mloc_write.o: transforms/adios_transform_mloc_write.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_transform_mloc_write.o `test -f 'transforms/adios_transform_mloc_write.c' || echo '$(srcdir)/'`transforms/adios_transform_mloc_write.c
@@ -3083,6 +3118,12 @@ libadiosf_v1_a-adios_transforms_util.o: core/transforms/adios_transforms_util.c
 
 libadiosf_v1_a-adios_transforms_util.obj: core/transforms/adios_transforms_util.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_transforms_util.obj `if test -f 'core/transforms/adios_transforms_util.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_util.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_util.c'; fi`
+
+libadiosf_v1_a-adios_transform_identity_write.o: transforms/adios_transform_identity_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_transform_identity_write.o `test -f 'transforms/adios_transform_identity_write.c' || echo '$(srcdir)/'`transforms/adios_transform_identity_write.c
+
+libadiosf_v1_a-adios_transform_identity_write.obj: transforms/adios_transform_identity_write.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_transform_identity_write.obj `if test -f 'transforms/adios_transform_identity_write.c'; then $(CYGPATH_W) 'transforms/adios_transform_identity_write.c'; else $(CYGPATH_W) '$(srcdir)/transforms/adios_transform_identity_write.c'; fi`
 
 libadiosf_v1_a-adios_transform_mloc_write.o: transforms/adios_transform_mloc_write.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_transform_mloc_write.o `test -f 'transforms/adios_transform_mloc_write.c' || echo '$(srcdir)/'`transforms/adios_transform_mloc_write.c

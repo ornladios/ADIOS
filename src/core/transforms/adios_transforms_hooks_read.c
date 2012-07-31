@@ -137,14 +137,3 @@ ADIOS_VARCHUNK * adios_transform_read_reqgroup_completed(adios_transform_read_re
     assert(is_transform_type_valid(transform_type));
     return TRANSFORM_READ_METHODS[transform_type].transform_reqgroup_completed(completed_reqgroup, mode);
 }
-
-enum ADIOS_ERRCODES adios_transform_retrieve_subvolume(
-        enum ADIOS_TRANSFORM_TYPE transform_type,
-        struct adios_index_var_struct_v1 *var, void *global_out, int time_index,
-        const adios_subvolume_copy_spec *subv_spec,
-        void *read_state, adios_transform_var_read_delegate read_delegate,
-        enum ADIOS_FLAG swap_endianness) {
-
-    assert(transform_type >= adios_transform_none && transform_type < num_adios_transform_types);
-    return TRANSFORM_READ_METHODS[transform_type].transform_retrieve_subvolume(var, global_out, time_index, subv_spec, read_state, read_delegate, swap_endianness);
-}

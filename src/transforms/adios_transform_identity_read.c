@@ -18,22 +18,6 @@
 // Implementation of the "identity" transform, which does nothing, but
 // exercises the transform framework for testing.
 
-enum ADIOS_ERRCODES adios_transform_identity_retrieve_subvolume(
-        struct adios_index_var_struct_v1 *var, void *global_out, int time_index,
-        const adios_subvolume_copy_spec *copy_spec,
-        void *read_state, adios_transform_var_read_delegate read_delegate,
-        enum ADIOS_FLAG swap_endianness) {
-
-    assert(var->characteristics[time_index].transform.transform_type == adios_transform_identity);
-
-    // Read the variable in its entirety
-    void *buf = read_delegate(var, time_index, 0, adios_transform_var_get_transformed_size(var, time_index), read_state);
-
-    copy_subvolume_with_spec(global_out, buf, copy_spec, adios_transform_get_var_original_type(var), swap_endianness);
-
-    return err_no_error;
-}
-
 int adios_transform_identity_generate_read_subrequests(adios_transform_read_reqgroup *reqgroup,
                                                        adios_transform_pg_reqgroup *pg_reqgroup) {
 
