@@ -25,7 +25,7 @@ static void write_test_file(double *arr) {
 
     // Write the data to file
     adios_open(&fd, BP_GROUP, BP_FILENAME, "w", &comm);
-    adios_group_size(fd, 6 * N * sizeof(double), &total_size);
+    adios_group_size(fd, 2 * N * sizeof(double), &total_size);
     adios_write(fd, RAW_VAR, arr);
     adios_write(fd, XFORM_VAR, arr);
     adios_close(fd);

@@ -23,7 +23,7 @@ uint64_t adios_transform_worst_case_transformed_group_size(uint64_t group_size, 
 {
     // New group size is always at least the original group size
     uint64_t max_transformed_group_size = group_size;
-    int non_scalar_var_count = 0;
+    int non_scalar_transformed_var_count = 0;
 
     struct adios_var_struct *cur_var;
     uint64_t transformed_group_size;
@@ -38,17 +38,15 @@ uint64_t adios_transform_worst_case_transformed_group_size(uint64_t group_size, 
     // variables
     for (cur_var = fd->group->vars; cur_var; cur_var = cur_var->next)
     {
-        // Skip unknown/none transform types, transform types that
-        // have already been processed, and scalar variables
+        // Skip unknown/none transform types and scalar variables
         if (cur_var->transform_type == adios_transform_none ||
-            transform_type_seen[cur_var->transform_type] ||
             !cur_var->dimensions)
         {
             continue;
         }
 
         transform_type_seen[cur_var->transform_type] = 1;
-        non_scalar_var_count++;
+        non_scalar_transformed_var_count++;
     }
 
     // For each transform type, get a worst-case group size estimate, and
@@ -57,7 +55,7 @@ uint64_t adios_transform_worst_case_transformed_group_size(uint64_t group_size, 
         if (!transform_type_seen[transform_type])
             continue;
 
-        transformed_group_size = adios_transform_calc_vars_transformed_size(transform_type, group_size, non_scalar_var_count);
+        transformed_group_size = adios_transform_calc_vars_transformed_size(transform_type, group_size, non_scalar_transformed_var_count);
 
         if (transformed_group_size > max_transformed_group_size) {
             max_transformed_group_size = transformed_group_size;

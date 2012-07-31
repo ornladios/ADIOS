@@ -86,7 +86,7 @@ void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES ty
 
         case adios_complex:
             for (i=0; i < n; i++) {
-                swap_32_ptr(ptr);   // swap REAL part 4 bytes 
+                swap_32_ptr(ptr);   // swap REAL part 4 bytes
                 swap_32_ptr(ptr+4); // swap IMG part 4 bytes
                 ptr += size_of_type;
             }
@@ -94,7 +94,7 @@ void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES ty
 
         case adios_double_complex:
             for (i=0; i < n; i++) {
-                swap_64_ptr(ptr);   // swap REAL part 8 bytes 
+                swap_64_ptr(ptr);   // swap REAL part 8 bytes
                 swap_64_ptr(ptr+8); // swap IMG part 8 bytes
                 ptr += size_of_type;
             }
@@ -135,7 +135,7 @@ void copy_data (void *dst, void *src,
     }
 
     for (i = 0; i<size_in_dset[idim];i++) {
-        // get the different step granularity 
+        // get the different step granularity
         // for each different reading pattern broke
         src_step = 1;
         dst_step = 1;
@@ -313,7 +313,7 @@ void free_selection (ADIOS_SELECTION * sel)
 /*******************************************************
    Processing parameter lists
 **********************************************************/
-static char * remove_whitespace (char *start, char *end) 
+static char * remove_whitespace (char *start, char *end)
 {
     char *s = start;
     char *e = end;
@@ -321,16 +321,16 @@ static char * remove_whitespace (char *start, char *end)
     int final_len;
     char *res;
     // remove front whitespace (but do not go far beyond the end)
-    while (s <= e && 
+    while (s <= e &&
            (*s==' ' || *s=='\t' || *s=='\n')
           ) s++;
-    if (s <= e) { // there is some text 
+    if (s <= e) { // there is some text
         // remove tail whitespace
-        while (s <= e && 
+        while (s <= e &&
                (*e==' ' || *e=='\t' || *e=='\n')
               ) e--;
-        // create result 
-        final_len = e - s + 1; //  length of result 
+        // create result
+        final_len = e - s + 1; //  length of result
         if (final_len > 0) {
             res = (char *) malloc (final_len + 1); // allocate space s..e and \0
             memcpy(res, s, final_len);
@@ -373,8 +373,8 @@ static void splitnamevalue (const char * line, int linelen,  char **name, char *
         *name = remove_whitespace ((char*)line, (char*)line+linelen-1);
         //printf ("      --name only=[%s]\n", *name);
         *value = NULL;
-    } else { 
-        // funny text starting with =. E.g. "=value" 
+    } else {
+        // funny text starting with =. E.g. "=value"
         *name = NULL;
         *value = NULL;
     }
@@ -383,17 +383,17 @@ static void splitnamevalue (const char * line, int linelen,  char **name, char *
 PairStruct * text_to_name_value_pairs (const char * text)
 {
     /* Process a multi-line and/or ;-separated text and create a list
-       of name=value pairs from each line which has a 
-           name = value 
-       pattern. Whitespaces are removed. 
+       of name=value pairs from each line which has a
+           name = value
+       pattern. Whitespaces are removed.
          "X = 1
-          Y = 2"  
+          Y = 2"
        is not valid because of missing ';', but
           "X=1; Y=5;
-          Z=apple"  
+          Z=apple"
        is valid
     */
-    char *name, *value; 
+    char *name, *value;
     char *item, *delim;
     int len;
     char line[256];
@@ -401,12 +401,12 @@ PairStruct * text_to_name_value_pairs (const char * text)
 
     if (!text) return res;
 
-    item  = (char *)text; 
+    item  = (char *)text;
     while (item) {
         delim = strchr (item, ';');
-        if (delim) 
-            len = (int) (delim-item); 
-        else 
+        if (delim)
+            len = (int) (delim-item);
+        else
             len = strlen (item);
 
         strncpy (line, item, len);
@@ -423,7 +423,7 @@ PairStruct * text_to_name_value_pairs (const char * text)
                 last->next = pair;
                 last = pair;
             } else {
-                res = pair; 
+                res = pair;
                 last = pair;
             }
         }
@@ -452,7 +452,7 @@ void free_name_value_pairs (PairStruct * pairs)
 /*******************************************************
    Timing
 **********************************************************/
-#include <time.h> // nanosleep 
+#include <time.h> // nanosleep
 void adios_nanosleep (int sec, int nanosec)
 {
 #if HAVE_NANOSLEEP
@@ -477,13 +477,19 @@ void adios_nanosleep (int sec, int nanosec)
     }
 
 #endif
-}   
+}
 
 #include <sys/time.h>
 struct timeval adios_timer_tp;
-double adios_gettime() 
+double adios_gettime()
 {
     gettimeofday(&adios_timer_tp, NULL); \
         return  ((double)adios_timer_tp.tv_sec + ((double)adios_timer_tp.tv_usec)/1000000.0);
 }
 
+void * bufdup(const void *buf, uint64_t elem_size, uint64_t count) {
+    const uint64_t len = elem_size * count;
+    void *newbuf = malloc(len);
+    memcpy(newbuf, buf, len);
+    return newbuf;
+}

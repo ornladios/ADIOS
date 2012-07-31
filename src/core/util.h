@@ -7,7 +7,7 @@
 
 typedef struct read_request
 {
-    int rank; // the rank of processor which issued this request. 
+    int rank; // the rank of processor which issued this request.
     ADIOS_SELECTION * sel;
     int varid;
     int from_steps;
@@ -48,12 +48,12 @@ void free_selection (ADIOS_SELECTION * sel);
    Processing parameter lists
 **********************************************************/
 /*
-   Process a ;-separated and possibly multi-line text and 
-   create a list of name=value pairs from each 
-   item which has a "name=value" pattern. Whitespaces are removed. 
+   Process a ;-separated and possibly multi-line text and
+   create a list of name=value pairs from each
+   item which has a "name=value" pattern. Whitespaces are removed.
    Input is not modified. Space is allocated;
-   Also, simple "name" or "name=" patterns are processed and 
-   returned with value=NULL. 
+   Also, simple "name" or "name=" patterns are processed and
+   returned with value=NULL.
 */
 struct PairStruct {
     char * name;
@@ -72,5 +72,7 @@ void free_name_value_pairs (PairStruct * pairs);
 void adios_nanosleep (int sec, int nanosec);
 /* get current time as double (in seconds) */
 double adios_gettime();
+
+void * bufdup(const void *buf, uint64_t elem_size, uint64_t count);
 
 #endif

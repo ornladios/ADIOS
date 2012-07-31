@@ -237,13 +237,6 @@ int adios_selection_to_copy_spec(adios_subvolume_copy_spec *copy_spec,
     return 1;
 }
 
-static void * bufdup(const void *buf, uint64_t elem_size, uint64_t count) {
-    const uint64_t len = elem_size * count;
-    void *newbuf = malloc(len);
-    memcpy(newbuf, buf, len);
-    return newbuf;
-}
-
 // Extracts a selection corresponding to the subvolume within the source buffer
 ADIOS_SELECTION * adios_copy_spec_to_src_selection(adios_subvolume_copy_spec *copy_spec) {
     return common_read_selection_boundingbox(copy_spec->ndim,

@@ -34,7 +34,7 @@ typedef struct _adios_transform_pg_reqgroup {
     const ADIOS_VARBLOCK *orig_varblock;// Points into adios_transform_read_reqgroup->transinfo->orig_blockinfo; do not free here
 
     ADIOS_SELECTION *pg_selection;
-    adios_subvolume_copy_spec *pg_to_global_copyspec;
+    adios_subvolume_copy_spec *pg_intersection_to_global_copyspec;
 
     int num_subreqs;
     int num_completed_subreqs;
@@ -80,7 +80,7 @@ void adios_transform_free_subreq(adios_transform_read_subrequest **subreq_ptr);
 // adios_transform_pg_reqgroup manipulation
 adios_transform_pg_reqgroup * adios_transform_new_pg_reqgroup(int blockidx, const ADIOS_VARBLOCK *orig_varblock,
                                                               const ADIOS_VARBLOCK *raw_varblock, ADIOS_SELECTION *pg_sel,
-                                                              adios_subvolume_copy_spec *pg_to_global_cs);
+                                                              adios_subvolume_copy_spec *pg_intersection_to_global_cs);
 void adios_transform_pg_reqgroup_append_subreq(adios_transform_pg_reqgroup *pg_reqgroup, adios_transform_read_subrequest *subreq);
 int adios_transform_pg_reqgroup_find_subreq(const adios_transform_pg_reqgroup *pg_reqgroup, const ADIOS_VARCHUNK *chunk,
                                             int skip_completed, adios_transform_read_subrequest **matching_subreq);

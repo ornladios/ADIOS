@@ -18,7 +18,7 @@
 // An adios_transform_read_subrequest corresponds to a single byte range read within a PG
 
 // adios_transform_read_subrequest owns ->sel and ->data (both will be free'd)
-// adios_transform_pg_reqgroup owns ->pg_selection and ->pg_to_global_copyspec (both will be free'd)
+// adios_transform_pg_reqgroup owns ->pg_selection and ->pg_intersection_to_global_copyspec (both will be free'd)
 // adios_transform_read_reqgroup owns ->orig_sel, ->varinfo and ->transinfo (all will be free'd)
 
 // Also, in all cases, ->transform_internal will be free'd if it is non-NULL
@@ -171,10 +171,10 @@ void adios_transform_free_subreq(adios_transform_read_subrequest **subreq_ptr) {
 adios_transform_pg_reqgroup * adios_transform_new_pg_reqgroup(
         int blockidx, const ADIOS_VARBLOCK *orig_varblock,
         const ADIOS_VARBLOCK *raw_varblock, ADIOS_SELECTION *pg_sel,
-        adios_subvolume_copy_spec *pg_to_global_cs) {
+        adios_subvolume_copy_spec *pg_intersection_to_global_cs) {
 
     adios_transform_pg_reqgroup *new_pg_reqgroup;
-    assert(orig_varblock); assert(pg_sel); assert(pg_to_global_cs);
+    assert(orig_varblock); assert(pg_sel); assert(pg_intersection_to_global_cs);
     assert(blockidx >= 0);
 
     new_pg_reqgroup = calloc(sizeof(adios_transform_pg_reqgroup), 1);
@@ -183,7 +183,7 @@ adios_transform_pg_reqgroup * adios_transform_new_pg_reqgroup(
     new_pg_reqgroup->raw_varblock = raw_varblock;
     new_pg_reqgroup->orig_varblock = orig_varblock;
     new_pg_reqgroup->pg_selection = pg_sel;
-    new_pg_reqgroup->pg_to_global_copyspec = pg_to_global_cs;
+    new_pg_reqgroup->pg_intersection_to_global_copyspec = pg_intersection_to_global_cs;
     // Other fields are 0'd
 
     return new_pg_reqgroup;
@@ -234,7 +234,7 @@ void adios_transform_free_pg_reqgroup(adios_transform_pg_reqgroup **pg_reqgroup_
 
     // Free malloc'd resources
     common_read_selection_delete(pg_reqgroup->pg_selection);
-    adios_subvolume_copy_spec_destroy(pg_reqgroup->pg_to_global_copyspec, 1);
+    adios_subvolume_copy_spec_destroy(pg_reqgroup->pg_intersection_to_global_copyspec, 1);
     MYFREE(pg_reqgroup->transform_internal);
 
     // Clear all data to 0's for safety

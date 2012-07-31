@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
+#include "util.h"
 #include "adios_transforms_hooks_read.h"
 #include "adios_transforms_reqgroup.h"
 
@@ -49,7 +50,7 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
     int curblocks, startblock_idx, endblock_idx;
     int intersects;
     ADIOS_VARBLOCK *raw_vb, *orig_vb;
-    adios_subvolume_copy_spec *pg_to_global_copyspec;
+    adios_subvolume_copy_spec *pg_intersection_to_global_copyspec;
 
     enum ADIOS_FLAG swap_endianness = (fp->endianness == get_system_endianness()) ? adios_flag_no : adios_flag_yes;
     int to_steps = from_steps + nsteps;
@@ -80,24 +81,25 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
         common_read_inq_trans_blockinfo(fp, raw_varinfo, transinfo);
 
     // Assemble read requests for each varblock
-    pg_to_global_copyspec = NULL;
+    pg_intersection_to_global_copyspec = NULL;
     for (idx = startblock_idx; idx != endblock_idx; idx++) {
         raw_vb = &raw_varinfo->blockinfo[idx];
         orig_vb = &transinfo->orig_blockinfo[idx];
 
         // Get a new copyspec if we need one
-        if (!pg_to_global_copyspec)
-            pg_to_global_copyspec = malloc(sizeof(adios_subvolume_copy_spec));
+        if (!pg_intersection_to_global_copyspec)
+            pg_intersection_to_global_copyspec = malloc(sizeof(adios_subvolume_copy_spec));
 
         // Find the intersection, if any
-        intersects = adios_selection_to_copy_spec(pg_to_global_copyspec, &sel->u.bb, orig_vb->count, orig_vb->start);
+        intersects = adios_selection_to_copy_spec(pg_intersection_to_global_copyspec, &sel->u.bb, orig_vb->count, orig_vb->start);
         if (intersects) {
             // Make a PG read request group, and fill it with some subrequests, and link it into the read reqgroup
             adios_transform_pg_reqgroup *new_pg_reqgroup;
+
             new_pg_reqgroup = adios_transform_new_pg_reqgroup(idx, orig_vb, raw_vb,
-                                                              adios_copy_spec_to_src_selection(pg_to_global_copyspec),
-                                                              pg_to_global_copyspec);
-            pg_to_global_copyspec = NULL;
+                                                              adios_copy_spec_to_src_selection(pg_intersection_to_global_copyspec),
+                                                              pg_intersection_to_global_copyspec);
+            pg_intersection_to_global_copyspec = NULL;
 
             TRANSFORM_READ_METHODS[transinfo->transform_type].transform_generate_read_subrequests(new_reqgroup, new_pg_reqgroup);
 
@@ -105,8 +107,8 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
         }
     }
     // If there is a leftover (uninitialized) copy spec, free it
-    if (pg_to_global_copyspec)
-        free(pg_to_global_copyspec);
+    if (pg_intersection_to_global_copyspec)
+        free(pg_intersection_to_global_copyspec);
 
     return new_reqgroup;
 }
@@ -202,13 +204,13 @@ ADIOS_VARCHUNK * adios_transform_identity_pg_reqgroup_completed(
         ADIOS_VARCHUNK *retchunk = (ADIOS_VARCHUNK *)malloc(sizeof(ADIOS_VARCHUNK));
         retchunk->varid = reqgroup->raw_varinfo->varid;
         retchunk->type = reqgroup->transinfo->orig_type;
-        retchunk->sel = adios_copy_spec_to_dst_selection(completed_pg_reqgroup->pg_to_global_copyspec);
+        retchunk->sel = adios_copy_spec_to_dst_selection(completed_pg_reqgroup->pg_intersection_to_global_copyspec);
         retchunk->data = completed_pg_reqgroup->subreqs->data; // The first (and only) subrequest data buffer
         return retchunk;
     } else {
         copy_subvolume_with_spec(reqgroup->orig_data,					// Copy TO original buffer
                                  completed_pg_reqgroup->subreqs->data,	// Copy FROM buffer of first (and only) subrequest
-                                 completed_pg_reqgroup->pg_to_global_copyspec,	// Copy USING the PG-to-global copy spec
+                                 completed_pg_reqgroup->pg_intersection_to_global_copyspec,	// Copy USING the PG-to-global copy spec
                                  reqgroup->transinfo->orig_type,		// Copy elements of the original type
                                  reqgroup->swap_endianness);			// Swap endianness if needed
         return NULL;
