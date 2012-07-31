@@ -13,12 +13,14 @@
 #include "public/adios_error.h"
 #include "core/adios_logger.h"
 #include "core/common_read.h"
-#include "core/adios_read_transformed.h"
-#include "core/adios_read_hooks.h"
-#include "core/adios_transforms_hooks_read.h"
-#include "core/adios_transforms_reqgroup.h"
 #include "core/futils.h"
 #include "core/bp_utils.h" // struct namelists_struct
+
+// NCSU ALACRITY-ADIOS
+#include "adios_read_transformed.h"
+#include "adios_read_hooks.h"
+#include "adios_transforms_hooks_read.h"
+#include "adios_transforms_reqgroup.h"
 #define BYTE_ALIGN 8
 
 #ifdef DMALLOC

@@ -21,7 +21,7 @@
 #define BYTE_ALIGN 8
 #define MINIFOOTER_SIZE 28
 
-#include "core/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
+#include "adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 
 #ifdef DMALLOC
 #include "dmalloc.h"

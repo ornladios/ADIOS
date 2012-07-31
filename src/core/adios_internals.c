@@ -28,9 +28,9 @@
 #endif
 
 // NCSU ALACRITY-ADIOS - Added header file
-#include "core/adios_transforms_common.h"
-#include "core/adios_transforms_read.h"
-#include "core/adios_transforms_write.h"
+#include "adios_transforms_common.h"
+#include "adios_transforms_read.h"
+#include "adios_transforms_write.h"
 
 struct adios_method_list_struct * adios_methods = 0;
 struct adios_group_list_struct * adios_groups = 0;
@@ -1647,29 +1647,29 @@ int adios_common_define_var (int64_t group_id, const char * name
     // NCSU ALACRITY-ADIOS - parse transform type string
     // If we are given a transform type string, and it is not the empty string, parse it
     // Else, default to no transform
-	
-	char sep = ':';
+
+    char sep = ':';
     if (transform_type_str && transform_type_str[0] != '\0' && transform_type_str[0] != sep) {
         // Break transform_type_str into "type" and "args" sections for parameterized transformations
-				
-		char * pch;
-		
-		char* transform_method_str = NULL;
-		char* transform_param_str = NULL;
-		
-		pch = strchr(transform_type_str, sep);		
-		
-		if(pch)
-		{ 			
-			transform_type_str[pch-transform_type_str] = '\0';
-			transform_method_str = (char*)transform_type_str;
-			transform_param_str = pch + 1;
-		}
-		else
-		{
-			transform_method_str = (char*)transform_type_str;
-		}
-				
+
+        char * pch;
+
+        char* transform_method_str = NULL;
+        char* transform_param_str = NULL;
+
+        pch = strchr(transform_type_str, sep);
+
+        if(pch)
+        {
+            transform_type_str[pch-transform_type_str] = '\0';
+            transform_method_str = (char*)transform_type_str;
+            transform_param_str = pch + 1;
+        }
+        else
+        {
+            transform_method_str = (char*)transform_type_str;
+        }
+
         enum ADIOS_TRANSFORM_TYPE transform_type = adios_transform_type_by_name(transform_method_str);
 
         if (transform_type == adios_transform_unknown) {

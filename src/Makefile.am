@@ -1,4 +1,5 @@
-INCLUDES=-I$(top_srcdir) 
+INCLUDES=-I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transform
+$(info  $(top_srcdir))
 
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES=AUTO
@@ -41,24 +42,28 @@ libadiosreadf_a_CFLAGS=
 libadiosread_nompi_a_CFLAGS= 
 libadiosreadf_nompi_a_CFLAGS= 
 
-transforms_common_SOURCES = core/adios_transforms_common.c \
+transforms_common_SOURCES = core/transform/adios_transforms_common.c \
                             core/adios_subvolume.c
 
+transforms_read_method_SOURCES = transforms/adios_transform_mloc_read.c \
+                                 transforms/adios_transform_compress_read.c \
+                                 transforms/adios_transform_alacrity_read.c
+
+transforms_write_method_SOURCES = transforms/adios_transform_mloc_write.c \
+                                  transforms/adios_transform_compress_write.c \
+                                  transforms/adios_transform_alacrity_write.c
+
 transforms_read_SOURCES = $(transforms_common_SOURCES) \
-                          core/adios_transforms_read.c \
-                          core/adios_transforms_hooks_read.c \
-                          core/adios_transform_mloc.c \
-                          core/adios_transform_compress.c \
-                          core/adios_transform_alacrity.c \
-                          core/adios_transforms_reqgroup.c
+                          core/transform/adios_transforms_read.c \
+                          core/transform/adios_transforms_hooks_read.c \
+                          core/transform/adios_transforms_reqgroup.c \
+                          $(transforms_read_method_SOURCES)
 
 transforms_write_SOURCES = $(transforms_read_SOURCES) \
-                           core/adios_transforms_write.c \
-                           core/adios_transforms_hooks_write.c \
-                           core/adios_transform_mloc_write.c \
-                           core/adios_transform_compress_write.c \
-                           core/adios_transform_alacrity_write.c \
-                           core/adios_transforms_util.c
+                           core/transform/adios_transforms_write.c \
+                           core/transform/adios_transforms_hooks_write.c \
+                           core/transform/adios_transforms_util.c \
+                           $(transforms_write_method_SOURCES)
 
 if BUILD_WRITE
 lib_LIBRARIES += libadios.a libadios_nompi.a

@@ -35,9 +35,10 @@
 #include "core/adios_logger.h"
 #include "public/adios_error.h"
 
-#include "core/adios_transforms_common.h"
-#include "core/adios_transforms_read.h"
-#include "core/adios_transforms_write.h"
+// NCSU ALACRITY-ADIOS
+#include "adios_transforms_common.h"
+#include "adios_transforms_read.h"
+#include "adios_transforms_write.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
