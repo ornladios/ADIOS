@@ -282,6 +282,11 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
     free (buf1);
 }
 
+FC_FUNC_(adios_write_f2c, ADIOS_WRITE_F2C) 
+    (int64_t * fd_p, const char * name, void * var, int * err,int name_size, int var_size)
+{
+    FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 void FC_FUNC_(adios_get_write_buffer, ADIOS_GET_WRITE_BUFFER) 
@@ -318,6 +323,13 @@ void FC_FUNC_(adios_read, ADIOS_READ)
     } else {
         *err = -adios_errno;
     }
+}
+
+void FC_FUNC_(adios_read_f2c, ADIOS_READ_F2C) 
+    (int64_t * fd_p, const char * name, void * buffer,int64_t * buffer_size, int * err, int name_size)
+{
+    FC_FUNC_(adios_read, ADIOS_READ) 
+    (fd_p, name, buffer, buffer_size, err, name_size);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -536,7 +548,7 @@ void FC_FUNC_(adios_select_method, ADIOS_SELECT_METHOD)
 /**************************************************************************/
 /*                  Specific function for each data type                  */
 /**************************************************************************/
-
+#if 0
 /* 
     ADIOS_WRITE 
 */
@@ -767,4 +779,5 @@ void FC_FUNC_(adios_read_logical4_d6, ADIOS_READ_LOGICAL4_D6) (int64_t * fd_p, c
 void FC_FUNC_(adios_read_logical8_d6, ADIOS_READ_LOGICAL8_D6) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }
 
 
+#endif
 

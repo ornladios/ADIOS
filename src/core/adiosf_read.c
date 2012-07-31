@@ -353,6 +353,8 @@ void FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ)
         PRINT_ERRMSG();
 }
 
+void FC_FUNC_(adios_schedule_read_f2c, ADIOS_SCHEDULE_READ_F2C) (int64_t * fp, int64_t * fsel, char * varname, int * from_step, int * nsteps, void * data, int * err, int varname_len) { FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ) (fp,fsel,varname,from_step,nsteps,data,err,varname_len); }
+
 void FC_FUNC_(adios_perform_reads, ADIOS_PERFORM_READS) 
         (int64_t * fp,
          int     * err)
@@ -386,7 +388,7 @@ void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS)
     varstr = futils_fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
         /* First get the number of dimensions of the variable */
-        vi = common_read_inq_var (afp, varname);
+        vi = common_read_inq_var (afp, varstr);
         free(varstr);
     }
     if (vi != NULL) {
@@ -578,6 +580,7 @@ void FC_FUNC_(adios_get_scalar_logical8, ADIOS_GET_SCALAR_LOGICAL8)  (int64_t * 
 
 /* ADIOS_SCHEDULE_READ */
 /* scalars */
+#if 0
 void FC_FUNC_(adios_schedule_read_int1_d0, ADIOS_SCHEDULE_READ_INT1_D0) (int64_t * gp, int64_t * fsel, char * varname, int * from_step, int * nsteps, void * data, int * err, int varname_len) { FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ) (gp, fsel, varname, from_step, nsteps, data, err, varname_len); }
 void FC_FUNC_(adios_schedule_read_int2_d0, ADIOS_SCHEDULE_READ_INT2_D0) (int64_t * gp, int64_t * fsel, char * varname, int * from_step, int * nsteps, void * data, int * err, int varname_len) { FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ) (gp, fsel, varname, from_step, nsteps, data, err, varname_len); }
 void FC_FUNC_(adios_schedule_read_int4_d0, ADIOS_SCHEDULE_READ_INT4_D0) (int64_t * gp, int64_t * fsel, char * varname, int * from_step, int * nsteps, void * data, int * err, int varname_len) { FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ) (gp, fsel, varname, from_step, nsteps, data, err, varname_len); }
@@ -681,7 +684,7 @@ void FC_FUNC_(adios_schedule_read_logical1_d6, ADIOS_SCHEDULE_READ_LOGICAL1_D6) 
 void FC_FUNC_(adios_schedule_read_logical2_d6, ADIOS_SCHEDULE_READ_LOGICAL2_D6) (int64_t * gp, int64_t * fsel, char * varname, int * from_step, int * nsteps, void * data, int * err, int varname_len) { FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ) (gp, fsel, varname, from_step, nsteps, data, err, varname_len); }
 void FC_FUNC_(adios_schedule_read_logical4_d6, ADIOS_SCHEDULE_READ_LOGICAL4_D6) (int64_t * gp, int64_t * fsel, char * varname, int * from_step, int * nsteps, void * data, int * err, int varname_len) { FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ) (gp, fsel, varname, from_step, nsteps, data, err, varname_len); }
 void FC_FUNC_(adios_schedule_read_logical8_d6, ADIOS_SCHEDULE_READ_LOGICAL8_D6) (int64_t * gp, int64_t * fsel, char * varname, int * from_step, int * nsteps, void * data, int * err, int varname_len) { FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ) (gp, fsel, varname, from_step, nsteps, data, err, varname_len); }
-
+#endif
 
 /* ADIOS_GET_STATISTICS */
 void FC_FUNC_(adios_get_statistics_int1, ADIOS_GET_STATISTICS_INT1) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * gavg, void * gstd_dev, void * mins, void * maxs, void * avgs, void * std_devs, int * err, int varname_len) { FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS) (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err, varname_len); }
