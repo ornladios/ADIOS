@@ -328,7 +328,7 @@ static int common_read_find_name (int n, char ** namelist, const char *name, int
     int id, nstartpos=0, sstartpos;
     char ** s = namelist;
     char *rolename[2] = { "variable", "attribute" };
-    int roleerror[2] = { err_invalid_varname, err_invalid_attrname };
+    enum ADIOS_ERRCODES roleerror[2] = { err_invalid_varname, err_invalid_attrname };
 
     if (!name) {
         adios_error (roleerror[role!=0], "Null pointer passed as %s name!\n", rolename[role!=0]);

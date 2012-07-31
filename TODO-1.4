@@ -15,7 +15,8 @@ WRITE
 - time-reset function for appending data to the same timestep ("extend" mode)
 - each method should process parameters from PairStruct, not from string
 - adios_init() should have a communicator parameter
-+ F90 module
+- F90 module
+  - write Fortran wrapper subroutines
 
 READ
 ====
@@ -24,11 +25,12 @@ READ
    + non-blocking: + simple file, + dataspaces
    - chunking: -
      - support memory limit
-- hide special attributes from attribute list
-   - have init parameter to show them
++ hide special attributes from attribute list
+   + have init parameter to show them
 - missing data blocks if read should contain undef values
 + init method parameter: abort_on_error (good for debugging)
-+ F90 module
+- F90 module
+  - write Fortran wrapper subroutines
 
 - simple BP reader
     - generate stats fro scalars written time 

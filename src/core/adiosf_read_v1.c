@@ -118,8 +118,6 @@ void FC_FUNC_(adios_fopen, ADIOS_FOPEN)
         afp = common_read_open_file (namestr, lastmethod, comm);
         if (afp != NULL) {
             *groups_count = common_read_get_grouplist(afp, &group_namelist);
-            // cannot do anything with group name list here
-            free_namelist (group_namelist, *groups_count);
         } else {
             *groups_count = 0;
         }
@@ -168,12 +166,11 @@ void FC_FUNC_(adios_inq_file, ADIOS_INQ_FILE)
         *vars_count = afp->nvars;
         *attrs_count = afp->nattrs;
         *tstart = 1;
-        *ntsteps = afp->last_step;
+        *ntsteps = afp->last_step-afp->current_step+1;
         ngroups = common_read_get_grouplist(afp, &group_namelist);
         for (i=0;i<ngroups;i++) {
             futils_cstr_to_fstr( group_namelist[i], (char *)gnamelist+i*gnamelist_len, gnamelist_len);
         }
-        free_namelist (group_namelist, ngroups);
         *err = 0;
     } else {
         *vars_count = 0;
@@ -204,10 +201,9 @@ void FC_FUNC_(adios_gopen, ADIOS_GOPEN)
         // get group list and find the group name 
         ngroups = common_read_get_grouplist(afp, &group_namelist);
         for (grpid=0;grpid<(ngroups);grpid++) {
-            if (!strcmp(group_namelist[grpid], grpname))
+            if (!strcmp(group_namelist[grpid], namestr))
                 break;
         }
-        free_namelist (group_namelist, ngroups);
 
         if (grpid < ngroups) {
 
@@ -333,7 +329,7 @@ void FC_FUNC_(adios_read_var, ADIOS_READ_VAR)
     varstr = futils_fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
         /* First get the number of dimensions of the variable */
-        ADIOS_VARINFO * vi = common_read_inq_var (afp, varname);
+        ADIOS_VARINFO * vi = common_read_inq_var (afp, varstr);
         if (!vi)  {
             *read_bytes = adios_errno;
             return;
@@ -352,7 +348,7 @@ void FC_FUNC_(adios_read_var, ADIOS_READ_VAR)
 
         ADIOS_SELECTION * sel = common_read_selection_boundingbox (vi->ndim, start, count);
 
-        common_read_schedule_read (afp, sel, varname, from_step, nsteps, data);
+        common_read_schedule_read (afp, sel, varstr, from_step, nsteps, data);
         int ret = common_read_perform_reads (afp, 1);
         if (ret == err_no_error) {
             /* should return the number of bytes read */
@@ -405,7 +401,7 @@ void FC_FUNC_(adios_read_local_var, ADIOS_READ_LOCAL_VAR)
          */
 
         /* First get the number of dimensions of the variable */
-        vi = common_read_inq_var (afp, varname);
+        vi = common_read_inq_var (afp, varstr);
     }
 
     if (vi != NULL) {
@@ -420,7 +416,7 @@ void FC_FUNC_(adios_read_local_var, ADIOS_READ_LOCAL_VAR)
         if (step == vi->nsteps) {
             adios_error (err_out_of_bound, "ADIOS ERROR: local "
                     "variable %s has only %d blocks in file. "
-                    "Requested index %d\n", varname, vi->sum_nblocks, idx);
+                    "Requested index %d\n", varstr, vi->sum_nblocks, idx);
             *read_bytes = adios_errno;
             return;
         }
@@ -433,7 +429,7 @@ void FC_FUNC_(adios_read_local_var, ADIOS_READ_LOCAL_VAR)
                         "variable, only the whole block can be requested; subselections "
                         "are not allowed. Variable %s, block %d, dimension %d size is %lld, "
                         "requested %lld from offset %lld\n",
-                        varname, *idx, vi->blockinfo[*idx].count[i], count[i], start[i]);
+                        varstr, *idx, vi->blockinfo[*idx].count[i], count[i], start[i]);
                 *read_bytes = adios_errno;
                 return;
             }
