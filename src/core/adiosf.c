@@ -66,7 +66,7 @@ void FC_FUNC_(adios_allocate_buffer, ADIOS_ALLOCATE_BUFFER) (int *sizeMB, int * 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adios_open, ADIOS_OPEN) 
+void FC_FUNC_(adios_open, ADIOS_OPEN)
     (int64_t * fd, const char * group_name, const char * name
     ,const char * mode, void * comm, int * err
     ,int group_name_size, int name_size, int mode_size
@@ -91,7 +91,7 @@ void FC_FUNC_(adios_open, ADIOS_OPEN)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adios_group_size, ADIOS_GROUP_SIZE) 
+void FC_FUNC_(adios_group_size, ADIOS_GROUP_SIZE)
     (int64_t * fd_p, int64_t * data_size
     ,int64_t * total_size, int * err
     )
@@ -111,7 +111,7 @@ void FC_FUNC_(adios_group_size, ADIOS_GROUP_SIZE)
  * length of a character array in an extra integer argument, even if
  * the C function declares a void* array in the argument list.
  */
-void FC_FUNC_(adios_write, ADIOS_WRITE) 
+void FC_FUNC_(adios_write, ADIOS_WRITE)
     (int64_t * fd_p, const char * name, void * var, int * err
     ,int name_size, int var_size
     )
@@ -288,7 +288,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
 
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adios_get_write_buffer, ADIOS_GET_WRITE_BUFFER) 
+void FC_FUNC_(adios_get_write_buffer, ADIOS_GET_WRITE_BUFFER)
     (int64_t * fd_p, const char * name
     ,int64_t * size
     ,void ** buffer, int * err, int name_size
@@ -307,7 +307,7 @@ void FC_FUNC_(adios_get_write_buffer, ADIOS_GET_WRITE_BUFFER)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adios_read, ADIOS_READ) 
+void FC_FUNC_(adios_read, ADIOS_READ)
     (int64_t * fd_p, const char * name, void * buffer
     ,int64_t * buffer_size, int * err, int name_size
     )
@@ -325,7 +325,7 @@ void FC_FUNC_(adios_read, ADIOS_READ)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adios_set_path, ADIOS_SET_PATH) 
+void FC_FUNC_(adios_set_path, ADIOS_SET_PATH)
     (int64_t * fd_p, const char * path, int * err, int path_size)
 {
     char * buf1 = 0;
@@ -341,7 +341,7 @@ void FC_FUNC_(adios_set_path, ADIOS_SET_PATH)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adios_set_path_var, ADIOS_SET_PATH_VAR) 
+void FC_FUNC_(adios_set_path_var, ADIOS_SET_PATH_VAR)
     (int64_t * fd_p, const char * path, const char * name, int * err, int path_size, int name_size)
 {
     char * buf1 = 0;
@@ -406,7 +406,7 @@ void FC_FUNC_(adios_timing_write_xml, ADIOS_TIMING_WRITE_XML) (int64_t * fd_p, c
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_declare_group is in adios_internals.c
 // group a list of vars into a composite group
-void FC_FUNC_(adios_declare_group, ADIOS_DECLARE_GROUP) 
+void FC_FUNC_(adios_declare_group, ADIOS_DECLARE_GROUP)
     (int64_t * id, const char * name
     ,const char * time_index, enum ADIOS_FLAG stats
     ,int * err, int name_size, int time_index_size
@@ -434,7 +434,7 @@ void FC_FUNC_(adios_declare_group, ADIOS_DECLARE_GROUP)
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_define_var is in adios_internals.c
 // declare a single var as an entry in a group
-void FC_FUNC_(adios_define_var, ADIOS_DEFINE_VAR) 
+void FC_FUNC_(adios_define_var, ADIOS_DEFINE_VAR)
     (int64_t * group_id, const char * name
     ,const char * path, int * type
     ,const char * dimensions
@@ -474,7 +474,7 @@ void FC_FUNC_(adios_define_var, ADIOS_DEFINE_VAR)
 
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_define_attribute is in adios_internals.c
-void FC_FUNC_(adios_define_attribute, ADIOS_DEFINE_ATTRIBUTE) 
+void FC_FUNC_(adios_define_attribute, ADIOS_DEFINE_ATTRIBUTE)
     (int64_t * group, const char * name
     ,const char * path, int * type, const char * value
     ,const char * var, int * err
@@ -509,7 +509,7 @@ void FC_FUNC_(adios_define_attribute, ADIOS_DEFINE_ATTRIBUTE)
 
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_select_method is in adios_internals_mxml.c
-void FC_FUNC_(adios_select_method, ADIOS_SELECT_METHOD) 
+void FC_FUNC_(adios_select_method, ADIOS_SELECT_METHOD)
     (int64_t * group, const char * method
     ,const char * parameters, const char * base_path
     ,int * err, int method_size, int parameters_size
@@ -541,8 +541,8 @@ void FC_FUNC_(adios_select_method, ADIOS_SELECT_METHOD)
 /*                  Specific function for each data type                  */
 /**************************************************************************/
 
-/* 
-    ADIOS_WRITE 
+/*
+    ADIOS_WRITE
 */
 /* scalars */
 void FC_FUNC_(adios_write_int1_d0, ADIOS_WRITE_INT1_D0) (int64_t * fd_p, const char * name, void * var, int * err, int name_size, int var_size) { FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size); }
@@ -657,8 +657,8 @@ void FC_FUNC_(adios_write_logical8_d6, ADIOS_WRITE_LOGICAL8_D6) (int64_t * fd_p,
 
 
 
-/* 
-    ADIOS_READ 
+/*
+    ADIOS_READ
 */
 /* scalars */
 void FC_FUNC_(adios_read_int1_d0, ADIOS_READ_INT1_D0) (int64_t * fd_p, const char * name, void * buffer ,int64_t * buffer_size, int * err, int name_size) { FC_FUNC_(adios_read, ADIOS_READ) (fd_p, name, buffer, buffer_size, err, name_size); }

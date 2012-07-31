@@ -1734,7 +1734,6 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
     return varinfo;
 }
 
-
 /* Note: most of the code of this routine is copied from previous 1.3.1 implementation
  * of NCSU. One thing to fix is that any counter related to characteristic index should be of uint64_t,
  * instead of int.
@@ -2351,12 +2350,15 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
         blockinfo[i].count = (uint64_t *) malloc (dimcount * sizeof(uint64_t));
         assert (blockinfo[i].start && blockinfo[i].count);
 
-        bp_get_dimension_generic(use_pretransform_dimensions ?
+        // NCSU ALACRITY-ADIOS - Fixed a bug with inq_var_blockinfo that was
+        //   triggered in the presence of a global array with time dimension
+        bp_get_dimension_generic_notime(use_pretransform_dimensions ?
                                     &var_root->characteristics[i].transform.pre_transform_dimensions :
                                     &var_root->characteristics[i].dims,
-                                 ldims, gdims, offsets
+                                 ldims, gdims, offsets, file_is_fortran
                                  );
 
+        /*
         if (dimcount != varinfo->ndim) // has time
         {
             if (file_is_fortran) // For Fortran file, time must be the last dim
@@ -2374,7 +2376,9 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
         {
             memcpy (blockinfo[i].start, offsets, varinfo->ndim * sizeof(uint64_t));
             memcpy (blockinfo[i].count, ldims, varinfo->ndim * sizeof(uint64_t));
-        }
+        }*/
+        memcpy (blockinfo[i].start, offsets, varinfo->ndim * sizeof(uint64_t));
+        memcpy (blockinfo[i].count, ldims, varinfo->ndim * sizeof(uint64_t));
 
         if (file_is_fortran != futils_is_called_from_fortran())
         {
@@ -2494,14 +2498,13 @@ ADIOS_TRANSINFO * adios_read_bp_inq_var_transinfo(const ADIOS_FILE *fp, const AD
                                             1); // 1 -> get based on pre-transform dimensions
 
         transinfo->orig_global = is_global_array_generic(&var_root->characteristics[0].transform.pre_transform_dimensions);
-        transinfo->orig_blockinfo = inq_var_blockinfo(fp, vi, 1); // 1 -> use original, pretransform dimensions
     } else {
         transinfo->orig_type = adios_unknown;
         transinfo->orig_ndim = 0;
         transinfo->orig_dims = 0;
         transinfo->orig_global = 0;
-        transinfo->orig_blockinfo = 0;
     }
+    transinfo->orig_blockinfo = 0;
 
     return transinfo;
 }
@@ -2511,6 +2514,29 @@ ADIOS_TRANSINFO * adios_read_bp_staged_inq_var_transinfo(const ADIOS_FILE *fp, c
 ADIOS_TRANSINFO * adios_read_bp_staged1_inq_var_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi) {
     return NULL;
 }
+
+int adios_read_bp_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
+    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
+    BP_FILE * fh = (BP_FILE *) p->fh;
+    struct adios_index_var_struct_v1 * var_root;
+
+    assert(vi);
+    assert(ti);
+    var_root = bp_find_var_byid(fh, vi->varid);
+    assert(var_root);
+
+    ti->orig_blockinfo = inq_var_blockinfo(fp, vi, 1); // 1 -> use original, pretransform dimensions
+    return 0;
+}
+
+int adios_read_bp_staged_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
+    return 1;
+}
+int adios_read_bp_staged1_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
+    return 1;
+}
+
+
 /*
 ADIOS_TRANSINFO * adios_read_bp_inq_var_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi) {
     struct BP_PROC * p = (struct BP_PROC *) fp->fh;

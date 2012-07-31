@@ -4,7 +4,7 @@
 #include "adios_logger.h"
 #include "adios_transforms_common.h"
 #include "adios_transforms_read.h"
-#include "adios_transforms_write.h"
+#include "adios_transforms_hooks_read.h"
 #include "adios_subvolume.h"
 #include "public/adios_error.h"
 
@@ -52,6 +52,5 @@ enum ADIOS_ERRCODES adios_transform_alacrity_retrieve_subvolume(
 }
 
 #else
-DEFINE_FNS_UNIMPL(alacrity);
-
+DECLARE_TRANSFORM_READ_METHOD_UNIMPL(alacrity)
 #endif

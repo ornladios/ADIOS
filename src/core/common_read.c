@@ -9,12 +9,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 #include "public/adios_error.h"
 #include "core/adios_logger.h"
 #include "core/common_read.h"
 #include "core/adios_read_transformed.h"
 #include "core/adios_read_hooks.h"
 #include "core/adios_transforms_hooks_read.h"
+#include "core/adios_transforms_reqgroup.h"
 #include "core/futils.h"
 #include "core/bp_utils.h" // struct namelists_struct
 #define BYTE_ALIGN 8
@@ -378,21 +380,25 @@ ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname)
 
 // NCSU ALACRITY-ADIOS - For copying original metadata from transform
 //   info to inq var info
+static void move_trans_blockinfo_to_varinfo(ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
+    common_read_free_blockinfo(&vi->blockinfo, vi->sum_nblocks);	// Free blockinfo in varinfo
+    vi->blockinfo = ti->orig_blockinfo;								// Move blockinfo from transinfo to varinfo
+    ti->orig_blockinfo = 0;											// Delink blockinfo from transinfo
+}
 static void move_transinfo_to_varinfo(ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
     // First make room for the transform info fields
     free(vi->dims);
-    common_read_free_blockinfo(&vi->blockinfo, vi->sum_nblocks);
 
     // Now move them
     vi->type = ti->orig_type;
     vi->ndim = ti->orig_ndim;
     vi->global = ti->orig_global;
     vi->dims = ti->orig_dims;
-    vi->blockinfo = ti->orig_blockinfo;
 
     // Finally, delink them from the transform info so they aren't inadvertently free'd
     ti->orig_dims = 0;
-    ti->orig_blockinfo = 0;
+
+    move_trans_blockinfo_to_varinfo(vi, ti); // Also move blockinfo if extant
 }
 
 // NCSU ALACRITY-ADIOS - Delegate to the 'inq_var_raw_byid' function, then
@@ -407,7 +413,7 @@ ADIOS_VARINFO * common_read_inq_var_byid(const ADIOS_FILE *fp, int varid)
         return NULL;
 
     // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
-    ti = common_read_inq_transinfo(fp, vi);
+    ti = common_read_inq_transinfo(fp, vi); // No orig_blockinfo
     if (ti->transform_type != adios_transform_none) {
         move_transinfo_to_varinfo(vi, ti);
     }
@@ -456,12 +462,13 @@ ADIOS_VARINFO * common_read_inq_var_raw_byid (const ADIOS_FILE *fp, int varid)
 //   becomes more common, a simple 'transform raw' API could be added.
 ADIOS_TRANSINFO * common_read_inq_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi) {
     if (!fp) {
-        adios_error (err_invalid_file_pointer, "Null pointer passed as file to common_read_inq_transinfo()\n");
+        adios_error (err_invalid_file_pointer,
+                     "Null ADIOS_FILE pointer passed to common_read_inq_transinfo()\n");
         return NULL;
     }
     if (!vi) {
         adios_error (err_invalid_argument,
-                     "Null pointer passed as varinfo to common_read_inq_transinfo()\n");
+                     "Null ADIOS_VARINFO pointer passed to common_read_inq_transinfo()\n");
         return NULL;
     }
 
@@ -470,6 +477,28 @@ ADIOS_TRANSINFO * common_read_inq_transinfo(const ADIOS_FILE *fp, const ADIOS_VA
 
     ADIOS_TRANSINFO *ti = internals->read_hooks[internals->method].adios_inq_var_transinfo_fn(fp, vi);
     return ti;
+}
+
+int common_read_inq_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO * ti) {
+    if (!fp) {
+        adios_error (err_invalid_argument,
+                     "Null ADIOS_FILE pointer passed to common_read_inq_trans_blockinfo()\n");
+        return 1;
+    }
+    if (!vi) {
+        adios_error (err_invalid_argument,
+                     "Null ADIOS_VARINFO pointer passed to common_read_inq_trans_blockinfo()\n");
+        return 1;
+    }
+    if (!ti) {
+        adios_error (err_invalid_argument,
+                     "Null ADIOS_TRANSINFO pointer passed to common_read_inq_trans_blockinfo()\n");
+        return 1;
+    }
+
+    struct common_read_internals_struct * internals;
+    internals = (struct common_read_internals_struct *) fp->internal_data;
+    return internals->read_hooks[internals->method].adios_inq_var_trans_blockinfo_fn(fp, vi, ti);
 }
 
 
@@ -499,7 +528,33 @@ int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
     return retval;
 }
 
+// NCSU ALACRITY-ADIOS - Delegate to the 'inq_var_blockinfo_raw' function, then
+//   patch the original metadata in from the transform info
 int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
+{
+    ADIOS_TRANSINFO *ti;
+
+    int retval = common_read_inq_var_blockinfo_raw(fp, varinfo);
+    if (retval != err_no_error)
+        return retval;
+
+    // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
+    ti = common_read_inq_transinfo(fp, varinfo);
+    if (ti->transform_type != adios_transform_none) {
+        retval = common_read_inq_trans_blockinfo(fp, varinfo, ti);
+        if (retval != err_no_error)
+            return retval;
+
+        move_trans_blockinfo_to_varinfo(varinfo, ti);
+    }
+    common_read_free_transinfo(varinfo, ti);
+
+    return err_no_error;
+}
+
+// NCSU ALACRITY-ADIOS - Renaming of common_read_inq_var_blockinfo, named 'raw'
+//   because it is oblivious to the original metadata as stored in TRANSINFO
+int common_read_inq_var_blockinfo_raw (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 {
     struct common_read_internals_struct * internals;
     int retval;
@@ -624,7 +679,8 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
     return retval;
 }
 
-
+// NCSU ALACRITY-ADIOS - Modified to delegate to transform method when called
+//   on a transformed variable
 int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
         const ADIOS_SELECTION * sel,
         int                     varid,
@@ -641,27 +697,32 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
         if (varid >=0 && varid < fp->nvars) {
             // NCSU ALACRITY-ADIOS - If the variable is transformed, intercept
             //   the read scheduling and schedule our own reads
-            ADIOS_VARINFO *vi = common_read_inq_var_byid(fp, varid);
-            ADIOS_TRANSINFO *ti = common_read_inq_transinfo(fp, vi);
+            ADIOS_VARINFO *raw_varinfo = common_read_inq_var_raw_byid(fp, varid);		// Get the *raw* varinfo
+            ADIOS_TRANSINFO *transinfo = common_read_inq_transinfo(fp, raw_varinfo);	// Get the transform info (i.e. original var info)
             //assert(vi);
             //assert(ti);
 
             // If this variable is transformed, delegate to the transform
             // method to generate subrequests
             // Else, do the normal thing
-            if (ti->transform_type != adios_transform_none) {
+            if (transinfo->transform_type != adios_transform_none) {
                 adios_transform_read_subrequest *subreq;
-                adios_transform_read_reqgroup *new_reqgroup =
-                    adios_transform_new_read_reqgroup(&internals->transform_reqgroups, fp, sel, varid, from_steps, nsteps, data);
+                adios_transform_pg_reqgroup *pg_reqgroup;
+                adios_transform_read_reqgroup *new_reqgroup;
 
-                //adios_transform_generate_read_subrequests(vi, ti, new_reqgroup);
-
-                retval = 0;
-                // Now schedule all of the subrequests
                 internals = (struct common_read_internals_struct *) fp->internal_data;
-                for (subreq = new_reqgroup->subreqs; subreq; subreq = subreq->next) {
-                    retval |= internals->read_hooks[internals->method].adios_schedule_read_byid_fn(
-                                fp, subreq->sel, varid+internals->group_varid_offset, from_steps, nsteps, subreq->data);
+
+                // Generate the read request group and append it to the list
+                new_reqgroup = adios_transform_generate_read_reqgroup(raw_varinfo, transinfo, fp, sel, from_steps, nsteps, data);
+                adios_transform_read_reqgroup_append(&internals->transform_reqgroups, new_reqgroup);
+
+                // Now schedule all of the new subrequests
+                retval = 0;
+                for (pg_reqgroup = new_reqgroup->pg_reqgroups; pg_reqgroup; pg_reqgroup = pg_reqgroup->next) {
+                    for (subreq = pg_reqgroup->subreqs; subreq; subreq = subreq->next) {
+                        retval |= internals->read_hooks[internals->method].adios_schedule_read_byid_fn(
+                                        fp, subreq->sel, varid+internals->group_varid_offset, from_steps, nsteps, subreq->data);
+                    }
                 }
             } else {
                 // Old functionality
@@ -681,7 +742,8 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
     return retval;
 }
 
-
+// NCSU ALACRITY-ADIOS - Modified to delegate to transform method to combine
+//  read subrequests to answer original requests
 int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
 {
     struct common_read_internals_struct * internals;
@@ -693,8 +755,32 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
         retval = internals->read_hooks[internals->method].adios_perform_reads_fn (fp, blocking);
 
         // NCSU ALACRITY-ADIOS - If this was a blocking call, consider all read
-        //   request groups completed, and reassemble via the transform method
-        // TODO
+        //   request groups completed, and reassemble via the transform method.
+        //   Otherwise, do nothing.
+        if (blocking) {
+            // Mark all subrequests, PG request groups and read request groups
+            // as completed, calling callbacks as needed
+            adios_transform_read_reqgroup *reqgroup;
+            adios_transform_pg_reqgroup *pg_reqgroup;
+            adios_transform_read_subrequest *subreq;
+            for (reqgroup = internals->transform_reqgroups; reqgroup; reqgroup = reqgroup->next) {
+                for (pg_reqgroup = reqgroup->pg_reqgroups; pg_reqgroup; pg_reqgroup = pg_reqgroup->next) {
+                    for (subreq = pg_reqgroup->subreqs; subreq; subreq = subreq->next) {
+                        adios_transform_subreq_mark_complete(reqgroup, pg_reqgroup, subreq);
+                        assert(subreq->completed);
+
+                        adios_transform_subrequest_completed(reqgroup, pg_reqgroup, subreq, adios_read_noreturn);
+                    }
+                    assert(pg_reqgroup->completed);
+                    adios_transform_pg_reqgroup_completed(reqgroup, pg_reqgroup, adios_read_noreturn);
+                }
+                printf(">>> num pg_reqgroups completed/total: %d/%d\n", reqgroup->num_completed_pg_reqgroups, reqgroup->num_pg_reqgroups);
+                assert(reqgroup->completed);
+                adios_transform_read_reqgroup_completed(reqgroup, adios_read_noreturn);
+            }
+        } else {
+            // Do nothing
+        }
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_perform_reads()\n");
         retval = err_invalid_file_pointer;
@@ -702,6 +788,66 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
     return retval;
 }
 
+// NCSU ALACRITY-ADIOS - Intercept read chunks, and translate as necessary
+// Take an ADIOS_VARCHUNK that was just read and process it with the transform
+// system. If it was part of a read request corresponding to a transformed
+// variable, consume it, and possibly replacing it with a detransformed chunk.
+// Otherwise, do nothing.
+static void transform_method_filter_chunk(adios_transform_read_reqgroup *reqgroups, ADIOS_VARCHUNK ** chunk) {
+    adios_transform_read_reqgroup *reqgroup;
+    adios_transform_pg_reqgroup *pg_reqgroup;
+    adios_transform_read_subrequest *subreq;
+    ADIOS_VARCHUNK *tmp_chunk;
+
+    // Some chunk was read; find the corresponding subrequest, if any
+    for (reqgroup = reqgroups; reqgroup; reqgroup = reqgroup->next) {
+        adios_transform_read_reqgroup_find_subreq(reqgroup, *chunk, 1, &pg_reqgroup, &subreq);
+
+        // If this chunk matches a read subreqest, process it
+        if (subreq) {
+            // This chunk corresponds to a subrequest. Therefore, consume it
+            // and perhaps replace it with a detransformed chunk.
+
+            // Consume the chunk
+            common_read_free_chunk(*chunk);
+            *chunk = NULL;
+
+            // Mark the subrequest as complete
+            adios_transform_subreq_mark_complete(reqgroup, pg_reqgroup, subreq);
+            assert(subreq->completed);
+
+            const enum ADIOS_READ_RESULT_MODE mode = reqgroup->orig_data ?
+                                                     adios_read_return_complete :
+                                                     adios_read_return_partial;
+
+            // Invoke all callbacks, depending on what completed, and
+            // get at most one ADIOS_VARCHUNK to return
+            *chunk = adios_transform_subrequest_completed(reqgroup, pg_reqgroup, subreq, mode);
+
+            if (pg_reqgroup->completed) {
+                tmp_chunk = adios_transform_pg_reqgroup_completed(reqgroup, pg_reqgroup, mode);
+                if (tmp_chunk) {
+                    assert(!*chunk);
+                    *chunk = tmp_chunk;
+                }
+            }
+
+            if (reqgroup->completed) {
+                tmp_chunk = adios_transform_read_reqgroup_completed(reqgroup, mode);
+                if (tmp_chunk) {
+                    assert(!*chunk);
+                    *chunk = tmp_chunk;
+                }
+            }
+
+            // At this point, the the original chunk has been consumed,
+            // and a new one may or may not be in *chunk, depending on
+            // whether the transform method was able to produce some
+            // data.
+            break;
+        }
+    }
+}
 
 int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
 {
@@ -711,11 +857,17 @@ int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        retval = internals->read_hooks[internals->method].adios_check_reads_fn (fp, chunk);
 
-        // NCSU ALACRITY-ADIOS - If the varchunk returned belongs to a
-        //   subrequest, tell the transform method
-        // TODO
+        // NCSU ALACRITY-ADIOS - Handle those VARCHUNKs that correspond to
+        //   subrequests; don't return until we get a completed one
+        do {
+            // Read some chunk
+            retval = internals->read_hooks[internals->method].adios_check_reads_fn(fp, chunk);
+            if (!*chunk) break; // If no more chunks are available, stop now
+
+            // Process the chunk through a transform method, if necessary
+            transform_method_filter_chunk(internals->transform_reqgroups, chunk);
+        } while (!*chunk); // Keep reading until we have a chunk to return
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_check_reads()\n");
         retval = err_invalid_file_pointer;

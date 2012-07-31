@@ -9,6 +9,7 @@
 #define ADIOS_READ_TRANSFORMED_H_
 
 #include "adios_transforms_common.h"
+#include "public/adios_read.h"
 
 // NCSU ALACRITY-ADIOS - struct for original metadata
 typedef struct {

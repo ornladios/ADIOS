@@ -1,12 +1,12 @@
-#ifdef ALACRITY
-
 #include <stdint.h>
 #include <assert.h>
 #include "adios_logger.h"
 #include "adios_transforms_common.h"
-#include "adios_transforms_read.h"
 #include "adios_transforms_write.h"
+#include "adios_transforms_hooks_write.h"
 #include "adios_transforms_util.h"
+
+#ifdef ALACRITY
 #include "alacrity.h"
 
 uint16_t adios_transform_alacrity_get_metadata_size() { return 2 * sizeof(uint64_t); }
@@ -122,4 +122,6 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd, struct adios_va
     return 1;
 }
 
+#else
+DECLARE_TRANSFORM_WRITE_METHOD_UNIMPL(alacrity)
 #endif

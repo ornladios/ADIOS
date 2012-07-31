@@ -39,6 +39,8 @@ enum ADIOS_TRANSFORM_TYPE adios_transform_type_by_name(const char *transform_nam
  */
 const char * adios_transform_name_by_type(enum ADIOS_TRANSFORM_TYPE transform_type);
 
+int is_transform_type_valid(enum ADIOS_TRANSFORM_TYPE transform_type);
+
 /////////////////////////////////////
 // Variable introspection
 /////////////////////////////////////

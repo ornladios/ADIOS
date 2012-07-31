@@ -33,7 +33,9 @@ int adios_read_##a##_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIO
 void adios_read_##a##_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran); \
 void adios_read_##a##_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group); \
 int adios_read_##a##_is_var_timed (const ADIOS_FILE *fp, int varid); \
-ADIOS_TRANSINFO * adios_read_##a##_inq_var_transinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi); /* NCSU ALACRITY-ADIOS */
+/* NCSU ALACRITY-ADIOS */ \
+ADIOS_TRANSINFO * adios_read_##a##_inq_var_transinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi); \
+int adios_read_##a##_inq_var_trans_blockinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti);
 
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -87,6 +89,7 @@ typedef void (* ADIOS_RESET_DIMENSION_ORDER_FN) (const ADIOS_FILE *fp, int is_fo
 typedef void (* ADIOS_GET_GROUPINFO_FN) (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group);
 typedef int  (* ADIOS_IS_VAR_TIMED_FN) (const ADIOS_FILE *fp, int varid);
 typedef ADIOS_TRANSINFO * (*ADIOS_READ_INQ_VAR_TRANSINFO)(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi); /* NCSU ALACRITY-ADIOS */
+typedef int (*ADIOS_READ_INQ_VAR_TRANS_BLOCKINFO)(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti); /* NCSU ALACRITY-ADIOS */
 
 struct adios_read_hooks_struct
 {
@@ -108,6 +111,7 @@ struct adios_read_hooks_struct
     ADIOS_GET_GROUPINFO_FN          adios_get_groupinfo_fn;
     ADIOS_IS_VAR_TIMED_FN           adios_is_var_timed_fn;
     ADIOS_READ_INQ_VAR_TRANSINFO	adios_inq_var_transinfo_fn;
+    ADIOS_READ_INQ_VAR_TRANS_BLOCKINFO	adios_inq_var_trans_blockinfo_fn;
 };
 
 #undef FORWARD_DECLARE

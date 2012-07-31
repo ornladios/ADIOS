@@ -57,7 +57,6 @@ uint64_t adios_transform_worst_case_transformed_group_size(uint64_t group_size, 
         if (!transform_type_seen[transform_type])
             continue;
 
-        printf(">>> WORST CASE FOR TRANSFORM TYPE %d\n", transform_type);
         transformed_group_size = adios_transform_calc_vars_transformed_size(transform_type, group_size, non_scalar_var_count);
 
         if (transformed_group_size > max_transformed_group_size) {
@@ -81,51 +80,92 @@ static struct adios_dimension_struct * new_dimension() {
     dim->dimension.time_index = adios_flag_no;
     dim->global_dimension.rank = 0;
     dim->global_dimension.id = 0;
-    dim->global_dimension.time_index = adios_flag_no;
+    dim->global_dimension.time_index = adios_flag_unknown;
     dim->local_offset.rank = 0;
     dim->local_offset.id = 0;
-    dim->local_offset.time_index = adios_flag_no;
+    dim->local_offset.time_index = adios_flag_unknown;
     dim->next = 0;
     return dim;
 }
 
-static void set_dimension_is_time_index(struct adios_dimension_struct *dim, enum ADIOS_FLAG is_time_index) {
-    dim->dimension.time_index = is_time_index;
-    dim->global_dimension.time_index = is_time_index;
-    dim->local_offset.time_index = is_time_index;
-}
-
-static int get_time_dimension_position(struct adios_var_struct *var) {
-    struct adios_dimension_struct *dim;
+static int find_time_dimension(struct adios_dimension_struct *dim, struct adios_dimension_struct **time_dim, enum ADIOS_FLAG fortran_order_flag) {
+    struct adios_dimension_struct *cur_dim;
     int i;
-
-    for (dim = var->dimensions, i = 0; dim != 0; dim = dim->next, i++) {
-        if (dim->dimension.time_index == adios_flag_yes)
+    for (i = 0, cur_dim = dim; cur_dim; cur_dim = cur_dim->next, i++ ) {
+        if (cur_dim->dimension.time_index == adios_flag_yes) {
+            if (time_dim) *time_dim = cur_dim;
             return i;
+        }
+
+        // If we're at the last dimension, and we haven't found a time
+        // dimension yet, check whether the global array is zero; if so, we
+        // have a time dimension, and must infer the location based on whether
+        // this is FORTRAN or not
+        if (!cur_dim->next) {
+            if (cur_dim->global_dimension.id == 0 && cur_dim->global_dimension.rank == 0) {
+                if (fortran_order_flag == adios_flag_yes) {
+                    if (time_dim) *time_dim = cur_dim;
+                    return i;
+                } else if (fortran_order_flag == adios_flag_no) {
+                    if (time_dim) *time_dim = dim;
+                    return 0;
+                }
+            }
+        }
     }
 
+    if (time_dim) *time_dim = 0;
     return -1;
 }
 
-static void adios_transform_attach_byte_array_dimension(struct adios_group_struct *grp, struct adios_var_struct *var) {
-    // Create dimensions for the byte array (including a time dimension, if one
-    // existed before).
-    int ndim = count_dimensions(var->pre_transform_dimensions);
+// If there is a time dimension the final dimensions will look like this:
+//   local:  t  l1 l2 l3 (or l1 l2 l3 t if fortran order)
+//   global: g1 g2 g3 0
+//   offset: o1 o2 o3 0
+static void adios_transform_attach_byte_array_dimensions(struct adios_group_struct *grp, struct adios_var_struct *var) {
+    int i, new_ndim, new_time_dim_pos;
+    uint64_t ldims[3];
+    uint64_t gdims[3];
+    uint64_t odims[3];
 
-    // -1 => no time dim, 0...ndim-1 => index of the time dim
-    int time_dim_pos = get_time_dimension_position(var);
-    assert(time_dim_pos == -1 || time_dim_pos == 0 || time_dim_pos == ndim - 1); // I think...check with Gary/Norbert
+    int orig_ndim = count_dimensions(var->pre_transform_dimensions);
+    int orig_time_dim_pos = find_time_dimension(var->pre_transform_dimensions, NULL, grp->adios_host_language_fortran);
 
-    adios_append_dimension(&var->dimensions, new_dimension());
-    if (time_dim_pos != -1) {
-        adios_append_dimension(&var->dimensions, new_dimension());
+    assert(orig_time_dim_pos == -1 || orig_time_dim_pos == 0 || orig_time_dim_pos == orig_ndim - 1); // Time dimension is either first, last, or non-existant
+    printf(">>> Found time dimension for var %s at index %d\n", var->name, orig_time_dim_pos);
 
-        // Mark the first or last dimension as a time dimension, depending on
-        // where the time dimension was before
-        if (time_dim_pos == 0)
-            set_dimension_is_time_index(var->dimensions, adios_flag_yes);
-        else
-            set_dimension_is_time_index(var->dimensions->next, adios_flag_yes);
+    ldims[0] = 1; // 1 PG ID in length
+    ldims[1] = 0; // unknown bytes in length
+    gdims[0] = UINT64_MAX >> 1; // Infinite max PGs
+    gdims[1] = UINT64_MAX >> 1; // Infinite max bytes
+    odims[0] = 0; // unknown PG ID
+    odims[1] = 0; // 0 byte offset
+    ldims[2] = gdims[2] = odims[2] = 0; // No 3rd dimension, yet
+
+    // Add the time dimension
+    if (orig_time_dim_pos == 0) {
+        ldims[2] = ldims[1];
+        ldims[1] = ldims[0];
+        ldims[0] = 1;
+        new_ndim = 3;
+        new_time_dim_pos = 0;
+    } else if (orig_time_dim_pos == orig_ndim - 1) {
+        ldims[2] = 1;
+        new_ndim = 3;
+        new_time_dim_pos = 2;
+    } else {
+        new_ndim = 2;
+        new_time_dim_pos = -1;
+    }
+
+    // Construct the dimension linked list
+    for (i = 0; i < new_ndim; i++) {
+        struct adios_dimension_struct *new_dim = new_dimension();
+        new_dim->dimension.time_index = (i == new_time_dim_pos) ? adios_flag_yes : adios_flag_no;
+        new_dim->dimension.rank = ldims[i];
+        new_dim->global_dimension.rank = gdims[i];
+        new_dim->local_offset.rank = odims[i];
+        adios_append_dimension(&var->dimensions, new_dim);
     }
 }
 
@@ -134,11 +174,13 @@ static void adios_transform_convert_var_to_byte_array(struct adios_group_struct 
     var->pre_transform_type = var->type;
     var->pre_transform_dimensions = var->dimensions;
 
+    // Convert the type to byte array and clear the dimensions (since they were
+    // moved and shouldn't be double-referenced)
     var->type = adios_byte;
     var->dimensions = 0;
 
-    // Attach the new 1D dimension to the variable
-    adios_transform_attach_byte_array_dimension(grp, var);
+    // Attach the new dimension to the variable
+    adios_transform_attach_byte_array_dimensions(grp, var);
 }
 
 ////////////////////////////////////////
@@ -147,7 +189,7 @@ static void adios_transform_convert_var_to_byte_array(struct adios_group_struct 
 struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *orig_var_grp,
                                                      struct adios_var_struct *orig_var,
                                                      enum ADIOS_TRANSFORM_TYPE transform_type,
-                                                    char* transform_param) {
+                                                     char *transform_param) {
     log_debug("Transforming variable %s with type %d\n", orig_var->name, transform_type);
 
     // Check for the simple and error cases
@@ -204,12 +246,34 @@ uint64_t adios_transform_get_pre_transform_var_size(struct adios_group_struct *g
                                           NULL); // NULL because it's not a string, so unneeded
 }
 
-static int adios_transform_store_transformed_length(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t len) {
-    // Assume a single dimension, since this has been converted to a byte array
-    assert(var->dimensions);
-    assert(var->dimensions->next == 0);
+static int adios_transform_store_transformed_length(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t transformed_len) {
+    struct adios_dimension_struct *dim1, *dim2, *dim3;
+    struct adios_dimension_item_struct *pg_id_offset, *byte_length_ldim;
 
-    var->dimensions->dimension.rank = len;
+    const uint64_t pg_id = fd->pg_start_in_file; // Use the current file offset as a unique ID for this PG
+
+    // Get the first two dimensions (which always exist)
+    dim1 = var->dimensions;
+    assert(dim1);
+    dim2 = dim1->next;
+    assert(dim2);
+
+    // Find appropriate dimension items
+    pg_id_offset = &dim1->local_offset;
+    if (dim1->dimension.time_index == adios_flag_yes) {
+        // If the first dimension is a time dimension, then dimension is
+        // upshifted, but only for ->dimension
+        dim3 = dim2->next;
+        assert(dim3);
+        byte_length_ldim = &dim3->dimension;
+    } else {
+        byte_length_ldim = &dim2->dimension;
+    }
+
+    // Finally, insert the values into the dimension items
+    pg_id_offset->rank = pg_id;
+    byte_length_ldim->rank = transformed_len;
+
     return 1;
 }
 

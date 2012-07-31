@@ -211,6 +211,11 @@ const char * adios_transform_name_by_type(enum ADIOS_TRANSFORM_TYPE transform_ty
     return "";
 }
 
+int is_transform_type_valid(enum ADIOS_TRANSFORM_TYPE transform_type) {
+    return transform_type >= adios_transform_none &&
+           transform_type < num_adios_transform_types;
+}
+
 ////////////////////////////////////////
 // Variable introspection
 ////////////////////////////////////////
@@ -322,8 +327,8 @@ int adios_transform_init_transform_var(struct adios_var_struct *var) {
     var->transform_type = adios_transform_none;
     var->pre_transform_dimensions = 0;
     var->pre_transform_type = adios_unknown;
-	var->transform_type_param_len = 0;
-	var->transform_type_param = 0;
+    var->transform_type_param_len = 0;
+    var->transform_type_param = 0;
     var->transform_metadata_len = 0;
     var->transform_metadata = 0;
     return 1;
@@ -398,8 +403,8 @@ int adios_transform_clear_transform_var(struct adios_var_struct *var) {
         var->pre_transform_dimensions = dimensions;
     }
 
-	// free transform type parameters
-	var->transform_type_param_len = 0;
+    // free transform type parameters
+    var->transform_type_param_len = 0;
     if (var->transform_type_param)
         free(var->transform_type_param);
     var->transform_type_param = 0;
