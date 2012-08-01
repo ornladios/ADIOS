@@ -1269,6 +1269,8 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
                 for (k = 0; k < ndim - 1; k++)
                 {
                     gdims[k] = gdims[k + 1];
+                    ldims[k] = ldims[k + 1];
+                    offsets[k] = offsets[k + 1]; 
                 }
             }
         }

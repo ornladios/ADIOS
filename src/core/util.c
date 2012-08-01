@@ -246,6 +246,26 @@ void list_free_read_request (read_request * h)
 }
 
 
+read_request * copy_read_request (const read_request * r)
+{
+    read_request * newreq;
+
+    newreq = (read_request *) malloc (sizeof (read_request));
+    assert (newreq);
+
+    newreq->rank = r->rank;
+    newreq->sel = copy_selection (r->sel);
+    newreq->varid = r->varid;
+    newreq->from_steps = r->from_steps;
+    newreq->nsteps = r->nsteps;
+    newreq->data = r->data;
+    newreq->datasize = r->datasize;
+    newreq->priv = r->priv;
+    newreq->next = 0;
+
+    return newreq;
+}
+
 ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel)
 {
     ADIOS_SELECTION * nsel;
@@ -280,11 +300,11 @@ ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel)
     }
     else if (sel->type == ADIOS_SELECTION_AUTO)
     {
-        //FIXME
+        //TODO
     }
     else
     {
-        //FIXME
+        //adios_error (err_invalid_argument, "Wrong ADIOS selection type.\n");
     }
 
     return nsel;
