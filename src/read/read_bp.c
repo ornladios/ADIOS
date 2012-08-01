@@ -627,9 +627,10 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
             /* READ AN ARRAY VARIABLE */
             int * idx_table = (int *) malloc (sizeof (int) * (stop_idx - start_idx + 1));
             uint64_t write_offset = 0;
+/* 
                 printf ("count   = "); for (j = 0; j<ndim; j++) printf ("%d ",count[j]); printf ("\n");
                 printf ("start   = "); for (j = 0; j<ndim; j++) printf ("%d ",start[j]); printf ("\n");
-
+*/
             // loop over the list of pgs to read from one-by-one
             for (idx = 0; idx < stop_idx - start_idx + 1; idx++)
             {
@@ -652,13 +653,10 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     // we need to read only the first PG, not all, so let's prevent a second loop
                     stop_idx = start_idx;
                 }
-
+/*
                 printf ("ldims   = "); for (j = 0; j<ndim; j++) printf ("%d ",ldims[j]); printf ("\n");
                 printf ("gdims   = "); for (j = 0; j<ndim; j++) printf ("%d ",gdims[j]); printf ("\n");
                 printf ("offsets = "); for (j = 0; j<ndim; j++) printf ("%d ",offsets[j]); printf ("\n");
-/*
-                printf ("count   = "); for (j = 0; j<ndim; j++) printf ("%d ",count[j]); printf ("\n");
-                printf ("start   = "); for (j = 0; j<ndim; j++) printf ("%d ",start[j]); printf ("\n");
 */              
                 for (j = 0; j < ndim; j++)
                 {
