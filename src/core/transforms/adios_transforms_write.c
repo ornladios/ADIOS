@@ -130,7 +130,6 @@ static void adios_transform_attach_byte_array_dimensions(struct adios_group_stru
     int orig_time_dim_pos = find_time_dimension(var->pre_transform_dimensions, NULL, grp->adios_host_language_fortran);
 
     assert(orig_time_dim_pos == -1 || orig_time_dim_pos == 0 || orig_time_dim_pos == orig_ndim - 1); // Time dimension is either first, last, or non-existant
-    printf(">>> Found time dimension for var %s at index %d\n", var->name, orig_time_dim_pos);
 
     ldims[0] = 1; // 1 PG ID in length
     ldims[1] = 0; // unknown bytes in length

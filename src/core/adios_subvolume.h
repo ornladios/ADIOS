@@ -44,7 +44,7 @@ void copy_subvolume(void *dst, const void *src, int ndim, const uint64_t *subv_d
                     enum ADIOS_FLAG swap_endianness);
 
 void copy_subvolume_with_spec(void *dst, const void *src,
-                              const const adios_subvolume_copy_spec *copy_spec,
+                              const adios_subvolume_copy_spec *copy_spec,
                               enum ADIOS_DATATYPES datum_type,
                               enum ADIOS_FLAG swap_endianness);
 
