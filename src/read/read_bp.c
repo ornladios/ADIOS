@@ -2258,34 +2258,12 @@ int adios_read_bp_inq_var_blockinfo (const ADIOS_FILE * fp, ADIOS_VARINFO * vari
         varinfo->blockinfo[i].count = (uint64_t *) malloc (varinfo->ndim * 8);
         assert (varinfo->blockinfo[i].start && varinfo->blockinfo[i].count);
 
-        bp_get_dimension_characteristics (&(var_root->characteristics[i]),
-                                          ldims, gdims, offsets
-                                         );
+        bp_get_dimension_characteristics_notime (&(var_root->characteristics[i]),
+                                                 ldims, gdims, offsets, file_is_fortran
+                                                );
 
-        if (var_root->characteristics[0].dims.count != varinfo->ndim) // has time
-        {
-            if (file_is_fortran) // For Fortran file, time must be the last dim
-            {
-                memcpy (varinfo->blockinfo[i].start, offsets, varinfo->ndim * 8);
-                memcpy (varinfo->blockinfo[i].count, ldims, varinfo->ndim * 8);
-            }
-            else // For C file, time must be the first dim
-            {
-                memcpy (varinfo->blockinfo[i].start, offsets + 1, varinfo->ndim * 8);
-                memcpy (varinfo->blockinfo[i].count, ldims + 1, varinfo->ndim * 8);
-            }
-        }
-        else // no time
-        {
-            memcpy (varinfo->blockinfo[i].start, offsets, varinfo->ndim * 8);
-            memcpy (varinfo->blockinfo[i].count, ldims, varinfo->ndim * 8);
-        } 
-
-        if (file_is_fortran != futils_is_called_from_fortran())
-        {
-            swap_order (varinfo->ndim, varinfo->blockinfo[i].start, &timedim);
-            swap_order (varinfo->ndim, varinfo->blockinfo[i].count, &timedim);
-        }
+        memcpy (varinfo->blockinfo[i].start, offsets, varinfo->ndim * 8);
+        memcpy (varinfo->blockinfo[i].count, ldims, varinfo->ndim * 8);
     }
     
     free (ldims);
