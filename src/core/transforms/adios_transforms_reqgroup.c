@@ -234,7 +234,7 @@ void adios_transform_free_pg_reqgroup(adios_transform_pg_reqgroup **pg_reqgroup_
 
     // Free malloc'd resources
     common_read_selection_delete(pg_reqgroup->pg_selection);
-    adios_subvolume_copy_spec_destroy(pg_reqgroup->pg_intersection_to_global_copyspec, 1);
+    adios_copyspec_free(pg_reqgroup->pg_intersection_to_global_copyspec, 1);
     MYFREE(pg_reqgroup->transform_internal);
 
     // Clear all data to 0's for safety

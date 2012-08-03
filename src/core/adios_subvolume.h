@@ -1,6 +1,8 @@
 /*
  * adios_subvolume.h
  *
+ * Utility functions for manipulating subvolumes of multi-dimensional arrays.
+ *
  *  Created on: Jul 25, 2012
  *      Author: David A. Boyuka II
  */
@@ -11,13 +13,7 @@
 #include <stdint.h>
 #include "public/adios_types.h"
 #include "public/adios_selection.h"
-
-typedef struct {
-    int ndim;
-    uint64_t *subv_dims;
-    uint64_t *dst_dims, *dst_subv_offsets;
-    uint64_t *src_dims, *src_subv_offsets;
-} adios_subvolume_copy_spec;
+#include "core/adios_copyspec.h"
 
 /*
  * Copies a multi-dimensional subvolume from one buffer to another.
@@ -43,45 +39,93 @@ void copy_subvolume(void *dst, const void *src, int ndim, const uint64_t *subv_d
                     enum ADIOS_DATATYPES datum_type,
                     enum ADIOS_FLAG swap_endianness);
 
+/*
+ * The same as copy_subvolume, with the addition of optional ragged src/dst
+ * arrays. These arrays are ragged iff the pointer supplied does not point to
+ * the logical (0,0,...,0) element of the corresponding array, but instead
+ * points to some element (r1,r2,...,rn) with some ri != 0. In this case,
+ * the corresponding {src,dst}_ragged_offsets designates the element pointed to
+ * by the corresponding pointer.
+ */
+void copy_subvolume_ragged(void *dst, const void *src, int ndim, const uint64_t *subv_dims,
+                           const uint64_t *dst_dims, const uint64_t *dst_subv_offsets,
+                           const uint64_t *dst_ragged_offsets,
+                           const uint64_t *src_dims, const uint64_t *src_subv_offsets,
+                           const uint64_t *src_ragged_offsets,
+                           enum ADIOS_DATATYPES datum_type, enum ADIOS_FLAG swap_endianness);
+
+/*
+ * Same as copy_subvolume_ragged, but takes a scalar byte offset for ragged
+ * arrays instead of an array of element offsets.
+ */
+void copy_subvolume_ragged_offset(void *dst, const void *src, int ndim, const uint64_t *subv_dims,
+                                  const uint64_t *dst_dims, const uint64_t *dst_subv_offsets,
+                                  uint64_t dst_ragged_offset,
+                                  const uint64_t *src_dims, const uint64_t *src_subv_offsets,
+                                  uint64_t src_ragged_offset,
+                                  enum ADIOS_DATATYPES datum_type, enum ADIOS_FLAG swap_endianness);
+
 void copy_subvolume_with_spec(void *dst, const void *src,
-                              const adios_subvolume_copy_spec *copy_spec,
+                              const const adios_subvolume_copy_spec *copy_spec,
                               enum ADIOS_DATATYPES datum_type,
                               enum ADIOS_FLAG swap_endianness);
 
 /*
- * Converts a variable bounding box and a selection box into a subvolume
- * copy spec. The provided subvolume copy spec must be uninitialized, and must
- * be properly destroyed after use (including freeing its buffers, as they are
- * malloc()ed by this function.
+ * Calculates the intersection, if any, between two volumes. For each volume,
+ * dimensions and global offsets must be specified. If the volumes do
+ * intersect, the size dimensions of the intersection are returned, as well as
+ * the offset of the intersection in three forms: global, and relative to each
+ * of the two volumes.
  *
- * @param copy_spec the subvolume copy spec to initialize (it must not have
- *        been previously initialized, or must have been subsequently
- *        destroyed)
- * @param sel the bounding box selection
- * @param ldims the dimensions of the variable local bounding box
- * @param offsets the global offsets of the variable's local bounding box
- * @return non-zero if the selection box intersects the variable's bounding
- *         box, and zero if the selection box does not inersect the variable's
- *         bounding box. If zero is returned, the subvolume copy spec's
- *         contents will be undefined.
+ * All global offsets (offset1, offset2, inter_offset) are defined relative to
+ * the same global coordinate space (typically a global array).
+ *
+ * All buffer arguments (everything but ndim) must be arrays of uint64_t of
+ * length at least ndim (or NULL, in the case of the optional output arguments;
+ * see below).
+ *
+ * If the volumes intersect, this function will return a non-zero value, and
+ * the output arguments (inter_offset, inter_offset_rel1, inter_offset_rel2,
+ * and inter_dims) will be populated with the global offset, offset relative
+ * to volume 1's offset, offset relative to volume 2's offset, and dimensions
+ * of the intersection volume, respectively. An appropriate buffer must be
+ * supplied for inter_dims, but NULL may be supplied for any of the other
+ * three output parameters if that information is not desired.
+ *
+ * If the volumes are disjoint, this function will return 0, and the content of
+ * the output arguments is undefined.
+ *
+ * @param offset1 the global offset of volume 1
+ * @param dims1 the dimensions of volume 1
+ * @param offset2 the global offset of volume 2
+ * @param dims2 the dimensions of volume 2
+ * @param inter_offset a buffer to hold the offset of the intersection
+ *        volume, or NULL if this information isn't required.
+ * @param inter_offset_rel1 a buffer to hold the offset of the intersection
+ *        volume relative to offset1, or NULL if this information isn't
+ *        required.
+ * @param inter_offset_rel2 a buffer to hold the offset of the intersection
+ *        volume relative to offset2, or NULL if this information isn't
+ *        required.
+ * @param inter_dims a buffer to hold the dimensions of the intersection volume
  */
-int adios_selection_to_copy_spec(adios_subvolume_copy_spec *copy_spec,
-                                 const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *sel,
-                                 const uint64_t *ldims, const uint64_t *offsets);
+int intersect_volumes(int ndim,
+                      const uint64_t *offset1, const uint64_t *dims1,
+                      const uint64_t *offset2, const uint64_t *dims2,
+                      uint64_t *inter_offset,
+                      uint64_t *inter_offset_rel1, uint64_t *inter_offset_rel2,
+                      uint64_t *inter_dims);
 
-// Extracts a selection corresponding to the subvolume within the source buffer
-ADIOS_SELECTION * adios_copy_spec_to_src_selection(adios_subvolume_copy_spec *copy_spec);
-
-// Extracts a selection corresponding to the subvolume within the destination buffer
-ADIOS_SELECTION * adios_copy_spec_to_dst_selection(adios_subvolume_copy_spec *copy_spec);
-
-void adios_subvolume_copy_spec_init(adios_subvolume_copy_spec *copy_spec,
-                                    int ndim, uint64_t *subv_dims,
-                                    uint64_t *dst_dims, uint64_t *dst_subv_offsets,
-                                    uint64_t *src_dims, uint64_t *src_subv_offsets);
-
-void adios_subvolume_copy_spec_destroy(adios_subvolume_copy_spec *copy_spec, int free_buffers);
-
-int is_subvolume_src_covering(adios_subvolume_copy_spec subv_spec);
+/*
+ * Computes the byte offset of the beginning of a ragged multidimensional
+ * volume array relative to the beginning of the corresponding complete volume
+ * array.
+ *
+ * @param ndim number of dimensions of the volume
+ * @param start_offset the offsets of the start of the ragged array
+ * @param overall_dims the dimensions of the complete array
+ * @param elem_type the datatype of each element in the array
+ */
+uint64_t compute_ragged_array_offset(int ndim, const uint64_t *start_offset, const uint64_t *overall_dims, enum ADIOS_DATATYPES elem_type);
 
 #endif /* ADIOS_SUBVOLUME_H_ */

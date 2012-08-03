@@ -2498,11 +2498,18 @@ ADIOS_TRANSINFO * adios_read_bp_inq_var_transinfo(const ADIOS_FILE *fp, const AD
                                             1); // 1 -> get based on pre-transform dimensions
 
         transinfo->orig_global = is_global_array_generic(&var_root->characteristics[0].transform.pre_transform_dimensions);
+
+        transinfo->transform_metadata_len = transform->transform_metadata_len;
+        transinfo->transform_metadata = transform->transform_metadata;
+        transinfo->should_free_transform_metadata = 0;
     } else {
         transinfo->orig_type = adios_unknown;
         transinfo->orig_ndim = 0;
         transinfo->orig_dims = 0;
         transinfo->orig_global = 0;
+        transinfo->transform_metadata_len = 0;
+        transinfo->transform_metadata = 0;
+        transinfo->should_free_transform_metadata = 0;
     }
     transinfo->orig_blockinfo = 0;
 

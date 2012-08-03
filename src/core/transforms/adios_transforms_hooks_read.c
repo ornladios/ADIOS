@@ -91,13 +91,13 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
             pg_intersection_to_global_copyspec = malloc(sizeof(adios_subvolume_copy_spec));
 
         // Find the intersection, if any
-        intersects = adios_selection_to_copy_spec(pg_intersection_to_global_copyspec, &sel->u.bb, orig_vb->count, orig_vb->start);
+        intersects = adios_copyspec_init_from_selection_intersect(pg_intersection_to_global_copyspec, &sel->u.bb, orig_vb->count, orig_vb->start);
         if (intersects) {
             // Make a PG read request group, and fill it with some subrequests, and link it into the read reqgroup
             adios_transform_pg_reqgroup *new_pg_reqgroup;
 
             new_pg_reqgroup = adios_transform_new_pg_reqgroup(idx, orig_vb, raw_vb,
-                                                              adios_copy_spec_to_src_selection(pg_intersection_to_global_copyspec),
+                                                              adios_copyspec_to_src_selection(pg_intersection_to_global_copyspec),
                                                               pg_intersection_to_global_copyspec);
             pg_intersection_to_global_copyspec = NULL;
 

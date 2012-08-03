@@ -55,6 +55,10 @@ struct common_read_internals_struct {
     adios_transform_read_reqgroup *transform_reqgroups;
 };
 
+// NCSU ALACRITY-ADIOS - Forward declaration/function prototypes
+static void common_read_free_blockinfo(ADIOS_VARBLOCK **varblock, int sum_nblocks);
+
+
 
 int common_read_init_method (enum ADIOS_READ_METHOD method,
                              MPI_Comm comm,
@@ -462,7 +466,7 @@ ADIOS_VARINFO * common_read_inq_var_raw_byid (const ADIOS_FILE *fp, int varid)
 //   query engine using an transform-embedded index), in which case that code
 //   can dive deeper and access this function. Alternatively, if this use case
 //   becomes more common, a simple 'transform raw' API could be added.
-static ADIOS_TRANSINFO * common_read_inq_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi) {
+ADIOS_TRANSINFO * common_read_inq_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi) {
     if (!fp) {
         adios_error (err_invalid_file_pointer,
                      "Null ADIOS_FILE pointer passed to common_read_inq_transinfo()\n");
@@ -481,7 +485,7 @@ static ADIOS_TRANSINFO * common_read_inq_transinfo(const ADIOS_FILE *fp, const A
     return ti;
 }
 
-static int common_read_inq_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO * ti) {
+int common_read_inq_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO * ti) {
     if (!fp) {
         adios_error (err_invalid_argument,
                      "Null ADIOS_FILE pointer passed to common_read_inq_trans_blockinfo()\n");
@@ -643,9 +647,11 @@ void common_read_free_varinfo (ADIOS_VARINFO *vp)
 }
 
 // NCSU ALACRITY-ADIOS - Free transform info
-static void common_read_free_transinfo(const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
+void common_read_free_transinfo(const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
     if (ti) {
         if (ti->orig_dims) MYFREE(ti->orig_dims);
+        if (ti->transform_metadata && ti->should_free_transform_metadata)
+            MYFREE(ti->transform_metadata);
 
         common_read_free_blockinfo(&ti->orig_blockinfo, vi->sum_nblocks);
 
@@ -699,7 +705,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
         if (varid >=0 && varid < fp->nvars) {
             // NCSU ALACRITY-ADIOS - If the variable is transformed, intercept
             //   the read scheduling and schedule our own reads
-            ADIOS_VARINFO *raw_varinfo = common_read_inq_var_raw_byid(fp, varid);       // Get the *raw* varinfo
+            ADIOS_VARINFO *raw_varinfo = common_read_inq_var_raw_byid(fp, varid);		// Get the *raw* varinfo
             ADIOS_TRANSINFO *transinfo = common_read_inq_transinfo(fp, raw_varinfo);	// Get the transform info (i.e. original var info)
             //assert(vi);
             //assert(ti);

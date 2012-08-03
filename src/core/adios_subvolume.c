@@ -10,7 +10,6 @@
 #include <string.h>
 #include "util.h"
 #include "adios_subvolume.h"
-#include "public/adios_selection.h"
 
 /*
  * Copies a given subvolume from 'src' to 'dst'. It recursively copies a
@@ -55,9 +54,8 @@ static void copy_subvolume_helper(char *dst, const char *src,
 }
 
 /*
- *
- * copy_data_space calls copy_data_space helper with the following paramter
- * translations:
+ * copy_subvolume delegates to the copy_subvolume_helper function, with the
+ * following parameter translations:
  * 1) Element size (i.e. 8 bytes for double, etc.) is considered an additional,
  *    fastest-varying dimension
  * 2) All "contiguous" fastest-varying dimensions are collapsed into a single
@@ -67,12 +65,63 @@ void copy_subvolume(void *dst, const void *src, int ndim, const uint64_t *subv_d
                     const uint64_t *dst_dims, const uint64_t *dst_subv_offsets,
                     const uint64_t *src_dims, const uint64_t *src_subv_offsets,
                     enum ADIOS_DATATYPES datum_type, enum ADIOS_FLAG swap_endianness) {
+    copy_subvolume_ragged(dst, src, ndim, subv_dims,
+                          dst_dims, dst_subv_offsets, NULL,
+                          src_dims, src_subv_offsets, NULL,
+                          datum_type, swap_endianness);
+}
+
+/*
+ *
+ * {src,dst}_ragged_offsets are offset vectors that represent the position of
+ * the first element in ragged arrays {src,dst}. In order words, the argument
+ * {src,dst} logically points into the complete array to the element at
+ * {src,dst}_ragged_offsets, and the data continues from there in the normal
+ * order.
+ *
+ * {src,dst}_ragged_offsets may be NULL, in which case it is considered to be a
+ * zero vector.
+ */
+void copy_subvolume_ragged(void *dst, const void *src, int ndim, const uint64_t *subv_dims,
+                           const uint64_t *dst_dims, const uint64_t *dst_subv_offsets,
+                           const uint64_t *dst_ragged_offsets,
+                           const uint64_t *src_dims, const uint64_t *src_subv_offsets,
+                           const uint64_t *src_ragged_offsets,
+                           enum ADIOS_DATATYPES datum_type, enum ADIOS_FLAG swap_endianness) {
+
+    const uint64_t src_ragged_offset =
+            src_ragged_offsets ?
+            compute_ragged_array_offset(ndim, src_ragged_offsets,
+                                        src_dims, datum_type) : 0;
+    const uint64_t dst_ragged_offset =
+            dst_ragged_offsets ?
+            compute_ragged_array_offset(ndim, dst_ragged_offsets,
+                                        dst_dims, datum_type) : 0;
+
+    copy_subvolume_ragged_offset(dst, src, ndim, subv_dims,
+                                 dst_dims, dst_subv_offsets,
+                                 dst_ragged_offsets,
+                                 src_dims, src_subv_offsets,
+                                 src_ragged_offsets,
+                                 datum_type, swap_endianness);
+}
+
+/*
+ * {src,dst}_ragged_offset are the byte offsets of the start of the
+ * corresponding arrays relative to the logical start of the complete arrays.
+ */
+void copy_subvolume_ragged_offset(void *dst, const void *src, int ndim, const uint64_t *subv_dims,
+                                  const uint64_t *dst_dims, const uint64_t *dst_subv_offsets,
+                                  uint64_t dst_ragged_offset,
+                                  const uint64_t *src_dims, const uint64_t *src_subv_offsets,
+                                  uint64_t src_ragged_offset,
+                                  enum ADIOS_DATATYPES datum_type, enum ADIOS_FLAG swap_endianness) {
 
     int i;
-    int first_contig_dim = 0; // Index of dimension that starts a contiguous block
+    int last_noncovering_dim = 0; // Index of dimension that starts a contiguous block
     uint64_t src_strides[32];
     uint64_t dst_strides[32];
-    int type_size = adios_get_type_size(datum_type, NULL);
+    const int type_size = adios_get_type_size(datum_type, NULL);
 
     // Find the last dimension for which the subvolume, source and destination
     // spaces do not exactly match (i.e. non-zero offset or unequal lengths).
@@ -84,14 +133,14 @@ void copy_subvolume(void *dst, const void *src, int ndim, const uint64_t *subv_d
             subv_dims[i] != src_dims[i] ||
             subv_dims[i] != dst_dims[i]) {
 
-            first_contig_dim = i;
+            last_noncovering_dim = i;
         }
     }
 
     // Calculate the volume (number of bytes) of the region subtended by the
-    // contiguous dimensions.
+    // contiguous dimensions (which start with the last non-covering dimension)
     uint64_t contig_dims_volume = 1;
-    for (i = first_contig_dim; i < ndim; i++) {
+    for (i = last_noncovering_dim; i < ndim; i++) {
         contig_dims_volume *= subv_dims[i];
     }
     // Add the element size as a new "dimension", to convert from element-space
@@ -117,22 +166,25 @@ void copy_subvolume(void *dst, const void *src, int ndim, const uint64_t *subv_d
         src_offset += src_subv_offsets[i] * src_strides[i];
         dst_offset += dst_subv_offsets[i] * dst_strides[i];
     }
+    // Incorporate ragged offsets
+    src_offset -= src_ragged_offset;
+    dst_offset -= dst_ragged_offset;
 
     // Save the old value of the first contiguous dimension, then replace it
     // with a "collapsed" dimension consolidating all contiguous dimensions
     // into one
     // We "cheat" a bit by removing the const modifier. This is OK because we
     // carefully put back the original value before returning. This is the only
-    // modification we do in this function besides filling 'dst'.
-    uint64_t first_contig_dim_value_old = subv_dims[first_contig_dim];
-    ((uint64_t*)subv_dims)[first_contig_dim] = contig_dims_volume;
+    // argument modification we do in this function besides filling 'dst'.
+    uint64_t first_contig_dim_value_old = subv_dims[last_noncovering_dim];
+    ((uint64_t*)subv_dims)[last_noncovering_dim] = contig_dims_volume;
 
     //printf(">>> copy_subvolume is using %d contiguous dimensions...\n", ndim - first_contig_dim);
 
     // Finally, delegate to the recursive worker function
     copy_subvolume_helper((char*)dst + dst_offset,			/* Offset dst buffer to the first element */
                           (char*)src + src_offset,			/* Offset src buffer to the first element */
-                          first_contig_dim + 1,				/* Reduce dimensions to the non-contiguous dimensions, plus 1 for the collapsed contiguous dimensions */
+                          last_noncovering_dim + 1,			/* Reduce dimensions to the non-contiguous dimensions, plus 1 for the collapsed contiguous dimensions */
                           subv_dims,						/* Subvolume dimensions (modified to collapse all contiguous dimensions) */
                           dst_strides,						/* dst buffer dimension strides */
                           src_strides,						/* src buffer dimension strides */
@@ -141,7 +193,7 @@ void copy_subvolume(void *dst, const void *src, int ndim, const uint64_t *subv_d
                           );
 
     // Restore the old first contiguous dimension value
-    ((uint64_t*)subv_dims)[first_contig_dim] = first_contig_dim_value_old;
+    ((uint64_t*)subv_dims)[last_noncovering_dim] = first_contig_dim_value_old;
 }
 
 void copy_subvolume_with_spec(void *dst, const void *src,
@@ -152,16 +204,6 @@ void copy_subvolume_with_spec(void *dst, const void *src,
                    copy_spec->dst_dims, copy_spec->dst_subv_offsets,
                    copy_spec->src_dims, copy_spec->src_subv_offsets,
                    datum_type, swap_endianness);
-}
-
-int is_subvolume_src_covered(const adios_subvolume_copy_spec *subv_spec) {
-    int dim;
-    for (dim = 0; dim < subv_spec->ndim; dim++) {
-        if (subv_spec->src_subv_offsets[dim] != 0 ||
-            subv_spec->src_dims[dim] != subv_spec->subv_dims[dim])
-            return 0;
-    }
-    return 1;
 }
 
 static int intersect_segments(uint64_t start1, uint64_t len1, uint64_t start2, uint64_t len2,
@@ -193,86 +235,53 @@ static int intersect_segments(uint64_t start1, uint64_t len1, uint64_t start2, u
     return 1;
 }
 
-
-int adios_selection_to_copy_spec(adios_subvolume_copy_spec *copy_spec,
-                                 const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *sel,
-                                 const uint64_t *ldims, const uint64_t *offsets) {
+int intersect_volumes(int ndim,
+                      const uint64_t *offset1, const uint64_t *dims1,
+                      const uint64_t *offset2, const uint64_t *dims2,
+                      uint64_t *inter_offset,
+                      uint64_t *inter_offset_rel1, uint64_t *inter_offset_rel2,
+                      uint64_t *inter_dims) {
+    // For every dimension, find the intersection in that dimension
+    // If ever the volumes are disjoint in some dimension, stop immediately
+    // and report no intersection
     int dim;
-    const int ndim = sel->ndim;
-    const int dimsize = sizeof(uint64_t) * ndim;
-
-    copy_spec->ndim = ndim;
-    copy_spec->subv_dims = malloc(dimsize);
-    copy_spec->dst_dims = malloc(dimsize);
-    copy_spec->dst_subv_offsets = malloc(dimsize);
-    copy_spec->src_dims = malloc(dimsize);
-    copy_spec->src_subv_offsets = malloc(dimsize);
-
-    //printf(">>> Intersecting local bb dim1 start:count %llu:%llu with sel bb start:count %llu:%llu\n", offsets[0], ldims[0], sel->start[0], sel->count[0]);
-
-    // Find the intersection between the selection box and the variable bounds
+    uint64_t tmp_inter_offset;
     for (dim = 0; dim < ndim; dim++) {
-        const uint64_t sel_dim_goffset = sel->start[dim];
-        const uint64_t sel_dim_len = sel->count[dim];
-        const uint64_t varbox_dim_goffset = offsets[dim];
-        const uint64_t varbox_dim_len = ldims[dim];
-        uint64_t intersection_goffset, intersection_len;
-
-        int intersects = intersect_segments(
-                sel_dim_goffset, sel_dim_len,
-                varbox_dim_goffset, varbox_dim_len,
-                &intersection_goffset, &intersection_len);
-
+        const int intersects = intersect_segments(*offset1, *dims1,
+                                                  *offset2, *dims2,
+                                                  &tmp_inter_offset, inter_dims);
         if (!intersects)
             return 0;
 
-        // Initialize parameters for this dimension based on the intersection
-        copy_spec->subv_dims[dim] = intersection_len;
-        copy_spec->src_dims[dim] = varbox_dim_len;
-        copy_spec->src_subv_offsets[dim] = intersection_goffset - varbox_dim_goffset;
-        copy_spec->dst_dims[dim] = sel_dim_len;
-        copy_spec->dst_subv_offsets[dim] = intersection_goffset - sel_dim_goffset;
+        // Calculate/store offsets as the user requests, and then advance to
+        // the next dimension on these as well
+        if (inter_offset)
+            *inter_offset++ = tmp_inter_offset;
+        if (inter_offset_rel1)
+            *inter_offset_rel1++ = tmp_inter_offset - *offset1;
+        if (inter_offset_rel2)
+            *inter_offset_rel2++ = tmp_inter_offset - *offset2;
+
+        // Advance the other arrays to the next dimension, as well
+        // NOTE: this must be done after offset calculations, as offset[12] are
+        // accessed
+        offset1++; dims1++;
+        offset2++; dims2++;
+        inter_dims++;
     }
 
+    // If we have a non-null intersection in every dimension, the entire
+    // volumes intersect, so return true to indicate this
     return 1;
 }
 
-// Extracts a selection corresponding to the subvolume within the source buffer
-ADIOS_SELECTION * adios_copy_spec_to_src_selection(adios_subvolume_copy_spec *copy_spec) {
-    return common_read_selection_boundingbox(copy_spec->ndim,
-                                             bufdup(copy_spec->src_subv_offsets, sizeof(uint64_t), copy_spec->ndim),
-                                             bufdup(copy_spec->subv_dims, sizeof(uint64_t), copy_spec->ndim));
-}
-
-// Extracts a selection corresponding to the subvolume within the destination buffer
-ADIOS_SELECTION * adios_copy_spec_to_dst_selection(adios_subvolume_copy_spec *copy_spec) {
-    return common_read_selection_boundingbox(copy_spec->ndim,
-                                             bufdup(copy_spec->dst_subv_offsets, sizeof(uint64_t), copy_spec->ndim),
-                                             bufdup(copy_spec->subv_dims, sizeof(uint64_t), copy_spec->ndim));
-}
-
-
-void adios_subvolume_copy_spec_init(adios_subvolume_copy_spec *copy_spec,
-                                    int ndim, uint64_t *subv_dims,
-                                    uint64_t *dst_dims, uint64_t *dst_subv_offsets,
-                                    uint64_t *src_dims, uint64_t *src_subv_offsets) {
-    copy_spec->ndim = ndim;
-    copy_spec->subv_dims = subv_dims;
-    copy_spec->dst_dims = dst_dims;
-    copy_spec->dst_subv_offsets = dst_subv_offsets;
-    copy_spec->src_dims = src_dims;
-    copy_spec->src_subv_offsets = src_subv_offsets;
-}
-
-#define MY_FREE(x) if (x) free(x); x = 0;
-void adios_subvolume_copy_spec_destroy(adios_subvolume_copy_spec *copy_spec, int free_buffers) {
-    if (free_buffers) {
-        MY_FREE(copy_spec->subv_dims);
-        MY_FREE(copy_spec->dst_dims);
-        MY_FREE(copy_spec->dst_subv_offsets);
-        MY_FREE(copy_spec->src_dims);
-        MY_FREE(copy_spec->src_subv_offsets);
+uint64_t compute_ragged_array_offset(int ndim, const uint64_t *start_offset, const uint64_t *overall_dims, enum ADIOS_DATATYPES elem_type) {
+    int dim;
+    uint64_t ragged_off = 0;
+    uint64_t volume_so_far = adios_get_type_size(elem_type, NULL);
+    for (dim = ndim - 1; dim >= 0; dim--) {
+        ragged_off += start_offset[dim] * volume_so_far;
+        volume_so_far *= overall_dims[dim];
     }
-    memset(copy_spec, 0, sizeof(adios_subvolume_copy_spec));
+    return ragged_off;
 }
-#undef MY_FREE

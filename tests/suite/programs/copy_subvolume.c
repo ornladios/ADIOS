@@ -151,14 +151,14 @@ int runtest(int argc, char **argv) {
     memcpy(final_volume, volumes[0], prod(ndims, volume_dims + 0*ndims));
     fill_subvolume(ndims, volume_dims + 0*ndims, final_volume, volume_offsets + 0*ndims, subvolume_dims, -1);
 
-//    printf("--- Final volume before copy:\n");
-//    printvolume(ndims, volume_dims + 0*ndims, final_volume, 0);
-//    printf("----------\n");
+    printf("--- Final volume before copy:\n");
+    printvolume(ndims, volume_dims + 0*ndims, final_volume, 0);
+    printf("----------\n");
 
 
-//    printf("--- Volume 0:\n");
-//    printvolume(ndims, volume_dims + 0*ndims, volumes[0], 0);
-//    printf("----------\n");
+    printf("--- Volume 0:\n");
+    printvolume(ndims, volume_dims + 0*ndims, volumes[0], 0);
+    printf("----------\n");
 
     for (i = 1; i < nvolumes; i++) {
         printf("Copying subvolume from volume %d to %d\n", i-1 + 1, i + 1);
@@ -167,9 +167,9 @@ int runtest(int argc, char **argv) {
                        volume_dims + (i-1)*ndims, volume_offsets + (i-1)*ndims,
                        adios_integer, adios_flag_no);
 
-//        printf("--- Volume %d:\n", i);
-//        printvolume(ndims, volume_dims + i*ndims, volumes[i], 0);
-//        printf("----------\n");
+        printf("--- Volume %d:\n", i);
+        printvolume(ndims, volume_dims + i*ndims, volumes[i], 0);
+        printf("----------\n");
     }
 
     printf("Copying subvolume from volume %d to replica of volume 1\n", nvolumes);
@@ -178,9 +178,9 @@ int runtest(int argc, char **argv) {
                    volume_dims + (nvolumes-1)*ndims, volume_offsets + (nvolumes-1)*ndims,
                    adios_integer, adios_flag_no);
 
-//    printf("--- Final volume:\n", i);
-//    printvolume(ndims, volume_dims + 0*ndims, final_volume, 0);
-//    printf("----------\n");
+    printf("--- Final volume:\n", i);
+    printvolume(ndims, volume_dims + 0*ndims, final_volume, 0);
+    printf("----------\n");
 
     printf("Comparing volume 0 and its replica after copy operations...\n");
     int success = (memcmp(volumes[0], final_volume, prod(ndims, volume_dims + 0*ndims)) == 0);

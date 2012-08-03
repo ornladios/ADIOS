@@ -52,7 +52,7 @@ ADIOS_VARCHUNK * adios_transform_identity_pg_reqgroup_completed(
         ADIOS_VARCHUNK *retchunk = (ADIOS_VARCHUNK *)malloc(sizeof(ADIOS_VARCHUNK));
         retchunk->varid = reqgroup->raw_varinfo->varid;
         retchunk->type = reqgroup->transinfo->orig_type;
-        retchunk->sel = adios_copy_spec_to_dst_selection(completed_pg_reqgroup->pg_intersection_to_global_copyspec);
+        retchunk->sel = adios_copyspec_to_dst_selection(completed_pg_reqgroup->pg_intersection_to_global_copyspec);
         retchunk->data = completed_pg_reqgroup->subreqs->data; // The first (and only) subrequest data buffer
         return retchunk;
     } else {

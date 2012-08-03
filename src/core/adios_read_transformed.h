@@ -15,6 +15,10 @@
 typedef struct {
     enum ADIOS_TRANSFORM_TYPE transform_type;
 
+    uint16_t transform_metadata_len;
+    void *transform_metadata;
+    int should_free_transform_metadata; // Used internally by read method and free
+
     enum ADIOS_DATATYPES orig_type;
 
     int orig_ndim;

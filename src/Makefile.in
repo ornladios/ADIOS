@@ -185,7 +185,8 @@ am__libadios_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c \
 	core/transforms/adios_transforms_common.c \
-	core/adios_subvolume.c core/transforms/adios_transforms_read.c \
+	core/adios_copyspec.c core/adios_subvolume.c \
+	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
 	transforms/adios_transform_identity_read.c \
@@ -212,6 +213,7 @@ am__libadios_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	write/adios_mpi_stripe.c write/adios_mpi_amr1.c \
 	write/adios_adaptive.c
 am__objects_1 = libadios_a-adios_transforms_common.$(OBJEXT) \
+	libadios_a-adios_copyspec.$(OBJEXT) \
 	libadios_a-adios_subvolume.$(OBJEXT)
 am__objects_2 = libadios_a-adios_transform_identity_read.$(OBJEXT) \
 	libadios_a-adios_transform_mloc_read.$(OBJEXT) \
@@ -290,6 +292,7 @@ libadios_internal_nompi_a_AR = $(AR) $(ARFLAGS)
 libadios_internal_nompi_a_LIBADD =
 am__objects_13 =  \
 	libadios_internal_nompi_a-adios_transforms_common.$(OBJEXT) \
+	libadios_internal_nompi_a-adios_copyspec.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_subvolume.$(OBJEXT)
 am__objects_14 = libadios_internal_nompi_a-adios_transform_identity_read.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transform_mloc_read.$(OBJEXT) \
@@ -329,7 +332,8 @@ libadios_nompi_a_LIBADD =
 am__libadios_nompi_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	core/adios_internals.c core/adios_internals_mxml.c \
 	core/transforms/adios_transforms_common.c \
-	core/adios_subvolume.c core/transforms/adios_transforms_read.c \
+	core/adios_copyspec.c core/adios_subvolume.c \
+	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
 	transforms/adios_transform_identity_read.c \
@@ -355,6 +359,7 @@ am__libadios_nompi_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
 	read/read_datatap.c
 am__objects_18 = libadios_nompi_a-adios_transforms_common.$(OBJEXT) \
+	libadios_nompi_a-adios_copyspec.$(OBJEXT) \
 	libadios_nompi_a-adios_subvolume.$(OBJEXT)
 am__objects_19 =  \
 	libadios_nompi_a-adios_transform_identity_read.$(OBJEXT) \
@@ -418,7 +423,8 @@ libadiosf_a_LIBADD =
 am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/adios_internals.c core/adios_internals_mxml.c \
 	core/transforms/adios_transforms_common.c \
-	core/adios_subvolume.c core/transforms/adios_transforms_read.c \
+	core/adios_copyspec.c core/adios_subvolume.c \
+	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
 	transforms/adios_transform_identity_read.c \
@@ -452,6 +458,7 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/adiosf_defs_mod.F90 core/adiosf_write_mod.F90 \
 	core/adiosf_read_mod.F90
 am__objects_26 = libadiosf_a-adios_transforms_common.$(OBJEXT) \
+	libadiosf_a-adios_copyspec.$(OBJEXT) \
 	libadiosf_a-adios_subvolume.$(OBJEXT)
 am__objects_27 = libadiosf_a-adios_transform_identity_read.$(OBJEXT) \
 	libadiosf_a-adios_transform_mloc_read.$(OBJEXT) \
@@ -539,7 +546,8 @@ libadiosf_v1_a_LIBADD =
 am__libadiosf_v1_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/adios_internals.c core/adios_internals_mxml.c \
 	core/transforms/adios_transforms_common.c \
-	core/adios_subvolume.c core/transforms/adios_transforms_read.c \
+	core/adios_copyspec.c core/adios_subvolume.c \
+	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
 	transforms/adios_transform_identity_read.c \
@@ -571,6 +579,7 @@ am__libadiosf_v1_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	write/adios_mpi_stripe.c write/adios_mpi_amr1.c \
 	write/adios_adaptive.c core/adiosf_read_v1.c
 am__objects_39 = libadiosf_v1_a-adios_transforms_common.$(OBJEXT) \
+	libadiosf_v1_a-adios_copyspec.$(OBJEXT) \
 	libadiosf_v1_a-adios_subvolume.$(OBJEXT)
 am__objects_40 =  \
 	libadiosf_v1_a-adios_transform_identity_read.$(OBJEXT) \
@@ -655,7 +664,8 @@ am__libadiosread_a_SOURCES_DIST = core/adios_bp_v1.c \
 	core/adios_endianness.c core/bp_utils.c core/futils.c \
 	core/adios_error.c core/adios_read.c core/adios_read_v1.c \
 	core/common_read.c core/transforms/adios_transforms_common.c \
-	core/adios_subvolume.c core/transforms/adios_transforms_read.c \
+	core/adios_copyspec.c core/adios_subvolume.c \
+	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
 	transforms/adios_transform_identity_read.c \
@@ -667,6 +677,7 @@ am__libadiosread_a_SOURCES_DIST = core/adios_bp_v1.c \
 	read/read_dataspaces.c read/read_dimes.c read/read_datatap.c \
 	nssi/adios_nssi_config.c read/read_nssi.c
 am__objects_52 = libadiosread_a-adios_transforms_common.$(OBJEXT) \
+	libadiosread_a-adios_copyspec.$(OBJEXT) \
 	libadiosread_a-adios_subvolume.$(OBJEXT)
 am__objects_53 =  \
 	libadiosread_a-adios_transform_identity_read.$(OBJEXT) \
@@ -714,7 +725,8 @@ am__libadiosread_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	core/futils.c core/adios_error.c core/adios_read.c \
 	core/adios_read_v1.c core/common_read.c core/adios_internals.c \
 	core/transforms/adios_transforms_common.c \
-	core/adios_subvolume.c core/transforms/adios_transforms_read.c \
+	core/adios_copyspec.c core/adios_subvolume.c \
+	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
 	transforms/adios_transform_identity_read.c \
@@ -727,6 +739,7 @@ am__libadiosread_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	nssi/adios_nssi_config.c read/read_nssi.c
 am__objects_59 =  \
 	libadiosread_nompi_a-adios_transforms_common.$(OBJEXT) \
+	libadiosread_nompi_a-adios_copyspec.$(OBJEXT) \
 	libadiosread_nompi_a-adios_subvolume.$(OBJEXT)
 am__objects_60 =  \
 	libadiosread_nompi_a-adios_transform_identity_read.$(OBJEXT) \
@@ -775,7 +788,8 @@ am__libadiosreadf_a_SOURCES_DIST = core/adios_bp_v1.c \
 	core/adios_endianness.c core/bp_utils.c core/futils.c \
 	core/adios_error.c core/common_read.c \
 	core/transforms/adios_transforms_common.c \
-	core/adios_subvolume.c core/transforms/adios_transforms_read.c \
+	core/adios_copyspec.c core/adios_subvolume.c \
+	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
 	transforms/adios_transform_identity_read.c \
@@ -788,6 +802,7 @@ am__libadiosreadf_a_SOURCES_DIST = core/adios_bp_v1.c \
 	nssi/adios_nssi_config.c read/read_nssi.c core/adiosf_read.c \
 	core/adiosf_defs_mod.F90 core/adiosf_read_mod.F90
 am__objects_66 = libadiosreadf_a-adios_transforms_common.$(OBJEXT) \
+	libadiosreadf_a-adios_copyspec.$(OBJEXT) \
 	libadiosreadf_a-adios_subvolume.$(OBJEXT)
 am__objects_67 =  \
 	libadiosreadf_a-adios_transform_identity_read.$(OBJEXT) \
@@ -837,7 +852,8 @@ am__libadiosreadf_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	core/adios_bp_v1.c core/adios_endianness.c core/bp_utils.c \
 	core/futils.c core/adios_error.c core/adios_logger.c \
 	core/common_read.c core/transforms/adios_transforms_common.c \
-	core/adios_subvolume.c core/transforms/adios_transforms_read.c \
+	core/adios_copyspec.c core/adios_subvolume.c \
+	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
 	transforms/adios_transform_identity_read.c \
@@ -849,6 +865,7 @@ am__libadiosreadf_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	nssi/adios_nssi_config.c read/read_nssi.c core/adiosf_read.c
 am__objects_74 =  \
 	libadiosreadf_nompi_a-adios_transforms_common.$(OBJEXT) \
+	libadiosreadf_nompi_a-adios_copyspec.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_subvolume.$(OBJEXT)
 am__objects_75 =  \
 	libadiosreadf_nompi_a-adios_transform_identity_read.$(OBJEXT) \
@@ -896,7 +913,8 @@ am__libadiosreadf_nompi_v1_a_SOURCES_DIST = core/mpidummy.c \
 	core/adios_bp_v1.c core/adios_endianness.c core/bp_utils.c \
 	core/futils.c core/adios_error.c core/adios_logger.c \
 	core/common_read.c core/transforms/adios_transforms_common.c \
-	core/adios_subvolume.c core/transforms/adios_transforms_read.c \
+	core/adios_copyspec.c core/adios_subvolume.c \
+	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
 	transforms/adios_transform_identity_read.c \
@@ -909,6 +927,7 @@ am__libadiosreadf_nompi_v1_a_SOURCES_DIST = core/mpidummy.c \
 	core/adiosf_read_v1.c
 am__objects_82 =  \
 	libadiosreadf_nompi_v1_a-adios_transforms_common.$(OBJEXT) \
+	libadiosreadf_nompi_v1_a-adios_copyspec.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_subvolume.$(OBJEXT)
 am__objects_83 = libadiosreadf_nompi_v1_a-adios_transform_identity_read.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_transform_mloc_read.$(OBJEXT) \
@@ -950,7 +969,8 @@ am__libadiosreadf_v1_a_SOURCES_DIST = core/adios_bp_v1.c \
 	core/adios_endianness.c core/bp_utils.c core/futils.c \
 	core/adios_error.c core/common_read.c \
 	core/transforms/adios_transforms_common.c \
-	core/adios_subvolume.c core/transforms/adios_transforms_read.c \
+	core/adios_copyspec.c core/adios_subvolume.c \
+	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
 	transforms/adios_transform_identity_read.c \
@@ -963,6 +983,7 @@ am__libadiosreadf_v1_a_SOURCES_DIST = core/adios_bp_v1.c \
 	nssi/adios_nssi_config.c read/read_nssi.c \
 	core/adiosf_read_v1.c
 am__objects_90 = libadiosreadf_v1_a-adios_transforms_common.$(OBJEXT) \
+	libadiosreadf_v1_a-adios_copyspec.$(OBJEXT) \
 	libadiosreadf_v1_a-adios_subvolume.$(OBJEXT)
 am__objects_91 =  \
 	libadiosreadf_v1_a-adios_transform_identity_read.$(OBJEXT) \
@@ -1379,6 +1400,7 @@ libadiosreadf_a_CFLAGS = $(am__append_44)
 libadiosread_nompi_a_CFLAGS = $(am__append_53)
 libadiosreadf_nompi_a_CFLAGS = $(am__append_60)
 transforms_common_SOURCES = core/transforms/adios_transforms_common.c \
+                            core/adios_copyspec.c \
                             core/adios_subvolume.c
 
 transforms_read_method_SOURCES = transforms/adios_transform_identity_read.c \
@@ -1931,6 +1953,12 @@ libadios_a-adios_transforms_common.o: core/transforms/adios_transforms_common.c
 libadios_a-adios_transforms_common.obj: core/transforms/adios_transforms_common.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_transforms_common.obj `if test -f 'core/transforms/adios_transforms_common.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_common.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_common.c'; fi`
 
+libadios_a-adios_copyspec.o: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_copyspec.o `test -f 'core/adios_copyspec.c' || echo '$(srcdir)/'`core/adios_copyspec.c
+
+libadios_a-adios_copyspec.obj: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_copyspec.obj `if test -f 'core/adios_copyspec.c'; then $(CYGPATH_W) 'core/adios_copyspec.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_copyspec.c'; fi`
+
 libadios_a-adios_subvolume.o: core/adios_subvolume.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_subvolume.o `test -f 'core/adios_subvolume.c' || echo '$(srcdir)/'`core/adios_subvolume.c
 
@@ -2225,6 +2253,12 @@ libadios_internal_nompi_a-adios_transforms_common.o: core/transforms/adios_trans
 libadios_internal_nompi_a-adios_transforms_common.obj: core/transforms/adios_transforms_common.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_transforms_common.obj `if test -f 'core/transforms/adios_transforms_common.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_common.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_common.c'; fi`
 
+libadios_internal_nompi_a-adios_copyspec.o: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_copyspec.o `test -f 'core/adios_copyspec.c' || echo '$(srcdir)/'`core/adios_copyspec.c
+
+libadios_internal_nompi_a-adios_copyspec.obj: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_copyspec.obj `if test -f 'core/adios_copyspec.c'; then $(CYGPATH_W) 'core/adios_copyspec.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_copyspec.c'; fi`
+
 libadios_internal_nompi_a-adios_subvolume.o: core/adios_subvolume.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_subvolume.o `test -f 'core/adios_subvolume.c' || echo '$(srcdir)/'`core/adios_subvolume.c
 
@@ -2386,6 +2420,12 @@ libadios_nompi_a-adios_transforms_common.o: core/transforms/adios_transforms_com
 
 libadios_nompi_a-adios_transforms_common.obj: core/transforms/adios_transforms_common.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_transforms_common.obj `if test -f 'core/transforms/adios_transforms_common.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_common.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_common.c'; fi`
+
+libadios_nompi_a-adios_copyspec.o: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_copyspec.o `test -f 'core/adios_copyspec.c' || echo '$(srcdir)/'`core/adios_copyspec.c
+
+libadios_nompi_a-adios_copyspec.obj: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_copyspec.obj `if test -f 'core/adios_copyspec.c'; then $(CYGPATH_W) 'core/adios_copyspec.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_copyspec.c'; fi`
 
 libadios_nompi_a-adios_subvolume.o: core/adios_subvolume.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_subvolume.o `test -f 'core/adios_subvolume.c' || echo '$(srcdir)/'`core/adios_subvolume.c
@@ -2674,6 +2714,12 @@ libadiosf_a-adios_transforms_common.o: core/transforms/adios_transforms_common.c
 
 libadiosf_a-adios_transforms_common.obj: core/transforms/adios_transforms_common.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_transforms_common.obj `if test -f 'core/transforms/adios_transforms_common.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_common.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_common.c'; fi`
+
+libadiosf_a-adios_copyspec.o: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_copyspec.o `test -f 'core/adios_copyspec.c' || echo '$(srcdir)/'`core/adios_copyspec.c
+
+libadiosf_a-adios_copyspec.obj: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_copyspec.obj `if test -f 'core/adios_copyspec.c'; then $(CYGPATH_W) 'core/adios_copyspec.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_copyspec.c'; fi`
 
 libadiosf_a-adios_subvolume.o: core/adios_subvolume.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_subvolume.o `test -f 'core/adios_subvolume.c' || echo '$(srcdir)/'`core/adios_subvolume.c
@@ -3052,6 +3098,12 @@ libadiosf_v1_a-adios_transforms_common.o: core/transforms/adios_transforms_commo
 
 libadiosf_v1_a-adios_transforms_common.obj: core/transforms/adios_transforms_common.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_transforms_common.obj `if test -f 'core/transforms/adios_transforms_common.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_common.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_common.c'; fi`
+
+libadiosf_v1_a-adios_copyspec.o: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_copyspec.o `test -f 'core/adios_copyspec.c' || echo '$(srcdir)/'`core/adios_copyspec.c
+
+libadiosf_v1_a-adios_copyspec.obj: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_copyspec.obj `if test -f 'core/adios_copyspec.c'; then $(CYGPATH_W) 'core/adios_copyspec.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_copyspec.c'; fi`
 
 libadiosf_v1_a-adios_subvolume.o: core/adios_subvolume.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_subvolume.o `test -f 'core/adios_subvolume.c' || echo '$(srcdir)/'`core/adios_subvolume.c
@@ -3449,6 +3501,12 @@ libadiosread_a-adios_transforms_common.o: core/transforms/adios_transforms_commo
 libadiosread_a-adios_transforms_common.obj: core/transforms/adios_transforms_common.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_transforms_common.obj `if test -f 'core/transforms/adios_transforms_common.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_common.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_common.c'; fi`
 
+libadiosread_a-adios_copyspec.o: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_copyspec.o `test -f 'core/adios_copyspec.c' || echo '$(srcdir)/'`core/adios_copyspec.c
+
+libadiosread_a-adios_copyspec.obj: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_copyspec.obj `if test -f 'core/adios_copyspec.c'; then $(CYGPATH_W) 'core/adios_copyspec.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_copyspec.c'; fi`
+
 libadiosread_a-adios_subvolume.o: core/adios_subvolume.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_subvolume.o `test -f 'core/adios_subvolume.c' || echo '$(srcdir)/'`core/adios_subvolume.c
 
@@ -3641,6 +3699,12 @@ libadiosread_nompi_a-adios_transforms_common.o: core/transforms/adios_transforms
 libadiosread_nompi_a-adios_transforms_common.obj: core/transforms/adios_transforms_common.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_transforms_common.obj `if test -f 'core/transforms/adios_transforms_common.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_common.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_common.c'; fi`
 
+libadiosread_nompi_a-adios_copyspec.o: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_copyspec.o `test -f 'core/adios_copyspec.c' || echo '$(srcdir)/'`core/adios_copyspec.c
+
+libadiosread_nompi_a-adios_copyspec.obj: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_copyspec.obj `if test -f 'core/adios_copyspec.c'; then $(CYGPATH_W) 'core/adios_copyspec.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_copyspec.c'; fi`
+
 libadiosread_nompi_a-adios_subvolume.o: core/adios_subvolume.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_subvolume.o `test -f 'core/adios_subvolume.c' || echo '$(srcdir)/'`core/adios_subvolume.c
 
@@ -3808,6 +3872,12 @@ libadiosreadf_a-adios_transforms_common.o: core/transforms/adios_transforms_comm
 
 libadiosreadf_a-adios_transforms_common.obj: core/transforms/adios_transforms_common.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-adios_transforms_common.obj `if test -f 'core/transforms/adios_transforms_common.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_common.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_common.c'; fi`
+
+libadiosreadf_a-adios_copyspec.o: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-adios_copyspec.o `test -f 'core/adios_copyspec.c' || echo '$(srcdir)/'`core/adios_copyspec.c
+
+libadiosreadf_a-adios_copyspec.obj: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-adios_copyspec.obj `if test -f 'core/adios_copyspec.c'; then $(CYGPATH_W) 'core/adios_copyspec.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_copyspec.c'; fi`
 
 libadiosreadf_a-adios_subvolume.o: core/adios_subvolume.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-adios_subvolume.o `test -f 'core/adios_subvolume.c' || echo '$(srcdir)/'`core/adios_subvolume.c
@@ -3995,6 +4065,12 @@ libadiosreadf_nompi_a-adios_transforms_common.o: core/transforms/adios_transform
 libadiosreadf_nompi_a-adios_transforms_common.obj: core/transforms/adios_transforms_common.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-adios_transforms_common.obj `if test -f 'core/transforms/adios_transforms_common.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_common.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_common.c'; fi`
 
+libadiosreadf_nompi_a-adios_copyspec.o: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-adios_copyspec.o `test -f 'core/adios_copyspec.c' || echo '$(srcdir)/'`core/adios_copyspec.c
+
+libadiosreadf_nompi_a-adios_copyspec.obj: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-adios_copyspec.obj `if test -f 'core/adios_copyspec.c'; then $(CYGPATH_W) 'core/adios_copyspec.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_copyspec.c'; fi`
+
 libadiosreadf_nompi_a-adios_subvolume.o: core/adios_subvolume.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-adios_subvolume.o `test -f 'core/adios_subvolume.c' || echo '$(srcdir)/'`core/adios_subvolume.c
 
@@ -4163,6 +4239,12 @@ libadiosreadf_nompi_v1_a-adios_transforms_common.o: core/transforms/adios_transf
 libadiosreadf_nompi_v1_a-adios_transforms_common.obj: core/transforms/adios_transforms_common.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-adios_transforms_common.obj `if test -f 'core/transforms/adios_transforms_common.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_common.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_common.c'; fi`
 
+libadiosreadf_nompi_v1_a-adios_copyspec.o: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-adios_copyspec.o `test -f 'core/adios_copyspec.c' || echo '$(srcdir)/'`core/adios_copyspec.c
+
+libadiosreadf_nompi_v1_a-adios_copyspec.obj: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-adios_copyspec.obj `if test -f 'core/adios_copyspec.c'; then $(CYGPATH_W) 'core/adios_copyspec.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_copyspec.c'; fi`
+
 libadiosreadf_nompi_v1_a-adios_subvolume.o: core/adios_subvolume.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-adios_subvolume.o `test -f 'core/adios_subvolume.c' || echo '$(srcdir)/'`core/adios_subvolume.c
 
@@ -4312,6 +4394,12 @@ libadiosreadf_v1_a-adios_transforms_common.o: core/transforms/adios_transforms_c
 
 libadiosreadf_v1_a-adios_transforms_common.obj: core/transforms/adios_transforms_common.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-adios_transforms_common.obj `if test -f 'core/transforms/adios_transforms_common.c'; then $(CYGPATH_W) 'core/transforms/adios_transforms_common.c'; else $(CYGPATH_W) '$(srcdir)/core/transforms/adios_transforms_common.c'; fi`
+
+libadiosreadf_v1_a-adios_copyspec.o: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-adios_copyspec.o `test -f 'core/adios_copyspec.c' || echo '$(srcdir)/'`core/adios_copyspec.c
+
+libadiosreadf_v1_a-adios_copyspec.obj: core/adios_copyspec.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-adios_copyspec.obj `if test -f 'core/adios_copyspec.c'; then $(CYGPATH_W) 'core/adios_copyspec.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_copyspec.c'; fi`
 
 libadiosreadf_v1_a-adios_subvolume.o: core/adios_subvolume.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-adios_subvolume.o `test -f 'core/adios_subvolume.c' || echo '$(srcdir)/'`core/adios_subvolume.c

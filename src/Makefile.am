@@ -43,6 +43,7 @@ libadiosread_nompi_a_CFLAGS=
 libadiosreadf_nompi_a_CFLAGS= 
 
 transforms_common_SOURCES = core/transforms/adios_transforms_common.c \
+                            core/adios_copyspec.c \
                             core/adios_subvolume.c
 
 transforms_read_method_SOURCES = transforms/adios_transform_identity_read.c \
