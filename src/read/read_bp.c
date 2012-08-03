@@ -406,6 +406,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
     ADIOS_SELECTION * sel, * nsel;
     ADIOS_VARCHUNK * chunk;
 
+    log_debug ("read_var()\n");
     sel = r->sel;
     p = (BP_PROC *) fp->fh;
     fh = (BP_FILE *) p->fh; 
@@ -462,6 +463,9 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
             break;
         case ADIOS_SELECTION_AUTO:
             break;
+        default:
+            log_debug ("ADIOS selection type is wrong\n");
+            break;
     }
 
     return chunk;
@@ -517,6 +521,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     MPI_Status status;
     ADIOS_VARCHUNK * chunk;
 
+    log_debug ("read_var_bb()\n");
     p = (BP_PROC *) fp->fh;
     fh = (BP_FILE *) p->fh;
     file_is_fortran = is_fortran_file (fh);
@@ -914,13 +919,14 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
     free (dims);
 
+    log_debug ("read_var_bb(): build ADIOS_VARCHUNK\n");
     chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
     assert (chunk);
 
     chunk->varid = r->varid;
     chunk->type = v->type;
     chunk->sel = copy_selection (r->sel);
-    chunk->data = data;
+    chunk->data = r->data;
 
     return chunk;
 }
@@ -2659,6 +2665,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
  *                  1: some chunks are/will be available, call again
  *                  <0 on error, sets adios_errno too
  */
+    log_debug ("adios_read_bp_check_reads()\n");
     p = (struct BP_PROC *) fp->fh;
 
     if (!p->local_read_request_list)
@@ -2669,6 +2676,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
     // if memory is pre-allocated
     if (p->local_read_request_list->data)
     {
+        log_debug ("adios_read_bp_check_reads(): memory is pre-allocated\n");
         varchunk = read_var (fp, p->local_read_request_list);
 
         if (varchunk)
@@ -2688,9 +2696,12 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
     }
     else // if memory is not pre-allocated
     {
+        log_debug ("adios_read_bp_check_reads(): memory is not pre-allocated\n");
         // memory is large enough to contain the data
         if (chunk_buffer_size >= p->local_read_request_list->datasize)
         {
+            log_debug ("adios_read_bp_check_reads(): memory is large enough to contain the data (%d)\n",
+                       p->local_read_request_list->datasize);
             assert (p->local_read_request_list->datasize);
             p->b = realloc (p->b, p->local_read_request_list->datasize);
             p->local_read_request_list->data = p->b;
