@@ -48,6 +48,7 @@ typedef struct _adios_transform_pg_reqgroup {
 
 typedef struct _adios_transform_read_reqgroup {
     int completed;
+    ADIOS_VARCHUNK *lent_varchunk;
 
     const ADIOS_FILE      	*fp;
 
@@ -88,7 +89,8 @@ int adios_transform_pg_reqgroup_remove_subreq(adios_transform_pg_reqgroup *pg_re
 void adios_transform_free_pg_reqgroup(adios_transform_pg_reqgroup **pg_reqgroup_ptr);
 
 // adios_transform_read_reqgroup manipulation
-adios_transform_read_reqgroup * adios_transform_new_read_reqgroup(const ADIOS_FILE *fp, ADIOS_VARINFO *varinfo, ADIOS_TRANSINFO *transinfo,
+adios_transform_read_reqgroup * adios_transform_new_read_reqgroup(const ADIOS_FILE *fp, const ADIOS_VARINFO *varinfo,
+                                                                  const ADIOS_TRANSINFO *transinfo,
                                                                   const ADIOS_SELECTION *sel, int from_steps, int nsteps,
                                                                   void *data, enum ADIOS_FLAG swap_endianness);
 void adios_transform_read_reqgroup_append_pg_reqgroup(adios_transform_read_reqgroup *reqgroup, adios_transform_pg_reqgroup *pg_reqgroup);

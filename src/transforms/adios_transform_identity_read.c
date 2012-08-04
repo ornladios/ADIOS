@@ -32,53 +32,24 @@ int adios_transform_identity_generate_read_subrequests(adios_transform_read_reqg
 }
 
 // Do nothing for individual subrequest
-ADIOS_VARCHUNK * adios_transform_identity_subrequest_completed(
+adios_datablock * adios_transform_identity_subrequest_completed(
                     adios_transform_read_reqgroup *reqgroup,
                     adios_transform_pg_reqgroup *pg_reqgroup,
-                    adios_transform_read_subrequest *completed_subreq,
-                    enum ADIOS_READ_RESULT_MODE mode) {
+                    adios_transform_read_subrequest *completed_subreq) {
     return NULL;
 }
 
-ADIOS_VARCHUNK * adios_transform_identity_pg_reqgroup_completed(
+adios_datablock * adios_transform_identity_pg_reqgroup_completed(
         adios_transform_read_reqgroup *reqgroup,
-        adios_transform_pg_reqgroup *completed_pg_reqgroup,
-        enum ADIOS_READ_RESULT_MODE mode) {
+        adios_transform_pg_reqgroup *completed_pg_reqgroup) {
 
-    // If we are allowed to return a partial result, return this PG's data
-    // Else, copy the PG's data into the global result buffer, and do nothing
-    //   all data is present
-    if (mode == adios_read_return_partial) {
-        ADIOS_VARCHUNK *retchunk = (ADIOS_VARCHUNK *)malloc(sizeof(ADIOS_VARCHUNK));
-        retchunk->varid = reqgroup->raw_varinfo->varid;
-        retchunk->type = reqgroup->transinfo->orig_type;
-        retchunk->sel = adios_copyspec_to_dst_selection(completed_pg_reqgroup->pg_intersection_to_global_copyspec);
-        retchunk->data = completed_pg_reqgroup->subreqs->data; // The first (and only) subrequest data buffer
-        return retchunk;
-    } else {
-        copy_subvolume_with_spec(reqgroup->orig_data,					// Copy TO original buffer
-                                 completed_pg_reqgroup->subreqs->data,	// Copy FROM buffer of first (and only) subrequest
-                                 completed_pg_reqgroup->pg_intersection_to_global_copyspec,	// Copy USING the PG-to-global copy spec
-                                 reqgroup->transinfo->orig_type,		// Copy elements of the original type
-                                 reqgroup->swap_endianness);			// Swap endianness if needed
-        return NULL;
-    }
+    assert(completed_pg_reqgroup->pg_selection->type == ADIOS_SELECTION_BOUNDINGBOX);
+    return adios_datablock_new(reqgroup->transinfo->orig_type,
+                               &completed_pg_reqgroup->pg_selection->u.bb,
+                               completed_pg_reqgroup->subreqs->data);
 }
 
-ADIOS_VARCHUNK * adios_transform_identity_reqgroup_completed(
-        adios_transform_read_reqgroup *completed_reqgroup,
-        enum ADIOS_READ_RESULT_MODE mode) {
-
-    if (mode == adios_read_return_complete) {
-        ADIOS_VARCHUNK *retchunk = (ADIOS_VARCHUNK *)malloc(sizeof(ADIOS_VARCHUNK));
-        retchunk->varid = completed_reqgroup->raw_varinfo->varid;
-        retchunk->type = completed_reqgroup->transinfo->orig_type;
-        retchunk->sel = copy_selection(completed_reqgroup->orig_sel);
-        retchunk->data = completed_reqgroup->orig_data;
-        return retchunk;
-    } else {
-        // Mode is either noreturn, in which case there should be no return,
-        // or return_partial, in which case all data was already returned
-        return NULL;
-    }
+adios_datablock * adios_transform_identity_reqgroup_completed(
+        adios_transform_read_reqgroup *completed_reqgroup) {
+    return NULL;
 }

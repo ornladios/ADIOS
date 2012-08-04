@@ -9,8 +9,9 @@
 #include <stdint.h>
 #include <assert.h>
 #include "util.h"
-#include "adios_transforms_hooks_read.h"
-#include "adios_transforms_reqgroup.h"
+#include "core/transforms/adios_transforms_hooks_read.h"
+#include "core/transforms/adios_transforms_reqgroup.h"
+#include "core/adios_subvolume.h"
 
 DECLARE_TRANSFORM_READ_METHOD_UNIMPL(none);
 DECLARE_TRANSFORM_READ_METHOD(identity);
@@ -32,7 +33,64 @@ void adios_transform_read_init() {
 }
 
 
+// Datablock management
 
+adios_datablock * adios_datablock_new(
+        enum ADIOS_DATATYPES elem_type,
+        const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bounds,
+        void *data) {
+
+    assert(bounds);
+    assert(data);
+    return adios_datablock_new_ragged_offset(elem_type, bounds, 0, data);
+}
+
+adios_datablock * adios_datablock_new_ragged(
+        enum ADIOS_DATATYPES elem_type,
+        const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bounds,
+        const uint64_t *ragged_offsets, void *data) {
+
+    assert(bounds);
+    assert(data);
+
+    const uint64_t ragged_offset = ragged_offsets ?
+            compute_ragged_array_offset(bounds->ndim, ragged_offsets, bounds->count) :
+            0;
+
+    return adios_datablock_new_ragged_offset(elem_type, bounds, ragged_offset, data);
+}
+
+adios_datablock * adios_datablock_new_ragged_offset(
+        enum ADIOS_DATATYPES elem_type,
+        const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bounds,
+        uint64_t ragged_offset, void *data) {
+
+    assert(bounds);
+    assert(data);
+
+    adios_datablock *datablock = malloc(sizeof(adios_datablock));
+
+    datablock->elem_type = elem_type;
+    datablock->bounds.ndim = bounds->ndim;
+    datablock->bounds.start = bufdup(bounds->start, sizeof(uint64_t), bounds->ndim);
+    datablock->bounds.count = bufdup(bounds->count, sizeof(uint64_t), bounds->ndim);
+    datablock->ragged_offset = ragged_offset;
+    datablock->data = data;
+
+    return datablock;
+}
+
+#define MYFREE(p) if (p) free(p); (p)=NULL;
+void adios_datablock_free(adios_datablock *datablock, int free_data) {
+    if (datablock) {
+        MYFREE(datablock->bounds.start);
+        MYFREE(datablock->bounds.count);
+        if (free_data)
+            MYFREE(datablock->data);
+    }
+    MYFREE(datablock);
+}
+#undef MYFREE
 
 // Delegate functions
 
@@ -91,7 +149,7 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
             pg_intersection_to_global_copyspec = malloc(sizeof(adios_subvolume_copy_spec));
 
         // Find the intersection, if any
-        intersects = adios_copyspec_init_from_selection_intersect(pg_intersection_to_global_copyspec, &sel->u.bb, orig_vb->count, orig_vb->start);
+        intersects = adios_copyspec_init_from_bb_intersection(pg_intersection_to_global_copyspec, &sel->u.bb, orig_vb->count, orig_vb->start);
         if (intersects) {
             // Make a PG read request group, and fill it with some subrequests, and link it into the read reqgroup
             adios_transform_pg_reqgroup *new_pg_reqgroup;
@@ -113,27 +171,24 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
     return new_reqgroup;
 }
 
-ADIOS_VARCHUNK * adios_transform_subrequest_completed(adios_transform_read_reqgroup *reqgroup,
-                                                      adios_transform_pg_reqgroup *pg_reqgroup,
-                                                      adios_transform_read_subrequest *completed_subreq,
-                                                      enum ADIOS_READ_RESULT_MODE mode) {
+adios_datablock * adios_transform_subrequest_completed(adios_transform_read_reqgroup *reqgroup,
+                                                       adios_transform_pg_reqgroup *pg_reqgroup,
+                                                       adios_transform_read_subrequest *completed_subreq) {
     enum ADIOS_TRANSFORM_TYPE transform_type = reqgroup->transinfo->transform_type;
     assert(is_transform_type_valid(transform_type));
-    return TRANSFORM_READ_METHODS[transform_type].transform_subrequest_completed(reqgroup, pg_reqgroup, completed_subreq, mode);
+    return TRANSFORM_READ_METHODS[transform_type].transform_subrequest_completed(reqgroup, pg_reqgroup, completed_subreq);
 }
 
-ADIOS_VARCHUNK * adios_transform_pg_reqgroup_completed(adios_transform_read_reqgroup *reqgroup,
-                                                       adios_transform_pg_reqgroup *completed_pg_reqgroup,
-                                                       enum ADIOS_READ_RESULT_MODE mode) {
+adios_datablock * adios_transform_pg_reqgroup_completed(adios_transform_read_reqgroup *reqgroup,
+                                                        adios_transform_pg_reqgroup *completed_pg_reqgroup) {
 
     enum ADIOS_TRANSFORM_TYPE transform_type = reqgroup->transinfo->transform_type;
     assert(is_transform_type_valid(transform_type));
-    return TRANSFORM_READ_METHODS[transform_type].transform_pg_reqgroup_completed(reqgroup, completed_pg_reqgroup, mode);
+    return TRANSFORM_READ_METHODS[transform_type].transform_pg_reqgroup_completed(reqgroup, completed_pg_reqgroup);
 }
 
-ADIOS_VARCHUNK * adios_transform_read_reqgroup_completed(adios_transform_read_reqgroup *completed_reqgroup,
-                                                         enum ADIOS_READ_RESULT_MODE mode) {
+adios_datablock * adios_transform_read_reqgroup_completed(adios_transform_read_reqgroup *completed_reqgroup) {
     enum ADIOS_TRANSFORM_TYPE transform_type = completed_reqgroup->transinfo->transform_type;
     assert(is_transform_type_valid(transform_type));
-    return TRANSFORM_READ_METHODS[transform_type].transform_reqgroup_completed(completed_reqgroup, mode);
+    return TRANSFORM_READ_METHODS[transform_type].transform_reqgroup_completed(completed_reqgroup);
 }

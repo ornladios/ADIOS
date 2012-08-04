@@ -3,9 +3,39 @@
  *
  * Utility functions for manipulating subvolumes of multi-dimensional arrays.
  *
+ * --- Note on overlapping subvolume copies ---
+ * In some special cases, it may be desirable to perform a subvolume copy where
+ * the source and destination volumes overlap, and therefore memcpy operations
+ * may also overlap. This operation is supported with the condition that the
+ * following conditions are met:
+ * 1) The source pointer is not before the destination pointer
+ * 2) The size of each stride in the source volume is at least the
+ *    size of the corresponding stride in the destination volume
+ *
+ * If these conditions hold, no source memory will ever be overwritten
+ * before it is copied. This can be proven inductively:
+ * 1) The first memmove will copy a block of data to an equal or lower
+ *    address than its source address, since the source pointer is
+ *    not before the destination pointer
+ * 2) At any later point, the additional offset into the source buffer
+ *    is at least the addition offset into the destination buffer,
+ *    since this offset is a positive linear combination of the strides
+ *    for each buffer, and the source stride is at least that of the
+ *    destination stride for every dimension. Therefore, the final copy
+ *    destination address is still at least that of the final source
+ *    address
+ *
+ * Note that this works even with ragged arrays, as we only consider
+ * the start offsets, which incorporate the ragged offset, and strides,
+ * which are not affected by the ragged offset.
+ *
+ * If a subvolume copy is attempted where both of these safety conditions do
+ * not hold, an assertion will fail.
+ *
  *  Created on: Jul 25, 2012
  *      Author: David A. Boyuka II
  */
+
 
 #ifndef ADIOS_SUBVOLUME_H_
 #define ADIOS_SUBVOLUME_H_
@@ -16,59 +46,9 @@
 #include "core/adios_copyspec.h"
 
 /*
- * Copies a multi-dimensional subvolume from one buffer to another.
- *
- * 'src' and 'dst' are assumed to be buffers laid out in C ordering (the
- * first dimension is the slowest-changing). 'dst' is assumed to have
- * sufficient size and dimensions to accommodate the incoming subvolume.
- *
- * @param dst the destination buffer
- * @param src the source buffer
- * @param ndim the number of dimensions in the source and destination space
- * @param subv_dims the dimensions of the subvolume to copy
- * @param dst_dims the dimensions of the entire destination buffer
- * @param dst_subv_offsets the offsets at which to write the subvolume
- * @param src_dims the dimensions of the entire source buffer
- * @param src_subv_offsets the offsets from which to read the subvolume
- * @param datum_type the ADIOS datatype of the elements in the source and
- *        destination buffers
+ * Simple computation of the volume in elements of a given array.
  */
-void copy_subvolume(void *dst, const void *src, int ndim, const uint64_t *subv_dims,
-                    const uint64_t *dst_dims, const uint64_t *dst_subv_offsets,
-                    const uint64_t *src_dims, const uint64_t *src_subv_offsets,
-                    enum ADIOS_DATATYPES datum_type,
-                    enum ADIOS_FLAG swap_endianness);
-
-/*
- * The same as copy_subvolume, with the addition of optional ragged src/dst
- * arrays. These arrays are ragged iff the pointer supplied does not point to
- * the logical (0,0,...,0) element of the corresponding array, but instead
- * points to some element (r1,r2,...,rn) with some ri != 0. In this case,
- * the corresponding {src,dst}_ragged_offsets designates the element pointed to
- * by the corresponding pointer.
- */
-void copy_subvolume_ragged(void *dst, const void *src, int ndim, const uint64_t *subv_dims,
-                           const uint64_t *dst_dims, const uint64_t *dst_subv_offsets,
-                           const uint64_t *dst_ragged_offsets,
-                           const uint64_t *src_dims, const uint64_t *src_subv_offsets,
-                           const uint64_t *src_ragged_offsets,
-                           enum ADIOS_DATATYPES datum_type, enum ADIOS_FLAG swap_endianness);
-
-/*
- * Same as copy_subvolume_ragged, but takes a scalar byte offset for ragged
- * arrays instead of an array of element offsets.
- */
-void copy_subvolume_ragged_offset(void *dst, const void *src, int ndim, const uint64_t *subv_dims,
-                                  const uint64_t *dst_dims, const uint64_t *dst_subv_offsets,
-                                  uint64_t dst_ragged_offset,
-                                  const uint64_t *src_dims, const uint64_t *src_subv_offsets,
-                                  uint64_t src_ragged_offset,
-                                  enum ADIOS_DATATYPES datum_type, enum ADIOS_FLAG swap_endianness);
-
-void copy_subvolume_with_spec(void *dst, const void *src,
-                              const const adios_subvolume_copy_spec *copy_spec,
-                              enum ADIOS_DATATYPES datum_type,
-                              enum ADIOS_FLAG swap_endianness);
+uint64_t compute_volume(int ndim, const uint64_t *dims);
 
 /*
  * Calculates the intersection, if any, between two volumes. For each volume,
@@ -117,15 +97,133 @@ int intersect_volumes(int ndim,
                       uint64_t *inter_dims);
 
 /*
- * Computes the byte offset of the beginning of a ragged multidimensional
+ * Same as intersect_volume, but derive the volume bounds from bounding box
+ * structs.
+ */
+int intersect_bb(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb1,
+                 const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb2,
+                 uint64_t *inter_offset,
+                 uint64_t *inter_offset_rel1, uint64_t *inter_offset_rel2,
+                 uint64_t *inter_dims);
+
+/*
+ * Copies a multi-dimensional subvolume from one buffer to another.
+ *
+ * 'src' and 'dst' are assumed to be buffers laid out in C array dimension
+ * order (the first dimension is the slowest-changing). 'dst' is assumed to
+ * have the specified dimensions to accommodate the incoming subvolume.
+ *
+ * NOTE: See the section on "safety condition for overlapping subvolume copies"
+ *       at the top of adios_subvolume.h for important information on
+ *       overlapping copies.
+ *
+ * @param dst the destination buffer
+ * @param src the source buffer
+ * @param ndim the number of dimensions in the source and destination space
+ * @param subv_dims the dimensions of the subvolume to copy
+ * @param dst_dims the dimensions of the entire destination buffer
+ * @param dst_subv_offsets the offsets at which to write the subvolume
+ * @param src_dims the dimensions of the entire source buffer
+ * @param src_subv_offsets the offsets from which to read the subvolume
+ * @param datum_type the ADIOS datatype of the elements in the source and
+ *        destination buffers
+ */
+void copy_subvolume(void *dst, const void *src, int ndim, const uint64_t *subv_dims,
+                    const uint64_t *dst_dims, const uint64_t *dst_subv_offsets,
+                    const uint64_t *src_dims, const uint64_t *src_subv_offsets,
+                    enum ADIOS_DATATYPES datum_type,
+                    enum ADIOS_FLAG swap_endianness);
+
+/*
+ * The same as copy_subvolume, with the addition of optional ragged src/dst
+ * arrays. These arrays are ragged iff the pointer supplied does not point to
+ * the logical (0,0,...,0) element of the corresponding array, but instead
+ * points to some element (r1,r2,...,rn) with some ri != 0. In this case,
+ * the corresponding {src,dst}_ragged_offsets designates the element pointed to
+ * by the corresponding pointer.
+ */
+void copy_subvolume_ragged(void *dst, const void *src, int ndim, const uint64_t *subv_dims,
+                           const uint64_t *dst_dims, const uint64_t *dst_subv_offsets,
+                           const uint64_t *dst_ragged_offsets,
+                           const uint64_t *src_dims, const uint64_t *src_subv_offsets,
+                           const uint64_t *src_ragged_offsets,
+                           enum ADIOS_DATATYPES datum_type, enum ADIOS_FLAG swap_endianness);
+
+/*
+ * Same as copy_subvolume_ragged, but takes a scalar byte offset for ragged
+ * arrays instead of an array of element offsets.
+ */
+void copy_subvolume_ragged_offset(void *dst, const void *src, int ndim, const uint64_t *subv_dims,
+                                  const uint64_t *dst_dims, const uint64_t *dst_subv_offsets,
+                                  uint64_t dst_ragged_offset,
+                                  const uint64_t *src_dims, const uint64_t *src_subv_offsets,
+                                  uint64_t src_ragged_offset,
+                                  enum ADIOS_DATATYPES datum_type, enum ADIOS_FLAG swap_endianness);
+
+/*
+ * Same as copy_subvolume, but derives most of the parameters from the supplied
+ * subvolume copy spec.
+ */
+void copy_subvolume_with_spec(void *dst, const void *src,
+                              const const adios_subvolume_copy_spec *copy_spec,
+                              enum ADIOS_DATATYPES datum_type,
+                              enum ADIOS_FLAG swap_endianness);
+
+/*
+ * Same as copy_subvolume_ragged, but derives most of the parameters from the
+ * supplied subvolume copy spec.
+ */
+void copy_subvolume_ragged_with_spec(void *dst, const void *src,
+                                     const adios_subvolume_copy_spec *copy_spec,
+                                     const uint64_t *dst_ragged_offsets,
+                                     const uint64_t *src_ragged_offsets,
+                                     enum ADIOS_DATATYPES datum_type,
+                                     enum ADIOS_FLAG swap_endianness);
+
+/*
+ * Same as copy_subvolume_ragged_offset, but derives most of the parameters
+ * from the supplied subvolume copy spec.
+ */
+void copy_subvolume_ragged_offset_with_spec(void *dst, const void *src,
+                                            const adios_subvolume_copy_spec *copy_spec,
+                                            uint64_t dst_ragged_offset,
+                                            uint64_t src_ragged_offset,
+                                            enum ADIOS_DATATYPES datum_type,
+                                            enum ADIOS_FLAG swap_endianness);
+
+/*
+ * Computes the element offset of the beginning of a ragged multidimensional
  * volume array relative to the beginning of the corresponding complete volume
  * array.
  *
  * @param ndim number of dimensions of the volume
  * @param start_offset the offsets of the start of the ragged array
  * @param overall_dims the dimensions of the complete array
- * @param elem_type the datatype of each element in the array
+ * @return the element offset of the beginning of the ragged array
  */
-uint64_t compute_ragged_array_offset(int ndim, const uint64_t *start_offset, const uint64_t *overall_dims, enum ADIOS_DATATYPES elem_type);
+uint64_t compute_ragged_array_offset(int ndim, const uint64_t *start_offset, const uint64_t *overall_dims);
+
+/*
+ * Compacts a subvolume within a buffer volume to the beginning of the buffer,
+ * leaving the rest of the buffer in an undefined state.
+ *
+ * For example, given a 10x10 subvolume of a 20x20 buffer volume, it will shift
+ * the contents of that subvolume to the first 100 elements of the buffer,
+ * leaving the remaining 300 elements undefined.
+ *
+ * @param buf the buffer for the containing volume
+ * @param ndim the dimensionality of space for the volumes
+ * @param subv_dims the dimensions of the subvolume
+ * @param buf_dims the dimensions of the containing volume
+ * @param buf_ragged_offset the ragged offset of the containing volume (if the
+ *        containing volume is a complete array, set this to 0)
+ * @param buf_subv_offsets the offset of the subvolume within the containing
+ *        volume
+ * @param elem_type the datatype of the elements of the buffer
+ */
+void compact_subvolume_ragged_offset(void *buf, int ndim, const uint64_t *subv_dims,
+                                     const uint64_t *buf_dims, uint64_t buf_ragged_offset,
+                                     const uint64_t *buf_subv_offsets,
+                                     enum ADIOS_DATATYPES elem_type);
 
 #endif /* ADIOS_SUBVOLUME_H_ */

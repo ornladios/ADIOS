@@ -8,9 +8,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
-#include "adios_transforms_hooks_read.h"
-#include "adios_transforms_reqgroup.h"
-#include "adios_subvolume.h"
+#include "core/transforms/adios_transforms_hooks_read.h"
+#include "core/transforms/adios_transforms_reqgroup.h"
+#include "core/common_read.h"
+#include "core/adios_subvolume.h"
 #include "public/adios_selection.h"
 
 // An adios_transform_read_reqgroup corresponds to a variable read request
@@ -120,7 +121,9 @@ adios_transform_read_subrequest * adios_transform_new_subreq_byte_segment(const 
     start_sel[1] = start;
     count_sel[1] = count;
 
+    // Transfer ownership of the our start/count vectors
     sel = common_read_selection_boundingbox(2, start_sel, count_sel);
+    start_sel = count_sel = NULL;
 
     return adios_transform_new_subreq(sel, data);
 }
@@ -248,7 +251,7 @@ void adios_transform_free_pg_reqgroup(adios_transform_pg_reqgroup **pg_reqgroup_
 //
 
 adios_transform_read_reqgroup * adios_transform_new_read_reqgroup(
-        const ADIOS_FILE *fp, ADIOS_VARINFO *varinfo, ADIOS_TRANSINFO *transinfo,
+        const ADIOS_FILE *fp, const ADIOS_VARINFO *varinfo, const ADIOS_TRANSINFO *transinfo,
         const ADIOS_SELECTION *sel, int from_steps, int nsteps,
         void *data, enum ADIOS_FLAG swap_endianness) {
 
@@ -332,9 +335,15 @@ void adios_transform_free_read_reqgroup(adios_transform_read_reqgroup **reqgroup
     }
 
     // Free malloc'd resources
-    common_read_selection_delete(reqgroup->orig_sel);
-    common_read_free_transinfo(reqgroup->raw_varinfo, reqgroup->transinfo);
-    common_read_free_varinfo(reqgroup->raw_varinfo);
+
+    // Free any data buffer lent to the user, but don't free the VARCHUNK; that
+    // should have been done already by the user
+    if (reqgroup->lent_varchunk) MYFREE(reqgroup->lent_varchunk->data);
+
+    common_read_selection_delete((ADIOS_SELECTION*)reqgroup->orig_sel); // Remove const
+    common_read_free_transinfo(reqgroup->raw_varinfo,
+                               (ADIOS_TRANSINFO*)reqgroup->transinfo); // Remove const
+    common_read_free_varinfo((ADIOS_VARINFO*)reqgroup->raw_varinfo); // Remove const
     MYFREE(reqgroup->transform_internal);
 
     // Clear all data to 0's for safety
