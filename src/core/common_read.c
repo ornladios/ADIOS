@@ -774,7 +774,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
  */
 static int apply_datablock_to_request_and_free(adios_datablock *datablock,
                                                adios_transform_read_reqgroup *reqgroup) {
-    adios_subvolume_copy_spec *copyspec;
+    adios_subvolume_copy_spec *copyspec = malloc(sizeof(adios_subvolume_copy_spec));
 
     assert(datablock); assert(reqgroup);
     assert(reqgroup->orig_sel);
@@ -793,6 +793,7 @@ static int apply_datablock_to_request_and_free(adios_datablock *datablock,
                 datablock->elem_type, reqgroup->swap_endianness);
     }
 
+    adios_copyspec_free(copyspec, 1);
     adios_datablock_free(datablock, 1);
     return intersects;
 }

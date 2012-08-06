@@ -415,8 +415,8 @@ void compact_subvolume_ragged_offset(void *buf, int ndim, const uint64_t *subv_d
 
     memset(zero, 0, ndim * sizeof(uint64_t));
 
-    adios_subvolume_copy_spec compact_copyspec;
-    adios_copyspec_init(&compact_copyspec, ndim, subv_dims,
+    adios_subvolume_copy_spec *compact_copyspec = malloc(sizeof(adios_subvolume_copy_spec));
+    adios_copyspec_init(compact_copyspec, ndim, subv_dims,
                         subv_dims, zero,
                         buf_dims, buf_subv_offsets);
 
@@ -426,11 +426,11 @@ void compact_subvolume_ragged_offset(void *buf, int ndim, const uint64_t *subv_d
         // condition as defined in comment at the top of adios_subvolume.h.
         // NOTE:we infer no endianness swap, as this is an intra-buffer operation
         copy_subvolume_ragged_offset_with_spec(
-                buf, buf, &compact_copyspec,
+                buf, buf, compact_copyspec,
                 0, buf_ragged_offset,
                 elem_type, adios_flag_no);
     }
 
     // We use the arguments and a stack array as buffers; don't free them
-    adios_copyspec_free(&compact_copyspec, 0);
+    adios_copyspec_free(compact_copyspec, 0);
 }

@@ -43,10 +43,14 @@ adios_datablock * adios_transform_identity_pg_reqgroup_completed(
         adios_transform_read_reqgroup *reqgroup,
         adios_transform_pg_reqgroup *completed_pg_reqgroup) {
 
+    // Transfer ownership of the data buffer
+    void *pg_data = completed_pg_reqgroup->subreqs->data;
+    completed_pg_reqgroup->subreqs->data = NULL;
+
     assert(completed_pg_reqgroup->pg_selection->type == ADIOS_SELECTION_BOUNDINGBOX);
     return adios_datablock_new(reqgroup->transinfo->orig_type,
                                &completed_pg_reqgroup->pg_selection->u.bb,
-                               completed_pg_reqgroup->subreqs->data);
+                               pg_data);
 }
 
 adios_datablock * adios_transform_identity_reqgroup_completed(

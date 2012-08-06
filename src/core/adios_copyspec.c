@@ -26,7 +26,7 @@ static void adios_copyspec_init_from_bufs(adios_subvolume_copy_spec *copy_spec,
                                           const uint64_t *src_dims,
                                           const uint64_t *src_subv_offsets) {
     const int dimsize = ndim * sizeof(uint64_t);
-    copy_spec->ndim = ndim;
+    copy_spec->ndim 			= ndim;
     copy_spec->subv_dims        = subv_dims        ? bufdup(subv_dims, 1, dimsize)        : malloc(dimsize);
     copy_spec->dst_dims         = dst_dims         ? bufdup(dst_dims, 1, dimsize)         : malloc(dimsize);
     copy_spec->dst_subv_offsets = dst_subv_offsets ? bufdup(dst_subv_offsets, 1, dimsize) : malloc(dimsize);
@@ -94,18 +94,19 @@ int adios_copyspec_init_from_2bb_intersection(adios_subvolume_copy_spec *copy_sp
 }
 
 
-#define FREE_IF_NULL(x) if (x) free((void*)x);
+#define MYFREE(x) {if (x) free((void*)x);}
 void adios_copyspec_free(adios_subvolume_copy_spec *copy_spec, int free_buffers) {
     if (free_buffers) {
-        FREE_IF_NULL(copy_spec->subv_dims);
-        FREE_IF_NULL(copy_spec->dst_dims);
-        FREE_IF_NULL(copy_spec->dst_subv_offsets);
-        FREE_IF_NULL(copy_spec->src_dims);
-        FREE_IF_NULL(copy_spec->src_subv_offsets);
+        MYFREE(copy_spec->subv_dims);
+        MYFREE(copy_spec->dst_dims);
+        MYFREE(copy_spec->dst_subv_offsets);
+        MYFREE(copy_spec->src_dims);
+        MYFREE(copy_spec->src_subv_offsets);
     }
     memset(copy_spec, 0, sizeof(adios_subvolume_copy_spec));
+    free(copy_spec);
 }
-#undef FREE_IF_NULL
+#undef MYFREE
 
 //
 // Derivative copyspec functions

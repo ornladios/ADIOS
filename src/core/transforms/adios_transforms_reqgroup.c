@@ -27,7 +27,7 @@
 // If this is not possible, you should free() malloced memory yourself as soon as it is no longer needed
 
 
-#define MYFREE(p) if (p) free(p); (p)=NULL;
+#define MYFREE(p) {if (p) free(p); (p)=NULL;}
 
 // Generic list manipulation
 // Assumes the list node struct has a ->next field
@@ -338,7 +338,8 @@ void adios_transform_free_read_reqgroup(adios_transform_read_reqgroup **reqgroup
 
     // Free any data buffer lent to the user, but don't free the VARCHUNK; that
     // should have been done already by the user
-    if (reqgroup->lent_varchunk) MYFREE(reqgroup->lent_varchunk->data);
+    if (reqgroup->lent_varchunk)
+        MYFREE(reqgroup->lent_varchunk->data);
 
     common_read_selection_delete((ADIOS_SELECTION*)reqgroup->orig_sel); // Remove const
     common_read_free_transinfo(reqgroup->raw_varinfo,

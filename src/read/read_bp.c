@@ -2360,13 +2360,13 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
             memcpy (blockinfo[i].start, offsets, varinfo->ndim * sizeof(uint64_t));
             memcpy (blockinfo[i].count, ldims, varinfo->ndim * sizeof(uint64_t));
         }*/
-        memcpy (blockinfo[i].start, offsets, varinfo->ndim * sizeof(uint64_t));
-        memcpy (blockinfo[i].count, ldims, varinfo->ndim * sizeof(uint64_t));
+        memcpy (blockinfo[i].start, offsets, dimcount * sizeof(uint64_t));
+        memcpy (blockinfo[i].count, ldims, dimcount * sizeof(uint64_t));
 
         if (file_is_fortran != futils_is_called_from_fortran())
         {
-            swap_order (varinfo->ndim, blockinfo[i].start, &timedim);
-            swap_order (varinfo->ndim, blockinfo[i].count, &timedim);
+            swap_order (dimcount, blockinfo[i].start, &timedim);
+            swap_order (dimcount, blockinfo[i].count, &timedim);
         }
     }
 

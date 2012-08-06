@@ -80,7 +80,7 @@ adios_datablock * adios_datablock_new_ragged_offset(
     return datablock;
 }
 
-#define MYFREE(p) if (p) free(p); (p)=NULL;
+#define MYFREE(p) {if (p) free(p); (p)=NULL;}
 void adios_datablock_free(adios_datablock *datablock, int free_data) {
     if (datablock) {
         MYFREE(datablock->bounds.start);
@@ -154,19 +154,20 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
             // Make a PG read request group, and fill it with some subrequests, and link it into the read reqgroup
             adios_transform_pg_reqgroup *new_pg_reqgroup;
 
+            // Transfer ownership of pg_intersection_to_global_copyspec
             new_pg_reqgroup = adios_transform_new_pg_reqgroup(idx, orig_vb, raw_vb,
                                                               adios_copyspec_to_src_selection(pg_intersection_to_global_copyspec),
                                                               pg_intersection_to_global_copyspec);
-            pg_intersection_to_global_copyspec = NULL;
 
             TRANSFORM_READ_METHODS[transinfo->transform_type].transform_generate_read_subrequests(new_reqgroup, new_pg_reqgroup);
 
             adios_transform_read_reqgroup_append_pg_reqgroup(new_reqgroup, new_pg_reqgroup);
+        } else {
+            adios_copyspec_free(pg_intersection_to_global_copyspec, 1);
         }
+        pg_intersection_to_global_copyspec = NULL;
     }
-    // If there is a leftover (uninitialized) copy spec, free it
-    if (pg_intersection_to_global_copyspec)
-        free(pg_intersection_to_global_copyspec);
+    assert(!pg_intersection_to_global_copyspec);
 
     return new_reqgroup;
 }
