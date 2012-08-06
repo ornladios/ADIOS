@@ -123,10 +123,12 @@ int adios_transform_compress_apply(struct adios_file_struct *fd, struct adios_va
         break;
 
         default: // default: do not do compression, just copy the buffer
+		{
             memcpy(output_buff, input_buff, input_size);
             output_size = input_size;
             compress_type_flag = compress_type_none;
             rtn = 0;
+		}
         break;
 
     }
@@ -156,6 +158,8 @@ int adios_transform_compress_apply(struct adios_file_struct *fd, struct adios_va
     {
         memcpy(var->transform_metadata, &compress_type_flag, var->transform_metadata_len);
     }
+	
+	printf("adios_transform_compress_apply %d %d\n", input_size, output_size);
 
 
     *transformed_len = output_size; // Return the size of the data buffer

@@ -18,7 +18,7 @@ static const int MAX_PART_METADATA_SIZE =
     MAX_POSSIBLE_BINS * ( sizeof(unsigned short int) +  2 * sizeof(uint64_t) + sizeof(unsigned char) );
 
 
-uint64_t adios_transform_mloc_vars_size(uint64_t orig_size, int num_vars) {
+uint64_t adios_transform_mloc_calc_vars_transformed_size(uint64_t orig_size, int num_vars) {
     return num_vars * MAX_PART_METADATA_SIZE +	// For the metadata
            orig_size * 5/4;						// For the index + data
 }
