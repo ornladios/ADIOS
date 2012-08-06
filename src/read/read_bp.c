@@ -532,7 +532,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     MPI_Status status;
     ADIOS_VARCHUNK * chunk;
 
-    log_debug ("read_var_bb()\n");
+//    log_debug ("read_var_bb()\n");
     p = (BP_PROC *) fp->fh;
     fh = (BP_FILE *) p->fh;
     file_is_fortran = is_fortran_file (fh);
@@ -591,7 +591,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
     size_of_type = bp_get_type_size (v->type, v->characteristics [0].value);
 
-    log_debug ("read_var_bb: from_steps = %d, nsteps = %d\n", r->from_steps, r->nsteps);
+//    log_debug ("read_var_bb: from_steps = %d, nsteps = %d\n", r->from_steps, r->nsteps);
 
     /* Note fp->current_step is always 0 for file mode. */
     for (t = fp->current_step + r->from_steps; t < fp->current_step + r->from_steps + r->nsteps; t++)
@@ -952,7 +952,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
     free (dims);
 
-    log_debug ("read_var_bb(): build ADIOS_VARCHUNK\n");
+//    log_debug ("read_var_bb(): build ADIOS_VARCHUNK\n");
     chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
     assert (chunk);
 
@@ -2688,12 +2688,13 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
             newreq->sel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
             assert (newreq->sel);
             newreq->sel->type = ADIOS_SELECTION_POINTS;
-            newreq->sel->u.points.npoints = n_elements;
-            newreq->sel->u.points.points = malloc (n_elements * type_size);
+            newreq->sel->u.points.ndim = sel->u.points.ndim;
+            newreq->sel->u.points.npoints = (remain > n_elements ? n_elements : remain);
+            newreq->sel->u.points.points = malloc (newreq->sel->u.points.npoints * newreq->sel->u.points.ndim * 8);
             assert (newreq->sel->u.points.points);
             memcpy (newreq->sel->u.points.points, 
-                    sel->u.points.points + (sel->u.points.npoints - remain) * type_size,
-                    n_elements * type_size
+                    sel->u.points.points + (sel->u.points.npoints - remain) * sel->u.points.ndim,
+                    newreq->sel->u.points.npoints * sel->u.points.ndim * 8
                    );
   
             newreq->varid = r->varid;
@@ -2705,6 +2706,7 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
             newreq->next = 0;
 
             list_insert_read_request_next (&h, newreq);
+
             remain -= n_elements;
         }
     }
