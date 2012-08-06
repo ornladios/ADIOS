@@ -174,6 +174,8 @@ const struct {
 
     ,{ "alacrity"	, adios_transform_alacrity }
     ,{ "indexed"	, adios_transform_alacrity }
+	,{ "compress"	, adios_transform_compress }
+	,{ "mloc"	, adios_transform_mloc }
 };
 const int NUM_ADIOS_TRANSFORM_NAMES = sizeof(ADIOS_TRANSFORM_NAMES)/sizeof(ADIOS_TRANSFORM_NAMES[0]);
 

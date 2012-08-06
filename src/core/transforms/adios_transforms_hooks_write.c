@@ -12,6 +12,8 @@
 DECLARE_TRANSFORM_WRITE_METHOD_UNIMPL(none);
 DECLARE_TRANSFORM_WRITE_METHOD(identity);
 DECLARE_TRANSFORM_WRITE_METHOD(alacrity);
+DECLARE_TRANSFORM_WRITE_METHOD(compress);
+DECLARE_TRANSFORM_WRITE_METHOD(mloc);
 
 // Transform write method registry
 adios_transform_write_method TRANSFORM_WRITE_METHODS[num_adios_transform_types];
@@ -24,6 +26,8 @@ void adios_transform_init() {
     REGISTER_TRANSFORM_WRITE_METHOD(none, adios_transform_none);
     REGISTER_TRANSFORM_WRITE_METHOD(identity, adios_transform_identity);
     REGISTER_TRANSFORM_WRITE_METHOD(alacrity, adios_transform_alacrity);
+	REGISTER_TRANSFORM_WRITE_METHOD(compress, adios_transform_compress);
+	REGISTER_TRANSFORM_WRITE_METHOD(mloc, adios_transform_mloc);
 
     adios_transforms_initialized = 1;
 }
