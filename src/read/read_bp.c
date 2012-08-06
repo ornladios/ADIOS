@@ -429,7 +429,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
             nr->from_steps = r->from_steps;
             nr->nsteps = r->nsteps;
             nr->data = r->data;
-            nr->datasize  = r->datasize;
+            nr->datasize  = size_of_type;
             nr->priv = r->priv;
 
             nsel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
@@ -453,10 +453,21 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 
                 chunk = read_var_bb (fp, nr);
                 nr->data = (char *) nr->data + size_of_type;
+
+                common_read_free_chunk (chunk);
             }
 
             free_selection (nsel);
             free (nr);
+
+            chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
+            assert (chunk);
+
+            chunk->varid = r->varid;
+            chunk->type = v->type;
+            chunk->sel = copy_selection (r->sel);
+            chunk->data = r->data;
+
             break;
         case ADIOS_SELECTION_WRITEBLOCK:
             chunk = read_var_wb (fp, r);
@@ -548,7 +559,29 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
         swap_order (ndim, start, &dummy);
         swap_order (ndim, count, &dummy);
     }
+/*
+    log_debug ("read_var_bb(): start(");
+    for (i = 0; i < ndim; i++)
+    {
+        log_debug_cont ("%lu", start[i]);
+        if (i != ndim - 1)
+        {
+            log_debug_cont (",");
+        }
+    }
+    log_debug_cont (")\n");
 
+    log_debug ("read_var_bb(): count(");
+    for (i = 0; i < ndim; i++)
+    {
+        log_debug_cont ("%lu", count[i]);
+        if (i != ndim - 1)
+        {
+            log_debug_cont (",");
+        }
+    }
+    log_debug_cont (")\n");
+*/
     /* items_read = how many data elements are we going to read in total (per timestep) */
     items_read = 1;
     for (i = 0; i < ndim; i++)
@@ -927,7 +960,6 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     chunk->type = v->type;
     chunk->sel = copy_selection (r->sel);
     chunk->data = r->data;
-
     return chunk;
 }
 
@@ -2462,6 +2494,9 @@ int adios_read_bp_perform_reads (const ADIOS_FILE *fp, int blocking)
     return 0;
 }
 
+/* This routine split a 'big' request into smaller ones which can be fit into
+ * buffer_size bytes of memory.
+ */
 static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, int buffer_size)
 {
     BP_PROC * p = (BP_PROC *) fp->fh;
@@ -2665,7 +2700,7 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
             newreq->from_steps = r->from_steps;
             newreq->nsteps = r->nsteps;
             newreq->data = r->data;
-            newreq->datasize = r->datasize;
+            newreq->datasize = type_size * newreq->sel->u.points.npoints;
             newreq->priv = r->priv;
             newreq->next = 0;
 
