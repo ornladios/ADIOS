@@ -171,4 +171,8 @@ int adios_transform_compress_apply(struct adios_file_struct *fd, struct adios_va
            // orig_size * 5/4;						// For the index + data
 // }
 
+#else
+
+DECLARE_TRANSFORM_WRITE_METHOD_UNIMPL(compress)
+
 #endif

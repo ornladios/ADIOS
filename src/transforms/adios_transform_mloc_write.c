@@ -35,4 +35,8 @@ int adios_transform_mloc_apply(struct adios_file_struct *fd, struct adios_var_st
     return 1;
 }
 
+#else
+
+DECLARE_TRANSFORM_WRITE_METHOD_UNIMPL(mloc)
+
 #endif
