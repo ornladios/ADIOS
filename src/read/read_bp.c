@@ -2470,22 +2470,24 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
     ADIOS_SELECTION * sel = r->sel;
     struct adios_index_var_struct_v1 * v;
     int type_size, n_elements, ndim;
-    int i, j, varid, remain, it;
+    int i, j, varid, remain, done;
     uint64_t pos[32], subbb[32], start[32], count[32];
 
+    log_debug ("split_req()\n");
     varid = map_req_varid (fp, r->varid);
     v = bp_find_var_byid (fh, varid);
     type_size = bp_get_type_size (v->type, "");
     assert (type_size);
 
     n_elements = buffer_size / type_size;
-
+    
+    printf ("n_elements = %d\n", n_elements);
     //TODO: handle string 
     if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
     {
         ndim = sel->u.bb.ndim;
         // convert chunk size to position within the bounding box
-        for (i = 0; i < ndim; i++)
+        for (i = ndim - 1; i > -1; i--)
         {
             pos[i] = n_elements % sel->u.bb.count[i];
             assert (sel->u.bb.count[i]);
@@ -2497,7 +2499,7 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
         {
             log_debug_cont ("%lu ", pos[i]);
         }
-        log_debug ("\n");
+        log_debug_cont ("\n");
 
         // calculate sub-bounding-box
         for (i = ndim - 1; i > -1; i--)
@@ -2513,11 +2515,11 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
 
                 if (j <= i)
                 {
-                    subbb[j] = pos[j] - 1;
+                    subbb[j] = pos[j];
                     j++;
                     while (j <= i)
                     {
-                        subbb[j] = sel->u.bb.count[j] - 1;
+                        subbb[j] = sel->u.bb.count[j];
                         j++;
                     }
                 }
@@ -2525,7 +2527,7 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
             }
             else
             {
-                subbb[i] = sel->u.bb.count[i] - 1;
+                subbb[i] = sel->u.bb.count[i];
             }
         }
 
@@ -2577,6 +2579,27 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
                     ndim * 8 
                    );
 
+            log_debug ("bb: (");
+            for (i = 0; i < ndim; i++)
+            {
+                log_debug_cont ("%lu", newreq->sel->u.bb.start[i]);
+                if (i != ndim - 1)
+                {
+                    log_debug_cont (",");
+                }
+            }
+            log_debug_cont (") (");
+            for (i = 0; i < ndim; i++)
+            {
+                log_debug_cont ("%lu", newreq->sel->u.bb.start[i] + newreq->sel->u.bb.count[i] - 1);
+                if (i != ndim - 1)
+                {
+                    log_debug_cont (",");
+                }
+            }
+            log_debug_cont (")\n");
+
+            done = 0;
             for (i = ndim - 1; i > -1; i--)
             {
                 // This dimension is finished.
@@ -2589,6 +2612,11 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
                     start[i] += count[i];
                     break;
                 }
+            }
+
+            if (i == -1)
+            {
+                done = 1;
             }
 
             newreq->varid = r->varid;
@@ -2607,7 +2635,7 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
             list_insert_read_request_next (&h, newreq);
 
             // all dimensions are finished and we are done
-            if (i == -1)
+            if (done)
             {
                 break;
             }
@@ -2725,6 +2753,8 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
         }
         else // memory is smaller than what it takes to read the entire thing in.
         {
+            log_debug ("adios_read_bp_check_reads(): memory is not large enough to contain the data (%d)\n",
+                       p->local_read_request_list->datasize);
             read_request * subreqs = split_req (fp, p->local_read_request_list, chunk_buffer_size);
             assert (subreqs);
 
@@ -2740,7 +2770,27 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
             }
 
             r->next = p->local_read_request_list;
-            p->local_read_request_list = r;
+            p->local_read_request_list = subreqs;
+
+            p->b = realloc (p->b, p->local_read_request_list->datasize);
+            p->local_read_request_list->data = p->b;
+
+            varchunk = read_var (fp, p->local_read_request_list);
+
+            if (varchunk)
+            {
+                // remove head from list
+                r = p->local_read_request_list;
+                p->local_read_request_list = p->local_read_request_list->next;
+                free(r);
+
+                * chunk = varchunk;
+                return 1;
+            }
+            else
+            {
+                return adios_errno;
+            }
         } 
     }
 

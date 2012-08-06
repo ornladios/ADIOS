@@ -38,8 +38,8 @@ build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = adios_global$(EXEEXT) adios_global_2files$(EXEEXT) \
 	adios_read_gpp$(EXEEXT) adios_read_global$(EXEEXT) \
-	adios_read_writeblock$(EXEEXT) adios_global_no_xml$(EXEEXT) \
-	adios_read_global_no_xml$(EXEEXT)
+	adios_read_writeblock$(EXEEXT) adios_read_chunk$(EXEEXT) \
+	adios_global_no_xml$(EXEEXT) adios_read_global_no_xml$(EXEEXT)
 subdir = examples/C/global-array
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -81,6 +81,10 @@ am_adios_global_no_xml_OBJECTS = adios_global_no_xml.$(OBJEXT)
 adios_global_no_xml_OBJECTS = $(am_adios_global_no_xml_OBJECTS)
 adios_global_no_xml_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1)
+am_adios_read_chunk_OBJECTS = adios_read_chunk.$(OBJEXT)
+adios_read_chunk_OBJECTS = $(am_adios_read_chunk_OBJECTS)
+adios_read_chunk_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
+	$(am__DEPENDENCIES_1)
 am_adios_read_global_OBJECTS =  \
 	adios_read_global-adios_read_global.$(OBJEXT)
 adios_read_global_OBJECTS = $(am_adios_read_global_OBJECTS)
@@ -112,11 +116,13 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(adios_global_SOURCES) $(adios_global_2files_SOURCES) \
-	$(adios_global_no_xml_SOURCES) $(adios_read_global_SOURCES) \
+	$(adios_global_no_xml_SOURCES) $(adios_read_chunk_SOURCES) \
+	$(adios_read_global_SOURCES) \
 	$(adios_read_global_no_xml_SOURCES) $(adios_read_gpp_SOURCES) \
 	$(adios_read_writeblock_SOURCES)
 DIST_SOURCES = $(adios_global_SOURCES) $(adios_global_2files_SOURCES) \
-	$(adios_global_no_xml_SOURCES) $(adios_read_global_SOURCES) \
+	$(adios_global_no_xml_SOURCES) $(adios_read_chunk_SOURCES) \
+	$(adios_read_global_SOURCES) \
 	$(adios_read_global_no_xml_SOURCES) $(adios_read_gpp_SOURCES) \
 	$(adios_read_writeblock_SOURCES)
 ETAGS = etags
@@ -375,6 +381,10 @@ adios_read_writeblock_SOURCES = adios_read_writeblock.c
 adios_read_writeblock_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSLIB_LDADD)
 adios_read_writeblock_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+adios_read_chunk_SOURCES = adios_read_chunk.c
+adios_read_chunk_LDADD = $(top_builddir)/src/libadiosread.a \
+	$(ADIOSLIB_LDADD)
+adios_read_chunk_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_gpp_SOURCES = adios_read_gpp.c
 adios_read_gpp_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSLIB_LDADD)
@@ -439,6 +449,9 @@ adios_global_2files$(EXEEXT): $(adios_global_2files_OBJECTS) $(adios_global_2fil
 adios_global_no_xml$(EXEEXT): $(adios_global_no_xml_OBJECTS) $(adios_global_no_xml_DEPENDENCIES) 
 	@rm -f adios_global_no_xml$(EXEEXT)
 	$(LINK) $(adios_global_no_xml_LDFLAGS) $(adios_global_no_xml_OBJECTS) $(adios_global_no_xml_LDADD) $(LIBS)
+adios_read_chunk$(EXEEXT): $(adios_read_chunk_OBJECTS) $(adios_read_chunk_DEPENDENCIES) 
+	@rm -f adios_read_chunk$(EXEEXT)
+	$(LINK) $(adios_read_chunk_LDFLAGS) $(adios_read_chunk_OBJECTS) $(adios_read_chunk_LDADD) $(LIBS)
 adios_read_global$(EXEEXT): $(adios_read_global_OBJECTS) $(adios_read_global_DEPENDENCIES) 
 	@rm -f adios_read_global$(EXEEXT)
 	$(LINK) $(adios_read_global_LDFLAGS) $(adios_read_global_OBJECTS) $(adios_read_global_LDADD) $(LIBS)
