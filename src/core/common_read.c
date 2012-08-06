@@ -67,6 +67,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     PairStruct *params, *p, *prev_p;
     int verbose_level, removeit, save;
     int retval;
+    char *end;
 
     adios_errno = err_no_error;
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
@@ -89,8 +90,8 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
         {
             if (p->value) {
                 errno = 0;
-                verbose_level = strtol(p->value, NULL, 10);
-                if (errno) {
+                verbose_level = strtol(p->value, &end, 10);
+                if (errno || (end != 0 && *end != '\0')) {
                     log_error ("Invalid 'verbose' parameter passed to read init function: '%s'\n", p->value);
                     verbose_level = 1; // print errors only
                 }

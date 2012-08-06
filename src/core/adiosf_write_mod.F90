@@ -99,9 +99,9 @@ module adios_write_mod
             integer,        intent(out) :: err
         end subroutine
 
-!
-! No-XML calls
-!
+        !
+        ! No-XML calls
+        !
         subroutine adios_declare_group (id, groupname, time_index, stats_flag, err)
             implicit none
             integer*8,      intent(out) :: id
@@ -163,7 +163,211 @@ module adios_write_mod
     !
     !
     interface adios_write
+        module procedure adios_write_int1_d0
+        module procedure adios_write_int2_d0
+        module procedure adios_write_int4_d0
+        module procedure adios_write_int8_d0
+        module procedure adios_write_real4_d0
+        module procedure adios_write_real8_d0
+        module procedure adios_write_complex8_d0
+        module procedure adios_write_complex16_d0
+        !module procedure adios_write_char_d0
+        module procedure adios_write_logical1_d0
+        module procedure adios_write_logical2_d0
+        module procedure adios_write_logical4_d0
+        module procedure adios_write_logical8_d0
+        module procedure adios_write_int1_d1
+        module procedure adios_write_int2_d1
+        module procedure adios_write_int4_d1
+        module procedure adios_write_int8_d1
+        module procedure adios_write_real4_d1
+        module procedure adios_write_real8_d1
+        module procedure adios_write_complex8_d1
+        module procedure adios_write_complex16_d1
+        module procedure adios_write_char_d1
+        module procedure adios_write_logical1_d1
+        module procedure adios_write_logical2_d1
+        module procedure adios_write_logical4_d1
+        module procedure adios_write_logical8_d1
+        module procedure adios_write_int1_d2
+        module procedure adios_write_int2_d2
+        module procedure adios_write_int4_d2
+        module procedure adios_write_int8_d2
+        module procedure adios_write_real4_d2
+        module procedure adios_write_real8_d2
+        module procedure adios_write_complex8_d2
+        module procedure adios_write_complex16_d2
+        module procedure adios_write_char_d2
+        module procedure adios_write_logical1_d2
+        module procedure adios_write_logical2_d2
+        module procedure adios_write_logical4_d2
+        module procedure adios_write_logical8_d2
+        module procedure adios_write_int1_d3
+        module procedure adios_write_int2_d3
+        module procedure adios_write_int4_d3
+        module procedure adios_write_int8_d3
+        module procedure adios_write_real4_d3
+        module procedure adios_write_real8_d3
+        module procedure adios_write_complex8_d3
+        module procedure adios_write_complex16_d3
+        module procedure adios_write_char_d3
+        module procedure adios_write_logical1_d3
+        module procedure adios_write_logical2_d3
+        module procedure adios_write_logical4_d3
+        module procedure adios_write_logical8_d3
+        module procedure adios_write_int1_d4
+        module procedure adios_write_int2_d4
+        module procedure adios_write_int4_d4
+        module procedure adios_write_int8_d4
+        module procedure adios_write_real4_d4
+        module procedure adios_write_real8_d4
+        module procedure adios_write_complex8_d4
+        module procedure adios_write_complex16_d4
+        module procedure adios_write_char_d4
+        module procedure adios_write_logical1_d4
+        module procedure adios_write_logical2_d4
+        module procedure adios_write_logical4_d4
+        module procedure adios_write_logical8_d4
+        module procedure adios_write_int1_d5
+        module procedure adios_write_int2_d5
+        module procedure adios_write_int4_d5
+        module procedure adios_write_int8_d5
+        module procedure adios_write_real4_d5
+        module procedure adios_write_real8_d5
+        module procedure adios_write_complex8_d5
+        module procedure adios_write_complex16_d5
+        module procedure adios_write_char_d5
+        module procedure adios_write_logical1_d5
+        module procedure adios_write_logical2_d5
+        module procedure adios_write_logical4_d5
+        module procedure adios_write_logical8_d5
+        module procedure adios_write_int1_d6
+        module procedure adios_write_int2_d6
+        module procedure adios_write_int4_d6
+        module procedure adios_write_int8_d6
+        module procedure adios_write_real4_d6
+        module procedure adios_write_real8_d6
+        module procedure adios_write_complex8_d6
+        module procedure adios_write_complex16_d6
+        module procedure adios_write_char_d6
+        module procedure adios_write_logical1_d6
+        module procedure adios_write_logical2_d6
+        module procedure adios_write_logical4_d6
+        module procedure adios_write_logical8_d6
+    end interface
 
+
+    !
+    !
+    ! ADIOS_READ generic interface 
+    !
+    ! Usage: call adios_read
+    !
+    !
+    interface adios_read
+        module procedure adios_read_int1_d0
+        module procedure adios_read_int2_d0
+        module procedure adios_read_int4_d0
+        module procedure adios_read_int8_d0
+        module procedure adios_read_real4_d0
+        module procedure adios_read_real8_d0
+        module procedure adios_read_complex8_d0
+        module procedure adios_read_complex16_d0
+        !module procedure adios_read_char_d0
+        module procedure adios_read_logical1_d0
+        module procedure adios_read_logical2_d0
+        module procedure adios_read_logical4_d0
+        module procedure adios_read_logical8_d0
+        module procedure adios_read_int1_d1
+        module procedure adios_read_int2_d1
+        module procedure adios_read_int4_d1
+        module procedure adios_read_int8_d1
+        module procedure adios_read_real4_d1
+        module procedure adios_read_real8_d1
+        module procedure adios_read_complex8_d1
+        module procedure adios_read_complex16_d1
+        module procedure adios_read_char_d1
+        module procedure adios_read_logical1_d1
+        module procedure adios_read_logical2_d1
+        module procedure adios_read_logical4_d1
+        module procedure adios_read_logical8_d1
+        module procedure adios_read_int1_d2
+        module procedure adios_read_int2_d2
+        module procedure adios_read_int4_d2
+        module procedure adios_read_int8_d2
+        module procedure adios_read_real4_d2
+        module procedure adios_read_real8_d2
+        module procedure adios_read_complex8_d2
+        module procedure adios_read_complex16_d2
+        module procedure adios_read_char_d2
+        module procedure adios_read_logical1_d2
+        module procedure adios_read_logical2_d2
+        module procedure adios_read_logical4_d2
+        module procedure adios_read_logical8_d2
+        module procedure adios_read_int1_d3
+        module procedure adios_read_int2_d3
+        module procedure adios_read_int4_d3
+        module procedure adios_read_int8_d3
+        module procedure adios_read_real4_d3
+        module procedure adios_read_real8_d3
+        module procedure adios_read_complex8_d3
+        module procedure adios_read_complex16_d3
+        module procedure adios_read_char_d3
+        module procedure adios_read_logical1_d3
+        module procedure adios_read_logical2_d3
+        module procedure adios_read_logical4_d3
+        module procedure adios_read_logical8_d3
+        module procedure adios_read_int1_d4
+        module procedure adios_read_int2_d4
+        module procedure adios_read_int4_d4
+        module procedure adios_read_int8_d4
+        module procedure adios_read_real4_d4
+        module procedure adios_read_real8_d4
+        module procedure adios_read_complex8_d4
+        module procedure adios_read_complex16_d4
+        module procedure adios_read_char_d4
+        module procedure adios_read_logical1_d4
+        module procedure adios_read_logical2_d4
+        module procedure adios_read_logical4_d4
+        module procedure adios_read_logical8_d4
+        module procedure adios_read_int1_d5
+        module procedure adios_read_int2_d5
+        module procedure adios_read_int4_d5
+        module procedure adios_read_int8_d5
+        module procedure adios_read_real4_d5
+        module procedure adios_read_real8_d5
+        module procedure adios_read_complex8_d5
+        module procedure adios_read_complex16_d5
+        module procedure adios_read_char_d5
+        module procedure adios_read_logical1_d5
+        module procedure adios_read_logical2_d5
+        module procedure adios_read_logical4_d5
+        module procedure adios_read_logical8_d5
+        module procedure adios_read_int1_d6
+        module procedure adios_read_int2_d6
+        module procedure adios_read_int4_d6
+        module procedure adios_read_int8_d6
+        module procedure adios_read_real4_d6
+        module procedure adios_read_real8_d6
+        module procedure adios_read_complex8_d6
+        module procedure adios_read_complex16_d6
+        module procedure adios_read_char_d6
+        module procedure adios_read_logical1_d6
+        module procedure adios_read_logical2_d6
+        module procedure adios_read_logical4_d6
+        module procedure adios_read_logical8_d6
+    end interface
+
+
+    contains
+
+    !
+    !
+    ! ADIOS_WRITE generic interface 
+    !
+    ! Usage: call adios_write (fd, varname, data, err)
+    !
+    !
         !
         ! scalars
         !
@@ -175,6 +379,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*1,      intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*2 scalar
@@ -184,6 +390,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*2,      intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*4 scalar
@@ -193,6 +401,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*4,      intent(in) :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*8 scalar
@@ -202,6 +412,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*8,      intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*4 scalar
@@ -211,6 +423,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*4,         intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*8 scalar
@@ -220,6 +434,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*8,         intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! COMPLEX (*8) scalar
@@ -229,6 +445,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex,        intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! DOUBLE-COMPLEX scalar
@@ -238,6 +456,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex*16,     intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! CHARACTER scalar (Same as 1D?)
@@ -247,6 +467,8 @@ module adios_write_mod
         !    character(*),   intent(in)  :: varname
         !    character(*),   intent(inout) :: data
         !    integer,        intent(in)  :: err 
+        !
+        !    call adios_write_f2c (fd, varname, data, err)
         !end subroutine
 
         ! LOGICAL*1 scalar
@@ -256,6 +478,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*1,      intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*2 scalar
@@ -265,6 +489,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*2,      intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*4 scalar
@@ -274,6 +500,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*4,      intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*8 scalar
@@ -283,6 +511,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*8,      intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
 
@@ -297,6 +527,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*1, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*2 array
@@ -306,6 +538,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*2, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*4 array
@@ -315,6 +549,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*4, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*8 array
@@ -324,6 +560,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*4 array
@@ -333,6 +571,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*4,    dimension(*), intent(out) :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*8 array
@@ -342,6 +582,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*8,   dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! COMPLEX (*8) array
@@ -351,6 +593,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex,   dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! DOUBLE-COMPLEX array
@@ -360,6 +604,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex*16,dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! CHARACTER array
@@ -369,6 +615,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             character(*),   intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*1 array
@@ -378,6 +626,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*1, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*2 array
@@ -387,6 +637,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*2, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*4 array
@@ -396,6 +648,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*4, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*8 array
@@ -405,6 +659,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*8, dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         !
@@ -418,6 +674,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*2 array
@@ -427,6 +685,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*4 array
@@ -436,6 +696,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*8 array
@@ -445,6 +707,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*4 array
@@ -454,6 +718,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*8 array
@@ -463,6 +729,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! COMPLEX (*8) array
@@ -472,6 +740,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! DOUBLE-COMPLEX array
@@ -481,6 +751,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! CHARACTER array
@@ -490,6 +762,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             character(*),dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*1 array
@@ -499,6 +773,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*2 array
@@ -508,6 +784,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*4 array
@@ -517,6 +795,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*8 array
@@ -526,6 +806,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         !
@@ -539,6 +821,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*2 array
@@ -548,6 +832,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*4 array
@@ -557,6 +843,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*8 array
@@ -566,6 +854,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*4 array
@@ -575,6 +865,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*8 array
@@ -584,6 +876,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! COMPLEX (*8) array
@@ -593,6 +887,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! DOUBLE-COMPLEX array
@@ -602,6 +898,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! CHARACTER array
@@ -611,6 +909,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             character(*),dimension(:,:),  intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*1 array
@@ -620,6 +920,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*2 array
@@ -629,6 +931,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*4 array
@@ -638,6 +942,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*8 array
@@ -647,6 +953,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         !
@@ -660,6 +968,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*2 array
@@ -669,6 +979,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*4 array
@@ -678,6 +990,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*8 array
@@ -687,6 +1001,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*4 array
@@ -696,6 +1012,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*8 array
@@ -705,6 +1023,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! COMPLEX (*8) array
@@ -714,6 +1034,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! DOUBLE-COMPLEX array
@@ -723,6 +1045,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! CHARACTER array
@@ -732,6 +1056,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             character(*),dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*1 array
@@ -741,6 +1067,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*2 array
@@ -750,6 +1078,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*4 array
@@ -759,6 +1089,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*8 array
@@ -768,6 +1100,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         !
@@ -781,6 +1115,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*2 array
@@ -790,6 +1126,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*4 array
@@ -799,6 +1137,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*8 array
@@ -808,6 +1148,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*4 array
@@ -817,6 +1159,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*8 array
@@ -826,6 +1170,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! COMPLEX (*8) array
@@ -835,6 +1181,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! DOUBLE-COMPLEX array
@@ -844,6 +1192,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! CHARACTER array
@@ -853,6 +1203,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             character(*),dimension(:,:,:,:),intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*1 array
@@ -862,6 +1214,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*2 array
@@ -871,6 +1225,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*4 array
@@ -880,6 +1236,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*8 array
@@ -889,6 +1247,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         !
@@ -902,6 +1262,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*2 array
@@ -911,6 +1273,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*4 array
@@ -920,6 +1284,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! INTEGER*8 array
@@ -929,6 +1295,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*4 array
@@ -938,6 +1306,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! REAL*8 array
@@ -947,6 +1317,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! COMPLEX (*8) array
@@ -956,6 +1328,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! DOUBLE-COMPLEX array
@@ -965,6 +1339,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! CHARACTER array
@@ -974,6 +1350,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             character(*),dimension(:,:,:,:,:),intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*1 array
@@ -983,6 +1361,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*2 array
@@ -992,6 +1372,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*4 array
@@ -1001,6 +1383,8 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
         ! LOGICAL*8 array
@@ -1010,9 +1394,11 @@ module adios_write_mod
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:,:,:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
+
+            call adios_write_f2c (fd, varname, data, err)
         end subroutine
 
-    end interface  ! ADIOS_WRITE
+    ! end of ADIOS_WRITE functions
 
 
 
@@ -1024,8 +1410,6 @@ module adios_write_mod
     ! Usage: call adios_read (fd, varname, buffer, buffer_size, err)
     !
     !
-    interface adios_read
-
         !
         ! scalar data
         !
@@ -1038,6 +1422,8 @@ module adios_write_mod
             integer*1,      intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*2 scalar
@@ -1048,6 +1434,8 @@ module adios_write_mod
             integer*2,      intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*4 scalar
@@ -1058,6 +1446,8 @@ module adios_write_mod
             integer*4,      intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*8 scalar
@@ -1068,6 +1458,8 @@ module adios_write_mod
             integer*8,      intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*4 scalar
@@ -1078,6 +1470,8 @@ module adios_write_mod
             real*4,         intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*8 scalar
@@ -1088,6 +1482,8 @@ module adios_write_mod
             real*8,         intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! COMPLEX (*8) scalar
@@ -1098,6 +1494,8 @@ module adios_write_mod
             complex,        intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! DOUBLE-COMPLEX scalar
@@ -1108,6 +1506,8 @@ module adios_write_mod
             complex*16,     intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! CHARACTER scalar
@@ -1118,6 +1518,8 @@ module adios_write_mod
         !    character(*),   intent(out) :: buffer
         !    integer*8,      intent(in)  :: buffer_size 
         !    integer,        intent(in)  :: err 
+        !
+        !    call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         !end subroutine
 
         ! LOGICAL*1 scalar
@@ -1128,6 +1530,8 @@ module adios_write_mod
             logical*1,      intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*2 scalar
@@ -1138,6 +1542,8 @@ module adios_write_mod
             logical*2,      intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*4 scalar
@@ -1148,6 +1554,8 @@ module adios_write_mod
             logical*4,      intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*8 scalar
@@ -1158,6 +1566,8 @@ module adios_write_mod
             logical*8,      intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
 
@@ -1173,6 +1583,8 @@ module adios_write_mod
             integer*1, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*2 array
@@ -1183,6 +1595,8 @@ module adios_write_mod
             integer*2, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*4 array
@@ -1193,6 +1607,8 @@ module adios_write_mod
             integer*4, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*8 array
@@ -1203,6 +1619,8 @@ module adios_write_mod
             integer*8, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*4 array
@@ -1213,6 +1631,8 @@ module adios_write_mod
             real*4,    dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*8 array
@@ -1223,6 +1643,8 @@ module adios_write_mod
             real*8,   dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! COMPLEX (*8) array
@@ -1233,6 +1655,8 @@ module adios_write_mod
             complex,   dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! DOUBLE-COMPLEX array
@@ -1243,6 +1667,8 @@ module adios_write_mod
             complex*16,dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! CHARACTER array
@@ -1253,6 +1679,8 @@ module adios_write_mod
             character(*),   intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*1 array
@@ -1263,6 +1691,8 @@ module adios_write_mod
             logical*1, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*2 array
@@ -1273,6 +1703,8 @@ module adios_write_mod
             logical*2, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*4 array
@@ -1283,6 +1715,8 @@ module adios_write_mod
             logical*4, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*8 array
@@ -1293,6 +1727,8 @@ module adios_write_mod
             logical*8, dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         !
@@ -1307,6 +1743,8 @@ module adios_write_mod
             integer*1, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*2 array
@@ -1317,6 +1755,8 @@ module adios_write_mod
             integer*2, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*4 array
@@ -1327,6 +1767,8 @@ module adios_write_mod
             integer*4, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*8 array
@@ -1337,6 +1779,8 @@ module adios_write_mod
             integer*8, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*4 array
@@ -1347,6 +1791,8 @@ module adios_write_mod
             real*4,    dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*8 array
@@ -1357,6 +1803,8 @@ module adios_write_mod
             real*8,   dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! COMPLEX (*8) array
@@ -1367,6 +1815,8 @@ module adios_write_mod
             complex,   dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! DOUBLE-COMPLEX array
@@ -1377,6 +1827,8 @@ module adios_write_mod
             complex*16,dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! CHARACTER array
@@ -1387,6 +1839,8 @@ module adios_write_mod
             character(*),dimension(*), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*1 array
@@ -1397,6 +1851,8 @@ module adios_write_mod
             logical*1, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*2 array
@@ -1407,6 +1863,8 @@ module adios_write_mod
             logical*2, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*4 array
@@ -1417,6 +1875,8 @@ module adios_write_mod
             logical*4, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*8 array
@@ -1427,6 +1887,8 @@ module adios_write_mod
             logical*8, dimension(:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         !
@@ -1441,6 +1903,8 @@ module adios_write_mod
             integer*1, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*2 array
@@ -1451,6 +1915,8 @@ module adios_write_mod
             integer*2, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*4 array
@@ -1461,6 +1927,8 @@ module adios_write_mod
             integer*4, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*8 array
@@ -1471,6 +1939,8 @@ module adios_write_mod
             integer*8, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*4 array
@@ -1481,6 +1951,8 @@ module adios_write_mod
             real*4,    dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*8 array
@@ -1491,6 +1963,8 @@ module adios_write_mod
             real*8,   dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! COMPLEX (*8) array
@@ -1501,6 +1975,8 @@ module adios_write_mod
             complex,   dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! DOUBLE-COMPLEX array
@@ -1511,6 +1987,8 @@ module adios_write_mod
             complex*16,dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! CHARACTER array
@@ -1521,6 +1999,8 @@ module adios_write_mod
             character(*),dimension(:,:),  intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*1 array
@@ -1531,6 +2011,8 @@ module adios_write_mod
             logical*1, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*2 array
@@ -1541,6 +2023,8 @@ module adios_write_mod
             logical*2, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*4 array
@@ -1551,6 +2035,8 @@ module adios_write_mod
             logical*4, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*8 array
@@ -1561,6 +2047,8 @@ module adios_write_mod
             logical*8, dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         !
@@ -1575,6 +2063,8 @@ module adios_write_mod
             integer*1, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*2 array
@@ -1585,6 +2075,8 @@ module adios_write_mod
             integer*2, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*4 array
@@ -1595,6 +2087,8 @@ module adios_write_mod
             integer*4, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*8 array
@@ -1605,6 +2099,8 @@ module adios_write_mod
             integer*8, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*4 array
@@ -1615,6 +2111,8 @@ module adios_write_mod
             real*4,    dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*8 array
@@ -1625,6 +2123,8 @@ module adios_write_mod
             real*8,   dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! COMPLEX (*8) array
@@ -1635,6 +2135,8 @@ module adios_write_mod
             complex,   dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! DOUBLE-COMPLEX array
@@ -1645,6 +2147,8 @@ module adios_write_mod
             complex*16,dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! CHARACTER array
@@ -1655,6 +2159,8 @@ module adios_write_mod
             character(*),dimension(:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*1 array
@@ -1665,6 +2171,8 @@ module adios_write_mod
             logical*1, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*2 array
@@ -1675,6 +2183,8 @@ module adios_write_mod
             logical*2, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*4 array
@@ -1685,6 +2195,8 @@ module adios_write_mod
             logical*4, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*8 array
@@ -1695,6 +2207,8 @@ module adios_write_mod
             logical*8, dimension(:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         !
@@ -1709,6 +2223,8 @@ module adios_write_mod
             integer*1, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*2 array
@@ -1719,6 +2235,8 @@ module adios_write_mod
             integer*2, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*4 array
@@ -1729,6 +2247,8 @@ module adios_write_mod
             integer*4, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*8 array
@@ -1739,6 +2259,8 @@ module adios_write_mod
             integer*8, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*4 array
@@ -1749,6 +2271,8 @@ module adios_write_mod
             real*4,    dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*8 array
@@ -1759,6 +2283,8 @@ module adios_write_mod
             real*8,   dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! COMPLEX (*8) array
@@ -1769,6 +2295,8 @@ module adios_write_mod
             complex,   dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! DOUBLE-COMPLEX array
@@ -1779,6 +2307,8 @@ module adios_write_mod
             complex*16,dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! CHARACTER array
@@ -1789,6 +2319,8 @@ module adios_write_mod
             character(*),dimension(:,:,:,:),intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*1 array
@@ -1799,6 +2331,8 @@ module adios_write_mod
             logical*1, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*2 array
@@ -1809,6 +2343,8 @@ module adios_write_mod
             logical*2, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*4 array
@@ -1819,6 +2355,8 @@ module adios_write_mod
             logical*4, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*8 array
@@ -1829,6 +2367,8 @@ module adios_write_mod
             logical*8, dimension(:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         !
@@ -1843,6 +2383,8 @@ module adios_write_mod
             integer*1, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*2 array
@@ -1853,6 +2395,8 @@ module adios_write_mod
             integer*2, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*4 array
@@ -1863,6 +2407,8 @@ module adios_write_mod
             integer*4, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! INTEGER*8 array
@@ -1873,6 +2419,8 @@ module adios_write_mod
             integer*8, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*4 array
@@ -1883,6 +2431,8 @@ module adios_write_mod
             real*4,    dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! REAL*8 array
@@ -1893,6 +2443,8 @@ module adios_write_mod
             real*8,   dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! COMPLEX (*8) array
@@ -1903,6 +2455,8 @@ module adios_write_mod
             complex,   dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! DOUBLE-COMPLEX array
@@ -1913,6 +2467,8 @@ module adios_write_mod
             complex*16,dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! CHARACTER array
@@ -1923,6 +2479,8 @@ module adios_write_mod
             character(*),dimension(:,:,:,:,:),intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*1 array
@@ -1933,6 +2491,8 @@ module adios_write_mod
             logical*1, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*2 array
@@ -1943,6 +2503,8 @@ module adios_write_mod
             logical*2, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*4 array
@@ -1953,6 +2515,8 @@ module adios_write_mod
             logical*4, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
         ! LOGICAL*8 array
@@ -1963,9 +2527,11 @@ module adios_write_mod
             logical*8, dimension(:,:,:,:,:,:), intent(out) :: buffer
             integer*8,      intent(in)  :: buffer_size 
             integer,        intent(in)  :: err 
+
+            call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
 
-    end interface  ! ADIOS_READ
+    ! end of ADIOS_READ functions
 
 end module
 

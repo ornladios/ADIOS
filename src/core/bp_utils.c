@@ -1058,7 +1058,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
         var_root = var_root->next;
     }
 
-    alloc_namelist (&fp->var_namelist, fp->nvars);
+    fp->var_namelist = (char **) malloc (sizeof (char *) * fp->nvars);
     p->varid_mapping = (int *) malloc (fp->nvars * 4);
     assert (p->varid_mapping);
 
@@ -1215,7 +1215,7 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
                               uint64_t *ldims, uint64_t *gdims, uint64_t *offsets,
                               int file_is_fortran)
 {
-    int is_global = 0, dummy = 0;
+    int is_global = 0, dummy = 0, has_time;
     int k;
 
     is_global = bp_get_dimension_generic(dims, ldims, gdims, offsets);
@@ -1229,7 +1229,8 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
         is_global = is_global || gdims[k];
     }*/
 
-
+    has_time = (gdims[ndim - 1] == 0);
+    // change all the stuff to C ordering
     if (file_is_fortran)
     {
         swap_order (ndim, gdims, &dummy);
@@ -1237,7 +1238,6 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
         swap_order (ndim, offsets, &dummy);
     }
 
-//
     if (!is_global)
     {
         /* local array */
@@ -1248,7 +1248,7 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
     }
     else
     {
-        if (gdims[ndim - 1] == 0) // with time
+        if (has_time)
         {
             if (!file_is_fortran)
             {
@@ -1282,7 +1282,7 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
             else
             {
                 // last dimension is the time (Fortran array)
-                if (ndim > 1 && ldims[ndim - 1] != 1)
+                if (ndim > 1 && ldims[0] != 1)
                 {
                     log_error ("ADIOS Error: this is a BP file with Fortran array "
                                "ordering but we didn't find an array to have time "
@@ -1295,6 +1295,13 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
                     }
 
                     log_error_cont (")\n");
+                }
+
+                for (k = 0; k < ndim - 1; k++)
+                {
+                    gdims[k] = gdims[k + 1];
+                    ldims[k] = ldims[k + 1];
+                    offsets[k] = offsets[k + 1]; 
                 }
             }
         }
@@ -1326,7 +1333,7 @@ void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_roo
 
 // NCSU ALACRITY-ADIOS - Factored out generic version of this function
 /* Fill out ndim and dims for the variable.
-   ndim and dims shouldn't include 'time' dimension.
+   ndim and dims doesn't include 'time' dimension.
 */
 void bp_get_dimensions_generic (BP_FILE * fh, struct adios_index_var_struct_v1 * var_root, int file_is_fortran,
                         int * ndim, uint64_t ** dims, int * nsteps, int use_pretransform_dimensions)

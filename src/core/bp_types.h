@@ -76,6 +76,7 @@ typedef struct BP_PROC {
     int streaming;
     int * varid_mapping;
     read_request * local_read_request_list;
+    void * b; //internal buffer for chunk reading
     void * priv;
 } BP_PROC;
 

@@ -427,1133 +427,103 @@ module adios_read_mod
 
     end interface
 
-
     !
     ! ADIOS_SCHEDULE_READ generic interface 
     !
     ! Usage: call adios_schedule_read (fp, sel, varname, from_step, nsteps,  data, err)
     !
     interface adios_schedule_read
-
-        !
-        ! scalars
-        !
-
-        ! INTEGER*1 scalar
-        subroutine adios_schedule_read_int1_d0 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*1,      intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*2 scalar
-        subroutine adios_schedule_read_int2_d0 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*2,      intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*4 scalar
-        subroutine adios_schedule_read_int4_d0 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*4,      intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*8 scalar
-        subroutine adios_schedule_read_int8_d0 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*8,      intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*4 scalar
-        subroutine adios_schedule_read_real4_d0 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*4,         intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*8 scalar
-        subroutine adios_schedule_read_real8_d0 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*8,        intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! COMPLEX (*8) scalar
-        subroutine adios_schedule_read_complex8_d0 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex,        intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! DOUBLE-COMPLEX scalar
-        subroutine adios_schedule_read_complex16_d0 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex*16,     intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! CHARACTER scalar
-        !subroutine adios_schedule_read_char_d0 (fp, sel, varname, from_step, nsteps, data, err)
-        !    implicit none
-        !    integer*8,      intent(in)  :: fp
-        !    integer*8,      intent(in)  :: sel
-        !    character(*),   intent(in)  :: varname
-        !    integer,        intent(in)  :: from_step
-        !    integer,        intent(in)  :: nsteps
-        !    character(*),   intent(out) :: data
-        !    integer,        intent(in)  :: err 
-        !end subroutine
-
-        ! LOGICAL*1 scalar
-        subroutine adios_schedule_read_logical1_d0 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*1,      intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*2 scalar
-        subroutine adios_schedule_read_logical2_d0 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*2,      intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*4 scalar
-        subroutine adios_schedule_read_logical4_d0 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*4,      intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*8 scalar
-        subroutine adios_schedule_read_logical8_d0 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*8,      intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        !
-        ! 1D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_schedule_read_int1_d1 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*1, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_schedule_read_int2_d1 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*2, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_schedule_read_int4_d1 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*4, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_schedule_read_int8_d1 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*8, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_schedule_read_real4_d1 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*4,    dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_schedule_read_real8_d1 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*8,   dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_schedule_read_complex8_d1 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex,   dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_schedule_read_complex16_d1 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex*16,dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_schedule_read_char_d1 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            character(*),   intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_schedule_read_logical1_d1 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*1, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_schedule_read_logical2_d1 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*2, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_schedule_read_logical4_d1 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*4, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_schedule_read_logical8_d1 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*8, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        !
-        ! 2D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_schedule_read_int1_d2 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*1, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_schedule_read_int2_d2 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*2, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_schedule_read_int4_d2 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*4, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_schedule_read_int8_d2 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*8, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_schedule_read_real4_d2 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*4,    dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_schedule_read_real8_d2 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*8,   dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_schedule_read_complex8_d2 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex,   dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_schedule_read_complex16_d2 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex*16,dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_schedule_read_char_d2 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            character(*),dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_schedule_read_logical1_d2 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*1, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_schedule_read_logical2_d2 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*2, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_schedule_read_logical4_d2 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*4, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_schedule_read_logical8_d2 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*8, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        !
-        ! 3D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_schedule_read_int1_d3 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*1, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_schedule_read_int2_d3 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*2, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_schedule_read_int4_d3 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*4, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_schedule_read_int8_d3 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*8, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_schedule_read_real4_d3 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*4,    dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_schedule_read_real8_d3 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*8,   dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_schedule_read_complex8_d3 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex,   dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_schedule_read_complex16_d3 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex*16,dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_schedule_read_char_d3 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            character(*),dimension(:,:),  intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_schedule_read_logical1_d3 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*1, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_schedule_read_logical2_d3 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*2, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_schedule_read_logical4_d3 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*4, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_schedule_read_logical8_d3 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*8, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        !
-        ! 4D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_schedule_read_int1_d4 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*1, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_schedule_read_int2_d4 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*2, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_schedule_read_int4_d4 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*4, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_schedule_read_int8_d4 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*8, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_schedule_read_real4_d4 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*4,    dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_schedule_read_real8_d4 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*8,   dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_schedule_read_complex8_d4 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex,   dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_schedule_read_complex16_d4 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex*16,dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_schedule_read_char_d4 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            character(*),dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_schedule_read_logical1_d4 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*1, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_schedule_read_logical2_d4 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*2, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_schedule_read_logical4_d4 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*4, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_schedule_read_logical8_d4 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*8, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        !
-        ! 5D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_schedule_read_int1_d5 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*1, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_schedule_read_int2_d5 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*2, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_schedule_read_int4_d5 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*4, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_schedule_read_int8_d5 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*8, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_schedule_read_real4_d5 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*4,    dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_schedule_read_real8_d5 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*8,   dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_schedule_read_complex8_d5 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex,   dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_schedule_read_complex16_d5 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex*16,dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_schedule_read_char_d5 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            character(*),dimension(:,:,:,:),intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_schedule_read_logical1_d5 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*1, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_schedule_read_logical2_d5 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*2, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_schedule_read_logical4_d5 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*4, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_schedule_read_logical8_d5 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*8, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        !
-        ! 6D data
-        !
-
-        ! INTEGER*1 array
-        subroutine adios_schedule_read_int1_d6 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*1, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*2 array
-        subroutine adios_schedule_read_int2_d6 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*2, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*4 array
-        subroutine adios_schedule_read_int4_d6 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*4, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! INTEGER*8 array
-        subroutine adios_schedule_read_int8_d6 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            integer*8, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*4 array
-        subroutine adios_schedule_read_real4_d6 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*4,    dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! REAL*8 array
-        subroutine adios_schedule_read_real8_d6 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            real*8,   dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! COMPLEX (*8) array
-        subroutine adios_schedule_read_complex8_d6 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex,   dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! DOUBLE-COMPLEX array
-        subroutine adios_schedule_read_complex16_d6 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            complex*16,dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! CHARACTER array
-        subroutine adios_schedule_read_char_d6 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            character(*),dimension(:,:,:,:,:),intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*1 array
-        subroutine adios_schedule_read_logical1_d6 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*1, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*2 array
-        subroutine adios_schedule_read_logical2_d6 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*2, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*4 array
-        subroutine adios_schedule_read_logical4_d6 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*4, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
-
-        ! LOGICAL*8 array
-        subroutine adios_schedule_read_logical8_d6 (fp, sel, varname, from_step, nsteps, data, err)
-            implicit none
-            integer*8,      intent(in)  :: fp
-            integer*8,      intent(in)  :: sel
-            character(*),   intent(in)  :: varname
-            integer,        intent(in)  :: from_step
-            integer,        intent(in)  :: nsteps
-            logical*8, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
-        end subroutine
+        module procedure adios_schedule_read_int1_d0
+        module procedure adios_schedule_read_int2_d0
+        module procedure adios_schedule_read_int4_d0
+        module procedure adios_schedule_read_int8_d0
+        module procedure adios_schedule_read_real4_d0
+        module procedure adios_schedule_read_real8_d0
+        module procedure adios_schedule_read_complex8_d0
+        module procedure adios_schedule_read_complex16_d0
+        !module procedure adios_schedule_read_char_d0
+        module procedure adios_schedule_read_logical1_d0
+        module procedure adios_schedule_read_logical2_d0
+        module procedure adios_schedule_read_logical4_d0
+        module procedure adios_schedule_read_logical8_d0
+        module procedure adios_schedule_read_int1_d1
+        module procedure adios_schedule_read_int2_d1
+        module procedure adios_schedule_read_int4_d1
+        module procedure adios_schedule_read_int8_d1
+        module procedure adios_schedule_read_real4_d1
+        module procedure adios_schedule_read_real8_d1
+        module procedure adios_schedule_read_complex8_d1
+        module procedure adios_schedule_read_complex16_d1
+        module procedure adios_schedule_read_char_d1
+        module procedure adios_schedule_read_logical1_d1
+        module procedure adios_schedule_read_logical2_d1
+        module procedure adios_schedule_read_logical4_d1
+        module procedure adios_schedule_read_logical8_d1
+        module procedure adios_schedule_read_int1_d2
+        module procedure adios_schedule_read_int2_d2
+        module procedure adios_schedule_read_int4_d2
+        module procedure adios_schedule_read_int8_d2
+        module procedure adios_schedule_read_real4_d2
+        module procedure adios_schedule_read_real8_d2
+        module procedure adios_schedule_read_complex8_d2
+        module procedure adios_schedule_read_complex16_d2
+        module procedure adios_schedule_read_char_d2
+        module procedure adios_schedule_read_logical1_d2
+        module procedure adios_schedule_read_logical2_d2
+        module procedure adios_schedule_read_logical4_d2
+        module procedure adios_schedule_read_logical8_d2
+        module procedure adios_schedule_read_int1_d3
+        module procedure adios_schedule_read_int2_d3
+        module procedure adios_schedule_read_int4_d3
+        module procedure adios_schedule_read_int8_d3
+        module procedure adios_schedule_read_real4_d3
+        module procedure adios_schedule_read_real8_d3
+        module procedure adios_schedule_read_complex8_d3
+        module procedure adios_schedule_read_complex16_d3
+        module procedure adios_schedule_read_char_d3
+        module procedure adios_schedule_read_logical1_d3
+        module procedure adios_schedule_read_logical2_d3
+        module procedure adios_schedule_read_logical4_d3
+        module procedure adios_schedule_read_logical8_d3
+        module procedure adios_schedule_read_int1_d4
+        module procedure adios_schedule_read_int2_d4
+        module procedure adios_schedule_read_int4_d4
+        module procedure adios_schedule_read_int8_d4
+        module procedure adios_schedule_read_real4_d4
+        module procedure adios_schedule_read_real8_d4
+        module procedure adios_schedule_read_complex8_d4
+        module procedure adios_schedule_read_complex16_d4
+        module procedure adios_schedule_read_char_d4
+        module procedure adios_schedule_read_logical1_d4
+        module procedure adios_schedule_read_logical2_d4
+        module procedure adios_schedule_read_logical4_d4
+        module procedure adios_schedule_read_logical8_d4
+        module procedure adios_schedule_read_int1_d5
+        module procedure adios_schedule_read_int2_d5
+        module procedure adios_schedule_read_int4_d5
+        module procedure adios_schedule_read_int8_d5
+        module procedure adios_schedule_read_real4_d5
+        module procedure adios_schedule_read_real8_d5
+        module procedure adios_schedule_read_complex8_d5
+        module procedure adios_schedule_read_complex16_d5
+        module procedure adios_schedule_read_char_d5
+        module procedure adios_schedule_read_logical1_d5
+        module procedure adios_schedule_read_logical2_d5
+        module procedure adios_schedule_read_logical4_d5
+        module procedure adios_schedule_read_logical8_d5
+        module procedure adios_schedule_read_int1_d6
+        module procedure adios_schedule_read_int2_d6
+        module procedure adios_schedule_read_int4_d6
+        module procedure adios_schedule_read_int8_d6
+        module procedure adios_schedule_read_real4_d6
+        module procedure adios_schedule_read_real8_d6
+        module procedure adios_schedule_read_complex8_d6
+        module procedure adios_schedule_read_complex16_d6
+        module procedure adios_schedule_read_char_d6
+        module procedure adios_schedule_read_logical1_d6
+        module procedure adios_schedule_read_logical2_d6
+        module procedure adios_schedule_read_logical4_d6
+        module procedure adios_schedule_read_logical8_d6
 
     end interface
 
@@ -1787,6 +757,1316 @@ module adios_read_mod
 
     end interface
 
+
+    contains 
+
+
+    !
+    ! ADIOS_SCHEDULE_READ procedures
+    !
+    ! Usage: call adios_schedule_read (fp, sel, varname, from_step, nsteps,  data, err)
+    !
+        !
+        ! scalars
+        !
+
+        ! INTEGER*1 scalar
+        subroutine adios_schedule_read_int1_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*1,      intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*2 scalar
+        subroutine adios_schedule_read_int2_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*2,      intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*4 scalar
+        subroutine adios_schedule_read_int4_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*4,      intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*8 scalar
+        subroutine adios_schedule_read_int8_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*8,      intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*4 scalar
+        subroutine adios_schedule_read_real4_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*4,         intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*8 scalar
+        subroutine adios_schedule_read_real8_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*8,        intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) scalar
+        subroutine adios_schedule_read_complex8_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex,        intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX scalar
+        subroutine adios_schedule_read_complex16_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex*16,     intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! CHARACTER scalar
+        !subroutine adios_schedule_read_char_d0 (fp, sel, varname, from_step, nsteps, data, err)
+        !    implicit none
+        !    integer*8,      intent(in)  :: fp
+        !    integer*8,      intent(in)  :: sel
+        !    character(*),   intent(in)  :: varname
+        !    integer,        intent(in)  :: from_step
+        !    integer,        intent(in)  :: nsteps
+        !    character(*),   intent(out) :: data
+        !    integer,        intent(in)  :: err 
+        !
+        !    call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        !end subroutine
+
+        ! LOGICAL*1 scalar
+        subroutine adios_schedule_read_logical1_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*1,      intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*2 scalar
+        subroutine adios_schedule_read_logical2_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*2,      intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*4 scalar
+        subroutine adios_schedule_read_logical4_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*4,      intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*8 scalar
+        subroutine adios_schedule_read_logical8_d0 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*8,      intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        !
+        ! 1D data
+        !
+
+        ! INTEGER*1 array
+        subroutine adios_schedule_read_int1_d1 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*1, dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*2 array
+        subroutine adios_schedule_read_int2_d1 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*2, dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*4 array
+        subroutine adios_schedule_read_int4_d1 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*4, dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*8 array
+        subroutine adios_schedule_read_int8_d1 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*8, dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*4 array
+        subroutine adios_schedule_read_real4_d1 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*4,    dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*8 array
+        subroutine adios_schedule_read_real8_d1 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*8,   dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) array
+        subroutine adios_schedule_read_complex8_d1 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex,   dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX array
+        subroutine adios_schedule_read_complex16_d1 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex*16,dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! CHARACTER array
+        subroutine adios_schedule_read_char_d1 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            character(*),   intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*1 array
+        subroutine adios_schedule_read_logical1_d1 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*1, dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*2 array
+        subroutine adios_schedule_read_logical2_d1 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*2, dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*4 array
+        subroutine adios_schedule_read_logical4_d1 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*4, dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*8 array
+        subroutine adios_schedule_read_logical8_d1 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*8, dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        !
+        ! 2D data
+        !
+
+        ! INTEGER*1 array
+        subroutine adios_schedule_read_int1_d2 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*1, dimension(:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*2 array
+        subroutine adios_schedule_read_int2_d2 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*2, dimension(:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*4 array
+        subroutine adios_schedule_read_int4_d2 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*4, dimension(:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*8 array
+        subroutine adios_schedule_read_int8_d2 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*8, dimension(:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*4 array
+        subroutine adios_schedule_read_real4_d2 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*4,    dimension(:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*8 array
+        subroutine adios_schedule_read_real8_d2 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*8,   dimension(:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) array
+        subroutine adios_schedule_read_complex8_d2 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex,   dimension(:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX array
+        subroutine adios_schedule_read_complex16_d2 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex*16,dimension(:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! CHARACTER array
+        subroutine adios_schedule_read_char_d2 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            character(*),dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*1 array
+        subroutine adios_schedule_read_logical1_d2 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*1, dimension(:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*2 array
+        subroutine adios_schedule_read_logical2_d2 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*2, dimension(:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*4 array
+        subroutine adios_schedule_read_logical4_d2 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*4, dimension(:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*8 array
+        subroutine adios_schedule_read_logical8_d2 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*8, dimension(:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        !
+        ! 3D data
+        !
+
+        ! INTEGER*1 array
+        subroutine adios_schedule_read_int1_d3 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*1, dimension(:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*2 array
+        subroutine adios_schedule_read_int2_d3 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*2, dimension(:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*4 array
+        subroutine adios_schedule_read_int4_d3 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*4, dimension(:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*8 array
+        subroutine adios_schedule_read_int8_d3 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*8, dimension(:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*4 array
+        subroutine adios_schedule_read_real4_d3 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*4,    dimension(:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*8 array
+        subroutine adios_schedule_read_real8_d3 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*8,   dimension(:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) array
+        subroutine adios_schedule_read_complex8_d3 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex,   dimension(:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX array
+        subroutine adios_schedule_read_complex16_d3 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex*16,dimension(:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! CHARACTER array
+        subroutine adios_schedule_read_char_d3 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            character(*),dimension(:,:),  intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*1 array
+        subroutine adios_schedule_read_logical1_d3 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*1, dimension(:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*2 array
+        subroutine adios_schedule_read_logical2_d3 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*2, dimension(:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*4 array
+        subroutine adios_schedule_read_logical4_d3 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*4, dimension(:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*8 array
+        subroutine adios_schedule_read_logical8_d3 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*8, dimension(:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        !
+        ! 4D data
+        !
+
+        ! INTEGER*1 array
+        subroutine adios_schedule_read_int1_d4 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*1, dimension(:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*2 array
+        subroutine adios_schedule_read_int2_d4 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*2, dimension(:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*4 array
+        subroutine adios_schedule_read_int4_d4 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*4, dimension(:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*8 array
+        subroutine adios_schedule_read_int8_d4 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*8, dimension(:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*4 array
+        subroutine adios_schedule_read_real4_d4 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*4,    dimension(:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*8 array
+        subroutine adios_schedule_read_real8_d4 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*8,   dimension(:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) array
+        subroutine adios_schedule_read_complex8_d4 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex,   dimension(:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX array
+        subroutine adios_schedule_read_complex16_d4 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex*16,dimension(:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! CHARACTER array
+        subroutine adios_schedule_read_char_d4 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            character(*),dimension(:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*1 array
+        subroutine adios_schedule_read_logical1_d4 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*1, dimension(:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*2 array
+        subroutine adios_schedule_read_logical2_d4 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*2, dimension(:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*4 array
+        subroutine adios_schedule_read_logical4_d4 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*4, dimension(:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*8 array
+        subroutine adios_schedule_read_logical8_d4 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*8, dimension(:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        !
+        ! 5D data
+        !
+
+        ! INTEGER*1 array
+        subroutine adios_schedule_read_int1_d5 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*1, dimension(:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*2 array
+        subroutine adios_schedule_read_int2_d5 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*2, dimension(:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*4 array
+        subroutine adios_schedule_read_int4_d5 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*4, dimension(:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*8 array
+        subroutine adios_schedule_read_int8_d5 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*8, dimension(:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*4 array
+        subroutine adios_schedule_read_real4_d5 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*4,    dimension(:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*8 array
+        subroutine adios_schedule_read_real8_d5 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*8,   dimension(:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) array
+        subroutine adios_schedule_read_complex8_d5 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex,   dimension(:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX array
+        subroutine adios_schedule_read_complex16_d5 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex*16,dimension(:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! CHARACTER array
+        subroutine adios_schedule_read_char_d5 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            character(*),dimension(:,:,:,:),intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*1 array
+        subroutine adios_schedule_read_logical1_d5 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*1, dimension(:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*2 array
+        subroutine adios_schedule_read_logical2_d5 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*2, dimension(:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*4 array
+        subroutine adios_schedule_read_logical4_d5 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*4, dimension(:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*8 array
+        subroutine adios_schedule_read_logical8_d5 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*8, dimension(:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        !
+        ! 6D data
+        !
+
+        ! INTEGER*1 array
+        subroutine adios_schedule_read_int1_d6 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*1, dimension(:,:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*2 array
+        subroutine adios_schedule_read_int2_d6 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*2, dimension(:,:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*4 array
+        subroutine adios_schedule_read_int4_d6 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*4, dimension(:,:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! INTEGER*8 array
+        subroutine adios_schedule_read_int8_d6 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            integer*8, dimension(:,:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*4 array
+        subroutine adios_schedule_read_real4_d6 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*4,    dimension(:,:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! REAL*8 array
+        subroutine adios_schedule_read_real8_d6 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            real*8,   dimension(:,:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) array
+        subroutine adios_schedule_read_complex8_d6 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex,   dimension(:,:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX array
+        subroutine adios_schedule_read_complex16_d6 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            complex*16,dimension(:,:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! CHARACTER array
+        subroutine adios_schedule_read_char_d6 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            character(*),dimension(:,:,:,:,:),intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*1 array
+        subroutine adios_schedule_read_logical1_d6 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*1, dimension(:,:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*2 array
+        subroutine adios_schedule_read_logical2_d6 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*2, dimension(:,:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*4 array
+        subroutine adios_schedule_read_logical4_d6 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*4, dimension(:,:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+        ! LOGICAL*8 array
+        subroutine adios_schedule_read_logical8_d6 (fp, sel, varname, from_step, nsteps, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer*8,      intent(in)  :: sel
+            character(*),   intent(in)  :: varname
+            integer,        intent(in)  :: from_step
+            integer,        intent(in)  :: nsteps
+            logical*8, dimension(:,:,:,:,:,:), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
 
 end module
 

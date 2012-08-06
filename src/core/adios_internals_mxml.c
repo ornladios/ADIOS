@@ -4388,6 +4388,7 @@ static PairStruct * get_and_preprocess_params (const char * parameters)
 {
     PairStruct *params, *p, *prev_p;
     int verbose_level, removeit, save;
+    char *end;
 
     params = text_to_name_value_pairs (parameters);
 
@@ -4407,8 +4408,8 @@ static PairStruct * get_and_preprocess_params (const char * parameters)
         {
             if (p->value) {
                 errno = 0;
-                verbose_level = strtol(p->value, NULL, 10);
-                if (errno) {
+                verbose_level = strtol(p->value, &end, 10);
+                if (errno || (end != 0 && *end != '\0')) {
                     log_error ("Invalid 'verbose' parameter passed to read init function: '%s'\n", p->value);
                     verbose_level = 1; // print errors only
                 }

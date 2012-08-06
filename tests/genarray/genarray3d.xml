@@ -41,7 +41,7 @@
 
   </adios-group>
 
-  <method group="genarray" method="POSIX"/>
+  <method group="genarray" method="MPI"/>
 
   <buffer size-MB="20" allocate-time="now"/>
 
