@@ -1026,7 +1026,7 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
             st = vi->dims[j]+istart[j+tidx];
         else
             st = istart[j+tidx];
-        if (icount[j] < 0)  // negative index means last-|index|+1-start
+        if (icount[j+tidx] < 0)  // negative index means last-|index|+1-start
             ct = vi->dims[j]+icount[j+tidx]+1-st;
         else
             ct = icount[j+tidx];
