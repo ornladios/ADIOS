@@ -73,11 +73,13 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/sith.$TARGET \
+    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/sith.$TARGET \
         --enable-dependency-tracking \
         --enable-research-transports  \
         --with-lustre=/usr \
-        $WITHDART \
+        $WITHDART 
+        #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
+        #--enable-shared --disable-static
         #--without-datatap #--without-infiniband
         #--with-hdf5=${SEQ_HDF5_DIR} \
         #--with-hdf5-libs="${SEQ_HDF5_CLIB}" \
@@ -326,8 +328,8 @@ elif [ `hostname | cut -c 1-8` == "jaguarpf" ]; then
         #export FC=mpif90
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
         export CFLAGS="-fPIC -g -O0" 
-        #./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xt5.$TARGET \
-        ./configure --prefix=/ccs/proj/fus022/norbert/RMP/adios.xt5.$TARGET \
+        #./configure --prefix=/ccs/proj/fus022/norbert/RMP/adios.xt5.$TARGET \
+        ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xk6.$TARGET \
         --enable-dependency-tracking \
         --with-cray-pmi=/opt/cray/pmi/default \
         --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
@@ -351,7 +353,7 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       ###############
       # Chester XK6 #
       ###############
-      TARGET=pgi
+      TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
       echo "Configure on Chester (XK6) for $TARGET env."
       export CC=cc
       #export CFLAGS="-Wall -g" 
@@ -374,13 +376,17 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
           module swap pgi pgi/11.8.0
           # NSSI needs -pgcpplibs flag 
           export LDFLAGS="-pgcpplibs" 
+          unset EXTRA_LIBS 
           WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/xk6/$TARGET"
       elif [ "$TARGET" == "gnu" ]; then
           # NSSI needs libstdc++
-          export EXTRA_LIBS="/opt/gcc/4.4.4/snos/lib64/libstdc++.a"
-          module swap gcc gcc/4.4.4
+          unset LDFLAGS 
+          export EXTRA_LIBS="/opt/gcc/4.7.0/snos/lib64/libstdc++.a"
+          #module swap gcc gcc/4.4.4
           WITHDART="--with-dataspacesss=/ccs/proj/e2e/dataspaces/xk6/$TARGET"
       else
+          unset LDFLAGS 
+          unset EXTRA_LIBS 
           WITHDART=""
       fi
       #module load szip
@@ -727,7 +733,7 @@ elif [ `hostname | cut -c 1-6` == "kraken" ]; then
     module load subversion
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-fPIC -g -O0" 
-    ./configure --prefix=/nics/d/home/norbert/adios/$TARGET \
+    ./configure --prefix=/${HOME}/adios/$TARGET \
         --enable-dependency-tracking \
         --with-portals=yes \
         --without-netcdf --without-nc4par --without-hdf5 --without-phdf5 \
