@@ -1680,7 +1680,9 @@ ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
     }
     
     varinfo->global = is_global_array (&(v->characteristics[0]));
+
     varinfo->nblocks = get_var_nblocks (v, varinfo->nsteps);
+
     assert (varinfo->nblocks);
 
     varinfo->sum_nblocks = v->characteristics_count;

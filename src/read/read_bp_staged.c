@@ -17,6 +17,7 @@
 #include <math.h>
 #include <pthread.h>
 #include <assert.h>
+#include <errno.h>
 #include "public/adios_types.h"
 #include "public/adios_read.h"
 #include "public/adios_error.h"
@@ -24,6 +25,8 @@
 #include "core/bp_types.h"
 #include "core/adios_read_hooks.h"
 #include "core/futils.h"
+#include "core/common_read.h"
+#include "core/adios_logger.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -31,14 +34,65 @@
 
 #define READ_CLOSE 0
 
+static int chunk_buffer_size = 1024*1024*16;
+static int poll_interval = 10; // 10 secs by default
+static int show_hidden_attrs = 0; // don't show hidden attr by default
 
-int adios_read_bp_staged_init_method (MPI_Comm comm, PairStruct * param)
+int adios_read_bp_staged_init_method (MPI_Comm comm, PairStruct * params)
 {
+    int  max_chunk_size;
+    PairStruct * p = params;
+
+    while (p)
+    {
+        if (!strcasecmp (p->name, "max_chunk_size"))
+        {
+            max_chunk_size = strtol(p->value, NULL, 10);
+            if (max_chunk_size > 0)
+            {
+                log_debug ("max_chunk_size set to %dMB for the read method\n", max_chunk_size);
+                chunk_buffer_size = max_chunk_size * 1024 * 1024;
+            }
+            else
+            {
+                log_error ("Invalid 'max_chunk_size' parameter given to the read method: '%s'\n", p->value);
+            }
+        }
+        else if (!strcasecmp (p->name, "poll_interval"))
+        {
+            errno = 0;
+            poll_interval = strtol(p->value, NULL, 10);
+            if (poll_interval > 0 && !errno)
+            {
+                log_debug ("poll_interval set to %d secs for READ_BP read method\n",
+                            poll_interval);
+            }
+            else
+            {
+                log_error ("Invalid 'poll_interval' parameter given to the READ_BP "
+                            "read method: '%s'\n", p->value);
+            }
+        }
+        else if (!strcasecmp (p->name, "show_hidden_attrs"))
+        {
+            show_hidden_attrs = 1;
+
+            log_debug ("show_hidden_attrs is set\n");
+        }
+
+        p = p->next;
+    }
+
     return 0;
 }
 
 int adios_read_bp_staged_finalize_method ()
 {
+    /* Set these back to default */
+    chunk_buffer_size = 1024*1024*16;
+    poll_interval = 10; // 10 secs by default
+    show_hidden_attrs = 0; // don't show hidden attr by default
+
     return 0;
 }
 

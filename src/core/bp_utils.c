@@ -1449,6 +1449,10 @@ int * get_var_nblocks (struct adios_index_var_struct_v1 * var_root, int nsteps)
         if (var_root->characteristics[i].time_index != prev_step)
         {
             j ++;
+            if (j > nsteps - 1)
+            {
+                break;
+            }
             prev_step = var_root->characteristics[i].time_index;
         }
 
