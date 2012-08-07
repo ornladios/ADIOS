@@ -247,12 +247,10 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 
 // NCSU ALACRITY-ADIOS - Cleanup for read request groups
 #define MYFREE(p) {if (p) free((void*)p); (p)=NULL;}
-static void clean_up_read_reqgroups(adios_transform_read_reqgroup *reqgroups_head) {
-    adios_transform_read_reqgroup *next;
-    while (reqgroups_head) {
-        next = reqgroups_head->next;
-        adios_transform_free_read_reqgroup(&reqgroups_head);
-        reqgroups_head = next;
+static void clean_up_read_reqgroups(adios_transform_read_reqgroup **reqgroups_head) {
+    adios_transform_read_reqgroup *removed;
+    while ((removed = adios_transform_read_reqgroup_pop(reqgroups_head)) != NULL) {
+        adios_transform_free_read_reqgroup(&removed);
     }
 }
 #undef MYFREE
@@ -270,7 +268,7 @@ int common_read_close (ADIOS_FILE *fp)
         free (internals->nvars_per_group);
         free (internals->nattrs_per_group);
         // NCSU ALACRITY-ADIOS - Cleanup read request groups
-        clean_up_read_reqgroups(internals->transform_reqgroups);
+        clean_up_read_reqgroups(&internals->transform_reqgroups);
         free (internals);
     } else {
         adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_read_close()\n");

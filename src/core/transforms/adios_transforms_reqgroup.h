@@ -86,6 +86,7 @@ void adios_transform_pg_reqgroup_append_subreq(adios_transform_pg_reqgroup *pg_r
 int adios_transform_pg_reqgroup_find_subreq(const adios_transform_pg_reqgroup *pg_reqgroup, const ADIOS_VARCHUNK *chunk,
                                             int skip_completed, adios_transform_read_subrequest **matching_subreq);
 int adios_transform_pg_reqgroup_remove_subreq(adios_transform_pg_reqgroup *pg_reqgroup, adios_transform_read_subrequest *subreq);
+adios_transform_read_subrequest * adios_transform_pg_reqgroup_pop_subreq(adios_transform_pg_reqgroup *pg_reqgroup);
 void adios_transform_free_pg_reqgroup(adios_transform_pg_reqgroup **pg_reqgroup_ptr);
 
 // adios_transform_read_reqgroup manipulation
@@ -95,10 +96,12 @@ adios_transform_read_reqgroup * adios_transform_new_read_reqgroup(const ADIOS_FI
                                                                   void *data, enum ADIOS_FLAG swap_endianness);
 void adios_transform_read_reqgroup_append_pg_reqgroup(adios_transform_read_reqgroup *reqgroup, adios_transform_pg_reqgroup *pg_reqgroup);
 int adios_transform_read_reqgroup_remove_pg_reqgroup(adios_transform_read_reqgroup *reqgroup, adios_transform_pg_reqgroup *pg_reqgroup);
+adios_transform_pg_reqgroup * adios_transform_read_reqgroup_pop_pg_reqgroup(adios_transform_read_reqgroup *reqgroup);
 int adios_transform_read_reqgroup_find_subreq(const adios_transform_read_reqgroup *reqgroup, const ADIOS_VARCHUNK *chunk, int skip_completed,
                                          adios_transform_pg_reqgroup **matching_pg_reqgroup, adios_transform_read_subrequest **matching_subreq);
 void adios_transform_read_reqgroup_append(adios_transform_read_reqgroup **head, adios_transform_read_reqgroup *new_reqgroup);
 adios_transform_read_reqgroup * adios_transform_read_reqgroup_remove(adios_transform_read_reqgroup **head, adios_transform_read_reqgroup *reqgroup);
+adios_transform_read_reqgroup * adios_transform_read_reqgroup_pop(adios_transform_read_reqgroup **head);
 void adios_transform_free_read_reqgroup(adios_transform_read_reqgroup **reqgroup_ptr);
 
 #endif /* ADIOS_TRANSFORMS_REQGROUP_H_ */

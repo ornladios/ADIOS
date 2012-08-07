@@ -222,17 +222,23 @@ int adios_transform_pg_reqgroup_remove_subreq(adios_transform_pg_reqgroup *pg_re
     return removed != NULL;
 }
 
+adios_transform_read_subrequest * adios_transform_pg_reqgroup_pop_subreq(adios_transform_pg_reqgroup *pg_reqgroup) {
+    adios_transform_read_subrequest *to_remove = pg_reqgroup->subreqs;
+    if (adios_transform_pg_reqgroup_remove_subreq(pg_reqgroup, to_remove))
+        return to_remove;
+    else
+        return NULL;
+}
+
 void adios_transform_free_pg_reqgroup(adios_transform_pg_reqgroup **pg_reqgroup_ptr) {
     adios_transform_pg_reqgroup *pg_reqgroup = *pg_reqgroup_ptr;
-    adios_transform_read_subrequest *subreq;
+    adios_transform_read_subrequest *removed_subreq;
 
     assert(!pg_reqgroup->next);
 
     // Free any remaining subrequests
-    while (pg_reqgroup->subreqs) {
-        subreq = pg_reqgroup->subreqs;
-        pg_reqgroup->subreqs = subreq->next;
-        adios_transform_free_subreq(&subreq);
+    while ((removed_subreq = adios_transform_pg_reqgroup_pop_subreq(pg_reqgroup)) != NULL) {
+        adios_transform_free_subreq(&removed_subreq);
     }
 
     // Free malloc'd resources
@@ -288,6 +294,14 @@ int adios_transform_read_reqgroup_remove_pg_reqgroup(adios_transform_read_reqgro
     return removed != NULL;
 }
 
+adios_transform_pg_reqgroup * adios_transform_read_reqgroup_pop_pg_reqgroup(adios_transform_read_reqgroup *reqgroup) {
+    adios_transform_pg_reqgroup *to_remove = reqgroup->pg_reqgroups;
+    if (adios_transform_read_reqgroup_remove_pg_reqgroup(reqgroup, to_remove))
+        return to_remove;
+    else
+        return NULL;
+}
+
 int adios_transform_read_reqgroup_find_subreq(const adios_transform_read_reqgroup *reqgroup, const ADIOS_VARCHUNK *chunk, int skip_completed,
                                               adios_transform_pg_reqgroup **matching_pg_reqgroup, adios_transform_read_subrequest **matching_subreq) {
     adios_transform_pg_reqgroup *cur;
@@ -321,17 +335,23 @@ adios_transform_read_reqgroup * adios_transform_read_reqgroup_remove(adios_trans
     return removed;
 }
 
+adios_transform_read_reqgroup * adios_transform_read_reqgroup_pop(adios_transform_read_reqgroup **head) {
+    adios_transform_read_reqgroup *to_remove = *head;
+    if (adios_transform_read_reqgroup_remove(head, to_remove))
+        return to_remove;
+    else
+        return NULL;
+}
+
 void adios_transform_free_read_reqgroup(adios_transform_read_reqgroup **reqgroup_ptr) {
     adios_transform_read_reqgroup *reqgroup = *reqgroup_ptr;
-    adios_transform_pg_reqgroup *pg_reqgroup;
+    adios_transform_pg_reqgroup *removed_pg_reqgroup;
 
     assert(!reqgroup->next);
 
     // Free any remaining subrequests
-    while (reqgroup->pg_reqgroups) {
-        pg_reqgroup = reqgroup->pg_reqgroups;
-        reqgroup->pg_reqgroups = pg_reqgroup->next;
-        adios_transform_free_pg_reqgroup(&pg_reqgroup);
+    while ((removed_pg_reqgroup = adios_transform_read_reqgroup_pop_pg_reqgroup(reqgroup)) != NULL) {
+        adios_transform_free_pg_reqgroup(&removed_pg_reqgroup);
     }
 
     // Free malloc'd resources
