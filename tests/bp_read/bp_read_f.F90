@@ -137,7 +137,7 @@ program read_bp_f
                 totalsize=totalsize*dims(j)
                 write(*,'(" ",i0,$)') dims(j)
             enddo
-            write(*,'("}")') dims(j)
+            write(*,'("}")') 
         endif
     enddo
 
