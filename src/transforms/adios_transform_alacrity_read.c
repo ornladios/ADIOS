@@ -66,7 +66,7 @@ adios_datablock * adios_transform_alacrity_pg_reqgroup_completed(
     void *decoded_data = decodeBuffer(&completed_pg_reqgroup->subreqs->data, true);
 
     return adios_datablock_new(reqgroup->transinfo->orig_type,
-                               &completed_pg_reqgroup->pg_selection->u.bb,
+                               completed_pg_reqgroup->pg_bounds_global,
                                decoded_data);
 }
 

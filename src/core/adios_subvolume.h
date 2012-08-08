@@ -42,6 +42,7 @@
 
 #include <stdint.h>
 #include "public/adios_types.h"
+#include "public/adios_read.h"
 #include "public/adios_selection.h"
 #include "core/adios_copyspec.h"
 
@@ -225,5 +226,33 @@ void compact_subvolume_ragged_offset(void *buf, int ndim, const uint64_t *subv_d
                                      const uint64_t *buf_dims, uint64_t buf_ragged_offset,
                                      const uint64_t *buf_subv_offsets,
                                      enum ADIOS_DATATYPES elem_type);
+
+
+/*
+ * Takes a selection that is relative to a given offset, and derelativizes it
+ * from that point. For a bounding box selection, this involves shifting the
+ * start coordinate of the bounding box by the given offset. For a point
+ * selection, this involves adding the given offset to each point.
+ *
+ * Only bounding box and point selections are supported at this time;
+ * attempting to derelativize some other selection type will cause a failed
+ * assertion.
+ *
+ * @param sel the relative selection
+ * @param the offset about which to derelativize the given selection
+ * @return a new selection that is derelativized.
+ */
+ADIOS_SELECTION * new_derelativized_selection(const ADIOS_SELECTION *sel, const uint64_t *sel_global_offset);
+
+/*
+ * Converts an ADIOS_VARBLOCK to a corresponding ADIOS_SELECTION of type
+ * bounding box, which will be a selection exactly matching the bounds of the
+ * given ADIOS_VARBLOCK within the global space.
+ * @param ndim the dimensionality of space
+ * @param the ADIOS_VARBLOCK to convert to a bounding box selection
+ * @return an ADIOS_SELECTION of type bounding box corresponding to the given
+ *         ADIOS_VARBLOCK.
+ */
+ADIOS_SELECTION * varblock_to_bb(int ndim, const ADIOS_VARBLOCK *vb);
 
 #endif /* ADIOS_SUBVOLUME_H_ */

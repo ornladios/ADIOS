@@ -5,12 +5,19 @@
  *      Author: David A. Boyuka II
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
-#include "util.h"
-#include "adios_subvolume.h"
+#include "core/util.h"
+#include "core/common_read.h"
+#include "core/adios_subvolume.h"
+
+void vector_add(int ndim, uint64_t *dst_vec, const uint64_t *vec1, const uint64_t *vec2) {
+    while (ndim--)
+        *dst_vec++ = *vec1++ + *vec2++;
+}
 
 uint64_t compute_volume(int ndim, const uint64_t *dims) {
     uint64_t volume = 1;
@@ -424,7 +431,7 @@ void compact_subvolume_ragged_offset(void *buf, int ndim, const uint64_t *subv_d
     if (!adios_copyspec_is_noop(&compact_copyspec)) {
         // Overlapping subvolume copy allowed because it matches the safety
         // condition as defined in comment at the top of adios_subvolume.h.
-        // NOTE:we infer no endianness swap, as this is an intra-buffer operation
+        // NOTE: we infer no endianness swap, as this is an intra-buffer operation
         copy_subvolume_ragged_offset_with_spec(
                 buf, buf, compact_copyspec,
                 0, buf_ragged_offset,
@@ -433,4 +440,58 @@ void compact_subvolume_ragged_offset(void *buf, int ndim, const uint64_t *subv_d
 
     // We use the arguments and a stack array as buffers; don't free them
     adios_copyspec_free(compact_copyspec, 0);
+}
+
+ADIOS_SELECTION * new_derelativized_selection(const ADIOS_SELECTION *sel, const uint64_t *sel_global_offset) {
+    ADIOS_SELECTION *new_sel;
+    switch (sel->type) {
+    case ADIOS_SELECTION_BOUNDINGBOX:
+    {
+        const int ndim = sel->u.bb.ndim;
+        const int dimsize = ndim * sizeof(uint64_t);
+        uint64_t * const new_start = malloc(dimsize);
+        uint64_t * const new_count = bufdup(sel->u.bb.count, sizeof(uint64_t), ndim);
+
+        // Add the global offset to the bounding box start
+        vector_add(ndim, new_start, sel->u.bb.start, sel_global_offset);
+
+        new_sel = common_read_selection_boundingbox(ndim, new_start, new_count);
+        break;
+    }
+    case ADIOS_SELECTION_POINTS:
+    {
+        const int ndim = sel->u.points.ndim;
+        const uint64_t npoints = sel->u.points.npoints;
+        uint64_t * const new_points = malloc(npoints * ndim * sizeof(uint64_t));
+
+        uint64_t i;
+        const uint64_t *cur_src_point = sel->u.points.points;
+        uint64_t *cur_dst_point = new_points;
+
+        // Add the global offset to each point
+        for (i = 0; i < npoints; i++) {
+            vector_add(ndim, cur_dst_point, cur_src_point, sel_global_offset);
+            cur_src_point += ndim;
+            cur_dst_point += ndim;
+        }
+
+        new_sel = common_read_selection_points(ndim, npoints, new_points);
+        break;
+    }
+    case ADIOS_SELECTION_WRITEBLOCK:
+    case ADIOS_SELECTION_AUTO:
+    default:
+        fprintf(stderr, "Internal error: attempt to call %s on a selection of type %d, but only BOUNDINGBOX (%d) and POINTS (%d) are supported.\n",
+                __FUNCTION__, sel->type, ADIOS_SELECTION_BOUNDINGBOX, ADIOS_SELECTION_POINTS);
+        assert(0);
+        break;
+    }
+
+    return new_sel;
+}
+
+ADIOS_SELECTION * varblock_to_bb(int ndim, const ADIOS_VARBLOCK *vb) {
+    return common_read_selection_boundingbox(ndim,
+                                             bufdup(vb->start, sizeof(uint64_t), ndim),
+                                             bufdup(vb->count, sizeof(uint64_t), ndim));
 }

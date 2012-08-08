@@ -173,11 +173,16 @@ void adios_transform_free_subreq(adios_transform_read_subrequest **subreq_ptr) {
 
 adios_transform_pg_reqgroup * adios_transform_new_pg_reqgroup(
         int blockidx, const ADIOS_VARBLOCK *orig_varblock,
-        const ADIOS_VARBLOCK *raw_varblock, ADIOS_SELECTION *pg_sel,
+        const ADIOS_VARBLOCK *raw_varblock,
+        const ADIOS_SELECTION *intersection_pg_rel,
+        const ADIOS_SELECTION *intersection_orig_sel_rel,
+        const ADIOS_SELECTION *intersection_global,
+        const ADIOS_SELECTION *pg_bounds_global,
         adios_subvolume_copy_spec *pg_intersection_to_global_cs) {
 
     adios_transform_pg_reqgroup *new_pg_reqgroup;
-    assert(orig_varblock); assert(pg_sel); assert(pg_intersection_to_global_cs);
+
+    assert(orig_varblock); assert(pg_intersection_to_global_cs);
     assert(blockidx >= 0);
 
     new_pg_reqgroup = calloc(sizeof(adios_transform_pg_reqgroup), 1);
@@ -185,7 +190,10 @@ adios_transform_pg_reqgroup * adios_transform_new_pg_reqgroup(
     new_pg_reqgroup->raw_var_length = raw_varblock->count[1]; // TODO: Break out into helper function in transforms_common
     new_pg_reqgroup->raw_varblock = raw_varblock;
     new_pg_reqgroup->orig_varblock = orig_varblock;
-    new_pg_reqgroup->pg_selection = pg_sel;
+    new_pg_reqgroup->intersection_pg_rel = intersection_pg_rel;
+    new_pg_reqgroup->intersection_orig_sel_rel = intersection_orig_sel_rel;
+    new_pg_reqgroup->intersection_global = intersection_global;
+    new_pg_reqgroup->pg_bounds_global = pg_bounds_global;
     new_pg_reqgroup->pg_intersection_to_global_copyspec = pg_intersection_to_global_cs;
     // Other fields are 0'd
 
@@ -242,7 +250,14 @@ void adios_transform_free_pg_reqgroup(adios_transform_pg_reqgroup **pg_reqgroup_
     }
 
     // Free malloc'd resources
-    common_read_selection_delete(pg_reqgroup->pg_selection);
+    if (pg_reqgroup->intersection_pg_rel)
+        common_read_selection_delete(pg_reqgroup->intersection_pg_rel);
+    if (pg_reqgroup->intersection_orig_sel_rel)
+        common_read_selection_delete(pg_reqgroup->intersection_orig_sel_rel);
+    if (pg_reqgroup->intersection_global)
+        common_read_selection_delete(pg_reqgroup->intersection_global);
+    if (pg_reqgroup->pg_bounds_global)
+        common_read_selection_delete(pg_reqgroup->pg_bounds_global);
     adios_copyspec_free(pg_reqgroup->pg_intersection_to_global_copyspec, 1);
     MYFREE(pg_reqgroup->transform_internal);
 

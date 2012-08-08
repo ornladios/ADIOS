@@ -30,8 +30,8 @@ void adios_transform_read_init() {
     REGISTER_TRANSFORM_READ_METHOD(none, adios_transform_none);
     REGISTER_TRANSFORM_READ_METHOD(identity, adios_transform_identity);
     REGISTER_TRANSFORM_READ_METHOD(alacrity, adios_transform_alacrity);
-	REGISTER_TRANSFORM_READ_METHOD(compress, adios_transform_compress);
-	REGISTER_TRANSFORM_READ_METHOD(mloc, adios_transform_mloc);
+    REGISTER_TRANSFORM_READ_METHOD(compress, adios_transform_compress);
+    REGISTER_TRANSFORM_READ_METHOD(mloc, adios_transform_mloc);
 
     adios_transforms_initialized = 1;
 }
@@ -41,7 +41,7 @@ void adios_transform_read_init() {
 
 adios_datablock * adios_datablock_new(
         enum ADIOS_DATATYPES elem_type,
-        const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bounds,
+        const ADIOS_SELECTION *bounds,
         void *data) {
 
     assert(bounds);
@@ -49,16 +49,22 @@ adios_datablock * adios_datablock_new(
     return adios_datablock_new_ragged_offset(elem_type, bounds, 0, data);
 }
 
+/*
+ * Note: only valid for bounding box selections (since there are no ragged
+ * arrays for point selections, and no other selection types are supported
+ * right now).
+ */
 adios_datablock * adios_datablock_new_ragged(
         enum ADIOS_DATATYPES elem_type,
-        const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bounds,
+        const ADIOS_SELECTION *bounds,
         const uint64_t *ragged_offsets, void *data) {
 
     assert(bounds);
     assert(data);
+    assert(bounds->type == ADIOS_SELECTION_BOUNDINGBOX);
 
     const uint64_t ragged_offset = ragged_offsets ?
-            compute_ragged_array_offset(bounds->ndim, ragged_offsets, bounds->count) :
+            compute_ragged_array_offset(bounds->u.bb.ndim, ragged_offsets, bounds->u.bb.count) :
             0;
 
     return adios_datablock_new_ragged_offset(elem_type, bounds, ragged_offset, data);
@@ -66,7 +72,7 @@ adios_datablock * adios_datablock_new_ragged(
 
 adios_datablock * adios_datablock_new_ragged_offset(
         enum ADIOS_DATATYPES elem_type,
-        const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bounds,
+        const ADIOS_SELECTION *bounds,
         uint64_t ragged_offset, void *data) {
 
     assert(bounds);
@@ -75,9 +81,7 @@ adios_datablock * adios_datablock_new_ragged_offset(
     adios_datablock *datablock = malloc(sizeof(adios_datablock));
 
     datablock->elem_type = elem_type;
-    datablock->bounds.ndim = bounds->ndim;
-    datablock->bounds.start = bufdup(bounds->start, sizeof(uint64_t), bounds->ndim);
-    datablock->bounds.count = bufdup(bounds->count, sizeof(uint64_t), bounds->ndim);
+    datablock->bounds = copy_selection(bounds);
     datablock->ragged_offset = ragged_offset;
     datablock->data = data;
 
@@ -87,8 +91,8 @@ adios_datablock * adios_datablock_new_ragged_offset(
 #define MYFREE(p) {if (p) free(p); (p)=NULL;}
 void adios_datablock_free(adios_datablock *datablock, int free_data) {
     if (datablock) {
-        MYFREE(datablock->bounds.start);
-        MYFREE(datablock->bounds.count);
+        if (datablock->bounds)
+            common_read_selection_delete(datablock->bounds);
         if (free_data)
             MYFREE(datablock->data);
     }
@@ -148,19 +152,30 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
         raw_vb = &raw_varinfo->blockinfo[idx];
         orig_vb = &transinfo->orig_blockinfo[idx];
 
-        // Get a new copyspec if we need one
-        if (!pg_intersection_to_global_copyspec)
-            pg_intersection_to_global_copyspec = malloc(sizeof(adios_subvolume_copy_spec));
-
         // Find the intersection, if any
+        pg_intersection_to_global_copyspec = malloc(sizeof(adios_subvolume_copy_spec));
         intersects = adios_copyspec_init_from_bb_intersection(pg_intersection_to_global_copyspec, &sel->u.bb, orig_vb->count, orig_vb->start);
+
         if (intersects) {
             // Make a PG read request group, and fill it with some subrequests, and link it into the read reqgroup
             adios_transform_pg_reqgroup *new_pg_reqgroup;
+            ADIOS_SELECTION *intersection_pg_rel;
+            ADIOS_SELECTION *intersection_orig_sel_rel;
+            ADIOS_SELECTION *intersection_global;
+            ADIOS_SELECTION *pg_bounds_global;
+
+            intersection_pg_rel = adios_copyspec_to_src_selection(pg_intersection_to_global_copyspec);
+            intersection_orig_sel_rel = adios_copyspec_to_dst_selection(pg_intersection_to_global_copyspec);
+            // Derelativize from PG space to global space
+            intersection_global = new_derelativized_selection(intersection_pg_rel, orig_vb->start);
+            pg_bounds_global = varblock_to_bb(transinfo->orig_ndim, orig_vb);
 
             // Transfer ownership of pg_intersection_to_global_copyspec
             new_pg_reqgroup = adios_transform_new_pg_reqgroup(idx, orig_vb, raw_vb,
-                                                              adios_copyspec_to_src_selection(pg_intersection_to_global_copyspec),
+                                                              intersection_pg_rel,
+                                                              intersection_orig_sel_rel,
+                                                              intersection_global,
+                                                              pg_bounds_global,
                                                               pg_intersection_to_global_copyspec);
 
             TRANSFORM_READ_METHODS[transinfo->transform_type].transform_generate_read_subrequests(new_reqgroup, new_pg_reqgroup);
@@ -169,6 +184,7 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
         } else {
             adios_copyspec_free(pg_intersection_to_global_copyspec, 1);
         }
+
         pg_intersection_to_global_copyspec = NULL;
     }
     assert(!pg_intersection_to_global_copyspec);

@@ -1278,6 +1278,7 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
                 {
                     ldims[k] = ldims[k + 1];
                 }
+                ldims[ndim-1] = 0;
             }
             else
             {
@@ -1301,8 +1302,11 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
                 {
                     gdims[k] = gdims[k + 1];
                     ldims[k] = ldims[k + 1];
-                    offsets[k] = offsets[k + 1]; 
+                    offsets[k] = offsets[k + 1];
                 }
+                gdims[ndim-1] = 0;
+                ldims[ndim-1] = 0;
+                offsets[ndim-1] = 0;
             }
         }
     }

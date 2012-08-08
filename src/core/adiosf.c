@@ -219,9 +219,6 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
         }
     }
 
-    // NCSU ALACRITY-ADIOS - Clear transform metadata
-    adios_transform_clear_transform_var(v);
-
     if (v->dimensions)
     {
         v->data = var;
@@ -286,7 +283,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
     free (buf1);
 }
 
-FC_FUNC_(adios_write_f2c, ADIOS_WRITE_F2C) 
+FC_FUNC_(adios_write_f2c, ADIOS_WRITE_F2C)
     (int64_t * fd_p, const char * name, void * var, int * err,int name_size, int var_size)
 {
     FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size);
@@ -329,10 +326,10 @@ void FC_FUNC_(adios_read, ADIOS_READ)
     }
 }
 
-void FC_FUNC_(adios_read_f2c, ADIOS_READ_F2C) 
+void FC_FUNC_(adios_read_f2c, ADIOS_READ_F2C)
     (int64_t * fd_p, const char * name, void * buffer,int64_t * buffer_size, int * err, int name_size)
 {
-    FC_FUNC_(adios_read, ADIOS_READ) 
+    FC_FUNC_(adios_read, ADIOS_READ)
     (fd_p, name, buffer, buffer_size, err, name_size);
 }
 

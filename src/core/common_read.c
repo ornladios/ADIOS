@@ -768,6 +768,8 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
  * read request group, then frees the given datablock. Assumes there is, in
  * fact, a user buffer (i.e., it is not NULL).
  *
+ * Assumes that the datablock selection is of type bounding box.
+ *
  * NOTE: also frees the data buffer within the datablock
  */
 static int apply_datablock_to_request_and_free(adios_datablock *datablock,
@@ -778,12 +780,13 @@ static int apply_datablock_to_request_and_free(adios_datablock *datablock,
     assert(reqgroup->orig_sel);
     assert(reqgroup->orig_data);
     assert(reqgroup->orig_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
-    assert(reqgroup->orig_sel->u.bb.ndim == datablock->bounds.ndim);
+    assert(datablock->bounds->type == ADIOS_SELECTION_BOUNDINGBOX);
+    assert(reqgroup->orig_sel->u.bb.ndim == datablock->bounds->u.bb.ndim);
 
     const int intersects =
         adios_copyspec_init_from_2bb_intersection(copyspec,
                                                   &reqgroup->orig_sel->u.bb,
-                                                  &datablock->bounds);
+                                                  &datablock->bounds->u.bb);
     if (intersects) {
         copy_subvolume_ragged_offset_with_spec(
                 reqgroup->orig_data, datablock->data, copyspec,
@@ -815,9 +818,10 @@ static ADIOS_VARCHUNK * extract_chunk_from_datablock_and_free(adios_datablock *r
     assert(result); assert(reqgroup);
     assert(reqgroup->orig_sel);
     assert(reqgroup->orig_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
-    assert(reqgroup->orig_sel->u.bb.ndim == result->bounds.ndim);
+    assert(reqgroup->orig_sel->u.bb.ndim == result->bounds->u.bb.ndim);
+    assert(result->bounds->type == ADIOS_SELECTION_BOUNDINGBOX);
 
-    const int ndim = result->bounds.ndim;
+    const int ndim = result->bounds->u.bb.ndim;
     const int dimsize = ndim * sizeof(uint64_t);
 
     inter_goffset = malloc(dimsize);
@@ -825,7 +829,7 @@ static ADIOS_VARCHUNK * extract_chunk_from_datablock_and_free(adios_datablock *r
     inter_dims = malloc(dimsize);
 
     const int intersects =
-            intersect_bb(&result->bounds, &reqgroup->orig_sel->u.bb,
+            intersect_bb(&result->bounds->u.bb, &reqgroup->orig_sel->u.bb,
                          inter_goffset, inter_offset_within_result, NULL, inter_dims);
 
     if (intersects) {
@@ -834,7 +838,7 @@ static ADIOS_VARCHUNK * extract_chunk_from_datablock_and_free(adios_datablock *r
         // Compact the data within the datablock buffer so it is fully
         // contiguous according to the dimensions we will return to the user
         compact_subvolume_ragged_offset(result->data, ndim, inter_dims,
-                                        result->bounds.count, result->ragged_offset,
+                                        result->bounds->u.bb.count, result->ragged_offset,
                                         inter_offset_within_result, result->elem_type);
 
         // Populate the chunk struct

@@ -47,9 +47,8 @@ adios_datablock * adios_transform_identity_pg_reqgroup_completed(
     void *pg_data = completed_pg_reqgroup->subreqs->data;
     completed_pg_reqgroup->subreqs->data = NULL;
 
-    assert(completed_pg_reqgroup->pg_selection->type == ADIOS_SELECTION_BOUNDINGBOX);
     return adios_datablock_new(reqgroup->transinfo->orig_type,
-                               &completed_pg_reqgroup->pg_selection->u.bb,
+                               completed_pg_reqgroup->pg_bounds_global,
                                pg_data);
 }
 

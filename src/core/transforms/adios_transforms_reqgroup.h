@@ -28,13 +28,17 @@ typedef struct _adios_transform_read_subrequest {
 typedef struct _adios_transform_pg_reqgroup {
     int completed;
 
-    int blockidx;
+    // PG and selection information/geometry
+    int blockidx;						// The block ID of this PG within the variable
     uint64_t raw_var_length;			// Transformed variable data length, in bytes
     const ADIOS_VARBLOCK *raw_varblock;	// Points into adios_transform_read_reqgroup->varinfo->blockinfo; do not free here
     const ADIOS_VARBLOCK *orig_varblock;// Points into adios_transform_read_reqgroup->transinfo->orig_blockinfo; do not free here
 
-    ADIOS_SELECTION *pg_selection;
-    adios_subvolume_copy_spec *pg_intersection_to_global_copyspec;
+    const ADIOS_SELECTION *intersection_pg_rel;
+    const ADIOS_SELECTION *intersection_orig_sel_rel;
+    const ADIOS_SELECTION *intersection_global;
+    const ADIOS_SELECTION *pg_bounds_global;
+    const adios_subvolume_copy_spec *pg_intersection_to_global_copyspec;
 
     int num_subreqs;
     int num_completed_subreqs;
@@ -58,7 +62,7 @@ typedef struct _adios_transform_read_reqgroup {
 
     int						from_steps;
     int                     nsteps;
-    const ADIOS_SELECTION 	*orig_sel;
+    const ADIOS_SELECTION 	*orig_sel; // Global space
     void                  	*orig_data;
 
     int num_pg_reqgroups;
@@ -80,7 +84,11 @@ void adios_transform_free_subreq(adios_transform_read_subrequest **subreq_ptr);
 
 // adios_transform_pg_reqgroup manipulation
 adios_transform_pg_reqgroup * adios_transform_new_pg_reqgroup(int blockidx, const ADIOS_VARBLOCK *orig_varblock,
-                                                              const ADIOS_VARBLOCK *raw_varblock, ADIOS_SELECTION *pg_sel,
+                                                              const ADIOS_VARBLOCK *raw_varblock,
+                                                              const ADIOS_SELECTION *intersection_pg_rel,
+                                                              const ADIOS_SELECTION *intersection_orig_sel_rel,
+                                                              const ADIOS_SELECTION *intersection_global,
+                                                              const ADIOS_SELECTION *pg_bounds_global,
                                                               adios_subvolume_copy_spec *pg_intersection_to_global_cs);
 void adios_transform_pg_reqgroup_append_subreq(adios_transform_pg_reqgroup *pg_reqgroup, adios_transform_read_subrequest *subreq);
 int adios_transform_pg_reqgroup_find_subreq(const adios_transform_pg_reqgroup *pg_reqgroup, const ADIOS_VARCHUNK *chunk,

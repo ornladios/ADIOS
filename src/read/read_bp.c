@@ -27,12 +27,6 @@
 #include "core/common_read.h"
 #include "core/adios_logger.h"
 
-// LAYERFIX
-// NCSU ALACRITY-ADIOS - Include necessary headers
-//#include "core/adios_transforms_common.h"
-//#include "core/adios_transforms_read.h"
-//#include "core/adios_transforms_util.h"
-
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
@@ -2340,6 +2334,11 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
                                     &var_root->characteristics[i].dims,
                                  ldims, gdims, offsets, file_is_fortran
                                  );
+
+        // NCSU ALACRITY-ADIOS - If a time dimension was removed above, update
+        // dimcount so that dimension copy/swapping works below
+        if (ldims[dimcount - 1] == 0)
+            dimcount--;
 
         /*
         if (dimcount != varinfo->ndim) // has time
