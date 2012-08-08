@@ -32,11 +32,8 @@ module genarray_comm
 
     real*8, dimension(:,:,:), allocatable :: double_xyz
 
-    ! MPI COMM_WORLD is for all codes started up at once on Cray XK6 
-    integer :: wrank, wnproc
-
-    ! MPI 'world' for this app variables
-    integer :: app_comm, color
+    ! MPI variables
+    integer :: group_comm
     integer :: rank, nproc
     integer :: ierr
 
@@ -56,30 +53,17 @@ end module genarray_comm
 
 program genarray
     use genarray_comm
+    use adios_write_mod
     implicit none
     include 'mpif.h'
 
-    !print *,"call MPI_Init "
     call MPI_Init (ierr)
-    ! World comm spans all applications started with the same aprun command 
-    ! on a Cray XK6
-    !print *,"call MPI_rank (world) "
-    call MPI_Comm_rank (MPI_COMM_WORLD, wrank, ierr)
-    !print *,"call MPI_size (world) "
-    call MPI_Comm_size (MPI_COMM_WORLD, wnproc , ierr)
-    ! Have to split and create a 'world' communicator for genarray only
-    color = 1
-    !print *,"call MPI_split "
-    call MPI_Comm_split (MPI_COMM_WORLD, color, wrank, app_comm, ierr)
-    !print *,"call MPI_rank (app) "
-    call MPI_Comm_rank (app_comm, rank, ierr)
-    !print *,"call MPI_size (app) "
-    call MPI_Comm_size (app_comm, nproc , ierr)
+    call MPI_Comm_dup (MPI_COMM_WORLD, group_comm, ierr)
+    call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
+    call MPI_Comm_size (group_comm, nproc , ierr)
 
-    !print *,"call adios_init "
     call adios_init ("genarray3d.xml", ierr)
-    !print *,"MPI_Barrier "
-    call MPI_Barrier (app_comm, ierr)
+    !call MPI_Barrier (group_comm, ierr)
 
     call processArgs()
     if (rank == 0) then
@@ -107,12 +91,9 @@ program genarray
 
     call writeArray()
     ! Terminate
-    call MPI_Barrier (app_comm, ierr)
-    call adios_finalize (rank, ierr)
     call MPI_Barrier (MPI_COMM_WORLD, ierr)
-    print *,"Writer calls MPI_Finalize"
+    call adios_finalize (rank, ierr)
     call MPI_Finalize (ierr)
-    print *,"Exit writer code "
 end program genarray
 
 
@@ -183,30 +164,33 @@ end subroutine generateLocalArray
 !!***************************
 subroutine writeArray()
     use genarray_comm
+    use adios_write_mod
     implicit none
     integer*8 adios_handle, adios_groupsize
     integer adios_err
     integer :: tstep
     character(2) :: mode = "w"
+    character(len=256) :: outfilename
     include 'mpif.h'
 
 
     if (rank==0) print '("Writing: "," filename ",14x,"size(GB)",4x,"io_time(sec)",6x,"GB/s")'
     do tstep=1,timesteps
-        if (tstep > 1) mode = "a"
+        !if (tstep > 1) mode = "a"
         double_xyz = tstep + double_xyz
-        call MPI_BARRIER(app_comm, adios_err)
+        call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
         io_start_time = MPI_WTIME()
         group = "genarray"
-        call adios_open (adios_handle, group, outputfile, mode, app_comm, adios_err)
+        write (outfilename,'(a,".",i3.3,".bp")') trim(outputfile),tstep
+        call adios_open (adios_handle, group, outfilename, mode, group_comm, adios_err)
 #include "gwrite_genarray.fh"
         call adios_close (adios_handle, adios_err)
-        call MPI_BARRIER(app_comm ,adios_err)
+        call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
         io_end_time = MPI_WTIME()
         io_total_time = io_end_time - io_start_time
         sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
         gbs = sz/io_total_time
-        if (rank==0) print '("Writing: ",a20,d12.2,2x,d12.2,2x,d12.3)', outputfile,sz,io_total_time,gbs
+        if (rank==0) print '("Writing: ",a20,d12.2,2x,d12.2,2x,d12.3)', outfilename,sz,io_total_time,gbs
         if (tstep<timesteps) call sleep(sleeptime)
      end do
 end subroutine writeArray
