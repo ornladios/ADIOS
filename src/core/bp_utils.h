@@ -21,6 +21,7 @@
 
 void bp_alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
 void bp_realloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
+int bp_get_endianness( uint32_t change_endianness );
 int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 		  	      struct adios_index_var_struct_v1 ** root,
 			      uint64_t j);
@@ -32,9 +33,13 @@ int bp_read_close (struct adios_bp_buffer_struct_v1 * b);
 int bp_read_open (const char * filename,
 	 	  MPI_Comm comm, 
 		  struct BP_FILE * fh);
+MPI_File * get_BP_file_handle(struct BP_file_handle * l, uint32_t file_index);
+void add_BP_file_handle (struct BP_file_handle ** l, struct BP_file_handle * n);
+void close_all_BP_files (struct BP_file_handle * l);
 int bp_open (const char * fname,
              MPI_Comm comm,
              struct BP_FILE * fh);
+int bp_close (BP_FILE * fh);
 int bp_read_minifooter (struct BP_FILE * bp_struct);
 int bp_parse_pgs (struct BP_FILE * fh);
 int bp_parse_attrs (struct BP_FILE * fh);

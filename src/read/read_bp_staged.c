@@ -103,11 +103,128 @@ ADIOS_FILE * adios_read_bp_staged_open_stream (const char * fname, MPI_Comm comm
 
 ADIOS_FILE * adios_read_bp_staged_open_file (const char * fname, MPI_Comm comm)
 {
-    return 0;
+    int i, rank;
+    struct BP_PROC * p;
+    BP_FILE * fh;
+    ADIOS_FILE * fp;
+
+    log_debug ("adios_read_bp_open_file\n");
+
+    MPI_Comm_rank (comm, &rank);
+
+    fh = (BP_FILE *) malloc (sizeof (BP_FILE));
+    assert (fh);
+
+    fh->fname = (fname ? strdup (fname) : 0L);
+    fh->sfh = 0;
+    fh->comm = comm;
+    fh->gvar_h = 0;
+    fh->pgs_root = 0;
+    fh->vars_root = 0;
+    fh->attrs_root = 0;
+    fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
+    assert (fh->b);
+
+    p = (struct BP_PROC *) malloc (sizeof (struct BP_PROC));
+    assert (p);
+    p->rank = rank;
+    p->fh = fh;
+    p->streaming = 0;
+    p->varid_mapping = 0; // maps perceived id to real id
+    p->local_read_request_list = 0;
+    p->b = 0;
+    p->priv = 0;
+
+    fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
+    assert (fp);
+
+    if (bp_open (fname, comm, fh) < 0)
+    {
+        adios_error (err_file_open_error, "File open failed: %s", fname);
+        return 0;
+    }
+
+    /* fill out ADIOS_FILE struct */
+    fp->fh = (uint64_t) p;
+
+    /* '-1' means that we want all steps. 
+     * This will seek to the last step. So we need to set current_step back properly.
+     * Usually bp_seek_to_step comes after release_step call, to first free up some
+     * memory allocated by the previous step. This is the first seek call and, therefore,
+     * no release_step.
+     */
+    bp_seek_to_step (fp, -1, show_hidden_attrs);
+    /* It was agreed that, for file open the current step should be set to 0,
+     * instead of the start time. The var_namelist and attr_namelist should
+     * consist of all steps. For stream open, this is done differently.
+     * 07/2012 - Q.Liu
+     */
+    fp->current_step = 0;
+    fp->last_step = fh->tidx_stop - fh->tidx_start;
+
+    fp->path = strdup (fh->fname);
+    fp->endianness = bp_get_endianness (fh->mfooter.change_endianness);
+    fp->version = fh->mfooter.version;
+    fp->file_size = fh->mfooter.file_size;
+
+    return fp;
 }
 
 int adios_read_bp_staged_close (ADIOS_FILE *fp)
 {
+    struct BP_PROC * p;
+    BP_FILE * fh;
+
+    if (!fp)
+    {
+        return 0;
+    }
+
+    p = (struct BP_PROC *) fp->fh;
+    assert (p);
+
+    fh = p->fh;
+
+    if (p->fh)
+    {
+        bp_close (fh);
+        p->fh = 0;
+    }
+
+    if (p->varid_mapping)
+    {
+        free (p->varid_mapping);
+        p->varid_mapping = 0;
+    }
+
+    if (p->local_read_request_list)
+    {
+        list_free_read_request (p->local_read_request_list);
+        p->local_read_request_list = 0;
+    }
+
+    free (p);
+
+    if (fp->var_namelist)
+    {
+        free_namelist (fp->var_namelist, fp->nvars);
+        fp->var_namelist = 0;
+    }
+
+    if (fp->attr_namelist)
+    {
+        free_namelist (fp->attr_namelist, fp->nattrs);
+        fp->attr_namelist = 0;
+    }
+
+    if (fp->path)
+    {
+        free (fp->path);
+        fp->path = 0;
+    }
+    // internal_data field is taken care of by common reader layer
+    free (fp);
+
     return 0;
 }
 
@@ -121,9 +238,9 @@ void adios_read_bp_staged_release_step (ADIOS_FILE *fp)
 
 }
 
-ADIOS_VARINFO * adios_read_bp_staged_inq_var_byid (const ADIOS_FILE *gp, int varid)
+ADIOS_VARINFO * adios_read_bp_staged_inq_var_byid (const ADIOS_FILE * fp, int varid)
 {
-    return 0;
+    return adios_read_bp_inq_var_byid (fp, varid);
 }
 
 int adios_read_bp_staged_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo, int per_step_stat, int per_block_stat)

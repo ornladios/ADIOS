@@ -29,16 +29,16 @@ int main (int argc, char ** argv)
     int         rank, size, i, j, datasize, if_any;
     MPI_Comm    comm = MPI_COMM_WORLD;
     enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
-    ADIOS_SELECTION * sel;
+    ADIOS_SELECTION * sel1, * sel2;
     ADIOS_VARCHUNK * chunk = 0;
     void * data = NULL;
-    uint64_t start[2], count[2], bytes_read = 0;
+    uint64_t start[2], count[2], npoints, * points;
    
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    adios_read_init_method (method, comm, "verbose=4;max_chunk_size=1");
+    adios_read_init_method (method, comm, "max_chunk_size=1;verbose=4");
 
     ADIOS_FILE * f = adios_read_open_file ("adios_global.bp", method, comm);
     ADIOS_VARINFO * varinfo = adios_inq_var (f, "temperature");
@@ -74,8 +74,41 @@ int main (int argc, char ** argv)
             count[i] = varinfo->dims[i];
         }
 
-        sel = adios_selection_boundingbox (varinfo->ndim, start, count);
-        adios_schedule_read (f, sel, "temperature", 0, 1, data);
+        sel1 = adios_selection_boundingbox (varinfo->ndim, start, count);
+
+        npoints = 1;
+        for (i = 0; i < varinfo->ndim; i++)
+        {
+            npoints *= count[i];
+        }
+
+        points = (uint64_t *) malloc (npoints * varinfo->ndim * 8);
+        for (i = 0; i < npoints; i++)
+        {
+            uint64_t temp = i;
+            for (j = varinfo->ndim - 1; j > -1; j--)
+            {
+                points[i * varinfo->ndim + j] = temp % count[j];
+                temp = temp/count[j];
+            }
+        }
+/*
+        for (i = 0; i < npoints; i++)
+        {
+            printf ("(");
+            for (j = 0; j < varinfo->ndim; j++)
+            {
+                printf ("%lu ",points[i * varinfo->ndim + j]);
+            }
+            printf (")");
+        }
+
+        printf ("\n");
+*/
+        sel2 = adios_selection_points (varinfo->ndim, npoints, points);
+
+        adios_schedule_read (f, sel1, "temperature", 0, 1, data);
+        adios_schedule_read (f, sel2, "temperature", 0, 1, data);
         adios_perform_reads (f, 0);
         while (adios_check_reads (f, &chunk) > 0)
         {
@@ -101,7 +134,8 @@ int main (int argc, char ** argv)
             adios_free_chunk (chunk);
         }
 
-        adios_selection_delete (sel);
+        adios_selection_delete (sel1);
+        adios_selection_delete (sel2);
     }
 
     adios_free_varinfo (varinfo);

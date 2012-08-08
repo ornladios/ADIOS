@@ -37,7 +37,6 @@ static int show_hidden_attrs = 0; // don't show hidden attr by default
 static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE * fp, read_request * r);
 static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r);
 static int bp_close (BP_FILE * fh);
-static int adios_read_bp_get_endianness( uint32_t change_endianness);
 static int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps);
 static int map_req_varid (const ADIOS_FILE * fp, int varid);
 static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
@@ -91,47 +90,6 @@ static int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
     }
 
     return -1;
-}
-
-MPI_File * get_BP_file_handle(struct BP_file_handle * l, uint32_t file_index)
-{
-    if (!l)
-        return 0;
-
-    while (l)
-    {
-        if (l->file_index == file_index)
-            return &l->fh;
-
-        l = l->next;
-    }
-
-    return 0;
-}
-
-void add_BP_file_handle (struct BP_file_handle ** l, struct BP_file_handle * n)
-{
-    if (!n)
-        return;
-
-    n->next = *l;
-    *l = n;
-}
-
-
-void close_all_BP_files (struct BP_file_handle * l)
-{
-    struct BP_file_handle * n;
-
-    while (l)
-    {
-        n = l->next;
-
-        MPI_File_close (&l->fh);
-        free (l);
-
-        l = n;
-    }
 }
 
 #define MPI_FILE_READ_OPS1                          \
@@ -310,7 +268,7 @@ void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
     fp->fh = (uint64_t) p;
     fp->file_size = fh->mfooter.file_size;
     fp->version = fh->mfooter.version;
-    fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
+    fp->endianness = bp_get_endianness (fh->mfooter.change_endianness);
     fp->last_step = fh->tidx_stop - 1;
 
     /* Seek to the initial step. */
@@ -963,27 +921,6 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     return chunk;
 }
 
-/* Return 0: if file is little endian, 1 if file is big endian 
- * We know if it is different from the current system, so here
- * we determine the current endianness and report accordingly.
- */
-static int adios_read_bp_get_endianness( uint32_t change_endianness )
-{
-   int LE = 0;
-   int BE = !LE;
-   int i = 1;
-   char *p = (char *) &i;
-   int current_endianness;
-   if (p[0] == 1) // Lowest address contains the least significant byte
-       current_endianness = LE;
-   else
-       current_endianness = BE;
-    if (change_endianness == adios_flag_yes)
-        return !current_endianness;
-    else
-        return current_endianness;
-}
-
 int adios_read_bp_init_method (MPI_Comm comm, PairStruct * params)
 {
     int  max_chunk_size;
@@ -1146,7 +1083,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
     fp->file_size = fh->mfooter.file_size;
     fp->version = fh->mfooter.version;
     fp->path = strdup (fh->fname);
-    fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
+    fp->endianness = bp_get_endianness (fh->mfooter.change_endianness);
 
     /* Seek to the initial step. */
     bp_seek_to_step (fp, 0, show_hidden_attrs);
@@ -1263,7 +1200,7 @@ typedef struct {
     fp->last_step = fh->tidx_stop - fh->tidx_start;
 
     fp->path = strdup (fh->fname);
-    fp->endianness = adios_read_bp_get_endianness (fh->mfooter.change_endianness);
+    fp->endianness = bp_get_endianness (fh->mfooter.change_endianness);
     fp->version = fh->mfooter.version;
     fp->file_size = fh->mfooter.file_size;
 
@@ -1324,198 +1261,6 @@ int adios_read_bp_close (ADIOS_FILE * fp)
     }
     // internal_data field is taken care of by common reader layer
     free (fp);
-
-    return 0;
-}
-
-int bp_close (BP_FILE * fh)
-{
-    struct BP_GROUP_VAR * gh = fh->gvar_h;
-    struct BP_GROUP_ATTR * ah = fh->gattr_h;
-    struct adios_index_var_struct_v1 * vars_root = fh->vars_root, *vr;
-    struct adios_index_attribute_struct_v1 * attrs_root = fh->attrs_root, *ar;
-    struct bp_index_pg_struct_v1 * pgs_root = fh->pgs_root, *pr;
-    int i,j;
-    MPI_File mpi_fh = fh->mpi_fh;
-
-    adios_errno = 0;
-    if (fh->mpi_fh) 
-        MPI_File_close (&mpi_fh);
-
-    if (fh->sfh)
-        close_all_BP_files (fh->sfh);
-
-    if (fh->b) {
-        adios_posix_close_internal (fh->b);
-        free(fh->b);
-    }
-
-    /* Free variable structures */
-    /* alloc in bp_utils.c: bp_parse_vars() */
-    while (vars_root) {
-        vr = vars_root;
-        vars_root = vars_root->next;
-        for (j = 0; j < vr->characteristics_count; j++) {
-            // alloc in bp_utils.c:bp_parse_characteristics() <- bp_get_characteristics_data()
-            if (vr->characteristics[j].dims.dims)
-                free (vr->characteristics[j].dims.dims);
-            if (vr->characteristics[j].value)
-                free (vr->characteristics[j].value);
-            // NCSU - Clearing up statistics
-            if (vr->characteristics[j].stats)
-            {
-                uint8_t k = 0, idx = 0;
-                uint8_t i = 0, count = adios_get_stat_set_count(vr->type);
-
-                while (vr->characteristics[j].bitmap >> k)
-                {
-                    if ((vr->characteristics[j].bitmap >> k) & 1)
-                    {
-                        for (i = 0; i < count; i ++)
-                        {
-                            if (k == adios_statistic_hist)
-                            {
-                                struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct *) (vr->characteristics [j].stats[i][idx].data);
-                                free (hist->breaks);
-                                free (hist->frequencies);
-                                free (hist);
-                            }
-                            else
-                            free (vr->characteristics[j].stats [i][idx].data);
-                        }
-                        idx ++;
-                    }
-                    k ++;
-                }
-
-                for (i = 0; i < count; i ++)
-                    free (vr->characteristics[j].stats [i]);
-
-                free (vr->characteristics[j].stats);
-                vr->characteristics[j].stats = 0;
-            }
-        }
-        if (vr->characteristics) 
-            free (vr->characteristics);
-        if (vr->group_name) 
-            free (vr->group_name);
-        if (vr->var_name) 
-            free (vr->var_name);
-        if (vr->var_path) 
-            free (vr->var_path);
-        free(vr);
-    }
-
-    fh->vars_root = 0;
-
-    /* Free attributes structures */
-    /* alloc in bp_utils.c bp_parse_attrs() */
-    while (attrs_root) {
-        ar = attrs_root;
-        attrs_root = attrs_root->next;
-        for (j = 0; j < ar->characteristics_count; j++) {
-            if (ar->characteristics[j].value)
-                free (ar->characteristics[j].value);
-        }
-        if (ar->characteristics) 
-            free (ar->characteristics);
-        if (ar->group_name) 
-            free (ar->group_name);
-        if (ar->attr_name) 
-            free (ar->attr_name);
-        if (ar->attr_path) 
-            free (ar->attr_path);
-        free(ar);
-    }
-
-    fh->attrs_root = 0;
-
-    /* Free process group structures */
-    /* alloc in bp_utils.c bp_parse_pgs() first loop */
-    //printf ("pgs: %d\n", fh->mfooter.pgs_count);
-    while (pgs_root) {
-        pr = pgs_root;
-        pgs_root = pgs_root->next;
-        //printf("%d\tpg pid=%d addr=%x next=%x\n",i, pr->process_id, pr, pr->next);
-        if (pr->group_name)
-            free(pr->group_name);
-        if (pr->time_index_name)
-            free(pr->time_index_name);
-        free(pr);
-    }
-
-    fh->pgs_root = 0;
-
-    /* Free variable structures in BP_GROUP_VAR */
-    if (gh) {
-        for (j=0;j<2;j++) { 
-            for (i=0;i<gh->group_count;i++) {
-                if (gh->time_index[j][i])
-                    free(gh->time_index[j][i]);
-            }
-            if (gh->time_index[j])
-                free(gh->time_index[j]);
-        }
-        free (gh->time_index);
-    
-        for (i=0;i<gh->group_count;i++) { 
-            if (gh->namelist[i])
-                free(gh->namelist[i]);
-        }
-        if (gh->namelist)
-            free (gh->namelist);
-
-        for (i=0;i<fh->mfooter.vars_count;i++) {
-            if (gh->var_namelist[i])
-                free(gh->var_namelist[i]);
-            if (gh->var_offsets[i]) 
-                free(gh->var_offsets[i]);
-        }
-        if (gh->var_namelist)
-            free (gh->var_namelist);
-
-        if (gh->var_offsets) 
-            free(gh->var_offsets);
-
-        if (gh->var_counts_per_group)
-            free(gh->var_counts_per_group);
-
-        if (gh->pg_offsets)
-            free (gh->pg_offsets);
-
-        free (gh);
-    }
-
-    fh->gvar_h = 0;
-
-    /* Free attribute structures in BP_GROUP_ATTR */
-    if (ah) {
-        for (i = 0; i < fh->mfooter.attrs_count; i++) {
-            if (ah->attr_offsets[i]) 
-                free(ah->attr_offsets[i]);
-            if (ah->attr_namelist[i]) 
-                free(ah->attr_namelist[i]);
-        }
-        if (ah->attr_offsets)
-            free(ah->attr_offsets);
-        if (ah->attr_namelist)
-            free(ah->attr_namelist);
-        if (ah->attr_counts_per_group) 
-            free(ah->attr_counts_per_group);
-
-        free(ah);
-    }
-
-    fh->gattr_h = 0;
- 
-    if (fh->fname)
-    {
-        free (fh->fname);
-        fh->fname = 0;
-    }
-           
-    if (fh)
-        free (fh);    
 
     return 0;
 }
