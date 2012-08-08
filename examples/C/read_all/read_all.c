@@ -1,12 +1,12 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-/* ADIOS C Example: 
- *  read all variables and attributes from 
+/* ADIOS C Example:
+ *  read all variables and attributes from
  *    all groups in a BP file
  *
  * This is a sequential program.
@@ -18,7 +18,7 @@
 
 const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx);
 
-int main (int argc, char ** argv) 
+int main (int argc, char ** argv)
 {
     char        filename [256];
     int         rank, size, gidx, i, j, k,l;
@@ -78,9 +78,9 @@ int main (int argc, char ** argv)
                         return -1;
                     }
 
-                    for (j = 0; j < v->ndim; j++) 
-                        count[j] = v->dims[j];   
-                    
+                    for (j = 0; j < v->ndim; j++)
+                        count[j] = v->dims[j];
+
                     bytes_read = adios_read_var_byid (g, i, start, count, data);
 
                     if (bytes_read < 0) {
@@ -89,13 +89,13 @@ int main (int argc, char ** argv)
                         printf ("Too big to print\n");
                     } else if (v->ndim == 1) {
                         printf ("        [");
-                        for (j = 0; j < v->dims[0]; j++) 
+                        for (j = 0; j < v->dims[0]; j++)
                             printf("%s ", value_to_string(v->type, data, j));
                         printf ("]\n");
                     } else if (v->ndim == 2) {
                         for (j = 0; j < v->dims[0]; j++) {
                             printf ("        row %d: [", j);
-                            for (k = 0; k < v->dims[1]; k++) 
+                            for (k = 0; k < v->dims[1]; k++)
                                printf("%s ", value_to_string(v->type, data, j*v->dims[1] + k));
                             printf ("]\n");
                         }
@@ -105,7 +105,8 @@ int main (int argc, char ** argv)
                             for (k = 0; k < v->dims[1]; k++) {
                                 printf ("        row %d: [", k);
                                 for (l = 0; l < v->dims[2]; l++) {
-                                    printf("%s ", value_to_string(v->type, data, j*v->dims[1]*v->dims[2] + k*v->dims[1] + l));
+                                    // NCSU ALACRITY-ADIOS - Fixed bug, k*v->dims[1] changed to  k*v->dims[2]
+                                    printf("%s ", value_to_string(v->type, data, j*v->dims[1]*v->dims[2] + k*v->dims[2] + l));
                                 }
                                 printf ("]\n");
                             }
@@ -128,7 +129,7 @@ int main (int argc, char ** argv)
             int  asize;
             void *adata;
             adios_get_attr_byid (g, i, &atype, &asize, &adata);
-            printf("    %-9s  %s = %s\n", adios_type_to_string(atype), 
+            printf("    %-9s  %s = %s\n", adios_type_to_string(atype),
                     g->attr_namelist[i], value_to_string(atype, adata, 0));
             free(adata);
         } /* attributes */
@@ -199,12 +200,12 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
             break;
 
         case adios_complex:
-            sprintf (s, "(%g, %g)", 
+            sprintf (s, "(%g, %g)",
                     ((float *) data)[2*idx], ((float *) data)[2*idx+1]);
             break;
 
         case adios_double_complex:
-            sprintf (s, "(%lg, %lg)", 
+            sprintf (s, "(%lg, %lg)",
                     ((double *) data)[2*idx], ((double *) data)[2*idx+1]);
             break;
     }

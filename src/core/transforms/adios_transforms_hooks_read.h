@@ -28,6 +28,7 @@ enum ADIOS_READ_RESULT_MODE {
 
 typedef struct {
     enum ADIOS_DATATYPES elem_type;
+    int timestep;
     const ADIOS_SELECTION *bounds;
     uint64_t ragged_offset;
     void *data;
@@ -39,20 +40,23 @@ void adios_transform_read_init();
 // Datablock management
 adios_datablock * adios_datablock_new(
         enum ADIOS_DATATYPES elem_type,
+        int timestep,
         const ADIOS_SELECTION *bounds,
         void *data);
 
 adios_datablock * adios_datablock_new_ragged(
         enum ADIOS_DATATYPES elem_type,
+        int timestep,
         const ADIOS_SELECTION *bounds,
         const uint64_t *ragged_offsets, void *data);
 
 adios_datablock * adios_datablock_new_ragged_offset(
         enum ADIOS_DATATYPES elem_type,
+        int timestep,
         const ADIOS_SELECTION *bounds,
         uint64_t ragged_offset, void *data);
 
-void adios_datablock_free(adios_datablock *datablock, int free_data);
+void adios_datablock_free(adios_datablock **datablock, int free_data);
 
 // Delegation functions
 adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADIOS_VARINFO *vi, const ADIOS_TRANSINFO* ti, const ADIOS_FILE *fp,

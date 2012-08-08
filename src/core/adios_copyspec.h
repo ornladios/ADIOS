@@ -161,7 +161,7 @@ int adios_copyspec_init_from_2bb_intersection(adios_subvolume_copy_spec *copy_sp
  * @param free_buffers if non-zero, all buffers within the copyspec will be
  *        free'd; if zero, they will be left allocated and unchanged.
  */
-void adios_copyspec_free(adios_subvolume_copy_spec *copy_spec, int free_buffers);
+void adios_copyspec_free(adios_subvolume_copy_spec **copy_spec, int free_buffers);
 
 //
 // Derivative copyspec functions

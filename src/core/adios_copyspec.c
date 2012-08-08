@@ -95,7 +95,8 @@ int adios_copyspec_init_from_2bb_intersection(adios_subvolume_copy_spec *copy_sp
 
 
 #define MYFREE(x) {if (x) free((void*)x);}
-void adios_copyspec_free(adios_subvolume_copy_spec *copy_spec, int free_buffers) {
+void adios_copyspec_free(adios_subvolume_copy_spec **copy_spec_ptr, int free_buffers) {
+    adios_subvolume_copy_spec *copy_spec = *copy_spec_ptr;
     if (free_buffers) {
         MYFREE(copy_spec->subv_dims);
         MYFREE(copy_spec->dst_dims);
@@ -104,7 +105,8 @@ void adios_copyspec_free(adios_subvolume_copy_spec *copy_spec, int free_buffers)
         MYFREE(copy_spec->src_subv_offsets);
     }
     memset(copy_spec, 0, sizeof(adios_subvolume_copy_spec));
-    free(copy_spec);
+
+    MYFREE(*copy_spec_ptr);
 }
 #undef MYFREE
 

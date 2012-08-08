@@ -439,7 +439,7 @@ void compact_subvolume_ragged_offset(void *buf, int ndim, const uint64_t *subv_d
     }
 
     // We use the arguments and a stack array as buffers; don't free them
-    adios_copyspec_free(compact_copyspec, 0);
+    adios_copyspec_free(&compact_copyspec, 0);
 }
 
 ADIOS_SELECTION * new_derelativized_selection(const ADIOS_SELECTION *sel, const uint64_t *sel_global_offset) {
@@ -494,4 +494,36 @@ ADIOS_SELECTION * varblock_to_bb(int ndim, const ADIOS_VARBLOCK *vb) {
     return common_read_selection_boundingbox(ndim,
                                              bufdup(vb->start, sizeof(uint64_t), ndim),
                                              bufdup(vb->count, sizeof(uint64_t), ndim));
+}
+
+uint64_t compute_selection_size(ADIOS_SELECTION *sel) {
+    uint64_t sel_size;
+    switch (sel->type) {
+    case ADIOS_SELECTION_BOUNDINGBOX:
+    {
+        const int ndim = sel->u.bb.ndim;
+        const uint64_t * const sel_count = sel->u.bb.count;
+        int i;
+
+        sel_size = 1;
+        for (i = 0; i < ndim; i++)
+            sel_size *= sel_count[i];
+
+        break;
+    }
+    case ADIOS_SELECTION_POINTS:
+    {
+        sel_size = sel->u.points.npoints;
+        break;
+    }
+    case ADIOS_SELECTION_WRITEBLOCK:
+    case ADIOS_SELECTION_AUTO:
+    default:
+        fprintf(stderr, "Internal error: attempt to call %s on a selection of type %d, but only BOUNDINGBOX (%d) and POINTS (%d) are supported.\n",
+                __FUNCTION__, sel->type, ADIOS_SELECTION_BOUNDINGBOX, ADIOS_SELECTION_POINTS);
+        assert(0);
+        break;
+    }
+
+    return sel_size;
 }

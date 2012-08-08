@@ -48,6 +48,7 @@ adios_datablock * adios_transform_identity_pg_reqgroup_completed(
     completed_pg_reqgroup->subreqs->data = NULL;
 
     return adios_datablock_new(reqgroup->transinfo->orig_type,
+                               completed_pg_reqgroup->timestep,
                                completed_pg_reqgroup->pg_bounds_global,
                                pg_data);
 }

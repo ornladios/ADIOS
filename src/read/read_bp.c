@@ -972,6 +972,9 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
     chunk->varid = r->varid;
     chunk->type = v->type;
+    // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
+    chunk->from_steps = r->from_steps;
+    chunk->nsteps = r->nsteps;
     chunk->sel = copy_selection (r->sel);
     chunk->data = r->data;
 
@@ -3604,6 +3607,9 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 
     chunk->varid = r->varid;
     chunk->type = v->type;
+    // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
+    chunk->from_steps = r->from_steps;
+    chunk->nsteps = r->nsteps;
     chunk->sel = copy_selection (r->sel);
     chunk->data = data;
 

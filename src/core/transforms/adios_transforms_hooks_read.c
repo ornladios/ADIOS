@@ -41,12 +41,13 @@ void adios_transform_read_init() {
 
 adios_datablock * adios_datablock_new(
         enum ADIOS_DATATYPES elem_type,
+        int timestep,
         const ADIOS_SELECTION *bounds,
         void *data) {
 
     assert(bounds);
     assert(data);
-    return adios_datablock_new_ragged_offset(elem_type, bounds, 0, data);
+    return adios_datablock_new_ragged_offset(elem_type, timestep, bounds, 0, data);
 }
 
 /*
@@ -56,6 +57,7 @@ adios_datablock * adios_datablock_new(
  */
 adios_datablock * adios_datablock_new_ragged(
         enum ADIOS_DATATYPES elem_type,
+        int timestep,
         const ADIOS_SELECTION *bounds,
         const uint64_t *ragged_offsets, void *data) {
 
@@ -67,11 +69,12 @@ adios_datablock * adios_datablock_new_ragged(
             compute_ragged_array_offset(bounds->u.bb.ndim, ragged_offsets, bounds->u.bb.count) :
             0;
 
-    return adios_datablock_new_ragged_offset(elem_type, bounds, ragged_offset, data);
+    return adios_datablock_new_ragged_offset(elem_type, timestep, bounds, ragged_offset, data);
 }
 
 adios_datablock * adios_datablock_new_ragged_offset(
         enum ADIOS_DATATYPES elem_type,
+        int timestep,
         const ADIOS_SELECTION *bounds,
         uint64_t ragged_offset, void *data) {
 
@@ -82,6 +85,7 @@ adios_datablock * adios_datablock_new_ragged_offset(
 
     datablock->elem_type = elem_type;
     datablock->bounds = copy_selection(bounds);
+    datablock->timestep = timestep;
     datablock->ragged_offset = ragged_offset;
     datablock->data = data;
 
@@ -89,14 +93,15 @@ adios_datablock * adios_datablock_new_ragged_offset(
 }
 
 #define MYFREE(p) {if (p) free(p); (p)=NULL;}
-void adios_datablock_free(adios_datablock *datablock, int free_data) {
+void adios_datablock_free(adios_datablock **datablock_ptr, int free_data) {
+    adios_datablock *datablock = *datablock_ptr;
     if (datablock) {
         if (datablock->bounds)
             common_read_selection_delete(datablock->bounds);
         if (free_data)
             MYFREE(datablock->data);
     }
-    MYFREE(datablock);
+    MYFREE(*datablock_ptr);
 }
 #undef MYFREE
 
@@ -112,8 +117,8 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
                                                                        const ADIOS_SELECTION *sel, int from_steps, int nsteps, void *data) {
     // Declares
     adios_transform_read_reqgroup *new_reqgroup;
-    int idx;
-    int curblocks, startblock_idx, endblock_idx;
+    int blockidx, timestep, timestep_blockidx;
+    int curblocks, start_blockidx, end_blockidx;
     int intersects;
     ADIOS_VARBLOCK *raw_vb, *orig_vb;
     adios_subvolume_copy_spec *pg_intersection_to_global_copyspec;
@@ -134,10 +139,17 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
 
     // Find the block index for the start and end timestep
     curblocks = 0;
-    for (idx = 0; idx < raw_varinfo->nsteps; idx++) {
-        if (idx == from_steps) { startblock_idx = curblocks;		}	// Find the start block
-        curblocks += raw_varinfo->nblocks[idx];
-        if (idx == to_steps - 1) { endblock_idx = curblocks; break;	}	// Find the end block and stop
+    for (blockidx = 0; blockidx < raw_varinfo->nsteps; blockidx++) {
+        // Find the start block
+        if (blockidx == from_steps) {
+            start_blockidx = curblocks;
+        }
+        curblocks += raw_varinfo->nblocks[blockidx];
+        // Find the end block, then stop
+        if (blockidx == to_steps - 1) {
+            end_blockidx = curblocks;
+            break;
+        }
     }
 
     // Retrieve blockinfos, if they haven't been done retrieved
@@ -148,9 +160,12 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
 
     // Assemble read requests for each varblock
     pg_intersection_to_global_copyspec = NULL;
-    for (idx = startblock_idx; idx != endblock_idx; idx++) {
-        raw_vb = &raw_varinfo->blockinfo[idx];
-        orig_vb = &transinfo->orig_blockinfo[idx];
+    blockidx = start_blockidx;
+    timestep = from_steps;
+    timestep_blockidx = 0;
+    while (blockidx != end_blockidx) { //for (blockidx = startblock_idx; blockidx != endblock_idx; blockidx++) {
+        raw_vb = &raw_varinfo->blockinfo[blockidx];
+        orig_vb = &transinfo->orig_blockinfo[blockidx];
 
         // Find the intersection, if any
         pg_intersection_to_global_copyspec = malloc(sizeof(adios_subvolume_copy_spec));
@@ -171,21 +186,30 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
             pg_bounds_global = varblock_to_bb(transinfo->orig_ndim, orig_vb);
 
             // Transfer ownership of pg_intersection_to_global_copyspec
-            new_pg_reqgroup = adios_transform_new_pg_reqgroup(idx, orig_vb, raw_vb,
+            new_pg_reqgroup = adios_transform_new_pg_reqgroup(timestep, timestep_blockidx,
+                                                              blockidx,
+                                                              orig_vb, raw_vb,
                                                               intersection_pg_rel,
                                                               intersection_orig_sel_rel,
                                                               intersection_global,
                                                               pg_bounds_global,
                                                               pg_intersection_to_global_copyspec);
+            pg_intersection_to_global_copyspec = NULL;
 
             TRANSFORM_READ_METHODS[transinfo->transform_type].transform_generate_read_subrequests(new_reqgroup, new_pg_reqgroup);
 
             adios_transform_read_reqgroup_append_pg_reqgroup(new_reqgroup, new_pg_reqgroup);
         } else {
-            adios_copyspec_free(pg_intersection_to_global_copyspec, 1);
+            adios_copyspec_free(&pg_intersection_to_global_copyspec, 1);
         }
 
-        pg_intersection_to_global_copyspec = NULL;
+        // Increment block indexes
+        blockidx++;
+        timestep_blockidx++;
+        if (timestep_blockidx == raw_varinfo->nblocks[timestep]) {
+            timestep_blockidx = 0;
+            timestep++;
+        }
     }
     assert(!pg_intersection_to_global_copyspec);
 

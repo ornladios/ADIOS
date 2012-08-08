@@ -249,7 +249,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 #define MYFREE(p) {if (p) free((void*)p); (p)=NULL;}
 static void clean_up_read_reqgroups(adios_transform_read_reqgroup **reqgroups_head) {
     adios_transform_read_reqgroup *removed;
-    while ((removed = adios_transform_read_reqgroup_pop(reqgroups_head)) != NULL) {
+    while ((removed = adios_transform_read_reqgroups_pop(reqgroups_head)) != NULL) {
         adios_transform_free_read_reqgroup(&removed);
     }
 }
@@ -735,14 +735,14 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
 
                 // Generate the read request group and append it to the list
                 new_reqgroup = adios_transform_generate_read_reqgroup(raw_varinfo, transinfo, fp, sel, from_steps, nsteps, data);
-                adios_transform_read_reqgroup_append(&internals->transform_reqgroups, new_reqgroup);
+                adios_transform_read_reqgroups_append(&internals->transform_reqgroups, new_reqgroup);
 
                 // Now schedule all of the new subrequests
                 retval = 0;
                 for (pg_reqgroup = new_reqgroup->pg_reqgroups; pg_reqgroup; pg_reqgroup = pg_reqgroup->next) {
                     for (subreq = pg_reqgroup->subreqs; subreq; subreq = subreq->next) {
                         retval |= internals->read_hooks[internals->method].adios_schedule_read_byid_fn(
-                                        fp, subreq->sel, varid+internals->group_varid_offset, from_steps, nsteps, subreq->data);
+                                        fp, subreq->sel, varid+internals->group_varid_offset, pg_reqgroup->timestep, 1, subreq->data);
                     }
                 }
             } else {
@@ -771,6 +771,9 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
  * Assumes that the datablock selection is of type bounding box.
  *
  * NOTE: also frees the data buffer within the datablock
+ *
+ * @return non-zero if some data in the datablock intersected the read
+ *         request's selection, and was applied; returns 0 otherwise.
  */
 static int apply_datablock_to_request_and_free(adios_datablock *datablock,
                                                adios_transform_read_reqgroup *reqgroup) {
@@ -788,14 +791,19 @@ static int apply_datablock_to_request_and_free(adios_datablock *datablock,
                                                   &reqgroup->orig_sel->u.bb,
                                                   &datablock->bounds->u.bb);
     if (intersects) {
+        int rel_timestep = datablock->timestep - reqgroup->from_steps;
+        void *timestep_data_slice =
+                (char*)reqgroup->orig_data +
+                rel_timestep * reqgroup->orig_sel_timestep_size;
+
         copy_subvolume_ragged_offset_with_spec(
-                reqgroup->orig_data, datablock->data, copyspec,
+                timestep_data_slice, datablock->data, copyspec,
                 0, datablock->ragged_offset,
                 datablock->elem_type, reqgroup->swap_endianness);
     }
 
-    adios_copyspec_free(copyspec, 1);
-    adios_datablock_free(datablock, 1);
+    adios_copyspec_free(&copyspec, 1);
+    adios_datablock_free(&datablock, 1);
     return intersects;
 }
 
@@ -862,7 +870,7 @@ static ADIOS_VARCHUNK * extract_chunk_from_datablock_and_free(adios_datablock *r
     MYFREE(inter_dims);
 
     // Do free the data buffer; we removed that buffer from the datablock above if it was needed
-    adios_datablock_free(result, 1);
+    adios_datablock_free(&result, 1);
     return chunk;
 }
 #undef MYFREE
@@ -908,9 +916,19 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
             adios_transform_pg_reqgroup *pg_reqgroup;
             adios_transform_read_subrequest *subreq;
             adios_datablock *result;
-            for (reqgroup = internals->transform_reqgroups; reqgroup; reqgroup = reqgroup->next) {
+
+            while ((reqgroup = adios_transform_read_reqgroups_pop(&internals->transform_reqgroups)) != NULL) {
+                if (reqgroup->completed) {
+                    // Free leftover read request groups immediately
+                    adios_transform_free_read_reqgroup(&reqgroup);
+                    continue;
+                }
+
                 for (pg_reqgroup = reqgroup->pg_reqgroups; pg_reqgroup; pg_reqgroup = pg_reqgroup->next) {
+                    if (pg_reqgroup->completed) continue;
                     for (subreq = pg_reqgroup->subreqs; subreq; subreq = subreq->next) {
+                        if (subreq->completed) continue;
+
                         adios_transform_subreq_mark_complete(reqgroup, pg_reqgroup, subreq);
                         assert(subreq->completed);
 
@@ -924,6 +942,9 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
                 assert(reqgroup->completed);
                 result = adios_transform_read_reqgroup_completed(reqgroup);
                 if (result) apply_datablock_to_request_and_free(result, reqgroup);
+
+                // Free read request groups as they are completed
+                adios_transform_free_read_reqgroup(&reqgroup);
             }
         } else {
             // Do nothing; reads will be performed by check_reads
@@ -940,84 +961,85 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
 // system. If it was part of a read request corresponding to a transformed
 // variable, consume it, and possibly replacing it with a detransformed chunk.
 // Otherwise, do nothing.
-static void transform_method_filter_chunk(adios_transform_read_reqgroup *reqgroups, ADIOS_VARCHUNK ** chunk) {
+static void transform_method_filter_chunk(adios_transform_read_reqgroup **reqgroups_head, ADIOS_VARCHUNK ** chunk) {
     adios_transform_read_reqgroup *reqgroup;
     adios_transform_pg_reqgroup *pg_reqgroup;
     adios_transform_read_subrequest *subreq;
     adios_datablock *result, *tmp_result;
 
     // Some chunk was read; find the corresponding subrequest, if any
-    for (reqgroup = reqgroups; reqgroup; reqgroup = reqgroup->next) {
-        adios_transform_read_reqgroup_find_subreq(reqgroup, *chunk, 1, &pg_reqgroup, &subreq);
+    int found = adios_transform_read_reqgroups_find_subreq(reqgroups_head, *chunk, 1, &reqgroup, &pg_reqgroup, &subreq);
+    if (found) {
+        // This chunk corresponds to a subrequest. Therefore, consume it
+        // and perhaps replace it with a detransformed chunk.
 
-        // If this chunk matches a read subreqest, process it
-        if (subreq) {
-            // This chunk corresponds to a subrequest. Therefore, consume it
-            // and perhaps replace it with a detransformed chunk.
+        // Consume the chunk
+        common_read_free_chunk(*chunk);
+        *chunk = NULL;
 
-            // Consume the chunk
-            common_read_free_chunk(*chunk);
-            *chunk = NULL;
+        // Mark the subrequest as complete
+        adios_transform_subreq_mark_complete(reqgroup, pg_reqgroup, subreq);
+        assert(subreq->completed);
 
-            // Mark the subrequest as complete
-            adios_transform_subreq_mark_complete(reqgroup, pg_reqgroup, subreq);
-            assert(subreq->completed);
+        // Invoke all callbacks, depending on what completed, and
+        // get at most one ADIOS_VARCHUNK to return
+        result = adios_transform_subrequest_completed(reqgroup, pg_reqgroup, subreq);
 
-            // Invoke all callbacks, depending on what completed, and
-            // get at most one ADIOS_VARCHUNK to return
-            result = adios_transform_subrequest_completed(reqgroup, pg_reqgroup, subreq);
-
-            if (pg_reqgroup->completed) {
-                tmp_result = adios_transform_pg_reqgroup_completed(reqgroup, pg_reqgroup);
-                if (tmp_result) {
-                    assert(!result); // pg_reqgroup_completed returned a result, but subrequest_completed did as well
-                    result = tmp_result;
-                }
+        if (pg_reqgroup->completed) {
+            tmp_result = adios_transform_pg_reqgroup_completed(reqgroup, pg_reqgroup);
+            if (tmp_result) {
+                assert(!result); // pg_reqgroup_completed returned a result, but subrequest_completed did as well
+                result = tmp_result;
             }
+        }
 
-            if (reqgroup->completed) {
-                tmp_result = adios_transform_read_reqgroup_completed(reqgroup);
-                if (tmp_result) {
-                    assert(!result); // read_reqgroup_completed returned a result, but subrequest_completed or pg_reqgroup_completed did as well
-                    result = tmp_result;
-                }
+        if (reqgroup->completed) {
+            tmp_result = adios_transform_read_reqgroup_completed(reqgroup);
+            if (tmp_result) {
+                assert(!result); // read_reqgroup_completed returned a result, but subrequest_completed or pg_reqgroup_completed did as well
+                result = tmp_result;
             }
+        }
 
-            // At this point, the the original chunk has been consumed,
-            // and a new one may or may not be ready, depending on the read
-            // mode and what was returned by the transform plugin; decide
-            // the final return now
+        // At this point, the the original chunk has been consumed,
+        // and a new one may or may not be ready, depending on the read
+        // mode and what was returned by the transform plugin; decide
+        // the final return now
 
-            if (result) {
-                const int partial_results_allowed = reqgroup->orig_data != NULL;
-                if (partial_results_allowed) {
-                    // If we can return partial results, return any relevant
-                    // data from the datablock as a VARCHUNK
+        if (result) {
+            const int partial_results_allowed = reqgroup->orig_data != NULL;
+            if (partial_results_allowed) {
+                // If we can return partial results, return any relevant
+                // data from the datablock as a VARCHUNK
 
-                    // First free any buffers held by the last-returned VARCHUNK
-                    if (reqgroup->lent_varchunk && reqgroup->lent_varchunk->data)
-                        free(reqgroup->lent_varchunk->data);
+                // First free any buffers held by the last-returned VARCHUNK
+                if (reqgroup->lent_varchunk && reqgroup->lent_varchunk->data)
+                    free(reqgroup->lent_varchunk->data);
 
-                    *chunk = extract_chunk_from_datablock_and_free(result, reqgroup);
+                *chunk = extract_chunk_from_datablock_and_free(result, reqgroup);
 
-                    reqgroup->lent_varchunk = *chunk;
-                } else {
-                    // Otherwise, apply the data to the overall read request group
-                    assert(reqgroup->orig_data);
-                    apply_datablock_to_request_and_free(result, reqgroup);
-
-                    // If the whole variable is now ready, return it as a VARCHUNK
-                    // Otherwise, return no chunk (NULL)
-                    if (reqgroup->completed) {
-                        *chunk = extract_chunk_from_finished_read_reqgroup(reqgroup);
-                    } else {
-                        assert(!*chunk); // No chunk to return, and *chunk is already NULL
-                    }
-                }
+                reqgroup->lent_varchunk = *chunk;
             } else {
-                assert(!*chunk); // No chunk to return, and *chunk is already NULL
+                // Otherwise, apply the data to the overall read request group
+                assert(reqgroup->orig_data);
+                apply_datablock_to_request_and_free(result, reqgroup);
+
+                // If the whole variable is now ready, return it as a VARCHUNK
+                // Otherwise, return no chunk (NULL)
+                if (reqgroup->completed) {
+                    *chunk = extract_chunk_from_finished_read_reqgroup(reqgroup);
+                } else {
+                    assert(!*chunk); // No chunk to return, and *chunk is already NULL
+                }
             }
-            break;
+        } else {
+            assert(!*chunk); // No chunk to return, and *chunk is already NULL
+        }
+
+        // Free the read request group if it was completed
+        if (reqgroup->completed) {
+            adios_transform_read_reqgroups_remove(reqgroups_head, reqgroup);
+            adios_transform_free_read_reqgroup(&reqgroup);
         }
     }
 }
