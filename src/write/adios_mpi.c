@@ -24,11 +24,13 @@
 // xml parser
 #include <mxml.h>
 
+#include "public/adios_error.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
 #include "core/buffer.h"
 #include "core/util.h"
+#include "core/adios_logger.h"
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
@@ -282,10 +284,8 @@ static void adios_var_to_comm (const char * comm_name
         {
             if (!t)
             {
-                fprintf (stderr, "communicator not provided and none "
-                                 "listed in XML.  Defaulting to "
-                                 "MPI_COMM_SELF\n"
-                        );
+                log_warn ("MPI method: communicator not provided and none "
+                          "listed in XML.  Defaulting to MPI_COMM_SELF\n");
 
                 *comm = MPI_COMM_SELF;
             }
@@ -307,10 +307,8 @@ static void adios_var_to_comm (const char * comm_name
             {
                 if (!t)
                 {
-                    fprintf (stderr, "communicator not provided and none "
-                                     "listed in XML.  Defaulting to "
-                                     "MPI_COMM_SELF\n"
-                            );
+                    log_warn ("MPI method: communicator not provided and none "
+                              "listed in XML.  Defaulting to MPI_COMM_SELF\n");
 
                     *comm = MPI_COMM_SELF;
                 }
@@ -330,10 +328,8 @@ static void adios_var_to_comm (const char * comm_name
             {
                 if (!t)
                 {
-                    fprintf (stderr, "communicator not provided but one "
-                                     "listed in XML.  Defaulting to "
-                                     "MPI_COMM_WORLD\n"
-                            );
+                    log_warn ("MPI method: communicator not provided but one "
+                              "listed in XML.  Defaulting to MPI_COMM_WORLD\n");
 
                     *comm = MPI_COMM_WORLD;
                 }
@@ -353,9 +349,8 @@ static void adios_var_to_comm (const char * comm_name
     }
     else
     {
-        fprintf (stderr, "coordination-communication not provided. "
-                         "Using MPI_COMM_WORLD instead\n"
-                );
+        log_warn ("MPI method: coordination-communication not provided. "
+                  "Using MPI_COMM_WORLD instead\n");
 
         *comm = MPI_COMM_WORLD;
     }
@@ -683,9 +678,9 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                     int len = 0;
                     memset (e, 0, MPI_MAX_ERROR_STRING);
                     MPI_Error_string (err, e, &len);
-                    fprintf (stderr, "1: MPI open read failed for %s: '%s'\n"
-                            ,name, e
-                            );
+                    adios_error (err_file_open_error, 
+                                 "MPI method: open read failed for %s: '%s'\n",
+                                 name, e);
                     free (name);
 
                     return adios_flag_no;
@@ -818,9 +813,9 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 int len = 0;
                 memset (e, 0, MPI_MAX_ERROR_STRING);
                 MPI_Error_string (err, e, &len);
-                fprintf (stderr, "2: MPI open write failed for %s: '%s'\n"
-                        ,name, e
-                        );
+                adios_error (err_file_open_error, 
+                        "MPI method, rank %d: open read failed for %s: '%s'\n", 
+                        md->rank, name, e);
                 free (name);
 
                 return adios_flag_no;
@@ -886,9 +881,9 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 int len = 0;
                 memset (e, 0, MPI_MAX_ERROR_STRING);
                 MPI_Error_string (err, e, &len);
-                fprintf (stderr, "3: MPI open write failed for %s: '%s'\n"
-                        ,name, e
-                        );
+                adios_error (err_file_open_error, 
+                        "MPI method, rank %d: open write failed for %s: '%s'\n", 
+                        md->rank, name, e);
                 free (name);
 
                 return adios_flag_no;
@@ -925,9 +920,9 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                         int len = 0;
                         memset (e, 0, MPI_MAX_ERROR_STRING);
                         MPI_Error_string (err, e, &len);
-                        fprintf (stderr, "4: MPI open write failed for %s: '%s'\n"
-                                ,name, e
-                                );
+                        adios_error (err_file_open_error, 
+                                "MPI method, rank %d: open for append failed for %s: '%s'\n", 
+                                md->rank, name, e);
                         free (name);
 
                         return adios_flag_no;
@@ -1087,9 +1082,9 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                 int len = 0;
                 memset (e, 0, MPI_MAX_ERROR_STRING);
                 MPI_Error_string (err, e, &len);
-                fprintf (stderr, "5: MPI open write failed for %s: '%s'\n"
-                        ,name, e
-                        );
+                adios_error (err_file_open_error, 
+                        "MPI method, rank %d: open for append failed for %s: '%s'\n", 
+                        md->rank, name, e);
                 free (name);
 
                 return adios_flag_no;
@@ -1100,7 +1095,9 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
         default:
         {
-            fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode, 
+                         "MPI method: Unknown file mode requested: %d\n", 
+                         fd->mode);
 
             free (name);
 
@@ -1150,9 +1147,10 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
             int len = 0;
             memset (e, 0, MPI_MAX_ERROR_STRING);
             MPI_Error_string (err, e, &len);
-            fprintf (stderr, "adios_mpi_should_buffer failed %s: '%s'\n"
-                    ,fd->name, e
-                    );
+            adios_error (err_write_error, 
+                         "MPI method, rank %d: adios_group_size() failed to "
+                         "write header to %s: '%s'\n",
+                         md->rank, fd->name, e);
             free (name);
 
             return adios_flag_no;
@@ -1162,11 +1160,8 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
         MPI_Get_count (&md->status, MPI_BYTE, &count);
         if (count != fd->bytes_written)
         {
-            fprintf (stderr, "a:MPI method tried to write %llu, "
-                             "only wrote %d\n"
-                    ,fd->bytes_written
-                    ,count
-                    );
+            log_warn ("a:MPI method tried to write %llu, only wrote %llu\n",
+                      fd->bytes_written, count);
         }
         fd->base_offset += count;
         fd->offset = 0;
@@ -1255,20 +1250,19 @@ void adios_mpi_write (struct adios_file_struct * fd
             int len = 0;
             memset (e, 0, MPI_MAX_ERROR_STRING);
             MPI_Error_string (err, e, &len);
-            fprintf (stderr, "adios_mpi_write (1) failed %s: '%s'\n"
-                    ,fd->name, e
-                    );       
+            adios_error (err_write_error, 
+                         "MPI method, rank %d: adios_write() of header of variable %s to "
+                         "file %s failed: '%s'\n ",
+                         md->rank, v->name, fd->name, e);       
         }
 
         int count;
         MPI_Get_count (&md->status, MPI_BYTE, &count);
         if (count != fd->bytes_written)
         {
-            fprintf (stderr, "b:MPI method tried to write %llu, "
-                             "only wrote %d\n"
-                    ,fd->bytes_written
-                    ,count
-                    );
+            log_warn ("MPI method, rank %d: tried to write %llu bytes, "
+                      "only wrote %d of header of variable %s\n",
+                      md->rank, fd->bytes_written, count, v->name);
         }
         fd->base_offset += count;
         fd->offset = 0;
@@ -1280,8 +1274,13 @@ void adios_mpi_write (struct adios_file_struct * fd
         uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
 
         if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes)
-            fprintf (stderr, "adios_mpi_write exceeds pg bound(1). File is corrupted. "
-                             "Need to enlarge group size. \n");
+            adios_error (err_out_of_bound, 
+                         "MPI method, rank %d: adios_write() of variable %s exceeds pg bound.\n"
+                         "File is corrupted. Need to enlarge group size in adios_group_size().\n"
+                         "Group size=%llu, offset at end of this variable data=%llu\n",
+                         md->rank, v->name, 
+                         fd->write_size_bytes,
+                         fd->base_offset - fd->pg_start_in_file + var_size);
 #if 0
         err = MPI_File_write (md->fh, v->data, var_size, MPI_BYTE, &md->status);
 #endif
@@ -1313,19 +1312,18 @@ void adios_mpi_write (struct adios_file_struct * fd
             int len = 0;
             memset (e, 0, MPI_MAX_ERROR_STRING);
             MPI_Error_string (err, e, &len);
-            fprintf (stderr, "adios_mpi_write (2) failed %s: '%s'\n"
-                    ,fd->name, e
-                    );       
+            adios_error (err_write_error, 
+                         "MPI method, rank %d: adios_write() of variable %s to "
+                         "file %s failed: '%s'\n ",
+                         md->rank, v->name, fd->name, e);       
         }
 
         MPI_Get_count (&md->status, MPI_BYTE, &count);
         if (count != var_size)
         {
-            fprintf (stderr, "c:MPI method tried to write %llu, "
-                             "only wrote %d\n"
-                    ,var_size
-                    ,count
-                    );
+            log_warn ("MPI method, rank %d: tried to write %llu bytes, "
+                      "only wrote %d of variable %s\n",
+                      md->rank, var_size, count, v->name);
         }
         fd->base_offset += count;
         fd->offset = 0;
@@ -1353,6 +1351,8 @@ void adios_mpi_get_write_buffer (struct adios_file_struct * fd
                                 )
 {
     uint64_t mem_allowed;
+    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+                                                      method->method_data;
 
     if (*size == 0)
     {
@@ -1374,9 +1374,9 @@ void adios_mpi_get_write_buffer (struct adios_file_struct * fd
         if (!*buffer)
         {
             adios_method_buffer_free (mem_allowed);
-            fprintf (stderr, "Out of memory allocating %llu bytes for %s\n"
-                    ,*size, v->name
-                    );
+            adios_error (err_no_memory,
+                         "MPI method, rank %d: cannot allocate %llu bytes for variable %s\n",
+                         md->rank, *size, v->name);
             v->got_buffer = adios_flag_no;
             v->free_data = adios_flag_no;
             v->data_size = 0;
@@ -1395,11 +1395,11 @@ void adios_mpi_get_write_buffer (struct adios_file_struct * fd
     else
     {
         adios_method_buffer_free (mem_allowed);
-        fprintf (stderr, "OVERFLOW: Cannot allocate requested buffer of %llu "
-                         "bytes for %s\n"
-                ,*size
-                ,v->name
-                );
+ 
+        adios_error (err_buffer_overflow,
+                "MPI method, rank %d: OVERFLOW: Cannot get requested ADIOS buffer of %llu "
+                "bytes for variable %s. Remaining buffer size was %llu\n",
+                md->rank, *size, v->name, mem_allowed);
         *size = 0;
         *buffer = 0;
     }
@@ -1487,9 +1487,8 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
                 }
                 else
                 {
-                    printf ("MPI read: skipping name: %s path: %s\n"
-                           ,var_header.name, var_header.path
-                           );
+                    log_warn ("MPI method, rank %d: read: skipping name: %s path: %s\n",
+                           md->rank, var_header.name, var_header.path);
                     adios_parse_var_data_payload_v1 (&md->b, &var_header
                                                     ,NULL, 0
                                                     );
@@ -1513,9 +1512,9 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
         }
 
         default:
-            fprintf (stderr, "MPI read: file version unknown: %u\n"
-                    ,md->b.version
-                    );
+            adios_error (err_invalid_file_version, 
+                         "MPI method read: ADIOS file version unknown: %u\n",
+                         md->b.version);
             return;
     }
 
@@ -1608,21 +1607,19 @@ void adios_mpi_close (struct adios_file_struct * fd
                     int len = 0;
                     memset (e, 0, MPI_MAX_ERROR_STRING);
                     MPI_Error_string (err, e, &len);
-                    fprintf (stderr, "adios_mpi_close (1) failed %s: '%s'\n"
-                            ,fd->name, e
-                            );       
-
+                    adios_error (err_write_error, 
+                         "MPI method, rank %d: adios_close(): writing of variable header "
+                         "of %llu bytes to file %s failed: '%s'\n",
+                         md->rank, md->vars_header_size, fd->name, e);       
                 }
 
                 int count;
                 MPI_Get_count (&md->status, MPI_BYTE, &count);
                 if (count != md->vars_header_size)
                 {
-                    fprintf (stderr, "d:MPI method tried to write %llu, "
-                                     "only wrote %d\n"
-                            ,md->vars_header_size
-                            ,count
-                            );
+                    log_warn ("MPI method, rank %d: adios_close() tried to write %llu bytes "
+                              "of variable header but only wrote %d\n",
+                              md->rank, md->vars_header_size, count);
                 }
                 fd->offset = 0;
                 fd->bytes_written = 0;
@@ -1643,8 +1640,13 @@ void adios_mpi_close (struct adios_file_struct * fd
                     {
                         adios_write_attribute_v1 (fd, a);
                         if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
-                            fprintf (stderr, "mpi_file_write exceeds PG bound(2). File is corrupted. "
-                                    "Need to enlarge group size.\n");
+                            adios_error (err_out_of_bound, 
+                                    "MPI method, rank %d: writing of the attributes exceeds pg bound.\n"
+                                    "File is corrupted. Need to enlarge group size in adios_group_size().\n"
+                                    "Group size=%llu, offset at end of this variable data=%llu\n",
+                                    md->rank, 
+                                    fd->write_size_bytes,
+                                    fd->base_offset - fd->pg_start_in_file + fd->bytes_written);
 #if 0
                         err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
                                 ,MPI_BYTE, &md->status
@@ -1678,20 +1680,18 @@ void adios_mpi_close (struct adios_file_struct * fd
                             int len = 0;
                             memset (e, 0, MPI_MAX_ERROR_STRING);
                             MPI_Error_string (err, e, &len);
-                            fprintf (stderr, "adios_mpi_close (2) failed %s: '%s'\n"
-                                    ,fd->name, e
-                                    );       
-
+                            adios_error (err_write_error, 
+                                    "MPI method, rank %d: adios_close(): writing of attributes "
+                                    "of %llu bytes to file %s failed: '%s'\n",
+                                    md->rank, fd->bytes_written, fd->name, e);       
                         }
 
                         MPI_Get_count (&md->status, MPI_BYTE, &count);
                         if (count != fd->bytes_written)
                         {
-                            fprintf (stderr, "e:MPI method tried to write %llu, "
-                                    "only wrote %d\n"
-                                    ,fd->bytes_written
-                                    ,count
-                                    );
+                            log_warn ("MPI method, rank %d: adios_close() tried to write "
+                                      "%llu bytes of attributes but only wrote %d\n",
+                                      md->rank, fd->bytes_written, count);
                         }
                         fd->base_offset += count;
                         fd->offset = 0;
@@ -1742,19 +1742,18 @@ void adios_mpi_close (struct adios_file_struct * fd
                     int len = 0;
                     memset (e, 0, MPI_MAX_ERROR_STRING);
                     MPI_Error_string (err, e, &len);
-                    fprintf (stderr, "adios_mpi_close (3) failed %s: '%s'\n"
-                            ,fd->name, e
-                            );       
+                    adios_error (err_write_error, 
+                            "MPI method, rank %d: adios_close(): writing of variable header "
+                            "of %llu bytes to file %s failed: '%s'\n",
+                            md->rank, md->vars_header_size, fd->name, e);       
                 }
 
                 MPI_Get_count (&md->status, MPI_BYTE, &count);
                 if (count != md->vars_header_size)
                 {
-                    fprintf (stderr, "f:MPI method tried to write %llu, "
-                                     "only wrote %d\n"
-                            ,md->vars_header_size
-                            ,count
-                            );
+                    log_warn ("MPI method, rank %d: adios_close() tried to write %llu bytes "
+                              "of variable header but only wrote %d\n",
+                              md->rank, md->vars_header_size, count);
                 }
                 fd->offset = 0;
                 fd->bytes_written = 0;
@@ -1872,13 +1871,21 @@ void adios_mpi_close (struct adios_file_struct * fd
                     to_write = (int32_t) fd->bytes_written;
                 }
 
+                if (fd->base_offset + fd->bytes_written > 
+                    fd->pg_start_in_file + fd->write_size_bytes) 
+                {
+                    adios_error (err_out_of_bound, 
+                            "MPI method, rank %d: size of buffered data exceeds pg bound.\n"
+                            "File is corrupted. Need to enlarge group size in adios_group_size().\n"
+                            "Group size=%llu, offset at end of variable buffer=%llu\n",
+                            md->rank, 
+                            fd->write_size_bytes,
+                            fd->base_offset - fd->pg_start_in_file + fd->bytes_written);
+                }
+
                 while (bytes_written < fd->bytes_written)
                 {
                     // everyone writes their data
-                    if (fd->base_offset + bytes_written + to_write > 
-                           fd->pg_start_in_file + fd->write_size_bytes)
-                        fprintf (stderr, "mpi_file_write exceeds PG bound(3). File is corrupted. "
-                                         "Need to enlarge group size.\n");
 
                     MPI_File_seek (md->fh, fd->base_offset + bytes_written
                                   ,MPI_SEEK_SET
@@ -1892,9 +1899,11 @@ void adios_mpi_close (struct adios_file_struct * fd
                         int len = 0;
                         memset (e, 0, MPI_MAX_ERROR_STRING);
                         MPI_Error_string (err, e, &len);
-                        fprintf (stderr, "adios_mpi_close (4) failed %s: '%s'\n"
-                                ,fd->name, e
-                                );       
+                        adios_error (err_write_error, 
+                                "MPI method, rank %d: adios_close(): writing of buffered data "
+                                "[%llu..%llu] to file %s failed: '%s'\n",
+                                md->rank, bytes_written, bytes_written+to_write-1, 
+                                fd->name, e);       
                     }
                     bytes_written += to_write;
                     if (fd->bytes_written > bytes_written)
@@ -1947,10 +1956,9 @@ timeval_subtract (&timing.t8, &b, &a);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
                         {
-                            fprintf (stderr, "Need to do multi-write 1 (tried: "
-                                             "%d wrote: %d) errno %d\n"
-                                    ,write_len, count, errno
-                                    );
+                            log_error ("MPI method, rank %d: Need to do multi-write 1 (tried: "
+                                    "%d wrote: %d) errno %d\n",
+                                    md->rank, write_len, count, errno);
                             err = count;
                             break;
                         }
@@ -1966,9 +1974,10 @@ timeval_subtract (&timing.t8, &b, &a);
                     int len = 0;
                     memset (e, 0, MPI_MAX_ERROR_STRING);
                     MPI_Error_string (err, e, &len);
-                    fprintf (stderr, "adios_mpi_close (5) failed %s: '%s'\n"
-                            ,fd->name, e
-                            );       
+                    adios_error (err_write_error, 
+                            "MPI method, rank %d: adios_close(): writing of index data "
+                            "of %llu bytes to file %s failed: '%s'\n",
+                            md->rank, buffer_offset, fd->name, e);       
                 }
             }
 #if COLLECT_METRICS
@@ -2054,20 +2063,19 @@ timeval_subtract (&timing.t8, &b, &a);
                     int len = 0;
                     memset (e, 0, MPI_MAX_ERROR_STRING);
                     MPI_Error_string (err, e, &len);
-                    fprintf (stderr, "adios_mpi_close (6) failed %s: '%s'\n"
-                            ,fd->name, e
-                            );       
+                    adios_error (err_write_error, 
+                         "MPI method, rank %d: adios_close(): writing of variable header "
+                         "of %llu bytes to file %s failed: '%s'\n",
+                         md->rank, md->vars_header_size, fd->name, e);       
                 }
 
                 int count;
                 MPI_Get_count (&md->status, MPI_BYTE, &count);
                 if (count != md->vars_header_size)
                 {
-                    fprintf (stderr, "d:MPI method tried to write %llu, "
-                                     "only wrote %d\n"
-                            ,md->vars_header_size
-                            ,count
-                            );
+                    log_warn ("MPI method, rank %d: adios_close() tried to write %llu bytes "
+                              "of variable header but only wrote %d\n",
+                              md->rank, md->vars_header_size, count);
                 }
                 fd->offset = 0;
                 fd->bytes_written = 0;
@@ -2087,6 +2095,14 @@ timeval_subtract (&timing.t8, &b, &a);
                     while (a)
                     {
                         adios_write_attribute_v1 (fd, a);
+                        if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+                            adios_error (err_out_of_bound, 
+                                    "MPI method, rank %d: writing of the attributes exceeds pg bound.\n"
+                                    "File is corrupted. Need to enlarge group size in adios_group_size().\n"
+                                    "Group size=%llu, offset at end of this variable data=%llu\n",
+                                    md->rank, 
+                                    fd->write_size_bytes,
+                                    fd->base_offset - fd->pg_start_in_file + fd->bytes_written);
 #if 0
                         err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
                                 ,MPI_BYTE, &md->status
@@ -2120,19 +2136,18 @@ timeval_subtract (&timing.t8, &b, &a);
                             int len = 0;
                             memset (e, 0, MPI_MAX_ERROR_STRING);
                             MPI_Error_string (err, e, &len);
-                            fprintf (stderr, "adios_mpi_close (7) failed %s: '%s'\n"
-                                    ,fd->name, e
-                                    );       
+                            adios_error (err_write_error, 
+                                    "MPI method, rank %d: adios_close(): writing of attributes "
+                                    "of %llu bytes to file %s failed: '%s'\n",
+                                    md->rank, fd->bytes_written, fd->name, e);       
                         }
 
                         MPI_Get_count (&md->status, MPI_BYTE, &count);
                         if (count != fd->bytes_written)
                         {
-                            fprintf (stderr, "e:MPI method tried to write %llu, "
-                                    "only wrote %d\n"
-                                    ,fd->bytes_written
-                                    ,count
-                                    );
+                            log_warn ("MPI method, rank %d: adios_close() tried to write "
+                                      "%llu bytes of attributes but only wrote %d\n",
+                                      md->rank, fd->bytes_written, count);
                         }
                         fd->base_offset += count;
                         fd->offset = 0;
@@ -2183,20 +2198,18 @@ timeval_subtract (&timing.t8, &b, &a);
                     int len = 0;
                     memset (e, 0, MPI_MAX_ERROR_STRING);
                     MPI_Error_string (err, e, &len);
-                    fprintf (stderr, "adios_mpi_close (8) failed %s: '%s'\n"
-                            ,fd->name, e
-                            );       
-
+                    adios_error (err_write_error, 
+                            "MPI method, rank %d: adios_close(): writing of variable header "
+                            "of %llu bytes to file %s failed: '%s'\n",
+                            md->rank, md->vars_header_size, fd->name, e);       
                 }
 
                 MPI_Get_count (&md->status, MPI_BYTE, &count);
                 if (count != md->vars_header_size)
                 {
-                    fprintf (stderr, "f:MPI method tried to write %llu, "
-                                     "only wrote %d\n"
-                            ,md->vars_header_size
-                            ,count
-                            );
+                    log_warn ("MPI method, rank %d: adios_close() tried to write %llu bytes "
+                              "of variable header but only wrote %d\n",
+                              md->rank, md->vars_header_size, count);
                 }
                 fd->offset = 0;
                 fd->bytes_written = 0;
@@ -2296,6 +2309,17 @@ timeval_subtract (&timing.t8, &b, &a);
 
             if (fd->shared_buffer == adios_flag_yes)
             {
+                if (fd->base_offset + fd->bytes_written > 
+                    fd->pg_start_in_file + fd->write_size_bytes) 
+                {
+                    adios_error (err_out_of_bound, 
+                            "MPI method, rank %d: size of buffered data exceeds pg bound.\n"
+                            "File is corrupted. Need to enlarge group size in adios_group_size().\n"
+                            "Group size=%llu, offset at end of variable buffer=%llu\n",
+                            md->rank, 
+                            fd->write_size_bytes,
+                            fd->base_offset - fd->pg_start_in_file + fd->bytes_written);
+                }
                 // everyone writes their data
                 MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
 #if 0
@@ -2331,9 +2355,10 @@ timeval_subtract (&timing.t8, &b, &a);
                     int len = 0;
                     memset (e, 0, MPI_MAX_ERROR_STRING);
                     MPI_Error_string (err, e, &len);
-                    fprintf (stderr, "adios_mpi_close (9) failed %s: '%s'\n"
-                            ,fd->name, e
-                            );       
+                    adios_error (err_write_error, 
+                            "MPI method, rank %d: adios_close(): writing of buffered data "
+                            "of %llu bytes to file %s failed: '%s'\n",
+                            md->rank, fd->bytes_written, fd->name, e);       
                 }
             }
 
@@ -2365,6 +2390,9 @@ timeval_subtract (&timing.t8, &b, &a);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
                         {
+                            log_error ("MPI method, rank %d: Need to do multi-write 2 (tried: "
+                                    "%d wrote: %d) errno %d\n",
+                                    md->rank, write_len, count, errno);
                             err = count;
                             break;
                         }
@@ -2380,9 +2408,10 @@ timeval_subtract (&timing.t8, &b, &a);
                     int len = 0;
                     memset (e, 0, MPI_MAX_ERROR_STRING);
                     MPI_Error_string (err, e, &len);
-                    fprintf (stderr, "adios_mpi_close (10) failed %s: '%s'\n"
-                            ,fd->name, e
-                            );       
+                    adios_error (err_write_error, 
+                            "MPI method, rank %d: adios_close(): writing of index data "
+                            "of %llu bytes to file %s failed: '%s'\n",
+                            md->rank, buffer_offset, fd->name, e);       
                 }
             }
 
@@ -2404,7 +2433,9 @@ timeval_subtract (&timing.t8, &b, &a);
 
         default:
         {
-            fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode,
+                    "MPI method: Unknown file mode: %d in adios_close()\n", 
+                    fd->mode);
         }
     }
 
