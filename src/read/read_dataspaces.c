@@ -1165,7 +1165,6 @@ int adios_read_dataspaces_schedule_read_byid (const ADIOS_FILE * fp,
     }
 
     if (r->sel) {
-        r->rank = ds->mpi_rank; // not interesting for this method
         r->varid = varid;
         r->from_steps = 0; // we read the current step anyway
         r->nsteps = 1;
