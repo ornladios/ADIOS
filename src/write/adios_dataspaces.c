@@ -117,18 +117,12 @@ void adios_dataspaces_init (const PairStruct * parameters,
     int index, i;
     char temp[64];
     int num_peers;
-    int appid;
-    int was_set;
     
     num_peers = 1;
-    // Application ID should be set by the application calling adios_set_application_id()
-    appid = globals_adios_get_application_id (&was_set);
-    if (!was_set)
-        appid = 1;
 
     //Init the static data structure
     p->peers = num_peers;
-    p->appid = appid;
+    p->appid = -1;
     p->time_index = 0;
     p->n_writes = 0;
 #if HAVE_MPI
@@ -136,7 +130,7 @@ void adios_dataspaces_init (const PairStruct * parameters,
 #endif
     p->num_of_files = 0;
 
-    log_info ("adios_dataspaces_init: appid=%d\n", p->appid);
+    log_info ("adios_dataspaces_init: done\n");
    
 }
 
@@ -239,8 +233,14 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
         }
 #endif
 
+        // Application ID should be set by the application calling adios_set_application_id()
+        int was_set;
+        p->appid = globals_adios_get_application_id (&was_set);
+        if (!was_set)
+            p->appid = 1;
+
         log_debug ("adios_dataspaces_open: rank=%d connect to DATASPACES, peers=%d, appid=%d \n",
-                        p->rank, num_peers, p->appid);
+                p->rank, num_peers, p->appid);
 
         //Init the dart client
         ret = dspaces_init (num_peers, p->appid);
