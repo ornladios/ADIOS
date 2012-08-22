@@ -3,13 +3,14 @@
 #include <adios.h>
 #include <iostream>
 #include <string.h>
+#include <stdlib.h>
 
 #define STR(A) #A
 #define CONCAT2(A, B) A ## B
 #define CONCAT3(A, B, C) CONCAT2(CONCAT2(A, B), C)
 #define GET_ARRAY_ELEMENT(TYPE) CONCAT3(Get, TYPE, ArrayElements)
-#define WRITE_ONE                                               \
-    /* std::cout << __FUNCTION__ << "..." << std::endl;*/       \
+#define WRITE_ONE(JTYPE)                                        \
+    /* std::cout << __FUNCTION__ << "..." << std::endl; */      \
     int result;                                                 \
     const char *str_var_name;                                   \
     str_var_name = env->GetStringUTFChars(var_name, NULL);      \
@@ -19,7 +20,7 @@
     return result;
 
 #define WRITE_ARRAY(JTYPE, CTYPE)                                       \
-    /* std::cout << __FUNCTION__ << " ..." << std::endl;*/               \
+    /* std::cout << __FUNCTION__ << " ..." << std::endl;*/              \
     int result;                                                         \
     const char *str_var_name;                                           \
     JTYPE *valarr = env->Get ##CTYPE ##ArrayElements(val, NULL);        \
@@ -34,7 +35,7 @@
     JNIEXPORT jint JNICALL FNAME                                        \
     (JNIEnv * env, jclass cls, jlong fh, jstring var_name, JTYPE val)   \
     {                                                                   \
-        WRITE_ONE;                                                      \
+        WRITE_ONE(JTYPE);                                               \
     }
 
 #define FUNC_WRITE_ARRAY(FNAME, JTYPE, CTYPE)                           \
