@@ -10,12 +10,14 @@ public class AdiosVarinfo
     // Declaration of the Native (C) function
     private native int adios_inq_var(long gp, String varname);
     private native int adios_free_varinfo();
-    private native double[] adios_read_var_byid(long gp, int varid, long[] start, long[] count);
-    private native byte[] adios_read_var_byid_as_bytearr(long gp, int varid, long[] start, long[] count);
-    private native int[] adios_read_var_byid_as_intarr(long gp, int varid, long[] start, long[] count);
-    private native long[] adios_read_var_byid_as_longarr(long gp, int varid, long[] start, long[] count);
-    private native float[] adios_read_var_byid_as_floatarr(long gp, int varid, long[] start, long[] count);
-    private native double[] adios_read_var_byid_as_doublearr(long gp, int varid, long[] start, long[] count);
+
+    //private native double[] adios_read_var_byid(long gp, int varid, long[] start, long[] count);
+
+    private native int adios_read(long gp, int varid, long[] start, long[] count, byte[] out);
+    private native int adios_read(long gp, int varid, long[] start, long[] count, int[] out);
+    private native int adios_read(long gp, int varid, long[] start, long[] count, long[] out);
+    private native int adios_read(long gp, int varid, long[] start, long[] count, float[] out);
+    private native int adios_read(long gp, int varid, long[] start, long[] count, double[] out);
 
     AdiosGroup group;
 
@@ -50,32 +52,37 @@ public class AdiosVarinfo
         return adios_free_varinfo();
     }
 
-    public byte[] readAsByteArr(long[] start, long[] count)
+    public int read(long[] start, long[] count, byte[] out)
     {
-        return adios_read_var_byid_as_bytearr(group.gp, varid, start, count);
+        return adios_read(group.gp, varid, start, count, out);
     }
 
-    public int[] readAsIntArr(long[] start, long[] count)
+    public int read(long[] start, long[] count, int[] out)
     {
-        return adios_read_var_byid_as_intarr(group.gp, varid, start, count);
+        return adios_read(group.gp, varid, start, count, out);
     }
 
-    public long[] readAsLongArr(long[] start, long[] count)
+    public int read(long[] start, long[] count, long[] out)
     {
-        return adios_read_var_byid_as_longarr(group.gp, varid, start, count);
+        return adios_read(group.gp, varid, start, count, out);
     }
 
-    public float[] readAsFloatArr(long[] start, long[] count)
+    public int read(long[] start, long[] count, float[] out)
     {
-        return adios_read_var_byid_as_floatarr(group.gp, varid, start, count);
+        return adios_read(group.gp, varid, start, count, out);
     }
 
-    public double[] readAsDoubleArr(long[] start, long[] count)
+    public int read(long[] start, long[] count, double[] out)
     {
-        return adios_read_var_byid_as_doublearr(group.gp, varid, start, count);
+        return adios_read(group.gp, varid, start, count, out);
     }
 
-    public int readAsInt()
+    public byte[] read()
+    {
+        return value;
+    }
+
+    public int readIntValue()
     {
         ByteBuffer bb = ByteBuffer.wrap(value);
         if (group.file.endianness == 0)
@@ -86,7 +93,7 @@ public class AdiosVarinfo
         return bb.getInt();
     }
 
-    public long readAsLong()
+    public long readLongValue()
     {
         ByteBuffer bb = ByteBuffer.wrap(value);
         if (group.file.endianness == 0)
@@ -97,7 +104,7 @@ public class AdiosVarinfo
         return bb.getLong();
     }
 
-    public float readAsFloat()
+    public float readFloatValue()
     {
         ByteBuffer bb = ByteBuffer.wrap(value);
         if (group.file.endianness == 0)
@@ -108,7 +115,7 @@ public class AdiosVarinfo
         return bb.getFloat();
     }
 
-    public double readAsDouble()
+    public double readDoubleValue()
     {
         ByteBuffer bb = ByteBuffer.wrap(value);
         if (group.file.endianness == 0)

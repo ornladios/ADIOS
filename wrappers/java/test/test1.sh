@@ -22,6 +22,7 @@ cat << EOF > config.xml
     <var name="rank" type="integer"/>
     <global-bounds dimensions="size,NX" offsets="rank,0">
        <var name="temperature" gwrite="t" type="double" dimensions="1,NX"/>
+       <var name="ascii" gwrite="t" type="byte" dimensions="1,NX"/>
     </global-bounds>
     <attribute name="description" path="/temperature" value="Global array written from 'size' processes" type="string"/>
 </adios-group>

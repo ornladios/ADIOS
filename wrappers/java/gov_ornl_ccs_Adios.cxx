@@ -468,3 +468,111 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1select_1method
     
     return result;
 }
+
+#define READ_ONE(JTYPE)                                                 \
+    /* std::cout << __FUNCTION__ << " ..." << std::endl; */             \
+    int result;                                                         \
+    JTYPE val;                                                          \
+    const char *str_var_name;                                           \
+    uint64_t read_size = sizeof(JTYPE);                                 \
+    str_var_name = env->GetStringUTFChars(var_name, NULL);              \
+    if (str_var_name == NULL) return -1;                                \
+    result = adios_read ((int64_t) fh, str_var_name, &val, sizeof(JTYPE)); \
+    env->ReleaseStringUTFChars(var_name, str_var_name);                 \
+    return val;
+
+#define FUNC_READ_ONE(FNAME, JTYPE)                                     \
+    JNIEXPORT JTYPE JNICALL FNAME                                       \
+    (JNIEnv * env, jclass cls, jlong fh, jstring var_name)              \
+    {                                                                   \
+        READ_ONE(JTYPE);                                                \
+    }
+
+/*
+ * Class:     gov_ornl_ccs_Adios
+ * Method:    adios_read_byte_value
+ * Signature: (JLjava/lang/String;)B
+ * Signature: (JLjava/lang/String;)I
+ * Signature: (JLjava/lang/String;)J
+ * Signature: (JLjava/lang/String;)F
+ * Signature: (JLjava/lang/String;)D
+ */
+
+FUNC_READ_ONE(
+    Java_gov_ornl_ccs_Adios_adios_1read_1byte_1value,
+    jbyte);
+
+FUNC_READ_ONE(
+    Java_gov_ornl_ccs_Adios_adios_1read_1int_1value,
+    jint);
+
+FUNC_READ_ONE(
+    Java_gov_ornl_ccs_Adios_adios_1read_1long_1value,
+    jlong);
+
+FUNC_READ_ONE(
+    Java_gov_ornl_ccs_Adios_adios_1read_1float_1value,
+    jfloat);
+
+FUNC_READ_ONE(
+    Java_gov_ornl_ccs_Adios_adios_1read_1double_1value,
+    jdouble);
+
+
+
+#define READ_ARRAY(JTYPE, CTYPE)                                        \
+    /* std::cout << __FUNCTION__ << " ..." << std::endl; */             \
+    int result;                                                         \
+    const char *str_var_name;                                           \
+    JTYPE *valarr = env->Get ##CTYPE ##ArrayElements(val, NULL);        \
+    uint64_t read_size = env->GetArrayLength(val) * sizeof(JTYPE);      \
+    str_var_name = env->GetStringUTFChars(var_name, NULL);              \
+    if (str_var_name == NULL) return -1;                                \
+    result = adios_read ((int64_t) fh, str_var_name, (void *) valarr, read_size); \
+    env->ReleaseStringUTFChars(var_name, str_var_name);                 \
+    env->Release ##CTYPE ##ArrayElements(val, valarr, 0);               \
+    return result;
+
+#define FUNC_READ_ARRAY(FNAME, JTYPE, CTYPE)                            \
+    JNIEXPORT jint JNICALL FNAME                                        \
+    (JNIEnv * env, jclass cls, jlong fh, jstring var_name, JTYPE ##Array val) \
+    {                                                                   \
+        READ_ARRAY(JTYPE, CTYPE);                                      \
+    }
+
+/*
+ * Class:     gov_ornl_ccs_Adios
+ * Method:    adios_read
+ * Signature: (JLjava/lang/String;[B)I
+ * Signature: (JLjava/lang/String;[I)I
+ * Signature: (JLjava/lang/String;[J)I
+ * Signature: (JLjava/lang/String;[F)I
+ * Signature: (JLjava/lang/String;[D)I
+ */
+
+FUNC_READ_ARRAY(
+    Java_gov_ornl_ccs_Adios_adios_1read__JLjava_lang_String_2_3B,
+    jbyte,
+    Byte);
+
+FUNC_READ_ARRAY(
+    Java_gov_ornl_ccs_Adios_adios_1read__JLjava_lang_String_2_3I,
+    jint,
+    Int);
+
+FUNC_READ_ARRAY(
+    Java_gov_ornl_ccs_Adios_adios_1read__JLjava_lang_String_2_3J,
+    jlong,
+    Long);
+
+FUNC_READ_ARRAY(
+    Java_gov_ornl_ccs_Adios_adios_1read__JLjava_lang_String_2_3F,
+    jfloat,
+    Float);
+
+FUNC_READ_ARRAY(
+    Java_gov_ornl_ccs_Adios_adios_1read__JLjava_lang_String_2_3D,
+    jdouble,
+    Double);
+
+

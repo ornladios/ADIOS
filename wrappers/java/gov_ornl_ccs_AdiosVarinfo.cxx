@@ -120,60 +120,56 @@ JNIEXPORT jdoubleArray JNICALL Java_gov_ornl_ccs_AdiosVarinfo_adios_1read_1var_1
     return result;
 }
 
-#define READ_ARRAY(JTYPE, CTYPE)                                \
-    /* std::cout << __FUNCTION__ << "..." << std::endl; */      \
-    jint len = env->GetArrayLength(count);                      \
-    if (len != env->GetArrayLength(start))  return NULL;        \
-    jlong *startarr = env->GetLongArrayElements(start, NULL);   \
-    jlong *countarr = env->GetLongArrayElements(count, NULL);   \
-    jlong ncount = 1;                                           \
+#define READ_ARRAY(JTYPE, CTYPE)                                        \
+    /* std::cout << __FUNCTION__ << "..." << std::endl; */              \
+    int result;                                                         \
+    jint len = env->GetArrayLength(count);                              \
+    if (len != env->GetArrayLength(start))  return 0;                   \
+    jlong *startarr = env->GetLongArrayElements(start, NULL);           \
+    jlong *countarr = env->GetLongArrayElements(count, NULL);           \
+    jlong ncount = 1;                                                   \
     for (jint i = 0; i < len; i++) ncount *= countarr[i];               \
-    JTYPE ##Array result = env->New ##CTYPE ##Array(ncount);            \
-    JTYPE *data = env->Get ##CTYPE ##ArrayElements(result, NULL);       \
-    int64_t nbytes = adios_read_var_byid((ADIOS_GROUP*)gp, (int) varid, (uint64_t *)startarr, (uint64_t *)countarr, (void *)data); \
+    JTYPE *data = env->Get ##CTYPE ##ArrayElements(val, NULL);          \
+    result = adios_read_var_byid((ADIOS_GROUP*)gp, (int) varid, (uint64_t *)startarr, (uint64_t *)countarr, (void *)data); \
     env->ReleaseLongArrayElements(start, startarr, 0);                  \
     env->ReleaseLongArrayElements(count, countarr, 0);                  \
-    env->Release ##CTYPE ##ArrayElements(result, data, 0);              \
+    env->Release ##CTYPE ##ArrayElements(val, data, 0);                 \
     return result;
-    
+
 #define FUNC_READ_ARRAY(FNAME, JTYPE, CTYPE)                            \
-    JNIEXPORT JTYPE ##Array JNICALL FNAME                                \
-    (JNIEnv * env, jobject obj, jlong gp, jint varid, jlongArray start, jlongArray count) \
+    JNIEXPORT jint JNICALL FNAME                                        \
+    (JNIEnv * env, jobject obj, jlong gp, jint varid, jlongArray start, jlongArray count, JTYPE ##Array val) \
     {                                                                   \
         READ_ARRAY(JTYPE, CTYPE);                                       \
     }
 
 /*
- * Class:     gov_ornl_ccs_Adios
- * Method:    adios_read_var_byid
- * Signature: (JI[J[J)[B
- * Signature: (JI[J[J)[I
- * Signature: (JI[J[J)[J
- * Signature: (JI[J[J)[F
- * Signature: (JI[J[J)[D
+ * Class:     gov_ornl_ccs_AdiosVarinfo
+ * Method:    adios_read
+ * Signature: (JI[J[J[B)I
  */
 
 FUNC_READ_ARRAY (
-    Java_gov_ornl_ccs_AdiosVarinfo_adios_1read_1var_1byid_1as_1bytearr,
+    Java_gov_ornl_ccs_AdiosVarinfo_adios_1read__JI_3J_3J_3B,
     jbyte,
     Byte)
 
 FUNC_READ_ARRAY (
-    Java_gov_ornl_ccs_AdiosVarinfo_adios_1read_1var_1byid_1as_1intarr,
+    Java_gov_ornl_ccs_AdiosVarinfo_adios_1read__JI_3J_3J_3I,
     jint,
     Int)
 
 FUNC_READ_ARRAY (
-    Java_gov_ornl_ccs_AdiosVarinfo_adios_1read_1var_1byid_1as_1longarr,
+    Java_gov_ornl_ccs_AdiosVarinfo_adios_1read__JI_3J_3J_3J,
     jlong,
     Long)
 
 FUNC_READ_ARRAY (
-    Java_gov_ornl_ccs_AdiosVarinfo_adios_1read_1var_1byid_1as_1floatarr,
+    Java_gov_ornl_ccs_AdiosVarinfo_adios_1read__JI_3J_3J_3F,
     jfloat,
     Float)
 
 FUNC_READ_ARRAY (
-    Java_gov_ornl_ccs_AdiosVarinfo_adios_1read_1var_1byid_1as_1doublearr,
+    Java_gov_ornl_ccs_AdiosVarinfo_adios_1read__JI_3J_3J_3D,
     jdouble,
     Double)
