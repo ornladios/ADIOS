@@ -21,6 +21,9 @@ public class Adios
     private static native int adios_write (long fh, String var_name, long[] val);
     private static native int adios_write (long fh, String var_name, float[] val);
     private static native int adios_write (long fh, String var_name, double[] val);
+
+    // adios_read is not supporting yet due to its delayed reading nature
+
     private static native int adios_close (long fh);
     private static native int adios_finalize (int id);
 

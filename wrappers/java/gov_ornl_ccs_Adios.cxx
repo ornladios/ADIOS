@@ -49,6 +49,10 @@
     const char *str_##var = env->GetStringUTFChars(var, NULL); \
     if (str_##var == NULL) return -1;
 
+#define STR_ALLOC2(var) \
+    const char *str_##var = env->GetStringUTFChars(var, NULL); \
+    if (str_##var == NULL) goto end;
+
 #define STR_FREE(var) \
     env->ReleaseStringUTFChars(var, str_##var);
 
@@ -66,12 +70,12 @@ Java_gov_ornl_ccs_Adios_adios_1init
     int result;
     jboolean isCopy;
 
-    STR_ALLOC(xml_fname)
+    STR_ALLOC(xml_fname);
 
     result = adios_init(str_xml_fname);
     //std::cout << "result = " << result << std::endl;
     
-    STR_FREE(xml_fname)
+    STR_FREE(xml_fname);
 
     return result;
 }
@@ -89,9 +93,9 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open
     int result;
     int64_t fd_p = 0;
 
-    STR_ALLOC(group_name)
-    STR_ALLOC(file_name)
-    STR_ALLOC(mode)
+    STR_ALLOC(group_name);
+    STR_ALLOC(file_name);
+    STR_ALLOC(mode);
 
     //std::cout << "[IN] fd_p = " << (int64_t) fd_p << std::endl;
     //std::cout << "[IN] str_group_name = " << str_group_name << std::endl;
@@ -102,16 +106,9 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open
     //std::cout << "[OUT] fd_p = " << fd_p << std::endl;
     //std::cout << "[OUT] result = " << result << std::endl;
 
-    STR_FREE(group_name)
-    STR_FREE(file_name)
-    STR_FREE(mode)
-
-    /*
-    uint64_t total_size;
-    std::cout << "[IN] fd_p = " << (int64_t) fd_p << std::endl;
-    adios_group_size (fd_p, 92, (uint64_t *) &total_size);
-    std::cout << "[OUT] total size = " << total_size << std::endl;
-    */
+    STR_FREE(group_name);
+    STR_FREE(file_name);
+    STR_FREE(mode);
 
     return (jlong) fd_p;
 }
@@ -206,6 +203,8 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1close
 (JNIEnv * env, jclass cls, jlong fh)
 {
     //std::cout << __FUNCTION__ << "..." << std::endl;
+
+    //std::cout << "[IN] fh = " << fh << std::endl;
     return adios_close ((int64_t) fh);
 }
 
@@ -325,9 +324,9 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open_1and_1set_1group_1si
     int result;
     int64_t fd_p = 0;
 
-    STR_ALLOC(group_name)
-    STR_ALLOC(file_name)
-    STR_ALLOC(mode)
+    STR_ALLOC(group_name);
+    STR_ALLOC(file_name);
+    STR_ALLOC(mode);
 
     //std::cout << "[IN] fd_p = " << (int64_t) fd_p << std::endl;
     //std::cout << "[IN] str_group_name = " << str_group_name << std::endl;
@@ -338,9 +337,9 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open_1and_1set_1group_1si
     //std::cout << "[OUT] fd_p = " << fd_p << std::endl;
     //std::cout << "[OUT] result = " << result << std::endl;
 
-    STR_FREE(group_name)
-    STR_FREE(file_name)
-    STR_FREE(mode)
+    STR_FREE(group_name);
+    STR_FREE(file_name);
+    STR_FREE(mode);
 
     uint64_t total_size;
     //std::cout << "[IN] fd_p = " << (int64_t) fd_p << std::endl;
@@ -384,13 +383,13 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1declare_1group
     int64_t id_p;
     int result;
 
-    STR_ALLOC(name)
-    STR_ALLOC(time_index)
+    STR_ALLOC(name);
+    STR_ALLOC(time_index);
 
     result = adios_declare_group(&id_p, str_name, str_time_index, (ADIOS_FLAG) stats);
 
-    STR_FREE(name)
-    STR_FREE(time_index)
+    STR_FREE(name);
+    STR_FREE(time_index);
 
     return (jlong) id_p;
 }
@@ -405,19 +404,19 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1define_1var
 {
     int result;
 
-    STR_ALLOC(name)
-    STR_ALLOC(path)
-    STR_ALLOC(dimensions)
-    STR_ALLOC(global_dimensions)
-    STR_ALLOC(local_offsets)
+    STR_ALLOC(name);
+    STR_ALLOC(path);
+    STR_ALLOC(dimensions);
+    STR_ALLOC(global_dimensions);
+    STR_ALLOC(local_offsets);
 
     result = adios_define_var((int64_t) group_id, str_name, str_path, (ADIOS_DATATYPES) type, str_dimensions, str_global_dimensions, str_local_offsets);
     
-    STR_FREE(name)
-    STR_FREE(path)
-    STR_FREE(dimensions)
-    STR_FREE(global_dimensions)
-    STR_FREE(local_offsets)
+    STR_FREE(name);
+    STR_FREE(path);
+    STR_FREE(dimensions);
+    STR_FREE(global_dimensions);
+    STR_FREE(local_offsets);
 
     return result;
 }
@@ -432,17 +431,17 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1define_1attribute
 {
     int result;
     
-    STR_ALLOC(name)
-    STR_ALLOC(path)
-    STR_ALLOC(value)
-    STR_ALLOC(var)
+    STR_ALLOC(name);
+    STR_ALLOC(path);
+    STR_ALLOC(value);
+    STR_ALLOC(var);
     
     result = adios_define_attribute((int64_t) group_id, str_name, str_path, (ADIOS_DATATYPES) type, str_value, str_var);
 
-    STR_FREE(name)
-    STR_FREE(path)
-    STR_FREE(value)
-    STR_FREE(var)
+    STR_FREE(name);
+    STR_FREE(path);
+    STR_FREE(value);
+    STR_FREE(var);
 
     return result;
 }
@@ -457,15 +456,15 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1select_1method
 {
     int result;
     
-    STR_ALLOC(method)
-    STR_ALLOC(parameters)
-    STR_ALLOC(base_path)
+    STR_ALLOC(method);
+    STR_ALLOC(parameters);
+    STR_ALLOC(base_path);
     
-        result = adios_select_method((int64_t) group_id, str_method, str_parameters, str_base_path);
+    result = adios_select_method((int64_t) group_id, str_method, str_parameters, str_base_path);
 
-    STR_FREE(method)
-    STR_FREE(parameters)
-    STR_FREE(base_path)
-
+    STR_FREE(method);
+    STR_FREE(parameters);
+    STR_FREE(base_path);
+    
     return result;
 }

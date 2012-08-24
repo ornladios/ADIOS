@@ -60,7 +60,7 @@ public class AdiosTest
         long[] start = {0, 0};
         long[] count = {1, 10};
         System.out.println(">>> AdiosVarinfo.read ... ");
-        double[] output = var.read(start, count);
+        double[] output = var.readAsDoubleArr(start, count);
 
         System.out.println("temperature.length = " + output.length);
         for (int i = 0; i < output.length; i++) {
@@ -70,7 +70,7 @@ public class AdiosTest
         System.out.println(">>> AdiosVarinfo.inq ... ");
         AdiosVarinfo var2 = new AdiosVarinfo(group);
         var2.inq("NX");
-        System.out.println("NX = " + var2.read());
+        System.out.println("NX = " + var2.readAsInt());
 
         var.close();
         var2.close();

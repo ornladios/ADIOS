@@ -11,6 +11,11 @@ public class AdiosVarinfo
     private native int adios_inq_var(long gp, String varname);
     private native int adios_free_varinfo();
     private native double[] adios_read_var_byid(long gp, int varid, long[] start, long[] count);
+    private native byte[] adios_read_var_byid_as_bytearr(long gp, int varid, long[] start, long[] count);
+    private native int[] adios_read_var_byid_as_intarr(long gp, int varid, long[] start, long[] count);
+    private native long[] adios_read_var_byid_as_longarr(long gp, int varid, long[] start, long[] count);
+    private native float[] adios_read_var_byid_as_floatarr(long gp, int varid, long[] start, long[] count);
+    private native double[] adios_read_var_byid_as_doublearr(long gp, int varid, long[] start, long[] count);
 
     AdiosGroup group;
 
@@ -45,23 +50,32 @@ public class AdiosVarinfo
         return adios_free_varinfo();
     }
 
-    public double[] read(long[] start, long[] count)
+    public byte[] readAsByteArr(long[] start, long[] count)
     {
-        return adios_read_var_byid(group.gp, varid, start, count);
+        return adios_read_var_byid_as_bytearr(group.gp, varid, start, count);
     }
 
-    public int read()
+    public int[] readAsIntArr(long[] start, long[] count)
     {
-        return valueAsInt();
+        return adios_read_var_byid_as_intarr(group.gp, varid, start, count);
     }
 
-    public static double read(AdiosGroup group, String varname)
+    public long[] readAsLongArr(long[] start, long[] count)
     {
-        //return adios_read_var_byid(group.gp, varid);
-        return 0;
+        return adios_read_var_byid_as_longarr(group.gp, varid, start, count);
     }
 
-    public int valueAsInt()
+    public float[] readAsFloatArr(long[] start, long[] count)
+    {
+        return adios_read_var_byid_as_floatarr(group.gp, varid, start, count);
+    }
+
+    public double[] readAsDoubleArr(long[] start, long[] count)
+    {
+        return adios_read_var_byid_as_doublearr(group.gp, varid, start, count);
+    }
+
+    public int readAsInt()
     {
         ByteBuffer bb = ByteBuffer.wrap(value);
         if (group.file.endianness == 0)
@@ -70,6 +84,39 @@ public class AdiosVarinfo
             bb.order(ByteOrder.BIG_ENDIAN);
 
         return bb.getInt();
+    }
+
+    public long readAsLong()
+    {
+        ByteBuffer bb = ByteBuffer.wrap(value);
+        if (group.file.endianness == 0)
+            bb.order(ByteOrder.LITTLE_ENDIAN);
+        else
+            bb.order(ByteOrder.BIG_ENDIAN);
+
+        return bb.getLong();
+    }
+
+    public float readAsFloat()
+    {
+        ByteBuffer bb = ByteBuffer.wrap(value);
+        if (group.file.endianness == 0)
+            bb.order(ByteOrder.LITTLE_ENDIAN);
+        else
+            bb.order(ByteOrder.BIG_ENDIAN);
+
+        return bb.getFloat();
+    }
+
+    public double readAsDouble()
+    {
+        ByteBuffer bb = ByteBuffer.wrap(value);
+        if (group.file.endianness == 0)
+            bb.order(ByteOrder.LITTLE_ENDIAN);
+        else
+            bb.order(ByteOrder.BIG_ENDIAN);
+
+        return bb.getDouble();
     }
 
     public String toString()
