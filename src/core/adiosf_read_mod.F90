@@ -37,14 +37,14 @@ module adios_read_mod
             integer,        intent(out) :: err
         end subroutine
 
-        subroutine adios_read_open_stream (fp, fname, method, comm, lockmode, timeout_msec, err)
+        subroutine adios_read_open_stream (fp, fname, method, comm, lockmode, timeout_sec, err)
             implicit none
             integer*8,      intent(out) :: fp
             character(*),   intent(in)  :: fname
             integer,        intent(in)  :: method
             integer,        intent(in)  :: comm
             integer,        intent(in)  :: lockmode
-            integer,        intent(in)  :: timeout_msec
+            real,           intent(in)  :: timeout_sec
             integer,        intent(out) :: err
         end subroutine
         
@@ -54,6 +54,20 @@ module adios_read_mod
             character(*),   intent(in)  :: fname
             integer,        intent(in)  :: method
             integer,        intent(in)  :: comm
+            integer,        intent(out) :: err
+        end subroutine
+
+        subroutine adios_advance_step (fp, last, timeout_sec, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
+            integer,        intent(in)  :: last
+            real,           intent(in)  :: timeout_sec
+            integer,        intent(out) :: err
+        end subroutine
+        
+        subroutine adios_release_step (fp, err)
+            implicit none
+            integer*8,      intent(in)  :: fp
             integer,        intent(out) :: err
         end subroutine
         
