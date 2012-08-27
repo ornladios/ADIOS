@@ -132,11 +132,12 @@ int FC_FUNC_(adios_advance_step, ADIOS_ADVANCE_STEP)
 }
 
 
-void FC_FUNC_(adios_release_step, ADIOS_RELEASE_STEP) (int64_t *fp)
+void FC_FUNC_(adios_release_step, ADIOS_RELEASE_STEP) (int64_t *fp, int *err)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
     common_read_release_step (afp);
-    if (adios_errno)
+    *err = adios_errno;
+    if (*err)
         PRINT_ERRMSG();
 }
 
