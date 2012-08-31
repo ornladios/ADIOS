@@ -456,7 +456,7 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
             fp->attr_namelist[i][namelen] = '\0';
         }
         b += namelen;
-        attrs[i].name = strdup(fp->var_namelist[i]);  
+        attrs[i].name = strdup(fp->attr_namelist[i]);  
         // type
         attrs[i].type = *(enum ADIOS_DATATYPES*)b; 
         b += sizeof(int);
