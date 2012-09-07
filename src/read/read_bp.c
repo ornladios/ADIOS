@@ -2920,7 +2920,20 @@ int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
 */
     if (gdims[ndim - 1] == 0) // with time
     {
-        retval = 1;
+        if (v->characteristics_count <= 1) {
+            // a local array written once
+            retval = 0;
+        } else {
+            retval = 1;
+        }
+        /* FIXME: This last test tests if the last l:g:o is only an 'l'.
+           This is true for a variable over time but also 
+           true for a 1D local array (which has no global dimension)
+           The characteristics_count is 1 only if the local array is written
+           from one process and only at one timestep.
+           How do we identify local arrays written from many processes?
+           And local arrays written several times?
+        */
     }
 
     log_debug ("%s is_var_timed: = %d\n", v->var_name, retval);
