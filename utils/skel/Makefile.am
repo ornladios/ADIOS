@@ -1,6 +1,6 @@
 SUBDIRS = etc
 
-dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py
+dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_cat.py bin/skel_extract.py
 
 pythonlibdir=@libdir@/python
 

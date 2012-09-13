@@ -35,6 +35,7 @@ deploy:
 	cp $(CTESTS) submit* $(DEST_DIR)
 	cp $(FTESTS) submit* $(DEST_DIR)
 	cp $(prefix)/bin/set_method.sh $(DEST_DIR)
+	cp $(prefix)/bin/skel_cat.py $(DEST_DIR)
 
 
 clean:
