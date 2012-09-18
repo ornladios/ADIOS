@@ -326,7 +326,7 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 SUBDIRS = etc
-dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_cat.py bin/skel_extract.py
+dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py
 pythonlibdir = @libdir@/python
 dist_pythonlib_DATA = \
     lib/adios.py \
