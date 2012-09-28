@@ -329,7 +329,11 @@ static void parse_dimension_name(
 //			strcpy(dimname, group->time_index_name);
             sprintf(dimname, "%s_dim", group->time_index_name);
         } else {
-            dimname[0] = '\0';
+            if (dim->rank > 0) {
+                sprintf(dimname, "n%lld_dim", dim->rank);
+            } else {
+                dimname[0] = '\0';
+            }
         }
     }
 
@@ -579,7 +583,8 @@ static int decipher_dims(
     dims = pvar->dimensions;
     for (i=0;i<global_dim_count;i++) {
         parse_dimension_name(group, pvar_root, patt_root, &dims->global_dimension, dimname);
-        ncd_gen_name(nc4_global_dimnames[i], pvar->path, dimname);
+        //ncd_gen_name(nc4_global_dimnames[i], pvar->path, dimname);
+        ncd_gen_name(nc4_global_dimnames[i], "", dimname);
         if (DEBUG>3) printf("global_dimension[%d]->name==%s, ->rank==%llu, ->id==%d, time_index==%d\n",
                 i, nc4_global_dimnames[i], dims->global_dimension.rank, dims->global_dimension.id, dims->global_dimension.time_index);
         if (dims) {
@@ -589,7 +594,8 @@ static int decipher_dims(
     dims = pvar->dimensions;
     for (i=0;i<local_dim_count;i++) {
         parse_dimension_name(group, pvar_root, patt_root, &dims->dimension, dimname);
-        ncd_gen_name(nc4_local_dimnames[i], pvar->path, dimname);
+        //ncd_gen_name(nc4_local_dimnames[i], pvar->path, dimname);
+        ncd_gen_name(nc4_local_dimnames[i], "", dimname);
         if (DEBUG>3) printf("local_dimension[%d]->name ==%s, ->rank==%llu, ->id==%d, time_index==%d\n",
                 i, nc4_local_dimnames[i], dims->dimension.rank, dims->dimension.id, dims->dimension.time_index);
         if (dims) {
@@ -599,7 +605,8 @@ static int decipher_dims(
     dims = pvar->dimensions;
     for (i=0;i<local_offset_count;i++) {
         parse_dimension_name(group, pvar_root, patt_root, &dims->local_offset, dimname);
-        ncd_gen_name(nc4_local_offset_names[i], pvar->path, dimname);
+        //ncd_gen_name(nc4_local_offset_names[i], pvar->path, dimname);
+        ncd_gen_name(nc4_local_offset_names[i], "", dimname);
         if (DEBUG>3) printf("local_offset[%d]->name    ==%s, ->rank==%llu, ->id==%d, time_index==%d\n",
                 i, nc4_local_offset_names[i], dims->local_offset.rank, dims->local_offset.id, dims->local_offset.time_index);
         if (dims) {
@@ -619,7 +626,8 @@ static int decipher_dims(
             nc4_localdims[local_idx] = 1;
             nc4_offsets[loffs_idx] = 0;
             parse_dimension_name(group, pvar_root, patt_root, &dims->dimension, dimname);
-            ncd_gen_name(nc4_global_dimnames[global_idx], pvar->path, dimname);
+            //ncd_gen_name(nc4_global_dimnames[global_idx], pvar->path, dimname);
+            ncd_gen_name(nc4_global_dimnames[global_idx], "", dimname);
             strcpy(nc4_local_dimnames[local_idx], nc4_global_dimnames[global_idx]);
             strcpy(nc4_local_offset_names[loffs_idx], nc4_global_dimnames[global_idx]);
             if ((global_dim_count < local_dim_count) && (local_idx < local_dim_count)) {
@@ -631,7 +639,8 @@ static int decipher_dims(
             if (dimname[0] == '\0') {
                 sprintf(dimname, "local_%d", local_idx);
             }
-            ncd_gen_name(nc4_local_dimnames[local_idx], pvar->path, dimname);
+            //ncd_gen_name(nc4_local_dimnames[local_idx], pvar->path, dimname);
+            ncd_gen_name(nc4_local_dimnames[local_idx], "", dimname);
             parse_dimension_size(group, pvar_root, patt_root, &dims->dimension, &nc4_localdims[local_idx]);
         }
         if (myrank==0) {
@@ -643,7 +652,8 @@ static int decipher_dims(
             if (dimname[0] == '\0') {
                 sprintf(dimname, "global_%d", global_idx);
             }
-            ncd_gen_name(nc4_global_dimnames[global_idx], pvar->path, dimname);
+            //ncd_gen_name(nc4_global_dimnames[global_idx], pvar->path, dimname);
+            ncd_gen_name(nc4_global_dimnames[global_idx], "", dimname);
             parse_dimension_size(group, pvar_root, patt_root, &dims->global_dimension, &nc4_globaldims[global_idx]);
             if (myrank==0) {
                 if (DEBUG>3) printf(":g(%d)", nc4_globaldims[global_idx]);
@@ -655,7 +665,8 @@ static int decipher_dims(
             if (dimname[0] == '\0') {
                 sprintf(dimname, "offset_%d", loffs_idx);
             }
-            ncd_gen_name(nc4_local_offset_names[loffs_idx], pvar->path, dimname);
+            //ncd_gen_name(nc4_local_offset_names[loffs_idx], pvar->path, dimname);
+            ncd_gen_name(nc4_local_offset_names[loffs_idx], "", dimname);
             parse_dimension_size(group, pvar_root, patt_root, &dims->local_offset, &nc4_offsets[loffs_idx]);
             if (myrank==0) {
                 if (DEBUG>3) printf(":o(%d)", nc4_offsets[loffs_idx]);
@@ -997,6 +1008,8 @@ static int write_header(
         if (myrank==0) if (DEBUG>3) printf("\twriting fixed dimension array var!\n");
 
         if (var_exists == adios_flag_no) {
+
+#ifdef THIS_IS_UNDEFINED /* I do not think we need to define ADIOS local dimension variables in NC4 */
             for (i=0;i<deciphered_dims.local_dim_count;i++) {
                 Func_Timer("inqdim", rc = nc_inq_dimid(ncid, deciphered_dims.nc4_local_dimnames[i], &deciphered_dims.nc4_local_dimids[i]););
                 if (rc == NC_EBADDIM) {
@@ -1012,6 +1025,8 @@ static int write_header(
                     goto escape;
                 }
             }
+#endif
+
             for (i=0;i<deciphered_dims.global_dim_count;i++) {
                 Func_Timer("inqdim", rc = nc_inq_dimid(ncid, deciphered_dims.nc4_global_dimnames[i], &deciphered_dims.nc4_global_dimids[i]););
                 if (rc == NC_EBADDIM) {
@@ -1027,6 +1042,7 @@ static int write_header(
                     goto escape;
                 }
             }
+
             if (deciphered_dims.has_globaldims == adios_flag_yes) {
                 Func_Timer("defvar", rc = nc_def_var(ncid, fullname, nc4_type_id, deciphered_dims.global_dim_count, deciphered_dims.nc4_global_dimids, &nc4_varid););
                 if (rc != NC_NOERR) {
@@ -1316,7 +1332,7 @@ static void adios_var_to_comm_nc4(
     }
 }
 void adios_nc4_init(
-        const PairStruct * parameters,
+        const PairStruct *parameters,
         struct adios_method_struct *method)
 {
     struct adios_nc4_data_struct *md=NULL;
