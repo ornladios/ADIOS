@@ -1642,8 +1642,8 @@ void adios_mpi_close (struct adios_file_struct * fd
                 {
                     adios_write_attribute_v1 (fd, a);
                     if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
-                        fprintf (stderr, "mpi_file_write exceeds PG bound(2). File is corrupted. "
-                                         "Need to enlarge group size.\n");
+                        fprintf (stderr, "mpi_file_write exceeds PG bound(2). File (%s) is corrupted. "
+                                         "Need to enlarge group size.\n", fd->name);
 #if 0
                     err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
                                          ,MPI_BYTE, &md->status
@@ -1872,8 +1872,8 @@ void adios_mpi_close (struct adios_file_struct * fd
                     // everyone writes their data
                     if (fd->base_offset + bytes_written + to_write > 
                            fd->pg_start_in_file + fd->write_size_bytes)
-                        fprintf (stderr, "mpi_file_write exceeds PG bound(3). File is corrupted. "
-                                         "Need to enlarge group size.\n");
+                        fprintf (stderr, "mpi_file_write exceeds PG bound(3). File (%s) is corrupted. "
+                                         "Need to enlarge group size.\n", fd->name);
 
                     MPI_File_seek (md->fh, fd->base_offset + bytes_written
                                   ,MPI_SEEK_SET
