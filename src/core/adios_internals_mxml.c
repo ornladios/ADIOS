@@ -3687,6 +3687,7 @@ static int parseGroup (mxml_node_t * node)
     // now that we have declared the whole group, validate that the
     // paths specified in attributes refer to real things or give
     // a warning
+    /* // This is not required in ADIOS so why do this warnings?
     struct adios_attribute_struct * a = new_group->attributes;
     while (a)
     {
@@ -3699,6 +3700,7 @@ static int parseGroup (mxml_node_t * node)
 
         a = a->next;
     }
+    */
 
     return 1;
 }
