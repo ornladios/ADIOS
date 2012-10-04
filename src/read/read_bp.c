@@ -949,29 +949,33 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
             if (!file_ok)
             {
                 // This stream does not exist yet
-                log_debug ("Warning: file %s does not exsit!\n", fname);
+                log_debug ("file %s found!\n", fname);
+            
+                if (stay_in_poll_loop)
+                {
+                    // check if we need to stay in loop 
+                    if (timeout_sec == 0.0)  //return immediately, which means check file once
+                    {
+                        stay_in_poll_loop = 0;
+                    }
+                    else if (timeout_sec < 0.0) // check file until it arrives
+                    {
+                        adios_nanosleep (poll_interval, 0);
+                        stay_in_poll_loop = 1;
+                    }
+                    else if (timeout_sec > 0.0 && (adios_gettime () - t1 > timeout_sec))
+                    {
+                        stay_in_poll_loop = 0;
+                    }
+                    else
+                    {
+                        adios_nanosleep (poll_interval, 0);
+                    }
+                }
             }
-
-            if (stay_in_poll_loop)
+            else
             {
-                // check if we need to stay in loop 
-                if (timeout_sec == 0.0)  //return immediately, which means check file once
-                {
-                    stay_in_poll_loop = 0;
-                }
-                else if (timeout_sec < 0.0) // check file until it arrives
-                {
-                    adios_nanosleep (poll_interval, 0);
-                    stay_in_poll_loop = 1;
-                }
-                else if (timeout_sec > 0.0 && (adios_gettime () - t1 > timeout_sec))
-                {
-                    stay_in_poll_loop = 0;
-                }
-                else
-                {
-                    adios_nanosleep (poll_interval, 0);
-                }
+                stay_in_poll_loop = 0;
             }
         } // while (stay_in_poll_loop)
 
