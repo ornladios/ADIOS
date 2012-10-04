@@ -263,6 +263,7 @@ am_libadios_internal_nompi_a_OBJECTS =  \
 	libadios_internal_nompi_a-adios_internals_mxml.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_timing.$(OBJEXT) \
 	libadios_internal_nompi_a-util.$(OBJEXT) \
+	libadios_internal_nompi_a-futils.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transport_hooks.$(OBJEXT)
 libadios_internal_nompi_a_OBJECTS =  \
 	$(am_libadios_internal_nompi_a_OBJECTS)
@@ -1232,6 +1233,7 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_internals_mxml.c \
                                     core/adios_timing.c \
                                     core/util.c \
+                                    core/futils.c \
                                     core/adios_transport_hooks.c 
 
 libadios_internal_nompi_a_CPPFLAGS = -D_INTERNAL $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
@@ -1814,6 +1816,12 @@ libadios_internal_nompi_a-util.o: core/util.c
 
 libadios_internal_nompi_a-util.obj: core/util.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-util.obj `if test -f 'core/util.c'; then $(CYGPATH_W) 'core/util.c'; else $(CYGPATH_W) '$(srcdir)/core/util.c'; fi`
+
+libadios_internal_nompi_a-futils.o: core/futils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-futils.o `test -f 'core/futils.c' || echo '$(srcdir)/'`core/futils.c
+
+libadios_internal_nompi_a-futils.obj: core/futils.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-futils.obj `if test -f 'core/futils.c'; then $(CYGPATH_W) 'core/futils.c'; else $(CYGPATH_W) '$(srcdir)/core/futils.c'; fi`
 
 libadios_internal_nompi_a-adios_transport_hooks.o: core/adios_transport_hooks.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-adios_transport_hooks.o `test -f 'core/adios_transport_hooks.c' || echo '$(srcdir)/'`core/adios_transport_hooks.c

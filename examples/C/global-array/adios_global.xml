@@ -10,7 +10,7 @@
     <attribute name="description" path="/temperature" value="Global array written from 'size' processes" type="string"/>
 </adios-group>
 
-<method group="temperature" method="MPI">stripe_count=1;stripe_size=10485760;num_aggregators=2;merging_pgs=0</method>
+<method group="temperature" method="MPI_AMR">stripe_count=1;stripe_size=10485760;num_aggregators=2;merging_pgs=0</method>
 
 <buffer size-MB="2" allocate-time="now"/>
 

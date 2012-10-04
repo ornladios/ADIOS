@@ -50,7 +50,7 @@ int main (int argc, char ** argv)
     MPI_Comm_size (comm, &size);
 
     /* set the read method to staged read */
-    adios_set_read_method (ADIOS_READ_METHOD_BP_STAGED1);
+    adios_set_read_method (ADIOS_READ_METHOD_BP_STAGED);
 
     ADIOS_FILE * f = adios_fopen ("adios_amr_write.bp", comm);
 

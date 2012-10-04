@@ -7,7 +7,6 @@
 
 typedef struct read_request
 {
-    int rank; // the rank of processor which issued this request. 
     ADIOS_SELECTION * sel;
     int varid;
     int from_steps;
@@ -41,6 +40,9 @@ void alloc_namelist (char ***namelist, int length);
 void free_namelist (char **namelist, int length);
 void list_insert_read_request_tail (read_request ** h, read_request * q);
 void list_insert_read_request_next (read_request ** h, read_request * q);
+void list_append_read_request_list (read_request ** h, read_request * q);
+void list_free_read_request (read_request * h);
+int list_get_length (read_request * h);
 ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel);
 void free_selection (ADIOS_SELECTION * sel);
 

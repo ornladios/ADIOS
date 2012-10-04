@@ -110,6 +110,33 @@ int bp_get_endianness( uint32_t change_endianness )
         return current_endianness;
 }
 
+/* Convert 'step' to time, which is used in ADIOS internals.
+ * 'step' should start from 0.
+ */
+int get_time (struct adios_index_var_struct_v1 * v, int step)
+{
+    int i = 0;
+    int prev_ti = 0, counter = 0;
+
+    while (i < v->characteristics_count)
+    {
+        if (v->characteristics[i].time_index != prev_ti)
+        {
+            counter ++;
+            if (counter == (step + 1))
+            {
+                return v->characteristics[i].time_index;
+            }
+            prev_ti = v->characteristics[i].time_index;
+        }
+
+        i++;
+    }
+
+    return -1;
+
+}
+
 int bp_read_open (const char * filename,
           MPI_Comm comm,
           struct BP_FILE * fh)
@@ -195,6 +222,71 @@ int bp_open (const char * fname,
     bp_parse_attrs (fh);
 
     return 0;
+}
+
+ADIOS_VARINFO * bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
+{
+    struct BP_PROC * p;
+    BP_FILE * fh;
+    ADIOS_VARINFO * varinfo;
+    int file_is_fortran, i, k, timedim, size;
+    struct adios_index_var_struct_v1 * v;
+
+    adios_errno = 0;
+
+    p = (struct BP_PROC *) fp->fh;
+    fh = (BP_FILE *)p->fh;
+    v = bp_find_var_byid (fh, varid);
+
+    varinfo = (ADIOS_VARINFO *) malloc (sizeof (ADIOS_VARINFO));
+    assert (varinfo);
+
+    /* Note: set varid as the real varid.
+       Common read layer should convert it to the perceived id after the read me
+thod returns.
+    */
+    varinfo->varid = varid;
+    varinfo->type = v->type;
+    file_is_fortran = is_fortran_file (fh);
+
+    assert (v->characteristics_count);
+
+    bp_get_and_swap_dimensions (fh, v, file_is_fortran,
+                                &varinfo->ndim, &varinfo->dims,
+                                &varinfo->nsteps,
+                                file_is_fortran != futils_is_called_from_fortran()
+                               );
+
+    if (p->streaming)
+    {
+        varinfo->nsteps = 1;
+    }
+
+    // set value for scalar
+    if (v->characteristics [0].value)
+    {
+        size = bp_get_type_size (v->type, v->characteristics [0].value);
+        varinfo->value = (void *) malloc (size);
+        assert (varinfo->value);
+
+        memcpy (varinfo->value, v->characteristics [0].value, size);
+    }
+    else
+    {
+        varinfo->value = NULL;
+    }
+
+    varinfo->global = is_global_array (&(v->characteristics[0]));
+
+    varinfo->nblocks = get_var_nblocks (v, varinfo->nsteps);
+
+    assert (varinfo->nblocks);
+
+    varinfo->sum_nblocks = v->characteristics_count;
+    varinfo->statistics = 0;
+    varinfo->blockinfo = 0;
+
+    return varinfo;
 }
 
 MPI_File * get_BP_file_handle(struct BP_file_handle * l, uint32_t file_index)
@@ -1258,6 +1350,38 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
     return 0;
 }
 
+// Search for the start var index.
+int64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
+{
+    int64_t i = 0;
+
+    while (i < v->characteristics_count) {
+        if (v->characteristics[i].time_index == t) {
+            return i;
+        }
+
+        i++;
+    }
+
+    return -1;
+}
+
+// Search for the stop var index
+int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
+{
+    int64_t i = v->characteristics_count - 1;
+
+    while (i > -1) {
+        if (v->characteristics[i].time_index == t) {
+            return i;
+        }
+
+        i--;
+    }
+
+    return -1;
+}
+
 /* Seek to the specified step and prepare a few fields
  * in ADIOS_FILE structure, i.e., nvars, var_namelist,
  * nattrs, attr_namelist. This routine also sets the
@@ -2233,7 +2357,7 @@ int has_subfiles (struct BP_FILE * fh)
 /****************************************************
   Find the var associated with the given variable id 
 *****************************************************/
-struct adios_index_var_struct_v1 * bp_find_var_byid (struct BP_FILE * fh, int varid)
+struct adios_index_var_struct_v1 * bp_find_var_byid (BP_FILE * fh, int varid)
 {
     struct adios_index_var_struct_v1 * var_root = fh->vars_root;
     int i;

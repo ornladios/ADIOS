@@ -461,6 +461,7 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_internals_mxml.c \
                                     core/adios_timing.c \
                                     core/util.c \
+                                    core/futils.c \
                                     core/adios_transport_hooks.c 
 
 

@@ -206,6 +206,32 @@ void list_insert_read_request_tail (read_request ** h, read_request * q)
     return;
 }
 
+void list_append_read_request_list (read_request ** h, read_request * q)
+{
+    read_request * head;
+    if (!h || !q)
+    {
+        printf ("Error: list_append_read_request_list: h: %d, q: %d\n", h == 0, q == 0);
+        return;
+    }
+
+    head = * h;
+    if (!head)
+    {
+        * h = q;
+        return;
+    }
+
+    while (head->next)
+    {
+        head = head->next;
+    }
+
+    head->next = q;
+
+    return;
+}
+
 void list_insert_read_request_next (read_request ** h, read_request * q)
 {
     read_request * head;
@@ -245,6 +271,18 @@ void list_free_read_request (read_request * h)
     }
 }
 
+int list_get_length (read_request * h)
+{
+    int l = 0;
+
+    while (h)
+    {
+        h = h->next;
+        l++;
+    }
+
+    return l;
+}
 
 read_request * copy_read_request (const read_request * r)
 {
@@ -253,7 +291,6 @@ read_request * copy_read_request (const read_request * r)
     newreq = (read_request *) malloc (sizeof (read_request));
     assert (newreq);
 
-    newreq->rank = r->rank;
     newreq->sel = copy_selection (r->sel);
     newreq->varid = r->varid;
     newreq->from_steps = r->from_steps;

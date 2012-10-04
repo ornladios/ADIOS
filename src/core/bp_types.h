@@ -71,7 +71,6 @@ typedef struct BP_FILE {
 
 // save per proc info
 typedef struct BP_PROC {
-    int rank;
     struct BP_FILE * fh;
     int streaming;
     int * varid_mapping;

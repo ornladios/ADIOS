@@ -60,38 +60,6 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
     }\
 }\
 
-// Search for the start var index.
-static int64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
-{
-    int64_t i = 0;
-
-    while (i < v->characteristics_count) {
-        if (v->characteristics[i].time_index == t) {
-            return i;
-        }
-
-        i++;
-    }
-
-    return -1;
-}
-
-// Search for the stop var index
-static int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
-{
-    int64_t i = v->characteristics_count - 1;
-
-    while (i > -1) {
-        if (v->characteristics[i].time_index == t) {
-            return i;
-        }
-
-        i--;
-    }
-
-    return -1;
-}
-
 #define MPI_FILE_READ_OPS1                          \
         bp_realloc_aligned(fh->b, slice_size);      \
         fh->b->offset = 0;                          \
@@ -258,7 +226,6 @@ void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
 
     p = (struct BP_PROC *) malloc (sizeof (struct BP_PROC));
     assert (p);
-    p->rank = rank;
     p->fh = fh;
     p->streaming = 1;
     p->local_read_request_list = 0;
@@ -382,7 +349,6 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
             nr = (read_request *) malloc (sizeof (read_request));
             assert (nr);
 
-            nr->rank = r->rank;
             nr->varid = r->varid;
             nr->from_steps = r->from_steps;
             nr->nsteps = r->nsteps;
@@ -440,33 +406,6 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
     return chunk;
 }
 
-/* Convert 'step' to time, which is used in ADIOS internals.
- * 'step' should start from 0.
- */
-static int get_time (struct adios_index_var_struct_v1 * v, int step)
-{
-    int i = 0;
-    int prev_ti = 0, counter = 0;
-
-    while (i < v->characteristics_count)
-    {
-        if (v->characteristics[i].time_index != prev_ti)
-        {
-            counter ++;
-            if (counter == (step + 1))
-            {
-                return v->characteristics[i].time_index;
-            }
-            prev_ti = v->characteristics[i].time_index;
-        }
-
-        i++;
-    }
-
-    return -1;
-
-}
-
 /* This routine reads in data for bounding box selection.
    If the selection is not bounding box, it should be converted to it.
    The data returned is saved in ADIOS_VARCHUNK.
@@ -504,7 +443,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     v = bp_find_var_byid (fh, r->varid);
     
     /* Get dimensions and flip if caller != writer language */
-    /* Note: ndim below does include time if there is any */
+    /* Note: ndim below doesn't include time if there is any */
     bp_get_and_swap_dimensions (fh, v, file_is_fortran, &ndim, &dims, &nsteps, file_is_fortran);
  
     assert (ndim == sel->u.bb.ndim);
@@ -1068,7 +1007,6 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
 
     p = (struct BP_PROC *) malloc (sizeof (struct BP_PROC));
     assert (p);
-    p->rank = rank;
     p->fh = fh;
     p->streaming = 1;
     p->varid_mapping = 0;
@@ -1140,7 +1078,6 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
 
     p = (struct BP_PROC *) malloc (sizeof (struct BP_PROC));
     assert (p);
-    p->rank = rank;
     p->fh = fh;
     p->streaming = 0;
     p->varid_mapping = 0; // maps perceived id to real id
@@ -1368,71 +1305,22 @@ void adios_read_bp_release_step (ADIOS_FILE *fp)
 
 ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 {
-    struct BP_PROC * p;
-    BP_FILE * fh;
     ADIOS_VARINFO * varinfo;
-    int file_is_fortran, i, k, timedim, size;
-    struct adios_index_var_struct_v1 * v;
+    int mapped_id = map_req_varid (fp, varid);;
 
     adios_errno = 0;
 
-    p = (struct BP_PROC *) fp->fh;
-    fh = (BP_FILE *)p->fh;
-
-    if (varid < 0 || varid >= fp->nvars)
+    if (mapped_id < 0 || mapped_id >= fp->nvars)
     {
-        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)\n", varid, fp->nvars);
+        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)\n", mapped_id, fp->nvars);
         return 0;
     }
 
-    v = bp_find_var_byid (fh, varid);
-
-    varinfo = (ADIOS_VARINFO *) malloc (sizeof (ADIOS_VARINFO));
-    assert (varinfo);
-
-    /* Note: set varid as the real varid.
-       Common read layer should convert it to the perceived id after the read method returns.
-    */
+    /* this call sets varinfo->varid as the real mapped id.
+     * Therefore, we need to set it back to perceived id.
+     */
+    varinfo = bp_inq_var_byid (fp, mapped_id);
     varinfo->varid = varid;
-    varinfo->type = v->type;
-    file_is_fortran = is_fortran_file (fh);
-    
-    assert (v->characteristics_count);
-
-    bp_get_and_swap_dimensions (fh, v, file_is_fortran, 
-                                &varinfo->ndim, &varinfo->dims,
-                                &varinfo->nsteps,
-                                file_is_fortran != futils_is_called_from_fortran()
-                               );
-
-    if (p->streaming)
-    {
-        varinfo->nsteps = 1;
-    }
-
-    // set value for scalar
-    if (v->characteristics [0].value)
-    {
-        size = bp_get_type_size (v->type, v->characteristics [0].value);
-        varinfo->value = (void *) malloc (size);
-        assert (varinfo->value);
-
-        memcpy (varinfo->value, v->characteristics [0].value, size);
-    }
-    else
-    {
-        varinfo->value = NULL;
-    }
-    
-    varinfo->global = is_global_array (&(v->characteristics[0]));
-
-    varinfo->nblocks = get_var_nblocks (v, varinfo->nsteps);
-
-    assert (varinfo->nblocks);
-
-    varinfo->sum_nblocks = v->characteristics_count;
-    varinfo->statistics = 0;
-    varinfo->blockinfo = 0;
 
     return varinfo;
 }
@@ -2167,7 +2055,6 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
         free (dims);
     }
 
-    r->rank = p->rank;
     /* copy selection since we don't want to operate on user memory.
      */
     r->sel = (!nullsel ? copy_selection (sel) : nullsel);
@@ -2328,7 +2215,6 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
             read_request * newreq = (read_request *) malloc (sizeof (read_request));
             assert (newreq);
 
-            newreq->rank = r->rank;
             newreq->sel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
             assert (newreq->sel);
             newreq->sel->type = ADIOS_SELECTION_BOUNDINGBOX;
@@ -2431,7 +2317,6 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
             read_request * newreq = (read_request *) malloc (sizeof (read_request));
             assert (newreq);
 
-            newreq->rank = r->rank;
             newreq->sel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
             assert (newreq->sel);
             newreq->sel->type = ADIOS_SELECTION_POINTS;
@@ -2747,7 +2632,6 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
             r = (read_request *) malloc (sizeof (read_request));
             assert (r);
 
-            r->rank = p->rank;
             r->sel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
             r->sel->type = ADIOS_SELECTION_BOUNDINGBOX;
             r->sel->u.bb.ndim = 1;
