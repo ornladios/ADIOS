@@ -1310,15 +1310,15 @@ void adios_read_bp_release_step (ADIOS_FILE *fp)
 ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 {
     ADIOS_VARINFO * varinfo;
+    if (varid < 0 || varid >= fp->nvars)
+    {
+        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)\n", varid, fp->nvars);
+        return 0;
+    }
+
     int mapped_id = map_req_varid (fp, varid);;
 
     adios_errno = 0;
-
-    if (mapped_id < 0 || mapped_id >= fp->nvars)
-    {
-        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)\n", mapped_id, fp->nvars);
-        return 0;
-    }
 
     /* this call sets varinfo->varid as the real mapped id.
      * Therefore, we need to set it back to perceived id.
