@@ -4086,7 +4086,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
     uint64_t size = 0;
 
     if (var->bitmap == 0)
-        return ;
+        return 0;
 
     int32_t map[32];
     memset (map, -1, sizeof(map));
