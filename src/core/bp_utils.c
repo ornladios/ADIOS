@@ -1397,7 +1397,10 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     struct adios_index_attribute_struct_v1 * attr_root;
     uint64_t i;
 
-    /* Streaming starts with step 0. However, time index in BP file starts with 1 */
+    /* Streaming starts with step 0. However, time index in BP file
+     * starts with 1. If 'tostep' is -1, that means we want to get all steps.
+     * If not, we seek to the specified step.
+     */
     if (tostep == -1)
     {
         allstep = 1;

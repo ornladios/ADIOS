@@ -192,99 +192,74 @@ static int calc_data_size (BP_PROC * p)
 /**************************************************
 * Get the subfile index and associate data offset *
 ***************************************************/
-static void getDataAddress (const ADIOS_FILE * fp, int varid
-                           ,const uint64_t * start
-                           ,const uint64_t * count
-                           ,int * file_idx
-                           ,uint64_t * offset
-                           ,uint64_t * payload_size
+static void get_data_addr (const ADIOS_FILE * fp, int varid,
+                            const read_request * r,
+                            int * file_idx,
+                            uint64_t * offset,
+                            uint64_t * payload_size
                            )
 {
-#if 0
     BP_PROC * p = (BP_PROC *) fp->fh;
     BP_FILE * fh = (BP_FILE *) p->fh;
     struct adios_index_var_struct_v1 * v;
     int i, j, k, idx, t;
     int start_time, stop_time, start_idx, stop_idx, f_idx;
-    int ndim, ndim_notime, has_subfile, file_is_fortran;
+    int ndim, time, has_subfile, file_is_fortran;
     uint64_t size, * dims = 0;
     uint64_t ldims[32], gdims[32], offsets[32];
-    uint64_t count_notime[32], start_notime[32];
-    int file_tdim = -1, read_arg_tdim, is_global = 0, flag;
+    uint64_t * start, * count;
+    int nsteps, is_global = 0, flag;
 
     file_is_fortran = is_fortran_file (fh);
     has_subfile = has_subfiles (fh);
     v = bp_find_var_byid (fh, varid);
 
     /* Get dimensions and flip if caller != writer language */
-    adios_read_bp_staged_get_dimensions (v
-                                         ,fh->tidx_stop - fh->tidx_start + 1
-                                         ,file_is_fortran
-                                         ,&ndim
-                                         ,&dims
-                                         ,&file_tdim
-                                         );
+    bp_get_and_swap_dimensions (fh, v, file_is_fortran,
+                                &ndim, &dims, &nsteps,
+                                file_is_fortran);
 
-    if (file_is_fortran)
+    assert (ndim == r->sel->u.bb.ndim);
+
+    start = r->sel->u.bb.start;
+    count = r->sel->u.bb.count;
+
+    /* Note fp->current_step is always 0 for file mode. */
+    for (t = fp->current_step + r->from_steps;
+         t < fp->current_step + r->from_steps + r->nsteps; t++
+        )
     {
-        swap_order (ndim, dims, &file_tdim);
-    }
 
-    if (isTimeless (file_tdim))
-    {
-        start_time = fh->tidx_start;
-        stop_time = fh->tidx_stop;
-        ndim_notime = ndim;
+        if (!p->streaming)
+        {
+            time = get_time (v, t);
+        }
+        else
+        {
+            time = t + 1;
+        }
 
-        memcpy (start_notime, start, ndim * 8);
-        memcpy (count_notime, count, ndim * 8);
-    }
-    else
-    {
-        read_arg_tdim = futils_is_called_from_fortran () ? ndim - 1 : 0;
-
-        start_time = start[read_arg_tdim] + fh->tidx_start;
-        stop_time = start_time + count[read_arg_tdim] - 1;
-        ndim_notime = ndim - 1;
-
-        memcpy (start_notime
-               ,futils_is_called_from_fortran () ? start : start + 1
-               ,ndim_notime * 8
-               );
-        memcpy (count_notime
-               ,futils_is_called_from_fortran () ? count : count + 1
-               ,ndim_notime * 8
-               );
-    }
-
-    for (t = start_time; t <= stop_time; t++)
-    {
         start_idx = get_var_start_index (v, t);
         stop_idx = get_var_stop_index (v, t);
 
         if (start_idx < 0 || stop_idx < 0)
         {
-            adios_error (err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step",
-                varid, t);
+            adios_error (err_no_data_at_timestep,
+                         "Variable (id=%d) has no data at %d time step",
+                         varid, t);
             continue;
         }
 
-        if (ndim_notime == 0)
+        if (ndim == 0)
         {
             /* THIS IS A SCALAR VARIABLE */
             idx = 0;
 
-            if (isTimeless (file_tdim) )
-            {
-
-                * file_idx = v->characteristics[start_idx + idx].file_index;
-                * offset = v->characteristics[start_idx + idx].payload_offset;
-                * payload_size = bp_get_type_size (v->type, v->characteristics[start_idx + idx].value);
-
-                return;
-            }
-            else
-                continue;
+            * file_idx = v->characteristics[start_idx + idx].file_index;
+            * offset = v->characteristics[start_idx + idx].payload_offset;
+            * payload_size = bp_get_type_size (v->type,
+                                               v->characteristics[start_idx + idx].value);
+            return;
         }
 
          /* READ AN ARRAY VARIABLE */
@@ -295,56 +270,38 @@ static void getDataAddress (const ADIOS_FILE * fp, int varid
         {
             idx_table[idx] = 1;
             /* Each pg can have a different sized array, so we need the actual dimensions from it */
-            is_global = adios_read_bp_staged_get_dimensioncharacteristics(&(v->characteristics[start_idx + idx])
-                                                                          ,ldims
-                                                                          ,gdims
-                                                                          ,offsets
-                                                                          );
+            is_global = bp_get_dimension_characteristics_notime (&(v->characteristics[start_idx + idx]),
+                                                                 ldims,
+                                                                 gdims,
+                                                                 offsets,
+                                                                 file_is_fortran
+                                                                );
             if (!is_global)
             {
                 memcpy (gdims, ldims, ndim * 8);
             }
 
-            if (file_is_fortran)
+            for (j = 0; j < ndim; j++)
             {
-                _swap_order (ndim, gdims);
-                _swap_order (ndim, ldims);
-                _swap_order (ndim, offsets);
-            }
-
-            if (!isTimeless (file_tdim))
-            {
-                for (i = file_tdim; i < ndim - 1; i++)
+                if ( (count[j] > gdims[j])
+                  || (start[j] > gdims[j])
+                  || (start[j] + count[j] > gdims[j]))
                 {
-                    ldims[i] = ldims[i + 1];
-                    if (file_is_fortran)
-                    {
-                        gdims[i] = gdims[i + 1];
-                        offsets[i] = offsets[i + 1];
-                    }
-                }
-            }
-
-            for (j = 0; j < ndim_notime; j++)
-            {
-                if ( (count_notime[j] > gdims[j])
-                  || (start_notime[j] > gdims[j])
-                  || (start_notime[j] + count_notime[j] > gdims[j]))
-                {
-                    adios_error ( err_out_of_bound, "Error: Variable (id=%d) out of bound ("
-                        "the data in dimension %d to read is %llu elements from index %llu"
-                        " but the actual data is [0,%llu])",
-                        varid, j + 1, count_notime[j], start_notime[j], gdims[j] - 1);
+                    adios_error (err_out_of_bound,
+                                 "Error: Variable (id=%d) out of bound ("
+                                 "the data in dimension %d to read is %llu elements from index %llu"
+                                 " but the actual data is [0,%llu])",
+                                 varid, j + 1, count[j], start[j], gdims[j] - 1);
                     return;
                 }
 
                 /* check if there is any data in this pg and this dimension to read in */
-                flag = (offsets[j] >= start_notime[j]
-                        && offsets[j] < start_notime[j] + count_notime[j])
-                    || (offsets[j] < start_notime[j]
-                        && offsets[j] + ldims[j] > start_notime[j] + count_notime[j])
-                    || (offsets[j] + ldims[j] > start_notime[j]
-                        && offsets[j] + ldims[j] <= start_notime[j] + count_notime[j]);
+                flag = (offsets[j] >= start[j]
+                        && offsets[j] < start[j] + count[j])
+                    || (offsets[j] < start[j]
+                        && offsets[j] + ldims[j] > start[j] + count[j])
+                    || (offsets[j] + ldims[j] > start[j]
+                        && offsets[j] + ldims[j] <= start[j] + count[j]);
 
                 idx_table[idx] = idx_table[idx] && flag;
             }
@@ -361,7 +318,7 @@ static void getDataAddress (const ADIOS_FILE * fp, int varid
                 * file_idx = v->characteristics[start_idx + idx].file_index;
                 * offset = v->characteristics[start_idx + idx].payload_offset;
                 * payload_size = bp_get_type_size (v->type, v->characteristics[start_idx + idx].value);
-                for (j = 0; j < ndim_notime; j++)
+                for (j = 0; j < ndim; j++)
                 {
                     * payload_size *= ldims[j];
                 }
@@ -370,16 +327,16 @@ static void getDataAddress (const ADIOS_FILE * fp, int varid
         }
 
         free (idx_table);
-
+/*
         if (isTimeless (file_tdim))
             break;
+*/
     } // end for (timestep ... loop over timesteps
 
     if (dims)
     {
         free (dims);
     }
-#endif
 }
 
 static void sort_read_requests (BP_PROC * p)
@@ -673,7 +630,6 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
     sel = r->sel;
     start = r->sel->u.bb.start;
     count = r->sel->u.bb.count;
-
     file_is_fortran = is_fortran_file (fh);
     has_subfile = has_subfiles (fh);
     v = bp_find_var_byid (fh, varid);
@@ -688,7 +644,9 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
         swap_order (ndim, count, &dummy);
     }
 
-    for (t = fp->current_step + r->from_steps; t < fp->current_step + r->from_steps + r->nsteps; t++)
+    for (t = fp->current_step + r->from_steps;
+         t < fp->current_step + r->from_steps + r->nsteps; t++
+        )
     {
         if (!p->streaming)
         {
@@ -704,8 +662,8 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
 
         if (start_idx < 0 || stop_idx < 0)
         {
-            fprintf (stderr,"Variable (id=%d) has no data at %d time step\n",
-                varid, t);
+            log_info ("Variable (id=%d) has no data at %d time step\n",
+                      varid, t);
             continue;
         }
 
@@ -732,12 +690,8 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
             n->next = 0;
 
             list_insert_read_request_tail (&h, n);
-/*
-            if (isTimeless (file_tdim) )
-                break;
-            else
-                continue;
-*/
+
+            continue;
         }
 
          /* READ AN ARRAY VARIABLE */
@@ -1116,14 +1070,13 @@ double t2, t3, t4, t5;
             }
 
             // Calculate the var payload size of the last request
-            getDataAddress (fp,
-                            o_prev_end->varid, 
-                            o_prev_end->sel->u.bb.start, 
-                            o_prev_end->sel->u.bb.count, 
-                            &file_idx, 
-                            &offset, 
-                            &payload_size
-                           );
+            get_data_addr (fp,
+                           o_prev_end->varid, 
+                           o_prev_end, 
+                           &file_idx, 
+                           &offset, 
+                           &payload_size
+                          );
 //printf ("o_start.offset = %llu\n", o_start->ra->offset);
 //printf ("o_prev_end.offset = %llu\n", o_prev_end->ra->offset);
 
@@ -1163,6 +1116,9 @@ double t2, t3, t4, t5;
 //    printf ("while time = %f \n", t3 - t2);
 }
 
+/* r - the original read rquest
+ * s - the read request as the result of spliting
+ */
 static void read_buffer (const ADIOS_FILE * fp,
                          uint64_t buffer_offset,
                          read_request * r,
@@ -1170,70 +1126,64 @@ static void read_buffer (const ADIOS_FILE * fp,
                         )
 {
 #define MAX_DIMS 32
-#if 0
     BP_PROC * p = (BP_PROC *) fp->fh;
     BP_FILE * fh = (BP_FILE *) p->fh;
     struct adios_index_var_struct_v1 * v;
-    uint64_t * r_start, * r_count, * s_start, * s_count;
-    int i, j, k, idx, t;
+    uint64_t * s_start, * s_count;
+    uint64_t * start, * count;
+    int i, j, k, idx, t, ndim, dummy;
     int varid, start_idx, stop_idx, has_subfile, file_is_fortran;
     uint64_t ldims[MAX_DIMS], gdims[MAX_DIMS], offsets[MAX_DIMS];
-    uint64_t datasize, dset_stride, var_stride, total_size = 0, items_read, size;
-    uint64_t count_notime[MAX_DIMS], start_notime[MAX_DIMS];
+    uint64_t datasize, dset_stride, var_stride, total_size = 0, items_read;
     int is_global = 0, size_unit, break_dim, idx_check1, idx_check2;
     uint64_t slice_offset, slice_size;
     void * data;
-//    read_info ri;
 
-    varid = r->ra->varid;
+    varid = r->varid;
+    v = bp_find_var_byid (fh, varid);
+    data = r->data;
+    start = r->sel->u.bb.start;
+    count = r->sel->u.bb.count;
+    s_start = s->sel->u.bb.start;
+    s_count = s->sel->u.bb.count;
+    file_is_fortran = is_fortran_file (fh);
+    has_subfile = has_subfiles (fh);
+    ndim = r->sel->u.bb.ndim;
+    size_unit = bp_get_type_size (v->type,
+                                  v->characteristics [0].value
+                                 );
 
-    // data is in "original read request" buffer
-    data = r->ra->data;
-
-    // orginal read request
-    r_start = r->ra->start;
-    r_count = r->ra->count;
-
-    // new read request after split
-    s_start = s->ra->start;
-    s_count = s->ra->count;
-
-    file_is_fortran = is_file_fortran (fh);
-    has_subfile = has_subfile (fh);
-    v = adios_find_var_byid (gp, varid);
-
-/*
-    memset (&ri, 0, sizeof (read_info));
-    ri.start_notime = start_notime;
-    ri.count_notime = count_notime;
-
-    getReadInfo (gp, v, r_start, r_count, &ri);
-*/
-    /* items_read = how many data elements are we going to read in total (per timestep) */
-    items_read = 1;
-    for (i = 0; i < ri.ndim_notime; i++)
+    /* We need to swap them here to read correctly in C order */
+    if (futils_is_called_from_fortran ())
     {
-        items_read *= count_notime[i];
+        swap_order (ndim, start, &dummy);
+        swap_order (ndim, count, &dummy);
     }
 
-    size_unit = bp_get_type_size (v->type, v->characteristics [0].value);
+    for (i = 0, items_read = 1; i < ndim; i++)
+    {
+        items_read *= count[i];
+    }
 
-    /* For each timestep, do reading separately (they are stored in different sets of process groups */
-    for (t = ri.start_time; t <= ri.stop_time; t++)
+    /* For each timestep, do the reading separately.
+     * Note fp->current_step is always 0 for file mode.
+     */
+    for (t = fp->current_step + r->from_steps;
+         t < fp->current_step + r->from_steps + r->nsteps; t++
+        )
     {
         start_idx = get_var_start_index (v, t);
         stop_idx = get_var_stop_index (v, t);
 
         if (start_idx < 0 || stop_idx < 0)
         {
-            adios_error (err_no_data_at_timestep
-                        ,"Variable (id=%d) has no data at %d time step"
-                        ,varid, t
-                        );
+            log_info ("Variable (id=%d) has no data at %d time step",
+                      varid, t
+                     );
             continue;
         }
 
-        if (ri.ndim_notime == 0)
+        if (ndim == 0)
         {
             /* READ A SCALAR VARIABLE */
             slice_size = 1 * size_unit;
@@ -1264,14 +1214,7 @@ static void read_buffer (const ADIOS_FILE * fp,
 
             total_size += size_unit;
 
-            if (isTimeless (ri.file_tdim))
-            {
-                break;
-            }
-            else
-            {
-                continue;
-            }
+            continue;
         }
 
          /* READ AN ARRAY VARIABLE */
@@ -1286,61 +1229,41 @@ static void read_buffer (const ADIOS_FILE * fp,
             dset_stride = 1;
             idx_check1 = 1;
             idx_check2 = 1;
-
-            /* Each pg can have a different sized array, so we need the actual dimensions from it */
-            is_global = adios_read_bp_staged_get_dimensioncharacteristics (&(v->characteristics[start_idx + idx])
-                                                                           ,ldims
-                                                                           ,gdims
-                                                                           ,offsets
-                                                                           );
+            is_global = bp_get_dimension_characteristics_notime (
+                                    &(v->characteristics[start_idx + idx]),
+                                    ldims,
+                                    gdims,
+                                    offsets,
+                                    file_is_fortran
+                                   );
 
             if (!is_global)
             {
-                memcpy (gdims, ldims, ri.ndim * 8);
+                memcpy (gdims, ldims, ndim * 8);
             }
 
-            if (file_is_fortran)
-            {
-                _swap_order (ri.ndim, gdims);
-                _swap_order (ri.ndim, ldims);
-                _swap_order (ri.ndim, offsets);
-            }
-
-            if (!isTimeless (ri.file_tdim))
-            {
-                for (i = ri.file_tdim; i < ri.ndim - 1; i++)
-                {
-                    ldims[i] = ldims[i + 1];
-                    if (file_is_fortran)
-                    {
-                        gdims[i] = gdims[i + 1];
-                        offsets[i] = offsets[i + 1];
-                    }
-                }
-            }
-
-            for (j = 0; j < ri.ndim_notime; j++)
+            for (j = 0; j < ndim; j++)
             {
                 payload_size *= ldims [j];
 
-                if ( (count_notime[j] > gdims[j])
-                  || (start_notime[j] > gdims[j])
-                  || (start_notime[j] + count_notime[j] > gdims[j]))
+                if ( (count[j] > gdims[j])
+                  || (start[j] > gdims[j])
+                  || (start[j] + count[j] > gdims[j]))
                 {
-                    adios_error ( err_out_of_bound, "Error: Variable (id=%d) out of bound ("
+                    log_error ("Error: Variable (id=%d) out of bound ("
                         "the data in dimension %d to read is %llu elements from index %llu"
                         " but the actual data is [0,%llu])",
-                        varid, j+1, count_notime[j], start_notime[j], gdims[j] - 1);
+                        varid, j+1, count[j], start[j], gdims[j] - 1);
                     return;
                 }
 
                 /* check if there is any data in this pg and this dimension to read in */
-                flag1 = (offsets[j] >= start_notime[j]
-                        && offsets[j] < start_notime[j] + count_notime[j])
-                    || (offsets[j] < start_notime[j]
-                        && offsets[j] + ldims[j] > start_notime[j] + count_notime[j])
-                    || (offsets[j] + ldims[j] > start_notime[j]
-                        && offsets[j] + ldims[j] <= start_notime[j] + count_notime[j]);
+                flag1 = (offsets[j] >= start[j]
+                        && offsets[j] < start[j] + count[j])
+                    || (offsets[j] < start[j]
+                        && offsets[j] + ldims[j] > start[j] + count[j])
+                    || (offsets[j] + ldims[j] > start[j]
+                        && offsets[j] + ldims[j] <= start[j] + count[j]);
 
                 idx_check1 = idx_check1 && flag1;
 
@@ -1359,10 +1282,12 @@ static void read_buffer (const ADIOS_FILE * fp,
                 continue;
             }
 
-            break_dim =  ri.ndim_notime - 1;
+            break_dim =  ndim - 1;
             while (break_dim > -1)
             {
-                if (start_notime[break_dim] == 0 && ldims[break_dim] == count_notime[break_dim])
+                if (start[break_dim] == 0 &&
+                    ldims[break_dim] == count[break_dim]
+                   )
                 {
                     datasize *= ldims[break_dim];
                 }
@@ -1393,39 +1318,40 @@ static void read_buffer (const ADIOS_FILE * fp,
             else if (break_dim == 0)
             {
                 int isize;
-                uint64_t size_in_dset = 0, offset_in_dset = 0, offset_in_var = 0, write_offset;
+                uint64_t size_in_dset = 0, offset_in_dset = 0;
+                uint64_t offset_in_var = 0, write_offset;
 
                 isize = offsets[0] + ldims[0];
-                if (start_notime[0] >= offsets[0])
+                if (start[0] >= offsets[0])
                 {
                     // head is in
-                    if (start_notime[0] < isize)
+                    if (start[0] < isize)
                     {
-                        if (start_notime[0] + count_notime[0] > isize)
+                        if (start[0] + count[0] > isize)
                         {
-                            size_in_dset = isize - start_notime[0];
+                            size_in_dset = isize - start[0];
                         }
                         else
                         {
-                            size_in_dset = count_notime[0];
+                            size_in_dset = count[0];
                         }
                         offset_in_var = 0;
-                        offset_in_dset = start_notime[0] - offsets[0];
+                        offset_in_dset = start[0] - offsets[0];
                     }
                 }
                 else
                 {
                     // middle is in
-                    if (isize < start_notime[0] + count_notime[0])
+                    if (isize < start[0] + count[0])
                     {
                         size_in_dset = ldims[0];
                     }
                     else
                     {
                     // tail is in
-                        size_in_dset = count_notime[0] + start_notime[0] - offsets[0];
+                        size_in_dset = count[0] + start[0] - offsets[0];
                     }
-                    offset_in_var = offsets[0] - start_notime[0];
+                    offset_in_var = offsets[0] - start[0];
                     offset_in_dset = 0;
                 }
 
@@ -1434,9 +1360,9 @@ static void read_buffer (const ADIOS_FILE * fp,
                                  + offset_in_dset * datasize * size_unit;
 
                 write_offset = offset_in_var * size_unit;
-                for (i = 1; i < ri.ndim_notime; i++)
+                for (i = 1; i < ndim; i++)
                 {
-                    write_offset *= count_notime[i];
+                    write_offset *= count[i];
                 }
 
                 if (idx_check2)
@@ -1460,23 +1386,23 @@ static void read_buffer (const ADIOS_FILE * fp,
                 memset (offset_in_dset, 0, MAX_DIMS * 8);
                 memset (offset_in_var, 0, MAX_DIMS * 8);
 
-                for (i = 0; i < ri.ndim_notime ; i++)
+                for (i = 0; i < ndim; i++)
                 {
                     isize = offsets[i] + ldims[i];
-                    if (start_notime[i] >= offsets[i])
+                    if (start[i] >= offsets[i])
                     {
                         // head is in
-                        if (start_notime[i] < isize)
+                        if (start[i] < isize)
                         {
-                            if (start_notime[i] + count_notime[i] > isize)
+                            if (start[i] + count[i] > isize)
                             {
-                                size_in_dset[i] = isize - start_notime[i];
+                                size_in_dset[i] = isize - start[i];
                             }
                             else
                             {
-                                size_in_dset[i] = count_notime[i];
+                                size_in_dset[i] = count[i];
                             }
-                            offset_in_dset[i] = start_notime[i] - offsets[i];
+                            offset_in_dset[i] = start[i] - offsets[i];
                             offset_in_var[i] = 0;
                         }
                         else
@@ -1486,34 +1412,34 @@ static void read_buffer (const ADIOS_FILE * fp,
                     else
                     {
                         // middle is in
-                        if (isize < start_notime[i] + count_notime[i])
+                        if (isize < start[i] + count[i])
                         {
                             size_in_dset[i] = ldims[i];
                         }
                         else
                         {
                             // tail is in
-                            size_in_dset[i] = count_notime[i] + start_notime[i] - offsets[i];
+                            size_in_dset[i] = count[i] + start[i] - offsets[i];
                         }
                         offset_in_dset[i] = 0;
-                        offset_in_var[i] = offsets[i] - start_notime[i];
+                        offset_in_var[i] = offsets[i] - start[i];
                     }
                 }
 
                 datasize = 1;
                 var_stride = 1;
 
-                for (i = ri.ndim_notime - 1; i >= break_dim; i--)
+                for (i = ndim - 1; i >= break_dim; i--)
                 {
                     datasize *= size_in_dset[i];
                     dset_stride *= ldims[i];
-                    var_stride *= count_notime[i];
+                    var_stride *= count[i];
                 }
 
                 uint64_t start_in_payload = 0, end_in_payload = 0, s = 1;
                 uint64_t var_offset = 0, dset_offset = 0;
 
-                for (i = ri.ndim_notime - 1; i > -1; i--)
+                for (i = ndim - 1; i > -1; i--)
                 {
                     start_in_payload += s * offset_in_dset[i] * size_unit;
                     end_in_payload += s * (offset_in_dset[i] + size_in_dset[i] - 1) * size_unit;
@@ -1524,14 +1450,14 @@ static void read_buffer (const ADIOS_FILE * fp,
                 slice_offset =  v->characteristics[start_idx + idx].payload_offset
                                   + start_in_payload;
 
-                for (i = 0; i < ri.ndim_notime ; i++)
+                for (i = 0; i < ndim; i++)
                 {
                     offset_in_dset[i] = 0;
                 }
 
-                for (i = 0; i < ri.ndim_notime ; i++)
+                for (i = 0; i < ndim; i++)
                 {
-                    var_offset = offset_in_var[i] + var_offset * count_notime[i];
+                    var_offset = offset_in_var[i] + var_offset * count[i];
                     dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
                 }
 
@@ -1543,7 +1469,7 @@ static void read_buffer (const ADIOS_FILE * fp,
                               ,break_dim
                               ,size_in_dset
                               ,ldims
-                              ,count_notime
+                              ,count
                               ,var_stride
                               ,dset_stride
                               ,var_offset
@@ -1558,16 +1484,7 @@ static void read_buffer (const ADIOS_FILE * fp,
 
         // shift target pointer for next read in
         data = (char *)data + (items_read * size_unit);
-
-        if (isTimeless (ri.file_tdim))
-            break;
     } // for t
-
-    if (ri.dims)
-    {
-        free (ri.dims);
-    }
-#endif
 #undef MAX_DIMS
 }
 
@@ -2459,7 +2376,58 @@ void adios_read_bp_staged_reset_dimension_order (const ADIOS_FILE *fp, int is_fo
 
 void adios_read_bp_staged_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group)
 {
+    BP_PROC * p;
+    BP_FILE * fh;
+    int i, j, k, offset;
 
+    p = (BP_PROC *) fp->fh;
+    fh = (BP_FILE *) p->fh;
+
+    * ngroups = fh->gvar_h->group_count;
+
+    alloc_namelist (group_namelist, fh->gvar_h->group_count);
+    for (i = 0; i < fh->gvar_h->group_count; i++)
+    {
+        (*group_namelist)[i] = malloc (strlen (fh->gvar_h->namelist[i]) + 1);
+        assert ((*group_namelist)[i]);
+
+        memcpy ((*group_namelist)[i], fh->gvar_h->namelist[i], strlen (fh->gvar_h->
+namelist[i]) + 1);
+    }
+
+    * nvars_per_group = (int *) malloc (fh->gvar_h->group_count * sizeof (int));
+    assert (* nvars_per_group);
+
+    for (i = 0; i < fh->gvar_h->group_count; i++)
+    {
+        (* nvars_per_group)[i] = fh->gvar_h->var_counts_per_group[i];
+    }
+
+    * nattrs_per_group = (int *) malloc (fh->gattr_h->group_count * sizeof (int));
+    assert (* nattrs_per_group);
+
+    for (i = 0; i < fh->gvar_h->group_count; i++)
+    {
+        offset = 0;
+        for (j = 0; j < i; j++)
+        {
+            offset += fh->gattr_h->attr_counts_per_group[j];
+        }
+
+        (* nattrs_per_group)[i] = 0;
+        for (j = 0; j < fh->gattr_h->attr_counts_per_group[i]; j++)
+        {
+            if (!show_hidden_attrs && strstr (fh->gattr_h->attr_namelist[offset + j], "__adios__"))
+            {
+            }
+            else
+            {
+                (* nattrs_per_group)[i] ++;
+            }
+        }
+    }
+
+    return;
 }
 
 int adios_read_bp_staged_is_var_timed (const ADIOS_FILE *fp, int varid)
