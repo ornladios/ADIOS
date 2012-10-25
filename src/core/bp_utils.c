@@ -1216,19 +1216,20 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
             (*root)->characteristics [j].value = bp_read_data_from_buffer(b, (*root)->type);
             break;
 
-		// NCSU - Adding in backward compatibility
-		case adios_characteristic_max:
-		{
-			if (!((*root)->characteristics [j].stats))
-			{
-				(*root)->characteristics [j].stats = malloc (sizeof(struct adios_index_characteristics_stat_struct *));
-				(*root)->characteristics [j].stats[0] = malloc (2 * sizeof(struct adios_index_characteristics_stat_struct));
-				(*root)->characteristics [j].bitmap = 0;
-			}
-			(*root)->characteristics [j].bitmap |= (1 << adios_statistic_max);
-			(*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, (*root)->type);
-			break;
-		}
+        // NCSU - Adding in backward compatibility
+        case adios_characteristic_max:
+        {
+            if (!((*root)->characteristics [j].stats))
+            {
+                (*root)->characteristics [j].stats = malloc (sizeof(struct adios_index_characteristics_stat_struct *));
+                (*root)->characteristics [j].stats[0] = malloc (2 * sizeof(struct adios_index_characteristics_stat_struct));
+                (*root)->characteristics [j].bitmap = 0;
+            }
+
+            (*root)->characteristics [j].bitmap |= (1 << adios_statistic_max);
+            (*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, (*root)->type);
+            break;
+        }
 
         // NCSU - Adding in backward compatibility
         case adios_characteristic_min:
@@ -1244,73 +1245,76 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 			break;
         }
 
-		// NCSU - Parse the statistical information based in the bitmap
+        // NCSU - Parse the statistical information based in the bitmap
         case adios_characteristic_stat:
-		{
-			uint8_t i, c, idx; 
-			uint8_t count = adios_get_stat_set_count ((*root)->type);
-			uint16_t characteristic_size;
+        {
+            uint8_t i, c, idx; 
+            uint8_t count = adios_get_stat_set_count ((*root)->type);
+            uint16_t characteristic_size;
 
-			(*root)->characteristics [j].stats = malloc (count * sizeof(struct adios_index_characteristics_stat_struct *));
+            (*root)->characteristics [j].stats = malloc (count * sizeof(struct adios_index_characteristics_stat_struct *));
 
-			for (c = 0; c < count; c ++)
-			{
-				i = idx = 0;
-				(*root)->characteristics [j].stats[c] = malloc (ADIOS_STAT_LENGTH * sizeof(struct adios_index_characteristics_stat_struct));
+            for (c = 0; c < count; c ++)
+            {
+                i = idx = 0;
+                (*root)->characteristics [j].stats[c] = malloc (ADIOS_STAT_LENGTH * sizeof(struct adios_index_characteristics_stat_struct));
 
-				while ((*root)->characteristics[j].bitmap >> i)
-				{
-					(*root)->characteristics [j].stats[c][i].data = 0;
-					if (((*root)->characteristics[j].bitmap >> i) & 1)
-					{
-						if (i == adios_statistic_hist)
-						{
-							uint32_t bi;
-							
-							(*root)->characteristics [j].stats[c][idx].data = malloc (sizeof(struct adios_index_characteristics_hist_struct));
-							struct adios_index_characteristics_hist_struct * hist = (*root)->characteristics [j].stats[c][idx].data; 
+                while ((*root)->characteristics[j].bitmap >> i)
+                {
+                    (*root)->characteristics [j].stats[c][i].data = 0;
+                    if (((*root)->characteristics[j].bitmap >> i) & 1)
+                    {
+                        if (i == adios_statistic_hist)
+                        {
+                            uint32_t bi;
 
-            				BUFREAD32(b, hist->num_breaks)
-            				hist->min = * (double *) bp_read_data_from_buffer(b, adios_double);
-            				hist->max = * (double *) bp_read_data_from_buffer(b, adios_double);
+                            (*root)->characteristics [j].stats[c][idx].data = malloc (sizeof(struct adios_index_characteristics_hist_struct));
+                            struct adios_index_characteristics_hist_struct * hist = (*root)->characteristics [j].stats[c][idx].data; 
 
-            				hist->frequencies = malloc((hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
-            				for (bi = 0; bi <= hist->num_breaks; bi ++) {
-            				    BUFREAD32(b, hist->frequencies[bi])
-            				}
+                            BUFREAD32(b, hist->num_breaks)
+                            hist->min = * (double *) bp_read_data_from_buffer(b, adios_double);
+                            hist->max = * (double *) bp_read_data_from_buffer(b, adios_double);
 
-            				hist->breaks = malloc(hist->num_breaks * adios_get_type_size(adios_double, ""));
-            				for (bi = 0; bi < hist->num_breaks; bi ++) {
-            				    hist->breaks[bi] = * (double *) bp_read_data_from_buffer(b, adios_double);
-            				}
-						}
-						else
-						{
-							characteristic_size = adios_get_stat_size((*root)->characteristics [j].stats[c][idx].data
-                                                                                                 ,(*root)->type
-                                                                                                 ,(enum ADIOS_STAT)i
-                                                                                                 );
-							(*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);
+                            hist->frequencies = malloc((hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+                            for (bi = 0; bi <= hist->num_breaks; bi ++)
+                            {
+                                BUFREAD32(b, hist->frequencies[bi])
+                            }
 
-							void * data = (*root)->characteristics [j].stats[c][idx].data;
-			            	memcpy (data, (b->buff + b->offset), characteristic_size);
-            				b->offset += characteristic_size;
+                            hist->breaks = malloc(hist->num_breaks * adios_get_type_size(adios_double, ""));
+                            for (bi = 0; bi < hist->num_breaks; bi ++)
+                            {
+                                hist->breaks[bi] = * (double *) bp_read_data_from_buffer(b, adios_double);
+                            }
+                        }
+                        else
+                        {
+                            characteristic_size = adios_get_stat_size(
+                                (*root)->characteristics [j].stats[c][idx].data
+                               ,(*root)->type
+                               ,(enum ADIOS_STAT)i
+                               );
+                            (*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);
 
-            				if(b->change_endianness == adios_flag_yes) 
-                        		swap_ptr(data, characteristic_size * 8);
-						}
-						idx ++;
-					}
-					i ++;
-				}	
-			}	
-			break;
-		}
+                            void * data = (*root)->characteristics [j].stats[c][idx].data;
+			    memcpy (data, (b->buff + b->offset), characteristic_size);
+                            b->offset += characteristic_size;
 
-		// NCSU - Statistics. Read the bitmap
-		case adios_characteristic_bitmap:
-			BUFREAD32(b, (*root)->characteristics [j].bitmap);
-			break;
+                            if(b->change_endianness == adios_flag_yes) 
+                                swap_ptr(data, characteristic_size * 8);
+                        }
+                        idx ++;
+                    }
+                    i ++;
+                }	
+            }	
+            break;
+	}
+
+       // NCSU - Statistics. Read the bitmap
+       case adios_characteristic_bitmap:
+           BUFREAD32(b, (*root)->characteristics [j].bitmap);
+           break;
 
         case adios_characteristic_offset: 
             BUFREAD64(b, (*root)->characteristics [j].offset)
