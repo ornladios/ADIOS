@@ -116,7 +116,6 @@ endif(MPI_LIBRARIES AND MPI_INCLUDE_PATH)
 endif(MPI_FOUND)
 
 # Define to 1 if you have the <mxml.h> header file.
-# mxml.h path /sw/analysis-x64/mxml/2.6/centos5.5_pgi10.9/include
 find_path(MXML_INCLUDE_DIR NAMES mxml.h PATHS ${MXML_DIR}/include)
 if(NOT MXML_INCLUDE_DIR_NOTFOUND)
   message(STATUS "find MXML header")
@@ -126,7 +125,7 @@ if(NOT MXML_INCLUDE_DIR_NOTFOUND)
 endif(NOT MXML_INCLUDE_DIR_NOTFOUND)
 
 # Define if you have the MXML.
-# MXML_LIBRARY path /sw/analysis-x64/mxml/2.6/centos5.5_pgi10.9/lib
+# MXML: /sw/analysis-x64/mxml/2.6/centos5.5_pgi10.9
 set(HAVE_MXML 0)
 set(MXML_DIR "" CACHE FILEPATH "") 
 find_library(MXML_LIB_DIR NAMES mxml PATHS ${MXML_DIR}/lib)
@@ -163,7 +162,7 @@ set(HAVE_P3RT_P3RT_H 0)
 set(HAVE_PABLO 0)
 
 # Define if you have PHDF5.
-# phdf5 library path: /sw/sith/hdf5/1.8.5/centos5.5_pgi10.9_ompi1.4.4/lib
+# phdf5: /sw/sith/hdf5/1.8.5/centos5.5_pgi10.9_ompi1.4.4
 set(HAVE_PHDF5 0)
 set(PHDF5_DIR "" CACHE FILEPATH "")
 find_library(PHDF5_LIB_DIR NAMES hdf5 PATHS "${PHDF5_DIR}/lib")
