@@ -4,7 +4,7 @@ project(ADIOS_PROJECT)
 #enable_language(${LANGUAGE})
 #message(STATUS "CMAKE_${LANGUAGE}_COMPILER_WORKS = ${CMAKE_${LANGUAGE}_COMPILER_WORKS}")
 include_directories(${PROJECT_SOURCE_DIR})
-link_directories(${PROJECT_SOURCE_DIR})
+link_directories(${PROJECT_BINARY_DIR})
 
 set(prefix ${CMAKE_INSTALL_PREFIX})
 set(exec_prefix ${prefix})
