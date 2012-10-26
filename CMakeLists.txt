@@ -1,7 +1,24 @@
 cmake_minimum_required(VERSION 2.8)
 project(ADIOS_PROJECT)
+#set(LANGUAGE "" CACHE FILEPATH "")  #C/CXX/Fortran
+#enable_language(${LANGUAGE})
+#message(STATUS "CMAKE_${LANGUAGE}_COMPILER_WORKS = ${CMAKE_${LANGUAGE}_COMPILER_WORKS}")
 include_directories(${PROJECT_SOURCE_DIR})
 link_directories(${PROJECT_SOURCE_DIR})
+
+set(prefix ${CMAKE_INSTALL_PREFIX})
+set(exec_prefix ${prefix})
+set(bindir ${exec_prefix}/bin)
+set(datadir ${prefix}/share)
+set(libdir ${exec_prefix}/lib)
+set(includedir ${prefix}/include)
+
+option(BUILD_WRITE "BUILD_WRITE" OFF)
+option(BUILD_FORTRAN "BUILD_FORTRAN" OFF)
+
+set(LIBS "")
+set(CPPFLAGS "-DMPICH_IGNORE_CXX_SEEK")
+set(CFLAGS "-g -fPIC")
 
 #################################### start generating config.h #######################################
 INCLUDE (CheckIncludeFiles)
@@ -89,27 +106,37 @@ CHECK_INCLUDE_FILES(memory.h HAVE_MEMORY_H)
 set(HAVE_MPI 0)
 find_package(MPI)
 if(MPI_FOUND)
-  set (HAVE_MPI 1)
-  message(STATUS "find MPI library")
+  if(MPI_LIBRARIES AND MPI_INCLUDE_PATH)
+    message(STATUS "find MPI library and header")
+    set (HAVE_MPI 1)
+    set(MPILIBS ${MPI_LIBRARIES})
+    include_directories(${MPI_INCLUDE_PATH})
+    set(LIBS "${LIBS} ${MPILIBS}")  
+endif(MPI_LIBRARIES AND MPI_INCLUDE_PATH)
 endif(MPI_FOUND)
-
-# Define if you have the MXML.
-# MXML_LIBRARY path /sw/analysis-x64/mxml/2.6/centos5.5_pgi10.9/lib
-set(HAVE_MXML 0)
-find_library(MXML_LIBRARY NAMES mxml PATHS "")
-if(MXML_LIBRARY)
-  message(STATUS "find MXML library")
-  set(HAVE_MXML 1)
-endif(MXML_LIBRARY)
 
 # Define to 1 if you have the <mxml.h> header file.
 # mxml.h path /sw/analysis-x64/mxml/2.6/centos5.5_pgi10.9/include
-find_path(MXML_INCLUDE_DIR NAMES mxml.h PATHS "")
+find_path(MXML_INCLUDE_DIR NAMES mxml.h PATHS ${MXML_DIR}/include)
 if(NOT MXML_INCLUDE_DIR_NOTFOUND)
   message(STATUS "find MXML header")
   set(HAVE_MXML_H 1)
   include_directories(${MXML_INCLUDE_DIR})
+  set(MXML_CPPFLAGS ${MXML_INCLUDE_DIR})
 endif(NOT MXML_INCLUDE_DIR_NOTFOUND)
+
+# Define if you have the MXML.
+# MXML_LIBRARY path /sw/analysis-x64/mxml/2.6/centos5.5_pgi10.9/lib
+set(HAVE_MXML 0)
+set(MXML_DIR "" CACHE FILEPATH "") 
+find_library(MXML_LIB_DIR NAMES mxml PATHS ${MXML_DIR}/lib)
+if(MXML_LIB_DIR AND HAVE_MXML_H)
+  message(STATUS "find MXML library")
+  set(HAVE_MXML 1)
+  set(MXML_LIB ${MXML_LIB_DIR})
+  set(LIBS "${LIBS} ${MXML_LIB}")
+  set(CPPFLAGS "${CPPFLAGS} ${MXML_CPPFLAGS}")
+endif(MXML_LIB_DIR AND HAVE_MXML_H)
 
 # Define to 1 if you have the `nanosleep' function.
 CHECK_FUNCTION_EXISTS(nanosleep HAVE_NANOSLEEP)
@@ -138,20 +165,23 @@ set(HAVE_PABLO 0)
 # Define if you have PHDF5.
 # phdf5 library path: /sw/sith/hdf5/1.8.5/centos5.5_pgi10.9_ompi1.4.4/lib
 set(HAVE_PHDF5 0)
-find_library(PHDF5_LIBRARY_DIR hdf5 "")
-if(PHDF5_LIBRARY_DIR)
+set(PHDF5_DIR "" CACHE FILEPATH "")
+find_library(PHDF5_LIB_DIR NAMES hdf5 PATHS "${PHDF5_DIR}/lib")
+if(PHDF5_LIB_DIR)
   message(STATUS "find PHDF5 library")
   set(HAVE_PHDF5 1)
-endif(PHDF5_LIBRARY_DIR)
+endif(PHDF5_LIB_DIR)
 
 # Define if you have the Portals.
 set(HAVE_PORTALS 0)
 
 # Define to 1 if you have <portals3.h>.
-set(HAVE_PORTALS3_H 0)
+#set(HAVE_PORTALS3_H 0)
+CHECK_INCLUDE_FILES(portals3.h HAVE_PORTALS3_H)
 
 # Define to 1 if you have <portals/portals3.h>.
-set(HAVE_PORTALS_PORTALS3_H 0)
+#set(HAVE_PORTALS_PORTALS3_H 0)
+CHECK_INCLUDE_FILES(portals/portals3.h HAVE_PORTALS_PORTALS3_H)
 
 # Define if you have POSIX threads libraries and header files.
 set(HAVE_PTHREAD 0)
@@ -268,11 +298,39 @@ set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO})
 set(VERSION_SVNREV 2007)
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${PROJECT_SOURCE_DIR}/config.h)
-#################################### end of generating config.h #######################################
+################################ end of generating config.h ###############################
+
+set(ADIOSLIB_LDADD "m ${MXML_LIB}")
+set(ADIOSLIB_CFLAGS "")
+set(ADIOSLIB_CPPFLAGS ${MXML_CPPFLAGS})
+set(ADIOSLIB_EXTRA_CPPFLAGS "-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE")
+set(ADIOSLIB_SEQ_CPPFLAGS "-D_NOMPI ${MXML_CPPFLAGS}")
+set(ADIOSLIB_SEQ_CFLAGS "")
+set(ADIOSLIB_SEQ_LDADD "m ${MXML_LIBS}")
+set(ADIOSLIB_INT_CPPFLAGS "-D_NOMPI ${MXML_CPPFLAGS}")
+set(ADIOSLIB_INT_CFLAGS "")
+set(ADIOSLIB_INT_LDADD "-lm ${MXML_LIBS}")
+set(ADIOSREADLIB_CPPFLAGS "")
+set(ADIOSREADLIB_CFLAGS "")
+set(ADIOSREADLIB_LDADD "m")
+set(ADIOSREADLIB_SEQ_CPPFLAGS "-D_NOMPI")
+set(ADIOSREADLIB_SEQ_CFLAGS "")
+set(ADIOSREADLIB_SEQ_LDADD "m")
+
+set(NSSI_SERVER_LIBS "")
+############################### srart of top CMakeLists.txt ###############################
+install(PROGRAMS adios_config DESTINATION ${bindir})
+
+if(HAVE_NSSI)
+install(PROGRAMS scripts/create.nssi.config.sh DESTINATION ${bindir}) 
+install(PROGRAMS scripts/kill.nssi.staging.sh DESTINATION ${bindir})
+install(PROGRAMS scripts/start.nssi.staging.sh DESTINATION  ${bindir})
+endif(HAVE_NSSI)
 
 add_definitions(-DO_LARGEFILE=0)
 
 add_subdirectory(src)
 #add_subdirectory(utils)
-#add_subdirectory(tests)
+add_subdirectory(tests)
 #add_subdirectory(examples)
+############################### end of top CMakeLists.txt ###############################
