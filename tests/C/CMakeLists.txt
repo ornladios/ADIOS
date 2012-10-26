@@ -1,0 +1,14 @@
+include_directories(${PROJECT_SOURCE_DIR}/tests/C)
+include_directories(${PROJECT_SOURCE_DIR}/src/public)
+link_directories(${PROJECT_BINARY_DIR}/tests/C)
+
+find_library(ADIOS_LIB NAMES adios PATHS ${PROJECT_BINARY_DIR}/src)
+if(NOT ${ADIOS_LIB})
+  message(STATUS "cannot find adios.a in ${PROJECT_SOURCE_DIR}/src/tests/C makefile")
+endif(NOT ${ADIOS_LIB})
+  
+add_executable(adios_test_c adios_test_c.c)
+target_link_libraries(adios_test_c ${ADIOS_LIB} ${ADIOSLIB_LDADD}) 
+set(adios_test_c_CPPFLAGS "${ADIOSLIB_CPPFLAGS}")
+set(adios_test_c_CFLAGS "${ADIOSLIB_CFLAGS}")
+set_target_properties(adios_test_c PROPERTIES COMPILE_FLAGS "${adios_test_c_CFLAGS} ${adios_test_c_CPPFLAGS}")
