@@ -112,12 +112,12 @@ int adios_set_buffer_size ()
 
         adios_buffer_size_remaining = adios_buffer_size_max;
 
-        return 1;
+        return 0;
     }
     else
     {
         log_error ("adios_allocate_buffer already called. No changes made.\n");
-        return 0;
+        return -1;
     }
 }
 

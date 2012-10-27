@@ -42,7 +42,7 @@ void FC_FUNC_(adios_init, ADIOS_INIT) (const char * config, int * err, int confi
         *err = common_adios_init (buf1);
         free (buf1);
     } else {
-        *err = -adios_errno;
+        *err = adios_errno;
     }
 }
 
@@ -86,7 +86,7 @@ void FC_FUNC_(adios_open, ADIOS_OPEN)
         free (buf2);
         free (buf3);
     } else {
-        *err = -adios_errno;
+        *err = adios_errno;
     }
 }
 
@@ -120,7 +120,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
     if (!fd)
     {
         adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_write\n");
-        *err = 1;
+        *err = err_invalid_file_pointer;
         return;
     }
 
@@ -140,7 +140,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
     //printf("  -- adios_write: name=[%s] var size = %d\n", buf1, var_size);
 
     if (!buf1) {
-        *err = -adios_errno;
+        *err = adios_errno;
         return;
     }
 
@@ -149,7 +149,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
     if (!v)
     {
         adios_error (err_invalid_varname, "Bad var name (ignored): '%s'\n", buf1);
-        *err = 1;
+        *err = adios_errno;
         free (buf1);
         return;
     }
@@ -161,7 +161,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
            )
         {
             adios_error (err_invalid_file_mode, "write attempted on %s in %s.  This was opened for read\n" ,buf1 , fd->name);
-            *err = 1;
+            *err = adios_errno;
             free (buf1);
             return;
         }
@@ -170,7 +170,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
     if (!var)
     {
         adios_error (err_invalid_data, "Invalid data (NULL pointer) passed to write for variable %s\n", buf1);
-        *err = 1;
+        *err = adios_errno;
         free (buf1);
         return;
     }
@@ -247,7 +247,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
                     adios_error (err_no_memory, 
                                  "In adios_write, cannot allocate %lld bytes to copy scalar %s\n",
                                  element_size, v->name);
-                    *err = 1;
+                    *err = adios_errno;
                     free (buf1);
                     return;
                 }
@@ -261,7 +261,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
                     adios_error (err_no_memory, 
                                  "In adios_write, cannot allocate %lld bytes to copy string %s\n",
                                  element_size, v->name);
-                    *err = 1;
+                    *err = adios_errno;
                     free (buf1);
                     return;
                 }
@@ -303,7 +303,7 @@ void FC_FUNC_(adios_get_write_buffer, ADIOS_GET_WRITE_BUFFER)
         *err = common_adios_get_write_buffer (*fd_p, buf1, (uint64_t *) size, buffer);
         free (buf1);
     } else {
-        *err = -adios_errno;
+        *err = adios_errno;
     }
 }
 
@@ -321,7 +321,7 @@ void FC_FUNC_(adios_read, ADIOS_READ)
         *err = common_adios_read (*fd_p, buf1, buffer, *buffer_size);
         free (buf1);
     } else {
-        *err = -adios_errno;
+        *err = adios_errno;
     }
 }
 
@@ -344,7 +344,7 @@ void FC_FUNC_(adios_set_path, ADIOS_SET_PATH)
         *err = common_adios_set_path (*fd_p, buf1);
         free (buf1);
     } else {
-        *err = -adios_errno;
+        *err = adios_errno;
     }
 }
 
@@ -363,7 +363,7 @@ void FC_FUNC_(adios_set_path_var, ADIOS_SET_PATH_VAR)
         free (buf1);
         free (buf2);
     } else {
-        *err = -adios_errno;
+        *err = adios_errno;
     }
 }
 
@@ -430,12 +430,12 @@ void FC_FUNC_(adios_declare_group, ADIOS_DECLARE_GROUP)
         *err = adios_common_declare_group (id, buf1, adios_flag_yes, "", "", buf2, *stats);
         free (buf1);
         free (buf2);
-        if (*err == 1) {
+        if (*err == 0) {
             struct adios_group_struct * g = (struct adios_group_struct *) *id;
             g->all_unique_var_names = adios_flag_no;
         }
     } else {
-        *err = -adios_errno;
+        *err = adios_errno;
     }
 }
 
@@ -476,7 +476,7 @@ void FC_FUNC_(adios_define_var, ADIOS_DEFINE_VAR)
         free (buf4);
         free (buf5);
     } else {
-        *err = -adios_errno;
+        *err = adios_errno;
     }
 }
 
@@ -511,7 +511,7 @@ void FC_FUNC_(adios_define_attribute, ADIOS_DEFINE_ATTRIBUTE)
         free (buf3);
         free (buf4);
     } else {
-        *err = -adios_errno;
+        *err = adios_errno;
     }
 }
 
@@ -539,7 +539,7 @@ void FC_FUNC_(adios_select_method, ADIOS_SELECT_METHOD)
         free (buf2);
         free (buf3);
     } else {
-        *err = -adios_errno;
+        *err = adios_errno;
     }
 }
 
