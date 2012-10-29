@@ -378,12 +378,10 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/adios_read.c \
                       core/adios_read_v1.c \
                       core/common_read.c \
-                      core/adios_internals.c \
                       core/adios_logger.c \
                       core/buffer.c \
                       core/globals.c \
                       core/adios_read_hooks.c \
-                      core/adios_transport_hooks.c \
                       core/util.c \
                       read/read_bp.c 
 
