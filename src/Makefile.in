@@ -398,9 +398,8 @@ libadiosread_nompi_a_LIBADD =
 am__libadiosread_nompi_a_SOURCES_DIST = mpidummy.c adios_bp_v1.c \
 	adios_endianness.c bp_utils.c futils.c adios_error.c \
 	adios_read.c adios_read_hooks.c common_read.c read_bp.c \
-	adios_internals.c buffer.c adios_transport_hooks.c globals.c \
-	read_dart.c read_dimes.c read_datatap.c adios_nssi_config.c \
-	read_nssi.c
+	buffer.c globals.c read_dart.c read_dimes.c read_datatap.c \
+	adios_nssi_config.c read_nssi.c
 @HAVE_DART_TRUE@am__objects_22 =  \
 @HAVE_DART_TRUE@	libadiosread_nompi_a-read_dart.$(OBJEXT)
 @HAVE_DIMES_TRUE@am__objects_23 =  \
@@ -420,9 +419,7 @@ am_libadiosread_nompi_a_OBJECTS =  \
 	libadiosread_nompi_a-adios_read_hooks.$(OBJEXT) \
 	libadiosread_nompi_a-common_read.$(OBJEXT) \
 	libadiosread_nompi_a-read_bp.$(OBJEXT) \
-	libadiosread_nompi_a-adios_internals.$(OBJEXT) \
 	libadiosread_nompi_a-buffer.$(OBJEXT) \
-	libadiosread_nompi_a-adios_transport_hooks.$(OBJEXT) \
 	libadiosread_nompi_a-globals.$(OBJEXT) $(am__objects_22) \
 	$(am__objects_23) $(am__objects_24) $(am__objects_25) \
 	$(am__objects_26)
@@ -927,9 +924,8 @@ libadiosread_a_SOURCES = adios_bp_v1.c adios_endianness.c bp_utils.c \
 libadiosread_nompi_a_SOURCES = mpidummy.c adios_bp_v1.c \
 	adios_endianness.c bp_utils.c futils.c adios_error.c \
 	adios_read.c adios_read_hooks.c common_read.c read_bp.c \
-	adios_internals.c buffer.c adios_transport_hooks.c globals.c \
-	$(am__append_43) $(am__append_44) $(am__append_45) \
-	$(am__append_46) $(am__append_52)
+	buffer.c globals.c $(am__append_43) $(am__append_44) \
+	$(am__append_45) $(am__append_46) $(am__append_52)
 @HAVE_NSSI_TRUE@dist_libadiosread_nompi_a_SOURCES = adios_nssi_args.x
 @HAVE_NSSI_TRUE@nodist_libadiosread_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@libadiosreadf_nompi_a_SOURCES = mpidummy.c \
@@ -2068,23 +2064,11 @@ libadiosread_nompi_a-read_bp.o: read_bp.c
 libadiosread_nompi_a-read_bp.obj: read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-read_bp.obj `if test -f 'read_bp.c'; then $(CYGPATH_W) 'read_bp.c'; else $(CYGPATH_W) '$(srcdir)/read_bp.c'; fi`
 
-libadiosread_nompi_a-adios_internals.o: adios_internals.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_internals.o `test -f 'adios_internals.c' || echo '$(srcdir)/'`adios_internals.c
-
-libadiosread_nompi_a-adios_internals.obj: adios_internals.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_internals.obj `if test -f 'adios_internals.c'; then $(CYGPATH_W) 'adios_internals.c'; else $(CYGPATH_W) '$(srcdir)/adios_internals.c'; fi`
-
 libadiosread_nompi_a-buffer.o: buffer.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-buffer.o `test -f 'buffer.c' || echo '$(srcdir)/'`buffer.c
 
 libadiosread_nompi_a-buffer.obj: buffer.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-buffer.obj `if test -f 'buffer.c'; then $(CYGPATH_W) 'buffer.c'; else $(CYGPATH_W) '$(srcdir)/buffer.c'; fi`
-
-libadiosread_nompi_a-adios_transport_hooks.o: adios_transport_hooks.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_transport_hooks.o `test -f 'adios_transport_hooks.c' || echo '$(srcdir)/'`adios_transport_hooks.c
-
-libadiosread_nompi_a-adios_transport_hooks.obj: adios_transport_hooks.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_transport_hooks.obj `if test -f 'adios_transport_hooks.c'; then $(CYGPATH_W) 'adios_transport_hooks.c'; else $(CYGPATH_W) '$(srcdir)/adios_transport_hooks.c'; fi`
 
 libadiosread_nompi_a-globals.o: globals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-globals.o `test -f 'globals.c' || echo '$(srcdir)/'`globals.c

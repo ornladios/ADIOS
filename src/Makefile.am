@@ -329,9 +329,7 @@ libadiosread_nompi_a_SOURCES = mpidummy.c\
                       adios_read_hooks.c \
                       common_read.c \
                       read_bp.c \
-                      adios_internals.c \
                       buffer.c \
-                      adios_transport_hooks.c \
                       globals.c
 
 if HAVE_DART
