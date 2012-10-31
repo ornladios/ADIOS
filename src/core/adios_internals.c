@@ -1178,7 +1178,7 @@ int adios_common_declare_group (int64_t * id, const char * name
 
     adios_append_group (g);
 
-    return 0;
+    return 1;
 }
 
 int adios_common_free_group (int64_t id)
@@ -1587,7 +1587,7 @@ int adios_common_define_var (int64_t group_id, const char * name
                 adios_error (err_no_memory, 
                         "config.xml: out of memory in adios_common_define_var\n");
 
-                return err_no_memory;
+                return 0;
             }
             char * dim = 0;
             char * g_dim = "0";
@@ -1638,7 +1638,7 @@ int adios_common_define_var (int64_t group_id, const char * name
     }
     t->var_count++;
 
-    return 0;
+    return 1;
 }
 
 void adios_common_get_group (int64_t * group_id, const char * name)

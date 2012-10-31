@@ -4108,7 +4108,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
         {
             adios_error (err_missing_config_file, "missing config file %s\n", config);
 
-            return err_missing_config_file;
+            return 0;
         }
         struct stat s;
         if (stat (config, &s) == 0)
@@ -4124,7 +4124,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                 adios_error (err_expected_read_size_mismatch, "error reading config file: %s. Expected %d Got %d\n"
                         ,config, s.st_size, bytes_read );
 
-                return err_expected_read_size_mismatch;
+                return 0;
             }
         }
         else
@@ -4133,7 +4133,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                     ,s.st_size + 1
                     );
 
-            return err_allocating_buffer_size;
+            return 0;
         }
         fclose (fp);
 //#if HAVE_MPI
@@ -4151,7 +4151,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                     ,buffer_size + 1
                     );
 
-            return err_allocating_buffer_size;
+            return 0;
         }
         MPI_Bcast (buffer, buffer_size, MPI_BYTE, 0, comm);
         buffer [buffer_size] = 0;
@@ -4169,7 +4169,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                          "Did you remember to start the file with\n"
                          "<?xml version=\"1.0\"?>\n");
 
-        return err_invalid_xml_doc;
+        return 0;
     }
 
     root = doc;
@@ -4195,7 +4195,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
 
             mxmlRelease (doc);
 
-            return err_invalid_xml_doc;
+            return 0;
         }
         else
         {
@@ -4227,7 +4227,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
 
         mxmlRelease (doc);
 
-        return err_invalid_xml_doc;
+        return 0;
     }
     else
     {
@@ -4269,7 +4269,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
 
                 mxmlRelease (doc);
 
-                return err_invalid_host_language;
+                return 0;
             }
         }
     }
@@ -4343,7 +4343,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                          "config.xml\n"
                 );
 
-        return err_no_group_defined;
+        return 0;
     }
     if (!saw_method)
     {
@@ -4351,7 +4351,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                          "the adios-group in config.xml\n"
                 );
 
-        return err_no_method_defined;
+        return 0;
     }
     if (!saw_buffer)
     {
@@ -4359,10 +4359,10 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                          "config.xml\n"
                 );
 
-        return err_no_buffer_defined;
+        return 0;
     }
 
-    return 0;
+    return 1;
 }
 
 int adios_local_config ()
@@ -4373,7 +4373,7 @@ int adios_local_config ()
         adios_init_transports (&adios_transports);
     }
 
-    return 0;
+    return 1;
 }
 
 static PairStruct * get_and_preprocess_params (const char * parameters)
@@ -4505,7 +4505,7 @@ int adios_common_select_method (int priority, const char * method
         free (new_method->parameters);
         free (new_method);
 
-        return err_invalid_write_method;
+        return 0;
     }
 
     adios_common_get_group (&group_id, group);
@@ -4521,7 +4521,7 @@ int adios_common_select_method (int priority, const char * method
         free (new_method->parameters);
         free (new_method);
 
-        return err_missing_invalid_group;
+        return 0;
     }
     else
     {
@@ -4550,7 +4550,7 @@ int adios_common_select_method (int priority, const char * method
 
     adios_append_method (new_method);
 
-    return 0;
+    return 1;
 }
 
 int adios_common_select_method_by_group_id (int priority, const char * method
@@ -4598,7 +4598,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
         free (new_method->parameters);
         free (new_method);
 
-        return err_invalid_write_method;
+        return 0;
     }
 
     g = (struct adios_group_struct *) group_id;
@@ -4613,7 +4613,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
         free (new_method->parameters);
         free (new_method);
 
-        return err_missing_invalid_group;
+        return 0;
     }
     else
     {
@@ -4630,7 +4630,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
             free (new_method->parameters);
             free (new_method);
 
-            return err_group_method_mismatch;
+            return 0;
         }
         adios_add_method_to_group (&g->methods, new_method);
         new_method->group = g;
@@ -4638,7 +4638,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
 
     adios_append_method (new_method);
 
-    return 0;
+    return 1;
 }
 
 void adios_cleanup ()

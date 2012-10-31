@@ -90,7 +90,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
     if (!fd)
     {
         adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_write\n");
-        return err_invalid_file_pointer;
+        return 1;
     }
 
     struct adios_var_struct * v = fd->group->vars;
@@ -108,7 +108,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
     {
         adios_error (err_invalid_varname, "Bad var name (ignored) in adios_write(): '%s'\n", name);
 
-        return err_invalid_varname;
+        return 1;
     }
 
     if (fd->mode == adios_mode_read)
@@ -118,7 +118,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
            )
         {
             adios_error (err_invalid_file_mode, "write attempted on %s in %s.  This was opened for read\n" ,name , fd->name);
-            return err_invalid_file_mode;
+            return 1;
         }
     }
 
@@ -126,7 +126,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
     {
         adios_error (err_invalid_data, "Invalid data (NULL pointer) passed to write for variable %s\n", name);
 
-        return err_invalid_data;
+        return 1;
     }
 
     if (v->data)
@@ -165,7 +165,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
                                  "In adios_write, cannot allocate %lld bytes to copy scalar %s\n",
                                  element_size, v->name);
 
-                    return err_no_memory;
+                    return 0;
                 }
 
                 memcpy ((char *) v->data, var, element_size);
@@ -179,7 +179,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
                                  "In adios_write, cannot allocate %lld bytes to copy string %s\n",
                                  element_size, v->name);
 
-                    return err_no_memory;
+                    return 0;
                 }
                 ((char *) v->data) [element_size] = 0;
                 memcpy ((char *) v->data, var, element_size);
@@ -302,8 +302,6 @@ int adios_close (int64_t fd_p)
 
         v = v->next;
     }
-
-    return retval;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -326,7 +324,7 @@ int adios_declare_group (int64_t * id, const char * name
                                       ,time_index
                                       ,stats
                                       );
-    if (ret == 0) {
+    if (ret == 1) {
         struct adios_group_struct * g = (struct adios_group_struct *) *id;
         g->all_unique_var_names = adios_flag_no;
     }
