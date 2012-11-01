@@ -254,6 +254,9 @@ libadiosf_a_SOURCES += core/adiosf_defs_mod.F90 \
                        core/adiosf_write_mod.F90 \
                        core/adiosf_read_mod.F90 
 
+libadiosf_v1_a_SOURCES += core/adiosf_defs_mod.F90 \
+                          core/adiosf_write_mod.F90 
+
 #nodist_libadiosreadf_a_SOURCES += adios_write.mod
 nodist_include_HEADERS += adios_write_mod.mod 
 CLEANFILES += adios_write_mod.mod
