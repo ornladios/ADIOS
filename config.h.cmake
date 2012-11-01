@@ -79,13 +79,13 @@
 #define HAVE_LIBRT ${HAVE_LIBRT}
 
 /* Define if you have LUSTRE. */
-#define HAVE_LUSTRE ${HAVE_LUSTRE}
+#cmakedefine HAVE_LUSTRE ${HAVE_LUSTRE}
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H ${HAVE_MEMORY_H}
 
 /* Define if you have the MPI library. */
-#define HAVE_MPI ${HAVE_MPI}
+#cmakedefine HAVE_MPI ${HAVE_MPI}
 
 /* Define if you have the MXML. */
 #define HAVE_MXML ${HAVE_MXML}
