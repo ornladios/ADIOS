@@ -371,8 +371,9 @@ if(HAVE_NSSI)
   set(libadiosread_nompi_a_SOURCES ${libadiosread_nompi_a_SOURCES} ${dist_libadiosread_nompi_a_SOURCES} ${nodist_libadiosread_nompi_a_SOURCES})
   set(libadiosread_nompi_a_SOURCES ${libadiosread_nompi_a_SOURCES} nssi/adios_nssi_config.c read/read_nssi.c)
   set(libadiosread_nompi_a_CPPFLAGS "${libadiosread_nompi_a_CPPFLAGS} -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NA")
-  set(libadiosread_nompi_a_CPPFLAGS "${libadiosread_nompi_a_CPPFLAGS} D_NOMPI ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSREADLIB_CPPFLAGS}")
 endif(HAVE_NSSI)
+
+set(libadiosread_nompi_a_CPPFLAGS "${libadiosread_nompi_a_CPPFLAGS} -D_NOMPI ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSREADLIB_CPPFLAGS}")
 
 #start libadiosreadf_nompi.a
 if(BUILD_FORTRAN)
