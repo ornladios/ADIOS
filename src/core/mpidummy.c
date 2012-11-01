@@ -38,6 +38,12 @@ int MPI_Finalize()
     return MPI_SUCCESS; 
 }
 
+int MPI_Initialized( int* flag )
+{
+  *flag = 1 ;
+  return MPI_SUCCESS;
+}
+
 int MPI_Comm_split ( MPI_Comm comm, int color, int key, MPI_Comm *comm_out ) {return MPI_SUCCESS;}
 
 int MPI_Barrier(MPI_Comm comm) { return MPI_SUCCESS; }
@@ -48,6 +54,47 @@ int MPI_Comm_rank(MPI_Comm comm, int *rank) { *rank = 0; return MPI_SUCCESS; }
 int MPI_Comm_size(MPI_Comm comm, int *size) { *size = 1; return MPI_SUCCESS; }
 MPI_Comm MPI_Comm_f2c(MPI_Fint comm) { return comm; }
 
+int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm)
+{
+  int ier = MPI_SUCCESS;
+  size_t n=0, nsent=0, nrecv=0 ;
+  if( !sendbuf || !recvbuf )        ier = MPI_ERR_BUFFER ;
+  if( comm==MPI_COMM_NULL || root ) ier = MPI_ERR_COMM ;
+
+  switch( sendtype )
+  {
+    case MPI_INT : n = sizeof( int ) ;
+    default      : return MPI_ERR_TYPE ;
+  }
+  nsent = n * sendcnt ;
+
+  switch( recvtype )
+  {
+    case MPI_INT : nrecv = sizeof( int ) ;
+    default      : return MPI_ERR_TYPE ;
+  }
+  nrecv = n * recvcnt ;
+
+  if( nrecv!=nsent ) ier = MPI_ERR_COUNT ;
+
+  if( ier == MPI_SUCCESS ) memcpy( recvbuf, sendbuf, nsent );
+  else snprintf(mpierrmsg, ier, "could not gather data\n" );
+
+  return ier ;
+}
+
+int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
+                void *recvbuf, int *recvcnts, int *displs, 
+                MPI_Datatype recvtype, int root, MPI_Comm comm)
+{
+  int ier = MPI_SUCCESS;
+  if( !recvcnts || !displs ) ier = MPI_ERR_BUFFER ;
+
+  if( ier == MPI_SUCCESS )
+    ier = MPI_Gather(sendbuf, sendcnt, sendtype, recvbuf, recvcnts[0], recvtype, root, comm ) ;
+
+  return ier ;
+}
 
 int MPI_File_open(MPI_Comm comm, char *filename, int amode, MPI_Info info, MPI_File *fh) 
 {
