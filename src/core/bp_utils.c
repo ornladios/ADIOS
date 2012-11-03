@@ -1205,6 +1205,8 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
                   uint64_t j)
 {
     uint8_t flag;
+    float fr, fi;
+    double dr, di;
     enum ADIOS_CHARACTERISTICS c;
 
     BUFREAD8(b, flag)
@@ -1214,6 +1216,207 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 
         case adios_characteristic_value:
             (*root)->characteristics [j].value = bp_read_data_from_buffer(b, (*root)->type);
+            if (!((*root)->characteristics [j].stats))
+            {
+                (*root)->characteristics [j].stats = malloc (sizeof(struct adios_index_characteristics_stat_struct *));
+                (*root)->characteristics [j].bitmap = 0;
+            }
+
+            (*root)->characteristics [j].bitmap |= (1 << adios_statistic_min);
+            (*root)->characteristics [j].bitmap |= (1 << adios_statistic_max);
+            (*root)->characteristics [j].bitmap |= (1 << adios_statistic_cnt);
+            (*root)->characteristics [j].bitmap |= (1 << adios_statistic_sum);
+            (*root)->characteristics [j].bitmap |= (1 << adios_statistic_sum_square);
+
+            uint8_t i, c, idx;
+            uint8_t count = adios_get_stat_set_count ((*root)->type);
+            uint16_t characteristic_size;
+
+            for (c = 0; c < count; c ++)
+            {
+                i = idx = 0;
+                (*root)->characteristics [j].stats[c] =
+                    malloc (ADIOS_STAT_LENGTH * sizeof(struct adios_index_characteristics_stat_struct));
+
+                while ((*root)->characteristics [j].bitmap >> i)
+                {
+                    (*root)->characteristics [j].stats[c][i].data = 0;
+                    if (((*root)->characteristics[j].bitmap >> i) & 1)
+                    {
+                        characteristic_size = adios_get_stat_size(
+                                (*root)->characteristics [j].stats[c][idx].data
+                               ,(*root)->type
+                               ,(enum ADIOS_STAT)i
+                               );
+                        (*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);
+                        void * data = (*root)->characteristics [j].stats[c][idx].data;
+                        if (idx == adios_statistic_cnt)
+                        {
+                            * (uint32_t *) data = 1;
+                        }
+#define IS_MIN_MAX \
+if (idx == adios_statistic_min \
+ || idx == adios_statistic_max) 
+
+#define IS_SUM \
+if (idx == adios_statistic_sum)
+
+#define IS_SUM2 \
+if (idx == adios_statistic_sum_square)
+
+#define SET_DATA_1(t) \
+* (t *) data = *(t *) (*root)->characteristics [j].value;
+
+#define SET_DATA_2(t) \
+* (double *) data = *(t *) (*root)->characteristics [j].value;
+
+#define SET_DATA_3(t) \
+* (double *) data = *(t *) (*root)->characteristics [j].value * (* (t *)(*root)->characteristics [j].value);
+
+#define SET_DATA(t) \
+IS_MIN_MAX \
+{ \
+SET_DATA_1(t) \
+} \
+else IS_SUM \
+{ \
+SET_DATA_2(t) \
+} \
+else IS_SUM2 \
+{ \
+SET_DATA_3(t) \
+}
+                        switch ((*root)->type)
+                        {
+                            case adios_byte:
+                                SET_DATA(int8_t)
+                                break;
+                            case adios_short:
+                                SET_DATA(int16_t)
+                                break;
+                            case adios_integer:
+                                SET_DATA(int32_t)
+                                break;
+                            case adios_long:
+                                SET_DATA(int64_t)
+                                break;
+                            case adios_unsigned_byte:
+                                SET_DATA(uint8_t)
+                                break;
+                            case adios_unsigned_short:
+                                SET_DATA(uint16_t)
+                                break;
+                            case adios_unsigned_integer:
+                                SET_DATA(uint32_t)
+                                break;
+                            case adios_unsigned_long:
+                                SET_DATA(uint64_t)
+                                break;
+                            case adios_real:
+                                SET_DATA(float)
+                                break;
+                            case adios_double:
+                                SET_DATA(double)
+                                break;
+                            case adios_long_double:
+                                // I don't think long double is currently supported for stats.
+                                break;
+                            case adios_complex:
+                                fr = * (float *) (*root)->characteristics [j].value;
+                                fi = * ((float *) (*root)->characteristics [j].value + 1);
+
+                                if (idx == adios_statistic_min || idx == adios_statistic_max) 
+                                {
+                                    if (c == 0)
+                                    {
+                                        * (float *) data = fr;
+                                    }
+                                    else if (c == 1)
+                                    {
+                                        * (float *) data = fi;
+                                    }
+                                    else if (c == 2)
+                                    {
+                                        * (float *) data = sqrt (fr * fr + fi * fi); 
+                                    }
+                                }
+                                else if (idx == adios_statistic_sum)
+                                {
+                                    if (c == 0)
+                                    {
+                                        * (double *) data = fr;
+                                    }
+                                    else if (c == 1)
+                                    {
+                                        * (double *) data = fi;
+                                    }
+                                    else if (c == 2)
+                                    {
+                                        * (double *) data = sqrt (fr * fr + fi * fi);
+                                    }
+                                }
+                                else if (idx == adios_statistic_sum_square)
+                                {
+                                    if (c == 0)
+                                    {
+                                        * (double *) data = fr * fr;
+                                    }
+                                    else if (c == 1)
+                                    {
+                                        * (double *) data = fi * fi;
+                                    }
+                                    else if (c == 2)
+                                    {
+                                        * (double *) data = fr * fr + fi * fi;
+                                    }
+                                }
+                                break;
+                            case adios_double_complex:
+                                dr = * (double *) (*root)->characteristics [j].value;
+                                di = * ((double *) (*root)->characteristics [j].value + 1);
+
+                                if (idx == adios_statistic_min
+                                 || idx == adios_statistic_max
+                                 || idx == adios_statistic_sum
+                                   )
+                                {
+                                    if (c == 0)
+                                    {
+                                        * (double *) data = dr;
+                                    }
+                                    else if (c == 1)
+                                    {
+                                        * (double *) data = di;
+                                    }
+                                    else if (c == 2)
+                                    {
+                                        * (double *) data = sqrt (dr * dr + di * di);
+                                    }
+                                }
+                                else if (idx == adios_statistic_sum_square)
+                                {
+                                    if (c == 0)
+                                    {
+                                        * (double *) data = dr * dr;
+                                    }
+                                    else if (c == 1)
+                                    {
+                                        * (double *) data = di * di;
+                                    }
+                                    else if (c == 2)
+                                    {
+                                        * (double *) data = dr * dr + di * di;
+                                    }
+                                }
+
+                                break;
+                        }
+                        idx ++;
+                    }
+                    i ++;
+                }
+            }
+
             break;
 
         // NCSU - Adding in backward compatibility
@@ -1242,7 +1445,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
             }
             (*root)->characteristics [j].bitmap |= (1 << adios_statistic_min);
             (*root)->characteristics [j].stats[0][adios_statistic_min].data = bp_read_data_from_buffer(b, (*root)->type);
-			break;
+            break;
         }
 
         // NCSU - Parse the statistical information based in the bitmap
