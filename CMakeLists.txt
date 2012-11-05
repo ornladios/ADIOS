@@ -16,6 +16,9 @@ set(includedir ${prefix}/include)
 option(BUILD_WRITE "BUILD_WRITE" OFF)
 option(BUILD_FORTRAN "BUILD_FORTRAN" OFF)
 
+option(PHDF5 "PHDF5" OFF)
+option(LUSTRE "LUSTRE" OFF)
+
 set(LIBS "")
 set(CPPFLAGS "-DMPICH_IGNORE_CXX_SEEK")
 set(CFLAGS "-g -fPIC")
@@ -97,7 +100,14 @@ CHECK_INCLUDE_FILES(inttypes.h HAVE_INTTYPES_H)
 set(HAVE_LIBRT 0)
 
 # Define if you have LUSTRE.
-set(HAVE_LUSTRE 0)
+if(LUSTRE)
+  set(LUSTRE_DIR "" CACHE FILEPATH "")
+  find_library(LUSTRE_LIB_DIR NAMES lustre PATHS "${LUSTRE_DIR}/lib")
+  if(LUSTRE_LIB_DIR)
+    message(STATUS "find LUSTRE library")
+    set(HAVE_LUSTRE 1)
+  endif(LUSTRE_LIB_DIR)
+endif(LUSTRE)
 
 # Define to 1 if you have the <memory.h> header file.
 CHECK_INCLUDE_FILES(memory.h HAVE_MEMORY_H)
@@ -163,13 +173,16 @@ set(HAVE_PABLO 0)
 
 # Define if you have PHDF5.
 # phdf5: /sw/sith/hdf5/1.8.5/centos5.5_pgi10.9_ompi1.4.4
-set(HAVE_PHDF5 0)
-set(PHDF5_DIR "" CACHE FILEPATH "")
-find_library(PHDF5_LIB_DIR NAMES hdf5 PATHS "${PHDF5_DIR}/lib")
-if(PHDF5_LIB_DIR)
-  message(STATUS "find PHDF5 library")
-  set(HAVE_PHDF5 1)
-endif(PHDF5_LIB_DIR)
+if(PHDF5)
+  set(PHDF5_DIR "" CACHE FILEPATH "")
+  find_library(PHDF5_LIB_DIR NAMES hdf5 PATHS "${PHDF5_DIR}/lib")
+  if(PHDF5_LIB_DIR)
+    message(STATUS "find PHDF5 library")
+    set(HAVE_PHDF5 1)
+  endif(PHDF5_LIB_DIR)
+else(PHDF5)
+  set(HAVE_PHDF5 0)
+endif(PHDF5)
 
 # Define if you have the Portals.
 set(HAVE_PORTALS 0)
@@ -318,13 +331,13 @@ set(ADIOSREADLIB_SEQ_LDADD "m")
 
 set(NSSI_SERVER_LIBS "")
 ############################### srart of top CMakeLists.txt ###############################
-install(PROGRAMS adios_config DESTINATION ${bindir})
+#install(PROGRAMS adios_config DESTINATION ${bindir})
 
-if(HAVE_NSSI)
-install(PROGRAMS scripts/create.nssi.config.sh DESTINATION ${bindir}) 
-install(PROGRAMS scripts/kill.nssi.staging.sh DESTINATION ${bindir})
-install(PROGRAMS scripts/start.nssi.staging.sh DESTINATION  ${bindir})
-endif(HAVE_NSSI)
+#if(HAVE_NSSI)
+#install(PROGRAMS scripts/create.nssi.config.sh DESTINATION ${bindir}) 
+#install(PROGRAMS scripts/kill.nssi.staging.sh DESTINATION ${bindir})
+#install(PROGRAMS scripts/start.nssi.staging.sh DESTINATION  ${bindir})
+#endif(HAVE_NSSI)
 
 add_definitions(-DO_LARGEFILE=0)
 
