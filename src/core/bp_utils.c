@@ -90,6 +90,54 @@ void bp_realloc_aligned (struct adios_bp_buffer_struct_v1 * b
     b->length = size;
 }
 
+/* Return 0: if file is little endian, 1 if file is big endian 
+ * We know if it is different from the current system, so here
+ * we determine the current endianness and report accordingly.
+ */
+int bp_get_endianness( uint32_t change_endianness )
+{
+   int LE = 0;
+   int BE = !LE;
+   int i = 1;
+   char *p = (char *) &i;
+   int current_endianness;
+   if (p[0] == 1) // Lowest address contains the least significant byte
+       current_endianness = LE;
+   else
+       current_endianness = BE;
+    if (change_endianness == adios_flag_yes)
+        return !current_endianness;
+    else
+        return current_endianness;
+}
+
+/* Convert 'step' to time, which is used in ADIOS internals.
+ * 'step' should start from 0.
+ */
+int get_time (struct adios_index_var_struct_v1 * v, int step)
+{
+    int i = 0;
+    int prev_ti = 0, counter = 0;
+
+    while (i < v->characteristics_count)
+    {
+        if (v->characteristics[i].time_index != prev_ti)
+        {
+            counter ++;
+            if (counter == (step + 1))
+            {
+                return v->characteristics[i].time_index;
+            }
+            prev_ti = v->characteristics[i].time_index;
+        }
+
+        i++;
+    }
+
+    return -1;
+
+}
+
 int bp_read_open (const char * filename,
           MPI_Comm comm,
           struct BP_FILE * fh)
@@ -173,6 +221,303 @@ int bp_open (const char * fname,
     bp_parse_pgs (fh);
     bp_parse_vars (fh);
     bp_parse_attrs (fh);
+
+    return 0;
+}
+
+ADIOS_VARINFO * bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
+{
+    struct BP_PROC * p;
+    BP_FILE * fh;
+    ADIOS_VARINFO * varinfo;
+    int file_is_fortran, i, k, timedim, size;
+    struct adios_index_var_struct_v1 * v;
+
+    adios_errno = 0;
+
+    p = (struct BP_PROC *) fp->fh;
+    fh = (BP_FILE *)p->fh;
+    v = bp_find_var_byid (fh, varid);
+
+    varinfo = (ADIOS_VARINFO *) malloc (sizeof (ADIOS_VARINFO));
+    assert (varinfo);
+
+    /* Note: set varid as the real varid.
+       Common read layer should convert it to the perceived id after the read me
+thod returns.
+    */
+    varinfo->varid = varid;
+    varinfo->type = v->type;
+    file_is_fortran = is_fortran_file (fh);
+
+    assert (v->characteristics_count);
+
+    bp_get_and_swap_dimensions (fh, v, file_is_fortran,
+                                &varinfo->ndim, &varinfo->dims,
+                                &varinfo->nsteps,
+                                file_is_fortran != futils_is_called_from_fortran()
+                               );
+
+    if (p->streaming)
+    {
+        varinfo->nsteps = 1;
+    }
+
+    // set value for scalar
+    if (v->characteristics [0].value)
+    {
+        size = bp_get_type_size (v->type, v->characteristics [0].value);
+        varinfo->value = (void *) malloc (size);
+        assert (varinfo->value);
+
+        memcpy (varinfo->value, v->characteristics [0].value, size);
+    }
+    else
+    {
+        varinfo->value = NULL;
+    }
+
+    varinfo->global = is_global_array (&(v->characteristics[0]));
+
+    varinfo->nblocks = get_var_nblocks (v, varinfo->nsteps);
+
+    assert (varinfo->nblocks);
+
+    varinfo->sum_nblocks = v->characteristics_count;
+    varinfo->statistics = 0;
+    varinfo->blockinfo = 0;
+
+    return varinfo;
+}
+
+MPI_File * get_BP_file_handle(struct BP_file_handle * l, uint32_t file_index)
+{
+    if (!l)
+        return 0;
+
+    while (l)
+    {
+        if (l->file_index == file_index)
+            return &l->fh;
+
+        l = l->next;
+    }
+
+    return 0;
+}
+
+void add_BP_file_handle (struct BP_file_handle ** l, struct BP_file_handle * n)
+{
+    if (!n)
+        return;
+
+    n->next = *l;
+    *l = n;
+}
+
+void close_all_BP_files (struct BP_file_handle * l)
+{
+    struct BP_file_handle * n;
+
+    while (l)
+    {
+        n = l->next;
+
+        MPI_File_close (&l->fh);
+        free (l);
+
+        l = n;
+    }
+}
+
+int bp_close (BP_FILE * fh)
+{
+    struct BP_GROUP_VAR * gh = fh->gvar_h;
+    struct BP_GROUP_ATTR * ah = fh->gattr_h;
+    struct adios_index_var_struct_v1 * vars_root = fh->vars_root, *vr;
+    struct adios_index_attribute_struct_v1 * attrs_root = fh->attrs_root, *ar;
+    struct bp_index_pg_struct_v1 * pgs_root = fh->pgs_root, *pr;
+    int i,j;
+    MPI_File mpi_fh = fh->mpi_fh;
+
+    adios_errno = 0;
+    if (fh->mpi_fh)
+        MPI_File_close (&mpi_fh);
+
+    if (fh->sfh)
+        close_all_BP_files (fh->sfh);
+
+    if (fh->b) {
+        adios_posix_close_internal (fh->b);
+        free(fh->b);
+    }
+
+    /* Free variable structures */
+    /* alloc in bp_utils.c: bp_parse_vars() */
+    while (vars_root) {
+        vr = vars_root;
+        vars_root = vars_root->next;
+        for (j = 0; j < vr->characteristics_count; j++) {
+            // alloc in bp_utils.c:bp_parse_characteristics() <- bp_get_characteristics_data()
+            if (vr->characteristics[j].dims.dims)
+                free (vr->characteristics[j].dims.dims);
+            if (vr->characteristics[j].value)
+                free (vr->characteristics[j].value);
+            // NCSU - Clearing up statistics
+            if (vr->characteristics[j].stats)
+            {
+                uint8_t k = 0, idx = 0;
+                uint8_t i = 0, count = adios_get_stat_set_count(vr->type);
+
+                while (vr->characteristics[j].bitmap >> k)
+                {
+                    if ((vr->characteristics[j].bitmap >> k) & 1)
+                    {
+                        for (i = 0; i < count; i ++)
+                        {
+                            if (k == adios_statistic_hist)
+                            {
+                                struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct *) (vr->characteristics [j].stats[i][idx].data);
+                                free (hist->breaks);
+                                free (hist->frequencies);
+                                free (hist);
+                            }
+                            else
+                            free (vr->characteristics[j].stats [i][idx].data);
+                        }
+                        idx ++;
+                    }
+                    k ++;
+                }
+
+                for (i = 0; i < count; i ++)
+                    free (vr->characteristics[j].stats [i]);
+
+                free (vr->characteristics[j].stats);
+                vr->characteristics[j].stats = 0;
+            }
+        }
+        if (vr->characteristics)
+            free (vr->characteristics);
+        if (vr->group_name)
+            free (vr->group_name);
+        if (vr->var_name)
+            free (vr->var_name);
+        if (vr->var_path)
+            free (vr->var_path);
+        free(vr);
+    }
+
+    fh->vars_root = 0;
+
+    /* Free attributes structures */
+    /* alloc in bp_utils.c bp_parse_attrs() */
+    while (attrs_root) {
+        ar = attrs_root;
+        attrs_root = attrs_root->next;
+        for (j = 0; j < ar->characteristics_count; j++) {
+            if (ar->characteristics[j].value)
+                free (ar->characteristics[j].value);
+        }
+        if (ar->characteristics)
+            free (ar->characteristics);
+        if (ar->group_name)
+            free (ar->group_name);
+        if (ar->attr_name)
+            free (ar->attr_name);
+        if (ar->attr_path)
+            free (ar->attr_path);
+        free(ar);
+    }
+
+    fh->attrs_root = 0;
+
+    /* Free process group structures */
+    /* alloc in bp_utils.c bp_parse_pgs() first loop */
+    //printf ("pgs: %d\n", fh->mfooter.pgs_count);
+    while (pgs_root) {
+        pr = pgs_root;
+        pgs_root = pgs_root->next;
+        //printf("%d\tpg pid=%d addr=%x next=%x\n",i, pr->process_id, pr, pr->next);
+        if (pr->group_name)
+            free(pr->group_name);
+        if (pr->time_index_name)
+            free(pr->time_index_name);
+        free(pr);
+    }
+
+    fh->pgs_root = 0;
+
+    /* Free variable structures in BP_GROUP_VAR */
+    if (gh) {
+        for (j=0;j<2;j++) {
+            for (i=0;i<gh->group_count;i++) {
+                if (gh->time_index[j][i])
+                    free(gh->time_index[j][i]);
+            }
+            if (gh->time_index[j])
+                free(gh->time_index[j]);
+        }
+        free (gh->time_index);
+
+        for (i=0;i<gh->group_count;i++) {
+            if (gh->namelist[i])
+                free(gh->namelist[i]);
+        }
+        if (gh->namelist)
+            free (gh->namelist);
+
+        for (i=0;i<fh->mfooter.vars_count;i++) {
+            if (gh->var_namelist[i])
+                free(gh->var_namelist[i]);
+            if (gh->var_offsets[i])
+                free(gh->var_offsets[i]);
+        }
+        if (gh->var_namelist)
+            free (gh->var_namelist);
+
+        if (gh->var_offsets)
+            free(gh->var_offsets);
+
+        if (gh->var_counts_per_group)
+            free(gh->var_counts_per_group);
+
+        if (gh->pg_offsets)
+            free (gh->pg_offsets);
+
+        free (gh);
+    }
+
+    fh->gvar_h = 0;
+
+    /* Free attribute structures in BP_GROUP_ATTR */
+    if (ah) {
+        for (i = 0; i < fh->mfooter.attrs_count; i++) {
+            if (ah->attr_offsets[i])
+                free(ah->attr_offsets[i]);
+            if (ah->attr_namelist[i])
+                free(ah->attr_namelist[i]);
+        }
+        if (ah->attr_offsets)
+            free(ah->attr_offsets);
+        if (ah->attr_namelist)
+            free(ah->attr_namelist);
+        if (ah->attr_counts_per_group)
+            free(ah->attr_counts_per_group);
+
+        free(ah);
+    }
+
+    fh->gattr_h = 0;
+
+    if (fh->fname)
+    {
+        free (fh->fname);
+        fh->fname = 0;
+    }
+
+    if (fh)
+        free (fh);
 
     return 0;
 }
@@ -863,6 +1208,8 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
                   uint64_t j)
 {
     uint8_t flag;
+    float fr, fi;
+    double dr, di;
     enum ADIOS_CHARACTERISTICS c;
 
     BUFREAD8(b, flag)
@@ -872,6 +1219,207 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 
         case adios_characteristic_value:
             (*root)->characteristics [j].value = bp_read_data_from_buffer(b, (*root)->type);
+            if (!((*root)->characteristics [j].stats))
+            {
+                (*root)->characteristics [j].stats = malloc (sizeof(struct adios_index_characteristics_stat_struct *));
+                (*root)->characteristics [j].bitmap = 0;
+            }
+
+            (*root)->characteristics [j].bitmap |= (1 << adios_statistic_min);
+            (*root)->characteristics [j].bitmap |= (1 << adios_statistic_max);
+            (*root)->characteristics [j].bitmap |= (1 << adios_statistic_cnt);
+            (*root)->characteristics [j].bitmap |= (1 << adios_statistic_sum);
+            (*root)->characteristics [j].bitmap |= (1 << adios_statistic_sum_square);
+
+            uint8_t i, c, idx;
+            uint8_t count = adios_get_stat_set_count ((*root)->type);
+            uint16_t characteristic_size;
+
+            for (c = 0; c < count; c ++)
+            {
+                i = idx = 0;
+                (*root)->characteristics [j].stats[c] =
+                    malloc (ADIOS_STAT_LENGTH * sizeof(struct adios_index_characteristics_stat_struct));
+
+                while ((*root)->characteristics [j].bitmap >> i)
+                {
+                    (*root)->characteristics [j].stats[c][i].data = 0;
+                    if (((*root)->characteristics[j].bitmap >> i) & 1)
+                    {
+                        characteristic_size = adios_get_stat_size(
+                                (*root)->characteristics [j].stats[c][idx].data
+                               ,(*root)->type
+                               ,(enum ADIOS_STAT)i
+                               );
+                        (*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);
+                        void * data = (*root)->characteristics [j].stats[c][idx].data;
+                        if (idx == adios_statistic_cnt)
+                        {
+                            * (uint32_t *) data = 1;
+                        }
+#define IS_MIN_MAX \
+if (idx == adios_statistic_min \
+ || idx == adios_statistic_max) 
+
+#define IS_SUM \
+if (idx == adios_statistic_sum)
+
+#define IS_SUM2 \
+if (idx == adios_statistic_sum_square)
+
+#define SET_DATA_1(t) \
+* (t *) data = *(t *) (*root)->characteristics [j].value;
+
+#define SET_DATA_2(t) \
+* (double *) data = *(t *) (*root)->characteristics [j].value;
+
+#define SET_DATA_3(t) \
+* (double *) data = *(t *) (*root)->characteristics [j].value * (* (t *)(*root)->characteristics [j].value);
+
+#define SET_DATA(t) \
+IS_MIN_MAX \
+{ \
+SET_DATA_1(t) \
+} \
+else IS_SUM \
+{ \
+SET_DATA_2(t) \
+} \
+else IS_SUM2 \
+{ \
+SET_DATA_3(t) \
+}
+                        switch ((*root)->type)
+                        {
+                            case adios_byte:
+                                SET_DATA(int8_t)
+            break;
+                            case adios_short:
+                                SET_DATA(int16_t)
+                                break;
+                            case adios_integer:
+                                SET_DATA(int32_t)
+                                break;
+                            case adios_long:
+                                SET_DATA(int64_t)
+                                break;
+                            case adios_unsigned_byte:
+                                SET_DATA(uint8_t)
+                                break;
+                            case adios_unsigned_short:
+                                SET_DATA(uint16_t)
+                                break;
+                            case adios_unsigned_integer:
+                                SET_DATA(uint32_t)
+                                break;
+                            case adios_unsigned_long:
+                                SET_DATA(uint64_t)
+                                break;
+                            case adios_real:
+                                SET_DATA(float)
+                                break;
+                            case adios_double:
+                                SET_DATA(double)
+                                break;
+                            case adios_long_double:
+                                // I don't think long double is currently supported for stats.
+                                break;
+                            case adios_complex:
+                                fr = * (float *) (*root)->characteristics [j].value;
+                                fi = * ((float *) (*root)->characteristics [j].value + 1);
+
+                                if (idx == adios_statistic_min || idx == adios_statistic_max) 
+                                {
+                                    if (c == 0)
+                                    {
+                                        * (float *) data = fr;
+                                    }
+                                    else if (c == 1)
+                                    {
+                                        * (float *) data = fi;
+                                    }
+                                    else if (c == 2)
+                                    {
+                                        * (float *) data = sqrt (fr * fr + fi * fi); 
+                                    }
+                                }
+                                else if (idx == adios_statistic_sum)
+                                {
+                                    if (c == 0)
+                                    {
+                                        * (double *) data = fr;
+                                    }
+                                    else if (c == 1)
+                                    {
+                                        * (double *) data = fi;
+                                    }
+                                    else if (c == 2)
+                                    {
+                                        * (double *) data = sqrt (fr * fr + fi * fi);
+                                    }
+                                }
+                                else if (idx == adios_statistic_sum_square)
+                                {
+                                    if (c == 0)
+                                    {
+                                        * (double *) data = fr * fr;
+                                    }
+                                    else if (c == 1)
+                                    {
+                                        * (double *) data = fi * fi;
+                                    }
+                                    else if (c == 2)
+                                    {
+                                        * (double *) data = fr * fr + fi * fi;
+                                    }
+                                }
+                                break;
+                            case adios_double_complex:
+                                dr = * (double *) (*root)->characteristics [j].value;
+                                di = * ((double *) (*root)->characteristics [j].value + 1);
+
+                                if (idx == adios_statistic_min
+                                 || idx == adios_statistic_max
+                                 || idx == adios_statistic_sum
+                                   )
+                                {
+                                    if (c == 0)
+                                    {
+                                        * (double *) data = dr;
+                                    }
+                                    else if (c == 1)
+                                    {
+                                        * (double *) data = di;
+                                    }
+                                    else if (c == 2)
+                                    {
+                                        * (double *) data = sqrt (dr * dr + di * di);
+                                    }
+                                }
+                                else if (idx == adios_statistic_sum_square)
+                                {
+                                    if (c == 0)
+                                    {
+                                        * (double *) data = dr * dr;
+                                    }
+                                    else if (c == 1)
+                                    {
+                                        * (double *) data = di * di;
+                                    }
+                                    else if (c == 2)
+                                    {
+                                        * (double *) data = dr * dr + di * di;
+                                    }
+                                }
+
+                                break;
+                        }
+                        idx ++;
+                    }
+                    i ++;
+                }
+            }
+
             break;
 
         // NCSU - Adding in backward compatibility
@@ -883,6 +1431,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
                 (*root)->characteristics [j].stats[0] = malloc (2 * sizeof(struct adios_index_characteristics_stat_struct));
                 (*root)->characteristics [j].bitmap = 0;
             }
+
             (*root)->characteristics [j].bitmap |= (1 << adios_statistic_max);
             (*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, (*root)->type);
             break;
@@ -933,18 +1482,21 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
                             hist->max = * (double *) bp_read_data_from_buffer(b, adios_double);
 
                             hist->frequencies = malloc((hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
-                            for (bi = 0; bi <= hist->num_breaks; bi ++) {
+                            for (bi = 0; bi <= hist->num_breaks; bi ++)
+                            {
                                 BUFREAD32(b, hist->frequencies[bi])
                             }
 
                             hist->breaks = malloc(hist->num_breaks * adios_get_type_size(adios_double, ""));
-                            for (bi = 0; bi < hist->num_breaks; bi ++) {
+                            for (bi = 0; bi < hist->num_breaks; bi ++)
+                            {
                                 hist->breaks[bi] = * (double *) bp_read_data_from_buffer(b, adios_double);
                             }
                         }
                         else
                         {
-                            characteristic_size = adios_get_stat_size((*root)->characteristics [j].stats[c][idx].data
+                            characteristic_size = adios_get_stat_size(
+                                (*root)->characteristics [j].stats[c][idx].data
                                                                                                  ,(*root)->type
                                                                                                  ,(enum ADIOS_STAT)i
                                                                                                  );
@@ -1014,6 +1566,38 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
     return 0;
 }
 
+// Search for the start var index.
+int64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
+{
+    int64_t i = 0;
+
+    while (i < v->characteristics_count) {
+        if (v->characteristics[i].time_index == t) {
+            return i;
+        }
+
+        i++;
+    }
+
+    return -1;
+}
+
+// Search for the stop var index
+int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
+{
+    int64_t i = v->characteristics_count - 1;
+
+    while (i > -1) {
+        if (v->characteristics[i].time_index == t) {
+            return i;
+        }
+
+        i--;
+    }
+
+    return -1;
+}
+
 /* Seek to the specified step and prepare a few fields
  * in ADIOS_FILE structure, i.e., nvars, var_namelist,
  * nattrs, attr_namelist. This routine also sets the
@@ -1029,7 +1613,10 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     struct adios_index_attribute_struct_v1 * attr_root;
     uint64_t i;
 
-    /* Streaming starts with step 0. However, time index in BP file starts with 1 */
+    /* Streaming starts with step 0. However, time index in BP file
+     * starts with 1. If 'tostep' is -1, that means we want to get all steps.
+     * If not, we seek to the specified step.
+     */
     if (tostep == -1)
     {
         allstep = 1;
@@ -1518,6 +2105,10 @@ int * get_var_nblocks (struct adios_index_var_struct_v1 * var_root, int nsteps)
         if (var_root->characteristics[i].time_index != prev_step)
         {
             j ++;
+            if (j > nsteps - 1)
+            {
+                break;
+            }
             prev_step = var_root->characteristics[i].time_index;
         }
 
@@ -2045,7 +2636,7 @@ int has_subfiles (struct BP_FILE * fh)
 /****************************************************
   Find the var associated with the given variable id
 *****************************************************/
-struct adios_index_var_struct_v1 * bp_find_var_byid (struct BP_FILE * fh, int varid)
+struct adios_index_var_struct_v1 * bp_find_var_byid (BP_FILE * fh, int varid)
 {
     struct adios_index_var_struct_v1 * var_root = fh->vars_root;
     int i;
