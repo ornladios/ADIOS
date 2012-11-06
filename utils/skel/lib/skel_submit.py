@@ -62,6 +62,7 @@ def submit_line_template_replace (template_line, params, batch, test):
     if test != None:
 
         #Test specific replacements
+        template_line = template_line.replace ('$$TAGS$$', test.get_tags() )
         template_line = template_line.replace ('$$METHOD$$', test.get_method() )
         template_line = template_line.replace ('$$EXEC$$', params.get_application() + '_skel_' + test.get_group_name() + '_' + test.get_type() )
 

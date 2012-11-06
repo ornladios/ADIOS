@@ -20,7 +20,7 @@ int main (int argc, char ** argv)
 {
 	char        filename [256];
 	int         rank, size, i;
-	int         NX = 10; 
+	int         NX = 65536; 
 	double      t[NX];
 	MPI_Comm    comm = MPI_COMM_WORLD;
 

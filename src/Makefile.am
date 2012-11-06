@@ -284,6 +284,9 @@ libadiosf_a_SOURCES += core/adiosf_defs_mod.F90 \
                        core/adiosf_write_mod.F90 \
                        core/adiosf_read_mod.F90 
 
+libadiosf_v1_a_SOURCES += core/adiosf_defs_mod.F90 \
+                          core/adiosf_write_mod.F90 
+
 #nodist_libadiosreadf_a_SOURCES += adios_write.mod
 nodist_include_HEADERS += adios_write_mod.mod 
 CLEANFILES += adios_write_mod.mod
@@ -410,13 +413,11 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/adios_read.c \
                       core/adios_read_v1.c \
                       core/common_read.c \
-                      core/adios_internals.c \
                       $(transforms_read_SOURCES) \
                       core/adios_logger.c \
                       core/buffer.c \
                       core/globals.c \
                       core/adios_read_hooks.c \
-                      core/adios_transport_hooks.c \
                       core/util.c \
                       read/read_bp.c 
 
@@ -497,6 +498,7 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_internals_mxml.c \
                                     core/adios_timing.c \
                                     core/util.c \
+                                    core/futils.c \
                                     core/adios_transport_hooks.c 
 
 									

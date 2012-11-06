@@ -117,18 +117,12 @@ void adios_dataspaces_init (const PairStruct * parameters,
     int index, i;
     char temp[64];
     int num_peers;
-    int appid;
-    int was_set;
     
     num_peers = 1;
-    // Application ID should be set by the application calling adios_set_application_id()
-    appid = globals_adios_get_application_id (&was_set);
-    if (!was_set)
-        appid = 1;
 
     //Init the static data structure
     p->peers = num_peers;
-    p->appid = appid;
+    p->appid = -1;
     p->time_index = 0;
     p->n_writes = 0;
 #if HAVE_MPI
@@ -136,7 +130,7 @@ void adios_dataspaces_init (const PairStruct * parameters,
 #endif
     p->num_of_files = 0;
 
-    log_info ("adios_dataspaces_init: appid=%d\n", p->appid);
+    log_info ("adios_dataspaces_init: done\n");
    
 }
 
@@ -238,6 +232,12 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
             p->mpi_comm = group_comm;
         }
 #endif
+
+        // Application ID should be set by the application calling adios_set_application_id()
+        int was_set;
+        p->appid = globals_adios_get_application_id (&was_set);
+        if (!was_set)
+            p->appid = 1;
 
         log_debug ("adios_dataspaces_open: rank=%d connect to DATASPACES, peers=%d, appid=%d \n",
                         p->rank, num_peers, p->appid);
@@ -601,6 +601,19 @@ static void adios_dataspaces_gather_indices (struct adios_file_struct * fd
                 __func__, my_pg_root, my_vars_root, my_attrs_root);
 }
 
+static int ds_get_full_name_len (char * path, char * name)
+{
+    int len;
+    // make full name
+    if (!path || !path[0] || !strcmp (path, "/")) { 
+        // no path, just name + leading /
+        len = strlen(name) + 1;
+    } else {
+        len = strlen(path) + strlen(name) + 1;
+    }
+    return len;
+}
+
 static int ds_get_full_name (char * path, char * name, int maxlen,
                             /*OUT*/char * out)
 {
@@ -646,7 +659,7 @@ void ds_pack_group_info (struct adios_file_struct *fd
     size = 3*sizeof(int); //header for buffer: length, nvars, nattrs
     while (v) {
         size += 4*sizeof(int) // name len, type, hastime, number of dims 
-                + strlen(v->var_name) + strlen(v->var_path) + 1  // full path
+                + ds_get_full_name_len (v->var_path, v->var_name) // full path
                 + 3 * 8; // always write 3 dimensions in the index (even for scalars)
         if (v->characteristics->dims.count == 0) {
             // For scalars, we write the value into the index
@@ -661,7 +674,8 @@ void ds_pack_group_info (struct adios_file_struct *fd
     }
 
     while (a) {
-        size += sizeof(int) + strlen(a->attr_name) + strlen(a->attr_path) + 1 // name len + name
+        size += sizeof(int) 
+                + ds_get_full_name_len (a->attr_path, a->attr_name)
                 + sizeof(int); // type
         if (a->type != adios_string)
             size += adios_get_type_size(a->type, NULL);

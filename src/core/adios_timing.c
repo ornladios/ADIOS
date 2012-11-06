@@ -13,7 +13,7 @@
 #include "core/adios_logger.h"
 #include <string.h>
 #include <stdio.h>
-
+#include <sys/time.h>
 
 //#include "mpi.h"
 
@@ -72,12 +72,22 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
             {
                 fprintf (f, "internal%i", i);
             }
-            if (i != fd->timing_obj->internal_count - 1)
+            if (i != fd->timing_obj->internal_count - 1) // Skip trailing comma
             {
                 fprintf (f, ", ");
             }
         }
-        fprintf (f, "' >\n");
+        fprintf (f, "' "); // Close the keys attribute
+
+        // Assume there is only one method in play
+        fprintf (f, "method='%s' ", fd->group->methods->method->method);
+
+        struct timeval tv;
+        gettimeofday (&tv, NULL);
+        double time = tv.tv_sec+(tv.tv_usec/1000000.0);
+        fprintf (f, "start_time='%f' ", time);
+
+        fprintf (f, ">\n"); // Close the adios_timing element
 
         // This part should be the same for all procs
         fprintf (f, "<proc id='%i' vals='", rank);

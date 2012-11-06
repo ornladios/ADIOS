@@ -3,12 +3,13 @@
 #include <adios.h>
 #include <iostream>
 #include <string.h>
+#include <stdlib.h>
 
 #define STR(A) #A
 #define CONCAT2(A, B) A ## B
 #define CONCAT3(A, B, C) CONCAT2(CONCAT2(A, B), C)
 #define GET_ARRAY_ELEMENT(TYPE) CONCAT3(Get, TYPE, ArrayElements)
-#define WRITE_ONE                                               \
+#define WRITE_ONE(JTYPE)                                        \
     /* std::cout << __FUNCTION__ << "..." << std::endl;*/       \
     int result;                                                 \
     const char *str_var_name;                                   \
@@ -34,7 +35,7 @@
     JNIEXPORT jint JNICALL FNAME                                        \
     (JNIEnv * env, jclass cls, jlong fh, jstring var_name, JTYPE val)   \
     {                                                                   \
-        WRITE_ONE;                                                      \
+        WRITE_ONE(JTYPE);                                               \
     }
 
 #define FUNC_WRITE_ARRAY(FNAME, JTYPE, CTYPE)                           \
@@ -47,6 +48,10 @@
 #define STR_ALLOC(var) \
     const char *str_##var = env->GetStringUTFChars(var, NULL); \
     if (str_##var == NULL) return -1;
+
+#define STR_ALLOC2(var) \
+    const char *str_##var = env->GetStringUTFChars(var, NULL); \
+    if (str_##var == NULL) goto end;
 
 #define STR_FREE(var) \
     env->ReleaseStringUTFChars(var, str_##var);
@@ -65,12 +70,12 @@ Java_gov_ornl_ccs_Adios_adios_1init
     int result;
     jboolean isCopy;
 
-    STR_ALLOC(xml_fname)
+    STR_ALLOC(xml_fname);
 
     result = adios_init(str_xml_fname);
     //std::cout << "result = " << result << std::endl;
     
-    STR_FREE(xml_fname)
+    STR_FREE(xml_fname);
 
     return result;
 }
@@ -88,9 +93,9 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open
     int result;
     int64_t fd_p = 0;
 
-    STR_ALLOC(group_name)
-    STR_ALLOC(file_name)
-    STR_ALLOC(mode)
+    STR_ALLOC(group_name);
+    STR_ALLOC(file_name);
+    STR_ALLOC(mode);
 
     //std::cout << "[IN] fd_p = " << (int64_t) fd_p << std::endl;
     //std::cout << "[IN] str_group_name = " << str_group_name << std::endl;
@@ -101,16 +106,9 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open
     //std::cout << "[OUT] fd_p = " << fd_p << std::endl;
     //std::cout << "[OUT] result = " << result << std::endl;
 
-    STR_FREE(group_name)
-    STR_FREE(file_name)
-    STR_FREE(mode)
-
-    /*
-    uint64_t total_size;
-    std::cout << "[IN] fd_p = " << (int64_t) fd_p << std::endl;
-    adios_group_size (fd_p, 92, (uint64_t *) &total_size);
-    std::cout << "[OUT] total size = " << total_size << std::endl;
-    */
+    STR_FREE(group_name);
+    STR_FREE(file_name);
+    STR_FREE(mode);
 
     return (jlong) fd_p;
 }
@@ -205,6 +203,8 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1close
 (JNIEnv * env, jclass cls, jlong fh)
 {
     //std::cout << __FUNCTION__ << "..." << std::endl;
+
+    //std::cout << "[IN] fh = " << fh << std::endl;
     return adios_close ((int64_t) fh);
 }
 
@@ -324,9 +324,9 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open_1and_1set_1group_1si
     int result;
     int64_t fd_p = 0;
 
-    STR_ALLOC(group_name)
-    STR_ALLOC(file_name)
-    STR_ALLOC(mode)
+    STR_ALLOC(group_name);
+    STR_ALLOC(file_name);
+    STR_ALLOC(mode);
 
     //std::cout << "[IN] fd_p = " << (int64_t) fd_p << std::endl;
     //std::cout << "[IN] str_group_name = " << str_group_name << std::endl;
@@ -337,9 +337,9 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open_1and_1set_1group_1si
     //std::cout << "[OUT] fd_p = " << fd_p << std::endl;
     //std::cout << "[OUT] result = " << result << std::endl;
 
-    STR_FREE(group_name)
-    STR_FREE(file_name)
-    STR_FREE(mode)
+    STR_FREE(group_name);
+    STR_FREE(file_name);
+    STR_FREE(mode);
 
     uint64_t total_size;
     //std::cout << "[IN] fd_p = " << (int64_t) fd_p << std::endl;
@@ -383,13 +383,13 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1declare_1group
     int64_t id_p;
     int result;
 
-    STR_ALLOC(name)
-    STR_ALLOC(time_index)
+    STR_ALLOC(name);
+    STR_ALLOC(time_index);
 
     result = adios_declare_group(&id_p, str_name, str_time_index, (ADIOS_FLAG) stats);
 
-    STR_FREE(name)
-    STR_FREE(time_index)
+    STR_FREE(name);
+    STR_FREE(time_index);
 
     return (jlong) id_p;
 }
@@ -404,19 +404,19 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1define_1var
 {
     int result;
 
-    STR_ALLOC(name)
-    STR_ALLOC(path)
-    STR_ALLOC(dimensions)
-    STR_ALLOC(global_dimensions)
-    STR_ALLOC(local_offsets)
+    STR_ALLOC(name);
+    STR_ALLOC(path);
+    STR_ALLOC(dimensions);
+    STR_ALLOC(global_dimensions);
+    STR_ALLOC(local_offsets);
 
     result = adios_define_var((int64_t) group_id, str_name, str_path, (ADIOS_DATATYPES) type, str_dimensions, str_global_dimensions, str_local_offsets);
     
-    STR_FREE(name)
-    STR_FREE(path)
-    STR_FREE(dimensions)
-    STR_FREE(global_dimensions)
-    STR_FREE(local_offsets)
+    STR_FREE(name);
+    STR_FREE(path);
+    STR_FREE(dimensions);
+    STR_FREE(global_dimensions);
+    STR_FREE(local_offsets);
 
     return result;
 }
@@ -431,17 +431,17 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1define_1attribute
 {
     int result;
     
-    STR_ALLOC(name)
-    STR_ALLOC(path)
-    STR_ALLOC(value)
-    STR_ALLOC(var)
+    STR_ALLOC(name);
+    STR_ALLOC(path);
+    STR_ALLOC(value);
+    STR_ALLOC(var);
     
     result = adios_define_attribute((int64_t) group_id, str_name, str_path, (ADIOS_DATATYPES) type, str_value, str_var);
 
-    STR_FREE(name)
-    STR_FREE(path)
-    STR_FREE(value)
-    STR_FREE(var)
+    STR_FREE(name);
+    STR_FREE(path);
+    STR_FREE(value);
+    STR_FREE(var);
 
     return result;
 }
@@ -456,15 +456,123 @@ JNIEXPORT jint JNICALL Java_gov_ornl_ccs_Adios_adios_1select_1method
 {
     int result;
     
-    STR_ALLOC(method)
-    STR_ALLOC(parameters)
-    STR_ALLOC(base_path)
+    STR_ALLOC(method);
+    STR_ALLOC(parameters);
+    STR_ALLOC(base_path);
     
         result = adios_select_method((int64_t) group_id, str_method, str_parameters, str_base_path);
 
-    STR_FREE(method)
-    STR_FREE(parameters)
-    STR_FREE(base_path)
+    STR_FREE(method);
+    STR_FREE(parameters);
+    STR_FREE(base_path);
 
     return result;
 }
+
+#define READ_ONE(JTYPE)                                                 \
+    /* std::cout << __FUNCTION__ << " ..." << std::endl; */             \
+    int result;                                                         \
+    JTYPE val;                                                          \
+    const char *str_var_name;                                           \
+    uint64_t read_size = sizeof(JTYPE);                                 \
+    str_var_name = env->GetStringUTFChars(var_name, NULL);              \
+    if (str_var_name == NULL) return -1;                                \
+    result = adios_read ((int64_t) fh, str_var_name, &val, sizeof(JTYPE)); \
+    env->ReleaseStringUTFChars(var_name, str_var_name);                 \
+    return val;
+
+#define FUNC_READ_ONE(FNAME, JTYPE)                                     \
+    JNIEXPORT JTYPE JNICALL FNAME                                       \
+    (JNIEnv * env, jclass cls, jlong fh, jstring var_name)              \
+    {                                                                   \
+        READ_ONE(JTYPE);                                                \
+    }
+
+/*
+ * Class:     gov_ornl_ccs_Adios
+ * Method:    adios_read_byte_value
+ * Signature: (JLjava/lang/String;)B
+ * Signature: (JLjava/lang/String;)I
+ * Signature: (JLjava/lang/String;)J
+ * Signature: (JLjava/lang/String;)F
+ * Signature: (JLjava/lang/String;)D
+ */
+
+FUNC_READ_ONE(
+    Java_gov_ornl_ccs_Adios_adios_1read_1byte_1value,
+    jbyte);
+
+FUNC_READ_ONE(
+    Java_gov_ornl_ccs_Adios_adios_1read_1int_1value,
+    jint);
+
+FUNC_READ_ONE(
+    Java_gov_ornl_ccs_Adios_adios_1read_1long_1value,
+    jlong);
+
+FUNC_READ_ONE(
+    Java_gov_ornl_ccs_Adios_adios_1read_1float_1value,
+    jfloat);
+
+FUNC_READ_ONE(
+    Java_gov_ornl_ccs_Adios_adios_1read_1double_1value,
+    jdouble);
+
+
+
+#define READ_ARRAY(JTYPE, CTYPE)                                        \
+    /* std::cout << __FUNCTION__ << " ..." << std::endl; */             \
+    int result;                                                         \
+    const char *str_var_name;                                           \
+    JTYPE *valarr = env->Get ##CTYPE ##ArrayElements(val, NULL);        \
+    uint64_t read_size = env->GetArrayLength(val) * sizeof(JTYPE);      \
+    str_var_name = env->GetStringUTFChars(var_name, NULL);              \
+    if (str_var_name == NULL) return -1;                                \
+    result = adios_read ((int64_t) fh, str_var_name, (void *) valarr, read_size); \
+    env->ReleaseStringUTFChars(var_name, str_var_name);                 \
+    env->Release ##CTYPE ##ArrayElements(val, valarr, 0);               \
+    return result;
+
+#define FUNC_READ_ARRAY(FNAME, JTYPE, CTYPE)                            \
+    JNIEXPORT jint JNICALL FNAME                                        \
+    (JNIEnv * env, jclass cls, jlong fh, jstring var_name, JTYPE ##Array val) \
+    {                                                                   \
+        READ_ARRAY(JTYPE, CTYPE);                                      \
+    }
+
+/*
+ * Class:     gov_ornl_ccs_Adios
+ * Method:    adios_read
+ * Signature: (JLjava/lang/String;[B)I
+ * Signature: (JLjava/lang/String;[I)I
+ * Signature: (JLjava/lang/String;[J)I
+ * Signature: (JLjava/lang/String;[F)I
+ * Signature: (JLjava/lang/String;[D)I
+ */
+
+FUNC_READ_ARRAY(
+    Java_gov_ornl_ccs_Adios_adios_1read__JLjava_lang_String_2_3B,
+    jbyte,
+    Byte);
+
+FUNC_READ_ARRAY(
+    Java_gov_ornl_ccs_Adios_adios_1read__JLjava_lang_String_2_3I,
+    jint,
+    Int);
+
+FUNC_READ_ARRAY(
+    Java_gov_ornl_ccs_Adios_adios_1read__JLjava_lang_String_2_3J,
+    jlong,
+    Long);
+
+FUNC_READ_ARRAY(
+    Java_gov_ornl_ccs_Adios_adios_1read__JLjava_lang_String_2_3F,
+    jfloat,
+    Float);
+
+FUNC_READ_ARRAY(
+    Java_gov_ornl_ccs_Adios_adios_1read__JLjava_lang_String_2_3D,
+    jdouble,
+    Double);
+
+

@@ -33,28 +33,18 @@ program read_bp_f
     integer          :: one, rank, nproc 
     integer          :: timestep, lasttimestep
     real*8,dimension(102,66,3)  :: b1
+    character(256) :: path
 
     call MPI_Init (ierr)
     comm = MPI_COMM_WORLD
     call mpi_comm_rank(comm, rank, ierr)
     call mpi_comm_size(comm, nproc, ierr)
 
+    call processArgs(path)
+
     call adios_set_read_method (0, ierr);
     varchar = ' '
-    !call adios_fopen (fh, "/lustre/spider/scratch/pnorbert/TRACKP.bp", comm, ierr)
-    !call adios_fopen (fh, "TRACKP_00010.bp", comm, ierr)
-    !call adios_fopen (fh, "g_1x4_5x1.bp", comm, ierr)
-    !call adios_fopen (fh, "pixie3d.bp", comm, ierr)
-    !call adios_fopen (fh, "g_2x2_2x2_t1.bp", comm, ierr)
-    !call adios_fopen (fh, "xgcp.bp", comm, ierr)
-    !call adios_fopen (fh, "pgood.bp", comm, ierr)
-    !call adios_fopen (fh, "xgc.flowdiag.bp", comm, ierr)
-    !call adios_fopen (fh, "xgc.restart.000.03600.bp", comm, ierr)
-    !call adios_fopen (fh, "adios_global.bp", comm, gcnt, ierr)
-    call adios_fopen (fh, "testbp_c.bp", comm, gcnt, ierr)
-    !call adios_fopen (fh, "testbp.bp", comm, ierr)
-    !call adios_fopen (fh, "record.bp", comm, ierr)
-    !call adios_fopen (fh, "outxz.bp", comm, ierr)
+    call adios_fopen (fh, path, comm, gcnt, ierr)
 
     call adios_inq_file (fh,vcnt,acnt,tstart,ntsteps,gnamelist,ierr) 
     tstop = ntsteps+ntsteps-1
@@ -169,3 +159,39 @@ program read_bp_f
 
     call MPI_Finalize (ierr)
 end program
+
+!!***************************
+subroutine usage()
+    write (*,*) "Usage: bp_read_f path]"
+    write (*,*) "    path: name of bp file"
+end subroutine usage
+
+!!***************************
+subroutine processArgs(path)
+
+    implicit none
+    character(len=256), intent(out) :: path
+
+#ifndef __GFORTRAN__
+#ifndef __GNUC__
+    interface
+         integer function iargc()
+         end function iargc
+    end interface
+#endif
+#endif
+
+    integer :: numargs
+
+    !! process arguments
+    numargs = iargc()
+    !print *,"Number of arguments:",numargs
+    if ( numargs < 1 ) then
+        call usage()
+        call exit(1)
+    endif
+    call getarg(1, path)
+
+end subroutine processArgs
+
+

@@ -40,9 +40,6 @@ int main (int argc, char ** argv)
 
         G = 2 * NX * size;
 
-	for (i = 0; i < NX; i++)
-	    t[i] = rank * NX + i;
-
 	strcpy (filename, "adios_globaltime.bp");
 
 	adios_init_noxml ();
@@ -62,6 +59,9 @@ int main (int argc, char ** argv)
                      ,"", adios_integer
                      ,0, 0, 0);
 
+        /* have to define O and temperature as many times as we 
+           write them within one step (twice) */
+        for (it=0; it < 2; it++) {
         adios_define_var (m_adios_group, "O"
                      ,"", adios_integer
                      ,0, 0, 0);
@@ -69,8 +69,12 @@ int main (int argc, char ** argv)
         adios_define_var (m_adios_group, "temperature"
                      ,"", adios_double
                      ,"iter,NX", "G", "O");
+        }
 
         for (it =0; it < 5; it++) {
+
+            for (i = 0; i < NX; i++)
+                t[i] = rank + it*0.1 + 0.01;
 
         	adios_open (&m_adios_file, "restart", filename, "a", &comm);
         	adios_groupsize = 4 + 4 + 4 + NX * 8
@@ -84,10 +88,8 @@ int main (int argc, char ** argv)
         	adios_write(m_adios_file, "temperature", t);
 
         	for (i = 0; i < NX; i++)
-            		t[i]++;
+            		t[i] += 0.01;
 
-        	adios_write(m_adios_file, "NX", (void *) &NX);
-        	adios_write(m_adios_file, "G", (void *) &G);
         	O = rank * 2 * NX + NX;
         	adios_write(m_adios_file, "O", (void *) &O);
         	adios_write(m_adios_file, "temperature", t);

@@ -263,7 +263,7 @@ int adios_close (int64_t fd_p)
     retval = common_adios_close (fd_p);
 
     // Q.L. 10-2010. To fix a memory leak problem.
-    while (!v) {
+    while (v) {
         int j, idx;
         int c, count = 1;
         // NCSU - Clear stats

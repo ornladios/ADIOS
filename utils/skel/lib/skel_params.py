@@ -60,7 +60,7 @@ def generate_param_file (app, outfile, config, groupname):
     param_file.write ('\n\n  <batch name="writes" cores="128" walltime="0:30:00">')
     for group in config.get_groups():
 
-        param_file.write ('\n    <test type="write" group="' + group.get_name() + '" method="POSIX" iterations="10" rm="pre"/>')
+        param_file.write ('\n    <test type="write" group="' + group.get_name() + '" method="POSIX" iterations="10" rm="pre" tags="name1:val1,name2:val2" />')
 
     param_file.write ('\n  </batch>')
 

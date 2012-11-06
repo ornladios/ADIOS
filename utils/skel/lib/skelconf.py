@@ -125,6 +125,9 @@ class test:
     def get_rm (self):
         return self.test_node.getAttribute ('rm')
 
+    def get_tags (self):
+        return self.test_node.getAttribute ('tags')
+
     def get_steps (self):
         steps = self.test_node.getAttribute ('steps')
         if steps == None or steps == '':

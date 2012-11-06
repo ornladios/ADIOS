@@ -57,7 +57,6 @@ int 	   gflag = 10;
 #define MAX_DIMS 100
 #define DEBUG 0
 #define PERFORMANCE_CHECK 0
-#define verbose 1
 #define TIMING 100
 
 void checkOverflow(int loc, ADIOS_VARINFO* v, uint64_t* s, uint64_t* c);
@@ -67,6 +66,9 @@ void calcC(uint64_t chunk_size, ADIOS_VARINFO* v, uint64_t* c);
 uint64_t calcChunkSize(uint64_t total_size, uint64_t mne, int np);
 uint64_t checkBound(ADIOS_VARINFO* v, uint64_t* s, uint64_t* c, uint64_t* uc, uint64_t chunk_size);
 void arrCopy(uint64_t* from, uint64_t* to);
+void getbasename (char *path, char **dirname, char **basename);
+int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype);
+
 
 int main (int argc, char ** argv) {
 	//For varriable definitions:
@@ -90,6 +92,7 @@ int main (int argc, char ** argv) {
 	int        itime;
 	int        WRITEME=1;
 	uint64_t   chunk_size;   //chunk size in # of elements
+    char      *var_path, *var_name; // full path cut into dir path and name
 	MPI_Init(&argc,&argv);
 	MPI_Comm_rank(comm,&rank);
 	MPI_Comm_size(comm,&size);
@@ -114,8 +117,6 @@ int main (int argc, char ** argv) {
 		}
 		//MPI_Barrier(MPI_COMM_WORLD);
 		start_time[5] = MPI_Wtime();
-
-
 	}
 
 	if(rank==0)
@@ -191,18 +192,23 @@ int main (int argc, char ** argv) {
 
 		// variable definition part
 		for (i = 0; i < g->vars_count; i++) {
-		//for (i = 14; i < 15; i++) { // just for testing 1 variable output....
 			ADIOS_VARINFO * v = adios_inq_var_byid (g, i);
+            getbasename (g->var_namelist[i], &var_path, &var_name);
 
-			if (v->ndim == 0) {   // scalars: every process does them the same.
-				adios_define_var(new_adios_group,g->var_namelist[i],"",v->type,0,0,0);
+            if (v->ndim == 0) 
+            {   
+                // scalars: every process does them the same.
+                adios_define_var(new_adios_group,var_name,var_path,v->type,0,0,0);
 				err = getTypeInfo( v->type, &element_size);    //element_size is size per element based on its type
 				if(v->type == adios_string){  //special case when the scalar is string.
 					adios_groupsize+= strlen(v->value);
-				}else
+                } else {
 					adios_groupsize+= element_size;
-			} else { // vector variables
-
+                }
+            } 
+            else 
+            { 
+                // vector variables
 				err = getTypeInfo( v->type, &element_size);
 				var_size=1;
 				for (ii=0;ii<v->ndim;ii++) {
@@ -222,6 +228,13 @@ int main (int argc, char ** argv) {
 
 				//set the chunk block array with the total size as close to chunk_size as possible
 				calcC(chunk_size, v, c);
+                strcpy(lbounds,"");
+                for(j=0; j<v->ndim; j++){
+                    sprintf(tstring, "%lld,", c[j]);
+                    strcat(lbounds, tstring);
+                }
+                printf("rank=%d, name=%s, chunk_size1=%lld c[]=%s\n",rank,g->var_namelist[i],chunk_size,lbounds);
+
 
 				chunk_size = 1;
 				for(ii=0; ii<v->ndim; ii++)			//reset chunk_size based on the created c. Now the chunk_size is exact.
@@ -274,28 +287,34 @@ int main (int argc, char ** argv) {
 						for(j=0; j<v->ndim-1; j++){
 							sprintf(tstring, "%d,", (int)v->dims[j]);
 							strcat(gbounds, tstring);
-							sprintf(tstring, "LIN%d,", j);
+                            //sprintf(tstring, "ldim%d_%s,", j, var_name);
+                            sprintf(tstring, "ldim%d,", j);
 							strcat(lbounds, tstring);
-							sprintf(tstring, "OAK%d,", j);
+                            //sprintf(tstring, "offs%d_%s,", j, var_name);
+                            sprintf(tstring, "offs%d,", j);
 							strcat(offs, tstring);
 						}
 
 						sprintf(tstring, "%d", (int)v->dims[v->ndim-1]);
 						strcat(gbounds, tstring);
-						sprintf(tstring, "LIN%d", v->ndim-1);
+                        //sprintf(tstring, "ldim%d_%s", v->ndim-1, var_name);
+                        sprintf(tstring, "ldim%d", v->ndim-1);
 						strcat(lbounds, tstring);
-						sprintf(tstring, "OAK%d", v->ndim-1);
+                        //sprintf(tstring, "offs%d_%s", v->ndim-1, var_name);
+                        sprintf(tstring, "offs%d", v->ndim-1);
 						strcat(offs, tstring);
 
 						//sprintf(tstring, "%d", v->ndim);
 						for(j=0; j<v->ndim; j++){
-							sprintf(tstring, "LIN%d", j);
-							adios_define_var(new_adios_group, tstring, "", adios_unsigned_long, 0, 0, 0);
-							sprintf(tstring, "OAK%d", j);
-							adios_define_var(new_adios_group, tstring, "", adios_unsigned_long, 0, 0, 0);
+                            //sprintf(tstring, "ldim%d_%s", j, var_name);
+                            sprintf(tstring, "ldim%d", j);
+                            adios_define_var(new_adios_group, tstring, "bp2bp", adios_unsigned_long, 0, 0, 0);
+                            //sprintf(tstring, "offs%d_%s", j, var_name);
+                            sprintf(tstring, "offs%d", j);
+                            adios_define_var(new_adios_group, tstring, "bp2bp", adios_unsigned_long, 0, 0, 0);
 						}
 
-						adios_define_var(new_adios_group,g->var_namelist[i],"",v->type,lbounds,gbounds,offs);
+                        adios_define_var(new_adios_group,var_name,var_path,v->type,lbounds,gbounds,offs);
 
 
 						if (DEBUG){
@@ -344,6 +363,8 @@ int main (int argc, char ** argv) {
 					free(sb); free(rb);
 				}
 			}
+            free (var_name);
+            free (var_path);
 		} // finished declaring all of the variables
 
 
@@ -395,10 +416,16 @@ int main (int argc, char ** argv) {
 			// now we have to write out the variables.... since they are all declared now
 			// This will be the place we actually write out the data!!!!!!!!
 			for (i = 0; i < g->vars_count; i++) {
-			//for (i = 14; i < 15;i++) {
 				ADIOS_VARINFO * v = adios_inq_var_byid (g, i);
-				if (v->ndim == 0) {
-
+                getbasename (g->var_namelist[i], &var_path, &var_name);
+                if (v->ndim == 0) 
+                {
+                    if (DEBUG) {
+                        printf ("ADIOS WRITE SCALAR: rank=%d, name=%s value=",
+                                rank,g->var_namelist[i]);
+                        print_data (v->value, 0, v->type);
+                        printf ("\n");
+                    }
 					if (TIMING==100) {
 						start_time[2] = MPI_Wtime();
 					}
@@ -407,7 +434,9 @@ int main (int argc, char ** argv) {
 						end_time[2] = MPI_Wtime();
 						total_time[2]+=end_time[2] - start_time[2];     //IO write time...
 					}
-				} else {
+                } 
+                else 
+                {
 					for(j=0; j<v->ndim; j++){
 						s[j] = 0;
 						c[j] = 1;
@@ -466,7 +495,7 @@ int main (int argc, char ** argv) {
 							}
 
 							if (DEBUG)
-								printf ("ADIOS WRITE: rank=%d, name=%s datasize=%d\n",rank,g->var_namelist[i],bytes_read);
+                                printf ("ADIOS WRITE: rank=%d, name=%s datasize=%lld\n",rank,g->var_namelist[i],bytes_read);
 
 
 							if (TIMING==100) {
@@ -476,19 +505,34 @@ int main (int argc, char ** argv) {
 								printf("rank=%d, write ts=",rank);
 								int k;
 								for(k=0; k<v->ndim; k++)
-									printf("%d,", ts[k]);
+                                    printf("%lld,", ts[k]);
 								printf("  uc=");
 								for(k=0; k<v->ndim; k++)
-									printf("%d,", uc[k]);
+                                    printf("%lld,", uc[k]);
 								printf("\n");
 							}
 
 							//local bounds and offets placeholders are not written out with actual values.
 							if(PERFORMANCE_CHECK) printf("rank=%d, adios write start\n", rank);
 							for(k=0; k<v->ndim; k++){
-								sprintf(tstring, "LIN%d", k);
+                                //sprintf(tstring, "ldim%d_%s", k, var_name);
+                                sprintf(tstring, "ldim%d", k);
+                                if (DEBUG) {
+                                    printf ("ADIOS WRITE DIMENSION: rank=%d, name=%s value=",
+                                            rank,tstring);
+                                    print_data (&uc[k], 0, adios_unsigned_long);
+                                    printf ("\n");
+                                }
 								adios_write(m_adios_file, tstring, &uc[k]);
-								sprintf(tstring, "OAK%d", k);
+
+                                //sprintf(tstring, "offs%d_%s", k, var_name);
+                                sprintf(tstring, "offs%d", k);
+                                if (DEBUG) {
+                                    printf ("ADIOS WRITE OFFSET: rank=%d, name=%s value=",
+                                            rank,tstring);
+                                    print_data (&ts[k], 0, adios_unsigned_long);
+                                    printf ("\n");
+                                }
 								adios_write(m_adios_file, tstring, &ts[k]);
 							}
 							adios_write(m_adios_file,g->var_namelist[i],data);
@@ -528,6 +572,8 @@ int main (int argc, char ** argv) {
 						free(sb); free(rb);
 					}
 				}
+                free (var_name);
+                free (var_path);
 			}// end of the writing of the variable..
 			if (TIMING==100) {
 				start_time[3] = MPI_Wtime();
@@ -961,3 +1007,97 @@ void arrCopy(uint64_t* from, uint64_t* to){
 	for(i=0; i<10; i++)
 		to[i] = from[i];
 }
+
+
+void getbasename (char *path, char **dirname, char **basename)
+{
+    char *work, *ptr;
+
+    work = strdup(path);
+    if (work[strlen(work)-1] == '/' && strlen(work)>1)
+        work[strlen(work)-1] = '\0';
+
+    ptr = rindex(work, '/');
+    if (ptr && ptr != work) {
+        // found a / and but not the beginning / of a full path
+        ptr[0] = 0;
+        *dirname = strdup(work);
+        ptr[0] = '/';
+        *basename = strdup(ptr+1);
+    } else if (ptr == work) {
+        // found / as the first character 
+        *dirname = strdup("");
+        *basename = strdup(ptr+1);
+    } else {
+        *dirname = NULL; //strdup(".");
+        *basename = strdup(work);
+    }
+    free(work);
+}
+
+
+int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype)
+{
+    if (data == NULL) {
+        printf ( "null ");
+        return 0;
+    }
+    // print next data item into vstr
+    switch(adiosvartype) {
+        case adios_unsigned_byte:
+            printf ("%hhu", ((unsigned char *) data)[item]);
+            break;
+        case adios_byte:
+            printf ("%hhd", ((signed char *) data)[item]);
+            break;
+        case adios_string:
+            printf ("\"%s\"", ((char *) data)+item);
+            break;
+
+        case adios_unsigned_short:
+            printf ("%hu", ((unsigned short *) data)[item]);
+            break;
+        case adios_short:
+            printf ("%hd", ((signed short *) data)[item]);
+            break;
+
+        case adios_unsigned_integer: 
+            printf ("%u", ((unsigned int *) data)[item]);
+            break;
+        case adios_integer:    
+            printf ("%d", ((signed int *) data)[item]);
+            break;
+
+        case adios_unsigned_long:
+            printf ("%llu", ((unsigned long long *) data)[item]);
+            break;
+        case adios_long:        
+            printf ("%lld", ((signed long long *) data)[item]);
+            break;
+
+        case adios_real:
+            printf ("%g", ((float *) data)[item]);
+            break;
+
+        case adios_double:
+            printf ("%g", ((double *) data)[item]);
+            break;
+
+
+        case adios_long_double:
+            //printf ("%g ", ((double *) data)[item]);
+            printf ("????????");
+            break;
+
+
+        case adios_complex:
+            printf ("(%g,i%g)", ((float *) data)[2*item], ((float *) data)[2*item+1]);
+            break;
+
+        case adios_double_complex:
+            printf ("(%g,i%g)", ((double *) data)[2*item], ((double *) data)[2*item+1]);
+            break;
+    } // end switch
+    return 0;
+}
+

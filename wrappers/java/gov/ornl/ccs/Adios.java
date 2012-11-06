@@ -21,6 +21,21 @@ public class Adios
     private static native int adios_write (long fh, String var_name, long[] val);
     private static native int adios_write (long fh, String var_name, float[] val);
     private static native int adios_write (long fh, String var_name, double[] val);
+
+    // Note: adios_read is a delayed operation
+    // Only non-buffered method will populate the data
+    private static native byte adios_read_byte_value (long fh, String var_name);
+    private static native int adios_read_int_value (long fh, String var_name);
+    private static native long adios_read_long_value (long fh, String var_name);
+    private static native float adios_read_float_value (long fh, String var_name);
+    private static native double adios_read_double_value (long fh, String var_name);
+
+    private static native int adios_read (long fh, String var_name, byte[] val);
+    private static native int adios_read (long fh, String var_name, int[] val);
+    private static native int adios_read (long fh, String var_name, long[] val);
+    private static native int adios_read (long fh, String var_name, float[] val);
+    private static native int adios_read (long fh, String var_name, double[] val);
+
     private static native int adios_close (long fh);
     private static native int adios_finalize (int id);
 
@@ -113,6 +128,56 @@ public class Adios
     public static long Write (long fh, String var_name, double[] value)
     {
         return adios_write (fh, var_name, value);
+    }
+
+    public static byte ReadByteValue (long fh, String var_name)
+    {
+        return adios_read_byte_value(fh, var_name);
+    }
+
+    public static int ReadIntValue (long fh, String var_name)
+    {
+        return adios_read_int_value(fh, var_name);
+    }
+
+    public static long ReadLongValue (long fh, String var_name)
+    {
+        return adios_read_long_value(fh, var_name);
+    }
+
+    public static float ReadFloatValue (long fh, String var_name)
+    {
+        return adios_read_float_value(fh, var_name);
+    }
+
+    public static double ReadDoubleValue (long fh, String var_name)
+    {
+        return adios_read_double_value(fh, var_name);
+    }
+
+    public static long Read (long fh, String var_name, byte[] value)
+    {
+        return adios_read (fh, var_name, value);
+    }
+
+    public static long Read (long fh, String var_name, int[] value)
+    {
+        return adios_read (fh, var_name, value);
+    }
+
+    public static long Read (long fh, String var_name, long[] value)
+    {
+        return adios_read (fh, var_name, value);
+    }
+
+    public static long Read (long fh, String var_name, float[] value)
+    {
+        return adios_read (fh, var_name, value);
+    }
+
+    public static long Read (long fh, String var_name, double[] value)
+    {
+        return adios_read (fh, var_name, value);
     }
 
 	/* Call adios_close */

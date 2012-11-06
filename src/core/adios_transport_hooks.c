@@ -43,10 +43,6 @@ void adios_init_transports (struct adios_transport_struct ** t)
 
 #ifndef ADIOS_EMPTY_TRANSPORTS
 
-#  ifndef NO_RESEARCH_TRANSPORTS
-    ASSIGN_FNS(adaptive,ADIOS_METHOD_ADAPTIVE)
-#  endif
-
 #  ifndef _NOMPI
 
 #    if HAVE_MPI
@@ -59,6 +55,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(mpi_stagger,ADIOS_METHOD_MPI_STAGGER)
     ASSIGN_FNS(mpi_aggregate,ADIOS_METHOD_MPI_AGG)
     ASSIGN_FNS(mpi_amr1,ADIOS_METHOD_MPI_AMR1)
+    ASSIGN_FNS(adaptive,ADIOS_METHOD_ADAPTIVE)
 #      endif
 #    endif
 
@@ -105,10 +102,6 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 {
     // add the string<->ID mapping here (also add ID in adios_internals.h)
     // use a '1' for requires a communicator or '0' if not as the last param
-#ifndef NO_RESEARCH_TRANSPORTS
-    MATCH_STRING_TO_METHOD("ADAPTIVE",ADIOS_METHOD_ADAPTIVE,1)
-#endif
-
 #if HAVE_MPI
     MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI,1)
     MATCH_STRING_TO_METHOD("MPI_LUSTRE",ADIOS_METHOD_MPI_LUSTRE,1)
@@ -119,6 +112,7 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
     MATCH_STRING_TO_METHOD("MPI_STAGGER",ADIOS_METHOD_MPI_STAGGER,1)
     MATCH_STRING_TO_METHOD("MPI_AGGREGATE",ADIOS_METHOD_MPI_AGG,1)
     MATCH_STRING_TO_METHOD("MPI_AMR1",ADIOS_METHOD_MPI_AMR1,1)
+    MATCH_STRING_TO_METHOD("ADAPTIVE",ADIOS_METHOD_ADAPTIVE,1)
 #endif
 #endif
 
