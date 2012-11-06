@@ -451,25 +451,25 @@ int bp_close (BP_FILE * fh)
     if (gh) {
         for (j=0;j<2;j++) {
             for (i=0;i<gh->group_count;i++) {
-                if (gh->time_index[j][i])
+                if (gh->time_index && gh->time_index[j] && gh->time_index[j][i])
                     free(gh->time_index[j][i]);
             }
-            if (gh->time_index[j])
+            if (gh->time_index && gh->time_index[j])
                 free(gh->time_index[j]);
         }
         free (gh->time_index);
 
         for (i=0;i<gh->group_count;i++) {
-            if (gh->namelist[i])
+            if (gh->namelist && gh->namelist[i])
                 free(gh->namelist[i]);
         }
         if (gh->namelist)
             free (gh->namelist);
 
         for (i=0;i<fh->mfooter.vars_count;i++) {
-            if (gh->var_namelist[i])
+            if (gh->var_namelist && gh->var_namelist[i])
                 free(gh->var_namelist[i]);
-            if (gh->var_offsets[i])
+            if (gh->var_offsets && gh->var_offsets[i])
                 free(gh->var_offsets[i]);
         }
         if (gh->var_namelist)
@@ -492,9 +492,9 @@ int bp_close (BP_FILE * fh)
     /* Free attribute structures in BP_GROUP_ATTR */
     if (ah) {
         for (i = 0; i < fh->mfooter.attrs_count; i++) {
-            if (ah->attr_offsets[i])
+            if (ah->attr_offsets && ah->attr_offsets[i])
                 free(ah->attr_offsets[i]);
-            if (ah->attr_namelist[i])
+            if (ah->attr_namelist && ah->attr_namelist[i])
                 free(ah->attr_namelist[i]);
         }
         if (ah->attr_offsets)
