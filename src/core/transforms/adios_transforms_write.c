@@ -225,7 +225,7 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
 
     orig_var->bitmap = 0; // Disable statistics
 
-    printf(">>> Statistics bitmap at define-time: %08lx\n", orig_var->bitmap);
+    //printf(">>> Statistics bitmap at define-time: %08lx\n", orig_var->bitmap);
 
     // Return the modified variable
     return orig_var;
@@ -275,7 +275,7 @@ static int adios_transform_store_transformed_length(struct adios_file_struct * f
     pg_id_offset->rank = pg_id;
     byte_length_ldim->rank = transformed_len;
 
-    printf(">>> Statistics bitmap at store-time: %08lx\n", var->bitmap);
+    //printf(">>> Statistics bitmap at store-time: %08lx\n", var->bitmap);
 
     return 1;
 }
