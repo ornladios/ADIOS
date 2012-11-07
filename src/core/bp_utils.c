@@ -396,9 +396,6 @@ int bp_close (BP_FILE * fh)
                 free (vr->characteristics[j].stats);
                 vr->characteristics[j].stats = 0;
             }
-
-            // NCSU ALACRITY-ADIOS - Clear transform metadata
-            adios_transform_clear_transform_characteristic(&vr->characteristics[j].transform);
         }
         if (vr->characteristics)
             free (vr->characteristics);
@@ -455,25 +452,25 @@ int bp_close (BP_FILE * fh)
     if (gh) {
         for (j=0;j<2;j++) {
             for (i=0;i<gh->group_count;i++) {
-                if (gh->time_index[j][i])
+                if (gh->time_index && gh->time_index[j] && gh->time_index[j][i])
                     free(gh->time_index[j][i]);
             }
-            if (gh->time_index[j])
+            if (gh->time_index && gh->time_index[j])
                 free(gh->time_index[j]);
         }
         free (gh->time_index);
 
         for (i=0;i<gh->group_count;i++) {
-            if (gh->namelist[i])
+            if (gh->namelist && gh->namelist[i])
                 free(gh->namelist[i]);
         }
         if (gh->namelist)
             free (gh->namelist);
 
         for (i=0;i<fh->mfooter.vars_count;i++) {
-            if (gh->var_namelist[i])
+            if (gh->var_namelist && gh->var_namelist[i])
                 free(gh->var_namelist[i]);
-            if (gh->var_offsets[i])
+            if (gh->var_offsets && gh->var_offsets[i])
                 free(gh->var_offsets[i]);
         }
         if (gh->var_namelist)
@@ -496,9 +493,9 @@ int bp_close (BP_FILE * fh)
     /* Free attribute structures in BP_GROUP_ATTR */
     if (ah) {
         for (i = 0; i < fh->mfooter.attrs_count; i++) {
-            if (ah->attr_offsets[i])
+            if (ah->attr_offsets && ah->attr_offsets[i])
                 free(ah->attr_offsets[i]);
-            if (ah->attr_namelist[i])
+            if (ah->attr_namelist && ah->attr_namelist[i])
                 free(ah->attr_namelist[i]);
         }
         if (ah->attr_offsets)
@@ -1296,7 +1293,7 @@ SET_DATA_3(t) \
                         {
                             case adios_byte:
                                 SET_DATA(int8_t)
-                                break;
+            break;
                             case adios_short:
                                 SET_DATA(int16_t)
                                 break;
@@ -1434,6 +1431,7 @@ SET_DATA_3(t) \
                 (*root)->characteristics [j].stats[0] = malloc (2 * sizeof(struct adios_index_characteristics_stat_struct));
                 (*root)->characteristics [j].bitmap = 0;
             }
+
             (*root)->characteristics [j].bitmap |= (1 << adios_statistic_max);
             (*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, (*root)->type);
             break;
@@ -1483,37 +1481,12 @@ SET_DATA_3(t) \
                             hist->min = * (double *) bp_read_data_from_buffer(b, adios_double);
                             hist->max = * (double *) bp_read_data_from_buffer(b, adios_double);
 
-<<<<<<< .working
-                            hist->frequencies = malloc((hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
-                            for (bi = 0; bi <= hist->num_breaks; bi ++) {
-                                BUFREAD32(b, hist->frequencies[bi])
-                            }
-
-                            hist->breaks = malloc(hist->num_breaks * adios_get_type_size(adios_double, ""));
-                            for (bi = 0; bi < hist->num_breaks; bi ++) {
-                                hist->breaks[bi] = * (double *) bp_read_data_from_buffer(b, adios_double);
-                            }
-                        }
-                        else
-                        {
-                            characteristic_size = adios_get_stat_size((*root)->characteristics [j].stats[c][idx].data
-                                                                                                 ,(*root)->type
-                                                                                                 ,(enum ADIOS_STAT)i
-                                                                                                 );
-                            (*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);
-=======
                             hist->frequencies = malloc((hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
                             for (bi = 0; bi <= hist->num_breaks; bi ++)
                             {
                                 BUFREAD32(b, hist->frequencies[bi])
                             }
->>>>>>> .merge-right.r2048
 
-<<<<<<< .working
-                            void * data = (*root)->characteristics [j].stats[c][idx].data;
-                            memcpy (data, (b->buff + b->offset), characteristic_size);
-                            b->offset += characteristic_size;
-=======
                             hist->breaks = malloc(hist->num_breaks * adios_get_type_size(adios_double, ""));
                             for (bi = 0; bi < hist->num_breaks; bi ++)
                             {
@@ -1524,13 +1497,15 @@ SET_DATA_3(t) \
                         {
                             characteristic_size = adios_get_stat_size(
                                 (*root)->characteristics [j].stats[c][idx].data
-                               ,(*root)->type
-                               ,(enum ADIOS_STAT)i
-                               );
+                                                                                                 ,(*root)->type
+                                                                                                 ,(enum ADIOS_STAT)i
+                                                                                                 );
                             (*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);
->>>>>>> .merge-right.r2048
 
-<<<<<<< .working
+                            void * data = (*root)->characteristics [j].stats[c][idx].data;
+                            memcpy (data, (b->buff + b->offset), characteristic_size);
+                            b->offset += characteristic_size;
+
                             if(b->change_endianness == adios_flag_yes)
                                 swap_ptr(data, characteristic_size * 8);
                         }
@@ -1541,31 +1516,12 @@ SET_DATA_3(t) \
             }
             break;
         }
-=======
-                            void * data = (*root)->characteristics [j].stats[c][idx].data;
-			    memcpy (data, (b->buff + b->offset), characteristic_size);
-                            b->offset += characteristic_size;
->>>>>>> .merge-right.r2048
 
-<<<<<<< .working
         // NCSU - Statistics. Read the bitmap
         case adios_characteristic_bitmap:
             BUFREAD32(b, (*root)->characteristics [j].bitmap);
             break;
-=======
-                            if(b->change_endianness == adios_flag_yes) 
-                                swap_ptr(data, characteristic_size * 8);
-                        }
-                        idx ++;
-                    }
-                    i ++;
-                }	
-            }	
-            break;
-	}
->>>>>>> .merge-right.r2048
 
-<<<<<<< .working
         // NCSU ALACRITY-ADIOS - Read transform type field
         case adios_characteristic_transform_type:
             adios_transform_deserialize_transform_characteristic(&(*root)->characteristics[j].transform, b);
@@ -1573,14 +1529,6 @@ SET_DATA_3(t) \
             break;
 
         case adios_characteristic_offset:
-=======
-       // NCSU - Statistics. Read the bitmap
-       case adios_characteristic_bitmap:
-           BUFREAD32(b, (*root)->characteristics [j].bitmap);
-           break;
-
-        case adios_characteristic_offset: 
->>>>>>> .merge-right.r2048
             BUFREAD64(b, (*root)->characteristics [j].offset)
             break;
 
