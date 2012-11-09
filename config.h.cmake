@@ -61,10 +61,10 @@
 #define HAVE_GETTIMEOFDAY ${HAVE_GETTIMEOFDAY}
 
 /* Define if you have HDF5. */
-#define HAVE_HDF5 ${HAVE_HDF5}
+#cmakedefine HAVE_HDF5 ${HAVE_HDF5}
 
 /* Define to 1 if you have the <hdf5.h> header file. */
-#define HAVE_HDF5_H ${HAVE_HDF5_H}
+#cmakedefine HAVE_HDF5_H ${HAVE_HDF5_H}
 
 /* Define to 1 if you have <infiniband/verbs.h>. */
 #define HAVE_IBVERBS_H ${HAVE_IBVERBS_H}
@@ -118,7 +118,10 @@
 #define HAVE_PABLO ${HAVE_PABLO}
 
 /* Define if you have PHDF5. */
-#define HAVE_PHDF5 ${HAVE_PHDF5}
+#cmakedefine HAVE_PHDF5 ${HAVE_PHDF5}
+
+/* Define to 1 if you have the <hdf5.h> header file. */
+#cmakedefine HAVE_PHDF5_H ${HAVE_PHDF5_H}
 
 /* Define if you have the Portals. */
 #define HAVE_PORTALS ${HAVE_PORTALS}
