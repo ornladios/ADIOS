@@ -445,6 +445,8 @@ static void send_read_data (BP_PROC * p)
 
     while (r)    {
         rr_pvt = (rr_pvt_struct *) r->priv;
+        assert (rr_pvt);
+
         g = rank_to_group_mapping (pvt, rr_pvt->rank);
 
         /*  g == p->group       -> requests are from processors that belong to th
@@ -486,7 +488,6 @@ e group
 static void get_read_data1 (BP_PROC * p)
 {
     bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
-    rr_pvt_struct * rr_pvt;
     MPI_Status status;
     read_request * r = p->local_read_request_list;
 
@@ -494,7 +495,6 @@ static void get_read_data1 (BP_PROC * p)
     {
         while (r)
         {
-            rr_pvt = (rr_pvt_struct *) r->priv;
             MPI_Recv (r->data, r->datasize, MPI_BYTE
                      ,MPI_ANY_SOURCE, MPI_ANY_TAG, pvt->new_comm
                      ,&status
@@ -2304,7 +2304,7 @@ int adios_read_bp_staged_perform_reads (const ADIOS_FILE *fp, int blocking)
 
     // first populate the private structure for
     // each local read request.
-    if (isAggregator (p))
+//    if (isAggregator (p))
     {
         h = p->local_read_request_list;
         while (h)
@@ -2395,11 +2395,11 @@ int adios_read_bp_staged_perform_reads (const ADIOS_FILE *fp, int blocking)
 
         do_read (fp);
 
-        send_read_data1 (p);
+        send_read_data (p);
     }
     else
     {
-        get_read_data1 (p);
+        get_read_data (p);
     }
 
 
@@ -2410,13 +2410,14 @@ int adios_read_bp_staged_perform_reads (const ADIOS_FILE *fp, int blocking)
         r = p->local_read_request_list;
         while (r)
         {
-            if (!r->data)
+            rr_pvt_struct * rr_pvt = (rr_pvt_struct *) r->priv;
+            if (rr_pvt->rank == pvt->rank && !r->data)
             {
                 adios_error (err_operation_not_supported,
-                    "Blocking mode at adios_perform_reads() requires that user "
+                    "[%d] Blocking mode at adios_perform_reads() requires that user "
                     "provides the memory for each read request. Request for "
                     "variable %d was scheduled without user-allocated me mory\n",
-                    r->varid);
+                    pvt->rank, r->varid);
                 return err_operation_not_supported;
             }
 
