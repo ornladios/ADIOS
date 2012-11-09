@@ -13,6 +13,7 @@ check_C=local_array_time \
         adios_amr_write \
         adios_amr_write_2vars \
         adios_staged_read \
+        adios_staged_read_v2 \
         adios_staged_read_2vars \
         write_read \
         write_alternate \
@@ -66,6 +67,11 @@ adios_staged_read_SOURCES=adios_staged_read.c
 adios_staged_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
 adios_staged_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 adios_staged_read.o: adios_staged_read.c
+
+adios_staged_read_v2_SOURCES=adios_staged_read_v2.c
+adios_staged_read_v2_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
+adios_staged_read_v2_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
+adios_staged_read_v2.o: adios_staged_read_v2.c
 
 adios_staged_read_2vars_SOURCES=adios_staged_read_2vars.c
 adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)

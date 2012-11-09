@@ -68,6 +68,7 @@ CONFIG_CLEAN_FILES =
 @BUILD_WRITE_TRUE@	adios_amr_write$(EXEEXT) \
 @BUILD_WRITE_TRUE@	adios_amr_write_2vars$(EXEEXT) \
 @BUILD_WRITE_TRUE@	adios_staged_read$(EXEEXT) \
+@BUILD_WRITE_TRUE@	adios_staged_read_v2$(EXEEXT) \
 @BUILD_WRITE_TRUE@	adios_staged_read_2vars$(EXEEXT) \
 @BUILD_WRITE_TRUE@	write_read$(EXEEXT) write_alternate$(EXEEXT) \
 @BUILD_WRITE_TRUE@	many_vars$(EXEEXT) selections$(EXEEXT)
@@ -92,6 +93,10 @@ am_adios_staged_read_2vars_OBJECTS =  \
 adios_staged_read_2vars_OBJECTS =  \
 	$(am_adios_staged_read_2vars_OBJECTS)
 adios_staged_read_2vars_DEPENDENCIES =  \
+	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1)
+am_adios_staged_read_v2_OBJECTS = adios_staged_read_v2.$(OBJEXT)
+adios_staged_read_v2_OBJECTS = $(am_adios_staged_read_v2_OBJECTS)
+adios_staged_read_v2_DEPENDENCIES =  \
 	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1)
 am_local_array_time_OBJECTS = local_array_time.$(OBJEXT)
 local_array_time_OBJECTS = $(am_local_array_time_OBJECTS)
@@ -136,13 +141,15 @@ LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(adios_staged_read_SOURCES) \
-	$(adios_staged_read_2vars_SOURCES) $(local_array_time_SOURCES) \
+	$(adios_staged_read_2vars_SOURCES) \
+	$(adios_staged_read_v2_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(posix_method_SOURCES) \
 	$(selections_SOURCES) $(write_alternate_SOURCES) \
 	$(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
-	$(adios_staged_read_2vars_SOURCES) $(local_array_time_SOURCES) \
+	$(adios_staged_read_2vars_SOURCES) \
+	$(adios_staged_read_v2_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(posix_method_SOURCES) \
 	$(selections_SOURCES) $(write_alternate_SOURCES) \
 	$(write_read_SOURCES)
@@ -398,6 +405,7 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@        adios_amr_write \
 @BUILD_WRITE_TRUE@        adios_amr_write_2vars \
 @BUILD_WRITE_TRUE@        adios_staged_read \
+@BUILD_WRITE_TRUE@        adios_staged_read_v2 \
 @BUILD_WRITE_TRUE@        adios_staged_read_2vars \
 @BUILD_WRITE_TRUE@        write_read \
 @BUILD_WRITE_TRUE@        write_alternate \
@@ -432,6 +440,9 @@ adios_amr_write_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 adios_staged_read_SOURCES = adios_staged_read.c
 adios_staged_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
 adios_staged_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
+adios_staged_read_v2_SOURCES = adios_staged_read_v2.c
+adios_staged_read_v2_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
+adios_staged_read_v2_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 adios_staged_read_2vars_SOURCES = adios_staged_read_2vars.c
 adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
 adios_staged_read_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
@@ -508,6 +519,9 @@ adios_staged_read$(EXEEXT): $(adios_staged_read_OBJECTS) $(adios_staged_read_DEP
 adios_staged_read_2vars$(EXEEXT): $(adios_staged_read_2vars_OBJECTS) $(adios_staged_read_2vars_DEPENDENCIES) 
 	@rm -f adios_staged_read_2vars$(EXEEXT)
 	$(LINK) $(adios_staged_read_2vars_LDFLAGS) $(adios_staged_read_2vars_OBJECTS) $(adios_staged_read_2vars_LDADD) $(LIBS)
+adios_staged_read_v2$(EXEEXT): $(adios_staged_read_v2_OBJECTS) $(adios_staged_read_v2_DEPENDENCIES) 
+	@rm -f adios_staged_read_v2$(EXEEXT)
+	$(LINK) $(adios_staged_read_v2_LDFLAGS) $(adios_staged_read_v2_OBJECTS) $(adios_staged_read_v2_LDADD) $(LIBS)
 local_array_time$(EXEEXT): $(local_array_time_OBJECTS) $(local_array_time_DEPENDENCIES) 
 	@rm -f local_array_time$(EXEEXT)
 	$(LINK) $(local_array_time_LDFLAGS) $(local_array_time_OBJECTS) $(local_array_time_LDADD) $(LIBS)
@@ -537,6 +551,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_amr_write_2vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_2vars.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_v2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local_array_time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/many_vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/selections.Po@am__quote@
@@ -831,6 +846,7 @@ gwrite_posix_method.fh: posix_method.xml
 adios_amr_write.o: adios_amr_write.c
 adios_amr_write_2vars.o: adios_amr_write_2vars.c
 adios_staged_read.o: adios_staged_read.c
+adios_staged_read_v2.o: adios_staged_read_v2.c
 adios_staged_read_2vars.o: adios_staged_read_2vars.c
 write_read.o: write_read.c
 write_alternate.o: write_alternate.c
