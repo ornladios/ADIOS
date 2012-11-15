@@ -17,6 +17,7 @@ set(includedir ${prefix}/include)
 
 #option(PHDF5 "PHDF5" OFF)
 #option(LUSTRE "LUSTRE" OFF)
+
 set(LIBS "")
 set(CPPFLAGS "-DMPICH_IGNORE_CXX_SEEK")
 set(CFLAGS "-g -fPIC")
@@ -87,7 +88,7 @@ if(HDF5)
     find_path(HDF5_INCLUDE_DIR hdf5.h ${HDF5_DIR}/include)
     if(HDF5_INCLUDE_DIR)
       set(HAVE_HDF5_H 1)
-      include_directories(${HDF5_DIR}/include)
+      include_directories(${HDF5_INCLUDE_DIR})
       set(CPPFLAGS "${CPPFLAGS} ${HDF5_FLAGS}")
       set(LIBS "${LIBS} ${HDF5_LIBS}")
     else()
@@ -162,27 +163,39 @@ endif(NOT MXML_INCLUDE_DIR_NOTFOUND)
 # Define if you have the MXML.
 # MXML: /sw/analysis-x64/mxml/2.6/centos5.5_pgi10./9
 set(HAVE_MXML 0)
-find_library(MXML_LIB_DIR NAMES mxml PATHS ${MXML_DIR}/lib)
-if(MXML_LIB_DIR)
+find_library(MXML_LIBS NAMES mxml PATHS ${MXML_DIR}/lib)
+if(MXML_LIBS)
   message(STATUS "find mxml library")
 endif()
-if(MXML_LIB_DIR AND HAVE_MXML_H)
+if(MXML_LIBS AND HAVE_MXML_H)
   set(HAVE_MXML 1)
   set(LIBS "${LIBS} -lmxml")
   set(CPPFLAGS "${CPPFLAGS} ${MXML_CPPFLAGS}")
-endif(MXML_LIB_DIR AND HAVE_MXML_H)
+endif()
 
 # Define to 1 if you have the `nanosleep' function.
 CHECK_FUNCTION_EXISTS(nanosleep HAVE_NANOSLEEP)
-
-# Define if you have NC4PAR.
-set(HAVE_NC4PAR 0)
 
 # Define if you have NETCDF.
 set(HAVE_NETCDF 0)
 
 # Define to 1 if you have the <netcdf.h> header file.
 set(HAVE_NETCDF_H 0)
+
+# Define if you have NC4PAR.
+set(HAVE_NC4PAR 0)
+
+# Use NC4PAR for bp2ncd if no sequential NETCDF was found
+if(HAVE_NC4PAR)
+  if(NOT HAVE_NETCDF)
+    set(NETCDF_CPPFLAGS "${NC4PAR_CPPFLAGS}")
+    set(NETCDF_CFLAGS "${NC4PAR_CFLAGS}")
+    set(NETCDF_LIBS "${NC4PAR_LIBS}")
+    set(HAVE_NETCDF 1)
+    set(USE_PARALLEL_COMPILER 1)
+    message(STATUS "Use NC4PAR for sequential NETCDF tools")
+  endif()
+endif()
 
 # Define if you have NSSI.
 set(HAVE_NSSI 0)
@@ -214,6 +227,21 @@ if(PHDF5)
 else()
   set(HAVE_PHDF5 0)
 endif(PHDF5)
+
+# Use PHDF5 for bp2h5 if no sequential HDF5 was found
+if(HAVE_PHDF5)
+  if(NOT HAVE_HDF5)
+    set(HDF5_FLAGS "${PHDF5_FLAGS}")
+    set(HDF5_LIBS "${PHDF5_LIBS}")
+    set(HAVE_HDF5 1)
+#    include_directories(${PHDF5_INCLUDE_DIR})
+    set(USE_PARALLEL_COMPILER 1)
+    set(CPPFLAGS "${CPPFLAGS} ${PHDF5_FLAGS}")
+    set(LIBS "${LIBS} ${PHDF5_LIBS}")
+    message(STATUS "Use PHDF5 for sequential HDF5 tools")
+  endif()
+endif()
+
 
 # Define if you have the Portals.
 set(HAVE_PORTALS 0)
@@ -340,19 +368,28 @@ set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO})
 # svn revision number
 set(VERSION_SVNREV 2007)
 
+
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${PROJECT_SOURCE_DIR}/config.h)
 ################################ end of generating config.h ###############################
 
-set(ADIOSLIB_LDADD "m ${MXML_LIB_DIR}")
+# Generate flags for adios lib creation which depends on the packages we found
+# ADIOSLIB_* for compiling libadios.a and libadiosf.a, and linking codes with those
+# ADIOSLIB_SEQ_* for compiling libadios_nompi.a and libadiosf_nompi.a with dummy MPI
+# ADIOSLIB_INT_* for codes using libadios_internal_nompi.a (like bp2ncd, bp2h5, bpdump etc)
+# ADIOSREADLIB_* for codes using libadiosread.a, libadiosreadf.a
+# ADIOSREADLIB_SEQ_* for codes using libadiosread_nompi.a
+# adios_config will contain flags for users' code linking based on these flags
+# EXTRA flags are used for compiling adios stuff, which need not go into adios_config for user codes
+set(ADIOSLIB_LDADD "m ${MXML_LIBS}")
 set(ADIOSLIB_CFLAGS "")
-set(ADIOSLIB_CPPFLAGS ${MXML_CPPFLAGS})
+set(ADIOSLIB_CPPFLAGS "${MXML_CPPFLAGS}")
 set(ADIOSLIB_EXTRA_CPPFLAGS "-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE")
 set(ADIOSLIB_SEQ_CPPFLAGS "-D_NOMPI ${MXML_CPPFLAGS}")
 set(ADIOSLIB_SEQ_CFLAGS "")
-set(ADIOSLIB_SEQ_LDADD "m ${MXML_LIB_DIR}")
+set(ADIOSLIB_SEQ_LDADD "m ${MXML_LIBS}")
 set(ADIOSLIB_INT_CPPFLAGS "-D_NOMPI ${MXML_CPPFLAGS}")
 set(ADIOSLIB_INT_CFLAGS "")
-set(ADIOSLIB_INT_LDADD "m ${MXML_LIB_DIR}")
+set(ADIOSLIB_INT_LDADD "m ${MXML_LIBS}")
 set(ADIOSREADLIB_CPPFLAGS "")
 set(ADIOSREADLIB_CFLAGS "")
 set(ADIOSREADLIB_LDADD "m")
@@ -360,7 +397,20 @@ set(ADIOSREADLIB_SEQ_CPPFLAGS "-D_NOMPI")
 set(ADIOSREADLIB_SEQ_CFLAGS "")
 set(ADIOSREADLIB_SEQ_LDADD "m")
 
-set(NSSI_SERVER_LIBS "")
+if(NOT NO_DATATAP)
+  set(ADIOSLIB_CPPFLAGS "${ADIOSLIB_CPPFLAGS} ${DT_CPPFLAGS}")
+  set(ADIOSLIB_CFLAGS "${ADIOSLIB_CFLAGS} ${DT_CFLAGS}")
+  set(ADIOSLIB_LDADD "${ADIOSLIB_LDADD} ${DT_LIBS}")
+  set(ADIOSREADLIB_CPPFLAGS "${ADIOSREADLIB_CPPFLAGS} ${DT_CPPFLAGS}")
+  set(ADIOSREADLIB_CFLAGS "${ADIOSREADLIB_CFLAGS} ${DT_CFLAGS}")
+  set(ADIOSREADLIB_LDADD "${ADIOSREADLIB_LDADD} ${DT_LIBS}")
+  set(ADIOSREADLIB_SEQ_CPPFLAGS "${ADIOSREADLIB_SEQ_CPPFLAGS} ${DT_CPPFLAGS}")
+  set(ADIOSREADLIB_SEQ_CFLAGS "${ADIOSREADLIB_SEQ_CFLAGS} ${DT_CFLAGS}")
+  set(ADIOSREADLIB_SEQ_LDADD "${ADIOSREADLIB_SEQ_LDADD} ${DT_LIBS}")
+endif()
+
+
+#set(NSSI_SERVER_LIBS "")
 ############################### srart of top CMakeLists.txt ###############################
 #install(PROGRAMS adios_config DESTINATION ${bindir})
 
@@ -369,6 +419,8 @@ set(NSSI_SERVER_LIBS "")
 #install(PROGRAMS scripts/kill.nssi.staging.sh DESTINATION ${bindir})
 #install(PROGRAMS scripts/start.nssi.staging.sh DESTINATION  ${bindir})
 #endif(HAVE_NSSI)
+
+
 
 add_definitions(-DO_LARGEFILE=0)
 
