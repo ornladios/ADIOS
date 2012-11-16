@@ -250,19 +250,19 @@ libadiosf_v1_a_SOURCES = $(FortranLibSources) core/adiosf_read_v1.c
 libadiosf_v1_a_CPPFLAGS = $(libadiosf_a_CPPFLAGS) 
 libadiosf_v1_a_CFLAGS = $(libadiosf_a_CFLAGS) 
 
-libadiosf_a_SOURCES += core/adiosf_defs_mod.F90 \
-                       core/adiosf_write_mod.F90 \
-                       core/adiosf_read_mod.F90 
+libadiosf_a_SOURCES += core/adiosf_defs_mod.f90 \
+                       core/adiosf_write_mod.f90 \
+                       core/adiosf_read_mod.f90 
 
-libadiosf_v1_a_SOURCES += core/adiosf_defs_mod.F90 \
-                          core/adiosf_write_mod.F90 
+libadiosf_v1_a_SOURCES += core/adiosf_defs_mod.f90 \
+                          core/adiosf_write_mod.f90 
 
 #nodist_libadiosreadf_a_SOURCES += adios_write.mod
 nodist_include_HEADERS += adios_write_mod.mod 
 CLEANFILES += adios_write_mod.mod
 
-adios_write_mod.mod: core/adiosf_write_mod.F90 adios_defs_mod.mod
-	$(FC) -c core/adiosf_write_mod.F90
+adios_write_mod.mod: core/adiosf_write_mod.f90 adios_defs_mod.mod
+	$(FC) -c core/adiosf_write_mod.f90
 
 endif
 
@@ -356,18 +356,18 @@ libadiosreadf_v1_a_SOURCES = $(FortranReadLibSource) core/adiosf_read_v1.c
 libadiosreadf_v1_a_CPPFLAGS = $(libadiosreadf_a_CPPFLAGS)
 libadiosreadf_v1_a_CFLAGS = $(libadiosreadf_a_CFLAGS)
 
-libadiosreadf_a_SOURCES += core/adiosf_defs_mod.F90 \
-                           core/adiosf_read_mod.F90
+libadiosreadf_a_SOURCES += core/adiosf_defs_mod.f90 \
+                           core/adiosf_read_mod.f90
 
 #nodist_libadiosreadf_a_SOURCES += adios_read_mod.mod
 nodist_include_HEADERS += adios_read_mod.mod adios_defs_mod.mod
 CLEANFILES += adios_read_mod.mod adios_defs_mod.mod
 
-adios_read_mod.mod: core/adiosf_read_mod.F90 adios_defs_mod.mod 
-	$(FC) -c core/adiosf_read_mod.F90
+adios_read_mod.mod: core/adiosf_read_mod.f90 adios_defs_mod.mod 
+	$(FC) -c core/adiosf_read_mod.f90
 
-adios_defs_mod.mod: core/adiosf_defs_mod.F90
-	$(FC) -c core/adiosf_defs_mod.F90
+adios_defs_mod.mod: core/adiosf_defs_mod.f90
+	$(FC) -c core/adiosf_defs_mod.f90
 
 endif
 
