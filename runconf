@@ -73,11 +73,12 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/sith.$TARGET \
+    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/sith.1.4.$TARGET \
         --enable-dependency-tracking \
-        --enable-research-transports  \
-        --with-lustre=/usr \
-        $WITHDART 
+        --enable-research-transports \
+        --with-lustre=/usr/lib64
+        #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
+        #$WITHDART 
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--enable-shared --disable-static
         #--without-datatap #--without-infiniband
@@ -223,9 +224,7 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
         --enable-dependency-tracking \
         --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
         --enable-research-transports  \
-        --without-datatap \
-        --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.lens.$TARGET
-
+        --without-datatap
 
 
 elif [ `hostname | cut -c 1-8` == "jaguarpf" ]; then
@@ -592,6 +591,20 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
     
     fi
     
+elif [ `hostname -f | cut -c 8-15` == "intrepid" ]; then
+    #####################
+    # Intrepid BlueGene #
+    #####################
+    echo "Configure on Intrepid (BlueGene)"
+    export MPICC=mpixlc_r
+    export MPIFC=mpixlf90
+    export CFLAGS=""
+    export FC=xlf90
+    export CC=xlc_r
+
+    ./configure --prefix=/home/qliu/ADIOS \
+            --enable-dependency-tracking \
+            --with-mxml=/home/qliu/mxml
 
 elif [ `hostname | cut -c 1-4` == "euge" ]; then
     ###################
