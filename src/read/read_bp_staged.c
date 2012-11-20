@@ -1998,17 +1998,40 @@ int adios_read_bp_staged_init_method (MPI_Comm comm, PairStruct * params)
 int adios_read_bp_staged_finalize_method ()
 {
     /* Set these back to default */
-    chunk_buffer_size = 1024*1024*16;
-    poll_interval = 10; // 10 secs by default
-    show_hidden_attrs = 0; // don't show hidden attr by default
-    num_aggregators = 0;
+    chunk_buffer_size = -1;
+    poll_interval = 10;
+    show_hidden_attrs = 0;
+    num_aggregators = -1;
 
     return 0;
 }
 
 ADIOS_FILE * adios_read_bp_staged_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
 {
+    log_error (" adios_read_open_stream() is not supported in this method.\n");
     return 0;
+}
+
+static void free_proc_struct (BP_PROC * p)
+{
+    bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
+    read_request * h = p->local_read_request_list, * n;
+
+    /* We need to free split_read_request_list cause
+     * people might do two back-to-back sets of
+     * schedule_read, schedule_read, perform_read
+     */
+    list_free_read_request (pvt->split_read_request_list);
+    pvt->split_read_request_list = 0;
+
+    list_free_read_request (p->local_read_request_list);
+    p->local_read_request_list = 0;
+
+    if (p->b)
+    {
+        free (p->b);
+        p->b = 0;
+    }
 }
 
 static void init_read (BP_PROC * p)
@@ -2207,6 +2230,16 @@ int adios_read_bp_staged_close (ADIOS_FILE *fp)
 {
     BP_PROC * p = (BP_PROC *) fp->fh;
     BP_FILE * fh = (BP_FILE *) p->fh;
+    bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
+
+    if (pvt->aggregator_rank_array)
+    {
+        free (pvt->aggregator_rank_array);
+        pvt->aggregator_rank_array = 0;
+    }
+
+    free (pvt);
+    p->priv = 0;
 
     if (p->fh)
     {
@@ -2255,6 +2288,7 @@ int adios_read_bp_staged_close (ADIOS_FILE *fp)
  */
 int adios_read_bp_staged_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
 {
+    log_error ("adios_advance_step() is not supported in this method.\n");
     return 0;
 }
 
@@ -2262,7 +2296,7 @@ int adios_read_bp_staged_advance_step (ADIOS_FILE *fp, int last, float timeout_s
  */
 void adios_read_bp_staged_release_step (ADIOS_FILE *fp)
 {
-
+    log_error ("adios_release_step() is not supported in this method.\n");
 }
 
 ADIOS_VARINFO * adios_read_bp_staged_inq_var_byid (const ADIOS_FILE * fp, int varid)
@@ -2302,18 +2336,16 @@ int adios_read_bp_staged_perform_reads (const ADIOS_FILE *fp, int blocking)
     rr_pvt_struct * rrs;
     void * buf;
 
-    // first populate the private structure for
-    // each local read request.
-//    if (isAggregator (p))
+    // First populate the read request private struct for
+    // each local read request. Have to do it here since the
+    // schedule_read_byid is simply calling what is in simple bp reader.
+    h = p->local_read_request_list;
+    while (h)
     {
-        h = p->local_read_request_list;
-        while (h)
-        {
-            h->priv = malloc (sizeof (rr_pvt_struct));
-            assert (h->priv);
-            ((rr_pvt_struct *) h->priv)->rank = pvt->rank;
-            h = h->next;
-        }
+        h->priv = malloc (sizeof (rr_pvt_struct));
+        assert (h->priv);
+        ((rr_pvt_struct *) h->priv)->rank = pvt->rank;
+        h = h->next;
     }
 
     size = calc_data_size (p);
@@ -2402,6 +2434,7 @@ int adios_read_bp_staged_perform_reads (const ADIOS_FILE *fp, int blocking)
         get_read_data (p);
     }
 
+    free_proc_struct (p);
 
     /* 1. prepare all reads */
     // check if all user memory is provided for blocking read
@@ -2429,24 +2462,17 @@ int adios_read_bp_staged_perform_reads (const ADIOS_FILE *fp, int blocking)
         return 0;
     }
 
-    while (p->local_read_request_list)
-    {
-        // remove head from list
-        r = p->local_read_request_list;
-        free (r->priv);
-        p->local_read_request_list = p->local_read_request_list->next;
-        free(r);
-    }
-
     return 0;
 }
 
 /* Note: staged read method doesn't support check_reads so far.
  * It only supports the sceanario that user allocates all memory and subsequently 
- * does perform_reads.
+ * does perform_reads with blocking flagged.
  */
 int adios_read_bp_staged_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
 {
+    log_error ("adios_check_reads() is not supported in this method.\n");
+
     return 0;
 }
 
@@ -2457,7 +2483,7 @@ int adios_read_bp_staged_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum 
 
 void adios_read_bp_staged_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
-
+    adios_read_bp_reset_dimension_order (fp, is_fortran);
 }
 
 void adios_read_bp_staged_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group)
@@ -2536,7 +2562,8 @@ int adios_read_bp_staged_is_var_timed (const ADIOS_FILE *fp, int varid)
     log_debug ("adios_read_bp_is_var_timed: varid = %d, ndim = %d\n", varid, ndim);
 
     if (ndim == 0)
-    {        return 0;
+    {
+        return 0;
     }
 
     for (k = 0; k < ndim; k++)
