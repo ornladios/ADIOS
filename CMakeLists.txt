@@ -409,7 +409,7 @@ if(NOT NO_DATATAP)
   set(ADIOSREADLIB_SEQ_LDADD "${ADIOSREADLIB_SEQ_LDADD} ${DT_LIBS}")
 endif()
 
-
+#if(HAVE_DATASPACES)
 #set(NSSI_SERVER_LIBS "")
 ############################### srart of top CMakeLists.txt ###############################
 #install(PROGRAMS adios_config DESTINATION ${bindir})
@@ -425,7 +425,18 @@ endif()
 add_definitions(-DO_LARGEFILE=0)
 
 add_subdirectory(src)
+set(ADIOS_LIB "${PROJECT_BINARY_DIR}/src/libadios.a")
+set(ADIOS_INTERNAL_NOMPI_LIB "${PROJECT_BINARY_DIR}/src/libadios_internal_nompi.a")
+set(ADIOSREAD_NOMPI_LIB "${PROJECT_BINARY_DIR}/src/libadiosread_nompi.a")
+if(BUILD_FORTRAN)
+  set(ADIOSREAD_LIB ${PROJECT_BINARY_DIR}/src/libadiosreadf.a)
+  set(ADIOSREAD_V1_LIB ${PROJECT_BINARY_DIR}/src/libadiosreadf_v1.a)
+else()
+  set(ADIOSREAD_LIB "${PROJECT_BINARY_DIR}/src/libadiosread.a")
+endif()
+
 add_subdirectory(tests)
 add_subdirectory(utils)
 add_subdirectory(examples)
+#set_source_files_properties
 ############################### end of top CMakeLists.txt ###############################
