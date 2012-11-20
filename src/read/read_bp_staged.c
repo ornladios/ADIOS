@@ -2026,12 +2026,6 @@ static void free_proc_struct (BP_PROC * p)
 
     list_free_read_request (p->local_read_request_list);
     p->local_read_request_list = 0;
-
-    if (p->b)
-    {
-        free (p->b);
-        p->b = 0;
-    }
 }
 
 static void init_read (BP_PROC * p)
@@ -2418,6 +2412,8 @@ int adios_read_bp_staged_perform_reads (const ADIOS_FILE *fp, int blocking)
         process_read_requests (fp);
     }
 
+    free (p->b);
+    p->b = 0;
     free (sizes);
     free (offsets);
 
