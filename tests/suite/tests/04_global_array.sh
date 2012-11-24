@@ -33,11 +33,11 @@ if [ ! -f adios_global.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav adios_global.bp -d -n 10  | grep -v endianness > c_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -la adios_global.bp -d -n 10  | grep -v endianness > c_bpls.txt
 diff -q c_bpls.txt $SRCDIR/reference/global_array_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: C version of adios_global produced a file different from the reference."
-    echo "Compare \"bpls -lav $PWD/adios_global.bp -d -n 10 | grep -v endianness\" to reference $SRCDIR/reference/global_array_bpls.txt"
+    echo "Compare \"bpls -la $PWD/adios_global.bp -d -n 10 | grep -v endianness\" to reference $SRCDIR/reference/global_array_bpls.txt"
     exit 1
 fi
 
