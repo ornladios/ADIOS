@@ -76,9 +76,9 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/sith.$TARGET \
         --enable-dependency-tracking \
         --enable-research-transports \
-        --with-lustre=/usr/lib64
+        --with-lustre=/usr/lib64 \
+        $WITHDART 
         #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
-        #$WITHDART 
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--enable-shared --disable-static
         #--without-datatap #--without-infiniband
