@@ -50,7 +50,7 @@ struct adios_ds_data_struct
 
 
 
-int get_dim_rank_value(struct adios_dimension_item_struct * dim_info, struct adios_group_struct *group)
+static int get_dim_rank_value(struct adios_dimension_item_struct * dim_info, struct adios_group_struct *group)
 {
     if(!dim_info)
        return 0;
@@ -100,40 +100,6 @@ int get_dim_rank_value(struct adios_dimension_item_struct * dim_info, struct adi
         return dim_info->rank;
     }
 }
-
-void adios_dataspaces_init (const PairStruct * parameters,
-                     struct adios_method_struct * method
-                     )
-{
-    struct adios_ds_data_struct *p = 0;
-    if (!adios_dataspaces_initialized)
-    {
-        adios_dataspaces_initialized = 1;
-    }
-   
-    method->method_data = calloc (1, sizeof (struct adios_ds_data_struct));
-    p = (struct adios_ds_data_struct*)method->method_data;
-    
-    int index, i;
-    char temp[64];
-    int num_peers;
-    
-    num_peers = 1;
-
-    //Init the static data structure
-    p->peers = num_peers;
-    p->appid = -1;
-    p->time_index = 0;
-    p->n_writes = 0;
-#if HAVE_MPI
-    p->mpi_comm = MPI_COMM_NULL;
-#endif
-    p->num_of_files = 0;
-
-    log_info ("adios_dataspaces_init: done\n");
-   
-}
-
 
 static void adios_dataspaces_var_to_comm  (const char * comm_name
                                     ,enum ADIOS_FLAG host_language_fortran
@@ -202,36 +168,16 @@ static void adios_dataspaces_var_to_comm  (const char * comm_name
     }
 }
 
-int adios_dataspaces_open (struct adios_file_struct * fd,
-                    struct adios_method_struct * method,
-                    void *comm
-                    )
+
+static int connect_to_dspaces (struct adios_ds_data_struct * p, MPI_Comm comm)
 {
     int ret = 0;
-    struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
-                                                method->method_data;
-    int num_peers = p->peers;
-  
-    log_info ("adios_dataspaces_open: open %s, mode=%d, time_index=%d \n",
-                        fd->name, fd->mode, p->time_index);
+    int num_peers;
 
-    // connect to DATASPACES at the very first adios_open(), disconnect in adios_finalize()
-    // connect only if the READ API has not connected yet
     if (!globals_adios_is_dataspaces_connected()) {
 
-#if HAVE_MPI
-    // if we have MPI and a communicator, we can get the exact size of this application
-    // that we need to tell DATASPACES
-        MPI_Comm group_comm;
-        if (comm) {
-            adios_dataspaces_var_to_comm (fd->group->group_comm, fd->group->adios_host_language_fortran,
-                                    comm, &group_comm);
-            MPI_Comm_rank ( group_comm, &(p->rank));
-            MPI_Comm_size ( group_comm, &num_peers);
-            p->peers = num_peers;
-            p->mpi_comm = group_comm;
-        }
-#endif
+        MPI_Comm_rank (comm, &(p->rank));
+        MPI_Comm_size (comm, &num_peers);
 
         // Application ID should be set by the application calling adios_set_application_id()
         int was_set;
@@ -239,13 +185,13 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
         if (!was_set)
             p->appid = 1;
 
-        log_debug ("adios_dataspaces_open: rank=%d connect to DATASPACES, peers=%d, appid=%d \n",
+        log_debug ("adios_dataspaces: rank=%d connect to DATASPACES, peers=%d, appid=%d \n",
                 p->rank, num_peers, p->appid);
 
         //Init the dart client
         ret = dspaces_init (num_peers, p->appid);
         if (ret) {
-            log_error ("adios_dataspaces_open: rank=%d Failed to connect to DATASPACES: err=%d,  rank=%d\n", p->rank, ret);        
+            log_error ("adios_dataspaces: rank=%d Failed to connect to DATASPACES: err=%d,  rank=%d\n", p->rank, ret);        
             return ret;
         }
 
@@ -254,19 +200,93 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
         dspaces_peers (&(p->peers));
 #endif
 
-        log_debug ("adios_dataspaces_open: rank=%d connected to DATASPACES: peers=%d\n", p->rank, p->peers);        
+        log_debug ("adios_dataspaces: rank=%d connected to DATASPACES: peers=%d\n", p->rank, p->peers);        
+        globals_adios_set_dataspaces_connected_from_writer();
     }
-    globals_adios_set_dataspaces_connected_from_writer();
+    return ret;
+}
+
+
+void adios_dataspaces_init (const PairStruct * parameters,
+                     struct adios_method_struct * method
+                     )
+{
+    struct adios_ds_data_struct *p = 0;
+    if (!adios_dataspaces_initialized)
+    {
+        adios_dataspaces_initialized = 1;
+    }
    
+    method->method_data = calloc (1, sizeof (struct adios_ds_data_struct));
+    p = (struct adios_ds_data_struct*)method->method_data;
+    
+    int index, i;
+    char temp[64];
+
+    //Init the static data structure
+    p->peers = 1;
+    p->appid = -1;
+    p->time_index = 0;
+    p->n_writes = 0;
+#if HAVE_MPI
+    p->mpi_comm = MPI_COMM_NULL;
+#endif
+    p->num_of_files = 0;
+
+    connect_to_dspaces (p, MPI_COMM_WORLD);
+
+    log_info ("adios_dataspaces_init: done\n");
+   
+}
+
+
+
+int adios_dataspaces_open (struct adios_file_struct * fd,
+                    struct adios_method_struct * method,
+                    void *comm
+                    )
+{
+    int ret = 0;
+    struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
+                                                method->method_data;
+  
+    log_info ("adios_dataspaces_open: open %s, mode=%d, time_index=%d \n",
+                        fd->name, fd->mode, p->time_index);
+
+#if HAVE_MPI
+    // if we have MPI and a communicator, we can get the exact size of this application
+    // that we need to tell DATASPACES
+    MPI_Comm group_comm;
+    if (comm) {
+        adios_dataspaces_var_to_comm (
+                fd->group->group_comm, 
+                fd->group->adios_host_language_fortran,
+                comm, &group_comm);
+    } else {
+        group_comm = MPI_COMM_WORLD;
+    }
+    MPI_Comm_rank (group_comm, &(p->rank));
+    MPI_Comm_size (group_comm, &(p->peers));
+    p->mpi_comm = group_comm;
+#endif
+
+    // connect to DATASPACES at the very first adios_open(), disconnect in adios_finalize()
+    // connect only if the READ API has not connected yet
+    /*
+    ret = connect_to_dspaces (p, group_comm);
+    if (ret)
+        return ret;
+    */
+
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
         log_debug ("adios_dataspaces_open: rank=%d call write lock...\n", p->rank);        
-        dspaces_lock_on_write (fd->name);  
+        dspaces_lock_on_write (fd->name, &p->mpi_comm);  
         log_debug ("adios_dataspaces_open: rank=%d got write lock\n", p->rank);        
     }
     else if (fd->mode == adios_mode_read)
     {
-        dspaces_lock_on_read (fd->name);
+        dspaces_lock_on_read (fd->name, &p->mpi_comm);
     } 
   
     return ret;
@@ -392,6 +412,7 @@ void adios_dataspaces_write (struct adios_file_struct * fd
             gdims[didx[0]], gdims[didx[1]], gdims[didx[2]], 
             lb[didx[0]], lb[didx[1]], lb[didx[2]], 
             ub[didx[0]], ub[didx[1]], ub[didx[2]]);
+    dspaces_put_sync();
 }
 
 void adios_dataspaces_get_write_buffer (struct adios_file_struct * fd
@@ -888,6 +909,10 @@ void adios_dataspaces_close (struct adios_file_struct * fd
         /* Gather var/attr indices from all processes to rank 0 */
         adios_dataspaces_gather_indices (fd, method, &pg_root, &vars_root ,&attrs_root);
 
+        // make sure all processes have finished putting data to the space 
+        // before we put metadata from rank 0
+        MPI_Barrier (p->mpi_comm); 
+
         if (p->rank == 0) {
 
             /* Write two adios specific variables with the name of the file and name of the group into the space */
@@ -930,6 +955,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
             /* Flip 1st and 2nd dimension for DataSpaces representation for a 1D array*/
             ub[0] = file_info_buf_len-1; ub[1] = 0; ub[2] = 0;
             ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
+            dspaces_put_sync(); //wait on previous put to finish
             dspaces_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
                      ub[didx[0]], ub[didx[1]], ub[didx[2]], file_info_buf); 
 
@@ -941,8 +967,10 @@ void adios_dataspaces_close (struct adios_file_struct * fd
                        __func__, ds_var_name, version_buf[0], version_buf[1], version_buf_len);
             ub[0] = version_buf_len-1; ub[1] = 0; ub[2] = 0;
             ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
+            dspaces_put_sync(); //wait on previous put to finish
             dspaces_put(ds_var_name, 0, sizeof(int),    0, 0, 0, /* lb 0..2 */
                      ub[didx[0]], ub[didx[1]], ub[didx[2]],  version_buf); 
+            dspaces_put_sync(); //wait on previous put to finish
             
         }
 
@@ -970,14 +998,16 @@ void adios_dataspaces_close (struct adios_file_struct * fd
         // free allocated index lists
         adios_clear_index_v1 (pg_root, vars_root, attrs_root);
 
-        log_debug("%s: call dspaces_put_sync()\n", __func__);
-        dspaces_put_sync();
+        // rank=0 may be in put_sync when others call unlock, which is a global op
+        MPI_Barrier (p->mpi_comm); 
+        //log_debug("%s: call dspaces_put_sync()\n", __func__);
+        //dspaces_put_sync();
         log_debug("%s: call dspaces_unlock_on_write(%s)\n", __func__, fd->name);
-        dspaces_unlock_on_write(fd->name);
+        dspaces_unlock_on_write(fd->name, &p->mpi_comm);
     }
     else if( fd->mode == adios_mode_read )
     {
-        dspaces_unlock_on_read(fd->name);
+        dspaces_unlock_on_read(fd->name, &p->mpi_comm);
     } 
 
     /* Increment the time index */
@@ -1003,7 +1033,7 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
     for (i=0; i<p->num_of_files; i++) {
         /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
         log_debug("%s: call dspaces_lock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
-        dspaces_lock_on_write(p->fnames[i]); // lock is global operation in DataSpaces
+        dspaces_lock_on_write(p->fnames[i], &p->mpi_comm); // lock is global operation in DataSpaces
         if (p->rank == 0) {
             value[0] = p->fversions[i];
             snprintf(ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", p->fnames[i]);
@@ -1017,7 +1047,7 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
             dspaces_put_sync();
         }
         log_debug("%s: call dspaces_unlock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
-        dspaces_unlock_on_write(p->fnames[i]);
+        dspaces_unlock_on_write(p->fnames[i], &p->mpi_comm);
         free (p->fnames[i]);
     }
 
