@@ -73,7 +73,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/sith.1.4.$TARGET \
+    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/sith.$TARGET \
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre=/usr/lib64
@@ -301,19 +301,21 @@ elif [ `hostname | cut -c 1-8` == "jaguarpf" ]; then
         #module unload xtpe-quadcore
         module load PrgEnv-$TARGET
         module swap xtpe-interlagos xtpe-istanbul
-        module load dataspaces/1.0.0
+        #module load dataspaces/1.0.0
+        unset EXTRA_LIBS
+        unset LDFLAGS
         if [ "$TARGET" == "pgi" ]; then
             #module swap pgi pgi/11.8.0
             # NSSI needs -pgcpplibs flag 
             export LDFLAGS="-pgcpplibs" 
-            #WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/xk6/$TARGET"
+            DATASPACES_DIR="/ccs/proj/e2e/dataspaces/xk6/$TARGET"
         elif [ "$TARGET" == "gnu" ]; then
             # NSSI needs libstdc++
             export EXTRA_LIBS="/opt/gcc/4.4.4/snos/lib64/libstdc++.a"
             module swap gcc gcc/4.4.4
-            #WITHDART="--with-dataspacesss=/ccs/proj/e2e/dataspaces/xk6/$TARGET"
+            DATASPACES_DIR="/ccs/proj/e2e/dataspaces/xk6/$TARGET"
         else
-            WITHDART=""
+            unset DATASPACES_DIR
         fi
      
         # NOTE hdf5-parallel module does not work with C++ compiler
@@ -371,18 +373,19 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       module unload papi
       module unload pmi
       module load PrgEnv-$TARGET
+      module load dataspaces/1.0.0
       if [ "$TARGET" == "pgi" ]; then
           module swap pgi pgi/11.8.0
           # NSSI needs -pgcpplibs flag 
           export LDFLAGS="-pgcpplibs" 
           unset EXTRA_LIBS 
-          WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/xk6/$TARGET"
+          WITHDART="--with-dataspaces=$DATASPACES_DIR"
       elif [ "$TARGET" == "gnu" ]; then
           # NSSI needs libstdc++
           unset LDFLAGS 
-          export EXTRA_LIBS="/opt/gcc/4.7.0/snos/lib64/libstdc++.a"
+          export EXTRA_LIBS="/opt/gcc/4.7.1/snos/lib64/libstdc++.a"
           #module swap gcc gcc/4.4.4
-          WITHDART="--with-dataspacesss=/ccs/proj/e2e/dataspaces/xk6/$TARGET"
+          WITHDART="--with-dataspaces=$DATASPACES_DIR"
       else
           unset LDFLAGS 
           unset EXTRA_LIBS 
@@ -395,12 +398,12 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       # use the two lines below for openmpi
       #export CC=mpicc
       #export FC=mpif90
-      CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/adios/chester.$TARGET \
-          --enable-dependency-tracking \
-          --with-cray-pmi=/opt/cray/pmi/default \
-          --with-cray-ugni-incdir=/opt/cray/gni-headers/2.1-1.0400.4351.3.1.gem/include \
-          --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
-          $WITHDART
+      CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
+          --enable-dependency-tracking 
+#          --with-cray-pmi=/opt/cray/pmi/default \
+#          --with-cray-ugni-incdir=/opt/cray/gni-headers/2.1-1.0400.4351.3.1.gem/include \
+#          --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
+#          $WITHDART
 #            --with-lustre=/opt/xt-lustre-ss/2.2_1.6.5/usr \
 #            --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.$TARGET \
 #            --enable-research-transports \
@@ -617,6 +620,7 @@ elif [ `hostname | cut -c 1-4` == "euge" ]; then
     export CFLAGS=""
     export FC=xlf90
     export CC=xlc_r
+    export MACRODEFFLAG="-WL,-D"
 
     source /etc/profile.d/modules.sh
     module load python
@@ -760,7 +764,7 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     #######
     echo "Configure on Mac"
     # Installed MacPorts and GCC4.4 and OpenMPI 1.4.2 ports 
-    # But should work with default openmpi and gcc, using --disable-fortran
+    # But should work with default mpicc and gcc, using --disable-fortran
     export CC=/opt/local/bin/gcc-mp-4.4
     export FC=/opt/local/bin/gfortran-mp-4.4
     export CXX=/opt/local/bin/g++-mp-4.4
