@@ -66,23 +66,23 @@ fi
 # run the Fortran tests too if available
 
 mv adios_global_no_xml.bp adios_global_no_xml_c.bp
-cp $TRUNKDIR/examples/Fortran/global-array/adios_global adios_global_f
+cp $TRUNKDIR/examples/Fortran/global-array/adios_global_no_xml adios_global_f
 cp $TRUNKDIR/examples/Fortran/global-array/adios_global.xml .
 
 echo "Run Fortran adios_global_f"
 $MPIRUN $NP_MPIRUN $PROCS ./adios_global_f
 EX=$?
-if [ ! -f adios_global.bp ]; then
+if [ ! -f adios_global_no_xml.bp ]; then
     echo "ERROR: Fortran version of adios_global failed. No BP file is created. Exit code=$EX"
     exit 1
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav adios_global.bp -d -n 10 | grep -v endianness > f_bpls.txt
-diff -q f_bpls.txt $SRCDIR/reference/global_array_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav adios_global_no_xml.bp -d -n 10 | grep -v endianness > f_bpls.txt
+diff -q f_bpls.txt $SRCDIR/reference/global_array_no_xml_f_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: Fortran version of adios_global produced a file different from the reference."
-    echo "Compare \"bpls -lav $PWD/adios_global.bp -d -n 10 | grep -v endianness\" to reference $SRCDIR/reference/global_array_bpls.txt"
+    echo "Compare \"bpls -lav $PWD/adios_global_no_xml.bp -d -n 10 | grep -v endianness\" to reference $SRCDIR/reference/global_array_no_xml_f_bpls.txt"
     exit 1
 fi
 
