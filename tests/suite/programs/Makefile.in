@@ -71,7 +71,8 @@ CONFIG_CLEAN_FILES =
 @BUILD_WRITE_TRUE@	adios_staged_read_v2$(EXEEXT) \
 @BUILD_WRITE_TRUE@	adios_staged_read_2vars$(EXEEXT) \
 @BUILD_WRITE_TRUE@	write_read$(EXEEXT) write_alternate$(EXEEXT) \
-@BUILD_WRITE_TRUE@	many_vars$(EXEEXT) selections$(EXEEXT)
+@BUILD_WRITE_TRUE@	many_vars$(EXEEXT) selections$(EXEEXT) \
+@BUILD_WRITE_TRUE@	connect_to_space_subset$(EXEEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
@@ -98,6 +99,12 @@ am_adios_staged_read_v2_OBJECTS = adios_staged_read_v2.$(OBJEXT)
 adios_staged_read_v2_OBJECTS = $(am_adios_staged_read_v2_OBJECTS)
 adios_staged_read_v2_DEPENDENCIES =  \
 	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1)
+am_connect_to_space_subset_OBJECTS =  \
+	connect_to_space_subset.$(OBJEXT)
+connect_to_space_subset_OBJECTS =  \
+	$(am_connect_to_space_subset_OBJECTS)
+connect_to_space_subset_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
 am_local_array_time_OBJECTS = local_array_time.$(OBJEXT)
 local_array_time_OBJECTS = $(am_local_array_time_OBJECTS)
 local_array_time_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -142,14 +149,16 @@ LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
-	$(adios_staged_read_v2_SOURCES) $(local_array_time_SOURCES) \
+	$(adios_staged_read_v2_SOURCES) \
+	$(connect_to_space_subset_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(posix_method_SOURCES) \
 	$(selections_SOURCES) $(write_alternate_SOURCES) \
 	$(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
-	$(adios_staged_read_v2_SOURCES) $(local_array_time_SOURCES) \
+	$(adios_staged_read_v2_SOURCES) \
+	$(connect_to_space_subset_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(posix_method_SOURCES) \
 	$(selections_SOURCES) $(write_alternate_SOURCES) \
 	$(write_read_SOURCES)
@@ -411,7 +420,8 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@        write_read \
 @BUILD_WRITE_TRUE@        write_alternate \
 @BUILD_WRITE_TRUE@        many_vars \
-@BUILD_WRITE_TRUE@        selections 
+@BUILD_WRITE_TRUE@        selections \
+@BUILD_WRITE_TRUE@        connect_to_space_subset
 
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
@@ -459,6 +469,9 @@ many_vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 selections_SOURCES = selections.c
 selections_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 selections_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+connect_to_space_subset_SOURCES = connect_to_space_subset.c
+connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
              write_alternate.xml write_read.xml
@@ -523,6 +536,9 @@ adios_staged_read_2vars$(EXEEXT): $(adios_staged_read_2vars_OBJECTS) $(adios_sta
 adios_staged_read_v2$(EXEEXT): $(adios_staged_read_v2_OBJECTS) $(adios_staged_read_v2_DEPENDENCIES) 
 	@rm -f adios_staged_read_v2$(EXEEXT)
 	$(LINK) $(adios_staged_read_v2_LDFLAGS) $(adios_staged_read_v2_OBJECTS) $(adios_staged_read_v2_LDADD) $(LIBS)
+connect_to_space_subset$(EXEEXT): $(connect_to_space_subset_OBJECTS) $(connect_to_space_subset_DEPENDENCIES) 
+	@rm -f connect_to_space_subset$(EXEEXT)
+	$(LINK) $(connect_to_space_subset_LDFLAGS) $(connect_to_space_subset_OBJECTS) $(connect_to_space_subset_LDADD) $(LIBS)
 local_array_time$(EXEEXT): $(local_array_time_OBJECTS) $(local_array_time_DEPENDENCIES) 
 	@rm -f local_array_time$(EXEEXT)
 	$(LINK) $(local_array_time_LDFLAGS) $(local_array_time_OBJECTS) $(local_array_time_LDADD) $(LIBS)
@@ -553,6 +569,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_2vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_v2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/connect_to_space_subset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local_array_time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/many_vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/selections.Po@am__quote@
@@ -853,6 +870,7 @@ write_read.o: write_read.c
 write_alternate.o: write_alternate.c
 many_vars.o: many_vars.c
 selections.o: selections.c
+connect_to_space_subset.o: connect_to_space_subset.c
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -18,7 +18,8 @@ check_C=local_array_time \
         write_read \
         write_alternate \
         many_vars \
-        selections 
+        selections \
+        connect_to_space_subset
 endif
 
 if BUILD_FORTRAN
@@ -97,6 +98,11 @@ selections_SOURCES=selections.c
 selections_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 selections_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 selections.o: selections.c
+
+connect_to_space_subset_SOURCES=connect_to_space_subset.c
+connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+connect_to_space_subset.o: connect_to_space_subset.c
 
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
