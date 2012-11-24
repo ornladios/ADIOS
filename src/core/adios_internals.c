@@ -2894,7 +2894,8 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                         }
                         v_index->characteristics [0].value = 0;
                     }
-                    else
+
+                    if (v->data)
                     {
                         v_index->characteristics [0].bitmap = 0;
                         v_index->characteristics [0].stats = 0;
@@ -3361,7 +3362,8 @@ int adios_write_index_v1 (char ** buffer
                         }
                         // NCSU - End of addition statistic to buffer
                     }
-                    else
+
+                    if (vars_root->characteristics [i].value)
                     {
                         // add a value characteristic
                         characteristic_set_count++;
