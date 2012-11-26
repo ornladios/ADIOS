@@ -1,0 +1,64 @@
+#!/bin/bash
+#PBS -A STF006
+#PBS -N genarray
+#PBS -j oe
+#PBS -l walltime=1:00:00,size=20
+## On jaguarpf, you need size=48 (4 nodes * 12cores for 4 apruns)
+
+#cd $PBS_O_WORKDIR
+
+SRCDIR=/ccs/proj/e2e/pnorbert/ADIOS/ADIOS/trunk/test_adios/staging1
+WRITEPROC=1
+STAGINGPROC=1
+READPROC=1
+let "PROCALL=WRITEPROC+READPROC"
+
+# clean-up
+rm -f log.* draw* core* conf dataspaces.conf log_*.txt
+rm -f genarray.bp
+
+# Copy everything for PIXIE3D from demo directory
+#cp $SRCDIR/genarray $SRCDIR/genarray3d.xml .
+
+# Copy everything for readtest from demo directory
+#cp $SRCDIR/readpar .
+
+# Prepare config file for DataSpaces
+echo "## Config file for DataSpaces
+ndim = 3
+dimx = 1024
+dimy = 32767
+dimz = 1024
+max_versions = 10
+max_readers =" $READPROC " 
+#lock_type = 2
+" > dataspaces.conf
+
+# Run DataSpaces
+#source /opt/modules/default/etc/modules.sh
+#module unload adios
+#module load adios/1.3
+SERVER=/ccs/proj/e2e/dataspaces/xk6/pgi/bin/dataspaces_server
+echo "-- Start DataSpaces server "$SERVER" on $STAGINGPROC PEs, -s$STAGINGPROC -c$PROCALL"
+echo "-- Start GENARRAY on $WRITEPROC PEs"
+echo "-- Start Readtest on $READPROC PEs."
+
+#aprun -n $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL
+
+aprun -n $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL : \
+      -n $WRITEPROC ./genarray genarray.bp $WRITEPROC 1 1 16 32 64 5 10 : \
+      -n $READPROC ./readpar genarray.bp /var/var1 
+
+#aprun -n $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL : \
+#      -n $WRITEPROC ./test_put $WRITEPROC 1 1 1 16 32 64 50 : \
+#      -n $READPROC ./test_get $READPROC 1 1 1 16 32 64 50 : \
+      
+#aprun -n $WRITEPROC ./genarray genarray.bp $WRITEPROC 1 1 16 32 64 5 10 : \
+#       -n $READPROC ./readpar genarray.bp /var/var1  
+
+#aprun -n $STAGINGPROC $SERVER -s$STAGINGPROC -c$READPROC : \
+#      -n $READPROC ./readpar genarray.bp /var/var1 
+#      -n $WRITEPROC ./genarray genarray.bp $WRITEPROC 1 1 16 32 64 5 1
+
+rm -f conf srv.lck
+
