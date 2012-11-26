@@ -90,7 +90,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
         {                                                                                   \
             int err;                                                                        \
             char * ch, * name_no_path, * name;                                              \
-            MPI_Info info;                                                                  \
+            MPI_Info info = MPI_INFO_NULL;                                                  \
             struct BP_file_handle * new_h =                                                 \
                   (struct BP_file_handle *) malloc (sizeof (struct BP_file_handle));        \
             new_h->file_index = v->characteristics[start_idx + idx].file_index;             \
