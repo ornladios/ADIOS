@@ -30,8 +30,12 @@ Parameters to stage write:
 
 NOTES
 =====
+1. The job example is set for the ./genarray_stream.F90 writing application, which is not built automatically. Use the Makefile.genarray_stream to build it. 
+WARNING: the method used in the genarray_stream.xml should match the reading method in stage_write.c. That is, if you use a file method (e.g. MPI) to write to a file, the stage_write should use the BP reading method to be able to process it. Then you don't need to run the dataspaces server in the job either. Modify both places to use DataSpaces for staging. 
 
-You probably end up modifying this code. For instance, you might find that the desired decomposition cannot be expressed (e.g. you have arrays with various dimensions and you want decomposition different from them), or you want to pass the output file name within the stream dataset itself, or you want to do something with the data before writing it out.
+2. The writing application must append new steps into the same file (name). A stream in ADIOS staging cannot consist of multiple file names but of a single "file" with multiple steps in it. E.g. we had to modify the tests/genarray/genarray.F90 to append to a file named "genarray.bp". See ./genarray_stream.F90, which is not built automatically.
+
+3. You probably end up modifying this code. For instance, you might find that the desired decomposition cannot be expressed (e.g. you have arrays with various dimensions and you want decomposition different from them), or you want to pass the output file name within the stream dataset itself, or you want to do something with the data before writing it out.
 
 
 

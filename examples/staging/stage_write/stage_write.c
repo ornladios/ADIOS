@@ -155,7 +155,7 @@ int main (int argc, char ** argv)
     err = adios_read_init_method(read_method, comm, 
                                  "max_chunk_size=100; "
                                  "app_id =32767; \n"
-                                 "verbose= 4;"
+                                 "verbose= 3;"
                                  "poll_interval  =  100;"
                                 );
 

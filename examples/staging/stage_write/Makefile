@@ -8,8 +8,8 @@ LDFLAGS=-g
 #CFLAGS = -O3
 #LDFLAGS =
 
-TARGET=gnu
-#TARGET=pgi
+#TARGET=gnu
+TARGET=pgi
 
 ## Set ADIOS_DIR here or before doing make
 override ADIOS_DIR=/ccs/proj/e2e/pnorbert/ADIOS/sith.${TARGET}
