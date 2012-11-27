@@ -223,8 +223,13 @@ Doing so allows for the same analysis tool chain to analyze the data.
 Currently, HDF5 supports two I/O modes: independent and Collective read or write, 
 which can use either the MPI or the POSIX driver by specifying the dataset transfer 
 property list in H5Dwrite function calls. In this release, only the MPI driver 
-is supported in ADIOS; later on, both I/O drivers will be supported by changing 
-the attribute information for PHDF5 method elements in XML. 
+is supported in ADIOS.
+This requires that every process participates in the writing of each variable. 
+
+Note: Do not expect better performance with ADIOS/PHDF5 than with PHDF5 itself. ADIOS does not write differently to a HDF5 formatted file, it simply uses PHDF5 function calls to write out data. 
+
+%later on, both I/O drivers will be supported by changing 
+%the attribute information for PHDF5 method elements in XML. 
 
 \subsection{NetCDF4}
 
@@ -319,7 +324,7 @@ Dataspaces is an asynchronous method available in ADIOS, that can be selected by
 the transport method in the external ADIOS XML configuration file as ``Dataspaces''.
 
 \begin{lstlisting}[language=XML, caption=Select Dataspaces as a transport method in the configuration file example.]
-<method priority="3" method="Dataspaces" group="fluxdiag"/>
+<method group="fluxdiag" method="Dataspaces"/>
 \end{lstlisting}
 
 To make use of the Dataspaces transport, an application job needs to also run the dataspaces\_server 
