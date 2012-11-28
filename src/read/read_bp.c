@@ -228,6 +228,7 @@ void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
     assert (p);
     p->fh = fh;
     p->streaming = 1;
+    p->varid_mapping = 0;
     p->local_read_request_list = 0;
     p->b = 0;
     p->priv = 0;
