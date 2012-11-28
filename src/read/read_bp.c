@@ -31,7 +31,7 @@
 #endif
 
 static int chunk_buffer_size = 1024*1024*16;
-static int poll_interval = 10; // 10 secs by default
+static int poll_interval_msec = 10000; // 10 secs by default
 static int show_hidden_attrs = 0; // don't show hidden attr by default
 
 static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE * fp, read_request * r);
@@ -305,7 +305,8 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
             }
             else
             {
-                adios_nanosleep (poll_interval, 0);
+                adios_nanosleep (poll_interval_msec/1000,
+                    (int)(((uint64_t)poll_interval_msec * 1000000L)%1000000000L));
             }
         }
 
@@ -862,7 +863,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
 int adios_read_bp_init_method (MPI_Comm comm, PairStruct * params)
 {
-    int  max_chunk_size;
+    int  max_chunk_size, pollinterval;
     PairStruct * p = params;
 
     while (p)
@@ -883,11 +884,12 @@ int adios_read_bp_init_method (MPI_Comm comm, PairStruct * params)
         else if (!strcasecmp (p->name, "poll_interval"))
         {
             errno = 0;
-            poll_interval = strtol(p->value, NULL, 10);
-            if (poll_interval > 0 && !errno)
+            pollinterval = strtol(p->value, NULL, 10);
+            if (pollinterval > 0 && !errno)
             {
                 log_debug ("poll_interval set to %d secs for READ_BP read method\n",
-                            poll_interval);
+                            pollinterval);
+                poll_interval_msec = pollinterval;
             }
             else
             {
@@ -912,7 +914,7 @@ int adios_read_bp_finalize_method ()
 {
     /* Set these back to default */
     chunk_buffer_size = 1024*1024*16;
-    poll_interval = 10; // 10 secs by default
+    poll_interval_msec = 10000; // 10 secs by default
     show_hidden_attrs = 0; // don't show hidden attr by default
 
     return 0;
@@ -945,6 +947,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
     {
         while (stay_in_poll_loop)
         {
+            adios_errno = err_no_error; // clear previous intermittent error
             file_ok = check_bp_validity (fname);
             if (!file_ok)
             {
@@ -960,7 +963,8 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
                     }
                     else if (timeout_sec < 0.0) // check file until it arrives
                     {
-                        adios_nanosleep (poll_interval, 0);
+                        adios_nanosleep (poll_interval_msec/1000,
+                            (int)(((uint64_t)poll_interval_msec * 1000000L)%1000000000L));
                         stay_in_poll_loop = 1;
                     }
                     else if (timeout_sec > 0.0 && (adios_gettime () - t1 > timeout_sec))
@@ -969,7 +973,8 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
                     }
                     else
                     {
-                        adios_nanosleep (poll_interval, 0);
+                        adios_nanosleep (poll_interval_msec/1000,
+                            (int)(((uint64_t)poll_interval_msec * 1000000L)%1000000000L));
                     }
                 }
             }
