@@ -36,10 +36,10 @@ fi
 rm -f log.* draw* core* conf dataspaces.conf srv.lck
 rm -f writer.bp reader_0*.bp
 
-METHOD=`grep method= coupling_writer_2D.xml | sed -e "s/^.*method=\"\([A-Z]*\).*/\1/"`
+METHOD=`grep "<transport .*method=" coupling_writer_2D.xml | sed -e "s/^.*method=\"\([A-Z]*\).*/\1/"`
 echo "The selected coupling method in coupling_writer_2D.xml is: $METHOD"
 
-if [ x$METHOD == xDATASPACES ]; then
+if [ "x$METHOD" == "xDATASPACES" ]; then
     READMETHOD="DATASPACES"
     let "PROCALL=WRITEPROC+READPROC"
 
