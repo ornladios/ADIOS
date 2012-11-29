@@ -10,9 +10,9 @@ FFLAGS=-g
 TARGET=pgi
 
 ## Set ADIOS_DIR here or before doing make
-override ADIOS_DIR=/ccs/proj/e2e/pnorbert/ADIOS/sith.${TARGET}
-override ADIOS_INC=`${ADIOS_DIR}/bin/adios_config -c -f`
-override ADIOS_FLIB=`${ADIOS_DIR}/bin/adios_config -l -f`
+override ADIOS_DIR:=/ccs/proj/e2e/pnorbert/ADIOS/sith.${TARGET}
+override ADIOS_INC:=`${ADIOS_DIR}/bin/adios_config -c -f`
+override ADIOS_FLIB:=`${ADIOS_DIR}/bin/adios_config -l -f`
 override GPP = ${ADIOS_DIR}/bin/gpp.py
 
 default: coupling_writer_2D coupling_reader_2D
