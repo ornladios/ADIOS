@@ -141,6 +141,25 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
                       );                                                                    \
         fh->b->offset = 0;                                                                  \
 
+//We also need to be able to read old .bp which doesn't have 'payload_offset'
+#define MPI_FILE_READ_OPS3                                                                  \
+        MPI_File_seek (fh->mpi_fh                                                           \
+                      ,(MPI_Offset) v->characteristics[start_idx + idx].offset       \
+                      ,MPI_SEEK_SET);                                                       \
+        MPI_File_read (fh->mpi_fh, fh->b->buff, 8, MPI_BYTE, &status);                      \
+        tmpcount= *((uint64_t*)fh->b->buff);                                                \
+                                                                                            \
+        bp_realloc_aligned(fh->b, tmpcount + 8);                                            \
+        fh->b->offset = 0;                                                                  \
+                                                                                            \
+        MPI_File_seek (fh->mpi_fh                                                           \
+                      ,(MPI_Offset) (v->characteristics[start_idx + idx].offset)     \
+                      ,MPI_SEEK_SET);                                                       \
+        MPI_File_read (fh->mpi_fh, fh->b->buff, tmpcount + 8, MPI_BYTE, &status);           \
+        fh->b->offset = 0;                                                                  \
+        adios_parse_var_data_header_v1 (fh->b, &var_header);                                \
+
+
 /* This routine release one step. It only frees the var/attr namelist. */
 static void release_step (ADIOS_FILE *fp)
 {
@@ -421,7 +440,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     int i, j, k, t, time, nsteps;
     int64_t start_idx, stop_idx, idx;
     int ndim, has_subfile, file_is_fortran;
-    uint64_t size, * dims;
+    uint64_t size, * dims, tmpcount;
     uint64_t ldims[32], gdims[32], offsets[32];
     uint64_t datasize, dset_stride,var_stride, total_size=0, items_read;
     uint64_t * count, * start;
@@ -430,6 +449,8 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     uint64_t slice_offset, slice_size;
     MPI_Status status;
     ADIOS_VARCHUNK * chunk;
+    struct adios_var_header_struct_v1 var_header;
+    struct adios_var_payload_struct_v1 var_payload;
 
 //    log_debug ("read_var_bb()\n");
     p = (BP_PROC *) fp->fh;
@@ -443,7 +464,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     data = r->data;
 
     v = bp_find_var_byid (fh, r->varid);
-    
+
     /* Get dimensions and flip if caller != writer language */
     /* Note: ndim below doesn't include time if there is any */
     bp_get_and_swap_dimensions (fh, v, file_is_fortran, &ndim, &dims, &nsteps, file_is_fortran);
@@ -533,13 +554,21 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 size_of_type--;
             }
 
-            if (!has_subfile)
+            if (v->characteristics[start_idx + idx].payload_offset > 0)
             {
-                MPI_FILE_READ_OPS1
+                if (!has_subfile)
+                {
+                    MPI_FILE_READ_OPS1
+                }
+                else
+                {
+                    MPI_FILE_READ_OPS2
+                }
             }
             else
             {
-                MPI_FILE_READ_OPS2
+                slice_offset = 0;
+                MPI_FILE_READ_OPS3
             }
 
             memcpy ((char *)data, fh->b->buff + fh->b->offset, size_of_type);
@@ -594,7 +623,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 printf ("ldims   = "); for (j = 0; j<ndim; j++) printf ("%d ",ldims[j]); printf ("\n");
                 printf ("gdims   = "); for (j = 0; j<ndim; j++) printf ("%d ",gdims[j]); printf ("\n");
                 printf ("offsets = "); for (j = 0; j<ndim; j++) printf ("%d ",offsets[j]); printf ("\n");
-*/              
+*/             
                 for (j = 0; j < ndim; j++)
                 {
                     payload_size *= ldims [j];
@@ -640,9 +669,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 hole_break = i;
                 slice_offset = 0;
                 slice_size = 0;
-/*
-                log_debug ("hole_break = %d\n", hole_break);
-*/
+
                 if (hole_break == -1)
                 {
                     /* The complete read happens to be exactly one pg, and the entire pg */
@@ -651,15 +678,23 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     slice_size = payload_size;
     
                     slice_offset = v->characteristics[start_idx + idx].payload_offset;
-                    if (!has_subfile)
+                    if (v->characteristics[start_idx + idx].payload_offset > 0)
                     {
-                        MPI_FILE_READ_OPS1
+                        if (!has_subfile)
+                        {
+                            MPI_FILE_READ_OPS1
+                        }
+                        else
+                        {
+                            MPI_FILE_READ_OPS2
+                        }
                     }
                     else
                     {
-                        MPI_FILE_READ_OPS2
+                         slice_offset = 0;
+                         MPI_FILE_READ_OPS3
                     }
-    
+
                     memcpy ((char *)data, fh->b->buff + fh->b->offset, slice_size);
                     if (fh->mfooter.change_endianness == adios_flag_yes)
                     {
@@ -716,6 +751,11 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                         {
                             MPI_FILE_READ_OPS2
                         }
+                    }
+                    else
+                    {
+                        slice_offset = 0;
+                        MPI_FILE_READ_OPS3
                     }
     
                     memcpy ((char *)data + write_offset, fh->b->buff + fh->b->offset, slice_size);
@@ -792,16 +832,23 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     }
     
                     slice_size = end_in_payload - start_in_payload + 1 * size_of_type;
-    
-                    slice_offset =  v->characteristics[start_idx + idx].payload_offset
-                                  + start_in_payload;
-                    if (!has_subfile)
+                    if (v->characteristics[start_idx + idx].payload_offset > 0)
                     {
-                        MPI_FILE_READ_OPS1
+                        slice_offset =  v->characteristics[start_idx + idx].payload_offset
+                                  + start_in_payload;
+                        if (!has_subfile)
+                        {
+                            MPI_FILE_READ_OPS1
+                        }
+                        else
+                        {
+                           MPI_FILE_READ_OPS2
+                        }
                     }
                     else
                     {
-                       MPI_FILE_READ_OPS2
+                        slice_offset =  start_in_payload;
+                        MPI_FILE_READ_OPS3
                     }
  
                     for (i = 0; i < ndim; i++)
@@ -2483,7 +2530,7 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
     BP_PROC * p = (BP_PROC *) fp->fh;
     BP_FILE * fh = (BP_FILE *) p->fh;
     struct adios_index_attribute_struct_v1 * attr_root;
-    struct adios_index_var_struct_v1 * var_root;
+    struct adios_index_var_struct_v1 * var_root, * v1;
     int file_is_fortran, last_step = fp->last_step;
     uint64_t k, attr_c_index, var_c_index;
 
@@ -2631,7 +2678,13 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
             ADIOS_VARCHUNK *vc;
             read_request * r;
             uint64_t start, count;
-            int status;
+            int status, varid = 0;
+            v1 = fh->vars_root;
+            while (v1 && v1 != var_root)
+            {
+                v1 = v1->next;
+                varid++;
+            }
 
             start = 0;
             count = var_root->characteristics[var_c_index].dims.dims[0];
@@ -2647,7 +2700,7 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
             r->sel->u.bb.ndim = 1;
             r->sel->u.bb.start = &start;
             r->sel->u.bb.count = &count;
-            r->varid = var_root->id;
+            r->varid = varid;
             r->from_steps = fp->last_step;
             r->nsteps = 1;
             r->data = tmpdata;
