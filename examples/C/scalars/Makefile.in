@@ -36,7 +36,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = scalars_write$(EXEEXT) scalars_read$(EXEEXT)
+noinst_PROGRAMS = scalars_write$(EXEEXT) scalars_read$(EXEEXT) \
+	scalars_write_step$(EXEEXT)
 subdir = examples/C/scalars
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -74,6 +75,10 @@ am_scalars_write_OBJECTS = scalars_write.$(OBJEXT)
 scalars_write_OBJECTS = $(am_scalars_write_OBJECTS)
 scalars_write_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1)
+am_scalars_write_step_OBJECTS = scalars_write.$(OBJEXT)
+scalars_write_step_OBJECTS = $(am_scalars_write_step_OBJECTS)
+scalars_write_step_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -85,8 +90,10 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(scalars_read_SOURCES) $(scalars_write_SOURCES)
-DIST_SOURCES = $(scalars_read_SOURCES) $(scalars_write_SOURCES)
+SOURCES = $(scalars_read_SOURCES) $(scalars_write_SOURCES) \
+	$(scalars_write_step_SOURCES)
+DIST_SOURCES = $(scalars_read_SOURCES) $(scalars_write_SOURCES) \
+	$(scalars_write_step_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -334,6 +341,10 @@ scalars_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 scalars_read_SOURCES = scalars_read.c
 scalars_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 scalars_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+scalars_write_step_SOURCES = scalars_write.c
+scalars_write_step_LDADD = $(top_builddir)/src/libadios.a \
+	$(ADIOSLIB_LDADD)
+scalars_write_step_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = scalars.xml gwrite_scalars.ch gread_scalars.ch job.pbs
 all: all-am
@@ -382,6 +393,9 @@ scalars_read$(EXEEXT): $(scalars_read_OBJECTS) $(scalars_read_DEPENDENCIES)
 scalars_write$(EXEEXT): $(scalars_write_OBJECTS) $(scalars_write_DEPENDENCIES) 
 	@rm -f scalars_write$(EXEEXT)
 	$(LINK) $(scalars_write_LDFLAGS) $(scalars_write_OBJECTS) $(scalars_write_LDADD) $(LIBS)
+scalars_write_step$(EXEEXT): $(scalars_write_step_OBJECTS) $(scalars_write_step_DEPENDENCIES) 
+	@rm -f scalars_write_step$(EXEEXT)
+	$(LINK) $(scalars_write_step_LDFLAGS) $(scalars_write_step_OBJECTS) $(scalars_write_step_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

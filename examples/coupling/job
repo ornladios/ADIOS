@@ -5,17 +5,19 @@
 #PBS -l walltime=1:00:00,size=20
 ## On jaguarpf, you need size=48 (4 nodes * 12cores for 4 apruns)
 
+ulimit -c unlimited
+
 #cd $PBS_O_WORKDIR
 
 # Number of writers (WPX*WPY = WRITEPROC)
-WRITEPROC=16
-WPX=4
-WPY=4
+WRITEPROC=4
+WPX=2
+WPY=2
 # Number of staging processes, if staging is used
 STAGINGPROC=4
 # Number of readers (RPX*RPY = READPROC)
-READPROC=9
-RPX=3
+READPROC=3
+RPX=1
 RPY=3
 
 
@@ -81,7 +83,7 @@ mpirun -np $WRITEPROC ./coupling_writer_2D $WPX $WPY 10 10 5  >& log.writer &
 
 # Start READER
 echo "-- Start READER on $READPROC PEs."
-mpirun -np $READPROC ./coupling_reader_2D $RPX $RPY $READMETHOD 1 >& log.reader &
+mpirun -np $READPROC ./coupling_reader_2D $RPX $RPY $READMETHOD 1 2>&1|tee log.reader &
 
 echo "-- Wait until all applications exit. Run ./check.sh to see status"
 wait

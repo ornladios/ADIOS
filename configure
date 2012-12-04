@@ -1886,7 +1886,7 @@ fi
 
 # Define the identity of the package.
  PACKAGE=adios
- VERSION=1.4.1pre1
+ VERSION=1.4.1
 
 
 cat >>confdefs.h <<_ACEOF
