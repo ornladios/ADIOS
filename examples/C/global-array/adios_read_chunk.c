@@ -28,7 +28,7 @@ int main (int argc, char ** argv)
     char        filename [256];
     int         rank, size, i, j, datasize, if_any;
     MPI_Comm    comm = MPI_COMM_WORLD;
-    enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP_STAGED;
+    enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP_AGGREGATE;
     ADIOS_SELECTION * sel1, * sel2;
     ADIOS_VARCHUNK * chunk = 0;
     void * data = NULL;

@@ -59,10 +59,10 @@ void FC_FUNC_(adios_set_read_method, ADIOS_SET_READ_METHOD) (int *fmethod, int *
             lastmethod = ADIOS_READ_METHOD_BP;
             break;
         case 1: //ADIOS_READ_METHOD_BP_STAGED_V1:
-            lastmethod = ADIOS_READ_METHOD_BP_STAGED;
+            lastmethod = ADIOS_READ_METHOD_BP_AGGREGATE;
             break;
         case 7: //ADIOS_READ_METHOD_BP_STAGED1_V1:
-            lastmethod = ADIOS_READ_METHOD_BP_STAGED1;
+            lastmethod = ADIOS_READ_METHOD_BP_AGGREGATE;
             break;
         case 3: //ADIOS_READ_METHOD_DART_V1:
             lastmethod = ADIOS_READ_METHOD_DATASPACES;
