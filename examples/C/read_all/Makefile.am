@@ -10,5 +10,3 @@ read_all_CPPFLAGS = -D_NOMPI -DADIOS_USE_READ_API_1
 read_all_LDADD = $(top_builddir)/src/libadiosread_nompi.a 
 read_all_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
 read_all_LDADD += $(ADIOSREADLIB_LDADD)
-
-CC=$(MPICC)
