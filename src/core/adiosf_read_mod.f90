@@ -56,7 +56,7 @@ module adios_read_mod
             integer,        intent(in)  :: comm
             integer,        intent(out) :: err
         end subroutine
-        
+
         subroutine adios_advance_step (fp, last, timeout_sec, err)
             implicit none
             integer*8,      intent(in)  :: fp

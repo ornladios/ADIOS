@@ -1,0 +1,89 @@
+#!/bin/bash
+#PBS -A STF006
+#PBS -N genarray
+#PBS -j oe
+#PBS -l walltime=1:00:00,size=20
+## On jaguarpf, you need size=48 (4 nodes * 12cores for 4 apruns)
+
+#cd $PBS_O_WORKDIR
+
+# Number of writers (WPX*WPY = WRITEPROC)
+WRITEPROC=16
+WPX=4
+WPY=4
+# Number of staging processes, if staging is used
+STAGINGPROC=4
+# Number of readers (RPX*RPY = READPROC)
+READPROC=9
+RPX=3
+RPY=3
+
+
+let "WP=WPX*WPY"
+if [ $WP -ne $WRITEPROC ]; then
+    echo "WPX*WPY != WRITEPROC: " $WP and $WRITEPROC
+    exit 1
+fi
+
+let "RP=RPX*RPY"
+if [ $RP -ne $READPROC ]; then
+    echo "RPX*RPY != READPROC: " $RP and $READPROC
+    exit 1
+fi
+
+
+# clean-up
+rm -f log.* draw* core* conf dataspaces.conf srv.lck
+rm -f writer.bp reader_0*.bp
+
+METHOD=`grep "<transport .*method=" coupling_writer_2D.xml | sed -e "s/^.*method=\"\([A-Z]*\).*/\1/"`
+echo "The selected coupling method in coupling_writer_2D.xml is: $METHOD"
+
+if [ "x$METHOD" == "xDATASPACES" ]; then
+    READMETHOD="DATASPACES"
+    let "PROCALL=WRITEPROC+READPROC"
+
+    # Prepare config file for DataSpaces
+    echo "## Config file for DataSpaces
+ndim = 3
+dimx = 1000
+dimy = 1000
+dimz = 1000
+max_versions = 10
+" > dataspaces.conf
+
+    # Run DataSpaces
+    SERVER=/ccs/proj/e2e/dataspaces/sith/pgi/bin/dataspaces_server
+    echo "-- Start DataSpaces server "$SERVER" on $STAGINGPROC PEs, -s$STAGINGPROC -c$PROCALL"
+    mpirun -np $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL &> log.server &
+
+    ## Give some time for the servers to load and startup
+    sleep 1s
+    while [ ! -f conf ]; do
+        echo "-- File conf is not yet available from server. Sleep more"
+        sleep 1s
+    done
+    sleep 10s  # wait server to fill up the conf file
+
+    ## Export the main server config to the environment
+    while read line; do
+        export set "${line}"
+    done < conf
+
+    echo "-- DataSpaces Portals IDs: P2TNID = $P2TNID   P2TPID = $P2TPID"
+else
+    READMETHOD="FILE"
+fi
+
+# Start WRITER
+echo "-- Start WRITER on $WRITEPROC PEs"
+mpirun -np $WRITEPROC ./coupling_writer_2D $WPX $WPY 10 10 5  >& log.writer &
+
+# Start READER
+echo "-- Start READER on $READPROC PEs."
+mpirun -np $READPROC ./coupling_reader_2D $RPX $RPY $READMETHOD 1 >& log.reader &
+
+echo "-- Wait until all applications exit. Run ./check.sh to see status"
+wait
+rm -f conf
+

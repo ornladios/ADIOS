@@ -283,7 +283,12 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
     free (buf1);
 }
 
-FC_FUNC_(adios_write_f2c, ADIOS_WRITE_F2C)
+/* Name clash resolution: Fortran adios_write is an interface, and its subroutines cannot call
+   adios_write() in this file directly because the Fortran compiler interprets it as the
+   call to the interface name. adios_write_f2c provides the bridge to link the C function with
+   the subroutines. 
+*/
+void FC_FUNC_(adios_write_f2c, ADIOS_WRITE_F2C) 
     (int64_t * fd_p, const char * name, void * var, int * err,int name_size, int var_size)
 {
     FC_FUNC_(adios_write, ADIOS_WRITE) (fd_p, name, var, err, name_size, var_size);

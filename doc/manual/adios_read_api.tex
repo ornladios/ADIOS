@@ -2,7 +2,7 @@
 
 \section{Introduction}
 
-The second version of the ADIOS Read API (introduced in ADIOS 1.4.0) is designed to handle both files on disk and data sets in memory staging areas. Non-blocking and chunking read is introduced to enable concurrent processing of some part of the requested data while other parts are being retrieved for methods that support it.  A Selection interface is introduced to define subsets of datasets other than a simple bounding box. 
+The second version of the ADIOS Read API (introduced in ADIOS 1.4) is designed to handle both files on disk and data sets in memory staging areas. Non-blocking and chunking read is introduced to enable concurrent processing of some part of the requested data while other parts are being retrieved for methods that support it.  A Selection interface is introduced to define subsets of datasets other than a simple bounding box. 
 
 
 \subsection{Changes from version 1}
@@ -30,7 +30,7 @@ Staging here means that data is in memory somewhere and an ADIOS method presents
     \item A staging library like the above with the specialization that both writer and reader occupies the same (multi-core) compute node and shares memory.   
 \end{itemize}
 
-\noindent ADIOS 1.4.0 comes with the DataSpaces method that is an implementation of the first scenario. Methods for the other two scenarios are coming in the near future. 
+\noindent ADIOS 1.4 comes with the DataSpaces method that is an implementation of the first scenario. Methods for the other two scenarios are coming in the near future. 
 
 \subsubsection{Streams and Steps}
 Simulations usually write the same data set regularly over time, so a file or a series of files contains the same set of variables written many times. The dataset written between one adios\_open and adios\_close calls is called {\em STEP} and not "time" or "timesteps" to avoid confusing users about what time actually means. A {\em STREAM} differs from a file containing multiple steps only in the handling of steps. In a file on disk, all steps are available at all times to a reader. In a stream, only one step is available at a time to read, and as newer steps are becoming available from the writer, older steps may disappear. The ADIOS Read API provides two different open functions for streams and files. Nevertheless, a file can be handled in an application as a stream, i.e., by reading one step at a time, processing it, then advancing to the next step. Users are encouraged to write their code with streaming in mind, so that their file processing code can be used in a staging environment without code modification. 
@@ -47,12 +47,12 @@ In case of streams a step is the feature of the stream, not of the individual va
 \subsubsection{Locking strategies}
 Locking is not used for files, but in a staging environment there are different strategies to deal with disappearing steps of datasets. A daredevil reader may tell the API to not block the writing application at all ({\em ADIOS\_LOCKMODE\_NONE}), i.e., to allow for loosing the opened data set any time if space is needed for storing newer steps of the writer's output. A safer way to handle complete steps is to lock the currently opened step ({\em ADIOS\_LOCKMODE\_CURRENT}). If the writer has more output in the meantime and there is not enough space for staging, an earlier or even a more recent step can be removed by the staging method. To ensure correct execution of  rigid readers, current and all more recent steps should be locked so that they can be read one-by-one without loosing them ({\em ADIOS\_LOCKMODE\_ALL}). This strategy, however, can certainly block the writing application if it has to wait for some available space to become free in the staging area.
 
-Note, however, that specific staging methods may not support all locking mechanisms, or the actual locking mechanism would depend on their configuration and runtime set-up. E.g., the DataSpaces method in ADIOS 1.4.0 only supports the {\em ADIOS\_LOCKMODE\_CURRENT} locking strategy, although the DataSpaces server can also be started up with a custom locking that enforces synchronized steps of alternating writes and reads. The three locking options are kept in the read API with the hope that some staging methods would support all of them in the future. 
+Note, however, that specific staging methods may not support all locking mechanisms, or the actual locking mechanism would depend on their configuration and runtime set-up. E.g., the DataSpaces method in ADIOS 1.4.1 only supports the {\em ADIOS\_LOCKMODE\_CURRENT} locking strategy, although the DataSpaces server can also be started up with a custom locking that enforces synchronized steps of alternating writes and reads. The three locking options are kept in the read API with the hope that some staging methods would support all of them in the future. 
 
 \subsubsection{Chunks}
 Chunking allows for processing large data in small pieces concurrently while other pieces are being transferred.
 
-\emph{Note: In ADIOS 1.4.0, chunking is implemented only "functionally" in any method; all of them will just read the whole variable at once.}
+\emph{Note: In ADIOS 1.4.1, chunking is implemented only "functionally" in any method; all of them will just read the whole variable at once.}
 
 A read request of a variable for one step can be served in multiple pieces. The reader should be able to receive parts of the whole requested dataset and process them one by one, instead of expecting the whole data set arriving in one piece, ordered in memory. We call these pieces or parts returned by the reading method to the reader as \emph{chunks}. In ADIOS, chunks are closely related to the individual outputs of writing processes. Therefore, readers should expect to receive one chunk per writer whose output partly matches the query.
 
@@ -181,7 +181,7 @@ List of parameters is documented for each method separately.
 
 \noindent The function returns 0 on success, $<0$ on an error.
 
-The methods supported in ADIOS 1.4.0 are
+The methods supported in ADIOS 1.4.1 are
 
 \begin{itemize}
 \item{\bf ADIOS\_READ\_METHOD\_BP}   Read from ADIOS BP file. 
@@ -197,8 +197,8 @@ settings:
 \begin{itemize}
 \item{\bf verbose=<integer>} Set the level of verbosity of ADIOS messages: 0=quiet, 1=errors only, 2= warnings, 3=info, 4=debug
 \item{\bf quiet} Same as verbose=0
-\item{\bf logfile=<path>} Redirect all ADIOS messages to a file. in ADIOS 1.4.0, there is no process level separation. Note that third-party libraries used by ADIOS will still print their messages to stdout/stderr.
-\item{\bf abort\_on\_error} ADIOS will abort the application whenever ADIOS prints an error message. In ADIOS 1.4.0, there are many error messages in the writing part that still go to stderr and will not abort the code. 
+\item{\bf logfile=<path>} Redirect all ADIOS messages to a file. in ADIOS 1.4.1, there is no process level separation. Note that third-party libraries used by ADIOS will still print their messages to stdout/stderr.
+\item{\bf abort\_on\_error} ADIOS will abort the application whenever ADIOS prints an error message. In ADIOS 1.4.1, there are error messages in some write transport methods that still go to stderr and will not abort the code. 
 \end{itemize}
 
 \begin{lstlisting}[alsolanguage=C]
@@ -934,6 +934,20 @@ subroutine adios_read_open_file (fp, fname, method, comm, err)
     integer,        intent(out) :: err
 end subroutine
 
+subroutine adios_advance_step (fp, last, timeout_sec, err)
+    implicit none
+    integer*8,      intent(in)  :: fp
+    integer,        intent(in)  :: last
+    real,           intent(in)  :: timeout_sec
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_release_step (fp, err)
+    implicit none
+    integer*8,      intent(in)  :: fp
+    integer,        intent(out) :: err
+end subroutine
+
 subroutine adios_read_close (fp, err)
     integer*8,      intent(in)  :: fp
     integer,        intent(out) :: err
@@ -1095,7 +1109,7 @@ In a C code, include the \verb+adios_read.h+ header file.
 \item If you want to use the non-MPI version of the library, you need to compile your 
 code with the \verb+-D_NOMPI+ option and link your application with \verb+-ladiosread_nompi+.
 
-\item If you have a code using the old (before ADIOS 1.4.0) read API, compile your code with the
+\item If you have a code using the old (before ADIOS 1.4) read API, compile your code with the
 
 \verb+-DADIOS_USE_READ_API_1+ and link your application with one of the two libraries above.
 
@@ -1115,7 +1129,7 @@ it proves to be very difficult.
 \item If you want to use the non-MPI version of the library, you need to compile your 
 code with the \verb+-D_NOMPI+ option and link your application with \verb+-ladiosreadf_nompi+.
 
-\item If you have a code using the old (before ADIOS 1.4.0) read API,  
+\item If you have a code using the old (before ADIOS 1.4) read API,  
 do not use the adios\_read\_mod module and link your application 
 with one of the two libraries 
 
@@ -1378,7 +1392,7 @@ The \verb+adios_advance_step()+ gets the next or last available step. In all cas
 \section{Non-blocking reads}
 
 \subsection{Chunk reads: read without pre-allocating buffers}
-\emph{Note that this chunked read is partially implemented in ADIOS 1.4.0: memory limits are not considered and each scheduled read is returned in one chunk.}
+\emph{Note that this chunked read is partially implemented in ADIOS 1.4.1: memory limits are not considered and each scheduled read is returned in one chunk.}
 
 An ADIOS read method can deliver the data in chunks, in its own working memory. 
 The application has to process that data before checking for new chunks. 

@@ -5,7 +5,7 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-/* ADIOS C Example: write a global array from N processors using MPI_AMR.
+/* ADIOS C Example: write a global array from N processors using MPI_AGGREGATE.
  *
  * How to run: mpirun -np <N> adios_amr_write
  * Output: adios_amr_write.bp

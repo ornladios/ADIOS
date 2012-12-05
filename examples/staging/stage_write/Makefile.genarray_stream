@@ -1,0 +1,30 @@
+## MPIF90 SETTINGS
+FC=mpif90
+FFLAGS=-g
+
+## FTN SETTINGS
+#FC=ftn
+#FFLAGS = -O3
+
+#TARGET=gnu
+TARGET=pgi
+
+## Set ADIOS_DIR here or before doing make
+override ADIOS_DIR=/ccs/proj/e2e/pnorbert/ADIOS/sith.${TARGET}
+override ADIOS_INC=`${ADIOS_DIR}/bin/adios_config -c -f`
+override ADIOS_FLIB=`${ADIOS_DIR}/bin/adios_config -l -f`
+
+default: genarray_stream
+all: default
+
+genarray_stream.o : genarray_stream.F90 
+	${FC} -g -c ${ADIOS_INC} genarray_stream.F90  $<
+
+genarray_stream:  genarray_stream.o
+	${FC} -g -o genarray_stream genarray_stream.o ${ADIOS_FLIB} 
+
+
+clean:
+	rm -f *.o *.mod *.fh core.*
+	rm -f genarray_stream
+        

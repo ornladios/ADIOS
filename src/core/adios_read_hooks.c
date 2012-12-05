@@ -47,8 +47,7 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
 
         ASSIGN_FNS(bp,ADIOS_READ_METHOD_BP)
 #ifndef __MPI_DUMMY_H__
-        ASSIGN_FNS(bp_staged,ADIOS_READ_METHOD_BP_STAGED)
-        ASSIGN_FNS(bp_staged1,ADIOS_READ_METHOD_BP_STAGED1)
+        ASSIGN_FNS(bp_staged,ADIOS_READ_METHOD_BP_AGGREGATE)
 #endif
 #if HAVE_DATASPACES
         ASSIGN_FNS(dataspaces,ADIOS_READ_METHOD_DATASPACES)

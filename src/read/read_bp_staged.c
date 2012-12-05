@@ -34,6 +34,10 @@
 
 #define TAG_DATA 0
 
+static int chunk_buffer_size = -1;  // chunk size - must be set
+static int poll_interval = 10; // 10 secs by default
+static int show_hidden_attrs = 0; // don't show hidden attr by default
+static int num_aggregators = -1; // number of aggregator - must be set
 
 //private structure of BP_PROC
 typedef struct bp_proc_private_struct
@@ -51,7 +55,6 @@ typedef struct bp_proc_private_struct
     int aggregator_rank;
     int aggregator_new_rank;
     read_request * split_read_request_list;
-    void * b;
     int * aggregator_rank_array;
 } bp_proc_pvt_struct;
 
@@ -65,11 +68,6 @@ typedef struct read_request_private
     void * parent;
 } rr_pvt_struct;
 
-static int chunk_buffer_size = 1024*1024*16;
-static int poll_interval = 10; // 10 secs by default
-static int show_hidden_attrs = 0; // don't show hidden attr by default
-static int num_aggregators = 0; // number of aggregators
-
 static void read_buffer (const ADIOS_FILE * fp,
                          uint64_t buffer_offset,
                          read_request * r,
@@ -78,6 +76,8 @@ static void read_buffer (const ADIOS_FILE * fp,
 
 static int isAggregator (BP_PROC * p)
 {
+    assert (p);
+
     bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
 
     return (pvt->rank == pvt->aggregator_rank);
@@ -97,8 +97,13 @@ static int rank_to_group_mapping (bp_proc_pvt_struct * pvt, int rank)
     {
         if (rank < (grp_size + 1) * remain)
         {
-            g = rank / (grp_size + 1);        }        else        {
-            g = remain + (rank - (grp_size + 1) * remain) / grp_size;        }    }
+            g = rank / (grp_size + 1);
+        }
+        else
+        {
+            g = remain + (rank - (grp_size + 1) * remain) / grp_size;
+        }
+    }
 
     return g;
 }
@@ -106,7 +111,7 @@ static int rank_to_group_mapping (bp_proc_pvt_struct * pvt, int rank)
 static void buffer_write (void ** buffer, void * data, int size)
 {
     memcpy (* buffer, data, size);
-    * buffer = * buffer + size;
+    * buffer = (char *)* buffer + size;
     }
 
 // *****************************************************************************
@@ -181,8 +186,8 @@ static int calc_data_size (BP_PROC * p)
 
     while (h)
     {
-        // varid + ndim + start + count
-        size += 4 + 4 + h->sel->u.bb.ndim * (8 + 8) + 8 + 4 + 8;
+        // varid + from_steps, nsteps, ndim + start + count
+        size += 4 + 4 + 4 + 4 + h->sel->u.bb.ndim * (8 + 8) + 8 + 4 + 8;
         h = h->next;
     }
 
@@ -239,14 +244,14 @@ static void get_data_addr (const ADIOS_FILE * fp, int varid,
             time = t + 1;
         }
 
-        start_idx = get_var_start_index (v, t);
-        stop_idx = get_var_stop_index (v, t);
+        start_idx = get_var_start_index (v, time);
+        stop_idx = get_var_stop_index (v, time);
 
         if (start_idx < 0 || stop_idx < 0)
         {
             adios_error (err_no_data_at_timestep,
-                         "Variable (id=%d) has no data at %d time step",
-                         varid, t);
+                         "Variable (id=%d) has no data at %d time step in %s\n",
+                         varid, t, __FUNCTION__);
             continue;
 }
 
@@ -397,13 +402,15 @@ static void send_read_data1 (BP_PROC * p)
     uint64_t ds;
     int i, counter = 0;
     read_request * r = p->local_read_request_list;
-    rr_pvt_struct * rr_pvt = (rr_pvt_struct *) r->priv;
+    rr_pvt_struct * rr_pvt;
 
     while (r)
     {
+        rr_pvt = (rr_pvt_struct *) r->priv;
+        assert (rr_pvt);
+
         if (pvt->rank != rr_pvt->rank)
         {
-            rr_pvt = (rr_pvt_struct *) r->priv;
             MPI_Send (r->data, r->datasize, MPI_BYTE
                      ,rr_pvt->rank - pvt->aggregator_rank, TAG_DATA, pvt->new_comm
                      );  
@@ -438,6 +445,8 @@ static void send_read_data (BP_PROC * p)
 
     while (r)    {
         rr_pvt = (rr_pvt_struct *) r->priv;
+        assert (rr_pvt);
+
         g = rank_to_group_mapping (pvt, rr_pvt->rank);
 
         /*  g == p->group       -> requests are from processors that belong to th
@@ -479,7 +488,6 @@ e group
 static void get_read_data1 (BP_PROC * p)
 {
     bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
-    rr_pvt_struct * rr_pvt;
     MPI_Status status;
     read_request * r = p->local_read_request_list;
 
@@ -487,7 +495,6 @@ static void get_read_data1 (BP_PROC * p)
     {
         while (r) 
         {
-            rr_pvt = (rr_pvt_struct *) r->priv;
             MPI_Recv (r->data, r->datasize, MPI_BYTE
                      ,MPI_ANY_SOURCE, MPI_ANY_TAG, pvt->new_comm
                      ,&status
@@ -502,7 +509,7 @@ static void get_read_data1 (BP_PROC * p)
 static void get_read_data (BP_PROC * p)
 {
     bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
-    void * b = 0, * recv_buff = 0;
+    char * b = 0, * recv_buff = 0;
     int * sizes = 0, * offsets = 0;
     int size = 0;
     MPI_Status status;
@@ -545,7 +552,7 @@ static void get_read_data (BP_PROC * p)
     free (recv_buff);
 }
 
-static void parse_buffer (BP_PROC * p, void * b, int src)
+static void parse_buffer (BP_PROC * p, char * b, int src)
 {
     read_request * h = p->local_read_request_list;
     int i, j, type, count, varid, ndims, size = calc_data_size (p);
@@ -564,11 +571,17 @@ static void parse_buffer (BP_PROC * p, void * b, int src)
 
         rr_pvt = (rr_pvt_struct *) malloc (sizeof (rr_pvt_struct));
         assert (rr_pvt);
-        r->priv = (rr_pvt_struct *) rr_pvt;
+        r->priv = rr_pvt;
 
         rr_pvt->rank = src;
    
         r->varid = * (uint32_t *) b;
+        b += 4;
+
+        r->from_steps = * (int32_t *) b;
+        b += 4;
+
+        r->nsteps = * (int32_t *) b;
         b += 4;
 
         r->sel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
@@ -592,16 +605,17 @@ static void parse_buffer (BP_PROC * p, void * b, int src)
 
         r->datasize = * (uint64_t *) b;
         b += 8;
-
+#if 0
         rr_pvt->file_idx = * (uint32_t *) b;
         b += 4;
 
         rr_pvt->offset = * (uint64_t *) b;
         b += 8;
-
+#endif
         r->data = malloc (r->datasize);
         assert (r->data);
 
+        // I am already a parent.
         rr_pvt->parent = 0;
 
         r->next = 0;
@@ -625,6 +639,7 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
     ADIOS_SELECTION * sel;
     read_request * h = 0;
     rr_pvt_struct * rr_pvt = (rr_pvt_struct *) r->priv;
+    assert (rr_pvt);
 
     varid = r->varid;
     sel = r->sel;
@@ -643,7 +658,6 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
         swap_order (ndim, start, &dummy);
         swap_order (ndim, count, &dummy);
     }
-
     for (t = fp->current_step + r->from_steps;
          t < fp->current_step + r->from_steps + r->nsteps; t++
         )
@@ -657,13 +671,13 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
             time = t + 1;
     }
 
-        start_idx = get_var_start_index (v, t);
-        stop_idx = get_var_stop_index (v, t);
+        start_idx = get_var_start_index (v, time);
+        stop_idx = get_var_stop_index (v, time);
 
         if (start_idx < 0 || stop_idx < 0)
         {
-            log_info ("Variable (id=%d) has no data at %d time step\n",
-                varid, t);
+            log_info ("Variable (id=%d) has no data at %d time step in %s\n",
+                      varid, t, __FUNCTION__);
             continue;
         }
 
@@ -680,7 +694,9 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
             n->priv = n_pvt;
 
             n->varid = r->varid;
-            n_pvt->rank = ((rr_pvt_struct *) r->priv)->rank;
+            n->from_steps = r->from_steps;
+            n->nsteps = r->nsteps;
+            n_pvt->rank = rr_pvt->rank;
             n_pvt->file_idx = v->characteristics[start_idx + idx].file_index;
             n_pvt->offset = v->characteristics[start_idx + idx].payload_offset;
             n_pvt->parent = r;
@@ -696,13 +712,12 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
 
          /* READ AN ARRAY VARIABLE */
         int * idx_table = (int *) malloc (sizeof(int) * (stop_idx - start_idx + 1));
-
         // loop over the list of pgs to read from one-by-one
         for (idx = 0; idx < stop_idx - start_idx + 1; idx++)
         {
             idx_table[idx] = 1;
-            /* Each pg can have a different sized array, so we need the actual dimensions from it */
-            is_global = bp_get_dimension_characteristics_notime (&(v->characteristics[start_idx + idx]),
+            is_global = bp_get_dimension_characteristics_notime (
+                            &(v->characteristics[start_idx + idx]),
                                                                  ldims,
                                                                  gdims,
                                                                  offsets,
@@ -712,7 +727,6 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
             {
                 memcpy (gdims, ldims, ndim * 8);
             }
-
             /*
             printf("ldims   = "); for (j = 0; j<ndim; j++) printf("%d ",ldims[j]); printf("\n");
             printf("gdims   = "); for (j = 0; j<ndim; j++) printf("%d ",gdims[j]); printf("\n");
@@ -766,6 +780,8 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
             assert (n);
 
             n->varid = r->varid;
+            n->from_steps = r->from_steps;
+            n->nsteps = r->nsteps;
             n->sel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
             assert (n->sel);
             //FIXME
@@ -780,14 +796,14 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
             memcpy (n->sel->u.bb.start, start, ndim * 8);
             memcpy (n->sel->u.bb.count, count, ndim * 8);
 
-            rr_pvt_struct * rr_pvt;
             n->priv = (rr_pvt_struct *) malloc (sizeof (rr_pvt_struct));
             assert (n->priv);
-            rr_pvt = (rr_pvt_struct *) n->priv;
+            rr_pvt_struct * nrr_pvt = (rr_pvt_struct *) n->priv;
 
-            rr_pvt->file_idx = v->characteristics[start_idx + idx].file_index;
-            rr_pvt->offset = v->characteristics[start_idx + idx].payload_offset;
-            rr_pvt->parent = r;
+            nrr_pvt->rank = ((rr_pvt_struct *) r->priv)->rank;;
+            nrr_pvt->file_idx = v->characteristics[start_idx + idx].file_index;
+            nrr_pvt->offset = v->characteristics[start_idx + idx].payload_offset;
+            nrr_pvt->parent = r;
             n->next = 0;
 
             if (hole_break == -1)
@@ -903,6 +919,12 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
         free (dims);
     }
 
+    if (!h)
+    {
+        fprintf (stderr, "v = %s\n", v->var_name);
+    }
+    assert (h);
+
     return h;
 }
 
@@ -973,12 +995,12 @@ gettimeofday (&t0, NULL);
             err = MPI_File_open (MPI_COMM_SELF
                                 ,name
                                 ,MPI_MODE_RDONLY
-                                ,(MPI_Info)MPI_INFO_NULL
+                                ,MPI_INFO_NULL
                                 ,&new_h->fh
                                 );
             if (err != MPI_SUCCESS)
             {
-                fprintf (stderr, "can not open file %S\n", name);
+                adios_error (err_file_open_error, "Can not open file %s\n", name);
                 return;
             }
 
@@ -1131,7 +1153,7 @@ static void read_buffer (const ADIOS_FILE * fp,
     struct adios_index_var_struct_v1 * v;
     uint64_t * s_start, * s_count;
     uint64_t * start, * count;
-    int i, j, k, idx, t, ndim, dummy;
+    int i, j, k, idx, t, time, ndim, dummy;
     int varid, start_idx, stop_idx, has_subfile, file_is_fortran;
     uint64_t ldims[MAX_DIMS], gdims[MAX_DIMS], offsets[MAX_DIMS];
     uint64_t datasize, dset_stride, var_stride, total_size = 0, items_read;
@@ -1172,13 +1194,22 @@ static void read_buffer (const ADIOS_FILE * fp,
          t < fp->current_step + r->from_steps + r->nsteps; t++
         )
     {
-        start_idx = get_var_start_index (v, t);
-        stop_idx = get_var_stop_index (v, t);
+        if (!p->streaming)
+        {
+            time = get_time (v, t);
+        }
+        else
+        {
+            time = t + 1;
+        }
+
+        start_idx = get_var_start_index (v, time);
+        stop_idx = get_var_stop_index (v, time);
 
         if (start_idx < 0 || stop_idx < 0)
         {
-            log_info ("Variable (id=%d) has no data at %d time step",
-                      varid, t
+            log_info ("Variable (id=%d) has no data at %d time step in %s\n",
+                      varid, t, __FUNCTION__
                         );
             continue;
         }
@@ -1367,7 +1398,10 @@ static void read_buffer (const ADIOS_FILE * fp,
 
                 if (idx_check2)
                 {
-                    memcpy (data + write_offset, fh->b->buff + slice_offset - buffer_offset, slice_size);
+                    memcpy ((char *) data + write_offset,
+                            fh->b->buff + slice_offset - buffer_offset,
+                            slice_size
+                           );
                     if (fh->mfooter.change_endianness == adios_flag_yes)
                     {
                         change_endianness ((char *) data + write_offset, slice_size, v->type);
@@ -1872,23 +1906,20 @@ uint64_t bo = buffer_offset;
 
 int adios_read_bp_staged_init_method (MPI_Comm comm, PairStruct * params)
 {
-    int  max_chunk_size;
+    int global_rank;
     PairStruct * p = params;
+    char * env_str;
 
     while (p)
     {
         if (!strcasecmp (p->name, "max_chunk_size"))
         {
-            max_chunk_size = strtol(p->value, NULL, 10);
-            if (max_chunk_size > 0)
+            chunk_buffer_size = strtol(p->value, NULL, 10);
+            if (chunk_buffer_size > 0)
             {
-                log_debug ("max_chunk_size set to %dMB for the read method\n", max_chunk_size);
-                chunk_buffer_size = max_chunk_size * 1024 * 1024;
+                log_debug ("max_chunk_size set to %dMB for the read method\n", chunk_buffer_size);
+                chunk_buffer_size = chunk_buffer_size * 1024 * 1024;
             }
-            else
-            {
-                log_error ("Invalid 'max_chunk_size' parameter given to the read method: '%s'\n", p->value);
-        }
         }
         else if (!strcasecmp (p->name, "poll_interval"))
         {
@@ -1920,15 +1951,46 @@ int adios_read_bp_staged_init_method (MPI_Comm comm, PairStruct * params)
                 log_debug ("num_aggregators set to %d for STAGED_READ_BP read method",
                            num_aggregators);
         }
-        else
-        {
-                log_error ("Invalid 'num_aggregators' parameter given to the STAGED_READ_BP "
-                            "read method: '%s'\n", p->value);
         }
-    }
 
         p = p->next;
+    }
+
+    /* if v1 read api is being used, the aggregation parameters can only
+     * be set through environment variables and the follow
+     * code deals with this.
+     */
+    MPI_Comm_rank (MPI_COMM_WORLD, &global_rank);
+    if (num_aggregators <= 0)
+        {
+        env_str = getenv ("num_aggregators");
+        if (!env_str)
+        {
+            adios_error (err_unspecified, 
+                         "Environment variable \"num_aggregators\" hasn't been set.\n");
+            exit(0);
+        }
+
+        num_aggregators = atoi (env_str);
+
+        if (global_rank == 0)
+        {
+            printf ("%d aggregators are used.\n", num_aggregators);
+    }
+    }
+
+    if (chunk_buffer_size <= 0)
+    {
+        env_str = getenv ("chunk_size");
+        if (!env_str)
+        {
+            adios_error (err_unspecified,
+                         "Environment variable \"chunk_size\" (in MB) hasn't been set.\n");
+            exit(0);
 }
+
+        chunk_buffer_size = 1024 * 1024 * atoi (env_str);
+    }
 
     return 0;
 }
@@ -1936,24 +1998,78 @@ int adios_read_bp_staged_init_method (MPI_Comm comm, PairStruct * params)
 int adios_read_bp_staged_finalize_method ()
 {
     /* Set these back to default */
-    chunk_buffer_size = 1024*1024*16;
-    poll_interval = 10; // 10 secs by default
-    show_hidden_attrs = 0; // don't show hidden attr by default
-    num_aggregators = 0;
+    chunk_buffer_size = -1;
+    poll_interval = 10;
+    show_hidden_attrs = 0;
+    num_aggregators = -1;
 
     return 0;
     }
 
 ADIOS_FILE * adios_read_bp_staged_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
 {
+    log_error (" adios_read_open_stream() is not supported in this method.\n");
     return 0;
+}
+
+static void free_proc_struct (BP_PROC * p)
+{
+    bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
+    read_request * h = p->local_read_request_list, * n;
+
+    /* We need to free split_read_request_list cause
+     * people might do two back-to-back sets of
+     * schedule_read, schedule_read, perform_read
+     */
+    list_free_read_request (pvt->split_read_request_list);
+    pvt->split_read_request_list = 0;
+
+    list_free_read_request (p->local_read_request_list);
+    p->local_read_request_list = 0;
 }
 
 static void init_read (BP_PROC * p)
 {
     BP_FILE * fh = (BP_FILE *) p->fh;
-    int i, remain;
+    int i, remain, global_rank;
     int color1, color2;
+    char * env_str;
+
+    /* if v1 read api is being used, the aggregation parameters can only
+     * be set through environment variables and the follow
+     * code deals with this.
+     */
+    MPI_Comm_rank (MPI_COMM_WORLD, &global_rank);
+    if (num_aggregators <= 0)
+    {
+        env_str = getenv ("num_aggregators");
+        if (!env_str)
+        {
+            adios_error (err_unspecified,
+                         "Environment variable \"num_aggregators\" hasn't been set.\n");
+            exit(0);
+        }
+
+        num_aggregators = atoi (env_str);
+
+        if (global_rank == 0)
+        {
+            printf ("%d aggregators are used.\n", num_aggregators);
+        }
+    }
+
+    if (chunk_buffer_size <= 0)
+    {
+        env_str = getenv ("chunk_size");
+        if (!env_str)
+        {
+            adios_error (err_unspecified,
+                         "Environment variable \"chunk_size\" (in MB) hasn't been set.\n");
+            exit(0);
+        }
+
+        chunk_buffer_size = 1024 * 1024 * atoi (env_str);
+    }
 
     bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) malloc (sizeof (bp_proc_pvt_struct));
     assert (pvt);
@@ -2022,7 +2138,7 @@ static void init_read (BP_PROC * p)
     pvt->aggregator_new_rank = 0;
     pvt->group_comm = fh->comm;
     pvt->split_read_request_list = 0;
-    pvt->b = 0;
+    p->b = 0;
 
     return;
     }
@@ -2042,6 +2158,7 @@ ADIOS_FILE * adios_read_bp_staged_open_file (const char * fname, MPI_Comm comm)
     fh = (BP_FILE *) malloc (sizeof (BP_FILE));
     assert (fh);
     fh->fname = (fname ? strdup (fname) : 0L);
+    fh->mpi_fh = 0;
     fh->sfh = 0;
     fh->comm = comm;
     fh->gvar_h = 0;
@@ -2105,18 +2222,18 @@ ently.
 
 int adios_read_bp_staged_close (ADIOS_FILE *fp)
 {
-    struct BP_PROC * p;
-    BP_FILE * fh;
+    BP_PROC * p = (BP_PROC *) fp->fh;
+    BP_FILE * fh = (BP_FILE *) p->fh;
+    bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
 
-    if (!fp)
+    if (pvt->aggregator_rank_array)
     {
-    return 0;
+        free (pvt->aggregator_rank_array);
+        pvt->aggregator_rank_array = 0;
 }
 
-    p = (struct BP_PROC *) fp->fh;
-    assert (p);
-
-    fh = p->fh;
+    free (pvt);
+    p->priv = 0;
 
     if (p->fh)
 {
@@ -2161,14 +2278,19 @@ int adios_read_bp_staged_close (ADIOS_FILE *fp)
     return 0;
     }
 
+/* Staged read method doesn't support streaming read yet
+ */
 int adios_read_bp_staged_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
 {
+    log_error ("adios_advance_step() is not supported in this method.\n");
     return 0;
     }
 
+/* Staged read method doesn't support streaming read yet
+ */
 void adios_read_bp_staged_release_step (ADIOS_FILE *fp)
 {
-
+    log_error ("adios_release_step() is not supported in this method.\n");
 }
 
 ADIOS_VARINFO * adios_read_bp_staged_inq_var_byid (const ADIOS_FILE * fp, int varid)
@@ -2186,46 +2308,63 @@ int adios_read_bp_staged_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO 
     return 0;
         }
 
-int adios_read_bp_staged_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel, int varid, int from_steps, int nsteps, void * data)
+int adios_read_bp_staged_schedule_read_byid (const ADIOS_FILE * fp,
+                                             const ADIOS_SELECTION * sel,
+                                             int varid,
+                                             int from_steps,
+                                             int nsteps,
+                                             void * data
+                                            )
 {
+    // simply call the 'simple reader' scheudle read routine. 
     return adios_read_bp_schedule_read_byid (fp, sel, varid, from_steps, nsteps, data);
 }
                    
 int adios_read_bp_staged_perform_reads (const ADIOS_FILE *fp, int blocking)
 {
-    BP_PROC * p = (struct BP_PROC *) fp->fh;
+    BP_PROC * p = (BP_PROC *) fp->fh;
     BP_FILE * fh = (BP_FILE *) p->fh;
     bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
-    read_request * r;
-    ADIOS_VARCHUNK * chunk;
-    read_request * h = p->local_read_request_list;
-    int count, varid, ndims, total_size, size = calc_data_size (p);
-    int i;
+    read_request * r, * h;
+    int i, count, varid, ndims, total_size, size;
     rr_pvt_struct * rrs;
     void * buf;
 
-    pvt->b = malloc (size);
-    assert (pvt->b);
+    // First populate the read request private struct for
+    // each local read request. Have to do it here since the
+    // schedule_read_byid is simply calling what is in simple bp reader.
+    h = p->local_read_request_list;
+    while (h)
+    {
+        h->priv = malloc (sizeof (rr_pvt_struct));
+        assert (h->priv);
+        ((rr_pvt_struct *) h->priv)->rank = pvt->rank;
+        h = h->next;
+    }
+
+    size = calc_data_size (p);
+    p->b = malloc (size);
+    assert (p->b);
     buf = p->b;
 
     // count
-    count = list_get_length (h);
+    count = list_get_length (p->local_read_request_list);
     buffer_write (&buf, &count, 4);
 
+    h = p->local_read_request_list;
     while (h)
     {
         varid = h->varid;
         ndims = h->sel->u.bb.ndim;
-        rrs = (rr_pvt_struct *) h->priv;
 
         buffer_write (&buf, &varid, 4);
+        buffer_write (&buf, &h->from_steps, 4);
+        buffer_write (&buf, &h->nsteps, 4);
         buffer_write (&buf, &ndims, 4);
-        //FIXME: bb only for now
+        //TODO: bb only for now
         buffer_write (&buf, h->sel->u.bb.start, ndims * 8);
         buffer_write (&buf, h->sel->u.bb.count, ndims * 8);
         buffer_write (&buf, &h->datasize, 8);
-        buffer_write (&buf, &rrs->file_idx, 4);
-        buffer_write (&buf, &rrs->offset, 8);
 
         h = h->next;
     }
@@ -2257,7 +2396,7 @@ int adios_read_bp_staged_perform_reads (const ADIOS_FILE *fp, int blocking)
         assert (recv_buffer);
     }
 
-    MPI_Gatherv (pvt->b, size, MPI_BYTE
+    MPI_Gatherv (p->b, size, MPI_BYTE
                 ,recv_buffer, sizes, offsets
                 ,MPI_BYTE, pvt->aggregator_new_rank, pvt->new_comm
                 );
@@ -2266,49 +2405,23 @@ int adios_read_bp_staged_perform_reads (const ADIOS_FILE *fp, int blocking)
     {
         for (i = 1; i < pvt->group_size; i++)
         {
-            parse_buffer (p, recv_buffer + offsets[i], pvt->aggregator_rank + i);
+            parse_buffer (p, (char *)recv_buffer + offsets[i], pvt->aggregator_rank + i);
         }
         free (recv_buffer);
 
         process_read_requests (fp);
     }
 
+    free (p->b);
+    p->b = 0;
     free (sizes);
     free (offsets);
 
     if (isAggregator (p))
     {
         sort_read_requests (p);
-/*
-if (p->rank == 0)
-{
-printf ("=============\n");
-        list_print_readers (p, p->split_read_request_list);
-printf ("=============\n");
-}
-*/
-    struct timeval t0, t1;
-    gettimeofday (&t0, NULL);
 
         do_read (fp);
-/*
-if (p->rank == 0)
-{
-candidate_reader * tr = p->local_read_request_list;
-while (tr)
-{
-    printf ("data = ");
-    int i;
-    for (i = 0; i <16;i++)
-    printf ("%4.4f ", * ((double *) tr->ra->data + i));
-printf ("\n");
-    tr = tr->next;
-}
-
-}
-*/
-    gettimeofday (&t1, NULL);
-//    printf ("[%3d] do_read time = %f\n", p->rank, t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000);
 
         send_read_data (p);
     }
@@ -2317,6 +2430,7 @@ printf ("\n");
         get_read_data (p); 
     }
 
+    free_proc_struct (p);
 
     /* 1. prepare all reads */
     // check if all user memory is provided for blocking read
@@ -2325,13 +2439,14 @@ printf ("\n");
         r = p->local_read_request_list;
         while (r)
 {
-            if (!r->data)
+            rr_pvt_struct * rr_pvt = (rr_pvt_struct *) r->priv;
+            if (rr_pvt->rank == pvt->rank && !r->data)
 {
                 adios_error (err_operation_not_supported,
-                    "Blocking mode at adios_perform_reads() requires that user "
+                    "[%d] Blocking mode at adios_perform_reads() requires that user "
                     "provides the memory for each read request. Request for "
                     "variable %d was scheduled without user-allocated me mory\n",
-                    r->varid);
+                    pvt->rank, r->varid);
                 return err_operation_not_supported;
     }
 
@@ -2343,24 +2458,17 @@ printf ("\n");
         return 0;
                 }
 
-    while (p->local_read_request_list)
-            {
-#if 0
-        chunk = read_var (fp, p->local_read_request_list);
-#endif
-        // remove head from list
-        r = p->local_read_request_list;
-        p->local_read_request_list = p->local_read_request_list->next;
-        free(r);
-
-        common_read_free_chunk (chunk);
-}
-
     return 0;
     }
 
+/* Note: staged read method doesn't support check_reads so far.
+ * It only supports the sceanario that user allocates all memory and subsequently 
+ * does perform_reads with blocking flagged.
+ */
 int adios_read_bp_staged_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
 {
+    log_error ("adios_check_reads() is not supported in this method.\n");
+
     return 0;
     }
 
@@ -2371,7 +2479,7 @@ int adios_read_bp_staged_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum 
 
 void adios_read_bp_staged_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
-
+    adios_read_bp_reset_dimension_order (fp, is_fortran);
         }
 
 void adios_read_bp_staged_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group)
@@ -2430,11 +2538,60 @@ namelist[i]) + 1);
                     return;
                 }
 
+/* This is simply a copy of simle bp reader */
 int adios_read_bp_staged_is_var_timed (const ADIOS_FILE *fp, int varid)
             {
-    int retval = 0;
+    BP_PROC * p;
+    BP_FILE * fh;
+    struct adios_index_var_struct_v1 * v;
+    struct adios_index_characteristic_struct_v1 ch;
+    int retval = 0, ndim, k, dummy, file_is_fortran;
+    uint64_t gdims[32];
+
+    p = (BP_PROC *) fp->fh;
+    fh = (BP_FILE *) p->fh;
+
+    v = bp_find_var_byid (fh, varid);
+    ch = v->characteristics[0];
+    ndim = ch.dims.count; //ndim possibly has 'time' dimension
+
+    log_debug ("adios_read_bp_is_var_timed: varid = %d, ndim = %d\n", varid, ndim);
+
+    if (ndim == 0)
+    {
+        return 0;
+    }
+
+    for (k = 0; k < ndim; k++)
+    {
+        gdims[k] = ch.dims.dims[k * 3 + 1];
+    }
     /*
-        retval = this variable had time dimension at write
+    if (is_fortran_file (fh))
+    {
+        swap_order (ndim, gdims, &dummy);
+    }
     */        
+
+    if (gdims[ndim - 1] == 0) // with time
+    {
+        if (v->characteristics_count <= 1) {
+            // a local array written once
+            retval = 0;
+        } else {
+            retval = 1;
+        }
+        /* FIXME: This last test tests if the last l:g:o is only an 'l'.
+           This is true for a variable over time but also 
+           true for a 1D local array (which has no global dimension)
+           The characteristics_count is 1 only if the local array is written
+           from one process and only at one timestep.
+           How do we identify local arrays written from many processes?
+           And local arrays written several times?
+        */
+    }
+
+    log_debug ("%s is_var_timed: = %d\n", v->var_name, retval);
+
     return retval;
         }

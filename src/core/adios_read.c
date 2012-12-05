@@ -9,6 +9,7 @@
 #include <string.h>
 #include "public/adios_read_v2.h"
 #include "public/adios_error.h"
+#include "core/adios_logger.h"
 #include "core/common_read.h"
 #define BYTE_ALIGN 8
 
@@ -25,7 +26,9 @@ int adios_read_init_method (enum ADIOS_READ_METHOD method, MPI_Comm comm, const 
 
 int adios_read_finalize_method(enum ADIOS_READ_METHOD method)
 {
-    return common_read_finalize_method(method);
+    int retval = common_read_finalize_method(method);
+    log_debug ("adios_read_finalize_method completed");
+    return retval;
 }
 
 ADIOS_FILE * adios_read_open_stream (const char * fname,

@@ -118,6 +118,7 @@ struct dataspaces_attr_struct { // describes one attribute (of one group)
 struct dataspaces_data_struct { // accessible as fp->fh
     int current_step;           // counting the access
     int disconnect_at_close;    // disconnect from DATASPACES in fclose()
+    MPI_Comm comm;              // communicator saved for lock/unlock operations
     int mpi_rank;               // rank of this process
     int nproc;                  // number of processes opening this stream
     int locked_fname;           // 1: locked 'fname' in DATASPACES, 0: unlocked
@@ -413,7 +414,7 @@ static int ds_unpack_group_info (ADIOS_FILE *fp, char * buf)
             log_debug("          dim[%d] = %lld, b = %d\n", j, vars[i].dims[j], b);
         }
 
-        if (vars[i].ndims == 0) { // && !vars[i].hastime) {
+        if (vars[i].ndims == 0 && !vars[i].hastime) {
             // need to get scalar value too
             if (vars[i].type != adios_string) {
                 datasize = common_read_type_size(vars[i].type, NULL);
@@ -532,7 +533,7 @@ static void lock_file (ADIOS_FILE *fp, struct dataspaces_data_struct *ds)
 {
     if (!ds->locked_fname) {
         log_debug("   rank %d: call dspaces_lock_on_read(%s)\n", ds->mpi_rank, fp->path);
-        dspaces_lock_on_read(fp->path);
+        dspaces_lock_on_read(fp->path, &ds->comm);
         ds->locked_fname = 1;
     //} else {
     //    log_error("   rank %d: lock_file called with the lock already in place\n", ds->mpi_rank);
@@ -543,7 +544,7 @@ static void unlock_file (ADIOS_FILE *fp, struct dataspaces_data_struct *ds)
 {
     if (ds->locked_fname) {
         log_debug("   rank %d: call dspaces_unlock_on_read(%s)\n", ds->mpi_rank, fp->path);
-        dspaces_unlock_on_read(fp->path);
+        dspaces_unlock_on_read(fp->path, &ds->comm);
         ds->locked_fname = 0;
     //} else {
     //    log_error("   rank %d: unlock_file called with the lock already released\n", ds->mpi_rank);
@@ -687,7 +688,8 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
             if (timeout_sec >= 0.0 && (adios_gettime()-t1 > timeout_sec))
                 stay_in_poll_loop = 0;
             else
-                adios_nanosleep (0, poll_interval_msec * 1000000); 
+                adios_nanosleep (poll_interval_msec/1000, 
+                     (int)(((uint64_t)poll_interval_msec * 1000000L)%1000000000L)); 
         }
 
     } // while (stay_in_poll_loop)
@@ -711,6 +713,7 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
                     "Step %d in stream '%s' is not available anymore\n", step, fp->path);
             break;
     default:
+            adios_errno = err_no_error; // clear temporary error during polling
             break;
 
     }
@@ -752,6 +755,7 @@ ADIOS_FILE * adios_read_dataspaces_open_stream (const char * fname,
 
     fp->fh = (uint64_t) ds;
     fp->path = strdup(fname);
+    ds->comm = comm;
     MPI_Comm_rank(comm, &ds->mpi_rank);
     MPI_Comm_size(comm, &ds->nproc);
     ds->current_step = -1;
@@ -872,6 +876,49 @@ int adios_read_dataspaces_close (ADIOS_FILE *fp)
     return 0;
 }
 
+int adios_read_dataspaces_peek_ahead (ADIOS_FILE *fp)
+{
+    struct dataspaces_data_struct * ds = 
+                (struct dataspaces_data_struct *) fp->fh;
+
+    log_debug("peek ahead from version %d of filename=%s, last available step %d\n", 
+              ds->current_step, fp->path, fp->last_step);
+
+    int offset[] = {0,0,0}, readsize[3] = {1,1,1};
+    int version_info_buf[2]; // 0: last version, 1: terminated?
+    int err;
+    char ds_vname[MAX_DS_NAMELEN];
+    enum STEP_STATUS step_status = STEP_OK;
+    snprintf(ds_vname, MAX_DS_NAMELEN, "VERSION@%s",fp->path);
+
+    log_debug("   rank %d: dspaces_get %s\n", ds->mpi_rank, ds_vname);
+    readsize[0] = 2; //*sizeof(int); // VERSION%name is 2 integers only
+    err = adios_read_dataspaces_get (ds_vname, adios_integer, 0, ds->mpi_rank, 1, 0, 
+            offset, readsize, version_info_buf);
+
+    if (!err) {
+        int last_version = version_info_buf[0];
+        int terminated = version_info_buf[1];
+        log_debug("   rank %d: version info: last=%d, terminated=%d\n", 
+                ds->mpi_rank, last_version, terminated);
+
+        fp->last_step = last_version; // update to new last_step
+        if (last_version <= fp->current_step) {
+            // we have no more new steps
+            if (terminated) {
+                // stream is gone, we read everything 
+                adios_error (err_end_of_stream, 
+                        "Stream '%s' has been terminated. No more steps available\n", fp->path);
+            } else {
+                // a next step may come 
+                adios_error (err_step_notready, 
+                        "No new step in stream '%s' is not yet available\n", fp->path);
+            }
+        }
+    }
+
+    return adios_errno;
+}
 
 int adios_read_dataspaces_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
 {
@@ -1211,7 +1258,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
     elemsize = common_read_type_size (var->type, var->value);
 
     // handle scalars first (no need to read from space again)
-    if (var->ndims == 0) { 
+    if (var->ndims == 0 && !var->hastime) { 
         if (r->data) {
             memcpy (r->data, var->value, elemsize);
             ds->chunk->data = r->data;

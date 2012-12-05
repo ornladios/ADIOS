@@ -116,33 +116,6 @@ Currently ADIOS uses the 1.6 version of the HDF5 API but it can be built and use
 with the 1.8.x version of the HDF5 library too. Use the option \verb+--with-hdf5=<path>+ 
 when configuring ADIOS.
 
-\subsection{PHDF5 (optional)}
-
-The transport method writing files in the Parallel HDF5 format is built only if 
-a parallel version of the HDF5 library is available. You need to use the 
-option \verb+--with-phdf5=<path>+ to build this transport method. 
-
-If you define Parallel HDF5 and do not define serial HDF5, then bp2h5 will be built 
-with the parallel library. 
-Note that if you build this transport method, ADIOS will depend on PHDF5 when you 
-link any application with ADIOS even if your application does not intend to 
-use this method. 
-If you have problems compiling ADIOS with PHDF5 due to missing flags or libraries, 
-you can define them using 
-
-\begin{lstlisting}
---with-phdf5-incdir=<path>,
---with-phdf5-libdir=<path> and 
---with-phdf5-libs=<link time flags and libraries>
-\end{lstlisting}
-
-\subsection{NetCDF-4 Parallel (optional)}
-
-The NC4 transport method writes files using the NetCDF-4 library which in turn 
-is based on the parallel HDF5 library. You need to use the option 
-\verb+--with-nc4par=<path>+ to build this transport method. 
-You also need to provide the parallel HDF5 library. 
-
 \subsection{Lustreapi (optional)}
 
 The Lustreapi library is used internally by \verb+MPI_LUSTRE+ and \verb+MPI_AMR+ method to 
@@ -154,7 +127,7 @@ Use the configuration option
 
 \subsection{Staging transport methods (optional)}
 
-In ADIOS 1.4.0, a transport method using the DataSpaces library (Rutgers University) 
+In ADIOS 1.4, a transport method using the DataSpaces library (Rutgers University) 
 is available for memory-to-memory transfer (staging) of data between two 
 applications. 
 
@@ -200,6 +173,37 @@ The DataSpaces model provides a separate server running on separate compute node
 \subsection{Read-only installation}
 
 If you just want the read API to be compiled for reading BP files, use the \verb+--disable-write+ option.
+
+\subsection{PHDF5 (optional)}
+
+The transport method writing files in the Parallel HDF5 format is built only if 
+a parallel version of the HDF5 library is available. You need to use the 
+option \verb+--with-phdf5=<path>+ to build this transport method. 
+
+Note: Do not expect better performance with ADIOS/PHDF5 than with PHDF5 itself. ADIOS does not write differently to a HDF5 formatted file, it simply uses PHDF5 function calls to write out data. Also good to know, that the method in ADIOS uses the collective function calls, that requires that every process participates in the writing of each variable. 
+
+If you define Parallel HDF5 and do not define serial HDF5, then bp2h5 will be built 
+with the parallel library. 
+Note that if you build this transport method, ADIOS will depend on PHDF5 when you 
+link any application with ADIOS even if your application does not intend to 
+use this method. 
+If you have problems compiling ADIOS with PHDF5 due to missing flags or libraries, 
+you can define them using 
+
+\begin{lstlisting}
+--with-phdf5-incdir=<path>,
+--with-phdf5-libdir=<path> and 
+--with-phdf5-libs=<link time flags and libraries>
+\end{lstlisting}
+
+\subsection{NetCDF-4 Parallel (optional)}
+
+The NC4 transport method writes files using the NetCDF-4 library which in turn 
+is based on the parallel HDF5 library. You need to use the option 
+\verb+--with-nc4par=<path>+ to build this transport method. 
+You also need to provide the parallel HDF5 library. 
+
+Note: Do not expect better performance with ADIOS/NC4 than with NC4 itself. ADIOS does not write differently to a HDF5 formatted file, it simply uses NC4 function calls to write out data. Also good to know, that this method requires that every process participates in the writing of each variable. 
 
 \section{Full Installation}
 

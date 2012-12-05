@@ -266,6 +266,11 @@ void list_free_read_request (read_request * h)
         n = h->next;
 
         free_selection (h->sel);
+        if (h->priv)
+        {
+            free (h->priv);
+            h->priv = 0;
+        }
         free (h);
         h = n;
     }
