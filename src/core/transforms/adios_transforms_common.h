@@ -18,9 +18,9 @@ enum ADIOS_TRANSFORM_TYPE
      adios_transform_unknown		= -1
     ,adios_transform_none			= 0
     ,adios_transform_identity		= 1
-    ,adios_transform_alacrity		= 2
-    ,adios_transform_compress		= 3
-    ,adios_transform_mloc			= 4
+    ,adios_transform_zlib			= 2
+	,adios_transform_bzip2			= 3
+	,adios_transform_szip			= 4
     ,num_adios_transform_types		= 5 // Not counting unknown; KEEP THIS UPDATED
 };
 

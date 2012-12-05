@@ -171,11 +171,9 @@ const struct {
     ,{ ""			, adios_transform_none }
 
     ,{ "identity"	, adios_transform_identity }
-
-    ,{ "alacrity"	, adios_transform_alacrity }
-    ,{ "indexed"	, adios_transform_alacrity }
-	,{ "compress"	, adios_transform_compress }
-	,{ "mloc"	, adios_transform_mloc }
+	,{ "zlib"		, adios_transform_zlib }
+	,{ "bzip2"		, adios_transform_bzip2 }
+	,{ "szip"		, adios_transform_szip }
 };
 const int NUM_ADIOS_TRANSFORM_NAMES = sizeof(ADIOS_TRANSFORM_NAMES)/sizeof(ADIOS_TRANSFORM_NAMES[0]);
 

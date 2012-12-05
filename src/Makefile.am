@@ -47,14 +47,14 @@ transforms_common_SOURCES = core/transforms/adios_transforms_common.c \
                             core/adios_subvolume.c
 
 transforms_read_method_SOURCES = transforms/adios_transform_identity_read.c \
-                                 transforms/adios_transform_mloc_read.c \
-                                 transforms/adios_transform_compress_read.c \
-                                 transforms/adios_transform_alacrity_read.c
+                                 transforms/adios_transform_zlib_read.c \
+								 transforms/adios_transform_bzip2_read.c \
+								 transforms/adios_transform_szip_read.c
 
 transforms_write_method_SOURCES = transforms/adios_transform_identity_write.c \
-                                  transforms/adios_transform_mloc_write.c \
-                                  transforms/adios_transform_compress_write.c \
-                                  transforms/adios_transform_alacrity_write.c
+                                  transforms/adios_transform_zlib_write.c \
+                                  transforms/adios_transform_bzip2_write.c \
+                                  transforms/adios_transform_szip_write.c 
 
 transforms_read_SOURCES = $(transforms_common_SOURCES) \
                           core/transforms/adios_transforms_read.c \

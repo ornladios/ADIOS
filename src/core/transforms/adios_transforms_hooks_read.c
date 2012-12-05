@@ -15,9 +15,9 @@
 
 DECLARE_TRANSFORM_READ_METHOD_UNIMPL(none);
 DECLARE_TRANSFORM_READ_METHOD(identity);
-DECLARE_TRANSFORM_READ_METHOD(alacrity);
-DECLARE_TRANSFORM_READ_METHOD(compress);
-DECLARE_TRANSFORM_READ_METHOD(mloc);
+DECLARE_TRANSFORM_READ_METHOD(zlib);
+DECLARE_TRANSFORM_READ_METHOD(bzip2);
+DECLARE_TRANSFORM_READ_METHOD(szip);
 
 // Transform read method registry
 adios_transform_read_method TRANSFORM_READ_METHODS[num_adios_transform_types];
@@ -29,10 +29,9 @@ void adios_transform_read_init() {
 
     REGISTER_TRANSFORM_READ_METHOD(none, adios_transform_none);
     REGISTER_TRANSFORM_READ_METHOD(identity, adios_transform_identity);
-    REGISTER_TRANSFORM_READ_METHOD(alacrity, adios_transform_alacrity);
-    REGISTER_TRANSFORM_READ_METHOD(compress, adios_transform_compress);
-    REGISTER_TRANSFORM_READ_METHOD(mloc, adios_transform_mloc);
-
+    REGISTER_TRANSFORM_READ_METHOD(zlib, adios_transform_zlib);
+	REGISTER_TRANSFORM_READ_METHOD(bzip2, adios_transform_bzip2);
+	REGISTER_TRANSFORM_READ_METHOD(szip, adios_transform_szip);
     adios_transforms_initialized = 1;
 }
 
