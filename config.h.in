@@ -17,6 +17,9 @@
 /* Define to 1 if your Fortran compiler doesn't accept -c and -o together. */
 #undef FC_NO_MINUS_C_MINUS_O
 
+/* Define if you have ALACRITY. */
+#undef HAVE_ALACRITY
+
 /* Define to 1 if you have the <Attributes.h> header file. */
 #undef HAVE_ATTRIBUTES_H
 
@@ -85,6 +88,9 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define if you have MLOC. */
+#undef HAVE_MLOC
 
 /* Define if you have the MPI library. */
 #undef HAVE_MPI
@@ -197,10 +203,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
-#undef LT_OBJDIR
-
 /* Datatap is disabled */
 #undef NO_DATATAP
 
@@ -221,9 +223,6 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
-
-/* Define to the home page for this package. */
-#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
