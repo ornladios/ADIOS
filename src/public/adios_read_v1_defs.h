@@ -27,6 +27,8 @@
 #define ADIOS_READ_METHOD_DATATAP ADIOS_READ_METHOD_DATATAP_V1
 #define ADIOS_READ_METHOD_BP_STAGED1 ADIOS_READ_METHOD_BP_STAGED1_V1
 
+#define adios_read_init adios_read_init_v1
+#define adios_read_finalize adios_read_finalize_v1
 #define adios_set_read_method adios_set_read_method_v1
 #define adios_fopen adios_fopen_v1
 #define adios_fopen adios_fopen_v1
