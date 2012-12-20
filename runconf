@@ -31,23 +31,23 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module load python
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
-    module load hdf5/1.8.5
+    module load hdf5/1.8.10
     SEQ_HDF5_DIR=$HDF5_DIR
     SEQ_HDF5_CLIB=$HDF5_CLIB
     module unload hdf5
-    module load hdf5/1.8.5_par
+    module load hdf5/1.8.10_par
     PAR_HDF5_DIR=$HDF5_DIR
     PAR_HDF5_CLIB=$HDF5_CLIB
     module unload hdf5
     # Seq. and Parallel NetCDF 4 
-    module load netcdf/4.1.1
-    SEQ_NC_DIR=$NETCDF_DIR
-    SEQ_NC_CLIB=$NETCDF_CLIB
-    module unload netcdf
-    module load netcdf/4.1.1_par
-    PAR_NC_DIR=$NETCDF_DIR
-    PAR_NC_CLIB=$NETCDF_CLIB
-    module unload netcdf
+    #module load netcdf/4.1.1
+    #SEQ_NC_DIR=$NETCDF_DIR
+    #SEQ_NC_CLIB=$NETCDF_CLIB
+    #module unload netcdf
+    #module load netcdf/4.1.1_par
+    #PAR_NC_DIR=$NETCDF_DIR
+    #PAR_NC_CLIB=$NETCDF_CLIB
+    #module unload netcdf
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
@@ -73,7 +73,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/sith.$TARGET \
+    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/sith.$TARGET \
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre=/usr/lib64 \
@@ -109,10 +109,10 @@ elif [ `hostname | cut -c 1-4` == "yona" ]; then
     module unload PE-intel
     module unload PE-pathscale
     module unload pgi gcc intel pathscale
-    module unload python
+    #module unload python
     module load PE-$TARGET
     module load mxml
-    module load python
+    #module load python
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
     module load hdf5/1.8.5
@@ -180,9 +180,15 @@ elif [ `hostname | cut -c 1-4` == "yona" ]; then
 
 
 elif [ `hostname | cut -c 1-4` == "lens" ]; then
-    TARGET=pgi
-    echo "Configure on LENS for $TARGET env."
     source /etc/profile.d/modules.sh
+    source /etc/profile.d/modules.sh
+    TARGET=`module list 2>&1 | grep "PE"- | sed "s/^.*PE-\([a-z]*\).*/\1/"`
+
+    if [ -z "$TARGET" ]; then
+        echo "Cannot determine Programming environment. Exit"
+        exit 1
+    fi
+    echo "Configure on LENS for $TARGET env."
     module unload hdf5
     module unload netcdf
     module unload PE-gnu
@@ -190,6 +196,7 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
     module unload PE-pathscale
     module unload pgi
     module load PE-$TARGET
+    module load mxml
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
     #module load hdf5/1.8.2
@@ -220,11 +227,11 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
     fi
 
     export CFLAGS="-g -fPIC"
-    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/sith.$TARGET \
+    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/lens.$TARGET \
         --enable-dependency-tracking \
-        --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
         --enable-research-transports  \
         --without-datatap
+        #--with-mxml=/ccs/proj/e2e/pnorbert/mxml \
 
 
 elif [ `hostname | cut -c 1-8` == "jaguarpf" ]; then
