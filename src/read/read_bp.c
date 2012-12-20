@@ -1363,11 +1363,6 @@ void adios_read_bp_release_step (ADIOS_FILE *fp)
 ADIOS_VARINFO * adios_read_bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 {
     ADIOS_VARINFO * varinfo;
-    if (varid < 0 || varid >= fp->nvars)
-    {
-        adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)\n", varid, fp->nvars);
-        return 0;
-    }
 
     int mapped_id = map_req_varid (fp, varid);;
 
