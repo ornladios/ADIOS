@@ -123,6 +123,25 @@ int write_group (int step)
     } \
     adios_free_varinfo (vi);
 
+#define CHECK_ATTR(ATTRNAME, VAL) \
+    vi = adios_get_attr (f, ATTRNAME, atype, asize); \
+    if (vi == NULL) { \
+        printE ("No such variable " VARNAME "\n"); \
+        err = 101; \
+        goto endread; \
+    } \
+    if (vi->ndim != NDIM) { \
+        printE ("Variable " VARNAME " has %d dimensions, but expected %d\n", vi->ndim, NDIM); \
+        err = 102; \
+        goto endread; \
+    } \
+    if (vi->nsteps != NSTEPS) { \
+        printE ("Variable " VARNAME " has %d steps, but expected %d\n", vi->nsteps, NSTEPS); \
+        err = 103; \
+        /*goto endread; */\
+    } \
+    adios_free_varinfo (vi);
+
 #define CHECK_SCALAR(VARNAME, VAR, VALUE, STEP) \
     if (VAR != VALUE) { \
         printE (#VARNAME " step %d: wrote %d but read %d\n",STEP,VALUE,VAR);\
@@ -250,7 +269,7 @@ int read_by_group ()
     CHECK_VARINFO("b0", 0, 1)
 
     log ("  Check variables b0...\n");
-    adios_schedule_read (f, sel0, "a0",  0, 1, &rb);
+    adios_schedule_read (f, sel0, "b0",  0, 1, &rb);
     adios_perform_reads (f, 1);
 
     CHECK_SCALAR (b0,  rb,  1, i)
