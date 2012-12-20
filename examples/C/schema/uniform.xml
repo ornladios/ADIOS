@@ -28,8 +28,7 @@
          - dimensions,
          - origin (first point), and
          - spacing
-    Note:  Values can be scalars or variable names. For nD physical space, 
-    reader will expect n coordinates for the first point.
+    Note: For an n-dimensional variable reader will expect n coordinates for origin.
     In this case, the spacing is uniform in both direction, so only one value
     is provided. Otherwise, use spacing value="S1,S2" as shown in Mesh 3.
     -->
@@ -42,11 +41,8 @@
     <!-- Mesh 3:
          - dimensions,
          - origin (first point), and 
-         - maximum (last point)
-    Note: Values can be scalars or variable names. For nD physical space, 
-    reader will expect n coordinates for both points.
-    "size-2" is a variable name in ADIOS XML, so a variable with such name
-    must be written
+         - spacing different in each dimension
+    Note: Values can be scalars or variable names. 
     -->
     <mesh name="mesh3" type="uniform" time-varying="no">
         <dimensions value="size,NX" />
@@ -58,10 +54,8 @@
          - dimensions,
          - origin (first point), and 
          - maximum (last point)
-    Note: Values can be scalars or variable names. For nD physical space, 
-    reader will expect n coordinates for both points.
-    "size-2" is a variable name in ADIOS XML, so a variable with such name
-    must be written
+    Note: "size-2" is a variable name in ADIOS XML, so a variable with such name
+    must be written by the application
     -->
     <mesh name="mesh4" type="uniform" time-varying="no">
         <dimensions value="40,60" />
