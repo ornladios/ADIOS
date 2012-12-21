@@ -77,13 +77,13 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre=/usr/lib64 \
+        --with-hdf5=${SEQ_HDF5_DIR} \
+        --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         $WITHDART 
         #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--enable-shared --disable-static
         #--without-datatap #--without-infiniband
-        #--with-hdf5=${SEQ_HDF5_DIR} \
-        #--with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         #--with-phdf5=${PAR_HDF5_DIR} \
         #--with-phdf5-libs="${PAR_HDF5_CLIB}" \
         #--with-netcdf=${SEQ_NC_DIR} \
@@ -199,13 +199,13 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
     module load mxml
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
-    #module load hdf5/1.8.2
+    module load hdf5/1.8.6
     SEQ_HDF5_DIR=$HDF5_DIR
     SEQ_HDF5_CLIB=$HDF5_CLIB
-    #module unload hdf5
-    #module load hdf5/1.8.2_par
-    PAR_HDF5_DIR=$HDF5_DIR
-    PAR_HDF5_CLIB=$HDF5_CLIB
+    module unload hdf5
+    #module load hdf5/1.8.6_ompi1.4.2
+    #PAR_HDF5_DIR=$HDF5_DIR
+    #PAR_HDF5_CLIB=$HDF5_CLIB
     #module unload hdf5
     # Seq NetCDF 3 for bp2ncd
     #module load netcdf/3.6.2
@@ -230,6 +230,8 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
     ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/lens.$TARGET \
         --enable-dependency-tracking \
         --enable-research-transports  \
+        --with-hdf5=${SEQ_HDF5_DIR} \
+        --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         --without-datatap
         #--with-mxml=/ccs/proj/e2e/pnorbert/mxml \
 
