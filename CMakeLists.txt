@@ -151,19 +151,19 @@ endif(MPI_LIBRARIES AND MPI_INCLUDE_PATH)
 endif(MPI_FOUND)
 
 # Define to 1 if you have the <mxml.h> header file.
-find_path(MXML_INCLUDE_DIR NAMES mxml.h PATHS ${MXML_DIR}/include)
-if(NOT MXML_INCLUDE_DIR_NOTFOUND)
-  message(STATUS "find mxml header")
+find_path(MXML_INCLUDE_DIR NAMES mxml.h PATHS $ENV{MXML_DIR}/include)
+if(NOT MXML_INCLUDE_DIR-NOTFOUND)
+  message("find mxml header")
   set(HAVE_MXML_H 1)
   include_directories(${MXML_INCLUDE_DIR})
   set(MXML_CPPFLAGS "-I${MXML_INCLUDE_DIR}")
   set(CPPFLAGS "${CPPFLAGS} ${MXML_CPPFLAGS}")
-endif(NOT MXML_INCLUDE_DIR_NOTFOUND)
+endif(NOT MXML_INCLUDE_DIR-NOTFOUND)
 
 # Define if you have the MXML.
 # MXML: /sw/analysis-x64/mxml/2.6/centos5.5_pgi10./9
 set(HAVE_MXML 0)
-find_library(MXML_LIBS NAMES mxml PATHS ${MXML_DIR}/lib)
+find_library(MXML_LIBS NAMES mxml PATHS $ENV{MXML_DIR}/lib)
 if(MXML_LIBS)
   message(STATUS "find mxml library")
 endif()
