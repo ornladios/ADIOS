@@ -1,23 +1,23 @@
 add_subdirectory(gpp)
 add_subdirectory(bpdump)
-add_subdirectory(bp2ascii)
-add_subdirectory(bpsplit)
-add_subdirectory(bpls)
+#add_subdirectory(bp2ascii)
+#add_subdirectory(bpsplit)
+#add_subdirectory(bpls)
 
 if(BUILD_WRITE)
-  add_subdirectory(adios_lint)
-  add_subdirectory(bp2bp)
+#  add_subdirectory(adios_lint)
+#  add_subdirectory(bp2bp)
 endif(BUILD_WRITE)
 
 if(HAVE_HDF5)
-  add_subdirectory(bp2h5)
+#  add_subdirectory(bp2h5)
 endif(HAVE_HDF5)
 
 if(HAVE_NETCDF)
-  add_subdirectory(bp2ncd)
+#  add_subdirectory(bp2ncd)
 endif(HAVE_NETCDF)
 
-add_subdirectory(skel)
+#add_subdirectory(skel)
 
 
 #find_library(ADIOS_INTERNAL_NOMPI_LIB adios_internal_nompi ${PROJECT_BINARY_DIR}/src)

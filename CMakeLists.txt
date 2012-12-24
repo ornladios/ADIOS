@@ -153,7 +153,7 @@ endif(MPI_FOUND)
 # Define to 1 if you have the <mxml.h> header file.
 find_path(MXML_INCLUDE_DIR NAMES mxml.h PATHS $ENV{MXML_DIR}/include)
 if(NOT MXML_INCLUDE_DIR-NOTFOUND)
-  message("find mxml header")
+  message(STATUS "find mxml header")
   set(HAVE_MXML_H 1)
   include_directories(${MXML_INCLUDE_DIR})
   set(MXML_CPPFLAGS "-I${MXML_INCLUDE_DIR}")
@@ -599,6 +599,6 @@ endif()
 
 add_subdirectory(tests)
 add_subdirectory(utils)
-add_subdirectory(examples)
+#add_subdirectory(examples)
 #set_source_files_properties
 ############################### end of top CMakeLists.txt ###############################

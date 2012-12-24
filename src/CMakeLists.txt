@@ -441,7 +441,7 @@ if(HAVE_DMALLOC)
   set(libadiosread_nompi_a_CPPFLAGS "${libadiosread_nompi_a_CPPFLAGS} -DDMALLOC") 
 endif(HAVE_DMALLOC)
 
-include_directories(${include_HEADERS})
+#include_directories(${include_HEADERS})
 add_library(adiosread STATIC ${libadiosread_a_SOURCES})
 set_target_properties(adiosread PROPERTIES COMPILE_FLAGS "${libadiosread_a_CPPFLAGS} ${libadiosread_a_CFLAGS}")
 
