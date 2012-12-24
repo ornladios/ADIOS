@@ -6,7 +6,7 @@ add_subdirectory(bpls)
 
 if(BUILD_WRITE)
   add_subdirectory(adios_lint)
-#  add_subdirectory(bp2bp)
+  add_subdirectory(bp2bp)
 endif(BUILD_WRITE)
 
 if(HAVE_HDF5)
