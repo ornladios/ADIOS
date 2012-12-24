@@ -600,6 +600,6 @@ endif()
 
 add_subdirectory(tests)
 add_subdirectory(utils)
-#add_subdirectory(examples)
+add_subdirectory(examples)
 #set_source_files_properties
 ############################### end of top CMakeLists.txt ###############################
