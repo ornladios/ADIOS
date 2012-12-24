@@ -10,14 +10,14 @@ if(BUILD_WRITE)
 endif(BUILD_WRITE)
 
 if(HAVE_HDF5)
-#  add_subdirectory(bp2h5)
+  add_subdirectory(bp2h5)
 endif(HAVE_HDF5)
 
 if(HAVE_NETCDF)
-#  add_subdirectory(bp2ncd)
+  add_subdirectory(bp2ncd)
 endif(HAVE_NETCDF)
 
-#add_subdirectory(skel)
+add_subdirectory(skel)
 
 
 #find_library(ADIOS_INTERNAL_NOMPI_LIB adios_internal_nompi ${PROJECT_BINARY_DIR}/src)
