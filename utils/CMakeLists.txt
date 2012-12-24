@@ -1,11 +1,11 @@
 add_subdirectory(gpp)
 add_subdirectory(bpdump)
-#add_subdirectory(bp2ascii)
-#add_subdirectory(bpsplit)
-#add_subdirectory(bpls)
+add_subdirectory(bp2ascii)
+add_subdirectory(bpsplit)
+add_subdirectory(bpls)
 
 if(BUILD_WRITE)
-#  add_subdirectory(adios_lint)
+  add_subdirectory(adios_lint)
 #  add_subdirectory(bp2bp)
 endif(BUILD_WRITE)
 

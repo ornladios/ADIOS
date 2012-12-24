@@ -15,8 +15,9 @@ set(datadir ${prefix}/share)
 set(libdir ${exec_prefix}/lib)
 set(includedir ${prefix}/include)
 
-#option(PHDF5 "PHDF5" OFF)
-#option(LUSTRE "LUSTRE" OFF)
+option(PHDF5 "PHDF5" OFF)
+option(LUSTRE "LUSTRE" OFF)
+option(BUILD_WRITE "BUILD_WRITE" ON)
 
 set(LIBS "")
 set(CPPFLAGS "-DMPICH_IGNORE_CXX_SEEK")
@@ -80,6 +81,20 @@ CHECK_FUNCTION_EXISTS(fdatasync HAVE_FDATASYNC)
 # Define to 1 if you have the `gettimeofday' function.
 CHECK_FUNCTION_EXISTS(gettimeofday HAVE_GETTIMEOFDAY)
 
+# Define if you have the MPI library.
+set(HAVE_MPI 0)
+find_package(MPI)
+if(MPI_FOUND)
+  if(MPI_LIBRARIES AND MPI_INCLUDE_PATH)
+    message(STATUS "find MPI library and header")
+    set (HAVE_MPI 1)
+    set(MPILIBS ${MPI_LIBRARIES})
+#    set(MPILIBS "-lmpi")
+    include_directories(${MPI_INCLUDE_PATH})
+    set(LIBS ${MPILIBS})
+endif(MPI_LIBRARIES AND MPI_INCLUDE_PATH)
+endif(MPI_FOUND)
+
 # Define to 1 if you have the <hdf5.h> header file.
 if(HDF5)
 # Define if you have HDF5.
@@ -135,20 +150,6 @@ endif(LUSTRE)
 
 # Define to 1 if you have the <memory.h> header file.
 CHECK_INCLUDE_FILES(memory.h HAVE_MEMORY_H)
-
-# Define if you have the MPI library.
-set(HAVE_MPI 0)
-find_package(MPI)
-if(MPI_FOUND)
-  if(MPI_LIBRARIES AND MPI_INCLUDE_PATH)
-    message(STATUS "find MPI library and header")
-    set (HAVE_MPI 1)
-#    set(MPILIBS ${MPI_LIBRARIES})
-    set(MPILIBS "-lmpi")
-    include_directories(${MPI_INCLUDE_PATH})
-    set(LIBS "${LIBS} ${MPILIBS}")  
-endif(MPI_LIBRARIES AND MPI_INCLUDE_PATH)
-endif(MPI_FOUND)
 
 # Define to 1 if you have the <mxml.h> header file.
 find_path(MXML_INCLUDE_DIR NAMES mxml.h PATHS $ENV{MXML_DIR}/include)
@@ -381,7 +382,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${PROJECT_SOURCE_DIR}/
 # adios_config will contain flags for users' code linking based on these flags
 # EXTRA flags are used for compiling adios stuff, which need not go into adios_config for user codes
 set(ADIOSLIB_EXTRA_CPPFLAGS "-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE")
-set(ADIOSLIB_LDADD "m ${MXML_LIBS}")
+set(ADIOSLIB_LDADD "${MXML_LIBS}")
 set(ADIOSLIB_CFLAGS "")
 set(ADIOSLIB_CPPFLAGS "${MXML_CPPFLAGS}")
 set(ADIOSLIB_SEQ_CPPFLAGS "-D_NOMPI ${MXML_CPPFLAGS}")

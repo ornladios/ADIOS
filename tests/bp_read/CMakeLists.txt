@@ -10,11 +10,11 @@ set(bp_read_c_CPPFLAGS "-DADIOS_USE_READ_API_1 ${ADIOSLIB_CPPFLAGS}")
 set(bp_read_c_CFLAGS "${ADIOSLIB_CFLAGS}")
 
 add_executable(genbp genbp.c)
-target_link_libraries(genbp ${ADIOS_LIB} ${ADIOSREAD_LIB} ${ADIOSLIB_LDADD})
+target_link_libraries(genbp ${ADIOS_LIB} ${ADIOSREAD_LIB} ${ADIOSLIB_LDADD} ${MPI_LIBRARIES})
 set_target_properties(genbp PROPERTIES COMPILE_FLAGS "${genbp_CPPFLAGS} ${genbp_CFLAGS}")
 
 add_executable(bp_read_c bp_read_c.c)
-target_link_libraries(bp_read_c ${ADIOSREAD_LIB} ${ADIOSREADLIB_LDADD})
+target_link_libraries(bp_read_c ${ADIOSREAD_LIB} ${ADIOSREADLIB_LDADD} ${MPI_LIBRARIES})
 set_target_properties(bp_read_c PROPERTIES COMPILE_FLAGS "${bp_read_c_CPPFLAGS} ${bp_read_c_CFLAGS}")
 
 if(BUILD_FORTRAN)
