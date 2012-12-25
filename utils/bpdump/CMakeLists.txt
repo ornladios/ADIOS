@@ -7,4 +7,4 @@ add_executable(bpdump bpdump.c)
 # Why pthread?
 target_link_libraries(bpdump ${ADIOS_INTERNAL_NOMPI_LIB} ${ADIOSLIB_INT_LDADD} "pthread")
 
-install(FILES bpdump DESTINATION ${PROJECT_BINARY_DIR}/bin)
+install(FILES bpdump DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

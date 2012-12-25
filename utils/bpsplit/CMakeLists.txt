@@ -12,6 +12,5 @@ target_link_libraries(bpappend ${ADIOS_INTERNAL_NOMPI_LIB} ${ADIOSLIB_INT_LDADD}
 add_executable(bpgettime bpgettime.c)
 target_link_libraries(bpgettime ${ADIOS_INTERNAL_NOMPI_LIB} ${ADIOSLIB_INT_LDADD} "pthread")
 
-install(FILES bpsplit bpappend bpgettime DESTINATION
-${PROJECT_BINARY_DIR}/bin)
+install(FILES bpsplit bpappend bpgettime DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 

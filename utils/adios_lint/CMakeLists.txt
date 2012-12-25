@@ -6,5 +6,4 @@ link_directories(${PROJECT_BINARY_DIR}/lib)
 add_executable(adios_lint adios_lint.c)
 target_link_libraries(adios_lint ${ADIOS_INTERNAL_NOMPI_LIB} ${ADIOSLIB_INT_LDADD} "pthread")
 
-install(FILES adios_lint DESTINATION
-${PROJECT_BINARY_DIR}/bin)
+install(FILES adios_lint DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
