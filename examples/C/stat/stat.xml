@@ -12,6 +12,8 @@
 
 <method group="temperature" method="MPI"/>
 <buffer size-MB="5" allocate-time="now"/>
-<analysis adios-group="temperature" var="temperature" break-points="0, 100, 1000, 10000" />
+<!--temporarily disabled the following because the support for histogram has yet to
+be implemented for the new read API. -->
+<!--analysis adios-group="temperature" var="temperature" break-points="0, 100, 1000, 10000" /-->
 </adios-config>
 
