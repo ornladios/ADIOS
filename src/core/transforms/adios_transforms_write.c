@@ -543,11 +543,11 @@ uint64_t adios_transform_calc_transform_characteristic_overhead(struct adios_var
     if (var->transform_type == adios_transform_none) {
         return 0; // No overhead needed, since characteristic won't be written
     } else {
-        return 1 +	// For characterstic flag
-               1 +	// For transform_type field
+        return 1 +    // For characterstic flag
+               1 +    // For transform_type field
                1 +  // For pre_transform_type field
                adios_calc_var_characteristics_dims_overhead(var->pre_transform_dimensions) + // For pre-transform dimensions field
-               2 +	// For transform_metadata_len
-               var->transform_metadata_len;	// For transform_metadata
+               2 +    // For transform_metadata_len
+               var->transform_metadata_len;    // For transform_metadata
     }
 }

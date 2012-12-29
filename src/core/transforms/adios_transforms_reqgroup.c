@@ -32,15 +32,15 @@
 // Generic list manipulation
 // Assumes the list node struct has a ->next field
 
-#define LIST_APPEND(head, elem, elem_type) 		\
-    if (!(head)) {								\
-        (head) = (elem);						\
-    } else {									\
-        elem_type *_cur = (head);    	    	\
-        while (_cur->next)						\
-            _cur = _cur->next;					\
-        _cur->next = (elem);					\
-    }											\
+#define LIST_APPEND(head, elem, elem_type)         \
+    if (!(head)) {                                \
+        (head) = (elem);                        \
+    } else {                                    \
+        elem_type *_cur = (head);                \
+        while (_cur->next)                        \
+            _cur = _cur->next;                    \
+        _cur->next = (elem);                    \
+    }                                            \
 
 
 #define LIST_REMOVE(head, elem, elem_type, removed) \
@@ -49,29 +49,29 @@
 #define LIST_REMOVE_KEY(head, key, keyfield, elem_type, removed) \
     LIST_REMOVE_PRED(head, (_cur->keyfield == (key)), elem_type, removed)
 
-#define LIST_REMOVE_PRED(head, pred, elem_type, removed)	\
-    if (!(head)) {									\
-        removed = 0;								\
-    } else {										\
-        elem_type *_prev = NULL;					\
-        elem_type *_cur = (head);					\
-        while (_cur) {								\
-            if (pred)								\
-                break;								\
-            _prev = _cur;							\
-            _cur = _cur->next;						\
-        }											\
-        if (!_cur) {								\
-            removed = NULL;							\
-        } else {									\
-            if (!_prev) {							\
-                (head) = (head)->next;				\
-            } else {								\
-                _prev->next = _cur->next;			\
-            }										\
-            _cur->next = NULL;						\
-            removed = _cur;							\
-        }											\
+#define LIST_REMOVE_PRED(head, pred, elem_type, removed)    \
+    if (!(head)) {                                    \
+        removed = 0;                                \
+    } else {                                        \
+        elem_type *_prev = NULL;                    \
+        elem_type *_cur = (head);                    \
+        while (_cur) {                                \
+            if (pred)                                \
+                break;                                \
+            _prev = _cur;                            \
+            _cur = _cur->next;                        \
+        }                                            \
+        if (!_cur) {                                \
+            removed = NULL;                            \
+        } else {                                    \
+            if (!_prev) {                            \
+                (head) = (head)->next;                \
+            } else {                                \
+                _prev->next = _cur->next;            \
+            }                                        \
+            _cur->next = NULL;                        \
+            removed = _cur;                            \
+        }                                            \
     }
 
 static int common_adios_selection_equal(ADIOS_SELECTION *sel1, ADIOS_SELECTION *sel2) {
@@ -99,7 +99,7 @@ static int common_adios_selection_equal(ADIOS_SELECTION *sel1, ADIOS_SELECTION *
 
 adios_transform_read_subrequest * adios_transform_new_subreq(ADIOS_SELECTION *sel, void *data) {
     adios_transform_read_subrequest *new_subreq = malloc(sizeof(adios_transform_read_subrequest));
-    new_subreq->sel = sel;
+    new_subreq->raw_sel = sel;
     new_subreq->data = data;
     new_subreq->completed = 0;
     new_subreq->transform_internal = 0;
@@ -129,6 +129,7 @@ adios_transform_read_subrequest * adios_transform_new_subreq_byte_segment(const 
 }
 
 adios_transform_read_subrequest * adios_transform_new_subreq_whole_pg(const ADIOS_VARBLOCK *raw_varblock, void *data) {
+    // raw_varblock has two dimensions: PG ID and byte offset. Thus, the length of this (raw) PG is the length of the 2nd dimension.
     return adios_transform_new_subreq_byte_segment(raw_varblock, 0, raw_varblock->count[1], data);
 }
 
@@ -156,7 +157,7 @@ void adios_transform_free_subreq(adios_transform_read_subrequest **subreq_ptr) {
     assert(!subreq->next); // Not a perfect check, but will catch many requests that are still linked
 
     // Free malloc'd resources
-    common_read_selection_delete(subreq->sel);
+    common_read_selection_delete(subreq->raw_sel);
     MYFREE(subreq->data);
     MYFREE(subreq->transform_internal);
 
@@ -216,7 +217,7 @@ int adios_transform_pg_reqgroup_find_subreq(const adios_transform_pg_reqgroup *p
         if (skip_completed && cur->completed)
             continue;
 
-        if (common_adios_selection_equal(cur->sel, chunk->sel))
+        if (common_adios_selection_equal(cur->raw_sel, chunk->sel))
             break;
     }
 
@@ -261,7 +262,7 @@ void adios_transform_free_pg_reqgroup(adios_transform_pg_reqgroup **pg_reqgroup_
         common_read_selection_delete(pg_reqgroup->intersection_global);
     if (pg_reqgroup->pg_bounds_global)
         common_read_selection_delete(pg_reqgroup->pg_bounds_global);
-    adios_copyspec_free(&pg_reqgroup->pg_intersection_to_global_copyspec, 1);
+    adios_copyspec_free((adios_subvolume_copy_spec **)&pg_reqgroup->pg_intersection_to_global_copyspec, 1);
     MYFREE(pg_reqgroup->transform_internal);
 
     // Clear all data to 0's for safety
@@ -323,7 +324,7 @@ adios_transform_pg_reqgroup * adios_transform_read_reqgroup_pop_pg_reqgroup(adio
         return NULL;
 }
 
-int adios_transform_read_reqgroup_find_subreq(const adios_transform_read_reqgroup *reqgroup, const ADIOS_VARCHUNK *chunk, int skip_completed,
+int adios_transform_read_reqgroup_find_subreq(adios_transform_read_reqgroup *reqgroup, const ADIOS_VARCHUNK *chunk, int skip_completed,
                                               adios_transform_pg_reqgroup **matching_pg_reqgroup, adios_transform_read_subrequest **matching_subreq) {
     adios_transform_pg_reqgroup *cur;
 
@@ -352,7 +353,7 @@ int adios_transform_read_reqgroup_find_subreq(const adios_transform_read_reqgrou
     return found;
 }
 
-int adios_transform_read_reqgroups_find_subreq(const adios_transform_read_reqgroup *reqgroup_head,
+int adios_transform_read_reqgroups_find_subreq(adios_transform_read_reqgroup *reqgroup_head,
                                                const ADIOS_VARCHUNK *chunk, int skip_completed,
                                                adios_transform_read_reqgroup **matching_reqgroup,
                                                adios_transform_pg_reqgroup **matching_pg_reqgroup,

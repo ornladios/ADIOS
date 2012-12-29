@@ -15,13 +15,15 @@
 #include "public/adios_types.h"
 
 typedef struct _adios_transform_read_subrequest {
-    int				completed;
+    int             completed;
 
-    ADIOS_SELECTION *sel;
-    void 			*data;
+    ADIOS_SELECTION *raw_sel; // The raw selection to pose to the read layer
+    void            *data;
 
-    void 			*transform_internal;
+    // Transform plugin private
+    void            *transform_internal;
 
+    // Linked list
     struct _adios_transform_read_subrequest *next;
 } adios_transform_read_subrequest;
 
@@ -29,12 +31,12 @@ typedef struct _adios_transform_pg_reqgroup {
     int completed;
 
     // PG information
-    int timestep;						// The timestep to which this PG belongs
-    int timestep_blockidx;				// The block ID of this PG within the timestep
-    int blockidx;						// The block ID of this PG within the variable
-    uint64_t raw_var_length;			// Transformed variable data length, in bytes
-    const ADIOS_VARBLOCK *raw_varblock;	// Points into adios_transform_read_reqgroup->varinfo->blockinfo; do not free here
-    const ADIOS_VARBLOCK *orig_varblock;// Points into adios_transform_read_reqgroup->transinfo->orig_blockinfo; do not free here
+    int timestep;                        // The timestep to which this PG belongs
+    int timestep_blockidx;               // The block ID of this PG within the timestep
+    int blockidx;                        // The block ID of this PG within the variable
+    uint64_t raw_var_length;             // Transformed variable data length, in bytes
+    const ADIOS_VARBLOCK *raw_varblock;  // Points into adios_transform_read_reqgroup->varinfo->blockinfo; do not free here
+    const ADIOS_VARBLOCK *orig_varblock; // Points into adios_transform_read_reqgroup->transinfo->orig_blockinfo; do not free here
 
     // Various selections to aid in datablock construction
     const ADIOS_SELECTION *intersection_pg_rel;
@@ -51,24 +53,27 @@ typedef struct _adios_transform_pg_reqgroup {
     // Transform plugin private
     void *transform_internal;
 
+    // Linked list
     struct _adios_transform_pg_reqgroup *next;
 } adios_transform_pg_reqgroup;
 
 typedef struct _adios_transform_read_reqgroup {
     int completed;
-    ADIOS_VARCHUNK *lent_varchunk;
+    ADIOS_VARCHUNK *lent_varchunk;    // varchunk owned by the common read layer (the transform code,
+                                      // specifically), which was lent to the user as a VARCHUNK.
 
-    const ADIOS_FILE      	*fp;
+    const ADIOS_FILE        *fp;
 
-    const ADIOS_VARINFO 	*raw_varinfo;
-    const ADIOS_TRANSINFO	*transinfo;
-    enum ADIOS_FLAG 		swap_endianness;
+    const ADIOS_VARINFO     *raw_varinfo;
+    const ADIOS_TRANSINFO   *transinfo;
+    enum ADIOS_FLAG         swap_endianness;
 
-    int						from_steps;
+    int                     from_steps;
     int                     nsteps;
-    const ADIOS_SELECTION 	*orig_sel; // Global space
-    void                  	*orig_data;
-    uint64_t 				orig_sel_timestep_size; // Number of bytes in orig_data per timestep
+    const ADIOS_SELECTION   *orig_sel;  // Global space
+    void                    *orig_data; // User buffer supplied in schedule_reads (could be NULL)
+
+    uint64_t                orig_sel_timestep_size; // Number of bytes in orig_data per timestep
 
     int num_pg_reqgroups;
     int num_completed_pg_reqgroups;
@@ -76,6 +81,7 @@ typedef struct _adios_transform_read_reqgroup {
 
     void *transform_internal;
 
+    // Linked list
     struct _adios_transform_read_reqgroup *next;
 } adios_transform_read_reqgroup;
 
@@ -111,10 +117,10 @@ adios_transform_read_reqgroup * adios_transform_new_read_reqgroup(const ADIOS_FI
 void adios_transform_read_reqgroup_append_pg_reqgroup(adios_transform_read_reqgroup *reqgroup, adios_transform_pg_reqgroup *pg_reqgroup);
 int adios_transform_read_reqgroup_remove_pg_reqgroup(adios_transform_read_reqgroup *reqgroup, adios_transform_pg_reqgroup *pg_reqgroup);
 adios_transform_pg_reqgroup * adios_transform_read_reqgroup_pop_pg_reqgroup(adios_transform_read_reqgroup *reqgroup);
-int adios_transform_read_reqgroup_find_subreq(const adios_transform_read_reqgroup *reqgroup, const ADIOS_VARCHUNK *chunk, int skip_completed,
+int adios_transform_read_reqgroup_find_subreq(adios_transform_read_reqgroup *reqgroup, const ADIOS_VARCHUNK *chunk, int skip_completed,
                                               adios_transform_pg_reqgroup **matching_pg_reqgroup, adios_transform_read_subrequest **matching_subreq);
 
-int adios_transform_read_reqgroups_find_subreq(const adios_transform_read_reqgroup *reqgroup_head,
+int adios_transform_read_reqgroups_find_subreq(adios_transform_read_reqgroup *reqgroup_head,
                                                const ADIOS_VARCHUNK *chunk, int skip_completed,
                                                adios_transform_read_reqgroup **matching_reqgroup,
                                                adios_transform_pg_reqgroup **matching_pg_reqgroup,

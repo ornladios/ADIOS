@@ -6,6 +6,7 @@
 
 PREFIX=/ccs/home/daboyuka/build
 ALAC_PATH=`readlink -f ~/alacrity-new`
+TARGET=gnu
 if [ `hostname | cut -c 1-4` == "sith" ]; then
 
     ########
@@ -73,7 +74,8 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --enable-dependency-tracking \
         --with-lustre=/usr \
         --without-datatap \
-	--with-alacrity=$ALAC_PATH
+	--with-alacrity=$ALAC_PATH \
+        --with-zlib=/usr
 	#--without-infiniband
         #--with-hdf5=${SEQ_HDF5_DIR} \
         #--with-hdf5-libs="${SEQ_HDF5_CLIB}" \
@@ -173,7 +175,7 @@ elif [ `hostname | cut -c 1-4` == "yona" ]; then
 
 
 elif [ `hostname | cut -c 1-4` == "lens" ]; then
-    TARGET=pgi
+    #TARGET=pgi
     echo "Configure on LENS for $TARGET env."
     source /etc/profile.d/modules.sh
     module unload hdf5
@@ -213,12 +215,13 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
     fi
 
     export CFLAGS="-g -fPIC"
-    ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/sith.$TARGET \
+    ./configure --prefix=$PREFIX/lens/adios-$TARGET \
         --enable-dependency-tracking \
-        --with-mxml=/ccs/proj/e2e/pnorbert/mxml \
+        --with-mxml=${MXML_DIR} \
         --enable-research-transports  \
         --without-datatap \
-        --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.lens.$TARGET
+        --with-zlib=/usr
+        #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.lens.$TARGET
 
 
 elif [ `hostname | cut -c 1-7` == "chester" ]; then

@@ -10,7 +10,31 @@
 
 #include "public/adios_error.h"
 #include "public/adios_types.h"
-#include "adios_transforms_common.h"
 #include "adios_subvolume.h"
+#include "transforms/adios_transforms_common.h"
+#include "transforms/adios_transforms_reqgroup.h"
+
+enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE {
+    FULL_RESULT_MODE,
+    PARTIAL_RESULT_MODE
+};
+
+enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_reqgroup_get_result_mode(adios_transform_read_reqgroup *reqgroup);
+
+// Delegation functions
+adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADIOS_VARINFO *vi, const ADIOS_TRANSINFO* ti, const ADIOS_FILE *fp,
+                                                                       const ADIOS_SELECTION *sel, int from_steps, int nsteps, void *data);
+
+/*
+ * Processes a VARCHUNK just returned by the read layer against the given list of outstanding transform
+ * read requests.
+ */
+void adios_transform_process_read_chunk(adios_transform_read_reqgroup **reqgroups_head, ADIOS_VARCHUNK ** chunk);
+
+/*
+ * Processes all data after a blocking read that has serviced all read requests,
+ * completing all transform read requests
+ */
+void adios_transform_process_all_reads(adios_transform_read_reqgroup **reqgroups_head);
 
 #endif /* ADIOS_TRANSFORMS_READ_H_ */

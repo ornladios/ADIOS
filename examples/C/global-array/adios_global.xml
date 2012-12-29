@@ -5,12 +5,12 @@
     <var name="size" type="integer"/>
     <var name="rank" type="integer"/>
     <global-bounds dimensions="size,NX" offsets="rank,0">
-       <var name="temperature" gwrite="t" type="double" dimensions="1,NX"/>
+       <var name="temperature" gwrite="t" type="double" dimensions="1,NX" transform="identity"/>
     </global-bounds>
     <attribute name="description" path="/temperature" value="Global array written from 'size' processes" type="string"/>
 </adios-group>
 
-<method group="temperature" method="MPI_AGGREGATE">stripe_count=1;stripe_size=10485760;num_aggregators=2;merging_pgs=0;num_ost=2</method>
+<method group="temperature" method="MPI">stripe_count=1;stripe_size=10485760;num_aggregators=2;merging_pgs=0;num_ost=2</method>
 
 <buffer size-MB="2" allocate-time="now"/>
 

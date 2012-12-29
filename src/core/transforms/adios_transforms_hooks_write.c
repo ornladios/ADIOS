@@ -25,9 +25,9 @@ void adios_transform_init() {
 
     REGISTER_TRANSFORM_WRITE_METHOD(none, adios_transform_none);
     REGISTER_TRANSFORM_WRITE_METHOD(identity, adios_transform_identity);
-	REGISTER_TRANSFORM_WRITE_METHOD(zlib, adios_transform_zlib);
-	REGISTER_TRANSFORM_WRITE_METHOD(bzip2, adios_transform_bzip2);
-	REGISTER_TRANSFORM_WRITE_METHOD(szip, adios_transform_szip);
+    REGISTER_TRANSFORM_WRITE_METHOD(zlib, adios_transform_zlib);
+    REGISTER_TRANSFORM_WRITE_METHOD(bzip2, adios_transform_bzip2);
+    REGISTER_TRANSFORM_WRITE_METHOD(szip, adios_transform_szip);
 
     adios_transforms_initialized = 1;
 }

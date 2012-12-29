@@ -60,6 +60,7 @@ transforms_read_SOURCES = $(transforms_common_SOURCES) \
                           core/transforms/adios_transforms_read.c \
                           core/transforms/adios_transforms_hooks_read.c \
                           core/transforms/adios_transforms_reqgroup.c \
+                          core/transforms/adios_transforms_datablock.c \
                           $(transforms_read_method_SOURCES)
 
 transforms_write_SOURCES = $(transforms_read_SOURCES) \

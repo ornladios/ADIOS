@@ -19,8 +19,9 @@
 // NCSU ALACRITY-ADIOS
 #include "adios_read_transformed.h"
 #include "adios_read_hooks.h"
-#include "adios_transforms_hooks_read.h"
-#include "adios_transforms_reqgroup.h"
+#include "transforms/adios_transforms_hooks_read.h"
+#include "transforms/adios_transforms_reqgroup.h"
+#include "transforms/adios_transforms_datablock.h"
 #define BYTE_ALIGN 8
 
 #ifdef DMALLOC
@@ -400,9 +401,9 @@ ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname)
 // NCSU ALACRITY-ADIOS - For copying original metadata from transform
 //   info to inq var info
 static void move_trans_blockinfo_to_varinfo(ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
-    common_read_free_blockinfo(&vi->blockinfo, vi->sum_nblocks);	// Free blockinfo in varinfo
-    vi->blockinfo = ti->orig_blockinfo;								// Move blockinfo from transinfo to varinfo
-    ti->orig_blockinfo = 0;											// Delink blockinfo from transinfo
+    common_read_free_blockinfo(&vi->blockinfo, vi->sum_nblocks);    // Free blockinfo in varinfo
+    vi->blockinfo = ti->orig_blockinfo;                                // Move blockinfo from transinfo to varinfo
+    ti->orig_blockinfo = 0;                                            // Delink blockinfo from transinfo
 }
 static void move_transinfo_to_varinfo(ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
     // First make room for the transform info fields
@@ -718,8 +719,8 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
         if (varid >=0 && varid < fp->nvars) {
             // NCSU ALACRITY-ADIOS - If the variable is transformed, intercept
             //   the read scheduling and schedule our own reads
-            ADIOS_VARINFO *raw_varinfo = common_read_inq_var_raw_byid(fp, varid);		// Get the *raw* varinfo
-            ADIOS_TRANSINFO *transinfo = common_read_inq_transinfo(fp, raw_varinfo);	// Get the transform info (i.e. original var info)
+            ADIOS_VARINFO *raw_varinfo = common_read_inq_var_raw_byid(fp, varid);        // Get the *raw* varinfo
+            ADIOS_TRANSINFO *transinfo = common_read_inq_transinfo(fp, raw_varinfo);    // Get the transform info (i.e. original var info)
             //assert(vi);
             //assert(ti);
 
@@ -742,7 +743,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
                 for (pg_reqgroup = new_reqgroup->pg_reqgroups; pg_reqgroup; pg_reqgroup = pg_reqgroup->next) {
                     for (subreq = pg_reqgroup->subreqs; subreq; subreq = subreq->next) {
                         retval |= internals->read_hooks[internals->method].adios_schedule_read_byid_fn(
-                                        fp, subreq->sel, varid+internals->group_varid_offset, pg_reqgroup->timestep, 1, subreq->data);
+                                        fp, subreq->raw_sel, varid+internals->group_varid_offset, pg_reqgroup->timestep, 1, subreq->data);
                     }
                 }
             } else {
@@ -763,137 +764,6 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
     return retval;
 }
 
-/*
- * Takes a datablock and applies its data to the user buffer for the given
- * read request group, then frees the given datablock. Assumes there is, in
- * fact, a user buffer (i.e., it is not NULL).
- *
- * Assumes that the datablock selection is of type bounding box.
- *
- * NOTE: also frees the data buffer within the datablock
- *
- * @return non-zero if some data in the datablock intersected the read
- *         request's selection, and was applied; returns 0 otherwise.
- */
-static int apply_datablock_to_request_and_free(adios_datablock *datablock,
-                                               adios_transform_read_reqgroup *reqgroup) {
-    adios_subvolume_copy_spec *copyspec = malloc(sizeof(adios_subvolume_copy_spec));
-
-    assert(datablock); assert(reqgroup);
-    assert(reqgroup->orig_sel);
-    assert(reqgroup->orig_data);
-    assert(reqgroup->orig_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
-    assert(datablock->bounds->type == ADIOS_SELECTION_BOUNDINGBOX);
-    assert(reqgroup->orig_sel->u.bb.ndim == datablock->bounds->u.bb.ndim);
-
-    const int intersects =
-        adios_copyspec_init_from_2bb_intersection(copyspec,
-                                                  &reqgroup->orig_sel->u.bb,
-                                                  &datablock->bounds->u.bb);
-    if (intersects) {
-        int rel_timestep = datablock->timestep - reqgroup->from_steps;
-        void *timestep_data_slice =
-                (char*)reqgroup->orig_data +
-                rel_timestep * reqgroup->orig_sel_timestep_size;
-
-        copy_subvolume_ragged_offset_with_spec(
-                timestep_data_slice, datablock->data, copyspec,
-                0, datablock->ragged_offset,
-                datablock->elem_type, reqgroup->swap_endianness);
-    }
-
-    adios_copyspec_free(&copyspec, 1);
-    adios_datablock_free(&datablock, 1);
-    return intersects;
-}
-
-#define MYFREE(p) {free(p); (p)=NULL;}
-/*
- * Takes a datablock containing data potentially applicable to the given read
- * request group, identifies that data (if any), and returns it as an
- * ADIOS_VARCHUNK. Additionally, free the datablock.
- *
- * NOTE: This function transfers ownership of the ->data field of the datablock
- * and places it in the returned ADIOS_VARCHUNK (if an ADIOS_VARCHUNK is
- * returned).
- */
-static ADIOS_VARCHUNK * extract_chunk_from_datablock_and_free(adios_datablock *result, adios_transform_read_reqgroup *reqgroup) {
-    ADIOS_VARCHUNK *chunk;
-    uint64_t *inter_goffset;
-    uint64_t *inter_offset_within_result;
-    uint64_t *inter_dims;
-
-    assert(result); assert(reqgroup);
-    assert(reqgroup->orig_sel);
-    assert(reqgroup->orig_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
-    assert(reqgroup->orig_sel->u.bb.ndim == result->bounds->u.bb.ndim);
-    assert(result->bounds->type == ADIOS_SELECTION_BOUNDINGBOX);
-
-    const int ndim = result->bounds->u.bb.ndim;
-    const int dimsize = ndim * sizeof(uint64_t);
-
-    inter_goffset = malloc(dimsize);
-    inter_offset_within_result = malloc(dimsize);
-    inter_dims = malloc(dimsize);
-
-    const int intersects =
-            intersect_bb(&result->bounds->u.bb, &reqgroup->orig_sel->u.bb,
-                         inter_goffset, inter_offset_within_result, NULL, inter_dims);
-
-    if (intersects) {
-        chunk = malloc(sizeof(ADIOS_VARCHUNK));
-
-        // Compact the data within the datablock buffer so it is fully
-        // contiguous according to the dimensions we will return to the user
-        compact_subvolume_ragged_offset(result->data, ndim, inter_dims,
-                                        result->bounds->u.bb.count, result->ragged_offset,
-                                        inter_offset_within_result, result->elem_type);
-
-        // Populate the chunk struct
-        chunk->varid = reqgroup->raw_varinfo->varid;
-        chunk->type = result->elem_type;
-
-        // Transfer ownership of the data buffer
-        chunk->data = result->data;
-        result->data = NULL;
-
-        // Transfer ownership of our global offset and dimension vectors
-        chunk->sel = common_read_selection_boundingbox(ndim, inter_goffset, inter_dims);
-        inter_goffset = NULL;
-        inter_dims = NULL;
-    } else {
-        chunk = NULL;
-    }
-
-    MYFREE(inter_goffset);
-    MYFREE(inter_offset_within_result);
-    MYFREE(inter_dims);
-
-    // Do free the data buffer; we removed that buffer from the datablock above if it was needed
-    adios_datablock_free(&result, 1);
-    return chunk;
-}
-#undef MYFREE
-
-static ADIOS_VARCHUNK * extract_chunk_from_finished_read_reqgroup(adios_transform_read_reqgroup *reqgroup) {
-    assert(reqgroup);
-    assert(reqgroup->completed);
-
-    ADIOS_VARCHUNK *chunk = malloc(sizeof(ADIOS_VARCHUNK));
-    chunk->varid = reqgroup->raw_varinfo->varid;
-    chunk->type = reqgroup->transinfo->orig_type;
-
-    // Transfer ownership of orig_data
-    chunk->data = reqgroup->orig_data;
-    reqgroup->orig_data = NULL;
-
-    // Transfer ownership of orig_sel
-    chunk->sel = (ADIOS_SELECTION*)reqgroup->orig_sel; // Remove const
-    reqgroup->orig_sel = NULL;
-
-    return chunk;
-}
-
 // NCSU ALACRITY-ADIOS - Modified to delegate to transform method to combine
 //  read subrequests to answer original requests
 int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
@@ -910,42 +780,7 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
         //   request groups completed, and reassemble via the transform method.
         //   Otherwise, do nothing.
         if (blocking) {
-            // Mark all subrequests, PG request groups and read request groups
-            // as completed, calling callbacks as needed
-            adios_transform_read_reqgroup *reqgroup;
-            adios_transform_pg_reqgroup *pg_reqgroup;
-            adios_transform_read_subrequest *subreq;
-            adios_datablock *result;
 
-            while ((reqgroup = adios_transform_read_reqgroups_pop(&internals->transform_reqgroups)) != NULL) {
-                if (reqgroup->completed) {
-                    // Free leftover read request groups immediately
-                    adios_transform_free_read_reqgroup(&reqgroup);
-                    continue;
-                }
-
-                for (pg_reqgroup = reqgroup->pg_reqgroups; pg_reqgroup; pg_reqgroup = pg_reqgroup->next) {
-                    if (pg_reqgroup->completed) continue;
-                    for (subreq = pg_reqgroup->subreqs; subreq; subreq = subreq->next) {
-                        if (subreq->completed) continue;
-
-                        adios_transform_subreq_mark_complete(reqgroup, pg_reqgroup, subreq);
-                        assert(subreq->completed);
-
-                        result = adios_transform_subrequest_completed(reqgroup, pg_reqgroup, subreq);
-                        if (result) apply_datablock_to_request_and_free(result, reqgroup);
-                    }
-                    assert(pg_reqgroup->completed);
-                    result = adios_transform_pg_reqgroup_completed(reqgroup, pg_reqgroup);
-                    if (result) apply_datablock_to_request_and_free(result, reqgroup);
-                }
-                assert(reqgroup->completed);
-                result = adios_transform_read_reqgroup_completed(reqgroup);
-                if (result) apply_datablock_to_request_and_free(result, reqgroup);
-
-                // Free read request groups as they are completed
-                adios_transform_free_read_reqgroup(&reqgroup);
-            }
         } else {
             // Do nothing; reads will be performed by check_reads
         }
@@ -956,93 +791,7 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
     return retval;
 }
 
-// NCSU ALACRITY-ADIOS - Intercept read chunks, and translate as necessary
-// Take an ADIOS_VARCHUNK that was just read and process it with the transform
-// system. If it was part of a read request corresponding to a transformed
-// variable, consume it, and possibly replacing it with a detransformed chunk.
-// Otherwise, do nothing.
-static void transform_method_filter_chunk(adios_transform_read_reqgroup **reqgroups_head, ADIOS_VARCHUNK ** chunk) {
-    adios_transform_read_reqgroup *reqgroup;
-    adios_transform_pg_reqgroup *pg_reqgroup;
-    adios_transform_read_subrequest *subreq;
-    adios_datablock *result, *tmp_result;
-
-    // Some chunk was read; find the corresponding subrequest, if any
-    int found = adios_transform_read_reqgroups_find_subreq(reqgroups_head, *chunk, 1, &reqgroup, &pg_reqgroup, &subreq);
-    if (found) {
-        // This chunk corresponds to a subrequest. Therefore, consume it
-        // and perhaps replace it with a detransformed chunk.
-
-        // Consume the chunk
-        common_read_free_chunk(*chunk);
-        *chunk = NULL;
-
-        // Mark the subrequest as complete
-        adios_transform_subreq_mark_complete(reqgroup, pg_reqgroup, subreq);
-        assert(subreq->completed);
-
-        // Invoke all callbacks, depending on what completed, and
-        // get at most one ADIOS_VARCHUNK to return
-        result = adios_transform_subrequest_completed(reqgroup, pg_reqgroup, subreq);
-
-        if (pg_reqgroup->completed) {
-            tmp_result = adios_transform_pg_reqgroup_completed(reqgroup, pg_reqgroup);
-            if (tmp_result) {
-                assert(!result); // pg_reqgroup_completed returned a result, but subrequest_completed did as well
-                result = tmp_result;
-            }
-        }
-
-        if (reqgroup->completed) {
-            tmp_result = adios_transform_read_reqgroup_completed(reqgroup);
-            if (tmp_result) {
-                assert(!result); // read_reqgroup_completed returned a result, but subrequest_completed or pg_reqgroup_completed did as well
-                result = tmp_result;
-            }
-        }
-
-        // At this point, the the original chunk has been consumed,
-        // and a new one may or may not be ready, depending on the read
-        // mode and what was returned by the transform plugin; decide
-        // the final return now
-
-        if (result) {
-            const int partial_results_allowed = reqgroup->orig_data != NULL;
-            if (partial_results_allowed) {
-                // If we can return partial results, return any relevant
-                // data from the datablock as a VARCHUNK
-
-                // First free any buffers held by the last-returned VARCHUNK
-                if (reqgroup->lent_varchunk && reqgroup->lent_varchunk->data)
-                    free(reqgroup->lent_varchunk->data);
-
-                *chunk = extract_chunk_from_datablock_and_free(result, reqgroup);
-
-                reqgroup->lent_varchunk = *chunk;
-            } else {
-                // Otherwise, apply the data to the overall read request group
-                assert(reqgroup->orig_data);
-                apply_datablock_to_request_and_free(result, reqgroup);
-
-                // If the whole variable is now ready, return it as a VARCHUNK
-                // Otherwise, return no chunk (NULL)
-                if (reqgroup->completed) {
-                    *chunk = extract_chunk_from_finished_read_reqgroup(reqgroup);
-                } else {
-                    assert(!*chunk); // No chunk to return, and *chunk is already NULL
-                }
-            }
-        } else {
-            assert(!*chunk); // No chunk to return, and *chunk is already NULL
-        }
-
-        // Free the read request group if it was completed
-        if (reqgroup->completed) {
-            adios_transform_read_reqgroups_remove(reqgroups_head, reqgroup);
-            adios_transform_free_read_reqgroup(&reqgroup);
-        }
-    }
-}
+// transform_method_filter_chunk was here
 
 int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
 {
@@ -1061,7 +810,7 @@ int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
             if (!*chunk) break; // If no more chunks are available, stop now
 
             // Process the chunk through a transform method, if necessary
-            transform_method_filter_chunk(internals->transform_reqgroups, chunk);
+            adios_transform_process_read_chunk(internals->transform_reqgroups, chunk);
         } while (!*chunk); // Keep reading until we have a chunk to return
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_check_reads()\n");
