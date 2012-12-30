@@ -2589,10 +2589,24 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
         {
             if (var_root->id == attr_root->characteristics[attr_c_index].var_id
                && !strcmp(var_root->var_path, attr_root->attr_path)
+               && !strcmp(var_root->group_name, attr_root->group_name)
                )
                 break;
             var_root = var_root->next;
         }
+
+        if (!var_root)
+        {
+            var_root = fh->vars_root;
+            while (var_root)
+            {
+                if (var_root->id == attr_root->characteristics[attr_c_index].var_id
+                   && !strcmp(var_root->group_name, attr_root->group_name))
+                    break;
+                var_root = var_root->next;
+            }
+        }
+
         if (!var_root)
         {
             var_root = fh->vars_root;
