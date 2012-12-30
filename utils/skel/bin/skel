@@ -16,6 +16,7 @@ import skel_install
 import skel_makefile
 import skel_params
 import skel_source
+import skel_dwarf
 import skel_submit
 import skel_xml
 
@@ -81,6 +82,10 @@ def main(argv=None):
 
     if args.subcommand == 'source':
         skel_source.create_sources (params, config, args.project)
+        return 0
+
+    if args.subcommand == 'dwarf':
+        skel_dwarf.create_dwarf (params, config, args.project)
         return 0
 
     if args.subcommand == 'submit':

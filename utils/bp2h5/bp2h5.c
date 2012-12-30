@@ -63,6 +63,21 @@ hid_t       HDF5_FILE;
 #define DEBUG 0
 #define verbose 1
 
+/* Support for complex types */
+typedef struct {
+    float re;   /*real part*/
+    float im;   /*imaginary part*/
+} complex_real_t;
+
+typedef struct {
+    double re;   /*real part*/
+    double im;   /*imaginary part*/
+} complex_double_t;
+
+hid_t complex_real_id, complex_double_id;
+
+
+
 
 int  istart[MAX_DIMS], icount[MAX_DIMS], ndimsspecified=0;
 
@@ -103,6 +118,14 @@ int main (int argc, char ** argv)
     ADIOS_FILE * f = adios_fopen (argv[1], comm_dummy);
     HDF5_FILE = H5Fcreate(argv[2],H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
+    /* create the complex types for HDF5 */
+    complex_real_id = H5Tcreate (H5T_COMPOUND, sizeof (complex_real_t));
+    H5Tinsert (complex_real_id, "real", HOFFSET(complex_real_t,re), H5T_NATIVE_FLOAT);
+    H5Tinsert (complex_real_id, "imaginary", HOFFSET(complex_real_t,im), H5T_NATIVE_FLOAT);
+
+    complex_double_id = H5Tcreate (H5T_COMPOUND, sizeof (complex_double_t));
+    H5Tinsert (complex_double_id, "real", HOFFSET(complex_double_t,re), H5T_NATIVE_DOUBLE);
+    H5Tinsert (complex_double_id, "imaginary", HOFFSET(complex_double_t,im), H5T_NATIVE_DOUBLE);
 
     if (f == NULL) {
         if (DEBUG) printf ("%s\n", adios_errmsg());
@@ -604,9 +627,12 @@ int bp_getH5TypeId(enum ADIOS_DATATYPES type, hid_t* h5_type_id)
             *h5_type_id = H5Tcopy(H5T_NATIVE_INT64);
             break;
         case adios_complex:
+            *h5_type_id = H5Tcopy(complex_real_id);
+            break;
         case adios_double_complex:
-            fprintf(stderr, "Error in mapping ADIOS Data Types to HDF5: complex not supported yet.\n");
-            status = -1;
+            *h5_type_id = H5Tcopy(complex_double_id);
+            //fprintf(stderr, "Error in mapping ADIOS Data Types to HDF5: complex not supported yet.\n");
+            //status = -1;
             break;
         case adios_unknown:
         default:

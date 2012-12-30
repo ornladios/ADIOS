@@ -17,6 +17,7 @@ check_C=local_array_time \
         adios_staged_read_2vars \
         write_read \
         write_alternate \
+        two_groups \
         many_vars \
         selections \
         connect_to_space_subset \
@@ -92,6 +93,11 @@ write_alternate_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 write_alternate_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 write_alternate.o: write_alternate.c
 
+two_groups_SOURCES=two_groups.c
+two_groups_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+two_groups_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+two_groups.o: two_groups.c
+
 many_vars_SOURCES=many_vars.c
 many_vars_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 many_vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
@@ -102,10 +108,10 @@ selections_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 selections_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 selections.o: selections.c
 
-#write_read_SOURCES=write_read.c
-#write_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-#write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
-#write_read.o: write_read.c
+write_read_SOURCES=write_read.c
+write_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+write_read.o: write_read.c
 
 copy_subvolume_SOURCES=copy_subvolume.c
 copy_subvolume_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)

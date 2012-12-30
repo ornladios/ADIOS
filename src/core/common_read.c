@@ -780,7 +780,7 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
         //   request groups completed, and reassemble via the transform method.
         //   Otherwise, do nothing.
         if (blocking) {
-
+            adios_transform_process_all_reads(&internals->transform_reqgroups);
         } else {
             // Do nothing; reads will be performed by check_reads
         }
@@ -790,8 +790,6 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
     }
     return retval;
 }
-
-// transform_method_filter_chunk was here
 
 int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
 {

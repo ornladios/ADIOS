@@ -1,14 +1,19 @@
 1.4.1 Release Aug 2012
-    - staged/aggregated file reader method (from 1.3.1): 
+    - aggregated file reader method (from 1.3.1): 
       use ADIOS_READ_METHOD_BP_AGGREGATE
     - memory limitation specified by user for chunked reading 
       now taken into account in file reading
     - stage writer example code for staged I/O
       see examples/stage_write
+    - code coupling example code for file-based/staged coupling
+      see examples/coupling
+    - bp2h5 supports converting complex and double complex types
     - fix: F90 modules: adios_write, adios_schedule_read
     - fix: invalid "out of bound" errors when reading multiple steps 
            of multi-dimensional arrays
     - fix: double-free bug in support of old read API in Fortran
+    - fix: backward compatibility of old read API to read multi-group 
+           files (fixed "invalid variable id..." errors)
 
 1.4.0 Release July 2012
     - new read API for staging method with step-by-step processing, 

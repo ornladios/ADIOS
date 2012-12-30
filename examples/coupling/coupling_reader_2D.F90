@@ -274,6 +274,7 @@ end subroutine usage
 !!***************************
 subroutine processArgs()
     use coupling_reader_2D_comm
+    use adios_read_mod
 
 #ifndef __GFORTRAN__
 #ifndef __GNUC__
@@ -301,11 +302,11 @@ subroutine processArgs()
 
     call getarg(3, method_str)
     if (trim(method_str) .eq. "DATASPACES") then
-        read_method = 3
+        read_method = ADIOS_READ_METHOD_DATASPACES 
     elseif (trim(method_str) .eq. "DIMES") then
-        read_method = 4
+        read_method = ADIOS_READ_METHOD_DIMES 
     else
-        read_method = 0
+        read_method = ADIOS_READ_METHOD_BP
     endif
 
     call getarg(4, mode_str)

@@ -3,7 +3,7 @@ INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/public -I$(top_builddir)
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-bin_PROGRAMS = bp2ascii
+noinst_PROGRAMS = bp2ascii
 
 bp2ascii_SOURCES = bp2ascii.c 
 bp2ascii_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_INT_CFLAGS)
