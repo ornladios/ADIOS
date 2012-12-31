@@ -81,6 +81,16 @@ int adios_group_size (int64_t fd_p, uint64_t data_size
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+/* This C api function is slightly different from adios_write. Instead of
+ * passing variable names, user is expected to pass variable id, which is returned
+ * from adios_define_var call. Therefore, this function is only used in the no-xml way.
+ */
+int adios_write_byid (int64_t fd_p, int64_t id, void * var)
+{
+    return common_adios_write_byid ((struct adios_file_struct *) fd_p, (struct adios_var_struct *) id, var);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 /* This C api function is a bit different from the Fortran api funcion, but
  * they call the same common_adios_write()
  */
@@ -111,6 +121,8 @@ int adios_write (int64_t fd_p, const char * name, void * var)
         return 1;
     }
 
+    common_adios_write_byid (fd, v, var);
+#if 0
     if (fd->mode == adios_mode_read)
     {
         if (   strcasecmp (name, fd->group->group_comm)
@@ -198,7 +210,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
     {
         adios_copy_var_written (&fd->group->vars_written, v, fd);
     }
-
+#endif
     return 0;
 }
 
@@ -342,13 +354,13 @@ int adios_free_group (int64_t id)
 // adios_common_define_var is in adios_internals.c
 
 // declare a single var as an entry in a group
-int adios_define_var (int64_t group_id, const char * name
-                     ,const char * path
-                     ,enum ADIOS_DATATYPES type
-                     ,const char * dimensions
-                     ,const char * global_dimensions
-                     ,const char * local_offsets
-                     )
+int64_t adios_define_var (int64_t group_id, const char * name
+                         ,const char * path
+                         ,enum ADIOS_DATATYPES type
+                         ,const char * dimensions
+                         ,const char * global_dimensions
+                         ,const char * local_offsets
+                         )
 {
     return adios_common_define_var (group_id, name, path
                                    ,type

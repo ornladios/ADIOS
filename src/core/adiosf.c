@@ -103,6 +103,46 @@ void FC_FUNC_(adios_group_size, ADIOS_GROUP_SIZE)
 
 ///////////////////////////////////////////////////////////////////////////////
 #include "stdio.h"
+void FC_FUNC_(adios_write_byid, ADIOS_WRITE_BYID)
+    (int64_t * fd_p, int64_t * id, void * var
+    ,int * err, int var_size
+    )
+{
+    struct adios_file_struct * fd = (struct adios_file_struct *) *fd_p;
+    if (!fd)
+    {
+        adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_write\n");
+        *err = 1;
+        return;
+    }
+
+    struct adios_var_struct * v = (struct adios_var_struct *) *id;
+    if (!v)
+    {
+        adios_error (err_invalid_varid, "Invalid id passed to adios_write_byid\n");
+        *err = 1;
+        return;
+    }
+
+    struct adios_method_list_struct * m = fd->group->methods;
+
+    if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
+    {
+        // nothing to do so just return
+        *err = 0;
+        return;
+    }
+
+    if (!var)
+    {
+        adios_error (err_invalid_data, "Invalid data (NULL pointer) passed to write\n");
+        *err = 1;
+        return;
+    }
+
+    *err = common_adios_write_byid (fd, v, var);
+}
+
 /* This Fortran api function is a bit different from the C api funcion, but
  * they call the same common_adios_write().
  * Difference: if the variable is string type then we need to convert
@@ -452,7 +492,7 @@ void FC_FUNC_(adios_define_var, ADIOS_DEFINE_VAR)
     ,const char * path, int * type
     ,const char * dimensions
     ,const char * global_dimensions
-    ,const char * local_offsets, int * err
+    ,const char * local_offsets, int64_t * id
     ,int name_size, int path_size, int dimensions_size
     ,int global_dimensions_size, int local_offsets_size
     )
@@ -470,7 +510,7 @@ void FC_FUNC_(adios_define_var, ADIOS_DEFINE_VAR)
     buf5 = futils_fstr_to_cstr (local_offsets, local_offsets_size);
 
     if (buf1 != 0 && buf2 != 0) {
-        *err = adios_common_define_var (*group_id, buf1, buf2
+        *id = adios_common_define_var (*group_id, buf1, buf2
                                        ,(enum ADIOS_DATATYPES) *type
                                        ,buf3, buf4, buf5
                                        );
@@ -481,7 +521,7 @@ void FC_FUNC_(adios_define_var, ADIOS_DEFINE_VAR)
         free (buf4);
         free (buf5);
     } else {
-        *err = -adios_errno;
+        *id = 0;
     }
 }
 

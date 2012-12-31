@@ -1483,12 +1483,12 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
     return 1;
 }
 
-int adios_common_define_var (int64_t group_id, const char * name
-                            ,const char * path, enum ADIOS_DATATYPES type
-                            ,const char * dimensions
-                            ,const char * global_dimensions
-                            ,const char * local_offsets
-                            )
+int64_t adios_common_define_var (int64_t group_id, const char * name
+                                ,const char * path, enum ADIOS_DATATYPES type
+                                ,const char * dimensions
+                                ,const char * global_dimensions
+                                ,const char * local_offsets
+                                )
 {
     struct adios_group_struct * t = (struct adios_group_struct *) group_id;
     struct adios_var_struct * v = (struct adios_var_struct *)
@@ -1612,7 +1612,7 @@ int adios_common_define_var (int64_t group_id, const char * name
                 cleanup_dimensions (&g_dim_tokens, &g_dim_count);
                 cleanup_dimensions (&lo_dim_tokens, &lo_dim_count);
 
-                return ret;
+                return 0;
             }
 
             adios_append_dimension (&v->dimensions, d);
@@ -1638,7 +1638,7 @@ int adios_common_define_var (int64_t group_id, const char * name
     }
     t->var_count++;
 
-    return 1;
+    return v;
 }
 
 void adios_common_get_group (int64_t * group_id, const char * name)
