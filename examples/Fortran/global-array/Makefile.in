@@ -34,7 +34,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = adios_global$(EXEEXT) adios_global_no_xml$(EXEEXT)
+noinst_PROGRAMS = adios_global$(EXEEXT) adios_global_no_xml$(EXEEXT) \
+	no_xml_write_byid$(EXEEXT)
 subdir = examples/Fortran/global-array
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -79,6 +80,13 @@ adios_global_no_xml_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
 adios_global_no_xml_LINK = $(LIBTOOL) --tag=FC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) \
 	$(adios_global_no_xml_LDFLAGS) $(LDFLAGS) -o $@
+am_no_xml_write_byid_OBJECTS = no_xml_write_byid.$(OBJEXT)
+no_xml_write_byid_OBJECTS = $(am_no_xml_write_byid_OBJECTS)
+no_xml_write_byid_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
+	$(am__DEPENDENCIES_1)
+no_xml_write_byid_LINK = $(LIBTOOL) --tag=FC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) \
+	$(no_xml_write_byid_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -88,8 +96,10 @@ LTPPFCCOMPILE = $(LIBTOOL) --tag=FC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=compile $(FC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_FCFLAGS) $(FCFLAGS)
 FCLD = $(FC)
-SOURCES = $(adios_global_SOURCES) $(adios_global_no_xml_SOURCES)
-DIST_SOURCES = $(adios_global_SOURCES) $(adios_global_no_xml_SOURCES)
+SOURCES = $(adios_global_SOURCES) $(adios_global_no_xml_SOURCES) \
+	$(no_xml_write_byid_SOURCES)
+DIST_SOURCES = $(adios_global_SOURCES) $(adios_global_no_xml_SOURCES) \
+	$(no_xml_write_byid_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -309,6 +319,10 @@ adios_global_no_xml_SOURCES = adios_global_no_xml.F90
 adios_global_no_xml_LDADD = $(top_builddir)/src/libadiosf.a \
 	$(ADIOSLIB_LDADD)
 adios_global_no_xml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+no_xml_write_byid_SOURCES = no_xml_write_byid.F90
+no_xml_write_byid_LDADD = $(top_builddir)/src/libadiosf.a \
+	$(ADIOSLIB_LDADD)
+no_xml_write_byid_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
@@ -364,6 +378,9 @@ adios_global$(EXEEXT): $(adios_global_OBJECTS) $(adios_global_DEPENDENCIES)
 adios_global_no_xml$(EXEEXT): $(adios_global_no_xml_OBJECTS) $(adios_global_no_xml_DEPENDENCIES) 
 	@rm -f adios_global_no_xml$(EXEEXT)
 	$(adios_global_no_xml_LINK) $(adios_global_no_xml_OBJECTS) $(adios_global_no_xml_LDADD) $(LIBS)
+no_xml_write_byid$(EXEEXT): $(no_xml_write_byid_OBJECTS) $(no_xml_write_byid_DEPENDENCIES) 
+	@rm -f no_xml_write_byid$(EXEEXT)
+	$(no_xml_write_byid_LINK) $(no_xml_write_byid_OBJECTS) $(no_xml_write_byid_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

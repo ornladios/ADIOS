@@ -111,7 +111,7 @@ module adios_write_mod
             integer,        intent(out) :: err
         end subroutine
 
-        subroutine adios_define_var (group_id, varname, path, vartype, dimensions, global_dimensions, local_offsets, err)
+        subroutine adios_define_var (group_id, varname, path, vartype, dimensions, global_dimensions, local_offsets, id) 
             implicit none
             integer*8,      intent(in)  :: group_id
             character(*),   intent(in)  :: varname
@@ -120,7 +120,7 @@ module adios_write_mod
             character(*),   intent(in)  :: dimensions
             character(*),   intent(in)  :: global_dimensions
             character(*),   intent(in)  :: local_offsets
-            integer,        intent(out) :: err
+            integer*8,      intent(out) :: id
         end subroutine
 
         subroutine adios_define_attribute (group_id, attrname, path, attrtype, value, varname, err)
