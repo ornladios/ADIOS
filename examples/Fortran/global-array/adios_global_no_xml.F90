@@ -27,6 +27,7 @@ program adios_global
     integer*8               :: adios_groupsize, adios_totalsize
     integer*8               :: adios_handle
     integer*8               :: m_adios_group
+    integer*8               :: varid
 
     call MPI_Init (ierr)
     call MPI_Comm_dup (MPI_COMM_WORLD, comm, ierr)
@@ -39,39 +40,41 @@ program adios_global
     call adios_declare_group (m_adios_group, "restart", "iter", 1, adios_err)
     call adios_select_method (m_adios_group, "MPI", "", "", adios_err)
 
+    ! This example doesn't use varid during writing.
+    ! So we simply put 'varid' everywhere.
     ! define a integer
     call adios_define_var (m_adios_group, "NX" &
                           ,"", 2 &
-                          ,"", "", "", adios_err)
+                          ,"", "", "", varid)
     ! define a integer
     call adios_define_var (m_adios_group, "G" &
                           ,"", 2 &
-                          ,"", "", "", adios_err)
+                          ,"", "", "", varid)
     ! define a integer
     call adios_define_var (m_adios_group, "O" &
                           ,"", 2 &
-                          ,"", "", "", adios_err)
+                          ,"", "", "", varid)
     ! define a global array
     call adios_define_var (m_adios_group, "temperature" &
                           ,"", 6 &
-                          ,"NX", "G", "O", adios_err)
+                          ,"NX", "G", "O", varid)
 
     ! define a integer
     call adios_define_var (m_adios_group, "NX" &
                           ,"", 2 &
-                          ,"", "", "", adios_err)
+                          ,"", "", "", varid) 
     ! define a integer
     call adios_define_var (m_adios_group, "G" &
                           ,"", 2 &
-                          ,"", "", "", adios_err)
+                          ,"", "", "", varid)
     ! define a integer
     call adios_define_var (m_adios_group, "O" &
                           ,"", 2 &
-                          ,"", "", "", adios_err)
+                          ,"", "", "", varid)
     ! define a global array
     call adios_define_var (m_adios_group, "temperature" &
                           ,"", 6 &
-                          ,"NX", "G", "O", adios_err)
+                          ,"NX", "G", "O", varid) 
 
     call adios_open (adios_handle, "restart", filename, "w", comm, adios_err)
 
