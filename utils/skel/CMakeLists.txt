@@ -1,4 +1,3 @@
-<<<<<<< .mine
 add_subdirectory(etc)
 
 set(pythonlibdir ${libdir}/python)
