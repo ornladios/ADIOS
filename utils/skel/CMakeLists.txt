@@ -1,4 +1,4 @@
-add_subdirectory(etc)
+#add_subdirectory(etc)
 
 set(pythonlibdir ${libdir}/python)
 
