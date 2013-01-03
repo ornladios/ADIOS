@@ -1,1 +1,10 @@
+add_subdirectory(scalars)
+add_subdirectory(arrays)
+add_subdirectory(attributes)
+add_subdirectory(manual)
 add_subdirectory(global-array)
+add_subdirectory(global-array-time)
+add_subdirectory(read_all)
+add_subdirectory(stat)
+add_subdirectory(schema)
+#SUBDIRS=scalars arrays attributes manual global-array global-array-time read_all stat schema
