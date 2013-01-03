@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.8)
 project(ADIOS_PROJECT)
-#set(LANGUAGE "" CACHE FILEPATH "")  #C/CXX/Fortran
-#enable_language(${LANGUAGE})
-#message(STATUS "CMAKE_${LANGUAGE}_COMPILER_WORKS = ${CMAKE_${LANGUAGE}_COMPILER_WORKS}")
-#add_custom_target(COMMAND ${CMAKE_COMMAND} -P runconf.cmake )
+
+set(LANGUAGE "" CACHE FILEPATH "")  #C/CXX/Fortran
+enable_language(${LANGUAGE})
+message(STATUS "CMAKE_${LANGUAGE}_COMPILER_WORKS = ${CMAKE_${LANGUAGE}_COMPILER_WORKS}")
 
 include_directories(${PROJECT_SOURCE_DIR})
 link_directories(${PROJECT_BINARY_DIR})
@@ -373,13 +373,20 @@ set(VERSION_SVNREV 2007)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${PROJECT_SOURCE_DIR}/config.h)
 ################################ end of generating config.h ###############################
 
+################################ start of Fortran processing ##############################
+include(FortranCInterface)
+FortranCInterface_HEADER(${CMAKE_CURRENT_SOURCE_DIR}/FC.h MACRO_NAMESPACE "FC_")
+FortranCInterface_VERIFY(CXX)
+################################ end of Fortran processing ##############################
+
+
 # Generate flags for adios lib creation which depends on the packages we found
 # ADIOSLIB_* for compiling libadios.a and libadiosf.a, and linking codes with those
 # ADIOSLIB_SEQ_* for compiling libadios_nompi.a and libadiosf_nompi.a with dummy MPI
 # ADIOSLIB_INT_* for codes using libadios_internal_nompi.a (like bp2ncd, bp2h5, bpdump etc)
 # ADIOSREADLIB_* for codes using libadiosread.a, libadiosreadf.a
 # ADIOSREADLIB_SEQ_* for codes using libadiosread_nompi.a
-# adios_config will contain flags for users' code linking based on these flags
+# adiosconfig will contain flags for users' code linking based on these flags
 # EXTRA flags are used for compiling adios stuff, which need not go into adios_config for user codes
 set(ADIOSLIB_EXTRA_CPPFLAGS "-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE")
 set(ADIOSLIB_LDADD "${MXML_LIBS}")
