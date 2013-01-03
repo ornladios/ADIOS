@@ -6,7 +6,7 @@ link_directories(${PROJECT_BINARY_DIR}/tests/suite)
 if(BUILD_WRITE)
   add_executable(local_array_time local_array_time.c)
   target_link_libraries(local_array_time ${ADIOS_LIB} ${ADIOSLIB_LDADD} ${MPI_LIBRARIES})
-
+  
   add_executable(adios_amr_write adios_amr_write.c)
   target_link_libraries(adios_amr_write ${ADIOS_LIB} ${ADIOSLIB_LDADD} ${MPI_LIBRARIES})
 
