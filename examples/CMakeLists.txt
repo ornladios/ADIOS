@@ -1,1 +1,6 @@
-add_subdirectory(C)
+if(BUILD_WRITE)
+  add_subdirectory(C)
+  if(BUILD_FORTRAN)
+    add_subdirectory(Fortran)
+  endif(BUILD_FORTRAN)
+endif(BUILD_WRITE)
