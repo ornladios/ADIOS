@@ -143,6 +143,18 @@ void FC_FUNC_(adios_write_byid, ADIOS_WRITE_BYID)
     *err = common_adios_write_byid (fd, v, var);
 }
 
+/* Name clash resolution: Fortran adios_write_byid is an interface, and its 
+   subroutines cannot call adios_write_byid() in this file directly because 
+   the Fortran compiler interprets it as the call to the interface name. 
+   adios_write_byid_f2c provides the bridge to link the C function with
+   the subroutines. 
+*/
+void FC_FUNC_(adios_write_byid_f2c, ADIOS_WRITE_BYID_F2C) 
+    (int64_t * fd_p, int64_t * id, void * var, int * err, int var_size)
+{
+    FC_FUNC_(adios_write_byid, ADIOS_WRITE) (fd_p, id, var, err, var_size);
+}
+
 /* This Fortran api function is a bit different from the C api funcion, but
  * they call the same common_adios_write().
  * Difference: if the variable is string type then we need to convert
