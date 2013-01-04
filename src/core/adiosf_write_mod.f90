@@ -1606,7 +1606,7 @@ module adios_write_mod
         !    implicit none
         !    integer*8,      intent(in)  :: fd
         !    integer*8,      intent(in)  :: varid
-        !    integer*8,      intent(inout) :: data
+        !    character(*),   intent(inout) :: data
         !    integer,        intent(in)  :: err 
         !
         !    call adios_write_byid_f2c (fd, varid, data, err)
@@ -1754,7 +1754,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
-            integer*8,      intent(in)  :: data
+            character(*),   intent(in)  :: data
             integer,        intent(in)  :: err 
 
             call adios_write_byid_f2c (fd, varid, data, err)
@@ -1901,7 +1901,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
-            integer*8,   dimension(*), intent(in)  :: data
+            character(*),dimension(*), intent(in)  :: data
             integer,        intent(in)  :: err 
 
             call adios_write_byid_f2c (fd, varid, data, err)
@@ -2048,7 +2048,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
-            integer*8,   dimension(:,:),  intent(in)  :: data
+            character(*),dimension(:,:),  intent(in)  :: data
             integer,        intent(in)  :: err 
 
             call adios_write_byid_f2c (fd, varid, data, err)
@@ -2195,7 +2195,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
-            integer*8,   dimension(:,:,:), intent(in)  :: data
+            character(*),dimension(:,:,:), intent(in)  :: data
             integer,        intent(in)  :: err 
 
             call adios_write_byid_f2c (fd, varid, data, err)
@@ -2342,7 +2342,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
-            integer*8,   dimension(:,:,:,:),intent(in)  :: data
+            character(*),dimension(:,:,:,:),intent(in)  :: data
             integer,        intent(in)  :: err 
 
             call adios_write_byid_f2c (fd, varid, data, err)
@@ -2489,7 +2489,7 @@ module adios_write_mod
             implicit none
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
-            integer*8,   dimension(:,:,:,:,:),intent(in)  :: data
+            character(*),dimension(:,:,:,:,:),intent(in)  :: data
             integer,        intent(in)  :: err 
 
             call adios_write_byid_f2c (fd, varid, data, err)
