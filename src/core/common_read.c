@@ -264,6 +264,10 @@ int common_read_close (ADIOS_FILE *fp)
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
+        if (internals->group_in_view != -1) {
+            // reset from group view before calling the real close
+            common_read_group_view (fp, -1);
+        }
         retval = internals->read_hooks[internals->method].adios_close_fn (fp);
         free_namelist (internals->group_namelist, internals->ngroups);
         free (internals->nvars_per_group);
