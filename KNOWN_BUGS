@@ -4,6 +4,7 @@ Writing data
 
 - No-XML writing: The following scenario is not supported:
   Define arrays sizes and offsets with numbers in the source code instead of references to scalar variables also written to the output AND write multiple blocks of the same variable from one process. The (bad) result is that each block's size definition will equal to the first definition.  
+  Solution: save the IDs returned by adios_define_variable() and use adios_write_byid() instead of adios_write()
 
 Reading data
 ============

@@ -8,6 +8,8 @@
     - code coupling example code for file-based/staged coupling
       see examples/coupling
     - bp2h5 supports converting complex and double complex types
+    - new adios_write_byid() function to write multiple-blocks of
+      the same global array from a process
     - fix: F90 modules: adios_write, adios_schedule_read
     - fix: invalid "out of bound" errors when reading multiple steps 
            of multi-dimensional arrays
