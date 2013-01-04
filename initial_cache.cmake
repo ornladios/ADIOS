@@ -1,7 +1,8 @@
 set(BUILD_WRITE ON CACHE BOOL "")
+
 set(BUILD_FORTRAN OFF CACHE BOOL "")
 
-set(MXML_DIR "/sw/analysis-x64/mxml/2.6/centos5.5_pgi10.9" CACHE FILEPATH "path to mxml dir")
+#set(MXML_DIR "/sw/analysis-x64/mxml/2.6/centos5.5_pgi10.9" CACHE FILEPATH "path to mxml dir")
 
 set(DATATAP OFF CACHE BOOL "")
 
