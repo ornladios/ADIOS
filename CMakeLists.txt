@@ -1,9 +1,10 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.6)
 project(ADIOS_PROJECT)
 
-set(LANGUAGE "" CACHE FILEPATH "")  #C/CXX/Fortran
-enable_language(${LANGUAGE})
-message(STATUS "CMAKE_${LANGUAGE}_COMPILER_WORKS = ${CMAKE_${LANGUAGE}_COMPILER_WORKS}")
+#set(LANGUAGE "" CACHE FILEPATH "")  #C/CXX/Fortran
+
+#enable_language(${LANGUAGE})
+#message(STATUS "CMAKE_${LANGUAGE}_COMPILER_WORKS = ${CMAKE_${LANGUAGE}_COMPILER_WORKS}")
 
 include_directories(${PROJECT_SOURCE_DIR})
 link_directories(${PROJECT_BINARY_DIR})
@@ -15,15 +16,16 @@ set(datadir ${prefix}/share)
 set(libdir ${exec_prefix}/lib)
 set(includedir ${prefix}/include)
 
-option(PHDF5 "PHDF5" OFF)
-option(LUSTRE "LUSTRE" OFF)
-option(BUILD_WRITE "BUILD_WRITE" ON)
+#option(PHDF5 "PHDF5" OFF)
+#option(LUSTRE "LUSTRE" OFF)
 
 set(LIBS "")
 set(CPPFLAGS "-DMPICH_IGNORE_CXX_SEEK")
 set(CFLAGS "-g -fPIC")
 
 #################################### start generating config.h #######################################
+set(BUILD_WITH_CMAKE 1)
+
 INCLUDE (CheckIncludeFiles)
 INCLUDE (CheckFunctionExists)
 
@@ -374,9 +376,14 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${PROJECT_SOURCE_DIR}/
 ################################ end of generating config.h ###############################
 
 ################################ start of Fortran processing ##############################
+if(BUILD_FORTRAN)
+enable_language(${LANGUAGE})
+message(STATUS "CMAKE_${LANGUAGE}_COMPILER_WORKS =${CMAKE_${LANGUAGE}_COMPILER_WORKS}")
+
 include(FortranCInterface)
 FortranCInterface_HEADER(${CMAKE_CURRENT_SOURCE_DIR}/FC.h MACRO_NAMESPACE "FC_")
 FortranCInterface_VERIFY(CXX)
+endif()
 ################################ end of Fortran processing ##############################
 
 
@@ -386,10 +393,10 @@ FortranCInterface_VERIFY(CXX)
 # ADIOSLIB_INT_* for codes using libadios_internal_nompi.a (like bp2ncd, bp2h5, bpdump etc)
 # ADIOSREADLIB_* for codes using libadiosread.a, libadiosreadf.a
 # ADIOSREADLIB_SEQ_* for codes using libadiosread_nompi.a
-# adiosconfig will contain flags for users' code linking based on these flags
+# adios_config will contain flags for users' code linking based on these flags
 # EXTRA flags are used for compiling adios stuff, which need not go into adios_config for user codes
 set(ADIOSLIB_EXTRA_CPPFLAGS "-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE")
-set(ADIOSLIB_LDADD "${MXML_LIBS}")
+set(ADIOSLIB_LDADD "m ${MXML_LIBS}")
 set(ADIOSLIB_CFLAGS "")
 set(ADIOSLIB_CPPFLAGS "${MXML_CPPFLAGS}")
 set(ADIOSLIB_SEQ_CPPFLAGS "-D_NOMPI ${MXML_CPPFLAGS}")
