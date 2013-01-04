@@ -27,9 +27,11 @@ buffer size in MB
 
 \textbf{adios\_declare\_group ---} declare an ADIOS group 
 
-\textbf{adios\_define\_var ---} define an ADIOS variable for an ADIOS group.
+\textbf{adios\_define\_var ---} define an ADIOS variable for an ADIOS group
 
 \textbf{adios\_define\_attribute ---} define an ADIOS attribute for an ADIOS group
+
+\textbf{adios\_write\_byid ---} write a variable, identified by the ID returned by adios\_define\_var, instead of by name
 
 \textbf{adios\_select\_method ---} associate an ADIOS transport method, such as MPI, 
 POSIX method with a particular ADIOS group. The transport methods that are supported 
@@ -128,7 +130,7 @@ call adios_declare_group (m_adios_group, "restart", "iter", 1, ierr)
 
 This API is used to declare an ADIOS variable for a particular group. 
 \begin{lstlisting}[alsolanguage=C,caption={},label={}]
-int adios_define_var (int64_t group_id, 
+int64_t adios_define_var (int64_t group_id, 
                       const char * name,
                   const char * path,
                       enum ADIOS_DATATYPES type,
@@ -159,15 +161,37 @@ See Section \ref{section-xml-global-arrays} for details on global dimensions.
 scalar or local array, an empty string (\verb+""+) is expected.
 \end{itemize}
 
-Output :
-\begin{itemize}
-\item None
-\end{itemize}
+Return value:
+
+A 64bit ID of the definition that can be used when writing multiple sub-blocks 
+of the same variable within one process within one output step. 
 
 Fortran example: 
 \begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
 call adios_define_var (m_adios_group, "temperature", "", 6, &
-                       "NX", "G", "O", ierr)
+                       "NX", "G", "O", varid)
+\end{lstlisting}
+
+\subsection{adios\_write\_byid}
+\verb+adios\_write()+ finds the definition of a variable by its name. If you write
+a variable multiple times in an output step, you must define it as many times as you
+write it and use the returned IDs in \verb+adios_write_byid()+ to identify what you
+are writing.
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_write_byid (int64_t fd_p, int64_t id, void * var)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item fd\_p---pointer to the internal file structure
+\item id---id returned by the corresponding adios\_define\_var() call
+\item var ---the address of the data element defined need to be written
+\end{itemize}
+
+Fortran example: 
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_write_byid (handle, id, v, ierr)
 \end{lstlisting}
 
 
@@ -270,6 +294,7 @@ program adios_global
     integer*8 :: adios_groupsize, adios_totalsize
     integer*8 :: adios_handle
     integer*8 :: m_adios_group
+    integer*8 :: varid ! dummy variable definition ID
 
     call MPI_Init (ierr)
     call MPI_Comm_dup (MPI_COMM_WORLD, comm, ierr)
@@ -286,15 +311,15 @@ program adios_global
 
     ! define integer scalars for dimensions and offsets
     call adios_define_var (m_adios_group, "NX","", 2, &
-                           "", "", "", ierr) 
+                           "", "", "", varid) 
     call adios_define_var (m_adios_group, "G", "", 2 &
-                           "", "", "", ierr) 
+                           "", "", "", varid) 
     call adios_define_var (m_adios_group, "O", "", 2 &
-                           "", "", "", ierr)
+                           "", "", "", varid)
         
     ! define a global array
     call adios_define_var (m_adios_group, "temperature", "", 6 &
-                           "NX", "G", "O", ierr)
+                           "NX", "G", "O", varid)
 
     !
     ! Write data 

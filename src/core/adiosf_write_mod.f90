@@ -111,7 +111,7 @@ module adios_write_mod
             integer,        intent(out) :: err
         end subroutine
 
-        subroutine adios_define_var (group_id, varname, path, vartype, dimensions, global_dimensions, local_offsets, err)
+        subroutine adios_define_var (group_id, varname, path, vartype, dimensions, global_dimensions, local_offsets, id) 
             implicit none
             integer*8,      intent(in)  :: group_id
             character(*),   intent(in)  :: varname
@@ -120,7 +120,7 @@ module adios_write_mod
             character(*),   intent(in)  :: dimensions
             character(*),   intent(in)  :: global_dimensions
             character(*),   intent(in)  :: local_offsets
-            integer,        intent(out) :: err
+            integer*8,      intent(out) :: id
         end subroutine
 
         subroutine adios_define_attribute (group_id, attrname, path, attrtype, value, varname, err)
@@ -151,7 +151,6 @@ module adios_write_mod
         end subroutine
 
     end interface
-
 
 
 
@@ -254,6 +253,108 @@ module adios_write_mod
         module procedure adios_write_logical2_d6
         module procedure adios_write_logical4_d6
         module procedure adios_write_logical8_d6
+    end interface
+
+
+    !
+    !
+    ! ADIOS_WRITE_BYID generic interface 
+    !
+    ! Usage: call adios_write_byid (fd, varid, data, err)
+    !
+    !
+    interface adios_write_byid
+        module procedure adios_write_byid_int1_d0
+        module procedure adios_write_byid_int2_d0
+        module procedure adios_write_byid_int4_d0
+        module procedure adios_write_byid_int8_d0
+        module procedure adios_write_byid_real4_d0
+        module procedure adios_write_byid_real8_d0
+        module procedure adios_write_byid_complex8_d0
+        module procedure adios_write_byid_complex16_d0
+        !module procedure adios_write_byid_char_d0
+        module procedure adios_write_byid_logical1_d0
+        module procedure adios_write_byid_logical2_d0
+        module procedure adios_write_byid_logical4_d0
+        module procedure adios_write_byid_logical8_d0
+        module procedure adios_write_byid_int1_d1
+        module procedure adios_write_byid_int2_d1
+        module procedure adios_write_byid_int4_d1
+        module procedure adios_write_byid_int8_d1
+        module procedure adios_write_byid_real4_d1
+        module procedure adios_write_byid_real8_d1
+        module procedure adios_write_byid_complex8_d1
+        module procedure adios_write_byid_complex16_d1
+        module procedure adios_write_byid_char_d1
+        module procedure adios_write_byid_logical1_d1
+        module procedure adios_write_byid_logical2_d1
+        module procedure adios_write_byid_logical4_d1
+        module procedure adios_write_byid_logical8_d1
+        module procedure adios_write_byid_int1_d2
+        module procedure adios_write_byid_int2_d2
+        module procedure adios_write_byid_int4_d2
+        module procedure adios_write_byid_int8_d2
+        module procedure adios_write_byid_real4_d2
+        module procedure adios_write_byid_real8_d2
+        module procedure adios_write_byid_complex8_d2
+        module procedure adios_write_byid_complex16_d2
+        module procedure adios_write_byid_char_d2
+        module procedure adios_write_byid_logical1_d2
+        module procedure adios_write_byid_logical2_d2
+        module procedure adios_write_byid_logical4_d2
+        module procedure adios_write_byid_logical8_d2
+        module procedure adios_write_byid_int1_d3
+        module procedure adios_write_byid_int2_d3
+        module procedure adios_write_byid_int4_d3
+        module procedure adios_write_byid_int8_d3
+        module procedure adios_write_byid_real4_d3
+        module procedure adios_write_byid_real8_d3
+        module procedure adios_write_byid_complex8_d3
+        module procedure adios_write_byid_complex16_d3
+        module procedure adios_write_byid_char_d3
+        module procedure adios_write_byid_logical1_d3
+        module procedure adios_write_byid_logical2_d3
+        module procedure adios_write_byid_logical4_d3
+        module procedure adios_write_byid_logical8_d3
+        module procedure adios_write_byid_int1_d4
+        module procedure adios_write_byid_int2_d4
+        module procedure adios_write_byid_int4_d4
+        module procedure adios_write_byid_int8_d4
+        module procedure adios_write_byid_real4_d4
+        module procedure adios_write_byid_real8_d4
+        module procedure adios_write_byid_complex8_d4
+        module procedure adios_write_byid_complex16_d4
+        module procedure adios_write_byid_char_d4
+        module procedure adios_write_byid_logical1_d4
+        module procedure adios_write_byid_logical2_d4
+        module procedure adios_write_byid_logical4_d4
+        module procedure adios_write_byid_logical8_d4
+        module procedure adios_write_byid_int1_d5
+        module procedure adios_write_byid_int2_d5
+        module procedure adios_write_byid_int4_d5
+        module procedure adios_write_byid_int8_d5
+        module procedure adios_write_byid_real4_d5
+        module procedure adios_write_byid_real8_d5
+        module procedure adios_write_byid_complex8_d5
+        module procedure adios_write_byid_complex16_d5
+        module procedure adios_write_byid_char_d5
+        module procedure adios_write_byid_logical1_d5
+        module procedure adios_write_byid_logical2_d5
+        module procedure adios_write_byid_logical4_d5
+        module procedure adios_write_byid_logical8_d5
+        module procedure adios_write_byid_int1_d6
+        module procedure adios_write_byid_int2_d6
+        module procedure adios_write_byid_int4_d6
+        module procedure adios_write_byid_int8_d6
+        module procedure adios_write_byid_real4_d6
+        module procedure adios_write_byid_real8_d6
+        module procedure adios_write_byid_complex8_d6
+        module procedure adios_write_byid_complex16_d6
+        module procedure adios_write_byid_char_d6
+        module procedure adios_write_byid_logical1_d6
+        module procedure adios_write_byid_logical2_d6
+        module procedure adios_write_byid_logical4_d6
+        module procedure adios_write_byid_logical8_d6
     end interface
 
 
@@ -1396,6 +1497,1046 @@ module adios_write_mod
             integer,        intent(in)  :: err 
 
             call adios_write_f2c (fd, varname, data, err)
+        end subroutine
+
+    ! end of ADIOS_WRITE functions
+
+
+    !
+    !
+    ! ADIOS_WRITE_BYID generic interface 
+    !
+    ! Usage: call adios_write_byid (fd, varid, data, err)
+    !
+    !
+        !
+        ! scalars
+        !
+
+        ! INTEGER*1 scalar
+        subroutine adios_write_byid_int1_d0 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*1,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*2 scalar
+        subroutine adios_write_byid_int2_d0 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*2,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*4 scalar
+        subroutine adios_write_byid_int4_d0 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*4,      intent(in) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*8 scalar
+        subroutine adios_write_byid_int8_d0 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*8,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*4 scalar
+        subroutine adios_write_byid_real4_d0 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*4,         intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*8 scalar
+        subroutine adios_write_byid_real8_d0 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*8,         intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) scalar
+        subroutine adios_write_byid_complex8_d0 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex,        intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX scalar
+        subroutine adios_write_byid_complex16_d0 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex*16,     intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! CHARACTER scalar (Same as 1D?)
+        !subroutine adios_write_byid_char_d0 (fd, varid, data, err)
+        !    implicit none
+        !    integer*8,      intent(in)  :: fd
+        !    integer*8,      intent(in)  :: varid
+        !    integer*8,      intent(inout) :: data
+        !    integer,        intent(in)  :: err 
+    !
+        !    call adios_write_byid_f2c (fd, varid, data, err)
+        !end subroutine
+
+        ! LOGICAL*1 scalar
+        subroutine adios_write_byid_logical1_d0 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*1,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*2 scalar
+        subroutine adios_write_byid_logical2_d0 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*2,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*4 scalar
+        subroutine adios_write_byid_logical4_d0 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*4,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*8 scalar
+        subroutine adios_write_byid_logical8_d0 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*8,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+
+    !
+        ! 1D data
+        !
+
+        ! INTEGER*1 array
+        subroutine adios_write_byid_int1_d1 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*1, dimension(*), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*2 array
+        subroutine adios_write_byid_int2_d1 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*2, dimension(*), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*4 array
+        subroutine adios_write_byid_int4_d1 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*4, dimension(*), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*8 array
+        subroutine adios_write_byid_int8_d1 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*8, dimension(*), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*4 array
+        subroutine adios_write_byid_real4_d1 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*4,    dimension(*), intent(out) :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*8 array
+        subroutine adios_write_byid_real8_d1 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*8,   dimension(*), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) array
+        subroutine adios_write_byid_complex8_d1 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex,   dimension(*), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX array
+        subroutine adios_write_byid_complex16_d1 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex*16,dimension(*), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! CHARACTER array
+        subroutine adios_write_byid_char_d1 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*8,      intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*1 array
+        subroutine adios_write_byid_logical1_d1 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*1, dimension(*), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*2 array
+        subroutine adios_write_byid_logical2_d1 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*2, dimension(*), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*4 array
+        subroutine adios_write_byid_logical4_d1 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*4, dimension(*), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*8 array
+        subroutine adios_write_byid_logical8_d1 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*8, dimension(*), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        !
+        ! 2D data
+        !
+
+        ! INTEGER*1 array
+        subroutine adios_write_byid_int1_d2 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*1, dimension(:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*2 array
+        subroutine adios_write_byid_int2_d2 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*2, dimension(:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*4 array
+        subroutine adios_write_byid_int4_d2 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*4, dimension(:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*8 array
+        subroutine adios_write_byid_int8_d2 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*8, dimension(:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*4 array
+        subroutine adios_write_byid_real4_d2 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*4,    dimension(:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*8 array
+        subroutine adios_write_byid_real8_d2 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*8,   dimension(:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) array
+        subroutine adios_write_byid_complex8_d2 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex,   dimension(:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX array
+        subroutine adios_write_byid_complex16_d2 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex*16,dimension(:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! CHARACTER array
+        subroutine adios_write_byid_char_d2 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*8,   dimension(*), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*1 array
+        subroutine adios_write_byid_logical1_d2 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*1, dimension(:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*2 array
+        subroutine adios_write_byid_logical2_d2 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*2, dimension(:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*4 array
+        subroutine adios_write_byid_logical4_d2 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*4, dimension(:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*8 array
+        subroutine adios_write_byid_logical8_d2 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*8, dimension(:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        !
+        ! 3D data
+        !
+
+        ! INTEGER*1 array
+        subroutine adios_write_byid_int1_d3 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*1, dimension(:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*2 array
+        subroutine adios_write_byid_int2_d3 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*2, dimension(:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*4 array
+        subroutine adios_write_byid_int4_d3 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*4, dimension(:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*8 array
+        subroutine adios_write_byid_int8_d3 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*8, dimension(:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*4 array
+        subroutine adios_write_byid_real4_d3 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*4,    dimension(:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*8 array
+        subroutine adios_write_byid_real8_d3 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*8,   dimension(:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) array
+        subroutine adios_write_byid_complex8_d3 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex,   dimension(:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX array
+        subroutine adios_write_byid_complex16_d3 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex*16,dimension(:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! CHARACTER array
+        subroutine adios_write_byid_char_d3 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*8,   dimension(:,:),  intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*1 array
+        subroutine adios_write_byid_logical1_d3 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*1, dimension(:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*2 array
+        subroutine adios_write_byid_logical2_d3 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*2, dimension(:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*4 array
+        subroutine adios_write_byid_logical4_d3 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*4, dimension(:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*8 array
+        subroutine adios_write_byid_logical8_d3 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*8, dimension(:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        !
+        ! 4D data
+        !
+
+        ! INTEGER*1 array
+        subroutine adios_write_byid_int1_d4 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*1, dimension(:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*2 array
+        subroutine adios_write_byid_int2_d4 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*2, dimension(:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*4 array
+        subroutine adios_write_byid_int4_d4 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*4, dimension(:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*8 array
+        subroutine adios_write_byid_int8_d4 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*8, dimension(:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*4 array
+        subroutine adios_write_byid_real4_d4 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*4,    dimension(:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*8 array
+        subroutine adios_write_byid_real8_d4 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*8,   dimension(:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) array
+        subroutine adios_write_byid_complex8_d4 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex,   dimension(:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX array
+        subroutine adios_write_byid_complex16_d4 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex*16,dimension(:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! CHARACTER array
+        subroutine adios_write_byid_char_d4 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*8,   dimension(:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*1 array
+        subroutine adios_write_byid_logical1_d4 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*1, dimension(:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*2 array
+        subroutine adios_write_byid_logical2_d4 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*2, dimension(:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*4 array
+        subroutine adios_write_byid_logical4_d4 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*4, dimension(:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*8 array
+        subroutine adios_write_byid_logical8_d4 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*8, dimension(:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        !
+        ! 5D data
+        !
+
+        ! INTEGER*1 array
+        subroutine adios_write_byid_int1_d5 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*1, dimension(:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*2 array
+        subroutine adios_write_byid_int2_d5 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*2, dimension(:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*4 array
+        subroutine adios_write_byid_int4_d5 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*4, dimension(:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*8 array
+        subroutine adios_write_byid_int8_d5 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*8, dimension(:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*4 array
+        subroutine adios_write_byid_real4_d5 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*4,    dimension(:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*8 array
+        subroutine adios_write_byid_real8_d5 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*8,   dimension(:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) array
+        subroutine adios_write_byid_complex8_d5 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex,   dimension(:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX array
+        subroutine adios_write_byid_complex16_d5 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex*16,dimension(:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! CHARACTER array
+        subroutine adios_write_byid_char_d5 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*8,   dimension(:,:,:,:),intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*1 array
+        subroutine adios_write_byid_logical1_d5 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*1, dimension(:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*2 array
+        subroutine adios_write_byid_logical2_d5 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*2, dimension(:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*4 array
+        subroutine adios_write_byid_logical4_d5 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*4, dimension(:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*8 array
+        subroutine adios_write_byid_logical8_d5 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*8, dimension(:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        !
+        ! 6D data
+        !
+
+        ! INTEGER*1 array
+        subroutine adios_write_byid_int1_d6 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*1, dimension(:,:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*2 array
+        subroutine adios_write_byid_int2_d6 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*2, dimension(:,:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*4 array
+        subroutine adios_write_byid_int4_d6 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*4, dimension(:,:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! INTEGER*8 array
+        subroutine adios_write_byid_int8_d6 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*8, dimension(:,:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*4 array
+        subroutine adios_write_byid_real4_d6 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*4,    dimension(:,:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! REAL*8 array
+        subroutine adios_write_byid_real8_d6 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            real*8,   dimension(:,:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! COMPLEX (*8) array
+        subroutine adios_write_byid_complex8_d6 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex,   dimension(:,:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! DOUBLE-COMPLEX array
+        subroutine adios_write_byid_complex16_d6 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            complex*16,dimension(:,:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! CHARACTER array
+        subroutine adios_write_byid_char_d6 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            integer*8,   dimension(:,:,:,:,:),intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*1 array
+        subroutine adios_write_byid_logical1_d6 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*1, dimension(:,:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*2 array
+        subroutine adios_write_byid_logical2_d6 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*2, dimension(:,:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*4 array
+        subroutine adios_write_byid_logical4_d6 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*4, dimension(:,:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
+        end subroutine
+
+        ! LOGICAL*8 array
+        subroutine adios_write_byid_logical8_d6 (fd, varid, data, err)
+            implicit none
+            integer*8,      intent(in)  :: fd
+            integer*8,      intent(in)  :: varid
+            logical*8, dimension(:,:,:,:,:,:), intent(in)  :: data
+            integer,        intent(in)  :: err 
+
+            call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
 
     ! end of ADIOS_WRITE functions
