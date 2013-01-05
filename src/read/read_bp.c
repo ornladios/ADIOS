@@ -2771,54 +2771,16 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
     BP_FILE * fh = (BP_FILE *) p->fh;
     struct adios_index_attribute_struct_v1 * attr_root;
     struct adios_index_var_struct_v1 * var_root, * v1;
-    int file_is_fortran, last_step = fp->last_step, show_hidden_attrs;
+    int file_is_fortran, last_step = fp->last_step;
     uint64_t k, attr_c_index, var_c_index;
 
     adios_errno = 0;
 
-    show_hidden_attrs = 0;
-    for (i = 0; i < fp->nattrs; i++)
-    {
-        if (strstr (fp->attr_namelist[i], "__adios__"))
-        {
-            show_hidden_attrs = 1;
-            break;
-        }
-    }
-
     attr_root = fh->attrs_root; /* need to traverse the attribute list of the group */
-    i = 0;
-
-    if (show_hidden_attrs)
+    for (i = 0; i < attrid && attr_root; i++)
     {
-        while (i < attrid && attr_root)
-        {
-            i++;
         attr_root = attr_root->next;
     }
-    }
-    else
-    {
-        while (i < attrid && attr_root)
-        {
-            if (strstr (attr_root->attr_path, "__adios__"))
-            {
-            }
-            else
-            {
-                i++;
-            }
-
-            attr_root = attr_root->next;
-        }
-
-        while (attr_root && strstr (attr_root->attr_path, "__adios__"))
-        {
-            attr_root = attr_root->next;
-        }
-    }
-
-    assert (attr_root);
 
     if (i != attrid)
     {
@@ -2872,24 +2834,10 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
         {
             if (var_root->id == attr_root->characteristics[attr_c_index].var_id
                && !strcmp(var_root->var_path, attr_root->attr_path)
-               && !strcmp(var_root->group_name, attr_root->group_name)
                )
                 break;
             var_root = var_root->next;
         }
-
-        if (!var_root)
-        {
-            var_root = fh->vars_root;
-            while (var_root)
-            {
-                if (var_root->id == attr_root->characteristics[attr_c_index].var_id
-                   && !strcmp(var_root->group_name, attr_root->group_name))
-                    break;
-                var_root = var_root->next;
-            }
-        }
-
         if (!var_root)
         {
             var_root = fh->vars_root;

@@ -1,4 +1,4 @@
-1.4.1 Release Dec 2012
+1.4.1 Release Aug 2012
     - aggregated file reader method (from 1.3.1): 
       use ADIOS_READ_METHOD_BP_AGGREGATE
     - memory limitation specified by user for chunked reading 
@@ -8,8 +8,6 @@
     - code coupling example code for file-based/staged coupling
       see examples/coupling
     - bp2h5 supports converting complex and double complex types
-    - new adios_write_byid() function to write multiple-blocks of
-      the same global array from a process
     - fix: F90 modules: adios_write, adios_schedule_read
     - fix: invalid "out of bound" errors when reading multiple steps 
            of multi-dimensional arrays
