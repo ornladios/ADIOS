@@ -38,6 +38,8 @@ gwrite_reader2D.fh: coupling_reader_2D.xml
 
 
 clean:
-	rm -f *.o *.mod *.fh core.*
+	rm -f *.o *.mod *.fh core.* 
 	rm -f coupling_writer_2D coupling_reader_2D
         
+distclean: clean
+	rm -f log.* dataspaces.conf conf srv.lck *.bp

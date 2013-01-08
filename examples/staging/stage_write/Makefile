@@ -34,4 +34,8 @@ test_decompose: ${OBJS} test_decompose.o
 clean:
 	rm -f *.o *.mod *.fh core.*
 	rm -f stage_write
-        
+
+
+distclean: clean
+	rm -f log.* dataspaces.conf conf srv.lck *.bp
+
