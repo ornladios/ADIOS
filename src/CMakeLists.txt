@@ -218,6 +218,12 @@ set(libadios_nompi_a_SOURCES core/adios.c
 
     set(nodist_include_HEADERS ${nodist_include_HEADERS} adios_write_mod.mod)
     set(CLEANFILES ${CLEANFILES} adios_write_mod.mod)
+
+    ADD_CUSTOM_COMMAND(
+	OUTPUT adios_write_mod.mod
+	COMMAND $(FC) -c core/adiosf_write_mod.F90
+	DEPENDS core/adiosf_write_mod.F90 adios_defs_mod.mod
+	)
 #not complete
 #from line 261 to line 262
 #not complet
@@ -322,7 +328,8 @@ if(BUILD_FORTRAN)
   endif(HAVE_NSSI)
 
   set(libadiosreadf_a_CPPFLAGS "${libadiosreadf_a_CPPFLAGS} ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSREADLIB_CPPFLAGS}")
-  set(libadiosreadf_a_SOURCES ${libadiosreadf_a_SOURCES} {FortranReadLibSource} core/adiosf_read.c)
+  set(libadiosreadf_a_SOURCES ${libadiosreadf_a_SOURCES} ${FortranReadLibSource} core/adiosf_read.c)
+  set(libadiosreadf_v1_a_SOURCES ${FortranReadLibSource} core/adiosf_read_v1.c)
   set(libadiosreadf_v1_a_CPPFLAGS "${libadiosreadf_a_CPPFLAGS}")
   set(libadiosreadf_v1_a_CFLAGS "${libadiosreadf_a_CFLAGS}")
   set(libadiosreadf_a_SOURCES ${libadiosreadf_a_SOURCES} core/adiosf_defs_mod.F90 core/adiosf_read_mod.F90)
@@ -331,7 +338,17 @@ if(BUILD_FORTRAN)
   #not complete
   #from line 363 to line 367
   #not complete
-  
+  ADD_CUSTOM_COMMAND(
+        OUTPUT adios_read_mod.mod
+        COMMAND $(FC) -c core/adiosf_read_mod.F90
+        DEPENDS core/adiosf_read_mod.F90 adios_defs_mod.mod
+        )  
+
+  ADD_CUSTOM_COMMAND(
+        OUTPUT adios_defs_mod.mod
+        COMMAND $(FC) -c core/adiosf_defs_mod.F90
+        DEPENDS core/adios_defs_mod.F90
+	)
 endif(BUILD_FORTRAN)
 
 #start libadiosread_nompi.a
@@ -441,7 +458,7 @@ if(HAVE_DMALLOC)
   set(libadiosread_nompi_a_CPPFLAGS "${libadiosread_nompi_a_CPPFLAGS} -DDMALLOC") 
 endif(HAVE_DMALLOC)
 
-#include_directories(${include_HEADERS})
+include_directories(${include_HEADERS})
 add_library(adiosread STATIC ${libadiosread_a_SOURCES})
 set_target_properties(adiosread PROPERTIES COMPILE_FLAGS "${libadiosread_a_CPPFLAGS} ${libadiosread_a_CFLAGS}")
 
@@ -456,8 +473,10 @@ if(BUILD_FORTRAN)
   add_library(adiosreadf ${libadiosreadf_a_SOURCES})
   set_target_properties(adiosreadf PROPERTIES COMPILE_FLAGS "${libadiosreadf_a_CPPFLAGS} ${libadiosreadf_a_CFLAGS}")
 
-  add_library(adiosreadf_v1 ${libadiosreadf_v1_a_SOURCES} ${nodist_include_HEADERS})
-  set_target_properties(libadiosreadf_v1 PROPERTIES COMPILE_FLAGS "${libadiosreadf_v1_a_CPPFLAGS} ${libadiosreadf_v1_a_CFLAGS}")
+#  message(STATUS "${nodist_include_HEADERS}")
+#  message(STATUS "${libadiosreadf_v1_a_SOURCES}")
+  add_library(adiosreadf_v1 ${libadiosreadf_v1_a_SOURCES})
+  set_target_properties(adiosreadf_v1 PROPERTIES COMPILE_FLAGS "${libadiosreadf_v1_a_CPPFLAGS} ${libadiosreadf_v1_a_CFLAGS}")
 
   add_library(adiosreadf_nompi ${libadiosreadf_nompi_a_SOURCES})
   set_target_properties(adiosreadf_nompi  PROPERTIES COMPILE_FLAGS "${libadiosreadf_nompi_a_CPPFLAGS} ${libadiosreadf_nompi_a_CFLAGS}")
