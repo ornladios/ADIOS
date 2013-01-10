@@ -517,6 +517,8 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
         v->data = 0;
     }
 
+    v->write_count++;
+printf ("var: %s written %d\n", v->name, v->write_count);
     return 0;
 }
 

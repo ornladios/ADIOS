@@ -56,6 +56,8 @@ struct adios_var_struct
     enum ADIOS_FLAG free_data;    // primarily used for writing
     void * data;                  // primarily used for reading
     uint64_t data_size;           // primarily used for reading
+    uint16_t write_count; // added to support multiple writes for transform layer.
+                          // Might needed for other things in the future.
 
     // NCSU - Adding stat related variables
     struct adios_stat_struct ** stats; // 2D array. Complex numbers can contain upto 3 parts

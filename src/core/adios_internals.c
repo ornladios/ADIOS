@@ -1532,6 +1532,7 @@ int adios_common_define_var (int64_t group_id, const char * name
     v->write_offset = 0;
 
     v->data_size = 0;
+    v->write_count = 0;
 
     v->next = 0;
 
@@ -2679,6 +2680,7 @@ void adios_copy_var_written (struct adios_var_struct ** root
             var_new->free_data = var->free_data;
             var_new->data = 0;
             var_new->data_size = var->data_size;
+            var_new->write_count = var->write_count;
             var_new->next = 0;
             adios_transform_init_transform_var(var_new);
 
