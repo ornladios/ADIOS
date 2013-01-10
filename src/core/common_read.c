@@ -53,7 +53,7 @@ struct common_read_internals_struct {
     char ** full_attrnamelist;   /* fp->attr_namelist to save here if one group is viewed */
 
     // NCSU ALACRITY-ADIOS - Table of sub-requests issued by transform method
-    adios_transform_read_reqgroup *transform_reqgroups;
+    adios_transform_read_request *transform_reqgroups;
 };
 
 // NCSU ALACRITY-ADIOS - Forward declaration/function prototypes
@@ -248,10 +248,10 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 
 // NCSU ALACRITY-ADIOS - Cleanup for read request groups
 #define MYFREE(p) {if (p) free((void*)p); (p)=NULL;}
-static void clean_up_read_reqgroups(adios_transform_read_reqgroup **reqgroups_head) {
-    adios_transform_read_reqgroup *removed;
-    while ((removed = adios_transform_read_reqgroups_pop(reqgroups_head)) != NULL) {
-        adios_transform_free_read_reqgroup(&removed);
+static void clean_up_read_reqgroups(adios_transform_read_request **reqgroups_head) {
+    adios_transform_read_request *removed;
+    while ((removed = adios_transform_read_request_pop(reqgroups_head)) != NULL) {
+        adios_transform_read_request_free(&removed);
     }
 }
 #undef MYFREE
@@ -404,12 +404,12 @@ ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname)
 
 // NCSU ALACRITY-ADIOS - For copying original metadata from transform
 //   info to inq var info
-static void move_trans_blockinfo_to_varinfo(ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
+static void patch_varinfo_with_transform_blockinfo(ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
     common_read_free_blockinfo(&vi->blockinfo, vi->sum_nblocks);    // Free blockinfo in varinfo
-    vi->blockinfo = ti->orig_blockinfo;                                // Move blockinfo from transinfo to varinfo
-    ti->orig_blockinfo = 0;                                            // Delink blockinfo from transinfo
+    vi->blockinfo = ti->orig_blockinfo;                             // Move blockinfo from transinfo to varinfo
+    ti->orig_blockinfo = 0;                                         // Delink blockinfo from transinfo
 }
-static void move_transinfo_to_varinfo(ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
+static void patch_varinfo_with_transinfo(ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
     // First make room for the transform info fields
     free(vi->dims);
 
@@ -422,7 +422,7 @@ static void move_transinfo_to_varinfo(ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
     // Finally, delink them from the transform info so they aren't inadvertently free'd
     ti->orig_dims = 0;
 
-    move_trans_blockinfo_to_varinfo(vi, ti); // Also move blockinfo if extant
+    patch_varinfo_with_transform_blockinfo(vi, ti); // Also move blockinfo if extant
 }
 
 // NCSU ALACRITY-ADIOS - Delegate to the 'inq_var_raw_byid' function, then
@@ -439,7 +439,7 @@ ADIOS_VARINFO * common_read_inq_var_byid(const ADIOS_FILE *fp, int varid)
     // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
     ti = common_read_inq_transinfo(fp, vi); // No orig_blockinfo
     if (ti->transform_type != adios_transform_none) {
-        move_transinfo_to_varinfo(vi, ti);
+        patch_varinfo_with_transinfo(vi, ti);
     }
     common_read_free_transinfo(vi, ti);
 
@@ -569,7 +569,7 @@ int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo
         if (retval != err_no_error)
             return retval;
 
-        move_trans_blockinfo_to_varinfo(varinfo, ti);
+        patch_varinfo_with_transform_blockinfo(varinfo, ti);
     }
     common_read_free_transinfo(varinfo, ti);
 
@@ -732,15 +732,15 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
             // method to generate subrequests
             // Else, do the normal thing
             if (transinfo->transform_type != adios_transform_none) {
-                adios_transform_read_subrequest *subreq;
-                adios_transform_pg_reqgroup *pg_reqgroup;
-                adios_transform_read_reqgroup *new_reqgroup;
+                adios_transform_raw_read_request *subreq;
+                adios_transform_pg_read_request *pg_reqgroup;
+                adios_transform_read_request *new_reqgroup;
 
                 internals = (struct common_read_internals_struct *) fp->internal_data;
 
                 // Generate the read request group and append it to the list
                 new_reqgroup = adios_transform_generate_read_reqgroup(raw_varinfo, transinfo, fp, sel, from_steps, nsteps, data);
-                adios_transform_read_reqgroups_append(&internals->transform_reqgroups, new_reqgroup);
+                adios_transform_read_request_append(&internals->transform_reqgroups, new_reqgroup);
 
                 // Now schedule all of the new subrequests
                 retval = 0;

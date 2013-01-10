@@ -14,18 +14,17 @@
 #include "core/adios_subvolume.h"
 #include "public/adios_selection.h"
 
-// An adios_transform_read_reqgroup corresponds to a variable read request
-// An adios_transform_pg_reqgroup corresponds to the portion of a read request intersecting a PG
-// An adios_transform_read_subrequest corresponds to a single byte range read within a PG
+// An adios_transform_read_request corresponds to a variable read request
+// An adios_transform_pg_read_request corresponds to the portion of a read request intersecting a PG
+// An adios_transform_raw_read_request corresponds to a single raw byte range read within a PG
 
-// adios_transform_read_subrequest owns ->sel and ->data (both will be free'd)
-// adios_transform_pg_reqgroup owns ->pg_selection and ->pg_intersection_to_global_copyspec (both will be free'd)
-// adios_transform_read_reqgroup owns ->orig_sel, ->varinfo and ->transinfo (all will be free'd)
+// adios_transform_raw_read_request owns ->sel and ->data (both will be free'd)
+// adios_transform_pg_read_request owns ->pg_selection and ->pg_intersection_to_global_copyspec (both will be free'd)
+// adios_transform_read_request owns ->orig_sel, ->varinfo and ->transinfo (all will be free'd)
 
 // Also, in all cases, ->transform_internal will be free'd if it is non-NULL
 // Thus, it is best to keep only a single level malloc in transform_internal (no pointers to other mallocs)
 // If this is not possible, you should free() malloced memory yourself as soon as it is no longer needed
-
 
 #define MYFREE(p) {if (p) free(p); (p)=NULL;}
 
@@ -74,6 +73,8 @@
         }                                            \
     }
 
+// Utility functions
+
 static int common_adios_selection_equal(ADIOS_SELECTION *sel1, ADIOS_SELECTION *sel2) {
     if (sel1->type != sel2->type)
         return 0;
@@ -97,8 +98,8 @@ static int common_adios_selection_equal(ADIOS_SELECTION *sel1, ADIOS_SELECTION *
 // adios_transform_read_subreq struct manipulation
 //
 
-adios_transform_read_subrequest * adios_transform_new_subreq(ADIOS_SELECTION *sel, void *data) {
-    adios_transform_read_subrequest *new_subreq = malloc(sizeof(adios_transform_read_subrequest));
+adios_transform_raw_read_request * adios_transform_raw_read_request_new(ADIOS_SELECTION *sel, void *data) {
+    adios_transform_raw_read_request *new_subreq = malloc(sizeof(adios_transform_raw_read_request));
     new_subreq->raw_sel = sel;
     new_subreq->data = data;
     new_subreq->completed = 0;
@@ -107,7 +108,7 @@ adios_transform_read_subrequest * adios_transform_new_subreq(ADIOS_SELECTION *se
     return new_subreq;
 }
 
-adios_transform_read_subrequest * adios_transform_new_subreq_byte_segment(const ADIOS_VARBLOCK *raw_varblock, uint64_t start, uint64_t count, void *data) {
+adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_segment(const ADIOS_VARBLOCK *raw_varblock, uint64_t start, uint64_t count, void *data) {
     ADIOS_SELECTION *sel;
     uint64_t *start_sel, *count_sel;
 
@@ -125,16 +126,16 @@ adios_transform_read_subrequest * adios_transform_new_subreq_byte_segment(const 
     sel = common_read_selection_boundingbox(2, start_sel, count_sel);
     start_sel = count_sel = NULL;
 
-    return adios_transform_new_subreq(sel, data);
+    return adios_transform_raw_read_request_new(sel, data);
 }
 
-adios_transform_read_subrequest * adios_transform_new_subreq_whole_pg(const ADIOS_VARBLOCK *raw_varblock, void *data) {
+adios_transform_raw_read_request * adios_transform_raw_read_request_new_whole_pg(const ADIOS_VARBLOCK *raw_varblock, void *data) {
     // raw_varblock has two dimensions: PG ID and byte offset. Thus, the length of this (raw) PG is the length of the 2nd dimension.
-    return adios_transform_new_subreq_byte_segment(raw_varblock, 0, raw_varblock->count[1], data);
+    return adios_transform_raw_read_request_new_byte_segment(raw_varblock, 0, raw_varblock->count[1], data);
 }
 
-void adios_transform_subreq_mark_complete(adios_transform_read_reqgroup *parent_reqgroup, adios_transform_pg_reqgroup *parent_pg_reqgroup,
-                                          adios_transform_read_subrequest *subreq) {
+void adios_transform_raw_read_request_mark_complete(adios_transform_read_request *parent_reqgroup, adios_transform_pg_read_request *parent_pg_reqgroup,
+                                          adios_transform_raw_read_request *subreq) {
     if (subreq->completed)
         return;
 
@@ -152,8 +153,8 @@ void adios_transform_subreq_mark_complete(adios_transform_read_reqgroup *parent_
 }
 
 // NOTE: MUST have removed the subrequest from the PG request group BEFORE calling this
-void adios_transform_free_subreq(adios_transform_read_subrequest **subreq_ptr) {
-    adios_transform_read_subrequest *subreq = *subreq_ptr;
+void adios_transform_raw_read_request_free(adios_transform_raw_read_request **subreq_ptr) {
+    adios_transform_raw_read_request *subreq = *subreq_ptr;
     assert(!subreq->next); // Not a perfect check, but will catch many requests that are still linked
 
     // Free malloc'd resources
@@ -162,7 +163,7 @@ void adios_transform_free_subreq(adios_transform_read_subrequest **subreq_ptr) {
     MYFREE(subreq->transform_internal);
 
     // Clear all data to 0's for safety
-    memset(subreq, 0, sizeof(adios_transform_read_subrequest));
+    memset(subreq, 0, sizeof(adios_transform_raw_read_request));
 
     // Free the entire struct and the user's pointer to it
     MYFREE(*subreq_ptr);
@@ -172,101 +173,73 @@ void adios_transform_free_subreq(adios_transform_read_subrequest **subreq_ptr) {
 // adios_transform_pg_reqgroup struct manipulation
 //
 
-adios_transform_pg_reqgroup * adios_transform_new_pg_reqgroup(
+adios_transform_pg_read_request * adios_transform_pg_read_request_new(
         int timestep, int timestep_blockidx, int blockidx,
         const ADIOS_VARBLOCK *orig_varblock,
         const ADIOS_VARBLOCK *raw_varblock,
-        const ADIOS_SELECTION *intersection_pg_rel,
-        const ADIOS_SELECTION *intersection_orig_sel_rel,
-        const ADIOS_SELECTION *intersection_global,
-        const ADIOS_SELECTION *pg_bounds_global,
-        adios_subvolume_copy_spec *pg_intersection_to_global_cs) {
+        const ADIOS_SELECTION *pg_intersection_sel,
+        const ADIOS_SELECTION *pg_bounds_sel) {
 
-    adios_transform_pg_reqgroup *new_pg_reqgroup;
+    adios_transform_pg_read_request *new_pg_reqgroup;
 
-    assert(orig_varblock); assert(pg_intersection_to_global_cs);
+    assert(orig_varblock);
     assert(blockidx >= 0);
 
-    new_pg_reqgroup = calloc(sizeof(adios_transform_pg_reqgroup), 1);
+    new_pg_reqgroup = calloc(sizeof(adios_transform_pg_read_request), 1);
     new_pg_reqgroup->timestep = timestep;
-    new_pg_reqgroup->timestep_blockidx = timestep_blockidx;
-    new_pg_reqgroup->blockidx = blockidx;
+    new_pg_reqgroup->blockidx_in_timestep = timestep_blockidx;
+    new_pg_reqgroup->blockidx_in_pg = blockidx;
     new_pg_reqgroup->raw_var_length = raw_varblock->count[1]; // TODO: Break out into helper function in transforms_common
     new_pg_reqgroup->raw_varblock = raw_varblock;
     new_pg_reqgroup->orig_varblock = orig_varblock;
-    new_pg_reqgroup->intersection_pg_rel = intersection_pg_rel;
-    new_pg_reqgroup->intersection_orig_sel_rel = intersection_orig_sel_rel;
-    new_pg_reqgroup->intersection_global = intersection_global;
-    new_pg_reqgroup->pg_bounds_global = pg_bounds_global;
-    new_pg_reqgroup->pg_intersection_to_global_copyspec = pg_intersection_to_global_cs;
+    new_pg_reqgroup->pg_intersection_sel = pg_intersection_sel;
+    new_pg_reqgroup->pg_bounds_sel = pg_bounds_sel;
     // Other fields are 0'd
 
     return new_pg_reqgroup;
 }
 
-void adios_transform_pg_reqgroup_append_subreq(adios_transform_pg_reqgroup *pg_reqgroup, adios_transform_read_subrequest *subreq) {
-    LIST_APPEND(pg_reqgroup->subreqs, subreq, adios_transform_read_subrequest);
+void adios_transform_raw_read_request_append(adios_transform_pg_read_request *pg_reqgroup, adios_transform_raw_read_request *subreq) {
+    LIST_APPEND(pg_reqgroup->subreqs, subreq, adios_transform_raw_read_request);
     pg_reqgroup->num_subreqs++;
 }
 
-int adios_transform_pg_reqgroup_find_subreq(const adios_transform_pg_reqgroup *pg_reqgroup, const ADIOS_VARCHUNK *chunk,
-                                            int skip_completed, adios_transform_read_subrequest **matching_subreq) {
-    adios_transform_read_subrequest *cur;
-
-    for (cur = pg_reqgroup->subreqs; cur; cur = cur->next) {
-        if (skip_completed && cur->completed)
-            continue;
-
-        if (common_adios_selection_equal(cur->raw_sel, chunk->sel))
-            break;
-    }
-
-    // cur will be NULL if none matched
-    *matching_subreq = cur;
-    return cur != NULL;
-}
-
-int adios_transform_pg_reqgroup_remove_subreq(adios_transform_pg_reqgroup *pg_reqgroup, adios_transform_read_subrequest *subreq) {
-    adios_transform_read_subrequest *removed;
-    LIST_REMOVE(pg_reqgroup->subreqs, subreq, adios_transform_read_subrequest, removed);
+int adios_transform_raw_read_request_remove(adios_transform_pg_read_request *pg_reqgroup, adios_transform_raw_read_request *subreq) {
+    adios_transform_raw_read_request *removed;
+    LIST_REMOVE(pg_reqgroup->subreqs, subreq, adios_transform_raw_read_request, removed);
 
     if (removed) pg_reqgroup->num_subreqs--;
     return removed != NULL;
 }
 
-adios_transform_read_subrequest * adios_transform_pg_reqgroup_pop_subreq(adios_transform_pg_reqgroup *pg_reqgroup) {
-    adios_transform_read_subrequest *to_remove = pg_reqgroup->subreqs;
-    if (adios_transform_pg_reqgroup_remove_subreq(pg_reqgroup, to_remove))
+adios_transform_raw_read_request * adios_transform_raw_read_request_pop(adios_transform_pg_read_request *pg_reqgroup) {
+    adios_transform_raw_read_request *to_remove = pg_reqgroup->subreqs;
+    if (adios_transform_raw_read_request_remove(pg_reqgroup, to_remove))
         return to_remove;
     else
         return NULL;
 }
 
-void adios_transform_free_pg_reqgroup(adios_transform_pg_reqgroup **pg_reqgroup_ptr) {
-    adios_transform_pg_reqgroup *pg_reqgroup = *pg_reqgroup_ptr;
-    adios_transform_read_subrequest *removed_subreq;
+void adios_transform_pg_read_request_free(adios_transform_pg_read_request **pg_reqgroup_ptr) {
+    adios_transform_pg_read_request *pg_reqgroup = *pg_reqgroup_ptr;
+    adios_transform_raw_read_request *removed_subreq;
 
     assert(!pg_reqgroup->next);
 
     // Free any remaining subrequests
-    while ((removed_subreq = adios_transform_pg_reqgroup_pop_subreq(pg_reqgroup)) != NULL) {
-        adios_transform_free_subreq(&removed_subreq);
+    while ((removed_subreq = adios_transform_raw_read_request_pop(pg_reqgroup)) != NULL) {
+        adios_transform_raw_read_request_free(&removed_subreq);
     }
 
     // Free malloc'd resources
-    if (pg_reqgroup->intersection_pg_rel)
-        common_read_selection_delete(pg_reqgroup->intersection_pg_rel);
-    if (pg_reqgroup->intersection_orig_sel_rel)
-        common_read_selection_delete(pg_reqgroup->intersection_orig_sel_rel);
-    if (pg_reqgroup->intersection_global)
-        common_read_selection_delete(pg_reqgroup->intersection_global);
-    if (pg_reqgroup->pg_bounds_global)
-        common_read_selection_delete(pg_reqgroup->pg_bounds_global);
-    adios_copyspec_free((adios_subvolume_copy_spec **)&pg_reqgroup->pg_intersection_to_global_copyspec, 1);
+    if (pg_reqgroup->pg_intersection_sel)
+        common_read_selection_delete((ADIOS_SELECTION*)pg_reqgroup->pg_intersection_sel);
+    if (pg_reqgroup->pg_bounds_sel)
+        common_read_selection_delete((ADIOS_SELECTION*)pg_reqgroup->pg_bounds_sel);
     MYFREE(pg_reqgroup->transform_internal);
 
     // Clear all data to 0's for safety
-    memset(pg_reqgroup, 0, sizeof(adios_transform_pg_reqgroup));
+    memset(pg_reqgroup, 0, sizeof(adios_transform_pg_read_request));
     // Free the entire struct and the user's pointer to it
     MYFREE(*pg_reqgroup_ptr);
 }
@@ -275,16 +248,16 @@ void adios_transform_free_pg_reqgroup(adios_transform_pg_reqgroup **pg_reqgroup_
 // adios_transform_read_reqgroup struct manipulation
 //
 
-adios_transform_read_reqgroup * adios_transform_new_read_reqgroup(
+adios_transform_read_request * adios_transform_read_request_new(
         const ADIOS_FILE *fp, const ADIOS_VARINFO *varinfo, const ADIOS_TRANSINFO *transinfo,
         const ADIOS_SELECTION *sel, int from_steps, int nsteps,
         void *data, enum ADIOS_FLAG swap_endianness) {
 
-    adios_transform_read_reqgroup *new_reqgroup;
+    adios_transform_read_request *new_reqgroup;
     assert(fp); assert(varinfo); assert(transinfo);
     assert(nsteps > 0);
 
-    new_reqgroup = calloc(sizeof(adios_transform_read_reqgroup), 1);
+    new_reqgroup = calloc(sizeof(adios_transform_read_request), 1);
     new_reqgroup->fp = fp;
     new_reqgroup->raw_varinfo = varinfo;
     new_reqgroup->transinfo = transinfo;
@@ -303,100 +276,54 @@ adios_transform_read_reqgroup * adios_transform_new_read_reqgroup(
     return new_reqgroup;
 }
 
-void adios_transform_read_reqgroup_append_pg_reqgroup(adios_transform_read_reqgroup *reqgroup, adios_transform_pg_reqgroup *pg_reqgroup) {
-    LIST_APPEND(reqgroup->pg_reqgroups, pg_reqgroup, adios_transform_pg_reqgroup);
+void adios_transform_pg_read_request_append(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *pg_reqgroup) {
+    LIST_APPEND(reqgroup->pg_reqgroups, pg_reqgroup, adios_transform_pg_read_request);
     reqgroup->num_pg_reqgroups++;
 }
 
-int adios_transform_read_reqgroup_remove_pg_reqgroup(adios_transform_read_reqgroup *reqgroup, adios_transform_pg_reqgroup *pg_reqgroup) {
-    adios_transform_pg_reqgroup *removed;
-    LIST_REMOVE(reqgroup->pg_reqgroups, pg_reqgroup, adios_transform_pg_reqgroup, removed);
+int adios_transform_pg_read_request_remove(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *pg_reqgroup) {
+    adios_transform_pg_read_request *removed;
+    LIST_REMOVE(reqgroup->pg_reqgroups, pg_reqgroup, adios_transform_pg_read_request, removed);
 
     if (removed) reqgroup->num_pg_reqgroups--;
     return removed != NULL;
 }
 
-adios_transform_pg_reqgroup * adios_transform_read_reqgroup_pop_pg_reqgroup(adios_transform_read_reqgroup *reqgroup) {
-    adios_transform_pg_reqgroup *to_remove = reqgroup->pg_reqgroups;
-    if (adios_transform_read_reqgroup_remove_pg_reqgroup(reqgroup, to_remove))
+adios_transform_pg_read_request * adios_transform_pg_read_request_pop(adios_transform_read_request *reqgroup) {
+    adios_transform_pg_read_request *to_remove = reqgroup->pg_reqgroups;
+    if (adios_transform_pg_read_request_remove(reqgroup, to_remove))
         return to_remove;
     else
         return NULL;
 }
 
-int adios_transform_read_reqgroup_find_subreq(adios_transform_read_reqgroup *reqgroup, const ADIOS_VARCHUNK *chunk, int skip_completed,
-                                              adios_transform_pg_reqgroup **matching_pg_reqgroup, adios_transform_read_subrequest **matching_subreq) {
-    adios_transform_pg_reqgroup *cur;
-
-    if (reqgroup->raw_varinfo->varid != chunk->varid)
-        return 0;
-
-    int found = 0;
-    // Search all PG request groups
-    for (cur = reqgroup->pg_reqgroups; cur; cur = cur->next) {
-        // Skip completed PG reqgroups if required
-        if (skip_completed && cur->completed)
-            continue;
-
-        // Skip PG reqgroups that are for other timesteps
-        if (cur->timestep != chunk->from_steps)
-            continue;
-
-        // Delegate remaining search to the PG regroup
-        found = adios_transform_pg_reqgroup_find_subreq(cur, chunk, skip_completed, matching_subreq);
-        if (found)
-            break;
-    }
-
-    // cur will be NULL if nothing matched
-    *matching_pg_reqgroup = cur;
-    return found;
+void adios_transform_read_request_append(adios_transform_read_request **head, adios_transform_read_request *new_reqgroup) {
+    LIST_APPEND(*head, new_reqgroup, adios_transform_read_request);
 }
 
-int adios_transform_read_reqgroups_find_subreq(adios_transform_read_reqgroup *reqgroup_head,
-                                               const ADIOS_VARCHUNK *chunk, int skip_completed,
-                                               adios_transform_read_reqgroup **matching_reqgroup,
-                                               adios_transform_pg_reqgroup **matching_pg_reqgroup,
-                                               adios_transform_read_subrequest **matching_subreq) {
-    int found;
-    adios_transform_read_reqgroup *cur;
-    for (cur = reqgroup_head; cur; cur = cur->next) {
-        found = adios_transform_read_reqgroup_find_subreq(cur, chunk, skip_completed, matching_pg_reqgroup, matching_subreq);
-        if (found)
-            break;
-    }
-
-    *matching_reqgroup = cur;
-    return found;
-}
-
-void adios_transform_read_reqgroups_append(adios_transform_read_reqgroup **head, adios_transform_read_reqgroup *new_reqgroup) {
-    LIST_APPEND(*head, new_reqgroup, adios_transform_read_reqgroup);
-}
-
-adios_transform_read_reqgroup * adios_transform_read_reqgroups_remove(adios_transform_read_reqgroup **head, adios_transform_read_reqgroup *reqgroup) {
-    adios_transform_read_reqgroup *removed;
-    LIST_REMOVE(*head, reqgroup, adios_transform_read_reqgroup, removed);
+adios_transform_read_request * adios_transform_read_request_remove(adios_transform_read_request **head, adios_transform_read_request *reqgroup) {
+    adios_transform_read_request *removed;
+    LIST_REMOVE(*head, reqgroup, adios_transform_read_request, removed);
     return removed;
 }
 
-adios_transform_read_reqgroup * adios_transform_read_reqgroups_pop(adios_transform_read_reqgroup **head) {
-    adios_transform_read_reqgroup *to_remove = *head;
-    if (adios_transform_read_reqgroups_remove(head, to_remove))
+adios_transform_read_request * adios_transform_read_request_pop(adios_transform_read_request **head) {
+    adios_transform_read_request *to_remove = *head;
+    if (adios_transform_read_request_remove(head, to_remove))
         return to_remove;
     else
         return NULL;
 }
 
-void adios_transform_free_read_reqgroup(adios_transform_read_reqgroup **reqgroup_ptr) {
-    adios_transform_read_reqgroup *reqgroup = *reqgroup_ptr;
-    adios_transform_pg_reqgroup *removed_pg_reqgroup;
+void adios_transform_read_request_free(adios_transform_read_request **reqgroup_ptr) {
+    adios_transform_read_request *reqgroup = *reqgroup_ptr;
+    adios_transform_pg_read_request *removed_pg_reqgroup;
 
     assert(!reqgroup->next);
 
     // Free any remaining subrequests
-    while ((removed_pg_reqgroup = adios_transform_read_reqgroup_pop_pg_reqgroup(reqgroup)) != NULL) {
-        adios_transform_free_pg_reqgroup(&removed_pg_reqgroup);
+    while ((removed_pg_reqgroup = adios_transform_pg_read_request_pop(reqgroup)) != NULL) {
+        adios_transform_pg_read_request_free(&removed_pg_reqgroup);
     }
 
     // Free malloc'd resources
@@ -413,9 +340,79 @@ void adios_transform_free_read_reqgroup(adios_transform_read_reqgroup **reqgroup
     MYFREE(reqgroup->transform_internal);
 
     // Clear all data to 0's for safety
-    memset(reqgroup, 0, sizeof(adios_transform_read_reqgroup));
+    memset(reqgroup, 0, sizeof(adios_transform_read_request));
     // Free the entire struct and the user's pointer to it
     MYFREE(*reqgroup_ptr);
 }
 
+//
+// Chunk matching code
+//
 
+static int adios_transform_pg_read_request_match_chunk(const adios_transform_pg_read_request *pg_reqgroup,
+                                                       const ADIOS_VARCHUNK *chunk, int skip_completed,
+                                                       adios_transform_raw_read_request **matching_subreq) {
+
+    adios_transform_raw_read_request *cur;
+
+    for (cur = pg_reqgroup->subreqs; cur; cur = cur->next) {
+        if (skip_completed && cur->completed)
+            continue;
+
+        if (common_adios_selection_equal(cur->raw_sel, chunk->sel))
+            break;
+    }
+
+    // cur will be NULL if none matched
+    *matching_subreq = cur;
+    return cur != NULL;
+}
+
+static int adios_transform_read_request_match_chunk(const adios_transform_read_request *reqgroup,
+                                                    const ADIOS_VARCHUNK *chunk, int skip_completed,
+                                                    adios_transform_pg_read_request **matching_pg_reqgroup,
+                                                    adios_transform_raw_read_request **matching_subreq) {
+
+    adios_transform_pg_read_request *cur;
+
+    if (reqgroup->raw_varinfo->varid != chunk->varid)
+        return 0;
+
+    int found = 0;
+    // Search all PG request groups
+    for (cur = reqgroup->pg_reqgroups; cur; cur = cur->next) {
+        // Skip completed PG reqgroups if required
+        if (skip_completed && cur->completed)
+            continue;
+
+        // Skip PG reqgroups that are for other timesteps
+        if (cur->timestep != chunk->from_steps)
+            continue;
+
+        // Delegate remaining search to the PG regroup
+        found = adios_transform_pg_read_request_match_chunk(cur, chunk, skip_completed, matching_subreq);
+        if (found)
+            break;
+    }
+
+    // cur will be NULL if nothing matched
+    *matching_pg_reqgroup = cur;
+    return found;
+}
+
+int adios_transform_read_request_list_match_chunk(const adios_transform_read_request *reqgroup_head,
+                                                  const ADIOS_VARCHUNK *chunk, int skip_completed,
+                                                  adios_transform_read_request **matching_reqgroup,
+                                                  adios_transform_pg_read_request **matching_pg_reqgroup,
+                                                  adios_transform_raw_read_request **matching_subreq) {
+    int found;
+    adios_transform_read_request *cur;
+    for (cur = reqgroup_head; cur; cur = cur->next) {
+        found = adios_transform_read_request_match_chunk(cur, chunk, skip_completed, matching_pg_reqgroup, matching_subreq);
+        if (found)
+            break;
+    }
+
+    *matching_reqgroup = cur;
+    return found;
+}
