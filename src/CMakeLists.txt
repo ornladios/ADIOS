@@ -176,7 +176,22 @@ set(libadios_nompi_a_SOURCES core/adios.c
 #not complete
 #from line 200 to line 218
 #not complete
-    set(CLEANFILES ${CLEANFILES} adios_nssi_args.c adios_nssi_args.h)
+
+    add_custom_command (
+	OUTPUT adios_nssi_args.h
+	COMMAND rm -f $@
+	COMMAND rpcgen -h ${PROJECT_SOURCE_DIR}/src/nssi/adios_nssi_args.x >> $@
+        DEPENDS ${PROJECT_SOURCE_DIR}/src/nssi/adios_nssi_args.x ${PROJECT_SOURCE_DIR}/src/CMakeLists.txt
+        )
+
+    add_custom_command (
+        OUTPUT adios_nssi_args.c
+        COMMAND rm -f adios_nssi_args.c
+	COMMAND rpcgen -c ${PROJECT_SOURCE_DIR}/src/nssi/adios_nssi_args.x | grep -v "include \"\.\." > adios_nssi_args.c
+        DEPENDS ${PROJECT_SOURCE_DIR}/src/nssi/adios_nssi_args.h
+        )
+    
+  set(CLEANFILES ${CLEANFILES} adios_nssi_args.c adios_nssi_args.h)
 
   endif(HAVE_NSSI)
 
@@ -220,7 +235,7 @@ set(libadios_nompi_a_SOURCES core/adios.c
     set(nodist_include_HEADERS ${nodist_include_HEADERS} adios_write_mod.mod)
     set(CLEANFILES ${CLEANFILES} adios_write_mod.mod)
 
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
 	OUTPUT adios_write_mod.mod
 	COMMAND $(FC) -c core/adiosf_write_mod.F90
 	DEPENDS core/adiosf_write_mod.F90 adios_defs_mod.mod
