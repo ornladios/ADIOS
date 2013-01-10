@@ -58,15 +58,13 @@ int adios_transform_szip_generate_read_subrequests(adios_transform_read_reqgroup
 // Do nothing for individual subrequest
 adios_datablock * adios_transform_szip_subrequest_completed(adios_transform_read_reqgroup *reqgroup,
 															adios_transform_pg_reqgroup *pg_reqgroup,
-															adios_transform_read_subrequest *completed_subreq,
-															enum ADIOS_READ_RESULT_MODE mode) 
+															adios_transform_read_subrequest *completed_subreq) 
 {
     return NULL;
 }
 
 adios_datablock * adios_transform_szip_pg_reqgroup_completed(adios_transform_read_reqgroup *reqgroup,
-																adios_transform_pg_reqgroup *completed_pg_reqgroup,
-																enum ADIOS_READ_RESULT_MODE mode) 
+																adios_transform_pg_reqgroup *completed_pg_reqgroup) 
 {
 	uint64_t compressed_len = (uint64_t)completed_pg_reqgroup->raw_var_length;
 	void* compressed_buff = completed_pg_reqgroup->subreqs->data;
@@ -101,8 +99,7 @@ adios_datablock * adios_transform_szip_pg_reqgroup_completed(adios_transform_rea
                                decompressed_buff);
 }
 
-adios_datablock * adios_transform_szip_reqgroup_completed(adios_transform_read_reqgroup *completed_reqgroup,
-															enum ADIOS_READ_RESULT_MODE mode) 
+adios_datablock * adios_transform_szip_reqgroup_completed(adios_transform_read_reqgroup *completed_reqgroup) 
 {
 	return NULL;
 }
