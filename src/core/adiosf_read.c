@@ -30,6 +30,12 @@ extern int adios_errno;
 
 #define PRINT_ERRMSG() fprintf(stderr, "ADIOS READ ERROR: %s\n", adios_get_last_errmsg())
 
+#ifdef BUILD_WITH_CMAKE
+  #include "../../FC.h"
+  #define FC_FUNC FC_GLOBAL
+  #define FC_FUNC_ FC_GLOBAL_
+#endif
+
 /*********************/
 /* FORTRAN INTERFACE */
 /*********************/
