@@ -26,6 +26,10 @@
 extern "C"  /* prevent C++ name mangling */
 #endif
 
+#ifdef BUILD_WITH_CMAKE
+  #include "../../FC.h"
+#endif
+
 static enum ADIOS_READ_METHOD lastmethod = ADIOS_READ_METHOD_BP;
 
 extern int adios_errno;
