@@ -4,249 +4,249 @@
 
 /* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */
-#define FC_DUMMY_MAIN ${FC_DUMMY_MAIN}
+#cmakedefine FC_DUMMY_MAIN 1
 
 /* Define if F77 and FC dummy `main' functions are identical. */
-#define FC_DUMMY_MAIN_EQ_F77 ${FC_DUMMY_MAIN_EQ_F77}
+#cmakedefine FC_DUMMY_MAIN_EQ_F77 1
 
 /* Define to a macro mangling the given C identifier (in lower and upper
    case), which must not contain underscores, for linking with Fortran. */
-/*#define FC_FUNC(name,NAME) ${FC_FUNC} */
+#cmakedefine FC_FUNC ${FC_FUNC} 
 
 /* As FC_FUNC, but for C identifiers containing underscores. */
-/*#define FC_FUNC_(name,NAME) ${FC_FUNC_} */
+#cmakedefine FC_FUNC_ ${FC_FUNC_}
 
 /* Define to 1 if your Fortran compiler doesn't accept -c and -o together. */
-#define FC_NO_MINUS_C_MINUS_O ${FC_NO_MINUS_C_MINUS_O}
+#cmakedefine FC_NO_MINUS_C_MINUS_O 1
 
 /* Define to 1 if you have the <Attributes.h> header file. */
-#define HAVE_ATTRIBUTES_H ${HAVE_ATTRIBUTES_H}
+#cmakedefine HAVE_ATTRIBUTES_H 1
 
 /* Define to 1 if you have the `clock_gettime' function. */
-#define HAVE_CLOCK_GETTIME ${HAVE_CLOCK_GETTIME}
+#cmakedefine HAVE_CLOCK_GETTIME 1
 
 /* Define if you have CRAY_PMI. */
-#define HAVE_CRAY_PMI ${HAVE_CRAY_PMI}
+#cmakedefine HAVE_CRAY_PMI 1
 
 /* Define if you have Cray Portals. */
-#define HAVE_CRAY_PORTALS ${HAVE_CRAY_PORTALS}
+#cmakedefine HAVE_CRAY_PORTALS 1
 
 /* Define if you have CRAY_UGNI. */
-#define HAVE_CRAY_UGNI ${HAVE_CRAY_UGNI}
+#cmakedefine HAVE_CRAY_UGNI 1
 
 /* Define if you have the DATASPACES. */
-#define HAVE_DATASPACES ${HAVE_DATASPACES}
+#cmakedefine HAVE_DATASPACES 1
 
 /* Define to 1 if you have the <dataspaces.h> header file. */
-#define HAVE_DATASPACES_H ${HAVE_DATASPACES_H}
+#cmakedefine HAVE_DATASPACES_H 1
 
 /* Define if you have the DIMES. */
-#define HAVE_DIMES ${HAVE_DIMES}
+#cmakedefine HAVE_DIMES 1
 
 /* Define to 1 if you have the <dimes.h> header file. */
-#define HAVE_DIMES_H ${HAVE_DIMES_H}
+#cmakedefine HAVE_DIMES_H 1
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
-#define HAVE_DLFCN_H ${HAVE_DLFCN_H}
+#cmakedefine HAVE_DLFCN_H 1
 
 /* Define if you have DMALLOC. */
-#define HAVE_DMALLOC ${HAVE_DMALLOC}
+#cmakedefine HAVE_DMALLOC 1
 
 /* Define to 1 if you have the <dmalloc.h> header file. */
-#define  HAVE_DMALLOC_H ${HAVE_DMALLOC_H}
+#cmakedefine  HAVE_DMALLOC_H 1
 
 /* Define to 1 if you have the `fdatasync' function. */
-#define HAVE_FDATASYNC ${HAVE_FDATASYNC}
+#cmakedefine HAVE_FDATASYNC 1
 
 /* Define to 1 if you have the `gettimeofday' function. */
-#define HAVE_GETTIMEOFDAY ${HAVE_GETTIMEOFDAY}
+#cmakedefine HAVE_GETTIMEOFDAY 1
 
 /* Define if you have HDF5. */
-#cmakedefine HAVE_HDF5 ${HAVE_HDF5}
+#cmakedefine HAVE_HDF5 1
 
 /* Define to 1 if you have the <hdf5.h> header file. */
-#cmakedefine HAVE_HDF5_H ${HAVE_HDF5_H}
+#cmakedefine HAVE_HDF5_H 1
 
 /* Define to 1 if you have <infiniband/verbs.h>. */
-#define HAVE_IBVERBS_H ${HAVE_IBVERBS_H}
+#cmakedefine HAVE_IBVERBS_H 1
 
 /* Define if you have the Infiniband. */
-#define HAVE_INFINIBAND ${HAVE_INFINIBAND}
+#cmakedefine HAVE_INFINIBAND 1
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#define HAVE_INTTYPES_H ${HAVE_INTTYPES_H}
+#cmakedefine HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the `rt' library (-lrt). */
-#define HAVE_LIBRT ${HAVE_LIBRT}
+#cmakedefine HAVE_LIBRT 1
 
 /* Define if you have LUSTRE. */
-#cmakedefine HAVE_LUSTRE ${HAVE_LUSTRE}
+#cmakedefine HAVE_LUSTRE 1
 
 /* Define to 1 if you have the <memory.h> header file. */
-#define HAVE_MEMORY_H ${HAVE_MEMORY_H}
+#cmakedefine HAVE_MEMORY_H 1
 
 /* Define if you have the MPI library. */
-#cmakedefine HAVE_MPI ${HAVE_MPI}
+#cmakedefine HAVE_MPI 1
 
 /* Define if you have the MXML. */
-#define HAVE_MXML ${HAVE_MXML}
+#cmakedefine HAVE_MXML 1
 
 /* Define to 1 if you have the <mxml.h> header file. */
-#define HAVE_MXML_H ${HAVE_MXML_H}
+#cmakedefine HAVE_MXML_H 1
 
 /* Define to 1 if you have the `nanosleep' function. */
-#define HAVE_NANOSLEEP ${HAVE_NANOSLEEP}
+#cmakedefine HAVE_NANOSLEEP 1
 
 /* Define if you have NC4PAR. */
-#define HAVE_NC4PAR ${HAVE_NC4PAR}
+#cmakedefine HAVE_NC4PAR 1
 
 /* Define if you have NETCDF. */
-#define HAVE_NETCDF ${HAVE_NETCDF}
+#cmakedefine HAVE_NETCDF 1
 
 /* Define to 1 if you have the <netcdf.h> header file. */
-#define HAVE_NETCDF_H ${HAVE_NETCDF_H}
+#cmakedefine HAVE_NETCDF_H 1
 
 /* Define if you have NSSI. */
-#define HAVE_NSSI ${HAVE_NSSI}
+#cmakedefine HAVE_NSSI 1
 
 /* Define to 1 if you have the <p3nal_utcp.h> header file. */
-#define HAVE_P3NAL_UTCP_H ${HAVE_P3NAL_UTCP_H}
+#cmakedefine HAVE_P3NAL_UTCP_H 1
 
 /* Define to 1 if you have the <p3rt/p3rt.h> header file. */
-#define HAVE_P3RT_P3RT_H ${HAVE_P3RT_P3RT_H}
+#cmakedefine HAVE_P3RT_P3RT_H 1
 
 /* Define if you have the Pablo. */
-#define HAVE_PABLO ${HAVE_PABLO}
+#cmakedefine HAVE_PABLO 1
 
 /* Define if you have PHDF5. */
-#cmakedefine HAVE_PHDF5 ${HAVE_PHDF5}
+#cmakedefine HAVE_PHDF5 1
 
 /* Define to 1 if you have the <hdf5.h> header file. */
-#cmakedefine HAVE_PHDF5_H ${HAVE_PHDF5_H}
+#cmakedefine HAVE_PHDF5_H 1
 
 /* Define if you have the Portals. */
-#define HAVE_PORTALS ${HAVE_PORTALS}
+#cmakedefine HAVE_PORTALS 1
 
 /* Define to 1 if you have <portals3.h>. */
-#define HAVE_PORTALS3_H ${HAVE_PORTALS3_H}
+#cmakedefine HAVE_PORTALS3_H 1
 
 /* Define to 1 if you have <portals/portals3.h>. */
-#define HAVE_PORTALS_PORTALS3_H ${HAVE_PORTALS_PORTALS3_H}
+#cmakedefine HAVE_PORTALS_PORTALS3_H 1
 
 /* Define if you have POSIX threads libraries and header files. */
-#define HAVE_PTHREAD ${HAVE_PTHREAD}
+#cmakedefine HAVE_PTHREAD 1
 
 /* Define to 1 if you have the `pthread_yield' function. */
-#define HAVE_PTHREAD_YIELD ${HAVE_PTHREAD_YIELD}
+#cmakedefine HAVE_PTHREAD_YIELD 1
 
 /* Define to 1 if you have the `PtlACEntry' function. */
-#define HAVE_PTLACENTRY ${HAVE_PTLACENTRY}
+#cmakedefine HAVE_PTLACENTRY 1
 
 /* Define to 1 if you have the `PtlErrorStr' function. */
-#define HAVE_PTLERRORSTR ${HAVE_PTLERRORSTR}
+#cmakedefine HAVE_PTLERRORSTR 1
 
 /* Define to 1 if you have the `PtlEventKindStr' function. */
-#define HAVE_PTLEVENTKINDSTR ${HAVE_PTLEVENTKINDSTR}
+#cmakedefine HAVE_PTLEVENTKINDSTR 1 
 
 /* Define to 1 if you have the `PtlGetJid' function. */
-#define HAVE_PTLGETJID ${HAVE_PTLGETJID}
+#cmakedefine HAVE_PTLGETJID 1
 
 /* Define to 1 if you have the `PtlNIFailStr' function. */
-#define HAVE_PTLNIFAILSTR ${HAVE_PTLNIFAILSTR}
+#cmakedefine HAVE_PTLNIFAILSTR 1
 
 /* Define to 1 if the system has the type `ptl_eq_handler_t'. */
-#define HAVE_PTL_EQ_HANDLER_T ${HAVE_PTL_EQ_HANDLER_T}
+#cmakedefine HAVE_PTL_EQ_HANDLER_T 1
 
 /* Define if you have PTL_NOACK_REQ. */
-#define HAVE_PTL_NOACK_REQ ${HAVE_PTL_NOACK_REQ}
+#cmakedefine HAVE_PTL_NOACK_REQ 1
 
 /* Define if you have PTL_NO_ACK_REQ. */
-#define HAVE_PTL_NO_ACK_REQ ${HAVE_PTL_NO_ACK_REQ}
+#cmakedefine HAVE_PTL_NO_ACK_REQ 1
 
 /* Define to 1 if the system has the type `ptl_time_t'. */
-#define HAVE_PTL_TIME_T ${HAVE_PTL_TIME_T}
+#cmakedefine HAVE_PTL_TIME_T 1
 
 /* Define to 1 if you have the `sched_yield' function. */
-#define HAVE_SCHED_YIELD ${HAVE_SCHED_YIELD}
+#cmakedefine HAVE_SCHED_YIELD 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
-#define HAVE_STDINT_H ${HAVE_STDINT_H}
+#cmakedefine HAVE_STDINT_H 1
 
 /* Define to 1 if you have the <stdlib.h> header file. */
-#define HAVE_STDLIB_H ${HAVE_STDLIB_H}
+#cmakedefine HAVE_STDLIB_H 1
 
 /* Define to 1 if you have the `strerror' function. */
-#define HAVE_STRERROR ${HAVE_STRERROR}
+#cmakedefine HAVE_STRERROR 1
 
 /* Define to 1 if cpp supports the ANSI  stringizing operator. */
-#define HAVE_STRINGIZE ${HAVE_STRINGIZE}
+#cmakedefine HAVE_STRINGIZE 1
 
 /* Define to 1 if you have the <strings.h> header file. */
-#define HAVE_STRINGS_H ${HAVE_STRINGS_H}
+#cmakedefine HAVE_STRINGS_H 1
 
 /* Define to 1 if you have the <string.h> header file. */
-#define HAVE_STRING_H ${HAVE_STRING_H}
+#cmakedefine HAVE_STRING_H 1
 
 /*  to 1 if you have the `strncpy' function. */
-#define HAVE_STRNCPY ${HAVE_STRNCPY}
+#cmakedefine HAVE_STRNCPY 1
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
-#define HAVE_SYS_STAT_H ${HAVE_SYS_STAT_H}
+#cmakedefine HAVE_SYS_STAT_H 1
 
 /* Define to 1 if you have the <sys/types.h> header file. */
-#define HAVE_SYS_TYPES_H ${HAVE_SYS_TYPES_H}
+#cmakedefine HAVE_SYS_TYPES_H 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#define HAVE_UNISTD_H ${HAVE_UNISTD_H}
+#cmakedefine HAVE_UNISTD_H 1
 
 /* Datatap is disabled */
-#define NO_DATATAP ${NO_DATATAP}
+#cmakedefine NO_DATATAP 1
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#define NO_MINUS_C_MINUS_O ${NO_MINUS_C_MINUS_O}
+#cmakedefine NO_MINUS_C_MINUS_O 1
 
 /* Name of package */
-#define PACKAGE "${PACKAGE}"
+#cmakedefine PACKAGE "${PACKAGE}"
 
 /* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "${PACKAGE_BUGREPORT}"
+#cmakedefine PACKAGE_BUGREPORT "${PACKAGE_BUGREPORT}"
 
 /* Define to the full name of this package. */
-#define PACKAGE_NAME "${PACKAGE_NAME}"
+#cmakedefine PACKAGE_NAME "${PACKAGE_NAME}"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "${PACKAGE_STRING}"
+#cmakedefine PACKAGE_STRING "${PACKAGE_STRING}"
 
 /* Define to the one symbol short name of this package. */
-#define PACKAGE_TARNAME "${PACKAGE_TARNAME}"
+#cmakedefine PACKAGE_TARNAME "${PACKAGE_TARNAME}"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "${PACKAGE_VERSION}"
+#cmakedefine PACKAGE_VERSION "${PACKAGE_VERSION}"
 
 /* Define to the necessary symbol if this constant uses a non-standard name on
    your system. */
 #cmakedefine PTHREAD_CREATE_JOINABLE ${PTHREAD_CREATE_JOINABLE}
 
 /* Skel timing is enabled */
-#define SKEL_TIMING ${SKEL_TIMING}
+#cmakedefine SKEL_TIMING 1
 
 /* Define to 1 if you have the ANSI C header files. */
-#define STDC_HEADERS ${STDC_HEADERS}
+#cmakedefine STDC_HEADERS 1
 
 /* Need to use MPI compiler for sequential utils */
-#define USE_PARALLEL_COMPILE ${USE_PARALLEL_COMPILE}
+#cmakedefine USE_PARALLEL_COMPILE 1
 
 /* Version number of package */
-#define VERSION "${VERSION}"
+#cmakedefine VERSION "${VERSION}"
 
 /* Major version number */
-#define VERSION_MAJOR ${VERSION_MAJOR}
+#cmakedefine VERSION_MAJOR ${VERSION_MAJOR}
 
 /* Micro version number */ 
-#define VERSION_MICRO ${VERSION_MICRO}
+#cmakedefine VERSION_MICRO ${VERSION_MICRO}
 
 /* Minor version number */
-#define VERSION_MINOR ${VERSION_MINOR}
+#cmakedefine VERSION_MINOR ${VERSION_MINOR}
 
 /* svn revision number */
-#define VERSION_SVNREV "${VERSION_SVNREV}
+#cmakedefine VERSION_SVNREV "${VERSION_SVNREV}
