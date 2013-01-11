@@ -32,8 +32,6 @@ extern int adios_errno;
 
 #ifdef BUILD_WITH_CMAKE
   #include "../../FC.h"
-  #define FC_FUNC FC_GLOBAL
-  #define FC_FUNC_ FC_GLOBAL_
 #endif
 
 /*********************/
