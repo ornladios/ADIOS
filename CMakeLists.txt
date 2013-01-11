@@ -36,9 +36,10 @@ INCLUDE (CheckFunctionExists)
 
 # Define to a macro mangling the given C identifier (in lower and upper case),
 # which must not contain underscores, for linking with Fortran.
+set(FC_FUNC FC_GLOBAL)
 
 # As FC_FUNC, but for C identifiers containing underscores.
-
+set(FC_FUNC_ FC_GLOBAL_)
 # Define to 1 if your Fortran compiler doesn't accept -c and -o together.
 
 # Define to 1 if you have the <Attributes.h> header file.
