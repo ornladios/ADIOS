@@ -38,7 +38,7 @@ if(BUILD_FORTRAN)
     target_link_libraries(posix_method adiosf ${ADIOSLIB_LDADD})
     add_custom_command(
 	OUTPUT gwrite_posix_method.fh
-	COMMAND $({PROJECT_SOURCE_DIR}/utils/gpp/gpp.py posix_method.xml
+	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py posix_method.xml
 	DEPENDS posix_method.xml
 	)
   endif(BUILD_WRITE)
