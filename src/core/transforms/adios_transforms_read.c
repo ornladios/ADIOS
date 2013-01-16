@@ -4,7 +4,11 @@
 #include "adios_internals.h"
 #include "public/adios_error.h"
 #include "public/adios_types.h"
+#include "util.h"
 
+#include "adios_selection_util.h"
+
+#include "transforms/adios_transforms_reqgroup.h"
 #include "transforms/adios_transforms_common.h"
 #include "transforms/adios_transforms_datablock.h"
 #include "transforms/adios_transforms_hooks_read.h"
@@ -13,7 +17,7 @@
 
 #define MYFREE(p) {free(p); (p)=NULL;}
 
-enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_reqgroup_get_result_mode(adios_transform_read_reqgroup *reqgroup) {
+enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_reqgroup_get_result_mode(adios_transform_read_request *reqgroup) {
     return reqgroup->orig_data != NULL ? FULL_RESULT_MODE : PARTIAL_RESULT_MODE;
 }
 
@@ -47,15 +51,21 @@ static void compute_blockidx_range(const ADIOS_VARINFO *raw_varinfo, int from_st
     }
 }
 
-adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO* transinfo, const ADIOS_FILE *fp,
+static ADIOS_SELECTION * create_pg_bounds(int ndim, ADIOS_VARBLOCK *orig_vb) {
+    const uint64_t *new_start = (uint64_t*)bufdup(orig_vb->start, sizeof(uint64_t), ndim);
+    const uint64_t *new_count = (uint64_t*)bufdup(orig_vb->count, sizeof(uint64_t), ndim);
+
+    return common_read_selection_boundingbox(ndim, new_start, new_count);
+}
+
+adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO* transinfo, const ADIOS_FILE *fp,
                                                                        const ADIOS_SELECTION *sel, int from_steps, int nsteps, void *data) {
     // Declares
-    adios_transform_read_reqgroup *new_reqgroup;
+    adios_transform_read_request *new_reqgroup;
     int blockidx, timestep, timestep_blockidx;
     int curblocks, start_blockidx, end_blockidx;
     int intersects;
     ADIOS_VARBLOCK *raw_vb, *orig_vb;
-    adios_subvolume_copy_spec *pg_intersection_to_global_copyspec;
 
     enum ADIOS_FLAG swap_endianness = (fp->endianness == get_system_endianness()) ? adios_flag_no : adios_flag_yes;
     int to_steps = from_steps + nsteps;
@@ -79,51 +89,40 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
         common_read_inq_trans_blockinfo(fp, raw_varinfo, transinfo);
 
     // Allocate a new, empty request group
-    new_reqgroup = adios_transform_new_read_reqgroup(fp, raw_varinfo, transinfo, sel, from_steps, nsteps, data, swap_endianness);
+    new_reqgroup = adios_transform_read_request_new(fp, raw_varinfo, transinfo, sel, from_steps, nsteps, data, swap_endianness);
 
     // Assemble read requests for each varblock
-    pg_intersection_to_global_copyspec = NULL;
     blockidx = start_blockidx;
     timestep = from_steps;
     timestep_blockidx = 0;
     while (blockidx != end_blockidx) { //for (blockidx = startblock_idx; blockidx != endblock_idx; blockidx++) {
+        ADIOS_SELECTION *pg_bounds_sel, *pg_intersection_sel;
+
         raw_vb = &raw_varinfo->blockinfo[blockidx];
         orig_vb = &transinfo->orig_blockinfo[blockidx];
 
+        pg_bounds_sel = create_pg_bounds(transinfo->orig_ndim, orig_vb);
+
         // Find the intersection, if any
-        pg_intersection_to_global_copyspec = malloc(sizeof(adios_subvolume_copy_spec));
-        intersects = adios_copyspec_init_from_bb_intersection(pg_intersection_to_global_copyspec, &sel->u.bb, orig_vb->count, orig_vb->start);
+        pg_intersection_sel = adios_selection_intersect(pg_bounds_sel, sel);
 
-        if (intersects) {
+        if (pg_intersection_sel) {
             // Make a PG read request group, and fill it with some subrequests, and link it into the read reqgroup
-            adios_transform_pg_reqgroup *new_pg_reqgroup;
-            ADIOS_SELECTION *intersection_pg_rel;
-            ADIOS_SELECTION *intersection_orig_sel_rel;
-            ADIOS_SELECTION *intersection_global;
-            ADIOS_SELECTION *pg_bounds_global;
-
-            intersection_pg_rel = adios_copyspec_to_src_selection(pg_intersection_to_global_copyspec);
-            intersection_orig_sel_rel = adios_copyspec_to_dst_selection(pg_intersection_to_global_copyspec);
-            // Derelativize from PG space to global space
-            intersection_global = new_derelativized_selection(intersection_pg_rel, orig_vb->start);
-            pg_bounds_global = varblock_to_bb(transinfo->orig_ndim, orig_vb);
+            adios_transform_pg_read_request *new_pg_reqgroup;
 
             // Transfer ownership of pg_intersection_to_global_copyspec
-            new_pg_reqgroup = adios_transform_new_pg_reqgroup(timestep, timestep_blockidx,
+            new_pg_reqgroup = adios_transform_pg_read_request_new(timestep, timestep_blockidx,
                                                               blockidx,
                                                               orig_vb, raw_vb,
-                                                              intersection_pg_rel,
-                                                              intersection_orig_sel_rel,
-                                                              intersection_global,
-                                                              pg_bounds_global,
-                                                              pg_intersection_to_global_copyspec);
-            pg_intersection_to_global_copyspec = NULL;
+                                                              pg_intersection_sel,
+                                                              pg_bounds_sel);
 
             adios_transform_generate_read_subrequests(new_reqgroup, new_pg_reqgroup);
 
-            adios_transform_read_reqgroup_append_pg_reqgroup(new_reqgroup, new_pg_reqgroup);
+            adios_transform_pg_read_request_append(new_reqgroup, new_pg_reqgroup);
         } else {
-            adios_copyspec_free(&pg_intersection_to_global_copyspec, 1);
+            // Cleanup
+            common_read_selection_delete(pg_bounds_sel);
         }
 
         // Increment block indexes
@@ -134,7 +133,6 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
             timestep++;
         }
     }
-    assert(!pg_intersection_to_global_copyspec);
 
     return new_reqgroup;
 }
@@ -146,15 +144,15 @@ adios_transform_read_reqgroup * adios_transform_generate_read_reqgroup(const ADI
  * adios_datablock if the transform method produces one.
  */
 static adios_datablock * finish_subreq(
-        adios_transform_read_reqgroup *reqgroup,
-        adios_transform_pg_reqgroup *pg_reqgroup,
-        adios_transform_read_subrequest *subreq) {
+        adios_transform_read_request *reqgroup,
+        adios_transform_pg_read_request *pg_reqgroup,
+        adios_transform_raw_read_request *subreq) {
 
     adios_datablock *result, *tmp_result;
 
     // Mark the subrequest as complete
     assert(!subreq->completed && !pg_reqgroup->completed && !reqgroup->completed);
-    adios_transform_subreq_mark_complete(reqgroup, pg_reqgroup, subreq);
+    adios_transform_raw_read_request_mark_complete(reqgroup, pg_reqgroup, subreq);
 
     // Invoke all callbacks, depending on what completed, and
     // get at most one ADIOS_VARCHUNK to return
@@ -192,16 +190,22 @@ static adios_datablock * finish_subreq(
  *         request's selection, and was applied; returns 0 otherwise.
  */
 static int apply_datablock_to_result_and_free(adios_datablock *datablock,
-                                              adios_transform_read_reqgroup *reqgroup) {
+                                              adios_transform_read_request *reqgroup) {
     adios_subvolume_copy_spec *copyspec = malloc(sizeof(adios_subvolume_copy_spec));
 
     assert(datablock); assert(reqgroup);
     assert(reqgroup->orig_sel);
     assert(reqgroup->orig_data);
+
+    uint64_t used_count =
+            adios_patch_data(reqgroup->orig_data, reqgroup->orig_sel,
+                             datablock->data, datablock->bounds,
+                             datablock->elem_type, reqgroup->swap_endianness);
+
+    /*
     assert(reqgroup->orig_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
     assert(datablock->bounds->type == ADIOS_SELECTION_BOUNDINGBOX);
     assert(reqgroup->orig_sel->u.bb.ndim == datablock->bounds->u.bb.ndim);
-
     const int intersects =
         adios_copyspec_init_from_2bb_intersection(copyspec,
                                                   &reqgroup->orig_sel->u.bb,
@@ -219,8 +223,11 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
     }
 
     adios_copyspec_free(&copyspec, 1);
+    */
+
     adios_datablock_free(&datablock, 1);
-    return intersects;
+    //return intersects;
+    return used_count != 0;
 }
 
 /*
@@ -232,7 +239,7 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
  * and places it in the returned ADIOS_VARCHUNK (if an ADIOS_VARCHUNK is
  * returned).
  */
-static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *result, adios_transform_read_reqgroup *reqgroup) {
+static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *result, adios_transform_read_request *reqgroup) {
     ADIOS_VARCHUNK *chunk;
     uint64_t *inter_goffset;
     uint64_t *inter_offset_within_result;
@@ -289,7 +296,7 @@ static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *resul
     return chunk;
 }
 
-static ADIOS_VARCHUNK * extract_chunk_from_finished_read_reqgroup(adios_transform_read_reqgroup *reqgroup) {
+static ADIOS_VARCHUNK * extract_chunk_from_finished_read_reqgroup(adios_transform_read_request *reqgroup) {
     assert(reqgroup);
     assert(reqgroup->completed);
 
@@ -312,14 +319,14 @@ static ADIOS_VARCHUNK * extract_chunk_from_finished_read_reqgroup(adios_transfor
 // system. If it was part of a read request corresponding to a transformed
 // variable, consume it, and possibly replacing it with a detransformed chunk.
 // Otherwise, do nothing.
-void adios_transform_process_read_chunk(adios_transform_read_reqgroup **reqgroups_head, ADIOS_VARCHUNK ** chunk) {
-    adios_transform_read_reqgroup *reqgroup;
-    adios_transform_pg_reqgroup *pg_reqgroup;
-    adios_transform_read_subrequest *subreq;
+void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups_head, ADIOS_VARCHUNK ** chunk) {
+    adios_transform_read_request *reqgroup;
+    adios_transform_pg_read_request *pg_reqgroup;
+    adios_transform_raw_read_request *subreq;
     adios_datablock *result, *tmp_result;
 
     // Find the subrequest that matches the VARCHUNK that was just read (if any)
-    int found = adios_transform_read_reqgroups_find_subreq(*reqgroups_head, *chunk, 1, &reqgroup, &pg_reqgroup, &subreq);
+    int found = adios_transform_read_request_list_match_chunk(*reqgroups_head, *chunk, 1, &reqgroup, &pg_reqgroup, &subreq);
 
     // If no subrequest matches the VARCHUNK, it must correspond to a non-transformed variable.
     // In this case, return immediately and let it be processed as-is.
@@ -378,8 +385,8 @@ void adios_transform_process_read_chunk(adios_transform_read_reqgroup **reqgroup
 
     // Free the read request group if it was completed
     if (reqgroup->completed) {
-        adios_transform_read_reqgroups_remove(reqgroups_head, reqgroup);
-        adios_transform_free_read_reqgroup(&reqgroup);
+        adios_transform_read_request_remove(reqgroups_head, reqgroup);
+        adios_transform_read_request_free(&reqgroup);
     }
 }
 
@@ -388,19 +395,19 @@ void adios_transform_process_read_chunk(adios_transform_read_reqgroup **reqgroup
  * producing all required results based on the raw data read.
  * (This function is called after a blocking perform_reads completes)
  */
-void adios_transform_process_all_reads(adios_transform_read_reqgroup **reqgroups_head) {
+void adios_transform_process_all_reads(adios_transform_read_request **reqgroups_head) {
     // Mark all subrequests, PG request groups and read request groups
     // as completed, calling callbacks as needed
-    adios_transform_read_reqgroup *reqgroup;
-    adios_transform_pg_reqgroup *pg_reqgroup;
-    adios_transform_read_subrequest *subreq;
+    adios_transform_read_request *reqgroup;
+    adios_transform_pg_read_request *pg_reqgroup;
+    adios_transform_raw_read_request *subreq;
     adios_datablock *result;
 
     // Complete each read reqgroup in turn
-    while ((reqgroup = adios_transform_read_reqgroups_pop(reqgroups_head)) != NULL) {
+    while ((reqgroup = adios_transform_read_request_pop(reqgroups_head)) != NULL) {
         // Free leftover read request groups immediately, with no further processing
         if (reqgroup->completed) {
-            adios_transform_free_read_reqgroup(&reqgroup);
+            adios_transform_read_request_free(&reqgroup);
             continue;
         }
 
@@ -415,7 +422,7 @@ void adios_transform_process_all_reads(adios_transform_read_reqgroup **reqgroups
                 if (subreq->completed) continue;
 
                 // Mark the subreq as completed
-                adios_transform_subreq_mark_complete(reqgroup, pg_reqgroup, subreq);
+                adios_transform_raw_read_request_mark_complete(reqgroup, pg_reqgroup, subreq);
                 assert(subreq->completed);
 
                 // Make the required call to the transform method to apply the results
@@ -435,6 +442,6 @@ void adios_transform_process_all_reads(adios_transform_read_reqgroup **reqgroups
         if (result) apply_datablock_to_result_and_free(result, reqgroup);
 
         // Now that the read reqgroup has been processed, free it (which also frees all children)
-        adios_transform_free_read_reqgroup(&reqgroup);
+        adios_transform_read_request_free(&reqgroup);
     }
 }

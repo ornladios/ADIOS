@@ -35,29 +35,29 @@ void adios_transform_read_init() {
     adios_transforms_initialized = 1;
 }
 
-adios_datablock * adios_transform_subrequest_completed(adios_transform_read_reqgroup *reqgroup,
-                                                       adios_transform_pg_reqgroup *pg_reqgroup,
-                                                       adios_transform_read_subrequest *completed_subreq) {
+adios_datablock * adios_transform_subrequest_completed(adios_transform_read_request *reqgroup,
+                                                       adios_transform_pg_read_request *pg_reqgroup,
+                                                       adios_transform_raw_read_request *completed_subreq) {
     enum ADIOS_TRANSFORM_TYPE transform_type = reqgroup->transinfo->transform_type;
     assert(is_transform_type_valid(transform_type));
     return TRANSFORM_READ_METHODS[transform_type].transform_subrequest_completed(reqgroup, pg_reqgroup, completed_subreq);
 }
 
-adios_datablock * adios_transform_pg_reqgroup_completed(adios_transform_read_reqgroup *reqgroup,
-                                                        adios_transform_pg_reqgroup *completed_pg_reqgroup) {
+adios_datablock * adios_transform_pg_reqgroup_completed(adios_transform_read_request *reqgroup,
+                                                        adios_transform_pg_read_request *completed_pg_reqgroup) {
 
     enum ADIOS_TRANSFORM_TYPE transform_type = reqgroup->transinfo->transform_type;
     assert(is_transform_type_valid(transform_type));
     return TRANSFORM_READ_METHODS[transform_type].transform_pg_reqgroup_completed(reqgroup, completed_pg_reqgroup);
 }
 
-adios_datablock * adios_transform_read_reqgroup_completed(adios_transform_read_reqgroup *completed_reqgroup) {
+adios_datablock * adios_transform_read_reqgroup_completed(adios_transform_read_request *completed_reqgroup) {
     enum ADIOS_TRANSFORM_TYPE transform_type = completed_reqgroup->transinfo->transform_type;
     assert(is_transform_type_valid(transform_type));
     return TRANSFORM_READ_METHODS[transform_type].transform_reqgroup_completed(completed_reqgroup);
 }
 
-int adios_transform_generate_read_subrequests(adios_transform_read_reqgroup *reqgroup, adios_transform_pg_reqgroup *pg_reqgroup) {
+int adios_transform_generate_read_subrequests(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *pg_reqgroup) {
     enum ADIOS_TRANSFORM_TYPE transform_type = reqgroup->transinfo->transform_type;
     assert(is_transform_type_valid(transform_type));
     return TRANSFORM_READ_METHODS[transform_type].transform_generate_read_subrequests(reqgroup, pg_reqgroup);

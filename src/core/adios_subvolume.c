@@ -110,7 +110,7 @@ int intersect_bb(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb1,
     assert(bb1->ndim == bb2->ndim);
     return intersect_volumes(
             bb1->ndim, bb1->count, bb1->start, bb2->count, bb2->start,
-            inter_offset, inter_offset_rel1, inter_offset_rel2, inter_dims);
+            inter_dims, inter_offset, inter_offset_rel1, inter_offset_rel2);
 }
 
 void copy_subvolume_with_spec(void *dst, const void *src,

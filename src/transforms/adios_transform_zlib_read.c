@@ -32,8 +32,8 @@ int decompress_zlib_pre_allocated(const void* input_data, const uint64_t input_l
     return 0;
 }
 
-int adios_transform_zlib_generate_read_subrequests(adios_transform_read_reqgroup *reqgroup,
-                                                    adios_transform_pg_reqgroup *pg_reqgroup)
+int adios_transform_zlib_generate_read_subrequests(adios_transform_read_request *reqgroup,
+                                                    adios_transform_pg_read_request *pg_reqgroup)
 {
 
     assert(reqgroup && pg_reqgroup);
@@ -44,24 +44,24 @@ int adios_transform_zlib_generate_read_subrequests(adios_transform_read_reqgroup
             pg_reqgroup->raw_var_length, pg_reqgroup->raw_varblock->start[0], pg_reqgroup->raw_varblock->count[0],
             pg_reqgroup->raw_varblock->start[1], pg_reqgroup->raw_varblock->count[1]);
 
-    adios_transform_read_subrequest *subreq = adios_transform_new_subreq_whole_pg(pg_reqgroup->raw_varblock, buf);
-    adios_transform_pg_reqgroup_append_subreq(pg_reqgroup, subreq);
+    adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new(pg_reqgroup->raw_varblock, buf);
+    adios_transform_raw_read_request_append(pg_reqgroup, subreq);
 
     return 0;
 }
 
 // Do nothing for individual subrequest
-adios_datablock * adios_transform_zlib_subrequest_completed(adios_transform_read_reqgroup *reqgroup,
-                                                            adios_transform_pg_reqgroup *pg_reqgroup,
-                                                            adios_transform_read_subrequest *completed_subreq)
+adios_datablock * adios_transform_zlib_subrequest_completed(adios_transform_read_request *reqgroup,
+                                                            adios_transform_pg_read_request *pg_reqgroup,
+                                                            adios_transform_raw_read_request *completed_subreq)
 {
     return NULL;
 }
 
 
 
-adios_datablock * adios_transform_zlib_pg_reqgroup_completed(adios_transform_read_reqgroup *reqgroup,
-                                                                adios_transform_pg_reqgroup *completed_pg_reqgroup)
+adios_datablock * adios_transform_zlib_pg_reqgroup_completed(adios_transform_read_request *reqgroup,
+                                                             adios_transform_pg_read_request *completed_pg_reqgroup)
 {
     uint64_t compressed_len = (uint64_t)completed_pg_reqgroup->raw_var_length;
     void* compressed_buff = completed_pg_reqgroup->subreqs->data;
@@ -90,11 +90,11 @@ adios_datablock * adios_transform_zlib_pg_reqgroup_completed(adios_transform_rea
 
     return adios_datablock_new(reqgroup->transinfo->orig_type,
                                completed_pg_reqgroup->timestep,
-                               completed_pg_reqgroup->pg_bounds_global,
+                               completed_pg_reqgroup->pg_bounds_sel,
                                decompressed_buff);
 }
 
-adios_datablock * adios_transform_zlib_reqgroup_completed(adios_transform_read_reqgroup *completed_reqgroup)
+adios_datablock * adios_transform_zlib_reqgroup_completed(adios_transform_read_request *completed_reqgroup)
 {
     return NULL;
 }

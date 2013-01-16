@@ -40,11 +40,10 @@ static void check_raw_var(ADIOS_GROUP *ag, double *arr) {
     ADIOS_VARINFO *vi_raw = adios_inq_var(ag, RAW_VAR);
     assert(vi_raw);
     assert(vi_raw->type == adios_double);
-    assert(vi_raw->ndim == 2); // One "dummy" dimension that always == 1, and the real dimension
-    assert(vi_raw->dims[0] == 1);
-    assert(vi_raw->dims[1] == N);
+    assert(vi_raw->ndim == 1); // Apparently the "dummy" dimension has gone away for timed arrays that are written only once
+    assert(vi_raw->dims[0] == N);
 
-    readlen = adios_read_var_byid(ag, vi_raw->varid, (uint64_t[]){0,0}, vi_raw->dims, readarr);
+    readlen = adios_read_var_byid(ag, vi_raw->varid, (uint64_t[]){0}, vi_raw->dims, readarr);
 
     assert(readlen == N * sizeof(double));
     assert(memcmp(readarr, arr, N * sizeof(double)) == 0);
@@ -63,11 +62,10 @@ static void check_xform_var(ADIOS_GROUP *ag, double *arr) {
     ADIOS_VARINFO *vi_xform = adios_inq_var(ag, XFORM_VAR);
     assert(vi_xform);
     assert(vi_xform->type == adios_double);
-    assert(vi_xform->ndim == 2); // One "dummy" dimension that always == 1, and the real dimension
-    assert(vi_xform->dims[0] == 1);
-    assert(vi_xform->dims[1] == N);
+    assert(vi_xform->ndim == 1); // Apparently the "dummy" dimension has gone away for timed arrays that are written only once
+    assert(vi_xform->dims[0] == N);
 
-    readlen = adios_read_var_byid(ag, vi_xform->varid, (uint64_t[]){0,0}, vi_xform->dims, readarr);
+    readlen = adios_read_var_byid(ag, vi_xform->varid, (uint64_t[]){0}, vi_xform->dims, readarr);
 
     assert(readlen == N * sizeof(double));
     assert(memcmp(readarr, arr, N * sizeof(double)) == 0);
