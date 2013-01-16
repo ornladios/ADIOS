@@ -1,5 +1,4 @@
 INCLUDES=-I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms
-$(info  $(top_srcdir))
 
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES=AUTO
@@ -61,6 +60,7 @@ transforms_read_SOURCES = $(transforms_common_SOURCES) \
                           core/transforms/adios_transforms_hooks_read.c \
                           core/transforms/adios_transforms_reqgroup.c \
                           core/transforms/adios_transforms_datablock.c \
+                          core/transforms/adios_patchdata.c \
                           core/adios_selection_util.c \
                           $(transforms_read_method_SOURCES)
 

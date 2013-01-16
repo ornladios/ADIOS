@@ -247,11 +247,15 @@ uint64_t adios_transform_get_pre_transform_var_size(struct adios_group_struct *g
                                           NULL); // NULL because it's not a string, so unneeded
 }
 
+static inline uint64_t generate_unique_block_id(const struct adios_file_struct * fd, const struct adios_var_struct *var) {
+	return (fd->group->process_id << 32) + var->write_count;
+}
+
 static int adios_transform_store_transformed_length(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t transformed_len) {
     struct adios_dimension_struct *dim1, *dim2, *dim3;
     struct adios_dimension_item_struct *pg_id_offset, *byte_length_ldim;
 
-    const uint64_t pg_id = fd->pg_start_in_file; // Use the current file offset as a unique ID for this PG
+    const uint64_t pg_id = generate_unique_block_id(fd, var);//fd->pg_start_in_file; // Use the current file offset as a unique ID for this PG
 
     // Get the first two dimensions (which always exist)
     dim1 = var->dimensions;

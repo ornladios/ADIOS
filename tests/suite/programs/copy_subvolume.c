@@ -7,6 +7,9 @@
 #include "public/adios_types.h"
 #include "core/adios_subvolume.h"
 
+// Uncomment to print all data volumes (original, intermediate, and final)
+//#define VERBOSE
+
 #define SHIFT argv++; argc--;
 #define SHIFT_N(n) argv += n; argc -= n;
 
@@ -105,40 +108,62 @@ int runtest(int argc, char **argv) {
 
     if (argc < 2 * ndims * nvolumes + ndims) usage_and_exit();
 
+#ifdef VERBOSE
     printf("Using %d-dimensional space with %d volumes\n", ndims, nvolumes);
+#endif
 
     subvolume_dims = malloc(ndims * sizeof(uint64_t));
     volume_dims = malloc(nvolumes * ndims * sizeof(uint64_t));
     volume_offsets = malloc(nvolumes * ndims * sizeof(uint64_t));
     volumes = malloc(nvolumes * sizeof(int*));
 
+#ifdef VERBOSE
     printf("Subvolume dimensions:");
+#endif
     for (i = 0; i < ndims; i++) {
         subvolume_dims[i] = atoll(argv[i]);
+#ifdef VERBOSE
         printf(" %llu", subvolume_dims[i]);
+#endif
     }
+#ifdef VERBOSE
     printf("\n");
+#endif
+
     SHIFT_N(ndims);
 
     for (i = 0; i < nvolumes; i++) {
+#ifdef VERBOSE
         printf("Volume %d:\n", i);
+#endif
 
+#ifdef VERBOSE
         printf("  Dimensions:");
+#endif
         for (j = 0; j < ndims; j++) {
             volume_dims[i * ndims + j] = atoll(argv[j]);
+#ifdef VERBOSE
             printf(" %llu", volume_dims[i * ndims + j]);
+#endif
         }
+#ifdef VERBOSE
         printf("\n");
+#endif
         SHIFT_N(ndims);
 
+#ifdef VERBOSE
         printf("  Offsets:");
+#endif
         for (j = 0; j < ndims; j++) {
             volume_offsets[i * ndims + j] = atoll(argv[j]);
+#ifdef VERBOSE
             printf(" %llu", volume_offsets[i * ndims + j]);
-
+#endif
             assert(volume_offsets[i * ndims + j] + subvolume_dims[j] <= volume_dims[i * ndims + j]);
         }
+#ifdef VERBOSE
         printf("\n");
+#endif
         SHIFT_N(ndims);
 
         volumes[i] = malloc(prod(ndims, volume_dims + i*ndims) * sizeof(int));
@@ -151,38 +176,51 @@ int runtest(int argc, char **argv) {
     memcpy(final_volume, volumes[0], prod(ndims, volume_dims + 0*ndims));
     fill_subvolume(ndims, volume_dims + 0*ndims, final_volume, volume_offsets + 0*ndims, subvolume_dims, -1);
 
+#ifdef VERBOSE
     printf("--- Final volume before copy:\n");
     printvolume(ndims, volume_dims + 0*ndims, final_volume, 0);
     printf("----------\n");
+#endif
 
-
+#ifdef VERBOSE
     printf("--- Volume 0:\n");
     printvolume(ndims, volume_dims + 0*ndims, volumes[0], 0);
     printf("----------\n");
+#endif
 
     for (i = 1; i < nvolumes; i++) {
+#ifdef VERBOSE
         printf("Copying subvolume from volume %d to %d\n", i-1 + 1, i + 1);
+#endif
         copy_subvolume(volumes[i], volumes[i-1], ndims, subvolume_dims,
                        volume_dims + i*ndims, volume_offsets + i*ndims,
                        volume_dims + (i-1)*ndims, volume_offsets + (i-1)*ndims,
                        adios_integer, adios_flag_no);
 
+#ifdef VERBOSE
         printf("--- Volume %d:\n", i);
         printvolume(ndims, volume_dims + i*ndims, volumes[i], 0);
         printf("----------\n");
+#endif
     }
 
+#ifdef VERBOSE
     printf("Copying subvolume from volume %d to replica of volume 1\n", nvolumes);
+#endif
     copy_subvolume(final_volume, volumes[nvolumes-1], ndims, subvolume_dims,
                    volume_dims + 0*ndims, volume_offsets + 0*ndims,
                    volume_dims + (nvolumes-1)*ndims, volume_offsets + (nvolumes-1)*ndims,
                    adios_integer, adios_flag_no);
 
+#ifdef VERBOSE
     printf("--- Final volume:\n", i);
     printvolume(ndims, volume_dims + 0*ndims, final_volume, 0);
     printf("----------\n");
+#endif
 
+#ifdef VERBOSE
     printf("Comparing volume 0 and its replica after copy operations...\n");
+#endif
     int success = (memcmp(volumes[0], final_volume, prod(ndims, volume_dims + 0*ndims)) == 0);
 
     if (success) {
@@ -205,7 +243,9 @@ int runtest_helper(const char *cmdline) {
     } while (argv[argc++]);
 
     argc--;
+#ifdef VERBOSE
     printf("argc = %d\n", argc);
+#endif
 
     int ret = runtest(argc, argv);
 

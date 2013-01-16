@@ -196,10 +196,16 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
     assert(datablock); assert(reqgroup);
     assert(reqgroup->orig_sel);
     assert(reqgroup->orig_data);
+
+    uint64_t used_count =
+            adios_patch_data(reqgroup->orig_data, reqgroup->orig_sel,
+                             datablock->data, datablock->bounds,
+                             datablock->elem_type, reqgroup->swap_endianness);
+
+    /*
     assert(reqgroup->orig_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
     assert(datablock->bounds->type == ADIOS_SELECTION_BOUNDINGBOX);
     assert(reqgroup->orig_sel->u.bb.ndim == datablock->bounds->u.bb.ndim);
-
     const int intersects =
         adios_copyspec_init_from_2bb_intersection(copyspec,
                                                   &reqgroup->orig_sel->u.bb,
@@ -217,8 +223,11 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
     }
 
     adios_copyspec_free(&copyspec, 1);
+    */
+
     adios_datablock_free(&datablock, 1);
-    return intersects;
+    //return intersects;
+    return used_count != 0;
 }
 
 /*
