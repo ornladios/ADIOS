@@ -1,5 +1,6 @@
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/tests/genarray)
+include_directories(${PROJECT_BINARY_DIR}/tests/genarray)
 link_directories(${PROJECT_BINARY_DIR}/tests/genarray)
 
 add_executable(genarray genarray.F90 gwrite_genarray.fh)
@@ -18,16 +19,18 @@ add_executable(copyarray2D copyarray2D.F90)
 target_link_libraries(copyarray2D adiosf ${ADIOSLIB_LDADD})
 set_target_properties(copyarray2D PROPERTIES COMPILE_FLAGS "${ADIOSLIB_CPPFLAGS} ${ADIOSLIB_CFLAGS}")
 
+install(FILES genarray3d.xml DESTINATION ${PROJECT_BINARY_DIR}/tests/genarray) 
+
 add_custom_command(
-	OUTPUT gwrite_genarray.fh
+	OUTPUT /${PROJECT_SOURCE_DIR}/tests/genarray/gwrite_genarray.fh
 	COMMAND rm -f gwrite_genarray.fh gread_genarray.fh 
-	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py genarray3d.xml
+	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/genarray/genarray3d.xml
 	DEPENDS genarray3d.xml
 	)
 
 add_custom_command(
-        OUTPUT gread_genarray.fh 
-	COMMAND rm -f gwrite_genarray.fh ed_genarray.fh 
-	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py genarray3d.xml
+        OUTPUT /${PROJECT_SOURCE_DIR}/tests/genarray/gread_genarray.fh 
+	COMMAND rm -f gwrite_genarray.fh gread_genarray.fh 
+	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/genarray/genarray3d.xml
 	DEPENDS genarray3d.xml
 	)
