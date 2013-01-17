@@ -452,7 +452,7 @@ subroutine adios_define_var (group_id, varname, path, vartype, dimensions, globa
     character(*),   intent(in)  :: dimensions
     character(*),   intent(in)  :: global_dimensions
     character(*),   intent(in)  :: local_offsets
-    integer,        intent(out) :: err
+    integer*8,      intent(out) :: id
 end subroutine
 
 subroutine adios_define_attribute (group_id, attrname, path, attrtype, value, varname, err)

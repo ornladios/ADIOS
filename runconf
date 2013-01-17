@@ -78,9 +78,9 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --enable-dependency-tracking \
         --enable-research-transports  \
         --with-lustre=/usr/lib64 \
-        --with-hdf5=${SEQ_HDF5_DIR} \
-        --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         $WITHDART 
+        #--with-hdf5=${SEQ_HDF5_DIR} \
+        #--with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--enable-shared --disable-static
@@ -733,8 +733,11 @@ elif [ `hostname | cut -c 1-6` == "hopper" ]; then
         --with-mxml=$HOME/mxml/mxml.hopper \
         --with-lustre=/usr \
         $WITHDART \
+        --with-cray-pmi-incdir=/opt/cray/pmi/default/include \
+        --with-cray-pmi-libdir=/opt/cray/pmi/default/lib64 \
+        --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
+        --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
         --without-hdf5 --without-netcdf
-
 
 
 elif [ `hostname | cut -c 1-6` == "kraken" ]; then

@@ -98,7 +98,7 @@ int adios_select_method (int64_t group,
                         );
 
 // To define a ADIOS variable
-int adios_define_var (int64_t group_id, 
+int64_t adios_define_var (int64_t group_id, 
                       const char * name,
                       const char * path,
                       enum ADIOS_DATATYPES type,
@@ -114,6 +114,12 @@ int adios_define_attribute (int64_t group,
                             const char * value, 
                             const char * var
                            );
+/** This function does similar function as adios_write. It is, however, used
+ * in the following scenario that
+ * 1. numbers, instead of a variable, are used to annotate array dimensions, and
+ * 2. a variable is written mutiple times on a processor (e.g., AMR codes)
+ */
+int adios_write_byid (int64_t fd_p, int64_t id, void * var);
 
 /** Set the application's ID for adios_read_init()
  *  when using a staging method (DATASPACES, DIMES, NSSI or DATATAP).

@@ -59,20 +59,7 @@
 
 This example illustrates both the use of sub blocks in writing, and the usage of 
 the ADIOS non-xml API's. This example will write out two sub blocks of the variable 
-temperature and place these in the global array. \textbf{Note:} if local dimension/global 
-dimension/offset of a variable is defined with passing a number, instead of using 
-names of variable as shown in the following code snippet, for example,
-
-adios\_define\_var (m\_adios\_group, \texttt{"}temperature\texttt{"}
-
-\parindent=86pt
-,\texttt{"}\texttt{"}, adios\_double
-
-,\texttt{"}100\texttt{"}, \texttt{"}400\texttt{"}, \texttt{"}0\texttt{"});
-
-\parindent=0pt
-the sequence of calling adios\_write needs to be exactly the same as that of calling 
-adios\_define\_var.
+temperature and place these in the global array. 
 
 \begin{lstlisting}[alsolanguage=C]
 #include <stdio.h>
@@ -165,3 +152,15 @@ int main (int argc, char ** argv)
 
 \end{lstlisting}
 
+
+\noindent \textbf{Note:} if local dimension/global 
+dimension/offset of a variable is defined with passing a number, instead of using 
+names of variable as shown in the following code snippet, for example,
+
+\begin{lstlisting}[alsolanguage=C]
+    varid = adios_define_var (m_adios_group, "temperature",
+                              "", adios_double,
+                              "100", "400", "0");
+\end{lstlisting}
+
+\noindent the returned IDs should be saved and used in calling \verb+adios_write_byid()+ instead of \verb+adios_write()+.

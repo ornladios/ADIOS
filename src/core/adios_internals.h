@@ -468,7 +468,7 @@ int adios_common_declare_group (int64_t * id, const char * name
                                ,enum ADIOS_FLAG stats
                                );
 
-int adios_common_define_var (int64_t group_id, const char * name
+int64_t adios_common_define_var (int64_t group_id, const char * name
                             ,const char * path, enum ADIOS_DATATYPES type
                             ,const char * dimensions
                             ,const char * global_dimensions

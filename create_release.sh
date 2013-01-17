@@ -61,6 +61,16 @@ tar -cO wrappers --exclude "\.svn" | tar -x -C adios-$VERSION
 echo "Add skel examples"
 tar -cO examples/skel --exclude "\.svn" | tar -x -C adios-$VERSION
 
+echo "Clean staging/coupling examples"
+(cd examples/coupling; make distclean)
+for sd in examples/staging; do
+    (cd $sd; make distclean)
+done
+(cd examples/staging/staging_write; make -f Makefile.genarray_stream clean)
+
+echo "Add staging/coupling examples"
+tar -cO examples/staging examples/coupling  --exclude "\.svn" | tar -x -C adios-$VERSION
+
 echo "Repack adios-$VERSION.tar.gz"
 rm -rf adios-$VERSION.tar.gz
 tar zcf adios-$VERSION.tar.gz adios-$VERSION

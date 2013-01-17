@@ -391,9 +391,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  tests/bp_read/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu tests/bp_read/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  tests/bp_read/Makefile
+	  $(AUTOMAKE) --gnu tests/bp_read/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -512,7 +512,7 @@ TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	if test -z "$(ETAGS_ARGS)$$*$$unique"; then :; else \
 	  test -n "$$unique" || unique=$$empty_fix; \
 	  if test $$# -gt 0; then \
-	  $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
+	    $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
 	      "$$@" $$unique; \
 	  else \
 	    $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
@@ -551,14 +551,14 @@ distdir: $(DISTFILES)
 	  */*) $(MKDIR_P) `echo "$$dist_files" | \
 			   sed '/\//!d;s|^|$(distdir)/|;s,/[^/]*$$,,' | \
 			   sort -u` ;; \
-	  esac; \
+	esac; \
 	for file in $$dist_files; do \
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
 	  if test -d $$d/$$file; then \
 	    dir=`echo "/$$file" | sed -e 's,/[^/]*$$,,'`; \
 	    if test -d "$(distdir)/$$file"; then \
 	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \
-	  fi; \
+	    fi; \
 	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
 	      cp -fpR $(srcdir)/$$file "$(distdir)$$dir" || exit 1; \
 	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \

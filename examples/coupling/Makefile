@@ -41,3 +41,5 @@ clean:
 	rm -f *.o *.mod *.fh core.*
 	rm -f coupling_writer_2D coupling_reader_2D
         
+distclean: clean
+	rm -f log.* dataspaces.conf conf srv.lck *.bp

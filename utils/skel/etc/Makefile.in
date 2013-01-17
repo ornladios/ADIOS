@@ -324,9 +324,9 @@ $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  utils/skel/etc/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu utils/skel/etc/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  utils/skel/etc/Makefile
+	  $(AUTOMAKE) --gnu utils/skel/etc/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -389,14 +389,14 @@ distdir: $(DISTFILES)
 	  */*) $(MKDIR_P) `echo "$$dist_files" | \
 			   sed '/\//!d;s|^|$(distdir)/|;s,/[^/]*$$,,' | \
 			   sort -u` ;; \
-	  esac; \
+	esac; \
 	for file in $$dist_files; do \
 	  if test -f $$file || test -d $$file; then d=.; else d=$(srcdir); fi; \
 	  if test -d $$d/$$file; then \
 	    dir=`echo "/$$file" | sed -e 's,/[^/]*$$,,'`; \
 	    if test -d "$(distdir)/$$file"; then \
 	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \
-	  fi; \
+	    fi; \
 	    if test -d $(srcdir)/$$file && test $$d != $(srcdir); then \
 	      cp -fpR $(srcdir)/$$file "$(distdir)$$dir" || exit 1; \
 	      find "$(distdir)/$$file" -type d ! -perm -700 -exec chmod u+rwx {} \;; \

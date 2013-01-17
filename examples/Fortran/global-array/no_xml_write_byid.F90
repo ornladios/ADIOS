@@ -12,11 +12,11 @@
 ! ADIOS config file: None
 !
 
-program adios_global 
+program no_xml_write_byid
     use adios_write_mod
     implicit none
     include 'mpif.h'
-    character(len=256)      :: filename = "adios_global_no_xml.bp"
+    character(len=256)      :: filename = "no_xml_write_byid.bp"
     integer                 :: rank, size, i, ierr
     integer,parameter       :: NX=10
     integer                 :: O, G
@@ -27,7 +27,8 @@ program adios_global
     integer*8               :: adios_groupsize, adios_totalsize
     integer*8               :: adios_handle
     integer*8               :: m_adios_group
-    integer*8               :: varid
+    integer*8               :: var_id1, var_id2
+    character(len=32)       :: local, global, offset
 
     call MPI_Init (ierr)
     call MPI_Comm_dup (MPI_COMM_WORLD, comm, ierr)
@@ -40,69 +41,44 @@ program adios_global
     call adios_declare_group (m_adios_group, "restart", "iter", 1, adios_err)
     call adios_select_method (m_adios_group, "MPI", "", "", adios_err)
 
-    ! This example doesn't use varid during writing.
-    ! So we simply put 'varid' everywhere.
-    ! define a integer
-    call adios_define_var (m_adios_group, "NX" &
-                          ,"", 2 &
-                          ,"", "", "", varid)
-    ! define a integer
-    call adios_define_var (m_adios_group, "G" &
-                          ,"", 2 &
-                          ,"", "", "", varid)
-    ! define a integer
-    call adios_define_var (m_adios_group, "O" &
-                          ,"", 2 &
-                          ,"", "", "", varid)
-    ! define a global array
-    call adios_define_var (m_adios_group, "temperature" &
-                          ,"", 6 &
-                          ,"NX", "G", "O", varid)
+    G = 2 * NX * size
+    O = 2 * NX * rank
 
-    ! define a integer
-    call adios_define_var (m_adios_group, "NX" &
-                          ,"", 2 &
-                          ,"", "", "", varid) 
-    ! define a integer
-    call adios_define_var (m_adios_group, "G" &
-                          ,"", 2 &
-                          ,"", "", "", varid)
-    ! define a integer
-    call adios_define_var (m_adios_group, "O" &
-                          ,"", 2 &
-                          ,"", "", "", varid)
+    write (local, "(I2)") NX
+    write (global, "(I3)") G
+    write (offset, "(I3)") O
+
     ! define a global array
     call adios_define_var (m_adios_group, "temperature" &
                           ,"", 6 &
-                          ,"NX", "G", "O", varid) 
+                          ,local, global, offset, var_id1)
+
+
+    write (offset, "(I3)") O + NX
+
+    ! define a global array
+    call adios_define_var (m_adios_group, "temperature" &
+                          ,"", 6 &
+                          ,local, global, offset, var_id2)
 
     call adios_open (adios_handle, "restart", filename, "w", comm, adios_err)
 
-    adios_groupsize = 4 + 4 + 4 + NX * 8 &
-                    + 4 + 4 + 4 + NX * 8
+    adios_groupsize =  NX * 8 &
+                    +  NX * 8
     call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
 
-    G = 2 * NX * size
-    O = 2 * NX * rank
     do i = 1, NX
         t(i)  = O + i - 1
     enddo
 
-    call adios_write (adios_handle, "NX", NX, adios_err)
-    call adios_write (adios_handle, "G", G, adios_err)
-    call adios_write (adios_handle, "O", O, adios_err)
-    call adios_write (adios_handle, "temperature", t, adios_err)
-
+    call adios_write_byid (adios_handle, var_id1, t, adios_err)
 
     O = 2 * NX * rank + NX
     do i = 1, NX
         t(i)  = O + i - 1
     enddo
 
-    call adios_write (adios_handle, "NX", NX, adios_err)
-    call adios_write (adios_handle, "G", G, adios_err)
-    call adios_write (adios_handle, "O", O, adios_err)
-    call adios_write (adios_handle, "temperature", t, adios_err)
+    call adios_write_byid (adios_handle, var_id2, t, adios_err)
 
     call adios_close (adios_handle, adios_err)
 

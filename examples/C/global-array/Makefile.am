@@ -3,7 +3,7 @@ INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-noinst_PROGRAMS = adios_global adios_global_2files adios_read_gpp adios_read_global adios_read_writeblock adios_read_chunk adios_global_no_xml adios_read_global_no_xml
+noinst_PROGRAMS = adios_global adios_global_2files adios_read_gpp adios_read_global adios_read_writeblock adios_read_chunk adios_global_no_xml adios_read_global_no_xml no_xml_write_byid read_no_xml_write_byid
 
 adios_global_SOURCES = adios_global.c
 adios_global_LDADD = $(top_builddir)/src/libadios.a 
@@ -39,6 +39,15 @@ adios_read_global_no_xml_CPPFLAGS = -DADIOS_USE_READ_API_1
 adios_read_global_no_xml_LDADD = $(top_builddir)/src/libadiosread.a
 adios_read_global_no_xml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_global_no_xml_LDADD += $(ADIOSLIB_LDADD)
+no_xml_write_byid_SOURCES = no_xml_write_byid.c
+no_xml_write_byid_LDADD = $(top_builddir)/src/libadios.a
+no_xml_write_byid_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+no_xml_write_byid_LDADD += $(ADIOSLIB_LDADD)
+read_no_xml_write_byid_SOURCES = read_no_xml_write_byid.c
+read_no_xml_write_byid_CPPFLAGS = -DADIOS_USE_READ_API_1
+read_no_xml_write_byid_LDADD = $(top_builddir)/src/libadiosread.a
+read_no_xml_write_byid_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+read_no_xml_write_byid_LDADD += $(ADIOSLIB_LDADD)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
