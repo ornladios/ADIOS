@@ -1,6 +1,8 @@
 include_directories(${PROJECT_SOURCE_DIR}/tests/suite)
 include_directories(${PROJECT_SOURCE_DIR}/src)
-link_directories(${PROJECT_BINARY_DIR}/tests/suite)
+include_directories(${PROJECT_SOURCE_DIR}/tests/suite/programs)
+include_directories(${PROJECT_BINARY_DIR}/tests/suite/programs)
+link_directories(${PROJECT_BINARY_DIR}/tests/suite/programs)
 
 
 if(BUILD_WRITE)
@@ -34,11 +36,11 @@ endif(BUILD_WRITE)
 
 if(BUILD_FORTRAN)
   if(BUILD_WRITE)
-    add_executable(posix_method posix_method.F90)
+    add_executable(posix_method posix_method.F90 gwrite_posix_method.fh)
     target_link_libraries(posix_method adiosf ${ADIOSLIB_LDADD})
     add_custom_command(
 	OUTPUT gwrite_posix_method.fh
-	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py posix_method.xml
+	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/posix_method.xml
 	DEPENDS posix_method.xml
 	)
   endif(BUILD_WRITE)
