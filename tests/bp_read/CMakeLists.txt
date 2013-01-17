@@ -1,6 +1,7 @@
 include_directories(${PROJECT_SOURCE_DIR}/tests/bp_read)
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_BINARY_DIR}/src)
 link_directories(${PROJECT_BINARY_DIR}/tests/bp_read)
 
 set(genbp_CPPFLAGS "${ADIOSLIB_CPPFLAGS}")
