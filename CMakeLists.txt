@@ -628,8 +628,8 @@ add_subdirectory(src)
 get_property(_LANGUAGES_ GLOBAL PROPERTY ENABLED_LANGUAGES)
 message(STATUS "${_LANGUAGES_}")
 
-add_subdirectory(tests)
 add_subdirectory(utils)
+add_subdirectory(tests)
 add_subdirectory(examples)
 #set_source_files_properties
 ############################### end of top CMakeLists.txt ###############################
