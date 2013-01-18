@@ -1,4 +1,5 @@
 include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_BINARY_DIR}/src)
 link_directories(${PROJECT_BINARY_DIR}/src)
 
 if(HAVE_NSSI)
@@ -177,9 +178,9 @@ set(libadios_nompi_a_SOURCES core/adios.c
       set(libadiosf_a_CPPFLAGS ${libadiosf_a_CPPFLAGS} -DPTL_IFACE_CLIENT=CRAY_USER_NAL -DPTL_IFACE_SERVER=CRAY_USER_NAL)
     endif(BUILD_FORTRAN)
 
-#not complete
-#from line 200 to line 218
-#not complete
+#adios_nssi_config.c: adios_nssi_args.c
+#use include_directories(${PROJECT_BINARY_DIR}/src) to let adios_nssi_config.c
+#find the header needed
 
     add_custom_command (
 	OUTPUT adios_nssi_args.h
