@@ -16,4 +16,4 @@ set_target_properties(adios_read_globaltime PROPERTIES COMPILE_FLAGS "-DADIOS_US
 add_executable(adios_read_globaltime_streaming adios_read_globaltime_streaming.c)
 target_link_libraries(adios_read_globaltime_streaming adiosread ${ADIOSLIB_LDADD})
 
-install(FILES adios_globaltime.xml DESTINATION ${PROJECT_BINARY_DIR}/examples/C/global-array-time)
+install(FILES adios_globaltime.xml gread_restart.ch gwrite_restart.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/global-array-time)
