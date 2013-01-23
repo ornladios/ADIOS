@@ -10,7 +10,3 @@ set_target_properties(adios_lint PROPERTIES COMPILE_FLAGS "${ADIOSLIB_EXTRA_CPPF
 
 #install(FILES config.xml DESTINATION ${PROJECT_BINARY_DIR}/utils/adios_lint)
 
-if(USE_PARALLEL_COMPILER)
-endif(USE_PARALLEL_COMPILER)
-
-install(FILES adios_lint DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
