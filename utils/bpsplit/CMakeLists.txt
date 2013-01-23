@@ -16,7 +16,3 @@ add_executable(bpgettime bpgettime.c)
 target_link_libraries(bpgettime adios_internal_nompi ${ADIOSLIB_INT_LDADD})
 set_target_properties(bpgettime PROPERTIES COMPILE_FLAGS "${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_INT_CPPFLAGS} ${ADIOSLIB_INT_CFLAGS}")
 
-if(USE_PARALLEL_COMPILER)
-endif(USE_PARALLEL_COMPILER)
-
-install(FILES bpsplit bpappend bpgettime DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
