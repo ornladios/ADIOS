@@ -9,5 +9,5 @@ target_link_libraries(arrays_write adios ${ADIOSLIB_LDADD})
 add_executable(arrays_read arrays_read.c)
 target_link_libraries(arrays_read adios ${ADIOSLIB_LDADD})
 
-install(FILES arrays.xml gwrite_arrays.ch gread_arrays.ch job.pb  DESTINATION ${PROJECT_BINARY_DIR}/examples/C/arrays)
+install(FILES arrays.xml gwrite_arrays.ch gread_arrays.ch jobs.pb  DESTINATION ${PROJECT_BINARY_DIR}/examples/C/arrays)
 
