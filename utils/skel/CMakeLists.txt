@@ -1,7 +1,6 @@
 add_subdirectory(etc)
 
-install(DIRECTORY bin/skel DESTINATION bindir)
-install(FILES bin/set_method.sh bin/skel_extract.py DESTINATION bindir)
+install(FILES bin/skel bin/set_method.sh bin/skel_extract.py DESTINATION ${bindir})
 
 install(FILES lib/adios.py 
 	lib/argparse.py 
@@ -15,13 +14,13 @@ install(FILES lib/adios.py
 	lib/skel_xml.py 
 	lib/skelconf.py 
 	lib/typeMapper.py 
-	DESTINATION libdir/python)
+	DESTINATION ${libdir}/python)
 
 
 install(FILES etc/templates/Makefile.default.tpl
 	etc/templates/submit_sith.tpl
 	etc/templates/submit_jaguar.tpl
-	DESTINATION prefix/etc/skel/templates)
+	DESTINATION ${prefix}/etc/skel/templates)
 
 
 install(FILES etc/settings etc/compiler_fragment.mk
