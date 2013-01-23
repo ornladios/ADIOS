@@ -15,5 +15,5 @@ target_link_libraries(3_adios_read adios ${ADIOSLIB_LDADD})
 add_executable(4_adios_nfiles 4_adios_nfiles.c)
 target_link_libraries(4_adios_nfiles adios ${ADIOSLIB_LDADD})
 
-install(FILES config.xml DESTINATION ${PROJECT_BINARY_DIR}/examples/C/manual)
+install(FILES config.xml gread_temperature.ch gwrite_temperature.ch DESTINATION ${PROJECT_BINARY_DIR}/examples/C/manual)
 
