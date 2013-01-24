@@ -236,16 +236,16 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
         #--with-mxml=/ccs/proj/e2e/pnorbert/mxml \
 
 
-elif [ `hostname | cut -c 1-8` == "jaguarpf" ]; then
+elif [ `hostname | cut -c 1-5` == "titan" ]; then
 
     BUILD_STAGING=true
     if [ $BUILD_STAGING == "false" ]; then
     
         ################
-        # Jaguar/Titan #
+        # Titan #
         ################
         TARGET=pgi
-        echo "Configure on JAGUAR (XK6) for $TARGET env."
+        echo "Configure on TITAN (XK7) for $TARGET env."
         export CC=cc
         #export CFLAGS="-Wall -g" 
         export FC=ftn
@@ -271,7 +271,7 @@ elif [ `hostname | cut -c 1-8` == "jaguarpf" ]; then
         #export CC=mpicc
         #export FC=mpif90
         CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
-            --host=jaguar --host_alias=jaguar  \
+            --host=titan --host_alias=titan  \
             --enable-dependency-tracking \
             #--with-hdf5=/opt/cray/hdf5/1.8.7/pgi/109 \
             #--with-phdf5=/opt/cray/hdf5-parallel/1.8.7/pgi/109 \
@@ -288,10 +288,10 @@ elif [ `hostname | cut -c 1-8` == "jaguarpf" ]; then
     else 
     
         ##########################
-        # Jaguar/Titan + staging #
+        # Titan + staging #
         ##########################
         TARGET=pgi
-        echo "Configure on JAGUAR including staging methods for $TARGET env."
+        echo "Configure on TITAN (XK7) including staging methods for $TARGET env."
         export CC=cc
         export FC=ftn
         export CXX=CC
@@ -317,12 +317,12 @@ elif [ `hostname | cut -c 1-8` == "jaguarpf" ]; then
             #module swap pgi pgi/11.8.0
             # NSSI needs -pgcpplibs flag 
             export LDFLAGS="-pgcpplibs" 
-            DATASPACES_DIR="/ccs/proj/e2e/dataspaces/xk6/$TARGET"
+            DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
         elif [ "$TARGET" == "gnu" ]; then
             # NSSI needs libstdc++
-            export EXTRA_LIBS="/opt/gcc/4.4.4/snos/lib64/libstdc++.a"
-            module swap gcc gcc/4.4.4
-            DATASPACES_DIR="/ccs/proj/e2e/dataspaces/xk6/$TARGET"
+            export EXTRA_LIBS="/opt/gcc/4.7.2/snos/lib64/libstdc++.a"
+            #module swap gcc gcc/4.4.4
+            DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
         else
             unset DATASPACES_DIR
         fi
@@ -339,7 +339,7 @@ elif [ `hostname | cut -c 1-8` == "jaguarpf" ]; then
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
         export CFLAGS="-fPIC -g -O0" 
         #./configure --prefix=/ccs/proj/fus022/norbert/RMP/adios.xt5.$TARGET \
-        ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xk6.$TARGET \
+        ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/titan.$TARGET \
         --enable-dependency-tracking \
         --with-cray-pmi=/opt/cray/pmi/default \
         --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
