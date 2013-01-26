@@ -7,31 +7,31 @@ link_directories(${PROJECT_BINARY_DIR}/tests/suite/programs)
 
 if(BUILD_WRITE)
   add_executable(local_array_time local_array_time.c)
-  target_link_libraries(local_array_time adios ${ADIOSLIB_LDADD} ${MPI_LIBRARIES})
+  target_link_libraries(local_array_time adios ${ADIOSLIB_LDADD})
   
   add_executable(adios_amr_write adios_amr_write.c)
-  target_link_libraries(adios_amr_write adios ${ADIOSLIB_LDADD} ${MPI_LIBRARIES})
+  target_link_libraries(adios_amr_write adios ${ADIOSLIB_LDADD})
 
   add_executable(adios_amr_write_2vars adios_amr_write_2vars.c)
-  target_link_libraries(adios_amr_write_2vars adios ${ADIOSLIB_LDADD} ${MPI_LIBRARIES})
+  target_link_libraries(adios_amr_write_2vars adios ${ADIOSLIB_LDADD})
   
   add_executable(adios_staged_read adios_staged_read.c)
-  target_link_libraries(adios_staged_read adiosread ${ADIOSREADLIB_LDADD} ${MPI_LIBRARIES})
+  target_link_libraries(adios_staged_read adiosread ${ADIOSREADLIB_LDADD})
 
   add_executable(adios_staged_read_2vars adios_staged_read_2vars.c)
-  target_link_libraries(adios_staged_read_2vars adiosread ${ADIOSREADLIB_LDADD} ${MPI_LIBRARIES})
+  target_link_libraries(adios_staged_read_2vars adiosread ${ADIOSREADLIB_LDADD})
 
   add_executable(write_read write_read.c)
-  target_link_libraries(write_read adios ${ADIOSLIB_LDADD} ${MPI_LIBRARIES})
+  target_link_libraries(write_read adios ${ADIOSLIB_LDADD})
 
   add_executable(write_alternate write_alternate.c)
-  target_link_libraries(write_alternate adios ${ADIOSLIB_LDADD} ${MPI_LIBRARIES})
+  target_link_libraries(write_alternate adios ${ADIOSLIB_LDADD})
 
   add_executable(many_vars many_vars.c)
-  target_link_libraries(many_vars adios ${ADIOSLIB_LDADD} ${MPI_LIBRARIES})
+  target_link_libraries(many_vars adios ${ADIOSLIB_LDADD})
 
   add_executable(selections selections.c)
-  target_link_libraries(selections adios ${ADIOSLIB_LDADD} ${MPI_LIBRARIES})
+  target_link_libraries(selections adios ${ADIOSLIB_LDADD})
 endif(BUILD_WRITE)
 
 if(BUILD_FORTRAN)
