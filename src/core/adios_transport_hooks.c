@@ -49,6 +49,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)
     ASSIGN_FNS(mpi_lustre,ADIOS_METHOD_MPI_LUSTRE)
     ASSIGN_FNS(mpi_amr,ADIOS_METHOD_MPI_AMR)
+    ASSIGN_FNS(mpi_gpfs,ADIOS_METHOD_MPI_GPFS)
 #      ifndef NO_RESEARCH_TRANSPORTS
     ASSIGN_FNS(mpi_stripe,ADIOS_METHOD_MPI_STRIPE)
     ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)
