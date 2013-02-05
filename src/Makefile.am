@@ -69,6 +69,7 @@ libadios_a_SOURCES = core/adios.c \
                      write/adios_mpi.c \
                      write/adios_mpi_lustre.c \
                      write/adios_mpi_amr.c \
+                     write/adios_mpi_gpfs.c \
                      write/adios_posix.c \
                      write/adios_posix1.c 
 
@@ -128,6 +129,7 @@ FortranLibSources = core/adiosf.c \
                      write/adios_mpi.c \
                      write/adios_mpi_lustre.c \
                      write/adios_mpi_amr.c \
+                     write/adios_mpi_gpfs.c \
                      write/adios_posix.c \
                      write/adios_posix1.c 
 
