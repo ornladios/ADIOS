@@ -124,40 +124,6 @@ struct adios_MPI_thread_data_write
 #       include <sys/statfs.h>
 #endif
 
-// this should be determined at configure time
-//#define ADIOS_LUSTRE
-
-//#ifdef ADIOS_LUSTRE
-#include <sys/ioctl.h>
-//#include <lustre/lustre_user.h>
-//#endif
-// from /usr/include/lustre/lustre_user.h
-#define LUSTRE_SUPER_MAGIC 0x0BD00BD0
-#  define LOV_USER_MAGIC 0x0BD10BD0
-#  define LL_IOC_LOV_SETSTRIPE  _IOW ('f', 154, long)
-#  define LL_IOC_LOV_GETSTRIPE  _IOW ('f', 155, long)
-#define O_LOV_DELAY_CREATE 0100000000
-
-struct lov_user_ost_data {           // per-stripe data structure
-        uint64_t l_object_id;        // OST object ID
-        uint64_t l_object_gr;        // OST object group (creating MDS number)
-        uint32_t l_ost_gen;          // generation of this OST index
-        uint32_t l_ost_idx;          // OST index in LOV
-} __attribute__((packed));
-struct lov_user_md {                 // LOV EA user data (host-endian)
-        uint32_t lmm_magic;          // magic number = LOV_USER_MAGIC_V1
-        uint32_t lmm_pattern;        // LOV_PATTERN_RAID0, LOV_PATTERN_RAID1
-        uint64_t lmm_object_id;      // LOV object ID
-        uint64_t lmm_object_gr;      // LOV object group
-        uint32_t lmm_stripe_size;    // size of stripe in bytes
-        uint16_t lmm_stripe_count;   // num stripes in use for this object
-        uint16_t lmm_stripe_offset;  // starting stripe offset in lmm_objects
-        struct lov_user_ost_data  lmm_objects[0]; // per-stripe data
-} __attribute__((packed));
-struct obd_uuid {
-        char uuid[40];
-};
-
 static void trim_spaces (char * str)
 {
     char * t = str, * p = NULL;
@@ -291,14 +257,8 @@ adios_mpi_gpfs_set_striping_unit(struct adios_MPI_data_struct * md, char *parame
     umask(old_mask);
     perm = old_mask ^ 0666;
 
-    fd =  open(filename, O_RDONLY | O_CREAT | O_LOV_DELAY_CREATE, perm);
+    fd =  open(filename, O_RDONLY | O_CREAT, perm);
     if (fd != -1) {
-        struct lov_user_md lum;
-        lum.lmm_magic = LOV_USER_MAGIC;
-        lum.lmm_pattern = 0;
-        lum.lmm_stripe_size = striping_unit;
-        lum.lmm_stripe_count = striping_count;
-
         // calculate the # of ost's to skip
         n_ost_skipping = 0;
         for (i = 0; i < md->g_num_ost; i++)
@@ -330,16 +290,6 @@ adios_mpi_gpfs_set_striping_unit(struct adios_MPI_data_struct * md, char *parame
             
             i++;
         }
-
-        lum.lmm_stripe_offset = i;
-        ioctl (fd, LL_IOC_LOV_SETSTRIPE
-              ,(void *) &lum
-              );
-
-        if (err == 0 && lum.lmm_stripe_size > 0) {
-            striping_unit = lum.lmm_stripe_size;
-        }
-
         close(fd);
     }
     else
@@ -553,27 +503,6 @@ adios_mpi_gpfs_get_striping_unit(MPI_File fh, char *filename)
     if (err == -1) {
         printf("Warning: statfs failed %s %s.\n",filename,strerror(errno));
         return striping_unit;
-    }
-
-    if (!err && fsbuf.f_type == LUSTRE_SUPER_MAGIC) {
-        int fd, old_mask, perm;
-
-        old_mask = umask(022);
-        umask(old_mask);
-        perm = old_mask ^ 0666;
-
-        fd =  open(filename, O_RDONLY, perm);
-        if (fd != -1) {
-            struct lov_user_md lum;
-            lum.lmm_magic = LOV_USER_MAGIC;
-            err = ioctl(fd, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
-            if (err == 0 && lum.lmm_stripe_size > 0) {
-                striping_unit = lum.lmm_stripe_size;
-            }
-            close(fd);
-        }
-        else
-            printf("Warning: open failed on file %s %s.\n",filename,strerror(errno));
     }
 
     // set the file striping size
@@ -1069,34 +998,20 @@ enum ADIOS_FLAG adios_mpi_gpfs_should_buffer (struct adios_file_struct * fd
         {
             if (md->rank == 0)
             {
-                struct lov_user_md lum;
-                struct obd_uuid uuids[1024], * uuidp;
                 int f, rc;
 
                 // open metadata file
                 unlink (fd->name);
 
-                f = open(fd->name, O_CREAT | O_RDWR | O_LOV_DELAY_CREATE, 0644);
+                f = open(fd->name, O_CREAT | O_RDWR, 0644);
                 if (f == -1)
                 {
                     adios_error (err_file_open_error,"MPI_AMR method: open() failed: %s\n", strerror(errno));
                     return -1;
                 }
 
-                lum.lmm_magic = LOV_USER_MAGIC;
-                lum.lmm_pattern = 0;
-                lum.lmm_stripe_size = DEFAULT_STRIPE_SIZE;
-                lum.lmm_stripe_count = 1;
-                lum.lmm_stripe_offset = -1;
-
-                ioctl (f, LL_IOC_LOV_SETSTRIPE ,(void *) &lum);
 #ifdef HAVE_LUSTRE
                 md->g_num_ost = 1024;
-                rc = llapi_lov_get_uuids(f, uuids, &md->g_num_ost);
-                if (rc != 0)
-                {
-                    log_warn ("MPI_AMR method: Lustre get uuids failed after creating the file: %s\n" ,strerror(errno));
-                }
 #endif
                 close (f);
 
