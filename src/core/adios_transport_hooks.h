@@ -126,7 +126,7 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
               ,ADIOS_METHOD_NSSI_STAGING = 18
               ,ADIOS_METHOD_NSSI_FILTER  = 19
               ,ADIOS_METHOD_DIMES        = 20
-              ,ADIOS_METHOD_GPFS         = 21
+              ,ADIOS_METHOD_MPI_GPFS     = 21
               ,ADIOS_METHOD_COUNT        = 22
 };
 
