@@ -4,13 +4,14 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/Modules/CMakeUtilityFunctions.cmake)
 
 project (AdiosPython CXX)
 
+find_package (PythonInterp REQUIRED)
+
 find_package (PythonLibs REQUIRED)
 include_directories (${PYTHON_INCLUDE_DIRS})
-##print(PYTHON_INCLUDE_DIRS)
 
-find_package (PythonInterp REQUIRED)
 find_package (Numpy REQUIRED)
 include_directories (${PYTHON_NUMPY_INCLUDE_DIR})
+
 find_package (MPI4Py REQUIRED)
 
 option (ADIOS_USE_MPI "Use parallel ADIOS" ON)
