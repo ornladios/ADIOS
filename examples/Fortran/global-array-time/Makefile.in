@@ -38,7 +38,8 @@ noinst_PROGRAMS = adios_globaltime$(EXEEXT)
 subdir = examples/Fortran/global-array-time
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_bzip2.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_aplod.m4 \
+	$(top_srcdir)/config/ac_bzip2.m4 \
 	$(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
 	$(top_srcdir)/config/ac_dataspaces.m4 \
@@ -47,6 +48,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_bzip2.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
+	$(top_srcdir)/config/ac_isobar.m4 \
 	$(top_srcdir)/config/ac_lustre.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_nc4par.m4 \
@@ -112,6 +114,9 @@ ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
 ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
 ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
 AMTAR = @AMTAR@
+APLOD_CPPFLAGS = @APLOD_CPPFLAGS@
+APLOD_LDFLAGS = @APLOD_LDFLAGS@
+APLOD_LIBS = @APLOD_LIBS@
 AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
@@ -175,6 +180,9 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ISOBAR_CPPFLAGS = @ISOBAR_CPPFLAGS@
+ISOBAR_LDFLAGS = @ISOBAR_LDFLAGS@
+ISOBAR_LIBS = @ISOBAR_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@

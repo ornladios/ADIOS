@@ -17,6 +17,12 @@
 /* Define to 1 if your Fortran compiler doesn't accept -c and -o together. */
 #undef FC_NO_MINUS_C_MINUS_O
 
+/* Define if you have APLOD. */
+#undef HAVE_APLOD
+
+/* Define to 1 if you have the <aplod.h> header file. */
+#undef HAVE_APLOD_H
+
 /* Define to 1 if you have the <Attributes.h> header file. */
 #undef HAVE_ATTRIBUTES_H
 
@@ -79,6 +85,12 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define if you have ISOBAR. */
+#undef HAVE_ISOBAR
+
+/* Define to 1 if you have the <isobar.h> header file. */
+#undef HAVE_ISOBAR_H
 
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
