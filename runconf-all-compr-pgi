@@ -1,3 +1,11 @@
+#
+# SET THIS TO YOUR --prefix DIR BEFORE RUNNING
+INSTALL_DIR=
+
+if [[ ! -d $INSTALL_DIR ]]; then
+  echo "You must edit this script and set a valid INSTALL_DIR at the top before running"
+else
+
 module unload gcc
 module unload PE-gnu
 module unload hmpp
@@ -22,6 +30,6 @@ export CXX=pgCC
 export FC=pgf90
 
 # do it in the code main dir
-./autogen.sh
-./configure --prefix=$your_install_dir  --with-mxml=$MXML_DIR --with-zlib=/usr --with-bzip2=$BZIP2_DIR --with-szip=$SZIP_DIR
+./configure --prefix=$INSTALL_DIR  --with-mxml=$MXML_DIR --with-zlib=/usr --with-bzip2=$BZIP2_DIR --with-szip=$SZIP_DIR
 
+fi
