@@ -566,6 +566,7 @@ AC_CONFIG_FILES([Makefile
                  examples/C/read_all/Makefile
                  examples/C/schema/Makefile
                  examples/C/transforms/Makefile
+                 examples/C/compression_test/Makefile
                  examples/Fortran/Makefile
                  examples/Fortran/scalars/Makefile
                  examples/Fortran/arrays/Makefile

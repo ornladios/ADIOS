@@ -1,6 +1,6 @@
 #
 # SET THIS TO YOUR --prefix DIR BEFORE RUNNING
-INSTALL_DIR=
+INSTALL_DIR=/ccs/home/daboyuka/build/sith/adios-pgi
 
 if [[ ! -d $INSTALL_DIR ]]; then
   echo "You must edit this script and set a valid INSTALL_DIR at the top before running"
