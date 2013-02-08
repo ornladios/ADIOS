@@ -331,7 +331,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = scalars arrays attributes manual global-array global-array-time read_all stat schema
+SUBDIRS = scalars arrays attributes manual global-array global-array-time read_all stat schema transforms compression_test
 all: all-recursive
 
 .SUFFIXES:
