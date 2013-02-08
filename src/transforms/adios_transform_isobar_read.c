@@ -7,32 +7,63 @@
 #include "adios_transforms_hooks_read.h"
 #include "adios_transforms_reqgroup.h"
 
-#ifdef ZLIB
+#ifdef ISOBAR
 
-#include "zlib.h"
+#include "isobar.h"
 
-int decompress_zlib_pre_allocated(const void* input_data, const uint64_t input_len,
+#define ELEMENT_BYTES	8
+
+int decompress_isobar_pre_allocated(const void* input_data, const uint64_t input_len,
                                     void* output_data, uint64_t* output_len)
 {
     assert(input_data != NULL && input_len > 0 && output_data != NULL && output_len != NULL && *output_len > 0);
+	
+	enum ISOBAR_status status;
+    struct isobar_stream i_strm;
+    
+    status = isobarInflateInit(&i_strm, ELEMENT_BYTES);
+    if(status != ISOBAR_SUCCESS)
+	{
+		printf("isobarInflateInit error\n");
+		return -1;
+	}
 
-    uLongf dest_temp = *output_len;
+    i_strm.next_in = (void*) input_data;
+    i_strm.avail_in = input_len;
+    i_strm.next_out = (void*) output_data;
+    i_strm.avail_out = *output_len;;
+	
+    status = isobarInflate(&i_strm, ISOBAR_FINISH);
+    if(status != ISOBAR_SUCCESS)
+	{
+		printf("isobarInflate error\n");
+		return -1;
+	}
 
-    printf("decompress_zlib_pre_allocated %d %d\n", dest_temp, input_len);
+    status = isobarInflateEnd(&i_strm);
+    if(status != ISOBAR_SUCCESS)
+	{
+		printf("isobarInflateEnd error\n");
+		return -1;
+	}
+	
+    // uLongf dest_temp = *output_len;
 
-    int z_rtn = uncompress((Bytef*)output_data, &dest_temp, (Bytef*)input_data, input_len);
-    if(z_rtn != Z_OK)
-    {
-        printf("zlib uncompress error %d\n", z_rtn);
-        return -1;
-    }
+    // printf("decompress_isobar_pre_allocated %d %d\n", dest_temp, input_len);
 
-    *output_len = (uint64_t)dest_temp;
+    // int z_rtn = uncompress((Bytef*)output_data, &dest_temp, (Bytef*)input_data, input_len);
+    // if(z_rtn != Z_OK)
+    // {
+        // printf("isobar uncompress error %d\n", z_rtn);
+        // return -1;
+    // }
+
+    // *output_len = (uint64_t)dest_temp;
 
     return 0;
 }
 
-int adios_transform_zlib_generate_read_subrequests(adios_transform_read_request *reqgroup,
+int adios_transform_isobar_generate_read_subrequests(adios_transform_read_request *reqgroup,
                                                     adios_transform_pg_read_request *pg_reqgroup)
 {
 
@@ -40,7 +71,7 @@ int adios_transform_zlib_generate_read_subrequests(adios_transform_read_request 
 
     void *buf = malloc(pg_reqgroup->raw_var_length);
 
-    // printf("[adios_transform_zlib_generate_read_subrequests] raw_var_length %d %d %d %d %d\n",
+    // printf("[adios_transform_isobar_generate_read_subrequests] raw_var_length %d %d %d %d %d\n",
             // pg_reqgroup->raw_var_length, pg_reqgroup->raw_varblock->start[0], pg_reqgroup->raw_varblock->count[0],
             // pg_reqgroup->raw_varblock->start[1], pg_reqgroup->raw_varblock->count[1]);
 
@@ -54,7 +85,7 @@ int adios_transform_zlib_generate_read_subrequests(adios_transform_read_request 
 }
 
 // Do nothing for individual subrequest
-adios_datablock * adios_transform_zlib_subrequest_completed(adios_transform_read_request *reqgroup,
+adios_datablock * adios_transform_isobar_subrequest_completed(adios_transform_read_request *reqgroup,
                                                             adios_transform_pg_read_request *pg_reqgroup,
                                                             adios_transform_raw_read_request *completed_subreq)
 {
@@ -63,7 +94,7 @@ adios_datablock * adios_transform_zlib_subrequest_completed(adios_transform_read
 
 
 
-adios_datablock * adios_transform_zlib_pg_reqgroup_completed(adios_transform_read_request *reqgroup,
+adios_datablock * adios_transform_isobar_pg_reqgroup_completed(adios_transform_read_request *reqgroup,
                                                              adios_transform_pg_read_request *completed_pg_reqgroup)
 {
     uint64_t compressed_len = (uint64_t)completed_pg_reqgroup->raw_var_length;
@@ -80,7 +111,7 @@ adios_datablock * adios_transform_zlib_pg_reqgroup_completed(adios_transform_rea
     uint64_t decompressed_len = *((uint64_t*)(reqgroup->transinfo->transform_metadata));
     void* decompressed_buff = malloc(decompressed_len);
 
-    int rtn = decompress_zlib_pre_allocated(compressed_buff, compressed_len, decompressed_buff, &decompressed_len);
+    int rtn = decompress_isobar_pre_allocated(compressed_buff, compressed_len, decompressed_buff, &decompressed_len);
     if(0 != rtn)
     {
         if(decompressed_buff)
@@ -97,7 +128,7 @@ adios_datablock * adios_transform_zlib_pg_reqgroup_completed(adios_transform_rea
                                decompressed_buff);
 }
 
-adios_datablock * adios_transform_zlib_reqgroup_completed(adios_transform_read_request *completed_reqgroup)
+adios_datablock * adios_transform_isobar_reqgroup_completed(adios_transform_read_request *completed_reqgroup)
 {
     return NULL;
 }
@@ -105,7 +136,7 @@ adios_datablock * adios_transform_zlib_reqgroup_completed(adios_transform_read_r
 
 #else
 
-DECLARE_TRANSFORM_READ_METHOD_UNIMPL(zlib);
+DECLARE_TRANSFORM_READ_METHOD_UNIMPL(isobar);
 
 #endif
 

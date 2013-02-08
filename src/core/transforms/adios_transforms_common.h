@@ -21,7 +21,9 @@ enum ADIOS_TRANSFORM_TYPE
     ,adios_transform_zlib			= 2
 	,adios_transform_bzip2			= 3
 	,adios_transform_szip			= 4
-    ,num_adios_transform_types		= 5 // Not counting unknown; KEEP THIS UPDATED
+	,adios_transform_isobar			= 5
+	,adios_transform_aplod			= 6
+    ,num_adios_transform_types		= 7 // Not counting unknown; KEEP THIS UPDATED
 };
 
 /*

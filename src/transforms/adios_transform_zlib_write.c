@@ -54,7 +54,7 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
 								int use_shared_buffer, 
 								int *wrote_to_shared_buffer)
 {
-    // Assume this function is only called for COMPRESS transform type
+    // Assume this function is only called for ZLIB transform type
     assert(var->transform_type == adios_transform_zlib);
 
     // Get the input data and data length
@@ -85,7 +85,7 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
 		// If shared buffer is permitted, serialize to there
         if (!shared_buffer_reserve(fd, output_size))
         {
-            log_error("Out of memory allocating %llu bytes for %s for zlib transform\n", output_size, var->name);
+            log_error("Out of memory allocating %llu bytes for %s for ZLIB transform\n", output_size, var->name);
             return 0;
         }
 
@@ -98,7 +98,7 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
 		output_buff = malloc(output_size);
         if (!output_buff)
         {
-            log_error("Out of memory allocating %llu bytes for %s for zlib transform\n", output_size, var->name);
+            log_error("Out of memory allocating %llu bytes for %s for ZLIB transform\n", output_size, var->name);
             return 0;
         }
     }

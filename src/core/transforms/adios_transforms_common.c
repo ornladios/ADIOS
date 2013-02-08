@@ -174,6 +174,8 @@ const struct {
 	,{ "zlib"		, adios_transform_zlib }
 	,{ "bzip2"		, adios_transform_bzip2 }
 	,{ "szip"		, adios_transform_szip }
+	,{ "isobar"		, adios_transform_isobar }
+	,{ "aplod"		, adios_transform_aplod }
 };
 const int NUM_ADIOS_TRANSFORM_NAMES = sizeof(ADIOS_TRANSFORM_NAMES)/sizeof(ADIOS_TRANSFORM_NAMES[0]);
 

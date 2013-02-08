@@ -112,8 +112,8 @@ adios_transform_raw_read_request * adios_transform_raw_read_request_pop(adios_tr
 // adios_transform_pg_read_request manipulation
 //
 adios_transform_pg_read_request * adios_transform_pg_read_request_new(int timestep, int timestep_blockidx, int blockidx,
-                                                              const ADIOS_VARBLOCK *orig_varblock,
-                                                              const ADIOS_VARBLOCK *raw_varblock,
+                                                                      const ADIOS_VARBLOCK *orig_varblock,
+                                                                      const ADIOS_VARBLOCK *raw_varblock,
                                                                       const ADIOS_SELECTION *pg_intersection_sel,
                                                                       const ADIOS_SELECTION *pg_bounds_sel);
 void adios_transform_pg_read_request_free(adios_transform_pg_read_request **pg_reqgroup_ptr);

@@ -1,77 +1,100 @@
 #include <stdint.h>
-#include <stdio.h>
 #include <assert.h>
 #include <limits.h>
+
 #include "adios_logger.h"
 #include "adios_transforms_common.h"
 #include "adios_transforms_write.h"
 #include "adios_transforms_hooks_write.h"
 
-#ifdef BZIP2
+#ifdef ISOBAR
 
-#include "bzlib.h"
+#include "isobar.h"
 
 #define TEST_SIZE(s) (s)
+
+#define ELEMENT_BYTES	8
 
 static int is_digit_str(char* input_str)
 {
 	return 1;
 }
 
-int compress_bzip2_pre_allocated(const void* input_data, const uint64_t input_len, void* output_data, uint64_t* output_len, int blockSize100k)
+int compress_isobar_pre_allocated(const void* input_data, const uint64_t input_len, 
+								void* output_data, uint64_t* output_len, int compress_level)
 {
-	// bzip2 only support input size of 32 bit integer
+	assert(input_data != NULL && input_len > 0 && output_data != NULL && output_len != NULL && *output_len > 0);
 	
-	assert(input_data != NULL 
-			&& input_len > 0 && input_len <= UINT_MAX 
-			&& output_data != NULL 
-			&& output_len != NULL && *output_len > 0 && *output_len < UINT_MAX);
+	enum ISOBAR_status status;
+	struct isobar_stream i_strm;
 
-	unsigned int input_len_32 = (unsigned int)input_len;
-	unsigned int output_len_32 = (unsigned int)(*output_len);
-	
-	printf("input_len_32 %d output_len_32 %d (%x %x)\n", input_len_32, output_len_32, output_data, input_data);
-	
-	int bz_rtn = 0;
-	bz_rtn = BZ2_bzBuffToBuffCompress((char*)output_data, &output_len_32, 
-										(char*)input_data, input_len_32, 
-										5, 0, 30);
-	
-	if(bz_rtn != BZ_OK)
+	status = isobarDeflateInit(&i_strm, ELEMENT_BYTES, compress_level);
+	if(status != ISOBAR_SUCCESS)
 	{
-		printf("BZ2_bzBuffToBuffCompress error %d\n", bz_rtn);
+		// cout << "isobarDeflateInit error" << endl;
 		return -1;
 	}
 
-	*output_len = output_len_32;
+	i_strm.next_in = (void*) input_data;
+	i_strm.avail_in = input_len;
+
+	status = isobarDeflateAnalysis(&i_strm);
+	if(status != ISOBAR_SUCCESS)
+	{
+		// cout << "isobarDeflateAnalysis error" << endl;
+		return -1;
+	}
+
+	i_strm.next_out = (void*) output_data;
+	i_strm.avail_out = input_len;
+
+//	printf("i_strm.avail_in: %d i_strm.avail_out: %d buffer_size: %d\n", i_strm.avail_in, i_strm.avail_out, buffer_size);
+
+	status = isobarDeflate(&i_strm, ISOBAR_FINISH);
+	if(status != ISOBAR_SUCCESS)
+	{
+		// cout << "isobarDeflate error" << endl;
+		return -1;
+	}
+
+//	printf("i_strm.avail_in: %d i_strm.avail_out: %d buffer_size: %d\n", i_strm.avail_in, i_strm.avail_out, buffer_size);
+
+	status = isobarDeflateEnd(&i_strm);
+	if(status != ISOBAR_SUCCESS)
+	{
+		// cout << "isobarDeflateEnd error" << endl;
+		return -1;
+	}
+	
+	*output_len = input_len - i_strm.avail_out;
 	return 0;
 }
 
-uint16_t adios_transform_bzip2_get_metadata_size() 
-{
+uint16_t adios_transform_isobar_get_metadata_size() 
+{ 
 	return (sizeof(uint64_t));
 }
 
-uint64_t adios_transform_bzip2_calc_vars_transformed_size(uint64_t orig_size, int num_vars) 
+uint64_t adios_transform_isobar_calc_vars_transformed_size(uint64_t orig_size, int num_vars) 
 {
     return TEST_SIZE(orig_size);
 }
 
-int adios_transform_bzip2_apply(struct adios_file_struct *fd, 
+int adios_transform_isobar_apply(struct adios_file_struct *fd, 
 								struct adios_var_struct *var,
 								uint64_t *transformed_len, 
 								int use_shared_buffer, 
 								int *wrote_to_shared_buffer)
 {
-    // Assume this function is only called for BZIP2 transform type
-    assert(var->transform_type == adios_transform_bzip2);
+    // Assume this function is only called for COMPRESS transform type
+    assert(var->transform_type == adios_transform_isobar);
 
     // Get the input data and data length
     const uint64_t input_size = adios_transform_get_pre_transform_var_size(fd->group, var);
     const void *input_buff= var->data;
-	
+
 	// parse the compressiong parameter
-	int compress_level = 9;
+	int compress_level = ISOBAR_SPEED;
 	if(var->transform_type_param 
 		&& strlen(var->transform_type_param) > 0 
 		&& is_digit_str(var->transform_type_param))
@@ -79,7 +102,7 @@ int adios_transform_bzip2_apply(struct adios_file_struct *fd,
 		compress_level = atoi(var->transform_type_param);
 		if(compress_level > 9 || compress_level < 1)
 		{
-			compress_level = 9;
+			compress_level = ISOBAR_SPEED;
 		}
 	}
 	
@@ -94,7 +117,7 @@ int adios_transform_bzip2_apply(struct adios_file_struct *fd,
 		// If shared buffer is permitted, serialize to there
         if (!shared_buffer_reserve(fd, output_size))
         {
-            log_error("Out of memory allocating %llu bytes for %s for BZIP2 transform\n", output_size, var->name);
+            log_error("Out of memory allocating %llu bytes for %s for isobar transform\n", output_size, var->name);
             return 0;
         }
 
@@ -107,16 +130,16 @@ int adios_transform_bzip2_apply(struct adios_file_struct *fd,
 		output_buff = malloc(output_size);
         if (!output_buff)
         {
-            log_error("Out of memory allocating %llu bytes for %s for BZIP2 transform\n", output_size, var->name);
+            log_error("Out of memory allocating %llu bytes for %s for isobar transform\n", output_size, var->name);
             return 0;
         }
     }
 
     // compress it
 	uint64_t actual_output_size = output_size;
-	int rtn = 0;
-	rtn = compress_bzip2_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
-
+    int rtn = 0;
+	rtn = compress_isobar_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
+	
     if(0 != rtn 					// compression failed for some reason, then just copy the buffer
         || actual_output_size > input_size)  // or size after compression is even larger (not likely to happen since compression lib will return non-zero in this case)
     {
@@ -142,17 +165,17 @@ int adios_transform_bzip2_apply(struct adios_file_struct *fd,
         memcpy(var->transform_metadata, &input_size, sizeof(uint64_t));
     }
 	
-	printf("adios_transform_bzip2_apply compress %d input_size %d actual_output_size %d\n", 
-			rtn, input_size, actual_output_size);
-	
+	// printf("adios_transform_compress_apply compress %d input_size %d actual_output_size %d\n", 
+			// rtn, input_size, actual_output_size);
 	
     *transformed_len = actual_output_size; // Return the size of the data buffer
+	
     return 1;
 }
 
 #else
 
-DECLARE_TRANSFORM_WRITE_METHOD_UNIMPL(bzip2)
+DECLARE_TRANSFORM_WRITE_METHOD_UNIMPL(isobar)
 
 #endif
 

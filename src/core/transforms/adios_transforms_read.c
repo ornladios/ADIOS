@@ -74,8 +74,9 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     assert(is_transform_type_valid(transinfo->transform_type));
     assert(from_steps >= 0 && to_steps <= raw_varinfo->nsteps);
 
-    if (sel->type != ADIOS_SELECTION_BOUNDINGBOX) {
-        adios_error(err_operation_not_supported, "Reads of transformed variables using selection types other than bounding box are not supported.");
+    if (sel->type != ADIOS_SELECTION_BOUNDINGBOX &&
+        sel->type != ADIOS_SELECTION_POINTS) {
+        adios_error(err_operation_not_supported, "Only bounding box and point selections are currently supported during read on transformed variables.");
         assert(0);
     }
 
@@ -197,37 +198,63 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
     assert(reqgroup->orig_sel);
     assert(reqgroup->orig_data);
 
+    if (datablock->bounds->type != ADIOS_SELECTION_BOUNDINGBOX) {
+        adios_error(err_operation_not_supported,
+                    "Only results of bounding box selection type are currently accepted "
+                    "from transform plugins (received selection type %d)",
+                    datablock->bounds->type);
+        assert(0);
+    }
+
     uint64_t used_count =
             adios_patch_data(reqgroup->orig_data, reqgroup->orig_sel,
                              datablock->data, datablock->bounds,
                              datablock->elem_type, reqgroup->swap_endianness);
 
-    /*
-    assert(reqgroup->orig_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
-    assert(datablock->bounds->type == ADIOS_SELECTION_BOUNDINGBOX);
-    assert(reqgroup->orig_sel->u.bb.ndim == datablock->bounds->u.bb.ndim);
-    const int intersects =
-        adios_copyspec_init_from_2bb_intersection(copyspec,
-                                                  &reqgroup->orig_sel->u.bb,
-                                                  &datablock->bounds->u.bb);
-    if (intersects) {
-        int rel_timestep = datablock->timestep - reqgroup->from_steps;
-        void *timestep_data_slice =
-                (char*)reqgroup->orig_data +
-                rel_timestep * reqgroup->orig_sel_timestep_size;
-
-        copy_subvolume_ragged_offset_with_spec(
-                timestep_data_slice, datablock->data, copyspec,
-                0, datablock->ragged_offset,
-                datablock->elem_type, reqgroup->swap_endianness);
-    }
-
-    adios_copyspec_free(&copyspec, 1);
-    */
-
     adios_datablock_free(&datablock, 1);
     //return intersects;
     return used_count != 0;
+}
+
+static uint64_t compute_selection_size_in_bytes(const ADIOS_SELECTION *sel,
+                                                enum ADIOS_DATATYPES datum_type,
+                                                const ADIOS_TRANSINFO *transinfo) {
+    int typesize = adios_get_type_size(datum_type, NULL);
+    switch (sel->type) {
+    case ADIOS_SELECTION_BOUNDINGBOX:
+    {
+        const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &sel->u.bb;
+        const int ndim = bb->ndim;
+        int i;
+
+        uint64_t size = typesize;
+        for (i = 0; i < ndim; i++)
+            size *= bb->count[i];
+
+        return size;
+    }
+    case ADIOS_SELECTION_POINTS:
+    {
+        const ADIOS_SELECTION_POINTS_STRUCT *pts = &sel->u.points;
+        return pts->ndim * pts->npoints * typesize;
+    }
+    case ADIOS_SELECTION_WRITEBLOCK:
+    {
+        const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &sel->u.block;
+        const ADIOS_VARBLOCK *theblock = &transinfo->orig_blockinfo[wb->index];
+        int i;
+
+        uint64_t size = typesize;
+        for (i = 0; i < transinfo->orig_ndim; i++)
+            size *= theblock->count[i];
+
+        return size;
+    }
+    case ADIOS_SELECTION_AUTO:
+    default:
+        adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Unsupported selection type %d", sel->type);
+        return 0;
+    }
 }
 
 /*
@@ -245,54 +272,41 @@ static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *resul
     uint64_t *inter_offset_within_result;
     uint64_t *inter_dims;
 
+    uint64_t chunk_buffer_size;
+    ADIOS_SELECTION *inter_sel;
+
     assert(result); assert(reqgroup);
     assert(reqgroup->orig_sel);
-    assert(reqgroup->orig_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
-    assert(reqgroup->orig_sel->u.bb.ndim == result->bounds->u.bb.ndim);
-    assert(result->bounds->type == ADIOS_SELECTION_BOUNDINGBOX);
 
-    const int ndim = result->bounds->u.bb.ndim;
-    const int dimsize = ndim * sizeof(uint64_t);
+    inter_sel = adios_selection_intersect(result->bounds, reqgroup->orig_sel);
 
-    inter_goffset = malloc(dimsize);
-    inter_offset_within_result = malloc(dimsize);
-    inter_dims = malloc(dimsize);
+    if (inter_sel) {
+        // TODO: This data copy code is somewhat inefficient, as it requires a second buffer,
+        //       whereas it may be possible to "compact" the buffer in-place, removing only
+        //       those values that are outside the selection. This would require another large
+        //       chunk of selection-type-pairwise-specific code, as in adios_patchdata.c and
+        //       adios_selection_util.c, so we use this approach to avoid that here. If it
+        //       ends up being slow, this can be fixed.
 
-    const int intersects =
-            intersect_bb(&result->bounds->u.bb, &reqgroup->orig_sel->u.bb,
-                         inter_goffset, inter_offset_within_result, NULL, inter_dims);
+        // Compute the number of bytes to allocate for this chunk
+        chunk_buffer_size = compute_selection_size_in_bytes(inter_sel, result->elem_type, reqgroup->transinfo);
 
-    if (intersects) {
         chunk = malloc(sizeof(ADIOS_VARCHUNK));
+        chunk->data = malloc(chunk_buffer_size);
+        chunk->sel = inter_sel;
 
-        // Compact the data within the datablock buffer so it is fully
-        // contiguous according to the dimensions we will return to the user
-        compact_subvolume_ragged_offset(result->data, ndim, inter_dims,
-                                        result->bounds->u.bb.count, result->ragged_offset,
-                                        inter_offset_within_result, result->elem_type);
+        adios_patch_data(chunk->data, chunk->sel,
+                         result->data, result->bounds,
+                         result->elem_type, reqgroup->swap_endianness);
 
         // Populate the chunk struct
         chunk->varid = reqgroup->raw_varinfo->varid;
         chunk->type = result->elem_type;
 
-        // Transfer ownership of the data buffer
-        chunk->data = result->data;
-        result->data = NULL;
-
-        // Transfer ownership of our global offset and dimension vectors
-        chunk->sel = common_read_selection_boundingbox(ndim, inter_goffset, inter_dims);
-        inter_goffset = NULL;
-        inter_dims = NULL;
-    } else {
-        chunk = NULL;
+        common_read_selection_delete(inter_sel);
     }
 
-    MYFREE(inter_goffset);
-    MYFREE(inter_offset_within_result);
-    MYFREE(inter_dims);
-
-    // Do free the data buffer; we removed that buffer from the datablock above if it was needed
-    adios_datablock_free(&result, 1);
+    adios_datablock_free(&result, 1); // 1 == free the datablock's buffer, as well
     return chunk;
 }
 
