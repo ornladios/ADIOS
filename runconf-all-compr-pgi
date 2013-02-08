@@ -1,0 +1,27 @@
+module unload gcc
+module unload PE-gnu
+module unload hmpp
+module unload intel
+module unload PE-intel
+module unload ompi
+module unload mxml
+module unload szip
+module unload bzip2
+module load pgi
+module load PE-pgi
+module load ompi
+module load mxml
+module load szip
+module load bzip2
+
+export MPICC=mpicc
+export MPICXX=mpiCC
+export MPIFC=mpif90
+export CC=pgcc
+export CXX=pgCC
+export FC=pgf90
+
+# do it in the code main dir
+./autogen.sh
+./configure --prefix=$your_install_dir  --with-mxml=$MXML_DIR --with-zlib=/usr --with-bzip2=$BZIP2_DIR --with-szip=$SZIP_DIR
+
