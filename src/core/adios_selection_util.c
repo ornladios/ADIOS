@@ -55,6 +55,7 @@ ADIOS_SELECTION * adios_selection_intersect_bb_pts(const ADIOS_SELECTION_BOUNDIN
     int j;
     uint64_t *new_pts_ptr = new_pts;
     uint64_t *pts2_ptr;
+    const uint64_t * const pts2_end_ptr = pts2->points + pts2->npoints * ndim;
     uint64_t new_npts = 0;
 
     assert(bb1->ndim == pts2->ndim);
@@ -65,7 +66,7 @@ ADIOS_SELECTION * adios_selection_intersect_bb_pts(const ADIOS_SELECTION_BOUNDIN
 
     // Check every pair of points for equality; whenever a shared point is found, output
     // it into the new point list
-    for (pts2_ptr = pts2->points; pts2_ptr < pts2->npoints * ndim; pts2_ptr += ndim) {
+    for (pts2_ptr = pts2->points; pts2_ptr < pts2_end_ptr; pts2_ptr += ndim) {
         // Check each dimension component of the point for containment in the bounding box
         for (j = 0; j < ndim; j++)
             if (pts2_ptr[j] < bb1->start[j] ||
@@ -102,6 +103,8 @@ ADIOS_SELECTION * adios_selection_intersect_pts_pts(const ADIOS_SELECTION_POINTS
     int k;
     uint64_t *new_pts_ptr = new_pts;
     uint64_t *pts1_ptr, *pts2_ptr;
+    const uint64_t * const pts1_end_ptr = pts1->points + pts1->npoints * ndim;
+    const uint64_t * const pts2_end_ptr = pts2->points + pts2->npoints * ndim;
     uint64_t new_npts = 0;
 
     assert(pts1->ndim == pts2->ndim);
@@ -112,8 +115,8 @@ ADIOS_SELECTION * adios_selection_intersect_pts_pts(const ADIOS_SELECTION_POINTS
 
     // Check every pair of points for equality; whenever a shared point is found, output
     // it into the new point list
-    for (pts1_ptr = pts1->points; pts1_ptr < pts1->npoints * ndim; pts1_ptr += ndim) {
-        for (pts2_ptr = pts2->points; pts2_ptr < pts2->npoints * ndim; pts2_ptr += ndim) {
+    for (pts1_ptr = pts1->points; pts1_ptr < pts1_end_ptr; pts1_ptr += ndim) {
+        for (pts2_ptr = pts2->points; pts2_ptr < pts2_end_ptr; pts2_ptr += ndim) {
             // Check each dimension component of the pair of points for equality
             for (k = 0; k < ndim; k++)
                 if (pts1_ptr[k] != pts2_ptr[k])

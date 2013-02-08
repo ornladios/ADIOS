@@ -32,33 +32,41 @@ static uint64_t adios_patch_data_bb_to_bb(void *dst, const ADIOS_SELECTION_BOUND
                                           enum ADIOS_FLAG swap_endianness) {
 
     const int ndim = dst_bb->ndim;
-    const ADIOS_SELECTION *inter_sel = adios_selection_intersect_bb_bb(dst_bb, src_bb);
     const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *inter_bb;
     uint64_t *inter_off_relative_to_dst;
     uint64_t *inter_off_relative_to_src;
     uint64_t volume;
 
+    // Intersect the two bounding boxes
+    const ADIOS_SELECTION *inter_sel = adios_selection_intersect_bb_bb(dst_bb, src_bb);
+
     // If there is no intersection, stop now, nothing to do
     if (!inter_sel)
         return 0;
 
+    // Ensure the intersection is actually a bounding box
+    // (this is guaranteed by the selection intersection code; this is just to check for bugs)
     assert(inter_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
     inter_bb = &inter_sel->u.bb;
 
+    // Compute the offset of the intersection bounding box within each of
+    // the source and destination bounding boxes
     assert(dst_bb->ndim == src_bb->ndim);
     inter_off_relative_to_dst = malloc(ndim * sizeof(uint64_t));
     inter_off_relative_to_src = malloc(ndim * sizeof(uint64_t));
-
     vec_sub(ndim, inter_off_relative_to_dst, inter_bb->start, dst_bb->start);
     vec_sub(ndim, inter_off_relative_to_src, inter_bb->start, src_bb->start);
 
+    // Perform a subvolume memcpy
     copy_subvolume(dst, src, dst_bb->ndim, inter_bb->count,
                    dst_bb->count, inter_off_relative_to_dst,
                    src_bb->count, inter_off_relative_to_src,
                    datum_type, swap_endianness);
 
+    // Compute the number of elements copied
     volume = compute_volume(ndim, inter_bb->count);
 
+    // Cleanup
     free(inter_off_relative_to_dst);
     free(inter_off_relative_to_src);
     common_read_selection_delete(inter_sel);
@@ -94,8 +102,59 @@ static uint64_t adios_patch_data_bb_to_pts(void *dst, const ADIOS_SELECTION_POIN
                                            void *src, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *src_bb,
                                            enum ADIOS_DATATYPES datum_type,
                                            enum ADIOS_FLAG swap_endianness) {
-    PATCH_UNIMPL("points","bounding box");
-    return 0;
+    const int ndim = dst_pts->ndim;
+    uint64_t i;
+    int j;
+    uint64_t pts_copied = 0;
+    uint64_t byte_offset_in_src;
+    const uint64_t *cur_pt;
+    uint64_t *src_strides = malloc(sizeof(uint64_t) * ndim);
+    uint64_t *pt_relative_to_src = malloc(sizeof(uint64_t) * ndim);
+
+    // Compute the strides into the source bounding box array
+    int typelen = adios_get_type_size(datum_type, NULL);
+    uint64_t src_volume = typelen;
+    for (j = ndim - 1; j >= 0; j--) {
+        src_strides[j] = src_volume;
+        src_volume *= src_bb->count[j];
+    }
+
+    // Check that the selection dimensions are compatible
+    assert(dst_pts->ndim == src_bb->ndim);
+
+    // Check each point in the destination; if it's in the source bounding box, copy it over
+    for (i = 0; i < dst_pts->npoints; i++) {
+        cur_pt = &dst_pts->points[i * ndim];
+
+        for (j = 0; j < ndim; j++) {
+            // If the point's coordinate in some dimension is outside the bounding box
+            if (cur_pt[j] < src_bb->start[j] ||
+                cur_pt[j] >= src_bb->start[j] + src_bb->count[j]) {
+                break;
+            }
+        }
+
+        // If the point is within the bounding box
+        if (j == ndim) {
+            vec_sub(ndim, pt_relative_to_src, cur_pt, src_bb->start);
+
+            byte_offset_in_src = 0;
+            for (j = 0; j < ndim; j++)
+                byte_offset_in_src += pt_relative_to_src[j] * src_strides[j];
+
+            memcpy((char*)dst + i * typelen, (char*)src + byte_offset_in_src, typelen);
+            pts_copied++;
+
+            printf("Copied into point at index %llu!\n", i);
+        }
+    }
+
+    free(src_strides);
+    free(pt_relative_to_src);
+
+    printf("Copied %llu points!\n", pts_copied);
+
+    return pts_copied;
 }
 
 static uint64_t adios_patch_data_pts_to_pts(void *dst, const ADIOS_SELECTION_POINTS_STRUCT *dst_pts,
