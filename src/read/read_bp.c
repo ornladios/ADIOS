@@ -2091,7 +2091,7 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
         nullsel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
         assert (nullsel);
 
-        nullsel->type == ADIOS_SELECTION_BOUNDINGBOX;
+        nullsel->type = ADIOS_SELECTION_BOUNDINGBOX;
         nullsel->u.bb.ndim = ndim;
         nullsel->u.bb.start = (uint64_t *) malloc (nullsel->u.bb.ndim * 8);
         assert (nullsel->u.bb.start);
