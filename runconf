@@ -23,14 +23,14 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module load mxml
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
-    module load hdf5/1.8.5
-    SEQ_HDF5_DIR=$HDF5_DIR
-    SEQ_HDF5_CLIB=$HDF5_CLIB
-    module unload hdf5
-    module load hdf5/1.8.5_par
-    PAR_HDF5_DIR=$HDF5_DIR
-    PAR_HDF5_CLIB=$HDF5_CLIB
-    module unload hdf5
+    #module load hdf5/1.8.5
+    #SEQ_HDF5_DIR=$HDF5_DIR
+    #SEQ_HDF5_CLIB=$HDF5_CLIB
+    #module unload hdf5
+    #module load hdf5/1.8.5_par
+    #PAR_HDF5_DIR=$HDF5_DIR
+    #PAR_HDF5_CLIB=$HDF5_CLIB
+    #module unload hdf5
     # Parallel NetCDF 4 
     #module load netcdf/4.1.1_par
     export MPICC=mpicc
@@ -50,14 +50,14 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     fi
         
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/sith.$TARGET \
+    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/ardma.sith.$TARGET \
         --enable-dependency-tracking \
-        --enable-research-transports  \
-        --with-hdf5=${SEQ_HDF5_DIR} \
-        --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
-        --with-phdf5=${PAR_HDF5_DIR} \
-        --with-phdf5-libs="${PAR_HDF5_CLIB}" \
-        --without-datatap 
+        --enable-research-transports  
+        #--with-hdf5=${SEQ_HDF5_DIR} \
+        #--with-hdf5-libs="${SEQ_HDF5_CLIB}" \
+        #--with-phdf5=${PAR_HDF5_DIR} \
+        #--with-phdf5-libs="${PAR_HDF5_CLIB}" \
+        #--without-datatap 
         #--without-infiniband
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--with-datatap=/ccs/home/habbasi/work/ewok/
