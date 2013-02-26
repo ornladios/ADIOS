@@ -9,6 +9,7 @@
 #include "adios_logger.h"
 #include "adios_internals.h"
 #include "public/adios_types.h"
+#include "util.h"
 
 #include "adios_transforms_hooks_write.h"
 #include "adios_transforms_common.h"
@@ -139,6 +140,15 @@ static void adios_transform_attach_byte_array_dimensions(struct adios_group_stru
     odims[1] = 0; // 0 byte offset
     ldims[2] = gdims[2] = odims[2] = 0; // No 3rd dimension, yet
 
+    // If we are writing from a FORTRAN file, we need to reverse the raw dimensions, so that when
+    // it is read back it is properly swapped to C order
+    if (grp->adios_host_language_fortran == adios_flag_yes) {
+        int dummy = -1;
+        swap_order(2, ldims, &dummy);
+        swap_order(2, gdims, &dummy);
+        swap_order(2, odims, &dummy);
+    }
+
     // Add the time dimension
     if (orig_time_dim_pos == 0) {
         ldims[2] = ldims[1];
@@ -248,7 +258,7 @@ uint64_t adios_transform_get_pre_transform_var_size(struct adios_group_struct *g
 }
 
 static inline uint64_t generate_unique_block_id(const struct adios_file_struct * fd, const struct adios_var_struct *var) {
-	return (fd->group->process_id << 32) + var->write_count;
+    return (fd->group->process_id << 32) + var->write_count;
 }
 
 static int adios_transform_store_transformed_length(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t transformed_len) {
@@ -264,15 +274,25 @@ static int adios_transform_store_transformed_length(struct adios_file_struct * f
     assert(dim2);
 
     // Find appropriate dimension items
-    pg_id_offset = &dim1->local_offset;
+    if (fd->group->adios_host_language_fortran == adios_flag_yes)
+        pg_id_offset = &dim2->local_offset;
+    else
+        pg_id_offset = &dim1->local_offset;
+
     if (dim1->dimension.time_index == adios_flag_yes) {
         // If the first dimension is a time dimension, then dimension is
         // upshifted, but only for ->dimension
         dim3 = dim2->next;
         assert(dim3);
-        byte_length_ldim = &dim3->dimension;
+        if (fd->group->adios_host_language_fortran == adios_flag_yes)
+            byte_length_ldim = &dim2->dimension;
+        else
+            byte_length_ldim = &dim3->dimension;
     } else {
-        byte_length_ldim = &dim2->dimension;
+        if (fd->group->adios_host_language_fortran == adios_flag_yes)
+            byte_length_ldim = &dim1->dimension;
+        else
+            byte_length_ldim = &dim2->dimension;
     }
 
     // Finally, insert the values into the dimension items

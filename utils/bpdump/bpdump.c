@@ -672,9 +672,9 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
     }
 
     // NCSU ALACRITY-ADIOS - Adding printing of transform type
-    printf ("\t\t\tTransform-ID(%d = %s)",
+    printf ("\t\t\tTransform-type(%hhu = %s)",
             var_header->characteristics.transform.transform_type,
-            adios_transform_name_by_type(var_header->characteristics.transform.transform_type));
+            adios_transform_plugin_primary_xml_alias(var_header->characteristics.transform.transform_type));
     if (var_header->characteristics.transform.transform_type != adios_transform_none) {
         printf ("\t\t\tPre-transform-datatype(%s)", adios_type_to_string_int(var_header->characteristics.transform.pre_transform_type));
         printf ("\t\t\tPre-transform-dims(l:g:o = ");
@@ -1113,7 +1113,7 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                 struct adios_index_characteristic_dims_struct_v1 *dims = &transform->pre_transform_dimensions;
                 int j;
 
-                printf ("\tTransform type: %s", adios_transform_name_by_type(transform->transform_type));
+                printf ("\tTransform type: %s (ID = %hhu)", adios_transform_plugin_desc(transform->transform_type), transform->transform_type);
                 printf ("\tPre-transform datatype: %s", adios_type_to_string_int(transform->pre_transform_type));
                 printf ("\tPre-transform dims (l:g:o): (");
                 for (j = 0; j < dims->count; j++)

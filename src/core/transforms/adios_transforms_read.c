@@ -17,12 +17,13 @@
 
 #define MYFREE(p) {free(p); (p)=NULL;}
 
-enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_reqgroup_get_result_mode(adios_transform_read_request *reqgroup) {
-    return reqgroup->orig_data != NULL ? FULL_RESULT_MODE : PARTIAL_RESULT_MODE;
+enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_read_request_get_mode(adios_transform_read_request *req) {
+    return req->orig_data != NULL ? FULL_RESULT_MODE : PARTIAL_RESULT_MODE;
 }
 
 // Delegate functions
 
+// Returns true for big endian, false for little endian
 static int get_system_endianness() {
     uint16_t word = 0x1234;
     return *(uint8_t*)(&word) == 0x12; // Returns 1 (big endian) iff the high byte comes first
@@ -373,7 +374,7 @@ void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups
         //            returned one VARCHUNK at a time.
         //   FULL: the user has supplied a buffer for full results, so patch relevant data from
         //         the returned VARCHUNK into this buffer.
-        enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE result_mode = adios_transform_reqgroup_get_result_mode(reqgroup);
+        enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE result_mode = adios_transform_read_request_get_mode(reqgroup);
         switch (result_mode) {
         case PARTIAL_RESULT_MODE:
             // Apply this VARCHUNK

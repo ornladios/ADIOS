@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <limits.h>
+#include <sys/time.h>
 
 #include "adios_logger.h"
 #include "adios_transforms_common.h"
@@ -14,6 +15,13 @@
 #define TEST_SIZE(s) (s)
 
 #define ELEMENT_BYTES	8
+
+static double dclock()
+{
+	struct timeval tv;
+	gettimeofday(&tv,0);
+	return (double) tv.tv_sec + (double) tv.tv_usec * 1e-6;
+}
 
 static int is_digit_str(char* input_str)
 {
@@ -137,8 +145,10 @@ int adios_transform_isobar_apply(struct adios_file_struct *fd,
 
     // compress it
 	uint64_t actual_output_size = output_size;
-    int rtn = 0;
-	rtn = compress_isobar_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
+    
+	double d1 = dclock();
+	int rtn = compress_isobar_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
+	double d2 = dclock();
 	
     if(0 != rtn 					// compression failed for some reason, then just copy the buffer
         || actual_output_size > input_size)  // or size after compression is even larger (not likely to happen since compression lib will return non-zero in this case)
@@ -146,6 +156,8 @@ int adios_transform_isobar_apply(struct adios_file_struct *fd,
         memcpy(output_buff, input_buff, input_size);
         actual_output_size = input_size;
     }
+	
+	printf("compress_isobar_succ|%d|%d|%d|%f\n", rtn, input_size, actual_output_size, d2 - d1);
 
     // Wrap up, depending on buffer mode
     if (use_shared_buffer)

@@ -11,37 +11,8 @@
 
 #include <stdint.h>
 #include "adios_bp_v1.h"
+#include "core/transforms/adios_transforms_hooks.h" // Includes the hooks header to load and access the ADIOS_TRANSFORM_TYPE enum
 //#include "adios_internals.h"
-
-enum ADIOS_TRANSFORM_TYPE
-{
-     adios_transform_unknown		= -1
-    ,adios_transform_none			= 0
-    ,adios_transform_identity		= 1
-    ,adios_transform_zlib			= 2
-	,adios_transform_bzip2			= 3
-	,adios_transform_szip			= 4
-	,adios_transform_isobar			= 5
-	,adios_transform_aplod			= 6
-    ,num_adios_transform_types		= 7 // Not counting unknown; KEEP THIS UPDATED
-};
-
-/*
- * @param transform_name the name of a transform type
- * @return the ADIOS_TRANSFORM_TYPE corresponding to transform_name, or
- *         adios_transform_unknown if it does not match any registered
- *         transform type
- */
-enum ADIOS_TRANSFORM_TYPE adios_transform_type_by_name(const char *transform_name);
-
-/*
- * @param transform_type a transform type
- * @return the corresponding name (string) for transform_type, or ""
- *         if transform_type is not valid.
- */
-const char * adios_transform_name_by_type(enum ADIOS_TRANSFORM_TYPE transform_type);
-
-int is_transform_type_valid(enum ADIOS_TRANSFORM_TYPE transform_type);
 
 /////////////////////////////////////
 // Variable introspection

@@ -563,7 +563,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
             // Make it appear as if the user had supplied the transformed data
             var = v->data;
         } else {
-            log_error("Error: unable to apply transform %s to variable %s; likely ran out of memory, check previous error messages\n", adios_transform_name_by_type(v->transform_type), v->name);
+            log_error("Error: unable to apply transform %s to variable %s; likely ran out of memory, check previous error messages\n", adios_transform_plugin_primary_xml_alias(v->transform_type), v->name);
             // FIXME: Reverse the transform metadata and write raw data as usual
         }
     }
@@ -598,7 +598,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     }
 
     v->write_count++;
-printf ("var: %s written %d\n", v->name, v->write_count);
+	// printf ("var: %s written %d\n", v->name, v->write_count);
     return 0;
 }
 

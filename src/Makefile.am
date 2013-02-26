@@ -41,23 +41,20 @@ libadiosreadf_a_CFLAGS=
 libadiosread_nompi_a_CFLAGS= 
 libadiosreadf_nompi_a_CFLAGS= 
 
+## Transform plugin source files
+
+transforms_write_method_SOURCES=
+transforms_read_method_SOURCES=
+
+include transforms/Makefile.plugins
+
+##
+## Core transform framework source files
+##
 transforms_common_SOURCES = core/transforms/adios_transforms_common.c \
+                            core/transforms/adios_transforms_hooks.c \
                             core/adios_copyspec.c \
                             core/adios_subvolume.c
-
-transforms_read_method_SOURCES = transforms/adios_transform_identity_read.c \
-                                 transforms/adios_transform_zlib_read.c \
-								 transforms/adios_transform_bzip2_read.c \
-								 transforms/adios_transform_szip_read.c \
-								 transforms/adios_transform_isobar_read.c \
-								 transforms/adios_transform_aplod_read.c
-
-transforms_write_method_SOURCES = transforms/adios_transform_identity_write.c \
-                                  transforms/adios_transform_zlib_write.c \
-                                  transforms/adios_transform_bzip2_write.c \
-                                  transforms/adios_transform_szip_write.c \
-								  transforms/adios_transform_isobar_write.c \
-								  transforms/adios_transform_aplod_write.c 
 
 transforms_read_SOURCES = $(transforms_common_SOURCES) \
                           core/transforms/adios_transforms_read.c \

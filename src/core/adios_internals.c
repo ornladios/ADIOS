@@ -29,6 +29,7 @@
 
 // NCSU ALACRITY-ADIOS - Added header file
 #include "adios_transforms_common.h"
+#include "adios_transforms_hooks.h"
 #include "adios_transforms_read.h"
 #include "adios_transforms_write.h"
 
@@ -1671,7 +1672,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
             transform_method_str = (char*)transform_type_str;
         }
 
-        enum ADIOS_TRANSFORM_TYPE transform_type = adios_transform_type_by_name(transform_method_str);
+        enum ADIOS_TRANSFORM_TYPE transform_type = adios_transform_find_type_by_xml_alias(transform_method_str);
 
         if (transform_type == adios_transform_unknown) {
             log_error("Unknown transform type \"%s\" specified for variable \"%s\", ignoring it...\n",
@@ -2408,7 +2409,7 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
                         {
                             if (j == adios_statistic_hist)
                             {
-                                struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct	*) root->characteristics [i].stats[c][idx].data;
+                                struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct    *) root->characteristics [i].stats[c][idx].data;
                                 free (hist->breaks);
                                 free (hist->frequencies);
                             }
@@ -3439,7 +3440,7 @@ int adios_write_index_v1 (char ** buffer
                                     {
                                         characteristic_size = adios_get_stat_size(vars_root->characteristics [i].stats[c][idx].data, vars_root->type, j);
 
-                                        buffer_write ( 	buffer, buffer_size, buffer_offset
+                                        buffer_write (     buffer, buffer_size, buffer_offset
                                                          ,vars_root->characteristics [i].stats[c][idx].data, characteristic_size
                                                       );
 
@@ -4284,7 +4285,7 @@ uint32_t * cnt; \
 struct adios_hist_struct * hist = 0; \
 i = j = 0; \
 while (var->bitmap >> j) { \
-    if ((var->bitmap >> j) & 1)	{\
+    if ((var->bitmap >> j) & 1)    {\
         map [j] = i; \
         if (j == adios_statistic_hist) \
             ;\
@@ -4396,7 +4397,7 @@ return 0; \
             i = j = 0;
 
             while (var->bitmap >> j) {
-                if ((var->bitmap >> j) & 1)	{
+                if ((var->bitmap >> j) & 1)    {
                     map [j] = i;
                     for (c = 0; c < count; c ++)
                         if (j != adios_statistic_hist)
@@ -4525,7 +4526,7 @@ return 0; \
             i = j = 0;
 
             while (var->bitmap >> j) {
-                if ((var->bitmap >> j) & 1)	{
+                if ((var->bitmap >> j) & 1)    {
                     map [j] = i;
                     for (c = 0; c < count; c ++)
                         if (j != adios_statistic_hist)

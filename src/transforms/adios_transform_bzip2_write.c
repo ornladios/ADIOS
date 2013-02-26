@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
+#include <sys/time.h>
+
 #include "adios_logger.h"
 #include "adios_transforms_common.h"
 #include "adios_transforms_write.h"
@@ -12,6 +14,13 @@
 #include "bzlib.h"
 
 #define TEST_SIZE(s) (s)
+
+static double dclock()
+{
+	struct timeval tv;
+	gettimeofday(&tv,0);
+	return (double) tv.tv_sec + (double) tv.tv_usec * 1e-6;
+}
 
 static int is_digit_str(char* input_str)
 {
@@ -30,7 +39,7 @@ int compress_bzip2_pre_allocated(const void* input_data, const uint64_t input_le
 	unsigned int input_len_32 = (unsigned int)input_len;
 	unsigned int output_len_32 = (unsigned int)(*output_len);
 	
-	printf("input_len_32 %d output_len_32 %d (%x %x)\n", input_len_32, output_len_32, output_data, input_data);
+//	printf("input_len_32 %d output_len_32 %d (%x %x)\n", input_len_32, output_len_32, output_data, input_data);
 	
 	int bz_rtn = 0;
 	bz_rtn = BZ2_bzBuffToBuffCompress((char*)output_data, &output_len_32, 
@@ -39,7 +48,7 @@ int compress_bzip2_pre_allocated(const void* input_data, const uint64_t input_le
 	
 	if(bz_rtn != BZ_OK)
 	{
-		printf("BZ2_bzBuffToBuffCompress error %d\n", bz_rtn);
+	//	printf("BZ2_bzBuffToBuffCompress error %d\n", bz_rtn);
 		return -1;
 	}
 
@@ -114,15 +123,19 @@ int adios_transform_bzip2_apply(struct adios_file_struct *fd,
 
     // compress it
 	uint64_t actual_output_size = output_size;
-	int rtn = 0;
-	rtn = compress_bzip2_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
-
+	
+	double d1 = dclock();
+	int rtn = compress_bzip2_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
+	double d2 = dclock();
+	
     if(0 != rtn 					// compression failed for some reason, then just copy the buffer
         || actual_output_size > input_size)  // or size after compression is even larger (not likely to happen since compression lib will return non-zero in this case)
     {
         memcpy(output_buff, input_buff, input_size);
         actual_output_size = input_size;
     }
+	
+	printf("compress_bzip2_succ|%d|%d|%d|%f\n", rtn, input_size, actual_output_size, d2 - d1);
 
     // Wrap up, depending on buffer mode
     if (use_shared_buffer)
@@ -142,8 +155,8 @@ int adios_transform_bzip2_apply(struct adios_file_struct *fd,
         memcpy(var->transform_metadata, &input_size, sizeof(uint64_t));
     }
 	
-	printf("adios_transform_bzip2_apply compress %d input_size %d actual_output_size %d\n", 
-			rtn, input_size, actual_output_size);
+	// printf("adios_transform_bzip2_apply compress %d input_size %d actual_output_size %d\n", 
+			// rtn, input_size, actual_output_size);
 	
 	
     *transformed_len = actual_output_size; // Return the size of the data buffer

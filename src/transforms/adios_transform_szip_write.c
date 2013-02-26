@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <limits.h>
+#include <sys/time.h>
 
 #include "adios_logger.h"
 #include "adios_transforms_common.h"
@@ -12,6 +13,13 @@
 #include "adios_transform_szip.h"
 
 #define TEST_SIZE(s) (s)
+
+static double dclock()
+{
+	struct timeval tv;
+	gettimeofday(&tv,0);
+	return (double) tv.tv_sec + (double) tv.tv_usec * 1e-6;
+}
 
 // assume double precision only
 int compress_szip_pre_allocated(const void* input_data, const uint64_t input_len, 
@@ -35,7 +43,7 @@ int compress_szip_pre_allocated(const void* input_data, const uint64_t input_len
 	rtn = SZ_BufftoBuffCompress(output_data, &temp, input_data, input_len, &sz_param);
 	if(SZ_OK!= rtn)
 	{
-		printf("SZ_BufftoBuffCompress error %d\n", rtn);
+		// printf("SZ_BufftoBuffCompress error %d\n", rtn);
 		return -1;
 	}
 
@@ -99,14 +107,19 @@ int adios_transform_szip_apply(struct adios_file_struct *fd,
 	uint64_t actual_output_size = output_size;
 	int ndims = 1;
 	uint64_t dim[1] = {input_size/sizeof(double)};
+	
+	double d1 = dclock();
 	int rtn = compress_szip_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, ndims, dim);
-
+	double d2 = dclock();
+	
     if(0 != rtn 					// compression failed for some reason, then just copy the buffer
         || actual_output_size > input_size)  // or size after compression is even larger (not likely to happen since compression lib will return non-zero in this case)
     {
         memcpy(output_buff, input_buff, input_size);
         actual_output_size = input_size;
     }
+	
+	printf("compress_szip_succ|%d|%d|%d|%f\n", rtn, input_size, actual_output_size, d2 - d1);
 
     // Wrap up, depending on buffer mode
     if (use_shared_buffer)
@@ -126,8 +139,8 @@ int adios_transform_szip_apply(struct adios_file_struct *fd,
         memcpy(var->transform_metadata, &input_size, sizeof(uint64_t));
     }
 	
-	printf("adios_transform_compress_apply compress %d input_size %d actual_output_size %d\n", 
-			rtn, input_size, actual_output_size);
+	// printf("adios_transform_compress_apply compress %d input_size %d actual_output_size %d\n", 
+			// rtn, input_size, actual_output_size);
 	
 	
     *transformed_len = actual_output_size; // Return the size of the data buffer

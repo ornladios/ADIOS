@@ -19,7 +19,7 @@ enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE {
     PARTIAL_RESULT_MODE
 };
 
-enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_reqgroup_get_result_mode(adios_transform_read_request *reqgroup);
+enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_read_request_get_mode(adios_transform_read_request *reqgroup);
 
 // Delegation functions
 adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIOS_VARINFO *vi, const ADIOS_TRANSINFO* ti, const ADIOS_FILE *fp,
