@@ -4,6 +4,7 @@
 # Libraries
 *.lib
 *.a
+*.la
 
 # Shared objects (inc. Windows DLLs)
 *.dll
@@ -16,5 +17,3 @@
 *.out
 *.app
 
-#Makefiles
-Makefile
