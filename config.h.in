@@ -56,6 +56,9 @@
 /* Define to 1 if you have the `fdatasync' function. */
 #undef HAVE_FDATASYNC
 
+/* Flexpath is enabled */
+#undef HAVE_FLEXPATH
+
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
@@ -200,6 +203,9 @@
 
 /* Datatap is disabled */
 #undef NO_DATATAP
+
+/* Flexpath is disabled */
+#undef NO_FLEXPATH
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O

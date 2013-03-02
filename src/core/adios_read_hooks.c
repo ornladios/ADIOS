@@ -40,6 +40,7 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
     // called from common_read.c/common_read_init_method() and 
     // from common_read.c/common_read_open_*() 
     if (!did_init) {
+        fflush(stdout);
         *t = (struct adios_read_hooks_struct *)
                calloc (ADIOS_READ_METHOD_COUNT, sizeof (struct adios_read_hooks_struct));
 
@@ -53,6 +54,12 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
 
 #if HAVE_DIMES
         ASSIGN_FNS(dimes,ADIOS_READ_METHOD_DIMES)
+#endif
+
+#  ifndef _NOMPI
+#if HAVE_FLEXPATH
+       ASSIGN_FNS(flexpath, ADIOS_READ_METHOD_FLEXPATH);
+#endif
 #endif
 
 #if HAVE_PHDF5
