@@ -16,4 +16,22 @@
 *.exe
 *.out
 *.app
+utils/adios_lint/adios_lint
+utils/bp2ascii/bp2ascii
+utils/bpdump/bpdump
+utils/bpls/bpls
+utils/bpsplit/bpappend
+utils/bpsplit/bpgettime
+utils/bpsplit/bpsplit
+utils/skel/etc/compiler_fragment.mk
 
+# Autoconf
+autom4te.cache
+Makefile
+config.log
+config.status
+libtool
+stamp-h1
+.deps
+config.h
+adios_config.flags
