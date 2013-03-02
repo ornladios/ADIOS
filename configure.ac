@@ -7,6 +7,8 @@ AC_REVISION($Revision$)
 AC_CONFIG_HEADERS(config.h)
 AM_INIT_AUTOMAKE(adios,1.4.1)
 
+AM_MAINTAINER_MODE([enable])
+
 AC_LANG(C)
 AC_C_STRINGIZE
 dnl generates HAVE_STRINGIZE
@@ -14,7 +16,6 @@ dnl generates HAVE_STRINGIZE
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
-AC_PROG_RANLIB
 
 AC_LANG(C)
 ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C])])
