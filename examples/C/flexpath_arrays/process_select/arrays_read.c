@@ -18,7 +18,7 @@
 #include "mpi.h"
 #include "adios.h"
 #include "public/adios_read.h"
-//ha
+
 int main (int argc, char ** argv) 
 {
     /* application data structures */
@@ -64,7 +64,7 @@ int main (int argc, char ** argv)
 
     /* Read arrays for each time step */
     int ii=0;
-    for(ii=0; ii<200; ii++) {        
+    for(ii=0; ii<30; ii++) {        
 
         /* schedule a read of the arrays */
         adios_schedule_read (afile, &process_select, "var_double_2Darray", 0, 1, t);
@@ -74,7 +74,7 @@ int main (int argc, char ** argv)
         adios_perform_reads (afile, 1);
 
         /* print result */
-        printf("Results Rank=%d Step=%d\n p[0] = %d t[0,0] = %f\n\n", rank, ii, p[0], t[0]);
+        printf("Results Rank=%d Step=%d\n p[0] = %d t[0,0] = %f\n p[1] = %d t[0,1] = %f\n\n", rank, ii, p[0], t[0], p[1], t[1]);
     
         /* block until next step is available (30 sec timeout unsupported) */
         adios_advance_step(afile, 0, 30);

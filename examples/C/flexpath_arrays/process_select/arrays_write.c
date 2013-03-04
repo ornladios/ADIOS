@@ -38,7 +38,7 @@ int main (int argc, char ** argv)
     
     /* write data 200 times so that it forms a stream */
     int ii=0;
-    for(ii=0; ii<200; ii++) {
+    for(ii=0; ii<30; ii++) {
         
         /* initialize 2d array to:
             (rank*1000000) + (stream step * 1000) + offset */
@@ -62,11 +62,10 @@ int main (int argc, char ** argv)
         adios_write (adios_handle, "NY", &NY);
         adios_write (adios_handle, "var_double_2Darray", t);
         adios_write (adios_handle, "var_int_1Darray", p);
-
+        //fprintf(stderr, "2d arr %p 1d arr %p\n", t, p);
         /* commit the write */
         adios_close (adios_handle);
         printf("Committed Rank=%d Step=%d\n\n", rank, ii);
-        sleep(1);
     }
 
     /* insure all writers are done before shutdown */

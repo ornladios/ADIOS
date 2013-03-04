@@ -43,6 +43,7 @@ typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, DATA_BUFFER, OFFSET_MSG} MsgType;
 typedef struct _stone {
     int myNum;
     int theirNum;
+    int step;
     char* contact;
 } Stone;
 
@@ -257,7 +258,10 @@ void threaded_enqueue(QueueNode** queue, void* item, MsgType type, thr_mutex_t m
     newNode->type = type;
     newNode->next = *queue;
     *queue = newNode;
-    //fprintf(stderr, "made node\n");
+    //fprintf(stderr, "made node with data %p\n", newNode->data);
+    //if(newNode->next) {
+    //    fprintf(stderr, "next node has data %p\n", newNode->next->data);
+    //}
     //fprintf(stderr, "released lock\n");
     //if(localWriteData->rank>0) fprintf(stderr, "rank %d signalling %d\n", localWriteData->rank, *cond);
     //fprintf(stderr, "start signal1\n");
@@ -924,6 +928,8 @@ struct _fm_structure* setFormat(struct adios_group_struct* t,struct adios_var_st
 }
 
 
+
+
 // copies buffer zeroing out arrays that havent been asked for
 void* copy_buffer(void* buffer, int rank){
     char* temp = (char*)malloc(localWriteData->fm->size);
@@ -1015,14 +1021,20 @@ static int op_handler(CManager cm, void* vevent, void* client_data, attr_list at
 
 attr_list set_size_atom(attr_list attrs, int value) {
     atom_t dst_atom = attr_atom_from_string("fp_size");
-    add_int_attr(attrs, dst_atom, value);
+    int size;
+    if(!get_int_attr(attrs, dst_atom, &size)) {
+        add_int_attr(attrs, dst_atom, value);
+    }
     set_int_attr(attrs, dst_atom, value);
     return attrs;
 }
 
 attr_list set_dst_rank_atom(attr_list attrs, int value) {
     atom_t dst_atom = attr_atom_from_string("fp_dst_rank");
-    add_int_attr(attrs, dst_atom, value);
+    int dst;
+    if(!get_int_attr(attrs, dst_atom, &dst)) {
+        add_int_attr(attrs, dst_atom, value);
+    }
     set_int_attr(attrs, dst_atom, value);
     return attrs;
 }
@@ -1053,7 +1065,7 @@ int control_thread(void* arg) {
 		dataNode = threaded_peek(&localWriteData->dataQueue, 
 					 localWriteData->dataMutex, 
 					 &localWriteData->dataCondition);
-		//fprintf(stderr, "peeked at dataNode\n");
+		//fprintf(stderr, "peeked at dataNode %p\n", dataNode->data);
 		Flush_msg* flushMsg = (Flush_msg*) controlMsg->data;
 		//fprintf(stderr, "looking at flush msg\n");
 		void* temp = copy_buffer(dataNode->data, flushMsg->rank);
@@ -1064,22 +1076,31 @@ int control_thread(void* arg) {
 		//fprintf(stderr, "submitting data\n");
 		EVsubmit_general(localWriteData->dataSource, temp, data_free, localWriteData->attrs);
 	    } else if(controlMsg->type==OPEN) {
-		//fprintf(stderr, "recieved open message\n\n\n\n\n");
+		//fprintf(stderr, "recieved open message\n");
                 op_msg* open = (op_msg*) controlMsg->data;
                 //fprintf(stderr, "has step %d\n", open->step);
-                if(open->step == currentStep) {
-		    thr_mutex_lock(localWriteData->openMutex);
-		    localWriteData->openCount++;        
+                localWriteData->bridges[open->process_id].step = open->step;
+                if(open->step < currentStep) {
+                    fprintf(stderr, "error! recieved open for past step...\n");
+                } else if (open->step == currentStep){
+                    //fprintf(stderr, "equal to step\n");
+                    thr_mutex_lock(localWriteData->openMutex);
+		    if(localWriteData->openCount==-1) localWriteData->openCount=0;
+                    localWriteData->openCount++;        
 		    thr_mutex_unlock(localWriteData->openMutex);
+                    //fprintf(stderr, "send ack\n");
+                    op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
+                    ack->file_name = "hey";
+                    ack->process_id = localWriteData->rank;
+                    ack->step = currentStep;
+                    ack->type = 2;
+                    localWriteData->attrs = set_dst_rank_atom(localWriteData->attrs, open->process_id+1);
+                    EVsubmit_general(localWriteData->opSource, ack, op_free, localWriteData->attrs);
+                    //fprintf(stderr, "continue\n");
+                } else {
+                    //fprintf(stderr, "future step\n");
                 }
-                //op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
-                //ack->file_name = strdup(open->file_name);
-                //ack->process_id = localWriteData->rank;
-                //ack->step = currentStep;
-                //ack->type = 2;
-                //localWriteData->attrs = set_dst_rank_atom(localWriteData->attrs, open->process_id+1);
-                //EVsubmit_general(localWriteData->opSource, ack, op_free, localWriteData->attrs);
-	    } else if(controlMsg->type==CLOSE) {
+            } else if(controlMsg->type==CLOSE) {
 		//fprintf(stderr, "recieved close message\n");
 		thr_mutex_lock(localWriteData->openMutex);
 		localWriteData->openCount--;
@@ -1088,7 +1109,10 @@ int control_thread(void* arg) {
 		    threaded_dequeue(&localWriteData->dataQueue, 
 				     localWriteData->dataMutex, 
 				     &localWriteData->dataCondition);
+                    //fprintf(stderr, "end of step %d\n", currentStep);
                     currentStep++;
+                    //for all bridges if step == currentstep send ack
+                    
 		}
 	    } else {
 		fprintf(stderr, "unrecognized control message in control thread\n");
@@ -1147,7 +1171,7 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     localWriteData->controlMutex = thr_mutex_alloc();
     localWriteData->dataMutex = thr_mutex_alloc();
     localWriteData->openMutex = thr_mutex_alloc();
-
+    localWriteData->openCount = -1;
     // setup conditions
     localWriteData->controlCondition = CMCondition_get(localWriteData->cm, NULL);
     localWriteData->dataCondition = CMCondition_get(localWriteData->cm, NULL);
@@ -1273,7 +1297,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 	sprintf(reader_info_filename, "%s_%s", fd->name, "reader_info.txt");
         FILE* reader_info = fopen(reader_info_filename, "r");
 	while(!reader_info){
-	    reader_info = fopen(reader_info_filename, "r");
+	  reader_info = fopen(reader_info_filename, "r");
 	}
         char in_contact[CONTACT_STR_LEN] = "";
        
@@ -1289,6 +1313,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
             //fprintf(stderr, "generated contact list\n");
             localWriteData->bridges[numBridges].myNum = EVcreate_bridge_action(localWriteData->cm, contact_list, stone_num);
             //fprintf(stderr, "created bridge action\n");
+            localWriteData->bridges[numBridges].step = 0;
             localWriteData->bridges[numBridges].theirNum = stone_num;
             localWriteData->bridges[numBridges].contact = strdup(in_contact);
             numBridges += 1;
@@ -1377,8 +1402,8 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 	char* temp = get_server_ID_FMformat(my_format, &id_len);
         
 	/*for(i=0; i<id_len; i++) {
-	  temp[i]=temp[i]+1;
-	  }*/
+            temp[i]=temp[i]+1;
+	    }*/
         initial_format_msg->format_id = temp;
         initial_format_msg->id_len = id_len;
 
@@ -1407,18 +1432,16 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
         CMsleep(localWriteData->cm, 5); 
 	//indicate evpath is setup correctly
 	localWriteData->setupCorrect = 1;
-    
-
-	// fork control thread
-	thr_thread_t forked_thread = thr_fork(control_thread, &localWriteData->rank);
-	if(forked_thread) {
-	    //fprintf(stderr, "successfully forked control thread\n");
-	} else {
-	    //fprintf(stderr, "error forking control thread\n");
-	}
+        // fork control thread
+        thr_thread_t forked_thread = thr_fork(control_thread, &localWriteData->rank);
+        if(forked_thread) {
+            //fprintf(stderr, "successfully forked control thread\n");
+        } else {
+            //fprintf(stderr, "error forking control thread\n");
+        }
+    //fprintf(stderr, "continuing\n");
     }
 
-    //fprintf(stderr, "continuing\n");
     return 0;
 	
 }
@@ -1428,6 +1451,7 @@ extern enum ADIOS_FLAG adios_flexpath_should_buffer (struct adios_file_struct * 
     //fprintf(stderr, "debug: adios_flexpath_should_buffer\n");
   return adios_flag_unknown;
 }
+
 
 //  writes data to multiqueue
 extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_struct *f, void *data, struct adios_method_struct *method) {
@@ -1486,7 +1510,8 @@ extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_
 	    {
                 //fprintf(stderr, "copying vector pointer\n");
 		//we just need to copy the pointer stored in f->data
-		memcpy(&fm->buffer[field->field_offset], &data, sizeof(void *));
+                // calculate size
+                memcpy(&fm->buffer[field->field_offset], &data, sizeof(void *));
 
 	    } else {
 		//fprintf(stderr, "no data for vector %s\n", f->name);
@@ -1501,8 +1526,65 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 {
     //fprintf(stderr, "debug: adios_flexpath_close\n");
     //fprintf(stderr, "enqueueing data\n");   
-    void* buffer =  localWriteData->fm->buffer;
-    //fprintf(stderr, "got buffer\n");
+    
+    //no copy
+    //void* buffer =  localWriteData->fm->buffer;
+    
+    //copy
+    void* buffer = malloc(localWriteData->fm->size);
+
+    struct adios_group_struct * g2 = fd->group;
+    struct adios_var_struct * fields = g2->vars;
+    while(fields) {
+        
+        //fprintf(stderr, "field name: %s\n", fields->name);
+        if(fields->dimensions) {
+            //fprintf(stderr, "field is an array\n");
+            struct adios_dimension_struct* dims = fields->dimensions;
+            //fprintf(stderr, "field dims: %p\n", dims);
+    
+            int total_size = 1;
+            //for each dimension
+            while(dims) {    
+                struct adios_var_struct* temp = adios_find_var_by_id(g2->vars, dims->dimension.id);            
+                int size = *(int*)temp->data;
+                //fprintf(stderr, "dim %s size %d\n", temp->name, *(int*)temp->data);
+                total_size *= size;
+                dims = dims->next;
+            }		
+            FMFieldList flist = localWriteData->fm->format->field_list;
+            FMField *field = NULL;
+            char *fixedname = find_fixed_name(localWriteData->fm, fields->name);
+            field = internal_find_field(fixedname, flist);
+            //fprintf(stderr, "field offset %d size %d\n", field->field_offset, field->field_size);
+
+            total_size*=field->field_size;
+            // malloc size
+            //fprintf(stderr, "field %s field size %d\n", fields->name, total_size);
+            void* pointer_data_copy = malloc(total_size);
+            // while null
+            while(pointer_data_copy==NULL) { 
+                sleep(1);
+                void* pointer_data_copy = malloc(total_size);
+                //block
+            }
+                
+            // memcpy data
+            char* cur_offset = (char*)&localWriteData->fm->buffer[field->field_offset];
+            //fprintf(stderr, "pointer %p\n", cur_offset); 
+            void* aptr8 = (void*)(*((unsigned long*)cur_offset));
+            //fprintf(stderr, "copying data to %p from %p of size %d\n", pointer_data_copy, aptr8, total_size);
+            memcpy(pointer_data_copy, aptr8, total_size);
+            // memcpy pointer
+            memcpy(&localWriteData->fm->buffer[field->field_offset], &pointer_data_copy, sizeof(void *));
+        }    
+        fields = fields->next;
+    }
+
+    
+    memcpy(buffer, localWriteData->fm->buffer, localWriteData->fm->size);
+
+    //fprintf(stderr, "got buffer %p\n", buffer);
     threaded_enqueue(&localWriteData->dataQueue, 
 		     buffer, 
 		     DATA_BUFFER, 

@@ -71,7 +71,6 @@ typedef struct _bridge_info
     int their_num;
     char * contact;
     int created;
-    int opened;
     int step;
 }bridge_info;
 
@@ -220,7 +219,7 @@ typedef struct _local_read_data
 static int compare_var_name(const char* varname, const flexpath_var_info *v);
 // this sructure holds all global data for flexpath read  methods
 flexpath_read_data* fp_read_data = NULL;
-//int ackCondition;
+int ackCondition;
 
 #define VAR_BITMAP_SIZE 16
 
@@ -290,6 +289,17 @@ static FMField
 }
 
 
+
+static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
+    op_msg* msg = (op_msg*)vevent;
+    //fprintf(stderr, "recieved op_msg type %d step %d\n", msg->type, msg->step);
+    if(msg->type==2) {
+        //fprintf(stderr, "signal ackCondition\n");
+        CMCondition_signal(fp_read_data->fp_cm, ackCondition);
+        ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    }
+    return 0;
+}
 
 /*
  * Should only be invoked from rank 0.  might need a better way to go about this.
@@ -689,7 +699,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     sprintf(reader_info_filename, "%s_%s", fname, READER_CONTACT_FILE);
     sprintf(writer_ready_filename, "%s_%s", fname, WRITER_READY_FILE);
     sprintf(writer_info_filename, "%s_%s", fname, WRITER_CONTACT_FILE);
-    //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
 
     adios_errno = 0;
     //search linked list for connection, if not there add connection send open, otherwise use connection
@@ -704,6 +714,12 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 	MPI_Comm_rank(file_data_list->comm, &(file_data_list->rank));
 
 	EVassoc_terminal_action(fp_read_data->fp_cm,
+				file_data_list->data_stone,
+				op_format_list,
+				op_msg_handler,
+				file_data_list);
+	
+        EVassoc_terminal_action(fp_read_data->fp_cm,
 				file_data_list->data_stone,
 				format_format_list,
 				format_handler,
@@ -776,7 +792,6 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 	    file_data_list->bridges[num_bridges].their_num = their_stone;
             file_data_list->bridges[num_bridges].contact = strdup(in_contact);
             file_data_list->bridges[num_bridges].created = 0;
-            file_data_list->bridges[num_bridges].opened = 0;
             file_data_list->bridges[num_bridges].step = 0;
 	    num_bridges++;
 	}
@@ -788,7 +803,8 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
         open_msg.step = 0;
         EVsubmit(file_data_list->bridges[0].op_source, &open_msg, NULL);
 
-        //CMCondition_wait(fp_read_data->fp_cm, ackCondition);
+        //fprintf(stderr, "waiting on ackCondition\n");
+        CMCondition_wait(fp_read_data->fp_cm, ackCondition);
         //fprintf(stderr, "resuming\n");
         fp->current_step = file_data_list->bridges[0].step;
 
@@ -878,42 +894,43 @@ void adios_read_flexpath_release_step(ADIOS_FILE *fp) {
 
     int i;
     for(i=0; i<file_data_list->num_bridges; i++) {
-        if(file_data_list->bridges[i].opened) {
+        if(file_data_list->bridges[i].created) {
             op_msg close;
             close.step = fp->current_step;
+            close.type = 0;
             close.process_id = file_data_list->rank;
             close.file_name = fp->path;
             EVsubmit(file_data_list->bridges[i].op_source, &close, NULL);
-            file_data_list->bridges[i].opened=0;
         }
     }
 }
 int adios_read_flexpath_advance_step(ADIOS_FILE *fp, int last, float timeout_sec) {
-    //perr( "debug:entering advance step\n");
+    //fprintf(stderr, "debug:entering advance step\n");
     int i=0;
     for(i=0; i<file_data_list->num_bridges; i++) {
-        if(file_data_list->bridges[i].opened) {
+        //fprintf(stderr, "close bridge %d\n", i);
+        if(file_data_list->bridges[i].created) {
             op_msg close;
             close.step = fp->current_step;
+            close.type = 0;
             close.process_id = file_data_list->rank;
-            close.file_name = fp->path;
+            close.file_name = "test";
+            //fprintf(stderr, "submitting close\n");
             EVsubmit(file_data_list->bridges[i].op_source, &close, NULL);
-            file_data_list->bridges[i].opened=0;
+            ///fprintf(stderr, "continuing\n");
         }
+        //fprintf(stderr, "reopen bridge %d and wait for ack\n", i);
         if(file_data_list->bridges[i].created) {
-            int recieved_step = fp->current_step+1;
-            while(recieved_step != fp->current_step) {
-                op_msg open;
-                open.step = fp->current_step +1;
-                open.process_id = file_data_list->rank;
-                open.file_name = fp->path;
-                EVsubmit(file_data_list->bridges[i].op_source, &open, NULL);
+            op_msg open;
+            open.step = fp->current_step +1;
+            open.type = 1;
+            open.process_id = file_data_list->rank;
+            open.file_name = "test";
+            EVsubmit(file_data_list->bridges[i].op_source, &open, NULL);
 
-                //CMCondition_wait(fp_read_data->fp_cm, ackCondition);
-                //fprintf(stderr, "resuming\n");
-                recieved_step = file_data_list->bridges[i].step;
-            }
-            fp->current_step = file_data_list->bridges[i].step;
+            //fprintf(stderr, "waiting on ack from bridge %d\n", i);
+            CMCondition_wait(fp_read_data->fp_cm, ackCondition);
+            //fprintf(stderr, "resuming\n");
         }
     }
 
@@ -933,10 +950,9 @@ int adios_read_flexpath_close(ADIOS_FILE * fp)
 
     //send to each opened link
     for(i = 0; i<file->num_bridges; i++){
-        if(file->bridges[i].created && file->bridges[i].opened) {
+        if(file->bridges[i].created) {
             msg.step = file->bridges[i].step;
 	    EVsubmit(file->bridges[i].op_source, &msg, NULL);
-            file->bridges[i].opened=0;
         }
     }
     // start to cleanup.  Clean up var_lists for now, as the
@@ -1192,7 +1208,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * fp,
             open_msg.type = 1;
             open_msg.step = 0;
             EVsubmit(fd->bridges[writer_index].op_source, &open_msg, NULL);
-            //CMCondition_wait(fp_read_data->fp_cm, ackCondition);
+            CMCondition_wait(fp_read_data->fp_cm, ackCondition);
             //fprintf(stderr, "resuming\n");
 	    Var_msg var;
 	    var.rank = fd->rank;
