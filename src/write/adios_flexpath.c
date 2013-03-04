@@ -1273,7 +1273,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 	sprintf(reader_info_filename, "%s_%s", fd->name, "reader_info.txt");
         FILE* reader_info = fopen(reader_info_filename, "r");
 	while(!reader_info){
-	  reader_info = fopen(reader_info_filename, "r");
+	    reader_info = fopen(reader_info_filename, "r");
 	}
         char in_contact[CONTACT_STR_LEN] = "";
        
@@ -1377,8 +1377,8 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 	char* temp = get_server_ID_FMformat(my_format, &id_len);
         
 	/*for(i=0; i<id_len; i++) {
-            temp[i]=temp[i]+1;
-	    }*/
+	  temp[i]=temp[i]+1;
+	  }*/
         initial_format_msg->format_id = temp;
         initial_format_msg->id_len = id_len;
 
@@ -1407,16 +1407,16 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
         CMsleep(localWriteData->cm, 5); 
 	//indicate evpath is setup correctly
 	localWriteData->setupCorrect = 1;
-    }
+    
 
-    // fork control thread
-    thr_thread_t forked_thread = thr_fork(control_thread, &localWriteData->rank);
-    if(forked_thread) {
-        //fprintf(stderr, "successfully forked control thread\n");
-    } else {
-        //fprintf(stderr, "error forking control thread\n");
+	// fork control thread
+	thr_thread_t forked_thread = thr_fork(control_thread, &localWriteData->rank);
+	if(forked_thread) {
+	    //fprintf(stderr, "successfully forked control thread\n");
+	} else {
+	    //fprintf(stderr, "error forking control thread\n");
+	}
     }
-
 
     //fprintf(stderr, "continuing\n");
     return 0;
