@@ -17,3 +17,6 @@
 *.out
 *.app
 
+#Makefiles
+*/Makefile
+
