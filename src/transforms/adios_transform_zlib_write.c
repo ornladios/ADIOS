@@ -46,27 +46,6 @@ int compress_zlib_pre_allocated(const void* input_data, const uint64_t input_len
 	return 0;
 }
 
-int decompress_zlib_pre_allocated_test(const void* input_data, const uint64_t input_len,
-										void* output_data, uint64_t* output_len)
-{
-    assert(input_data != NULL && input_len > 0 && output_data != NULL && output_len != NULL && *output_len > 0);
-
-    uLongf dest_temp = *output_len;
-
-    // printf("decompress_zlib_pre_allocated %d %d\n", dest_temp, input_len);
-
-    int z_rtn = uncompress((Bytef*)output_data, &dest_temp, (Bytef*)input_data, input_len);
-    if(z_rtn != Z_OK)
-    {
-        printf("zlib uncompress error %d\n", z_rtn);
-        return -1;
-    }
-
-    *output_len = (uint64_t)dest_temp;
-
-    return 0;
-}
-
 uint16_t adios_transform_zlib_get_metadata_size() 
 { 
 	return (sizeof(uint64_t));
@@ -105,7 +84,7 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
 		sum += test_data[ii];
 	}
 	
-	printf("test_output|%g|%g|%g\n", sum, min, max);
+	// printf("test_output|%g|%g|%g\n", sum, min, max);
 	
 	// printf("#############################\n");
 
@@ -164,42 +143,6 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
         memcpy(output_buff, input_buff, input_size);
         actual_output_size = input_size;
     }
-	
-	printf("compress_zlib_succ|%d|%d|%d|%f\n", rtn, input_size, actual_output_size, d2 - d1);
-	//////////////////////////////////////
-	void* output_data_verify = malloc(input_size);
-	uint64_t output_len_verify = input_size;
-	rtn = decompress_zlib_pre_allocated_test(output_buff, actual_output_size,
-												output_data_verify, &output_len_verify);
-	double* test_data_verify = (double*)output_data_verify;
-	sum = 0.0;
-	min = 0.0;
-	max = 0.0;
-	ii = 0;
-	// printf("#############################\n");
-	for(ii = 0; ii < count_data; ii++)
-	{
-		// printf("%f\n", test_data[ii]);
-		if(test_data_verify[ii] > max) max = test_data_verify[ii];
-		if(test_data_verify[ii] < min) min = test_data_verify[ii];
-		sum += test_data_verify[ii];
-	}
-	
-	printf("test_output_verify_%d|%g|%g|%g\n", rtn, sum, min, max);
-	
-	char test_file_name[256];
-	snprintf(test_file_name, 255, "test_output_%d_%d_%d", fd->group->process_id, time(NULL), rand());
-	FILE* fpt = fopen(test_file_name, "w+");
-	if(fpt)
-	{
-		fwrite(test_data, sizeof(double), count_data, fpt);
-		fclose(fpt);
-	}
-	
-	free(output_data_verify);
-	
-	
-	///////////////////////////////////////
 
     // Wrap up, depending on buffer mode
     if (use_shared_buffer)

@@ -18,7 +18,7 @@ int decompress_zlib_pre_allocated(const void* input_data, const uint64_t input_l
 
     uLongf dest_temp = *output_len;
 
-    printf("decompress_zlib_pre_allocated %d %d\n", dest_temp, input_len);
+    // printf("decompress_zlib_pre_allocated %d %d\n", dest_temp, input_len);
 
     int z_rtn = uncompress((Bytef*)output_data, &dest_temp, (Bytef*)input_data, input_len);
     if(z_rtn != Z_OK)

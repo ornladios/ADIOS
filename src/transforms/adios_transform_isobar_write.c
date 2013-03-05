@@ -157,7 +157,7 @@ int adios_transform_isobar_apply(struct adios_file_struct *fd,
         actual_output_size = input_size;
     }
 	
-	printf("compress_isobar_succ|%d|%d|%d|%f\n", rtn, input_size, actual_output_size, d2 - d1);
+	// printf("compress_isobar_succ|%d|%d|%d|%f\n", rtn, input_size, actual_output_size, d2 - d1);
 
     // Wrap up, depending on buffer mode
     if (use_shared_buffer)
