@@ -29,24 +29,26 @@ int main (int argc, char ** argv)
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
-
-    for (i = 0; i < NX; i++)
-        t[i] = rank * NX + i;
-
+    
     fprintf(stderr, "starting writer.\n");
     strcpy (filename, "arrays");
     adios_init ("arrays.xml");
-    adios_open (&adios_handle, "temperature", filename, "w", &comm);
-    adios_write (adios_handle, "NX", &NX);
-    adios_write (adios_handle, "NY", &NY);
-    adios_write (adios_handle, "size", &size);
-    adios_write (adios_handle, "rank", &rank);
-    adios_write (adios_handle, "var_2d_array", t);
-    fprintf(stderr, "in app: rank: %d, size: %d, NX: %d\n", rank, size, NX);
-    adios_close (adios_handle);
+    
+    int ii;
+    for(ii = 0; ii<30; ii++){
+      for (i = 0; i < NX; i++)
+        t[i] = rank * NX + i*ii;
+      adios_open (&adios_handle, "temperature", filename, "w", &comm);
+      adios_write (adios_handle, "NX", &NX);
+      adios_write (adios_handle, "NY", &NY);
+      adios_write (adios_handle, "size", &size);
+      adios_write (adios_handle, "rank", &rank);
+      adios_write (adios_handle, "var_2d_array", t);
+      fprintf(stderr, "in app: rank: %d, size: %d, NX: %d\n", rank, size, NX);
+      adios_close (adios_handle);
 
-    MPI_Barrier (comm);
-
+      MPI_Barrier (comm);
+    }
     adios_finalize (rank);
 
     MPI_Finalize ();

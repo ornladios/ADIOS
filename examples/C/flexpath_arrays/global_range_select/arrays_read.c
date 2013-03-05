@@ -81,24 +81,25 @@ int main (int argc, char ** argv)
     /* Allocate space for the arrays */
     t = (double *) malloc (5*1*sizeof(double));
     fprintf(stderr, "t %p\n", t);
-
-    /* Read the arrays */
-    fprintf(stderr, "example is calling schedule read\n");
-    adios_schedule_read (afile, 
-			 &global_range_select, 
-			 "var_2d_array", 
-			 0, 1, t);
-    adios_perform_reads (afile, 1);
-    adios_read_close(afile);
+    int ii;
+    for(ii = 0; ii<30; i++){
+      /* Read the arrays */
+      fprintf(stderr, "example is calling schedule read\n");
+      adios_schedule_read (afile, 
+			   &global_range_select, 
+			   "var_2d_array", 
+			   0, 1, t);
+      adios_perform_reads (afile, 1);
+      adios_read_close(afile);
     
-    //sleep(20);
+      //sleep(20);
     
-    printf("rank=%d: t[0,5+x] = [%6.2f", rank, t[0]);
-    for(j=1; j<5; j++) {
+      printf("rank=%d: t[0,5+x] = [%6.2f", rank, t[0]);
+      for(j=1; j<5; j++) {
         printf(", %6.2f", t[j]);
+      }
+      printf("]\n");
     }
-    printf("]\n");
-    
     //MPI_Barrier (comm);
 
     adios_read_finalize_method(ADIOS_READ_METHOD_FLEXPATH);
