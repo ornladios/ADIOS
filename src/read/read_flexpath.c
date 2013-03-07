@@ -131,6 +131,11 @@ typedef struct _flexpath_file_data
     int valid_evgroup;
     evgroup * gp;
 
+    char *arr;
+    char *rep_id;
+    int rep_id_len;
+    int id_len;
+
     int* sendees;
     int num_sendees;
 
@@ -191,6 +196,11 @@ new_flexpath_file_data(const char * fname)
     fp->num_vars = 0;
     fp->sendees = NULL;
     fp->num_sendees = 0;    
+
+    fp->arr = NULL;
+    fp->rep_id = NULL;
+    fp->rep_id_len = 0;
+    fp->id_len = 0;
     return fp;        
 }
 
@@ -569,24 +579,11 @@ static int
 format_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     Format_msg* msg = (Format_msg*)vevent;
     flexpath_file_data * fp = (flexpath_file_data*)client_data;
-    char* arr = msg->format_id;
-    char* rep_id = msg->rep_id;
-    int rep_id_len = msg->rep_id_len;
-    int len = msg->id_len;
-    int i;
-
-    FMContext my_context = create_local_FMcontext();
-    if(my_context!=NULL) {
-        //FMFormat my_format = FMformat_from_ID(my_context, arr);
-	FMFormat my_format = load_external_format_FMcontext(my_context, arr, len, rep_id);
-	if(!my_format)
-	{
-	    adios_error(err_file_open_error,
-			"Could not get FMFormat from format server.");
-	    return err_file_open_error;
-	}
-	fp->current_format = my_format;
-    }
+    fp->arr = msg->format_id;
+    fp->rep_id = msg->rep_id;
+    fp->rep_id_len = msg->rep_id_len;
+    fp->id_len = msg->id_len;
+    
     fp->polling = 0;
     return 0;
 }
@@ -826,17 +823,57 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     EVsubmit(file_data_list->bridges[0].op_source, &open_msg, NULL);
 
     CMCondition_wait(fp_read_data->fp_cm, ackCondition);
-
-    Flush_msg msg;
-    msg.rank = fp_read_data->fp_comm_rank;
-    msg.type = FORMAT;
-    file_data_list->polling = 1;
-    // telling writer to flush format.
-    EVsubmit(file_data_list->bridges[0].flush_source, &msg, NULL);
-    while(file_data_list->polling) {
-        CMsleep(fp_read_data->fp_cm, 1);
+    // rank 0 gets format from server and then bcasts it to all
+    // other ranks.
+    int *lengths = calloc(2, sizeof(int*));
+    int myrank = fp_read_data->fp_comm_rank;
+    if(myrank == 0){
+	Flush_msg msg;
+	msg.rank = fp_read_data->fp_comm_rank;
+	msg.type = FORMAT;
+	file_data_list->polling = 1;
+	// telling writer to flush format.
+	EVsubmit(file_data_list->bridges[0].flush_source, &msg, NULL);
+	
+	while(file_data_list->polling) {
+	    CMsleep(fp_read_data->fp_cm, 1);
+	}
+	lengths[0] = file_data_list->rep_id_len;
+	lengths[1] = file_data_list->id_len;
     }
+    MPI_Bcast(lengths, 2, MPI_INT, 0, fp_read_data->fp_comm);
 
+    file_data_list->rep_id_len = lengths[0];
+    file_data_list->id_len = lengths[1];
+
+    if(myrank != 0){
+	file_data_list->arr = malloc(sizeof(char)*file_data_list->id_len);
+	file_data_list->rep_id = malloc(sizeof(char)*file_data_list->rep_id_len);	
+    }    
+
+    MPI_Bcast(file_data_list->arr, file_data_list->id_len, MPI_BYTE, 0, fp_read_data->fp_comm);
+    MPI_Bcast(file_data_list->rep_id, file_data_list->rep_id_len, MPI_BYTE, 0, fp_read_data->fp_comm);
+    perr("rank: %d rep_id_len = %d, id_len = %d\n",
+	 myrank, 
+	 file_data_list->rep_id_len, 
+	 file_data_list->id_len);
+    FMContext my_context = create_local_FMcontext();
+    if(my_context != NULL) {
+        //FMFormat my_format = FMformat_from_ID(my_context, arr);
+	FMFormat my_format = load_external_format_FMcontext(my_context, 
+							    file_data_list->arr, 
+							    file_data_list->id_len, 
+							    file_data_list->rep_id);
+	if(!my_format)
+	{
+	    adios_error(err_file_open_error,
+			"Could not get FMFormat from format server.");
+	    //return err_file_open_error;
+	}
+	file_data_list->current_format = my_format;
+    }
+    file_data_list->polling = 0;
+    perr("after all that: %d\n", myrank);
     int var_count = 0;
     FMStructDescList struct_list = FMcopy_struct_list(format_list_of_FMFormat(file_data_list->current_format));
     FMField *f = struct_list[0].field_list;
@@ -883,6 +920,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 
     // telling the writer to flush data
     //TODO: send to split stone to all writers
+    Flush_msg msg;
     msg.type = DATA;
     file_data_list->polling = 1;
     EVsubmit(file_data_list->bridges[0].flush_source, &msg, NULL);
