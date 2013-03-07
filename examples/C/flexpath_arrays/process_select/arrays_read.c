@@ -39,33 +39,34 @@ int main (int argc, char ** argv)
     adios_read_init_method(ADIOS_READ_METHOD_FLEXPATH, comm, "");
 
     /* First read in the scalars to calculate the size of the arrays */
-    ADIOS_FILE* afile = adios_read_open_file("arrays", ADIOS_READ_METHOD_FLEXPATH, comm);
+
     /* get everything from single process - rank 0 for now*/
     ADIOS_SELECTION process_select;
     process_select.type=ADIOS_SELECTION_WRITEBLOCK;
     process_select.u.block.index = 0;
 
     /* read the size of arrays using local inq_var */
-    ADIOS_VARINFO* nx_info = adios_inq_var( afile, "NX");
-    if(nx_info->value) {
-        NX = *((int *)nx_info->value);
-    }
 
-    ADIOS_VARINFO* ny_info = adios_inq_var( afile, "NY");
-    if(ny_info->value) {
-        NY = *((int *)ny_info->value);
-    }
-
-    /* Allocate space for the arrays */
-    t = (double *) malloc (NX*NY*sizeof(double));    
-    p = (int *) malloc (NX*sizeof(int));
-    memset(t, 0, NX*NY*sizeof(double));
-    memset(p, 0, NX*sizeof(int));
-
+    ADIOS_FILE* afile = adios_read_open_file("arrays", ADIOS_READ_METHOD_FLEXPATH, comm);
     /* Read arrays for each time step */
     int ii=0;
     for(ii=0; ii<30; ii++) {        
 
+	ADIOS_VARINFO* nx_info = adios_inq_var( afile, "NX");
+	if(nx_info->value) {
+	    NX = *((int *)nx_info->value);
+	}
+
+	ADIOS_VARINFO* ny_info = adios_inq_var( afile, "NY");
+	if(ny_info->value) {
+	    NY = *((int *)ny_info->value);
+	}
+    
+	/* Allocate space for the arrays */
+	t = (double *) malloc (NX*NY*sizeof(double));    
+	p = (int *) malloc (NX*sizeof(int));
+	memset(t, 0, NX*NY*sizeof(double));
+	memset(p, 0, NX*sizeof(int));
         /* schedule a read of the arrays */
         adios_schedule_read (afile, &process_select, "var_double_2Darray", 0, 1, t);
         adios_schedule_read (afile, &process_select, "var_int_1Darray", 0, 1, p);
@@ -74,18 +75,17 @@ int main (int argc, char ** argv)
         adios_perform_reads (afile, 1);
 
         /* print result */
-        printf("Results Rank=%d Step=%d\n p[0] = %d t[0,0] = %f\n p[1] = %d t[0,1] = %f\n\n", rank, ii, p[0], t[0], p[1], t[1]);
+        printf("Results Rank=%d Step=%d p[0] = %d t[0,0] = %f\n p[1] = %d t[0,1] = %f\n\n", 
+	       rank, ii, p[0], t[0], p[1], t[1]);
     
         /* block until next step is available (30 sec timeout unsupported) */
         adios_advance_step(afile, 0, 30);
-
+	MPI_Barrier (comm);
+	
+	/* shutdown ADIOS and MPI */
     }
-    
+    adios_read_close(afile);	
     /* wait until all readers finish */
-    MPI_Barrier (comm);
-
-    /* shutdown ADIOS and MPI */
-    adios_read_close(afile);
     adios_read_finalize_method(ADIOS_READ_METHOD_FLEXPATH);
     MPI_Finalize ();
 

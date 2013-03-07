@@ -146,7 +146,7 @@ new_flexpath_var_info(const char * varname, int id, uint64_t data_size);
 flexpath_var_info*
 new_flexpath_var_info(const char * varname, int id, uint64_t data_size)
 {
-    flexpath_var_info * var = (flexpath_var_info*)malloc(sizeof(flexpath_var_info));
+    flexpath_var_info * var = malloc(sizeof(flexpath_var_info));
     if(var == NULL){
 	perr("Error creating new var: %s\n", varname);
 	exit(1);
@@ -162,6 +162,7 @@ new_flexpath_var_info(const char * varname, int id, uint64_t data_size)
     var->was_scheduled = 0;    
     var->time_dim = 0;
     var->ndims = 0;
+    var->next = NULL;
     return var;
 }
 
@@ -169,7 +170,7 @@ new_flexpath_var_info(const char * varname, int id, uint64_t data_size)
 flexpath_file_data*
 new_flexpath_file_data(const char * fname)
 {
-    flexpath_file_data * fp = (flexpath_file_data*)malloc(sizeof(flexpath_file_data));
+    flexpath_file_data * fp = malloc(sizeof(flexpath_file_data));
     if(fp == NULL){
 	perr("Cannot create data for new file.\n");
 	exit(1);
@@ -189,7 +190,7 @@ new_flexpath_file_data(const char * fname)
     fp->polling = 1;
     fp->num_vars = 0;
     fp->sendees = NULL;
-    fp->num_sendees = 0;
+    fp->num_sendees = 0;    
     return fp;        
 }
 
@@ -316,6 +317,8 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     global_var * vars = msg->vars;
     int num_vars = msg->num_vars;
 
+
+    /*
     int i;
     
     for(i=0; i<num_vars; i++){
@@ -323,7 +326,7 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 	perr("noffset_structs: %d\n", noffset_structs);
 	int j;
 	for(j=0; j<noffset_structs; j++){
-	    perr("i: %d, j: %d\n", i, j);
+	    //perr("i: %d, j: %d\n", i, j);
 	    int total_offsets = vars[i].offsets[j].total_offsets;
 	    int k;
 	    perr("offsets for var: %s\n", vars[i].name);
@@ -336,7 +339,8 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 		perr("%d\t", vars[i].offsets[j].local_dimensions[k]);
 	    }
 	}
-    }    
+    }  
+    */  
 
     return 0;
 
@@ -367,15 +371,15 @@ find_displacement(array_displacements* list, int rank, int num_displ){
 int
 linearize_displ(int * offset, int * sizes, int ndim, int data_size)
 {
-    print_int_arr("linearize_displ offsets", offset, ndim);
-    print_int_arr("linearize_displ sizes", sizes, ndim);
+    //print_int_arr("linearize_displ offsets", offset, ndim);
+    //print_int_arr("linearize_displ sizes", sizes, ndim);
     int i;
     int retval = 0;
     for(i = 0; i<ndim - 1; i++){
 	retval += (offset[i] * sizes[i+1])*data_size;       
     }
     retval+=offset[ndim-1]*data_size;
-    perr("\t\t\tretval: %d\n\n\n", retval);
+    //perr("\t\t\tretval: %d\n\n\n", retval);
     return retval;
 }
 
@@ -391,11 +395,13 @@ copyoffsets(int dim, // dimension index
 	    char* from, 
 	    char* to) 
 {
+    /*
     perr("\n\n\ncopyoffsets call:\n");
     print_int_arr("disp_start", disp_start, ndims);
     print_int_arr("disp_count", disp_count, ndims);
     print_int_arr("writer_count", writer_count, ndims);
     print_int_arr("reader_count", (int*)reader_count, ndims);
+    */
     if(dim==ndims-1) {
         int* reader_count_copy = (int*)malloc(sizeof(int)*ndims);
         int i=0;
@@ -404,7 +410,7 @@ copyoffsets(int dim, // dimension index
         }
         int s = linearize_displ(disp_start, writer_count, ndims, data_size);
         int e = linearize_displ(disp_start, reader_count_copy, ndims, data_size);
-        perr("copying %d from %d to %d\n", disp_count[dim]*data_size, s, e);
+        //perr("copying %d from %d to %d\n", disp_count[dim]*data_size, s, e);
 	free(reader_count_copy);
         memcpy(to, from+s,  data_size*disp_count[ndims-1]);
     } else {
@@ -519,7 +525,7 @@ data_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 
 	    }
 	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
-		perr("\t\t\tvar type: %d\n\n\n", (int)var->type);
+		//perr("\t\t\tvar type: %d\n\n\n", (int)var->type);
 		int i;
                 global_var* gv = find_gbl_var(file_data_list->gp->vars, 
 					      var->varname, 
@@ -531,6 +537,7 @@ data_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 							       var->num_displ);
 		void* aptr8 = (void*)(*((unsigned long*)curr_offset));
 		double * temp = (double*)curr_offset;
+		/*
 		perr("%s, %d first value: %f\n", var->varname, (int)var->data_size, temp[2]);
 		perr("copying offsets.\n");
 		perr("\t\t\tndims: %d\n", disp->ndims);
@@ -539,6 +546,7 @@ data_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 		print_int_arr("\t\t\twriter_count", writer_count, disp->ndims);
 		print_int_arr("\t\t\treader_count", (int*)reader_count, disp->ndims);		
                 perr("\t\t\tcurent_offset %p", var->chunks[0].data);
+		*/
                 copyoffsets(0, 
 			    disp->ndims,
 			    f->field_size,
@@ -683,35 +691,26 @@ ADIOS_FILE*
 adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 {
     //perr( "debug: entering adios_read_flexpath_fopen\n");
-    ADIOS_FILE *fp = NULL;
-    fp = (ADIOS_FILE*)malloc(sizeof(ADIOS_FILE));
+    //search linked list for connection, if not there add connection send open, otherwise use connection
+    // connection information for this file does not yet exist.
+    // establish graph for this file.
+    ADIOS_FILE *fp = malloc(sizeof(ADIOS_FILE));    
     if(!fp){
 	adios_error (err_no_memory, "Cannot allocate memory for file info.\n");
 	return NULL;
     }    
-
-    char writer_ready_filename[200];
-    char writer_info_filename[200];
-    char reader_ready_filename[200];
-    char reader_info_filename[200];
-
-    sprintf(reader_ready_filename, "%s_%s", fname, READER_READY_FILE);
-    sprintf(reader_info_filename, "%s_%s", fname, READER_CONTACT_FILE);
-    sprintf(writer_ready_filename, "%s_%s", fname, WRITER_READY_FILE);
-    sprintf(writer_info_filename, "%s_%s", fname, WRITER_CONTACT_FILE);
-    ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
-
-    adios_errno = 0;
-    //search linked list for connection, if not there add connection send open, otherwise use connection
-    // connection information for this file does not yet exist.
-    // establish graph for this file.
-    if(file_data_list == NULL){
+    if(file_data_list == NULL){	
+	ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
+	
+	adios_errno = 0;
  	file_data_list = new_flexpath_file_data(fname);
-	file_data_list->data_stone = EValloc_stone(fp_read_data->fp_cm);
-
+	file_data_list->data_stone = EValloc_stone(fp_read_data->fp_cm);	
 	file_data_list->comm = comm;
+
+#ifndef _NOMPI      
 	MPI_Comm_size(file_data_list->comm, &(file_data_list->size));
 	MPI_Comm_rank(file_data_list->comm, &(file_data_list->rank));
+#endif
 
 	EVassoc_terminal_action(fp_read_data->fp_cm,
 				file_data_list->data_stone,
@@ -731,19 +730,30 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 				group_msg_handler,
 				file_data_list);
 
+	char writer_ready_filename[200];
+	char writer_info_filename[200];
+	char reader_ready_filename[200];
+	char reader_info_filename[200];
+	
+	sprintf(reader_ready_filename, "%s_%s", fname, READER_READY_FILE);
+	sprintf(reader_info_filename, "%s_%s", fname, READER_CONTACT_FILE);
+	sprintf(writer_ready_filename, "%s_%s", fname, WRITER_READY_FILE);
+	sprintf(writer_info_filename, "%s_%s", fname, WRITER_CONTACT_FILE);
+	
 	char * string_list;
 	char data_contact_info[50];
 	string_list = attr_list_to_string(CMget_contact_list(fp_read_data->fp_cm));
 	sprintf(&data_contact_info[0], "%d:%s", file_data_list->data_stone, string_list);
 	char * recvbuf;
-	if(file_data_list->rank == 0)
-	{
+	if(file_data_list->rank == 0){	
 	    recvbuf = (char*)malloc(sizeof(char)*50*(file_data_list->size));
 	}
+
 #ifndef _NOMPI
 	MPI_Gather(data_contact_info, 50, MPI_CHAR, recvbuf,
 		   50, MPI_CHAR, 0, file_data_list->comm);
 #endif
+
 	if(file_data_list->rank == 0)
 	{
 	    // print our own contact information
@@ -768,7 +778,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 	FILE * read_ready = fopen(reader_ready_filename, "w");
 	fprintf(read_ready, "ready");
 	fclose(read_ready);
-	//may need to switch to rank 0 and mpi broadcast (SCALABILITY)
+	//may need to switch to rank 0 and mpi broadcast
         FILE * fp_in = fopen(writer_ready_filename,"r");
 	while(!fp_in) {
             CMsleep(fp_read_data->fp_cm, 1);
@@ -780,43 +790,43 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
             fp_in = fopen(writer_info_filename, "r");
 
 	char in_contact[50] = "";
-	file_data_list->bridges = (bridge_info*)malloc(sizeof(bridge_info));
+	file_data_list->bridges = malloc(sizeof(bridge_info));
 	int num_bridges = 0;
 	int their_stone;
 
         // change to read all numbers, dont create stones, turn bridge array into linked list
-        while(fscanf(fp_in, "%d:%s", &their_stone, in_contact) != EOF)
-	{
-	    file_data_list->bridges = (bridge_info*)realloc(file_data_list->bridges,
-							    sizeof(bridge_info) * (num_bridges+1));
+        while(fscanf(fp_in, "%d:%s", &their_stone, in_contact) != EOF){	
+	    file_data_list->bridges = realloc(file_data_list->bridges,
+					      sizeof(bridge_info) * (num_bridges+1));
 	    file_data_list->bridges[num_bridges].their_num = their_stone;
             file_data_list->bridges[num_bridges].contact = strdup(in_contact);
             file_data_list->bridges[num_bridges].created = 0;
             file_data_list->bridges[num_bridges].step = 0;
 	    num_bridges++;
 	}
+	fclose(fp_in);
         build_bridge(&file_data_list->bridges[0]);
-        op_msg open_msg;
-        open_msg.process_id = file_data_list->rank;
-        open_msg.file_name = strdup(file_data_list->file_name);
-        open_msg.type = 1;
-        open_msg.step = 0;
-        EVsubmit(file_data_list->bridges[0].op_source, &open_msg, NULL);
 
-        //fprintf(stderr, "waiting on ackCondition\n");
-        CMCondition_wait(fp_read_data->fp_cm, ackCondition);
-        //fprintf(stderr, "resuming\n");
-        fp->current_step = file_data_list->bridges[0].step;
+        //fprintf(stderr, "waiting on ackCondition\n");        
 
 	file_data_list->num_bridges = num_bridges;
-	fclose(fp_in);
 	// clean up of writer's files
 	if(fp_read_data->fp_comm_rank == 0){
 	    unlink(writer_info_filename);
 	    unlink(writer_ready_filename);
-	}
-	fp->fh = (uint64_t)file_data_list;
+	}	
     }
+    fp->fh = (uint64_t)file_data_list;
+    //fp->current_step = file_data_list->bridges[0].step;
+    op_msg open_msg;    
+    open_msg.process_id = file_data_list->rank;
+    open_msg.file_name = strdup(file_data_list->file_name);
+    open_msg.type = 1;
+    open_msg.step = fp->current_step;
+    EVsubmit(file_data_list->bridges[0].op_source, &open_msg, NULL);
+
+    CMCondition_wait(fp_read_data->fp_cm, ackCondition);
+
     Flush_msg msg;
     msg.rank = fp_read_data->fp_comm_rank;
     msg.type = FORMAT;
@@ -933,7 +943,6 @@ int adios_read_flexpath_advance_step(ADIOS_FILE *fp, int last, float timeout_sec
             //fprintf(stderr, "resuming\n");
         }
     }
-
     fp->current_step++;
    return fp->current_step;
 }
@@ -947,7 +956,6 @@ int adios_read_flexpath_close(ADIOS_FILE * fp)
     msg.file_name = strdup(file->file_name);
     msg.process_id = file->rank;
 
-
     //send to each opened link
     for(i = 0; i<file->num_bridges; i++){
         if(file->bridges[i].created) {
@@ -959,43 +967,43 @@ int adios_read_flexpath_close(ADIOS_FILE * fp)
     // data has already been COPIED over to ADIOS_VARINFO structs
     // that the user maintains a copy of.  Leave stone info in place
     // will handle "invalid" graph setups later
-    flexpath_var_info * v = file->var_list;
-    while(v)
-    {
-	flexpath_var_info * v_tmp = v;
-	//free(v->varpath);
-	//free(v->varname);
-	if(v->chunks == NULL)
-	{
-	    perr( "NULL\n");
-	    break;
-	}
-	//flexpath_var_chunk * c = &v->chunks[0];
-	//flexpath_var_chunk * c_tmp = c;
-	// free chunks; data has already been copied to user
-	int i;
-	for(i = 0; i<v->num_chunks; i++)
-	{
-	    flexpath_var_chunk * c = &v->chunks[i];
-	    // have to do this, because for arrays data is actually pre-alloced by user,
-	    // and not flexpath, so user still has a copy of the data.  for scalars, this isn't so.
-	    if( (c->data) &&(v->ndims == 0))
-	    {
+    /* flexpath_var_info * v = file->var_list; */
+    /* while(v) */
+    /* { */
+    /* 	flexpath_var_info * v_tmp = v; */
+    /* 	//free(v->varpath); */
+    /* 	//free(v->varname); */
+    /* 	if(v->chunks == NULL) */
+    /* 	{ */
+    /* 	    perr( "NULL\n"); */
+    /* 	    break; */
+    /* 	} */
+    /* 	//flexpath_var_chunk * c = &v->chunks[0]; */
+    /* 	//flexpath_var_chunk * c_tmp = c; */
+    /* 	// free chunks; data has already been copied to user */
+    /* 	int i; */
+    /* 	for(i = 0; i<v->num_chunks; i++) */
+    /* 	{ */
+    /* 	    flexpath_var_chunk * c = &v->chunks[i]; */
+    /* 	    // have to do this, because for arrays data is actually pre-alloced by user, */
+    /* 	    // and not flexpath, so user still has a copy of the data.  for scalars, this isn't so. */
+    /* 	    if( (c->data) &&(v->ndims == 0)) */
+    /* 	    { */
 		
-		//free(c->data);
-		if(c->global_bounds)
-		    free(c->global_bounds);
-		if(c->global_offsets)
-		    free(c->global_offsets);
-		if(c->local_bounds)
-		    free(c->local_bounds);
-	    }
-	}
-	v=v->next;
-	free(v_tmp);
-	if(v == NULL)
-	    break;
-    }
+    /* 		//free(c->data); */
+    /* 		if(c->global_bounds) */
+    /* 		    free(c->global_bounds); */
+    /* 		if(c->global_offsets) */
+    /* 		    free(c->global_offsets); */
+    /* 		if(c->local_bounds) */
+    /* 		    free(c->local_bounds); */
+    /* 	    } */
+    /* 	} */
+    /* 	v=v->next; */
+    /* 	//free(v_tmp); */
+    /* 	if(v == NULL) */
+    /* 	    break; */
+    /* } */
     return 0;
 }
 
@@ -1384,7 +1392,7 @@ ADIOS_VARINFO* adios_read_flexpath_inq_var(const ADIOS_FILE * fp, const char* va
 {
     //perr( "debug: adios_read_flexpath_inq_var\n");
 
-    ADIOS_VARINFO* v = (ADIOS_VARINFO*) malloc(sizeof(ADIOS_VARINFO));
+    ADIOS_VARINFO* v = malloc(sizeof(ADIOS_VARINFO));
     if(!v) {
         adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
         return NULL;
@@ -1407,7 +1415,6 @@ ADIOS_VARINFO * adios_read_flexpath_inq_var_byid (const ADIOS_FILE * fp, int var
 {
     //perr( "debug: inq_var_byid\n");
     if(varid >= 0 && varid < fp->nvars) {
-	//perr( "valid var id\n");
         return adios_read_flexpath_inq_var(fp, fp->var_namelist[varid]);
     }
     else {
@@ -1432,8 +1439,7 @@ convert_file_info(flexpath_var_info * current_var,
     v->type = current_var->type;
     v->ndim = current_var->ndims;
     //v->timedim = current_var->time_dim;
-    if(v->ndim == 0)
-    {
+    if(v->ndim == 0){    
 	//int value_size = common_read_type_size(v->type, current_var->chunks->data);
 	int value_size = current_var->data_size;
 	v->value = malloc(value_size);
@@ -1443,12 +1449,8 @@ convert_file_info(flexpath_var_info * current_var,
 	}
 	flexpath_var_chunk * chunk = &current_var->chunks[0];
 	memcpy(v->value, chunk->data, value_size);
-	int * temp_int = (int*)(chunk->data);
-	//perr("inq_var: current_var->varname: %s, value: %d\n", current_var->varname, *temp_int);
-    }
-    else
-    { // arrays
-	//perr( "ARRAYS\n");
+    }else{ // arrays
+	perr( "ARRAYS\n");
 	v->dims = (uint64_t *) malloc(v->ndim * sizeof(uint64_t));
 	if(!v->dims) {
 	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
