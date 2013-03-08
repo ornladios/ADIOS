@@ -450,7 +450,7 @@ copyoffsets(int dim, // dimension index
 static int
 data_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
-    //perr("Data handler called.\n");
+    //perr("myrank: %d Data handler called.\n", fp_read_data->fp_comm_rank);
     int rank;
     flexpath_file_data * file_data = (flexpath_file_data*)client_data;
     char * buffer = (char*)vevent;
@@ -636,6 +636,7 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
 
 
 void build_bridge(bridge_info* bridge) {
+    perr("myrank: %d %d %s\n", fp_read_data->fp_comm_rank, __LINE__, __FILE__);
     attr_list contact_list = attr_list_from_string(bridge->contact);
 
     bridge->bridge_stone =
@@ -751,14 +752,12 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 		   50, MPI_CHAR, 0, file_data_list->comm);
 #endif
 
-	if(file_data_list->rank == 0)
-	{
+	if(file_data_list->rank == 0){	
 	    // print our own contact information
 
 	    FILE * fp_out = fopen(reader_info_filename, "w");
             int i;
-	    if(!fp_out)
-	    {
+	    if(!fp_out){	    
 		adios_error(err_file_open_error,
 			    "File for contact info could not be opened for writing.\n");
 		exit(1);
@@ -860,10 +859,12 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     FMContext my_context = create_local_FMcontext();
     if(my_context != NULL) {
         //FMFormat my_format = FMformat_from_ID(my_context, arr);
+	perr("before Here I am: %d\n", myrank);
 	FMFormat my_format = load_external_format_FMcontext(my_context, 
 							    file_data_list->arr, 
 							    file_data_list->id_len, 
 							    file_data_list->rep_id);
+	perr("Here I am: %d\n", myrank);
 	if(!my_format)
 	{
 	    adios_error(err_file_open_error,
@@ -878,17 +879,16 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     FMStructDescList struct_list = FMcopy_struct_list(format_list_of_FMFormat(file_data_list->current_format));
     FMField *f = struct_list[0].field_list;
     // need to construct var lists here.
-    while(f->field_name != NULL)
-    {
+    while(f->field_name != NULL){    
 	//flexpath_var_info * curr_var = (flexpath_var_info*)malloc(sizeof(flexpath_var_info));
 	flexpath_var_info * curr_var = new_flexpath_var_info(f->field_name, var_count, f->field_size);
 	//curr_var->num_chunks = file_data_list->num_bridges;
 	curr_var->num_chunks = 1;
 	curr_var->chunks = (flexpath_var_chunk*)malloc(sizeof(flexpath_var_chunk)*curr_var->num_chunks);
-	int i;
 	memset(curr_var->chunks, 0, sizeof(flexpath_var_chunk)*curr_var->num_chunks);
-	for(i = 0; i<curr_var->num_chunks; i++)
-	{
+
+	int i;
+	for(i = 0; i<curr_var->num_chunks; i++){	
 	    flexpath_var_chunk * c = &curr_var->chunks[i];
 	    c->has_data = 0;
 	    c->data = NULL;
@@ -902,33 +902,37 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
         var_count++;
         f++;
     }
-
+    perr("myrank: %d %d %s\n", myrank, __LINE__, __FILE__);
     fp->nvars = var_count;
     fp->var_namelist = (char **) malloc(var_count * sizeof(char *));
     f = struct_list[0].field_list;  // f is top-level field list 
     int i=0;
+    perr("myrank: %d %d %s\n", myrank, __LINE__, __FILE__);
     while(f->field_name != NULL) {
         fp->var_namelist[i++] = strdup(f->field_name);
         //perr("added var name %s\n", f->field_name);
         f++;
+	perr("myrank: %d %d %s\n", myrank, __LINE__, __FILE__);
     }
+    perr("myrank: %d %d %s\n", myrank, __LINE__, __FILE__);
     // setting up terminal action for data
     EVassoc_terminal_action(fp_read_data->fp_cm,
 			    file_data_list->data_stone,
 			    struct_list, data_handler,
 			    (void*)file_data_list);
-
+    perr("myrank: %d %d %s\n", myrank, __LINE__, __FILE__);
     // telling the writer to flush data
     //TODO: send to split stone to all writers
     Flush_msg msg;
     msg.type = DATA;
+    msg.rank = myrank;
     file_data_list->polling = 1;
     EVsubmit(file_data_list->bridges[0].flush_source, &msg, NULL);
-
+    perr("myrank: %d %d %s\n", myrank, __LINE__, __FILE__);
     while(file_data_list->polling) {
         CMsleep(fp_read_data->fp_cm, 1);
     }
-
+    perr("myrank: %d %d %s\n", myrank, __LINE__, __FILE__);
     return fp;
 }
 
