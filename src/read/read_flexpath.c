@@ -1254,7 +1254,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * fp,
             build_bridge(&(fd->bridges[writer_index]));
             op_msg open_msg;
             open_msg.process_id = file_data_list->rank;
-            open_msg.file_name = "hey";
+            open_msg.file_name = fd->file_name;
             open_msg.type = 1;
             open_msg.step = 0;
             EVsubmit(fd->bridges[writer_index].op_source, &open_msg, NULL);
