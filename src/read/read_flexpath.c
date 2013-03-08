@@ -813,7 +813,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 	}	
     }
     fp->fh = (uint64_t)file_data_list;
-    //fp->current_step = file_data_list->bridges[0].step;
+    fp->current_step = 0;
     op_msg open_msg;    
     open_msg.process_id = file_data_list->rank;
     open_msg.file_name = strdup(file_data_list->file_name);
