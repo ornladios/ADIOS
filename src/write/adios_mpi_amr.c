@@ -18,6 +18,11 @@
 // xml parser
 #include <mxml.h>
 
+// add by Kimmy 10/15/2012
+#include <sys/types.h>
+#include <sys/stat.h>
+// end of change
+
 #include "public/adios_error.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
@@ -25,6 +30,7 @@
 #include "core/buffer.h"
 #include "core/util.h"
 #include "core/adios_logger.h"
+
 
 enum ADIOS_MPI_AMR_IO_TYPE
 {
@@ -1091,13 +1097,15 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
 
                 ioctl (f, LL_IOC_LOV_SETSTRIPE ,(void *) &lum);
 #ifdef HAVE_LUSTRE
+
                 md->g_num_ost = 1024;
                 rc = llapi_lov_get_uuids(f, uuids, &md->g_num_ost);
                 if (rc != 0)
                 {
                     log_warn ("MPI_AMR method: Lustre get uuids failed after creating the file: %s\n" ,strerror(errno));
                 }
-#endif
+
+#endif 
                 close (f);
 
                 MPI_File_open (MPI_COMM_SELF, fd->name
