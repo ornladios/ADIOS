@@ -303,9 +303,9 @@ static FMField
 
 static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     op_msg* msg = (op_msg*)vevent;
-    //fprintf(stderr, "recieved op_msg type %d step %d\n", msg->type, msg->step);
+    fprintf(stderr, "recieved op_msg type %d step %d\n", msg->type, msg->step);
     if(msg->type==2) {
-        //fprintf(stderr, "signal ackCondition\n");
+        fprintf(stderr, "signal ackCondition\n");
         CMCondition_signal(fp_read_data->fp_cm, ackCondition);
         ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     }

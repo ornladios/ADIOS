@@ -975,11 +975,7 @@ void* copy_buffer(void* buffer, int rank){
 static int var_handler(CManager cm, void *vevent, void *client_data, attr_list attrs){
     Var_msg* msg = (Var_msg*) vevent;
     EVtake_event_buffer(cm, msg);
-    /*
-    fprintf(stderr, 
-	    "rank %d <- var_msg : rank %d\n", 
-	    localWriteData->rank, 
-	    msg->rank);*/
+    fprintf(stderr, "rank %d <- var_msg : rank %d\n", localWriteData->rank, msg->rank);
     threaded_enqueue(&localWriteData->controlQueue, 
 		     msg, 
 		     VAR, 
@@ -992,11 +988,9 @@ static int flush_handler(CManager cm, void* vevent, void* client_data, attr_list
     Flush_msg* msg = (Flush_msg*) vevent;
     EVtake_event_buffer(cm, msg);
     // Don't have to take buffer since we're only copying the rank onto the stack.
-    /*
     fprintf(stderr, 
 	    "rank %d <- flush data : rank %d\n", 
 	    localWriteData->rank, msg->rank);
-    */
     threaded_enqueue(&localWriteData->controlQueue, 
 		     msg, 
 		     DATA_FLUSH, 
@@ -1008,7 +1002,7 @@ static int flush_handler(CManager cm, void* vevent, void* client_data, attr_list
 static int op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
     op_msg* msg = (op_msg*) vevent;
     EVtake_event_buffer(cm, msg);
-    //fprintf(stderr, "rank %d <- op_msg : rank %d type %d\n", localWriteData->rank, msg->process_id, msg->type);
+    fprintf(stderr, "rank %d <- op_msg : rank %d type %d\n", localWriteData->rank, msg->process_id, msg->type);
     if(msg->type == 1) {
         //fprintf(stderr, "recieved open\n");
         threaded_enqueue(&localWriteData->controlQueue, msg, OPEN, localWriteData->controlMutex, &localWriteData->controlCondition);
@@ -1076,19 +1070,20 @@ int control_thread(void* arg) {
 		//fprintf(stderr, "submitting data\n");
 		EVsubmit_general(localWriteData->dataSource, temp, data_free, localWriteData->attrs);
 	    } else if(controlMsg->type==OPEN) {
-		//fprintf(stderr, "recieved open message\n");
+		fprintf(stderr, "recieved open message\n");
                 op_msg* open = (op_msg*) controlMsg->data;
-                //fprintf(stderr, "has step %d\n", open->step);
+                fprintf(stderr, "rank %d has step %d\n", localWriteData->rank, open->step);
                 localWriteData->bridges[open->process_id].step = open->step;
                 if(open->step < currentStep) {
                     fprintf(stderr, "error! recieved open for past step...\n");
                 } else if (open->step == currentStep){
-                    //fprintf(stderr, "equal to step\n");
+                    fprintf(stderr, "equal to step\n");
                     thr_mutex_lock(localWriteData->openMutex);
 		    if(localWriteData->openCount==-1) localWriteData->openCount=0;
-                    localWriteData->openCount++;        
+                    localWriteData->openCount++;  
+                    fprintf(stderr, "opencount %d\n", localWriteData->openCount);      
 		    thr_mutex_unlock(localWriteData->openMutex);
-                    //fprintf(stderr, "send ack\n");
+                    fprintf(stderr, "send ack\n");
                     op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
                     ack->file_name = "hey";
                     ack->process_id = localWriteData->rank;
@@ -1096,23 +1091,37 @@ int control_thread(void* arg) {
                     ack->type = 2;
                     localWriteData->attrs = set_dst_rank_atom(localWriteData->attrs, open->process_id+1);
                     EVsubmit_general(localWriteData->opSource, ack, op_free, localWriteData->attrs);
-                    //fprintf(stderr, "continue\n");
+                    fprintf(stderr, "continue\n");
                 } else {
-                    //fprintf(stderr, "future step\n");
+                    fprintf(stderr, "future step\n");
                 }
             } else if(controlMsg->type==CLOSE) {
 		//fprintf(stderr, "recieved close message\n");
 		thr_mutex_lock(localWriteData->openMutex);
 		localWriteData->openCount--;
+                fprintf(stderr, "opencount %d\n", localWriteData->openCount);
 		thr_mutex_unlock(localWriteData->openMutex);
-		if(localWriteData->openCount==0) {
+		fprintf(stderr, "unlocked...\n");
+                 if(localWriteData->openCount==0) {
 		    threaded_dequeue(&localWriteData->dataQueue, 
-				     localWriteData->dataMutex, 
+                                    localWriteData->dataMutex, 
 				     &localWriteData->dataCondition);
-                    //fprintf(stderr, "end of step %d\n", currentStep);
+                    fprintf(stderr, "end of step %d\n", currentStep);
                     currentStep++;
                     //for all bridges if step == currentstep send ack
-                    
+                    int i;
+                    for(i=0; i<localWriteData->numBridges; i++) {
+                      if(localWriteData->bridges[i].step==currentStep) {
+                        localWriteData->openCount++;
+                        op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
+                        ack->file_name = "hey";
+                        ack->process_id = localWriteData->rank;
+                        ack->step = currentStep;
+                        ack->type = 2;
+                        localWriteData->attrs = set_dst_rank_atom(localWriteData->attrs, i+1);
+                        EVsubmit_general(localWriteData->opSource, ack, op_free, localWriteData->attrs);
+                      }
+                    }
 		}
 	    } else {
 		fprintf(stderr, "unrecognized control message in control thread\n");
