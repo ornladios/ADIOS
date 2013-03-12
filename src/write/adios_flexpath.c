@@ -125,8 +125,9 @@ typedef struct _local_write_data {
     int controlCondition;
     QueueNode* dataQueue;    
     thr_mutex_t dataMutex;
+    int emptyCondition;
     int dataCondition;
-
+    int max_queue_size;
     //global array distribution data;
     int global_count; //field to keep track if this file is handling global arrays.
     int sent_global_offsets;
@@ -1121,6 +1122,10 @@ int control_thread(void* arg) {
 		    threaded_dequeue(&localWriteData->dataQueue, 
 				     localWriteData->dataMutex, 
 				     &localWriteData->dataCondition);
+                    if(queue_count(&localWriteData->dataQueue, localWriteData->dataMutex)==localWriteData->max_queue_size) {
+                      CMCondition_signal(localWriteData->cm, localWriteData->emptyCondition);
+                    }
+                    localWriteData->emptyCondition = CMCondition_get(localWriteData->cm, NULL);
                 perr( "queue size %d\n", queue_count(&localWriteData->dataQueue, localWriteData->dataMutex));
                     perr( "end of step %d\n", currentStep);
                     currentStep++;
@@ -1171,9 +1176,15 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     attr_list listen_list = NULL;
     char * transport = NULL;
     transport = getenv("CMTransport");
-
+    localWriteData->max_queue_size=0;
     if(method!=NULL) {
-        //perr( "todo: recieved non null method struct\n");
+        perr( "recieved method struct\n");
+        if(method->parameters) {
+          perr("parameters:%s\n",method->parameters);
+          sscanf(method->parameters,"QUEUE_SIZE=%d;",&localWriteData->max_queue_size);
+          perr("max_queue_size:%d\n", localWriteData->max_queue_size);
+        }
+        sleep(1);
     }
     
     localWriteData->attrs = create_attr_list();
@@ -1201,6 +1212,7 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     // setup conditions
     localWriteData->controlCondition = CMCondition_get(localWriteData->cm, NULL);
     localWriteData->dataCondition = CMCondition_get(localWriteData->cm, NULL);
+    localWriteData->emptyCondition = CMCondition_get(localWriteData->cm, NULL);
 
     // fork communications thread
     int forked = CMfork_comm_thread(localWriteData->cm);   
@@ -1616,8 +1628,16 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 		     DATA_BUFFER, 
 		     localWriteData->dataMutex, 
 		     &localWriteData->dataCondition);
-    //perr( "sucessfully enqueued\n");
     localWriteData->fm->sndCount++;
+    perr( "sucessfully enqueued\n");
+    int c = 0;
+    while((c=queue_count(&localWriteData->dataQueue, localWriteData->dataMutex))>localWriteData->max_queue_size) {
+      perr("sleeping for queue size %d, current %d\n", localWriteData->max_queue_size, c);
+      CMCondition_wait(localWriteData->cm, localWriteData->emptyCondition);
+      perr("woke up from queue size sleep\n");
+    }
+
+ 
     // now gather offsets and send them via MPI to root
     struct adios_group_struct * g = fd->group;
     struct adios_var_struct * list = g->vars;
