@@ -303,9 +303,9 @@ static FMField
 
 static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     op_msg* msg = (op_msg*)vevent;
-    fprintf(stderr, "recieved op_msg type %d step %d\n", msg->type, msg->step);
+    perr( "recieved op_msg type %d step %d\n", msg->type, msg->step);
     if(msg->type==2) {
-        fprintf(stderr, "signal ackCondition\n");
+        perr( "signal ackCondition\n");
         CMCondition_signal(fp_read_data->fp_cm, ackCondition);
         ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     }
@@ -803,7 +803,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 	fclose(fp_in);
         build_bridge(&file_data_list->bridges[0]);
 
-        //fprintf(stderr, "waiting on ackCondition\n");        
+        //perr( "waiting on ackCondition\n");        
 
 	file_data_list->num_bridges = num_bridges;
 	// clean up of writer's files
@@ -957,21 +957,21 @@ void adios_read_flexpath_release_step(ADIOS_FILE *fp) {
     }
 }
 int adios_read_flexpath_advance_step(ADIOS_FILE *fp, int last, float timeout_sec) {
-    //fprintf(stderr, "debug:entering advance step\n");
+    //perr( "debug:entering advance step\n");
     int i=0;
     for(i=0; i<file_data_list->num_bridges; i++) {
-        //fprintf(stderr, "close bridge %d\n", i);
+        //perr( "close bridge %d\n", i);
         if(file_data_list->bridges[i].created) {
             op_msg close;
             close.step = fp->current_step;
             close.type = 0;
             close.process_id = file_data_list->rank;
             close.file_name = "test";
-            //fprintf(stderr, "submitting close\n");
+            //perr( "submitting close\n");
             EVsubmit(file_data_list->bridges[i].op_source, &close, NULL);
-            ///fprintf(stderr, "continuing\n");
+            ///perr( "continuing\n");
         }
-        //fprintf(stderr, "reopen bridge %d and wait for ack\n", i);
+        //perr( "reopen bridge %d and wait for ack\n", i);
         if(file_data_list->bridges[i].created) {
             op_msg open;
             open.step = fp->current_step +1;
@@ -980,9 +980,9 @@ int adios_read_flexpath_advance_step(ADIOS_FILE *fp, int last, float timeout_sec
             open.file_name = "test";
             EVsubmit(file_data_list->bridges[i].op_source, &open, NULL);
 
-            //fprintf(stderr, "waiting on ack from bridge %d\n", i);
+            //perr( "waiting on ack from bridge %d\n", i);
             CMCondition_wait(fp_read_data->fp_cm, ackCondition);
-            //fprintf(stderr, "resuming\n");
+            //perr( "resuming\n");
         }
     }
     fp->current_step++;
@@ -1259,7 +1259,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * fp,
             open_msg.step = 0;
             EVsubmit(fd->bridges[writer_index].op_source, &open_msg, NULL);
             CMCondition_wait(fp_read_data->fp_cm, ackCondition);
-            //fprintf(stderr, "resuming\n");
+            //perr( "resuming\n");
 	    Var_msg var;
 	    var.rank = fd->rank;
             var.var_name = strdup(v->varname);

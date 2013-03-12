@@ -13,7 +13,8 @@
 #define FP_DIM_ATTR_NAME "fp_dim"
 #define FP_NDIMS_ATTR_NAME "fp_ndims"
 
-#define perr(...) fprintf (stderr, __VA_ARGS__);
+#define perr(...) if(getenv("GT_DEBUG")) fprintf(stderr, __VA_ARGS__);
+
 //adios_logger(4,1, __VA_ARGS__);
 
 #define CONTACT_STR_LEN 50

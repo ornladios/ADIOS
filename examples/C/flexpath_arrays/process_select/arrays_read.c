@@ -43,7 +43,7 @@ int main (int argc, char ** argv)
     /* get everything from single process - rank 0 for now*/
     ADIOS_SELECTION process_select;
     process_select.type=ADIOS_SELECTION_WRITEBLOCK;
-    process_select.u.block.index = rank;
+    process_select.u.block.index = 0;
 
     /* read the size of arrays using local inq_var */
 
