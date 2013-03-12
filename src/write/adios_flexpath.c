@@ -275,6 +275,22 @@ void threaded_enqueue(QueueNode** queue, void* item, MsgType type, thr_mutex_t m
      //fprintf(stderr, "signaled exiting\n");
 }
 
+int queue_count(QueueNode** queue, thr_mutex_t mutex) {
+  thr_mutex_lock(mutex);
+  if(*queue==NULL) {
+    thr_mutex_unlock(mutex);
+    return 0;
+  }
+  int count = 1;
+  QueueNode* current = *queue;
+  while(current && current->next) {
+    count++;
+    current = current->next;
+  }
+  thr_mutex_unlock(mutex);
+  return count;
+}
+
 //remove from tail
 QueueNode* threaded_dequeue(QueueNode** queue, thr_mutex_t mutex, int* cond) {
     //if(localWriteData->rank>0) fprintf(stderr, "rank %d enter dequeue\n", localWriteData->rank);
@@ -1067,7 +1083,7 @@ int control_thread(void* arg) {
 		//fprintf(stderr, "adding dst attr\n");
 		localWriteData->attrs = set_dst_rank_atom(localWriteData->attrs, flushMsg->rank);
 		//send data on multiqueue stone
-		//fprintf(stderr, "submitting data\n");
+		fprintf(stderr, "rank %d sending step %d to rank %d\n", localWriteData->rank, currentStep, flushMsg->rank);
 		EVsubmit_general(localWriteData->dataSource, temp, data_free, localWriteData->attrs);
 	    } else if(controlMsg->type==OPEN) {
 		fprintf(stderr, "recieved open message\n");
@@ -1079,7 +1095,6 @@ int control_thread(void* arg) {
                 } else if (open->step == currentStep){
                     fprintf(stderr, "equal to step\n");
                     thr_mutex_lock(localWriteData->openMutex);
-		    if(localWriteData->openCount==-1) localWriteData->openCount=0;
                     localWriteData->openCount++;  
                     fprintf(stderr, "opencount %d\n", localWriteData->openCount);      
 		    thr_mutex_unlock(localWriteData->openMutex);
@@ -1099,18 +1114,21 @@ int control_thread(void* arg) {
 		//fprintf(stderr, "recieved close message\n");
 		thr_mutex_lock(localWriteData->openMutex);
 		localWriteData->openCount--;
+                fprintf(stderr, "queue size %d\n", queue_count(&localWriteData->dataQueue, localWriteData->dataMutex));
                 fprintf(stderr, "opencount %d\n", localWriteData->openCount);
 		thr_mutex_unlock(localWriteData->openMutex);
 		fprintf(stderr, "unlocked...\n");
                  if(localWriteData->openCount==0) {
 		    threaded_dequeue(&localWriteData->dataQueue, 
-                                    localWriteData->dataMutex, 
+				     localWriteData->dataMutex, 
 				     &localWriteData->dataCondition);
+                fprintf(stderr, "queue size %d\n", queue_count(&localWriteData->dataQueue, localWriteData->dataMutex));
                     fprintf(stderr, "end of step %d\n", currentStep);
                     currentStep++;
                     //for all bridges if step == currentstep send ack
                     int i;
                     for(i=0; i<localWriteData->numBridges; i++) {
+                      fprintf(stderr, "bridge %d\n", i);
                       if(localWriteData->bridges[i].step==currentStep) {
                         localWriteData->openCount++;
                         op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
@@ -1180,7 +1198,7 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     localWriteData->controlMutex = thr_mutex_alloc();
     localWriteData->dataMutex = thr_mutex_alloc();
     localWriteData->openMutex = thr_mutex_alloc();
-    localWriteData->openCount = -1;
+    localWriteData->openCount = 0;
     // setup conditions
     localWriteData->controlCondition = CMCondition_get(localWriteData->cm, NULL);
     localWriteData->dataCondition = CMCondition_get(localWriteData->cm, NULL);
@@ -1713,7 +1731,9 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) {
     //fprintf(stderr, "debug: adios_flexpath_finalize\n");
     while(localWriteData->dataQueue!=NULL) {
-        //fprintf(stderr, "rank %d data still in data queue\n", localWriteData->rank);
+        fprintf(stderr, "queue size %d\n", queue_count(&localWriteData->dataQueue, localWriteData->dataMutex));
+      
+        fprintf(stderr, "rank %d data still in data queue\n", localWriteData->rank);
         sleep(1);
     }
 }

@@ -38,7 +38,7 @@ int main (int argc, char ** argv)
     
     /* write data 200 times so that it forms a stream */
     int ii=0;
-    for(ii=0; ii<30; ii++) {
+    for(ii=0; ii<6; ii++) {
         
         /* initialize 2d array to:
             (rank*1000000) + (stream step * 1000) + offset */
