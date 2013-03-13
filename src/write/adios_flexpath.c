@@ -251,7 +251,7 @@ void op_free(void* temp, void* a) {
 
 //add to head
 void threaded_enqueue(QueueNode** queue, void* item, MsgType type, thr_mutex_t mutex, int* cond) {
-    //if(localWriteData->rank>0) perr( "rank %d enter enqueue\n", localWriteData->rank);
+    fp_log("QUEUE","rank %d enter enqueue\n", localWriteData->rank);
     //perr( "attempting enqueue\n");
     thr_mutex_lock(mutex);
     //perr( "got lock\n");
@@ -271,7 +271,6 @@ void threaded_enqueue(QueueNode** queue, void* item, MsgType type, thr_mutex_t m
     *cond = CMCondition_get(localWriteData->cm, NULL);
     //perr( "done signal1\n");
 
-    //if(localWriteData->rank>0) perr( "rank %d exit enqueue\n", localWriteData->rank);
     //reset condition
     thr_mutex_unlock(mutex);
      //perr( "signaled exiting\n");
@@ -295,7 +294,7 @@ int queue_count(QueueNode** queue, thr_mutex_t mutex) {
 
 //remove from tail
 QueueNode* threaded_dequeue(QueueNode** queue, thr_mutex_t mutex, int* cond) {
-    //if(localWriteData->rank>0) perr( "rank %d enter dequeue\n", localWriteData->rank);
+    fp_log("QUEUE", "rank %d enter dequeue\n", localWriteData->rank);
     thr_mutex_lock(mutex);
     if(*queue==NULL) {
         //empty queue, wait for item
@@ -320,13 +319,12 @@ QueueNode* threaded_dequeue(QueueNode** queue, thr_mutex_t mutex, int* cond) {
         *queue = NULL;
     }
     thr_mutex_unlock(mutex);
-    //if(localWriteData->rank>0) perr( "rank %d exit dequeue\n", localWriteData->rank);
     return tail;  // match holds either the matching item or NULL
 }
 
 //peek at tail
 QueueNode* threaded_peek(QueueNode** queue, thr_mutex_t mutex, int* cond) {
-    //perr( "rank %d enter peek\n", localWriteData->rank);
+    fp_log("QUEUE", "rank %d enter peek\n", localWriteData->rank);
     thr_mutex_lock(mutex);
     if(*queue==NULL) {
         //if(localWriteData->rank>0) perr( "rank %d peek waiting\n", localWriteData->rank);
@@ -342,7 +340,7 @@ QueueNode* threaded_peek(QueueNode** queue, thr_mutex_t mutex, int* cond) {
         tail=tail->next;
     }
     thr_mutex_unlock(mutex);
-    //perr( "rank %d exit peek\n", localWriteData->rank);
+    fp_log("QUEUE", "rank %d exit peek\n", localWriteData->rank);
     return tail;
 }
 

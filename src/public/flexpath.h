@@ -13,7 +13,18 @@
 #define FP_DIM_ATTR_NAME "fp_dim"
 #define FP_NDIMS_ATTR_NAME "fp_ndims"
 
-#define perr(...) if(getenv("GT_DEBUG")) fprintf(stderr, __VA_ARGS__);
+#define perr(...) if(getenv("FP_DEBUG")) fprintf(stderr, __VA_ARGS__);
+
+//todo: update to handle multiple log names in environment variable
+#define fp_log(LOG, ...)                             \
+            if(getenv("FP_DEBUG")) {    \
+                if(strcmp(getenv("FP_DEBUG"),"ALL")==0) {          \
+                    fprintf(stderr, __VA_ARGS__);   \
+                } else if(strcmp(getenv("FP_DEBUG"),LOG)==0) {     \
+                    fprintf(stderr, __VA_ARGS__);   \
+                }                                   \
+            }
+            
 
 //adios_logger(4,1, __VA_ARGS__);
 
