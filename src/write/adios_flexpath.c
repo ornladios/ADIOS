@@ -44,6 +44,7 @@ typedef struct _stone {
     int myNum;
     int theirNum;
     int step;
+    int opened;
     char* contact;
 } Stone;
 
@@ -1024,7 +1025,7 @@ static int op_handler(CManager cm, void* vevent, void* client_data, attr_list at
         threaded_enqueue(&localWriteData->controlQueue, msg, OPEN, localWriteData->controlMutex, &localWriteData->controlCondition);
     } else {
         //perr( "recieved close\n");
-        threaded_enqueue(&localWriteData->controlQueue, NULL, CLOSE, localWriteData->controlMutex, &localWriteData->controlCondition);
+        threaded_enqueue(&localWriteData->controlQueue, msg, CLOSE, localWriteData->controlMutex, &localWriteData->controlCondition);
     }
     return 0;
 }
@@ -1071,6 +1072,8 @@ int control_thread(void* arg) {
 		EVreturn_event_buffer(localWriteData->cm,controlMsg->data);
 	    } else if(controlMsg->type==DATA_FLUSH) { 
 		//perr( "recieved data flush message\n");
+                
+                    
 		//make copy of buffer
 		dataNode = threaded_peek(&localWriteData->dataQueue, 
 					 localWriteData->dataMutex, 
@@ -1082,7 +1085,12 @@ int control_thread(void* arg) {
 		//add dst attr 
 		//perr( "adding dst attr\n");
 		localWriteData->attrs = set_dst_rank_atom(localWriteData->attrs, flushMsg->rank);
-		//send data on multiqueue stone
+		if(!localWriteData->bridges[flushMsg->rank].opened) {
+                  perr("rank %d data flush setting bridge %d to open\n", localWriteData->rank, flushMsg->rank);
+                  localWriteData->bridges[flushMsg->rank].opened=1;
+                  localWriteData->openCount++;
+                }
+                //send data on multiqueue stone
 		perr( "rank %d sending step %d to rank %d\n", localWriteData->rank, currentStep, flushMsg->rank);
 		EVsubmit_general(localWriteData->dataSource, temp, data_free, localWriteData->attrs);
 	    } else if(controlMsg->type==OPEN) {
@@ -1096,6 +1104,8 @@ int control_thread(void* arg) {
                     perr( "equal to step\n");
                     thr_mutex_lock(localWriteData->openMutex);
                     localWriteData->openCount++;  
+                    perr( "rank %d setting bridge %d to open\n", localWriteData->rank, open->process_id);
+                    localWriteData->bridges[open->process_id].opened = 1;
                     perr( "opencount %d\n", localWriteData->openCount);      
 		    thr_mutex_unlock(localWriteData->openMutex);
                     perr( "send ack\n");
@@ -1111,9 +1121,11 @@ int control_thread(void* arg) {
                     perr( "future step\n");
                 }
             } else if(controlMsg->type==CLOSE) {
+                op_msg* close = (op_msg*) controlMsg->data;
 		//perr( "recieved close message\n");
 		thr_mutex_lock(localWriteData->openMutex);
 		localWriteData->openCount--;
+                localWriteData->bridges[close->process_id].opened=0;
                 perr( "queue size %d\n", queue_count(&localWriteData->dataQueue, localWriteData->dataMutex));
                 perr( "opencount %d\n", localWriteData->openCount);
 		thr_mutex_unlock(localWriteData->openMutex);
@@ -1135,6 +1147,8 @@ int control_thread(void* arg) {
                       perr( "bridge %d\n", i);
                       if(localWriteData->bridges[i].step==currentStep) {
                         localWriteData->openCount++;
+                        perr( "rank %d setting bridge %d to open\n", localWriteData->rank, i); 
+                        localWriteData->bridges[i].opened = 1;
                         op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
                         ack->file_name = "hey";
                         ack->process_id = localWriteData->rank;
@@ -1351,6 +1365,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
             //perr( "generated contact list\n");
             localWriteData->bridges[numBridges].myNum = EVcreate_bridge_action(localWriteData->cm, contact_list, stone_num);
             //perr( "created bridge action\n");
+            localWriteData->bridges[numBridges].opened = 0;
             localWriteData->bridges[numBridges].step = 0;
             localWriteData->bridges[numBridges].theirNum = stone_num;
             localWriteData->bridges[numBridges].contact = strdup(in_contact);

@@ -951,7 +951,7 @@ void adios_read_flexpath_release_step(ADIOS_FILE *fp) {
             close.step = fp->current_step;
             close.type = 0;
             close.process_id = file_data_list->rank;
-            close.file_name = fp->path;
+            close.file_name = "test";
             EVsubmit(file_data_list->bridges[i].op_source, &close, NULL);
         }
     }
