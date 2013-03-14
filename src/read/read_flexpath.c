@@ -314,7 +314,7 @@ static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_lis
 static int
 group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
-    //perr("debug: group_msg_handler called %d.\n", file_data_list->rank);
+    perr("debug: group_msg_handler called %d.\n", file_data_list->rank);
     EVtake_event_buffer(fp_read_data->fp_cm, vevent);
     evgroup * msg = (evgroup*)vevent;
     flexpath_file_data * fp = (flexpath_file_data*)client_data;
@@ -1068,9 +1068,9 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE* fp, int blocking)
     for(i = 0; i<num_sendees; i++)
     {
 	int sendee = fd->sendees[i];
+        fp_log("MSG","rank %d sending flush to %d\n", fp_read_data->fp_comm_rank, sendee);
 	/*
         if(file_data_list->bridges[sendee].created) {
-            perr("rank %d sending flush to %d\n", fp_read_data->fp_comm_rank, sendee);
         } else {
             perr("rank %d bridge %d not built!!!\n", fp_read_data->fp_comm_rank, sendee);
         }
@@ -1141,10 +1141,10 @@ get_writer_displacements(int rank, const ADIOS_SELECTION * sel, global_var* gvar
 
 int
 need_writer(int j, const ADIOS_SELECTION* sel, evgroup_ptr gp, char* varname) {
-    //perr("\n\n\n\n Checking rank %d against a selector\n", j);
+    perr("\n\n\n\n Checking rank %d against a selector\n", j);
 
     while(file_data_list->gp==NULL) {
-        //perr("rank %d waiting for group info\n", file_data_list->rank);
+        perr("rank %d waiting for group info\n", file_data_list->rank);
         CMsleep(fp_read_data->fp_cm,1);
     }
 
@@ -1159,29 +1159,29 @@ need_writer(int j, const ADIOS_SELECTION* sel, evgroup_ptr gp, char* varname) {
         int sel_offset = sel->u.bb.start[i];
         //grab sel dimensions(size)
         int sel_size = sel->u.bb.count[i];
-        //perr("sel offset %d with val %d and size %d\n", i, sel_offset, sel_size);
+        perr("sel offset %d with val %d and size %d\n", i, sel_offset, sel_size);
 
 
         //select rank offsets
         int rank_offset = var_offsets.local_offsets[j*var_offsets.offsets_per_rank+i];
         //grab rank dimencsions(size)
         int rank_size =var_offsets.local_dimensions[j*var_offsets.offsets_per_rank+i];
-        //perr("rank offset %d with val %d and size %d\n", i, rank_offset, rank_size);
+        perr("rank offset %d with val %d and size %d\n", i, rank_offset, rank_size);
 
         //if rank offset < selector offset and rank offset +size-1 > selector offset
 	
         if((rank_offset <= sel_offset) && (rank_offset + rank_size - 1 >=sel_offset)) {
-	    // perr("matched overlap type 1\n");
+	     perr("matched overlap type 1\n");
         }
         //if rank offset < selector offset + selector size -1 and rank offset+size-1 > selector offset +selector size -1
         else if((rank_offset <= sel_offset + sel_size - 1) && (rank_offset+rank_size-1>=sel_offset+sel_size-1)) {
-            //perr("matched overlap type 2\n");
+            perr("matched overlap type 2\n");
         } else {
-            //perr("overlap not present\n\n");
+            perr("overlap not present\n\n");
             return 0;
         }
     }
-    //perr("overlap detected\n\n");
+    perr("overlap detected\n\n");
     return 1;
 }
 
@@ -1193,7 +1193,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * fp,
 					   int nsteps,
 					   void * data)
 {
-    //perr( "debug:schedule_read_byid\n");
+    perr( "debug:schedule_read_byid\n");
     flexpath_file_data * fd = (flexpath_file_data*)(fp->fh);
     flexpath_var_info * v = fd->var_list;
     while(v){
@@ -1284,12 +1284,15 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * fp,
     }
     case ADIOS_SELECTION_BOUNDINGBOX:
     {
+        fp_log("BOUNDING", "bounding box scheduled read\n");
         int j=0;
 	int need_count = 0;
 	array_displacements * all_disp = NULL;	
         for(j=0; j<fd->size; j++) {
+            fp_log("BOUNDING", "checking writer %d\n", j);
             int reader=0;	    	    
-            if(need_writer(j, sel, fd->gp, v->varname)==1){		
+            if(need_writer(j, sel, fd->gp, v->varname)==1){
+                fp_log("BOUNDING", "yes it's neededi\n");		
 		need_count++;
                 reader = j;
 		global_var * gvar = find_gbl_var(fd->gp->vars, v->varname, fd->gp->num_vars);
@@ -1297,10 +1300,12 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * fp,
 		all_disp = realloc(all_disp, sizeof(array_displacements)*need_count);
 		all_disp[need_count-1] = *displ;
             } else {
+                fp_log("BOUNDING", "no it's not\n");		
                 continue;
             }
             int i = 0;
             int found = 0;
+            fp_log("BOUNDING", "remember who to read from\n");
             for(i=0; i<fd->num_sendees; i++) {
                 if(fd->sendees[i]==reader) {
                     found=1;
@@ -1313,8 +1318,8 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * fp,
                 fd->sendees[fd->num_sendees-1] = reader;
             }
             if(!fd->bridges[reader].created) {
-                //perr("rank %d building bridge to %d\n", 
-		//    fp_read_data->fp_comm_rank, reader);
+                perr("rank %d building bridge to %d\n", 
+		    fp_read_data->fp_comm_rank, reader);
                 build_bridge(&(fd->bridges[reader]));
                 op_msg open_msg;
                 open_msg.process_id = file_data_list->rank;
@@ -1324,19 +1329,19 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * fp,
 	        Var_msg var;
 	        var.rank = fd->rank;
                 var.var_name = strdup(v->varname);
-                //perr("1 sending %s from %d to %p aka %d\n", 
-		//   var.var_name, var.rank, fd->bridges[reader].var_source, reader);
+                perr("1 sending %s from %d to %p aka %d\n", 
+		   var.var_name, var.rank, fd->bridges[reader].var_source, reader);
 	        EVsubmit(fd->bridges[reader].var_source, &var, NULL);
             } else {
 	        Var_msg var;
 	        var.rank = fd->rank;
                 var.var_name = strdup(v->varname);
-                //perr("2 sending %s from %d to %p aka %d\n", 
-		//   var.var_name, var.rank, fd->bridges[reader].var_source, reader);
+                perr("2 sending %s from %d to %p aka %d\n", 
+		   var.var_name, var.rank, fd->bridges[reader].var_source, reader);
 	        EVsubmit(fd->bridges[reader].var_source, &var, NULL);
             }
-            //perr("rank %d sent var msg to %d\n", 
-	    // fp_read_data->fp_comm_rank,reader);
+            perr("rank %d sent var msg to %d\n", 
+	     fp_read_data->fp_comm_rank,reader);
 	}
 	v->displ = all_disp;
 	v->num_displ = need_count;

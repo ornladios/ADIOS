@@ -991,7 +991,7 @@ void* copy_buffer(void* buffer, int rank){
 static int var_handler(CManager cm, void *vevent, void *client_data, attr_list attrs){
     Var_msg* msg = (Var_msg*) vevent;
     EVtake_event_buffer(cm, msg);
-    perr( "rank %d <- var_msg : rank %d\n", localWriteData->rank, msg->rank);
+    fp_log("MSG", "rank %d <- var_msg : rank %d\n", localWriteData->rank, msg->rank);
     threaded_enqueue(&localWriteData->controlQueue, 
 		     msg, 
 		     VAR, 
@@ -1642,13 +1642,8 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 		     localWriteData->dataMutex, 
 		     &localWriteData->dataCondition);
     localWriteData->fm->sndCount++;
-    perr( "sucessfully enqueued\n");
+    perr( "close sucessfully enqueued\n");
     int c = 0;
-    while((c=queue_count(&localWriteData->dataQueue, localWriteData->dataMutex))>localWriteData->max_queue_size) {
-      perr("sleeping for queue size %d, current %d\n", localWriteData->max_queue_size, c);
-      CMCondition_wait(localWriteData->cm, localWriteData->emptyCondition);
-      perr("woke up from queue size sleep\n");
-    }
 
  
     // now gather offsets and send them via MPI to root
@@ -1656,7 +1651,8 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     struct adios_var_struct * list = g->vars;
 
     if(localWriteData->global_count > 0 && !localWriteData->sent_global_offsets){	
-	// process local offsets here	
+	fp_log("BOUNDING", "check offsets\n");
+        // process local offsets here	
 	int num_gbl_vars = 0;
         global_var * gbl_vars = NULL;
 	int num_vars = 0;
@@ -1696,26 +1692,26 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 		    gbl_vars = realloc(gbl_vars, sizeof(global_var) * num_gbl_vars);
 		    gbl_vars[num_gbl_vars - 1].name = strdup(list->name);
 		    gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
-		    //perr("\n\n\n\t\tnoffset_structs: %d\n", 
-		    // gbl_vars[num_gbl_vars - 1].noffset_structs);
+		    perr("\n\n\n\t\tnoffset_structs: %d\n", 
+		     gbl_vars[num_gbl_vars - 1].noffset_structs);
 		    gbl_vars[num_gbl_vars - 1].offsets = ostruct;
 		    int i;			   
 		    i = 0;
-		    //perr("\t\t\tall offsets for var: %s\n", list->name);
+		    perr("\t\t\tall offsets for var: %s\n", list->name);
 		    while(i<commsize * num_local_offsets){
 			int j;
-			/*
+			
 			for(j=0; j<num_local_offsets;j++){
 			    perr("\t\t\t%d ", all_offsets[i]);  
 			    i++;
 			}			
 			perr("\n");				
-			*/
+			
 		    }
-		    //perr("\n");
-		    //perr("\t\t\tall local_dims for var: %s\n", list->name);
+		    perr("\n");
+		    perr("\t\t\tall local_dims for var: %s\n", list->name);
 		    i = 0;
-		    /*
+		    
 		    while(i<commsize * num_local_offsets){
 			int j;				
 			for(j=0; j<num_local_offsets;j++){
@@ -1726,7 +1722,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 			
 		    }
 		    perr("\n");
-		    */
+		    
 		}		
 	    }
 	    list=list->next;
@@ -1734,18 +1730,18 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	}
 	if(myrank == 0){
 	    int i;
-	    /*
+	    
 	    for(i=0; i<num_gbl_vars; i++){
 		perr("global_var: %s has local offsets\n", gbl_vars[i].name);
 	    }
-	    */
+	    
 	    evgroup * gp = (evgroup*)malloc(sizeof(evgroup));
 	    gp->num_vars = num_gbl_vars;
-	    //perr("num global vars %d\n", num_gbl_vars);
+	    perr("num global vars %d\n", num_gbl_vars);
             gp->vars = gbl_vars;
 	    localWriteData->gp = gp;
 	    localWriteData->attrs = set_size_atom(localWriteData->attrs, localWriteData->size);
-	    //perr("size:%d\n\n\n", localWriteData->size);
+	    perr("size:%d\n\n\n", localWriteData->size);
             EVsubmit(localWriteData->offsetSource, gp, localWriteData->attrs);
 	    /*
 	    threaded_enqueue(&localWriteData->offsetQueue, 
@@ -1756,6 +1752,13 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	    */
 	}
 	localWriteData->sent_global_offsets = 1;
+    }
+
+    fp_log("QUEUE", "queue check...\n");
+    while((c=queue_count(&localWriteData->dataQueue, localWriteData->dataMutex))>localWriteData->max_queue_size) {
+      perr("sleeping for queue size %d, current %d\n", localWriteData->max_queue_size, c);
+      CMCondition_wait(localWriteData->cm, localWriteData->emptyCondition);
+      perr("woke up from queue size sleep\n");
     }
     //perr( "exiting close\n");
 }
