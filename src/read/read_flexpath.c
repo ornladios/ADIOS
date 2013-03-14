@@ -47,10 +47,6 @@
 #include "dmalloc.h"
 #endif
 
-
-#define MAX(a, b) ((a<b)?(b):(a))
-#define MIN(a, b) ((a>b)?(b):(a))
-
 /*
  * Contains start & counts for each dimension for each writer.
  */
