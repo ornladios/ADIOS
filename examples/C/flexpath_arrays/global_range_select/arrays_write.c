@@ -34,20 +34,23 @@ int main (int argc, char ** argv)
     strcpy (filename, "arrays");
     adios_init ("arrays.xml");
     
+    
     int ii;
     for(ii = 0; ii<30; ii++){
       for (i = 0; i < NX; i++)
         t[i] = rank * NX + i*ii;
+      fprintf(stderr, "open\n");
       adios_open (&adios_handle, "temperature", filename, "w", &comm);
+      fprintf(stderr, "scalar write\n");
       adios_write (adios_handle, "NX", &NX);
       adios_write (adios_handle, "NY", &NY);
+      fprintf(stderr, "array writes\n");
       adios_write (adios_handle, "size", &size);
       adios_write (adios_handle, "rank", &rank);
       adios_write (adios_handle, "var_2d_array", t);
       fprintf(stderr, "in app: rank: %d, size: %d, NX: %d\n", rank, size, NX);
       adios_close (adios_handle);
-
-      MPI_Barrier (comm);
+      fprintf(stderr, "commited write %d\n", ii);
     }
     adios_finalize (rank);
 

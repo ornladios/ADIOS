@@ -327,7 +327,7 @@ QueueNode* threaded_peek(QueueNode** queue, thr_mutex_t mutex, int* cond) {
     fp_log("QUEUE", "rank %d enter peek\n", localWriteData->rank);
     thr_mutex_lock(mutex);
     if(*queue==NULL) {
-        //if(localWriteData->rank>0) perr( "rank %d peek waiting\n", localWriteData->rank);
+        fp_log("QUEUE", "rank %d peek waiting\n", localWriteData->rank);
         thr_mutex_unlock(mutex);
         //perr( "start wait2\n");
         int res = CMCondition_wait(localWriteData->cm, *cond);
@@ -1758,9 +1758,9 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     while((c=queue_count(&localWriteData->dataQueue, localWriteData->dataMutex))>localWriteData->max_queue_size) {
       perr("sleeping for queue size %d, current %d\n", localWriteData->max_queue_size, c);
       CMCondition_wait(localWriteData->cm, localWriteData->emptyCondition);
-      perr("woke up from queue size sleep\n");
+      perr("woke up from queue size sleep %d, %d\n", localWriteData->max_queue_size, queue_count(&localWriteData->dataQueue, localWriteData->dataMutex));
     }
-    //perr( "exiting close\n");
+    perr( "exiting close\n");
 }
 
 extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) {
