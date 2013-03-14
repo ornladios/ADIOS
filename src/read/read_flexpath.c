@@ -568,6 +568,8 @@ data_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
         f++;
     }
     file_data_list->polling = 0;
+    CMCondition_signal(fp_read_data->fp_cm, ackCondition);
+    ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     return 0;
 }
 
@@ -581,6 +583,8 @@ format_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     fp->id_len = msg->id_len;
     
     fp->polling = 0;
+    CMCondition_signal(fp_read_data->fp_cm, ackCondition);
+    ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     return 0;
 }
 
@@ -830,9 +834,10 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 	// telling writer to flush format.
 	EVsubmit(file_data_list->bridges[0].flush_source, &msg, NULL);
 	
-	while(file_data_list->polling) {
-	    CMsleep(fp_read_data->fp_cm, 1);
-	}
+	CMCondition_wait(fp_read_data->fp_cm, ackCondition);
+	/* while(file_data_list->polling) { */
+	/*     CMsleep(fp_read_data->fp_cm, 1); */
+	/* } */
 	lengths[0] = file_data_list->rep_id_len;
 	lengths[1] = file_data_list->id_len;
     }
@@ -925,9 +930,10 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     file_data_list->polling = 1;
     EVsubmit(file_data_list->bridges[0].flush_source, &msg, NULL);
     perr("myrank: %d %d %s\n", myrank, __LINE__, __FILE__);
-    while(file_data_list->polling) {
-        CMsleep(fp_read_data->fp_cm, 1);
-    }
+    CMCondition_wait(fp_read_data->fp_cm, ackCondition);
+    /* while(file_data_list->polling) { */
+    /*     CMsleep(fp_read_data->fp_cm, 1); */
+    /* } */
     perr("myrank: %d %d %s\n", myrank, __LINE__, __FILE__);
     return fp;
 }
@@ -1080,10 +1086,11 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE* fp, int blocking)
     if(blocking)
     {
 	fd->polling = 1;
-	while(fd->polling)
-	{
-            CMsleep(fp_read_data->fp_cm, 1);
-	}
+	CMCondition_wait(fp_read_data->fp_cm, ackCondition);
+	/* while(fd->polling) */
+	/* { */
+        /*     CMsleep(fp_read_data->fp_cm, 1); */
+	/* } */
     }
     return 0;
 }
