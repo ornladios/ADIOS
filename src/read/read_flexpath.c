@@ -116,11 +116,11 @@ typedef struct _flexpath_file_data
     int rank;
     int size;
     int valid;
-    struct _flexpath_file_data * next;
+
     int num_bridges;
     bridge_info *bridges;
     FMFormat current_format;
-    int polling;
+
     int num_vars;
     flexpath_var_info * var_list;
     int num_gp; // for array distribution.
@@ -134,7 +134,7 @@ typedef struct _flexpath_file_data
 
     int* sendees;
     int num_sendees;
-
+    struct _flexpath_file_data * next;
 } flexpath_file_data;
 
 
@@ -188,7 +188,6 @@ new_flexpath_file_data(const char * fname)
     fp->num_bridges = 0;
     fp->num_gp = 0;
     fp->valid_evgroup = 0;
-    fp->polling = 1;
     fp->num_vars = 0;
     fp->sendees = NULL;
     fp->num_sendees = 0;    
@@ -518,7 +517,7 @@ data_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
         j++;
         f++;
     }
-    file_data_list->polling = 0;
+    
     CMCondition_signal(fp_read_data->fp_cm, ackCondition);
     ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     return 0;
@@ -533,7 +532,6 @@ format_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     fp->rep_id_len = msg->rep_id_len;
     fp->id_len = msg->id_len;
     
-    fp->polling = 0;
     CMCondition_signal(fp_read_data->fp_cm, ackCondition);
     ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     return 0;
@@ -638,10 +636,6 @@ adios_read_flexpath_open_stream(const char * fname,
 ADIOS_FILE*
 adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 {
-    //perr( "debug: entering adios_read_flexpath_fopen\n");
-    //search linked list for connection, if not there add connection send open, otherwise use connection
-    // connection information for this file does not yet exist.
-    // establish graph for this file.
     ADIOS_FILE *fp = malloc(sizeof(ADIOS_FILE));    
     if(!fp){
 	adios_error (err_no_memory, "Cannot allocate memory for file info.\n");
@@ -655,10 +649,8 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 	file_data_list->data_stone = EValloc_stone(fp_read_data->fp_cm);	
 	file_data_list->comm = comm;
 
-#ifndef _NOMPI      
 	MPI_Comm_size(file_data_list->comm, &(file_data_list->size));
 	MPI_Comm_rank(file_data_list->comm, &(file_data_list->rank));
-#endif
 
 	EVassoc_terminal_action(fp_read_data->fp_cm,
 				file_data_list->data_stone,
@@ -719,6 +711,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
             fp_out = fopen(reader_ready_filename, "w");
             fprintf(fp_out, "ready");
             fclose(fp_out);
+	    free(recvbuf);
         }
 
 	FILE * read_ready = fopen(reader_ready_filename, "w");
@@ -732,8 +725,10 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
         }
         fclose(fp_in);
         fp_in = fopen(writer_info_filename, "r");
-        while(!fp_in)
+        while(!fp_in){
+	    CMsleep(fp_read_data->fp_cm, 1);
             fp_in = fopen(writer_info_filename, "r");
+	}
 
 	char in_contact[50] = "";
 	file_data_list->bridges = malloc(sizeof(bridge_info));
@@ -762,6 +757,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     }
     fp->fh = (uint64_t)file_data_list;
     fp->current_step = 0;
+
     op_msg open_msg;    
     open_msg.process_id = file_data_list->rank;
     open_msg.file_name = strdup(file_data_list->file_name);
@@ -778,7 +774,6 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 	Flush_msg msg;
 	msg.rank = fp_read_data->fp_comm_rank;
 	msg.type = FORMAT;
-	file_data_list->polling = 1;
 	// telling writer to flush format.
 	EVsubmit(file_data_list->bridges[0].flush_source, &msg, NULL);
 	
@@ -804,7 +799,6 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 
     FMContext my_context = create_local_FMcontext();
     if(my_context != NULL) {
-        //FMFormat my_format = FMformat_from_ID(my_context, arr);
 	FMFormat my_format = load_external_format_FMcontext(my_context, 
 							    file_data_list->arr, 
 							    file_data_list->id_len, 
@@ -815,25 +809,17 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 	}
 	file_data_list->current_format = my_format;
     }
-    file_data_list->polling = 0;
+    // TODO: if my_context is null, then what?
     int var_count = 0;
     FMStructDescList struct_list = FMcopy_struct_list(format_list_of_FMFormat(file_data_list->current_format));
     FMField *f = struct_list[0].field_list;
-    // need to construct var lists here.
-    while(f->field_name != NULL){    
-	//flexpath_var_info * curr_var = (flexpath_var_info*)malloc(sizeof(flexpath_var_info));
+    
+    while(f->field_name != NULL){           
 	flexpath_var_info * curr_var = new_flexpath_var_info(f->field_name, var_count, f->field_size);
-	//curr_var->num_chunks = file_data_list->num_bridges;
 	curr_var->num_chunks = 1;
-	curr_var->chunks = (flexpath_var_chunk*)malloc(sizeof(flexpath_var_chunk)*curr_var->num_chunks);
+	curr_var->chunks = malloc(sizeof(flexpath_var_chunk)*curr_var->num_chunks);
 	memset(curr_var->chunks, 0, sizeof(flexpath_var_chunk)*curr_var->num_chunks);
 
-	int i;
-	for(i = 0; i<curr_var->num_chunks; i++){	
-	    flexpath_var_chunk * c = &curr_var->chunks[i];
-	    c->has_data = 0;
-	    c->data = NULL;
-	}
 	flexpath_var_info * temp = file_data_list->var_list;
 	
 	curr_var->next = temp;
@@ -843,8 +829,9 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
         var_count++;
         f++;
     }
+
     fp->nvars = var_count;
-    fp->var_namelist = (char **) malloc(var_count * sizeof(char *));
+    fp->var_namelist = malloc(var_count * sizeof(char *));
     f = struct_list[0].field_list;  // f is top-level field list 
     int i=0;
     while(f->field_name != NULL) {
@@ -856,11 +843,10 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 			    file_data_list->data_stone,
 			    struct_list, data_handler,
 			    (void*)file_data_list);
-
+    free(struct_list);
     Flush_msg msg;
     msg.type = DATA;
     msg.rank = myrank;
-    file_data_list->polling = 1;
     EVsubmit(file_data_list->bridges[0].flush_source, &msg, NULL);
     CMCondition_wait(fp_read_data->fp_cm, ackCondition);
     return fp;
@@ -1000,14 +986,8 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE* fp, int blocking)
 	*/
 	EVsubmit(file_data_list->bridges[sendee].flush_source, &msg, NULL);
     }
-    if(blocking)
-    {
-	fd->polling = 1;
+    if(blocking){    
 	CMCondition_wait(fp_read_data->fp_cm, ackCondition);
-	/* while(fd->polling) */
-	/* { */
-        /*     CMsleep(fp_read_data->fp_cm, 1); */
-	/* } */
     }
     return 0;
 }
