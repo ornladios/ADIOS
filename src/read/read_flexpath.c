@@ -318,6 +318,8 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     fp->valid_evgroup = 1;
     global_var * vars = msg->vars;
     int num_vars = msg->num_vars;
+    CMCondition_signal(fp_read_data->fp_cm, ackCondition);
+    ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     return 0;
 
 }
@@ -870,6 +872,7 @@ void adios_read_flexpath_release_step(ADIOS_FILE *fp) {
         }
     }
 }
+
 int adios_read_flexpath_advance_step(ADIOS_FILE *fp, int last, float timeout_sec) {
     int i=0;
     for(i=0; i<file_data_list->num_bridges; i++) {
@@ -914,42 +917,21 @@ int adios_read_flexpath_close(ADIOS_FILE * fp)
     }
     /*
     start to cleanup.  Clean up var_lists for now, as the
-    data has already been COPIED over to ADIOS_VARINFO structs
-    that the user maintains a copy of.  Leave stone info in place
-    will handle "invalid" graph setups later
+    data has already been copied over to ADIOS_VARINFO structs
+    that the user maintains a copy of. 
     */
     flexpath_var_info * v = file->var_list;
-    while(v)
-    {
-    	if(v->chunks == NULL)
-    	{
-    	    perr( "NULL\n");
-    	    break;
-    	}
-    	//flexpath_var_chunk * c = &v->chunks[0];
-    	//flexpath_var_chunk * c_tmp = c;
+    while(v){        	
     	// free chunks; data has already been copied to user
     	int i;
-    	for(i = 0; i<v->num_chunks; i++)
-    	{
+    	for(i = 0; i<v->num_chunks; i++){    	
     	    flexpath_var_chunk * c = &v->chunks[i];
-    	    // have to do this, because for arrays data is actually pre-alloced by user,
-    	    // and not flexpath, so user still has a copy of the data.  for scalars, this isn't so.
-    	    if( (c->data) &&(v->ndims == 0))
-    	    {
-		
-    		//free(c->data);
-    		if(c->global_bounds)
-    		    free(c->global_bounds);
-    		if(c->global_offsets)
-    		    free(c->global_offsets);
-    		if(c->local_bounds)
-    		    free(c->local_bounds);
-    	    }
-    	}
+	    free(c->data);    		
+	    free(c->global_bounds);		
+	    free(c->global_offsets);
+	    free(c->local_bounds);
+	}
     	v=v->next;
-    	if(v == NULL)
-    	    break;
     }
     return 0;
 }
@@ -966,8 +948,6 @@ int adios_read_flexpath_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk
 
 int adios_read_flexpath_perform_reads(const ADIOS_FILE* fp, int blocking)
 {
-    //perr( "debug: rank=%d adios function perform reads with blocking: %d\n",
-//	  fp_read_data->fp_comm_rank, blocking);
     flexpath_file_data * fd = (flexpath_file_data*)fp->fh;
     Flush_msg msg;
     msg.rank = fp_read_data->fp_comm_rank;
@@ -1006,11 +986,12 @@ void adiosread_flexpath_release_step (ADIOS_FILE *fp);
 
 
 array_displacements*
-get_writer_displacements(int rank, const ADIOS_SELECTION * sel, global_var* gvar){
+get_writer_displacements(int rank, const ADIOS_SELECTION * sel, global_var* gvar)
+{
     int ndims = sel->u.bb.ndim;
     array_displacements * displ = (array_displacements*)malloc(sizeof(array_displacements));
     displ->writer_rank = rank;
-    //displ->strides = (stride*)malloc(sizeof(stride)*ndims);
+
     displ->start = (int*)malloc(sizeof(int) * ndims);
     displ->count = (int*)malloc(sizeof(int) * ndims);    
     displ->ndims = ndims;
@@ -1021,8 +1002,6 @@ get_writer_displacements(int rank, const ADIOS_SELECTION * sel, global_var* gvar
     //for each dim
     int i;
     for(i=0; i<ndims; i++){	
-	//perr("\t\t\t%d selector start: %llu, selector count: %llu\n", i, sel->u.bb.start[i], sel->u.bb.count[i]);
-	//perr("\t\t\t%d offsets[%d]: %d local_dims[%d]: %d\n", i, pos+i, offsets[pos+i], pos+i, local_dims[pos+i]);
 	if(sel->u.bb.start[i] >= offsets[pos+i]){
 	    int start = sel->u.bb.start[i] - offsets[pos+i];
 	    displ->start[i] = start;
@@ -1034,22 +1013,15 @@ get_writer_displacements(int rank, const ADIOS_SELECTION * sel, global_var* gvar
 	}else{
 	    int count = (local_dims[pos+i] - 1) - displ->start[i] + 1;
 	    displ->count[i] = count;
-	}
-	
-	//perr("\t\t\tdispl->start[%d] = %d, count = %d\n", i, displ->start[i], displ->count[i]);
+	}	
     }
-    //print_int_arr("displ->start: ", displ->start, displ->ndims);
-    //print_int_arr("displ->count: ", displ->count, displ->ndims);
     return displ;
 }
 
 int
-need_writer(int j, const ADIOS_SELECTION* sel, evgroup_ptr gp, char* varname) {
-    perr("\n\n\n\n Checking rank %d against a selector\n", j);
-
-    while(file_data_list->gp==NULL) {
-        perr("rank %d waiting for group info\n", file_data_list->rank);
-        CMsleep(fp_read_data->fp_cm,1);
+need_writer(int j, const ADIOS_SELECTION* sel, evgroup_ptr gp, char* varname) {    
+    if(!file_data_list->gp){
+	CMCondition_wait(fp_read_data->fp_cm, ackCondition);
     }
 
     //select var from group
@@ -1062,15 +1034,13 @@ need_writer(int j, const ADIOS_SELECTION* sel, evgroup_ptr gp, char* varname) {
         //select sel offsets
         int sel_offset = sel->u.bb.start[i];
         //grab sel dimensions(size)
-        int sel_size = sel->u.bb.count[i];
-        perr("sel offset %d with val %d and size %d\n", i, sel_offset, sel_size);
+        int sel_size = sel->u.bb.count[i];        
 
 
         //select rank offsets
         int rank_offset = var_offsets.local_offsets[j*var_offsets.offsets_per_rank+i];
         //grab rank dimencsions(size)
-        int rank_size =var_offsets.local_dimensions[j*var_offsets.offsets_per_rank+i];
-        perr("rank offset %d with val %d and size %d\n", i, rank_offset, rank_size);
+        int rank_size =var_offsets.local_dimensions[j*var_offsets.offsets_per_rank+i];        
 
         //if rank offset < selector offset and rank offset +size-1 > selector offset
 	
@@ -1078,7 +1048,8 @@ need_writer(int j, const ADIOS_SELECTION* sel, evgroup_ptr gp, char* varname) {
 	     perr("matched overlap type 1\n");
         }
         //if rank offset < selector offset + selector size -1 and rank offset+size-1 > selector offset +selector size -1
-        else if((rank_offset <= sel_offset + sel_size - 1) && (rank_offset+rank_size-1>=sel_offset+sel_size-1)) {
+        else if((rank_offset <= sel_offset + sel_size - 1) && \
+		(rank_offset+rank_size-1>=sel_offset+sel_size-1)) {
             perr("matched overlap type 2\n");
         } else {
             perr("overlap not present\n\n");
@@ -1335,8 +1306,6 @@ int adios_read_flexpath_get_attr_byid (const ADIOS_FILE *fp, int attrid,
 
 ADIOS_VARINFO* adios_read_flexpath_inq_var(const ADIOS_FILE * fp, const char* varname)
 {
-    //perr( "debug: adios_read_flexpath_inq_var\n");
-
     ADIOS_VARINFO* v = malloc(sizeof(ADIOS_VARINFO));
     if(!v) {
         adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
@@ -1358,7 +1327,6 @@ ADIOS_VARINFO* adios_read_flexpath_inq_var(const ADIOS_FILE * fp, const char* va
 
 ADIOS_VARINFO * adios_read_flexpath_inq_var_byid (const ADIOS_FILE * fp, int varid)
 {
-    //perr( "debug: inq_var_byid\n");
     if(varid >= 0 && varid < fp->nvars) {
         return adios_read_flexpath_inq_var(fp, fp->var_namelist[varid]);
     }
