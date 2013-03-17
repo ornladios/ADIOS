@@ -1129,9 +1129,10 @@ int control_thread(void* arg) {
 		thr_mutex_unlock(localWriteData->openMutex);
 		perr( "unlocked...\n");
                  if(localWriteData->openCount==0) {
-		    threaded_dequeue(&localWriteData->dataQueue, 
+		    QueueNode* node = threaded_dequeue(&localWriteData->dataQueue, 
 				     localWriteData->dataMutex, 
 				     &localWriteData->dataCondition);
+                    FMfree_var_rec_elements(localWriteData->fm->format, node->data);
                     if(queue_count(&localWriteData->dataQueue, localWriteData->dataMutex)==localWriteData->max_queue_size) {
                       CMCondition_signal(localWriteData->cm, localWriteData->emptyCondition);
                     }
@@ -1615,19 +1616,19 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
             void* pointer_data_copy = malloc(total_size);
             // while null
             while(pointer_data_copy==NULL) { 
+                perr("mallocing space for user buffer failed, trying again soon\n");
                 sleep(1);
                 void* pointer_data_copy = malloc(total_size);
                 //block
             }
                 
-            // memcpy data
-            char* cur_offset = (char*)&localWriteData->fm->buffer[field->field_offset];
-            //perr( "pointer %p\n", cur_offset); 
-            void* aptr8 = (void*)(*((unsigned long*)cur_offset));
-            //perr( "copying data to %p from %p of size %d\n", pointer_data_copy, aptr8, total_size);
-            memcpy(pointer_data_copy, aptr8, total_size);
-            // memcpy pointer
-            memcpy(&localWriteData->fm->buffer[field->field_offset], &pointer_data_copy, sizeof(void *));
+            fp_log("DATA","Attempting to get pointer to user data\n");
+            void* temp = get_FMPtrField_by_name(flist, fields->name, localWriteData->fm->buffer, 0);
+            perr("got %p for field %s", temp, fields->name);
+            fp_log("DATA","Copying user data to new space\n");
+            memcpy(pointer_data_copy, temp, total_size);
+            fp_log("DATA","Setting pointer to new space\n");
+            set_FMPtrField_by_name(flist, fields->name, localWriteData->fm->buffer, pointer_data_copy);
         }    
         fields = fields->next;
     }
