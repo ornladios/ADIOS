@@ -1802,63 +1802,61 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
             gdims[k] = ldims[k];
         }
     }
-    else
+
+    if (has_time)
     {
-        if (has_time)
+        if (!file_is_fortran)
         {
-            if (!file_is_fortran)
+            /* first dimension is the time (C array)
+             * ldims[0] = 1 but gdims does not contain time info and 
+             * gdims[0] is 1st data dimension and 
+             * gdims is shorter by one value than ldims in case of C.
+             * Therefore, gdims[*ndim-1] = 0 if there is a time dimension. 
+             */
+            // error check
+            if (ndim > 1 && ldims[0] != 1)
             {
-                /* first dimension is the time (C array)
-                 * ldims[0] = 1 but gdims does not contain time info and 
-                 * gdims[0] is 1st data dimension and 
-                 * gdims is shorter by one value than ldims in case of C.
-                 * Therefore, gdims[*ndim-1] = 0 if there is a time dimension. 
-                 */
-                // error check
-                if (ndim > 1 && ldims[0] != 1)
+                log_error ("ADIOS Error 1: this is a BP file with C ordering "
+                           "but we didn't find an array to have time dimension "
+                           "in the first dimension. l:g:o = (");
+                for (k = 0; k < ndim; k++)
                 {
-                    log_error ("ADIOS Error 1: this is a BP file with C ordering "
-                               "but we didn't find an array to have time dimension "
-                               "in the first dimension. l:g:o = (");
-                    for (k = 0; k < ndim; k++)
-                    {
-                        log_error_cont ("%llu:%llu:%llu%s", 
+                    log_error_cont ("%llu:%llu:%llu%s", 
                                    ldims[k], gdims[k], offsets[k], 
                                    (k<ndim-1 ? ", " : "") );
-                    }
-
-                    log_error_cont ("\n");
                 }
 
-                for (k = 0; k < ndim - 1; k++)
-                {
-                    ldims[k] = ldims[k + 1];
-                }
+                log_error_cont ("\n");
             }
-            else
+
+            for (k = 0; k < ndim - 1; k++)
             {
-                // last dimension is the time (Fortran array)
-                if (ndim > 1 && ldims[0] != 1)
+                ldims[k] = ldims[k + 1];
+            }
+        }
+        else
+        {
+            // last dimension is the time (Fortran array)
+            if (ndim > 1 && ldims[0] != 1)
+            {
+                log_error ("ADIOS Error: this is a BP file with Fortran array "
+                           "ordering but we didn't find an array to have time "
+                           "dimension in the last dimension. l:g:o = (");
+                for (k = 0; k < ndim; k++)
                 {
-                    log_error ("ADIOS Error: this is a BP file with Fortran array "
-                               "ordering but we didn't find an array to have time "
-                               "dimension in the last dimension. l:g:o = (");
-                    for (k = 0; k < ndim; k++)
-                    {
-                        log_error_cont ("%llu:%llu:%llu%s", 
-                                        ldims[k], gdims[k], offsets[k], 
-                                        (k<ndim-1 ? ", " : "") );
-                    }
-
-                    log_error_cont (")\n");
+                    log_error_cont ("%llu:%llu:%llu%s", 
+                                    ldims[k], gdims[k], offsets[k], 
+                                    (k<ndim-1 ? ", " : "") );
                 }
 
-                for (k = 0; k < ndim - 1; k++)
-                {
-                    gdims[k] = gdims[k + 1];
-                    ldims[k] = ldims[k + 1];
-                    offsets[k] = offsets[k + 1]; 
-                }
+                log_error_cont (")\n");
+            }
+
+            for (k = 0; k < ndim - 1; k++)
+            {
+                gdims[k] = gdims[k + 1];
+                ldims[k] = ldims[k + 1];
+                offsets[k] = offsets[k + 1]; 
             }
         }
     }
