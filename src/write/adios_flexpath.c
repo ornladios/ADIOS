@@ -1132,7 +1132,7 @@ int control_thread(void* arg) {
 		    QueueNode* node = threaded_dequeue(&localWriteData->dataQueue, 
 				     localWriteData->dataMutex, 
 				     &localWriteData->dataCondition);
-                    FMfree_var_rec_elements(localWriteData->fm->format, node->data);
+                    FMfree_var_rec_elements(localWriteData->fm->ioFormat, node->data);
                     if(queue_count(&localWriteData->dataQueue, localWriteData->dataMutex)==localWriteData->max_queue_size) {
                       CMCondition_signal(localWriteData->cm, localWriteData->emptyCondition);
                     }
@@ -1448,11 +1448,9 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 	//store format id in multiqueue
 	Format_msg *initial_format_msg = malloc(sizeof(Format_msg));
         FMContext my_context = create_local_FMcontext();	
-        FMFormat my_format = register_data_format(my_context, localWriteData->fm->format);
-
+	localWriteData->fm->ioFormat = register_data_format(my_context, localWriteData->fm->format);
         int id_len;
-	char* temp = get_server_ID_FMformat(my_format, &id_len);
-        
+        char* temp = get_server_ID_FMformat(localWriteData->fm->ioFormat, &id_len);
 	/*for(i=0; i<id_len; i++) {
             temp[i]=temp[i]+1;
 	    }*/
@@ -1460,7 +1458,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
         initial_format_msg->id_len = id_len;
 
 	int rep_len;
-	char* temp2 = get_server_rep_FMformat(my_format, &rep_len);
+	char *temp2 = get_server_rep_FMformat(localWriteData->fm->ioFormat, &rep_len);
 	//for(i=0; i<id_len; i++)
 	//    temp2[i]=temp2[i]+1;
 	initial_format_msg->rep_id = temp2;
