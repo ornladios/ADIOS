@@ -341,12 +341,11 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = etc
-dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py
+dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py bin/skel_cat.py
 pythonlibdir = @libdir@/python
 dist_pythonlib_DATA = \
     lib/adios.py \
 	lib/argparse.py \
-    lib/skel_cat.py \
     lib/skel_install.py \
     lib/skel_makefile.py \
     lib/skel_params.py \
