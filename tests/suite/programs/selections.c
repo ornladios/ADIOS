@@ -171,7 +171,7 @@ int main (int argc, char ** argv)
 
     alloc_vars();
     if (do_write) {
-        adios_init_noxml ();
+        adios_init_noxml (comm);
         adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
     }
     if (do_read) {

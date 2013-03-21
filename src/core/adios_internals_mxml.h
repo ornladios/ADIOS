@@ -17,7 +17,7 @@
 #endif
 
 int adios_parse_config (const char * config, MPI_Comm comm);
-int adios_local_config ();
+int adios_local_config (MPI_Comm comm);
 int adios_common_select_method (int priority, const char * method
                                ,const char * parameters, const char * group 
                                ,const char * base_path, int iters

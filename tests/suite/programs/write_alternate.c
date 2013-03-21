@@ -120,7 +120,7 @@ int main (int argc, char ** argv)
     MPI_Comm_size (comm, &size);
 
     alloc_vars();
-    adios_init ("write_alternate.xml");
+    adios_init ("write_alternate.xml", comm);
     err = adios_read_init_method(ADIOS_READ_METHOD_BP, comm, "verbose=2");
     if (err) {
         printE ("%s\n", adios_errmsg());

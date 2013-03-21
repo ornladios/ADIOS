@@ -15,6 +15,14 @@
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 
+#ifdef _NOMPI
+/* Sequential processes can use the library compiled with -D_NOMPI */
+#   include "public/mpidummy.h"
+#else
+/* Parallel applications should use MPI to communicate file info and slices of data */
+#   include "mpi.h"
+#endif
+
 #ifdef SKEL_TIMING
 #include "core/adios_timing.h"
 #endif
@@ -97,6 +105,7 @@ struct adios_method_struct
     int iterations;
     int priority;
     struct adios_group_struct * group;
+    MPI_Comm init_comm; // MPI Communicator used only for the method's init call
 };
 
 struct adios_method_list_struct

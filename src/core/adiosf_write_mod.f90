@@ -18,14 +18,16 @@ module adios_write_mod
 
     interface
 
-        subroutine adios_init (config, err)
+        subroutine adios_init (config, comm, err)
             implicit none
             character(*),   intent(in)  :: config
+            integer,        intent(in)  :: comm
             integer,        intent(out) :: err
         end subroutine
 
-        subroutine adios_init_noxml (err)
+        subroutine adios_init_noxml_withcomm (comm, err)
             implicit none
+            integer,        intent(in)  :: comm
             integer,        intent(out) :: err
         end subroutine
 
@@ -151,7 +153,6 @@ module adios_write_mod
         end subroutine
 
     end interface
-
 
 
     !

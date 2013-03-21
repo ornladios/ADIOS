@@ -38,6 +38,7 @@ struct adios_group_list_struct * adios_groups = 0;
 struct adios_transport_struct * adios_transports = 0;
 static int adios_transports_initialized = 0;
 
+static MPI_Comm init_comm; // communicator for each method's init call
 
 // ADIOS Schema: adding utility functions
 void conca_var_att_nam(char ** returnstr, const char * varname, char * att_nam);
@@ -6597,6 +6598,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
     int buffer_size = 0;
     int rank;
     MPI_Comm_rank (comm, &rank);
+    init_comm = comm;
     if (rank == 0)
     {
 //#endif
@@ -6907,7 +6909,7 @@ int adios_parse_config (const char * config, MPI_Comm comm)
     return 1;
 }
 
-int adios_local_config ()
+int adios_local_config (MPI_Comm comm)
 {
     if (!adios_transports_initialized)
     {
@@ -6915,6 +6917,7 @@ int adios_local_config ()
         adios_init_transports (&adios_transports);
     }
 
+    init_comm = comm;
     return 1;
 }
 
@@ -7021,6 +7024,7 @@ int adios_common_select_method (int priority, const char * method
     new_method->iterations = iters;
     new_method->priority = priority;
     new_method->method_data = 0;
+    new_method->init_comm = init_comm;
     new_method->group = 0;
 
     if (adios_parse_method (method, &new_method->m, &requires_group_comm))
@@ -7067,25 +7071,6 @@ int adios_common_select_method (int priority, const char * method
     }
     else
     {
-        // JL: 1-2010
-        // we no longer require this since we moved the coordiantion
-        // communicator to the open call. Leaving code here, just in case.
-        // once this has been validated thoroughly, remove this block of code.
-        //if (requires_group_comm && !g->group_comm)
-        //{
-        //    fprintf (stderr, "config.xml: method %s for group %s.  Group does "
-        //                     "not have the required coordination-communicator"
-        //                     ".\n"
-        //            ,method, group
-        //            );
-
-        //    free (new_method->base_path);
-        //    free (new_method->method);
-        //    free (new_method->parameters);
-        //    free (new_method);
-
-        //    return 0;
-        //}
         adios_add_method_to_group (&g->methods, new_method);
         new_method->group = g;
     }

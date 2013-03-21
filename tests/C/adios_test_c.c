@@ -82,7 +82,7 @@ printf ("rank %d filename: %s\n", rank, filename);
 #else
     strcpy (filename, "restart.bp");
 #endif
-    if (!adios_init ("config_c.xml"))
+    if (!adios_init ("config_c.xml", comm))
         return -1;
 
     //uint64_t byte_test_length = 768LL * 1024 * 1024;

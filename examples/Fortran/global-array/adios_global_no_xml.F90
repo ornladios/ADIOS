@@ -34,7 +34,7 @@ program adios_global
     call MPI_Comm_rank (comm, rank, ierr)
     call MPI_Comm_size (comm, size, ierr)
 
-    call adios_init_noxml (adios_err)
+    call adios_init_noxml (comm, adios_err)
     call adios_allocate_buffer (10, adios_err)
 
     call adios_declare_group (m_adios_group, "restart", "iter", 1, adios_err)

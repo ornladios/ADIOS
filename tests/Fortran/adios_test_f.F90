@@ -6,6 +6,7 @@
 !
 
 program adios_test
+    use adios_write_mod
     implicit none
     include 'mpif.h'
     character (len=200) :: group
@@ -47,8 +48,8 @@ program adios_test
 
     print '("rank=",i0," group_comm=",i0," ierr=",i0)', rank, group_comm, ierr
 
-    call adios_allocate_buffer (ierr);
-    call adios_init ("config_fortran.xml", ierr)
+    call adios_allocate_buffer (10, ierr);
+    call adios_init ("config_fortran.xml", group_comm, ierr)
     call test_write (group, filename, group_comm, small_int, big_int, small_real, big_real, z_size, z_array)
 
     call MPI_Barrier (MPI_COMM_WORLD, ierr)

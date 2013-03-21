@@ -10,9 +10,9 @@
 #include <unistd.h>
 #include <stdint.h>
 
-#include "core/common_adios.h"
 #include "core/adios_internals.h"
 #include "core/adios_internals_mxml.h"
+#include "core/common_adios.h"
 #include "core/adios_transport_hooks.h"
 #include "core/futils.h"
 #include "core/globals.h"
@@ -33,13 +33,14 @@ void FC_FUNC_(adios_set_application_id, ADIOS_SET_APPLICATION_ID) (int *id, int 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adios_init, ADIOS_INIT) (const char * config, int * err, int config_size)
+void FC_FUNC_(adios_init, ADIOS_INIT) (const char * config, MPI_Fint * comm, int * err, int config_size)
 {
     char * buf1 = 0;
 
+    MPI_Comm c_comm = MPI_Comm_f2c (*comm);
     buf1 = futils_fstr_to_cstr (config, config_size);
     if (buf1 != 0) {
-        *err = common_adios_init (buf1);
+        *err = common_adios_init (buf1, c_comm);
         free (buf1);
     } else {
         *err = -adios_errno;
@@ -47,9 +48,10 @@ void FC_FUNC_(adios_init, ADIOS_INIT) (const char * config, int * err, int confi
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-void FC_FUNC_(adios_init_noxml, ADIOS_INIT_LOCAL) (int * err)
+void FC_FUNC_(adios_init_noxml, ADIOS_INIT_LOCAL) (MPI_Fint * comm, int * err)
 {
-    *err = common_adios_init_noxml ();
+    MPI_Comm c_comm = MPI_Comm_f2c (*comm);
+    *err = common_adios_init_noxml (c_comm);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

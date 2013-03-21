@@ -402,7 +402,7 @@ int main (int argc, char ** argv )
 	cells[i] --;
     }
 
-    adios_init (xmlfilename);
+    adios_init (xmlfilename, comm);
 
     adios_open (&adios_handle, "channel", filename, "w", &comm);
 

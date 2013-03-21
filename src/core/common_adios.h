@@ -18,12 +18,12 @@
  */
 
 // Global setup using the XML file
-int common_adios_init (const char * config);
+int common_adios_init (const char * config, MPI_Comm comm);
 
 // setup, but all XML file pieces will be provided by another series of calls
 // yet to be worked out
 // TODO
-int common_adios_init_noxml (void);
+int common_adios_init_noxml (MPI_Comm comm);
 
 int common_adios_finalize (int mype);
 

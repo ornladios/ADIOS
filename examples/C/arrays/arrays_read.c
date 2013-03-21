@@ -36,7 +36,7 @@ int main (int argc, char ** argv)
 
 
     strcpy (filename, "arrays.bp");
-    adios_init ("arrays.xml");
+    adios_init ("arrays.xml", comm);
 
     /* First read in the scalars to calculate the size of the arrays */
     adios_open (&adios_handle, "arrays", filename, "r", &comm);

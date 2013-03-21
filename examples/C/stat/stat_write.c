@@ -34,7 +34,7 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
     MPI_Comm_size (comm, &size);
 
-    adios_init ("stat.xml");
+    adios_init ("stat.xml", comm);
     strcpy (filename, "adios_stat.bp");
 
     for (it =0; it < 13; it++) {

@@ -136,7 +136,7 @@ int main (int argc, char ** argv) {
         end_time[4] = MPI_Wtime();
         total_time[4] = end_time[4]-start_time[4];
     }
-    adios_init_noxml(); // no xml will be used to write the new adios file
+    adios_init_noxml(comm); // no xml will be used to write the new adios file
     read_buffer = atoi(argv[3]);
     write_buffer = atoi(argv[4]);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, write_buffer); // allocate MB buffer

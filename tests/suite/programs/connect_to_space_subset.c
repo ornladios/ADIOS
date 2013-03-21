@@ -116,8 +116,8 @@ int main (int argc, char ** argv)
     }
 
     alloc_vars();
-    adios_read_init_method(ADIOS_READ_METHOD_DATASPACES, wcomm, "verbose=4");
-    adios_init_noxml ();
+    adios_read_init_method(ADIOS_READ_METHOD_DATASPACES, subcomm, "verbose=4");
+    adios_init_noxml (subcomm);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 1);
 
     if (iconnect) 

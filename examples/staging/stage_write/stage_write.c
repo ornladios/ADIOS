@@ -163,7 +163,7 @@ int main (int argc, char ** argv)
         print0 ("%s\n", adios_errmsg());
     }
 
-    adios_init_noxml();
+    adios_init_noxml(comm);
 
     print0 ("Waiting to open stream %s...\n", infilename);
     f = adios_read_open_stream (infilename, read_method, comm, 
