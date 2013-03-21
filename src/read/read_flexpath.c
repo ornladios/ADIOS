@@ -120,6 +120,7 @@ typedef struct _flexpath_file_data
     int num_bridges;
     bridge_info *bridges;
     FMFormat current_format;
+    FMContext context;
 
     int num_vars;
     flexpath_var_info * var_list;
@@ -183,7 +184,8 @@ new_flexpath_file_data(const char * fname)
     fp->gp = NULL;
     fp->bridges = NULL;
     fp->current_format = NULL;
-    
+    fp->context = NULL;
+
     fp->valid = 0;
     fp->num_bridges = 0;
     fp->num_gp = 0;
@@ -407,122 +409,143 @@ copyoffsets(int dim, // dimension index
  * Format for this is gathered from the file_data_list->my_format field
  */
 static int
-data_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
+data_handler(CManager cm, void *vevent, int len, void *client_data, attr_list attrs)
 {
+    fprintf(stderr, "Data handler is called.\n");
     int rank;
-    flexpath_file_data * file_data = (flexpath_file_data*)client_data;
-    char * buffer = (char*)vevent;
-
-    get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &rank);
+    flexpath_file_data * file_data = client_data;
+    char * buffer = vevent;
+    
+    void *base_data = FMheader_skip(file_data->context, vevent);
+    get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &rank); 
     FMFormat format = file_data->current_format;
 
     if(!file_data_list->current_format){
-	adios_error(err_file_open_error, "file not opened correctly.  Format not specified.\n");
+    	adios_error(err_file_open_error, "file not opened correctly.  Format not specified.\n");
     }
 
     FMStructDescList struct_list = FMcopy_struct_list(format_list_of_FMFormat(format));
     FMField *f = struct_list[0].field_list;
     char * curr_offset = NULL;
-    int i = 0, l =0;
-    int j=0;
-    while(f->field_name != NULL){		
-	curr_offset = &buffer[f->field_offset];
+    int i = 0, l = 0, j = 0;
+
+    while(f->field_name){
+    	curr_offset = &buffer[f->field_offset];
         char atom_name[200] = "";
-	flexpath_var_info * var = find_fp_var(file_data->var_list, strdup(f->field_name));
+    	flexpath_var_info * var = find_fp_var(file_data->var_list, strdup(f->field_name));
 	
-	if(!var){
-	    adios_error(err_file_open_error,
-			"file not opened correctly.  var does not match format.\n");
-	    return -1;
-	}
+    	if(!var){
+    	    adios_error(err_file_open_error,
+    			"file not opened correctly.  var does not match format.\n");
+    	    return -1;
+    	}
         strcat(atom_name, f->field_name);
         strcat(atom_name, "_");
         strcat(atom_name, FP_NDIMS_ATTR_NAME);
         int num_dims;
         int i;
         get_int_attr(attrs, attr_atom_from_string(strdup(atom_name)), &num_dims);
-	// scalar
-	if(num_dims == 0){
-	    flexpath_var_chunk * curr_chunk = &var->chunks[0];
-	    curr_chunk->global_offsets = NULL;
-	    curr_chunk->global_bounds = NULL;
-	    curr_chunk->local_bounds = NULL;
-	    curr_chunk->data = malloc(var->data_size);
-	    memcpy(curr_chunk->data, curr_offset, var->data_size);
-	    curr_chunk->has_data = 1;
-	    // else it's an array
-	}else{
-            if(var->sel == NULL)
-	    {// var hasn't been scheduled yet.  		
-	    }
-	    else if(var->sel->type == ADIOS_SELECTION_WRITEBLOCK){
-		var->ndims = num_dims;
-		var->dims = (int*)malloc(sizeof(int)*num_dims);
-		if(var->was_scheduled == 1){
-		    var->array_size = var->data_size;
-		    for(i=0; i<num_dims; i++){
-			char* dim = malloc(200*sizeof(char));
-			atom_name[0] ='\0';
-			strcat(atom_name, f->field_name);
-			strcat(atom_name, "_");
-			strcat(atom_name, FP_DIM_ATTR_NAME);
-			strcat(atom_name, "_");
-			char dim_num[10] = "";
-			sprintf(dim_num, "%d", i+1);
-			strcat(atom_name, dim_num);
-			get_string_attr(attrs, attr_atom_from_string(atom_name), &dim);
+    	flexpath_var_chunk * curr_chunk = &var->chunks[0];
+    	// scalar
+    	if(num_dims == 0){
+	    
+    	    curr_chunk->global_offsets = NULL;
+    	    curr_chunk->global_bounds = NULL;
+    	    curr_chunk->local_bounds = NULL;
+    	    //curr_chunk->data = malloc(var->data_size);
+    	    //void *tmpdata = malloc(var->data_size);
+    	    var->chunks[0].data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
+    	    /* fprintf(stderr, "\t\tf->field_name: %s\n", f->field_name); */
+    	    if(!strcmp(f->field_name, "NX")){
+    		int *tmpint = (int*)(var->chunks[0].data);
+    	     	fprintf(stderr, "\t\tNX VALUE: %d\n", *tmpint);
+    	    }
+    	    if(!strcmp(f->field_name, "NY")){
+    		int *tmpint = (int*)(var->chunks[0].data);
+    	     	fprintf(stderr, "\t\tNY VALUE: %d\n", *tmpint);
+    	    }
+    	    // memcpy(curr_chunk->data, curr_offset, var->data_size);
+    	    curr_chunk->has_data = 1;
+    	    // else it's an array
+    	}else{
+            if(!var->sel)
+    	    {// var hasn't been scheduled yet.
+    		fp_log("SEL", "Variable has not yet been scheduled.  Cannot recieve data for it.\n");
+    	    }
+    	    else if(var->sel->type == ADIOS_SELECTION_WRITEBLOCK){
+    		var->ndims = num_dims;
+    		var->dims = malloc(sizeof(int)*num_dims);
+    		if(var->was_scheduled == 1){
+    		    var->array_size = var->data_size;
+    		    for(i=0; i<num_dims; i++){
+    			char* dim = malloc(200*sizeof(char));
+    			atom_name[0] ='\0';
+    			strcat(atom_name, f->field_name);
+    			strcat(atom_name, "_");
+    			strcat(atom_name, FP_DIM_ATTR_NAME);
+    			strcat(atom_name, "_");
+    			char dim_num[10] = "";
+    			sprintf(dim_num, "%d", i+1);
+    			strcat(atom_name, dim_num);
+    			get_string_attr(attrs, attr_atom_from_string(atom_name), &dim);
 
-			FMField * temp_f = find_field(dim, f);
-			if(!temp_f){
-			    adios_error(err_invalid_varname,
-					"Could not find fieldname: %s\n",
-					dim);
-			}
-			else{
-			    // since it's a dimension, field size should be int.
-			    char * temp_offset = &buffer[temp_f->field_offset];
-			    int * temp_data = (int*)malloc(f->field_size);
-			    memcpy(temp_data, temp_offset, f->field_size);
-			    var->dims[i] = *temp_data;
-			    var->array_size = var->array_size * var->dims[i];
-			}
-		    }
-		    void* aptr8 = (void*)(*((unsigned long*)curr_offset));
-		    memcpy(var->chunks[0].data, aptr8, var->array_size);
-		}
+    			FMField * temp_f = find_field(dim, f);
+    			if(!temp_f){
+    			    adios_error(err_invalid_varname,
+    					"Could not find fieldname: %s\n",
+    					dim);
+    			}
+    			else{
+    			    // since it's a dimension, field size should be int.
+    			    int *temp_data = get_FMfieldAddr_by_name(temp_f,
+    								     temp_f->field_name,
+    								     base_data);
+    			     if(!temp_data)
+    				 fprintf(stderr, "\t\ttmep_data is null!!\n");
+    			    //memcpy(temp_data, temp_offset, f->field_size);
+    			    var->dims[i] = *temp_data;
+    			    var->array_size = var->array_size * var->dims[i];
+    			}
+    		    }
+    		    /* void* aptr8 = (void*)(*((unsigned long*)curr_offset)); */
+    		    /* memcpy(var->chunks[0].data, aptr8, var->array_size); */
+    		    fprintf(stderr, "getting data for var: %s, field_name: %s\n",
+    			    var->varname, f->field_name);
+    		    var->chunks[0].data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
+    		}
 
-	    }
-	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
-		int i;
-                global_var* gv = find_gbl_var(file_data_list->gp->vars, 
-					      var->varname, 
-					      file_data_list->gp->num_vars);
+    	    }
+    	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
+    		int i;
+                global_var* gv = find_gbl_var(file_data_list->gp->vars,
+    					      var->varname,
+    					      file_data_list->gp->num_vars);
                 int * writer_count = gv->offsets[0].local_dimensions;
                 uint64_t * reader_count = var->sel->u.bb.count;
-		array_displacements * disp = find_displacement(var->displ, 
-							       rank, 
-							       var->num_displ);
-		void* aptr8 = (void*)(*((unsigned long*)curr_offset));
-		double * temp = (double*)curr_offset;
+    		array_displacements * disp = find_displacement(var->displ,
+    							       rank,
+    							       var->num_displ);
+    		void* aptr8 = (void*)(*((unsigned long*)curr_offset));
+    		//double * temp = (double*)curr_offset;
 
-                copyoffsets(0, 
-			    disp->ndims,
-			    f->field_size,
-			    disp->start,
-			    disp->count, 
-			    writer_count, 
-			    reader_count, 
-			    (char*)aptr8, 
-			    (char*)var->chunks[0].data);	
-	    }
-	}
+                copyoffsets(0,
+    			    disp->ndims,
+    			    f->field_size,
+    			    disp->start,
+    			    disp->count,
+    			    writer_count,
+    			    reader_count,
+    			    (char*)aptr8,
+    			    (char*)var->chunks[0].data);
+    	    }
+    	}
         j++;
         f++;
     }
     
     CMCondition_signal(fp_read_data->fp_cm, ackCondition);
     ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
-    return 0;
+    return 0; 
 }
 
 static int
@@ -799,9 +822,9 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     MPI_Bcast(file_data_list->arr, file_data_list->id_len, MPI_BYTE, 0, fp_read_data->fp_comm);
     MPI_Bcast(file_data_list->rep_id, file_data_list->rep_id_len, MPI_BYTE, 0, fp_read_data->fp_comm);
 
-    FMContext my_context = create_local_FMcontext();
-    if(my_context != NULL) {
-	FMFormat my_format = load_external_format_FMcontext(my_context, 
+    file_data_list->context = create_local_FMcontext();
+    if(file_data_list->context != NULL) {
+	FMFormat my_format = load_external_format_FMcontext(file_data_list->context, 
 							    file_data_list->arr, 
 							    file_data_list->id_len, 
 							    file_data_list->rep_id);
@@ -813,7 +836,8 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     }
     // TODO: if my_context is null, then what?
     int var_count = 0;
-    FMStructDescList struct_list = FMcopy_struct_list(format_list_of_FMFormat(file_data_list->current_format));
+    FMStructDescList struct_list = 
+	FMcopy_struct_list(format_list_of_FMFormat(file_data_list->current_format));
     FMField *f = struct_list[0].field_list;
     
     while(f->field_name != NULL){           
@@ -841,10 +865,16 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
         f++;
     }
     // setting up terminal action for data
-    EVassoc_terminal_action(fp_read_data->fp_cm,
-			    file_data_list->data_stone,
-			    struct_list, data_handler,
-			    (void*)file_data_list);
+    /* EVassoc_terminal_action(fp_read_data->fp_cm, */
+    /* 			    file_data_list->data_stone, */
+    /* 			    struct_list, data_handler, */
+    /* 			    (void*)file_data_list); */
+    fprintf(stderr, "before assoc\n");
+    EVassoc_raw_terminal_action(fp_read_data->fp_cm,
+    				file_data_list->data_stone,
+    				data_handler,
+    				(void*)file_data_list);
+    fprintf(stderr, "after assoc\n");
     free(struct_list);
     Flush_msg msg;
     msg.type = DATA;
@@ -901,6 +931,7 @@ int adios_read_flexpath_advance_step(ADIOS_FILE *fp, int last, float timeout_sec
 
 int adios_read_flexpath_close(ADIOS_FILE * fp)
 {
+    fprintf(stderr, "flexpath close\n");
     flexpath_file_data * file = (flexpath_file_data*)fp->fh;
     int i;
     op_msg msg;
@@ -923,9 +954,13 @@ int adios_read_flexpath_close(ADIOS_FILE * fp)
     flexpath_var_info * v = file->var_list;
     while(v){        	
     	// free chunks; data has already been copied to user
-    	int i;
+    	int i;	
+	fprintf(stderr, "num_chunks for var: %s: %d\n", v->varname, v->num_chunks);
     	for(i = 0; i<v->num_chunks; i++){    	
-    	    flexpath_var_chunk * c = &v->chunks[i];
+	    fprintf(stderr, "i: %d\n", i);
+    	    flexpath_var_chunk * c = &v->chunks[i];	    
+	    if(!c)
+		fprintf(stderr, "should not happen!\n");
 	    free(c->data);    		
 	    free(c->global_bounds);		
 	    free(c->global_offsets);
@@ -958,12 +993,6 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE* fp, int blocking)
     {
 	int sendee = fd->sendees[i];
         fp_log("MSG","rank %d sending flush to %d\n", fp_read_data->fp_comm_rank, sendee);
-	/*
-        if(file_data_list->bridges[sendee].created) {
-        } else {
-            perr("rank %d bridge %d not built!!!\n", fp_read_data->fp_comm_rank, sendee);
-        }
-	*/
 	EVsubmit(file_data_list->bridges[sendee].flush_source, &msg, NULL);
     }
     if(blocking){    
