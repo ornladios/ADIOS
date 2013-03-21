@@ -299,10 +299,11 @@ static FMField
 
 
 static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
-    op_msg* msg = (op_msg*)vevent; 
+    op_msg* msg = (op_msg*)vevent;    
+    fprintf(stderr, "op_msg_handler condition: %d\n", msg->condition);
     if(msg->type==2) {
-        CMCondition_signal(fp_read_data->fp_cm, ackCondition);
-        ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
+        CMCondition_signal(fp_read_data->fp_cm, msg->condition);
+        //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     }
     return 0;
 }
@@ -403,15 +404,147 @@ copyoffsets(int dim, // dimension index
     }
 }
 
+
+
+
 /*
  * gets the data and puts it in the appropriate flexpath_var_struct.  Need to do a bit different
  * things if it's a scalar vs. an array.
  * Format for this is gathered from the file_data_list->my_format field
  */
 static int
-data_handler(CManager cm, void *vevent, int len, void *client_data, attr_list attrs)
+data_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
-    fprintf(stderr, "Data handler is called.\n");
+
+    int condition;
+    get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
+    
+    int rank;
+    flexpath_file_data * file_data = (flexpath_file_data*)client_data;
+    char * buffer = (char*)vevent;
+
+    get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &rank);
+    fprintf(stderr, "Data handler is called with condition: %d and rank: %d.\n", condition, rank);
+    FMFormat format = file_data->current_format;
+    if(!file_data_list->current_format){
+	adios_error(err_file_open_error, "file not opened correctly. Format not specified.\n");
+    }
+
+    FMStructDescList struct_list = FMcopy_struct_list(format_list_of_FMFormat(format));
+    FMField *f = struct_list[0].field_list;
+    char * curr_offset = NULL;
+    int i = 0, l =0;
+    int j=0;
+    while(f->field_name != NULL){
+	curr_offset = &buffer[f->field_offset];
+        char atom_name[200] = "";
+	flexpath_var_info * var = find_fp_var(file_data->var_list, strdup(f->field_name));
+
+	if(!var){
+	    adios_error(err_file_open_error,
+			"file not opened correctly. var does not match format.\n");
+	    return -1;
+	}
+        strcat(atom_name, f->field_name);
+        strcat(atom_name, "_");
+        strcat(atom_name, FP_NDIMS_ATTR_NAME);
+        int num_dims;
+        int i;
+        get_int_attr(attrs, attr_atom_from_string(strdup(atom_name)), &num_dims);
+// scalar
+	if(num_dims == 0){
+	    flexpath_var_chunk * curr_chunk = &var->chunks[0];
+	    curr_chunk->global_offsets = NULL;
+	    curr_chunk->global_bounds = NULL;
+	    curr_chunk->local_bounds = NULL;
+	    curr_chunk->data = malloc(var->data_size);
+	    memcpy(curr_chunk->data, curr_offset, var->data_size);
+	    curr_chunk->has_data = 1;
+// else it's an array
+	}else{
+            if(var->sel == NULL)
+	    {// var hasn't been scheduled yet.
+	    }
+	    else if(var->sel->type == ADIOS_SELECTION_WRITEBLOCK){
+		var->ndims = num_dims;
+		var->dims = (int*)malloc(sizeof(int)*num_dims);
+		if(var->was_scheduled == 1){
+		    var->array_size = var->data_size;
+		    for(i=0; i<num_dims; i++){
+			char* dim = malloc(200*sizeof(char));
+			atom_name[0] ='\0';
+			strcat(atom_name, f->field_name);
+			strcat(atom_name, "_");
+			strcat(atom_name, FP_DIM_ATTR_NAME);
+			strcat(atom_name, "_");
+			char dim_num[10] = "";
+			sprintf(dim_num, "%d", i+1);
+			strcat(atom_name, dim_num);
+			get_string_attr(attrs, attr_atom_from_string(atom_name), &dim);
+
+			FMField * temp_f = find_field(dim, f);
+			if(!temp_f){
+			    adios_error(err_invalid_varname,
+					"Could not find fieldname: %s\n",
+					dim);
+			}
+			else{
+// since it's a dimension, field size should be int.
+			    char * temp_offset = &buffer[temp_f->field_offset];
+			    int * temp_data = (int*)malloc(f->field_size);
+			    memcpy(temp_data, temp_offset, f->field_size);
+			    var->dims[i] = *temp_data;
+			    var->array_size = var->array_size * var->dims[i];
+			}
+		    }
+		    void* aptr8 = (void*)(*((unsigned long*)curr_offset));
+		    memcpy(var->chunks[0].data, aptr8, var->array_size);
+		}
+
+	    }
+	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
+		int i;
+                global_var* gv = find_gbl_var(file_data_list->gp->vars,
+					      var->varname,
+					      file_data_list->gp->num_vars);
+                int * writer_count = gv->offsets[0].local_dimensions;
+                uint64_t * reader_count = var->sel->u.bb.count;
+		array_displacements * disp = find_displacement(var->displ,
+							       rank,
+							       var->num_displ);
+		void* aptr8 = (void*)(*((unsigned long*)curr_offset));
+		double * temp = (double*)curr_offset;
+
+                copyoffsets(0,
+			    disp->ndims,
+			    f->field_size,
+			    disp->start,
+			    disp->count,
+			    writer_count,
+			    reader_count,
+			    (char*)aptr8,
+			    (char*)var->chunks[0].data);
+	    }
+	}
+        j++;
+        f++;
+    }
+    
+    CMCondition_signal(fp_read_data->fp_cm, condition);
+    //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    return 0;
+}
+
+/*
+ * Will replace data handler once everything is figured out and working wrt conditions and the fm
+ * get/set api.
+ */
+static int
+raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list attrs)
+{
+    int condition;
+    get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
+    fprintf(stderr, "Data handler is called with condition: %d.\n", condition);
     int rank;
     flexpath_file_data * file_data = client_data;
     char * buffer = vevent;
@@ -542,23 +675,24 @@ data_handler(CManager cm, void *vevent, int len, void *client_data, attr_list at
         j++;
         f++;
     }
-    
-    CMCondition_signal(fp_read_data->fp_cm, ackCondition);
-    ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    CMCondition_signal(fp_read_data->fp_cm, condition);
+    //CMCondition_signal(fp_read_data->fp_cm, ackCondition);
+    //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     return 0; 
 }
 
 static int
 format_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     Format_msg* msg = (Format_msg*)vevent;
+    fprintf(stderr, "FORMAT HANDLER CALLED with condition: %d\n", msg->condition);
     flexpath_file_data * fp = (flexpath_file_data*)client_data;
     fp->arr = msg->format_id;
     fp->rep_id = msg->rep_id;
     fp->rep_id_len = msg->rep_id_len;
     fp->id_len = msg->id_len;
     
-    CMCondition_signal(fp_read_data->fp_cm, ackCondition);
-    ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    CMCondition_signal(fp_read_data->fp_cm, msg->condition);
+    //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     return 0;
 }
 
@@ -788,9 +922,10 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     open_msg.file_name = strdup(file_data_list->file_name);
     open_msg.type = 1;
     open_msg.step = fp->current_step;
+    open_msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
     EVsubmit(file_data_list->bridges[0].op_source, &open_msg, NULL);
-
-    CMCondition_wait(fp_read_data->fp_cm, ackCondition);
+    fprintf(stderr, "waiting on condition: %d\n", open_msg.condition);
+    CMCondition_wait(fp_read_data->fp_cm, open_msg.condition);
     // rank 0 gets format from server and then bcasts it to all
     // other ranks.
     int *lengths = calloc(2, sizeof(int*));
@@ -799,10 +934,11 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 	Flush_msg msg;
 	msg.rank = fp_read_data->fp_comm_rank;
 	msg.type = FORMAT;
+	msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
 	// telling writer to flush format.
 	EVsubmit(file_data_list->bridges[0].flush_source, &msg, NULL);
 	
-	CMCondition_wait(fp_read_data->fp_cm, ackCondition);
+	CMCondition_wait(fp_read_data->fp_cm, msg.condition);
 	/* while(file_data_list->polling) { */
 	/*     CMsleep(fp_read_data->fp_cm, 1); */
 	/* } */
@@ -865,22 +1001,23 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
         f++;
     }
     // setting up terminal action for data
-    /* EVassoc_terminal_action(fp_read_data->fp_cm, */
-    /* 			    file_data_list->data_stone, */
-    /* 			    struct_list, data_handler, */
-    /* 			    (void*)file_data_list); */
-    fprintf(stderr, "before assoc\n");
-    EVassoc_raw_terminal_action(fp_read_data->fp_cm,
-    				file_data_list->data_stone,
-    				data_handler,
-    				(void*)file_data_list);
-    fprintf(stderr, "after assoc\n");
+    EVassoc_terminal_action(fp_read_data->fp_cm,
+    			    file_data_list->data_stone,
+    			    struct_list, data_handler,
+    			    (void*)file_data_list);
+    /* fprintf(stderr, "before assoc\n"); */
+    /* EVassoc_raw_terminal_action(fp_read_data->fp_cm, */
+    /* 				file_data_list->data_stone, */
+    /* 				raw_handler, */
+    /* 				(void*)file_data_list); */
+    /* fprintf(stderr, "after assoc\n"); */
     free(struct_list);
     Flush_msg msg;
     msg.type = DATA;
     msg.rank = myrank;
+    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
     EVsubmit(file_data_list->bridges[0].flush_source, &msg, NULL);
-    CMCondition_wait(fp_read_data->fp_cm, ackCondition);
+    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
     return fp;
 }
 
@@ -920,9 +1057,10 @@ int adios_read_flexpath_advance_step(ADIOS_FILE *fp, int last, float timeout_sec
             open.type = 1;
             open.process_id = file_data_list->rank;
             open.file_name = "test";
+	    open.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
             EVsubmit(file_data_list->bridges[i].op_source, &open, NULL);
 
-            CMCondition_wait(fp_read_data->fp_cm, ackCondition);
+            CMCondition_wait(fp_read_data->fp_cm, open.condition);
         }
     }
     fp->current_step++;
@@ -938,7 +1076,7 @@ int adios_read_flexpath_close(ADIOS_FILE * fp)
     msg.type=0;
     msg.file_name = strdup(file->file_name);
     msg.process_id = file->rank;
-
+    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
     //send to each opened link
     for(i = 0; i<file->num_bridges; i++){
         if(file->bridges[i].created) {
@@ -987,6 +1125,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE* fp, int blocking)
     Flush_msg msg;
     msg.rank = fp_read_data->fp_comm_rank;
     msg.type = DATA;
+    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
     int i;
     int num_sendees = fd->num_sendees;
     for(i = 0; i<num_sendees; i++)
@@ -996,7 +1135,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE* fp, int blocking)
 	EVsubmit(file_data_list->bridges[sendee].flush_source, &msg, NULL);
     }
     if(blocking){    
-	CMCondition_wait(fp_read_data->fp_cm, ackCondition);
+	CMCondition_wait(fp_read_data->fp_cm, msg.condition);
     }
     return 0;
 }
@@ -1049,10 +1188,12 @@ get_writer_displacements(int rank, const ADIOS_SELECTION * sel, global_var* gvar
 
 int
 need_writer(int j, const ADIOS_SELECTION* sel, evgroup_ptr gp, char* varname) {    
-    if(!file_data_list->gp){
-	CMCondition_wait(fp_read_data->fp_cm, ackCondition);
-    }
+    /* if(!file_data_list->gp){ */
+    /* 	CMCondition_wait(fp_read_data->fp_cm, ackCondition); */
+    /* } */
 
+    while(!file_data_list->gp)
+	CMsleep(fp_read_data->fp_cm, 1);
     //select var from group
     global_var * gvar = find_gbl_var(gp->vars, varname, gp->num_vars);
 
@@ -1157,8 +1298,9 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * fp,
             open_msg.file_name = fd->file_name;
             open_msg.type = 1;
             open_msg.step = 0;
+	    open_msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
             EVsubmit(fd->bridges[writer_index].op_source, &open_msg, NULL);
-            CMCondition_wait(fp_read_data->fp_cm, ackCondition);
+            CMCondition_wait(fp_read_data->fp_cm, open_msg.condition);
             //perr( "resuming\n");
 	    Var_msg var;
 	    var.rank = fd->rank;

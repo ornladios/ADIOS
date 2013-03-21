@@ -124,6 +124,7 @@ typedef struct _local_write_data {
     QueueNode* controlQueue;
     thr_mutex_t controlMutex;
     int controlCondition;
+    int outCondition;
     QueueNode* dataQueue;    
     thr_mutex_t dataMutex;
     int emptyCondition;
@@ -566,6 +567,8 @@ char* multiqueue_action = "{\n\
         if(c->type == 0) {\n\
             if(EVcount_formatMsg()>0) {\n\
                 formatMsg* msg = EVdata_formatMsg(0);\n\
+                msg->condition = c->condition;\n\
+                printf(\"condition in format msg: \\%d \\n\", msg->condition);\n\
                 EVdiscard_flush(0);\n\
                 EVsubmit(c->rank+1, msg);\n\
             }\n\
@@ -1017,7 +1020,8 @@ static int flush_handler(CManager cm, void* vevent, void* client_data, attr_list
 static int op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
     op_msg* msg = (op_msg*) vevent;
     EVtake_event_buffer(cm, msg);
-    perr( "rank %d <- op_msg : rank %d type %d\n", localWriteData->rank, msg->process_id, msg->type);
+    fprintf(stderr, "rank %d <- op_msg : rank %d type %d: condition: %d\n", 
+	    localWriteData->rank, msg->process_id, msg->type, msg->condition);
     if(msg->type == 1) {
         //perr( "recieved open\n");
         threaded_enqueue(&localWriteData->controlQueue, msg, OPEN, localWriteData->controlMutex, &localWriteData->controlCondition);
@@ -1048,6 +1052,15 @@ attr_list set_dst_rank_atom(attr_list attrs, int value) {
     return attrs;
 }
 
+attr_list set_dst_condition_atom(attr_list attrs, int condition){
+    atom_t dst_atom = attr_atom_from_string("fp_dst_condition");
+    int dst;
+    if(!get_int_attr(attrs, dst_atom, &dst)){
+	add_int_attr(attrs, dst_atom, condition);
+    }
+    set_int_attr(attrs, dst_atom, condition);
+    return attrs;
+}
 
 int control_thread(void* arg) {
     int rank = *((int*) arg);
@@ -1082,7 +1095,9 @@ int control_thread(void* arg) {
 		void* temp = copy_buffer(dataNode->data, flushMsg->rank);
 		//add dst attr 
 		//perr( "adding dst attr\n");
+		fprintf(stderr, "flushMsg condition in attr: %d\n", flushMsg->condition);
 		localWriteData->attrs = set_dst_rank_atom(localWriteData->attrs, flushMsg->rank);
+		localWriteData->attrs = set_dst_condition_atom(localWriteData->attrs, flushMsg->condition);
 		if(!localWriteData->bridges[flushMsg->rank].opened) {
                   perr("rank %d data flush setting bridge %d to open\n", localWriteData->rank, flushMsg->rank);
                   localWriteData->bridges[flushMsg->rank].opened=1;
@@ -1112,6 +1127,7 @@ int control_thread(void* arg) {
                     ack->process_id = localWriteData->rank;
                     ack->step = currentStep;
                     ack->type = 2;
+		    ack->condition = open->condition;
                     localWriteData->attrs = set_dst_rank_atom(localWriteData->attrs, open->process_id+1);
                     EVsubmit_general(localWriteData->opSource, ack, op_free, localWriteData->attrs);
                     perr( "continue\n");
@@ -1153,6 +1169,7 @@ int control_thread(void* arg) {
                         ack->process_id = localWriteData->rank;
                         ack->step = currentStep;
                         ack->type = 2;
+			ack->condition = close->condition;
                         localWriteData->attrs = set_dst_rank_atom(localWriteData->attrs, i+1);
                         EVsubmit_general(localWriteData->opSource, ack, op_free, localWriteData->attrs);
                       }

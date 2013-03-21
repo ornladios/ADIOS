@@ -60,11 +60,13 @@ typedef struct _op_msg
     char * file_name;
     int type; //3 = end_of_stream, 2 = ack, 1 = open, 0 = close,
     int step;
+    int condition;
 } op_msg, *op_msg_ptr;
  
 typedef struct flush_msg_ {
     Flush_type type;
     int rank;
+    int condition;
 } Flush_msg, *Flush_msg_ptr;
  
 typedef struct format_msg_ {
@@ -72,11 +74,13 @@ typedef struct format_msg_ {
     int rep_id_len;
     char* format_id;
     char* rep_id;
+    int condition;
 } Format_msg, *Format_msg_ptr;
 
 typedef struct var_msg_ {
     char* var_name;
     int rank;
+    int condition;
 } Var_msg, *Var_msg_ptr;
 
 static FMField offset_struct_field_list[]=
@@ -107,6 +111,7 @@ static FMField flush_field_list[] =
 {   
     {"type", "integer", sizeof(Flush_type), FMOffset(Flush_msg_ptr, type)},
     {"rank", "integer", sizeof(int), FMOffset(Flush_msg_ptr, rank)},
+    {"condition", "integer", sizeof(int), FMOffset(Flush_msg_ptr, condition)},
     {NULL, NULL, 0, 0}
 };
 
@@ -116,6 +121,7 @@ static FMField format_field_list[] =
     {"rep_id_len", "integer", sizeof(int), FMOffset(Format_msg_ptr, rep_id_len)},
     {"format_id", "char[id_len]", sizeof(char), FMOffset(Format_msg_ptr, format_id)},
     {"rep_id", "char[rep_id_len]", sizeof(char), FMOffset(Format_msg_ptr, rep_id)},
+    {"condition", "integer", sizeof(int), FMOffset(Format_msg_ptr, condition)},
     {NULL, NULL, 0, 0}
 };
 
@@ -133,6 +139,7 @@ static FMField op_file_field_list[] =
     {"file_name", "string", sizeof(char*), FMOffset(op_msg_ptr, file_name)},
     {"type", "integer", sizeof(int), FMOffset(op_msg_ptr, type)},
     {"step", "integer", sizeof(int), FMOffset(op_msg_ptr, step)},
+    {"condition", "integer", sizeof(int), FMOffset(op_msg_ptr, condition)},
     {NULL, NULL, 0, 0}
 };
 
