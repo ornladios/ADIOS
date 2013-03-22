@@ -258,7 +258,7 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
 #if HAVE_MPI
     // if we have MPI and a communicator, we can get the exact size of this application
     // that we need to tell DATASPACES
-    MPI_Comm group_comm = (MPI_Comm) *comm;
+    MPI_Comm group_comm = *(MPI_Comm*)comm;
     /*
     if (comm) {
         adios_dataspaces_var_to_comm (
