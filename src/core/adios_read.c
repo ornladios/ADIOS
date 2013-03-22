@@ -161,12 +161,12 @@ void adios_print_fileinfo (ADIOS_FILE *fp)
 }
 
 
-ADIOS_SELECTION * adios_selection_boundingbox (uint64_t ndim, const uint64_t *start, const uint64_t *count)
+ADIOS_SELECTION * adios_selection_boundingbox (int ndim, const uint64_t *start, const uint64_t *count)
 {
     return common_read_selection_boundingbox (ndim, start, count);
 }
 
-ADIOS_SELECTION * adios_selection_points (uint64_t ndim, uint64_t npoints, const uint64_t *points)
+ADIOS_SELECTION * adios_selection_points (int ndim, uint64_t npoints, const uint64_t *points)
 {
     return common_read_selection_points (ndim, npoints, points);
 }
