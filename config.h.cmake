@@ -249,4 +249,4 @@
 #cmakedefine VERSION_MINOR ${VERSION_MINOR}
 
 /* svn revision number */
-#cmakedefine VERSION_SVNREV "${VERSION_SVNREV}
+#cmakedefine VERSION_SVNREV "${VERSION_SVNREV}"
