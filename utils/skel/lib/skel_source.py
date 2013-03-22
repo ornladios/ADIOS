@@ -183,6 +183,20 @@ def generate_c_write (outfile, config, params, test):
 #            c_file.write ('\nskel_total_close = skel_close_timer;')
 #            c_file.write ('\nskel_total_total = skel_total_timer;')
 
+
+
+# Need to check whether A, compiled with timing support, and B, timing enabled.
+# If A and B, skip other reporting and use adios_timing, otherwise produce xml here.
+
+
+
+
+
+
+
+
+
+
         if measure.report_all():
             pass
             # Detailed reporting disabled, use adios timing instead.
