@@ -23,14 +23,14 @@ set_target_properties(copyarray2D PROPERTIES COMPILE_FLAGS "${ADIOSLIB_CPPFLAGS}
 install(FILES genarray.xml genarray3d.xml job.ewok job2D.ewok DESTINATION ${PROJECT_BINARY_DIR}/tests/genarray) 
 
 add_custom_command(
-	OUTPUT /${PROJECT_SOURCE_DIR}/tests/genarray/gwrite_genarray.fh
+	OUTPUT gwrite_genarray.fh
 	COMMAND rm -f gwrite_genarray.fh gread_genarray.fh 
 	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/genarray/genarray3d.xml
 	DEPENDS genarray3d.xml
 	)
 
 add_custom_command(
-        OUTPUT /${PROJECT_SOURCE_DIR}/tests/genarray/gread_genarray.fh 
+        OUTPUT gread_genarray.fh 
 	COMMAND rm -f gwrite_genarray.fh gread_genarray.fh 
 	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/genarray/genarray3d.xml
 	DEPENDS genarray3d.xml
