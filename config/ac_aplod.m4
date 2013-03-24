@@ -50,7 +50,7 @@ else
     # Check for the APLOD library and headers
     dnl AC_TRY_COMPILE([struct obd_uuid {char uuid[40];};int fd, num_ost;struct obd_uuid uuids[1024];],
     dnl        [llapi_lov_get_uuids(fd, uuids, &num_ost);],
-    dnl        [APLOD_LIBS="-laplod"],
+    dnl        [APLOD_LIBS="-laplod -lz"],
     dnl        [AM_CONDITIONAL(HAVE_APLOD,false)])
 
     LIBS="$save_LIBS"

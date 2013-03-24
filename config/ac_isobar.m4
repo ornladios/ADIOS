@@ -50,7 +50,7 @@ else
     # Check for the ISOBAR library and headers
     dnl AC_TRY_COMPILE([struct obd_uuid {char uuid[40];};int fd, num_ost;struct obd_uuid uuids[1024];],
     dnl        [llapi_lov_get_uuids(fd, uuids, &num_ost);],
-    dnl        [ISOBAR_LIBS="-lisobar"],
+    dnl        [ISOBAR_LIBS="-lisobar -lz"],
     dnl        [AM_CONDITIONAL(HAVE_ISOBAR,false)])
 
     LIBS="$save_LIBS"
