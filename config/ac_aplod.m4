@@ -24,7 +24,7 @@ AM_CONDITIONAL(HAVE_APLOD,true)
 AC_ARG_WITH(aplod,
         [  --with-aplod=DIR      Location of APLOD library],
         [APLOD_LDFLAGS="-L$withval/lib";
-         APLOD_LIBS="-laplod";
+         APLOD_LIBS="-laplod -lz";
          APLOD_CPPFLAGS="-I$withval/include";],
         [with_aplod=no])
 

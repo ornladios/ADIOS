@@ -24,7 +24,7 @@ AM_CONDITIONAL(HAVE_ISOBAR,true)
 AC_ARG_WITH(isobar,
         [  --with-isobar=DIR      Location of ISOBAR library],
         [ISOBAR_LDFLAGS="-L$withval/lib";
-         ISOBAR_LIBS="-lisobar";
+         ISOBAR_LIBS="-lisobar -lz";
          ISOBAR_CPPFLAGS="-I$withval/include";],
         [with_isobar=no])
 
