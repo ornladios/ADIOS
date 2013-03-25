@@ -104,7 +104,7 @@ typedef struct {
  *       count     number of data elements to read in each dimension
  *  RETURN:        A selection which can be used to read variables
  */
-ADIOS_SELECTION * adios_selection_boundingbox (uint64_t ndim, const uint64_t *start, const uint64_t *count);
+ADIOS_SELECTION * adios_selection_boundingbox (int ndim, const uint64_t *start, const uint64_t *count);
 
 
 /** Selection for a selection of an enumeration of positions.
@@ -115,7 +115,7 @@ ADIOS_SELECTION * adios_selection_boundingbox (uint64_t ndim, const uint64_t *st
  *                 (e.g.  [i1,j1,k1,i2,j2,k2,...,in,jn,kn] for
  *                 n points in a 3D space.
  */
-ADIOS_SELECTION* adios_selection_points (uint64_t ndim, uint64_t npoints, const uint64_t *points);
+ADIOS_SELECTION* adios_selection_points (int ndim, uint64_t npoints, const uint64_t *points);
 
 /** Selection for a block of data coming from a certain producer.
  *

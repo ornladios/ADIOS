@@ -851,7 +851,7 @@ void common_read_print_fileinfo (const ADIOS_FILE *fp)
 
 
 /**    SELECTIONS   **/ 
-ADIOS_SELECTION * common_read_selection_boundingbox (uint64_t ndim, const uint64_t *start, const uint64_t *count)
+ADIOS_SELECTION * common_read_selection_boundingbox (int ndim, const uint64_t *start, const uint64_t *count)
 {   
     adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
@@ -867,7 +867,7 @@ ADIOS_SELECTION * common_read_selection_boundingbox (uint64_t ndim, const uint64
 }
 
 
-ADIOS_SELECTION * common_read_selection_points (uint64_t ndim, uint64_t npoints, const uint64_t *points)
+ADIOS_SELECTION * common_read_selection_points (int ndim, uint64_t npoints, const uint64_t *points)
 {   
     adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
