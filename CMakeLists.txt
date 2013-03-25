@@ -191,7 +191,7 @@ endif(LUSTRE)
 CHECK_INCLUDE_FILES(memory.h HAVE_MEMORY_H)
 
 # Define to 1 if you have the <mxml.h> header file.
-find_path(MXML_INCLUDE_DIR NAMES mxml.h PATHS ${MXML_DIR}/include)
+find_path(MXML_INCLUDE_DIR NAMES mxml.h PATHS $ENV{MXML_DIR}/include)
 if(NOT MXML_INCLUDE_DIR-NOTFOUND)
   message(STATUS "find mxml header")
   set(HAVE_MXML_H 1)
