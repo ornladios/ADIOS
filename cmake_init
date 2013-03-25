@@ -161,15 +161,15 @@ elif [ `hostname | cut -c 1-4` == "yona" ]; then
     fi
         
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/yona.$TARGET \
-        --enable-dependency-tracking \
-        --enable-research-transports  \
-        --with-hdf5=${SEQ_HDF5_DIR} \
-        --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
-        --with-netcdf=${SEQ_NC_DIR} \
-        --with-netcdf-libs="${SEQ_NC_CLIB}" \
-        --with-lustre=/usr \
-        --without-datatap --without-infiniband
+#    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/yona.$TARGET \
+#        --enable-dependency-tracking \
+#        --enable-research-transports  \
+#        --with-hdf5=${SEQ_HDF5_DIR} \
+#        --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
+#        --with-netcdf=${SEQ_NC_DIR} \
+#        --with-netcdf-libs="${SEQ_NC_CLIB}" \
+#        --with-lustre=/usr \
+#        --without-datatap --without-infiniband
         #--with-phdf5=${PAR_HDF5_DIR} \
         #--with-phdf5-libs="${PAR_HDF5_CLIB}" \
         #--with-nc4par=${PAR_NC_DIR} \
@@ -244,7 +244,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         ################
         # Titan #
         ################
-        TARGET=gnu
+        TARGET=intel
         echo "Configure on TITAN (XK7) for $TARGET env."
         export CC=cc
         #export CFLAGS="-Wall -g" 
@@ -409,8 +409,9 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       # use the two lines below for openmpi
       #export CC=mpicc
       #export FC=mpif90
-      CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
-          --enable-dependency-tracking 
+      CFLAGS="-g -fPIC" 
+#      ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
+#          --enable-dependency-tracking 
 #          --with-cray-pmi=/opt/cray/pmi/default \
 #          --with-cray-ugni-incdir=/opt/cray/gni-headers/2.1-1.0400.4351.3.1.gem/include \
 #          --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
@@ -474,14 +475,14 @@ elif [ `hostname | cut -c 1-5` == "smoky" ]; then
     fi
         
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/smoky.$TARGET \
-        --enable-dependency-tracking \
-        --enable-research-transports  \
-        --with-mxml=/ccs/proj/e2e/pnorbert/mxml.smoky.$TARGET \
-        --without-hdf5 --without-phdf5 \
-        --without-netcdf --without-nc4par \
-        --with-lustre=/usr \
-        --without-datatap --without-infiniband \
+#    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/smoky.$TARGET \
+#        --enable-dependency-tracking \
+#        --enable-research-transports  \
+#        --with-mxml=/ccs/proj/e2e/pnorbert/mxml.smoky.$TARGET \
+#        --without-hdf5 --without-phdf5 \
+#        --without-netcdf --without-nc4par \
+#        --with-lustre=/usr \
+#        --without-datatap --without-infiniband \
         #--with-phdf5=${PAR_HDF5_DIR} \
         #--with-phdf5-libs="${PAR_HDF5_CLIB}" \
         #--with-hdf5=${SEQ_HDF5_DIR} \
@@ -525,12 +526,13 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
-        CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
-            --enable-dependency-tracking \
-            --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.pgi \
-            --with-hdf5=/opt/cray/hdf5/1.8.7/pgi/109 \
-            --with-phdf5=/opt/cray/hdf5-parallel/1.8.7/pgi/109 \
-            --without-portals
+        CFLAGS="-g -fPIC" 
+#        ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
+#            --enable-dependency-tracking \
+#            --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.pgi \
+#            --with-hdf5=/opt/cray/hdf5/1.8.7/pgi/109 \
+#            --with-phdf5=/opt/cray/hdf5-parallel/1.8.7/pgi/109 \
+#            --without-portals
 #            --with-lustre=/opt/xt-lustre-ss/2.2_1.6.5/usr
 #            --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.$TARGET
 #            --enable-research-transports \
@@ -590,15 +592,15 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
         export CFLAGS="-fPIC -g -O0" 
         #./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xt5.$TARGET \
-        ./configure --prefix=/ccs/proj/fus022/norbert/RMP/adios.xt5.$TARGET \
-        --enable-dependency-tracking \
-        --with-portals=/opt/xt-pe/2.2.41A \
-        --with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
-        --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
-        --with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-$TARGET \
-        --with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
-        $WITHDART \
-        --with-dimes=/ccs/proj/e2e/pnorbert/spaces/$TARGET
+#        ./configure --prefix=/ccs/proj/fus022/norbert/RMP/adios.xt5.$TARGET \
+#        --enable-dependency-tracking \
+#        --with-portals=/opt/xt-pe/2.2.41A \
+#        --with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
+#        --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
+#        --with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-$TARGET \
+#        --with-phdf5=/opt/cray/hdf5-parallel/1.8.4.1/hdf5-parallel-$TARGET \
+#        $WITHDART \
+#        --with-dimes=/ccs/proj/e2e/pnorbert/spaces/$TARGET
         #--with-nssi=/ccs/proj/e2e/pnorbert/nssi/xt5/$TARGET \
         #--with-datatap=/ccs/home/zf2/work/pe.$TARGET \
         #--with-datatap=/ccs/proj/e2e/pnorbert/datatap/xt5/$TARGET \
@@ -643,11 +645,11 @@ elif [ `hostname | cut -c 1-4` == "euge" ]; then
     export HDF5_CLIB="-I/sw/bgp/hdf5/1.8.5/sles10.2_xlc9.0xlf11.1/install/include -L/sw/bgp/hdf5/1.8.5/sles10.2_xlc9.0xlf11.1/install/lib -lhdf5_hl -lhdf5 -L/sw/bgp/szip/2.1/sles10.1_xlc9.0/lib -lsz /usr/lib/libz.a"
     module load mxml
 
-    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eugene \
-            --enable-dependency-tracking \
-            --with-hdf5=$HDF5_DIR \
-            --with-hdf5-libs="$HDF5_CLIB" \
-            --without-phdf5
+#    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eugene \
+#            --enable-dependency-tracking \
+#            --with-hdf5=$HDF5_DIR \
+#            --with-hdf5-libs="$HDF5_CLIB" \
+#            --without-phdf5
 
     
 elif [ `hostname | cut -c 1-4` == "nid0" ]; then
@@ -675,14 +677,14 @@ elif [ `hostname | cut -c 1-4` == "nid0" ]; then
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-fPIC"
     #./configure --prefix=/project/projectdirs/m499/adios \
-    ./configure --prefix=/global/homes/p/pnorbert/adios \
-        --enable-dependency-tracking \
-        --with-mxml=$HOME/mxml \
-        --with-hdf5=/opt/cray/hdf5/1.8.5.0/hdf5-${TARGET} \
-        --with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
-        --with-phdf5=/opt/cray/hdf5-parallel/1.8.5.0/hdf5-parallel-${TARGET} \
-        --with-nc4par=/opt/cray/netcdf-hdf5parallel/4.1.1.0/netcdf-hdf5parallel-${TARGET} \
-        --with-dart=/global/homes/p/pnorbert/dart.0628.pgi
+#    ./configure --prefix=/global/homes/p/pnorbert/adios \
+#        --enable-dependency-tracking \
+#        --with-mxml=$HOME/mxml \
+#        --with-hdf5=/opt/cray/hdf5/1.8.5.0/hdf5-${TARGET} \
+#        --with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
+#        --with-phdf5=/opt/cray/hdf5-parallel/1.8.5.0/hdf5-parallel-${TARGET} \
+#        --with-nc4par=/opt/cray/netcdf-hdf5parallel/4.1.1.0/netcdf-hdf5parallel-${TARGET} \
+#        --with-dart=/global/homes/p/pnorbert/dart.0628.pgi
     
 
 elif [ `hostname | cut -c 1-6` == "hopper" ]; then
@@ -729,16 +731,16 @@ elif [ `hostname | cut -c 1-6` == "hopper" ]; then
     fi
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-fPIC"
-    ./configure --prefix=/global/homes/p/pnorbert/adios/1.4.1/hopper/$TARGET \
-        --enable-dependency-tracking \
-        --with-mxml=$HOME/mxml/mxml.hopper \
-        --with-lustre=/usr \
-        $WITHDART \
-        --with-cray-pmi-incdir=/opt/cray/pmi/default/include \
-        --with-cray-pmi-libdir=/opt/cray/pmi/default/lib64 \
-        --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
-        --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
-        --without-hdf5 --without-netcdf
+#    ./configure --prefix=/global/homes/p/pnorbert/adios/1.4.1/hopper/$TARGET \
+#        --enable-dependency-tracking \
+#        --with-mxml=$HOME/mxml/mxml.hopper \
+#        --with-lustre=/usr \
+#        $WITHDART \
+#        --with-cray-pmi-incdir=/opt/cray/pmi/default/include \
+#        --with-cray-pmi-libdir=/opt/cray/pmi/default/lib64 \
+#        --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
+#        --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
+#        --without-hdf5 --without-netcdf
 
 
 elif [ `hostname | cut -c 1-6` == "kraken" ]; then
@@ -782,11 +784,11 @@ elif [ `hostname | cut -c 1-6` == "kraken" ]; then
     module load subversion
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-fPIC -g -O0" 
-    ./configure --prefix=/${HOME}/adios/$TARGET \
-        --enable-dependency-tracking \
-        --with-portals=yes \
-        --without-netcdf --without-nc4par --without-hdf5 --without-phdf5 \
-        --with-dataspaces=${HOME}/dataspaces/1.0.0/$TARGET
+#    ./configure --prefix=/${HOME}/adios/$TARGET \
+#        --enable-dependency-tracking \
+#        --with-portals=yes \
+#        --without-netcdf --without-nc4par --without-hdf5 --without-phdf5 \
+#        --with-dataspaces=${HOME}/dataspaces/1.0.0/$TARGET
 
 
 elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; then
@@ -803,11 +805,12 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     export MPICC=/opt/local/bin/openmpicc
     export MPIFC=/opt/local/bin/openmpif90
     export MPICXX=/opt/local/bin/openmpicxx
-    CFLAGS="-g -DO_LARGEFILE=0 -fno-common" ./configure --prefix=/opt/adios \
-        --with-mxml=/opt/mxml \
-        --with-netcdf=/opt/netcdf \
-        --with-phdf5=/opt/hdf5 \
-        --with-hdf5=/opt/hdf5.seq
+    CFLAGS="-g -DO_LARGEFILE=0 -fno-common" 
+#    ./configure --prefix=/opt/adios \
+#        --with-mxml=/opt/mxml \
+#        --with-netcdf=/opt/netcdf \
+#        --with-phdf5=/opt/hdf5 \
+#        --with-hdf5=/opt/hdf5.seq
 
 
 elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
@@ -817,9 +820,9 @@ elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
     #########################
     echo "Configure on UBUNTU"
     export CC=mpicc
-    ./configure --prefix=/usr/local/adios \
-        --enable-dependency-tracking \
-        --with-mxml=/usr/local/adios 
+#    ./configure --prefix=/usr/local/adios \
+#        --enable-dependency-tracking \
+#        --with-mxml=/usr/local/adios 
         #--with-hdf5=/usr/local/hdf5-serial\
         #--with-phdf5=/usr/local \
         #--with-netcdf=/usr 
@@ -832,12 +835,12 @@ elif [ `hostname | cut -c 1-6` == "tomato" ]; then
     #########################
     echo "Configure on UBUNTU"
     export CC=mpicc
-    ./configure --prefix=/home/thkorde/local \
-        --enable-dependency-tracking \
-        --with-mxml=/home/thkorde/local \
-        --with-phdf5=/home/thkorde/local \
-        --with-hdf5=/home/thkorde/local \
-        --with-netcdf=/home/thkorde/local
+#    ./configure --prefix=/home/thkorde/local \
+#        --enable-dependency-tracking \
+#        --with-mxml=/home/thkorde/local \
+#        --with-phdf5=/home/thkorde/local \
+#        --with-hdf5=/home/thkorde/local \
+#        --with-netcdf=/home/thkorde/local
 
 
 elif [ `hostname | cut -c 1-4` == "qliu" ]; then
@@ -848,9 +851,9 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
     echo "Configure on UBUNTU"
     export CC=mpicc
     export CFLAGS="-g -O0 -fPIC"
-    ./configure --prefix=/home/qliu/ADIOS \
-        --enable-dependency-tracking \
-        --with-mxml=/home/qliu/mxml \
+#    ./configure --prefix=/home/qliu/ADIOS \
+#        --enable-dependency-tracking \
+#        --with-mxml=/home/qliu/mxml \
         #--with-phdf5=/home/thkorde/local \
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
