@@ -23,6 +23,11 @@
 extern "C"  /* prevent C++ name mangling */
 #endif
 
+
+#ifdef BUILD_WITH_CMAKE
+  #include "../../FC.h"
+#endif
+
 extern int adios_errno;
 
 ///////////////////////////////////////////////////////////////////////////////

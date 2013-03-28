@@ -27,8 +27,8 @@ class skel_settings:
 
 
 
-    def get_skel_home (self):
-        return self.settings_dict['skel_home']
+#    def get_skel_home (self):
+#        return self.settings_dict['skel_home']
 
     def get_deploy_dir (self):
         return self.settings_dict['deploy_dir']

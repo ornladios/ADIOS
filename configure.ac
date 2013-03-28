@@ -89,9 +89,17 @@ AC_ARG_ENABLE(skel-timing,
         [Include the skel timing mechanism. By default this is not included])])
 AM_CONDITIONAL([SKEL_TIMING], [test "x$enable_skel_timing" == "xyes"])
 
+
 if test "x$enable_skel_timing" == "xyes"; then
     AC_DEFINE(SKEL_TIMING, 1, [Skel timing is enabled])
+    AC_SUBST(SKEL_HAVE_ADIOS_TIMING,true)
+    AM_SUBST_NOTMAKE(SKEL_HAVE_ADIOS_TIMING,true)
+else
+    AC_SUBST(SKEL_HAVE_ADIOS_TIMING,false)
+    AM_SUBST_NOTMAKE(SKEL_HAVE_ADIOS_TIMING,false)
 fi
+AC_SUBST(SKEL_TIMING)
+
 
 AC_LANG(C)
 
@@ -430,6 +438,7 @@ AC_CONFIG_FILES([Makefile
                  utils/Makefile
                  utils/skel/Makefile
                  utils/skel/etc/Makefile
+                 utils/skel/lib/skel_have_adios_timing.py
                  utils/adios_lint/Makefile
                  utils/gpp/Makefile
                  utils/bpdump/Makefile

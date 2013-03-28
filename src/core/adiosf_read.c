@@ -30,6 +30,10 @@ extern int adios_errno;
 
 #define PRINT_ERRMSG() fprintf(stderr, "ADIOS READ ERROR: %s\n", adios_get_last_errmsg())
 
+#ifdef BUILD_WITH_CMAKE
+  #include "../../FC.h"
+#endif
+
 /*********************/
 /* FORTRAN INTERFACE */
 /*********************/
@@ -525,14 +529,14 @@ void FC_FUNC_(adios_inq_attr, ADIOS_INQ_ATTR)
 }
 
 void FC_FUNC_(adios_selection_boundingbox, ADIOS_SELECTION_BOUNDINGBOX) 
-           (int64_t * fsel, uint64_t *ndim, uint64_t *start, uint64_t *count)
+           (int64_t * fsel, int *ndim, uint64_t *start, uint64_t *count)
 {   
     ADIOS_SELECTION * sel = common_read_selection_boundingbox (*ndim, start, count);
     *fsel = (int64_t) sel;
 }
 
 void FC_FUNC_(adios_selection_points, ADIOS_SELECTION_POINTS) 
-            (int64_t *fsel, uint64_t *ndim, uint64_t *npoints, uint64_t *points)
+            (int64_t *fsel, int *ndim, uint64_t *npoints, uint64_t *points)
 {
     ADIOS_SELECTION * sel = common_read_selection_points (*ndim, *npoints, points);
     *fsel = (int64_t) sel;

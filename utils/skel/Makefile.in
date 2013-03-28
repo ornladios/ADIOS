@@ -284,6 +284,7 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SKEL_TIMING = @SKEL_TIMING@
 STRIP = @STRIP@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
@@ -341,12 +342,11 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = etc
-dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py
+dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py bin/skel_cat.py
 pythonlibdir = @libdir@/python
 dist_pythonlib_DATA = \
     lib/adios.py \
 	lib/argparse.py \
-    lib/skel_cat.py \
     lib/skel_install.py \
     lib/skel_makefile.py \
     lib/skel_params.py \
@@ -355,6 +355,7 @@ dist_pythonlib_DATA = \
     lib/skel_submit.py \
     lib/skel_xml.py \
     lib/skelconf.py \
+    lib/skel_have_adios_timing.py \
     lib/typeMapper.py 
 
 templatedir = @prefix@/etc/skel/templates
@@ -366,7 +367,8 @@ dist_template_DATA = \
 EXTRA_DIST = etc/settings etc/compiler_fragment.mk \
            etc/templates/Makefile.default.tpl \
            etc/templates/submit_jaguar.tpl \
-           etc/templates/submit_sith.tpl 
+           etc/templates/submit_sith.tpl \
+           bin/skel_have_adios_timing.py
 
 all: all-recursive
 

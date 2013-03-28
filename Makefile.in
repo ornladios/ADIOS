@@ -41,10 +41,11 @@ host_triplet = @host@
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/adios_config.flags.in \
-	$(srcdir)/config.h.in $(top_srcdir)/configure AUTHORS COPYING \
-	ChangeLog INSTALL NEWS TODO config/compile config/config.guess \
-	config/config.sub config/depcomp config/install-sh \
-	config/ltmain.sh config/missing
+	$(srcdir)/config.h.in $(top_srcdir)/configure \
+	$(top_srcdir)/utils/skel/lib/skel_have_adios_timing.py.in \
+	AUTHORS COPYING ChangeLog INSTALL NEWS TODO config/compile \
+	config/config.guess config/config.sub config/depcomp \
+	config/install-sh config/ltmain.sh config/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
@@ -71,7 +72,8 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
-CONFIG_CLEAN_FILES = adios_config.flags
+CONFIG_CLEAN_FILES = utils/skel/lib/skel_have_adios_timing.py \
+	adios_config.flags
 CONFIG_CLEAN_VPATH_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -300,6 +302,7 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SKEL_TIMING = @SKEL_TIMING@
 STRIP = @STRIP@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
@@ -429,6 +432,8 @@ $(srcdir)/config.h.in:  $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f config.h stamp-h1
+utils/skel/lib/skel_have_adios_timing.py: $(top_builddir)/config.status $(top_srcdir)/utils/skel/lib/skel_have_adios_timing.py.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 adios_config.flags: $(top_builddir)/config.status $(srcdir)/adios_config.flags.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 install-binSCRIPTS: $(bin_SCRIPTS)

@@ -1,0 +1,9 @@
+add_subdirectory(programs)
+
+install(FILES HOWTO-Add-new-test DESTINATION ${PROJECT_BINARY_DIR}/tests/suite)
+install(FILES HOWTO-Run DESTINATION ${PROJECT_BINARY_DIR}/tests/suite)
+install(PROGRAMS cleanup.sh DESTINATION ${PROJECT_BINARY_DIR}/tests/suite)
+install(DIRECTORY reference USE_SOURCE_PERMISSIONS DESTINATION ${PROJECT_BINARY_DIR}/tests/suite
+PATTERN ".svn" EXCLUDE)
+install(PROGRAMS test.sh DESTINATION ${PROJECT_BINARY_DIR}/tests/suite)
+install(DIRECTORY tests USE_SOURCE_PERMISSIONS DESTINATION ${PROJECT_BINARY_DIR}/tests/suite PATTERN ".svn" EXCLUDE)
