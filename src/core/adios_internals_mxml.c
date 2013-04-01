@@ -215,7 +215,7 @@ static void adios_append_mesh_cell_list
 
 
 // Parse var time series format (real time tracking, not integers)
-static int parseVarTimeSeriesFormat (const char ** timeseries
+static int parseVarTimeSeriesFormat (const char * timeseries
                                       ,struct adios_group_struct * new_group
                                       ,const char * name
                                       )
@@ -241,7 +241,7 @@ static int parseVarTimeSeriesFormat (const char ** timeseries
 
 
 // Parse var time scale (real time tracking, not integers)
-static int parseVarTimeScale (const char ** timescale
+static int parseVarTimeScale (const char * timescale
                                       ,struct adios_group_struct * new_group
                                       ,const char * name
                                       )
@@ -410,7 +410,7 @@ static int parseVarTimeScale (const char ** timescale
 
 // Parse mesh time series (single file for multiple time steps or
 // multiple files for time steps, basename + timeformat + extension)
-static int parseMeshTimeSeriesFormat (const char ** timeseries
+static int parseMeshTimeSeriesFormat (const char * timeseries
                                       ,struct adios_group_struct * new_group
                                       ,const char * name
                                       )
@@ -435,7 +435,7 @@ static int parseMeshTimeSeriesFormat (const char ** timeseries
 }
 
 // Parse mesh time scale (real time tracking, not integers)
-static int parseMeshTimeScale (const char ** timescale
+static int parseMeshTimeScale (const char * timescale
                                       ,struct adios_group_struct * new_group
                                       ,const char * name
                                       )
@@ -604,7 +604,7 @@ static int parseMeshTimeScale (const char ** timescale
  
 
 // Parse var var steps (integers = number of times vars are written)
-static int parseVarTimeSteps (const char ** timesteps
+static int parseVarTimeSteps (const char * timesteps
                                       ,struct adios_group_struct * new_group
                                       ,const char * name
                                       )
@@ -770,7 +770,7 @@ static int parseVarTimeSteps (const char ** timesteps
 }
 
 // Parse mesh time steps (integers = number of times vars are written)
-static int parseMeshTimeSteps (const char ** timesteps
+static int parseMeshTimeSteps (const char * timesteps
                                       ,struct adios_group_struct * new_group
                                       ,const char * name
                                       )
