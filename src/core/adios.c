@@ -314,7 +314,8 @@ int adios_close (int64_t fd_p)
         }
 
         // NCSU ALACRITY-ADIOS - Clear transform metadata
-        adios_transform_clear_transform_var(v);
+        // adios_transform_clear_transform_var(v); // Actually, no, we shouldn't free the metadata here, because this happens once a timestep,
+                                                   // and this shouldn't be free'd until finalize (it is just overwritten each timestep)
 
         v = v->next;
     }
