@@ -1,3 +1,5 @@
+ACLOCAL_AMFLAGS=-I config
+
 SUBDIRS=src utils tests examples
 
 EXTRA_DIST = runconf \
