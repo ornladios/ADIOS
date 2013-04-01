@@ -92,7 +92,7 @@ int main (int argc, char ** argv)
 {
     char        filename [256]; 
     int         rank, size, gidx, i, j, k,l;
-    MPI_Comm    comm_dummy = 0;  /* MPI_Comm is defined through adios_read.h */
+    MPI_Comm    comm_dummy = MPI_COMM_WORLD;  /* MPI_Comm is defined through adios_read.h */
     enum ADIOS_DATATYPES attr_type;
     void      * data = NULL;
     uint64_t    start[] = {0,0,0,0,0,0,0,0,0,0};
@@ -114,6 +114,7 @@ int main (int argc, char ** argv)
         return 1;
     }
 
+    MPI_Init(&argc, &argv);
     h5_err = H5Eset_auto(NULL, NULL );
     ADIOS_FILE * f = adios_fopen (argv[1], comm_dummy);
     HDF5_FILE = H5Fcreate(argv[2],H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -222,6 +223,7 @@ int main (int argc, char ** argv)
     adios_fclose (f);
     h5_err =  H5Fclose(HDF5_FILE);
 
+    MPI_Finalize();
     return 0;
 }
 
