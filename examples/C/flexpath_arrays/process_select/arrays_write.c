@@ -35,6 +35,7 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     strcpy (filename, "arrays");
     adios_init ("arrays.xml");
+    adios_open (&adios_handle, "arrays", filename, "w", &comm);
     
     /* write data 200 times so that it forms a stream */
     int ii=0;
@@ -50,9 +51,6 @@ int main (int argc, char ** argv)
         for (i = 0; i < NX; i++)
             p[i] = (rank*1000000) + (ii * 1000) + i;
         
-        /* explicit open each step */
-        adios_open (&adios_handle, "arrays", filename, "w", &comm);
-
         /* groupsize registration (necessary?) */
         adios_groupsize = 4 + 4 + 8 * (NX) * (NY) + 4 * (NX);
         adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
@@ -63,6 +61,7 @@ int main (int argc, char ** argv)
         adios_write (adios_handle, "var_double_2Darray", t);
         adios_write (adios_handle, "var_int_1Darray", p);
         //fprintf(stderr, "2d arr %p 1d arr %p\n", t, p);
+   
         /* commit the write */
         adios_close (adios_handle);
         printf("Committed Rank=%d Step=%d\n\n", rank, ii);
