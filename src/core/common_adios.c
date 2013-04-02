@@ -202,6 +202,11 @@ int common_adios_open (int64_t * fd, const char * group_name
 ///////////////////////////////////////////////////////////////////////////////
 static const char ADIOS_ATTR_PATH[] = "/__adios__";
 
+uint32_t pinned_timestep = 0;
+void adios_pin_timestep(uint32_t ts) {
+  pinned_timestep = ts;
+}
+
 int common_adios_group_size (int64_t fd_p
                      ,uint64_t data_size
                      ,uint64_t * total_size
@@ -341,6 +346,9 @@ int common_adios_group_size (int64_t fd_p
 
         m = m->next;
     }
+
+    if (pinned_timestep != 0)
+        fd->group->time_index = pinned_timestep;
 
     if (fd->shared_buffer == adios_flag_no)
     {

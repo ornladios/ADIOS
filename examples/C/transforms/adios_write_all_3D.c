@@ -20,6 +20,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <core/adios_internals.h>
+
 #define MAX_DIMS 5
 
 struct dimensions {
@@ -118,6 +120,7 @@ void adios_write_pg (char transform [], char input_dir [], uint8_t nvars, char *
 
         rank = t;
 
+        adios_pin_timestep(1);
         if (t == 0) {
             adios_open (&adios_handle, "S3D", output_bp_file, "w", &comm);
         } else {
