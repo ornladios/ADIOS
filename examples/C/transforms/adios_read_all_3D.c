@@ -24,7 +24,7 @@
 #define Y 2
 #define X 4
 
-#define NTIMES 10
+#define NTIMES 1
 
 #define RS_SCALE (1.0 / (1.0 + RAND_MAX))
 
@@ -44,6 +44,7 @@ uint32_t irand (uint x)
 
 void read_points (char filename [], char varname [], uint32_t npoints)
 {
+    printf ("===%s===\n", __FUNCTION__);
     // What are the first 2 dimensions
     enum ADIOS_READ_METHOD  method   = ADIOS_READ_METHOD_BP;
     MPI_Comm                comm     = MPI_COMM_WORLD;
@@ -114,6 +115,7 @@ void read_points (char filename [], char varname [], uint32_t npoints)
 
 void read_bounding_box (char filename [], char varname [], uint64_t counts [], uint8_t plane, uint8_t is_aligned)
 {
+    printf ("===%s===\n", __FUNCTION__);
     // What are the first 2 dimensions
     enum ADIOS_READ_METHOD  method   = ADIOS_READ_METHOD_BP;
     MPI_Comm                comm     = MPI_COMM_WORLD;
@@ -141,20 +143,26 @@ void read_bounding_box (char filename [], char varname [], uint64_t counts [], u
     // This code should only work for 3D data
     // assert (varinfo->ndim == 3);
 
-    /*
-    printf ("Dimensions for %s are %s: ", filename, varname);
+    printf ("%lu dimensions for %s are %s: ", ndim, filename, varname);
     for (i = 0; i < varinfo->ndim; i ++) {
         printf ("%d ", varinfo->dims [i]);        
     }
     printf ("\n");
     printf ("Timesteps: %d\n", f->last_step + 1);
 
-    assert (f->last_step == 0);
-    */
+    // assert (f->last_step == 0);
+
+    #if 1 
+        counts [0] = 64;
+        counts [1] = 64;
+        counts [2] = 64;
+    #endif
 
     for (j = 0; j < ndim; j ++) {
         npoints *= counts [j];
     }
+
+    printf ("npoints: %d\n", npoints);
 
     data    = (double *) malloc (npoints * sizeof (double));
     starts  = (uint64_t *) malloc (varinfo->ndim * sizeof (uint64_t));
@@ -188,6 +196,25 @@ void read_bounding_box (char filename [], char varname [], uint64_t counts [], u
             }
         }
 
+        #if 1 
+            printf ("Starts: ");
+            starts [0] = 0;
+            starts [1] = 128;
+            starts [2] = 28;
+            
+            for (j = 0; j < ndim; j ++) {
+                printf ("%lu ", starts [j]);
+            }
+            printf ("\n");
+
+            printf ("Counts: ");
+            starts [0] = 0;
+            for (j = 0; j < ndim; j ++) {
+                printf ("%lu ", counts [j]);
+            }
+            printf ("\n");
+        #endif
+
         sel1 = adios_selection_boundingbox (varinfo->ndim, starts, counts);
         
         adios_schedule_read (f, sel1, varname, 0, 1, data);
@@ -217,10 +244,16 @@ void read_bounding_box (char filename [], char varname [], uint64_t counts [], u
 int main (int argc, char *argv[]) 
 {
     MPI_Init (&argc, &argv);
-    read_points (argv [1], argv [2], 100);
+    srand (time (NULL));
+    uint64_t counts [] = {1, 10, 10};
 
-    uint64_t counts [] = {1, 100};
-    read_bounding_box (argv [1], argv [2], counts, Y + Z, 0);
+    if (argc >= 2) {
+        read_bounding_box (argv [1], argv [2], counts, Y + Z, 1);
+        // read_points (argv [1], argv [2], 10);
+    } else {
+        printf ("Usage: <%s> <filename> <variable name>\n", argv [0]);
+    }
+
     MPI_Finalize ();
     return 0;
 }
