@@ -74,7 +74,7 @@ adios_datablock * adios_transform_bzip2_pg_reqgroup_completed(adios_transform_re
 	uint64_t compressed_len = (uint64_t)completed_pg_reqgroup->raw_var_length;
 	void* compressed_buff = completed_pg_reqgroup->subreqs->data;
 	
-	uint64_t decompressed_len_test = adios_get_type_size(reqgroup->raw_varinfo->type, "");
+	uint64_t decompressed_len_test = adios_get_type_size(reqgroup->transinfo->orig_type, "");
 	int d = 0;
 	for(d = 0; d < reqgroup->raw_varinfo->ndim; d++)
 	{
