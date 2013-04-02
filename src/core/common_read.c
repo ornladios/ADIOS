@@ -740,14 +740,20 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
 
                 // Generate the read request group and append it to the list
                 new_reqgroup = adios_transform_generate_read_reqgroup(raw_varinfo, transinfo, fp, sel, from_steps, nsteps, data);
-                adios_transform_read_request_append(&internals->transform_reqgroups, new_reqgroup);
 
-                // Now schedule all of the new subrequests
-                retval = 0;
-                for (pg_reqgroup = new_reqgroup->pg_reqgroups; pg_reqgroup; pg_reqgroup = pg_reqgroup->next) {
-                    for (subreq = pg_reqgroup->subreqs; subreq; subreq = subreq->next) {
-                        retval |= internals->read_hooks[internals->method].adios_schedule_read_byid_fn(
-                                        fp, subreq->raw_sel, varid+internals->group_varid_offset, pg_reqgroup->timestep, 1, subreq->data);
+                // Proceed to register the read request and schedule all of its grandchild raw
+                // read requests ONLY IF a non-NULL reqgroup was returned (i.e., the user's
+                // selection intersected at least one PG).
+                if (new_reqgroup) {
+                    adios_transform_read_request_append(&internals->transform_reqgroups, new_reqgroup);
+
+                    // Now schedule all of the new subrequests
+                    retval = 0;
+                    for (pg_reqgroup = new_reqgroup->pg_reqgroups; pg_reqgroup; pg_reqgroup = pg_reqgroup->next) {
+                        for (subreq = pg_reqgroup->subreqs; subreq; subreq = subreq->next) {
+                            retval |= internals->read_hooks[internals->method].adios_schedule_read_byid_fn(
+                                            fp, subreq->raw_sel, varid+internals->group_varid_offset, pg_reqgroup->timestep, 1, subreq->data);
+                        }
                     }
                 }
             } else {

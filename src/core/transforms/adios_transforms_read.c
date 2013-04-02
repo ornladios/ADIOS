@@ -136,6 +136,12 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
         }
     }
 
+    // If this read request does not intersect any PGs, then clear the new read request
+    if (new_reqgroup->num_pg_reqgroups == 0) {
+        adios_transform_read_request_free(&new_reqgroup);
+        new_reqgroup = NULL;
+    }
+
     return new_reqgroup;
 }
 
