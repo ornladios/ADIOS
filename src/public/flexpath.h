@@ -24,6 +24,17 @@
                     fprintf(stderr, __VA_ARGS__);   \
                 }                                   \
             }
+
+#define fp_write_log(LOG, ...)                             \
+            if(getenv("FP_DEBUG")) {    \
+                if(strcmp(getenv("FP_DEBUG"),"ALL")==0) {          \
+                    fprintf(stderr, "%d %s:", flexpathWriteData.rank, LOG);   \
+                    fprintf(stderr, __VA_ARGS__);   \
+                } else if(strcmp(getenv("FP_DEBUG"),LOG)==0) {     \
+                    fprintf(stderr, "%d %s:", flexpathWriteData.rank, LOG);   \
+                    fprintf(stderr, __VA_ARGS__);   \
+                }                                   \
+            }
             
 
 //adios_logger(4,1, __VA_ARGS__);

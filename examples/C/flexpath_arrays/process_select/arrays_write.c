@@ -35,11 +35,13 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     strcpy (filename, "arrays");
     adios_init ("arrays.xml");
-    adios_open (&adios_handle, "arrays", filename, "w", &comm);
     
     /* write data 200 times so that it forms a stream */
     int ii=0;
     for(ii=0; ii<6; ii++) {
+        
+        /* must open eveery time for stream api to work */
+        adios_open (&adios_handle, "arrays", filename, "w", &comm);
         
         /* initialize 2d array to:
             (rank*1000000) + (stream step * 1000) + offset */
