@@ -8933,6 +8933,7 @@ AC_SUBST([am__tar])
 AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
+m4_include([config/ac_alacrity.m4])
 m4_include([config/ac_aplod.m4])
 m4_include([config/ac_bzip2.m4])
 m4_include([config/ac_cray_pmi.m4])

@@ -16,6 +16,7 @@ DECLARE_TRANSFORM_WRITE_METHOD(bzip2);
 DECLARE_TRANSFORM_WRITE_METHOD(szip);
 DECLARE_TRANSFORM_WRITE_METHOD(isobar);
 DECLARE_TRANSFORM_WRITE_METHOD(aplod);
+DECLARE_TRANSFORM_WRITE_METHOD(alacrity);
 
 // Transform write method registry
 adios_transform_write_method TRANSFORM_WRITE_METHODS[num_adios_transform_types];
@@ -32,6 +33,7 @@ void adios_transform_init() {
     REGISTER_TRANSFORM_WRITE_METHOD(szip, adios_transform_szip);
 	REGISTER_TRANSFORM_WRITE_METHOD(isobar, adios_transform_isobar);
 	REGISTER_TRANSFORM_WRITE_METHOD(aplod, adios_transform_aplod);
+	REGISTER_TRANSFORM_WRITE_METHOD(alacrity, adios_transform_alacrity);
 
     adios_transforms_initialized = 1;
 }

@@ -21,3 +21,7 @@ transforms_read_method_SOURCES += transforms/adios_transform_isobar_read.c
 # APLOD plugin:
 transforms_write_method_SOURCES += transforms/adios_transform_aplod_write.c
 transforms_read_method_SOURCES += transforms/adios_transform_aplod_read.c
+
+# ALACRITY plugin:
+transforms_write_method_SOURCES += transforms/adios_transform_alacrity_write.c
+transforms_read_method_SOURCES += transforms/adios_transform_alacrity_read.c

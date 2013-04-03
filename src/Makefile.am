@@ -54,7 +54,10 @@ include transforms/Makefile.plugins
 transforms_common_SOURCES = core/transforms/adios_transforms_common.c \
                             core/transforms/adios_transforms_hooks.c \
                             core/adios_copyspec.c \
-                            core/adios_subvolume.c
+                            core/adios_subvolume.c \
+                            core/transforms/plugindetect/detect_plugin_infos.h \
+                            core/transforms/plugindetect/detect_plugin_types.h \
+                            core/transforms/plugindetect/plugin_info_types.h
 
 transforms_read_SOURCES = $(transforms_common_SOURCES) \
                           core/transforms/adios_transforms_read.c \

@@ -11,7 +11,7 @@
 
 #include "aplod.h"
 
-#define TEST_SIZE(s) (s)
+#define TEST_SIZE(s,numComponents) (s + sizeof (numComponents) + numComponents * sizeof (int32_t))
 
 static int is_digit_str(char* input_str)
 {
@@ -40,12 +40,14 @@ int compress_aplod_pre_allocated(const void* input_data, const uint64_t input_le
 
 uint16_t adios_transform_aplod_get_metadata_size() 
 { 
-	return (sizeof(uint64_t));
+    // Write the component vector here
+    // No more than 8 components per variable
+	return (8 * sizeof(uint64_t));
 }
 
 uint64_t adios_transform_aplod_calc_vars_transformed_size(uint64_t orig_size, int num_vars) 
 {
-    return TEST_SIZE(orig_size);
+    return TEST_SIZE(orig_size, sizeof (long double));
 }
 
 int adios_transform_aplod_apply(struct adios_file_struct *fd, 
@@ -60,22 +62,66 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
     // Get the input data and data length
     const uint64_t input_size = adios_transform_get_pre_transform_var_size(fd->group, var);
     const void *input_buff= var->data;
+ 
+    // max size supported is long double
+    int32_t componentVector [16];
+    int8_t numComponents = 0;
+    int32_t componentTotals = 0; 
 
-	// parse the compressiong parameter
-	int compress_level = 5;
-	if(var->transform_type_param 
-		&& strlen(var->transform_type_param) > 0 
-		&& is_digit_str(var->transform_type_param))
+    // printf ("[%s] byte = %d, real = %d, double = %d, this = %d\n", var->name, adios_byte, adios_real, adios_double, var->pre_transform_type);
+	// parse the aplod component vector parameters
+	if(var->transform_type_param)
 	{
-		compress_level = atoi(var->transform_type_param);
-		if(compress_level > 9 || compress_level < 1)
-		{
-			compress_level = 5;
-		}
+        char transform_param [1024];
+        char *transform_param_ptr       = 0;
+        uint16_t transform_param_length = 0;
+
+        char transform_param_option [256];
+
+        uint16_t idx = 0;
+
+        strcpy (transform_param, var->transform_type_param);
+        transform_param_ptr     = transform_param;
+        transform_param_length  = strlen (transform_param);
+
+        // Get the key
+        char *key = strtok (transform_param, "=");
+
+        if (strcmp (key, "CV") == 0) {
+
+            char *value = strtok (key, ",");
+            int32_t componentID = 0;
+
+            while (value) {
+                int32_t component = atoi (value);
+                if (component <= 0) {
+                    numComponents = 0;
+                    break ;
+                }
+
+                componentVector [componentID] = component;
+                componentTotals += component;
+                componentID ++;
+            }
+        }
 	}
-	
+
+    if ((numComponents == 0) || (componentTotals != bp_get_type_size (var->pre_transform_type, ""))) {
+        if (var->pre_transform_type == adios_double) {
+            componentVector [0] = 2;
+            componentVector [1] = 2;
+            componentVector [2] = 2;
+            componentVector [3] = 2;
+            numComponents = 4;
+        } else if (var->pre_transform_type == adios_real) {
+            componentVector [0] = 2;
+            componentVector [1] = 2;
+            numComponents = 2;
+        }
+    }
+
     // decide the output buffer
-    uint64_t output_size = TEST_SIZE(input_size);
+    uint64_t output_size = TEST_SIZE(input_size, numComponents);
     void* output_buff = NULL;
 
     uint64_t mem_allowed = 0;
@@ -103,31 +149,28 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
         }
     }
 
-    // compress it
-	uint64_t actual_output_size = output_size;
-    int rtn = 0;
-	rtn = compress_aplod_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
-	
-    if(0 != rtn 					// compression failed for some reason, then just copy the buffer
-        || actual_output_size > input_size)  // or size after compression is even larger (not likely to happen since compression lib will return non-zero in this case)
-    {
-        memcpy(output_buff, input_buff, input_size);
-        actual_output_size = input_size;
-    }
+    // APLOD specific code - Start
+    memcpy (output_buff, &numComponents, sizeof (numComponents));
+    memcpy (output_buff + sizeof (numComponents), componentVector, numComponents * sizeof (int32_t));
+    uint32_t numElements = input_size / bp_get_type_size (var->pre_transform_type, "");
+
+    APLODConfig_t *config = APLODConfigure (componentVector, numComponents);
+    APLODShuffleComponents (config, numElements, 0, numComponents, input_buff, ((char *) output_buff) + sizeof (numComponents) + numComponents * sizeof (int32_t)); 
+    // APLOD specific code - End 
 
     // Wrap up, depending on buffer mode
-    if (use_shared_buffer)
+    if (*wrote_to_shared_buffer)
     {
-        shared_buffer_mark_written(fd, actual_output_size);
+        shared_buffer_mark_written(fd, output_size);
     }
     else
     {
         var->data = output_buff;
-        var->data_size = actual_output_size;
+        var->data_size = output_size;
         var->free_data = adios_flag_yes;
     }
 
-    // copy the metadata, simply the compress type
+    // Do I copy the PLODHandle_t object as the metadata or do I serialize it into the buffer as well
     if(var->transform_metadata && var->transform_metadata_len > 0)
     {
         memcpy(var->transform_metadata, &input_size, sizeof(uint64_t));
@@ -136,7 +179,7 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
 	// printf("adios_transform_compress_apply compress %d input_size %d actual_output_size %d\n", 
 			// rtn, input_size, actual_output_size);
 	
-    *transformed_len = actual_output_size; // Return the size of the data buffer
+    *transformed_len = output_size; // Return the size of the data buffer
 	
     return 1;
 }

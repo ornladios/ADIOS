@@ -10,4 +10,5 @@ REGISTER_TRANSFORM_PLUGIN(bzip2, "zlib", "bzip2", "bzip2 compression")
 REGISTER_TRANSFORM_PLUGIN(szip, "slib", "szip", "szip compression")
 REGISTER_TRANSFORM_PLUGIN(isobar, "isobar", "ncsu-isobar", "ISOBAR compression")
 REGISTER_TRANSFORM_PLUGIN(aplod, "aplod", "ncsu-aplod", "APLOD byte-columnar precision-level-of-detail access format")
+REGISTER_TRANSFORM_PLUGIN(alacrity, "alacrity", "ncsu-alacrity", "ALACRITY indexing")
 

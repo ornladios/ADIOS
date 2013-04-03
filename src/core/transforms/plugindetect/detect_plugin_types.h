@@ -23,7 +23,7 @@ enum ADIOS_TRANSFORM_TYPE {
 
     #include "transforms/transform_plugins.h" // Translate plugin register entries into enum entries
 
-    num_adios_transform_types = 7 // Not counting unknown
+    num_adios_transform_types // Not counting unknown
 };
 
 // Clean up macro
