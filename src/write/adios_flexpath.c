@@ -236,7 +236,9 @@ void data_free(void* eventData, void* clientData) {
 void op_free(void* eventData, void* clientData) {
     fp_write_log("OP", "freeing an op message\n");
     op_msg* op = (op_msg*) eventData;
-    if(op->
+    if(op->file_name) {
+        free(op->file_name);
+    }
     free(op);
 }
 
@@ -979,7 +981,7 @@ int control_thread(void* arg) {
                     fileData->bridges[open->process_id].opened = 1;
 		    thr_mutex_unlock(fileData->openMutex);
                     op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
-                    ack->file_name = strdup(method->group->name);
+                    ack->file_name = strdup(fileData->name);
                     ack->process_id = fileData->rank;
                     ack->step = fileData->currentStep;
                     ack->type = 2;
@@ -1011,7 +1013,7 @@ int control_thread(void* arg) {
                         fileData->openCount++;
                         fileData->bridges[i].opened = 1;
                         op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
-                        ack->file_name = strdup(method->group->name);
+                        ack->file_name = strdup(fileData->name);
                         ack->process_id = fileData->rank;
                         ack->step = fileData->currentStep;
                         ack->type = 2;
