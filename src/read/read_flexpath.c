@@ -31,6 +31,7 @@
 // evpath libraries
 #include <ffs.h>
 #include <atl.h>
+#include <gen_thread.h>
 #include <evpath.h>
 
 // local libraries
@@ -545,20 +546,21 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 {
     ADIOS_FILE *adiosfile = client_data;
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
+    FMContext context = CMget_FMcontext(cm);
+    void *base_data = FMheader_skip(context, vevent);
+    FMFormat format = FMformat_from_ID(context, vevent);
     int condition;
-    get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
-    fprintf(stderr, "Data handler is called with condition: %d.\n", condition);
-    int rank;
-    flexpath_file_data * file_data = client_data;
-    char * buffer = vevent;
-    
-    void *base_data = FMheader_skip(file_data->context, vevent);
-    get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &rank); 
-    FMFormat format = file_data->current_format;
 
-    if(!fp->current_format){
-    	adios_error(err_file_open_error, "file not opened correctly.  Format not specified.\n");
-    }
+    get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
+    fprintf(stderr, "raw handler is called with condition: %d.\n", condition);
+    int rank;       
+    
+    get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &rank); 
+    fp->current_format = format;
+
+    /* if(!fp->current_format){ */
+    /* 	adios_error(err_file_open_error, "file not opened correctly.  Format not specified.\n"); */
+    /* } */
 
     FMStructDescList struct_list = FMcopy_struct_list(format_list_of_FMFormat(format));
     FMField *f = struct_list[0].field_list;
@@ -566,9 +568,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     int i = 0, l = 0, j = 0;
 
     while(f->field_name){
-    	curr_offset = &buffer[f->field_offset];
+    	//curr_offset = &buffer[f->field_offset];	
         char atom_name[200] = "";
-    	flexpath_var_info * var = find_fp_var(file_data->var_list, strdup(f->field_name));
+    	flexpath_var_info * var = find_fp_var(fp->var_list, strdup(f->field_name));
 	
     	if(!var){
     	    adios_error(err_file_open_error,
@@ -604,8 +606,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	    curr_chunk->has_data = 1;
     	    // else it's an array
     	}else{
-            if(!var->sel)
-    	    {// var hasn't been scheduled yet.
+            if(!var->sel){// var hasn't been scheduled yet.
     		fp_log("SEL", "Variable has not yet been scheduled.  Cannot recieve data for it.\n");
     	    }
     	    else if(var->sel->type == ADIOS_SELECTION_WRITEBLOCK){
@@ -614,7 +615,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     		if(var->was_scheduled == 1){
     		    var->array_size = var->data_size;
     		    for(i=0; i<num_dims; i++){
-    			char* dim = malloc(200*sizeof(char));
+    			char *dim = malloc(200*sizeof(char));			
     			atom_name[0] ='\0';
     			strcat(atom_name, f->field_name);
     			strcat(atom_name, "_");
@@ -642,12 +643,13 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     			    var->dims[i] = *temp_data;
     			    var->array_size = var->array_size * var->dims[i];
     			}
+			free(dim);
     		    }
     		    /* void* aptr8 = (void*)(*((unsigned long*)curr_offset)); */
     		    /* memcpy(var->chunks[0].data, aptr8, var->array_size); */
     		    fprintf(stderr, "getting data for var: %s, field_name: %s\n",
     			    var->varname, f->field_name);
-    		    var->chunks[0].data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
+    		    var->chunks[0].data = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
     		}
 
     	    }
@@ -661,7 +663,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     		array_displacements * disp = find_displacement(var->displ,
     							       rank,
     							       var->num_displ);
-    		void* aptr8 = (void*)(*((unsigned long*)curr_offset));
+		
+    		//void *aptr8 = (void*)(*((unsigned long*)curr_offset));		
+		void *aptr8 = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
     		//double * temp = (double*)curr_offset;
 
                 copyoffsets(0,
@@ -1005,15 +1009,15 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
         f++;
     }
     // setting up terminal action for data
-    EVassoc_terminal_action(fp_read_data->fp_cm,
-    			    fp->data_stone,
-    			    struct_list, data_handler,
-    			    (void*)fp);
+    /* EVassoc_terminal_action(fp_read_data->fp_cm, */
+    /* 			    fp->data_stone, */
+    /* 			    struct_list, data_handler, */
+    /* 			    (void*)adiosfile); */
     /* fprintf(stderr, "before assoc\n"); */
-    /* EVassoc_raw_terminal_action(fp_read_data->fp_cm, */
-    /* 				file_data_list->data_stone, */
-    /* 				raw_handler, */
-    /* 				(void*)file_data_list); */
+    EVassoc_raw_terminal_action(fp_read_data->fp_cm,
+    				fp->data_stone,
+    				raw_handler,
+    				(void*)adiosfile);
     /* fprintf(stderr, "after assoc\n"); */
     free(struct_list);
     Flush_msg msg;
