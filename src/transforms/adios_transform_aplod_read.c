@@ -74,7 +74,7 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
 
     // Replace this with the one in writes
     int d = 0;
-    for(d = 0; d < reqgroup->raw_varinfo->ndim; d++)
+    for(d = 0; d < reqgroup->transinfo->orig_ndim; d++)
     {
         decompressed_len *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
     }
@@ -92,6 +92,7 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
     compressed_buff += (numComponents * sizeof (int32_t));
 
     APLODConfig_t *config = APLODConfigure (componentVector, numComponents);
+    config->blockLengthElts = numElements;
 
     APLODReconstructComponents  (config,
                                     numElements,

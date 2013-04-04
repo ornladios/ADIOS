@@ -64,7 +64,7 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
     const void *input_buff= var->data;
  
     // max size supported is long double
-    int32_t componentVector [16];
+    int32_t componentVector [4];
     int8_t numComponents = 0;
     int32_t componentTotals = 0; 
 
@@ -149,13 +149,25 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
         }
     }
 
+    // printf ("Numcomponents: %hu\n", numComponents);
+
     // APLOD specific code - Start
     memcpy (output_buff, &numComponents, sizeof (numComponents));
     memcpy (output_buff + sizeof (numComponents), componentVector, numComponents * sizeof (int32_t));
     uint32_t numElements = input_size / bp_get_type_size (var->pre_transform_type, "");
 
+    char *compressed_buff = (((char *) output_buff) + sizeof (numComponents) + numComponents * sizeof (int32_t)); 
+
     APLODConfig_t *config = APLODConfigure (componentVector, numComponents);
-    APLODShuffleComponents (config, numElements, 0, numComponents, input_buff, ((char *) output_buff) + sizeof (numComponents) + numComponents * sizeof (int32_t)); 
+
+    config->blockLengthElts = numElements;
+    APLODShuffleComponents (config, numElements, 0, numComponents, input_buff, compressed_buff);
+    // APLODReconstructComponents  (config, numElements, 0, numComponents, 0, 0, decompressed_buff, compressed_buff);
+
+    // void *decompressed_buff = (void *) calloc (input_size, sizeof (char));
+    // assert (memcmp (input_buff, decompressed_buff, numElements * sizeof (double)) == 0);
+    // free (decompressed_buff);
+ 
     // APLOD specific code - End 
 
     // Wrap up, depending on buffer mode
