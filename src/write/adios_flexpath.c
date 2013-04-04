@@ -246,12 +246,14 @@ void op_free(void* eventData, void* clientData) {
 void threaded_enqueue(FlexpathQueueNode** queue, void* item, FlexpathMessageType type, thr_mutex_t mutex, thr_condition_t condition) {
     fp_write_log("QUEUE", "enqueing a message\n");
     thr_mutex_lock(mutex);
+    fp_write_log("MUTEX","lock 2\n");
     FlexpathQueueNode* newNode = (FlexpathQueueNode*) malloc(sizeof(FlexpathQueueNode));
     newNode->data = item;
     newNode->type = type;
     newNode->next = *queue;
     *queue = newNode;
     thr_condition_signal(condition);
+    fp_write_log("MUTEX","unlock 2\n");
     thr_mutex_unlock(mutex);
 }
 
@@ -259,7 +261,9 @@ void threaded_enqueue(FlexpathQueueNode** queue, void* item, FlexpathMessageType
 int queue_count(FlexpathQueueNode** queue, thr_mutex_t mutex) {
     fp_write_log("QUEUE", "counting a queue\n");
     thr_mutex_lock(mutex);
+    fp_write_log("MUTEX","lock 3\n");
     if(*queue==NULL) {
+        fp_write_log("MUTEX","unlock 3\n");
         thr_mutex_unlock(mutex);
         return 0;
     }
@@ -269,6 +273,7 @@ int queue_count(FlexpathQueueNode** queue, thr_mutex_t mutex) {
         count++;
         current = current->next;
     }
+    fp_write_log("MUTEX","unlock 3\n");
     thr_mutex_unlock(mutex);
     return count;
 }
@@ -277,11 +282,10 @@ int queue_count(FlexpathQueueNode** queue, thr_mutex_t mutex) {
 FlexpathQueueNode* threaded_dequeue(FlexpathQueueNode** queue, thr_mutex_t mutex, thr_condition_t condition) {
     fp_write_log("QUEUE", "dequeue\n");
     thr_mutex_lock(mutex);
-    fp_write_log("QUEUE", "should wait %d\n", gen_thr_initialized());
+    fp_write_log("MUTEX","lock 4\n");
     while(*queue==NULL) {
         thr_condition_wait(condition, mutex);
     }
-    fp_write_log("QUEUE", "but does not\n");
     FlexpathQueueNode* tail;
     FlexpathQueueNode* prev = NULL;
     tail = *queue;
@@ -295,24 +299,26 @@ FlexpathQueueNode* threaded_dequeue(FlexpathQueueNode** queue, thr_mutex_t mutex
         *queue = NULL;
     }
     thr_condition_signal(condition);
+    fp_write_log("MUTEX","unlock 4\n");
     thr_mutex_unlock(mutex);
     return tail;
 }
 
 // peek at tail of message queue
 FlexpathQueueNode* threaded_peek(FlexpathQueueNode** queue, thr_mutex_t mutex, thr_condition_t condition) {
+    fp_write_log("QUEUE", "queue count %d\n", queue_count(queue, mutex));
     fp_write_log("QUEUE", "peeking at a queue\n");
     thr_mutex_lock(mutex);
+    fp_write_log("MUTEX","lock 5\n");
     if(*queue==NULL) {
-        thr_mutex_unlock(mutex);
         thr_condition_wait(condition, mutex);
-        thr_mutex_lock(mutex);
     }
     FlexpathQueueNode* tail;
     tail = *queue;
     while(tail && tail->next) {
         tail=tail->next;
     }
+    fp_write_log("MUTEX","unlock 5\n");
     thr_mutex_unlock(mutex);
     return tail;
 }
@@ -977,8 +983,10 @@ int control_thread(void* arg) {
                 } else if (open->step == fileData->currentStep){
                     fp_write_log("STEP", "recieved op with current step\n");
                     thr_mutex_lock(fileData->openMutex);
+                    fp_write_log("MUTEX","lock 6\n");
                     fileData->openCount++;  
                     fileData->bridges[open->process_id].opened = 1;
+                    fp_write_log("MUTEX","unlock 6\n");
 		    thr_mutex_unlock(fileData->openMutex);
                     op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
                     ack->file_name = strdup(fileData->name);
@@ -996,13 +1004,16 @@ int control_thread(void* arg) {
             } else if(controlMsg->type==CLOSE) {
                 op_msg* close = (op_msg*) controlMsg->data;
 		thr_mutex_lock(fileData->openMutex);
+                fp_write_log("MUTEX","lock 7\n");
 		fileData->openCount--;
                 fileData->bridges[close->process_id].opened=0;
+                fp_write_log("MUTEX","unlock 7\n");
 		thr_mutex_unlock(fileData->openMutex);
                  if(fileData->openCount==0) {
-                    fp_write_log("STEP", "advancing\n");
+                    fp_write_log("STEP", "advancing\n\n");
 		    FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue, 
 		        fileData->dataMutex, fileData->dataCondition);
+                    fp_write_log("STEP", "advancing successfully dequeue\n\n");
                     FMfree_var_rec_elements(fileData->fm->ioFormat, node->data);
                     fileData->currentStep++;
                     
@@ -1545,11 +1556,16 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 // wait until all open files have finished sending data to shutdown
 extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) {
     FlexpathWriteFileData* fileData = flexpathWriteData.openFiles;
+    fp_write_log("FILE", "Entered finalize\n");
     while(fileData) {
         thr_mutex_lock(fileData->dataMutex);
+        fp_write_log("MUTEX","lock 1\n");
         while(fileData->dataQueue!=NULL) {
+            fp_write_log("FILE", "waiting on %s to empty data\n", fileData->name);
             thr_condition_wait(fileData->dataCondition, fileData->dataMutex);
         }
+        fp_write_log("MUTEX","unlock 1\n");
+        thr_mutex_unlock(fileData->dataMutex);
         fileData = fileData->next;
     }
 }
